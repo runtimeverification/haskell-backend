@@ -19,7 +19,7 @@ import Control.Monad (foldM)
 import Control.Monad.Trans.State
 import Data.Limit
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (maybeToList)
+import Data.Maybe (fromJust)
 import Data.Sequence (Seq (..))
 import Data.Sequence qualified as Seq
 import GHC.Natural
@@ -49,8 +49,8 @@ data TransitionResult a
     | -- | final state (e.g., goal state reached, side conditions hold)
       Final a
     | -- | not stuck, but also not final (maximum depth reached before
-      -- finishing the proof). Provides the "next" states for the result.
-      Stopped [a]
+      -- finishing the proof). Provides current and "next" states for the result.
+      Stop a [a]
     deriving stock (Eq, Show)
 
 instance Functor TransitionResult where
@@ -59,7 +59,7 @@ instance Functor TransitionResult where
         Branch a as -> Branch (f a) $ NE.map f as
         Stuck a -> Stuck $ f a
         Final a -> Final $ f a
-        Stopped as -> Stopped (map f as)
+        Stop a as -> Stop (f a) (map f as)
 
 instance Pretty a => Pretty (TransitionResult a) where
     pretty = \case
@@ -67,9 +67,7 @@ instance Pretty a => Pretty (TransitionResult a) where
         Branch a as -> multi "Branch" "node" a "successors" (NE.toList as)
         Stuck a -> single "Stuck" a
         Final a -> single "Final" a
-        Stopped as ->
-            Pretty.vsep $
-                "Stopped" : map (Pretty.indent 4 . Pretty.pretty) as
+        Stop a as -> multi "Stop" "node" a "successors" as
       where
         single :: Doc x -> a -> Doc x
         single lbl a =
@@ -85,13 +83,13 @@ instance Pretty a => Pretty (TransitionResult a) where
                 ]
                     <> map (Pretty.indent 4 . Pretty.pretty) as
 
-isStuck, isFinal, isStopped, isBranch :: TransitionResult a -> Bool
+isStuck, isFinal, isStop, isBranch :: TransitionResult a -> Bool
 isStuck (Stuck _) = True
 isStuck _ = False
 isFinal (Final _) = True
 isFinal _ = False
-isStopped (Stopped _) = True
-isStopped _ = False
+isStop (Stop _ _) = True
+isStop _ = False
 isBranch (Branch _ _) = True
 isBranch _ = False
 
@@ -101,7 +99,7 @@ extractNext = \case
     Branch _ as -> NE.toList as
     Stuck _ -> []
     Final _ -> []
-    Stopped as -> as
+    Stop _ as -> as
 
 extractState :: TransitionResult a -> Maybe a
 extractState = \case
@@ -109,7 +107,7 @@ extractState = \case
     Branch a _ -> Just a
     Stuck a -> Just a
     Final a -> Just a
-    Stopped _ -> Nothing
+    Stop a _ -> Just a
 
 {- | A sequence of transition instructions executed together as a
  single transition by the transition function.
@@ -139,7 +137,7 @@ data TState instr config = TState
 
   Transition yields a @'TransitionResult'@ which indicates what to do
   next. The reached configuration could be @'Final'@ or @'Stuck'@, or
-  traversal should be @'Stopped'@. Otherwise, traversal continues,
+  traversal should be @'Stop'@ped. Otherwise, traversal continues,
   either simply @'Continuing'@ with a next state, or @'Branch'@ing
   (i.e., continuing on several branches).
 
@@ -159,10 +157,10 @@ data TState instr config = TState
   prematurely after having found the maximum of counterexamples given
   as a parameter).
 
-  When any transition produced @'Stopped'@, or when stopping at branch
+  When any transition produced @'Stop'@, or when stopping at branch
   points was requested, the result will include non-final states. In
-  this case, the result will be @'GotStuck'@ with these non-final
-  states.
+  this case, the result is @'Stopped'@, returning all non-final states
+  and their successors.
 
   Note that the transition function can modify the provided
   instructions during the traversal. Usually the @nextSteps@ in
@@ -234,7 +232,8 @@ graphTraversal
             | isBranch result =
                 case stopOn of
                     Leaf -> result
-                    LeafOrBranching -> Stopped (maybeToList $ extractState result)
+                    LeafOrBranching ->
+                        Stop (fromJust $ extractState result) (extractNext result)
             | otherwise = result
 
         worker ::
@@ -259,8 +258,8 @@ graphTraversal
                                     pure $
                                         GotStuck (Seq.length nextQ) (mapMaybe extractState stuck)
                                 else worker nextQ
-                Abort lastState queue -> do
-                    pure $ Aborted (Seq.length queue) (extractNext lastState)
+                Abort _lastState queue -> do
+                    pure $ Aborted $ toList queue
 
         step ::
             (TState instr config) ->
@@ -268,7 +267,7 @@ graphTraversal
             Simplifier (StepResult (TState instr config))
         step a q = do
             next <- branchStop <$> transit a
-            if (isStuck next || isFinal next || isStopped next)
+            if (isStuck next || isFinal next || isStop next)
                 then pure (Output next q)
                 else
                     let abort (LimitExceeded queue) = Abort next queue
@@ -285,17 +284,19 @@ graphTraversal
                 collected <- gets reverse
                 -- we collect a maximum of 'maxCounterExamples' Stuck states
                 let stuck = map (fmap currentState) $ filter isStuck collected
-                -- Other states may be unfinished but not stuck (Stopped)
+                -- Other states may be unfinished but not stuck (Stop)
                 -- Only provide the requested amount of states (maxCounterExamples)
                 let unproven =
                         takeWithin maxCounterExamples . map (fmap currentState) $
-                            filter isStopped collected
+                            filter isStop collected
                 pure $
                     if
                             | (not $ null stuck) ->
                                 GotStuck 0 (mapMaybe extractState stuck)
                             | not $ null unproven ->
-                                GotStuck 0 (concatMap extractNext unproven)
+                                Stopped
+                                    (mapMaybe extractState unproven)
+                                    (concatMap extractNext unproven)
                             | otherwise -> fmap currentState result
             other -> pure $ fmap currentState other
 
@@ -313,14 +314,17 @@ data StepResult a
     deriving stock (Eq, Show)
 
 data TraversalResult a
-    = -- | remaining queue length and stuck or stopped (unproven)
-      -- results (always at most maxCounterExamples many).
+    = -- | remaining queue length and stuck results (always at most
+      -- maxCounterExamples many).
       GotStuck Int [a]
-    | -- | queue length (exceeding the limit) and result(s) of the
-      -- last step that led to stopping.
-      Aborted Int [a]
+    | -- | queue (length exceeding the limit), including result(s) of
+      -- the last step that led to stopping.
+      Aborted [a]
     | -- | queue empty, results returned
       Ended [a]
+    | -- | stop was signalled by the transition, return stopped
+      -- (unproven) states and next states (from queue)
+      Stopped [a] [a]
     deriving stock (Eq, Show)
 
 instance Pretty a => Pretty (TraversalResult a) where
@@ -329,19 +333,24 @@ instance Pretty a => Pretty (TraversalResult a) where
             Pretty.hang 4 . Pretty.vsep $
                 ("Got stuck with queue of " <> Pretty.pretty n) :
                 map Pretty.pretty as
-        Aborted n as ->
+        Aborted as ->
             Pretty.hang 4 . Pretty.vsep $
-                ("Aborted with queue of " <> Pretty.pretty n) :
+                "Aborted with queue of " :
                 map Pretty.pretty as
         Ended as ->
             Pretty.hang 4 . Pretty.vsep $
                 "Ended" : map Pretty.pretty as
+        Stopped as qu ->
+            Pretty.hang 4 . Pretty.vsep $
+                ("Stopped" : map Pretty.pretty as)
+                    <> ("Queue" : map Pretty.pretty qu)
 
 instance Functor TraversalResult where
     fmap f = \case
         GotStuck n rs -> GotStuck n (map f rs)
-        Aborted n rs -> Aborted n (map f rs)
+        Aborted rs -> Aborted (map f rs)
         Ended rs -> Ended (map f rs)
+        Stopped rs qu -> Stopped (map f rs) (map f qu)
 
 ----------------------------------------
 -- constructing transition functions (for caller)
