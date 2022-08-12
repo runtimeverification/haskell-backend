@@ -19,6 +19,7 @@ import Control.Monad (foldM)
 import Control.Monad.Trans.State
 import Data.Limit
 import Data.List.NonEmpty qualified as NE
+import Data.Maybe (fromJust)
 import Data.Sequence (Seq (..))
 import Data.Sequence qualified as Seq
 import GHC.Natural
@@ -225,11 +226,15 @@ graphTraversal
         exceedsLimit =
             not . withinLimit breadthLimit . fromIntegral . Seq.length
 
-        shouldStop :: TransitionResult (TState instr config) -> Bool
-        shouldStop =
-            case stopOn of
-                Leaf -> const False
-                LeafOrBranching -> isBranch
+        -- when stopping at branches, turn a 'Branch' result into a 'Stopped'
+        branchStop :: TransitionResult (TState i c) -> TransitionResult (TState i c)
+        branchStop result
+            | isBranch result =
+                case stopOn of
+                    Leaf -> result
+                    LeafOrBranching ->
+                        Stop (fromJust $ extractState result) (extractNext result)
+            | otherwise = result
 
         worker ::
             Seq (TState instr config) ->
@@ -261,8 +266,8 @@ graphTraversal
             Seq (TState instr config) ->
             Simplifier (StepResult (TState instr config))
         step a q = do
-            next <- transit a
-            if (isStuck next || isFinal next || isStop next || shouldStop next)
+            next <- branchStop <$> transit a
+            if (isStuck next || isFinal next || isStop next)
                 then pure (Output next q)
                 else
                     let abort (LimitExceeded queue) = Abort next queue
