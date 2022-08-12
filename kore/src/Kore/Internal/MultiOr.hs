@@ -174,8 +174,8 @@ distributeApplication
             (MultiOrBottom, _) -> MultiOrBottom
             (_, MultiOrBottom) -> MultiOrBottom
             (mor, mapp) -> make [applyTo child app | child <- toList mor, app <- toList mapp]
-        applyTo term Application{applicationSymbolOrAlias = alias, applicationChildren} =
-            Application{applicationSymbolOrAlias = alias, applicationChildren = term : applicationChildren}
+        applyTo term Application{applicationSymbolOrAlias = alias, applicationChildren = children} =
+            Application{applicationSymbolOrAlias = alias, applicationChildren = term : children}
         application =
             Application{applicationSymbolOrAlias, applicationChildren = []}
 
