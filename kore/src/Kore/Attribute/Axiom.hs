@@ -295,7 +295,6 @@ getPriorityOfAxiom
                 defaultSimplificationPriority
             (Priority Nothing, Owise False, IsSimplification (Just value)) ->
                 value
-            -- TODO: remove
             -- TODO: remove this case once the frontend
             -- modifies the simplification attribute
             -- to take an optional priority value
