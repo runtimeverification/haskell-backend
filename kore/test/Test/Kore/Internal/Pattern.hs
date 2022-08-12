@@ -240,9 +240,9 @@ test_hasSimplifiedChildren =
     , testCase "One child isn't simplified, nested ands" $ do
         let simplified = Simplified_ Fully Any
             predicate =
-                    makeAndPredicate
-                        mockPredicate1
-                        (setSimplifiedPred simplified mockPredicate2)
+                makeAndPredicate
+                    mockPredicate1
+                    (setSimplifiedPred simplified mockPredicate2)
             patt =
                 Pattern.fromCondition Mock.testSort
                     . Condition.fromPredicate
