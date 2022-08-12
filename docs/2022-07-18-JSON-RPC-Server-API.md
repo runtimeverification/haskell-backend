@@ -23,7 +23,7 @@ The server runs over sockets and can be interacted with by sending JSON RPC mess
   "id": 1,
   "method": "execute",
   "params": {
-    "max-depth": 1,
+    "max-depth": 4,
     "cut-point-rules": ["rule1"],
     "terminal-rules": ["ruleFoo"],
     "state": {
@@ -87,52 +87,106 @@ If the verification of the `state` pattern fails, the following error is returne
 
 ### Correct Response:
 
+All correct responses have a result containing a `reason`, with one of the following values:
+* `"reason: "branching"`
+* `"reason: "stuck"`
+* `"reason: "depth-bound"`
+* `"reason: "cut-point-rule"`
+* `"reason: "terminal-rule"`
+
+A field `state` contains the state reached (including optional `predicate` and `substitution`), a field `depth` indicates the execution depth.
+
 ```json
 {
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
-    "states": [
-      {
-        "state": {"format":"KORE", "version":1, "term":{}},
-        "depth": 1
-      }
-    ],
-    "reason": "final-state"
+    "state": {
+      "term": {"format":"KORE", "version":1, "term":{}},
+      "predicate": {"format":"KORE", "version":1, "term":{}},
+      "substitution": {"format":"KORE", "version":1, "term":{}},
+    },
+    "depth": 1
+    "reason": "stuck"
   }
 }
 ```
 
 The above will be also be the same for:
-  * `"reason": "stuck"`
   * `"reason": "depth-bound"`
-  * `"reason": "cut-point-rule"`
-  * `"reason": "terminal-rule"`
+
+
+If `"reason":  "terminal-rule"`, an additional `rule` field indicates which of the `terminal-rule` labels or IDs led to terminating the execution:
 
 ```json
 {
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
-    "states": [
+    "state": {
+      "term": {"format":"KORE", "version":1, "term":{}},
+      "predicate": {"format":"KORE", "version":1, "term":{}},
+      "substitution": {"format":"KORE", "version":1, "term":{}},
+    },
+    "depth": 1,
+    "reason": "terminal-rule",
+    "rule": "ruleFoo"
+  }
+}
+```
+
+
+If `"reason": "branching"`, an additional `next-states` field contains all following states of the branch point.
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "state": {
+      "term": {"format":"KORE", "version":1, "term":{}},
+      "predicate": {"format":"KORE", "version":1, "term":{}},
+      "substitution": {"format":"KORE", "version":1, "term":{}},
+    },
+    "depth": 2,
+    "reason": "branching",
+    "next-states": [
       {
-        "state": {"format": "KORE", "version": 1, "term": {}},
-        "depth": 5,
-        "condition": {
-          "substitution": {"format": "KORE", "version": 1, "term": {}},
-          "predicate": {"format": "KORE", "version": 1, "term": {}}
-        }
+        "term": {"format": "KORE", "version": 1, "term": {}},
+        "predicate": {"format":"KORE", "version":1, "term":{}},
+        "substitution": {"format":"KORE", "version":1, "term":{}},
       },
       {
-        "state": {"format": "KORE", "version": 1, "term": {}},
-        "depth": 5,
-        "condition": {
-          "substitution": {"format": "KORE", "version": 1, "term": {}},
-          "predicate": {"format": "KORE", "version": 1, "term": {}}
-        }
+        "term": {"format": "KORE", "version": 1, "term": {}},
+        "predicate": {"format":"KORE", "version":1, "term":{}},
+        "substitution": {"format":"KORE", "version":1, "term":{}},
       }
-    ],
-    "reason": "branching"
+    ]
+  }
+}
+```
+
+If `"reason": "cut-point-rule"`, the `next-states` field contains the next state (if any) in a list. The `rule` field indicates which rule led to stopping.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "state": {
+      "term": {"format":"KORE", "version":1, "term":{}},
+      "predicate": {"format":"KORE", "version":1, "term":{}},
+      "substitution": {"format":"KORE", "version":1, "term":{}},
+    },
+    "depth": 2,
+    "reason": "cut-point-rule",
+    "rule": "rule1",
+    "next-states": [
+      {
+        "term": {"format": "KORE", "version": 1, "term": {}},
+        "predicate": {"format":"KORE", "version":1, "term":{}},
+        "substitution": {"format":"KORE", "version":1, "term":{}},
+      }
+    ]
   }
 }
 ```
@@ -247,7 +301,7 @@ The server uses the JSON RPC spec way of returning errors. Namely, the returned 
 
 ```json
 {
-  "jsonrpc": "2.0", 
+  "jsonrpc": "2.0",
   "id": 1,
   "error": {
     "code": -32002,
@@ -261,7 +315,7 @@ The kore-rpc specific error messages will use error codes in the range -32000 to
 
 ## -32001 Cancel request unsupported in batch mode
 
-Due tot he way that cancel is implemented, we do not allow a cancel message within batch mode. This message should never occur if batch mode is not used.
+Due to the way that cancel is implemented, we do not allow a cancel message within batch mode. This message should never occur if batch mode is not used.
 
 ## -32002 Could not verify KORE pattern
 
@@ -269,7 +323,7 @@ This error wraps the internal error thrown when validating the received pattern 
 
 ```json
 {
-  "jsonrpc": "2.0", 
+  "jsonrpc": "2.0",
   "id": 1,
   "error": {
     "code": -32002,
@@ -281,3 +335,7 @@ This error wraps the internal error thrown when validating the received pattern 
   }
 }
 ```
+
+## -32032 Internal server error
+
+This error indicates an internal problem with the server implementation. Its data is not expected to be processed by a client (other than including it in a bug report).

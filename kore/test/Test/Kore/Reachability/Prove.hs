@@ -827,7 +827,7 @@ test_proveClaims =
                             ProveClaimsResult
                                 { stuckClaims = MultiAnd.singleton $ StuckClaim stuck
                                 , provenClaims = MultiAnd.top
-                                , unexplored = 0
+                                , unexplored = 2
                                 }
                     assertEqual "count" (unexplored expect) (unexplored actual)
                     assertEqual "claim" (stuckClaims expect) (stuckClaims actual)
