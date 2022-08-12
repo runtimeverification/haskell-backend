@@ -107,8 +107,14 @@ fromPredicate :: Kore.Sort -> Predicate VariableName -> KoreJson
 fromPredicate s = fromTermLike . Predicate.fromPredicate s
 
 {- | represent a @'Substitution'@ as a conjunction of equalities, so
-'[t1 / X][t2 / Y]'becomes '#And ( X #Equals t1, #And ( Y #Equals t2, ... ))'.
-The result sort is fixed to a sort variable.
+
+'[t1 / X1][t2 / X2]..[tn / Xn'
+
+becomes
+
+'#And ( ... (#And ( X1 #Equals t1, X2 #Equals t2), ...), Xn #Equals tn)'.
+
+The result sort is fixed to a made-up sort variable.
 -}
 fromSubstitution :: Substitution VariableName -> Maybe KoreJson
 fromSubstitution subst
