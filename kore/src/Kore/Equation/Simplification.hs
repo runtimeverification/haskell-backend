@@ -66,7 +66,7 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
         simplifiedCond <-
             Simplifier.simplifyCondition
                 SideCondition.top
-                (fromPredicate $ makeAndPredicate argument' antiLeft')
+                (makeAndPredicate argument' antiLeft' & fromPredicate)
         let Conditional{substitution, predicate} = simplifiedCond
             subst = Substitution.toMap substitution
             left' = substitute subst left

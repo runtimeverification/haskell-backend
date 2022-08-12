@@ -39,7 +39,6 @@ import Kore.Rewrite.Axiom.EvaluationStrategy (
     builtinEvaluation,
     simplifierWithFallback,
  )
-import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier)
 import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier (
     AxiomIdentifier (..),
  )
@@ -49,7 +48,6 @@ import Kore.Rewrite.Axiom.Registry (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
-    mkEquationVariable,
     mkRuleVariable,
  )
 import Kore.Rewrite.SMT.Declaration (
@@ -76,7 +74,6 @@ import Test.Kore.Internal.Substitution as Substitution hiding (
     test_substitute,
  )
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
-import Test.Kore.Simplify
 import Test.SMT qualified as Test
 import Test.Tasty
 import Test.Tasty.HUnit.Ext

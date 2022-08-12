@@ -419,9 +419,6 @@ f, g :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 f = Mock.functionalConstr10
 g = Mock.functionalConstr11
 
-fSymbol :: Symbol
-fSymbol = Mock.functionalConstr10Symbol
-
 cf :: TermLike RewritingVariableName
 cf = Mock.cf
 
@@ -430,9 +427,6 @@ sigma ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 sigma = Mock.functionalConstr20
-
-sigmaSymbol :: Symbol
-sigmaSymbol = Mock.functionalConstr20Symbol
 
 string :: Text -> TermLike RewritingVariableName
 string = Mock.builtinString

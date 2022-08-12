@@ -55,8 +55,6 @@ test_simplifyEquation =
             actual <- simplify equation
             assertEqual "" expected actual
         ]
-        -- TODO(ana.pantilie): after #2341 we should check that equations which
-        --   don't have an 'argument' are not simplified
     ]
 
 a, b, c :: InternalVariable variable => TermLike variable
@@ -65,16 +63,6 @@ b = Mock.b
 c = Mock.c
 f :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 f = Mock.f
-xMap :: TermLike RewritingVariableName
-xMap = mkElemVar Mock.xMapConfig
-symbolicMap :: TermLike RewritingVariableName
-symbolicMap =
-    Mock.concatMap
-        ( Mock.elementMap
-            (mkElemVar Mock.xConfig)
-            (mkElemVar Mock.yConfig)
-        )
-        xMap
 
 mkSimplifiedEquation ::
     TermLike RewritingVariableName ->
