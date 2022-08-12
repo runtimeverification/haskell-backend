@@ -31,10 +31,6 @@ module Kore.Internal.MultiOr (
     Alternative (..),
 ) where
 
-import Control.Lens qualified as Lens
-import Data.Generics.Product (
-    field,
- )
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Traversable qualified as Traversable
@@ -170,15 +166,16 @@ distributeApplication
         , applicationChildren
         } =
         foldr
-            ( \mor mapp -> case (mor, mapp) of
-                (MultiOrBottom, _) -> MultiOrBottom
-                (_, MultiOrBottom) -> MultiOrBottom
-                _ -> make [applyTo child app | child <- toList mor, app <- toList mapp]
-            )
+            (curry go)
             (singleton application)
             applicationChildren
       where
-        applyTo term = Lens.over (field @"applicationChildren") (term :)
+        go = \case
+            (MultiOrBottom, _) -> MultiOrBottom
+            (_, MultiOrBottom) -> MultiOrBottom
+            (mor, mapp) -> make [applyTo child app | child <- toList mor, app <- toList mapp]
+        applyTo term Application{applicationSymbolOrAlias=alias, applicationChildren} =
+            Application{applicationSymbolOrAlias=alias, applicationChildren = term:applicationChildren}
         application =
             Application{applicationSymbolOrAlias, applicationChildren = []}
 

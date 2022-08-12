@@ -129,8 +129,11 @@ top :: MultiAnd term
 top = MultiAndTop
 
 -- | 'make' constructs a normalized 'MultiAnd'.
-singleton :: (Ord term, TopBottom term) => term -> MultiAnd term
-singleton term = make [term]
+singleton :: TopBottom term => term -> MultiAnd term
+singleton term
+    | isTop term = MultiAndTop
+    | isBottom term = MultiAndBottom term
+    | otherwise = MultiAnd $ Set.singleton term
 
 size :: MultiAnd a -> Natural
 size = genericLength . toList
@@ -218,7 +221,6 @@ traverseOr f = fmap distributeAnd . traverse f
 
 traverseOrAnd ::
     Ord child2 =>
-    -- TopBottom child2 =>
     Applicative f =>
     (child1 -> f (MultiOr (MultiAnd child2))) ->
     MultiOr (MultiAnd child1) ->
