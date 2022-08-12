@@ -340,13 +340,15 @@ proveClaim
                 limitedStrategyList
                 (ProofDepth 0, startGoal)
 
-        let returnUnprovenClaims n =
+        let returnUnprovenClaims n unproven = do
+                mapM_ (infoUnprovenDepth . fst) unproven
                 pure
                     . Left
                     . (,fromIntegral n)
                     . MultiAnd.make
                     . map StuckClaim
                     . mapMaybe (extractUnproven . snd)
+                    $ unproven
 
         case traversalResult of
             GraphTraversal.GotStuck n rs ->
