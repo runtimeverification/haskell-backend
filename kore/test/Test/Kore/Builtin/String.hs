@@ -56,6 +56,11 @@ import Test.Kore.Internal.OrPattern qualified as OrPattern
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
+import qualified Pretty
+import Control.Exception (ErrorCall(..), try)
+import Kore.Unparser (unparse)
+import Kore.Builtin.String (string2BaseKey)
+import Kore.Builtin.String.String (base2StringKey)
 
 genString :: Gen Text
 genString = Gen.text (Range.linear 0 256) Gen.unicode
@@ -321,15 +326,10 @@ test_string2Base =
         string2BaseStringSymbol
         [asInternal "-3k", Test.Int.asInternal 36]
         (Test.Int.asOrPattern (-128))
-    , Test.Int.testInt
+    , testBadEvaluation
         "string2Base bad base"
-        string2BaseStringSymbol
-        [asInternal "1", Test.Int.asInternal 37]
-        ( OrPattern.fromTermLike $
-            mkApplySymbol
-                string2BaseStringSymbol
-                [asInternal "1", Test.Int.asInternal 37]
-        )
+        string2BaseKey
+        (mkApplySymbol string2BaseStringSymbol [asInternal "1", Test.Int.asInternal 37])
     ]
 
 test_base2String :: [TestTree]
@@ -349,16 +349,26 @@ test_base2String =
         base2StringStringSymbol
         [Test.Int.asInternal 51966, Test.Int.asInternal 16]
         (asOrPattern "cafe")
-    , testString
+    , testBadEvaluation
         "base2String bad base"
-        base2StringStringSymbol
-        [Test.Int.asInternal 1, Test.Int.asInternal 37]
-        ( OrPattern.fromTermLike $
-            mkApplySymbol
-                base2StringStringSymbol
-                [Test.Int.asInternal 1, Test.Int.asInternal 37]
-        )
+        base2StringKey
+        (mkApplySymbol base2StringStringSymbol [Test.Int.asInternal 1, Test.Int.asInternal 37])
     ]
+
+testBadEvaluation :: TestName -> Pretty.Doc a -> TermLike RewritingVariableName -> TestTree
+testBadEvaluation testName hook term =
+    testCase testName $ do
+        try (runNoSMT $ evaluateTerm term) >>= \case
+            Right patt -> assertFailure $ unlines
+                [ "Expected evaluation to fail, but it succeeded:"
+                , show patt
+                ]
+            Left (ErrorCall errMsg) -> do
+                let expectedErrMsg = show $ Pretty.vsep
+                        [ "Expecting hook " <> Pretty.squotes hook <> " to reduce concrete pattern:"
+                        , Pretty.indent 4 (unparse term)
+                        ]
+                assertEqual "" expectedErrMsg errMsg
 
 test_string2Int :: [TestTree]
 test_string2Int =

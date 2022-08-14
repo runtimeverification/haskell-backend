@@ -59,7 +59,9 @@ import Test.Kore.Builtin.Int qualified as Test.Int
 import Test.Kore.Builtin.String qualified as Test.String
 import Test.SMT
 import Test.Tasty
+import Control.Exception (ErrorCall(..), try)
 import Test.Tasty.HUnit.Ext
+import Kore.Builtin.InternalBytes (encodeBytesKey, decodeBytesKey)
 
 genString :: Gen Text
 genString = Gen.text (Range.linear 0 256) Gen.latin1
@@ -555,31 +557,42 @@ test_decodeBytes_encodeBytes = map testProp encodings
 
 test_decodeBytes :: TestTree
 test_decodeBytes =
-    testBytes
+    testBadEvaluation
         "test bad decoding"
-        decodeBytesBytesSymbol
+        decodeBytesKey
+        (mkApplySymbol
+                decodeBytesBytesSymbol
         [ Test.String.asInternal "bad"
         , asInternal ""
         ]
-        ( OrPattern.fromTermLike $
-            mkApplySymbol
-                decodeBytesBytesSymbol
-                [Test.String.asInternal "bad", asInternal ""]
         )
 
 test_encodeBytes :: TestTree
 test_encodeBytes =
-    testBytes
+    testBadEvaluation
         "test bad encoding"
-        encodeBytesBytesSymbol
-        [ Test.String.asInternal "bad"
-        , Test.String.asInternal ""
-        ]
-        ( OrPattern.fromTermLike $
-            mkApplySymbol
-                encodeBytesBytesSymbol
-                [Test.String.asInternal "bad", Test.String.asInternal ""]
+        encodeBytesKey
+        (mkApplySymbol
+            encodeBytesBytesSymbol
+            [ Test.String.asInternal "bad"
+            , Test.String.asInternal ""
+            ]
         )
+
+testBadEvaluation :: TestName -> Pretty.Doc a -> TermLike RewritingVariableName -> TestTree
+testBadEvaluation testName hook term =
+    testCase testName $ do
+        try (runNoSMT $ evaluateTerm term) >>= \case
+            Right patt -> assertFailure $ unlines
+                [ "Expected evaluation to fail, but it succeeded:"
+                , show patt
+                ]
+            Left (ErrorCall errMsg) -> do
+                let expectedErrMsg = show $ Pretty.vsep
+                        [ "Expecting hook " <> Pretty.squotes hook <> " to reduce concrete pattern:"
+                        , Pretty.indent 4 (unparse term)
+                        ]
+                assertEqual "" expectedErrMsg errMsg
 
 int2bytesData ::
     -- | (integer, big endian?, bytes)
