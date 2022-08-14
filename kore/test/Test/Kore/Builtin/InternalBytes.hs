@@ -20,6 +20,7 @@ module Test.Kore.Builtin.InternalBytes (
     test_unparse,
 ) where
 
+import Control.Exception (ErrorCall (..), try)
 import Data.ByteString (
     ByteString,
  )
@@ -39,6 +40,7 @@ import Hedgehog hiding (
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 import Kore.Builtin.Encoding qualified as E
+import Kore.Builtin.InternalBytes (decodeBytesKey, encodeBytesKey)
 import Kore.Builtin.InternalBytes qualified as InternalBytes
 import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern (OrPattern)
@@ -59,9 +61,7 @@ import Test.Kore.Builtin.Int qualified as Test.Int
 import Test.Kore.Builtin.String qualified as Test.String
 import Test.SMT
 import Test.Tasty
-import Control.Exception (ErrorCall(..), try)
 import Test.Tasty.HUnit.Ext
-import Kore.Builtin.InternalBytes (encodeBytesKey, decodeBytesKey)
 
 genString :: Gen Text
 genString = Gen.text (Range.linear 0 256) Gen.latin1
@@ -560,11 +560,11 @@ test_decodeBytes =
     testBadEvaluation
         "test bad decoding"
         decodeBytesKey
-        (mkApplySymbol
-                decodeBytesBytesSymbol
-        [ Test.String.asInternal "bad"
-        , asInternal ""
-        ]
+        ( mkApplySymbol
+            decodeBytesBytesSymbol
+            [ Test.String.asInternal "bad"
+            , asInternal ""
+            ]
         )
 
 test_encodeBytes :: TestTree
@@ -572,7 +572,7 @@ test_encodeBytes =
     testBadEvaluation
         "test bad encoding"
         encodeBytesKey
-        (mkApplySymbol
+        ( mkApplySymbol
             encodeBytesBytesSymbol
             [ Test.String.asInternal "bad"
             , Test.String.asInternal ""
@@ -583,15 +583,19 @@ testBadEvaluation :: TestName -> Pretty.Doc a -> TermLike RewritingVariableName 
 testBadEvaluation testName hook term =
     testCase testName $ do
         try (runNoSMT $ evaluateTerm term) >>= \case
-            Right patt -> assertFailure $ unlines
-                [ "Expected evaluation to fail, but it succeeded:"
-                , show patt
-                ]
-            Left (ErrorCall errMsg) -> do
-                let expectedErrMsg = show $ Pretty.vsep
-                        [ "Expecting hook " <> Pretty.squotes hook <> " to reduce concrete pattern:"
-                        , Pretty.indent 4 (unparse term)
+            Right patt ->
+                assertFailure $
+                    unlines
+                        [ "Expected evaluation to fail, but it succeeded:"
+                        , show patt
                         ]
+            Left (ErrorCall errMsg) -> do
+                let expectedErrMsg =
+                        show $
+                            Pretty.vsep
+                                [ "Expecting hook " <> Pretty.squotes hook <> " to reduce concrete pattern:"
+                                , Pretty.indent 4 (unparse term)
+                                ]
                 assertEqual "" expectedErrMsg errMsg
 
 int2bytesData ::

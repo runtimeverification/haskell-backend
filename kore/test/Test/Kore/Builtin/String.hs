@@ -21,6 +21,7 @@ module Test.Kore.Builtin.String (
     asInternal,
 ) where
 
+import Control.Exception (ErrorCall (..), try)
 import Data.Text (
     Text,
  )
@@ -31,7 +32,9 @@ import Hedgehog hiding (
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 import Kore.Builtin.Builtin qualified as Builtin
+import Kore.Builtin.String (string2BaseKey)
 import Kore.Builtin.String qualified as String
+import Kore.Builtin.String.String (base2StringKey)
 import Kore.Builtin.String.String qualified as String
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.MultiOr qualified as MultiOr
@@ -44,7 +47,9 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
  )
+import Kore.Unparser (unparse)
 import Prelude.Kore
+import Pretty qualified
 import Test.Kore (
     testId,
  )
@@ -56,11 +61,6 @@ import Test.Kore.Internal.OrPattern qualified as OrPattern
 import Test.SMT
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-import qualified Pretty
-import Control.Exception (ErrorCall(..), try)
-import Kore.Unparser (unparse)
-import Kore.Builtin.String (string2BaseKey)
-import Kore.Builtin.String.String (base2StringKey)
 
 genString :: Gen Text
 genString = Gen.text (Range.linear 0 256) Gen.unicode
@@ -359,15 +359,19 @@ testBadEvaluation :: TestName -> Pretty.Doc a -> TermLike RewritingVariableName 
 testBadEvaluation testName hook term =
     testCase testName $ do
         try (runNoSMT $ evaluateTerm term) >>= \case
-            Right patt -> assertFailure $ unlines
-                [ "Expected evaluation to fail, but it succeeded:"
-                , show patt
-                ]
-            Left (ErrorCall errMsg) -> do
-                let expectedErrMsg = show $ Pretty.vsep
-                        [ "Expecting hook " <> Pretty.squotes hook <> " to reduce concrete pattern:"
-                        , Pretty.indent 4 (unparse term)
+            Right patt ->
+                assertFailure $
+                    unlines
+                        [ "Expected evaluation to fail, but it succeeded:"
+                        , show patt
                         ]
+            Left (ErrorCall errMsg) -> do
+                let expectedErrMsg =
+                        show $
+                            Pretty.vsep
+                                [ "Expecting hook " <> Pretty.squotes hook <> " to reduce concrete pattern:"
+                                , Pretty.indent 4 (unparse term)
+                                ]
                 assertEqual "" expectedErrMsg errMsg
 
 test_string2Int :: [TestTree]
