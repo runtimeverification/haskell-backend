@@ -1,6 +1,7 @@
 module Main (main) where
 
 import Data.Proxy
+import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import Kore.Util.TSM qualified as TSM
 import Kore.Util.TSM.UnifyTag (UnifyTag)
 import Options.Applicative as Options
@@ -10,9 +11,10 @@ import System.IO (hFlush, stdout)
 
 main :: IO ()
 main =
-    Options.execParser inf >>= \case
-        Speedscope opts -> Speedscope.main opts
-        TSM opts -> runTsm opts
+    Options.execParser inf
+        >>= \case
+            Speedscope opts -> Speedscope.main opts
+            TSM opts -> runTsm opts
   where
     inf =
         Options.info
@@ -86,6 +88,7 @@ components =
 
 runTsm :: TSMOptions -> IO ()
 runTsm TSMOptions{component, mbTsmOutputFile, tsmSourceFile} = do
+    setLocaleEncoding utf8
     putStr $ tsmSourceFile <> "..."
     hFlush stdout
     let worker =
