@@ -32,10 +32,9 @@ module Kore.Util.TSM (
 import Control.Monad.Extra (fold1M)
 import Control.Monad.State
 import Data.Bifunctor (first)
-import Data.List (sortBy)
-import Data.Map (Map)
-import Data.Map qualified as Map
-import Data.Ord (comparing)
+import Data.List (sortOn)
+import Data.Map.Strict (Map)
+import Data.Map.Strict qualified as Map
 import Data.Proxy
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -43,19 +42,6 @@ import GHC.Float (log)
 import GHC.RTS.Events
 import Prelude.Kore
 import Text.Printf
-
--- main :: IO ()
--- main = do
---     args <- getArgs
---     -- option processing here, future work
---     when (null args) $ putStrLn "No eventlog files given, nothing to do."
---     forM_ args $ \file -> do
---         putStr $ file <> "..."
---         hFlush stdout
---         logLines <- logStats (Proxy :: Proxy UnifyTag) file
---         let contents = printf "digraph \"%s\" {\n%s\n}\n" file (unlines logLines)
---         writeFile (file <> ".dot") contents
---         putStrLn "Done"
 
 graphOf ::
     forall tag.
@@ -87,7 +73,7 @@ logStats_ _ file = do
 readLog :: FilePath -> IO [Event]
 readLog file =
     readEventLogFromFile file
-        >>= either error (pure . sortBy (comparing evTime) . events . dat)
+        >>= either error (pure . sortOn evTime . events . dat)
 
 getMarkers ::
     forall tag. TimingStateMachine tag => [Event] -> [(Timestamp, tag)]
