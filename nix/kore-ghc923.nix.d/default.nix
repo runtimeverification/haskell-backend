@@ -3,6 +3,8 @@
     packages = {
       "ghc-trace-events" =
         (((hackage.ghc-trace-events)."0.1.2.1").revisions).default;
+      "decision-diagrams" =
+        (((hackage.decision-diagrams)."0.2.0.0").revisions).default;
       "monoidal-containers" =
         (((hackage.monoidal-containers)."0.6.0.1").revisions).default;
       "newtype" = (((hackage.newtype)."0.2.2.0").revisions).default;

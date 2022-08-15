@@ -15,6 +15,9 @@ module Kore.Syntax.Json (
     decodeKoreJson,
     toParsedPattern,
     fromPattern,
+    fromTermLike,
+    fromPredicate,
+    fromSubstitution,
 ) where
 
 import Data.Aeson as Json
@@ -22,6 +25,12 @@ import Data.Aeson.Encode.Pretty as Json
 import Data.ByteString.Lazy (ByteString)
 import Data.Either.Extra hiding (Left, Right)
 import Kore.Attribute.Attributes (ParsedPattern)
+import Kore.Internal.Predicate (Predicate)
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.Substitution (Assignment (..), Substitution)
+import Kore.Internal.Substitution qualified as Substitution
+import Kore.Internal.TermLike qualified as TermLike
+import Kore.Internal.TermLike.TermLike (TermLike)
 import Kore.Syntax qualified as Kore
 import Kore.Syntax.Json.Internal
 import Kore.Syntax.Variable (VariableName (..))
@@ -51,8 +60,9 @@ newtype JsonParseError
 -- | Write a Pattern to a json byte string.
 encodePattern :: Kore.Pattern VariableName ann -> ByteString
 encodePattern = encodeKoreJson . addHeader . fromPattern
-  where
-    addHeader = KoreJson KORE KJ1
+
+addHeader :: KorePattern -> KoreJson
+addHeader = KoreJson KORE KJ1
 
 encodeKoreJson :: KoreJson -> ByteString
 encodeKoreJson = Json.encodePretty' prettyJsonOpts
@@ -83,3 +93,50 @@ prettyJsonOpts =
                 , "value"
                 ]
         }
+
+------------------------------------------------------------
+-- convenience converters
+
+fromTermLike :: TermLike VariableName -> KoreJson
+fromTermLike =
+    addHeader
+        . fromPattern
+        . from @_ @(Kore.Pattern _ (TermLike.TermAttributes VariableName))
+
+fromPredicate :: Kore.Sort -> Predicate VariableName -> KoreJson
+fromPredicate s = fromTermLike . Predicate.fromPredicate s
+
+{- | represent a @'Substitution'@ as a conjunction of equalities, so
+
+'[t1 / X1][t2 / X2]..[tn / Xn'
+
+becomes
+
+'#And ( ... (#And ( X1 #Equals t1, X2 #Equals t2), ...), Xn #Equals tn)'.
+
+The result sort is fixed to a made-up sort variable.
+-}
+fromSubstitution :: Substitution VariableName -> Maybe KoreJson
+fromSubstitution subst
+    | Substitution.null subst = Nothing
+    | otherwise =
+        Just
+            . fromTermLike
+            . foldl1 TermLike.mkAnd
+            . map (uncurry equals . asPair)
+            . Substitution.unwrap
+            $ subst
+  where
+    freshSort =
+        Kore.SortVariableSort
+            . Kore.SortVariable
+            $ Kore.noLocationId "JSONSortVariable"
+
+    equals ::
+        Kore.SomeVariable VariableName ->
+        TermLike VariableName ->
+        TermLike VariableName
+    v `equals` t = TermLike.mkEquals freshSort (TermLike.mkVar v) t
+
+    asPair :: Assignment v -> (Kore.SomeVariable v, TermLike v)
+    asPair (Substitution.Assignment v t) = (v, t)
