@@ -1,4 +1,4 @@
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
 
@@ -37,13 +37,13 @@ Rules -> Rule
    \       V        V
     ---Success --> EndRules
 -}
-module Kore.Util.TSM.UnifyTag
-  ( UnifyTag
-  ) where
+module Kore.Util.TSM.UnifyTag (
+    UnifyTag,
+) where
 
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
-import Kore.Util.TSM (TimingStateMachine(..), (-->))
+import Kore.Util.TSM (TimingStateMachine (..), (-->))
 import Prelude.Kore
 
 data UnifyTag

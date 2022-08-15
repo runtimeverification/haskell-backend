@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-{-|
+{- |
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
 
@@ -24,11 +24,10 @@ containing all allowed transitions. Transitions with empty labels are
 allowed but will be omitted from the output graph. On unexpected
 transitions (i.e., marker event sequences that are unexpected), the
 tool currently throws an error.
-
 -}
-module Kore.Util.TSM
-  ( module Kore.Util.TSM --temporary
-  ) where
+module Kore.Util.TSM (
+    module Kore.Util.TSM, --temporary
+) where
 
 import Control.Monad.Extra (fold1M)
 import Control.Monad.State
@@ -36,7 +35,6 @@ import Data.Bifunctor (first)
 import Data.List (sortBy)
 import Data.Map (Map)
 import Data.Map qualified as Map
-import Data.Maybe (fromJust)
 import Data.Ord (comparing)
 import Data.Proxy
 import Data.Text (Text)
@@ -62,16 +60,19 @@ import Text.Printf
 graphOf ::
     forall tag.
     TimingStateMachine tag =>
-    Proxy tag -> FilePath -> IO String
+    Proxy tag ->
+    FilePath ->
+    IO String
 graphOf proxy file =
-    logStats_ proxy file >>=
-    pure . printf "digraph \"%s\" {\n%s\n}\n" file . unlines
-
+    logStats_ proxy file
+        >>= pure . printf "digraph \"%s\" {\n%s\n}\n" file . unlines
 
 logStats ::
     forall tag.
     TimingStateMachine tag =>
-    Proxy tag -> FilePath -> IO [String]
+    Proxy tag ->
+    FilePath ->
+    IO [String]
 logStats _ file = do
     timingMap <- collectTimings @tag . getMarkers <$> readLog file
     let statMap = mapStatistics timingMap
@@ -127,12 +128,10 @@ class (Show tag, Ord tag) => TimingStateMachine tag where
             , tag <- uncurry (<>) $ unzip keys
             ]
 
-
 -- | Helper for the transitionLabels
 (-->) :: tag -> tag -> Text -> ((tag, tag), Text)
 t1 --> t2 = ((t1, t2),)
 
-------------------------------------------------------------
 -----------------------------------------------------------
 
 {- Collect timings for all state transitions in the machine above from
@@ -158,13 +157,15 @@ collectTimings =
         State (Map (tag, tag) [Double]) (Double, tag)
     collect (t1, prior) (t2, next) = do
         case label prior next of
-            Nothing ->
-                error $ "Undefined transition " <> show prior <> " --> " <> show next
+            Nothing -> do
+                traceM $
+                    "WARNING: Undefined transition " <> show prior <> " --> " <> show next
+                modify $ Map.insertWith (++) (prior, next) [t2 - t1]
             Just l
-                | Text.null l -> pure (t2, next) -- omit
-                | otherwise -> do
+                | Text.null l -> pure ()
+                | otherwise ->
                     modify $ Map.insertWith (++) (prior, next) [t2 - t1]
-                    pure (t2, next)
+        pure (t2, next)
 
 data Stats a = Stats
     { count :: Int
@@ -264,7 +265,7 @@ printForDot (t1, t2) Stats{count, average, stddev, total} =
         (show t1)
         (show t2)
         (max 0.1 $ log @Double $ fromIntegral count / 50)
-        (fromJust $ label t1 t2) -- safe, transitions have been checked before
+        (fromMaybe "UNEXPECTED" $ label t1 t2)
         average
         stddev
         count
