@@ -52,6 +52,7 @@
           name = "haskell-backend-src";
           # make sure we remove all nix files and flake.lock, since any changes to these triggers re-compilation of kore
           src = pkgs.nix-gitignore.gitignoreSourcePure [
+            "./github"
             "/nix"
             "*.nix"
             "*.nix.sh"
