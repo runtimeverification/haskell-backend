@@ -28,15 +28,24 @@ import Deriving.Aeson (
 import GHC.Generics (Generic)
 import Kore.Builtin qualified as Builtin
 import Kore.Exec qualified as Exec
+import Kore.Exec.GraphTraversal qualified as GraphTraversal
 
--- import Kore.Internal.Pattern qualified as Pattern
 -- import Kore.Internal.OrPattern qualified as OrPattern
+import Kore.Internal.Pattern (Pattern)
+import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.Predicate (pattern PredicateTrue)
+import Kore.Internal.TermLike qualified as TermLike
+
 -- import Kore.Reachability.Claim qualified as Claim
 -- import  Kore.Rewrite.ClaimPattern qualified as ClaimPattern
+import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
-import Kore.Rewrite (ExecutionMode (All), Natural)
+import Kore.Rewrite (
+    Natural,
+    ProgramState,
+    extractProgramState,
+ )
 
--- import Kore.Rewrite.RewritingVariable as RewritingVariable
 -- import Kore.Simplify.API (
 --     evalSimplifier,
 --  )
@@ -65,6 +74,7 @@ import Network.JSONRPC (
     sendBatchResponse,
  )
 import Prelude.Kore
+import Pretty qualified
 import SMT qualified
 
 newtype Depth = Depth Natural
@@ -120,9 +130,9 @@ instance FromRequest (API 'Req) where
     parseParams _ = Nothing
 
 data ExecuteState = ExecuteState
-    { state :: !KoreJson
-    , depth :: !Depth
-    , condition :: !(Maybe Condition)
+    { term :: KoreJson
+    , substitution :: Maybe KoreJson
+    , predicate :: Maybe KoreJson
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -133,7 +143,6 @@ data HaltReason
     = Branching
     | Stuck
     | DepthBound
-    | FinalState
     | CutPointRule
     | TerminalRule
     deriving stock (Generic, Show, Eq)
@@ -143,7 +152,10 @@ data HaltReason
 
 data ExecuteResult = ExecuteResult
     { reason :: HaltReason
-    , states :: [ExecuteState]
+    , depth :: Depth
+    , state :: ExecuteState
+    , nextStates :: Maybe [ExecuteState]
+    , rule :: Maybe Text
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -228,32 +240,83 @@ respond
                     PatternJson.toParsedPattern $ PatternJson.term state of
                 Left err -> pure $ Left $ couldNotVerify $ toJSON err
                 Right verifiedPattern -> do
-                    (_, _finalPatt) <-
+                    traversalResult <-
                         liftIO
                             ( runSMT $
-                                Exec.exec
-                                    ( case maxDepth of
-                                        Nothing -> Unlimited
-                                        Just (Depth n) -> Limit n
-                                    )
-                                    Unlimited
+                                Exec.rpcExec
+                                    (maybe Unlimited (\(Depth n) -> Limit n) maxDepth)
                                     serializedModule
-                                    All
                                     verifiedPattern
                             )
 
-                    pure $
-                        Right $
-                            Execute $
-                                ExecuteResult
-                                    { states = [ExecuteState{state, depth = Depth 1, condition = Nothing}] -- dummy
-                                    -- state = PatternJson.fromPattern $ Pattern.fromTermLike finalPatt,
-                                    , reason = FinalState
-                                    }
+                    pure $ buildResult (TermLike.termLikeSort verifiedPattern) traversalResult
           where
             context =
                 PatternVerifier.verifiedModuleContext verifiedModule
                     & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
+
+            buildResult ::
+                TermLike.Sort ->
+                GraphTraversal.TraversalResult
+                    (ExecDepth, ProgramState (Pattern TermLike.VariableName)) ->
+                Either ErrorObj (API 'Res)
+            buildResult sort = \case
+                GraphTraversal.Ended [(ExecDepth depth, result)] ->
+                    -- Actually not "ended" but out of instructions.
+                    -- See @toTransitionResult@ in @rpcExec@.
+                    Right $
+                        Execute $
+                            ExecuteResult
+                                { state = patternToExecState sort result
+                                , depth = Depth depth
+                                , reason = DepthBound
+                                , rule = Nothing
+                                , nextStates = Nothing
+                                }
+                GraphTraversal.GotStuck _n [(ExecDepth depth, result)] ->
+                    Right $
+                        Execute $
+                            ExecuteResult
+                                { state = patternToExecState sort result
+                                , depth = Depth depth
+                                , reason = Stuck
+                                , rule = Nothing
+                                , nextStates = Nothing
+                                }
+                GraphTraversal.Stopped [(ExecDepth depth, result)] nexts ->
+                    -- TODO add rule information, decide terminal or cut-point
+                    Right $
+                        Execute $
+                            ExecuteResult
+                                { state = patternToExecState sort result
+                                , depth = Depth depth
+                                , reason = Branching
+                                , rule = Nothing
+                                , nextStates = Just $ map (patternToExecState sort . snd) nexts
+                                }
+                -- these are programmer errors
+                result@GraphTraversal.Aborted{} ->
+                    Left $ serverError "aborted" result
+                other ->
+                    Left $ serverError "multiple states in result" other
+
+            patternToExecState ::
+                TermLike.Sort ->
+                ProgramState (Pattern TermLike.VariableName) ->
+                ExecuteState
+            patternToExecState sort s =
+                ExecuteState
+                    { term =
+                        PatternJson.fromTermLike $ Pattern.term p
+                    , substitution =
+                        PatternJson.fromSubstitution $ Pattern.substitution p
+                    , predicate =
+                        case Pattern.predicate p of
+                            PredicateTrue -> Nothing
+                            pr -> Just $ PatternJson.fromPredicate sort pr
+                    }
+              where
+                p = fromMaybe (Pattern.bottomOf sort) $ extractProgramState s
 
         -- Step StepRequest{} -> pure $ Right $ Step $ StepResult []
         Implies ImpliesRequest{antecedent, consequent} ->
@@ -297,6 +360,12 @@ respond
         Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
       where
         couldNotVerify err = ErrorObj "Could not verify KORE pattern" (-32002) err
+
+        serverError detail payload =
+            ErrorObj ("Server error: " <> detail) (-32032) $ asText payload
+
+        asText :: Pretty.Pretty a => a -> Value
+        asText = String . Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty
 
 -- implicationError err = ErrorObj "Implication check error" (-32003) err
 
