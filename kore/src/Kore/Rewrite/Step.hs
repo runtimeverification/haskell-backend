@@ -166,8 +166,6 @@ unifyRule sideCondition initial rule = do
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
-    ruleMarker "FastCheck"
-    -- fast check omitted here
     ruleMarker "Unify"
     unification <-
         unificationProcedure sideCondition' initialTerm ruleLeft

@@ -1,51 +1,79 @@
-{-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE TypeApplications #-}
 
-module TraceUnify where
+{-|
+Copyright   : (c) Runtime Verification, 2022
+License     : BSD-3-Clause
 
+This module provides infrastructure for "Timing State Machines" (TSM),
+which analyse an eventlog file for specific _marker events_ that
+instrument a component.
+
+The markers indicate transitions between states of a state machine
+defined as an instance of @'TimingStateMachine'@, and the tool
+produces a graph of these transitions with timing information on each
+edge.
+
+All sequences of visited states (i.e., marker events) are extracted
+from the event log, collecting timing information about the time
+spent inside each state before transitioning into the subsequent state
+(plus the total).
+
+The state machine is specified by a `transitionLabels` table
+containing all allowed transitions. Transitions with empty labels are
+allowed but will be omitted from the output graph. On unexpected
+transitions (i.e., marker event sequences that are unexpected), the
+tool currently throws an error.
+
+-}
+module Kore.Util.TSM
+  ( module Kore.Util.TSM --temporary
+  ) where
+
+import Control.Monad.Extra (fold1M)
 import Control.Monad.State
 import Data.Bifunctor (first)
 import Data.List (sortBy)
 import Data.Map (Map)
 import Data.Map qualified as Map
-import Data.Maybe (fromJust, mapMaybe)
+import Data.Maybe (fromJust)
 import Data.Ord (comparing)
 import Data.Proxy
-import Data.Set (Set)
-import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
+import GHC.Float (log)
 import GHC.RTS.Events
-import System.Environment
-import System.IO
+import Prelude.Kore
 import Text.Printf
 
-main :: IO ()
-main = do
-    args <- getArgs
-    -- option processing here, future work
-    when (null args) $ putStrLn "No eventlog files given, nothing to do."
-    forM_ args $ \file -> do
-        putStr $ file <> "..."
-        hFlush stdout
-        lines <- logStats (Proxy :: Proxy UnifyTag) file
-        let contents = printf "digraph \"%s\" {\n%s\n}\n" file (unlines lines)
-        writeFile (file <> ".dot") contents
-        putStrLn "Done"
+-- main :: IO ()
+-- main = do
+--     args <- getArgs
+--     -- option processing here, future work
+--     when (null args) $ putStrLn "No eventlog files given, nothing to do."
+--     forM_ args $ \file -> do
+--         putStr $ file <> "..."
+--         hFlush stdout
+--         logLines <- logStats (Proxy :: Proxy UnifyTag) file
+--         let contents = printf "digraph \"%s\" {\n%s\n}\n" file (unlines logLines)
+--         writeFile (file <> ".dot") contents
+--         putStrLn "Done"
+
+graphOf ::
+    forall tag.
+    TimingStateMachine tag =>
+    Proxy tag -> FilePath -> IO String
+graphOf proxy file =
+    logStats_ proxy file >>=
+    pure . printf "digraph \"%s\" {\n%s\n}\n" file . unlines
+
 
 logStats ::
-    forall tag. TimingStateMachine tag => Proxy tag -> FilePath -> IO [String]
+    forall tag.
+    TimingStateMachine tag =>
+    Proxy tag -> FilePath -> IO [String]
 logStats _ file = do
-    timingMap <- collectTimings @UnifyTag . getMarkers <$> readLog file
+    timingMap <- collectTimings @tag . getMarkers <$> readLog file
     let statMap = mapStatistics timingMap
     pure $ map (uncurry printForDot) $ Map.assocs statMap
 
@@ -99,89 +127,13 @@ class (Show tag, Ord tag) => TimingStateMachine tag where
             , tag <- uncurry (<>) $ unzip keys
             ]
 
-------------------------------------------------------------
-{-
-UnifyRules markers as a state machine:
 
-Rules --> Rule
-        /  |
-       /   |
-      /    V
-     /    Init
-    /      |
-   /       |
-   |       |
-   |\      V
-   | ---FastCheck---
-   |       |        \
-   |       |        |
-   |       |        |
-   |\      V        |
-   | ----Unify----- |
-   |       |       \|
-   |       |        |
-   |       |        |
-   |\      V        |
-   | --CheckSide--- |
-   |       |       \|
-   |       |        |
-   |       |        |
-   \       V        V
-    ---Success--> EndRules
--}
-
-data UnifyTag
-    = -- | starting to unify term with a set of rules
-      Rules
-    | -- | starting work on one rule (Logic.scatter)
-      Rule
-    | -- | starting work on one rule (worker function)
-      Init
-    | -- | starting fast check for one rule
-      FastCheck
-    | -- | starting unification for one rule
-      Unify
-    | -- | checking side conditions for one rule
-      CheckSide
-    | -- | successful unification using one rule
-      Success
-    | -- | ending term unification
-      EndRules
-    deriving (Eq, Ord, Enum, Bounded, Show)
-
-{- ORMOLU_DISABLE -}
--- since it destroys the alignment of transitionLabels
-instance TimingStateMachine UnifyTag where
-    readTag t
-        | "unify" : tag : rest <- Text.splitOn ":" t =
-            Map.lookup tag tagMap
-        | otherwise =
-            Nothing
-
-    transitionLabels =
-        Map.fromList
-            [ Rules     --> Rule      $ "Starting"
-            , Rule      --> Init      $ "InRule"
-            , Init      --> FastCheck $ "Init"
-            , FastCheck --> Unify     $ "FastCheckPassed"
-            , FastCheck --> Rule      $ "FailedFast"
-            , FastCheck --> EndRules  $ "FailedFast"
-            , Unify     --> CheckSide $ "Unified"
-            , Unify     --> Rule      $ "UnifyFailed"
-            , Unify     --> EndRules  $ "UnifyFailed"
-            , CheckSide --> Success   $ "SideChecked"
-            , CheckSide --> Rule      $ "SideFailed"
-            , CheckSide --> EndRules  $ "SideFailed"
-            , Success   --> Rule      $ "Success"
-            , Success   --> EndRules  $ "Success"
-            , EndRules  --> Rules     $ Text.empty -- technical edge, filtered out
-            ]
-      where
-        (-->) :: tag -> tag -> Text -> ((tag, tag), Text)
-        t1 --> t2 = ((t1, t2),)
-{- ORMOLU_ENABLE -}
+-- | Helper for the transitionLabels
+(-->) :: tag -> tag -> Text -> ((tag, tag), Text)
+t1 --> t2 = ((t1, t2),)
 
 ------------------------------------------------------------
+-----------------------------------------------------------
 
 {- Collect timings for all state transitions in the machine above from
  the trace event sequence. 'UnifyTag's are trace markers indicating
@@ -214,10 +166,6 @@ collectTimings =
                     modify $ Map.insertWith (++) (prior, next) [t2 - t1]
                     pure (t2, next)
 
-fold1M :: Monad m => (a -> a -> m a) -> [a] -> m a
-fold1M f [] = error "foldM1: empty"
-fold1M f (x : xs) = foldM f x xs
-
 data Stats a = Stats
     { count :: Int
     , average :: a
@@ -226,7 +174,7 @@ data Stats a = Stats
     , maxVal :: a
     , minVal :: a
     }
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 -- helper structure to compute statistics in one pass
 data Stats' a = Stats'
@@ -251,7 +199,7 @@ singleStats' :: Num a => a -> Stats' a
 singleStats' x =
     Stats'{count = 1, total = x, squares = x * x, maxVal = x, minVal = x}
 
-finaliseStats :: (Num a, Floating a) => Stats' a -> Stats a
+finaliseStats :: (Floating a) => Stats' a -> Stats a
 finaliseStats Stats'{..} = Stats{..}
   where
     average = total / fromIntegral count
@@ -287,14 +235,14 @@ collectStats =
     add x Nothing = Just $ singleStats' x
     add x (Just s) = Just $ addStats' s x
 
-mkStats :: forall a. (Ord a, Num a, Floating a) => [a] -> Stats a
+mkStats :: forall a. (Ord a, Floating a) => [a] -> Stats a
 mkStats [] = error "mkStats: empty"
 mkStats (x : xs) =
     Stats{count, average, stddev, total = valSum, maxVal, minVal}
   where
     go :: (Int, a, a, a, a) -> a -> (Int, a, a, a, a) -- basically Stats'
-    go (count, acc, squareAcc, accMax, accMin) xx =
-        (count + 1, acc + xx, squareAcc + xx * xx, max accMax xx, min accMin xx)
+    go (cnt, acc, squareAcc, accMax, accMin) xx =
+        (cnt + 1, acc + xx, squareAcc + xx * xx, max accMax xx, min accMin xx)
 
     (count, valSum, squareSum, maxVal, minVal) = foldl go (1, x, x * x, x, x) xs
     average = valSum / fromIntegral count
@@ -307,7 +255,7 @@ mapStatistics = Map.map mkStats
 
 printForDot ::
     forall tag. TimingStateMachine tag => (tag, tag) -> Stats Double -> String
-printForDot (t1, t2) Stats{count, average, stddev, total, maxVal, minVal} =
+printForDot (t1, t2) Stats{count, average, stddev, total} =
     printf
         "%s -> %s\n\
         \  [ penwidth=%.1f,\n\
@@ -324,6 +272,6 @@ printForDot (t1, t2) Stats{count, average, stddev, total, maxVal, minVal} =
   where
     humanReadable :: Double -> String
     humanReadable x
-        | x > 10 ^ 5 = printf "%.2fs" $ x / 10 ^ 6
-        | x > 10 ^ 2 = printf "%.3fms" $ x / 10 ^ 3
+        | x > 10 ** 5 = printf "%.2fs" $ x / 10 ** 6
+        | x > 10 ** 2 = printf "%.3fms" $ x / 10 ** 3
         | otherwise = printf "%.1fμs" x
