@@ -16,8 +16,15 @@ import Control.Monad.State.Strict (
     StateT,
  )
 import Control.Monad.State.Strict qualified as State
+import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Product (
     field,
+ )
+import Data.Set (
+    Set,
+ )
+import Kore.Attribute.Pattern.FreeVariables (
+    freeVariableNames,
  )
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional qualified as Conditional
@@ -53,6 +60,8 @@ import Kore.Simplify.SubstitutionSimplifier (
     SubstitutionSimplifier (..),
  )
 import Kore.Substitute
+import Kore.Syntax.Exists qualified as Exists
+import Kore.Syntax.Variable(SomeVariableName)
 import Kore.TopBottom qualified as TopBottom
 import Logic
 import Prelude.Kore
@@ -168,14 +177,34 @@ simplifyPredicates sideCondition original = do
     let predicates =
             SideCondition.simplifyConjunctionByAssumption original
                 & fst . extract
-    simplifiedPredicates <-
+    simplifiedPredicates <- do
+        let eliminatedExists =
+                map (simplifyPredicateExistElim $ freeVariableNames original <> freeVariableNames sideCondition) $
+                    toList predicates
         simplifyPredicatesWithAssumptions
             sideCondition
-            (toList predicates)
+            eliminatedExists
     let simplified = foldMap mkCondition simplifiedPredicates
     if original == simplifiedPredicates
         then return (Condition.markSimplified simplified)
         else simplifyPredicates sideCondition simplifiedPredicates
+
+{- | Simplify an existential predicate by removing the existential binder
+under the assumption that the others are true.
+-}
+simplifyPredicateExistElim ::
+    Set (SomeVariableName RewritingVariableName) ->
+    Predicate RewritingVariableName ->
+    Predicate RewritingVariableName
+simplifyPredicateExistElim avoid predicate = case predicateF of
+    Predicate.ExistsF existsF ->
+        let
+            existsF'@Exists.Exists{existsChild} = Exists.refreshExists avoid existsF
+        in
+            simplifyPredicateExistElim (avoid <> freeVariableNames existsF') existsChild
+    _ -> predicate
+    where
+    _ :< predicateF = Recursive.project predicate
 
 {- | Simplify a conjunction of predicates by simplifying each one
 under the assumption that the others are true.
