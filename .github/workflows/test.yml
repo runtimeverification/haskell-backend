@@ -16,15 +16,14 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           submodules: recursive
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v14.1
+      - name: 'Install Nix'
+        uses: cachix/install-nix-action@v15
         with:
           extra_nix_config: |
-            substituters = http://cache.nixos.org https://hydra.iohk.io
+            substituters = http://cache.nixos.org https://cache.iog.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
-          install_url: "https://releases.nixos.org/nix/nix-2.3.16/install"
 
-      - name: Install Cachix
+      - name: 'Install Cachix'
         uses: cachix/cachix-action@v10
         with:
           name: runtimeverification
@@ -33,65 +32,11 @@ jobs:
       - name: Build
         run: nix-build -A kore
 
-  nix-shell:
-    name: 'Nix / Shell'
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v2.3.4
-        with:
-          # Check out pull request HEAD instead of merge commit.
-          ref: ${{ github.event.pull_request.head.sha }}
-          submodules: recursive
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v14.1
-        with:
-          extra_nix_config: |
-            substituters = http://cache.nixos.org https://hydra.iohk.io
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
-          install_url: "https://releases.nixos.org/nix/nix-2.3.16/install"
-
-      - name: Install Cachix
-        uses: cachix/cachix-action@v10
-        with:
-          name: runtimeverification
-          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+      - name: Build GHC9
+        run: GC_DONT_GC=1 nix build .#kore-exec-prof
 
       - name: Check shell
         run: nix-shell --run "echo OK"
-
-  nix-test:
-    name: 'Nix / Test'
-    needs: nix-build
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v2.3.4
-        with:
-          # Check out pull request HEAD instead of merge commit.
-          ref: ${{ github.event.pull_request.head.sha }}
-          submodules: recursive
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v14.1
-        with:
-          extra_nix_config: |
-            substituters = http://cache.nixos.org https://hydra.iohk.io
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
-          install_url: "https://releases.nixos.org/nix/nix-2.3.16/install"
-
-      - name: Install Cachix
-        uses: cachix/cachix-action@v10
-        with:
-          name: runtimeverification
-          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
 
       - name: Run unit tests
         run: nix-build -A project.kore.checks
