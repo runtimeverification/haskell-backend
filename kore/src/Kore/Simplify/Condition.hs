@@ -61,7 +61,7 @@ import Kore.Simplify.SubstitutionSimplifier (
  )
 import Kore.Substitute
 import Kore.Syntax.Exists qualified as Exists
-import Kore.Syntax.Variable(SomeVariableName)
+import Kore.Syntax.Variable (SomeVariableName)
 import Kore.TopBottom qualified as TopBottom
 import Logic
 import Prelude.Kore
@@ -198,12 +198,10 @@ simplifyPredicateExistElim ::
     Predicate RewritingVariableName
 simplifyPredicateExistElim avoid predicate = case predicateF of
     Predicate.ExistsF existsF ->
-        let
-            existsF'@Exists.Exists{existsChild} = Exists.refreshExists avoid existsF
-        in
-            simplifyPredicateExistElim (avoid <> freeVariableNames existsF') existsChild
+        let existsF'@Exists.Exists{existsChild} = Exists.refreshExists avoid existsF
+         in simplifyPredicateExistElim (avoid <> freeVariableNames existsF') existsChild
     _ -> predicate
-    where
+  where
     _ :< predicateF = Recursive.project predicate
 
 {- | Simplify a conjunction of predicates by simplifying each one
