@@ -65,8 +65,8 @@ import Kore.Repl.Interpreter
 import Kore.Repl.Parser
 import Kore.Repl.State
 import Kore.Rewrite.Strategy qualified as Strategy
-import Kore.Simplify.Data (
-    MonadSimplify,
+import Kore.Simplify.API (
+    Simplifier,
  )
 import Kore.Syntax.Module (
     ModuleName (..),
@@ -79,9 +79,6 @@ import Kore.Unparser (
     unparseToString,
  )
 import Prelude.Kore
-import Prof (
-    MonadProf,
- )
 import System.Clock (
     Clock (Monotonic),
     TimeSpec,
@@ -107,11 +104,6 @@ import Text.Megaparsec (
  execution of proofs. Currently works via stdin/stdout interaction.
 -}
 runRepl ::
-    forall m.
-    MonadSimplify m =>
-    MonadIO m =>
-    MonadProf m =>
-    MonadMask m =>
     Maybe MinDepth ->
     StuckCheck ->
     -- | list of axioms to used in the proof
@@ -130,7 +122,7 @@ runRepl ::
     ModuleName ->
     Log.KoreLogOptions ->
     KFileLocations ->
-    m ()
+    Simplifier ()
 runRepl _ _ _ [] _ _ _ _ outputFile _ _ _ =
     let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
      in liftIO . printTerm . unparseToString $ topTerm
@@ -165,7 +157,7 @@ runRepl
                 RunScript ->
                     runReplCommand Exit newState
       where
-        runReplCommand :: ReplCommand -> ReplState -> m ()
+        runReplCommand :: ReplCommand -> ReplState -> Simplifier ()
         runReplCommand cmd st =
             void $
                 flip evalStateT st $
@@ -176,14 +168,14 @@ runRepl
         evaluateScript ::
             ReplScript ->
             ScriptModeOutput ->
-            RWST (Config m) String ReplState m ()
+            RWST Config String ReplState Simplifier ()
         evaluateScript script outputFlag =
             maybe
                 (pure ())
                 (flip parseEvalScript outputFlag)
                 (unReplScript script)
 
-        repl0 :: InputT (ReaderT (Config m) (StateT ReplState m)) ()
+        repl0 :: InputT (ReaderT Config (StateT ReplState Simplifier)) ()
         repl0 = do
             str <- prompt
             let command =
@@ -215,7 +207,7 @@ runRepl
                         }
                 }
 
-        config :: Config m
+        config :: Config
         config =
             Config
                 { stepper = stepper0
@@ -268,7 +260,7 @@ runRepl
             [Axiom] ->
             ExecutionGraph ->
             ReplNode ->
-            m ExecutionGraph
+            Simplifier ExecutionGraph
         stepper0 claims axioms graph rnode = do
             let node = unReplNode rnode
             if Graph.outdeg (Strategy.graph graph) node == 0
@@ -278,7 +270,7 @@ runRepl
                         & Exception.handle (someExceptionHandler graph)
                 else pure graph
 
-        withConfigurationHandler :: a -> Claim.WithConfiguration -> m a
+        withConfigurationHandler :: a -> Claim.WithConfiguration -> Simplifier a
         withConfigurationHandler
             _
             (Claim.WithConfiguration lastConfiguration someException) =
@@ -289,7 +281,7 @@ runRepl
                             ("// Last configuration:\n" <> unparseToString lastConfiguration)
                     Exception.throwM someException
 
-        someExceptionHandler :: a -> Exception.SomeException -> m a
+        someExceptionHandler :: a -> Exception.SomeException -> Simplifier a
         someExceptionHandler a someException = do
             case Exception.fromException someException of
                 Just (Log.SomeEntry entry) ->
@@ -298,7 +290,7 @@ runRepl
                     errorException someException
             pure a
 
-        replGreeting :: m ()
+        replGreeting :: Simplifier ()
         replGreeting =
             liftIO $
                 putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"

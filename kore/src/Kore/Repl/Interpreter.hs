@@ -37,9 +37,6 @@ import Control.Lens qualified as Lens
 import Control.Monad (
     (<=<),
  )
-import Control.Monad.Catch (
-    MonadMask,
- )
 import Control.Monad.Extra (
     ifM,
     loop,
@@ -120,7 +117,7 @@ import GHC.IO.Handle (
     hPutStr,
  )
 import GHC.Natural (
-    naturalToInt,
+    naturalToInteger,
  )
 import Kore.Attribute.Axiom (
     SourceLocation (..),
@@ -184,8 +181,8 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Rewrite.RulePattern qualified as RulePattern
 import Kore.Rewrite.Strategy qualified as Strategy
-import Kore.Simplify.Data (
-    MonadSimplify,
+import Kore.Simplify.API (
+    Simplifier,
  )
 import Kore.Syntax.Application
 import Kore.Syntax.Id qualified as Id (
@@ -249,20 +246,16 @@ import Text.Megaparsec (
  rid of the WriterT part of the stack. This happens in the implementation of
  'replInterpreter'.
 -}
-type ReplM m a = RWST (Config m) ReplOutput ReplState m a
+type ReplM a = RWST Config ReplOutput ReplState Simplifier a
 
 data ReplStatus = Continue | SuccessStop | FailStop
     deriving stock (Eq, Show)
 
 -- | Interprets a REPL command in a stateful Simplifier context.
 replInterpreter ::
-    forall m.
-    MonadSimplify m =>
-    MonadIO m =>
-    MonadMask m =>
     (forall n. MonadIO n => String -> InputT n ()) ->
     ReplCommand ->
-    InputT (ReaderT (Config m) (StateT ReplState m)) ReplStatus
+    InputT (ReaderT Config (StateT ReplState Simplifier)) ReplStatus
 replInterpreter fn cmd =
     replInterpreter0
         (PrintAuxOutput fn)
@@ -270,14 +263,10 @@ replInterpreter fn cmd =
         cmd
 
 replInterpreter0 ::
-    forall m.
-    MonadSimplify m =>
-    MonadIO m =>
-    MonadMask m =>
     PrintAuxOutput ->
     PrintKoreOutput ->
     ReplCommand ->
-    InputT (ReaderT (Config m) (StateT ReplState m)) ReplStatus
+    InputT (ReaderT Config (StateT ReplState Simplifier)) ReplStatus
 replInterpreter0 printAux printKore replCmd = do
     let command = case replCmd of
             ShowUsage -> showUsage $> Continue
@@ -350,8 +339,8 @@ replInterpreter0 printAux printKore replCmd = do
     -- and updates the state, returning the writer output along with the
     -- monadic result.
     evaluateCommand ::
-        ReplM m ReplStatus ->
-        ReaderT (Config m) (StateT ReplState m) (ReplOutput, ReplStatus)
+        ReplM ReplStatus ->
+        ReaderT Config (StateT ReplState Simplifier) (ReplOutput, ReplStatus)
     evaluateCommand c = do
         st <- get
         config <- Reader.ask
@@ -381,9 +370,7 @@ showStepStoppedMessage n sr =
 showUsage :: MonadWriter ReplOutput m => m ()
 showUsage = putStrLn' showUsageMessage
 
-exit ::
-    MonadIO m =>
-    ReplM m ReplStatus
+exit :: ReplM ReplStatus
 exit = do
     proofs <- allProofs
     ofile <- Lens.view (field @"outputFile")
@@ -521,11 +508,9 @@ showGraph view mfile out = do
 
 -- | Executes 'n' prove steps, or until branching occurs.
 proveSteps ::
-    MonadSimplify m =>
-    MonadIO m =>
     -- | maximum number of steps to perform
     Natural ->
-    ReplM m ()
+    ReplM ()
 proveSteps n = do
     let node = ReplNode . fromEnum $ n
     result <- loopM performStepNoBranching (n, SingleResult node)
@@ -538,11 +523,9 @@ proveSteps n = do
 than 'n' steps if the proof is stuck or completed in less than 'n' steps.
 -}
 proveStepsF ::
-    MonadSimplify m =>
-    MonadIO m =>
     -- | maximum number of steps to perform
     Natural ->
-    ReplM m ()
+    ReplM ()
 proveStepsF n = do
     node <- Lens.use (field @"node")
     recursiveForcedStep n node
@@ -554,13 +537,9 @@ proveStepsF n = do
 
 -- | Loads a script from a file.
 loadScript ::
-    forall m.
-    MonadSimplify m =>
-    MonadIO m =>
-    MonadMask m =>
     -- | path to file
     FilePath ->
-    ReplM m ()
+    ReplM ()
 loadScript file = parseEvalScript file DisableOutput
 
 -- | Change the general log settings.
@@ -618,31 +597,28 @@ selectNode rnode = do
 
 -- | Shows configuration at node 'n', or current node if 'Nothing' is passed.
 showConfig ::
-    Monad m =>
     -- | 'Nothing' for current node, or @Just n@ for a specific node identifier
     Maybe ReplNode ->
-    ReplM m ()
+    ReplM ()
 showConfig =
     showClaimStateComponent "Config" (from @_ @(OrPattern _) . getConfiguration)
 
 -- | Shows destination at node 'n', or current node if 'Nothing' is passed.
 showDest ::
-    Monad m =>
     -- | 'Nothing' for current node, or @Just n@ for a specific node identifier
     Maybe ReplNode ->
-    ReplM m ()
+    ReplM ()
 showDest =
     showClaimStateComponent
         "Destination"
         getDestination
 
 showClaimStateComponent ::
-    Monad m =>
     -- | component name
     String ->
     (SomeClaim -> OrPattern RewritingVariableName) ->
     Maybe ReplNode ->
-    ReplM m ()
+    ReplM ()
 showClaimStateComponent name transformer maybeNode = do
     maybeClaimState <- getClaimStateAt maybeNode
     case maybeClaimState of
@@ -660,24 +636,22 @@ showClaimStateComponent name transformer maybeNode = do
  depending on whether the string already exists in the list or not.
 -}
 omitCell ::
-    forall m.
-    Monad m =>
     -- | Nothing to show current list, @Just str@ to add/remove to list
     Maybe String ->
-    ReplM m ()
+    ReplM ()
 omitCell =
     \case
         Nothing -> showCells
         Just str -> addOrRemove str
   where
-    showCells :: ReplM m ()
+    showCells :: ReplM ()
     showCells = do
         omit <- Lens.use (field @"omit")
         if Set.null omit
             then putStrLn' "Omit list is currently empty."
             else traverse_ putStrLn' omit
 
-    addOrRemove :: String -> ReplM m ()
+    addOrRemove :: String -> ReplM ()
     addOrRemove str = field @"omit" %= toggle str
 
     toggle :: String -> Set String -> Set String
@@ -688,7 +662,7 @@ omitCell =
 {- | Shows all leaf nodes identifiers which are either stuck or can be
  evaluated further.
 -}
-showLeafs :: forall m. Monad m => ReplM m ()
+showLeafs :: ReplM ()
 showLeafs = do
     leafsByType <- sortLeafsByType <$> getInnerGraph
     case Map.foldMapWithKey showPair leafsByType of
@@ -698,15 +672,12 @@ showLeafs = do
     showPair :: NodeState -> [Graph.Node] -> String
     showPair ns xs = show ns <> ": " <> show xs
 
-proofStatus :: forall m. Monad m => ReplM m ()
+proofStatus :: ReplM ()
 proofStatus = do
     proofs <- allProofs
     putStrLn' . showProofStatus $ proofs
 
-allProofs ::
-    forall m.
-    Monad m =>
-    ReplM m (Map.Map ClaimIndex GraphProofStatus)
+allProofs :: ReplM (Map.Map ClaimIndex GraphProofStatus)
 allProofs = do
     graphs <- Lens.use (field @"graphs")
     claims <- Lens.use (field @"claims")
@@ -760,9 +731,8 @@ showRule configNode = do
             putStrLn' $ showRuleIdentifier rule
 
 showRules ::
-    Monad m =>
     (ReplNode, ReplNode) ->
-    ReplM m ()
+    ReplM ()
 showRules (ReplNode node1, ReplNode node2) = do
     graph <- getInnerGraph
     let path =
@@ -808,10 +778,9 @@ showRuleIdentifier rule =
 
 -- | Shows the previous branching point.
 showPrecBranch ::
-    Monad m =>
     -- | 'Nothing' for current node, or @Just n@ for a specific node identifier
     Maybe ReplNode ->
-    ReplM m ()
+    ReplM ()
 showPrecBranch maybeNode = do
     graph <- getInnerGraph
     node' <- getTargetNode maybeNode
@@ -830,10 +799,9 @@ showPrecBranch maybeNode = do
 
 -- | Shows the next node(s) for the selected node.
 showChildren ::
-    Monad m =>
     -- | 'Nothing' for current node, or @Just n@ for a specific node identifier
     Maybe ReplNode ->
-    ReplM m ()
+    ReplM ()
 showChildren maybeNode = do
     graph <- getInnerGraph
     node' <- getTargetNode maybeNode
@@ -906,29 +874,21 @@ labelDel lbl = do
 
 -- | Redirect command to specified file.
 redirect ::
-    forall m.
-    MonadSimplify m =>
-    MonadIO m =>
-    MonadMask m =>
     -- | command to redirect
     ReplCommand ->
     -- | file path
     FilePath ->
-    ReplM m ()
+    ReplM ()
 redirect cmd file = do
     liftIO $ withExistingDirectory file (`writeFile` "")
     appendCommand cmd file
 
 runInterpreterWithOutput ::
-    forall m.
-    MonadSimplify m =>
-    MonadIO m =>
-    MonadMask m =>
     PrintAuxOutput ->
     PrintKoreOutput ->
     ReplCommand ->
-    Config m ->
-    ReplM m ()
+    Config ->
+    ReplM ()
 runInterpreterWithOutput printAux printKore cmd config =
     get
         >>= ( \st ->
@@ -945,32 +905,23 @@ data AlsoApplyRule = Never | IfPossible
  current node.
 -}
 tryAxiomClaim ::
-    forall m.
-    MonadSimplify m =>
-    MonadIO m =>
     -- | tagged index in the axioms or claims list
     RuleReference ->
-    ReplM m ()
+    ReplM ()
 tryAxiomClaim = tryAxiomClaimWorker Never
 
 -- | Attempt to use a specific axiom or claim to progress the current proof.
 tryFAxiomClaim ::
-    forall m.
-    MonadSimplify m =>
-    MonadIO m =>
     -- | tagged index in the axioms or claims list
     RuleReference ->
-    ReplM m ()
+    ReplM ()
 tryFAxiomClaim = tryAxiomClaimWorker IfPossible
 
 tryAxiomClaimWorker ::
-    forall m.
-    MonadSimplify m =>
-    MonadIO m =>
     AlsoApplyRule ->
     -- | tagged index in the axioms or claims list
     RuleReference ->
-    ReplM m ()
+    ReplM ()
 tryAxiomClaimWorker mode ref = do
     maybeAxiomOrClaim <-
         ruleReference
@@ -1020,7 +971,7 @@ tryAxiomClaimWorker mode ref = do
     showUnificationFailure ::
         Either Axiom SomeClaim ->
         ReplNode ->
-        ReplM m ()
+        ReplM ()
     showUnificationFailure axiomOrClaim' node = do
         let first = extractLeftPattern axiomOrClaim'
         maybeSecond <- getClaimStateAt (Just node)
@@ -1037,7 +988,7 @@ tryAxiomClaimWorker mode ref = do
                         }
                     (getConfiguration <$> second)
               where
-                patternUnifier :: Pattern RewritingVariableName -> ReplM m ()
+                patternUnifier :: Pattern RewritingVariableName -> ReplM ()
                 patternUnifier
                     (Pattern.splitTerm -> (secondTerm, secondCondition)) =
                         runUnifier' sideCondition first secondTerm
@@ -1049,7 +1000,7 @@ tryAxiomClaimWorker mode ref = do
     tryForceAxiomOrClaim ::
         Either Axiom SomeClaim ->
         ReplNode ->
-        ReplM m ()
+        ReplM ()
     tryForceAxiomOrClaim axiomOrClaim node = do
         (graph, result) <-
             tryApplyAxiomOrClaim axiomOrClaim node
@@ -1070,7 +1021,7 @@ tryAxiomClaimWorker mode ref = do
         SideCondition RewritingVariableName ->
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
-        ReplM m ()
+        ReplM ()
     runUnifier' sideCondition first second =
         runUnifier sideCondition first' second
             >>= tell . formatUnificationMessage
@@ -1161,11 +1112,9 @@ saveSessionWithMessage notifySuccess path =
     seqUnlines = unlines . toList
 
 savePartialProof ::
-    forall m.
-    MonadIO m =>
     Maybe Natural ->
     FilePath ->
-    ReplM m ()
+    ReplM ()
 savePartialProof maybeNatural file = do
     currentIndex <- Lens.use (field @"claimIndex")
     claims <- Lens.use (field @"claims")
@@ -1188,7 +1137,7 @@ savePartialProof maybeNatural file = do
   where
     saveUnparsedDefinitionToFile ::
         Pretty.Doc ann ->
-        ReplM m ()
+        ReplM ()
     saveUnparsedDefinitionToFile definition =
         liftIO $
             withFile
@@ -1198,7 +1147,7 @@ savePartialProof maybeNatural file = do
 
     maybeNode :: Maybe ReplNode
     maybeNode =
-        ReplNode . naturalToInt <$> maybeNatural
+        ReplNode . fromIntegral . naturalToInteger <$> maybeNatural
 
     removeIfRoot ::
         ReplNode ->
@@ -1222,17 +1171,13 @@ output. AuxOut will not be piped, instead it will be sent directly to the repl's
 output.
 -}
 pipe ::
-    forall m.
-    MonadIO m =>
-    MonadMask m =>
-    MonadSimplify m =>
     -- | command to pipe
     ReplCommand ->
     -- | path to the program that will receive the command's output
     String ->
     -- | additional arguments to be passed to the program
     [String] ->
-    ReplM m ()
+    ReplM ()
 pipe cmd file args = do
     exists <- liftIO $ findExecutable file
     case exists of
@@ -1267,26 +1212,18 @@ pipe cmd file args = do
 
 -- | Appends output of a command to a file.
 appendTo ::
-    forall m.
-    MonadSimplify m =>
-    MonadIO m =>
-    MonadMask m =>
     -- | command
     ReplCommand ->
     -- | file to append to
     FilePath ->
-    ReplM m ()
+    ReplM ()
 appendTo cmd file =
     withExistingDirectory file (appendCommand cmd)
 
 appendCommand ::
-    forall m.
-    MonadSimplify m =>
-    MonadIO m =>
-    MonadMask m =>
     ReplCommand ->
     FilePath ->
-    ReplM m ()
+    ReplM ()
 appendCommand cmd file = do
     config <- ask
     runInterpreterWithOutput
@@ -1309,14 +1246,10 @@ alias a = do
         Right _ -> pure ()
 
 tryAlias ::
-    forall m.
-    MonadSimplify m =>
-    MonadIO m =>
-    MonadMask m =>
     ReplAlias ->
     PrintAuxOutput ->
     PrintKoreOutput ->
-    ReplM m ReplStatus
+    ReplM ReplStatus
 tryAlias replAlias@ReplAlias{name} printAux printKore = do
     res <- findAlias name
     case res of
@@ -1334,9 +1267,9 @@ tryAlias replAlias@ReplAlias{name} printAux printKore = do
   where
     runInterpreter ::
         ReplCommand ->
-        Config m ->
+        Config ->
         ReplState ->
-        ReplM m (ReplStatus, ReplState)
+        ReplM (ReplStatus, ReplState)
     runInterpreter cmd config st =
         lift $
             (`runStateT` st) $
@@ -1351,12 +1284,9 @@ tryAlias replAlias@ReplAlias{name} printAux printKore = do
  See 'loopM' for details.
 -}
 performStepNoBranching ::
-    forall m.
-    MonadSimplify m =>
-    MonadIO m =>
     -- | (current step, last result)
     (Natural, StepResult) ->
-    ReplM m (Either (Natural, StepResult) (Natural, StepResult))
+    ReplM (Either (Natural, StepResult) (Natural, StepResult))
 performStepNoBranching =
     \case
         -- Termination branch
@@ -1371,11 +1301,9 @@ performStepNoBranching =
 -- TODO(Vladimir): It would be ideal for this to be implemented in terms of
 -- 'performStepNoBranching'.
 recursiveForcedStep ::
-    MonadSimplify m =>
-    MonadIO m =>
     Natural ->
     ReplNode ->
-    ReplM m ()
+    ReplM ()
 recursiveForcedStep n node
     | n == 0 = pure ()
     | otherwise = do
@@ -1600,16 +1528,13 @@ instance ShowErrorComponent ReplScriptParseError where
     showErrorComponent (ReplScriptParseError err) = err
 
 parseEvalScript ::
-    forall t m.
-    MonadSimplify m =>
-    MonadIO m =>
-    MonadMask m =>
-    MonadState ReplState (t m) =>
-    MonadReader (Config m) (t m) =>
+    forall t.
+    MonadState ReplState (t Simplifier) =>
+    MonadReader Config (t Simplifier) =>
     Monad.Trans.MonadTrans t =>
     FilePath ->
     ScriptModeOutput ->
-    t m ()
+    t Simplifier ()
 parseEvalScript file scriptModeOutput = do
     exists <- lift . liftIO . doesFileExist $ file
     if exists
@@ -1634,7 +1559,7 @@ parseEvalScript file scriptModeOutput = do
 
     executeScript ::
         [ReplCommand] ->
-        t m ()
+        t Simplifier ()
     executeScript cmds = do
         config <- ask
         get >>= executeCommands config >>= put
@@ -1649,7 +1574,7 @@ parseEvalScript file scriptModeOutput = do
 
         executeCommand ::
             ReplCommand ->
-            ReaderT (Config m) (StateT ReplState m) ReplStatus
+            ReaderT Config (StateT ReplState Simplifier) ReplStatus
         executeCommand command =
             runInputT defaultSettings $
                 replInterpreter0
@@ -1659,7 +1584,7 @@ parseEvalScript file scriptModeOutput = do
 
         executeCommandWithOutput ::
             ReplCommand ->
-            ReaderT (Config m) (StateT ReplState m) ReplStatus
+            ReaderT Config (StateT ReplState Simplifier) ReplStatus
         executeCommandWithOutput command = do
             node <- Lens.use (field @"node")
             liftIO $ putStr $ "Kore (" <> show (unReplNode node) <> ")> "

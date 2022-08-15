@@ -103,7 +103,7 @@ import Prelude.Kore hiding (
     concatMap,
  )
 import SMT (
-    NoSMT,
+    SMT,
  )
 import Test.Expect
 import Test.Kore (
@@ -125,7 +125,7 @@ import Test.Kore.Builtin.Set qualified as Test.Set
 import Test.Kore.Internal.OrPattern qualified as OrPattern
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify (
-    runSimplifier,
+    testRunSimplifier,
  )
 import Test.SMT
 import Test.Tasty
@@ -1142,7 +1142,7 @@ unifiesWith ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Pattern RewritingVariableName ->
-    PropertyT NoSMT ()
+    PropertyT SMT ()
 unifiesWith pat1 pat2 expected =
     unifiesWithMulti pat1 pat2 [expected]
 
@@ -1152,7 +1152,7 @@ unifiesWithMulti ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     [Pattern RewritingVariableName] ->
-    PropertyT NoSMT ()
+    PropertyT SMT ()
 unifiesWithMulti pat1 pat2 expectedResults = do
     actualResults <- lift $ evaluateToList (mkAnd pat1 pat2)
     compareElements (List.sort expectedResults) actualResults
@@ -1438,7 +1438,7 @@ test_inKeys =
                 boolSort
                 [termKey, termMap]
                 & runMaybeT
-                & runSimplifier testEnv
+                & testRunSimplifier testEnv
         case output of
             Nothing -> return Nothing
             Just result -> do

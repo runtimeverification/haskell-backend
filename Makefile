@@ -32,7 +32,7 @@ haddock:
 		>haddock.log 2>&1 \
 		|| ( cat haddock.log; exit 1; )
         #remove header warning for Paths_kore
-	sed "N;N;/[^\n]*in 'Paths_kore'\n.*\n.*/d" haddock.log | tee haddock.log.noPaths
+	sed -e "/.*in 'Paths_kore'$/{n;n;/^ *Module header$/d}" haddock.log | tee haddock.log.noPaths
 	if grep -B 2 'Module header' haddock.log.noPaths; then \
 		echo >&2 "Please fix the missing documentation!"; \
 		exit 1; \

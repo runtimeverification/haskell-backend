@@ -16,6 +16,7 @@ module Log (
 
     -- * Implementation
     LoggerT (..),
+    LoggerEnv (..),
     runLoggerT,
     askLogAction,
 

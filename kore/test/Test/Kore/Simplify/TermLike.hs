@@ -3,9 +3,6 @@ module Test.Kore.Simplify.TermLike (
     test_simplifyOnly,
 ) where
 
-import Control.Monad.Catch (
-    MonadThrow,
- )
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -23,7 +20,6 @@ import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     mkRepresentation,
  )
 import Kore.Internal.TermLike
-import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     getRewritingPattern,
@@ -31,9 +27,7 @@ import Kore.Rewrite.RewritingVariable (
     mkElementConfigVariable,
     mkRewritingTerm,
  )
-import Kore.Simplify.Simplify
 import Kore.Simplify.TermLike qualified as TermLike
-import Logic qualified
 import Prelude.Kore
 import Pretty qualified
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
@@ -104,33 +98,9 @@ simplifyWithSideCondition ::
 simplifyWithSideCondition
     (SideCondition.mapVariables (pure mkConfigVariable) -> sideCondition) =
         fmap (OrPattern.map getRewritingPattern)
-            <$> runSimplifier Mock.env
+            <$> testRunSimplifier Mock.env
                 . TermLike.simplify sideCondition
                 . mkRewritingTerm
-
-newtype TestSimplifier a = TestSimplifier {getTestSimplifier :: SimplifierT NoSMT a}
-    deriving newtype (Functor, Applicative, Monad)
-    deriving newtype (MonadLog, MonadSMT, MonadThrow)
-
-instance MonadSimplify TestSimplifier where
-    askMetadataTools = TestSimplifier askMetadataTools
-    askSimplifierAxioms = TestSimplifier askSimplifierAxioms
-    localSimplifierAxioms f =
-        TestSimplifier . localSimplifierAxioms f . getTestSimplifier
-    askMemo = TestSimplifier (Memo.liftSelf TestSimplifier <$> askMemo)
-    askInjSimplifier = TestSimplifier askInjSimplifier
-    askOverloadSimplifier = TestSimplifier askOverloadSimplifier
-    askSimplifierXSwitch = TestSimplifier askSimplifierXSwitch
-    getCache = TestSimplifier getCache
-    putCache = TestSimplifier . putCache
-    simplifyCondition sideCondition condition =
-        Logic.mapLogicT
-            TestSimplifier
-            (simplifyCondition sideCondition condition)
-
-    -- Throw an error if any pattern/term would be simplified.
-    simplifyPattern = undefined
-    simplifyTerm = undefined
 
 test_simplifyOnly :: [TestTree]
 test_simplifyOnly =
@@ -196,5 +166,5 @@ simplify ::
     TermLike RewritingVariableName ->
     IO (OrPattern RewritingVariableName)
 simplify =
-    runSimplifier Mock.env
+    testRunSimplifier Mock.env
         . TermLike.simplify SideCondition.top

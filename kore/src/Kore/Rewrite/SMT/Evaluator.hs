@@ -20,8 +20,10 @@ import Control.Error (
  )
 import Control.Lens qualified as Lens
 import Control.Monad.Counter qualified as Counter
+import Control.Monad.Morph qualified as Morph
 import Control.Monad.State.Strict qualified as State
 import Data.Generics.Product.Fields
+import Data.Limit
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
@@ -80,6 +82,7 @@ import Pretty qualified
 import SMT (
     Result (..),
     SExpr (..),
+    SMT,
  )
 import SMT qualified
 import SMT.SimpleSMT qualified as SimpleSMT
@@ -88,11 +91,10 @@ import SMT.SimpleSMT qualified as SimpleSMT
  condition using an external SMT solver.
 -}
 evalPredicate ::
-    MonadSimplify m =>
     InternalVariable variable =>
     Predicate variable ->
     Maybe (SideCondition variable) ->
-    m (Maybe Bool)
+    Simplifier (Maybe Bool)
 evalPredicate predicate sideConditionM = case predicate of
     Predicate.PredicateTrue -> return $ Just True
     Predicate.PredicateFalse -> return $ Just False
@@ -108,11 +110,10 @@ evalPredicate predicate sideConditionM = case predicate of
  condition using an external SMT solver.
 -}
 evalConditional ::
-    MonadSimplify m =>
     InternalVariable variable =>
     Conditional variable term ->
     Maybe (SideCondition variable) ->
-    m (Maybe Bool)
+    Simplifier (Maybe Bool)
 evalConditional conditional sideConditionM =
     evalPredicate predicate sideConditionM
         & assert (Conditional.isNormalized conditional)
@@ -123,21 +124,20 @@ evalConditional conditional sideConditionM =
 
 -- | Removes from a MultiOr all items refuted by an external SMT solver.
 filterMultiOr ::
-    forall simplifier term variable.
-    ( MonadSimplify simplifier
-    , Ord term
+    forall term variable.
+    ( Ord term
     , TopBottom term
     , InternalVariable variable
     ) =>
     MultiOr (Conditional variable term) ->
-    simplifier (MultiOr (Conditional variable term))
+    Simplifier (MultiOr (Conditional variable term))
 filterMultiOr multiOr = do
     elements <- mapM refute (toList multiOr)
     return (MultiOr.make (catMaybes elements))
   where
     refute ::
         Conditional variable term ->
-        simplifier (Maybe (Conditional variable term))
+        Simplifier (Maybe (Conditional variable term))
     refute p =
         evalConditional p Nothing <&> \case
             Nothing -> Just p
@@ -149,12 +149,11 @@ filterMultiOr multiOr = do
 The predicate is always sent to the external solver, even if it is trivial.
 -}
 decidePredicate ::
-    forall variable simplifier.
+    forall variable.
     InternalVariable variable =>
-    MonadSimplify simplifier =>
     SideCondition variable ->
     NonEmpty (Predicate variable) ->
-    simplifier (Maybe Bool)
+    Simplifier (Maybe Bool)
 decidePredicate sideCondition predicates =
     whileDebugEvaluateCondition predicates go
   where
@@ -171,46 +170,67 @@ decidePredicate sideCondition predicates =
 
     whenUnknown f Unknown = f
     whenUnknown _ result = return result
-    query :: MaybeT simplifier Result
+
+    query :: MaybeT Simplifier Result
     query =
         SMT.withSolver . evalTranslator $ do
             tools <- Simplifier.askMetadataTools
-            predicates' <-
-                traverse
-                    (translatePredicate sideCondition tools)
-                    predicates
-            traverse_ SMT.assert predicates'
-            SMT.check
+            Morph.hoist SMT.liftSMT $ do
+                predicates' <-
+                    traverse
+                        (translatePredicate sideCondition tools)
+                        predicates
+                traverse_ SMT.assert predicates'
+                SMT.check
 
+    retry :: MaybeT Simplifier Result
     retry = do
+        SMT.RetryLimit limit <- SMT.askRetryLimit
+        -- Use the same timeout for the first retry, since sometimes z3
+        -- decides it doesn't want to work today and all we need is to
+        -- retry it once.
+        let timeoutScales = takeWithin limit [1 ..]
+        let retryActions = map retryOnceWithScaledTimeout timeoutScales
+        let combineRetries r1 r2 = r1 >>= whenUnknown r2
+        -- This works even if 'retryActions' is infinite, because the second
+        -- argument to 'whenUnknown' will be the 'combineRetries' of all of
+        -- the tail of the list. As soon as a result is not 'Unknown', the
+        -- rest of the fold is discarded.
+        foldr combineRetries (pure Unknown) retryActions
+
+    retryOnceWithScaledTimeout :: Integer -> MaybeT Simplifier Result
+    retryOnceWithScaledTimeout scale =
+        -- scale the timeout _inside_ 'retryOnce' so that we override the
+        -- call to 'SMT.reinit'.
+        retryOnce $ SMT.localTimeOut (scaleTimeOut scale) query
+
+    scaleTimeOut _ (SMT.TimeOut Unlimited) = SMT.TimeOut Unlimited
+    scaleTimeOut n (SMT.TimeOut (Limit r)) = SMT.TimeOut (Limit (n * r))
+
+    retryOnce actionToRetry = do
         SMT.reinit
-        result <- query
+        result <- actionToRetry
         debugRetrySolverQuery predicates
         return result
 
 translatePredicate ::
-    forall variable m.
-    ( InternalVariable variable
-    , SMT.MonadSMT m
-    , MonadLog m
-    ) =>
+    forall variable.
+    InternalVariable variable =>
     SideCondition variable ->
     SmtMetadataTools Attribute.Symbol ->
     Predicate variable ->
-    Translator variable m SExpr
+    Translator variable SMT SExpr
 translatePredicate sideCondition tools predicate =
     translatePredicateWith tools sideCondition translateTerm predicate
 
 translateTerm ::
-    forall m variable.
+    forall variable.
     InternalVariable variable =>
-    SMT.MonadSMT m =>
-    MonadLog m =>
     -- | type name
     SExpr ->
     -- | uninterpreted pattern
     TranslateItem variable ->
-    Translator variable m SExpr
+    Translator variable SMT SExpr
 translateTerm smtType (QuantifiedVariable var) = do
     n <- Counter.increment
     let varName = "<" <> Text.pack (show n) <> ">"
@@ -245,9 +265,7 @@ translateTerm t (UninterpretedTerm pat) = do
         <|> declareUninterpreted t stateSetter boundPat boundVarsMap
 
 declareUninterpreted ::
-    ( MonadSMT m
-    , MonadLog m
-    , InternalVariable variable
+    ( InternalVariable variable
     , Ord termOrPredicate
     , Pretty termOrPredicate
     ) =>
@@ -257,7 +275,7 @@ declareUninterpreted ::
         (Map.Map termOrPredicate (SMTDependentAtom variable)) ->
     termOrPredicate ->
     Map.Map (ElementVariable variable) (SMTDependentAtom variable) ->
-    Translator variable m SExpr
+    Translator variable SMT SExpr
 declareUninterpreted
     sExpr
     stateSetter
@@ -294,20 +312,19 @@ filterBoundVarsMap freeVars quantifiedVars =
         quantifiedVars
 
 lookupUninterpreted ::
-    (InternalVariable variable, MonadSMT m, Ord k) =>
+    (InternalVariable variable, Ord k) =>
     k ->
     Map.Map (ElementVariable variable) (SMTDependentAtom variable) ->
     Map.Map k (SMTDependentAtom variable) ->
-    Translator variable m SExpr
+    Translator variable SMT SExpr
 lookupUninterpreted boundPat quantifiedVars terms =
     maybe empty (translateSMTDependentAtom quantifiedVars) $
         Map.lookup boundPat terms
 
 lookupVariable ::
     InternalVariable variable =>
-    Monad m =>
     TermLike.ElementVariable variable ->
-    Translator variable m SExpr
+    Translator variable SMT SExpr
 lookupVariable var =
     lookupQuantifiedVariable <|> lookupFreeVariable
   where
@@ -321,13 +338,11 @@ lookupVariable var =
 
 declareVariable ::
     InternalVariable variable =>
-    SMT.MonadSMT m =>
-    MonadLog m =>
     -- | type name
     SExpr ->
     -- | variable to be declared
     TermLike.ElementVariable variable ->
-    Translator variable m SExpr
+    Translator variable SMT SExpr
 declareVariable t variable = do
     n <- Counter.increment
     let varName = "<" <> Text.pack (show n) <> ">"

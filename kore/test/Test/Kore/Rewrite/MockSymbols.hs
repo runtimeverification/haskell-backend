@@ -47,12 +47,14 @@ import Kore.Attribute.Sort.Constructors qualified as Attribute (
     Constructors,
  )
 import Kore.Attribute.Sort.Element qualified as Attribute
+import Kore.Attribute.Sort.HasDomainValues qualified as Attribute
 import Kore.Attribute.Sort.Unit qualified as Attribute
 import Kore.Attribute.Subsort
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Attribute.Synthetic (
     synthesize,
  )
+import Kore.Builtin qualified as Builtin
 import Kore.Builtin.Bool qualified as Builtin.Bool
 import Kore.Builtin.Builtin qualified as Builtin
 import Kore.Builtin.Int qualified as Builtin.Int
@@ -61,6 +63,7 @@ import Kore.Builtin.List qualified as List
 import Kore.Builtin.Map qualified as Map
 import Kore.Builtin.Set qualified as Set
 import Kore.Builtin.String qualified as Builtin.String
+import Kore.IndexedModule.IndexedModule qualified as IndexedModule
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
@@ -96,23 +99,28 @@ import Kore.Rewrite.SMT.AST qualified as SMT
 import Kore.Rewrite.SMT.Representation.Resolve qualified as SMT (
     resolve,
  )
-import Kore.Simplify.Condition qualified as Simplifier.Condition
-import Kore.Simplify.Data (
+import Kore.Simplify.API (
     Env (Env),
     MonadSimplify,
  )
-import Kore.Simplify.Data qualified as SimplificationData.DoNotUse
+import Kore.Simplify.API qualified as SimplificationAPI.DoNotUse
+import Kore.Simplify.Condition qualified as Simplifier.Condition
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.OverloadSimplifier
+import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifierMap,
     ConditionSimplifier,
-    SimplifierXSwitch (..),
  )
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
+import Kore.Simplify.TermLike qualified as TermLike
 import Kore.Sort
 import Kore.Syntax.Application
+import Kore.Syntax.Module (ModuleName (..))
+import Kore.Syntax.Sentence (SentenceSort (..), SentenceSymbol (..))
+import Kore.Syntax.Sentence qualified
 import Kore.Syntax.Variable
+import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Prelude.Kore
 import SMT.AST qualified as SMT
 import SMT.SimpleSMT qualified as SMT
@@ -893,6 +901,8 @@ xRuleSet :: MockRewritingElementVariable
 xRuleSet = mkRuleElementVariable (testId "xSet") mempty setSort
 xConfigSet :: MockRewritingElementVariable
 xConfigSet = mkConfigElementVariable (testId "xSet") mempty setSort
+yConfigSet :: MockRewritingElementVariable
+yConfigSet = mkConfigElementVariable (testId "ySet") mempty setSort
 xEquationSet :: MockRewritingElementVariable
 xEquationSet = mkEquationElementVariable (testId "xSet") mempty setSort
 ySet :: MockElementVariable
@@ -990,6 +1000,12 @@ eConfigSubSubsort =
 e2ConfigSubSubsort :: MockRewritingSetVariable
 e2ConfigSubSubsort =
     mkConfigSetVariable (testId "e2ConfigSubSubsort") mempty subSubsort
+setXConfigSetSort :: MockRewritingSetVariable
+setXConfigSetSort =
+    mkConfigSetVariable (testId "XSetSort") mempty setSort
+setYConfigSetSort :: MockRewritingSetVariable
+setYConfigSetSort =
+    mkConfigSetVariable (testId "YSetSort") mempty setSort
 
 makeSomeVariable :: Text -> Sort -> SomeVariable VariableName
 makeSomeVariable name variableSort =
@@ -2301,16 +2317,17 @@ overloadSimplifier = mkOverloadSimplifier overloadGraph injSimplifier
 
 -- TODO(Ana): if needed, create copy with experimental simplifier
 -- enabled
-env :: MonadSimplify simplifier => Env simplifier
+env :: Env
 env =
     Env
         { metadataTools = Test.Kore.Rewrite.MockSymbols.metadataTools
         , simplifierCondition = predicateSimplifier
+        , simplifierPattern = Pattern.makeEvaluate
+        , simplifierTerm = TermLike.simplify
         , simplifierAxioms = axiomSimplifiers
         , memo = Memo.forgetful
         , injSimplifier
         , overloadSimplifier
-        , simplifierXSwitch = DisabledSimplifierX
         }
 
 generatorSetup :: ConsistentKore.Setup
@@ -2402,3 +2419,49 @@ builtinSimplifiers =
                 (Builtin.KEqual.builtinFunctions Map.! Builtin.KEqual.eqKey)
             )
         ]
+
+verifiedModuleContext :: PatternVerifier.Context
+verifiedModuleContext =
+    PatternVerifier.verifiedModuleContext
+        IndexedModule.IndexedModuleSyntax
+            { indexedModuleName = ModuleName "MOCK"
+            , indexedModuleAliasSentences = mempty
+            , indexedModuleSymbolSentences =
+                Map.fromList
+                    [ ( symbolConstructor
+                      ,
+                          ( symbolAttributes
+                          , SentenceSymbol
+                                { sentenceSymbolSymbol =
+                                    Kore.Syntax.Sentence.Symbol
+                                        { symbolConstructor
+                                        , symbolParams = []
+                                        }
+                                , sentenceSymbolSorts = applicationSortsOperands
+                                , sentenceSymbolResultSort = applicationSortsResult
+                                , sentenceSymbolAttributes = Default.def
+                                }
+                          )
+                      )
+                    | Symbol
+                        { symbolConstructor
+                        , symbolAttributes
+                        , symbolSorts =
+                            ApplicationSorts
+                                { applicationSortsOperands
+                                , applicationSortsResult
+                                }
+                        } <-
+                        allSymbols
+                    ]
+            , indexedModuleSortDescriptions =
+                Map.fromList
+                    [ (sortActualName, (attr{Attribute.hasDomainValues = Attribute.HasDomainValues True}, SentenceSort sortActualName [] Default.def))
+                    | (SortActualSort (SortActual{sortActualName}), attr) <- sortAttributesMapping
+                    ]
+            , indexedModuleImportsSyntax = mempty
+            , indexedModuleHookedIdentifiers = mempty
+            }
+        & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
+  where
+    ConsistentKore.Setup{allSymbols} = generatorSetup

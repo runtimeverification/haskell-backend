@@ -5,9 +5,6 @@ module Test.Kore.Rewrite (
 
 import Control.Exception qualified as Exception
 import Control.Lens qualified as Lens
-import Control.Monad.Catch (
-    MonadThrow,
- )
 import Data.Generics.Product
 import Data.Generics.Wrapped (
     _Unwrapped,
@@ -320,21 +317,14 @@ test_executionStrategy =
     hasRewrite :: Strategy Prim -> Bool
     hasRewrite = \case
         Strategy.Seq s1 s2 -> hasRewrite s1 || hasRewrite s2
-        Strategy.And s1 s2 -> hasRewrite s1 || hasRewrite s2
-        Strategy.Or s1 s2 -> hasRewrite s1 || hasRewrite s2
         Strategy.Apply p -> p == Rewrite
-        Strategy.Stuck -> False
         Strategy.Continue -> False
 
     isLastSimplify :: Strategy Prim -> Bool
     isLastSimplify = \case
         Strategy.Seq s Strategy.Continue -> isLastSimplify s
-        Strategy.Seq s Strategy.Stuck -> isLastSimplify s
         Strategy.Seq _ s -> isLastSimplify s
-        Strategy.And s1 s2 -> isLastSimplify s1 && isLastSimplify s2
-        Strategy.Or s1 s2 -> isLastSimplify s1 && isLastSimplify s2
         Strategy.Apply p -> p == Simplify
-        Strategy.Stuck -> False
         Strategy.Continue -> False
 
 simpleRewrite ::
@@ -371,7 +361,7 @@ runStep ::
     Pattern VariableName ->
     [RewriteRule RewritingVariableName] ->
     IO [ProgramState (Pattern VariableName)]
-runStep = runStepWorker runSimplifier
+runStep = runStepWorker testRunSimplifier
 
 runStepSMT ::
     -- | depth limit
@@ -391,9 +381,7 @@ runStepWorker ::
         ~ Strategy.ExecutionGraph
             (ProgramState (Pattern RewritingVariableName))
             (RewriteRule RewritingVariableName) =>
-    MonadSimplify simplifier =>
-    MonadThrow simplifier =>
-    (Env simplifier -> simplifier result -> IO result) ->
+    (Env -> Simplifier result -> IO result) ->
     -- | depth limit
     Limit Natural ->
     -- | breadth limit

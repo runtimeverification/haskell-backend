@@ -47,9 +47,6 @@ import Control.Lens (
  )
 import Control.Lens qualified as Lens
 import Control.Monad qualified as Monad
-import Control.Monad.Catch (
-    MonadMask,
- )
 import Data.Binary qualified as Binary
 import Data.ByteString.Lazy qualified as ByteString
 import Data.Compact (
@@ -136,7 +133,6 @@ import Kore.Rewrite.SMT.Lemma
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
-import Kore.Simplify.Simplify (SimplifierXSwitch (..))
 import Kore.Syntax hiding (Pattern)
 import Kore.Syntax.Definition (
     ModuleName (..),
@@ -189,11 +185,8 @@ import Paths_kore qualified as MetaData (
  )
 import Prelude.Kore
 import Pretty qualified as KorePretty
-import Prof (
-    MonadProf,
- )
 import SMT (
-    MonadSMT,
+    SMT,
  )
 import SMT qualified
 import System.Clock (
@@ -325,9 +318,8 @@ data MainOptions a = MainOptions
     , localOptions :: !(Maybe (LocalOptions a))
     }
 
-data LocalOptions a = LocalOptions
-    { execOptions :: !a
-    , simplifierx :: !SimplifierXSwitch
+newtype LocalOptions a = LocalOptions
+    { execOptions :: a
     }
 
 {- |
@@ -377,15 +369,6 @@ globalCommandLineParser =
                 <> help "Print version information"
             )
 
-parseSimplifierX :: Parser SimplifierXSwitch
-parseSimplifierX =
-    flag
-        DisabledSimplifierX
-        EnabledSimplifierX
-        ( long "simplifierx"
-            <> help "Enable the experimental simplifier"
-        )
-
 getArgs ::
     -- | environment variable name for extra arguments
     Maybe String ->
@@ -424,7 +407,6 @@ commandLineParse (ExeName exeName) maybeEnv parser infoMod = do
     parseLocalOptions =
         LocalOptions
             <$> parser
-            <*> parseSimplifierX
     parseMainOptions =
         MainOptions
             <$> globalCommandLineParser
@@ -556,14 +538,6 @@ mainParse parser fileName = do
         Left err -> errorParse err
         Right definition -> return definition
 
-type MonadExecute exe =
-    ( MonadMask exe
-    , MonadIO exe
-    , MonadSMT exe
-    , MonadProf exe
-    , WithLog LogMessage exe
-    )
-
 -- | Run the worker in the context of the main module.
 execute ::
     forall r.
@@ -572,7 +546,7 @@ execute ::
     SmtMetadataTools StepperAttributes ->
     [SentenceAxiom (TermLike VariableName)] ->
     -- | Worker
-    (forall exe. MonadExecute exe => exe r) ->
+    SMT r ->
     Main r
 execute options metadataTools lemmas worker =
     clockSomethingIO "Executing" $
@@ -609,13 +583,11 @@ and either deserialize it, or else treat it as a text KORE definition and manual
 construct the needed SerializedDefinition object from it.
 -}
 deserializeDefinition ::
-    SimplifierXSwitch ->
     KoreSolverOptions ->
     FilePath ->
     ModuleName ->
     Main SerializedDefinition
 deserializeDefinition
-    simplifierx
     solverOptions
     definitionFilePath
     mainModuleName =
@@ -627,7 +599,6 @@ deserializeDefinition
                     return serializedDefinition
                 Nothing ->
                     makeSerializedDefinition
-                        simplifierx
                         solverOptions
                         definitionFilePath
                         mainModuleName
@@ -660,19 +631,18 @@ deserializeDefinition
                 )
 
 makeSerializedDefinition ::
-    SimplifierXSwitch ->
     KoreSolverOptions ->
     FilePath ->
     ModuleName ->
     Main SerializedDefinition
-makeSerializedDefinition simplifierx solverOptions definitionFileName mainModuleName = do
+makeSerializedDefinition solverOptions definitionFileName mainModuleName = do
     definition <- loadDefinitions [definitionFileName]
     mainModule <- loadModule mainModuleName definition
     let metadataTools = MetadataTools.build mainModule
     let lemmas = getSMTLemmas mainModule
     serializedModule <-
         execute solverOptions metadataTools lemmas $
-            makeSerializedModule simplifierx mainModule
+            makeSerializedModule mainModule
     let locations = kFileLocations definition
     let serializedDefinition =
             SerializedDefinition

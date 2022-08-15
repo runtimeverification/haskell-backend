@@ -19,11 +19,6 @@ source-repository head
   type: git
   location: https://github.com/runtimeverification/haskell-backend
 
-flag release
-  description: Build a faster runtime, at the expense of a slower build.
-  manual: True
-  default: False
-
 flag threaded
   description: Use the threaded runtime. Recommended to disable for profiling.
   manual: True
@@ -129,6 +124,7 @@ common library
   -- Dependencies of the library, shared in common with the tests
   build-depends: adjunctions >=4.4
   build-depends: aeson >=1.4
+  build-depends: aeson-pretty == 0.8.9
   build-depends: array
   build-depends: async >=2.2
   build-depends: binary >=0.8.8.0
@@ -141,6 +137,7 @@ common library
   build-depends: containers >=0.5.8
   build-depends: cryptonite >=0.25
   build-depends: data-default >=0.7
+  build-depends: decision-diagrams >=0.2.0.0
   build-depends: deepseq >=1.4
   build-depends: deriving-aeson >=0.2
   build-depends: directory >=1.3
@@ -156,17 +153,20 @@ common library
   build-depends: ghc-trace-events >=0.1
   build-depends: gitrev >=1.3
   build-depends: graphviz >=2999.20
-  build-depends: hashable >=1.2
+  -- Pin hashable to make sure cabal build uses the one Nix & Stack builds do
+  build-depends: hashable ==1.3.0.0
   build-depends: haskeline ==0.8.*
   build-depends: integer-gmp >=1.0
   build-depends: json-rpc >=1.0
   build-depends: lens >=4.17
   build-depends: logict >=0.7
+  build-depends: matrix >=0.3.6.1
   build-depends: megaparsec >=7.0.4
   build-depends: mmorph >=1.1
   build-depends: monad-logger >=0.3.36
   build-depends: mono-traversable >=1.0
   build-depends: mtl >=2.2
+  build-depends: multiset >=0.3.4.3
   build-depends: optparse-applicative >=0.14
   build-depends: parser-combinators >=1.1
   build-depends: prettyprinter >=1.2
@@ -313,6 +313,7 @@ library
     Kore.Equation.Validate
     Kore.Error
     Kore.Exec
+    Kore.Exec.GraphTraversal
     Kore.IndexedModule.Error
     Kore.IndexedModule.IndexedModule
     Kore.IndexedModule.MetadataTools
@@ -375,6 +376,7 @@ library
     Kore.Log.ErrorRewritesInstantiation
     Kore.Log.ErrorVerify
     Kore.Log.InfoAttemptUnification
+    Kore.Log.JsonRpc
     Kore.Log.InfoExecBreadth
     Kore.Log.InfoExecDepth
     Kore.Log.InfoProofDepth
@@ -392,6 +394,7 @@ library
     Kore.Log.WarnStuckClaimState
     Kore.Log.WarnSymbolSMTRepresentation
     Kore.Log.WarnTrivialClaim
+    Kore.Log.WarnUnexploredBranches
     Kore.Log.WarnUnsimplified
     Kore.ModelChecker.Bounded
     Kore.ModelChecker.Simplification
@@ -456,12 +459,12 @@ library
     Kore.Simplify.And
     Kore.Simplify.AndPredicates
     Kore.Simplify.AndTerms
+    Kore.Simplify.API
     Kore.Simplify.Application
     Kore.Simplify.Bottom
     Kore.Simplify.Ceil
     Kore.Simplify.CeilSimplifier
     Kore.Simplify.Condition
-    Kore.Simplify.Data
     Kore.Simplify.DomainValue
     Kore.Simplify.Equals
     Kore.Simplify.Exists
@@ -519,6 +522,8 @@ library
     Kore.Syntax.Implies
     Kore.Syntax.In
     Kore.Syntax.Inhabitant
+    Kore.Syntax.Json
+    Kore.Syntax.Json.Internal
     Kore.Syntax.Module
     Kore.Syntax.Mu
     Kore.Syntax.Next
@@ -538,6 +543,7 @@ library
     Kore.Unification.SubstitutionSimplifier
     Kore.Unification.UnifierT
     Kore.Unification.Unify
+    Kore.Unification.NewUnifier
     Kore.Unparser
     Kore.Validate.AliasVerifier
     Kore.Validate.AttributesVerifier
@@ -578,8 +584,6 @@ library
   hs-source-dirs:
     src
     app/share
-  if !flag(release)
-    ghc-options: -fno-specialise
 
 executable kore-exec
   import: haskell
@@ -610,6 +614,12 @@ executable kore-rpc
   main-is: Main.hs
   hs-source-dirs: app/rpc
   build-depends: kore
+  build-depends: clock >=0.8
+  build-depends: directory >=1.3
+  build-depends: exceptions >=0.10
+  build-depends: mtl >=2.2
+  build-depends: optparse-applicative >=0.14
+  build-depends: time >=1.9.3
 
 executable kore-format
   import: haskell
@@ -626,6 +636,7 @@ executable kore-parser
   main-is: Main.hs
   hs-source-dirs: app/parser
   build-depends: kore
+  build-depends: bytestring >=0.10
   build-depends: containers >=0.5
   build-depends: exceptions >=0.10
 
@@ -646,6 +657,7 @@ executable kore-repl
   build-depends: kore
   build-depends: clock >=0.8
   build-depends: exceptions >=0.10
+  build-depends: extra >= 1.7
   build-depends: optparse-applicative >=0.14
 
 executable kore-match-disjunction
@@ -860,6 +872,8 @@ test-suite kore-test
     Test.Kore.Simplify.TermLike
     Test.Kore.Simplify.Top
     Test.Kore.Syntax.Id
+    Test.Kore.Syntax.Json
+    Test.Kore.Syntax.Json.Roundtrips
     Test.Kore.Syntax.Variable
     Test.Kore.TopBottom
     Test.Kore.Unification.SubstitutionNormalization
@@ -886,7 +900,7 @@ test-suite kore-test
     Test.Tasty.HUnit.Ext
     Test.Terse
   hs-source-dirs: test
-  build-tool-depends: tasty-discover:tasty-discover >=4.2
+  build-tool-depends: tasty-discover:tasty-discover >=4.2 && <5.0
   build-depends: kore
   build-depends: QuickCheck >=2.13
   build-depends: hedgehog >=1.0

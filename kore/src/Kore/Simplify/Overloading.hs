@@ -6,6 +6,10 @@ module Kore.Simplify.Overloading (
     matchOverloading,
     -- for testing purposes
     unifyOverloading,
+    unifyOverloadingCommonOverload,
+    unifyOverloadingInjVsVariable,
+    unifyOverloadingVsOverloaded,
+    unifyOverloadingVsOverloadedVariable,
     OverloadingData (..),
     UnifyOverloadingResult,
     MatchOverloadingResult,
@@ -45,6 +49,7 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Simplify as Simplifier (
     MonadSimplify (..),
+    askOverloadSimplifier,
  )
 import Pair
 import Prelude.Kore hiding (

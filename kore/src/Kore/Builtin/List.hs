@@ -23,6 +23,8 @@ module Kore.Builtin.List (
     asPattern,
     asInternal,
     internalize,
+    normalize,
+    isListSort,
 
     -- * Symbols
     lookupSymbolGet,
@@ -247,10 +249,10 @@ expectConcreteBuiltinList ctx =
         . expectBuiltinList ctx
 
 returnList ::
-    (MonadSimplify m, InternalVariable variable) =>
+    (InternalVariable variable) =>
     Sort ->
     Seq (TermLike variable) ->
-    m (Pattern variable)
+    Simplifier (Pattern variable)
 returnList builtinListSort builtinListChild = do
     tools <- Simplifier.askMetadataTools
     return $ asPattern tools builtinListSort builtinListChild
@@ -258,7 +260,7 @@ returnList builtinListSort builtinListChild = do
 evalElement :: Builtin.Function
 evalElement _ resultSort =
     \case
-        [elem'] -> returnList resultSort (Seq.singleton elem')
+        [elem'] -> lift $ returnList resultSort (Seq.singleton elem')
         _ -> Builtin.wrongArity elementKey
 
 evalGet :: Builtin.Function
@@ -289,7 +291,7 @@ evalUpdate _ resultSort [_list, _ix, value] = do
     _ix <- fromInteger <$> Int.expectBuiltinInt getKey _ix
     let len = Seq.length _list
     if _ix >= 0 && _ix < len
-        then returnList resultSort (Seq.update _ix value _list)
+        then lift $ returnList resultSort (Seq.update _ix value _list)
         else return (Pattern.bottomOf resultSort)
 evalUpdate _ _ _ = Builtin.wrongArity updateKey
 
@@ -305,7 +307,7 @@ evalIn _ _ _ = Builtin.wrongArity inKey
 evalUnit :: Builtin.Function
 evalUnit _ resultSort =
     \case
-        [] -> returnList resultSort Seq.empty
+        [] -> lift $ returnList resultSort Seq.empty
         _ -> Builtin.wrongArity "LIST.unit"
 
 evalConcat :: Builtin.Function
@@ -323,7 +325,7 @@ evalConcat _ resultSort [_list1, _list2] = do
         bothConcrete = do
             _list1 <- expectBuiltinList concatKey _list1
             _list2 <- expectBuiltinList concatKey _list2
-            returnList resultSort (_list1 <> _list2)
+            lift $ returnList resultSort (_list1 <> _list2)
     leftIdentity <|> rightIdentity <|> bothConcrete
 evalConcat _ _ _ = Builtin.wrongArity concatKey
 
@@ -340,7 +342,7 @@ evalMake :: Builtin.Function
 evalMake _ resultSort [_len, value] = do
     _len <- fromInteger <$> Int.expectBuiltinInt getKey _len
     if _len >= 0
-        then returnList resultSort (Seq.replicate _len value)
+        then lift $ returnList resultSort (Seq.replicate _len value)
         else return (Pattern.bottomOf resultSort)
 evalMake _ _ _ = Builtin.wrongArity sizeKey
 
@@ -359,7 +361,7 @@ evalUpdateAll _ resultSort [_list1, _ix, _list2] = do
                 let unchanged1 = Seq.take _ix _list1
                     unchanged2 = Seq.drop (_ix + length _list2) _list1
                  in returnList resultSort (unchanged1 <> _list2 <> unchanged2)
-    result
+    lift result
 evalUpdateAll _ _ _ = Builtin.wrongArity updateKey
 
 -- | Implement builtin function evaluation.

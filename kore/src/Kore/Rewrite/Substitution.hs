@@ -44,13 +44,12 @@ import Prelude.Kore
 
 -- | Normalize the substitution and predicate of 'expanded'.
 normalize ::
-    forall term simplifier.
+    forall term.
     Ord term =>
     TopBottom term =>
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Conditional RewritingVariableName term ->
-    LogicT simplifier (Conditional RewritingVariableName term)
+    LogicT Simplifier (Conditional RewritingVariableName term)
 normalize sideCondition conditional@Conditional{substitution} = do
     results <- simplifySubstitution sideCondition substitution & lift
     scatter (MultiOr.map applyTermPredicate results)
@@ -68,12 +67,10 @@ If it does not know how to merge the substitutions, it will transform them into
 predicates and redo the merge.
 -}
 mergePredicatesAndSubstitutions ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     [Predicate RewritingVariableName] ->
     [Substitution RewritingVariableName] ->
-    LogicT simplifier (Condition RewritingVariableName)
+    LogicT Simplifier (Condition RewritingVariableName)
 mergePredicatesAndSubstitutions topCondition predicates substitutions =
     simplifyCondition
         topCondition

@@ -28,7 +28,6 @@ import Data.EitherR (
  )
 import Data.Semigroup (
     Min (..),
-    Option (..),
  )
 import Data.Text qualified as Text
 import Kore.Attribute.Symbol qualified as Attribute
@@ -91,21 +90,20 @@ definitionEvaluation equations =
                         , remainders = OrPattern.bottom
                         }
             Left minError ->
-                case getMin <$> getOption minError of
+                case getMin <$> minError of
                     Just (Equation.WhileCheckRequires _) ->
                         (return . NotApplicableUntilConditionChanges)
                             (SideCondition.toRepresentation condition)
                     _ -> return NotApplicable
 
 attemptEquationAndAccumulateErrors ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     TermLike (Target RewritingVariableName) ->
     Equation RewritingVariableName ->
     ExceptRT
         (OrPattern RewritingVariableName)
-        simplifier
-        (Option (Min (AttemptEquationError RewritingVariableName)))
+        Simplifier
+        (Maybe (Min (AttemptEquationError RewritingVariableName)))
 attemptEquationAndAccumulateErrors condition term equation =
     attemptEquation
   where
@@ -115,15 +113,14 @@ attemptEquationAndAccumulateErrors condition term equation =
                 condition
                 (TermLike.mapVariables (pure Target.unTarget) term)
                 equation
-                >>= either (return . Left . Option . Just . Min) (fmap Right . apply)
+                >>= either (return . Left . Just . Min) (fmap Right . apply)
     apply = Equation.applyEquation condition equation
 
 attemptEquations ::
-    MonadSimplify simplifier =>
     Monoid error =>
-    (Equation variable -> ExceptRT result simplifier error) ->
+    (Equation variable -> ExceptRT result Simplifier error) ->
     [Equation variable] ->
-    simplifier (Either error result)
+    Simplifier (Either error result)
 attemptEquations accumulator equations =
     foldlM
         (\err equation -> mappend err <$> accumulator equation)
@@ -180,13 +177,11 @@ builtinEvaluation evaluator =
     BuiltinAndAxiomSimplifier (evaluateBuiltin evaluator)
 
 evaluateBuiltin ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     -- | Map from axiom IDs to axiom evaluators
     BuiltinAndAxiomSimplifier ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
-    simplifier (AttemptedAxiom RewritingVariableName)
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evaluateBuiltin
     (BuiltinAndAxiomSimplifier builtinEvaluator)
     patt

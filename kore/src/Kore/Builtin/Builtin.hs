@@ -114,7 +114,7 @@ import Kore.Simplify.Simplify (
     AttemptedAxiom (..),
     AttemptedAxiomResults (..),
     BuiltinAndAxiomSimplifier (..),
-    MonadSimplify,
+    Simplifier,
     TermSimplifier,
     applicationAxiomSimplifier,
  )
@@ -275,14 +275,13 @@ ternaryOperator extractVal asPattern ctx op =
             _ -> wrongArity (Text.unpack ctx)
 
 type Function =
-    forall variable simplifier.
+    forall variable.
     InternalVariable variable =>
     HasCallStack =>
-    MonadSimplify simplifier =>
     SideCondition variable ->
     Sort ->
     [TermLike variable] ->
-    MaybeT simplifier (Pattern variable)
+    MaybeT Simplifier (Pattern variable)
 
 functionEvaluator :: Function -> BuiltinAndAxiomSimplifier
 functionEvaluator impl =
@@ -293,12 +292,11 @@ functionEvaluator impl =
         impl sideCondition resultSort args
 
 applicationEvaluator ::
-    ( forall variable simplifier.
+    ( forall variable.
       InternalVariable variable =>
-      MonadSimplify simplifier =>
       SideCondition variable ->
       Application Symbol (TermLike variable) ->
-      MaybeT simplifier (Pattern variable)
+      MaybeT Simplifier (Pattern variable)
     ) ->
     BuiltinAndAxiomSimplifier
 applicationEvaluator impl =
@@ -306,13 +304,12 @@ applicationEvaluator impl =
   where
     evaluator ::
         InternalVariable variable =>
-        MonadSimplify simplifier =>
         SideCondition variable ->
         CofreeF
             (Application Symbol)
             (TermAttributes variable)
             (TermLike variable) ->
-        simplifier (AttemptedAxiom variable)
+        Simplifier (AttemptedAxiom variable)
     evaluator sideCondition (_ :< app) = do
         getAttemptedAxiom
             (impl sideCondition app >>= appliedFunction)

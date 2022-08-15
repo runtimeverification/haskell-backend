@@ -7,14 +7,31 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 module SMT (
     SMT,
-    getSMT,
-    Solver,
-    stopSolver,
+    runNoSMT,
     runSMT,
+    Solver,
+    SolverSetup (..),
+    newSolver,
+    initSolver,
+    runWithSolver,
+    stopSolver,
     MonadSMT (..),
+    declare,
+    declareFun,
+    declareSort,
+    declareDatatype,
+    declareDatatypes,
+    assert,
+    check,
+    ackCommand,
+    loadFile,
+    reinit,
+    askRetryLimit,
+    localTimeOut,
     Config (..),
     defaultConfig,
     TimeOut (..),
+    RetryLimit (..),
     RLimit (..),
     ResetInterval (..),
     Prelude (..),
@@ -30,8 +47,6 @@ module SMT (
     declareFun_,
     setInfo,
     setOption,
-    NoSMT (..),
-    runNoSMT,
     SimpleSMT.SolverException (..),
 
     -- * Expressions
@@ -60,9 +75,6 @@ import Control.Exception (
     SomeException,
  )
 import Control.Lens qualified as Lens
-import Control.Monad (
-    join,
- )
 import Control.Monad qualified as Monad
 import Control.Monad.Catch (
     MonadCatch,
@@ -76,8 +88,7 @@ import Control.Monad.RWS.Strict (
     RWST,
  )
 import Control.Monad.Reader (
-    ReaderT,
-    runReaderT,
+    ReaderT (ReaderT),
  )
 import Control.Monad.Reader qualified as Reader
 import Control.Monad.State.Lazy qualified as State.Lazy
@@ -101,10 +112,8 @@ import Data.Text (
 import GHC.Generics qualified as GHC
 import Kore.Log.WarnRestartSolver (warnRestartSolver)
 import Log (
-    LogAction,
     LoggerT,
     MonadLog (..),
-    SomeEntry,
  )
 import Log qualified
 import Logic (
@@ -149,190 +158,125 @@ class Monad m => MonadSMT m where
     withSolver action = Morph.hoist withSolver action
     {-# INLINE withSolver #-}
 
-    -- | Declares a general SExpr to SMT.
-    declare :: Text -> SExpr -> m SExpr
-    default declare ::
-        (Trans.MonadTrans t, MonadSMT n, m ~ t n) =>
-        Text ->
-        SExpr ->
-        m SExpr
-    declare text = Trans.lift . declare text
-    {-# INLINE declare #-}
+    -- | Lift an SMT action.
+    liftSMT :: SMT a -> m a
+    default liftSMT ::
+        ( MonadTrans t
+        , MonadSMT n
+        , m ~ t n
+        ) =>
+        SMT a ->
+        m a
+    liftSMT = Trans.lift . liftSMT
 
-    -- | Declares a function symbol to SMT.
-    declareFun :: SmtFunctionDeclaration -> m SExpr
-    default declareFun ::
-        (Trans.MonadTrans t, MonadSMT n, m ~ t n) =>
-        SmtFunctionDeclaration ->
-        m SExpr
-    declareFun = Trans.lift . declareFun
-    {-# INLINE declareFun #-}
+-- | Declares a general SExpr to SMT.
+declare :: MonadSMT m => Text -> SExpr -> m SExpr
+declare text = liftSMT . declareSMT text
+{-# INLINE declare #-}
 
-    -- | Declares a sort to SMT.
-    declareSort :: SmtSortDeclaration -> m SExpr
-    default declareSort ::
-        (Trans.MonadTrans t, MonadSMT n, m ~ t n) =>
-        SmtSortDeclaration ->
-        m SExpr
-    declareSort = Trans.lift . declareSort
-    {-# INLINE declareSort #-}
+-- | Declares a function symbol to SMT.
+declareFun :: MonadSMT m => SmtFunctionDeclaration -> m SExpr
+declareFun = liftSMT . declareFunSMT
+{-# INLINE declareFun #-}
 
-    -- | Declares a constructor-based sort to SMT.
-    declareDatatype :: SmtDataTypeDeclaration -> m ()
-    default declareDatatype ::
-        (Trans.MonadTrans t, MonadSMT n, m ~ t n) =>
-        SmtDataTypeDeclaration ->
-        m ()
-    declareDatatype = Trans.lift . declareDatatype
-    {-# INLINE declareDatatype #-}
+-- | Declares a sort to SMT.
+declareSort :: MonadSMT m => SmtSortDeclaration -> m SExpr
+declareSort = liftSMT . declareSortSMT
+{-# INLINE declareSort #-}
 
-    -- | Declares a constructor-based sort to SMT.
-    declareDatatypes :: [SmtDataTypeDeclaration] -> m ()
-    default declareDatatypes ::
-        (Trans.MonadTrans t, MonadSMT n, m ~ t n) =>
-        [SmtDataTypeDeclaration] ->
-        m ()
-    declareDatatypes = Trans.lift . declareDatatypes
-    {-# INLINE declareDatatypes #-}
+-- | Declares a constructor-based sort to SMT.
+declareDatatype :: MonadSMT m => SmtDataTypeDeclaration -> m ()
+declareDatatype = liftSMT . declareDatatypeSMT
+{-# INLINE declareDatatype #-}
 
-    -- | Assume a fact.
-    assert :: SExpr -> m ()
-    default assert ::
-        (Trans.MonadTrans t, MonadSMT n, m ~ t n) =>
-        SExpr ->
-        m ()
-    assert = Trans.lift . assert
-    {-# INLINE assert #-}
+-- | Declares a constructor-based sort to SMT.
+declareDatatypes :: MonadSMT m => [SmtDataTypeDeclaration] -> m ()
+declareDatatypes = liftSMT . declareDatatypesSMT
+{-# INLINE declareDatatypes #-}
 
-    -- | Check if the current set of assertions is satisfiable.
-    check :: m Result
-    default check ::
-        (Trans.MonadTrans t, MonadSMT n, m ~ t n) =>
-        m Result
-    check = Trans.lift check
-    {-# INLINE check #-}
+-- | Assume a fact.
+assert :: MonadSMT m => SExpr -> m ()
+assert = liftSMT . assertSMT
+{-# INLINE assert #-}
 
-    -- | A command with an uninteresting result.
-    ackCommand :: SExpr -> m ()
-    default ackCommand ::
-        (Trans.MonadTrans t, MonadSMT n, m ~ t n) =>
-        SExpr ->
-        m ()
-    ackCommand = Trans.lift . ackCommand
-    {-# INLINE ackCommand #-}
+-- | Check if the current set of assertions is satisfiable.
+check :: MonadSMT m => m Result
+check = liftSMT checkSMT
+{-# INLINE check #-}
 
-    -- | Load a .smt2 file
-    loadFile :: FilePath -> m ()
-    default loadFile ::
-        (Trans.MonadTrans t, MonadSMT n, m ~ t n) =>
-        FilePath ->
-        m ()
-    loadFile = Trans.lift . loadFile
-    {-# INLINE loadFile #-}
+-- | A command with an uninteresting result.
+ackCommand :: MonadSMT m => SExpr -> m ()
+ackCommand = liftSMT . ackCommandSMT
+{-# INLINE ackCommand #-}
 
-    -- | Reinitialize the SMT
-    reinit :: m ()
-    default reinit ::
-        (Trans.MonadTrans t, MonadSMT n, m ~ t n) =>
-        m ()
-    reinit = Trans.lift reinit
-    {-# INLINE reinit #-}
+-- | Load a .smt2 file
+loadFile :: MonadSMT m => FilePath -> m ()
+loadFile = liftSMT . loadFileSMT
+{-# INLINE loadFile #-}
 
--- * Dummy implementation
+-- | Reinitialize the SMT
+reinit :: MonadSMT m => m ()
+reinit = liftSMT reinitSMT
+{-# INLINE reinit #-}
 
-newtype NoSMT a = NoSMT {getNoSMT :: LoggerT IO a}
-    deriving newtype (Functor, Applicative, Monad, MonadIO)
-    deriving newtype (MonadCatch, MonadThrow, MonadMask)
-
-runNoSMT :: NoSMT a -> LoggerT IO a
-runNoSMT = getNoSMT
-
-instance MonadProf NoSMT where
-    traceEvent name = NoSMT (traceEvent name)
-    {-# INLINE traceEvent #-}
-
-instance MonadLog NoSMT where
-    logEntry entry = NoSMT $ logEntry entry
-    {-# INLINE logEntry #-}
-
-    logWhile entry2 action = NoSMT $ logWhile entry2 $ getNoSMT action
-    {-# INLINE logWhile #-}
-
-instance MonadSMT NoSMT where
-    withSolver = id
-    declare name _ = return (Atom name)
-    declareFun FunctionDeclaration{name} = return name
-    declareSort SortDeclaration{name} = return name
-    declareDatatype _ = return ()
-    declareDatatypes _ = return ()
-    loadFile _ = return ()
-    ackCommand _ = return ()
-    assert _ = return ()
-    check = return Unknown
-    reinit = return ()
+-- | Get the retry limit from the SMT
+askRetryLimit :: MonadSMT m => m RetryLimit
+askRetryLimit = liftSMT askRetryLimitSMT
+{-# INLINE askRetryLimit #-}
 
 -- * Implementation
 
 data SolverSetup = SolverSetup
-    { userInit :: !(SMT ())
+    { userInit :: !(SolverSetup -> LoggerT IO ())
     , refSolverHandle :: !(MVar SolverHandle)
     , config :: !Config
     }
     deriving stock (GHC.Generic)
 
-{- | Query an external SMT solver.
+reinitSMT' :: SolverSetup -> LoggerT IO ()
+reinitSMT' sharedSolverSetup =
+    unshareSolverHandle sharedSolverSetup $ \solverSetup -> do
+        withSolver' solverSetup $ \solver -> SimpleSMT.simpleCommand solver ["reset"]
+        initSolver solverSetup
+        modifySolverHandle solverSetup $ Lens.assign (field @"queryCounter") 0
 
-The solver may be shared among multiple threads. Individual commands will
-acquire and release the solver as needed, but sequences of commands from
-different threads may be interleaved; use 'inNewScope' to acquire exclusive
-access to the solver for a sequence of commands.
--}
-newtype SMT a = SMT {getSMT :: ReaderT SolverSetup (LoggerT IO) a}
-    deriving newtype (Applicative, Functor, Monad)
-    deriving newtype (MonadIO, MonadLog)
-    deriving newtype (MonadCatch, MonadThrow, MonadMask)
-
-instance MonadProf SMT where
-    traceEvent name = SMT (traceEvent name)
-    {-# INLINE traceEvent #-}
-
-withSolverHandle :: (SolverHandle -> SMT a) -> SMT a
-withSolverHandle action = do
-    mvar <- SMT (Reader.asks refSolverHandle)
+withSolverHandle :: SolverSetup -> (SolverHandle -> LoggerT IO a) -> LoggerT IO a
+withSolverHandle solverSetup action = do
+    let mvar = refSolverHandle solverSetup
     Exception.bracket
         (Trans.liftIO $ takeMVar mvar)
         (Trans.liftIO . putMVar mvar)
         action
 
-withSolverHandleWithRestart :: (SolverHandle -> SMT a) -> SMT a
-withSolverHandleWithRestart action = do
-    mvar <- SMT (Reader.asks refSolverHandle)
+withSolverHandleWithRestart :: SolverSetup -> (SolverHandle -> LoggerT IO a) -> LoggerT IO a
+withSolverHandleWithRestart solverSetup action = do
     bracketWithExceptions
         (Trans.liftIO $ takeMVar mvar)
         (Trans.liftIO . putMVar mvar)
-        (handleExceptions mvar)
+        handleExceptions
         action
   where
-    handleExceptions mvar originalHandle exception =
+    mvar = refSolverHandle solverSetup
+    Config{executable = exe, arguments = args} = config solverSetup
+
+    handleExceptions originalHandle exception =
         case castToSolverException exception of
             Just solverException -> do
                 warnRestartSolver solverException
-                restartSolverAndRetry mvar
+                restartSolverAndRetry
             Nothing -> do
                 Trans.liftIO $ putMVar mvar originalHandle
                 Exception.throwM exception
 
-    restartSolverAndRetry mvar = do
-        logAction <- askLogAction
-        config@Config{executable = exe, arguments = args} <-
-            askConfig
+    restartSolverAndRetry = do
+        logAction <- Log.askLogAction
         newSolverHandle <-
             Trans.liftIO $
                 Exception.handle handleIOException $
                     SimpleSMT.newSolver exe args logAction
         _ <- Trans.liftIO $ putMVar mvar newSolverHandle
-        initSolver config
-        (action newSolverHandle)
+        initSolver solverSetup
+        action newSolverHandle
 
     handleIOException :: IOException -> IO SolverHandle
     handleIOException e =
@@ -363,29 +307,21 @@ bracketWithExceptions acquire release handleException use =
                 _ <- release resource
                 return v
 
-askLogAction :: SMT (LogAction IO SomeEntry)
-askLogAction = SMT $ Trans.lift Log.askLogAction
-{-# INLINE askLogAction #-}
-
-askConfig :: SMT Config
-askConfig = SMT $ Reader.asks config
-{-# INLINE askConfig #-}
-
-withSolver' :: (Solver -> IO a) -> SMT a
-withSolver' action =
-    withSolverHandle $ \solverHandle -> do
-        logAction <- askLogAction
+withSolver' :: SolverSetup -> (Solver -> IO a) -> LoggerT IO a
+withSolver' solverSetup action =
+    withSolverHandle solverSetup $ \solverHandle -> do
+        logAction <- Log.askLogAction
         Trans.liftIO $ action (Solver solverHandle logAction)
 
-withSolverWithRestart :: (Solver -> IO a) -> SMT a
-withSolverWithRestart action =
-    withSolverHandleWithRestart $ \solverHandle -> do
-        logAction <- askLogAction
+withSolverWithRestart :: SolverSetup -> (Solver -> IO a) -> LoggerT IO a
+withSolverWithRestart solverSetup action =
+    withSolverHandleWithRestart solverSetup $ \solverHandle -> do
+        logAction <- Log.askLogAction
         Trans.liftIO $ action (Solver solverHandle logAction)
 
-modifySolverHandle :: StateT SolverHandle SMT a -> SMT a
-modifySolverHandle action = do
-    mvar <- SMT (Reader.asks refSolverHandle)
+modifySolverHandle :: SolverSetup -> StateT SolverHandle (LoggerT IO) a -> LoggerT IO a
+modifySolverHandle solverSetup action = do
+    let mvar = refSolverHandle solverSetup
     solverHandle <- Trans.liftIO $ takeMVar mvar
     Exception.onException
         ( do
@@ -400,17 +336,14 @@ modifySolverHandle action = do
 @unshareSolverHandle@ works by locking the received 'MVar' and running the
 action with a new 'MVar' that is not shared with any other thread.
 -}
-unshareSolverHandle :: SMT a -> SMT a
-unshareSolverHandle action = do
-    mvarShared <- SMT (Reader.asks refSolverHandle)
+unshareSolverHandle :: SolverSetup -> (SolverSetup -> LoggerT IO a) -> LoggerT IO a
+unshareSolverHandle solverSetup action = do
+    let mvarShared = refSolverHandle solverSetup
     mvarUnshared <- Trans.liftIO $ takeMVar mvarShared >>= newMVar
-    let unshare =
-            SMT
-                . Reader.local (Lens.set (field @"refSolverHandle") mvarUnshared)
-                . getSMT
+    let unshare = Lens.set (field @"refSolverHandle") mvarUnshared
         replaceMVar =
             Trans.liftIO $ takeMVar mvarUnshared >>= putMVar mvarShared
-    Exception.finally (unshare action) replaceMVar
+    Exception.finally (action (unshare solverSetup)) replaceMVar
 
 -- | Increase the 'queryCounter' and indicate if the solver should be reset.
 incrementQueryCounter ::
@@ -422,54 +355,6 @@ incrementQueryCounter (ResetInterval resetInterval) = do
     -- number of runs, specified here. This number can be adjusted based on
     -- experimentation.
     pure (toInteger counter >= resetInterval)
-
-instance MonadSMT SMT where
-    withSolver action =
-        unshareSolverHandle $ do
-            withSolverWithRestart push
-            Exception.finally
-                action
-                ( do
-                    withSolverWithRestart pop
-                    resetInterval' <- extractResetInterval
-                    needReset <-
-                        modifySolverHandle
-                            (incrementQueryCounter resetInterval')
-                    when needReset reinit
-                )
-
-    declare name typ =
-        withSolver' $ \solver -> SimpleSMT.declare solver (Atom name) typ
-
-    declareFun declaration =
-        withSolver' $ \solver -> SimpleSMT.declareFun solver declaration
-
-    declareSort declaration =
-        withSolver' $ \solver -> SimpleSMT.declareSort solver declaration
-
-    declareDatatype declaration =
-        withSolver' $ \solver -> SimpleSMT.declareDatatype solver declaration
-
-    declareDatatypes datatypes =
-        withSolver' $ \solver -> SimpleSMT.declareDatatypes solver datatypes
-
-    assert fact =
-        traceProf ":solver:assert" $
-            withSolver' $ \solver -> SimpleSMT.assert solver fact
-
-    check = traceProf ":solver:check" $ withSolver' SimpleSMT.check
-
-    ackCommand command =
-        withSolver' $ \solver -> SimpleSMT.ackCommand solver command
-
-    loadFile path =
-        withSolver' $ \solver -> SimpleSMT.loadFile solver path
-
-    reinit = unshareSolverHandle $ do
-        withSolver' $ \solver -> SimpleSMT.simpleCommand solver ["reset"]
-        config <- SMT (Reader.asks config)
-        initSolver config
-        modifySolverHandle $ Lens.assign (field @"queryCounter") 0
 
 instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
     withSolver = mapAccumT withSolver
@@ -499,6 +384,10 @@ instance MonadSMT m => MonadSMT (RWST r () s m)
 newtype TimeOut = TimeOut {getTimeOut :: Limit Integer}
     deriving stock (Eq, Ord, Read, Show)
 
+-- | Retry-limit for SMT queries.
+newtype RetryLimit = RetryLimit {getRetryLimit :: Limit Integer}
+    deriving stock (Eq, Ord, Read, Show)
+
 -- | Resource-limit for SMT queries.
 newtype RLimit = RLimit {getRLimit :: Limit Integer}
     deriving stock (Eq, Ord, Read, Show)
@@ -522,6 +411,8 @@ data Config = Config
       logFile :: !(Maybe FilePath)
     , -- | query time limit
       timeOut :: !TimeOut
+    , -- | query retry limit
+      retryLimit :: !RetryLimit
     , -- | query resource limit
       rLimit :: !RLimit
     , -- | reset solver after this number of queries
@@ -540,18 +431,19 @@ defaultConfig =
         , prelude = Prelude Nothing
         , logFile = Nothing
         , timeOut = TimeOut (Limit 40)
+        , retryLimit = RetryLimit (Limit 1)
         , rLimit = RLimit Unlimited
         , resetInterval = ResetInterval 100
         }
 
-initSolver :: Config -> SMT ()
-initSolver Config{timeOut, rLimit, prelude} = do
-    setTimeOut timeOut
-    setRLimit rLimit
-    traverse_ loadFile preludeFile
-    join $ SMT (Reader.asks userInit)
-  where
-    preludeFile = getPrelude prelude
+initSolver :: SolverSetup -> LoggerT IO ()
+initSolver solverSetup = do
+    let Config{timeOut, rLimit, prelude} = config solverSetup
+        preludeFile = getPrelude prelude
+    runWithSolver (setTimeOut timeOut) solverSetup
+    runWithSolver (setRLimit rLimit) solverSetup
+    runWithSolver (traverse_ loadFile preludeFile) solverSetup
+    userInit solverSetup solverSetup
 
 {- | Initialize a new solverHandle with the given 'Config'.
 
@@ -588,20 +480,6 @@ stopSolver mvar = do
         _ <- SimpleSMT.stop solver
         return ()
 
--- | Run an external SMT solver.
-runSMT :: Config -> SMT () -> SMT a -> LoggerT IO a
-runSMT config userInit smt =
-    Exception.bracket
-        (newSolver config)
-        stopSolver
-        (\mvar -> runSMT' config userInit mvar smt)
-
-runSMT' :: Config -> SMT () -> MVar SolverHandle -> SMT a -> LoggerT IO a
-runSMT' config userInit refSolverHandle SMT{getSMT = smt} =
-    runReaderT
-        (getSMT (initSolver config) >> smt)
-        SolverSetup{userInit, refSolverHandle, config}
-
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars
 escapeId :: Text -> Text
@@ -621,6 +499,149 @@ setInfo infoFlag expr =
 setOption :: MonadSMT m => Text -> SExpr -> m ()
 setOption infoFlag expr =
     ackCommand $ List (Atom "set-option" : Atom infoFlag : [expr])
+
+{- | Query an external SMT solver (if available).
+
+The solver may be shared among multiple threads. Individual commands will
+acquire and release the solver as needed, but sequences of commands from
+different threads may be interleaved; use 'withSolver' to acquire exclusive
+access to the solver for a sequence of commands.
+-}
+newtype SMT a = SMT (Maybe SolverSetup -> LoggerT IO a)
+    deriving
+        (Applicative, Functor, Monad, MonadIO, MonadLog, MonadProf, MonadCatch, MonadThrow, MonadMask)
+        via ReaderT (Maybe SolverSetup) (LoggerT IO)
+
+runWithSolver :: SMT a -> SolverSetup -> LoggerT IO a
+runWithSolver (SMT action) = action . Just
+
+runNoSMT :: SMT a -> LoggerT IO a
+runNoSMT (SMT action) = action Nothing
+
+-- | Run an external SMT solver.
+runSMT :: Config -> SMT () -> SMT a -> LoggerT IO a
+runSMT config userInit action =
+    Exception.bracket (newSolver config) stopSolver $ \refSolverHandle -> do
+        let solverSetup = SolverSetup{userInit = runWithSolver userInit, refSolverHandle, config}
+        initSolver solverSetup
+        runWithSolver action solverSetup
+
+instance MonadSMT SMT where
+    withSolver (SMT action) =
+        SMT $ \case
+            Nothing -> action Nothing
+            Just sharedSolverSetup -> do
+                unshareSolverHandle sharedSolverSetup $ \solverSetup -> do
+                    withSolverWithRestart solverSetup push
+                    action (Just solverSetup) `Exception.finally` do
+                        withSolverWithRestart solverSetup pop
+                        needReset <-
+                            modifySolverHandle solverSetup $
+                                incrementQueryCounter (resetInterval (config solverSetup))
+                        when needReset (reinitSMT' solverSetup)
+    liftSMT = id
+
+declareSMT :: Text -> SExpr -> SMT SExpr
+declareSMT name typ =
+    SMT $ \case
+        Nothing -> return (Atom name)
+        Just solverSetup ->
+            withSolver' solverSetup $ \solver ->
+                SimpleSMT.declare solver (Atom name) typ
+
+declareFunSMT :: FunctionDeclaration SExpr SExpr -> SMT SExpr
+declareFunSMT declaration@FunctionDeclaration{name} =
+    SMT $ \case
+        Nothing -> return name
+        Just solverSetup ->
+            withSolver' solverSetup $ \solver ->
+                SimpleSMT.declareFun solver declaration
+
+declareSortSMT :: SortDeclaration SExpr -> SMT SExpr
+declareSortSMT declaration@SortDeclaration{name} =
+    SMT $ \case
+        Nothing -> return name
+        Just solverSetup ->
+            withSolver' solverSetup $ \solver ->
+                SimpleSMT.declareSort solver declaration
+
+declareDatatypeSMT :: SmtDataTypeDeclaration -> SMT ()
+declareDatatypeSMT declaration =
+    SMT $ \case
+        Nothing -> return ()
+        Just solverSetup ->
+            withSolver' solverSetup $ \solver ->
+                SimpleSMT.declareDatatype solver declaration
+
+declareDatatypesSMT :: [SmtDataTypeDeclaration] -> SMT ()
+declareDatatypesSMT datatypes =
+    SMT $ \case
+        Nothing -> return ()
+        Just solverSetup ->
+            withSolver' solverSetup $ \solver ->
+                SimpleSMT.declareDatatypes solver datatypes
+
+assertSMT :: SExpr -> SMT ()
+assertSMT fact =
+    SMT $ \case
+        Nothing -> return ()
+        Just solverSetup ->
+            traceProf ":solver:assert" $
+                withSolver' solverSetup $ \solver ->
+                    SimpleSMT.assert solver fact
+
+checkSMT :: SMT Result
+checkSMT =
+    SMT $ \case
+        Nothing -> return Unknown
+        Just solverSetup ->
+            traceProf ":solver:check" $
+                withSolver' solverSetup SimpleSMT.check
+
+ackCommandSMT :: SExpr -> SMT ()
+ackCommandSMT command =
+    SMT $ \case
+        Nothing -> return ()
+        Just solverSetup ->
+            withSolver' solverSetup $ \solver ->
+                SimpleSMT.ackCommand solver command
+
+loadFileSMT :: FilePath -> SMT ()
+loadFileSMT path =
+    SMT $ \case
+        Nothing -> return ()
+        Just solverSetup ->
+            withSolver' solverSetup $ \solver ->
+                SimpleSMT.loadFile solver path
+
+reinitSMT :: SMT ()
+reinitSMT =
+    SMT $ \case
+        Nothing -> return ()
+        Just solverSetup -> reinitSMT' solverSetup
+
+{- | Run a solver action with an adjusted timeout,
+ and reset the timeout when it's done.
+-}
+localTimeOut :: MonadSMT m => (TimeOut -> TimeOut) -> m a -> m a
+localTimeOut adjust isolated = do
+    originalTimeOut <- liftSMT extractTimeOut
+    setTimeOut $ adjust originalTimeOut
+    isolated <* setTimeOut originalTimeOut
+  where
+    extractTimeOut =
+        SMT $
+            pure . \case
+                Nothing -> TimeOut Unlimited
+                Just setup -> timeOut $ config setup
+
+-- | Get the retry limit for SMT queries.
+askRetryLimitSMT :: SMT RetryLimit
+askRetryLimitSMT =
+    SMT $
+        pure . \case
+            Nothing -> RetryLimit (Limit 0)
+            Just setup -> retryLimit $ config setup
 
 -- --------------------------------
 -- Internal
@@ -642,9 +663,3 @@ setRLimit RLimit{getRLimit} =
             setOption ":rlimit" (SimpleSMT.int rLimit)
         Unlimited ->
             return ()
-
--- | Extract the reset interval value from the configuration.
-extractResetInterval :: SMT ResetInterval
-extractResetInterval =
-    SMT (Reader.asks config)
-        >>= return . resetInterval

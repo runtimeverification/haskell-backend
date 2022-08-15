@@ -418,9 +418,8 @@ alias = do
     literal "alias"
     name <- word
     arguments <- many $ wordWithout "="
-    if nub arguments /= arguments
-        then customFailure "Error when parsing alias: duplicate argument name."
-        else pure ()
+    when (nub arguments /= arguments) $
+        customFailure "Error when parsing alias: duplicate argument name."
     literal "="
     command <- some (noneOf ['\n'])
     return . Alias $ AliasDefinition{name, arguments, command}

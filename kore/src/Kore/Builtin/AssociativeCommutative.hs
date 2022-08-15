@@ -529,13 +529,12 @@ addElementDisjoint (list, existing) (key, value) =
 
 -- | Given a @NormalizedAc@, returns it as a function result.
 returnAc ::
-    ( MonadSimplify m
-    , InternalVariable variable
+    ( InternalVariable variable
     , TermWrapper normalized
     ) =>
     Sort ->
     TermNormalizedAc normalized variable ->
-    m (Pattern variable)
+    Simplifier (Pattern variable)
 returnAc resultSort ac = do
     tools <- Simplifier.askMetadataTools
     asInternal tools resultSort ac
@@ -546,13 +545,12 @@ returnAc resultSort ac = do
 as a function result.
 -}
 returnConcreteAc ::
-    ( MonadSimplify m
-    , InternalVariable variable
+    ( InternalVariable variable
     , TermWrapper normalized
     ) =>
     Sort ->
     HashMap Key (Value normalized (TermLike variable)) ->
-    m (Pattern variable)
+    Simplifier (Pattern variable)
 returnConcreteAc resultSort concrete =
     (returnAc resultSort . wrapAc)
         NormalizedAc
@@ -622,15 +620,14 @@ asPattern tools resultSort =
 NormalizedOrBottom, providind the result in the form of a function result.
 -}
 evalConcatNormalizedOrBottom ::
-    forall normalized simplifier variable.
-    ( MonadSimplify simplifier
-    , InternalVariable variable
+    forall normalized variable.
+    ( InternalVariable variable
     , TermWrapper normalized
     ) =>
     Sort ->
     NormalizedOrBottom normalized variable ->
     NormalizedOrBottom normalized variable ->
-    MaybeT simplifier (Pattern variable)
+    MaybeT Simplifier (Pattern variable)
 evalConcatNormalizedOrBottom resultSort Bottom _ =
     return (Pattern.bottomOf resultSort)
 evalConcatNormalizedOrBottom resultSort _ Bottom =
@@ -639,7 +636,7 @@ evalConcatNormalizedOrBottom
     resultSort
     (Normalized normalized1)
     (Normalized normalized2) =
-        maybe (return $ Pattern.bottomOf resultSort) (returnAc resultSort) $
+        maybe (return $ Pattern.bottomOf resultSort) (lift . returnAc resultSort) $
             concatNormalized normalized1 normalized2
 
 disjointMap :: Ord a => Hashable a => [(a, b)] -> Maybe (HashMap a b)

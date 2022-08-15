@@ -82,6 +82,9 @@ instance AcWrapper NormalizedSet where
     unparseConcreteElement keyUnparser _childUnparser (key, SetValue) =
         argument' (keyUnparser key)
 
+    elementToApplicationArgs (SetElement key) = [key]
+    concreteElementToApplicationArgs SetValue = []
+
 -- | Internal representation of the builtin @SET.Set@ domain.
 type InternalSet key = InternalAc key NormalizedSet
 

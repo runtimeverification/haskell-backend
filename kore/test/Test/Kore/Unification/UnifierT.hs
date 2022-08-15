@@ -32,10 +32,10 @@ import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.Condition qualified as Condition
-import Kore.Simplify.Data (
+import Kore.Simplify.API (
     Env (..),
  )
+import Kore.Simplify.Condition qualified as Condition
 import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Unification.UnifierT qualified as Monad.Unify
@@ -399,7 +399,7 @@ merge ::
 merge
     (Substitution.mkUnwrappedSubstitution -> s1)
     (Substitution.mkUnwrappedSubstitution -> s2) =
-        Test.runSimplifier mockEnv $
+        Test.testRunSimplifier mockEnv $
             Monad.Unify.runUnifierT Not.notSimplifier $
                 mergeSubstitutionsExcept $
                     Substitution.wrap
@@ -423,7 +423,7 @@ normalize ::
     Conditional RewritingVariableName term ->
     IO [Conditional RewritingVariableName term]
 normalize =
-    Test.runSimplifierBranch mockEnv
+    Test.testRunSimplifierBranch mockEnv
         . Condition.simplifyCondition SideCondition.top
   where
     mockEnv = Mock.env
@@ -433,7 +433,7 @@ normalizeExcept ::
     IO (MultiOr (Conditional RewritingVariableName ()))
 normalizeExcept predicated =
     fmap MultiOr.make $
-        Test.runSimplifier mockEnv $
+        Test.testRunSimplifier mockEnv $
             Monad.Unify.runUnifierT Not.notSimplifier $
                 Logic.lowerLogicT $
                     Simplifier.simplifyCondition SideCondition.top predicated

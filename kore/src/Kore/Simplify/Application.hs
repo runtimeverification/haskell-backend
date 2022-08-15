@@ -12,9 +12,6 @@ module Kore.Simplify.Application (
     Application (..),
 ) where
 
-import Control.Monad.Catch (
-    MonadThrow,
- )
 import Kore.Attribute.Synthetic (synthesize)
 import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.MultiOr qualified as MultiOr
@@ -44,6 +41,7 @@ import Kore.Rewrite.Substitution (
 import Kore.Simplify.Simplify as Simplifier
 import Logic (
     LogicT,
+    mapLogicT,
  )
 import Logic qualified
 import Prelude.Kore
@@ -62,11 +60,9 @@ predicates ans substitutions, applying functions on the Application(terms),
 then merging everything into an Pattern.
 -}
 simplify ::
-    MonadSimplify simplifier =>
-    MonadThrow simplifier =>
     SideCondition RewritingVariableName ->
     Application Symbol (OrPattern RewritingVariableName) ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 simplify sideCondition application = do
     evaluated <- OrPattern.observeAllT $ do
         Application{applicationChildren = result} <-
@@ -85,22 +81,18 @@ simplify sideCondition application = do
         MultiOr.distributeApplication application
 
 makeAndEvaluateApplications ::
-    MonadSimplify simplifier =>
-    MonadThrow simplifier =>
     SideCondition RewritingVariableName ->
     Symbol ->
     [Pattern RewritingVariableName] ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 makeAndEvaluateApplications =
     makeAndEvaluateSymbolApplications
 
 makeAndEvaluateSymbolApplications ::
-    MonadSimplify simplifier =>
-    MonadThrow simplifier =>
     SideCondition RewritingVariableName ->
     Symbol ->
     [Pattern RewritingVariableName] ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 makeAndEvaluateSymbolApplications sideCondition symbol children = do
     expandedApplications <-
         makeExpandedApplication sideCondition symbol children
@@ -116,13 +108,11 @@ makeAndEvaluateSymbolApplications sideCondition symbol children = do
  as much as possible inside the current rewrite step.
 -}
 evaluateApplicationFunction ::
-    MonadSimplify simplifier =>
-    MonadThrow simplifier =>
     -- | The predicate from the configuration
     SideCondition RewritingVariableName ->
     -- | The pattern to be evaluated
     ExpandedApplication RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 evaluateApplicationFunction
     sideCondition
     expandedApp@Conditional{term, predicate, substitution}
@@ -147,10 +137,11 @@ makeExpandedApplication ::
     LogicT simplifier (ExpandedApplication RewritingVariableName)
 makeExpandedApplication sideCondition symbol children = do
     merged <-
-        mergePredicatesAndSubstitutions
-            sideCondition
-            (fmap Pattern.predicate children)
-            (fmap Pattern.substitution children)
+        mapLogicT liftSimplifier $
+            mergePredicatesAndSubstitutions
+                sideCondition
+                (fmap Pattern.predicate children)
+                (fmap Pattern.substitution children)
     let term =
             symbolApplication
                 symbol

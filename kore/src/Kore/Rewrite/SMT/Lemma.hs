@@ -51,6 +51,8 @@ import SMT (
     MonadSMT (..),
     Result (..),
     SExpr (..),
+    assert,
+    check,
  )
 
 getSMTLemmas ::

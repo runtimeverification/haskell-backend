@@ -32,7 +32,7 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Simplify (
-    MonadSimplify,
+    Simplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute
@@ -45,9 +45,8 @@ import Prelude.Kore
 See also: 'Kore.Equation.Registry.extractEquations'
 -}
 simplifyExtractedEquations ::
-    MonadSimplify simplifier =>
     Map identifier [Equation RewritingVariableName] ->
-    simplifier (Map identifier [Equation RewritingVariableName])
+    Simplifier (Map identifier [Equation RewritingVariableName])
 simplifyExtractedEquations = do
     results <- (traverse . traverse) simplifyEquation
     return $ collectResults results
@@ -65,9 +64,8 @@ argument contain a predicate which is not 'Top', 'simplifyEquation'
 returns the original equation.
 -}
 simplifyEquation ::
-    MonadSimplify simplifier =>
     Equation RewritingVariableName ->
-    simplifier (MultiAnd (Equation RewritingVariableName))
+    Simplifier (MultiAnd (Equation RewritingVariableName))
 simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
     do
         simplifiedCond <-

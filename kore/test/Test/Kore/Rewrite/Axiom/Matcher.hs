@@ -115,6 +115,28 @@ test_matcherEqualHeads =
                 (mkCeil Mock.topSort (Mock.plain10 (mkElemVar Mock.xConfig)))
                 (mkCeil Mock.topSort (Mock.plain10 Mock.a))
         assertEqual "" expect actual
+    , testCase "Match multiple opaque parts" $ do
+        let expect =
+                mkMatchResult
+                    ( makeTruePredicate
+                    , Map.fromList
+                        [ (inject Mock.setXConfigSetSort, mkElemVar Mock.xConfigSet)
+                        , (inject Mock.setYConfigSetSort, mkElemVar Mock.yConfigSet)
+                        ]
+                    )
+        actual <-
+            matchDefinition
+                ( Mock.framedSet
+                    []
+                    [ mkSetVar Mock.setXConfigSetSort
+                    , mkSetVar Mock.setYConfigSetSort
+                    ]
+                )
+                ( Mock.framedSet
+                    []
+                    [mkElemVar Mock.xConfigSet, mkElemVar Mock.yConfigSet]
+                )
+        assertEqual "" expect actual
     , testCase "Equals" $ do
         let expect =
                 mkMatchResult
@@ -1331,9 +1353,9 @@ match ::
     TermLike RewritingVariableName ->
     IO MatchResult
 match first second =
-    runSimplifier Mock.env matchResult
+    testRunSimplifier Mock.env matchResult
   where
-    matchResult :: SimplifierT NoSMT MatchResult
+    matchResult :: Simplifier MatchResult
     matchResult = matchIncremental SideCondition.top first second
 
 withMatch ::

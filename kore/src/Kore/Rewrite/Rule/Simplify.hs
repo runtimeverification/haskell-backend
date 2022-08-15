@@ -5,8 +5,6 @@ License     : BSD-3-Clause
 module Kore.Rewrite.Rule.Simplify (
     SimplifyRuleLHS (..),
     simplifyClaimPattern,
-    simplifyRewriteRule,
-    simplifyRulePattern,
 ) where
 
 import Kore.Internal.Condition qualified as Condition
@@ -26,7 +24,6 @@ import Kore.Internal.Predicate (
     makeAndPredicate,
     pattern PredicateTrue,
  )
-import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike as TermLike
@@ -35,7 +32,6 @@ import Kore.Reachability (
     OnePathClaim (..),
     SomeClaim (..),
  )
-import Kore.Rewrite.AntiLeft qualified as AntiLeft
 import Kore.Rewrite.ClaimPattern (
     ClaimPattern (..),
  )
@@ -47,16 +43,14 @@ import Kore.Rewrite.RulePattern (
     RewriteRule (..),
     RulePattern (RulePattern),
  )
-import Kore.Rewrite.RulePattern qualified as OLD
 import Kore.Rewrite.RulePattern qualified as RulePattern (
     RulePattern (..),
     applySubstitution,
-    rhsForgetSimplified,
  )
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
-    MonadSimplify,
+    Simplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute (
@@ -70,14 +64,11 @@ import Prelude.Kore
 
 -- | Simplifies the left-hand-side of a rewrite rule (claim or axiom)
 class SimplifyRuleLHS rule where
-    simplifyRuleLhs ::
-        forall simplifier.
-        MonadSimplify simplifier =>
-        rule ->
-        simplifier (MultiAnd rule)
+    simplifyRuleLhs :: rule -> Simplifier (MultiAnd rule)
 
 instance SimplifyRuleLHS (RulePattern RewritingVariableName) where
-    simplifyRuleLhs rule@(RulePattern _ _ _ _ _) = do
+    simplifyRuleLhs rule@RulePattern{left = And_ _ _ (ElemVar_ _)} = return $ MultiAnd.make [rule]
+    simplifyRuleLhs rule = do
         let lhsWithPredicate = Pattern.fromTermLike left
         simplifiedTerms <-
             Pattern.simplifyTopConfiguration lhsWithPredicate
@@ -127,10 +118,8 @@ instance SimplifyRuleLHS SomeClaim where
         (fmap . MultiAnd.map) AllPath $ simplifyRuleLhs rule
 
 simplifyClaimRule ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     ClaimPattern ->
-    simplifier (MultiAnd ClaimPattern)
+    Simplifier (MultiAnd ClaimPattern)
 simplifyClaimRule claimPattern = fmap MultiAnd.make $
     Logic.observeAllT $ do
         let lhs = Pattern.requireDefined $ ClaimPattern.left claimPattern
@@ -146,67 +135,12 @@ simplifyClaimRule claimPattern = fmap MultiAnd.make $
   where
     filterWithSolver ::
         Pattern RewritingVariableName ->
-        LogicT simplifier (Pattern RewritingVariableName)
-    filterWithSolver conditional =
-        SMT.Evaluator.evalConditional conditional Nothing >>= \case
+        LogicT Simplifier (Pattern RewritingVariableName)
+    filterWithSolver conditional = do
+        l <- lift $ SMT.Evaluator.evalConditional conditional Nothing
+        case l of
             Just False -> empty
             _ -> return conditional
-
-{- | Simplify a 'Rule' using only matching logic rules.
-
-See also: 'simplifyRulePattern'
--}
-simplifyRewriteRule ::
-    MonadSimplify simplifier =>
-    RewriteRule RewritingVariableName ->
-    simplifier (RewriteRule RewritingVariableName)
-simplifyRewriteRule (RewriteRule rule) =
-    RewriteRule <$> simplifyRulePattern rule
-
-{- | Simplify a 'RulePattern' using only matching logic rules.
-
-The original rule is returned unless the simplification result matches certain
-narrowly-defined criteria.
--}
-simplifyRulePattern ::
-    MonadSimplify simplifier =>
-    RulePattern RewritingVariableName ->
-    simplifier (RulePattern RewritingVariableName)
-simplifyRulePattern rule = do
-    let RulePattern{left} = rule
-    simplifiedLeft <- simplifyPattern' left
-    case OrPattern.toPatterns simplifiedLeft of
-        [Conditional{term, predicate, substitution}]
-            | PredicateTrue <- predicate -> do
-                -- TODO (virgil): Dropping the substitution for equations
-                -- and for rewrite rules where the substituted variables occur
-                -- in the RHS is wrong because those variables are not
-                -- existentially quantified.
-                let subst = Substitution.toMap substitution
-                    left' = substitute subst term
-                    antiLeft' = substitute subst <$> antiLeft
-                      where
-                        RulePattern{antiLeft} = rule
-                    requires' = substitute subst requires
-                      where
-                        RulePattern{requires} = rule
-                    rhs' = substitute subst rhs
-                      where
-                        RulePattern{rhs} = rule
-                    RulePattern{attributes} = rule
-                return
-                    RulePattern
-                        { left = TermLike.forgetSimplified left'
-                        , antiLeft = AntiLeft.forgetSimplified <$> antiLeft'
-                        , requires = Predicate.forgetSimplified requires'
-                        , rhs = RulePattern.rhsForgetSimplified rhs'
-                        , attributes = attributes
-                        }
-        _ ->
-            -- Unable to simplify the given rule pattern, so we return the
-            -- original pattern in the hope that we can do something with it
-            -- later.
-            return rule
 
 {- | Simplify a 'ClaimPattern' using only matching logic rules.
 
@@ -214,9 +148,8 @@ The original rule is returned unless the simplification result matches certain
 narrowly-defined criteria.
 -}
 simplifyClaimPattern ::
-    MonadSimplify simplifier =>
     ClaimPattern ->
-    simplifier ClaimPattern
+    Simplifier ClaimPattern
 simplifyClaimPattern claim = do
     let ClaimPattern{left} = claim
     simplifiedLeft <- simplifyPattern' (Pattern.term left)
@@ -243,9 +176,8 @@ simplifyClaimPattern claim = do
 
 -- | Simplify a 'TermLike' using only matching logic rules.
 simplifyPattern' ::
-    MonadSimplify simplifier =>
     TermLike RewritingVariableName ->
-    simplifier (OrPattern.OrPattern RewritingVariableName)
+    Simplifier (OrPattern.OrPattern RewritingVariableName)
 simplifyPattern' termLike =
     Simplifier.localSimplifierAxioms (const mempty) $
         Simplifier.simplifyPattern

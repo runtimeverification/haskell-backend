@@ -111,7 +111,7 @@ evaluateApplication ::
     Application Symbol (TermLike RewritingVariableName) ->
     IO (OrPattern RewritingVariableName)
 evaluateApplication predicate =
-    Test.runSimplifier env
+    Test.testRunSimplifier env
         . Kore.evaluateApplication SideCondition.top predicate
 
 simplifierAxioms :: Kore.BuiltinAndAxiomSimplifierMap
@@ -119,5 +119,5 @@ simplifierAxioms = Map.fromList [(fId, fEvaluator)]
   where
     fId = Axiom.Identifier.Application (TermLike.symbolConstructor fSymbol)
 
-env :: Test.Env (Test.SimplifierT Test.NoSMT)
+env :: Test.Env
 env = Mock.env{Test.simplifierAxioms = simplifierAxioms}

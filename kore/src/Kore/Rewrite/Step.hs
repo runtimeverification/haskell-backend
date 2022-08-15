@@ -77,6 +77,7 @@ import Kore.Rewrite.UnifyingRule
 import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    liftSimplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.TopBottom qualified as TopBottom
@@ -213,6 +214,7 @@ assertFunctionLikeResults termLike results =
 
 -- |Checks whether configuration and matching pattern are function-like
 checkFunctionLike ::
+    forall variable rule f.
     InternalVariable variable =>
     InternalVariable (UnifyingRuleVariable rule) =>
     Foldable f =>
@@ -232,14 +234,22 @@ checkFunctionLike unifiedRules pat
             , Pretty.indent 4 (unparse pat)
             ]
   where
-    checkFunctionLikeRule Conditional{term}
-        | TermLike.isFunctionPattern left = return ()
+    checkFunctionLikeRule ::
+        UnifiedRule rule ->
+        Either String ()
+    checkFunctionLikeRule Conditional{term, substitution}
+        | all (TermLike.isFunctionPattern . Substitution.assignedTerm) $
+            Substitution.unwrap substitution =
+            return ()
         | otherwise =
             Left . show . Pretty.vsep $
-                [ "Expected function-like left-hand side of rule, but found:"
-                , Pretty.indent 4 (unparse left)
+                [ "Expected function-like unification solution, but found:"
+                , Pretty.indent 4 (unparse conditional)
                 ]
       where
+        conditional =
+            TermLike.mkTop (TermLike.termLikeSort left)
+                `Pattern.withCondition` Condition.fromSubstitution substitution
         left = matchingPattern term
 
 {- | Apply the initial conditions to the results of rule unification.
@@ -273,7 +283,7 @@ applyInitialConditions sideCondition initial unification = do
         -- the side condition!
         Simplifier.simplifyCondition sideCondition (initial <> unification)
             & MultiOr.gather
-    evaluated <- SMT.Evaluator.filterMultiOr applied
+    evaluated <- liftSimplifier $ SMT.Evaluator.filterMultiOr applied
     -- If 'evaluated' is \bottom, the rule is considered to not apply and
     -- no result is returned. If the result is \bottom after this check,
     -- then the rule is considered to apply with a \bottom result.

@@ -3,15 +3,26 @@ Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
 -}
 module Kore.Simplify.Simplify (
+    Env (..),
+    Simplifier,
+    runSimplifier,
+    runSimplifierBranch,
     InternalVariable,
     MonadSimplify (..),
+    askMetadataTools,
+    simplifyPattern,
+    simplifyTerm,
+    askSimplifierAxioms,
+    askInjSimplifier,
+    askOverloadSimplifier,
+    getCache,
+    putCache,
     simplifyPatternScatter,
     TermSimplifier,
 
     -- * Condition simplifiers
     ConditionSimplifier (..),
     emptyConditionSimplifier,
-    liftConditionSimplifier,
 
     -- * Builtin and axiom simplifiers
     SimplifierCache (attemptedEquationsCache),
@@ -44,68 +55,46 @@ module Kore.Simplify.Simplify (
     makeEvaluateTermCeil,
     makeEvaluateCeil,
 
-    -- * Experimental simplifier,
-    SimplifierXSwitch (..),
-
     -- * Re-exports
     MonadSMT,
     MonadLog,
 ) where
 
 import Control.Monad qualified as Monad
+import Control.Monad.Catch
 import Control.Monad.Counter
-import Control.Monad.Morph (
-    MFunctor,
- )
+import Control.Monad.Morph (MFunctor)
 import Control.Monad.Morph qualified as Monad.Morph
-import Control.Monad.RWS.Strict (
-    RWST,
- )
-import Control.Monad.State.Strict qualified as Strict
+import Control.Monad.RWS.Strict (RWST)
+import Control.Monad.Reader
+import Control.Monad.State.Strict
 import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe
-import Control.Monad.Trans.Reader
 import Data.Functor.Foldable qualified as Recursive
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HashMap
 import Data.Map.Strict qualified as Map
-import Data.Text (
-    Text,
- )
+import Data.Text (Text)
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Debug
 import Kore.Equation.DebugEquation (AttemptEquationError)
 import Kore.Equation.Equation (Equation)
-import Kore.IndexedModule.MetadataTools (
-    SmtMetadataTools,
- )
+import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
 import Kore.Internal.Condition qualified as Condition
-import Kore.Internal.Conditional (
-    Conditional,
- )
+import Kore.Internal.Conditional (Conditional)
 import Kore.Internal.MultiOr qualified as MultiOr
-import Kore.Internal.OrCondition (
-    OrCondition,
- )
+import Kore.Internal.OrCondition (OrCondition)
 import Kore.Internal.OrCondition qualified as OrCondition
-import Kore.Internal.OrPattern (
-    OrPattern,
-    fromPattern,
- )
+import Kore.Internal.OrPattern (OrPattern)
 import Kore.Internal.OrPattern qualified as OrPattern
-import Kore.Internal.Pattern (
-    Pattern,
- )
+import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate qualified as Predicate
-import Kore.Internal.SideCondition (
-    SideCondition,
-    toRepresentation,
- )
+import Kore.Internal.SideCondition (SideCondition, toRepresentation)
 import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
@@ -117,74 +106,91 @@ import Kore.Internal.TermLike (
     TermLikeF (..),
     pattern App_,
  )
-import Kore.Internal.Variable (
-    InternalVariable,
- )
-import Kore.Log.WarnFunctionWithoutEvaluators (
-    warnFunctionWithoutEvaluators,
- )
-import Kore.Rewrite.Axiom.Identifier (
-    AxiomIdentifier (..),
- )
+import Kore.Internal.Variable (InternalVariable)
+import Kore.Log.WarnFunctionWithoutEvaluators (warnFunctionWithoutEvaluators)
+import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier (..))
 import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.Function.Memo qualified as Memo
-import Kore.Rewrite.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Simplify.InjSimplifier (
-    InjSimplifier,
- )
-import Kore.Simplify.OverloadSimplifier (
-    OverloadSimplifier (..),
- )
+import Kore.Rewrite.RewritingVariable (RewritingVariableName)
+import Kore.Simplify.InjSimplifier (InjSimplifier)
+import Kore.Simplify.OverloadSimplifier (OverloadSimplifier (..))
 import Kore.Syntax.Application
 import Kore.Unparser
 import Log
 import Logic
 import Prelude.Kore
-import Pretty (
-    (<+>),
- )
+import Pretty ((<+>))
 import Pretty qualified
+import Prof (
+    MonadProf,
+ )
 import SMT (
     MonadSMT (..),
+    SMT,
  )
+
+-- * Simplifier
+
+data Env = Env
+    { metadataTools :: !(SmtMetadataTools Attribute.Symbol)
+    , simplifierCondition :: !(ConditionSimplifier Simplifier)
+    , simplifierPattern ::
+        SideCondition RewritingVariableName ->
+        Pattern RewritingVariableName ->
+        Simplifier (OrPattern RewritingVariableName)
+    , simplifierTerm ::
+        SideCondition RewritingVariableName ->
+        TermLike RewritingVariableName ->
+        Simplifier (OrPattern RewritingVariableName)
+    , simplifierAxioms :: !BuiltinAndAxiomSimplifierMap
+    , memo :: !(Memo.Self Simplifier)
+    , injSimplifier :: !InjSimplifier
+    , overloadSimplifier :: !OverloadSimplifier
+    }
+
+{- | @Simplifier@ represents a simplification action.
+
+A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
+
+A @Simplifier@ can write to the log through 'HasLog'.
+-}
+newtype Simplifier a
+    = Simplifier (StateT SimplifierCache (ReaderT Env SMT) a)
+    deriving newtype (Functor, Applicative, Monad)
+    deriving newtype (MonadSMT, MonadLog, MonadProf)
+    deriving newtype (MonadIO, MonadCatch, MonadThrow, MonadMask)
+    deriving newtype (MonadReader Env)
+    deriving newtype (MonadState SimplifierCache)
+
+{- | Run a simplification, returning the result of only one branch.
+
+__Warning__: @runSimplifier@ calls 'error' if the 'Simplifier' does not contain
+exactly one branch. Use 'evalSimplifierBranch' to evaluation simplifications
+that may branch.
+-}
+runSimplifier :: Env -> Simplifier a -> SMT a
+runSimplifier env (Simplifier simplifier) =
+    runReaderT (evalStateT simplifier initCache) env
+
+-- | Run a simplification, returning the results along all branches.
+runSimplifierBranch ::
+    Env ->
+    -- | simplifier computation
+    LogicT Simplifier a ->
+    SMT [a]
+runSimplifierBranch env = runSimplifier env . observeAllT
 
 type TermSimplifier variable m =
     TermLike variable -> TermLike variable -> m (Pattern variable)
 
 class (MonadLog m, MonadSMT m) => MonadSimplify m where
-    -- | Retrieve the 'MetadataTools' for the Kore context.
-    askMetadataTools :: m (SmtMetadataTools Attribute.Symbol)
-    default askMetadataTools ::
+    liftSimplifier :: Simplifier a -> m a
+    default liftSimplifier ::
         (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        m (SmtMetadataTools Attribute.Symbol)
-    askMetadataTools = lift askMetadataTools
-    {-# INLINE askMetadataTools #-}
-
-    simplifyPattern ::
-        SideCondition RewritingVariableName ->
-        Pattern RewritingVariableName ->
-        m (OrPattern RewritingVariableName)
-    default simplifyPattern ::
-        (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        SideCondition RewritingVariableName ->
-        Pattern RewritingVariableName ->
-        m (OrPattern RewritingVariableName)
-    simplifyPattern sideCondition termLike =
-        lift (simplifyPattern sideCondition termLike)
-
-    simplifyTerm ::
-        SideCondition RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        m (OrPattern RewritingVariableName)
-    default simplifyTerm ::
-        (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        SideCondition RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        m (OrPattern RewritingVariableName)
-    simplifyTerm sideCondition termLike =
-        lift (simplifyTerm sideCondition termLike)
+        Simplifier a ->
+        m a
+    liftSimplifier = lift . liftSimplifier
+    {-# INLINE liftSimplifier #-}
 
     simplifyCondition ::
         SideCondition RewritingVariableName ->
@@ -204,13 +210,6 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
                 observeAllT $ simplifyCondition sideCondition conditional
         scatter results
     {-# INLINE simplifyCondition #-}
-
-    askSimplifierAxioms :: m BuiltinAndAxiomSimplifierMap
-    default askSimplifierAxioms ::
-        (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        m BuiltinAndAxiomSimplifierMap
-    askSimplifierAxioms = lift askSimplifierAxioms
-    {-# INLINE askSimplifierAxioms #-}
 
     localSimplifierAxioms ::
         (BuiltinAndAxiomSimplifierMap -> BuiltinAndAxiomSimplifierMap) ->
@@ -232,49 +231,63 @@ class (MonadLog m, MonadSMT m) => MonadSimplify m where
     askMemo = Memo.liftSelf lift <$> lift askMemo
     {-# INLINE askMemo #-}
 
-    -- | Retrieve the 'InjSimplifier' for the Kore context.
-    askInjSimplifier :: m InjSimplifier
-    default askInjSimplifier ::
-        (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        m InjSimplifier
-    askInjSimplifier = lift askInjSimplifier
-    {-# INLINE askInjSimplifier #-}
+-- | Retrieve the 'MetadataTools' for the Kore context.
+askMetadataTools :: MonadSimplify m => m (SmtMetadataTools Attribute.Symbol)
+askMetadataTools = liftSimplifier $ asks metadataTools
 
-    -- | Retrieve the 'OverloadSimplifier' for the Kore context.
-    askOverloadSimplifier :: m OverloadSimplifier
-    default askOverloadSimplifier ::
-        (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        m OverloadSimplifier
-    askOverloadSimplifier = lift askOverloadSimplifier
-    {-# INLINE askOverloadSimplifier #-}
+simplifyPattern ::
+    MonadSimplify m =>
+    SideCondition RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    m (OrPattern RewritingVariableName)
+simplifyPattern sideCondition patt =
+    liftSimplifier $ do
+        simplifier <- asks simplifierPattern
+        simplifier sideCondition patt
 
-    getCache :: m SimplifierCache
-    default getCache ::
-        (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        m SimplifierCache
-    getCache = lift getCache
-    {-# INLINE getCache #-}
+simplifyTerm ::
+    MonadSimplify m =>
+    SideCondition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    m (OrPattern RewritingVariableName)
+simplifyTerm sideCondition termLike =
+    liftSimplifier $ do
+        simplifier <- asks simplifierTerm
+        simplifier sideCondition termLike
 
-    putCache :: SimplifierCache -> m ()
-    default putCache ::
-        (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        SimplifierCache ->
-        m ()
-    putCache = lift . putCache
-    {-# INLINE putCache #-}
+askSimplifierAxioms :: MonadSimplify m => m BuiltinAndAxiomSimplifierMap
+askSimplifierAxioms = liftSimplifier $ asks simplifierAxioms
 
-    askSimplifierXSwitch :: m SimplifierXSwitch
-    default askSimplifierXSwitch ::
-        (MonadTrans t, MonadSimplify n, m ~ t n) =>
-        m SimplifierXSwitch
-    askSimplifierXSwitch = lift askSimplifierXSwitch
-    {-# INLINE askSimplifierXSwitch #-}
+-- | Retrieve the 'InjSimplifier' for the Kore context.
+askInjSimplifier :: MonadSimplify m => m InjSimplifier
+askInjSimplifier = liftSimplifier $ asks injSimplifier
 
-    simplifyPatternId ::
-        Pattern RewritingVariableName ->
-        m (OrPattern RewritingVariableName)
-    simplifyPatternId = pure . fromPattern
-    {-# INLINE simplifyPatternId #-}
+-- | Retrieve the 'OverloadSimplifier' for the Kore context.
+askOverloadSimplifier :: MonadSimplify m => m OverloadSimplifier
+askOverloadSimplifier = liftSimplifier $ asks overloadSimplifier
+
+getCache :: MonadSimplify m => m SimplifierCache
+getCache = liftSimplifier get
+
+putCache :: MonadSimplify m => SimplifierCache -> m ()
+putCache = liftSimplifier . put
+
+instance MonadSimplify Simplifier where
+    liftSimplifier = id
+    {-# INLINE liftSimplifier #-}
+
+    simplifyCondition topCondition conditional = do
+        ConditionSimplifier simplify <- asks simplifierCondition
+        simplify topCondition conditional
+    {-# INLINE simplifyCondition #-}
+
+    localSimplifierAxioms locally =
+        local $ \env@Env{simplifierAxioms} ->
+            env{simplifierAxioms = locally simplifierAxioms}
+    {-# INLINE localSimplifierAxioms #-}
+
+    askMemo = asks memo
+    {-# INLINE askMemo #-}
 
 instance
     (WithLog LogMessage m, MonadSimplify m, Monoid w) =>
@@ -299,15 +312,9 @@ instance MonadSimplify m => MonadSimplify (MaybeT m)
 
 instance MonadSimplify m => MonadSimplify (ReaderT r m)
 
-instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
+instance MonadSimplify m => MonadSimplify (StateT s m)
 
 instance MonadSimplify m => MonadSimplify (RWST r () s m)
-
--- * Experimental simplifier
-data SimplifierXSwitch
-    = EnabledSimplifierX
-    | DisabledSimplifierX
-    deriving stock (Show, Eq)
 
 -- * Term simplifiers
 
@@ -319,12 +326,9 @@ simplifyPatternScatter ::
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
     simplifier (Pattern RewritingVariableName)
-simplifyPatternScatter sideCondition patt = do
-    simplifierX <- askSimplifierXSwitch
+simplifyPatternScatter sideCondition patt =
     Logic.scatter
-        =<< case simplifierX of
-            EnabledSimplifierX -> simplifyPatternId patt
-            DisabledSimplifierX -> simplifyPattern sideCondition patt
+        =<< simplifyPattern sideCondition patt
 -- * Predicate simplifiers
 
 {- | 'ConditionSimplifier' wraps a function that simplifies
@@ -343,16 +347,6 @@ emptyConditionSimplifier :: ConditionSimplifier monad
 emptyConditionSimplifier =
     ConditionSimplifier (\_ predicate -> return predicate)
 
-liftConditionSimplifier ::
-    (Monad monad, MonadTrans trans, Monad (trans monad)) =>
-    ConditionSimplifier monad ->
-    ConditionSimplifier (trans monad)
-liftConditionSimplifier (ConditionSimplifier simplifier) =
-    ConditionSimplifier $ \sideCondition predicate -> do
-        results <-
-            lift . lift $
-                observeAllT $ simplifier sideCondition predicate
-        scatter results
 -- * Builtin and axiom simplifiers
 
 {- | Used for keeping track of already attempted equations which failed to
@@ -425,11 +419,9 @@ newtype BuiltinAndAxiomSimplifier =
     -- TODO (thomas.tuegel): Rename me!
     BuiltinAndAxiomSimplifier
     { runBuiltinAndAxiomSimplifier ::
-        forall simplifier.
-        MonadSimplify simplifier =>
         TermLike RewritingVariableName ->
         SideCondition RewritingVariableName ->
-        simplifier (AttemptedAxiom RewritingVariableName)
+        Simplifier (AttemptedAxiom RewritingVariableName)
     }
 
 {- |A type to abstract away the mapping from symbol identifiers to
@@ -536,25 +528,21 @@ data NonSimplifiability
     | Conditional
 
 applyFirstSimplifierThatWorks ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     [BuiltinAndAxiomSimplifier] ->
     AcceptsMultipleResults ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
-    simplifier (AttemptedAxiom RewritingVariableName)
+    Simplifier (AttemptedAxiom RewritingVariableName)
 applyFirstSimplifierThatWorks evaluators multipleResults =
     applyFirstSimplifierThatWorksWorker evaluators multipleResults Always
 
 applyFirstSimplifierThatWorksWorker ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     [BuiltinAndAxiomSimplifier] ->
     AcceptsMultipleResults ->
     NonSimplifiability ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
-    simplifier (AttemptedAxiom RewritingVariableName)
+    Simplifier (AttemptedAxiom RewritingVariableName)
 applyFirstSimplifierThatWorksWorker [] _ Always _ _ =
     return NotApplicable
 applyFirstSimplifierThatWorksWorker [] _ Conditional _ sideCondition =
@@ -760,25 +748,21 @@ purePatternAxiomEvaluator p =
 'Application'.
 -}
 applicationAxiomSimplifier ::
-    ( forall simplifier.
-      MonadSimplify simplifier =>
-      SideCondition RewritingVariableName ->
+    ( SideCondition RewritingVariableName ->
       CofreeF
         (Application Symbol)
         (TermAttributes RewritingVariableName)
         (TermLike RewritingVariableName) ->
-      simplifier (AttemptedAxiom RewritingVariableName)
+      Simplifier (AttemptedAxiom RewritingVariableName)
     ) ->
     BuiltinAndAxiomSimplifier
 applicationAxiomSimplifier applicationSimplifier =
     BuiltinAndAxiomSimplifier helper
   where
     helper ::
-        forall simplifier.
-        MonadSimplify simplifier =>
         TermLike RewritingVariableName ->
         SideCondition RewritingVariableName ->
-        simplifier (AttemptedAxiom RewritingVariableName)
+        Simplifier (AttemptedAxiom RewritingVariableName)
     helper termLike sideCondition =
         case Recursive.project termLike of
             (valid :< ApplySymbolF p) ->

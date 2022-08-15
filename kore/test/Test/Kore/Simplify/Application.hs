@@ -337,6 +337,6 @@ evaluate ::
     BuiltinAndAxiomSimplifierMap ->
     Application Symbol (OrPattern RewritingVariableName) ->
     IO (OrPattern RewritingVariableName)
-evaluate simplifierAxioms = runSimplifier mockEnv . simplify SideCondition.top
+evaluate simplifierAxioms = testRunSimplifier mockEnv . simplify SideCondition.top
   where
     mockEnv = Mock.env{simplifierAxioms}

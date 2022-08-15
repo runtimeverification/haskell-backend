@@ -1,7 +1,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
-Module      : Kore.Simplify.Data
+Module      : Kore.Simplify.API
 Description : Data structures used for term simplification.
 Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
@@ -9,31 +9,30 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-module Kore.Simplify.Data (
-    Simplifier,
-    TermSimplifier,
-    SimplifierT,
-    runSimplifierT,
-    Env (..),
-    runSimplifier,
-    runSimplifierBranch,
+module Kore.Simplify.API (
     evalSimplifier,
     evalSimplifierProofs,
 
     -- * Re-exports
+    Env (..),
+    Simplifier,
+    runSimplifier,
+    runSimplifierBranch,
+    TermSimplifier,
     MonadSimplify (..),
+    askMetadataTools,
+    simplifyPattern,
+    simplifyTerm,
+    askSimplifierAxioms,
+    askInjSimplifier,
+    askOverloadSimplifier,
+    getCache,
+    putCache,
     InternalVariable,
     MonadProf,
 ) where
 
-import Control.Monad.Catch (
-    MonadCatch,
-    MonadMask,
-    MonadThrow,
- )
-import Control.Monad.Morph qualified as Morph
 import Control.Monad.Reader
-import Control.Monad.State.Strict
 import Data.Map.Strict (
     Map,
  )
@@ -85,53 +84,12 @@ import Kore.Simplify.TermLike qualified as TermLike
 import Kore.Syntax.Variable (
     VariableName,
  )
-import Log
-import Logic
 import Prelude.Kore
 import Pretty qualified
 import Prof
 import SMT (
-    SMT (..),
+    SMT,
  )
-
--- * Simplifier
-
-data Env simplifier = Env
-    { metadataTools :: !(SmtMetadataTools Attribute.Symbol)
-    , simplifierCondition :: !(ConditionSimplifier simplifier)
-    , simplifierAxioms :: !BuiltinAndAxiomSimplifierMap
-    , memo :: !(Memo.Self simplifier)
-    , injSimplifier :: !InjSimplifier
-    , overloadSimplifier :: !OverloadSimplifier
-    , simplifierXSwitch :: !SimplifierXSwitch
-    }
-
-{- | @Simplifier@ represents a simplification action.
-
-A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
-
-A @Simplifier@ can write to the log through 'HasLog'.
--}
-newtype SimplifierT smt a = SimplifierT
-    { runSimplifierT :: StateT SimplifierCache (ReaderT (Env (SimplifierT smt)) smt) a
-    }
-    deriving newtype (Functor, Applicative, Monad, MonadSMT)
-    deriving newtype (MonadIO, MonadCatch, MonadThrow, MonadMask)
-    deriving newtype (MonadReader (Env (SimplifierT smt)))
-    deriving newtype (MonadState SimplifierCache)
-
-type Simplifier = SimplifierT SMT
-
-instance MonadTrans SimplifierT where
-    lift smt = SimplifierT ((lift . lift) smt)
-    {-# INLINE lift #-}
-
-instance MonadLog log => MonadLog (SimplifierT log) where
-    logWhile entry = mapSimplifierT $ logWhile entry
-
-instance (MonadMask prof, MonadProf prof) => MonadProf (SimplifierT prof) where
-    traceEvent name = lift (traceEvent name)
-    {-# INLINE traceEvent #-}
 
 traceProfSimplify ::
     MonadProf prof =>
@@ -148,81 +106,14 @@ traceProfSimplify (Pattern.toTermLike -> termLike) =
             . Pretty.pretty
             <$> matchAxiomIdentifier termLike
 
-instance
-    (MonadSMT m, MonadLog m, MonadMask m, MonadProf m) =>
-    MonadSimplify (SimplifierT m)
-    where
-    askMetadataTools = asks metadataTools
-    {-# INLINE askMetadataTools #-}
-
-    simplifyPattern sideCondition patt =
-        traceProfSimplify patt (Pattern.makeEvaluate sideCondition patt)
-    {-# INLINE simplifyPattern #-}
-
-    simplifyTerm = TermLike.simplify
-    {-# INLINE simplifyTerm #-}
-
-    simplifyCondition topCondition conditional = do
-        ConditionSimplifier simplify <- asks simplifierCondition
-        simplify topCondition conditional
-    {-# INLINE simplifyCondition #-}
-
-    askSimplifierAxioms = asks simplifierAxioms
-    {-# INLINE askSimplifierAxioms #-}
-
-    localSimplifierAxioms locally =
-        local $ \env@Env{simplifierAxioms} ->
-            env{simplifierAxioms = locally simplifierAxioms}
-    {-# INLINE localSimplifierAxioms #-}
-
-    askMemo = asks memo
-    {-# INLINE askMemo #-}
-
-    askInjSimplifier = asks injSimplifier
-    {-# INLINE askInjSimplifier #-}
-
-    askOverloadSimplifier = asks overloadSimplifier
-    {-# INLINE askOverloadSimplifier #-}
-
-    getCache = get
-    {-# INLINE getCache #-}
-
-    putCache = put
-    {-# INLINE putCache #-}
-
-    askSimplifierXSwitch = asks simplifierXSwitch
-    {-# INLINE askSimplifierXSwitch #-}
-
--- | Run a simplification, returning the results along all branches.
-runSimplifierBranch ::
-    Monad smt =>
-    Env (SimplifierT smt) ->
-    -- | simplifier computation
-    LogicT (SimplifierT smt) a ->
-    smt [a]
-runSimplifierBranch env = runSimplifier env . observeAllT
-
-{- | Run a simplification, returning the result of only one branch.
-
-__Warning__: @runSimplifier@ calls 'error' if the 'Simplifier' does not contain
-exactly one branch. Use 'evalSimplifierBranch' to evaluation simplifications
-that may branch.
--}
-runSimplifier :: Monad smt => Env (SimplifierT smt) -> SimplifierT smt a -> smt a
-runSimplifier env simplifier =
-    runReaderT (evalStateT (runSimplifierT simplifier) initCache) env
-
 mkSimplifierEnv ::
-    forall smt.
-    (MonadLog smt, MonadSMT smt, MonadMask smt, MonadProf smt, MonadIO smt) =>
-    SimplifierXSwitch ->
     VerifiedModuleSyntax Attribute.Symbol ->
     SortGraph ->
     OverloadGraph ->
     SmtMetadataTools Attribute.Symbol ->
     Map AxiomIdentifier [Equation VariableName] ->
-    smt (Env (SimplifierT smt))
-mkSimplifierEnv simplifierXSwitch verifiedModule sortGraph overloadGraph metadataTools rawEquations =
+    SMT Env
+mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquations =
     runSimplifier earlyEnv initialize
   where
     !earlyEnv =
@@ -230,11 +121,12 @@ mkSimplifierEnv simplifierXSwitch verifiedModule sortGraph overloadGraph metadat
         Env
             { metadataTools = metadataTools
             , simplifierCondition
+            , simplifierPattern
+            , simplifierTerm
             , simplifierAxioms = earlySimplifierAxioms
             , memo = Memo.forgetful
             , injSimplifier
             , overloadSimplifier
-            , simplifierXSwitch
             }
     injSimplifier =
         {-# SCC "evalSimplifier/injSimplifier" #-}
@@ -245,6 +137,12 @@ mkSimplifierEnv simplifierXSwitch verifiedModule sortGraph overloadGraph metadat
     simplifierCondition =
         {-# SCC "evalSimplifier/simplifierCondition" #-}
         Condition.create substitutionSimplifier
+    simplifierPattern sideCondition patt =
+        {-# SCC "evalSimplifier/simplifierPattern" #-}
+        traceProfSimplify patt (Pattern.makeEvaluate sideCondition patt)
+    simplifierTerm =
+        {-# SCC "evalSimplifier/simplifierTerm" #-}
+        TermLike.simplify
     -- Initialize without any builtin or axiom simplifiers.
     earlySimplifierAxioms = Map.empty
 
@@ -257,7 +155,7 @@ mkSimplifierEnv simplifierXSwitch verifiedModule sortGraph overloadGraph metadat
         {-# SCC "evalSimplifier/overloadSimplifier" #-}
         mkOverloadSimplifier overloadGraph injSimplifier
 
-    initialize :: SimplifierT smt (Env (SimplifierT smt))
+    initialize :: Simplifier Env
     initialize = do
         equations <-
             Equation.simplifyExtractedEquations $
@@ -282,11 +180,12 @@ mkSimplifierEnv simplifierXSwitch verifiedModule sortGraph overloadGraph metadat
             Env
                 { metadataTools
                 , simplifierCondition
+                , simplifierPattern
+                , simplifierTerm
                 , simplifierAxioms
                 , memo
                 , injSimplifier
                 , overloadSimplifier
-                , simplifierXSwitch
                 }
 
 {- | Evaluate a simplifier computation, returning the result of only one branch.
@@ -296,29 +195,23 @@ exactly one branch. Use 'evalSimplifierBranch' to evaluation simplifications
 that may branch.
 -}
 evalSimplifier ::
-    forall smt a.
-    (MonadLog smt, MonadSMT smt, MonadMask smt, MonadProf smt, MonadIO smt) =>
-    SimplifierXSwitch ->
     VerifiedModuleSyntax Attribute.Symbol ->
     SortGraph ->
     OverloadGraph ->
     SmtMetadataTools Attribute.Symbol ->
     Map AxiomIdentifier [Equation VariableName] ->
-    SimplifierT smt a ->
-    smt a
-evalSimplifier simplifierXSwitch verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
-    env <- mkSimplifierEnv simplifierXSwitch verifiedModule sortGraph overloadGraph metadataTools rawEquations
+    Simplifier a ->
+    SMT a
+evalSimplifier verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
+    env <- mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquations
     runSimplifier env simplifier
 
 evalSimplifierProofs ::
-    forall smt a.
-    (MonadLog smt, MonadSMT smt, MonadMask smt, MonadProf smt, MonadIO smt) =>
-    SimplifierXSwitch ->
     VerifiedModule Attribute.Symbol ->
-    SimplifierT smt a ->
-    smt a
-evalSimplifierProofs simplifierXSwitch verifiedModule simplifier =
-    evalSimplifier simplifierXSwitch (indexedModuleSyntax verifiedModule) sortGraph overloadGraph metadataTools rawEquations simplifier
+    Simplifier a ->
+    SMT a
+evalSimplifierProofs verifiedModule simplifier =
+    evalSimplifier (indexedModuleSyntax verifiedModule) sortGraph overloadGraph metadataTools rawEquations simplifier
   where
     sortGraph =
         {-# SCC "evalSimplifier/sortGraph" #-}
@@ -337,13 +230,3 @@ evalSimplifierProofs simplifierXSwitch verifiedModule simplifier =
         OverloadGraph.fromIndexedModule verifiedModule
     metadataTools = MetadataTools.build verifiedModule'
     rawEquations = Equation.extractEquations verifiedModule'
-
-mapSimplifierT ::
-    forall m b.
-    Monad m =>
-    (forall a. m a -> m a) ->
-    SimplifierT m b ->
-    SimplifierT m b
-mapSimplifierT f simplifierT =
-    SimplifierT . StateT $ \s ->
-        Morph.hoist f (runStateT (runSimplifierT simplifierT) s)

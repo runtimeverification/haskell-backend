@@ -37,7 +37,7 @@ import Kore.Rewrite.Transition (
     runTransitionT,
  )
 import Kore.Rewrite.Transition qualified as Transition
-import Kore.Simplify.Data (
+import Kore.Simplify.API (
     MonadSimplify (..),
  )
 import Kore.TopBottom (
@@ -396,16 +396,7 @@ instance MonadLog AllPathIdentity where
 
 instance MonadSMT AllPathIdentity where
     withSolver = undefined
-    declare = undefined
-    declareFun = undefined
-    declareSort = undefined
-    declareDatatype = undefined
-    declareDatatypes = undefined
-    assert = undefined
-    check = undefined
-    ackCommand = undefined
-    loadFile = undefined
-    reinit = undefined
+    liftSMT = undefined
 
 instance MonadThrow AllPathIdentity where
     throwM _ = error "Unimplemented"
@@ -414,18 +405,10 @@ instance MonadCatch AllPathIdentity where
     catch action _handler = action
 
 instance MonadSimplify AllPathIdentity where
-    askMetadataTools = undefined
-    simplifyPattern = undefined
-    simplifyTerm = undefined
+    liftSimplifier = undefined
     simplifyCondition = undefined
-    askSimplifierAxioms = undefined
     localSimplifierAxioms = undefined
     askMemo = undefined
-    askInjSimplifier = undefined
-    askOverloadSimplifier = undefined
-    getCache = undefined
-    putCache = undefined
-    askSimplifierXSwitch = undefined
 
 differentLengthPaths :: [MockRule]
 differentLengthPaths =
