@@ -49,10 +49,6 @@ import Data.ByteString (
 import Data.ByteString qualified as ByteString
 import Data.Char as Char
 import Data.HashMap.Strict qualified as HashMap
-import Data.Map.Strict (
-    Map,
- )
-import Data.Map.Strict qualified as Map
 import Data.String (
     IsString,
     fromString,
@@ -146,20 +142,19 @@ symbolVerifiers =
         ]
 
 -- | Implement builtin function evaluation.
-builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
-builtinFunctions =
-    Map.fromList
-        [ (keccak256Key, evalKeccak)
-        , (hashKeccak256Key, evalKeccak)
-        , (sha256Key, evalSha256)
-        , (hashSha256Key, evalSha256)
-        , (sha3256Key, evalSha3256)
-        , (hashSha3_256Key, evalSha3256)
-        , (ripemd160Key, evalRipemd160)
-        , (hashRipemd160Key, evalRipemd160)
-        , (ecdsaRecoverKey, evalECDSARecover)
-        , (secp256k1EcdsaRecoverKey, evalECDSARecover)
-        ]
+builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
+builtinFunctions key
+    | key == keccak256Key = Just evalKeccak
+    | key == hashKeccak256Key = Just evalKeccak
+    | key == sha256Key = Just evalSha256
+    | key == hashSha256Key = Just evalSha256
+    | key == sha3256Key = Just evalSha3256
+    | key == hashSha3_256Key = Just evalSha3256
+    | key == ripemd160Key = Just evalRipemd160
+    | key == hashRipemd160Key = Just evalRipemd160
+    | key == ecdsaRecoverKey = Just evalECDSARecover
+    | key == secp256k1EcdsaRecoverKey = Just evalECDSARecover
+    | otherwise = Nothing
 
 verifyHashFunction :: Builtin.SymbolVerifier
 verifyHashFunction = Builtin.verifySymbol String.assertSort [String.assertSort]

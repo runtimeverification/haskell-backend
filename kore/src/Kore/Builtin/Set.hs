@@ -42,10 +42,6 @@ import Data.HashMap.Strict (
  )
 import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet qualified as HashSet
-import Data.Map.Strict (
-    Map,
- )
-import Data.Map.Strict qualified as Map
 import Data.Sequence qualified as Seq
 import Data.Text (
     Text,
@@ -480,20 +476,19 @@ evalInclusion _ resultSort [_setLeft, _setRight] = do
 evalInclusion _ _ _ = Builtin.wrongArity Set.inclusionKey
 
 -- | Implement builtin function evaluation.
-builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
-builtinFunctions =
-    Map.fromList
-        [ (Set.concatKey, Builtin.functionEvaluator evalConcat)
-        , (Set.elementKey, Builtin.functionEvaluator evalElement)
-        , (Set.unitKey, Builtin.functionEvaluator evalUnit)
-        , (Set.inKey, Builtin.functionEvaluator evalIn)
-        , (Set.differenceKey, Builtin.applicationEvaluator evalDifference)
-        , (Set.toListKey, Builtin.functionEvaluator evalToList)
-        , (Set.sizeKey, Builtin.functionEvaluator evalSize)
-        , (Set.intersectionKey, Builtin.functionEvaluator evalIntersection)
-        , (Set.list2setKey, Builtin.functionEvaluator evalList2set)
-        , (Set.inclusionKey, Builtin.functionEvaluator evalInclusion)
-        ]
+builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
+builtinFunctions key
+    | key == Set.concatKey = Just $ Builtin.functionEvaluator evalConcat
+    | key == Set.elementKey = Just $ Builtin.functionEvaluator evalElement
+    | key == Set.unitKey = Just $ Builtin.functionEvaluator evalUnit
+    | key == Set.inKey = Just $ Builtin.functionEvaluator evalIn
+    | key == Set.differenceKey = Just $ Builtin.applicationEvaluator evalDifference
+    | key == Set.toListKey = Just $ Builtin.functionEvaluator evalToList
+    | key == Set.sizeKey = Just $ Builtin.functionEvaluator evalSize
+    | key == Set.intersectionKey = Just $ Builtin.functionEvaluator evalIntersection
+    | key == Set.list2setKey = Just $ Builtin.functionEvaluator evalList2set
+    | key == Set.inclusionKey = Just $ Builtin.functionEvaluator evalInclusion
+    | otherwise = Nothing
 
 {- | Convert a Set-sorted 'TermLike' to its internal representation.
 
