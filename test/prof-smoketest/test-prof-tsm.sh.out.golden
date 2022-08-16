@@ -1,43 +1,43 @@
 digraph "test-prof-tsm-eventlog" {
 Rules -> Rule
   [ penwidth=1.4,
-    label="Starting. 1.04μs (+-0.44), total #212 (0.221ms)",
+    label="Starting. 1.00μs (+-0.31), total #212 (0.212ms)",
     fontsize=10 ]
 Rule -> Init
   [ penwidth=6.0,
-    label="InRule. 6.64μs (+-1.36), total #20720 (0.14s)",
+    label="InRule. 6.80μs (+-1.60), total #20720 (0.14s)",
     fontsize=10 ]
 Init -> Unify
   [ penwidth=6.0,
-    label="Init. 46.42μs (+-23.96), total #20720 (0.96s)",
+    label="Init. 47.31μs (+-23.43), total #20720 (0.98s)",
     fontsize=10 ]
 Unify -> Rule
   [ penwidth=6.0,
-    label="UnifyFailed. 29.55μs (+-27.76), total #20397 (0.60s)",
+    label="UnifyFailed. 29.48μs (+-27.79), total #20397 (0.60s)",
     fontsize=10 ]
 Unify -> CheckSide
   [ penwidth=0.9,
-    label="Unified. 2356.70μs (+-1499.60), total #119 (0.28s)",
+    label="UNEXPECTED. 2379.87μs (+-1521.48), total #119 (0.28s)",
     fontsize=10 ]
 Unify -> EndRules
   [ penwidth=1.4,
-    label="UnifyFailed. 88.03μs (+-205.84), total #204 (17.958ms)",
+    label="UnifyFailed. 90.88μs (+-210.35), total #204 (18.539ms)",
     fontsize=10 ]
 CheckSide -> Rule
   [ penwidth=0.1,
-    label="SideFailed. 1500.25μs (+-2058.03), total #32 (48.008ms)",
+    label="SideFailed. 1515.22μs (+-2111.03), total #32 (48.487ms)",
     fontsize=10 ]
 CheckSide -> Success
   [ penwidth=0.6,
-    label="SideChecked. 3019.38μs (+-4534.55), total #87 (0.26s)",
+    label="SideChecked. 3106.09μs (+-4698.40), total #87 (0.27s)",
     fontsize=10 ]
 Success -> Rule
   [ penwidth=0.5,
-    label="Success. 1.59μs (+-0.54), total #79 (0.125ms)",
+    label="Success. 1.52μs (+-0.37), total #79 (0.120ms)",
     fontsize=10 ]
 Success -> EndRules
   [ penwidth=0.1,
-    label="Success. 1.86μs (+-0.47), total #8 (14.9μs)",
+    label="Success. 1.79μs (+-0.76), total #8 (14.3μs)",
     fontsize=10 ]
 
 }
