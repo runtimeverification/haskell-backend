@@ -237,24 +237,6 @@ test_hasSimplifiedChildren =
                 "Has simplified children"
                 True
                 (Pattern.hasSimplifiedChildren topSideCondition patt)
-    , testCase "One child isn't simplified, nested ands" $ do
-        let simplified = Simplified_ Fully Any
-            predicate =
-                makeAndPredicate
-                    mockPredicate1
-                    (setSimplifiedPred simplified mockPredicate2)
-            patt =
-                Pattern.fromCondition Mock.testSort
-                    . Condition.fromPredicate
-                    $ predicate
-        assertEqual
-            "Predicate isn't simplified"
-            False
-            (Predicate.isSimplified topSideCondition predicate)
-        assertEqual
-            "Children aren't simplified"
-            False
-            (Pattern.hasSimplifiedChildren topSideCondition patt)
     , testCase "Subsitution isn't simplified" $ do
         let simplified = Simplified_ Fully Any
             term =
