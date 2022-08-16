@@ -60,6 +60,7 @@
         (hsPkgs."free" or (errorHandler.buildDepError "free"))
         (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
         (hsPkgs."generics-sop" or (errorHandler.buildDepError "generics-sop"))
+        (hsPkgs."ghc-events" or (errorHandler.buildDepError "ghc-events"))
         (hsPkgs."ghc-trace-events" or (errorHandler.buildDepError
           "ghc-trace-events"))
         (hsPkgs."gitrev" or (errorHandler.buildDepError "gitrev"))
@@ -463,6 +464,8 @@
         "Kore/Unification/Unify"
         "Kore/Unification/NewUnifier"
         "Kore/Unparser"
+        "Kore/Util/TSM"
+        "Kore/Util/TSM/UnifyTag"
         "Kore/Validate/AliasVerifier"
         "Kore/Validate/AttributesVerifier"
         "Kore/Validate/DefinitionVerifier"
@@ -703,6 +706,7 @@
           (hsPkgs."free" or (errorHandler.buildDepError "free"))
           (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
           (hsPkgs."generics-sop" or (errorHandler.buildDepError "generics-sop"))
+          (hsPkgs."ghc-events" or (errorHandler.buildDepError "ghc-events"))
           (hsPkgs."ghc-trace-events" or (errorHandler.buildDepError
             "ghc-trace-events"))
           (hsPkgs."gitrev" or (errorHandler.buildDepError "gitrev"))
