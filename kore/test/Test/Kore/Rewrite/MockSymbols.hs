@@ -27,6 +27,7 @@ import Data.Bifunctor qualified as Bifunctor
 import Data.Default qualified as Default
 import Data.Generics.Product
 import Data.HashMap.Strict qualified as HashMap
+import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Sequence qualified as Seq
 import Data.Set qualified as Set
@@ -56,12 +57,11 @@ import Kore.Attribute.Synthetic (
  )
 import Kore.Builtin qualified as Builtin
 import Kore.Builtin.Bool qualified as Builtin.Bool
-import Kore.Builtin.Builtin qualified as Builtin
 import Kore.Builtin.Int qualified as Builtin.Int
 import Kore.Builtin.KEqual qualified as Builtin.KEqual
 import Kore.Builtin.List qualified as List
-import Kore.Builtin.Map qualified as Map
-import Kore.Builtin.Set qualified as Set
+import Kore.Builtin.Map.Map qualified as Map
+import Kore.Builtin.Set.Set qualified as Set
 import Kore.Builtin.String qualified as Builtin.String
 import Kore.IndexedModule.IndexedModule qualified as IndexedModule
 import Kore.IndexedModule.MetadataTools (
@@ -82,12 +82,6 @@ import Kore.Internal.TermLike (
     retractKey,
  )
 import Kore.Internal.TermLike qualified as Internal
-import Kore.Rewrite.Axiom.EvaluationStrategy (
-    builtinEvaluation,
- )
-import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier (
-    AxiomIdentifier (..),
- )
 import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -2322,6 +2316,7 @@ env =
         , memo = Memo.forgetful
         , injSimplifier
         , overloadSimplifier
+        , hookedSymbols = Map.empty
         }
 
 generatorSetup :: ConsistentKore.Setup
@@ -2353,64 +2348,60 @@ generatorSetup =
   where
     doesNotHaveArguments Symbol{symbolParams} = null symbolParams
 
-builtinSimplifiers :: BuiltinAndAxiomSimplifierMap
+builtinSimplifiers :: Map Id Text
 builtinSimplifiers =
     Map.fromList
         [
-            ( AxiomIdentifier.Application unitMapId
-            , Builtin.functionEvaluator Map.evalUnit
+            ( unitMapId
+            , Map.unitKey
             )
         ,
-            ( AxiomIdentifier.Application elementMapId
-            , Builtin.functionEvaluator Map.evalElement
+            ( elementMapId
+            , Map.elementKey
             )
         ,
-            ( AxiomIdentifier.Application concatMapId
-            , Builtin.functionEvaluator Map.evalConcat
+            ( concatMapId
+            , Map.concatKey
             )
         ,
-            ( AxiomIdentifier.Application unitSetId
-            , Builtin.functionEvaluator Set.evalUnit
+            ( unitSetId
+            , Set.unitKey
             )
         ,
-            ( AxiomIdentifier.Application elementSetId
-            , Builtin.functionEvaluator Set.evalElement
+            ( elementSetId
+            , Set.elementKey
             )
         ,
-            ( AxiomIdentifier.Application concatSetId
-            , Builtin.functionEvaluator Set.evalConcat
+            ( concatSetId
+            , Set.concatKey
             )
         ,
-            ( AxiomIdentifier.Application unitListId
-            , Builtin.functionEvaluator List.evalUnit
+            ( unitListId
+            , List.unitKey
             )
         ,
-            ( AxiomIdentifier.Application elementListId
-            , Builtin.functionEvaluator List.evalElement
+            ( elementListId
+            , List.elementKey
             )
         ,
-            ( AxiomIdentifier.Application concatListId
-            , Builtin.functionEvaluator List.evalConcat
+            ( concatListId
+            , List.concatKey
             )
         ,
-            ( AxiomIdentifier.Application tdivIntId
-            , builtinEvaluation
-                (Builtin.Int.builtinFunctions Map.! Builtin.Int.tdivKey)
+            ( tdivIntId
+            , Builtin.Int.tdivKey
             )
         ,
-            ( AxiomIdentifier.Application lessIntId
-            , builtinEvaluation
-                (Builtin.Int.builtinFunctions Map.! Builtin.Int.ltKey)
+            ( lessIntId
+            , Builtin.Int.ltKey
             )
         ,
-            ( AxiomIdentifier.Application greaterEqIntId
-            , builtinEvaluation
-                (Builtin.Int.builtinFunctions Map.! Builtin.Int.geKey)
+            ( greaterEqIntId
+            , Builtin.Int.geKey
             )
         ,
-            ( AxiomIdentifier.Application keqBoolId
-            , builtinEvaluation
-                (Builtin.KEqual.builtinFunctions Map.! Builtin.KEqual.eqKey)
+            ( keqBoolId
+            , Builtin.KEqual.eqKey
             )
         ]
 

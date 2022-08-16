@@ -55,10 +55,6 @@ import Data.HashMap.Strict qualified as HashMap
 import Data.List (
     findIndex,
  )
-import Data.Map.Strict (
-    Map,
- )
-import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
@@ -421,41 +417,36 @@ evalString2Token = Builtin.functionEvaluator evalString2Token0
     evalString2Token0 _ _ _ = Builtin.wrongArity token2StringKey
 
 -- | Implement builtin function evaluation.
-builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
-builtinFunctions =
-    Map.fromList
-        [ comparator eqKey (==)
-        , comparator ltKey (<)
-        , binaryOperator plusKey Text.append
-        , (substrKey, evalSubstr)
-        , (lengthKey, evalLength)
-        , (findKey, evalFind)
-        , (string2BaseKey, evalString2Base)
-        , (base2StringKey, evalBase2String)
-        , (string2IntKey, evalString2Int)
-        , (int2StringKey, evalInt2String)
-        , (chrKey, evalChr)
-        , (ordKey, evalOrd)
-        , (token2StringKey, evalToken2String)
-        , (string2TokenKey, evalString2Token)
-        ]
+builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
+builtinFunctions key
+    | key == eqKey = Just $ comparator eqKey (==)
+    | key == ltKey = Just $ comparator ltKey (<)
+    | key == plusKey = Just $ binaryOperator plusKey Text.append
+    | key == substrKey = Just evalSubstr
+    | key == lengthKey = Just evalLength
+    | key == findKey = Just evalFind
+    | key == string2BaseKey = Just evalString2Base
+    | key == base2StringKey = Just evalBase2String
+    | key == string2IntKey = Just evalString2Int
+    | key == int2StringKey = Just evalInt2String
+    | key == chrKey = Just evalChr
+    | key == ordKey = Just evalOrd
+    | key == token2StringKey = Just evalToken2String
+    | key == string2TokenKey = Just evalString2Token
+    | otherwise = Nothing
   where
     comparator name op =
-        ( name
-        , Builtin.binaryOperator
+        Builtin.binaryOperator
             extractStringDomainValue
             Bool.asPattern
             name
             op
-        )
     binaryOperator name op =
-        ( name
-        , Builtin.binaryOperator
+        Builtin.binaryOperator
             extractStringDomainValue
             asPattern
             name
             op
-        )
 
 data UnifyString = UnifyString
     { string1, string2 :: !InternalString

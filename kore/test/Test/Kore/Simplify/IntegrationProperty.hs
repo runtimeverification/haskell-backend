@@ -43,9 +43,6 @@ import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Internal.TermLike
-import Kore.Rewrite.Axiom.EvaluationStrategy (
-    simplifierWithFallback,
- )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkRewritingPattern,
@@ -175,16 +172,10 @@ evaluateWithAxioms ::
     BuiltinAndAxiomSimplifierMap ->
     Pattern RewritingVariableName ->
     SMT.SMT (OrPattern RewritingVariableName)
-evaluateWithAxioms axioms =
+evaluateWithAxioms simplifierAxioms =
     Simplification.runSimplifier env . Pattern.simplify
   where
-    env = Mock.env{simplifierAxioms}
-    simplifierAxioms :: BuiltinAndAxiomSimplifierMap
-    simplifierAxioms =
-        Map.unionWith
-            simplifierWithFallback
-            Mock.builtinSimplifiers
-            axioms
+    env = Mock.env{simplifierAxioms, hookedSymbols = Mock.builtinSimplifiers}
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =
