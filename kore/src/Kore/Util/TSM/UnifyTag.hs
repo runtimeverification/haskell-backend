@@ -28,6 +28,13 @@ Rules -> Rule
    | ----Unify-----
    |       |       \
    |       |        |
+   |       V        |
+   |    MakeCeil    |
+   |       |  A     |
+   |       |  |     |
+   |\      V  |     |
+   | --CombineCeil- |
+   |       |       \|
    |       |        |
    |\      V        |
    | --CheckSide--- |
@@ -55,6 +62,10 @@ data UnifyTag
       Init
     | -- | starting unification for one rule
       Unify
+    | -- | make ceil condition of unified term
+      MakeCeil
+    | -- | combine ceil with unification condition
+      CombineCeil
     | -- | checking side conditions for one rule
       CheckSide
     | -- | successful unification using one rule
@@ -74,17 +85,24 @@ instance TimingStateMachine UnifyTag where
 
     transitionLabels =
         Map.fromList
-            [ Rules     --> Rule      $ "Starting"
-            , Rule      --> Init      $ "InRule"
-            , Init      --> Unify     $ "Init"
-            , Unify     --> CheckSide $ "Unified"
-            , Unify     --> Rule      $ "UnifyFailed"
-            , Unify     --> EndRules  $ "UnifyFailed"
-            , CheckSide --> Success   $ "SideChecked"
-            , CheckSide --> Rule      $ "SideFailed"
-            , CheckSide --> EndRules  $ "SideFailed"
-            , Success   --> Rule      $ "Success"
-            , Success   --> EndRules  $ "Success"
-            , EndRules  --> Rules     $ Text.empty -- technical edge, filtered out
+            [ Rules       --> Rule        $ "Starting"
+            , Rule        --> Init        $ "InRule"
+            , Init        --> Unify       $ "Init"
+            , Unify       --> MakeCeil    $ "TermsUnified"
+            , Unify       --> Rule        $ "UnifyFailed"
+            , Unify       --> EndRules    $ "UnifyFailed"
+            , MakeCeil    --> CombineCeil $ "MadeCeil"
+            , MakeCeil    --> Rule        $ "CeilFailed"
+            , MakeCeil    --> EndRules    $ "CeilFailed"
+            , CombineCeil --> MakeCeil    $ "NextAlternative"
+            , CombineCeil --> CheckSide   $ "Unified"
+            , CombineCeil --> Rule        $ "WCeilFailed"
+            , CombineCeil --> EndRules    $ "WCeilFailed"
+            , CheckSide   --> Success     $ "SideChecked"
+            , CheckSide   --> Rule        $ "SideFailed"
+            , CheckSide   --> EndRules    $ "SideFailed"
+            , Success     --> Rule        $ "Success"
+            , Success     --> EndRules    $ "Success"
+            , EndRules    --> Rules       $ Text.empty -- technical edge, filtered out
             ]
 {- ORMOLU_ENABLE -}
