@@ -479,12 +479,12 @@ toParsedPattern = \case
         embedParsedPattern . ApplicationF $ Kore.Application (toSymbol n sorts) [a, b]
 
 koreId :: Id -> Kore.Id
-koreId (Id name) = Kore.Id name Kore.AstLocationNone
+koreId (Id name) = Kore.locatedId name Kore.AstLocationNone
 
 koreVar :: Id -> Kore.VariableName
 koreVar (Id name) =
     -- TODO check well-formed (initial letter, char. set)
-    VariableName (Kore.Id base Kore.AstLocationNone) suffix
+    VariableName (Kore.locatedId base Kore.AstLocationNone) suffix
   where
     baseName = T.dropWhileEnd isDigit name
     endDigits = T.takeWhileEnd isDigit name

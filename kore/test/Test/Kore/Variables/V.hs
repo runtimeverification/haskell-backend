@@ -65,4 +65,4 @@ var' :: Integer -> TermLike V
 var' = mkElemVar . fmap ElementVariableName . mkV
 
 sortVariable :: Sort
-sortVariable = SortVariableSort (SortVariable (Id "#a" AstLocationTest))
+sortVariable = SortVariableSort (SortVariable (locatedId "#a" AstLocationTest))

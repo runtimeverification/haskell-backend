@@ -59,39 +59,36 @@ test_id =
             ( do
                 assertBool
                     ""
-                    (Id "a" AstLocationNone <= Id "b" AstLocationNone)
+                    (locatedId "a" AstLocationNone <= locatedId "b" AstLocationNone)
                 assertBool
                     ""
-                    (Id "b" AstLocationNone >= Id "a" AstLocationNone)
+                    (locatedId "b" AstLocationNone >= locatedId "a" AstLocationNone)
                 assertBool
                     ""
-                    (Id "a" AstLocationNone == Id "a" AstLocationNone)
+                    (locatedId "a" AstLocationNone == locatedId "a" AstLocationNone)
             )
         , testCase
             "Id comparison ignores location"
             ( do
                 assertBool
                     ""
-                    (Id "a" AstLocationNone == Id "a" AstLocationImplicit)
+                    (locatedId "a" AstLocationNone == locatedId "a" AstLocationImplicit)
                 assertBool
                     ""
-                    (Id "a" AstLocationImplicit == Id "a" AstLocationNone)
+                    (locatedId "a" AstLocationImplicit == locatedId "a" AstLocationNone)
             )
         , testCase
             "Id show"
             ( assertEqual
                 ""
                 "Id {getId = \"a\", idLocation = AstLocationNone}"
-                (show (Id "a" AstLocationNone))
+                (show (locatedId "a" AstLocationNone))
             )
         , testCase
             "noLocationId"
             ( assertEqual
                 ""
-                Id
-                    { getId = "a"
-                    , idLocation = AstLocationNone
-                    }
+                (locatedId "a" AstLocationNone)
                 (noLocationId "a")
             )
         ]

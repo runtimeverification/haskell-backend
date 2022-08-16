@@ -112,7 +112,7 @@ import Kore.Sort (
 import Kore.Substitute
 import Kore.Syntax.Id (
     AstLocation (..),
-    Id (..),
+    locatedId,
  )
 import Kore.TopBottom (
     TopBottom (..),
@@ -533,10 +533,7 @@ aPG :: Sort -> Alias (TermLike.TermLike VariableName)
 aPG sort =
     Alias
         { aliasConstructor =
-            Id
-                { getId = allPathGlobally
-                , idLocation = AstLocationNone
-                }
+            locatedId allPathGlobally AstLocationNone
         , aliasParams = [sort]
         , aliasSorts =
             ApplicationSorts

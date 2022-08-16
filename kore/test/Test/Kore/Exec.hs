@@ -493,7 +493,7 @@ test_checkFunctions =
         ]
   where
     mySymbolName :: Id
-    mySymbolName = Id "MySymbol" AstLocationTest
+    mySymbolName = locatedId "MySymbol" AstLocationTest
     mySymbol :: Sentence.Symbol
     mySymbol =
         Sentence.Symbol
@@ -819,7 +819,7 @@ verifiedMyModule module_ = indexedModule
             }
 
 mySortName :: Id
-mySortName = Id "MySort" AstLocationTest
+mySortName = locatedId "MySort" AstLocationTest
 
 mySort :: Sort
 mySort =

@@ -57,7 +57,8 @@ import Kore.Sort qualified as Kore (
     Sort,
  )
 import Kore.Syntax.Id qualified as Kore (
-    Id (Id, getId),
+    Id,
+    getId,
  )
 import Prelude.Kore
 import SMT.AST qualified as AST
@@ -275,7 +276,7 @@ type UnresolvedSymbol =
     Symbol SortReference Encodable
 
 encodable :: Kore.Id -> Encodable
-encodable Kore.Id{getId} = Encodable (Atom getId)
+encodable x = Encodable (Atom (Kore.getId x))
 
 encode :: Encodable -> SExpr
 encode (AlreadyEncoded e) = e

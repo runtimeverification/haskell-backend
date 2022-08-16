@@ -1829,10 +1829,7 @@ wEF :: Sort -> Alias (TermLike VariableName)
 wEF sort =
     Alias
         { aliasConstructor =
-            Id
-                { getId = weakExistsFinally
-                , idLocation = AstLocationNone
-                }
+            locatedId weakExistsFinally AstLocationNone
         , aliasParams = [sort]
         , aliasSorts =
             ApplicationSorts
@@ -1848,10 +1845,7 @@ wAF :: Sort -> Alias (TermLike VariableName)
 wAF sort =
     Alias
         { aliasConstructor =
-            Id
-                { getId = weakAlwaysFinally
-                , idLocation = AstLocationNone
-                }
+            locatedId weakAlwaysFinally AstLocationNone
         , aliasParams = [sort]
         , aliasSorts =
             ApplicationSorts

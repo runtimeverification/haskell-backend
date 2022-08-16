@@ -254,11 +254,7 @@ traverseVariables adj =
 groundHead :: Text -> AstLocation -> SymbolOrAlias
 groundHead ctor location =
     SymbolOrAlias
-        { symbolOrAliasConstructor =
-            Id
-                { getId = ctor
-                , idLocation = location
-                }
+        { symbolOrAliasConstructor = locatedId ctor location
         , symbolOrAliasParams = []
         }
 

@@ -6,11 +6,14 @@ Please refer to <http://github.com/runtimeverification/haskell-backend/blob/mast
 -}
 module Kore.Syntax.Id (
     -- * Identifiers
-    Id (..),
+    Id,
+    getId,
+    idLocation,
     getIdForError,
     noLocationId,
     implicitId,
     generatedId,
+    locatedId,
 
     -- * Locations
     AstLocation (..),
@@ -80,21 +83,22 @@ Before doing this, you should consider using an existing case or adding a new
 constructor to 'AstLocation'.
 -}
 noLocationId :: Text -> Id
-noLocationId name = Id name AstLocationNone
+noLocationId name = locatedId name AstLocationNone
 
 -- | Create an implicit 'Id'.
 implicitId :: Text -> Id
-implicitId name = Id name AstLocationImplicit
+implicitId name = locatedId name AstLocationImplicit
 
 {- | Create a generated 'Id'.
 
 The location will be 'AstLocationGeneratedVariable'.
 -}
 generatedId :: Text -> Id
-generatedId getId =
-    Id{getId, idLocation}
-  where
-    idLocation = AstLocationGeneratedVariable
+generatedId name = locatedId name AstLocationGeneratedVariable
+
+-- | Create an 'Id' with the specified location.
+locatedId :: Text -> AstLocation -> Id
+locatedId = Id
 
 -- | Get the identifier name for an error message 'String'.
 getIdForError :: Id -> String

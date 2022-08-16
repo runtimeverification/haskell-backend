@@ -380,24 +380,24 @@ getVariableName identifier =
 
 -- | Read the fresh name counter (if any) from the end of an 'Id'.
 parseVariableCounter :: Id -> (Id, Maybe (Sup Natural))
-parseVariableCounter identifier@Id{getId, idLocation}
+parseVariableCounter identifier
     -- Cases:
     -- suffix is empty: no counter, Id is not changed
     | Text.null suffix = (identifier, Nothing)
     -- suffix is all zeros: counter is zero, Id has final zero stripped
     | Text.null nonZeros =
-        ( Id{idLocation, getId = base <> Text.init zeros}
+        ( locatedId (base <> Text.init zeros) (idLocation identifier)
         , Just (Element 0)
         )
     -- suffix is some zeros followed by non-zeros:
     --   read the counter from the non-zeros, Id is base + zeros
     | otherwise =
-        ( Id{idLocation, getId = base <> zeros}
+        ( locatedId (base <> zeros) (idLocation identifier)
         , (Just . Element) (read $ Text.unpack nonZeros)
         )
   where
-    base = Text.dropWhileEnd Char.isDigit getId
-    suffix = Text.drop (Text.length base) getId
+    base = Text.dropWhileEnd Char.isDigit (getId identifier)
+    suffix = Text.drop (Text.length base) (getId identifier)
     zeros = Text.takeWhile (== '0') suffix
     nonZeros = Text.drop (Text.length zeros) suffix
 
@@ -410,9 +410,8 @@ an AstLocation.
 -}
 mkId :: Token -> Id
 mkId tok@(Token (AlexPn fileName _ line column) _) =
-    Id { getId = getIdentName tok
-       , idLocation = AstLocationFile $ FileLocation{fileName, line, column}
-       }
+    locatedId (getIdentName tok)
+              (AstLocationFile $ FileLocation{fileName, line, column})
 
 -- | Create a VariableName from a Token by using mkId and getVariableName.
 mkVariableName :: Token -> VariableName

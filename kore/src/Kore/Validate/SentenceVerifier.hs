@@ -115,10 +115,10 @@ data UnparameterizedId = UnparameterizedId
     deriving stock (Show)
 
 toUnparameterizedId :: Id -> UnparameterizedId
-toUnparameterizedId Id{getId = name, idLocation = location} =
+toUnparameterizedId x =
     UnparameterizedId
-        { unparameterizedIdName = name
-        , unparameterizedIdLocation = location
+        { unparameterizedIdName = getId x
+        , unparameterizedIdLocation = idLocation x
         }
 
 verifyUniqueId ::
