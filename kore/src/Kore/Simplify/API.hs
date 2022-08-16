@@ -61,7 +61,6 @@ import Kore.IndexedModule.SortGraph
 import Kore.IndexedModule.SortGraph qualified as SortGraph
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
-import Kore.Rewrite.Axiom.EvaluationStrategy qualified as Axiom.EvaluationStrategy
 import Kore.Rewrite.Axiom.Identifier (
     AxiomIdentifier,
     matchAxiomIdentifier,
@@ -127,6 +126,7 @@ mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquation
             , memo = Memo.forgetful
             , injSimplifier
             , overloadSimplifier
+            , hookedSymbols = Map.empty
             }
     injSimplifier =
         {-# SCC "evalSimplifier/injSimplifier" #-}
@@ -143,14 +143,15 @@ mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquation
     simplifierTerm =
         {-# SCC "evalSimplifier/simplifierTerm" #-}
         TermLike.simplify
-    -- Initialize without any builtin or axiom simplifiers.
+    -- Initialize without any axiom simplifiers.
     earlySimplifierAxioms = Map.empty
 
-    verifiedModule' =
+    verifiedModule' :: VerifiedModuleSyntax Attribute.Symbol =
         {-# SCC "evalSimplifier/verifiedModule'" #-}
         IndexedModule.mapAliasPatterns
             (Builtin.internalize metadataTools)
             verifiedModule
+    hookedSymbols = mkHookedSymbols verifiedModule'
     overloadSimplifier =
         {-# SCC "evalSimplifier/overloadSimplifier" #-}
         mkOverloadSimplifier overloadGraph injSimplifier
@@ -161,20 +162,7 @@ mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquation
             Equation.simplifyExtractedEquations $
                 (Map.map . fmap . Equation.mapVariables $ pure mkEquationVariable)
                     rawEquations
-        let builtinEvaluators
-                , userEvaluators
-                , simplifierAxioms ::
-                    BuiltinAndAxiomSimplifierMap
-            userEvaluators = mkEvaluatorRegistry equations
-            builtinEvaluators =
-                Axiom.EvaluationStrategy.builtinEvaluation
-                    <$> Builtin.koreEvaluators verifiedModule'
-            simplifierAxioms =
-                {-# SCC "evalSimplifier/simplifierAxioms" #-}
-                Map.unionWith
-                    Axiom.EvaluationStrategy.simplifierWithFallback
-                    builtinEvaluators
-                    userEvaluators
+        let userEvaluators = mkEvaluatorRegistry equations :: BuiltinAndAxiomSimplifierMap
         memo <- Memo.new
         return
             Env
@@ -182,10 +170,11 @@ mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquation
                 , simplifierCondition
                 , simplifierPattern
                 , simplifierTerm
-                , simplifierAxioms
+                , simplifierAxioms = userEvaluators
                 , memo
                 , injSimplifier
                 , overloadSimplifier
+                , hookedSymbols
                 }
 
 {- | Evaluate a simplifier computation, returning the result of only one branch.

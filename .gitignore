@@ -50,3 +50,4 @@ kore-exec.tar.gz
 hie.yaml
 .hie/
 .direnv
+*~

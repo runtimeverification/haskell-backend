@@ -57,11 +57,15 @@ unificationProcedure sideCondition p1 p2
     | otherwise = infoAttemptUnification p1 p2 $ do
         condition <- unifyTerms p1 p2 sideCondition
         TopBottom.guardAgainstBottom condition
+        marker "unify" "MakeCeil"
         let term = unifiedTermAnd p1 p2 condition
         orCeil <- makeEvaluateTermCeil sideCondition term
+        marker "unify" "CombineCeil"
         ceil' <- Monad.Unify.scatter orCeil
         lowerLogicT . simplifyCondition sideCondition $
             Conditional.andCondition ceil' condition
   where
     p1Sort = termLikeSort p1
     p2Sort = termLikeSort p2
+
+    marker c t = liftIO . traceMarkerIO $ concat [c, ":", t, ":"]

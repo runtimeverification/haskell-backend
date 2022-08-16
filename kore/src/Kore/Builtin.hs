@@ -27,23 +27,12 @@ module Kore.Builtin (
     Builtin.symbolVerifier,
     koreVerifiers,
     koreEvaluators,
-    evaluators,
     internalize,
 ) where
 
 import Data.Functor.Foldable qualified as Recursive
-import Data.Map.Strict (
-    Map,
- )
-import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
- )
-import Kore.Attribute.Hook (
-    Hook (..),
- )
-import Kore.Attribute.Symbol (
-    StepperAttributes,
  )
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Builtin.Bool qualified as Bool
@@ -60,21 +49,10 @@ import Kore.Builtin.Map qualified as Map
 import Kore.Builtin.Set qualified as Set
 import Kore.Builtin.Signedness qualified as Signedness
 import Kore.Builtin.String qualified as String
-import Kore.IndexedModule.IndexedModule (
-    IndexedModuleSyntax (..),
-    VerifiedModuleSyntax,
- )
-import Kore.IndexedModule.IndexedModule qualified as IndexedModule
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
 import Kore.Internal.TermLike
-import Kore.Rewrite.Axiom.Identifier (
-    AxiomIdentifier,
- )
-import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier (
-    AxiomIdentifier (..),
- )
 import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
  )
@@ -103,74 +81,25 @@ koreVerifiers =
 
 {- | Construct an evaluation context for Kore builtin functions.
 
-  Returns a map from symbol identifiers to builtin functions used for function
+  Given the name of a hook, returns the builtin function used for function
   evaluation in the context of the given module.
 
   See also: 'Data.Step.Step.step'
 -}
-koreEvaluators ::
-    -- | Module under which evaluation takes place
-    VerifiedModuleSyntax StepperAttributes ->
-    Map AxiomIdentifier BuiltinAndAxiomSimplifier
-koreEvaluators = evaluators builtins
-  where
-    builtins :: Map Text BuiltinAndAxiomSimplifier
-    builtins =
-        Map.unions
-            [ Bool.builtinFunctions
-            , Int.builtinFunctions
-            , KEqual.builtinFunctions
-            , List.builtinFunctions
-            , Map.builtinFunctions
-            , Set.builtinFunctions
-            , String.builtinFunctions
-            , Krypto.builtinFunctions
-            , InternalBytes.builtinFunctions
-            ]
-
-{- | Construct an evaluation context for the given builtin functions.
-
-  Returns a map from symbol identifiers to builtin functions used for function
-  evaluation in the context of the given module.
-
-  See also: 'Data.Step.Step.step', 'koreEvaluators'
--}
-evaluators ::
-    -- | Builtin functions indexed by name
-    Map Text BuiltinAndAxiomSimplifier ->
-    -- | Module under which evaluation takes place
-    VerifiedModuleSyntax StepperAttributes ->
-    Map AxiomIdentifier BuiltinAndAxiomSimplifier
-evaluators builtins indexedModule =
-    Map.mapMaybe
-        lookupBuiltins
-        ( Map.mapKeys
-            AxiomIdentifier.Application
-            (hookedSymbolAttributes indexedModule)
-        )
-  where
-    hookedSymbolAttributes ::
-        VerifiedModuleSyntax StepperAttributes ->
-        Map Id StepperAttributes
-    hookedSymbolAttributes im =
-        Map.union
-            (justAttributes <$> IndexedModule.hookedObjectSymbolSentences im)
-            ( Map.unions
-                (importHookedSymbolAttributes <$> indexedModuleImportsSyntax im)
-            )
-      where
-        justAttributes (attrs, _) = attrs
-
-    importHookedSymbolAttributes ::
-        (a, b, VerifiedModuleSyntax StepperAttributes) ->
-        Map Id StepperAttributes
-    importHookedSymbolAttributes (_, _, im) = hookedSymbolAttributes im
-
-    lookupBuiltins :: StepperAttributes -> Maybe BuiltinAndAxiomSimplifier
-    lookupBuiltins Attribute.Symbol{Attribute.hook = Hook{getHook}} =
-        do
-            name <- getHook
-            Map.lookup name builtins
+koreEvaluators :: Text -> Maybe BuiltinAndAxiomSimplifier
+koreEvaluators key =
+    asum
+        [ Bool.builtinFunctions key
+        , Int.builtinFunctions key
+        , KEqual.builtinFunctions key
+        , List.builtinFunctions key
+        , Map.builtinFunctions key
+        , Set.builtinFunctions key
+        , String.builtinFunctions key
+        , Krypto.builtinFunctions key
+        , InternalBytes.builtinFunctions key
+        ]
+{-# INLINE koreEvaluators #-}
 
 {- | Convert a 'TermLike' to its internal representation.
 
