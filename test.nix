@@ -44,7 +44,7 @@ in stdenv.mkDerivation {
   preferLocalBuild = true;
   buildInputs = [
     k
-    kore # some tests use kore-exec directly, others run through the frontend
+    kore # some tests use kore-exec/kore-prof directly, others run through the frontend
     ncurses # TODO: .../lib/kframework/setenv: line 31: tput: command not found
     jq
     miller # processing test statistics
@@ -57,6 +57,7 @@ in stdenv.mkDerivation {
   buildFlags = [
     "KORE_PARSER=kore-parser"
     "KORE_EXEC=kore-exec"
+    "KORE_PROF=kore-prof"
     "KORE_REPL=kore-repl"
     "--output-sync"
     "test"
@@ -73,4 +74,3 @@ in stdenv.mkDerivation {
     runHook postInstall
   '';
 }
-
