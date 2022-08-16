@@ -208,15 +208,17 @@ collectStats =
         (Double, tag) ->
         (Double, tag) ->
         State (Map (tag, tag) (Stats' Double)) (Double, tag)
-    collect (t1, prior) (t2, next) =
+    collect (t1, prior) (t2, next) = do
         case label prior next of
-            Nothing ->
-                error $ "Undefined transition " <> show prior <> " --> " <> show next
+            Nothing -> do
+                traceM $
+                    "WARNING: Undefined transition " <> show prior <> " --> " <> show next
+                modify $ Map.alter (add $ t2 - t1) (prior, next)
             Just l
-                | Text.null l -> pure (t2, next) -- omit
-                | otherwise -> do
+                | Text.null l -> pure ()
+                | otherwise ->
                     modify $ Map.alter (add $ t2 - t1) (prior, next)
-                    pure (t2, next)
+        pure (t2, next)
 
     add :: Double -> Maybe (Stats' Double) -> Maybe (Stats' Double)
     add x Nothing = Just $ singleStats' x
