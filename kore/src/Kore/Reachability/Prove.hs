@@ -353,8 +353,10 @@ proveClaim
         case traversalResult of
             GraphTraversal.GotStuck n rs ->
                 returnUnprovenClaims n rs
-            GraphTraversal.Aborted n rs ->
-                returnUnprovenClaims n rs
+            GraphTraversal.Stopped rs nexts ->
+                returnUnprovenClaims (length nexts) rs
+            GraphTraversal.Aborted rs ->
+                returnUnprovenClaims (length rs) rs
             GraphTraversal.Ended results -> do
                 let depths = map fst results
                     maxProofDepth = sconcat (ProofDepth 0 :| depths)
@@ -404,7 +406,7 @@ proveClaim
         toTransitionResultWithDepth prior = \case
             []
                 | isJust (extractStuck $ snd prior) -> GraphTraversal.Stuck prior
-                | isJust (extractUnproven $ snd prior) -> GraphTraversal.Stopped [prior]
+                | isJust (extractUnproven $ snd prior) -> GraphTraversal.Stop prior []
                 | otherwise -> GraphTraversal.Final prior
             [c@(_, ClaimState.Claimed{})] -> GraphTraversal.Continuing c
             [c@(_, ClaimState.Rewritten{})] -> GraphTraversal.Continuing c
