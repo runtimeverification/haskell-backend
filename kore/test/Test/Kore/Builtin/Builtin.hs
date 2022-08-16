@@ -6,7 +6,6 @@ module Test.Kore.Builtin.Builtin (
     testMetadataTools,
     testEnv,
     testConditionSimplifier,
-    testEvaluators,
     testSymbolWithoutSolver,
     simplify,
     evaluateTerm,
@@ -221,9 +220,6 @@ testConditionSimplifier ::
 testConditionSimplifier =
     Simplifier.Condition.create SubstitutionSimplifier.substitutionSimplifier
 
-testEvaluators :: BuiltinAndAxiomSimplifierMap
-testEvaluators = Builtin.koreEvaluators $ indexedModuleSyntax verifiedModule
-
 testSortGraph :: SortGraph.SortGraph
 testSortGraph = SortGraph.fromIndexedModule verifiedModule
 
@@ -247,10 +243,11 @@ testEnv =
         , simplifierCondition = testConditionSimplifier
         , simplifierPattern = Pattern.makeEvaluate
         , simplifierTerm = TermLike.simplify
-        , simplifierAxioms = testEvaluators
+        , simplifierAxioms = Map.empty
         , memo = Memo.forgetful
         , injSimplifier = testInjSimplifier
         , overloadSimplifier = testOverloadSimplifier
+        , hookedSymbols = mkHookedSymbols $ indexedModuleSyntax verifiedModule
         }
 
 simplify :: TermLike RewritingVariableName -> IO [Pattern RewritingVariableName]

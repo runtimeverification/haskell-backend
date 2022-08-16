@@ -45,10 +45,6 @@ import Data.ByteString.Short qualified as ShortByteString
 import Data.Functor.Const
 import Data.Functor.Foldable qualified as Recursive
 import Data.HashMap.Strict qualified as HashMap
-import Data.Map.Strict (
-    Map,
- )
-import Data.Map.Strict qualified as Map
 import Data.String (
     IsString,
  )
@@ -542,25 +538,24 @@ bytes2int bytes end sign =
             LittleEndian _ -> bytes
             BigEndian _ -> ByteString.reverse bytes
 
-builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
-builtinFunctions =
-    Map.fromList
-        [ (bytes2StringKey, evalBytes2String)
-        , (string2BytesKey, evalString2Bytes)
-        , (decodeBytesKey, evalDecodeBytes)
-        , (encodeBytesKey, evalEncodeBytes)
-        , (updateKey, evalUpdate)
-        , (getKey, evalGet)
-        , (substrKey, evalSubstr)
-        , (replaceAtKey, evalReplaceAt)
-        , (padRightKey, evalPadRight)
-        , (padLeftKey, evalPadLeft)
-        , (reverseKey, evalReverse)
-        , (lengthKey, evalLength)
-        , (concatKey, evalConcat)
-        , (int2bytesKey, evalInt2bytes)
-        , (bytes2intKey, evalBytes2int)
-        ]
+builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
+builtinFunctions key
+    | key == bytes2StringKey = Just evalBytes2String
+    | key == string2BytesKey = Just evalString2Bytes
+    | key == decodeBytesKey = Just evalDecodeBytes
+    | key == encodeBytesKey = Just evalEncodeBytes
+    | key == updateKey = Just evalUpdate
+    | key == getKey = Just evalGet
+    | key == substrKey = Just evalSubstr
+    | key == replaceAtKey = Just evalReplaceAt
+    | key == padRightKey = Just evalPadRight
+    | key == padLeftKey = Just evalPadLeft
+    | key == reverseKey = Just evalReverse
+    | key == lengthKey = Just evalLength
+    | key == concatKey = Just evalConcat
+    | key == int2bytesKey = Just evalInt2bytes
+    | key == bytes2intKey = Just evalBytes2int
+    | otherwise = Nothing
 
 -- | @UnifyBytes@ matches unification problems on @\\dv{Bytes}(_)@ itself.
 data UnifyBytes = UnifyBytes
