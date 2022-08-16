@@ -36,10 +36,6 @@ module Kore.Builtin.Bool (
 import Control.Monad qualified as Monad
 import Data.Functor.Const
 import Data.HashMap.Strict qualified as HashMap
-import Data.Map.Strict (
-    Map,
- )
-import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
@@ -146,19 +142,18 @@ parse = (Parsec.<|>) true false
     false = Parsec.string "false" $> False
 
 -- | @builtinFunctions@ are builtin functions on the 'Bool' sort.
-builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
-builtinFunctions =
-    Map.fromList
-        [ (orKey, binaryOperator orKey (||))
-        , (andKey, binaryOperator andKey (&&))
-        , (xorKey, binaryOperator xorKey xor)
-        , (neKey, binaryOperator neKey (/=))
-        , (eqKey, binaryOperator eqKey (==))
-        , (notKey, unaryOperator notKey not)
-        , (impliesKey, binaryOperator impliesKey implies)
-        , (andThenKey, binaryOperator andThenKey (&&))
-        , (orElseKey, binaryOperator orElseKey (||))
-        ]
+builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
+builtinFunctions key
+    | key == orKey = Just $ binaryOperator orKey (||)
+    | key == andKey = Just $ binaryOperator andKey (&&)
+    | key == xorKey = Just $ binaryOperator xorKey xor
+    | key == neKey = Just $ binaryOperator neKey (/=)
+    | key == eqKey = Just $ binaryOperator eqKey (==)
+    | key == notKey = Just $ unaryOperator notKey not
+    | key == impliesKey = Just $ binaryOperator impliesKey implies
+    | key == andThenKey = Just $ binaryOperator andThenKey (&&)
+    | key == orElseKey = Just $ binaryOperator orElseKey (||)
+    | otherwise = Nothing
   where
     unaryOperator =
         Builtin.unaryOperator extractBoolDomainValue asPattern
