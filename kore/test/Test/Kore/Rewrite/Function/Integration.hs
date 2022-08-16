@@ -1610,11 +1610,11 @@ listSimplifiers =
         , (removeMapId, builtinEvaluation removeMapEvaluator)
         ]
   where
-    Just addIntEvaluator = Map.lookup "INT.add" Int.builtinFunctions
+    Just addIntEvaluator = Int.builtinFunctions "INT.add"
     addIntId =
         AxiomIdentifier.Application $
             symbolConstructor Builtin.addIntSymbol
-    Just removeMapEvaluator = Map.lookup "MAP.remove" Map.builtinFunctions
+    Just removeMapEvaluator = Map.builtinFunctions "MAP.remove"
     removeMapId =
         AxiomIdentifier.Application $
             symbolConstructor Builtin.removeMapSymbol
@@ -2030,9 +2030,6 @@ testConditionSimplifier ::
 testConditionSimplifier =
     Simplifier.Condition.create SubstitutionSimplifier.substitutionSimplifier
 
-testEvaluators :: BuiltinAndAxiomSimplifierMap
-testEvaluators = Builtin.koreEvaluators $ indexedModuleSyntax verifiedModule
-
 testInjSimplifier :: InjSimplifier
 testInjSimplifier =
     mkInjSimplifier $ SortGraph.fromIndexedModule verifiedModule
@@ -2048,8 +2045,7 @@ testEnv =
         , simplifierTerm = TermLike.simplify
         , simplifierAxioms =
             mconcat
-                [ testEvaluators
-                , natSimplifiers
+                [ natSimplifiers
                 , listSimplifiers
                 , mapSimplifiers
                 , fatalSimplifiers
@@ -2057,6 +2053,7 @@ testEnv =
         , memo = Memo.forgetful
         , injSimplifier = testInjSimplifier
         , overloadSimplifier = Mock.overloadSimplifier
+        , hookedSymbols = mkHookedSymbols $ indexedModuleSyntax verifiedModule
         }
 
 testEnvUnification :: Env
@@ -2064,8 +2061,7 @@ testEnvUnification =
     testEnv
         { simplifierAxioms =
             mconcat
-                [ testEvaluators
-                , natSimplifiersUnification
+                [ natSimplifiersUnification
                 , listSimplifiers
                 , mapSimplifiers
                 , fatalSimplifiers
