@@ -177,7 +177,8 @@
         self.flake.${system}.packages // {
           update-cabal = self.project.${system}.rematerialize-kore;
           update-cabal-ghc9 = self.projectGhc9.${system}.rematerialize-kore;
-
+          kore-exec-ghc9 =
+            self.projectGhc9.${system}.hsPkgs.kore.components.exes.kore-exec;
           kore-exec-prof =
             self.projectGhc9ProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
           kore-exec-prof-infotable =
