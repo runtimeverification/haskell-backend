@@ -410,6 +410,9 @@ instance MonadSimplify AllPathIdentity where
     localSimplifierAxioms = undefined
     askMemo = undefined
 
+instance MonadIO AllPathIdentity where
+    liftIO _ = error "Unimplemented"
+
 differentLengthPaths :: [MockRule]
 differentLengthPaths =
     fmap

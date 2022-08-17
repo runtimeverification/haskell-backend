@@ -41,10 +41,6 @@ import Data.HashMap.Strict (
     HashMap,
  )
 import Data.HashMap.Strict qualified as HashMap
-import Data.Map.Strict (
-    Map,
- )
-import Data.Map.Strict qualified as Map
 import Data.Sequence qualified as Seq
 import Data.Text (
     Text,
@@ -482,24 +478,23 @@ evalValues _ resultSort [_map] = do
 evalValues _ _ _ = Builtin.wrongArity Map.valuesKey
 
 -- | Implement builtin function evaluation.
-builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
-builtinFunctions =
-    Map.fromList
-        [ (Map.concatKey, Builtin.functionEvaluator evalConcat)
-        , (Map.lookupKey, Builtin.functionEvaluator evalLookup)
-        , (Map.lookupOrDefaultKey, Builtin.functionEvaluator evalLookupOrDefault)
-        , (Map.elementKey, Builtin.functionEvaluator evalElement)
-        , (Map.unitKey, Builtin.functionEvaluator evalUnit)
-        , (Map.updateKey, Builtin.functionEvaluator evalUpdate)
-        , (Map.in_keysKey, Builtin.functionEvaluator evalInKeys)
-        , (Map.keysKey, Builtin.functionEvaluator evalKeys)
-        , (Map.keys_listKey, Builtin.functionEvaluator evalKeysList)
-        , (Map.removeKey, Builtin.functionEvaluator evalRemove)
-        , (Map.removeAllKey, Builtin.functionEvaluator evalRemoveAll)
-        , (Map.sizeKey, Builtin.functionEvaluator evalSize)
-        , (Map.valuesKey, Builtin.functionEvaluator evalValues)
-        , (Map.inclusionKey, Builtin.functionEvaluator evalInclusion)
-        ]
+builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
+builtinFunctions key
+    | key == Map.concatKey = Just $ Builtin.functionEvaluator evalConcat
+    | key == Map.lookupKey = Just $ Builtin.functionEvaluator evalLookup
+    | key == Map.lookupOrDefaultKey = Just $ Builtin.functionEvaluator evalLookupOrDefault
+    | key == Map.elementKey = Just $ Builtin.functionEvaluator evalElement
+    | key == Map.unitKey = Just $ Builtin.functionEvaluator evalUnit
+    | key == Map.updateKey = Just $ Builtin.functionEvaluator evalUpdate
+    | key == Map.in_keysKey = Just $ Builtin.functionEvaluator evalInKeys
+    | key == Map.keysKey = Just $ Builtin.functionEvaluator evalKeys
+    | key == Map.keys_listKey = Just $ Builtin.functionEvaluator evalKeysList
+    | key == Map.removeKey = Just $ Builtin.functionEvaluator evalRemove
+    | key == Map.removeAllKey = Just $ Builtin.functionEvaluator evalRemoveAll
+    | key == Map.sizeKey = Just $ Builtin.functionEvaluator evalSize
+    | key == Map.valuesKey = Just $ Builtin.functionEvaluator evalValues
+    | key == Map.inclusionKey = Just $ Builtin.functionEvaluator evalInclusion
+    | otherwise = Nothing
 
 {- | Convert a Map-sorted 'TermLike' to its internal representation.
 

@@ -48,6 +48,7 @@ newtype UnifierT (m :: Type -> Type) a = UnifierT
             a
     }
     deriving newtype (Functor, Applicative, Monad, Alternative, MonadPlus)
+    deriving newtype (MonadIO)
 
 instance MonadTrans UnifierT where
     lift = UnifierT . lift . lift

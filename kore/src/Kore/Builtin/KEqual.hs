@@ -32,10 +32,6 @@ import Control.Error (
  )
 import Control.Monad qualified as Monad
 import Data.HashMap.Strict qualified as HashMap
-import Data.Map.Strict (
-    Map,
- )
-import Data.Map.Strict qualified as Map
 import Data.String (
     IsString,
  )
@@ -136,13 +132,12 @@ check whether they are equal or not, producing a builtin boolean value.
 sort) and return the first term if the expression is true, and the second
 otherwise.
 -}
-builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
-builtinFunctions =
-    Map.fromList
-        [ (eqKey, applicationAxiomSimplifier (evalKEq True))
-        , (neqKey, applicationAxiomSimplifier (evalKEq False))
-        , (iteKey, applicationAxiomSimplifier evalKIte)
-        ]
+builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
+builtinFunctions key
+    | key == eqKey = Just $ applicationAxiomSimplifier (evalKEq True)
+    | key == neqKey = Just $ applicationAxiomSimplifier (evalKEq False)
+    | key == iteKey = Just $ applicationAxiomSimplifier evalKIte
+    | otherwise = Nothing
 
 evalKEq ::
     forall variable.

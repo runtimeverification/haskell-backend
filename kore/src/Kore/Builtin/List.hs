@@ -56,10 +56,6 @@ import Control.Monad.Trans.Maybe qualified as Monad.Trans.Maybe (
     mapMaybeT,
  )
 import Data.HashMap.Strict qualified as HashMap
-import Data.Map.Strict (
-    Map,
- )
-import Data.Map.Strict qualified as Map
 import Data.Sequence (
     Seq,
  )
@@ -365,19 +361,18 @@ evalUpdateAll _ resultSort [_list1, _ix, _list2] = do
 evalUpdateAll _ _ _ = Builtin.wrongArity updateKey
 
 -- | Implement builtin function evaluation.
-builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
-builtinFunctions =
-    Map.fromList
-        [ (concatKey, Builtin.functionEvaluator evalConcat)
-        , (elementKey, Builtin.functionEvaluator evalElement)
-        , (unitKey, Builtin.functionEvaluator evalUnit)
-        , (getKey, Builtin.functionEvaluator evalGet)
-        , (updateKey, Builtin.functionEvaluator evalUpdate)
-        , (inKey, Builtin.functionEvaluator evalIn)
-        , (sizeKey, Builtin.functionEvaluator evalSize)
-        , (makeKey, Builtin.functionEvaluator evalMake)
-        , (updateAllKey, Builtin.functionEvaluator evalUpdateAll)
-        ]
+builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
+builtinFunctions key
+    | key == concatKey = Just $ Builtin.functionEvaluator evalConcat
+    | key == elementKey = Just $ Builtin.functionEvaluator evalElement
+    | key == unitKey = Just $ Builtin.functionEvaluator evalUnit
+    | key == getKey = Just $ Builtin.functionEvaluator evalGet
+    | key == updateKey = Just $ Builtin.functionEvaluator evalUpdate
+    | key == inKey = Just $ Builtin.functionEvaluator evalIn
+    | key == sizeKey = Just $ Builtin.functionEvaluator evalSize
+    | key == makeKey = Just $ Builtin.functionEvaluator evalMake
+    | key == updateAllKey = Just $ Builtin.functionEvaluator evalUpdateAll
+    | otherwise = Nothing
 
 data FirstElemVarData = FirstElemVarData
     { pat1, pat2 :: !(TermLike RewritingVariableName)
