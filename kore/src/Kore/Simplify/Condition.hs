@@ -179,7 +179,13 @@ simplifyPredicates sideCondition original = do
                 & fst . extract
     simplifiedPredicates <- do
         let eliminatedExists =
-                map (simplifyPredicateExistElim $ freeVariableNames original <> freeVariableNames sideCondition) $
+                map
+                    (simplifyPredicateExistElim $
+                        -- TODO (sam): this is quite conservative and we may not need to
+                        -- avoid names here, but there doesn't seem to be a negative
+                        -- impact on performance, so best leave this in for now.
+                        freeVariableNames original <>
+                        freeVariableNames sideCondition) $
                     toList predicates
         simplifyPredicatesWithAssumptions
             sideCondition
@@ -189,8 +195,8 @@ simplifyPredicates sideCondition original = do
         then return (Condition.markSimplified simplified)
         else simplifyPredicates sideCondition simplifiedPredicates
 
-{- | Simplify an existential predicate by removing the existential binder
-under the assumption that the others are true.
+{- | Simplify an existential predicate by removing the existential binder and refreshing
+all occurrences of the name within the child term
 -}
 simplifyPredicateExistElim ::
     Set (SomeVariableName RewritingVariableName) ->
