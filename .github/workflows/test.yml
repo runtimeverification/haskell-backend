@@ -33,7 +33,7 @@ jobs:
         run: nix-build -A kore
 
       - name: Build GHC9
-        run: GC_DONT_GC=1 nix build .#kore-exec-prof
+        run: GC_DONT_GC=1 nix build .#kore-exec-ghc9
 
       - name: Check shell
         run: nix-shell --run "echo OK"

@@ -150,6 +150,14 @@
       prelude-kore = ./src/main/kore/prelude.kore;
 
       project = projectForGhc { ghc = "ghc8107"; };
+
+      projectProfilingEventlog = projectForGhc {
+        ghc = "ghc8107";
+        profiling = true;
+        ghcOptions = [ "-eventlog" ];
+      };
+
+
       projectGhc9 = projectForGhc {
         ghc = "ghc923";
         stack-yaml = "stack-nix-ghc9.yaml";
@@ -177,8 +185,11 @@
         self.flake.${system}.packages // {
           update-cabal = self.project.${system}.rematerialize-kore;
           update-cabal-ghc9 = self.projectGhc9.${system}.rematerialize-kore;
-
+          kore-exec-ghc9 =
+            self.projectGhc9.${system}.hsPkgs.kore.components.exes.kore-exec;
           kore-exec-prof =
+            self.projectProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
+          kore-exec-prof-ghc9 =
             self.projectGhc9ProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
           kore-exec-prof-infotable =
             self.projectGhc9ProfilingEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;

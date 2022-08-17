@@ -37,8 +37,7 @@ test_simplifyEquation =
                         a
                 expected =
                     mkSimplifiedEquation (f a) a
-                        & pure
-                        & MultiAnd.make
+                        & MultiAnd.singleton
             actual <- simplify equation
             assertEqual "" expected actual
         , testCase "Gets split into two equations" $ do
