@@ -48,16 +48,13 @@ test_Pattern_simplify =
         "\\or(a, a)"
     , bottomLike `becomes` OrPattern.bottom $
         "\\and(a, \\bottom)"
-    , testCase "Replaces and terms under independent quantifiers" $ do
+    , testCase "Removes top level exist quantifier whilst simplifying" $ do
         let expect =
                 Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
                     ( makeAndPredicate
                         (makeCeilPredicate fOfX)
-                        ( makeExistsPredicate
-                            Mock.yConfig
-                            (makeCeilPredicate fOfY)
-                        )
+                        (makeCeilPredicate fOfY)
                     )
         actual <-
             simplify
@@ -117,10 +114,7 @@ test_Pattern_simplify =
                     (Mock.constr10 fOfX)
                     ( makeAndPredicate
                         (makeCeilPredicate fOfX)
-                        ( makeExistsPredicate
-                            x'
-                            (fromCeil_ $ Mock.f (mkElemVar x'))
-                        )
+                        (fromCeil_ $ Mock.f (mkElemVar x'))
                     )
                     & OrPattern.fromPattern
         actual <-
