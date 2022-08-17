@@ -748,7 +748,7 @@ test_simplificationIntegrationUnification =
                 )
                 initial
         assertEqual "" expect actual
-    , testCase "TESTING function application with top predicate" $ do
+    , testCase "function application with top predicate" $ do
         let requirement = \var ->
                 makeEqualsPredicate
                     (Mock.f (mkElemVar var))
