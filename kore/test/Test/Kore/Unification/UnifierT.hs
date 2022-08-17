@@ -63,8 +63,7 @@ test_simplifyCondition =
         assertEqual "Expected empty result" expect actual
         assertNormalizedPredicatesMulti actual
     , testCase "∃ y z. x = σ(y, z)" $ do
-        let expect = Condition.fromPredicate existsPredicate
-        assertNormalized expect
+        assertNormalized existsSubst
     , testCase "¬∃ y z. x = σ(y, z)" $ do
         let expect =
                 Condition.fromPredicate $
@@ -95,6 +94,10 @@ test_simplifyCondition =
         assertEqual "Expected \\top" expect actual
     ]
   where
+    existsSubst =
+        Condition.fromSubstitution $
+            Substitution.unsafeWrap
+                [(inject Mock.xConfig, (Mock.sigma (mkElemVar Mock.yConfig) (mkElemVar Mock.zConfig)))]
     existsPredicate =
         Predicate.makeMultipleExists [Mock.yConfig, Mock.zConfig] $
             Predicate.makeEqualsPredicate

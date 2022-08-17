@@ -54,10 +54,7 @@ test_Pattern_simplify =
                     (Mock.constr10 fOfX)
                     ( makeAndPredicate
                         (makeCeilPredicate fOfX)
-                        ( makeExistsPredicate
-                            Mock.yConfig
                             (makeCeilPredicate fOfY)
-                        )
                     )
         actual <-
             simplify
@@ -117,10 +114,8 @@ test_Pattern_simplify =
                     (Mock.constr10 fOfX)
                     ( makeAndPredicate
                         (makeCeilPredicate fOfX)
-                        ( makeExistsPredicate
-                            x'
+
                             (fromCeil_ $ Mock.f (mkElemVar x'))
-                        )
                     )
                     & OrPattern.fromPattern
         actual <-
