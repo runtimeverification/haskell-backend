@@ -180,13 +180,14 @@ simplifyPredicates sideCondition original = do
     simplifiedPredicates <- do
         let eliminatedExists =
                 map
-                    (simplifyPredicateExistElim $
+                    ( simplifyPredicateExistElim $
                         -- TODO (sam): this is quite conservative and we may not need to
                         -- avoid names here, but there doesn't seem to be a negative
                         -- impact on performance, so best leave this in for now.
-                        freeVariableNames original <>
-                        freeVariableNames sideCondition) $
-                    toList predicates
+                        freeVariableNames original
+                            <> freeVariableNames sideCondition
+                    )
+                    $ toList predicates
         simplifyPredicatesWithAssumptions
             sideCondition
             eliminatedExists

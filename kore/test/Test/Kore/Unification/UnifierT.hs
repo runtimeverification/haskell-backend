@@ -62,9 +62,12 @@ test_simplifyCondition =
         actual <- normalize Condition.bottomCondition
         assertEqual "Expected empty result" expect actual
         assertNormalizedPredicatesMulti actual
-    , testCase ("∃ y z. x = σ(y, z) normalized to a substitution x = σ(y, z) " <>
-        "(top-level exists get removed, and y,z must be fresh in the context)") $ do
-        assertNormalized existsSubst
+    , testCase
+        ( "∃ y z. x = σ(y, z) normalized to a substitution x = σ(y, z) "
+            <> "(top-level exists get removed, and y,z must be fresh in the context)"
+        )
+        $ do
+            assertNormalized existsSubst
     , testCase "¬∃ y z. x = σ(y, z)" $ do
         let expect =
                 Condition.fromPredicate $
