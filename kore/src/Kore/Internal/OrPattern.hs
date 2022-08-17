@@ -26,7 +26,6 @@ module Kore.Internal.OrPattern (
     targetBinder,
     mapVariables,
     MultiOr.flatten,
-    MultiOr.filterOr,
     MultiOr.gather,
     MultiOr.observeAllT,
     MultiOr.map,
