@@ -1317,7 +1317,8 @@ matchSimplification ::
 matchSimplification = matchDefinition
 
 type MatchResult =
-    Either Text
+    Either
+        Text
         ( Predicate RewritingVariableName
         , Map.Map
             (SomeVariableName RewritingVariableName)

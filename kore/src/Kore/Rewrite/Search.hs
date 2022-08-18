@@ -13,8 +13,8 @@ module Kore.Rewrite.Search (
 ) where
 
 import Control.Error (
-    MaybeT (..),
     ExceptT (..),
+    MaybeT (..),
  )
 import Control.Monad.Trans.Maybe (
     exceptToMaybeT,
