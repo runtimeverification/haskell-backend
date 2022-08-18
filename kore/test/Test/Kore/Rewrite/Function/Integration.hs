@@ -19,6 +19,8 @@ import Data.Map.Strict (
 import Data.Map.Strict qualified as Map
 
 -- import Data.Sup
+
+import Data.Functor.Const (Const (..))
 import Data.Text (Text)
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Builtin qualified as Builtin
@@ -26,7 +28,6 @@ import Kore.Builtin.AssociativeCommutative qualified as Ac
 import Kore.Builtin.Int qualified as Int (
     builtinFunctions,
  )
-import Data.Functor.Const (Const(..))
 import Kore.Builtin.Map qualified as Map (
     builtinFunctions,
  )
@@ -105,6 +106,8 @@ import Prelude.Kore hiding (
  )
 
 -- import Pretty qualified
+
+import Kore.Attribute.Synthetic (synthesize)
 import Test.Kore
 import Test.Kore.Builtin.Bool qualified as Bool
 import Test.Kore.Builtin.Builtin qualified as Builtin
@@ -127,7 +130,6 @@ import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-import Kore.Attribute.Synthetic (synthesize)
 
 test_functionIntegration :: [TestTree]
 test_functionIntegration =
