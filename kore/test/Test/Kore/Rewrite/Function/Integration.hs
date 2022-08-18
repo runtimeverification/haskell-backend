@@ -26,6 +26,7 @@ import Kore.Builtin.AssociativeCommutative qualified as Ac
 import Kore.Builtin.Int qualified as Int (
     builtinFunctions,
  )
+import Data.Functor.Const (Const(..))
 import Kore.Builtin.Map qualified as Map (
     builtinFunctions,
  )
@@ -75,6 +76,7 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
     mkConfigVariable,
+    mkUnifiedRuleVariable,
  )
 import Kore.Simplify.Condition qualified as Simplifier.Condition
 import Kore.Simplify.InjSimplifier (
@@ -125,6 +127,7 @@ import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
+import Kore.Attribute.Synthetic (synthesize)
 
 test_functionIntegration :: [TestTree]
 test_functionIntegration =
@@ -289,54 +292,26 @@ test_functionIntegration =
                 (Mock.f Mock.cf)
         assertEqual "" (MultiOr.singleton expect) actual
     , testCase "Merges substitutions with reevaluation ones." $ do
+        let xTerm = synthesize $ VariableF . Const $ mkUnifiedRuleVariable $ inject @(SomeVariable VariableName) Mock.x
+        let zTerm = synthesize $ VariableF . Const $ mkUnifiedRuleVariable $ inject @(SomeVariable VariableName) Mock.z
+
         let expect =
                 Conditional
-                    { term = Mock.f Mock.e
+                    { term = Mock.f Mock.cf
                     , predicate = makeTruePredicate
-                    , substitution =
-                        Substitution.unsafeWrap
-                            [
-                                ( inject Mock.var_xConfig_1
-                                , Mock.a
-                                )
-                            ,
-                                ( inject Mock.var_zConfig_1
-                                , Mock.a
-                                )
-                            ]
+                    , substitution = mempty
                     }
+
         actual <-
-            evaluate
+            evaluate'
                 ( Map.fromList
                     [
                         ( AxiomIdentifier.Application Mock.cfId
-                        , appliedMockEvaluator
-                            Conditional
-                                { term = Mock.cg
-                                , predicate = makeTruePredicate
-                                , substitution =
-                                    Substitution.unsafeWrap
-                                        [
-                                            ( inject Mock.x
-                                            , mkElemVar Mock.z
-                                            )
-                                        ]
-                                }
+                        , [mkEquationEnsures Mock.cf Mock.cg $ makeEqualsPredicate xTerm zTerm]
                         )
                     ,
                         ( AxiomIdentifier.Application Mock.cgId
-                        , appliedMockEvaluator
-                            Conditional
-                                { term = Mock.e
-                                , predicate = makeTruePredicate
-                                , substitution =
-                                    Substitution.unsafeWrap
-                                        [
-                                            ( inject Mock.x
-                                            , Mock.a
-                                            )
-                                        ]
-                                }
+                        , [mkEquationEnsures Mock.cg Mock.e $ makeEqualsPredicate xTerm Mock.a]
                         )
                     ]
                 )
