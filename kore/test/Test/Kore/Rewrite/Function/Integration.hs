@@ -288,61 +288,61 @@ test_functionIntegration =
                 )
                 (Mock.f Mock.cf)
         assertEqual "" (MultiOr.singleton expect) actual
-    , -- , testCase "Merges substitutions with reevaluation ones." $ do
-      --     let expect =
-      --             Conditional
-      --                 { term = Mock.f Mock.e
-      --                 , predicate = makeTruePredicate
-      --                 , substitution =
-      --                     Substitution.unsafeWrap
-      --                         [
-      --                             ( inject Mock.var_xConfig_1
-      --                             , Mock.a
-      --                             )
-      --                         ,
-      --                             ( inject Mock.var_zConfig_1
-      --                             , Mock.a
-      --                             )
-      --                         ]
-      --                 }
-      --     actual <-
-      --         evaluate
-      --             ( Map.fromList
-      --                 [
-      --                     ( AxiomIdentifier.Application Mock.cfId
-      --                     , appliedMockEvaluator
-      --                         Conditional
-      --                             { term = Mock.cg
-      --                             , predicate = makeTruePredicate
-      --                             , substitution =
-      --                                 Substitution.unsafeWrap
-      --                                     [
-      --                                         ( inject Mock.x
-      --                                         , mkElemVar Mock.z
-      --                                         )
-      --                                     ]
-      --                             }
-      --                     )
-      --                 ,
-      --                     ( AxiomIdentifier.Application Mock.cgId
-      --                     , appliedMockEvaluator
-      --                         Conditional
-      --                             { term = Mock.e
-      --                             , predicate = makeTruePredicate
-      --                             , substitution =
-      --                                 Substitution.unsafeWrap
-      --                                     [
-      --                                         ( inject Mock.x
-      --                                         , Mock.a
-      --                                         )
-      --                                     ]
-      --                             }
-      --                     )
-      --                 ]
-      --             )
-      --             (Mock.f Mock.cf)
-      --     assertEqual "" (MultiOr.singleton expect) actual
-      -- , testCase "Simplifies substitution-predicate." $ do
+    , testCase "Merges substitutions with reevaluation ones." $ do
+        let expect =
+                Conditional
+                    { term = Mock.f Mock.e
+                    , predicate = makeTruePredicate
+                    , substitution =
+                        Substitution.unsafeWrap
+                            [
+                                ( inject Mock.var_xConfig_1
+                                , Mock.a
+                                )
+                            ,
+                                ( inject Mock.var_zConfig_1
+                                , Mock.a
+                                )
+                            ]
+                    }
+        actual <-
+            evaluate
+                ( Map.fromList
+                    [
+                        ( AxiomIdentifier.Application Mock.cfId
+                        , appliedMockEvaluator
+                            Conditional
+                                { term = Mock.cg
+                                , predicate = makeTruePredicate
+                                , substitution =
+                                    Substitution.unsafeWrap
+                                        [
+                                            ( inject Mock.x
+                                            , mkElemVar Mock.z
+                                            )
+                                        ]
+                                }
+                        )
+                    ,
+                        ( AxiomIdentifier.Application Mock.cgId
+                        , appliedMockEvaluator
+                            Conditional
+                                { term = Mock.e
+                                , predicate = makeTruePredicate
+                                , substitution =
+                                    Substitution.unsafeWrap
+                                        [
+                                            ( inject Mock.x
+                                            , Mock.a
+                                            )
+                                        ]
+                                }
+                        )
+                    ]
+                )
+                (Mock.f Mock.cf)
+        assertEqual "" (MultiOr.singleton expect) actual
+    , -- , testCase "Simplifies substitution-predicate." $ do
       --     -- Mock.plain10 below prevents:
       --     -- 1. unification without substitution.
       --     -- 2. Transforming the 'and' in an equals predicate,
