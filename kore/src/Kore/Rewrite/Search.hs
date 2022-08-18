@@ -14,6 +14,10 @@ module Kore.Rewrite.Search (
 
 import Control.Error (
     MaybeT (..),
+    ExceptT (..),
+ )
+import Control.Monad.Trans.Maybe (
+    exceptToMaybeT,
  )
 import Data.Limit (
     Limit (..),
@@ -43,7 +47,7 @@ import Kore.Internal.Substitution (
  )
 import Kore.Rewrite.Axiom.Matcher (
     MatchResult,
-    matchIncremental,
+    patternMatch,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -129,7 +133,7 @@ matchWith ::
     Pattern RewritingVariableName ->
     MaybeT Simplifier (OrCondition RewritingVariableName)
 matchWith sideCondition e1 e2 = do
-    matchResults <- MaybeT $ matchIncremental sideCondition t1 t2
+    matchResults <- exceptToMaybeT $ ExceptT $ patternMatch sideCondition t1 t2
     let mergeAndEvaluate ::
             MatchResult RewritingVariableName ->
             Simplifier (OrCondition RewritingVariableName)
