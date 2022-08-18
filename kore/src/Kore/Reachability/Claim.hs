@@ -34,6 +34,9 @@ module Kore.Reachability.Claim (
     derivePar',
     deriveSeq',
 
+    -- * For JSON-RPC
+    checkSimpleImplication,
+
     -- * For testing
     checkImplicationWorker,
     simplifyRightHandSide,
@@ -57,6 +60,7 @@ import Data.Functor.Compose
 import Data.Generics.Product (
     field,
  )
+import Data.List (partition)
 import Data.Monoid qualified as Monoid
 import Data.Stream.Infinite (
     Stream (..),
@@ -98,6 +102,7 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import Kore.Internal.SideCondition qualified as SideCondition
+import Kore.Internal.Substitution (Substitution)
 import Kore.Internal.Symbol (
     Symbol,
  )
@@ -151,14 +156,12 @@ import Kore.Syntax.Variable
 import Kore.TopBottom (
     TopBottom (..),
  )
+import Kore.Unification.Procedure (unificationProcedure)
+import Kore.Unification.UnifierT as UnifierT
 import Kore.Unparser (
     Unparse (..),
  )
 import Kore.Verified qualified as Verified
-import Logic (
-    LogicT,
-    MonadLogic,
- )
 import Logic qualified
 import Prelude.Kore
 import Pretty (
@@ -332,7 +335,7 @@ transitionRule stuckCheck claims axiomGroups = transitionRuleWorker
         | Just claim <- retractRewritable claimState = do
             result <- checkImplication claim & Logic.lowerLogicT
             case result of
-                Implied -> pure Proven
+                Implied _ -> pure Proven
                 NotImpliedStuck a ->
                     returnStuckOrContinue a
                 NotImplied a
@@ -451,7 +454,7 @@ conditions does not hold.
 -}
 data CheckImplicationResult a
     = -- | The implication is valid.
-      Implied
+      Implied !a
     | -- | The implication is not valid.
       NotImplied !a
     | -- | The implication between /terms/ is valid, but the implication between
@@ -465,7 +468,11 @@ data CheckImplicationResult a
     deriving anyclass (Debug, Diff)
 
 instance Pretty a => Pretty (CheckImplicationResult a) where
-    pretty Implied = "implied"
+    pretty (Implied a) =
+        Pretty.vsep
+            [ "implied:"
+            , Pretty.indent 4 $ pretty a
+            ]
     pretty (NotImplied a) =
         Pretty.vsep
             [ "not implied:"
@@ -633,7 +640,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
     didUnify :: MonadState AnyUnified state => state ()
     didUnify = State.put (AnyUnified True)
 
-    elseImplied acts = Logic.ifte acts pure (pure Implied)
+    elseImplied acts = Logic.ifte acts pure (pure $ Implied claimPattern)
 
     examine ::
         AnyUnified ->
@@ -642,7 +649,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
     examine AnyUnified{didAnyUnify} stuck
         | didAnyUnify
           , isBottom condition =
-            pure Implied
+            pure $ Implied claimPattern
         | not didAnyUnify
           , not (isBottom right) =
             pure $ NotImplied claimPattern
@@ -654,6 +661,158 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
                     & NotImpliedStuck
       where
         (_, condition) = Pattern.splitTerm stuck
+
+{- | Check a simple implication (with a single consequent), and return a
+  substitution that witnesses it if the implication is true.
+
+The implication has the form
+
+@
+φ(X) → ∃ Y. ψ(X, Y)
+@
+
+again with @X@ and @Y@ disjoint families of variables, and @φ@ and @ψ@
+assumed to be function-like patterns,
+
+Let @φ(X) = t(X) ∧ P(X)@ and @ψ(X, Y) = t'(X, Y) ∧ P'(X, Y)@. Following
+the reasoning from above in @'checkImplicationWorker'@, the
+implication is valid when
+
+@
+(¬ ∃ Y. ⌈t(X) ∧ t'(X, Y)⌉ ∧ P'(X, Y)) ∧ ⌈t(X)⌉ ∧ P(X)
+@
+
+is unsatisfiable.
+
+1) If
+
+@
+⌈t(X)⌉ ∧ P(X)
+@
+
+is already unsatisfiable by itself, the implication holds trivially
+(ex falso quodlibet) with an empty substitution.
+
+2) Otherwise, we must refute
+
+@
+¬ ∃ Y. ⌈t(X) ∧ t'(X, Y)⌉ ∧ P'(X, Y) ∧ ⌈t(X)⌉ ∧ P(X)
+@
+
+which involves unification ⌈t(X) ∧ t'(X, Y)⌉ providing the desired
+substitution.
+
+When the implication formula is valid, @checkImplicationWorker@
+returns 'Implied' with a witness substitution.
+
+When the implication formula is not valid, the function behaves
+similar to @checkImplicationWorker@:
+
+* If unification @⌈t(X) ∧ t'(X, Y)⌉@ succeeded, the return value is
+   'NotImpliedStuck' with the refuted term,
+* otherwise, the function returns 'NotImplied'.
+-}
+checkSimpleImplication ::
+    forall m.
+    (MonadSimplify m) =>
+    Pattern RewritingVariableName -> -- left
+    Pattern RewritingVariableName -> -- right
+    [ElementVariable RewritingVariableName] -> -- existentials
+    m (CheckImplicationResult (ClaimPattern, Maybe (Substitution RewritingVariableName)))
+checkSimpleImplication inLeft inRight inExistentials =
+    do
+        assertFunctionLikeConfiguration claimPattern
+        let definedConfig =
+                Pattern.andCondition renamedLeft $
+                    from $ makeCeilPredicate leftTerm
+        trivial <-
+            fmap isBottom $
+                (liftSimplifier . SMT.Evaluator.filterMultiOr)
+                    =<< Pattern.simplify definedConfig
+
+        if trivial
+            then pure $ Implied (claimPattern, Just mempty)
+            else do
+                -- attempt term unification (to remember the substitution
+                unified <-
+                    Logic.observeAllT $
+                        evalEnvUnifierT
+                            Not.notSimplifier
+                            (unificationProcedure SideCondition.top leftTerm rightTerm)
+
+                -- for each unification result, attempt to refute the formula
+                remainders ::
+                    [(OrPattern RewritingVariableName, Substitution RewritingVariableName)] <-
+                    mapM (checkUnifiedConsequent definedConfig) unified
+
+                let (successes, stucks) = partition (isBottom . fst) remainders
+
+                case (successes, stucks) of
+                    ((_bottom, subst) : _, _) ->
+                        -- success for at least one, return (ignore other failures)
+                        pure $ Implied (claimPattern, Just subst)
+                    ([], []) ->
+                        -- no successful unification, thus not implied
+                        pure $ NotImplied (claimPattern, Nothing)
+                    ([], stuck : _) ->
+                        -- successful unification but all stuck,
+                        -- return with first stuck term as antecedent
+                        let stuckClaim :: ClaimPattern =
+                                claimPattern{left = OrPattern.toPattern sort (fst stuck)}
+                         in pure $ NotImpliedStuck (stuckClaim, Nothing)
+  where
+    sort = termLikeSort leftTerm
+
+    claimPattern@ClaimPattern{left = renamedLeft, right = orRight, existentials} =
+        ClaimPattern.refreshExistentials $
+            -- ensures existentials of RHS do not occur free in LHS
+            ClaimPattern.mkClaimPattern inLeft (OrPattern.fromPattern inRight) inExistentials
+
+    renamedRight = OrPattern.toPattern sort orRight
+
+    (rightTerm, rightCondition) = Pattern.splitTerm renamedRight
+    (leftTerm, leftCondition) = Pattern.splitTerm renamedLeft
+
+    -- using a successful unification result (Condition), build term
+    -- to refute and try to refute (returning non-refutable parts and
+    -- the substitution for unification)
+    checkUnifiedConsequent ::
+        Pattern RewritingVariableName ->
+        Pattern.Condition RewritingVariableName ->
+        m (OrPattern RewritingVariableName, Substitution RewritingVariableName)
+    checkUnifiedConsequent definedConfig (Pattern.fromCondition sort -> unified) =
+        fmap ((,Pattern.substitution unified) . MultiOr.mergeAll) $
+            Logic.observeAllT $ do
+                let existsChild =
+                        Pattern.andCondition unified rightCondition
+                    sideCondition =
+                        SideCondition.fromConditionWithReplacements
+                            -- (NB this from . to applies the substitution)
+                            (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
+
+                notChild <- -- ∃ Y. ⌈t(X) ∧ t'(X, Y)⌉ ∧ P'(X, Y) (Or pattern)
+                    Exists.makeEvaluate sideCondition existentials existsChild
+
+                notRhs <- -- not notChild (Or pattern)
+                    Not.simplify sideCondition Not{notSort = sort, notChild}
+
+                let combineWithAntecedent ::
+                        Pattern RewritingVariableName ->
+                        Pattern RewritingVariableName
+                    combineWithAntecedent = (definedConfig <*)
+                -- (<*) takes the 1st arg.s term but combines
+                -- both arg.s predicate and substitution
+
+                -- The result's substitution needs to be renormalized,
+                -- which we achieve by simplifying it
+
+                toRefute <-
+                    Pattern.simplify
+                        . OrPattern.toPattern sort
+                        . MultiOr.map combineWithAntecedent
+                        $ notRhs
+
+                liftSimplifier $ SMT.Evaluator.filterMultiOr toRefute
 
 simplify' ::
     MonadSimplify m =>

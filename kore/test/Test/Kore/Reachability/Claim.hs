@@ -1,5 +1,6 @@
 module Test.Kore.Reachability.Claim (
     test_checkImplication,
+    test_checkSimpleImplication,
     test_simplifyRightHandSide,
 ) where
 
@@ -36,6 +37,7 @@ import Kore.Internal.TermLike qualified as TermLike
 import Kore.Reachability.Claim (
     CheckImplicationResult (..),
     checkImplicationWorker,
+    checkSimpleImplication,
     simplifyRightHandSide,
  )
 import Kore.Rewrite.ClaimPattern (
@@ -43,6 +45,7 @@ import Kore.Rewrite.ClaimPattern (
     mkClaimPattern,
  )
 import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
     mkConfigVariable,
     mkRewritingPattern,
  )
@@ -61,9 +64,10 @@ test_checkImplication =
         let config = mkElemVar Mock.x & Pattern.fromTermLike
             dest = mkElemVar Mock.y & OrPattern.fromTermLike
             existentials = [Mock.y]
+            goal = mkGoal config dest existentials
         actual <-
-            checkImplication (mkGoal config dest existentials)
-        assertEqual "" [Implied] actual
+            checkImplication goal
+        assertEqual "" [Implied goal] actual
     , testCase "does not unify" $ do
         let goal = aToB
         actual <-
@@ -115,7 +119,7 @@ test_checkImplication =
             existentials = [Mock.y]
             goal = mkGoal config dest existentials
         actual <- checkImplication goal
-        assertEqual "" [Implied] actual
+        assertEqual "" [Implied goal] actual
     , testCase "Variable unification, conditions don't match" $ do
         let config =
                 Pattern.withCondition
@@ -180,7 +184,7 @@ test_checkImplication =
             existentials = []
             goal = mkGoal config dest existentials
         actual <- checkImplication goal
-        assertEqual "" [Implied] actual
+        assertEqual "" [Implied goal] actual
     , testCase "Branching RHS with condition 1" $ do
         let config = Mock.a & Pattern.fromTermLike
             dest =
@@ -201,7 +205,7 @@ test_checkImplication =
             existentials = [Mock.x]
             goal = mkGoal config dest existentials
         actual <- checkImplication goal
-        assertEqual "" [Implied] actual
+        assertEqual "" [Implied goal] actual
     , testCase "Branching RHS with condition 2" $ do
         let config = Mock.a & Pattern.fromTermLike
             dest =
@@ -221,7 +225,7 @@ test_checkImplication =
             existentials = [Mock.x]
             goal = mkGoal config dest existentials
         actual <- checkImplication goal
-        assertEqual "" [Implied] actual
+        assertEqual "" [Implied goal] actual
     , testCase "Stuck if RHS is \\bottom" $ do
         let config = Mock.a & Pattern.fromTermLike
             dest = OrPattern.bottom
@@ -233,7 +237,155 @@ test_checkImplication =
             dest = OrPattern.bottom
             goal = mkGoal config dest []
         actual <- checkImplication goal
-        assertEqual "" [Implied] actual
+        assertEqual "" [Implied goal] actual
+    ]
+
+test_checkSimpleImplication :: [TestTree]
+test_checkSimpleImplication =
+    [ testCase "Variable unification" $ do
+        let config = mkElemVar Mock.x & Pattern.fromTermLike
+            dest = mkElemVar Mock.y & Pattern.fromTermLike
+            existentials = [Mock.y]
+            goal = mkGoal config (OrPattern.fromPattern dest) existentials
+            subst = mkSubst (inject Mock.x) (mkElemVar Mock.y)
+        actual <-
+            checkSimple config dest existentials
+        assertEqual "" (Implied (goal, Just subst)) actual
+    , testCase "does not unify" $ do
+        actual <-
+            checkSimple (Pattern.fromTermLike Mock.a) (Pattern.fromTermLike Mock.b) []
+        assertEqual "" (NotImplied (aToB, Nothing)) actual
+    , testCase "does not unify, with left condition" $ do
+        let goal =
+                mkGoal
+                    ( Pattern.fromTermAndPredicate
+                        Mock.a
+                        (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
+                    )
+                    (OrPattern.fromTermLike Mock.b)
+                    []
+        actual <-
+            checkSimple
+                ( Pattern.fromTermAndPredicate
+                    Mock.a
+                    (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
+                )
+                (Pattern.fromTermLike Mock.b)
+                []
+        assertEqual "" (NotImplied (goal, Nothing)) actual
+    , testCase "does not unify, with right condition" $ do
+        let config = Mock.a & Pattern.fromTermLike
+            dest =
+                Pattern.withCondition
+                    Mock.b
+                    (makeEqualsPredicate (mkElemVar Mock.x) Mock.a & from)
+            existentials = [Mock.x]
+            goal = mkGoal config (OrPattern.fromPattern dest) existentials
+        actual <-
+            checkSimple config dest existentials
+        assertEqual "" (NotImplied (goal, Nothing)) actual
+    , testCase "Variable unification, conditions match" $ do
+        let config =
+                Pattern.withCondition
+                    (mkElemVar Mock.x)
+                    ( Substitution.wrap
+                        [Substitution.assign (inject Mock.x) Mock.a]
+                        & Condition.fromSubstitution
+                    )
+            dest =
+                Pattern.withCondition
+                    (mkElemVar Mock.y)
+                    ( Substitution.wrap
+                        [Substitution.assign (inject Mock.y) Mock.a]
+                        & Condition.fromSubstitution
+                    )
+            existentials = [Mock.y]
+            goal = mkGoal config (OrPattern.fromPattern dest) existentials
+            subst = mkSubst (inject Mock.x) (mkElemVar Mock.y)
+        actual <- checkSimple config dest existentials
+        assertEqual "" (Implied (goal, Just subst)) actual
+    , testCase "Variable unification, conditions don't match" $ do
+        let config =
+                Pattern.withCondition
+                    (mkElemVar Mock.x)
+                    ( Substitution.wrap
+                        [Substitution.assign (inject Mock.x) Mock.a]
+                        & Condition.fromSubstitution
+                    )
+            dest =
+                Pattern.withCondition
+                    (mkElemVar Mock.y)
+                    ( Substitution.wrap
+                        [Substitution.assign (inject Mock.y) Mock.b]
+                        & Condition.fromSubstitution
+                    )
+            existentials = [Mock.y]
+            -- goal = mkGoal config (OrPattern.fromPattern dest) existentials
+            stuckConfig =
+                Pattern.withCondition
+                    Mock.a
+                    (Condition.assign (inject Mock.x) Mock.a)
+            stuckGoal =
+                mkGoal stuckConfig (OrPattern.fromPattern dest) existentials
+        actual <- checkSimple config dest existentials
+        assertEqual "" (NotImpliedStuck (stuckGoal, Nothing)) actual
+    , testCase "Function unification, definedness condition and remainder" $ do
+        let config = Mock.f (mkElemVar Mock.x) & Pattern.fromTermLike
+            dest = Mock.f (mkElemVar Mock.y) & Pattern.fromTermLike
+            existentials = [Mock.y]
+            stuckConfig =
+                Pattern.fromTermAndPredicate
+                    (Mock.f (mkElemVar Mock.x))
+                    ( makeAndPredicate
+                        ( makeCeilPredicate
+                            (Mock.f (mkElemVar Mock.x))
+                        )
+                        ( makeNotPredicate
+                            ( makeExistsPredicate
+                                Mock.y
+                                ( makeEqualsPredicate
+                                    (Mock.f (mkElemVar Mock.x))
+                                    (Mock.f (mkElemVar Mock.y))
+                                )
+                            )
+                        )
+                    )
+            stuckGoal =
+                mkGoal stuckConfig (OrPattern.fromPattern dest) existentials
+        actual <- checkSimple config dest existentials
+        assertEqual "" (NotImpliedStuck (stuckGoal, Nothing)) actual
+    , testCase "Branching RHS with condition in single pattern" $ do
+        let config = Mock.a & Pattern.fromTermLike
+            dest =
+                Pattern.fromTermAndPredicate
+                    (mkElemVar Mock.x)
+                    ( makeOrPredicate
+                        ( makeEqualsPredicate
+                            (mkElemVar Mock.x)
+                            Mock.a
+                        )
+                        ( makeEqualsPredicate
+                            (mkElemVar Mock.x)
+                            Mock.b
+                        )
+                    )
+            existentials = [Mock.x]
+            goal = mkGoal config (OrPattern.fromPattern dest) existentials
+            subst = mkSubst (inject Mock.x) Mock.a
+        actual <- checkSimple config dest existentials
+        assertEqual "" (Implied (goal, Just subst)) actual
+    , testCase "Stuck if RHS is \\bottom" $ do
+        let config = Mock.a & Pattern.fromTermLike
+            dest = Pattern.bottomOf Mock.topSort
+            goal = mkGoal config (OrPattern.bottom) []
+        actual <- checkSimple config dest []
+        assertEqual "" (NotImplied (goal, Nothing)) actual
+    , testCase "Implied if both sides are \\bottom" $ do
+        let config = Pattern.bottomOf Mock.topSort
+            dest = Pattern.bottomOf Mock.topSort
+            goal = mkGoal config (OrPattern.fromPattern dest) []
+        actual <- checkSimple config dest []
+        assertEqual "" (Implied (goal, Just mempty)) actual
     ]
 
 test_simplifyRightHandSide :: [TestTree]
@@ -280,6 +432,15 @@ mkGoal
         ) =
         mkClaimPattern leftPatt rightPatts existentialVars
 
+mkSubst ::
+    TermLike.SomeVariable VariableName ->
+    TermLike.TermLike VariableName ->
+    Substitution.Substitution RewritingVariableName
+mkSubst var term =
+    Substitution.mapVariables (pure mkConfigVariable) $
+        Substitution.wrap
+            [Substitution.assign var term]
+
 aToB :: ClaimPattern
 aToB =
     mkGoal
@@ -292,3 +453,20 @@ checkImplication claim =
     checkImplicationWorker claim
         & Logic.observeAllT
         & runSimplifierSMT Mock.env
+
+checkSimple ::
+    Pattern VariableName ->
+    Pattern VariableName ->
+    [ElementVariable VariableName] ->
+    IO
+        ( CheckImplicationResult
+            ( ClaimPattern
+            , Maybe (Substitution.Substitution RewritingVariableName)
+            )
+        )
+checkSimple left right existentials =
+    runSimplifierSMT Mock.env $
+        checkSimpleImplication
+            (mkRewritingPattern left)
+            (mkRewritingPattern right)
+            (fmap (TermLike.mapElementVariable (pure mkConfigVariable)) existentials)
