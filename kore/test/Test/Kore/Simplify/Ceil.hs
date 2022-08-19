@@ -39,7 +39,7 @@ import Kore.Simplify.Ceil qualified as Ceil (
  )
 import Kore.Simplify.Simplify
 import Prelude.Kore
-import Test.Kore.Equation.Common (mkEquationEnsures)
+import Test.Kore.Equation.Common (axiomEnsures)
 import Test.Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -346,8 +346,8 @@ test_ceilSimplification =
                     ( AxiomIdentifier.Ceil
                         (AxiomIdentifier.Application Mock.fId)
                     )
-                    [ mkEquationEnsures (mkCeil Mock.testSort $ Mock.f Mock.a) (mkTop Mock.testSort) (makeEqualsPredicate Mock.a Mock.cf)
-                    , mkEquationEnsures (mkCeil Mock.testSort $ Mock.f Mock.b) (mkTop Mock.testSort) (makeEqualsPredicate Mock.a Mock.cf)
+                    [ axiomEnsures (mkCeil Mock.testSort $ Mock.f Mock.a) (mkTop Mock.testSort) (makeEqualsPredicate Mock.a Mock.cf)
+                    , axiomEnsures (mkCeil Mock.testSort $ Mock.f Mock.b) (mkTop Mock.testSort) (makeEqualsPredicate Mock.a Mock.cf)
                     ]
                 )
                 Conditional
@@ -439,11 +439,11 @@ makeEvaluateWithAxioms ::
     Map.Map AxiomIdentifier.AxiomIdentifier [Equation RewritingVariableName] ->
     Pattern RewritingVariableName ->
     IO (OrCondition RewritingVariableName)
-makeEvaluateWithAxioms equations child =
+makeEvaluateWithAxioms axiomEquations child =
     testRunSimplifier mockEnv $
         Ceil.makeEvaluate SideCondition.top child
   where
-    mockEnv = Mock.env{equations}
+    mockEnv = Mock.env{axiomEquations}
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =

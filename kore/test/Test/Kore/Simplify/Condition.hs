@@ -5,7 +5,7 @@ module Test.Kore.Simplify.Condition (
 ) where
 
 import Data.Map.Strict qualified as Map
-import Kore.Equation (Equation, mkEquation)
+import Kore.Equation (Equation)
 import Kore.Internal.Condition (
     Condition,
     Conditional (..),
@@ -48,6 +48,7 @@ import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify qualified as Test
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
+import Test.Kore.Equation.Common (axiom_)
 
 test_simplify_local_functions :: [TestTree]
 test_simplify_local_functions =
@@ -195,8 +196,8 @@ test_predicateSimplification =
                     [
                         ( AxiomIdentifier.Application Mock.fId
                         ,
-                            [ mkEquation (Mock.f Mock.functional00) Mock.functional00
-                            , mkEquation (Mock.f Mock.functional01) Mock.a
+                            [ axiom_ (Mock.f Mock.functional00) Mock.functional00
+                            , axiom_ (Mock.f Mock.functional01) Mock.a
                             ]
                         )
                     ]
@@ -230,7 +231,7 @@ test_predicateSimplification =
                 ( Map.fromList
                     [
                         ( AxiomIdentifier.Application Mock.fId
-                        , [mkEquation (Mock.f Mock.b) (Mock.constr10 Mock.a)]
+                        , [axiom_ (Mock.f Mock.b) (Mock.constr10 Mock.a)]
                         )
                     ]
                 )
@@ -265,7 +266,7 @@ test_predicateSimplification =
                 ( Map.fromList
                     [
                         ( AxiomIdentifier.Application Mock.fId
-                        , [mkEquation (Mock.f Mock.b) (Mock.constr10 Mock.a)]
+                        , [axiom_ (Mock.f Mock.b) (Mock.constr10 Mock.a)]
                         )
                     ]
                 )
@@ -307,8 +308,8 @@ test_predicateSimplification =
                     [
                         ( AxiomIdentifier.Application Mock.fId
                         ,
-                            [ mkEquation (Mock.f Mock.b) (Mock.constr10 Mock.a)
-                            , mkEquation (Mock.f Mock.a) (Mock.g Mock.b)
+                            [ axiom_ (Mock.f Mock.b) (Mock.constr10 Mock.a)
+                            , axiom_ (Mock.f Mock.a) (Mock.g Mock.b)
                             ]
                         )
                     ]
@@ -369,12 +370,12 @@ conditionRunSimplifier ::
     Map.Map AxiomIdentifier.AxiomIdentifier [Equation RewritingVariableName] ->
     Condition RewritingVariableName ->
     IO (OrCondition RewritingVariableName)
-conditionRunSimplifier equations predicate =
+conditionRunSimplifier axiomEquations predicate =
     fmap MultiOr.make $
         Test.testRunSimplifierBranch env $
             simplifier SideCondition.top predicate
   where
-    env = Mock.env{equations}
+    env = Mock.env{axiomEquations}
     ConditionSimplifier simplifier =
         Condition.create SubstitutionSimplifier.substitutionSimplifier
 

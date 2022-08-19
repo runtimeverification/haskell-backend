@@ -1132,7 +1132,7 @@ test_simplifySideCondition =
                         (Mock.g Mock.b)
                     )
                     & OrPattern.fromPattern
-            equations =
+            axioms =
                 Map.fromList
                     [
                         ( AxiomIdentifier.Application Mock.fId
@@ -1148,7 +1148,7 @@ test_simplifySideCondition =
                             ]
                         )
                     ]
-        actual <- evaluateWithAxioms equations configuration
+        actual <- evaluateWithAxioms axioms configuration
         assertEqual "" expected actual
     ]
 
@@ -1161,15 +1161,15 @@ evaluateWithAxioms ::
     Map.Map AxiomIdentifier.AxiomIdentifier [Equation RewritingVariableName] ->
     Pattern.Pattern RewritingVariableName ->
     IO (OrPattern.OrPattern RewritingVariableName)
-evaluateWithAxioms equations =
-    evaluateConditionalWithAxioms equations SideCondition.top
+evaluateWithAxioms axiomEquations =
+    evaluateConditionalWithAxioms axiomEquations SideCondition.top
 
 evaluateConditionalWithAxioms ::
     Map.Map AxiomIdentifier.AxiomIdentifier [Equation RewritingVariableName] ->
     SideCondition' ->
     Pattern.Pattern RewritingVariableName ->
     IO (OrPattern.OrPattern RewritingVariableName)
-evaluateConditionalWithAxioms equations sideCondition patt =
+evaluateConditionalWithAxioms axiomEquations sideCondition patt =
     Test.runSMT userInit $ do
         newEnv <- runSimplifier Mock.env initialize
         runSimplifier newEnv . Pattern.makeEvaluate sideCondition $ patt
@@ -1177,8 +1177,8 @@ evaluateConditionalWithAxioms equations sideCondition patt =
     userInit = declareSortsSymbols Mock.smtDeclarations
     initialize :: Simplifier Env
     initialize = do
-        processedEquations <- Equation.simplifyExtractedEquations equations
-        return Mock.env{equations = processedEquations, hookedSymbols = builtinAxioms}
+        processedEquations <- Equation.simplifyExtractedEquations axiomEquations
+        return Mock.env{axiomEquations = processedEquations, hookedSymbols = builtinAxioms}
 
 -- | A selection of builtin axioms used in the tests above.
 builtinAxioms :: Map Id Text

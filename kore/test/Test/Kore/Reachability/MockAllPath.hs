@@ -407,7 +407,7 @@ instance MonadCatch AllPathIdentity where
 instance MonadSimplify AllPathIdentity where
     liftSimplifier = undefined
     simplifyCondition = undefined
-    localEquations = undefined
+    localAxiomEquations = undefined
     askMemo = undefined
 
 instance MonadIO AllPathIdentity where

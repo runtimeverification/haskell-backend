@@ -458,8 +458,7 @@ testEnv :: Env
 testEnv =
     Mock.env
         { metadataTools = testMetadataTools
-        , simplifierAxioms = mempty
-        , equations = testEquations
+        , axiomEquations = testEquations
         }
 
 test_functionRegistry :: [TestTree]

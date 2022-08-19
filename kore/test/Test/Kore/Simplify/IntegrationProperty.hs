@@ -174,10 +174,10 @@ evaluateWithAxioms ::
     Map.Map AxiomIdentifier [Equation RewritingVariableName] ->
     Pattern RewritingVariableName ->
     SMT.SMT (OrPattern RewritingVariableName)
-evaluateWithAxioms equations =
+evaluateWithAxioms axiomEquations =
     Simplification.runSimplifier env . Pattern.simplify
   where
-    env = Mock.env{equations, hookedSymbols = Mock.builtinSimplifiers}
+    env = Mock.env{axiomEquations, hookedSymbols = Mock.builtinSimplifiers}
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =

@@ -4,7 +4,7 @@ module Test.Kore.Equation.Common (
     symbolic,
     axiom,
     axiom_,
-    mkEquationEnsures,
+    axiomEnsures,
     asSimplification,
     asDefinition,
     functionAxiomUnification,
@@ -57,13 +57,13 @@ axiom_ ::
     Equation RewritingVariableName
 axiom_ left right = axiom left right makeTruePredicate
 
-mkEquationEnsures ::
+axiomEnsures ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Predicate RewritingVariableName ->
     Equation RewritingVariableName
-mkEquationEnsures left right ensures =
-    Lens.set (field @"ensures") ensures $ mkEquation left right
+axiomEnsures left right ensures =
+    (axiom_ left right){ensures}
 
 asSimplification :: Equation variable -> Equation variable
 asSimplification = Lens.set (field @"attributes" . field @"simplification") (IsSimplification Nothing)

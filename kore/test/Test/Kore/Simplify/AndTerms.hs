@@ -1583,12 +1583,12 @@ simplifyEquals ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     IO (Maybe [Condition RewritingVariableName])
-simplifyEquals equations first second =
+simplifyEquals axiomEquations first second =
     (fmap . fmap) toList $
         testRunSimplifier mockEnv $
             runMaybeT $ termEquals (simplifiedTerm first) (simplifiedTerm second)
   where
-    mockEnv = Mock.env{equations}
+    mockEnv = Mock.env{axiomEquations}
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =

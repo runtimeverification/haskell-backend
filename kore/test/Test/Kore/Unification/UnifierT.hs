@@ -444,8 +444,8 @@ normalizeExcept predicated =
                 Logic.lowerLogicT $
                     Simplifier.simplifyCondition SideCondition.top predicated
   where
-    mockEnv = Mock.env{equations}
-    equations =
+    mockEnv = Mock.env{axiomEquations}
+    axiomEquations =
         -- Use Mock.functional10 as the identity function.
         Map.fromList
             [

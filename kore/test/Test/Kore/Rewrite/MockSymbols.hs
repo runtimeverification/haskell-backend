@@ -2282,8 +2282,8 @@ metadataTools =
         smtDeclarations
         sortConstructors
 
-equations :: Map AxiomIdentifier [Equation RewritingVariableName]
-equations = Map.empty
+axiomEquations :: Map AxiomIdentifier [Equation RewritingVariableName]
+axiomEquations = Map.empty
 
 predicateSimplifier ::
     MonadSimplify simplifier => ConditionSimplifier simplifier
@@ -2313,8 +2313,7 @@ env =
         , simplifierCondition = predicateSimplifier
         , simplifierPattern = Pattern.makeEvaluate
         , simplifierTerm = TermLike.simplify
-        , simplifierAxioms = Map.empty
-        , equations = equations
+        , axiomEquations = axiomEquations
         , memo = Memo.forgetful
         , injSimplifier
         , overloadSimplifier

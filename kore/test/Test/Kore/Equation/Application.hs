@@ -373,8 +373,8 @@ test_applySubstitutionAndSimplify =
   where
     subst var term =
         Map.fromList [(var, term)]
-    env = Mock.env{equations}
-    equations =
+    env = Mock.env{axiomEquations}
+    axiomEquations =
         Map.fromList
             [
                 ( AxiomIdentifier.Application Mock.fId

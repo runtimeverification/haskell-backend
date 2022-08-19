@@ -113,10 +113,10 @@ evaluateApplication predicate =
     Test.testRunSimplifier env
         . Kore.evaluateApplication SideCondition.top predicate
 
-equations :: Map AxiomIdentifier [Equation.Equation RewritingVariableName]
-equations = Map.fromList [(fId, [fEquation])]
+axiomEquations :: Map AxiomIdentifier [Equation.Equation RewritingVariableName]
+axiomEquations = Map.fromList [(fId, [fEquation])]
   where
     fId = Axiom.Identifier.Application (TermLike.symbolConstructor fSymbol)
 
 env :: Test.Env
-env = Mock.env{Test.equations = equations}
+env = Mock.env{Test.axiomEquations = axiomEquations}
