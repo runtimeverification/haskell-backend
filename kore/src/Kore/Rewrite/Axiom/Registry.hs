@@ -4,13 +4,9 @@ License     : BSD-3-Clause
 -}
 module Kore.Rewrite.Axiom.Registry (
     mkEvaluator,
-    mkEvaluatorRegistry,
     extractEquations,
 ) where
 
-import Data.Map.Strict (
-    Map,
- )
 import Kore.Equation (
     Equation (..),
  )
@@ -23,9 +19,6 @@ import Kore.Rewrite.Axiom.EvaluationStrategy (
     firstFullEvaluation,
     simplificationEvaluation,
     simplifierWithFallback,
- )
-import Kore.Rewrite.Axiom.Identifier (
-    AxiomIdentifier,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -60,10 +53,3 @@ mkEvaluator equations =
         if null functionRules
             then Nothing
             else Just $ definitionEvaluation functionRules
-
--- TODO (diogo): delete
-mkEvaluatorRegistry ::
-    Map AxiomIdentifier [Equation RewritingVariableName] ->
-    Map AxiomIdentifier BuiltinAndAxiomSimplifier
-mkEvaluatorRegistry =
-    mapMaybe mkEvaluator

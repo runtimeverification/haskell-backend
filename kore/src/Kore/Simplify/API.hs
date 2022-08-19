@@ -23,8 +23,7 @@ module Kore.Simplify.API (
     askMetadataTools,
     simplifyPattern,
     simplifyTerm,
-    askSimplifierAxioms,
-    askEquations,
+    askAxiomEquations,
     askInjSimplifier,
     askOverloadSimplifier,
     getCache,
@@ -120,8 +119,7 @@ mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquation
             , simplifierCondition
             , simplifierPattern
             , simplifierTerm
-            , simplifierAxioms = earlySimplifierAxioms
-            , equations = Map.empty
+            , axiomEquations = earlyAxiomEquations
             , memo = Memo.forgetful
             , injSimplifier
             , overloadSimplifier
@@ -142,8 +140,8 @@ mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquation
     simplifierTerm =
         {-# SCC "evalSimplifier/simplifierTerm" #-}
         TermLike.simplify
-    -- Initialize without any axiom simplifiers.
-    earlySimplifierAxioms = Map.empty
+    -- Initialize without any axiom equations.
+    earlyAxiomEquations = Map.empty
 
     verifiedModule' :: VerifiedModuleSyntax Attribute.Symbol =
         {-# SCC "evalSimplifier/verifiedModule'" #-}
@@ -157,7 +155,7 @@ mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquation
 
     initialize :: Simplifier Env
     initialize = do
-        equations <-
+        axiomEquations <-
             Equation.simplifyExtractedEquations $
                 (Map.map . fmap . Equation.mapVariables $ pure mkEquationVariable)
                     rawEquations
@@ -168,12 +166,11 @@ mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquation
                 , simplifierCondition
                 , simplifierPattern
                 , simplifierTerm
-                , simplifierAxioms = Map.empty
                 , memo
                 , injSimplifier
                 , overloadSimplifier
                 , hookedSymbols
-                , equations
+                , axiomEquations
                 }
 
 {- | Evaluate a simplifier computation, returning the result of only one branch.

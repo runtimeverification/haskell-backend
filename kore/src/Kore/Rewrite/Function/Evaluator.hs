@@ -208,9 +208,9 @@ lookupAxiomSimplifier ::
     MaybeT simplifier BuiltinAndAxiomSimplifier
 lookupAxiomSimplifier termLike = do
     hookedSymbols <- lift askHookedSymbols
-    equations <- lift askEquations
+    axiomEquations <- lift askAxiomEquations
     let getEvaluator :: Axiom.Identifier.AxiomIdentifier -> Maybe BuiltinAndAxiomSimplifier
-        getEvaluator axiomIdentifier = Map.lookup axiomIdentifier equations >>= mkEvaluator
+        getEvaluator axiomIdentifier = Map.lookup axiomIdentifier axiomEquations >>= mkEvaluator
 
     let missing = do
             -- TODO (thomas.tuegel): Factor out a second function evaluator and
@@ -220,7 +220,7 @@ lookupAxiomSimplifier termLike = do
             -- missing, so that is not an error. If any function evaluators are
             -- present, we assume that startup is finished, but we should really
             -- have a separate evaluator for startup.
-            Monad.guard (not $ null equations)
+            Monad.guard (not $ null axiomEquations)
             case termLike of
                 App_ symbol _
                     | isDeclaredFunction symbol -> do

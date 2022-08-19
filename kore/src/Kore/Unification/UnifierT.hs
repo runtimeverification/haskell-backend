@@ -64,14 +64,14 @@ deriving newtype instance
 deriving newtype instance MonadSMT m => MonadSMT (UnifierT m)
 
 instance MonadSimplify m => MonadSimplify (UnifierT m) where
-    localEquations locally (UnifierT readerT) =
+    localAxiomEquations locally (UnifierT readerT) =
         UnifierT $
             mapReaderT
                 ( mapLogicT
-                    (localEquations locally)
+                    (localAxiomEquations locally)
                 )
                 readerT
-    {-# INLINE localEquations #-}
+    {-# INLINE localAxiomEquations #-}
 
     simplifyCondition sideCondition condition = do
         ConditionSimplifier conditionSimplifier <- ask
