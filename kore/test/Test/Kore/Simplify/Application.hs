@@ -4,7 +4,6 @@ module Test.Kore.Simplify.Application (
 
 import Data.Map.Strict qualified as Map
 import Kore.Equation (Equation (..))
-import Test.Kore.Equation.Common (axiom_)
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -29,6 +28,7 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Simplify.Application
 import Kore.Simplify.Simplify
 import Prelude.Kore
+import Test.Kore.Equation.Common (axiom_)
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty

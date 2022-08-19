@@ -12,6 +12,7 @@ import Data.Map.Strict qualified as Map
 import Kore.Attribute.Overload
 import Kore.Builtin qualified as Builtin
 import Kore.Equation qualified as Equation
+import Kore.Equation.Registry (extractEquations)
 import Kore.Error
 import Kore.Internal.Symbol (
     applicationSorts,
@@ -20,8 +21,8 @@ import Kore.Internal.Symbol (
     toSymbolOrAlias,
  )
 import Kore.Internal.TermLike
+import Kore.Rewrite.Axiom.EvaluationStrategy (mkEvaluator)
 import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier
-import Kore.Rewrite.Axiom.Registry
 import Kore.Rewrite.RewritingVariable (
     mkConfigVariable,
  )

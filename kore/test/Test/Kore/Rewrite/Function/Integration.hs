@@ -90,8 +90,8 @@ import Test.Kore.Equation.Common (
     asDefinition,
     asSimplification,
     axiom,
-    axiom_,
     axiomEnsures,
+    axiom_,
  )
 import Test.Kore.Rewrite.Axiom.Matcher (
     doesn'tMatch,
@@ -110,9 +110,10 @@ test_functionIntegration =
             evaluate
                 ( Map.singleton
                     (AxiomIdentifier.Application Mock.functional10Id)
-                    ( [axiom_
-                        (Mock.functional10 (mkElemVar Mock.xConfig))
-                        (Mock.g (mkElemVar Mock.xConfig))]
+                    ( [ axiom_
+                            (Mock.functional10 (mkElemVar Mock.xConfig))
+                            (Mock.g (mkElemVar Mock.xConfig))
+                      ]
                     )
                 )
                 (Mock.functional10 Mock.c)
@@ -140,9 +141,10 @@ test_functionIntegration =
             evaluate
                 ( Map.singleton
                     (AxiomIdentifier.Application Mock.functional10Id)
-                    ( [axiom_
-                        (Mock.functional10 (mkElemVar Mock.xConfig))
-                        (Mock.functional11 (mkElemVar Mock.xConfig))]
+                    ( [ axiom_
+                            (Mock.functional10 (mkElemVar Mock.xConfig))
+                            (Mock.functional11 (mkElemVar Mock.xConfig))
+                      ]
                     )
                 )
                 (Mock.functional10 (Mock.functional10 Mock.c))
@@ -156,9 +158,10 @@ test_functionIntegration =
             evaluate
                 ( Map.singleton
                     (AxiomIdentifier.Application Mock.functional10Id)
-                    ( [axiom_
-                        (Mock.functional10 (mkElemVar Mock.xConfig))
-                        (Mock.functional11 (mkElemVar Mock.xConfig))]
+                    ( [ axiom_
+                            (Mock.functional10 (mkElemVar Mock.xConfig))
+                            (Mock.functional11 (mkElemVar Mock.xConfig))
+                      ]
                     )
                 )
                 ( Mock.functional10
@@ -179,9 +182,10 @@ test_functionIntegration =
             evaluate
                 ( Map.singleton
                     (AxiomIdentifier.Application Mock.functional10Id)
-                    ( [axiom_
-                        (Mock.functional10 (mkElemVar Mock.xConfig))
-                        (Mock.functional11 (mkElemVar Mock.xConfig))]
+                    ( [ axiom_
+                            (Mock.functional10 (mkElemVar Mock.xConfig))
+                            (Mock.functional11 (mkElemVar Mock.xConfig))
+                      ]
                     )
                 )
                 ( Mock.functional10
@@ -231,9 +235,11 @@ test_functionIntegration =
                         )
                     ,
                         ( AxiomIdentifier.Application Mock.functional10Id
-                        , [axiom_
-                            (Mock.functional10 (mkElemVar Mock.xConfig))
-                            (Mock.functional11 (mkElemVar Mock.xConfig))]
+                        ,
+                            [ axiom_
+                                (Mock.functional10 (mkElemVar Mock.xConfig))
+                                (Mock.functional11 (mkElemVar Mock.xConfig))
+                            ]
                         )
                     ]
                 )

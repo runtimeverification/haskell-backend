@@ -44,11 +44,11 @@ import Kore.Simplify.Simplify
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
 import Kore.TopBottom
 import Prelude.Kore
+import Test.Kore.Equation.Common (axiom_)
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify qualified as Test
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-import Test.Kore.Equation.Common (axiom_)
 
 test_simplify_local_functions :: [TestTree]
 test_simplify_local_functions =

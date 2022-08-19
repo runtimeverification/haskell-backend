@@ -35,10 +35,10 @@ import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
+import Kore.Rewrite.Axiom.EvaluationStrategy (mkEvaluator)
 import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier (
     AxiomIdentifier (..),
  )
-import Kore.Rewrite.Axiom.Registry (mkEvaluator)
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
