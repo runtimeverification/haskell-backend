@@ -41,8 +41,11 @@ module Kore.Internal.Predicate (
     mapVariables,
     depth,
     markSimplified,
+    markSimplifiedUnsafe,
     markSimplifiedConditional,
+    markSimplifiedConditionalUnsafe,
     markSimplifiedMaybeConditional,
+    markSimplifiedMaybeConditionalUnsafe,
     setSimplified,
     forgetSimplified,
     forgetSimplifiedSafe,
@@ -1138,6 +1141,17 @@ markSimplified (Recursive.project -> attrs :< predF) =
             :< predF
         )
 
+markSimplifiedUnsafe ::
+    Predicate variable ->
+    Predicate variable
+markSimplifiedUnsafe (Recursive.project -> attrs :< predF) =
+    Recursive.embed
+        ( PredicatePattern.setSimplified
+            Attribute.fullySimplified
+            attrs
+            :< predF
+        )
+
 markSimplifiedConditional ::
     (HasCallStack, InternalVariable variable) =>
     SideCondition.Representation ->
@@ -1155,6 +1169,21 @@ markSimplifiedConditional
                 :< predF
             )
 
+markSimplifiedConditionalUnsafe ::
+    SideCondition.Representation ->
+    Predicate variable ->
+    Predicate variable
+markSimplifiedConditionalUnsafe
+    condition
+    (Recursive.project -> attrs :< predF) =
+        Recursive.embed
+            ( PredicatePattern.setSimplified
+                ( Attribute.simplifiedConditionally condition
+                )
+                attrs
+                :< predF
+            )
+
 markSimplifiedMaybeConditional ::
     (HasCallStack, InternalVariable variable) =>
     Maybe SideCondition.Representation ->
@@ -1163,6 +1192,14 @@ markSimplifiedMaybeConditional ::
 markSimplifiedMaybeConditional Nothing = markSimplified
 markSimplifiedMaybeConditional (Just condition) =
     markSimplifiedConditional condition
+
+markSimplifiedMaybeConditionalUnsafe ::
+    Maybe SideCondition.Representation ->
+    Predicate variable ->
+    Predicate variable
+markSimplifiedMaybeConditionalUnsafe Nothing = markSimplifiedUnsafe
+markSimplifiedMaybeConditionalUnsafe (Just condition) =
+    markSimplifiedConditionalUnsafe condition
 
 setSimplified ::
     (HasCallStack, InternalVariable variable) =>

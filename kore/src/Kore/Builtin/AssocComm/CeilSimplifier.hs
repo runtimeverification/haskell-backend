@@ -219,7 +219,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
                 definedKeysAndOpaque
                     <> definedValues
                     <> definedSubCollections
-        And.simplifyEvaluatedMultiPredicate sideCondition conditions
+        And.simplifyEvaluatedMultiPredicateUnsafe sideCondition conditions
   where
     defineValue ::
         SideCondition RewritingVariableName ->

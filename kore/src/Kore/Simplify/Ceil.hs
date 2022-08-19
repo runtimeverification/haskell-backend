@@ -118,7 +118,7 @@ makeEvaluate sideCondition child
     | isTop term = return $ OrCondition.fromCondition condition
     | otherwise = do
         termCeil <- makeEvaluateTerm childSort sideCondition term
-        And.simplifyEvaluatedMultiPredicate
+        And.simplifyEvaluatedMultiPredicateUnsafe
             sideCondition
             (MultiAnd.make [MultiOr.make [condition], termCeil])
   where
@@ -197,12 +197,15 @@ newApplicationCeilSimplifier = CeilSimplifier $ \input ->
             | let headAttributes = symbolAttributes patternHead
               , Attribute.Symbol.isTotal headAttributes -> do
                 sideCondition <- Reader.ask
+                -- TODO: just add ceil children here
+                -- also, modify definedness cache?
                 let mkChildCeil =
                         makeEvaluateTermCeil
                             sideCondition
                 simplifiedChildren <- mapM mkChildCeil children
                 let ceils = simplifiedChildren
-                And.simplifyEvaluatedMultiPredicate
+                -- TODO: remove this
+                And.simplifyEvaluatedMultiPredicateUnsafe
                     sideCondition
                     (MultiAnd.make ceils)
         _ -> empty
@@ -219,6 +222,7 @@ newInjCeilSimplifier = CeilSimplifier $ \input ->
         Inj_ inj -> do
             InjSimplifier{evaluateCeilInj} <- askInjSimplifier
             sideCondition <- Reader.ask
+            -- TODO: remove call to makeevaltermceil
             input{ceilChild = inj}
                 & evaluateCeilInj
                 & ceilChild
@@ -326,7 +330,8 @@ makeEvaluateInternalList listSort sideCondition internal = do
     children <- mapM (makeEvaluateTerm listSort sideCondition) (toList internal)
     let ceils :: [OrCondition RewritingVariableName]
         ceils = children
-    And.simplifyEvaluatedMultiPredicate sideCondition (MultiAnd.make ceils)
+    -- TODO: again, just add the conditions to the result
+    And.simplifyEvaluatedMultiPredicateUnsafe sideCondition (MultiAnd.make ceils)
 
 {- | This handles the case when we can't simplify a term's ceil.
 
@@ -352,11 +357,12 @@ makeSimplifiedCeil
     maybeCurrentCondition
     termLike@(Recursive.project -> _ :< termLikeF) =
         do
+            -- TODO: don't evaluate children, add them to result!
             childCeils <-
                 if needsChildCeils
                     then mapM (makeEvaluateTerm ceilSort sideCondition) (toList termLikeF)
                     else return []
-            And.simplifyEvaluatedMultiPredicate
+            And.simplifyEvaluatedMultiPredicateUnsafe
                 sideCondition
                 (MultiAnd.make (unsimplified : childCeils))
       where
@@ -398,7 +404,7 @@ makeSimplifiedCeil
 
         unsimplified =
             OrCondition.fromPredicate
-                . Predicate.markSimplifiedMaybeConditional maybeCurrentCondition
+                . Predicate.markSimplifiedMaybeConditionalUnsafe maybeCurrentCondition
                 . makeCeilPredicate
                 $ termLike
 

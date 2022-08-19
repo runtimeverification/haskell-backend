@@ -9,6 +9,7 @@ module Kore.Internal.Condition (
     forgetSimplified,
     markSimplified,
     Conditional.markPredicateSimplified,
+    Conditional.markPredicateSimplifiedUnsafe,
     Conditional.markPredicateSimplifiedConditional,
     Conditional.setPredicateSimplified,
     eraseConditionalTerm,

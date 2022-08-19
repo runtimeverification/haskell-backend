@@ -255,6 +255,13 @@ simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
     simplifyPredicate sideCondition' predicate =
         Predicate.simplify sideCondition' predicate >>= Logic.scatter & lift
 
+-- Experiment: disable ceil evaluation in 'simplifyPredicates'
+--     simplifyPredicate sideCondition' predicate@(Recursive.project -> _ :< predF) =
+--         case predF of
+--             Predicate.CeilF _ -> return MultiAnd.top
+--             _ ->
+--                 Predicate.simplify sideCondition' predicate >>= Logic.scatter & lift
+
 mkCondition ::
     InternalVariable variable =>
     Predicate variable ->

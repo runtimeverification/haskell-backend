@@ -9,6 +9,7 @@ Portability : portable
 -}
 module Kore.Simplify.AndPredicates (
     simplifyEvaluatedMultiPredicate,
+    simplifyEvaluatedMultiPredicateUnsafe,
 ) where
 
 import Kore.Internal.Condition qualified as Condition
@@ -52,3 +53,21 @@ simplifyEvaluatedMultiPredicate sideCondition predicates =
         markSimplified =
             Condition.setPredicateSimplified
                 (foldMap Condition.simplifiedAttribute predicates')
+
+simplifyEvaluatedMultiPredicateUnsafe ::
+    forall simplifier.
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    MultiAnd (OrCondition RewritingVariableName) ->
+    simplifier (OrCondition RewritingVariableName)
+simplifyEvaluatedMultiPredicateUnsafe sideCondition predicates =
+    liftSimplifier . MultiOr.observeAllT $ do
+        element <- MultiAnd.traverse LogicT.scatter predicates
+        andConditions element
+  where
+    andConditions predicates' =
+        fmap markSimplified $
+            Substitution.normalize sideCondition (fold predicates')
+      where
+        markSimplified =
+            Condition.markPredicateSimplifiedUnsafe
