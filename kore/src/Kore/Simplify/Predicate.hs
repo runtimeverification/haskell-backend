@@ -179,7 +179,7 @@ simplify sideCondition original =
                 IffF iffF -> simplifyIff =<< traverse worker iffF
                 CeilF ceilF ->
                     simplifyCeil sideCondition =<< traverse simplifyTerm' ceilF
-                    -- simplifyCeil sideCondition ceilF
+                -- simplifyCeil sideCondition ceilF
                 FloorF floorF@(Floor _ _ child) ->
                     simplifyFloor (termLikeSort child) sideCondition
                         =<< traverse simplifyTerm' floorF
@@ -413,7 +413,6 @@ simplifyIff Iff{iffFirst, iffSecond, iffSort} = do
         normalizeAnd And{andSort = iffSort, andFirst, andSecond}
     mkOrSimplified orFirst orSecond =
         normalizeOr Or{orSort = iffSort, orFirst, orSecond}
-
 
 -- simplifyCeil ::
 --     MonadSimplify simplifier =>

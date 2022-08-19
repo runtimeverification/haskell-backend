@@ -17,18 +17,20 @@ import Control.Monad.Reader (
 import Control.Monad.Reader qualified as Reader
 import Data.Bifunctor qualified as Bifunctor
 import Data.HashMap.Strict qualified as HashMap
-import Kore.Internal.From (fromCeil_)
 import Data.HashSet qualified as HashSet
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
 import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
+import Kore.Internal.From (fromCeil_)
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
 import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.MultiOr (MultiOr)
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrCondition (
     OrCondition,
  )
@@ -69,8 +71,6 @@ import Kore.Variables.Fresh (
     refreshElementVariable,
  )
 import Prelude.Kore
-import Kore.Internal.MultiOr (MultiOr)
-import Kore.Internal.MultiOr qualified as MultiOr
 
 type BuiltinAssocComm normalized variable =
     InternalAc Key normalized (TermLike variable)
