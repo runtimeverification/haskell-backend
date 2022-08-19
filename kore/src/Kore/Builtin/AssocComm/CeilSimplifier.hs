@@ -17,6 +17,7 @@ import Control.Monad.Reader (
 import Control.Monad.Reader qualified as Reader
 import Data.Bifunctor qualified as Bifunctor
 import Data.HashMap.Strict qualified as HashMap
+import Kore.Internal.From (fromCeil_)
 import Data.HashSet qualified as HashSet
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
@@ -68,6 +69,8 @@ import Kore.Variables.Fresh (
     refreshElementVariable,
  )
 import Prelude.Kore
+import Kore.Internal.MultiOr (MultiOr)
+import Kore.Internal.MultiOr qualified as MultiOr
 
 type BuiltinAssocComm normalized variable =
     InternalAc Key normalized (TermLike variable)
@@ -120,7 +123,7 @@ newMapCeilSimplifier ::
     CeilSimplifier
         simplifier
         (BuiltinAssocComm NormalizedMap RewritingVariableName)
-        (OrCondition RewritingVariableName)
+        (MultiOr (MultiAnd (Predicate RewritingVariableName)))
 newMapCeilSimplifier =
     CeilSimplifier $ \ceil@Ceil{ceilChild} -> do
         let mkInternalAc normalizedAc =
@@ -192,7 +195,7 @@ newBuiltinAssocCommCeilSimplifier ::
     CeilSimplifier
         simplifier
         (BuiltinAssocComm normalized RewritingVariableName)
-        (OrCondition RewritingVariableName)
+        (MultiOr (MultiAnd (Predicate RewritingVariableName)))
 newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
     CeilSimplifier $ \Ceil{ceilChild} -> do
         let internalAc@InternalAc{builtinAcChild} = ceilChild
@@ -201,16 +204,10 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
             symbolicValues = getSymbolicValuesOfAc builtinAcChild
             concreteValues = getConcreteValuesOfAc builtinAcChild
             opaqueElements = opaque . unwrapAc $ builtinAcChild
-        definedKeysAndOpaque <-
-            traverse
-                (makeEvaluateTermCeil sideCondition)
-                (symbolicKeys <> opaqueElements)
-                & fmap MultiAnd.make
-        definedValues <-
-            traverse
-                (defineValue sideCondition)
-                (symbolicValues <> concreteValues)
-                & fmap mconcat
+            definedKeysAndOpaque =
+                MultiAnd.make $ fromCeil_ <$> symbolicKeys <> opaqueElements
+            definedValues =
+                MultiAnd.make $ fromCeil_ <$> symbolicValues <> concreteValues
         definedSubCollections <-
             definePairWiseElements mkBuiltin mkNotMember internalAc
                 . generatePairWiseElements
@@ -219,19 +216,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
                 definedKeysAndOpaque
                     <> definedValues
                     <> definedSubCollections
-        And.simplifyEvaluatedMultiPredicateUnsafe sideCondition conditions
-  where
-    defineValue ::
-        SideCondition RewritingVariableName ->
-        Value normalized (TermLike RewritingVariableName) ->
-        MaybeT
-            simplifier
-            (MultiAnd (OrCondition RewritingVariableName))
-    defineValue sideCondition = foldlM worker mempty
-      where
-        worker multiAnd termLike = do
-            evaluated <- makeEvaluateTermCeil sideCondition termLike
-            return (multiAnd <> MultiAnd.singleton evaluated)
+        return (MultiOr.singleton conditions)
 
 -- {-# SPECIALIZE newBuiltinAssocCommCeilSimplifier ::
 --     forall normalized.

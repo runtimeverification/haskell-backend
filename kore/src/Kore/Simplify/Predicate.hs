@@ -178,7 +178,8 @@ simplify sideCondition original =
                 ImpliesF impliesF -> simplifyImplies =<< traverse worker impliesF
                 IffF iffF -> simplifyIff =<< traverse worker iffF
                 CeilF ceilF ->
-                    simplifyCeil sideCondition ceilF
+                    simplifyCeil sideCondition =<< traverse simplifyTerm' ceilF
+                    -- simplifyCeil sideCondition ceilF
                 FloorF floorF@(Floor _ _ child) ->
                     simplifyFloor (termLikeSort child) sideCondition
                         =<< traverse simplifyTerm' floorF
@@ -413,14 +414,22 @@ simplifyIff Iff{iffFirst, iffSecond, iffSort} = do
     mkOrSimplified orFirst orSecond =
         normalizeOr Or{orSort = iffSort, orFirst, orSecond}
 
+
+-- simplifyCeil ::
+--     MonadSimplify simplifier =>
+--     SideCondition RewritingVariableName ->
+--     Ceil sort (TermLike RewritingVariableName) ->
+--     simplifier NormalForm
+-- simplifyCeil sideCondition Ceil{ceilChild} =
+--     Ceil.makeEvaluateTerm (TermLike.termLikeSort ceilChild) sideCondition ceilChild
+--         <&> fromOrCondition
 simplifyCeil ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
-    Ceil sort (TermLike RewritingVariableName) ->
+    Ceil sort (OrPattern RewritingVariableName) ->
     simplifier NormalForm
-simplifyCeil sideCondition Ceil{ceilChild} =
-    Ceil.makeEvaluateTerm (TermLike.termLikeSort ceilChild) sideCondition ceilChild
-        <&> fromOrCondition
+simplifyCeil sideCondition =
+    Ceil.simplify sideCondition >=> return . fromOrCondition
 
 {- |
  @
