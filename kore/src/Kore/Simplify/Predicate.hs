@@ -418,9 +418,9 @@ simplifyCeil ::
     SideCondition RewritingVariableName ->
     Ceil sort (TermLike RewritingVariableName) ->
     simplifier NormalForm
-simplifyCeil sideCondition Ceil {ceilChild} =
+simplifyCeil sideCondition Ceil{ceilChild} =
     Ceil.makeEvaluateTerm (TermLike.termLikeSort ceilChild) sideCondition ceilChild
-    <&> fromOrCondition
+        <&> fromOrCondition
 
 {- |
  @
@@ -451,7 +451,7 @@ simplifyFloor termSort sideCondition floor' = do
                 , ceilResultSort = floorResultSort
                 , ceilChild
                 }
-        <&> fromOrCondition
+            <&> fromOrCondition
 
 simplifyExists ::
     forall simplifier.
