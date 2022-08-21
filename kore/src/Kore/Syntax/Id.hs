@@ -1,3 +1,5 @@
+{-# LANGUAGE MagicHash #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
@@ -35,6 +37,12 @@ import Kore.Unparser
 import Prelude.Kore
 import Pretty qualified
 
+import Data.HashMap.Strict (HashMap)
+import Data.HashMap.Strict qualified as HashMap
+import Data.IORef
+import GHC.Exts (reallyUnsafePtrEquality#)
+import System.IO.Unsafe (unsafePerformIO)
+
 {- | 'Id' is a Kore identifier.
 
 'Id' corresponds to the @identifier@ syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#identifiers kore-syntax.md#identifiers>.
@@ -51,12 +59,12 @@ data Id = Id
 
 -- | 'Ord' ignores the 'AstLocation'
 instance Ord Id where
-    compare first@(Id _ _) second@(Id _ _) =
-        compare (getId first) (getId second)
+    compare (Id a _) (Id b _) = fastCmpText a b
+    {-# INLINE compare #-}
 
 -- | 'Eq' ignores the 'AstLocation'
 instance Eq Id where
-    first == second = compare first second == EQ
+    Id a _ == Id b _ = fastEqText a b
     {-# INLINE (==) #-}
 
 -- | 'Hashable' ignores the 'AstLocation'
@@ -98,7 +106,33 @@ generatedId name = locatedId name AstLocationGeneratedVariable
 
 -- | Create an 'Id' with the specified location.
 locatedId :: Text -> AstLocation -> Id
-locatedId = Id
+locatedId s loc = Id (dedupText s) loc
+
+fastCmpText :: Text -> Text -> Ordering
+fastCmpText a b =
+    case reallyUnsafePtrEquality# a b of
+        1# -> EQ
+        _ -> compare a b
+
+fastEqText :: Text -> Text -> Bool
+fastEqText a b =
+    case reallyUnsafePtrEquality# a b of
+        1# -> True
+        _ -> a == b
+
+{-# NOINLINE dedupText #-}
+dedupText :: Text -> Text
+dedupText s = unsafePerformIO $ do
+    tbl0 <- readIORef textTable
+    case HashMap.lookup s tbl0 of
+        Just s' -> return s'
+        Nothing -> do
+            atomicModifyIORef textTable $ \tbl ->
+                (HashMap.insert s s tbl, s)
+
+{-# NOINLINE textTable #-}
+textTable :: IORef (HashMap Text Text)
+textTable = unsafePerformIO (newIORef HashMap.empty)
 
 -- | Get the identifier name for an error message 'String'.
 getIdForError :: Id -> String
