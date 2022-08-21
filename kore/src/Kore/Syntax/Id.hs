@@ -23,6 +23,9 @@ module Kore.Syntax.Id (
     prettyPrintAstLocation,
 ) where
 
+import Data.HashMap.Strict (HashMap)
+import Data.HashMap.Strict qualified as HashMap
+import Data.IORef
 import Data.String (
     IsString (..),
  )
@@ -30,17 +33,13 @@ import Data.Text (
     Text,
  )
 import Data.Text qualified as Text
+import GHC.Exts (reallyUnsafePtrEquality#)
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Debug
 import Kore.Unparser
 import Prelude.Kore
 import Pretty qualified
-
-import Data.HashMap.Strict (HashMap)
-import Data.HashMap.Strict qualified as HashMap
-import Data.IORef
-import GHC.Exts (reallyUnsafePtrEquality#)
 import System.IO.Unsafe (unsafePerformIO)
 
 {- | 'Id' is a Kore identifier.
