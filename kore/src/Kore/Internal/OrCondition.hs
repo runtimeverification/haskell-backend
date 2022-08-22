@@ -17,6 +17,7 @@ module Kore.Internal.OrCondition (
     isFalse,
     isTrue,
     toPredicate,
+    toOrCondition,
 ) where
 
 import Kore.Internal.Condition (
@@ -25,6 +26,9 @@ import Kore.Internal.Condition (
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.MultiOr (
     MultiOr,
+ )
+import Kore.Internal.MultiAnd (
+    MultiAnd,
  )
 import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.Predicate (
@@ -106,3 +110,10 @@ toPredicate ::
     MultiOr (Predicate variable) ->
     Predicate variable
 toPredicate = Predicate.makeMultipleOrPredicate . toList
+
+toOrCondition ::
+    InternalVariable variable =>
+    MultiOr (MultiAnd (Predicate variable)) ->
+    OrCondition variable
+toOrCondition =
+    MultiOr.map (from @_ @(Condition _) . Predicate.fromMultiAnd)

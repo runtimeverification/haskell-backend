@@ -4,6 +4,9 @@ License     : BSD-3-Clause
 -}
 module Kore.Simplify.Ceil (
     simplify,
+    simplifyEvaluated,
+    makeEvaluate,
+    makeEvaluateTerm,
     Ceil (..),
 ) where
 
@@ -48,6 +51,9 @@ import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Internal.TermLike
+import Kore.Internal.OrPattern (OrPattern)
+import Kore.Internal.Pattern (Pattern)
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Rewrite.Function.Evaluator qualified as Axiom (
     evaluatePattern,
  )
@@ -58,6 +64,7 @@ import Kore.Internal.From (fromCeil_)
 import Kore.Simplify.CeilSimplifier
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.Simplify as Simplifier
+import Kore.TopBottom
 import Kore.Internal.MultiOr (MultiOr)
 import Kore.Unparser (
     unparseToString,
@@ -73,15 +80,67 @@ fromPredicate = MultiOr.singleton . MultiAnd.singleton
 fromPredicates :: [Predicate RewritingVariableName] -> NormalForm
 fromPredicates = MultiOr.singleton . MultiAnd.make
 
--- | Evaluates the ceil of a TermLike, see 'simplify' for details.
+{- | Simplify a 'Ceil' of 'OrPattern'.
+
+A ceil(or) is equal to or(ceil). We also take into account that
+* ceil(top) = top
+* ceil(bottom) = bottom
+* ceil leaves predicates and substitutions unchanged
+* ceil transforms terms into predicates
+-}
 simplify ::
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    Ceil sort (OrPattern RewritingVariableName) ->
+    simplifier NormalForm
+simplify
+    sideCondition
+    Ceil{ceilChild = child} =
+        simplifyEvaluated sideCondition child
+
+{- | 'simplifyEvaluated' evaluates a ceil given its child, see 'simplify'
+for details.
+-}
+simplifyEvaluated ::
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    simplifier NormalForm
+simplifyEvaluated sideCondition child =
+    OrPattern.traverseOr (makeEvaluate sideCondition) child
+
+{- | Evaluates a ceil given its child as an Pattern, see 'simplify'
+for details.
+-}
+makeEvaluate ::
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    simplifier NormalForm
+makeEvaluate sideCondition child
+    | Pattern.isTop child = return (MultiOr.singleton MultiAnd.top)
+    | Pattern.isBottom child = return MultiOr.bottom
+    | isTop term = return condition'
+    | otherwise = do
+        termCeil <- makeEvaluateTerm childSort sideCondition term
+        return (condition' <> termCeil)
+  where
+    (term, condition) = Pattern.splitTerm child
+    condition' = fromPredicate (from @_ @(Predicate _) condition)
+    childSort = Pattern.patternSort child
+
+-- TODO: Ceil(function) should be an and of all the function's conditions, both
+-- implicit and explicit.
+
+-- | Evaluates the ceil of a TermLike, see 'simplify' for details.
+makeEvaluateTerm ::
     forall simplifier.
     MonadSimplify simplifier =>
     Sort ->
     SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
     simplifier NormalForm
-simplify resultSort sideCondition ceilChild =
+makeEvaluateTerm resultSort sideCondition ceilChild =
     runCeilSimplifierWith
         ceilSimplifier
         sideCondition
@@ -261,7 +320,7 @@ makeEvaluateInternalList ::
     InternalList (TermLike RewritingVariableName) ->
     simplifier NormalForm
 makeEvaluateInternalList _ _ internal = do
-    return (MultiAnd.make $ fromCeil_ <$> toList internal)
+    return (MultiOr.singleton (MultiAnd.make $ fromCeil_ <$> toList internal))
 
 {- | This handles the case when we can't simplify a term's ceil.
 
@@ -287,8 +346,8 @@ makeSimplifiedCeil
     maybeCurrentCondition
     termLike@(Recursive.project -> _ :< termLikeF) =
         if needsChildCeils
-            then return (MultiAnd.make $ unsimplified : (fromCeil_ <$> toList termLikeF))
-            else return (MultiAnd.singleton unsimplified)
+            then return (MultiOr.singleton (MultiAnd.make $ unsimplified : (fromCeil_ <$> toList termLikeF)))
+            else return (MultiOr.singleton (MultiAnd.singleton unsimplified))
       where
         needsChildCeils = case termLikeF of
             ApplyAliasF _ -> False

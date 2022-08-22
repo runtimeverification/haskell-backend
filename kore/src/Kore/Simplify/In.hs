@@ -70,8 +70,10 @@ simplifyEvaluatedIn ::
 simplifyEvaluatedIn sideCondition first second
     | OrPattern.isFalse first = return OrCondition.bottom
     | OrPattern.isFalse second = return OrCondition.bottom
-    | OrPattern.isTrue first = Ceil.simplifyEvaluated sideCondition second
-    | OrPattern.isTrue second = Ceil.simplifyEvaluated sideCondition first
+    | OrPattern.isTrue first =
+        OrCondition.toOrCondition <$> Ceil.simplifyEvaluated sideCondition second
+    | OrPattern.isTrue second =
+        OrCondition.toOrCondition <$> Ceil.simplifyEvaluated sideCondition first
     | otherwise =
         OrPattern.observeAllT $ do
             pattFirst <- Logic.scatter first
@@ -85,13 +87,16 @@ makeEvaluateIn ::
     Pattern RewritingVariableName ->
     simplifier (OrCondition RewritingVariableName)
 makeEvaluateIn sideCondition first second
-    | Pattern.isTop first = Ceil.makeEvaluate sideCondition second
-    | Pattern.isTop second = Ceil.makeEvaluate sideCondition first
+    | Pattern.isTop first =
+        OrCondition.toOrCondition <$> Ceil.makeEvaluate sideCondition second
+    | Pattern.isTop second =
+        OrCondition.toOrCondition <$> Ceil.makeEvaluate sideCondition first
     | Pattern.isBottom first || Pattern.isBottom second = return OrCondition.bottom
     | otherwise =
         (And.makeEvaluate pattSort Not.notSimplifier sideCondition)
             (MultiAnd.make [first, second])
             & OrPattern.observeAllT
             >>= Ceil.simplifyEvaluated sideCondition
+            <&> OrCondition.toOrCondition
   where
     pattSort = patternSort first

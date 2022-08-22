@@ -136,6 +136,7 @@ ceilChildOfApplicationOrTop sideCondition patt =
                     >>= ( AndPredicates.simplifyEvaluatedMultiPredicate
                             sideCondition
                             . MultiAnd.make
+                            . (fmap . MultiOr.map) (from @_ @(Condition _) . Predicate.fromMultiAnd)
                         )
             pure
                 Conditional

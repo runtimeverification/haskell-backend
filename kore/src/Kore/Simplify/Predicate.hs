@@ -429,7 +429,7 @@ simplifyCeil ::
     Ceil sort (OrPattern RewritingVariableName) ->
     simplifier NormalForm
 simplifyCeil sideCondition =
-    Ceil.simplify sideCondition >=> return . fromOrCondition
+    Ceil.simplify sideCondition
 
 {- |
  @
@@ -460,7 +460,6 @@ simplifyFloor termSort sideCondition floor' = do
                 , ceilResultSort = floorResultSort
                 , ceilChild
                 }
-            <&> fromOrCondition
 
 simplifyExists ::
     forall simplifier.
