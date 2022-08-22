@@ -30,17 +30,20 @@ import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
     Conditional (..),
  )
+import Kore.Internal.From (fromCeil_)
 import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
-import Kore.Internal.MultiAnd qualified as MultiAnd
-import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
+import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.MultiOr (MultiOr)
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Predicate (
-    makeCeilPredicate, Predicate
+    Predicate,
+    makeCeilPredicate,
  )
 import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (
@@ -58,9 +61,8 @@ import Kore.Rewrite.Function.Evaluator qualified as Axiom (
     evaluatePattern,
  )
 import Kore.Rewrite.RewritingVariable (
-    RewritingVariableName
+    RewritingVariableName,
  )
-import Kore.Internal.From (fromCeil_)
 import Kore.Simplify.CeilSimplifier
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.Simplify as Simplifier

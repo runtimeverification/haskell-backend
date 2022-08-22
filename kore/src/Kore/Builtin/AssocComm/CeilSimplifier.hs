@@ -28,6 +28,8 @@ import Kore.Internal.MultiAnd (
     MultiAnd,
  )
 import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.MultiOr (MultiOr)
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.Predicate (
     Predicate,
     makeCeilPredicate,
@@ -60,8 +62,6 @@ import Kore.Variables.Fresh (
     refreshElementVariable,
  )
 import Prelude.Kore
-import Kore.Internal.MultiOr (MultiOr)
-import Kore.Internal.MultiOr qualified as MultiOr
 
 type BuiltinAssocComm normalized variable =
     InternalAc Key normalized (TermLike variable)
