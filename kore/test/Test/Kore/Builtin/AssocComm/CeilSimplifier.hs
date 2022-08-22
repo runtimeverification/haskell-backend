@@ -14,13 +14,11 @@ import Hedgehog.Gen qualified as Gen
 import Kore.Builtin.AssocComm.CeilSimplifier (
     generalizeMapElement,
  )
-import Kore.Internal.Condition as Condition
 import Kore.Internal.InternalMap
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
 import Kore.Internal.MultiAnd qualified as MultiAnd
-import Kore.Internal.OrCondition qualified as OrCondition
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate (
     Predicate,
@@ -29,9 +27,7 @@ import Kore.Internal.Predicate (
     makeForallPredicate,
     makeNotPredicate,
  )
-import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition qualified as SideCondition
-import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -300,28 +296,16 @@ makeEvaluate ::
     TermLike RewritingVariableName ->
     IO (MultiAnd (Predicate RewritingVariableName))
 makeEvaluate termLike = do
-    actualPattern <-
-        makeEvaluate' termLike
-            >>= (return . OrCondition.toConditions)
-            >>= expectSingleResult
-    assertBool
-        "expected \\top term"
-        (isTop $ term actualPattern)
-    assertBool
-        "expected empty substitution"
-        (Substitution.null $ substitution actualPattern)
-    let actualPredicates =
-            predicate actualPattern
-                & Predicate.getMultiAndPredicate
-                & MultiAnd.make
-    return actualPredicates
+    makeEvaluate' termLike
+        >>= expectSingleResult
+    -- TODO: removed checks because they no longer make sense
   where
     makeEvaluate' =
         testRunSimplifier mockEnv
             . Ceil.makeEvaluate SideCondition.top
             . Pattern.fromTermLike
     mockEnv = Mock.env{simplifierAxioms = mempty}
-    expectSingleResult =
-        \case
+    expectSingleResult result =
+        case toList result of
             [actualPattern] -> return actualPattern
             _ -> assertFailure "expected single result"

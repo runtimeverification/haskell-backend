@@ -8,6 +8,10 @@ module Kore.Simplify.Ceil (
     makeEvaluate,
     makeEvaluateTerm,
     Ceil (..),
+    -- TODO: move!
+    NormalForm,
+    fromPredicates,
+    fromPredicate,
 ) where
 
 import Control.Error (
