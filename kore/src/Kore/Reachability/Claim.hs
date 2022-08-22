@@ -757,8 +757,8 @@ checkSimpleImplication inLeft inRight inExistentials =
                     ([], stuck : _) ->
                         -- successful unification but all stuck,
                         -- return with first stuck term as antecedent
-                        let stuckClaim :: ClaimPattern =
-                                claimPattern{left = OrPattern.toPattern sort (fst stuck)}
+                        let stuckClaim =
+                                (claimPattern :: ClaimPattern){left = OrPattern.toPattern sort (fst stuck)}
                          in pure $ NotImpliedStuck (stuckClaim, Nothing)
   where
     sort = termLikeSort leftTerm
