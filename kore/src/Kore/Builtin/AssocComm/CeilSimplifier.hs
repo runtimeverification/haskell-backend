@@ -15,13 +15,13 @@ import Control.Monad.Reader (
     MonadReader,
  )
 import Data.Bifunctor qualified as Bifunctor
-import Kore.Internal.From ( fromNot, fromEquals_, fromCeil_ )
 import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet qualified as HashSet
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
 import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
+import Kore.Internal.From (fromCeil_, fromEquals_, fromNot)
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.MultiAnd (

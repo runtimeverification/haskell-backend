@@ -40,7 +40,10 @@ import Kore.Internal.MultiAnd (
 import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.MultiOr (MultiOr)
 import Kore.Internal.MultiOr qualified as MultiOr
+import Kore.Internal.OrPattern (OrPattern)
 import Kore.Internal.OrPattern qualified as OrPattern
+import Kore.Internal.Pattern (Pattern)
+import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     Predicate,
     makeCeilPredicate,
@@ -54,9 +57,6 @@ import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Internal.TermLike
-import Kore.Internal.OrPattern (OrPattern)
-import Kore.Internal.Pattern (Pattern)
-import Kore.Internal.Pattern qualified as Pattern
 import Kore.Rewrite.Function.Evaluator qualified as Axiom (
     evaluatePattern,
  )
@@ -67,7 +67,6 @@ import Kore.Simplify.CeilSimplifier
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.Simplify as Simplifier
 import Kore.TopBottom
-import Kore.Internal.MultiOr (MultiOr)
 import Kore.Unparser (
     unparseToString,
  )

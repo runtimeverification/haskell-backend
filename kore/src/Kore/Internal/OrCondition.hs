@@ -24,11 +24,11 @@ import Kore.Internal.Condition (
     Condition,
  )
 import Kore.Internal.Condition qualified as Condition
-import Kore.Internal.MultiOr (
-    MultiOr,
- )
 import Kore.Internal.MultiAnd (
     MultiAnd,
+ )
+import Kore.Internal.MultiOr (
+    MultiOr,
  )
 import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.Predicate (
