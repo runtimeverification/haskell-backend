@@ -5,6 +5,7 @@ module Test.Kore.Simplify.Ceil (
 import Data.Map.Strict qualified as Map
 import Data.Sup qualified as Sup
 import Kore.Internal.Condition as Condition
+import Kore.Internal.From (fromTop_)
 import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.Predicate (
     makeCeilPredicate,
@@ -26,14 +27,13 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Ceil qualified as Ceil (
+    NormalForm,
+    fromPredicate,
+    fromPredicates,
     makeEvaluate,
     simplify,
-    NormalForm,
-    fromPredicates,
-    fromPredicate,
  )
 import Kore.Simplify.Simplify
-import Kore.Internal.From (fromTop_)
 import Kore.Simplify.Simplify qualified as AttemptedAxiom (
     AttemptedAxiom (..),
  )
