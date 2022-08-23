@@ -7,8 +7,6 @@ module Kore.Simplify.Predicate (
     extractFirstAssignment,
 ) where
 
-import Pretty qualified
-
 import Control.Error (
     MaybeT,
     runMaybeT,
@@ -99,6 +97,7 @@ import Kore.Syntax.Exists qualified as Exists
 import Kore.Syntax.Forall qualified as Forall
 import Logic
 import Prelude.Kore
+import Pretty qualified
 
 {- | @NormalForm@ is the normal form result of simplifying 'Predicate'.
  The primary purpose of this form is to transmit to the external solver.
@@ -366,15 +365,15 @@ normalizeNotAnd Not{notSort, notChild = predicates} =
         if hasCeils predicates
             then
                 Predicate.fromMultiAnd predicates
-                & fromNot
-                & mkSingleton
-                & pure
+                    & fromNot
+                    & mkSingleton
+                    & pure
             else
                 Predicate.fromMultiAnd predicates
-                & fromNot
-                & Predicate.markSimplified
-                & mkSingleton
-                & pure
+                    & fromNot
+                    & Predicate.markSimplified
+                    & mkSingleton
+                    & pure
     bottom = normalizeBottom Bottom{bottomSort = notSort}
 
     hasCeils (toList -> predicates') =
@@ -447,7 +446,7 @@ simplifyCeil ::
     SideCondition RewritingVariableName ->
     Ceil sort (OrPattern RewritingVariableName) ->
     simplifier NormalForm
-simplifyCeil sideCondition input@Ceil { ceilChild } = do
+simplifyCeil sideCondition input@Ceil{ceilChild} = do
     x <- Ceil.simplify sideCondition input
     -- trace ("\nInput\n" <> (show . Pretty.pretty) ceilChild <> "\nOutput\n" <> (show . Pretty.pretty) x ) $ return x
     return x
