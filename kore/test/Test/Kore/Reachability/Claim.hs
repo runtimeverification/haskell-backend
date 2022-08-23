@@ -327,8 +327,9 @@ test_checkSimpleImplication =
                     (Condition.assign (inject Mock.x) Mock.a)
             stuckGoal =
                 mkGoal stuckConfig (OrPattern.fromPattern dest) existentials
+            subst = mkSubst (inject Mock.x) (mkElemVar Mock.y)
         actual <- checkSimple config dest existentials
-        assertEqual "" (NotImpliedStuck (stuckGoal, Nothing)) actual
+        assertEqual "" (NotImpliedStuck (stuckGoal, Just subst)) actual
     , testCase "Function unification, definedness condition and remainder" $ do
         let config = Mock.f (mkElemVar Mock.x) & Pattern.fromTermLike
             dest = Mock.f (mkElemVar Mock.y) & Pattern.fromTermLike
@@ -353,7 +354,7 @@ test_checkSimpleImplication =
             stuckGoal =
                 mkGoal stuckConfig (OrPattern.fromPattern dest) existentials
         actual <- checkSimple config dest existentials
-        assertEqual "" (NotImpliedStuck (stuckGoal, Nothing)) actual
+        assertEqual "" (NotImpliedStuck (stuckGoal, Just mempty)) actual
     , testCase "Branching RHS with condition in single pattern" $ do
         let config = Mock.a & Pattern.fromTermLike
             dest =

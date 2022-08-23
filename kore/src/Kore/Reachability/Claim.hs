@@ -759,7 +759,7 @@ checkSimpleImplication inLeft inRight inExistentials =
                         -- return with first stuck term as antecedent
                         let stuckClaim =
                                 (claimPattern :: ClaimPattern){left = OrPattern.toPattern sort (fst stuck)}
-                         in pure $ NotImpliedStuck (stuckClaim, Nothing)
+                         in pure $ NotImpliedStuck (stuckClaim, Just $ snd stuck)
   where
     sort = termLikeSort leftTerm
 

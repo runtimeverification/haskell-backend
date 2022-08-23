@@ -328,6 +328,7 @@ respond
                     pure $ Left $ couldNotVerify $ toJSON err
                 Right (antVerified, consVerified) -> do
                     let leftPatt = mkRewritingPattern $ Pattern.fromTermLike antVerified
+                        sort = TermLike.termLikeSort antVerified
                         (consWOExistentials, existentialVars) =
                             ClaimPattern.termToExistentials $
                                 mkRewritingTerm consVerified
@@ -345,23 +346,13 @@ respond
 
                             pure $
                                 Implies $ case result of
-                                    Claim.Implied (_, Just subst) ->
-                                        let substJson =
-                                                PatternJson.fromSubstitution $
-                                                    Substitution.mapVariables getRewritingVariable subst
-                                            condition s =
-                                                Condition
-                                                    { predicate =
-                                                        PatternJson.fromPredicate
-                                                            sort
-                                                            makeTruePredicate
-                                                    , substitution = s
-                                                    }
-                                         in ImpliesResult True $ fmap condition substJson
-                                    _ ->
+                                    Claim.Implied (_, subst) ->
+                                        ImpliesResult True $ renderSubst sort subst
+                                    Claim.NotImpliedStuck (_stuckTerm, subst) ->
+                                        ImpliesResult False $ renderSubst sort subst
+                                    Claim.NotImplied _ ->
                                         ImpliesResult False Nothing
           where
-            sort = undefined
             context =
                 PatternVerifier.verifiedModuleContext verifiedModule
                     & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
@@ -377,6 +368,14 @@ respond
 
             evalInContext =
                 evalSimplifier verifiedModule sortGraph overloadGraph metadataTools equations
+
+            renderSubst sort mbSubst = do
+                subst <- mbSubst
+                substitution <-
+                    PatternJson.fromSubstitution $
+                        Substitution.mapVariables getRewritingVariable subst
+                let predicate = PatternJson.fromPredicate sort makeTruePredicate
+                pure Condition{predicate, substitution}
 
             withErrHandler :: m result -> m (Either ErrorObj result)
             withErrHandler act =
