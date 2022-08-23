@@ -1,0 +1,1 @@
+{"error":{"data":"The check implication step expects the configuration term to be function-like.   Configuration term:     /* Spa */     \\and{SortK{}}(         /* Fl Fn D Sfa */ Configa:SortK{},         /* Fl Fn D Sfa */ Configb:SortK{}     )","code":-32003,"message":"Implication check error"},"jsonrpc":"2.0","id":1}

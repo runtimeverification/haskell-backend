@@ -1,0 +1,27 @@
+{
+    "format": "KORE",
+    "version": 1,
+    "term": {
+        "tag": "Exists",
+        "sort": {
+            "tag": "SortApp",
+            "name": "SortK",
+            "args": []
+        },
+        "var": "x",
+        "varSort": {
+            "tag": "SortApp",
+            "name": "SortK",
+            "args": []
+        },
+        "arg": {
+            "tag": "EVar",
+            "name": "x",
+            "sort": {
+                "tag": "SortApp",
+                "name": "SortK",
+                "args": []
+            }
+        }
+    }
+}

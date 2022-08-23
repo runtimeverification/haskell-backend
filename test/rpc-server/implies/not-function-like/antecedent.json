@@ -1,0 +1,30 @@
+{
+    "format": "KORE",
+    "version": 1,
+    "term": {
+        "tag": "And",
+        "sort": {
+            "tag": "SortApp",
+            "name": "SortK",
+            "args": []
+        },
+        "first": {
+                "tag": "EVar",
+                "name": "a",
+                "sort": {
+                    "tag": "SortApp",
+                    "name": "SortK",
+                    "args": []
+                }
+        },
+        "second": {
+            "tag": "EVar",
+            "name": "b",
+            "sort": {
+                "tag": "SortApp",
+                "name": "SortK",
+                "args": []
+            }
+        }
+    }
+}
