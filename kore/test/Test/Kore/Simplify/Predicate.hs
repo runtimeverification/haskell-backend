@@ -430,7 +430,7 @@ test_simplify_SideCondition =
     , testGroup
         "\\iff"
         [ test "Positive" [faCeil] (fromIff faCeil fbCeil) [[fbCeil]]
-        , test "Negative" [fromNot faCeil] (fromIff faCeil fbCeil) [[fromNot fbCeil]]
+        , test "2TESTING Negative" [fromNot faCeil] (fromIff faCeil fbCeil) [[fromNot fbCeil]]
         ]
     ]
   where

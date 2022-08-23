@@ -188,13 +188,13 @@ newDefinedCeilSimplifier ::
         (TermLike RewritingVariableName)
         NormalForm
 newDefinedCeilSimplifier sideCondition = CeilSimplifier $ \input ->
+    -- trace ("\ndefinedCeilInput\n" <> unparseToString (ceilChild input)) $
     if SideCondition.isDefined sideCondition (ceilChild input)
         then return (MultiOr.singleton MultiAnd.top)
         else empty
 
 newApplicationCeilSimplifier ::
     MonadSimplify simplifier =>
-    InternalVariable RewritingVariableName =>
     CeilSimplifier
         simplifier
         (TermLike RewritingVariableName)

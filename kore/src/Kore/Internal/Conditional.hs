@@ -21,7 +21,6 @@ module Kore.Internal.Conditional (
     isNormalized,
     assertNormalized,
     markPredicateSimplified,
-    markPredicateSimplifiedUnsafe,
     markPredicateSimplifiedConditional,
     setPredicateSimplified,
 ) where
@@ -529,12 +528,6 @@ markPredicateSimplified ::
     Conditional variable term
 markPredicateSimplified conditional@Conditional{predicate} =
     conditional{predicate = Predicate.markSimplified predicate}
-
-markPredicateSimplifiedUnsafe ::
-    Conditional variable term ->
-    Conditional variable term
-markPredicateSimplifiedUnsafe conditional@Conditional{predicate} =
-    conditional{predicate = Predicate.markSimplifiedUnsafe predicate}
 
 markPredicateSimplifiedConditional ::
     (HasCallStack, InternalVariable variable) =>

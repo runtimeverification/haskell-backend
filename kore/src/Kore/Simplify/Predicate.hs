@@ -7,6 +7,8 @@ module Kore.Simplify.Predicate (
     extractFirstAssignment,
 ) where
 
+import Pretty qualified
+
 import Control.Error (
     MaybeT,
     runMaybeT,
@@ -167,6 +169,7 @@ simplify sideCondition original =
         | Just predicate' <- replacePredicate predicate =
             worker predicate'
         | Predicate.isSimplified repr predicate =
+            -- trace ("\nisSimplified\n" <> (show . Pretty.pretty) predicate) $ pure (mkSingleton predicate)
             pure (mkSingleton predicate)
         | otherwise =
             case predicateF of
@@ -359,12 +362,29 @@ normalizeNotAnd Not{notSort, notChild = predicates} =
   where
     fallback =
         -- \not(\and(_, ...))
-        Predicate.fromMultiAnd predicates
-            & fromNot
-            & Predicate.markSimplified
-            & mkSingleton
-            & pure
+        -- TODO: unfortunately, the unit tests loop
+        if hasCeils predicates
+            then
+                Predicate.fromMultiAnd predicates
+                & fromNot
+                & mkSingleton
+                & pure
+            else
+                Predicate.fromMultiAnd predicates
+                & fromNot
+                & Predicate.markSimplified
+                & mkSingleton
+                & pure
     bottom = normalizeBottom Bottom{bottomSort = notSort}
+
+    hasCeils (toList -> predicates') =
+        worker predicates'
+      where
+        worker [] = False
+        worker (p : ps) =
+            case p of
+                Predicate.PredicateCeil _ -> True
+                _ -> worker ps
 
 {- |
  @
@@ -427,8 +447,10 @@ simplifyCeil ::
     SideCondition RewritingVariableName ->
     Ceil sort (OrPattern RewritingVariableName) ->
     simplifier NormalForm
-simplifyCeil sideCondition =
-    Ceil.simplify sideCondition
+simplifyCeil sideCondition input@Ceil { ceilChild } = do
+    x <- Ceil.simplify sideCondition input
+    -- trace ("\nInput\n" <> (show . Pretty.pretty) ceilChild <> "\nOutput\n" <> (show . Pretty.pretty) x ) $ return x
+    return x
 
 {- |
  @
