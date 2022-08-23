@@ -125,13 +125,13 @@ makeEvaluate ::
 makeEvaluate sideCondition child
     | Pattern.isTop child = return (MultiOr.singleton MultiAnd.top)
     | Pattern.isBottom child = return MultiOr.bottom
-    | isTop term = return condition'
+    | isTop term = return (fromPredicate condition')
     | otherwise = do
         termCeil <- makeEvaluateTerm childSort sideCondition term
-        return (condition' <> termCeil)
+        return (MultiOr.map (MultiAnd.singleton condition' <>) termCeil)
   where
     (term, condition) = Pattern.splitTerm child
-    condition' = fromPredicate (from @_ @(Predicate _) condition)
+    condition' = from @_ @(Predicate _) condition
     childSort = Pattern.patternSort child
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
@@ -390,7 +390,7 @@ makeSimplifiedCeil
             VariableF _ -> False
 
         unsimplified =
-            Predicate.markSimplifiedMaybeConditionalUnsafe maybeCurrentCondition
+            Predicate.markSimplifiedMaybeConditional maybeCurrentCondition
                 . makeCeilPredicate
                 $ termLike
 
