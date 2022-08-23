@@ -13,6 +13,7 @@ import Control.Lens qualified as Lens
 import Data.Default qualified as Default
 import Data.Generics.Product
 import Data.List (sort)
+import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Kore.Builtin.Bool qualified as Bool
