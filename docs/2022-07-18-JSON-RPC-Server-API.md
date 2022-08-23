@@ -336,6 +336,22 @@ This error wraps the internal error thrown when validating the received pattern 
 }
 ```
 
+## -32003 Implication check error
+
+This error wraps an error message from the internal implication check routine, in case the input data is inconsistent or otherwise unsuitable for the check.
+
+```json
+{
+  "jsonrpc":"2.0",
+  "id":1
+  "error": {
+    "code":-32003,
+    "message":"Implication check error",
+    "data": "The check implication step expects the configuration term to be function-like. Configuration term: /* Spa */ \\and{SortK{}}( /* Fl Fn D Sfa */ Configa:SortK{}, /* Fl Fn D Sfa */ Configb:SortK{} )",
+  }
+}
+```
+
 ## -32032 Internal server error
 
 This error indicates an internal problem with the server implementation. Its data is not expected to be processed by a client (other than including it in a bug report).
