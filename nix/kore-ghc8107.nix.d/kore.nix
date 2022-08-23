@@ -68,6 +68,7 @@
         (hsPkgs."hashable" or (errorHandler.buildDepError "hashable"))
         (hsPkgs."haskeline" or (errorHandler.buildDepError "haskeline"))
         (hsPkgs."integer-gmp" or (errorHandler.buildDepError "integer-gmp"))
+        (hsPkgs."intern" or (errorHandler.buildDepError "intern"))
         (hsPkgs."json-rpc" or (errorHandler.buildDepError "json-rpc"))
         (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
         (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
@@ -510,6 +511,7 @@
         depends = [
           (hsPkgs."base" or (errorHandler.buildDepError "base"))
           (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
+          (hsPkgs."array" or (errorHandler.buildDepError "array"))
           (hsPkgs."binary" or (errorHandler.buildDepError "binary"))
           (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
           (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
@@ -521,11 +523,14 @@
           (hsPkgs."extra" or (errorHandler.buildDepError "extra"))
           (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
           (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
+          (hsPkgs."intern" or (errorHandler.buildDepError "intern"))
           (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
           (hsPkgs."optparse-applicative" or (errorHandler.buildDepError
             "optparse-applicative"))
           (hsPkgs."text" or (errorHandler.buildDepError "text"))
           (hsPkgs."time" or (errorHandler.buildDepError "time"))
+          (hsPkgs."unordered-containers" or (errorHandler.buildDepError
+            "unordered-containers"))
         ];
         buildable = true;
         hsSourceDirs = [ "app/exec" ];
@@ -714,6 +719,7 @@
           (hsPkgs."hashable" or (errorHandler.buildDepError "hashable"))
           (hsPkgs."haskeline" or (errorHandler.buildDepError "haskeline"))
           (hsPkgs."integer-gmp" or (errorHandler.buildDepError "integer-gmp"))
+          (hsPkgs."intern" or (errorHandler.buildDepError "intern"))
           (hsPkgs."json-rpc" or (errorHandler.buildDepError "json-rpc"))
           (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
           (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
