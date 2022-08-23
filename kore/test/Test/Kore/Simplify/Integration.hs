@@ -39,9 +39,6 @@ import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier (
     AxiomIdentifier (..),
  )
-import Kore.Rewrite.Axiom.Registry (
-    mkEvaluatorRegistry,
- )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
@@ -305,8 +302,7 @@ test_simplificationIntegration =
     , testCase "exists variable equality" $ do
         let expect = OrPattern.topOf Mock.testSort
         actual <-
-            evaluateWithAxioms
-                Map.empty
+            evaluate
                 Conditional
                     { term =
                         mkExists
@@ -322,8 +318,7 @@ test_simplificationIntegration =
     , testCase "exists variable equality reverse" $ do
         let expect = OrPattern.topOf Mock.testSort
         actual <-
-            evaluateWithAxioms
-                Map.empty
+            evaluate
                 Conditional
                     { term =
                         mkExists
@@ -338,14 +333,14 @@ test_simplificationIntegration =
         assertEqual "" expect actual
     , testCase "exists variable equality" $ do
         actual <-
-            evaluateWithAxioms Map.empty $
+            evaluate $
                 Pattern.fromTermLike $
                     mkExists Mock.xConfig $
                         (mkEquals Mock.testSort) (mkElemVar Mock.xConfig) (mkElemVar Mock.yConfig)
         assertEqual "" (OrPattern.topOf Mock.testSort) actual
     , testCase "exists variable equality reverse" $ do
         actual <-
-            evaluateWithAxioms Map.empty $
+            evaluate $
                 Pattern.fromTermLike $
                     mkExists Mock.xConfig $
                         (mkEquals Mock.testSort) (mkElemVar Mock.yConfig) (mkElemVar Mock.xConfig)
@@ -1153,7 +1148,6 @@ test_simplifySideCondition =
                             ]
                         )
                     ]
-
         actual <- evaluateWithAxioms axioms configuration
         assertEqual "" expected actual
     ]
@@ -1167,15 +1161,15 @@ evaluateWithAxioms ::
     Map.Map AxiomIdentifier.AxiomIdentifier [Equation RewritingVariableName] ->
     Pattern.Pattern RewritingVariableName ->
     IO (OrPattern.OrPattern RewritingVariableName)
-evaluateWithAxioms axioms =
-    evaluateConditionalWithAxioms axioms SideCondition.top
+evaluateWithAxioms axiomEquations =
+    evaluateConditionalWithAxioms axiomEquations SideCondition.top
 
 evaluateConditionalWithAxioms ::
     Map.Map AxiomIdentifier.AxiomIdentifier [Equation RewritingVariableName] ->
     SideCondition' ->
     Pattern.Pattern RewritingVariableName ->
     IO (OrPattern.OrPattern RewritingVariableName)
-evaluateConditionalWithAxioms axioms sideCondition patt =
+evaluateConditionalWithAxioms axiomEquations sideCondition patt =
     Test.runSMT userInit $ do
         newEnv <- runSimplifier Mock.env initialize
         runSimplifier newEnv . Pattern.makeEvaluate sideCondition $ patt
@@ -1183,10 +1177,8 @@ evaluateConditionalWithAxioms axioms sideCondition patt =
     userInit = declareSortsSymbols Mock.smtDeclarations
     initialize :: Simplifier Env
     initialize = do
-        processedEquations <- Equation.simplifyExtractedEquations axioms
-        let simplifierAxioms :: BuiltinAndAxiomSimplifierMap
-            simplifierAxioms = mkEvaluatorRegistry processedEquations
-        return Mock.env{simplifierAxioms, hookedSymbols = builtinAxioms}
+        processedEquations <- Equation.simplifyExtractedEquations axiomEquations
+        return Mock.env{axiomEquations = processedEquations, hookedSymbols = builtinAxioms}
 
 -- | A selection of builtin axioms used in the tests above.
 builtinAxioms :: Map Id Text
