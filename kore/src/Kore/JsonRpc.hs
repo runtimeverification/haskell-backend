@@ -11,7 +11,8 @@ import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Exception (ErrorCall (..), Exception, mask)
 import Control.Monad (forever)
-import Control.Monad.Catch (MonadCatch, catch)
+import Control.Monad.Catch (MonadCatch, catch, handle)
+import Control.Monad.Except (runExceptT)
 import Control.Monad.Logger (MonadLoggerIO, askLoggerIO, runLoggingT)
 import Control.Monad.Reader (ask, runReaderT)
 import Control.Monad.STM (atomically)
@@ -28,6 +29,7 @@ import Deriving.Aeson (
  )
 import GHC.Generics (Generic)
 import Kore.Builtin qualified as Builtin
+import Kore.Error (Error (..))
 import Kore.Exec qualified as Exec
 import Kore.Exec.GraphTraversal qualified as GraphTraversal
 import Kore.Internal.Pattern (Pattern)
@@ -228,15 +230,8 @@ respond ::
     (forall a. SMT.SMT a -> IO a) ->
     Exec.SerializedModule ->
     Respond (API 'Req) m (API 'Res)
-respond
-    runSMT
-    serializedModule@Exec.SerializedModule
-        { sortGraph
-        , overloadGraph
-        , metadataTools
-        , verifiedModule
-        , equations
-        } = \case
+respond runSMT serializedModule =
+    withErrHandler . \case
         Execute ExecuteRequest{state, maxDepth} ->
             case PatternVerifier.runPatternVerifier context $
                 PatternVerifier.verifyStandalonePattern Nothing $
@@ -299,9 +294,9 @@ respond
                                 }
                 -- these are programmer errors
                 result@GraphTraversal.Aborted{} ->
-                    Left $ serverError "aborted" result
+                    Left $ serverError "aborted" $ asText result
                 other ->
-                    Left $ serverError "multiple states in result" other
+                    Left $ serverError "multiple states in result" $ asText other
 
             patternToExecState ::
                 TermLike.Sort ->
@@ -334,24 +329,16 @@ respond
                                 mkRewritingTerm consVerified
                         rightPatt = Pattern.fromTermLike consWOExistentials
 
-                    withErrHandler $
-                        liftIO $ do
-                            result <-
-                                runSMT
-                                    . evalInContext
-                                    $ Claim.checkSimpleImplication
-                                        leftPatt
-                                        rightPatt
-                                        existentialVars
-
-                            pure $
-                                Implies $ case result of
-                                    Claim.Implied (_, subst) ->
-                                        ImpliesResult True $ renderSubst sort subst
-                                    Claim.NotImpliedStuck (_stuckTerm, subst) ->
-                                        ImpliesResult False $ renderSubst sort subst
-                                    Claim.NotImplied _ ->
-                                        ImpliesResult False Nothing
+                    result <-
+                        liftIO
+                            . runSMT
+                            . evalInContext
+                            . runExceptT
+                            $ Claim.checkSimpleImplication
+                                leftPatt
+                                rightPatt
+                                existentialVars
+                    pure $ buildResult sort result
           where
             context =
                 PatternVerifier.verifiedModuleContext verifiedModule
@@ -367,7 +354,12 @@ respond
                 pure (antVerified, consVerified)
 
             evalInContext =
-                evalSimplifier verifiedModule sortGraph overloadGraph metadataTools equations
+                evalSimplifier
+                    verifiedModule
+                    sortGraph
+                    overloadGraph
+                    metadataTools
+                    equations
 
             renderSubst sort mbSubst = do
                 subst <- mbSubst
@@ -377,24 +369,46 @@ respond
                 let predicate = PatternJson.fromPredicate sort makeTruePredicate
                 pure Condition{predicate, substitution}
 
-            withErrHandler :: m result -> m (Either ErrorObj result)
-            withErrHandler act =
-                (act >>= pure . Right)
-                    `catch` \(ErrorCall msg) ->
-                        pure . Left . implicationError . asText $ msg
+            buildResult _ (Left err) = Left $ implicationError $ toJSON err
+            buildResult sort (Right r) =
+                Right . Implies $
+                    case r of
+                        Claim.Implied (_, subst) ->
+                            ImpliesResult True $ renderSubst sort subst
+                        Claim.NotImpliedStuck (_stuckTerm, subst) ->
+                            ImpliesResult False $ renderSubst sort subst
+                        Claim.NotImplied _ ->
+                            ImpliesResult False Nothing
         Simplify SimplifyRequest{state} -> pure $ Right $ Simplify SimplifyResult{state}
         -- this case is only reachable if the cancel appeared as part of a batch request
         Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
-      where
-        couldNotVerify err = ErrorObj "Could not verify KORE pattern" (-32002) err
+  where
+    Exec.SerializedModule
+        { sortGraph
+        , overloadGraph
+        , metadataTools
+        , verifiedModule
+        , equations
+        } = serializedModule
 
-        serverError detail payload =
-            ErrorObj ("Server error: " <> detail) (-32032) $ asText payload
+    couldNotVerify err = ErrorObj "Could not verify KORE pattern" (-32002) err
 
-        asText :: Pretty.Pretty a => a -> Value
-        asText = String . Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty
+    serverError detail payload =
+        ErrorObj ("Server error: " <> detail) (-32032) payload
 
-        implicationError err = ErrorObj "Implication check error" (-32003) err
+    asText :: Pretty.Pretty a => a -> Value
+    asText = String . Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty
+
+    implicationError err = ErrorObj "Implication check error" (-32003) err
+
+    -- catch all calls to `error` that may occur within the guts of the engine
+    withErrHandler ::
+        m (Either ErrorObj res) ->
+        m (Either ErrorObj res)
+    withErrHandler =
+        let mkError (ErrorCallWithLocation msg loc) =
+                Error{errorContext = [loc], errorError = msg}
+         in handle (pure . Left . serverError "crashed" . toJSON . mkError)
 
 runServer :: Int -> SMT.SolverSetup -> Log.LoggerEnv IO -> Exec.SerializedModule -> IO ()
 runServer port solverSetup Log.LoggerEnv{logAction, context = entryContext} serializedModule = do

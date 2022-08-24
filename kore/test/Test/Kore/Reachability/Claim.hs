@@ -5,6 +5,7 @@ module Test.Kore.Reachability.Claim (
 ) where
 
 import Control.Lens qualified as Lens
+import Control.Monad.Except (runExceptT)
 import Data.Generics.Product (
     field,
  )
@@ -466,8 +467,10 @@ checkSimple ::
             )
         )
 checkSimple left right existentials =
-    runSimplifierSMT Mock.env $
-        checkSimpleImplication
+    fmap (either (error . show) id)
+        . runSimplifierSMT Mock.env
+        . runExceptT
+        $ checkSimpleImplication
             (mkRewritingPattern left)
             (mkRewritingPattern right)
             (fmap (TermLike.mapElementVariable (pure mkConfigVariable)) existentials)

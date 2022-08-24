@@ -345,9 +345,14 @@ This error wraps an error message from the internal implication check routine, i
   "jsonrpc":"2.0",
   "id":1
   "error": {
-    "code":-32003,
-    "message":"Implication check error",
-    "data": "The check implication step expects the configuration term to be function-like. Configuration term: /* Spa */ \\and{SortK{}}( /* Fl Fn D Sfa */ Configa:SortK{}, /* Fl Fn D Sfa */ Configb:SortK{} )",
+    "code": -32003,
+    "message": "Implication check error",
+    "data": {
+      "context": [
+        "/* Spa */ \\and{SortK{}}( /* Fl Fn D Sfa */ Configa:SortK{}, /* Fl Fn D Sfa */ Configb:SortK{} )"
+      ],
+      "error": "The check implication step expects the antecedent term to be function-like."
+    }
   }
 }
 ```

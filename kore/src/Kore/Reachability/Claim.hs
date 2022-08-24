@@ -36,6 +36,7 @@ module Kore.Reachability.Claim (
 
     -- * For JSON-RPC
     checkSimpleImplication,
+    ImplicationError,
 
     -- * For testing
     checkImplicationWorker,
@@ -50,6 +51,9 @@ import Control.Monad.Catch (
     Exception (..),
     SomeException (..),
  )
+import Control.Monad.Except (
+    ExceptT,
+ )
 import Control.Monad.State.Strict (
     MonadState,
     StateT,
@@ -60,7 +64,7 @@ import Data.Functor.Compose
 import Data.Generics.Product (
     field,
  )
-import Data.List (partition)
+import Data.List (intersect, partition)
 import Data.Monoid qualified as Monoid
 import Data.Stream.Infinite (
     Stream (..),
@@ -73,6 +77,7 @@ import Kore.Attribute.Axiom qualified as Attribute.Axiom
 import Kore.Attribute.Label qualified as Attribute (
     Label,
  )
+import Kore.Attribute.Pattern.FreeVariables (getFreeElementVariables)
 import Kore.Attribute.RuleIndex qualified as Attribute (
     RuleIndex,
  )
@@ -80,6 +85,7 @@ import Kore.Attribute.SourceLocation qualified as Attribute (
     SourceLocation,
  )
 import Kore.Attribute.Trusted qualified as Attribute.Trusted
+import Kore.Error (Error (..), koreFailWhen, withContext)
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (indexedModuleClaims),
     VerifiedModule,
@@ -109,6 +115,7 @@ import Kore.Internal.Symbol (
 import Kore.Internal.TermLike (
     Not (..),
     Sort,
+    freeVariables,
     isFunctionPattern,
     termLikeSort,
  )
@@ -709,8 +716,9 @@ When the implication formula is not valid, the function behaves
 similar to @checkImplicationWorker@:
 
 * If unification @⌈t(X) ∧ t'(X, Y)⌉@ succeeded, the return value is
-   'NotImpliedStuck' with the refuted term,
-* otherwise, the function returns 'NotImplied'.
+  'NotImpliedStuck' with terms that could not be refuted, and the
+  substitution for the unification.
+* otherwise, the function returns 'NotImplied' without a substitution.
 -}
 checkSimpleImplication ::
     forall m.
@@ -718,12 +726,15 @@ checkSimpleImplication ::
     Pattern RewritingVariableName -> -- left
     Pattern RewritingVariableName -> -- right
     [ElementVariable RewritingVariableName] -> -- existentials
-    m (CheckImplicationResult (ClaimPattern, Maybe (Substitution RewritingVariableName)))
-checkSimpleImplication inLeft inRight inExistentials =
+    ExceptT
+        (Error ImplicationError)
+        m
+        (CheckImplicationResult (ClaimPattern, Maybe (Substitution RewritingVariableName)))
+checkSimpleImplication left right existentials =
     do
-        assertFunctionLikeConfiguration claimPattern
+        checkAssumptions
         let definedConfig =
-                Pattern.andCondition renamedLeft $
+                Pattern.andCondition left $
                     from $ makeCeilPredicate leftTerm
         trivial <-
             fmap isBottom $
@@ -743,7 +754,7 @@ checkSimpleImplication inLeft inRight inExistentials =
                 -- for each unification result, attempt to refute the formula
                 remainders ::
                     [(OrPattern RewritingVariableName, Substitution RewritingVariableName)] <-
-                    mapM (checkUnifiedConsequent definedConfig) unified
+                    mapM (lift . checkUnifiedConsequent definedConfig) unified
 
                 let (successes, stucks) = partition (isBottom . fst) remainders
 
@@ -761,17 +772,32 @@ checkSimpleImplication inLeft inRight inExistentials =
                                 (claimPattern :: ClaimPattern){left = OrPattern.toPattern sort (fst stuck)}
                          in pure $ NotImpliedStuck (stuckClaim, Just $ snd stuck)
   where
+    checkAssumptions = do
+        let showTerm = Pretty.renderString . Pretty.layoutOneLine . Pretty.pretty
+        -- must be function-like
+        withContext (showTerm leftTerm) $
+            koreFailWhen
+                (not $ isFunctionPattern leftTerm)
+                $ "The check implication step expects the antecedent term to be function-like."
+        -- RHS existentials must not capture free variables of LHS
+        let nameCollisions =
+                existentials `intersect` getFreeElementVariables (freeVariables left)
+        withContext ("LHS: " <> showTerm leftTerm)
+            . withContext ("RHS: " <> showTerm rightTerm)
+            . withContext ("existentials: " <> show (map unparse2 existentials))
+            $ koreFailWhen (not $ null nameCollisions) $
+                unwords
+                    ( "Existentials capture free variables of the LHS:" :
+                      map (show . unparse2) nameCollisions
+                    )
+
+    claimPattern =
+        ClaimPattern.mkClaimPattern left (OrPattern.fromPattern right) existentials
+
+    (rightTerm, rightCondition) = Pattern.splitTerm right
+    (leftTerm, leftCondition) = Pattern.splitTerm left
+
     sort = termLikeSort leftTerm
-
-    claimPattern@ClaimPattern{left = renamedLeft, right = orRight, existentials} =
-        ClaimPattern.refreshExistentials $
-            -- ensures existentials of RHS do not occur free in LHS
-            ClaimPattern.mkClaimPattern inLeft (OrPattern.fromPattern inRight) inExistentials
-
-    renamedRight = OrPattern.toPattern sort orRight
-
-    (rightTerm, rightCondition) = Pattern.splitTerm renamedRight
-    (leftTerm, leftCondition) = Pattern.splitTerm renamedLeft
 
     -- using a successful unification result (Condition), build term
     -- to refute and try to refute (returning non-refutable parts and
@@ -813,6 +839,9 @@ checkSimpleImplication inLeft inRight inExistentials =
                         $ notRhs
 
                 liftSimplifier $ SMT.Evaluator.filterMultiOr toRefute
+
+-- | type tag for errors thrown from the above
+data ImplicationError
 
 simplify' ::
     MonadSimplify m =>
