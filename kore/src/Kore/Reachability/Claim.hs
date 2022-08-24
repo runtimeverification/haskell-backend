@@ -778,7 +778,7 @@ checkSimpleImplication left right existentials =
         withContext (showTerm leftTerm) $
             koreFailWhen
                 (not $ isFunctionPattern leftTerm)
-                $ "The check implication step expects the antecedent term to be function-like."
+                "The check implication step expects the antecedent term to be function-like."
         -- RHS existentials must not capture free variables of LHS
         let nameCollisions =
                 existentials `intersect` getFreeElementVariables (freeVariables left)
