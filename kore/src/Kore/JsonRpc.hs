@@ -34,7 +34,7 @@ import Kore.Exec qualified as Exec
 import Kore.Exec.GraphTraversal qualified as GraphTraversal
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
-import Kore.Internal.Predicate (makeTruePredicate, pattern PredicateTrue)
+import Kore.Internal.Predicate (pattern PredicateTrue)
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.InfoExecDepth (ExecDepth (..))
@@ -161,18 +161,10 @@ data ExecuteResult = ExecuteResult
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ExecuteResult
 
-data Condition = Condition
-    { substitution :: !KoreJson
-    , predicate :: !KoreJson
-    }
-    deriving stock (Generic, Show, Eq)
-    deriving
-        (ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] Condition
-
 data ImpliesResult = ImpliesResult
-    { satisfiable :: !Bool
-    , condition :: !(Maybe Condition)
+    { satisfiable :: Bool
+    , substitution :: Maybe KoreJson
+    , predicate :: Maybe KoreJson
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -323,7 +315,6 @@ respond runSMT serializedModule =
                     pure $ Left $ couldNotVerify $ toJSON err
                 Right (antVerified, consVerified) -> do
                     let leftPatt = mkRewritingPattern $ Pattern.fromTermLike antVerified
-                        sort = TermLike.termLikeSort antVerified
                         (consWOExistentials, existentialVars) =
                             ClaimPattern.termToExistentials $
                                 mkRewritingTerm consVerified
@@ -338,7 +329,7 @@ respond runSMT serializedModule =
                                 leftPatt
                                 rightPatt
                                 existentialVars
-                    pure $ buildResult sort result
+                    pure $ buildResult result
           where
             context =
                 PatternVerifier.verifiedModuleContext verifiedModule
@@ -361,24 +352,21 @@ respond runSMT serializedModule =
                     metadataTools
                     equations
 
-            renderSubst sort mbSubst = do
+            renderSubst mbSubst = do
                 subst <- mbSubst
-                substitution <-
-                    PatternJson.fromSubstitution $
-                        Substitution.mapVariables getRewritingVariable subst
-                let predicate = PatternJson.fromPredicate sort makeTruePredicate
-                pure Condition{predicate, substitution}
+                PatternJson.fromSubstitution $
+                    Substitution.mapVariables getRewritingVariable subst
 
-            buildResult _ (Left err) = Left $ implicationError $ toJSON err
-            buildResult sort (Right r) =
+            buildResult (Left err) = Left $ implicationError $ toJSON err
+            buildResult (Right r) =
                 Right . Implies $
                     case r of
                         Claim.Implied (_, subst) ->
-                            ImpliesResult True $ renderSubst sort subst
+                            ImpliesResult True (renderSubst subst) Nothing
                         Claim.NotImpliedStuck (_stuckTerm, subst) ->
-                            ImpliesResult False $ renderSubst sort subst
+                            ImpliesResult False (renderSubst subst) Nothing
                         Claim.NotImplied _ ->
-                            ImpliesResult False Nothing
+                            ImpliesResult False Nothing Nothing
         Simplify SimplifyRequest{state} -> pure $ Right $ Simplify SimplifyResult{state}
         -- this case is only reachable if the cancel appeared as part of a batch request
         Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null

@@ -228,11 +228,21 @@ Same as for execute
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
+    "satisfiable": false,
+    "substitution": {"format": "KORE", "version": 1, "term": {}},
+    "predicate": {"format": "KORE", "version": 1, "term": {}}
+  }
+}
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
     "satisfiable": true,
-    "condition": {
-      "substitution": {"format": "KORE", "version": 1, "term": {}},
-      "predicate": {"format": "KORE", "version": 1, "term": {}}
-    }
+    "substitution": {"format": "KORE", "version": 1, "term": {}},
+    "predicate": {"format": "KORE", "version": 1, "term": {}}
   }
 }
 ```
