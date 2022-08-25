@@ -3,7 +3,7 @@
     "version": 1,
     "term": {
         "tag": "EVar",
-        "name": "b",
+        "name": "a",
         "sort": {
             "tag": "SortApp",
             "name": "SortK",

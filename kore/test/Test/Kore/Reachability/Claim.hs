@@ -303,7 +303,7 @@ test_checkSimpleImplication =
             goal =
                 mkGoal
                     -- simplification applies the substitutions
-                    (Pattern.fromTermLike Mock.a <* config) -- ((Pattern.fromTermLike Mock.a) <> config)
+                    (Pattern.fromTermLike Mock.a <* config)
                     (OrPattern.fromPattern (Pattern.fromTermLike Mock.a <* dest))
                     existentials
             subst = mempty -- FIXME WAS mkSubst (inject Mock.x) (mkElemVar Mock.y)
