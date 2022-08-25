@@ -209,7 +209,31 @@ If `"reason": "cut-point-rule"`, the `next-states` field contains the next state
 
 ### Error Response:
 
-Same as for execute
+Errors in decoding the `antecedent` or `consequent` terms are reported similar as for execute.
+
+Other errors are specific to the implication checker and what it supports. These errors are reported as `Implication check error` (also see below):
+
+* Currently, terms that do not simplify to a singleton pattern are not supported. Unsupported terms are typically those which have an `\or` at the top level.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "data": {
+      "context": [
+        "LHS: \\and{SortK{}}(     /* term: */ /* D Spa */ \\or{SortK{}}( /* Fl Fn D Sfa */ Configa:SortK{}, /* Spa */ \\not{SortK{}}( /* Fl Fn D Sfa */ Configa:SortK{} ) ), \\and{SortK{}}(     /* predicate: */ /* D Sfa */ \\top{SortK{}}(),     /* substitution: */ \\top{SortK{}}() ))"
+      ],
+      "error": "Term does not simplify to a singleton pattern"
+    }
+    "code": -32003,
+    "message": "Implication check error"
+  }
+}
+```
+
+* The `antecedent` term must not have free variables that are used as existentials in the `consequent`.
+* The `antecedent` term must be function-like.
 
 ### Correct Response:
 
