@@ -1,3 +1,5 @@
+{-# LANGUAGE BlockArguments #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
@@ -7,10 +9,14 @@ Please refer to <http://github.com/runtimeverification/haskell-backend/blob/mast
 module Kore.Syntax.Id (
     -- * Identifiers
     Id (..),
+    pattern Id,
+    getId,
+    idLocation,
     getIdForError,
     noLocationId,
     implicitId,
     generatedId,
+    globalIdMap,
 
     -- * Locations
     AstLocation (..),
@@ -18,6 +24,10 @@ module Kore.Syntax.Id (
     prettyPrintAstLocation,
 ) where
 
+import Control.Lens (lens)
+import Data.Generics.Product
+import Data.HashMap.Strict as HashMap
+import Data.IORef
 import Data.String (
     IsString (..),
  )
@@ -31,35 +41,130 @@ import Kore.Debug
 import Kore.Unparser
 import Prelude.Kore
 import Pretty qualified
+import System.IO.Unsafe (unsafePerformIO)
+
+globalIdMap :: IORef (HashMap Text Int)
+globalIdMap = unsafePerformIO $ newIORef HashMap.empty
+{-# NOINLINE globalIdMap #-}
+
+data InternedText = InternedText
+    { getText :: {-# UNPACK #-} !Text
+    , getUniqueId :: {-# UNPACK #-} !Int
+    }
+    deriving stock (GHC.Generic)
+    deriving anyclass (NFData)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+
+instance Show InternedText where
+    showsPrec prec = showsPrec prec . getText
+
+instance Debug InternedText where
+    debugPrec = debugPrec . getText
+
+instance Diff InternedText where
+    diffPrec = diffPrec `on` getText
+
+internText :: Text -> InternedText
+internText text = unsafePerformIO $ do
+    atomicModifyIORef' globalIdMap modification
+  where
+    modification :: HashMap Text Int -> (HashMap Text Int, InternedText)
+    modification idMap =
+        swap $
+            HashMap.alterF
+                \case
+                    -- If this text is already interned, reuse it.
+                    existing@(Just iden) -> (InternedText text iden, existing)
+                    -- Otherwise, create a new ID for it and intern it.
+                    Nothing ->
+                        -- TODO: `HashMap.size` is O(n).
+                        -- We should save a counter alongside the hashmap instead of using `size`.
+                        let iden = HashMap.size idMap
+                         in (InternedText text iden, Just iden)
+                text
+                idMap
 
 {- | 'Id' is a Kore identifier.
 
 'Id' corresponds to the @identifier@ syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#identifiers kore-syntax.md#identifiers>.
 -}
-data Id = Id
-    { getId :: !Text
-    , idLocation :: !AstLocation
+data Id = InternedId
+    { getInternedId :: !InternedText
+    , internedIdLocation :: !AstLocation
     }
-    deriving stock (Show)
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug)
+
+pattern Id :: Text -> AstLocation -> Id
+pattern Id{getId, idLocation} <-
+    InternedId (getText -> getId) idLocation
+    where
+        Id text location = InternedId (internText text) location
+
+{-# COMPLETE Id #-}
+
+instance Show Id where
+    showsPrec = showsPrecId False
+
+{- | Produces valid syntax for the 'Id' pattern synonym.
+   This hides the interning of the Text, including the unique identifier.
+-}
+instance Debug Id where
+    debugPrec a prec = Pretty.pretty (showsPrecId True prec a "")
+
+{- | ShowS an 'Id' in accordance with the old uninterned interface.
+   If the predicate 'useSpace' is 'True', spaces are placed between the braces and the field
+   names.
+-}
+showsPrecId :: Bool -> Int -> Id -> ShowS
+showsPrecId useSpace prec (Id iden location) = showParen (prec > 10) showId
+  where
+    showId =
+        showString "Id {"
+            . space
+            . showString "getId = "
+            . shows iden
+            . showString ", idLocation = "
+            . shows location
+            . space
+            . showChar '}'
+    space
+        | useSpace = showChar ' '
+        | otherwise = id
+
+{- | The @HasField "getId"@ instance for the Id type maintains compatibility with
+   the old interface of non-interned Ids.
+-}
+instance {-# OVERLAPPING #-} HasField "getId" Id Id Text Text where
+    field = lens getId (\(Id _ iden) text -> Id text iden)
+
+{- | The @HasField "idLocation"@ instance for the Id type maintains compatibility with
+   the old interface of non-interned Ids.
+-}
+instance {-# OVERLAPPING #-} HasField "idLocation" Id Id AstLocation AstLocation where
+    field = field @"internedIdLocation"
 
 -- | 'Ord' ignores the 'AstLocation'
 instance Ord Id where
-    compare first@(Id _ _) second@(Id _ _) =
-        compare (getId first) (getId second)
+    a `compare` b
+        -- Quickly check if their interned IDs are equal.
+        | a == b = EQ
+        -- If they're not, fallback to using lexical order by comparing the strings' actual contents.
+        | otherwise = getId a `compare` getId b
+    {-# INLINE compare #-}
 
 -- | 'Eq' ignores the 'AstLocation'
 instance Eq Id where
-    first == second = compare first second == EQ
+    first == second = getUniqueId (getInternedId first) == getUniqueId (getInternedId second)
     {-# INLINE (==) #-}
 
 -- | 'Hashable' ignores the 'AstLocation'
 instance Hashable Id where
-    hashWithSalt salt (Id text _) = hashWithSalt salt text
+    hashWithSalt salt internedId = hashWithSalt salt $ getUniqueId (getInternedId internedId)
     {-# INLINE hashWithSalt #-}
+    hash internedId = hash $ getUniqueId (getInternedId internedId)
+    {-# INLINE hash #-}
 
 instance Diff Id where
     diffPrec a b =
@@ -91,10 +196,10 @@ implicitId name = Id name AstLocationImplicit
 The location will be 'AstLocationGeneratedVariable'.
 -}
 generatedId :: Text -> Id
-generatedId getId =
-    Id{getId, idLocation}
+generatedId text =
+    Id{getId = text, idLocation = location}
   where
-    idLocation = AstLocationGeneratedVariable
+    location = AstLocationGeneratedVariable
 
 -- | Get the identifier name for an error message 'String'.
 getIdForError :: Id -> String
