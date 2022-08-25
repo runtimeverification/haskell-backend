@@ -9,7 +9,6 @@ import Control.Exception (
     evaluate,
  )
 import Data.Bifunctor qualified as Bifunctor
-import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
@@ -31,9 +30,6 @@ import Kore.Simplify.API (
  )
 import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Pattern qualified as Pattern
-import Kore.Simplify.Simplify (
-    BuiltinAndAxiomSimplifierMap,
- )
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
 import Kore.Unification.Procedure
 import Kore.Unification.SubstitutionSimplifier qualified as Unification
@@ -229,25 +225,20 @@ andSimplifyException message term1 term2 exceptionMessage =
         assertFailure "This evaluation should fail"
     handler (ErrorCall s) = assertEqual "" exceptionMessage s
 
-unificationProcedureSuccessWithSimplifiers ::
+unificationProcedureSuccess ::
     HasCallStack =>
     TestName ->
-    BuiltinAndAxiomSimplifierMap ->
     UnificationTerm ->
     UnificationTerm ->
-    [ ( [Substitution.Assignment RewritingVariableName]
-      , Predicate RewritingVariableName
-      )
-    ] ->
+    [(Substitution, Predicate RewritingVariableName)] ->
     TestTree
-unificationProcedureSuccessWithSimplifiers
+unificationProcedureSuccess
     message
-    axiomIdToSimplifier
     (UnificationTerm term1)
     (UnificationTerm term2)
-    expect =
+    substPredicate =
         testCase message $ do
-            let mockEnv = testEnv{simplifierAxioms = axiomIdToSimplifier}
+            let mockEnv = testEnv
             results <-
                 unificationProcedure
                     SideCondition.topTODO
@@ -267,29 +258,14 @@ unificationProcedureSuccessWithSimplifiers
                 ""
                 expect
                 (map normalize results)
-
-unificationProcedureSuccess ::
-    HasCallStack =>
-    TestName ->
-    UnificationTerm ->
-    UnificationTerm ->
-    [(Substitution, Predicate RewritingVariableName)] ->
-    TestTree
-unificationProcedureSuccess message term1 term2 substPredicate =
-    unificationProcedureSuccessWithSimplifiers
-        message
-        Map.empty
-        term1
-        term2
-        expect
-  where
-    expect ::
-        [ ( [Substitution.Assignment RewritingVariableName]
-          , Predicate RewritingVariableName
-          )
-        ]
-    expect =
-        map (Bifunctor.first unificationSubstitution) substPredicate
+      where
+        expect ::
+            [ ( [Substitution.Assignment RewritingVariableName]
+              , Predicate RewritingVariableName
+              )
+            ]
+        expect =
+            map (Bifunctor.first unificationSubstitution) substPredicate
 
 test_unification :: [TestTree]
 test_unification =

@@ -641,7 +641,7 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
 
     discharge ::
         unifier (Condition RewritingVariableName)
-    discharge = unifyTerms' rootSort sideCondition origVars vars rest bindings constraints acEquations
+    ~discharge = unifyTerms' rootSort sideCondition origVars vars rest bindings constraints acEquations
 
     failUnify ::
         Text ->
@@ -744,7 +744,7 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                     )
             ) = unifyTerms' rootSort sideCondition origVars vars ((term1, term2) : rest) bindings (Condition.andCondition constraints narrowingSubst) acEquations
 
-    trySubstDecompose = do
+    ~trySubstDecompose = do
         (newFirst, firstConstraints) <- substAndSimplify constraints first
         (newSecond, secondConstraints) <- substAndSimplify firstConstraints second
         if newFirst /= first || newSecond /= second
@@ -764,7 +764,8 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
         TermLike RewritingVariableName ->
         unifier (TermLike RewritingVariableName, Condition RewritingVariableName)
     substAndSimplify constraints' term = do
-        let substituted = substitute currentSubstitution term
+        let currentSubstitution = Map.mapKeys variableName $ Map.map fromFree $ Map.filter isFree bindings
+            substituted = substitute currentSubstitution term
         if substituted /= term
             then do
                 pats <- simplifyTerm sideCondition substituted
@@ -772,8 +773,6 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                 let (term', condition) = Pattern.splitTerm pat
                 return (term', Condition.andCondition constraints' condition)
             else return (term, constraints')
-
-    currentSubstitution = Map.mapKeys variableName $ Map.map fromFree $ Map.filter isFree bindings
 
     unifyMaps ::
         InternalMap Key (TermLike RewritingVariableName) ->
@@ -870,7 +869,7 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
             (_, _, 0, 0) -> failUnify "Cannot unify empty collection with non-empty collection"
             (_, _, _, _) -> acUnifyConcat
       where
-        acUnifyConcat =
+        ~acUnifyConcat =
             let (vars1, lhs, freeEqs1) = variableAbstraction sort vars term1
                 (vars2, rhs, freeEqs2) = variableAbstraction sort vars1 term2
              in case (lhs, rhs) of

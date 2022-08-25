@@ -19,6 +19,7 @@ import Data.Text (
     Text,
  )
 import Kore.Builtin.AssociativeCommutative qualified as Ac
+import Kore.Equation (Equation)
 import Kore.Internal.Condition as Condition
 import Kore.Internal.From
 import Kore.Internal.InternalSet
@@ -47,6 +48,7 @@ import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
  )
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike as TermLike
+import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier)
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
@@ -1577,16 +1579,16 @@ simplify first second =
     mockEnv = Mock.env
 
 simplifyEquals ::
-    BuiltinAndAxiomSimplifierMap ->
+    Map.Map AxiomIdentifier [Equation RewritingVariableName] ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     IO (Maybe [Condition RewritingVariableName])
-simplifyEquals simplifierAxioms first second =
+simplifyEquals axiomEquations first second =
     (fmap . fmap) toList $
         testRunSimplifier mockEnv $
             runMaybeT $ termEquals (simplifiedTerm first) (simplifiedTerm second)
   where
-    mockEnv = Mock.env{simplifierAxioms}
+    mockEnv = Mock.env{axiomEquations}
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =
