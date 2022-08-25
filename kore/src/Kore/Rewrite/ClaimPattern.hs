@@ -16,11 +16,9 @@ module Kore.Rewrite.ClaimPattern (
     parseRightHandSide,
     claimPatternToTerm,
     getClaimPatternSort,
+    parsePatternFromTermLike,
 ) where
 
-import Control.Error.Util (
-    hush,
- )
 import Control.Monad.State.Strict (
     evalState,
  )
@@ -47,9 +45,9 @@ import Kore.Internal.OrPattern (
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (
     Pattern,
+    parsePatternFromTermLike,
  )
 import Kore.Internal.Pattern qualified as Pattern
-import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.Substitution (
     Substitution,
  )
@@ -429,29 +427,3 @@ parseRightHandSide term =
         OrPattern.fromPattern
             . parsePatternFromTermLike
             $ term'
-
-    parsePatternFromTermLike ::
-        TermLike variable ->
-        Pattern variable
-    parsePatternFromTermLike original@(TermLike.And_ _ term1 term2)
-        | isTop term1 = Pattern.fromTermLike term2
-        | isTop term2 = Pattern.fromTermLike term1
-        | otherwise =
-            case (tryPredicate term1, tryPredicate term2) of
-                (Nothing, Nothing) ->
-                    Pattern.fromTermLike original
-                (Just predicate, Nothing) ->
-                    Pattern.fromTermAndPredicate
-                        term2
-                        predicate
-                (Nothing, Just predicate) ->
-                    Pattern.fromTermAndPredicate
-                        term1
-                        predicate
-                (Just predicate, _) ->
-                    Pattern.fromTermAndPredicate
-                        term2
-                        predicate
-      where
-        tryPredicate = hush . Predicate.makePredicate
-    parsePatternFromTermLike term' = Pattern.fromTermLike term'

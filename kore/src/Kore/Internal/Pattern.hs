@@ -20,6 +20,7 @@ module Kore.Internal.Pattern (
     toTermLike,
     topOf,
     fromTermLike,
+    parsePatternFromTermLike,
     Kore.Internal.Pattern.freeElementVariables,
     isSimplified,
     hasSimplifiedChildren,
@@ -40,6 +41,9 @@ module Kore.Internal.Pattern (
     Conditional.withoutTerm,
     Condition,
 ) where
+
+import Data.Bifunctor (first)
+import Data.List.NonEmpty qualified as NonEmpty
 
 import Kore.Attribute.Pattern.FreeVariables (
     freeVariables,
@@ -245,7 +249,7 @@ topOf resultSort =
         , substitution = mempty
         }
 
-{- | Construct an 'Pattern' from a 'TermLike'.
+{- | Construct an 'Pattern' having the given 'TermLike' as its term
 
 The resulting @Pattern@ has a true predicate and an empty
 substitution, unless it is trivially 'Bottom'.
@@ -264,6 +268,46 @@ fromTermLike term
             , predicate = Predicate.makeTruePredicate
             , substitution = mempty
             }
+
+{- | Split up a 'TermLike' into actual terms and predicates, to construct a 'Pattern'
+
+The argument term-like is split into its top-level 'And' components, which are
+then analysed using @'Predicate.makePredicate'@ to add them to the actual term
+or to the predicate of the resulting 'Pattern'.
+-}
+parsePatternFromTermLike :: forall v. InternalVariable v => TermLike v -> Pattern v
+parsePatternFromTermLike original
+    | isBottom original =
+        bottomOf sort
+    | null actualTerms =
+        fromTermAndPredicate (mkTop sort) (andPredicates predicates)
+    | null predicates =
+        fromTermLike original
+    | [singleTerm] <- actualTerms =
+        fromTermAndPredicate singleTerm (andPredicates predicates)
+    | otherwise =
+        fromTermAndPredicate (andTerms actualTerms) (andPredicates predicates)
+  where
+    sort = TermLike.termLikeSort original
+
+    andParts :: TermLike v -> NonEmpty (TermLike v)
+    andParts (TermLike.And_ _ t1 t2) = andParts t1 <> andParts t2
+    andParts other = NonEmpty.fromList [other]
+
+    -- invariant: one of the lists in non-empty
+    (actualTerms, predicates) =
+        partitionEithers
+            . toList
+            . NonEmpty.map getPredicate
+            $ andParts original
+
+    getPredicate t = first (const t) $ Predicate.makePredicate t
+
+    andPredicates :: [Predicate.Predicate v] -> Predicate.Predicate v
+    andPredicates = foldr1 Predicate.makeAndPredicate
+
+    andTerms :: [TermLike v] -> TermLike v
+    andTerms = foldr1 TermLike.mkAnd
 
 withCondition ::
     InternalVariable variable =>
