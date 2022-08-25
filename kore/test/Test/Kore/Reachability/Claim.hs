@@ -47,7 +47,6 @@ import Kore.Rewrite.ClaimPattern (
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
-    getRewritingVariable,
     mkConfigVariable,
     mkRewritingPattern,
  )
@@ -419,15 +418,6 @@ mkGoal
             existentialVars
         ) =
         mkClaimPattern leftPatt rightPatts existentialVars
-
-mkSubst ::
-    TermLike.SomeVariable VariableName ->
-    TermLike.TermLike VariableName ->
-    Substitution.Substitution RewritingVariableName
-mkSubst var term =
-    Substitution.mapVariables (pure mkConfigVariable) $
-        Substitution.wrap
-            [Substitution.assign var term]
 
 aToB :: ClaimPattern
 aToB =
