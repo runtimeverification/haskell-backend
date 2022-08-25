@@ -777,9 +777,9 @@ checkSimpleImplication inLeft inRight existentials =
                         pure $ NotImplied Nothing
                     ([], (stuck, _unifier) : _) ->
                         -- successful unification but all stuck,
-                        -- return stuck term (includes unifier)
+                        -- return original left term and unifier
                         let stuckLeft = OrPattern.toPattern sort stuck
-                         in pure $ NotImpliedStuck (Just stuckLeft)
+                         in pure $ NotImpliedStuck $ Just stuckLeft
   where
     sort = termLikeSort (Pattern.term inLeft)
 

@@ -161,8 +161,8 @@ data ExecuteResult = ExecuteResult
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ExecuteResult
 
 data Condition = Condition
-    { substitution :: !KoreJson
-    , predicate :: !KoreJson
+    { substitution :: KoreJson
+    , predicate :: KoreJson
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -170,8 +170,9 @@ data Condition = Condition
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] Condition
 
 data ImpliesResult = ImpliesResult
-    { satisfiable :: !Bool
-    , condition :: !(Maybe Condition)
+    { satisfiable :: Bool
+    , condition :: Maybe Condition
+    , term :: Maybe KoreJson
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -362,7 +363,7 @@ respond runSMT serializedModule =
                     equations
 
             -- renderCond :: Pattern v -> Condition
-            renderCond sort (Pattern.mapVariables getRewritingVariable -> pat) =
+            renderCond sort (toOutput -> pat) =
                 let predicate =
                         PatternJson.fromPredicate sort $ Pattern.predicate pat
                     mbSubstitution =
@@ -378,15 +379,21 @@ respond runSMT serializedModule =
                 Right . Implies $
                     case r of
                         Claim.Implied mbPat ->
-                            ImpliesResult True $ fmap (renderCond sort) mbPat
+                            ImpliesResult True (fmap (renderCond sort) mbPat) Nothing
                         Claim.NotImpliedStuck Nothing ->
-                            ImpliesResult False Nothing
+                            ImpliesResult False Nothing Nothing
                         Claim.NotImpliedStuck (Just pat) ->
-                            let -- term = PatternJson.fromTermLike $ Pattern.term mbPat
+                            let term =
+                                    Just
+                                        . PatternJson.fromTermLike
+                                        . Pattern.term
+                                        $ toOutput pat
                                 cond = Just $ renderCond sort pat
-                             in ImpliesResult False cond
+                             in ImpliesResult False cond term
                         Claim.NotImplied _ ->
-                            ImpliesResult False Nothing
+                            ImpliesResult False Nothing Nothing
+
+            toOutput = Pattern.mapVariables getRewritingVariable
         Simplify SimplifyRequest{state} -> pure $ Right $ Simplify SimplifyResult{state}
         -- this case is only reachable if the cancel appeared as part of a batch request
         Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
