@@ -44,7 +44,6 @@ module Kore.Internal.Pattern (
 
 import Data.Bifunctor (first)
 import Data.List.NonEmpty qualified as NonEmpty
-
 import Kore.Attribute.Pattern.FreeVariables (
     freeVariables,
     getFreeElementVariables,
