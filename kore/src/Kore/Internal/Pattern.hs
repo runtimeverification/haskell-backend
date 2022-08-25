@@ -282,8 +282,6 @@ parsePatternFromTermLike original
         fromTermAndPredicate (mkTop sort) (andPredicates predicates)
     | null predicates =
         fromTermLike original
-    | [singleTerm] <- actualTerms =
-        fromTermAndPredicate singleTerm (andPredicates predicates)
     | otherwise =
         fromTermAndPredicate (andTerms actualTerms) (andPredicates predicates)
   where
