@@ -34,8 +34,7 @@ import Kore.Exec qualified as Exec
 import Kore.Exec.GraphTraversal qualified as GraphTraversal
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
-import Kore.Internal.Predicate (makeTruePredicate, pattern PredicateTrue)
-import Kore.Internal.Substitution qualified as Substitution
+import Kore.Internal.Predicate (pattern PredicateTrue)
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
@@ -362,22 +361,30 @@ respond runSMT serializedModule =
                     metadataTools
                     equations
 
-            renderSubst sort mbSubst = do
-                subst <- mbSubst
-                substitution <-
-                    PatternJson.fromSubstitution $
-                        Substitution.mapVariables getRewritingVariable subst
-                let predicate = PatternJson.fromPredicate sort makeTruePredicate
-                pure Condition{predicate, substitution}
+            -- renderCond :: Pattern v -> Condition
+            renderCond sort (Pattern.mapVariables getRewritingVariable -> pat) =
+                let predicate =
+                        PatternJson.fromPredicate sort $ Pattern.predicate pat
+                    mbSubstitution =
+                        PatternJson.fromSubstitution $ Pattern.substitution pat
+                    noSubstitution = PatternJson.fromTermLike $ TermLike.mkTop sort
+                 in Condition
+                        { predicate
+                        , substitution = fromMaybe noSubstitution mbSubstitution
+                        }
 
             buildResult _ (Left err) = Left $ implicationError $ toJSON err
             buildResult sort (Right r) =
                 Right . Implies $
                     case r of
-                        Claim.Implied (_, subst) ->
-                            ImpliesResult True $ renderSubst sort subst
-                        Claim.NotImpliedStuck (_stuckTerm, subst) ->
-                            ImpliesResult False $ renderSubst sort subst
+                        Claim.Implied mbPat ->
+                            ImpliesResult True $ fmap (renderCond sort) mbPat
+                        Claim.NotImpliedStuck Nothing ->
+                            ImpliesResult False Nothing
+                        Claim.NotImpliedStuck (Just pat) ->
+                            let -- term = PatternJson.fromTermLike $ Pattern.term mbPat
+                                cond = Just $ renderCond sort pat
+                             in ImpliesResult False cond
                         Claim.NotImplied _ ->
                             ImpliesResult False Nothing
         Simplify SimplifyRequest{state} -> pure $ Right $ Simplify SimplifyResult{state}

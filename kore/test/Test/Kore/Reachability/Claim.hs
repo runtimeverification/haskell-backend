@@ -47,6 +47,7 @@ import Kore.Rewrite.ClaimPattern (
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
+    getRewritingVariable,
     mkConfigVariable,
     mkRewritingPattern,
  )
@@ -247,22 +248,18 @@ test_checkSimpleImplication =
         let config = mkElemVar Mock.x & Pattern.fromTermLike
             dest = mkElemVar Mock.y & Pattern.fromTermLike
             existentials = [Mock.y]
-            goal = mkGoal config (OrPattern.fromPattern dest) existentials
-            subst = mkSubst (inject Mock.x) (mkElemVar Mock.y)
+            expected =
+                Pattern.mapVariables (pure mkConfigVariable) $
+                    Pattern.fromCondition Mock.testSort $
+                        Condition.assign (inject Mock.x) (mkElemVar Mock.y)
         actual <-
             checkSimple config dest existentials
-        assertEqual "" (Implied (goal, Just subst)) actual
+        assertEqual "" (Implied (Just expected)) actual
     , testCase "does not unify" $ do
         actual <-
             checkSimple (Pattern.fromTermLike Mock.a) (Pattern.fromTermLike Mock.b) []
-        assertEqual "" (NotImplied (aToB, Nothing)) actual
+        assertEqual "" (NotImplied Nothing) actual
     , testCase "does not unify, with left condition" $ do
-        let goal =
-                mkGoal
-                    -- simplification turns the predicate into a substitution
-                    (Pattern.assign (inject Mock.x) Mock.a)
-                    (OrPattern.fromTermLike Mock.b)
-                    []
         actual <-
             checkSimple
                 ( Pattern.fromTermAndPredicate
@@ -271,23 +268,17 @@ test_checkSimpleImplication =
                 )
                 (Pattern.fromTermLike Mock.b)
                 []
-        assertEqual "" (NotImplied (goal, Nothing)) actual
+        assertEqual "" (NotImplied Nothing) actual
     , testCase "does not unify, with right condition" $ do
         let config = Mock.a & Pattern.fromTermLike
             dest =
                 Pattern.withCondition
                     Mock.b
                     (makeEqualsPredicate (mkElemVar Mock.x) Mock.a & from)
-            result =
-                Pattern.withCondition
-                    Mock.b
-                    -- simplification turns the predicate into a substitution
-                    (Condition.assign (inject Mock.x) Mock.a)
             existentials = [Mock.x]
-            goal = mkGoal config (OrPattern.fromPattern result) existentials
         actual <-
             checkSimple config dest existentials
-        assertEqual "" (NotImplied (goal, Nothing)) actual
+        assertEqual "" (NotImplied Nothing) actual
     , testCase "Variable unification, conditions match" $ do
         -- FIXME this matches trivially now since simplification
         -- applies the substitutions
@@ -300,15 +291,11 @@ test_checkSimpleImplication =
                     (mkElemVar Mock.y)
                     (Condition.assign (inject Mock.y) Mock.a)
             existentials = [Mock.y]
-            goal =
-                mkGoal
-                    -- simplification applies the substitutions
-                    (Pattern.fromTermLike Mock.a <* config)
-                    (OrPattern.fromPattern (Pattern.fromTermLike Mock.a <* dest))
-                    existentials
-            subst = mempty -- FIXME WAS mkSubst (inject Mock.x) (mkElemVar Mock.y)
+            expected :: Pattern RewritingVariableName =
+                -- simplification applies the substitutions, trivial match
+                mkRewritingPattern $ Pattern.topOf Mock.testSort
         actual <- checkSimple config dest existentials
-        assertEqual "" (Implied (goal, Just subst)) actual
+        assertEqual "" (Implied (Just expected)) actual
     , -- FIXME test below changes target. When simplification applies
       -- substitutions the terms do not unify any more in this test
       -- , testCase "Variable unification, conditions don't match" $ do
@@ -336,26 +323,25 @@ test_checkSimpleImplication =
             dest = Mock.f (mkElemVar Mock.y) & Pattern.fromTermLike
             existentials = [Mock.y]
             stuckConfig =
-                Pattern.fromTermAndPredicate
-                    (Mock.f (mkElemVar Mock.x))
-                    ( makeAndPredicate
-                        ( makeCeilPredicate
-                            (Mock.f (mkElemVar Mock.x))
-                        )
-                        ( makeNotPredicate
-                            ( makeExistsPredicate
-                                Mock.y
-                                ( makeEqualsPredicate
-                                    (Mock.f (mkElemVar Mock.x))
-                                    (Mock.f (mkElemVar Mock.y))
+                mkRewritingPattern $
+                    Pattern.fromTermAndPredicate
+                        (Mock.f (mkElemVar Mock.x))
+                        ( makeAndPredicate
+                            ( makeCeilPredicate
+                                (Mock.f (mkElemVar Mock.x))
+                            )
+                            ( makeNotPredicate
+                                ( makeExistsPredicate
+                                    Mock.y
+                                    ( makeEqualsPredicate
+                                        (Mock.f (mkElemVar Mock.x))
+                                        (Mock.f (mkElemVar Mock.y))
+                                    )
                                 )
                             )
                         )
-                    )
-            stuckGoal =
-                mkGoal stuckConfig (OrPattern.fromPattern dest) existentials
         actual <- checkSimple config dest existentials
-        assertEqual "" (NotImpliedStuck (stuckGoal, Just mempty)) actual
+        assertEqual "" (NotImpliedStuck (Just stuckConfig)) actual
     , -- FIXME test below not supported any more. Pattern simplification
       -- distributes the branch and yields a non-singleton Or-pattern
       -- , testCase "Branching RHS with condition in single pattern" $ do
@@ -381,15 +367,13 @@ test_checkSimpleImplication =
       testCase "Stuck if RHS is \\bottom" $ do
         let config = Mock.a & Pattern.fromTermLike
             dest = Pattern.bottomOf Mock.topSort
-            goal = mkGoal config (OrPattern.bottom) []
         actual <- checkSimple config dest []
-        assertEqual "" (NotImplied (goal, Nothing)) actual
+        assertEqual "" (NotImplied Nothing) actual
     , testCase "Implied if both sides are \\bottom" $ do
         let config = Pattern.bottomOf Mock.topSort
             dest = Pattern.bottomOf Mock.topSort
-            goal = mkGoal config (OrPattern.fromPattern dest) []
         actual <- checkSimple config dest []
-        assertEqual "" (Implied (goal, Just mempty)) actual
+        assertEqual "" (Implied (Just (Pattern.topOf Mock.topSort))) actual
     ]
 
 test_simplifyRightHandSide :: [TestTree]
@@ -462,12 +446,7 @@ checkSimple ::
     Pattern VariableName ->
     Pattern VariableName ->
     [ElementVariable VariableName] ->
-    IO
-        ( CheckImplicationResult
-            ( ClaimPattern
-            , Maybe (Substitution.Substitution RewritingVariableName)
-            )
-        )
+    IO (CheckImplicationResult (Maybe (Pattern RewritingVariableName)))
 checkSimple left right existentials =
     fmap (either (error . show) id)
         . runSimplifierSMT Mock.env

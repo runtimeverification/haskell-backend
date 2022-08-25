@@ -108,7 +108,6 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import Kore.Internal.SideCondition qualified as SideCondition
-import Kore.Internal.Substitution (Substitution)
 import Kore.Internal.Symbol (
     Symbol,
  )
@@ -734,18 +733,16 @@ checkSimpleImplication ::
     ExceptT
         (Error ImplicationError)
         m
-        (CheckImplicationResult (ClaimPattern, Maybe (Substitution RewritingVariableName)))
+        (CheckImplicationResult (Maybe (Pattern RewritingVariableName)))
 checkSimpleImplication inLeft inRight existentials =
     do
         left <- simplifyToSingle "LHS: " inLeft
         right <- simplifyToSingle "RHS: " inRight
         checkAssumptions left right
-        let claimPattern =
-                ClaimPattern.mkClaimPattern left (OrPattern.fromPattern right) existentials
-
-            (rightTerm, rightCondition) = Pattern.splitTerm right
+        let (rightTerm, rightCondition) = Pattern.splitTerm right
             (leftTerm, leftCondition) = Pattern.splitTerm left
 
+        --
         let definedConfig =
                 Pattern.andCondition left $
                     from $ makeCeilPredicate leftTerm
@@ -755,7 +752,7 @@ checkSimpleImplication inLeft inRight existentials =
                     =<< Pattern.simplify definedConfig
 
         if trivial
-            then pure $ Implied (claimPattern, Just mempty)
+            then pure $ Implied $ Just (Pattern.topOf sort) -- trivial unifier
             else do
                 -- attempt term unification (to remember the substitution
                 unified <-
@@ -766,24 +763,23 @@ checkSimpleImplication inLeft inRight existentials =
 
                 -- for each unification result, attempt to refute the formula
                 remainders ::
-                    [(OrPattern RewritingVariableName, Substitution RewritingVariableName)] <-
+                    [(OrPattern RewritingVariableName, Pattern.Condition RewritingVariableName)] <-
                     mapM (lift . checkUnifiedConsequent definedConfig leftCondition rightCondition) unified
 
                 let (successes, stucks) = partition (isBottom . fst) remainders
 
                 case (successes, stucks) of
-                    ((_bottom, subst) : _, _) ->
+                    ((_bottom, cond) : _, _) ->
                         -- success for at least one, return (ignore other failures)
-                        pure $ Implied (claimPattern, Just subst)
+                        pure $ Implied $ Just $ Pattern.fromCondition sort cond
                     ([], []) ->
                         -- no successful unification, thus not implied
-                        pure $ NotImplied (claimPattern, Nothing)
-                    ([], stuck : _) ->
+                        pure $ NotImplied Nothing
+                    ([], (stuck, _unifier) : _) ->
                         -- successful unification but all stuck,
-                        -- return with first stuck term as antecedent
-                        let stuckClaim =
-                                (claimPattern :: ClaimPattern){left = OrPattern.toPattern sort (fst stuck)}
-                         in pure $ NotImpliedStuck (stuckClaim, Just $ snd stuck)
+                        -- return stuck term (includes unifier)
+                        let stuckLeft = OrPattern.toPattern sort stuck
+                         in pure $ NotImpliedStuck (Just stuckLeft)
   where
     sort = termLikeSort (Pattern.term inLeft)
 
@@ -831,16 +827,18 @@ checkSimpleImplication inLeft inRight existentials =
         Pattern.Condition RewritingVariableName ->
         Pattern.Condition RewritingVariableName ->
         Pattern.Condition RewritingVariableName ->
-        m (OrPattern RewritingVariableName, Substitution RewritingVariableName)
+        m (OrPattern RewritingVariableName, Pattern.Condition RewritingVariableName)
     checkUnifiedConsequent
         definedConfig
         leftCondition
         rightCondition
-        (Pattern.fromCondition sort -> unified) =
-            fmap ((,Pattern.substitution unified) . MultiOr.mergeAll) $
+        unified =
+            fmap ((,unified) . MultiOr.mergeAll) $
                 Logic.observeAllT $ do
                     let existsChild =
-                            Pattern.andCondition unified rightCondition
+                            Pattern.andCondition
+                                (Pattern.fromCondition sort unified)
+                                rightCondition
                         sideCondition =
                             SideCondition.fromConditionWithReplacements
                                 -- (NB this from . to applies the substitution)
