@@ -322,12 +322,13 @@ respond runSMT serializedModule =
                 Left err ->
                     pure $ Left $ couldNotVerify $ toJSON err
                 Right (antVerified, consVerified) -> do
-                    let leftPatt = mkRewritingPattern $ Pattern.fromTermLike antVerified
+                    let leftPatt =
+                            mkRewritingPattern $ Pattern.parsePatternFromTermLike antVerified
                         sort = TermLike.termLikeSort antVerified
                         (consWOExistentials, existentialVars) =
                             ClaimPattern.termToExistentials $
                                 mkRewritingTerm consVerified
-                        rightPatt = Pattern.fromTermLike consWOExistentials
+                        rightPatt = Pattern.parsePatternFromTermLike consWOExistentials
 
                     result <-
                         liftIO
