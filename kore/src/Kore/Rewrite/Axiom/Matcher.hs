@@ -145,7 +145,7 @@ patternMatch' ::
     MultiAnd (Predicate RewritingVariableName) ->
     Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName) ->
     Simplifier (Either Text (MatchResult RewritingVariableName))
-patternMatch' _ [] [] predicate subst = return $ Right $ (Predicate.fromMultiAnd predicate, finalizeSubst subst)
+patternMatch' _ [] [] predicate subst = return $ Right (Predicate.fromMultiAnd predicate, finalizeSubst subst)
 patternMatch' sideCondition [] ((pat, subject, boundVars, boundSet) : rest) predicate subst = do
     let pat' = renormalizeBuiltins $ substitute subst pat
     case (pat', subject) of
@@ -413,7 +413,7 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
             else case opaque1 of
                 -- Without opaques and syntactically equal
                 [] ->
-                    if (not $ null opaque2) || (not $ null excessConcrete2) || (not $ null excessAbstract2) then failMatch "AC collection without opaque terms has excess elements" else decomposeList $ unwrapValues $ concrete12 ++ abstractMerge
+                    if not (null opaque2) || not (null excessConcrete2) || not (null excessAbstract2) then failMatch "AC collection without opaque terms has excess elements" else decomposeList $ unwrapValues $ concrete12 ++ abstractMerge
                 [frame1]
                     -- One opaque each, rest are syntactically equal
                     | null excessAbstract2
