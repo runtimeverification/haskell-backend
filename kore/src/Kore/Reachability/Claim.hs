@@ -795,7 +795,7 @@ checkSimpleImplication inLeft inRight existentials =
         simplified <- toList <$> lift (Pattern.simplify pat)
         withContext (ctx <> showTerm pat) $
             koreFailWhen
-                (not $ length simplified <= 1)
+                (length simplified > 1)
                 "Term does not simplify to a singleton pattern"
         pure $
             fromMaybe (Pattern.bottomOf sort) $ headMay simplified
