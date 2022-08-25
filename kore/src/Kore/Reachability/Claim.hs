@@ -672,6 +672,11 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
 {- | Check a simple implication (with a single consequent), and return a
   substitution that witnesses it if the implication is true.
 
+Requirements:
+* The LHS pattern must be function-like
+* Free variables of the LHS must not be used as existentials on the RHS
+* Both LHS and RHS must simplify to single patterns (OrPattern singletons)
+
 The implication has the form
 
 @
@@ -730,9 +735,17 @@ checkSimpleImplication ::
         (Error ImplicationError)
         m
         (CheckImplicationResult (ClaimPattern, Maybe (Substitution RewritingVariableName)))
-checkSimpleImplication left right existentials =
+checkSimpleImplication inLeft inRight existentials =
     do
-        checkAssumptions
+        left <- simplifyToSingle "LHS: " inLeft
+        right <- simplifyToSingle "RHS: " inRight
+        checkAssumptions left right
+        let claimPattern =
+                ClaimPattern.mkClaimPattern left (OrPattern.fromPattern right) existentials
+
+            (rightTerm, rightCondition) = Pattern.splitTerm right
+            (leftTerm, leftCondition) = Pattern.splitTerm left
+
         let definedConfig =
                 Pattern.andCondition left $
                     from $ makeCeilPredicate leftTerm
@@ -754,7 +767,7 @@ checkSimpleImplication left right existentials =
                 -- for each unification result, attempt to refute the formula
                 remainders ::
                     [(OrPattern RewritingVariableName, Substitution RewritingVariableName)] <-
-                    mapM (lift . checkUnifiedConsequent definedConfig) unified
+                    mapM (lift . checkUnifiedConsequent definedConfig leftCondition rightCondition) unified
 
                 let (successes, stucks) = partition (isBottom . fst) remainders
 
@@ -772,8 +785,26 @@ checkSimpleImplication left right existentials =
                                 (claimPattern :: ClaimPattern){left = OrPattern.toPattern sort (fst stuck)}
                          in pure $ NotImpliedStuck (stuckClaim, Just $ snd stuck)
   where
-    checkAssumptions = do
-        let showTerm = Pretty.renderString . Pretty.layoutOneLine . Pretty.pretty
+    sort = termLikeSort (Pattern.term inLeft)
+
+    simplifyToSingle ::
+        String ->
+        Pattern RewritingVariableName ->
+        ExceptT (Error ImplicationError) m (Pattern RewritingVariableName)
+    simplifyToSingle ctx pat = do
+        simplified <- toList <$> lift (Pattern.simplify pat)
+        withContext (ctx <> showTerm pat) $
+            koreFailWhen
+                (not $ length simplified <= 1)
+                "Term does not simplify to a singleton pattern"
+        pure $
+            fromMaybe (Pattern.bottomOf sort) $ headMay simplified
+
+    showTerm :: Pretty a => a -> String
+    showTerm = Pretty.renderString . Pretty.layoutOneLine . Pretty.pretty
+
+    checkAssumptions left right = do
+        let leftTerm = Pattern.term left
         -- must be function-like
         withContext (showTerm leftTerm) $
             koreFailWhen
@@ -782,6 +813,7 @@ checkSimpleImplication left right existentials =
         -- RHS existentials must not capture free variables of LHS
         let nameCollisions =
                 existentials `intersect` getFreeElementVariables (freeVariables left)
+            rightTerm = Pattern.term right
         withContext ("LHS: " <> showTerm leftTerm)
             . withContext ("RHS: " <> showTerm rightTerm)
             . withContext ("existentials: " <> show (map unparse2 existentials))
@@ -791,54 +823,52 @@ checkSimpleImplication left right existentials =
                       map (show . unparse2) nameCollisions
                     )
 
-    claimPattern =
-        ClaimPattern.mkClaimPattern left (OrPattern.fromPattern right) existentials
-
-    (rightTerm, rightCondition) = Pattern.splitTerm right
-    (leftTerm, leftCondition) = Pattern.splitTerm left
-
-    sort = termLikeSort leftTerm
-
     -- using a successful unification result (Condition), build term
     -- to refute and try to refute (returning non-refutable parts and
     -- the substitution for unification)
     checkUnifiedConsequent ::
         Pattern RewritingVariableName ->
         Pattern.Condition RewritingVariableName ->
+        Pattern.Condition RewritingVariableName ->
+        Pattern.Condition RewritingVariableName ->
         m (OrPattern RewritingVariableName, Substitution RewritingVariableName)
-    checkUnifiedConsequent definedConfig (Pattern.fromCondition sort -> unified) =
-        fmap ((,Pattern.substitution unified) . MultiOr.mergeAll) $
-            Logic.observeAllT $ do
-                let existsChild =
-                        Pattern.andCondition unified rightCondition
-                    sideCondition =
-                        SideCondition.fromConditionWithReplacements
-                            -- (NB this from . to applies the substitution)
-                            (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
+    checkUnifiedConsequent
+        definedConfig
+        leftCondition
+        rightCondition
+        (Pattern.fromCondition sort -> unified) =
+            fmap ((,Pattern.substitution unified) . MultiOr.mergeAll) $
+                Logic.observeAllT $ do
+                    let existsChild =
+                            Pattern.andCondition unified rightCondition
+                        sideCondition =
+                            SideCondition.fromConditionWithReplacements
+                                -- (NB this from . to applies the substitution)
+                                (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
 
-                notChild <- -- ∃ Y. ⌈t(X) ∧ t'(X, Y)⌉ ∧ P'(X, Y) (Or pattern)
-                    Exists.makeEvaluate sideCondition existentials existsChild
+                    notChild <- -- ∃ Y. ⌈t(X) ∧ t'(X, Y)⌉ ∧ P'(X, Y) (Or pattern)
+                        Exists.makeEvaluate sideCondition existentials existsChild
 
-                notRhs <- -- not notChild (Or pattern)
-                    Not.simplify sideCondition Not{notSort = sort, notChild}
+                    notRhs <- -- not notChild (Or pattern)
+                        Not.simplify sideCondition Not{notSort = sort, notChild}
 
-                let combineWithAntecedent ::
-                        Pattern RewritingVariableName ->
-                        Pattern RewritingVariableName
-                    combineWithAntecedent = (definedConfig <*)
-                -- (<*) takes the 1st arg.s term but combines
-                -- both arg.s predicate and substitution
+                    let combineWithAntecedent ::
+                            Pattern RewritingVariableName ->
+                            Pattern RewritingVariableName
+                        combineWithAntecedent = (definedConfig <*)
+                    -- (<*) takes the 1st arg.s term but combines
+                    -- both arg.s predicate and substitution
 
-                -- The result's substitution needs to be renormalized,
-                -- which we achieve by simplifying it
+                    -- The result's substitution needs to be renormalized,
+                    -- which we achieve by simplifying it
 
-                toRefute <-
-                    Pattern.simplify
-                        . OrPattern.toPattern sort
-                        . MultiOr.map combineWithAntecedent
-                        $ notRhs
+                    toRefute <-
+                        Pattern.simplify
+                            . OrPattern.toPattern sort
+                            . MultiOr.map combineWithAntecedent
+                            $ notRhs
 
-                liftSimplifier $ SMT.Evaluator.filterMultiOr toRefute
+                    liftSimplifier $ SMT.Evaluator.filterMultiOr toRefute
 
 -- | type tag for errors thrown from the above
 data ImplicationError
