@@ -32,6 +32,7 @@ import Kore.Builtin qualified as Builtin
 import Kore.Error (Error (..))
 import Kore.Exec qualified as Exec
 import Kore.Exec.GraphTraversal qualified as GraphTraversal
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (pattern PredicateTrue)
@@ -170,9 +171,9 @@ data Condition = Condition
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] Condition
 
 data ImpliesResult = ImpliesResult
-    { satisfiable :: Bool
+    { implication :: KoreJson
+    , satisfiable :: Bool
     , condition :: Maybe Condition
-    , term :: Maybe KoreJson
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -362,12 +363,13 @@ respond runSMT serializedModule =
                     metadataTools
                     equations
 
-            -- renderCond :: Pattern v -> Condition
-            renderCond sort (toOutput -> pat) =
-                let predicate =
-                        PatternJson.fromPredicate sort $ Pattern.predicate pat
+            --             renderCond :: TermLike.Sort -> Pattern.Condition RewritingVariable -> Condition
+            renderCond sort cond =
+                let pat = Condition.mapVariables getRewritingVariable cond
+                    predicate =
+                        PatternJson.fromPredicate sort $ Condition.predicate pat
                     mbSubstitution =
-                        PatternJson.fromSubstitution $ Pattern.substitution pat
+                        PatternJson.fromSubstitution $ Condition.substitution pat
                     noSubstitution = PatternJson.fromTermLike $ TermLike.mkTop sort
                  in Condition
                         { predicate
@@ -375,25 +377,22 @@ respond runSMT serializedModule =
                         }
 
             buildResult _ (Left err) = Left $ implicationError $ toJSON err
-            buildResult sort (Right r) =
-                Right . Implies $
-                    case r of
-                        Claim.Implied mbPat ->
-                            ImpliesResult True (fmap (renderCond sort) mbPat) Nothing
-                        Claim.NotImpliedStuck Nothing ->
-                            ImpliesResult False Nothing Nothing
-                        Claim.NotImpliedStuck (Just pat) ->
-                            let term =
-                                    Just
-                                        . PatternJson.fromTermLike
-                                        . Pattern.term
-                                        $ toOutput pat
-                                cond = Just $ renderCond sort pat
-                             in ImpliesResult False cond term
-                        Claim.NotImplied _ ->
-                            ImpliesResult False Nothing Nothing
-
-            toOutput = Pattern.mapVariables getRewritingVariable
+            buildResult sort (Right (term, r)) =
+                let jsonTerm =
+                        PatternJson.fromTermLike $
+                            TermLike.mapVariables getRewritingVariable term
+                 in Right . Implies $
+                        case r of
+                            Claim.Implied mbCond ->
+                                ImpliesResult jsonTerm True (fmap (renderCond sort) mbCond)
+                            Claim.NotImplied _ ->
+                                ImpliesResult jsonTerm False Nothing
+                            Claim.NotImpliedStuck (Just cond) ->
+                                let jsonCond = renderCond sort cond
+                                 in ImpliesResult jsonTerm False (Just jsonCond)
+                            Claim.NotImpliedStuck Nothing ->
+                                -- should not happen
+                                ImpliesResult jsonTerm False Nothing
         Simplify SimplifyRequest{state} -> pure $ Right $ Simplify SimplifyResult{state}
         -- this case is only reachable if the cancel appeared as part of a batch request
         Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null

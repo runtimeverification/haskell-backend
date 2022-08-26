@@ -114,8 +114,11 @@ import Kore.Internal.Symbol (
 import Kore.Internal.TermLike (
     Not (..),
     Sort,
+    TermLike,
     freeVariables,
     isFunctionPattern,
+    mkExistsN,
+    mkImplies,
     termLikeSort,
  )
 import Kore.Log.InfoReachability
@@ -725,15 +728,16 @@ similar to @checkImplicationWorker@:
 * otherwise, the function returns 'NotImplied' without a substitution.
 -}
 checkSimpleImplication ::
-    forall m.
+    forall m v.
     (MonadSimplify m) =>
-    Pattern RewritingVariableName -> -- left
-    Pattern RewritingVariableName -> -- right
-    [ElementVariable RewritingVariableName] -> -- existentials
+    (v ~ RewritingVariableName) =>
+    Pattern v -> -- left
+    Pattern v -> -- right
+    [ElementVariable v] -> -- existentials
     ExceptT
         (Error ImplicationError)
         m
-        (CheckImplicationResult (Maybe (Pattern RewritingVariableName)))
+        (TermLike v, CheckImplicationResult (Maybe (Pattern.Condition v)))
 checkSimpleImplication inLeft inRight existentials =
     do
         left <- simplifyToSingle "LHS: " inLeft
@@ -741,8 +745,12 @@ checkSimpleImplication inLeft inRight existentials =
         checkAssumptions left right
         let (rightTerm, rightCondition) = Pattern.splitTerm right
             (leftTerm, leftCondition) = Pattern.splitTerm left
+            claimToCheck =
+                -- this will be returned with the result
+                mkImplies
+                    (Pattern.toTermLike left)
+                    (mkExistsN existentials (Pattern.toTermLike right))
 
-        --
         let definedConfig =
                 Pattern.andCondition left $
                     from $ makeCeilPredicate leftTerm
@@ -752,7 +760,7 @@ checkSimpleImplication inLeft inRight existentials =
                     =<< Pattern.simplify definedConfig
 
         if trivial
-            then pure $ Implied $ Just (Pattern.topOf sort) -- trivial unifier
+            then pure (claimToCheck, Implied . Just $ Condition.top) -- trivial unifier
             else do
                 -- attempt term unification (to remember the substitution
                 unified <-
@@ -763,46 +771,46 @@ checkSimpleImplication inLeft inRight existentials =
 
                 -- for each unification result, attempt to refute the formula
                 remainders ::
-                    [(OrPattern RewritingVariableName, Pattern.Condition RewritingVariableName)] <-
+                    [(OrPattern v, Pattern.Condition v)] <-
                     mapM (lift . checkUnifiedConsequent definedConfig leftCondition rightCondition) unified
 
                 let (successes, stucks) = partition (isBottom . fst) remainders
 
-                case (successes, stucks) of
-                    ((_bottom, cond) : _, _) ->
+                pure . (claimToCheck,) $ case (successes, stucks) of
+                    ((_bottom, unifier) : _, _) ->
                         -- success for at least one, return (ignore other failures)
-                        pure $ Implied $ Just $ Pattern.fromCondition sort cond
+                        Implied $ Just unifier
                     ([], []) ->
                         -- no successful unification, thus not implied
-                        pure $ NotImplied Nothing
-                    ([], (stuck, _unifier) : _) ->
+                        NotImplied Nothing
+                    ([], (_stuck, unifier) : _) ->
                         -- successful unification but all stuck,
                         -- return original left term and unifier
-                        let stuckLeft = OrPattern.toPattern sort stuck
-                         in pure $ NotImpliedStuck $ Just stuckLeft
+                        NotImpliedStuck $ Just unifier
   where
     sort = termLikeSort (Pattern.term inLeft)
 
     simplifyToSingle ::
         String ->
-        Pattern RewritingVariableName ->
-        ExceptT (Error ImplicationError) m (Pattern RewritingVariableName)
+        Pattern v ->
+        ExceptT (Error ImplicationError) m (Pattern v)
     simplifyToSingle ctx pat = do
+        let patSort = termLikeSort (Pattern.term pat)
         simplified <- toList <$> lift (Pattern.simplify pat)
-        withContext (ctx <> showTerm pat) $
+        withContext (ctx <> showPretty pat) $
             koreFailWhen
                 (length simplified > 1)
                 "Term does not simplify to a singleton pattern"
         pure $
-            fromMaybe (Pattern.bottomOf sort) $ headMay simplified
+            fromMaybe (Pattern.bottomOf patSort) $ headMay simplified
 
-    showTerm :: Pretty a => a -> String
-    showTerm = Pretty.renderString . Pretty.layoutOneLine . Pretty.pretty
+    showPretty :: Pretty a => a -> String
+    showPretty = Pretty.renderString . Pretty.layoutOneLine . Pretty.pretty
 
     checkAssumptions left right = do
         let leftTerm = Pattern.term left
         -- must be function-like
-        withContext (showTerm leftTerm) $
+        withContext (showPretty leftTerm) $
             koreFailWhen
                 (not $ isFunctionPattern leftTerm)
                 "The check implication step expects the antecedent term to be function-like."
@@ -810,24 +818,32 @@ checkSimpleImplication inLeft inRight existentials =
         let nameCollisions =
                 existentials `intersect` getFreeElementVariables (freeVariables left)
             rightTerm = Pattern.term right
-        withContext ("LHS: " <> showTerm leftTerm)
-            . withContext ("RHS: " <> showTerm rightTerm)
+        withContext ("LHS: " <> showPretty leftTerm)
+            . withContext ("RHS: " <> showPretty rightTerm)
             . withContext ("existentials: " <> show (map unparse2 existentials))
             $ koreFailWhen (not $ null nameCollisions) $
                 unwords
-                    ( "Existentials capture free variables of the LHS:" :
+                    ( "Existentials capture free variables of the antecedent:" :
                       map (show . unparse2) nameCollisions
                     )
+        -- sorts of LHS and RHS have to agree
+        let lSort = termLikeSort leftTerm
+            rSort = termLikeSort rightTerm
+        withContext ("LHS sort: " <> show (unparse2 lSort))
+            . withContext ("RHS sort: " <> show (unparse2 rSort))
+            $ koreFailWhen
+                  (lSort /= rSort)
+                  "Antecedent and consequent must have the same sort."
 
     -- using a successful unification result (Condition), build term
     -- to refute and try to refute (returning non-refutable parts and
     -- the substitution for unification)
     checkUnifiedConsequent ::
-        Pattern RewritingVariableName ->
-        Pattern.Condition RewritingVariableName ->
-        Pattern.Condition RewritingVariableName ->
-        Pattern.Condition RewritingVariableName ->
-        m (OrPattern RewritingVariableName, Pattern.Condition RewritingVariableName)
+        Pattern v ->
+        Pattern.Condition v ->
+        Pattern.Condition v ->
+        Pattern.Condition v ->
+        m (OrPattern v, Pattern.Condition v)
     checkUnifiedConsequent
         definedConfig
         leftCondition
@@ -850,9 +866,7 @@ checkSimpleImplication inLeft inRight existentials =
                     notRhs <- -- not notChild (Or pattern)
                         Not.simplify sideCondition Not{notSort = sort, notChild}
 
-                    let combineWithAntecedent ::
-                            Pattern RewritingVariableName ->
-                            Pattern RewritingVariableName
+                    let combineWithAntecedent :: Pattern v -> Pattern v
                         combineWithAntecedent = (definedConfig <*)
                     -- (<*) takes the 1st arg.s term but combines
                     -- both arg.s predicate and substitution
