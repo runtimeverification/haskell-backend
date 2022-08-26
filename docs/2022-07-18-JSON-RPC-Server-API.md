@@ -234,24 +234,20 @@ Other errors are specific to the implication checker and what it supports. These
 
 * The `antecedent` term must not have free variables that are used as existentials in the `consequent`.
 * The `antecedent` term must be function-like.
+* `antecedent` and `consequent` must have the same sort.
 
 ### Correct Response:
 
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "result": {
-    "satisfiable": false
-  }
-}
-```
+The endpoint simplifies `antecedent` and `consequent` terms and checks whether the implication holds. The simplified implication is returned (as a KORE term) in field `implication`.
+
+If the implication holds, `satisfiable` is `true` and `condition` contains a unifying condition for the simplified antecedent and consequent (as provided in `implication`).
 
 ```json
 {
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
+    "implication":  {"format": "KORE", "version": 1, "term": {}},
     "satisfiable": true,
     "condition": {
       "substitution": {"format": "KORE", "version": 1, "term": {}},
@@ -261,6 +257,20 @@ Other errors are specific to the implication checker and what it supports. These
 }
 ```
 
+If the implication cannot be shown to hold, `satisfiable` is false.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "implication":  {"format": "KORE", "version": 1, "term": {}},
+    "satisfiable": false
+  }
+}
+```
+
+In some cases, a unifier `condition` for the implication can still be provided, although the implication cannot be shown to be true.
 
 ## Simplify
 
