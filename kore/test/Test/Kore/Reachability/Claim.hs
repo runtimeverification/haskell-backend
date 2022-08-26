@@ -147,7 +147,8 @@ test_checkImplication =
                 mkGoal stuckConfig dest existentials
         actual <- checkImplication goal
         assertEqual "" [NotImpliedStuck stuckGoal] actual
-    , testCase "Function unification, definedness condition and remainder" $ do
+    , testCase "Function unification, WRONG, definedness condition and remainder" $ do
+        -- FIXME test is actually wrong (the implication holds)... #3218
         let config = Mock.f (mkElemVar Mock.x) & Pattern.fromTermLike
             dest =
                 Mock.f (mkElemVar Mock.y) & Pattern.fromTermLike
@@ -278,46 +279,8 @@ test_checkSimpleImplication =
         actual <-
             checkSimple config dest existentials
         assertEqual "" (NotImplied Nothing) actual
-    , testCase "Variable unification, conditions match" $ do
-        -- FIXME this matches trivially now since simplification
-        -- applies the substitutions
-        let config =
-                Pattern.withCondition
-                    (mkElemVar Mock.x)
-                    (Condition.assign (inject Mock.x) Mock.a)
-            dest =
-                Pattern.withCondition
-                    (mkElemVar Mock.y)
-                    (Condition.assign (inject Mock.y) Mock.a)
-            existentials = [Mock.y]
-            expected :: Pattern RewritingVariableName =
-                -- simplification applies the substitutions, trivial match
-                mkRewritingPattern $ Pattern.topOf Mock.testSort
-        actual <- checkSimple config dest existentials
-        assertEqual "" (Implied (Just expected)) actual
-    , -- FIXME test below changes target. When simplification applies
-      -- substitutions the terms do not unify any more in this test
-      -- , testCase "Variable unification, conditions don't match" $ do
-      --     let config =
-      --             Pattern.withCondition
-      --                 (mkElemVar Mock.x)
-      --                 (Condition.assign (inject Mock.x) Mock.a)
-      --         dest =
-      --             Pattern.withCondition
-      --                 (mkElemVar Mock.y)
-      --                 (Condition.assign (inject Mock.y) Mock.b)
-      --         existentials = [Mock.y]
-      --         -- goal = mkGoal config (OrPattern.fromPattern dest) existentials
-      --         stuckConfig =
-      --             Pattern.withCondition
-      --                 Mock.a
-      --                 (Condition.assign (inject Mock.x) Mock.a)
-      --         stuckGoal =
-      --             mkGoal stuckConfig (OrPattern.fromPattern dest) existentials
-      --         subst = mkSubst (inject Mock.x) (mkElemVar Mock.y)
-      --     actual <- checkSimple config dest existentials
-      --     assertEqual "" (NotImpliedStuck (stuckGoal, Just subst)) actual
-      testCase "Function unification, definedness condition and remainder" $ do
+    , testCase "Function unification, WRONG, definedness condition and remainder" $ do
+        -- FIXME test is actually wrong (the implication holds)... #3218
         let config = Mock.f (mkElemVar Mock.x) & Pattern.fromTermLike
             dest = Mock.f (mkElemVar Mock.y) & Pattern.fromTermLike
             existentials = [Mock.y]
@@ -341,7 +304,8 @@ test_checkSimpleImplication =
                         )
         actual <- checkSimple config dest existentials
         assertEqual "" (NotImpliedStuck (Just stuckConfig)) actual
-    , -- FIXME test below not supported any more. Pattern simplification
+    , -- TODO if we support non-singleton Or patterns in the future,
+      -- the test below should be reactivated. Pattern simplification
       -- distributes the branch and yields a non-singleton Or-pattern
       -- , testCase "Branching RHS with condition in single pattern" $ do
       --     let config = Mock.a & Pattern.fromTermLike
