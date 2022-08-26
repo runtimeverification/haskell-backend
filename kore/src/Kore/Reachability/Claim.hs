@@ -832,8 +832,8 @@ checkSimpleImplication inLeft inRight existentials =
         withContext ("LHS sort: " <> show (unparse2 lSort))
             . withContext ("RHS sort: " <> show (unparse2 rSort))
             $ koreFailWhen
-                  (lSort /= rSort)
-                  "Antecedent and consequent must have the same sort."
+                (lSort /= rSort)
+                "Antecedent and consequent must have the same sort."
 
     -- using a successful unification result (Condition), build term
     -- to refute and try to refute (returning non-refutable parts and
