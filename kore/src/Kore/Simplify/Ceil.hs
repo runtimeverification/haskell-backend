@@ -30,6 +30,7 @@ import Kore.Attribute.Synthetic (
     synthesize,
  )
 import Kore.Builtin.AssocComm.CeilSimplifier qualified as AssocComm
+import Kore.Equation.DebugEquation (CheckRequiresError (sideCondition))
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
     Conditional (..),
@@ -75,7 +76,6 @@ import Kore.Unparser (
     unparseToString,
  )
 import Prelude.Kore
-import Kore.Equation.DebugEquation (CheckRequiresError(sideCondition))
 
 -- TODO: move common type alias to common module
 type NormalForm = MultiOr (MultiAnd (Predicate RewritingVariableName))
@@ -352,8 +352,7 @@ makeSimplifiedCeil
     maybeCurrentCondition
     termLike@(Recursive.project -> _ :< termLikeF) =
         if needsChildCeils
-            then
-                return (MultiOr.singleton (MultiAnd.make $ unsimplified : (fromCeil_ <$> toList termLikeF)))
+            then return (MultiOr.singleton (MultiAnd.make $ unsimplified : (fromCeil_ <$> toList termLikeF)))
             else return (MultiOr.singleton (MultiAnd.singleton unsimplified))
       where
         needsChildCeils = case termLikeF of

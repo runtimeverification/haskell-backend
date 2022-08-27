@@ -369,11 +369,11 @@ normalizeNotAnd Not{notSort, notChild = predicates} =
         --             & mkSingleton
         --             & pure
         --     else
-                Predicate.fromMultiAnd predicates
-                    & fromNot
-                    -- & Predicate.markSimplified
-                    & mkSingleton
-                    & pure
+        Predicate.fromMultiAnd predicates
+            & fromNot
+            -- & Predicate.markSimplified
+            & mkSingleton
+            & pure
     bottom = normalizeBottom Bottom{bottomSort = notSort}
 
     hasCeils (toList -> predicates') =
