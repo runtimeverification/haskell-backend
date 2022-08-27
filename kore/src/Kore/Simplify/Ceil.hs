@@ -116,7 +116,7 @@ makeEvaluate sideCondition child
         return (MultiOr.map (predicates <>) termCeil)
   where
     (term, condition) = Pattern.splitTerm child
-    predicates = Predicate.toMultiAnd  . from @_ @(Predicate _) $ condition
+    predicates = Predicate.toMultiAnd . from @_ @(Predicate _) $ condition
     childSort = Pattern.patternSort child
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
