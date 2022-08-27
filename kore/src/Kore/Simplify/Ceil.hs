@@ -110,13 +110,13 @@ makeEvaluate ::
 makeEvaluate sideCondition child
     | Pattern.isTop child = return (MultiOr.singleton MultiAnd.top)
     | Pattern.isBottom child = return MultiOr.bottom
-    | isTop term = return (NormalForm.fromPredicate condition')
+    | isTop term = return (MultiOr.singleton predicates)
     | otherwise = do
         termCeil <- makeEvaluateTerm childSort sideCondition term
-        return (MultiOr.map (MultiAnd.singleton condition' <>) termCeil)
+        return (MultiOr.map (predicates <>) termCeil)
   where
     (term, condition) = Pattern.splitTerm child
-    condition' = from @_ @(Predicate _) condition
+    predicates = Predicate.toMultiAnd  . from @_ @(Predicate _) $ condition
     childSort = Pattern.patternSort child
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
@@ -253,7 +253,7 @@ newAxiomCeilSimplifier = CeilSimplifier $ \input -> do
             (from @_ @(Predicate _) substitution)
     toPredicate patt =
         error
-            ( "Ceil simplification is expected to result ai a predicate, but"
+            ( "Ceil simplification is expected to result a predicate, but"
                 ++ " got ("
                 ++ show patt
                 ++ ")."

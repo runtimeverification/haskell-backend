@@ -2,6 +2,8 @@ module Test.Kore.Simplify.Ceil (
     test_ceilSimplification,
 ) where
 
+import qualified Pretty
+import Kore.Internal.Predicate qualified as Predicate
 import Data.Map.Strict qualified as Map
 import Data.Sup qualified as Sup
 import Kore.Internal.Condition as Condition
@@ -49,6 +51,7 @@ import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
+import qualified Kore.Internal.Pattern as Pattern
 
 test_ceilSimplification :: [TestTree]
 test_ceilSimplification =
@@ -278,32 +281,16 @@ test_ceilSimplification =
             "ceil(functional(non-funct, non-funct) and eq(f(a), g(a)))"
             expected
             actual
-    , testCase "ceil with axioms" $ do
-        -- if term is functional(non-funct, non-funct), then
-        -- ceil(term and predicate and subst)
-        --     = top and
-        --       ceil(non-funct) and ceil(non-funct) and predicate and
-        --       subst
+    , testCase "Simplifies functional term, adds ceils to children" $ do
         let expected =
                 NormalForm.fromPredicates
-                    [ makeEqualsPredicate Mock.a Mock.cf
-                    , makeEqualsPredicate fOfA gOfA
+                    [ makeEqualsPredicate fOfA gOfA
                     , makeEqualsPredicate (mkElemVar Mock.xConfig) fOfB
+                    , makeCeilPredicate fOfA
+                    , makeCeilPredicate fOfB
                     ]
         actual <-
-            makeEvaluateWithAxioms
-                ( Map.singleton
-                    ( AxiomIdentifier.Ceil
-                        (AxiomIdentifier.Application Mock.fId)
-                    )
-                    ( appliedMockEvaluator
-                        Conditional
-                            { term = mkTop Mock.testSort
-                            , predicate = makeEqualsPredicate Mock.a Mock.cf
-                            , substitution = mempty
-                            }
-                    )
-                )
+            makeEvaluate
                 Conditional
                     { term = Mock.functional20 fOfA fOfB
                     , predicate = makeEqualsPredicate fOfA gOfA
@@ -312,10 +299,44 @@ test_ceilSimplification =
                             Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.xConfig, fOfB)]
                     }
+        -- putStrLn $
+        --     "\nExpected\n"
+        --     <> unlines (show . Pretty.pretty . Predicate.fromMultiAnd <$> toList expected)
+        --     <> "\nActual\n"
+        --     <> unlines (show . Pretty.pretty . Predicate.fromMultiAnd <$> toList actual)
         assertEqual
-            "ceil(functional(non-funct, non-funct) and eq(f(a), g(a)))"
+            ""
             expected
             actual
+    -- TODO: should be moved to predicate simplifier
+    -- , testCase "Ceil with axioms" $ do
+    --     let expected =
+    --                 (makeEqualsPredicate Mock.a Mock.cf)
+    --                 & NormalForm.fromPredicate
+    --     actual <-
+    --         makeEvaluateWithAxioms
+    --             ( Map.singleton
+    --                 ( AxiomIdentifier.Ceil
+    --                     (AxiomIdentifier.Application Mock.fId)
+    --                 )
+    --                 ( appliedMockEvaluator
+    --                     Conditional
+    --                         { term = mkTop Mock.testSort
+    --                         , predicate = makeEqualsPredicate Mock.a Mock.cf
+    --                         , substitution = mempty
+    --                         }
+    --                 )
+    --             )
+    --             (Pattern.fromTermAndPredicate (mkTop Mock.testSort) (makeCeilPredicate fOfA))
+    --     putStrLn $
+    --         "\nExpected\n"
+    --         <> unlines (show . Pretty.pretty . Predicate.fromMultiAnd <$> toList expected)
+    --         <> "\nActual\n"
+    --         <> unlines (show . Pretty.pretty . Predicate.fromMultiAnd <$> toList actual)
+    --     -- assertEqual
+    --     --     ""
+    --     --     expected
+    --     --     actual
     , testCase "ceil with normal domain value" $ do
         -- ceil(1) = top
         let expected = NormalForm.fromPredicate fromTop_
