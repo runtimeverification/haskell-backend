@@ -12,7 +12,7 @@ module Kore.Simplify.Simplify (
     askMetadataTools,
     simplifyPattern,
     simplifyTerm,
-    askSimplifierAxioms,
+    askAxiomEquations,
     askInjSimplifier,
     askOverloadSimplifier,
     getCache,
@@ -34,7 +34,6 @@ module Kore.Simplify.Simplify (
     updateCache,
     lookupCache,
     BuiltinAndAxiomSimplifier (..),
-    BuiltinAndAxiomSimplifierMap,
     AttemptedAxiom (..),
     isApplicable,
     isNotApplicable,
@@ -142,9 +141,7 @@ data Env = Env
         SideCondition RewritingVariableName ->
         TermLike RewritingVariableName ->
         Simplifier (OrPattern RewritingVariableName)
-    , -- | A map with the user defined evaluators.
-      -- Builtin evaluators are not stored in this map.
-      simplifierAxioms :: !BuiltinAndAxiomSimplifierMap
+    , axiomEquations :: !(Map AxiomIdentifier [Equation RewritingVariableName])
     , memo :: !(Memo.Self Simplifier)
     , injSimplifier :: !InjSimplifier
     , overloadSimplifier :: !OverloadSimplifier
@@ -214,18 +211,18 @@ class (MonadIO m, MonadLog m, MonadSMT m) => MonadSimplify m where
         scatter results
     {-# INLINE simplifyCondition #-}
 
-    localSimplifierAxioms ::
-        (BuiltinAndAxiomSimplifierMap -> BuiltinAndAxiomSimplifierMap) ->
+    localAxiomEquations ::
+        (Map AxiomIdentifier [Equation RewritingVariableName] -> Map AxiomIdentifier [Equation RewritingVariableName]) ->
         m a ->
         m a
-    default localSimplifierAxioms ::
+    default localAxiomEquations ::
         (MFunctor t, MonadSimplify n, m ~ t n) =>
-        (BuiltinAndAxiomSimplifierMap -> BuiltinAndAxiomSimplifierMap) ->
+        (Map AxiomIdentifier [Equation RewritingVariableName] -> Map AxiomIdentifier [Equation RewritingVariableName]) ->
         m a ->
         m a
-    localSimplifierAxioms locally =
-        Monad.Morph.hoist (localSimplifierAxioms locally)
-    {-# INLINE localSimplifierAxioms #-}
+    localAxiomEquations locally =
+        Monad.Morph.hoist (localAxiomEquations locally)
+    {-# INLINE localAxiomEquations #-}
 
     askMemo :: m (Memo.Self m)
     default askMemo ::
@@ -258,8 +255,8 @@ simplifyTerm sideCondition termLike =
         simplifier <- asks simplifierTerm
         simplifier sideCondition termLike
 
-askSimplifierAxioms :: MonadSimplify m => m BuiltinAndAxiomSimplifierMap
-askSimplifierAxioms = liftSimplifier $ asks simplifierAxioms
+askAxiomEquations :: MonadSimplify m => m (Map AxiomIdentifier [Equation RewritingVariableName])
+askAxiomEquations = liftSimplifier $ asks axiomEquations
 
 -- | Retrieve the 'InjSimplifier' for the Kore context.
 askInjSimplifier :: MonadSimplify m => m InjSimplifier
@@ -305,10 +302,10 @@ instance MonadSimplify Simplifier where
         simplify topCondition conditional
     {-# INLINE simplifyCondition #-}
 
-    localSimplifierAxioms locally =
-        local $ \env@Env{simplifierAxioms} ->
-            env{simplifierAxioms = locally simplifierAxioms}
-    {-# INLINE localSimplifierAxioms #-}
+    localAxiomEquations locally =
+        local $ \env@Env{axiomEquations} ->
+            env{axiomEquations = locally axiomEquations}
+    {-# INLINE localAxiomEquations #-}
 
     askMemo = asks memo
     {-# INLINE askMemo #-}
@@ -317,9 +314,9 @@ instance
     (WithLog LogMessage m, MonadSimplify m, Monoid w) =>
     MonadSimplify (AccumT w m)
     where
-    localSimplifierAxioms locally =
-        mapAccumT (localSimplifierAxioms locally)
-    {-# INLINE localSimplifierAxioms #-}
+    localAxiomEquations locally =
+        mapAccumT (localAxiomEquations locally)
+    {-# INLINE localAxiomEquations #-}
 
 instance MonadSimplify m => MonadSimplify (CounterT m)
 
@@ -328,9 +325,9 @@ instance MonadSimplify m => MonadSimplify (ExceptT e m)
 instance MonadSimplify m => MonadSimplify (IdentityT m)
 
 instance MonadSimplify m => MonadSimplify (LogicT m) where
-    localSimplifierAxioms locally =
-        mapLogicT (localSimplifierAxioms locally)
-    {-# INLINE localSimplifierAxioms #-}
+    localAxiomEquations locally =
+        mapLogicT (localAxiomEquations locally)
+    {-# INLINE localAxiomEquations #-}
 
 instance MonadSimplify m => MonadSimplify (MaybeT m)
 
@@ -428,9 +425,6 @@ patterns such as their sorts, whether they are constructors or hooked.
 * 'TermLikeSimplifier' is a Function for simplifying patterns, used for
 the post-processing of the function application results.
 
-* BuiltinAndAxiomSimplifierMap is a map from pattern identifiers to the
-'BuiltinAndAxiomSimplifier's that handle those patterns.
-
 * 'TermLike' is the pattern to be evaluated.
 
 Return value:
@@ -447,12 +441,6 @@ newtype BuiltinAndAxiomSimplifier =
         SideCondition RewritingVariableName ->
         Simplifier (AttemptedAxiom RewritingVariableName)
     }
-
-{- |A type to abstract away the mapping from symbol identifiers to
-their corresponding evaluators.
--}
-type BuiltinAndAxiomSimplifierMap =
-    Map.Map AxiomIdentifier BuiltinAndAxiomSimplifier
 
 -- |Describes whether simplifiers are allowed to return multiple results or not.
 data AcceptsMultipleResults = WithMultipleResults | OnlyOneResult

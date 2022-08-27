@@ -13,6 +13,7 @@ module Kore.Rewrite.Axiom.EvaluationStrategy (
     simplificationEvaluation,
     firstFullEvaluation,
     simplifierWithFallback,
+    mkEvaluator,
 
     -- * For testing
     attemptEquationAndAccumulateErrors,
@@ -39,6 +40,7 @@ import Kore.Equation.DebugEquation qualified as Equation
 import Kore.Equation.Equation (
     Equation,
  )
+import Kore.Equation.Registry (PartitionedEquations (..), partitionEquations)
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -203,3 +205,28 @@ evaluateBuiltin
       where
         isValue pat =
             maybe False TermLike.isConstructorLike $ asConcrete pat
+
+-- | Creates an 'BuiltinAndAxiomSimplifier' from a set of equations.
+mkEvaluator ::
+    [Equation RewritingVariableName] ->
+    Maybe BuiltinAndAxiomSimplifier
+mkEvaluator equations =
+    case (simplificationEvaluator, definitionEvaluator) of
+        (Nothing, Nothing) -> Nothing
+        (Just evaluator, Nothing) -> Just evaluator
+        (Nothing, Just evaluator) -> Just evaluator
+        (Just sEvaluator, Just dEvaluator) ->
+            Just (simplifierWithFallback dEvaluator sEvaluator)
+  where
+    PartitionedEquations{functionRules, simplificationRules} = partitionEquations equations
+    simplificationEvaluator =
+        if null simplificationRules
+            then Nothing
+            else
+                Just . firstFullEvaluation $
+                    simplificationEvaluation
+                        <$> simplificationRules
+    definitionEvaluator =
+        if null functionRules
+            then Nothing
+            else Just $ definitionEvaluation functionRules

@@ -353,7 +353,7 @@ test_simplifyClaimRule =
         env =
             Mock.env
                 { simplifierCondition = emptyConditionSimplifier
-                , simplifierAxioms = mempty
+                , axiomEquations = mempty
                 , simplifierTerm = testSimplifyTerm testEnv
                 }
 

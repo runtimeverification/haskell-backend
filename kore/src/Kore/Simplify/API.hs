@@ -23,7 +23,7 @@ module Kore.Simplify.API (
     askMetadataTools,
     simplifyPattern,
     simplifyTerm,
-    askSimplifierAxioms,
+    askAxiomEquations,
     askInjSimplifier,
     askOverloadSimplifier,
     getCache,
@@ -64,9 +64,6 @@ import Kore.Internal.Pattern qualified as Pattern
 import Kore.Rewrite.Axiom.Identifier (
     AxiomIdentifier,
     matchAxiomIdentifier,
- )
-import Kore.Rewrite.Axiom.Registry (
-    mkEvaluatorRegistry,
  )
 import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
@@ -122,7 +119,7 @@ mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquation
             , simplifierCondition
             , simplifierPattern
             , simplifierTerm
-            , simplifierAxioms = earlySimplifierAxioms
+            , axiomEquations = earlyAxiomEquations
             , memo = Memo.forgetful
             , injSimplifier
             , overloadSimplifier
@@ -143,8 +140,8 @@ mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquation
     simplifierTerm =
         {-# SCC "evalSimplifier/simplifierTerm" #-}
         TermLike.simplify
-    -- Initialize without any axiom simplifiers.
-    earlySimplifierAxioms = Map.empty
+    -- Initialize without any axiom equations.
+    earlyAxiomEquations = Map.empty
 
     verifiedModule' :: VerifiedModuleSyntax Attribute.Symbol =
         {-# SCC "evalSimplifier/verifiedModule'" #-}
@@ -158,11 +155,10 @@ mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquation
 
     initialize :: Simplifier Env
     initialize = do
-        equations <-
+        axiomEquations <-
             Equation.simplifyExtractedEquations $
                 (Map.map . fmap . Equation.mapVariables $ pure mkEquationVariable)
                     rawEquations
-        let userEvaluators = mkEvaluatorRegistry equations :: BuiltinAndAxiomSimplifierMap
         memo <- Memo.new
         return
             Env
@@ -170,11 +166,11 @@ mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquation
                 , simplifierCondition
                 , simplifierPattern
                 , simplifierTerm
-                , simplifierAxioms = userEvaluators
                 , memo
                 , injSimplifier
                 , overloadSimplifier
                 , hookedSymbols
+                , axiomEquations
                 }
 
 {- | Evaluate a simplifier computation, returning the result of only one branch.

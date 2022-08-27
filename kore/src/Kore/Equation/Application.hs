@@ -206,7 +206,7 @@ applySubstitutionAndSimplify
     argument
     antiLeft
     matchSubstitution =
-        lift . Simplifier.localSimplifierAxioms mempty $ do
+        lift . Simplifier.localAxiomEquations mempty $ do
             let toMatchResult Conditional{predicate, substitution} =
                     (predicate, Substitution.toMap substitution)
             Substitution.mergePredicatesAndSubstitutions
@@ -367,7 +367,7 @@ checkRequires sideCondition predicate requires =
 
     withoutAxioms =
         fmap Condition.forgetSimplified
-            . Simplifier.localSimplifierAxioms (const mempty)
+            . Simplifier.localAxiomEquations (const mempty)
     withAxioms = id
 
 refreshVariables ::

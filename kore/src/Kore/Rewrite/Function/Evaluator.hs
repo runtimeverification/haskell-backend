@@ -54,7 +54,7 @@ import Kore.Log.ErrorBottomTotalFunction (
     errorBottomTotalFunction,
  )
 import Kore.Log.WarnFunctionWithoutEvaluators (warnFunctionWithoutEvaluators)
-import Kore.Rewrite.Axiom.EvaluationStrategy (builtinEvaluation, simplifierWithFallback)
+import Kore.Rewrite.Axiom.EvaluationStrategy (builtinEvaluation, mkEvaluator, simplifierWithFallback)
 import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
@@ -206,8 +206,11 @@ lookupAxiomSimplifier ::
     TermLike RewritingVariableName ->
     MaybeT simplifier BuiltinAndAxiomSimplifier
 lookupAxiomSimplifier termLike = do
-    simplifierMap <- lift askSimplifierAxioms
     hookedSymbols <- lift askHookedSymbols
+    axiomEquations <- lift askAxiomEquations
+    let getEvaluator :: Axiom.Identifier.AxiomIdentifier -> Maybe BuiltinAndAxiomSimplifier
+        getEvaluator axiomIdentifier = Map.lookup axiomIdentifier axiomEquations >>= mkEvaluator
+
     let missing = do
             -- TODO (thomas.tuegel): Factor out a second function evaluator and
             -- remove this check. At startup, the definition's rules are
@@ -216,7 +219,7 @@ lookupAxiomSimplifier termLike = do
             -- missing, so that is not an error. If any function evaluators are
             -- present, we assume that startup is finished, but we should really
             -- have a separate evaluator for startup.
-            Monad.guard (not $ null simplifierMap)
+            Monad.guard (not $ null axiomEquations)
             case termLike of
                 App_ symbol _
                     | isDeclaredFunction symbol -> do
@@ -227,7 +230,7 @@ lookupAxiomSimplifier termLike = do
             empty
     maybe missing return $ do
         axiomIdentifier <- Axiom.Identifier.matchAxiomIdentifier termLike
-        let exact = Map.lookup axiomIdentifier simplifierMap
+        let exact = getEvaluator axiomIdentifier
         case axiomIdentifier of
             Axiom.Identifier.Application appId ->
                 let builtinEvaluator = do
@@ -237,15 +240,15 @@ lookupAxiomSimplifier termLike = do
             Axiom.Identifier.Variable -> exact
             Axiom.Identifier.DV -> exact
             Axiom.Identifier.Ceil _ ->
-                let inexact = Map.lookup (Axiom.Identifier.Ceil Axiom.Identifier.Variable) simplifierMap
+                let inexact = getEvaluator $ Axiom.Identifier.Ceil Axiom.Identifier.Variable
                  in combineEvaluators [exact, inexact]
             Axiom.Identifier.Exists _ ->
-                let inexact = Map.lookup (Axiom.Identifier.Exists Axiom.Identifier.Variable) simplifierMap
+                let inexact = getEvaluator $ Axiom.Identifier.Exists Axiom.Identifier.Variable
                  in combineEvaluators [exact, inexact]
             Axiom.Identifier.Equals id1 id2 ->
-                let inexact1 = Map.lookup (Axiom.Identifier.Equals Axiom.Identifier.Variable id2) simplifierMap
-                    inexact2 = Map.lookup (Axiom.Identifier.Equals id1 Axiom.Identifier.Variable) simplifierMap
-                    inexact12 = Map.lookup (Axiom.Identifier.Equals Axiom.Identifier.Variable Axiom.Identifier.Variable) simplifierMap
+                let inexact1 = getEvaluator $ Axiom.Identifier.Equals Axiom.Identifier.Variable id2
+                    inexact2 = getEvaluator $ Axiom.Identifier.Equals id1 Axiom.Identifier.Variable
+                    inexact12 = getEvaluator $ Axiom.Identifier.Equals Axiom.Identifier.Variable Axiom.Identifier.Variable
                  in combineEvaluators [exact, inexact1, inexact2, inexact12]
   where
     getHook :: Symbol -> Maybe Text

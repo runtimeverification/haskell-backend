@@ -345,7 +345,6 @@
         "Kore/Rewrite/Axiom/Identifier"
         "Kore/Rewrite/Axiom/Matcher"
         "Kore/Rewrite/Axiom/MatcherData"
-        "Kore/Rewrite/Axiom/Registry"
         "Kore/Rewrite/AxiomPattern"
         "Kore/Rewrite/ClaimPattern"
         "Kore/Rewrite/Function/Evaluator"
