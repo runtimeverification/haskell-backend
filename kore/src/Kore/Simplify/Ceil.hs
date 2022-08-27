@@ -309,7 +309,8 @@ makeEvaluateInternalList ::
     InternalList (TermLike RewritingVariableName) ->
     simplifier NormalForm
 makeEvaluateInternalList _ _ internal = do
-    return (MultiOr.singleton (MultiAnd.make $ fromCeil_ <$> toList internal))
+    return . NormalForm.fromPredicates
+    $ fromCeil_ <$> toList internal
 
 {- | This handles the case when we can't simplify a term's ceil.
 
@@ -335,8 +336,11 @@ makeSimplifiedCeil
     maybeCurrentCondition
     termLike@(Recursive.project -> _ :< termLikeF) =
         if needsChildCeils
-            then return (MultiOr.singleton (MultiAnd.make $ unsimplified : (fromCeil_ <$> toList termLikeF)))
-            else return (MultiOr.singleton (MultiAnd.singleton unsimplified))
+            then
+                return
+                . NormalForm.fromPredicates
+                $ unsimplified : (fromCeil_ <$> toList termLikeF)
+            else return . NormalForm.fromPredicate $ unsimplified
       where
         needsChildCeils = case termLikeF of
             ApplyAliasF _ -> False

@@ -299,8 +299,6 @@ makeEvaluate termLike = do
     makeEvaluate' termLike
         >>= expectSingleResult
   where
-    -- TODO: removed checks because they no longer make sense
-
     makeEvaluate' =
         testRunSimplifier mockEnv
             . Ceil.makeEvaluate SideCondition.top

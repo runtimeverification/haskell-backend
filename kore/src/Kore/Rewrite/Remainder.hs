@@ -24,6 +24,7 @@ import Kore.Internal.MultiOr (
     MultiOr,
  )
 import Kore.Internal.MultiOr qualified as MultiOr
+import Kore.Internal.NormalForm qualified as NormalForm
 import Kore.Internal.OrCondition qualified as OrCondition
 import Kore.Internal.Predicate (
     Predicate,
@@ -136,7 +137,7 @@ ceilChildOfApplicationOrTop sideCondition patt =
                     >>= ( AndPredicates.simplifyEvaluatedMultiPredicate
                             sideCondition
                             . MultiAnd.make
-                            . (fmap . MultiOr.map) (from @_ @(Condition _) . Predicate.fromMultiAnd)
+                            . fmap NormalForm.toOrCondition
                         )
             pure
                 Conditional

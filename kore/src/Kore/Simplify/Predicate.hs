@@ -393,14 +393,6 @@ simplifyIff Iff{iffFirst, iffSecond, iffSort} = do
     mkOrSimplified orFirst orSecond =
         normalizeOr Or{orSort = iffSort, orFirst, orSecond}
 
--- simplifyCeil ::
---     MonadSimplify simplifier =>
---     SideCondition RewritingVariableName ->
---     Ceil sort (TermLike RewritingVariableName) ->
---     simplifier NormalForm
--- simplifyCeil sideCondition Ceil{ceilChild} =
---     Ceil.makeEvaluateTerm (TermLike.termLikeSort ceilChild) sideCondition ceilChild
---         <&> fromOrCondition
 simplifyCeil ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->

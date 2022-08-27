@@ -44,7 +44,7 @@ import Prelude.Kore
 {- | @NormalForm@ is the normal form result of simplifying 'Predicate'.
  The primary purpose of this form is to transmit to the external solver.
  Note that this is almost, but not quite, disjunctive normal form; see
- 'simplifyNot' for the most notable exception.
+ 'Kore.Simplify.Predicate.simplifyNot' for the most notable exception.
 -}
 type NormalForm = MultiOr (MultiAnd (Predicate RewritingVariableName))
 

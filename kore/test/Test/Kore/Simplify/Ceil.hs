@@ -351,8 +351,6 @@ test_ceilSimplification =
             (makeEvaluate . Pattern.fromTermLike)
                 (Mock.sortInjection Mock.topSort (TermLike.markSimplified fOfA))
         assertEqual "ceil(f(a))" expected actual
-        -- TODO: this was removed because we need to slowly stop supporting the
-        -- Simplified attribute
     ]
   where
     fOfA :: TermLike RewritingVariableName
