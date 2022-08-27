@@ -36,6 +36,8 @@ import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
 import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.MultiOr qualified as MultiOr
+import Kore.Internal.NormalForm (NormalForm)
+import Kore.Internal.NormalForm qualified as NormalForm
 import Kore.Internal.OrPattern (OrPattern)
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (Pattern)
@@ -61,8 +63,6 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Simplify.CeilSimplifier
 import Kore.Simplify.InjSimplifier
-import Kore.Internal.NormalForm (NormalForm)
-import Kore.Internal.NormalForm qualified as NormalForm
 import Kore.Simplify.Simplify as Simplifier
 import Kore.TopBottom
 import Kore.Unparser (

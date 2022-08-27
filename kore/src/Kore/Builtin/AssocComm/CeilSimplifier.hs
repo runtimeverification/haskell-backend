@@ -29,6 +29,7 @@ import Kore.Internal.MultiAnd (
  )
 import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.MultiOr qualified as MultiOr
+import Kore.Internal.NormalForm (NormalForm)
 import Kore.Internal.Predicate (
     Predicate,
     makeCeilPredicate,
@@ -50,7 +51,6 @@ import Kore.Internal.TermLike (
     termLikeSort,
  )
 import Kore.Internal.TermLike qualified as TermLike
-import Kore.Internal.NormalForm (NormalForm)
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )

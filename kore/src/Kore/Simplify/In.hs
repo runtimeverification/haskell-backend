@@ -12,11 +12,11 @@ module Kore.Simplify.In (
 ) where
 
 import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.NormalForm qualified as NormalForm
 import Kore.Internal.OrCondition (
     OrCondition,
  )
 import Kore.Internal.OrCondition qualified as OrCondition
-import Kore.Internal.NormalForm qualified as NormalForm
 import Kore.Internal.OrPattern (
     OrPattern,
  )

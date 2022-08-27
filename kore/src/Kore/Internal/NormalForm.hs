@@ -2,7 +2,6 @@
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
 -}
-
 module Kore.Internal.NormalForm (
     NormalForm,
     toOrPattern,
@@ -12,14 +11,6 @@ module Kore.Internal.NormalForm (
     fromPredicates,
 ) where
 
-import Prelude.Kore
-import Kore.Internal.Predicate (
-    Predicate,
- )
-import Kore.Internal.Predicate qualified as Predicate
-import Kore.Rewrite.RewritingVariable (
-    RewritingVariableName,
- )
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
@@ -28,19 +19,27 @@ import Kore.Internal.MultiOr (
     MultiOr,
  )
 import Kore.Internal.MultiOr qualified as MultiOr
-import Kore.Internal.Pattern (
-    Condition,
- )
-import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.OrCondition (
     OrCondition,
  )
 import Kore.Internal.OrPattern (
     OrPattern,
  )
+import Kore.Internal.Pattern (
+    Condition,
+ )
+import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.Predicate (
+    Predicate,
+ )
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
 import Kore.Syntax (
     Sort,
  )
+import Prelude.Kore
 
 {- | @NormalForm@ is the normal form result of simplifying 'Predicate'.
  The primary purpose of this form is to transmit to the external solver.

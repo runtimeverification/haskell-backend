@@ -27,6 +27,8 @@ import Kore.Internal.MultiAnd (
  )
 import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.MultiOr qualified as MultiOr
+import Kore.Internal.NormalForm (NormalForm)
+import Kore.Internal.NormalForm qualified as NormalForm
 import Kore.Internal.OrCondition (
     OrCondition,
  )
@@ -67,8 +69,6 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Ceil qualified as Ceil
-import Kore.Internal.NormalForm (NormalForm)
-import Kore.Internal.NormalForm qualified as NormalForm
 import Kore.Simplify.Equals qualified as Equals
 import Kore.Simplify.In qualified as In
 import Kore.Simplify.Not qualified as Not

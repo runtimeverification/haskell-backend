@@ -7,6 +7,11 @@ import Data.Sup qualified as Sup
 import Kore.Internal.Condition as Condition
 import Kore.Internal.From (fromTop_)
 import Kore.Internal.MultiOr qualified as MultiOr
+import Kore.Internal.NormalForm (NormalForm)
+import Kore.Internal.NormalForm qualified as NormalForm (
+    fromPredicate,
+    fromPredicates,
+ )
 import Kore.Internal.Predicate (
     makeCeilPredicate,
     makeEqualsPredicate,
@@ -25,11 +30,6 @@ import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier (
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
- )
-import Kore.Internal.NormalForm (NormalForm)
-import Kore.Internal.NormalForm qualified as NormalForm (
-    fromPredicate,
-    fromPredicates,
  )
 import Kore.Simplify.Ceil qualified as Ceil
 import Kore.Simplify.Simplify
