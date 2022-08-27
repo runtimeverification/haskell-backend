@@ -8,10 +8,6 @@ module Kore.Simplify.Ceil (
     makeEvaluate,
     makeEvaluateTerm,
     Ceil (..),
-    -- TODO: move!
-    NormalForm,
-    fromPredicates,
-    fromPredicate,
 ) where
 
 import Control.Error (
@@ -30,7 +26,6 @@ import Kore.Attribute.Synthetic (
     synthesize,
  )
 import Kore.Builtin.AssocComm.CeilSimplifier qualified as AssocComm
-import Kore.Equation.DebugEquation (CheckRequiresError (sideCondition))
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
     Conditional (..),
@@ -39,11 +34,7 @@ import Kore.Internal.From (fromCeil_)
 import Kore.Internal.InternalList
 import Kore.Internal.InternalMap
 import Kore.Internal.InternalSet
-import Kore.Internal.MultiAnd (
-    MultiAnd,
- )
 import Kore.Internal.MultiAnd qualified as MultiAnd
-import Kore.Internal.MultiOr (MultiOr)
 import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern (OrPattern)
 import Kore.Internal.OrPattern qualified as OrPattern
@@ -70,21 +61,14 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Simplify.CeilSimplifier
 import Kore.Simplify.InjSimplifier
+import Kore.Internal.NormalForm (NormalForm)
+import Kore.Internal.NormalForm qualified as NormalForm
 import Kore.Simplify.Simplify as Simplifier
 import Kore.TopBottom
 import Kore.Unparser (
     unparseToString,
  )
 import Prelude.Kore
-
--- TODO: move common type alias to common module
-type NormalForm = MultiOr (MultiAnd (Predicate RewritingVariableName))
-
-fromPredicate :: Predicate RewritingVariableName -> NormalForm
-fromPredicate = MultiOr.singleton . MultiAnd.singleton
-
-fromPredicates :: [Predicate RewritingVariableName] -> NormalForm
-fromPredicates = MultiOr.singleton . MultiAnd.make
 
 {- | Simplify a 'Ceil' of 'OrPattern'.
 
@@ -126,7 +110,7 @@ makeEvaluate ::
 makeEvaluate sideCondition child
     | Pattern.isTop child = return (MultiOr.singleton MultiAnd.top)
     | Pattern.isBottom child = return MultiOr.bottom
-    | isTop term = return (fromPredicate condition')
+    | isTop term = return (NormalForm.fromPredicate condition')
     | otherwise = do
         termCeil <- makeEvaluateTerm childSort sideCondition term
         return (MultiOr.map (MultiAnd.singleton condition' <>) termCeil)
@@ -179,7 +163,7 @@ newPredicateCeilSimplifier ::
 newPredicateCeilSimplifier = CeilSimplifier $ \input ->
     case Predicate.makePredicate (ceilChild input) of
         Left _ -> empty
-        Right predicate -> return (fromPredicate predicate)
+        Right predicate -> return (NormalForm.fromPredicate predicate)
 
 newDefinedCeilSimplifier ::
     Monad simplifier =>
@@ -189,7 +173,6 @@ newDefinedCeilSimplifier ::
         (TermLike RewritingVariableName)
         NormalForm
 newDefinedCeilSimplifier sideCondition = CeilSimplifier $ \input ->
-    -- trace ("\ndefinedCeilInput\n" <> unparseToString (ceilChild input)) $
     if SideCondition.isDefined sideCondition (ceilChild input)
         then return (MultiOr.singleton MultiAnd.top)
         else empty
@@ -205,7 +188,7 @@ newApplicationCeilSimplifier = CeilSimplifier $ \input ->
         App_ patternHead children
             | let headAttributes = symbolAttributes patternHead
               , Attribute.Symbol.isTotal headAttributes -> do
-                return (fromPredicates $ fromCeil_ <$> children)
+                return (NormalForm.fromPredicates $ fromCeil_ <$> children)
         _ -> empty
 
 newInjCeilSimplifier ::
@@ -222,7 +205,7 @@ newInjCeilSimplifier = CeilSimplifier $ \input ->
                 & evaluateCeilInj
                 & ceilChild
                 & fromCeil_
-                & fromPredicate
+                & NormalForm.fromPredicate
                 & return
         _ -> empty
 

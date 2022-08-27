@@ -26,13 +26,12 @@ import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.Ceil qualified as Ceil (
-    NormalForm,
+import Kore.Internal.NormalForm (NormalForm)
+import Kore.Internal.NormalForm qualified as NormalForm (
     fromPredicate,
     fromPredicates,
-    makeEvaluate,
-    simplify,
  )
+import Kore.Simplify.Ceil qualified as Ceil
 import Kore.Simplify.Simplify
 import Kore.Simplify.Simplify qualified as AttemptedAxiom (
     AttemptedAxiom (..),
@@ -56,7 +55,7 @@ test_ceilSimplification =
     [ testCase "Ceil - or distribution" $ do
         -- ceil(a or b) = (top and ceil(a)) or (top and ceil(b))
         let expected =
-                Ceil.fromPredicates
+                NormalForm.fromPredicates
                     [ makeCeilPredicate somethingOfA
                     , makeCeilPredicate somethingOfB
                     ]
@@ -77,7 +76,7 @@ test_ceilSimplification =
                     )
             assertEqual
                 "ceil(top)"
-                (Ceil.fromPredicate fromTop_)
+                (NormalForm.fromPredicate fromTop_)
                 actual1
             -- ceil(bottom) = bottom
             actual2 <-
@@ -101,7 +100,7 @@ test_ceilSimplification =
                     )
             assertEqual
                 "ceil(top)"
-                (Ceil.fromPredicate fromTop_)
+                (NormalForm.fromPredicate fromTop_)
                 actual1
         )
     , testCase
@@ -111,7 +110,7 @@ test_ceilSimplification =
             actual1 <- makeEvaluate (Pattern.topOf Mock.testSort)
             assertEqual
                 "ceil(top)"
-                (Ceil.fromPredicate fromTop_)
+                (NormalForm.fromPredicate fromTop_)
                 actual1
             -- ceil(bottom) = bottom
             actual2 <- makeEvaluate (Pattern.bottomOf Mock.testSort)
@@ -125,7 +124,7 @@ test_ceilSimplification =
         -- ceil(term and predicate and subst)
         --     = top and (ceil(term) and predicate) and subst
         let expected =
-                Ceil.fromPredicates
+                NormalForm.fromPredicates
                     [ makeCeilPredicate somethingOfA
                     , makeEqualsPredicate fOfA gOfA
                     , makeEqualsPredicate (mkElemVar Mock.xConfig) fOfB
@@ -150,7 +149,7 @@ test_ceilSimplification =
             -- ceil(term and predicate and subst)
             --     = top and (ceil(term) and predicate) and subst
             let expected =
-                    Ceil.fromPredicates
+                    NormalForm.fromPredicates
                         [ makeCeilPredicate somethingOfA
                         , makeCeilPredicate somethingOfB
                         , makeEqualsPredicate fOfA gOfA
@@ -171,7 +170,7 @@ test_ceilSimplification =
                 expected
                 actual
     , testCase "ceil of constructors is top" $ do
-        let expected = Ceil.fromPredicate fromTop_
+        let expected = NormalForm.fromPredicate fromTop_
         actual <-
             makeEvaluate
                 Conditional
@@ -185,7 +184,7 @@ test_ceilSimplification =
         -- ceil(term and predicate and subst)
         --     = top and (ceil(params) and predicate) and subst
         let expected =
-                Ceil.fromPredicates
+                NormalForm.fromPredicates
                     [ makeCeilPredicate somethingOfA
                     , makeCeilPredicate somethingOfB
                     , makeEqualsPredicate fOfA gOfA
@@ -210,7 +209,7 @@ test_ceilSimplification =
         -- ceil(term and predicate and subst)
         --     = top and (ceil(term) and predicate) and subst
         let expected =
-                Ceil.fromPredicates
+                NormalForm.fromPredicates
                     [ makeCeilPredicate fOfA
                     , makeEqualsPredicate fOfA gOfA
                     , makeEqualsPredicate (mkElemVar Mock.xConfig) fOfB
@@ -234,7 +233,7 @@ test_ceilSimplification =
         -- ceil(term and predicate and subst)
         --     = top and predicate and subst
         let expected =
-                Ceil.fromPredicates
+                NormalForm.fromPredicates
                     [ makeEqualsPredicate fOfA gOfA
                     , makeEqualsPredicate (mkElemVar Mock.xConfig) fOfB
                     ]
@@ -259,7 +258,7 @@ test_ceilSimplification =
         --       ceil(non-funct) and ceil(non-funct) and predicate and
         --       subst
         let expected =
-                Ceil.fromPredicates
+                NormalForm.fromPredicates
                     [ makeCeilPredicate fOfA
                     , makeCeilPredicate fOfB
                     , makeEqualsPredicate fOfA gOfA
@@ -286,7 +285,7 @@ test_ceilSimplification =
         --       ceil(non-funct) and ceil(non-funct) and predicate and
         --       subst
         let expected =
-                Ceil.fromPredicates
+                NormalForm.fromPredicates
                     [ makeEqualsPredicate Mock.a Mock.cf
                     , makeEqualsPredicate fOfA gOfA
                     , makeEqualsPredicate (mkElemVar Mock.xConfig) fOfB
@@ -319,7 +318,7 @@ test_ceilSimplification =
             actual
     , testCase "ceil with normal domain value" $ do
         -- ceil(1) = top
-        let expected = Ceil.fromPredicate fromTop_
+        let expected = NormalForm.fromPredicate fromTop_
         actual <-
             makeEvaluate $
                 Pattern.fromTermLike $
@@ -332,7 +331,7 @@ test_ceilSimplification =
     , testCase "ceil with list domain value" $ do
         -- ceil([a, b]) = ceil(a) and ceil(b)
         let expected =
-                Ceil.fromPredicates
+                NormalForm.fromPredicates
                     [ makeCeilPredicate fOfA
                     , makeCeilPredicate fOfB
                     ]
@@ -347,7 +346,7 @@ test_ceilSimplification =
     , testCase "ceil of sort injection" $ do
         let expected =
                 makeCeilPredicate fOfA
-                    & Ceil.fromPredicate
+                    & NormalForm.fromPredicate
         actual <-
             (makeEvaluate . Pattern.fromTermLike)
                 (Mock.sortInjection Mock.topSort (TermLike.markSimplified fOfA))
@@ -414,7 +413,7 @@ makeCeil patterns =
 
 evaluate ::
     Ceil Sort (OrPattern RewritingVariableName) ->
-    IO Ceil.NormalForm
+    IO NormalForm
 evaluate ceil =
     testRunSimplifier mockEnv $
         Ceil.simplify SideCondition.top ceil
@@ -422,14 +421,14 @@ evaluate ceil =
     mockEnv = Mock.env
 
 makeEvaluate ::
-    Pattern RewritingVariableName -> IO Ceil.NormalForm
+    Pattern RewritingVariableName -> IO NormalForm
 makeEvaluate = makeEvaluateWithAxioms Map.empty
 
 makeEvaluateWithAxioms ::
     -- | Map from symbol IDs to defined functions
     BuiltinAndAxiomSimplifierMap ->
     Pattern RewritingVariableName ->
-    IO Ceil.NormalForm
+    IO NormalForm
 makeEvaluateWithAxioms axiomIdToSimplifier child =
     testRunSimplifier mockEnv $
         Ceil.makeEvaluate SideCondition.top child

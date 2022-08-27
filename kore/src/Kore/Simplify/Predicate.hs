@@ -26,9 +26,6 @@ import Kore.Internal.MultiAnd (
     MultiAnd,
  )
 import Kore.Internal.MultiAnd qualified as MultiAnd
-import Kore.Internal.MultiOr (
-    MultiOr,
- )
 import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrCondition (
     OrCondition,
@@ -70,6 +67,8 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Ceil qualified as Ceil
+import Kore.Internal.NormalForm (NormalForm)
+import Kore.Internal.NormalForm qualified as NormalForm
 import Kore.Simplify.Equals qualified as Equals
 import Kore.Simplify.In qualified as In
 import Kore.Simplify.Not qualified as Not
@@ -97,25 +96,6 @@ import Kore.Syntax.Exists qualified as Exists
 import Kore.Syntax.Forall qualified as Forall
 import Logic
 import Prelude.Kore
-import Pretty qualified
-
-{- | @NormalForm@ is the normal form result of simplifying 'Predicate'.
- The primary purpose of this form is to transmit to the external solver.
- Note that this is almost, but not quite, disjunctive normal form; see
- 'simplifyNot' for the most notable exception.
--}
-type NormalForm = MultiOr (MultiAnd (Predicate RewritingVariableName))
-
-toOrPattern :: Sort -> NormalForm -> OrPattern RewritingVariableName
-toOrPattern sort =
-    MultiOr.map
-        ( Pattern.fromPredicateSorted sort
-            . Predicate.makeMultipleAndPredicate
-            . toList
-        )
-
-fromOrCondition :: OrCondition RewritingVariableName -> NormalForm
-fromOrCondition = MultiOr.map (from @(Condition _))
 
 simplify ::
     forall simplifier.
@@ -150,7 +130,7 @@ simplify sideCondition original =
     -- accordingly.
     simplifyTerm' term
         | Right predicate <- Predicate.makePredicate term =
-            toOrPattern (termLikeSort term) <$> worker predicate
+            NormalForm.toOrPattern (termLikeSort term) <$> worker predicate
         | otherwise =
             simplifyTerm sideCondition term
 
@@ -168,7 +148,6 @@ simplify sideCondition original =
         | Just predicate' <- replacePredicate predicate =
             worker predicate'
         | Predicate.isSimplified repr predicate =
-            -- trace ("\nisSimplified\n" <> (show . Pretty.pretty) predicate) $ pure (mkSingleton predicate)
             pure (mkSingleton predicate)
         | otherwise =
             case predicateF of
@@ -180,8 +159,8 @@ simplify sideCondition original =
                 ImpliesF impliesF -> simplifyImplies =<< traverse worker impliesF
                 IffF iffF -> simplifyIff =<< traverse worker iffF
                 CeilF ceilF ->
+                    -- TODO(Ana): don't simplify children first
                     simplifyCeil sideCondition =<< traverse simplifyTerm' ceilF
-                -- simplifyCeil sideCondition ceilF
                 FloorF floorF@(Floor _ _ child) ->
                     simplifyFloor (termLikeSort child) sideCondition
                         =<< traverse simplifyTerm' floorF
@@ -360,30 +339,11 @@ normalizeNotAnd Not{notSort, notChild = predicates} =
         _ -> fallback
   where
     fallback =
-        -- \not(\and(_, ...))
-        -- TODO: unfortunately, the unit tests loop
-        -- if hasCeils predicates
-        --     then
-        --         Predicate.fromMultiAnd predicates
-        --             & fromNot
-        --             & mkSingleton
-        --             & pure
-        --     else
         Predicate.fromMultiAnd predicates
             & fromNot
-            -- & Predicate.markSimplified
             & mkSingleton
             & pure
     bottom = normalizeBottom Bottom{bottomSort = notSort}
-
-    hasCeils (toList -> predicates') =
-        worker predicates'
-      where
-        worker [] = False
-        worker (p : ps) =
-            case p of
-                Predicate.PredicateCeil _ -> True
-                _ -> worker ps
 
 {- |
  @
@@ -446,10 +406,8 @@ simplifyCeil ::
     SideCondition RewritingVariableName ->
     Ceil sort (OrPattern RewritingVariableName) ->
     simplifier NormalForm
-simplifyCeil sideCondition input@Ceil{ceilChild} = do
-    x <- Ceil.simplify sideCondition input
-    -- trace ("\nInput\n" <> (show . Pretty.pretty) ceilChild <> "\nOutput\n" <> (show . Pretty.pretty) x ) $ return x
-    return x
+simplifyCeil sideCondition input =
+    Ceil.simplify sideCondition input
 
 {- |
  @
@@ -622,4 +580,4 @@ simplifyIn ::
     In sort (OrPattern RewritingVariableName) ->
     simplifier NormalForm
 simplifyIn sideCondition =
-    In.simplify sideCondition >=> return . fromOrCondition
+    In.simplify sideCondition >=> return . NormalForm.fromOrCondition

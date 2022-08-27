@@ -28,7 +28,6 @@ import Kore.Internal.MultiAnd (
     MultiAnd,
  )
 import Kore.Internal.MultiAnd qualified as MultiAnd
-import Kore.Internal.MultiOr (MultiOr)
 import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.Predicate (
     Predicate,
@@ -51,6 +50,7 @@ import Kore.Internal.TermLike (
     termLikeSort,
  )
 import Kore.Internal.TermLike qualified as TermLike
+import Kore.Internal.NormalForm (NormalForm)
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -81,7 +81,7 @@ newSetCeilSimplifier ::
     CeilSimplifier
         simplifier
         (BuiltinAssocComm NormalizedSet RewritingVariableName)
-        (MultiOr (MultiAnd (Predicate RewritingVariableName)))
+        NormalForm
 newSetCeilSimplifier =
     CeilSimplifier $ \ceil@Ceil{ceilChild} -> do
         let mkInternalAc normalizedAc =
@@ -105,7 +105,7 @@ newSetCeilSimplifier =
 --     CeilSimplifier
 --         Simplifier
 --         (BuiltinAssocComm NormalizedSet RewritingVariableName)
---         (OrCondition RewritingVariableName) #-}
+--         NormalForm #-}
 
 newMapCeilSimplifier ::
     forall simplifier.
@@ -114,7 +114,7 @@ newMapCeilSimplifier ::
     CeilSimplifier
         simplifier
         (BuiltinAssocComm NormalizedMap RewritingVariableName)
-        (MultiOr (MultiAnd (Predicate RewritingVariableName)))
+        NormalForm
 newMapCeilSimplifier =
     CeilSimplifier $ \ceil@Ceil{ceilChild} -> do
         let mkInternalAc normalizedAc =
@@ -144,7 +144,7 @@ newMapCeilSimplifier =
 --     CeilSimplifier
 --         Simplifier
 --         (BuiltinAssocComm NormalizedMap RewritingVariableName)
---         (OrCondition RewritingVariableName) #-}
+--         NormalForm #-}
 
 {- | Generalize a 'MapElement' by replacing the 'MapValue' with a variable.
 
@@ -186,7 +186,7 @@ newBuiltinAssocCommCeilSimplifier ::
     CeilSimplifier
         simplifier
         (BuiltinAssocComm normalized RewritingVariableName)
-        (MultiOr (MultiAnd (Predicate RewritingVariableName)))
+        NormalForm
 newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
     CeilSimplifier $ \Ceil{ceilChild} -> do
         let internalAc@InternalAc{builtinAcChild} = ceilChild
