@@ -308,9 +308,10 @@ makeEvaluateInternalList ::
     SideCondition RewritingVariableName ->
     InternalList (TermLike RewritingVariableName) ->
     simplifier NormalForm
-makeEvaluateInternalList _ _ internal = do
-    return . NormalForm.fromPredicates
-    $ fromCeil_ <$> toList internal
+makeEvaluateInternalList _ _ internal =
+    do
+        return . NormalForm.fromPredicates
+        $ fromCeil_ <$> toList internal
 
 {- | This handles the case when we can't simplify a term's ceil.
 
@@ -338,8 +339,8 @@ makeSimplifiedCeil
         if needsChildCeils
             then
                 return
-                . NormalForm.fromPredicates
-                $ unsimplified : (fromCeil_ <$> toList termLikeF)
+                    . NormalForm.fromPredicates
+                    $ unsimplified : (fromCeil_ <$> toList termLikeF)
             else return . NormalForm.fromPredicate $ unsimplified
       where
         needsChildCeils = case termLikeF of
