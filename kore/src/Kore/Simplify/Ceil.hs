@@ -75,6 +75,7 @@ import Kore.Unparser (
     unparseToString,
  )
 import Prelude.Kore
+import Kore.Equation.DebugEquation (CheckRequiresError(sideCondition))
 
 -- TODO: move common type alias to common module
 type NormalForm = MultiOr (MultiAnd (Predicate RewritingVariableName))
@@ -145,7 +146,7 @@ makeEvaluateTerm ::
     SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
     simplifier NormalForm
-makeEvaluateTerm resultSort sideCondition ceilChild =
+makeEvaluateTerm resultSort sideCondition ceilChild = do
     runCeilSimplifierWith
         ceilSimplifier
         sideCondition
@@ -351,7 +352,8 @@ makeSimplifiedCeil
     maybeCurrentCondition
     termLike@(Recursive.project -> _ :< termLikeF) =
         if needsChildCeils
-            then return (MultiOr.singleton (MultiAnd.make $ unsimplified : (fromCeil_ <$> toList termLikeF)))
+            then
+                return (MultiOr.singleton (MultiAnd.make $ unsimplified : (fromCeil_ <$> toList termLikeF)))
             else return (MultiOr.singleton (MultiAnd.singleton unsimplified))
       where
         needsChildCeils = case termLikeF of

@@ -186,7 +186,7 @@ test_simplify =
                 ]
             ]
         , test
-            "desugaring"
+            "3TESTING desugaring"
             ( fromNot
                 ( fromFloor_
                     ( mkNot

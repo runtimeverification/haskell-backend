@@ -128,7 +128,7 @@ simplify sideCondition original =
     loop 0 (mkSingleton original)
   where
     limit :: Int
-    limit = 4
+    limit = 1000
 
     loop :: Int -> NormalForm -> simplifier NormalForm
     loop count input
@@ -362,16 +362,16 @@ normalizeNotAnd Not{notSort, notChild = predicates} =
     fallback =
         -- \not(\and(_, ...))
         -- TODO: unfortunately, the unit tests loop
-        if hasCeils predicates
-            then
+        -- if hasCeils predicates
+        --     then
+        --         Predicate.fromMultiAnd predicates
+        --             & fromNot
+        --             & mkSingleton
+        --             & pure
+        --     else
                 Predicate.fromMultiAnd predicates
                     & fromNot
-                    & mkSingleton
-                    & pure
-            else
-                Predicate.fromMultiAnd predicates
-                    & fromNot
-                    & Predicate.markSimplified
+                    -- & Predicate.markSimplified
                     & mkSingleton
                     & pure
     bottom = normalizeBottom Bottom{bottomSort = notSort}
