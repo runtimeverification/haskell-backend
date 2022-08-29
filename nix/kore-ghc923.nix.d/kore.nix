@@ -501,6 +501,7 @@
         "SQL/SOP"
         "SQL/SQL"
         "Stats"
+        "UnrollMaybe"
       ];
       hsSourceDirs = [ "src" "app/share" ];
     };
