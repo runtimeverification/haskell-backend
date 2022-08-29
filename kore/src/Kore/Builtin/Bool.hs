@@ -148,21 +148,19 @@ parse = (Parsec.<|>) true false
 -- | @builtinFunctions@ are builtin functions on the 'Bool' sort.
 builtinFunctions ::
     Text ->
-    Maybe
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
-        )
-builtinFunctions key
-    | key == orKey = Just $ binaryOperator orKey (||)
-    | key == andKey = Just $ binaryOperator andKey (&&)
-    | key == xorKey = Just $ binaryOperator xorKey xor
-    | key == neKey = Just $ binaryOperator neKey (/=)
-    | key == eqKey = Just $ binaryOperator eqKey (==)
-    | key == notKey = Just $ unaryOperator notKey not
-    | key == impliesKey = Just $ binaryOperator impliesKey implies
-    | key == andThenKey = Just $ binaryOperator andThenKey (&&)
-    | key == orElseKey = Just $ binaryOperator orElseKey (||)
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
+builtinFunctions key termLike sideCondition
+    | key == orKey = Just $ binaryOperator orKey (||) termLike sideCondition
+    | key == andKey = Just $ binaryOperator andKey (&&) termLike sideCondition
+    | key == xorKey = Just $ binaryOperator xorKey xor termLike sideCondition
+    | key == neKey = Just $ binaryOperator neKey (/=) termLike sideCondition
+    | key == eqKey = Just $ binaryOperator eqKey (==) termLike sideCondition
+    | key == notKey = Just $ unaryOperator notKey not termLike sideCondition
+    | key == impliesKey = Just $ binaryOperator impliesKey implies termLike sideCondition
+    | key == andThenKey = Just $ binaryOperator andThenKey (&&) termLike sideCondition
+    | key == orElseKey = Just $ binaryOperator orElseKey (||) termLike sideCondition
     | otherwise = Nothing
   where
     unaryOperator =

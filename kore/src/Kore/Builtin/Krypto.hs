@@ -149,22 +149,20 @@ symbolVerifiers =
 -- | Implement builtin function evaluation.
 builtinFunctions ::
     Text ->
-    Maybe
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
-        )
-builtinFunctions key
-    | key == keccak256Key = Just evalKeccak
-    | key == hashKeccak256Key = Just evalKeccak
-    | key == sha256Key = Just evalSha256
-    | key == hashSha256Key = Just evalSha256
-    | key == sha3256Key = Just evalSha3256
-    | key == hashSha3_256Key = Just evalSha3256
-    | key == ripemd160Key = Just evalRipemd160
-    | key == hashRipemd160Key = Just evalRipemd160
-    | key == ecdsaRecoverKey = Just evalECDSARecover
-    | key == secp256k1EcdsaRecoverKey = Just evalECDSARecover
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
+builtinFunctions key termLike sideCondition
+    | key == keccak256Key = Just $ evalKeccak termLike sideCondition
+    | key == hashKeccak256Key = Just $ evalKeccak termLike sideCondition
+    | key == sha256Key = Just $ evalSha256 termLike sideCondition
+    | key == hashSha256Key = Just $ evalSha256 termLike sideCondition
+    | key == sha3256Key = Just $ evalSha3256 termLike sideCondition
+    | key == hashSha3_256Key = Just $ evalSha3256 termLike sideCondition
+    | key == ripemd160Key = Just $ evalRipemd160 termLike sideCondition
+    | key == hashRipemd160Key = Just $ evalRipemd160 termLike sideCondition
+    | key == ecdsaRecoverKey = Just $ evalECDSARecover termLike sideCondition
+    | key == secp256k1EcdsaRecoverKey = Just $ evalECDSARecover termLike sideCondition
     | otherwise = Nothing
 
 verifyHashFunction :: Builtin.SymbolVerifier

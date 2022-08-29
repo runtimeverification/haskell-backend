@@ -483,26 +483,24 @@ evalValues _ _ _ = Builtin.wrongArity Map.valuesKey
 -- | Implement builtin function evaluation.
 builtinFunctions ::
     Text ->
-    Maybe
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
-        )
-builtinFunctions key
-    | key == Map.concatKey = Just $ Builtin.functionEvaluator evalConcat
-    | key == Map.lookupKey = Just $ Builtin.functionEvaluator evalLookup
-    | key == Map.lookupOrDefaultKey = Just $ Builtin.functionEvaluator evalLookupOrDefault
-    | key == Map.elementKey = Just $ Builtin.functionEvaluator evalElement
-    | key == Map.unitKey = Just $ Builtin.functionEvaluator evalUnit
-    | key == Map.updateKey = Just $ Builtin.functionEvaluator evalUpdate
-    | key == Map.in_keysKey = Just $ Builtin.functionEvaluator evalInKeys
-    | key == Map.keysKey = Just $ Builtin.functionEvaluator evalKeys
-    | key == Map.keys_listKey = Just $ Builtin.functionEvaluator evalKeysList
-    | key == Map.removeKey = Just $ Builtin.functionEvaluator evalRemove
-    | key == Map.removeAllKey = Just $ Builtin.functionEvaluator evalRemoveAll
-    | key == Map.sizeKey = Just $ Builtin.functionEvaluator evalSize
-    | key == Map.valuesKey = Just $ Builtin.functionEvaluator evalValues
-    | key == Map.inclusionKey = Just $ Builtin.functionEvaluator evalInclusion
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
+builtinFunctions key termLike sideCondition
+    | key == Map.concatKey = Just $ Builtin.functionEvaluator evalConcat termLike sideCondition
+    | key == Map.lookupKey = Just $ Builtin.functionEvaluator evalLookup termLike sideCondition
+    | key == Map.lookupOrDefaultKey = Just $ Builtin.functionEvaluator evalLookupOrDefault termLike sideCondition
+    | key == Map.elementKey = Just $ Builtin.functionEvaluator evalElement termLike sideCondition
+    | key == Map.unitKey = Just $ Builtin.functionEvaluator evalUnit termLike sideCondition
+    | key == Map.updateKey = Just $ Builtin.functionEvaluator evalUpdate termLike sideCondition
+    | key == Map.in_keysKey = Just $ Builtin.functionEvaluator evalInKeys termLike sideCondition
+    | key == Map.keysKey = Just $ Builtin.functionEvaluator evalKeys termLike sideCondition
+    | key == Map.keys_listKey = Just $ Builtin.functionEvaluator evalKeysList termLike sideCondition
+    | key == Map.removeKey = Just $ Builtin.functionEvaluator evalRemove termLike sideCondition
+    | key == Map.removeAllKey = Just $ Builtin.functionEvaluator evalRemoveAll termLike sideCondition
+    | key == Map.sizeKey = Just $ Builtin.functionEvaluator evalSize termLike sideCondition
+    | key == Map.valuesKey = Just $ Builtin.functionEvaluator evalValues termLike sideCondition
+    | key == Map.inclusionKey = Just $ Builtin.functionEvaluator evalInclusion termLike sideCondition
     | otherwise = Nothing
 
 {- | Convert a Map-sorted 'TermLike' to its internal representation.

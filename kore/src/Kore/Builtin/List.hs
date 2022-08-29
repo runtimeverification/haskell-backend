@@ -366,21 +366,19 @@ evalUpdateAll _ _ _ = Builtin.wrongArity updateKey
 -- | Implement builtin function evaluation.
 builtinFunctions ::
     Text ->
-    Maybe
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
-        )
-builtinFunctions key
-    | key == concatKey = Just $ Builtin.functionEvaluator evalConcat
-    | key == elementKey = Just $ Builtin.functionEvaluator evalElement
-    | key == unitKey = Just $ Builtin.functionEvaluator evalUnit
-    | key == getKey = Just $ Builtin.functionEvaluator evalGet
-    | key == updateKey = Just $ Builtin.functionEvaluator evalUpdate
-    | key == inKey = Just $ Builtin.functionEvaluator evalIn
-    | key == sizeKey = Just $ Builtin.functionEvaluator evalSize
-    | key == makeKey = Just $ Builtin.functionEvaluator evalMake
-    | key == updateAllKey = Just $ Builtin.functionEvaluator evalUpdateAll
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
+builtinFunctions key termLike sideCondition
+    | key == concatKey = Just $ Builtin.functionEvaluator evalConcat termLike sideCondition
+    | key == elementKey = Just $ Builtin.functionEvaluator evalElement termLike sideCondition
+    | key == unitKey = Just $ Builtin.functionEvaluator evalUnit termLike sideCondition
+    | key == getKey = Just $ Builtin.functionEvaluator evalGet termLike sideCondition
+    | key == updateKey = Just $ Builtin.functionEvaluator evalUpdate termLike sideCondition
+    | key == inKey = Just $ Builtin.functionEvaluator evalIn termLike sideCondition
+    | key == sizeKey = Just $ Builtin.functionEvaluator evalSize termLike sideCondition
+    | key == makeKey = Just $ Builtin.functionEvaluator evalMake termLike sideCondition
+    | key == updateAllKey = Just $ Builtin.functionEvaluator evalUpdateAll termLike sideCondition
     | otherwise = Nothing
 
 data FirstElemVarData = FirstElemVarData

@@ -251,46 +251,44 @@ expectBuiltinInt _ =
 -- | Implement builtin function evaluation.
 builtinFunctions ::
     Text ->
-    Maybe
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
-        )
-builtinFunctions key
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
+builtinFunctions key termLike sideCondition
     -- TODO (thomas.tuegel): Add MonadRandom to evaluation context to
     -- implement rand and srand.
-    | key == randKey = Just Builtin.notImplemented
-    | key == srandKey = Just Builtin.notImplemented
-    | key == gtKey = Just $ comparator gtKey (>)
-    | key == geKey = Just $ comparator geKey (>=)
-    | key == eqKey = Just $ Builtin.functionEvaluator evalEq
-    | key == leKey = Just $ comparator leKey (<=)
-    | key == ltKey = Just $ comparator ltKey (<)
-    | key == neKey = Just $ comparator neKey (/=)
+    | key == randKey = Just $ Builtin.notImplemented termLike sideCondition
+    | key == srandKey = Just $ Builtin.notImplemented termLike sideCondition
+    | key == gtKey = Just $ comparator gtKey (>) termLike sideCondition
+    | key == geKey = Just $ comparator geKey (>=) termLike sideCondition
+    | key == eqKey = Just $ Builtin.functionEvaluator evalEq termLike sideCondition
+    | key == leKey = Just $ comparator leKey (<=) termLike sideCondition
+    | key == ltKey = Just $ comparator ltKey (<) termLike sideCondition
+    | key == neKey = Just $ comparator neKey (/=) termLike sideCondition
     -- Ordering operations
-    | key == minKey = Just $ binaryOperator minKey min
-    | key == maxKey = Just $ binaryOperator maxKey max
+    | key == minKey = Just $ binaryOperator minKey min termLike sideCondition
+    | key == maxKey = Just $ binaryOperator maxKey max termLike sideCondition
     -- Arithmetic operations
-    | key == addKey = Just $ binaryOperator addKey (+)
-    | key == subKey = Just $ binaryOperator subKey (-)
-    | key == mulKey = Just $ binaryOperator mulKey (*)
-    | key == absKey = Just $ unaryOperator absKey abs
+    | key == addKey = Just $ binaryOperator addKey (+) termLike sideCondition
+    | key == subKey = Just $ binaryOperator subKey (-) termLike sideCondition
+    | key == mulKey = Just $ binaryOperator mulKey (*) termLike sideCondition
+    | key == absKey = Just $ unaryOperator absKey abs termLike sideCondition
     -- Division operations
-    | key == edivKey = Just $ partialBinaryOperator edivKey ediv
-    | key == emodKey = Just $ partialBinaryOperator emodKey emod
-    | key == tdivKey = Just $ partialBinaryOperator tdivKey tdiv
-    | key == tmodKey = Just $ partialBinaryOperator tmodKey tmod
+    | key == edivKey = Just $ partialBinaryOperator edivKey ediv termLike sideCondition
+    | key == emodKey = Just $ partialBinaryOperator emodKey emod termLike sideCondition
+    | key == tdivKey = Just $ partialBinaryOperator tdivKey tdiv termLike sideCondition
+    | key == tmodKey = Just $ partialBinaryOperator tmodKey tmod termLike sideCondition
     -- Bitwise operations
-    | key == andKey = Just $ binaryOperator andKey (.&.)
-    | key == orKey = Just $ binaryOperator orKey (.|.)
-    | key == xorKey = Just $ binaryOperator xorKey xor
-    | key == notKey = Just $ unaryOperator notKey complement
-    | key == shlKey = Just $ binaryOperator shlKey (\a -> shift a . fromInteger)
-    | key == shrKey = Just $ binaryOperator shrKey (\a -> shift a . fromInteger . negate)
+    | key == andKey = Just $ binaryOperator andKey (.&.) termLike sideCondition
+    | key == orKey = Just $ binaryOperator orKey (.|.) termLike sideCondition
+    | key == xorKey = Just $ binaryOperator xorKey xor termLike sideCondition
+    | key == notKey = Just $ unaryOperator notKey complement termLike sideCondition
+    | key == shlKey = Just $ binaryOperator shlKey (\a -> shift a . fromInteger) termLike sideCondition
+    | key == shrKey = Just $ binaryOperator shrKey (\a -> shift a . fromInteger . negate) termLike sideCondition
     -- Exponential and logarithmic operations
-    | key == powKey = Just $ partialBinaryOperator powKey pow
-    | key == powmodKey = Just $ partialTernaryOperator powmodKey powmod
-    | key == log2Key = Just $ partialUnaryOperator log2Key log2
+    | key == powKey = Just $ partialBinaryOperator powKey pow termLike sideCondition
+    | key == powmodKey = Just $ partialTernaryOperator powmodKey powmod termLike sideCondition
+    | key == log2Key = Just $ partialUnaryOperator log2Key log2 termLike sideCondition
     | otherwise = Nothing
   where
     unaryOperator name op =

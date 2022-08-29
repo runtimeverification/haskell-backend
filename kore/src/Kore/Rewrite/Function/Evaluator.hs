@@ -205,36 +205,19 @@ evaluatePattern
 lookupAxiomSimplifier ::
     MonadSimplify simplifier =>
     TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
     MaybeT
         simplifier
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
-        )
-lookupAxiomSimplifier termLike = do
+        (Simplifier (AttemptedAxiom RewritingVariableName))
+lookupAxiomSimplifier termLike sideCondition = do
     hookedSymbols <- lift askHookedSymbols
     axiomEquations <- lift askAxiomEquations
-    let getEvaluator ::
+    let getSimplifier ::
             Axiom.Identifier.AxiomIdentifier ->
-            Maybe
-                ( TermLike RewritingVariableName ->
-                  SideCondition RewritingVariableName ->
-                  Simplifier (AttemptedAxiom RewritingVariableName)
-                )
-        getEvaluator axiomIdentifier = Map.lookup axiomIdentifier axiomEquations >>= mkEvaluator
-
-        combineEvaluators ::
-            Axiom.Identifier.AxiomIdentifier ->
-            Maybe
-                ( TermLike RewritingVariableName ->
-                  SideCondition RewritingVariableName ->
-                  Simplifier (AttemptedAxiom RewritingVariableName)
-                )
-        combineEvaluators identifiers =
-            case mapMaybe getEvaluator identifiers of
-                [] -> Nothing
-                [a] -> Just a
-                as -> Just $ firstFullEvaluation as
+            Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
+        getSimplifier axiomIdentifier = do
+            equations <- Map.lookup axiomIdentifier axiomEquations
+            mkEvaluator equations termLike sideCondition
 
     let missing = do
             -- TODO (thomas.tuegel): Factor out a second function evaluator and
@@ -255,24 +238,26 @@ lookupAxiomSimplifier termLike = do
             empty
     maybe missing return $ do
         let axiomIdentifier = Axiom.Identifier.matchAxiomIdentifier termLike
+        let exact = getSimplifier axiomIdentifier
         case axiomIdentifier of
             Axiom.Identifier.Application appId ->
                 let builtinEvaluator = do
                         name <- Map.lookup appId hookedSymbols
-                        builtinEvaluation <$> koreEvaluators name
-                 in combineEvaluatorsWithFallBack (builtinEvaluator, getEvaluator axiomIdentifier)
+                        koreSimplifier <- koreEvaluators name termLike sideCondition
+                        Just (builtinEvaluation koreSimplifier termLike)
+                 in combineSimplifiersWithFallBack (builtinEvaluator, exact)
             Axiom.Identifier.Ceil _ ->
                 let inexact =
                         [ Axiom.Identifier.Ceil Axiom.Identifier.Variable
                         , Axiom.Identifier.Ceil Axiom.Identifier.Other
                         ]
-                 in combineEvaluators $ axiomIdentifier : inexact
+                 in combineSimplifiers $ exact : map getSimplifier inexact
             Axiom.Identifier.Exists _ ->
                 let inexact =
                         [ Axiom.Identifier.Exists Axiom.Identifier.Variable
                         , Axiom.Identifier.Exists Axiom.Identifier.Other
                         ]
-                 in combineEvaluators $ axiomIdentifier : inexact
+                 in combineSimplifiers $ exact : map getSimplifier inexact
             Axiom.Identifier.Equals id1 id2 ->
                 let inexact =
                         [ Axiom.Identifier.Equals Axiom.Identifier.Variable id2
@@ -283,41 +268,39 @@ lookupAxiomSimplifier termLike = do
                         , Axiom.Identifier.Equals Axiom.Identifier.Other Axiom.Identifier.Variable
                         , Axiom.Identifier.Equals Axiom.Identifier.Variable Axiom.Identifier.Other
                         ]
-                 in combineEvaluators $ axiomIdentifier : inexact
+                 in combineSimplifiers $ exact : map getSimplifier inexact
             Axiom.Identifier.Not _ ->
                 let inexact =
                         [ Axiom.Identifier.Not Axiom.Identifier.Variable
                         , Axiom.Identifier.Not Axiom.Identifier.Other
                         ]
-                 in combineEvaluators $ axiomIdentifier : inexact
-            Axiom.Identifier.Variable -> getEvaluator axiomIdentifier
-            Axiom.Identifier.DV -> getEvaluator axiomIdentifier
-            Axiom.Identifier.Other -> getEvaluator axiomIdentifier
+                 in combineSimplifiers $ exact : map getSimplifier inexact
+            Axiom.Identifier.Variable -> exact
+            Axiom.Identifier.DV -> exact
+            Axiom.Identifier.Other -> exact
   where
     getHook :: Symbol -> Maybe Text
     getHook = Attribute.getHook . Attribute.hook . symbolAttributes
 
-    combineEvaluatorsWithFallBack ::
-        ( Maybe
-            ( TermLike RewritingVariableName ->
-              SideCondition RewritingVariableName ->
-              Simplifier (AttemptedAxiom RewritingVariableName)
-            )
-        , Maybe
-            ( TermLike RewritingVariableName ->
-              SideCondition RewritingVariableName ->
-              Simplifier (AttemptedAxiom RewritingVariableName)
-            )
+    combineSimplifiers ::
+        [Maybe (Simplifier (AttemptedAxiom RewritingVariableName))] ->
+        Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
+    combineSimplifiers maybeEvaluators =
+        case catMaybes maybeEvaluators of
+            [] -> Nothing
+            [a] -> Just a
+            as -> Just $ firstFullEvaluation as termLike sideCondition
+
+    combineSimplifiersWithFallBack ::
+        ( Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
+        , Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
         ) ->
-        Maybe
-            ( TermLike RewritingVariableName ->
-              SideCondition RewritingVariableName ->
-              Simplifier (AttemptedAxiom RewritingVariableName)
-            )
-    combineEvaluatorsWithFallBack = \case
+        Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
+    combineSimplifiersWithFallBack = \case
         (Nothing, eval2) -> eval2
         (eval1, Nothing) -> eval1
-        (Just eval1, Just eval2) -> Just $ simplifierWithFallback eval1 eval2
+        (Just eval1, Just eval2) ->
+            Just $ simplifierWithFallback eval1 eval2 termLike sideCondition
 
 criticalMissingHook :: Symbol -> Text -> a
 criticalMissingHook symbol hookName =
@@ -359,10 +342,10 @@ maybeEvaluatePattern
     defaultValue
     sideCondition =
         do
-            evaluator <- lookupAxiomSimplifier termLike
+            evaluator <- lookupAxiomSimplifier termLike sideCondition
             lift $ do
                 merged <- do
-                    result <- liftSimplifier $ evaluator termLike sideCondition
+                    result <- liftSimplifier evaluator
                     flattened <- case result of
                         AttemptedAxiom.Applied
                             AttemptedAxiomResults

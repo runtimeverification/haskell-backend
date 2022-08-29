@@ -429,10 +429,7 @@ If that result contains more than one pattern, or it contains a reminder,
 the evaluation fails with 'error' (may change in the future).
 -}
 firstFullEvaluation ::
-    [ TermLike RewritingVariableName ->
-    SideCondition RewritingVariableName ->
-    Simplifier (AttemptedAxiom RewritingVariableName)
-    ] ->
+    [Simplifier (AttemptedAxiom RewritingVariableName)] ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
     Simplifier (AttemptedAxiom RewritingVariableName)
@@ -466,10 +463,7 @@ data NonSimplifiability
     | Conditional
 
 applyFirstSimplifierThatWorks ::
-    [ TermLike RewritingVariableName ->
-    SideCondition RewritingVariableName ->
-    Simplifier (AttemptedAxiom RewritingVariableName)
-    ] ->
+    [Simplifier (AttemptedAxiom RewritingVariableName)] ->
     AcceptsMultipleResults ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
@@ -478,10 +472,7 @@ applyFirstSimplifierThatWorks evaluators multipleResults =
     applyFirstSimplifierThatWorksWorker evaluators multipleResults Always
 
 applyFirstSimplifierThatWorksWorker ::
-    [ TermLike RewritingVariableName ->
-    SideCondition RewritingVariableName ->
-    Simplifier (AttemptedAxiom RewritingVariableName)
-    ] ->
+    [Simplifier (AttemptedAxiom RewritingVariableName)] ->
     AcceptsMultipleResults ->
     NonSimplifiability ->
     TermLike RewritingVariableName ->
@@ -494,13 +485,13 @@ applyFirstSimplifierThatWorksWorker [] _ Conditional _ sideCondition =
         NotApplicableUntilConditionChanges $
             toRepresentation sideCondition
 applyFirstSimplifierThatWorksWorker
-    (evaluator : evaluators)
+    (simplifier : simplifiers)
     multipleResults
     nonSimplifiability
     patt
     sideCondition =
         do
-            applicationResult <- evaluator patt sideCondition
+            applicationResult <- simplifier
 
             case applicationResult of
                 Applied
@@ -537,7 +528,7 @@ applyFirstSimplifierThatWorksWorker
       where
         tryNextSimplifier nonSimplifiability' =
             applyFirstSimplifierThatWorksWorker
-                evaluators
+                simplifiers
                 multipleResults
                 nonSimplifiability'
                 patt

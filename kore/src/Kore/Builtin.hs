@@ -93,24 +93,23 @@ koreVerifiers =
 -}
 koreEvaluators ::
     Text ->
-    Maybe
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
-        )
-koreEvaluators key =
-    asum
-        [ Bool.builtinFunctions key
-        , Int.builtinFunctions key
-        , IO.builtinFunctions key
-        , KEqual.builtinFunctions key
-        , List.builtinFunctions key
-        , Map.builtinFunctions key
-        , Set.builtinFunctions key
-        , String.builtinFunctions key
-        , Krypto.builtinFunctions key
-        , InternalBytes.builtinFunctions key
-        ]
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
+koreEvaluators key termLike sideCondition =
+    asum $
+        map
+            (\evaluator -> evaluator key termLike sideCondition)
+            [ Bool.builtinFunctions
+            , Int.builtinFunctions
+            , KEqual.builtinFunctions
+            , List.builtinFunctions
+            , Map.builtinFunctions
+            , Set.builtinFunctions
+            , String.builtinFunctions
+            , Krypto.builtinFunctions
+            , InternalBytes.builtinFunctions
+            ]
 {-# INLINE koreEvaluators #-}
 
 {- | Convert a 'TermLike' to its internal representation.

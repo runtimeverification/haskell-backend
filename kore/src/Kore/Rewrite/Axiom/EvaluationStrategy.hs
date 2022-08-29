@@ -164,14 +164,8 @@ simplificationEvaluation equation term condition = do
 returns Applicable, otherwise returns the result of the second.
 -}
 simplifierWithFallback ::
-    ( TermLike RewritingVariableName ->
-      SideCondition RewritingVariableName ->
-      Simplifier (AttemptedAxiom RewritingVariableName)
-    ) ->
-    ( TermLike RewritingVariableName ->
-      SideCondition RewritingVariableName ->
-      Simplifier (AttemptedAxiom RewritingVariableName)
-    ) ->
+    Simplifier (AttemptedAxiom RewritingVariableName) ->
+    Simplifier (AttemptedAxiom RewritingVariableName) ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
     Simplifier (AttemptedAxiom RewritingVariableName)
@@ -182,74 +176,62 @@ simplifierWithFallback first second =
 on concrete patterns.
 -}
 builtinEvaluation ::
-    ( TermLike RewritingVariableName ->
-      SideCondition RewritingVariableName ->
-      Simplifier (AttemptedAxiom RewritingVariableName)
-    ) ->
+    Simplifier (AttemptedAxiom RewritingVariableName) ->
     TermLike RewritingVariableName ->
-    SideCondition RewritingVariableName ->
     Simplifier (AttemptedAxiom RewritingVariableName)
-builtinEvaluation evaluator =
-    evaluateBuiltin evaluator
+builtinEvaluation = evaluateBuiltin
 
 evaluateBuiltin ::
     -- | Map from axiom IDs to axiom evaluators
-    ( TermLike RewritingVariableName ->
-      SideCondition RewritingVariableName ->
-      Simplifier (AttemptedAxiom RewritingVariableName)
-    ) ->
+    Simplifier (AttemptedAxiom RewritingVariableName) ->
     TermLike RewritingVariableName ->
-    SideCondition RewritingVariableName ->
     Simplifier (AttemptedAxiom RewritingVariableName)
-evaluateBuiltin
-    builtinEvaluator
-    patt
-    sideCondition =
-        do
-            result <- builtinEvaluator patt sideCondition
-            case result of
-                AttemptedAxiom.NotApplicable
-                    | App_ appHead children <- patt
-                      , Just hook_ <- Text.unpack <$> Attribute.getHook (symbolHook appHead)
-                      , all isValue children ->
-                        (error . show . Pretty.vsep)
-                            [ "Expecting hook "
-                                <> Pretty.squotes (Pretty.pretty hook_)
-                                <> " to reduce concrete pattern:"
-                            , Pretty.indent 4 (unparse patt)
-                            ]
-                _ -> return result
-      where
-        isValue pat =
-            maybe False TermLike.isConstructorLike $ asConcrete pat
+evaluateBuiltin builtinEvaluator patt =
+    do
+        result <- builtinEvaluator
+        case result of
+            AttemptedAxiom.NotApplicable
+                | App_ appHead children <- patt
+                  , Just hook_ <- Text.unpack <$> Attribute.getHook (symbolHook appHead)
+                  , all isValue children ->
+                    (error . show . Pretty.vsep)
+                        [ "Expecting hook "
+                            <> Pretty.squotes (Pretty.pretty hook_)
+                            <> " to reduce concrete pattern:"
+                        , Pretty.indent 4 (unparse patt)
+                        ]
+            _ -> return result
+  where
+    isValue pat =
+        maybe False TermLike.isConstructorLike $ asConcrete pat
 
 {- | TODO (breakerzirconia): either refactor the documentation or inline this function.
 Creates an 'BuiltinAndAxiomSimplifier' from a set of equations.
 -}
 mkEvaluator ::
     [Equation RewritingVariableName] ->
-    Maybe
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
-        )
-mkEvaluator equations =
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
+mkEvaluator equations termLike sideCondition =
     case (simplificationEvaluator, definitionEvaluator) of
         (Nothing, Nothing) -> Nothing
         (Just evaluator, Nothing) -> Just evaluator
         (Nothing, Just evaluator) -> Just evaluator
         (Just sEvaluator, Just dEvaluator) ->
-            Just (simplifierWithFallback dEvaluator sEvaluator)
+            Just (simplifierWithFallback dEvaluator sEvaluator termLike sideCondition)
   where
     PartitionedEquations{functionRules, simplificationRules} = partitionEquations equations
     simplificationEvaluator =
         if null simplificationRules
             then Nothing
             else
-                Just . firstFullEvaluation $
-                    simplificationEvaluation
-                        <$> simplificationRules
+                let simplifiers =
+                        map
+                            (\equation -> simplificationEvaluation equation termLike sideCondition)
+                            simplificationRules
+                 in Just $ firstFullEvaluation simplifiers termLike sideCondition
     definitionEvaluator =
         if null functionRules
             then Nothing
-            else Just $ definitionEvaluation functionRules
+            else Just $ definitionEvaluation functionRules termLike sideCondition

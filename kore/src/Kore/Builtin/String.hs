@@ -453,26 +453,24 @@ evalString2Token = Builtin.functionEvaluator evalString2Token0
 -- | Implement builtin function evaluation.
 builtinFunctions ::
     Text ->
-    Maybe
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
-        )
-builtinFunctions key
-    | key == eqKey = Just $ comparator eqKey (==)
-    | key == ltKey = Just $ comparator ltKey (<)
-    | key == plusKey = Just $ binaryOperator plusKey Text.append
-    | key == substrKey = Just evalSubstr
-    | key == lengthKey = Just evalLength
-    | key == findKey = Just evalFind
-    | key == string2BaseKey = Just evalString2Base
-    | key == base2StringKey = Just evalBase2String
-    | key == string2IntKey = Just evalString2Int
-    | key == int2StringKey = Just evalInt2String
-    | key == chrKey = Just evalChr
-    | key == ordKey = Just evalOrd
-    | key == token2StringKey = Just evalToken2String
-    | key == string2TokenKey = Just evalString2Token
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
+builtinFunctions key termLike sideCondition
+    | key == eqKey = Just $ comparator eqKey (==) termLike sideCondition
+    | key == ltKey = Just $ comparator ltKey (<) termLike sideCondition
+    | key == plusKey = Just $ binaryOperator plusKey Text.append termLike sideCondition
+    | key == substrKey = Just $ evalSubstr termLike sideCondition
+    | key == lengthKey = Just $ evalLength termLike sideCondition
+    | key == findKey = Just $ evalFind termLike sideCondition
+    | key == string2BaseKey = Just $ evalString2Base termLike sideCondition
+    | key == base2StringKey = Just $ evalBase2String termLike sideCondition
+    | key == string2IntKey = Just $ evalString2Int termLike sideCondition
+    | key == int2StringKey = Just $ evalInt2String termLike sideCondition
+    | key == chrKey = Just $ evalChr termLike sideCondition
+    | key == ordKey = Just $ evalOrd termLike sideCondition
+    | key == token2StringKey = Just $ evalToken2String termLike sideCondition
+    | key == string2TokenKey = Just $ evalString2Token termLike sideCondition
     | otherwise = Nothing
   where
     comparator name op =

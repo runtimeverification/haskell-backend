@@ -585,27 +585,25 @@ bytes2int bytes end sign =
 
 builtinFunctions ::
     Text ->
-    Maybe
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
-        )
-builtinFunctions key
-    | key == bytes2StringKey = Just evalBytes2String
-    | key == string2BytesKey = Just evalString2Bytes
-    | key == decodeBytesKey = Just evalDecodeBytes
-    | key == encodeBytesKey = Just evalEncodeBytes
-    | key == updateKey = Just evalUpdate
-    | key == getKey = Just evalGet
-    | key == substrKey = Just evalSubstr
-    | key == replaceAtKey = Just evalReplaceAt
-    | key == padRightKey = Just evalPadRight
-    | key == padLeftKey = Just evalPadLeft
-    | key == reverseKey = Just evalReverse
-    | key == lengthKey = Just evalLength
-    | key == concatKey = Just evalConcat
-    | key == int2bytesKey = Just evalInt2bytes
-    | key == bytes2intKey = Just evalBytes2int
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
+builtinFunctions key termLike sideCondition
+    | key == bytes2StringKey = Just $ evalBytes2String termLike sideCondition
+    | key == string2BytesKey = Just $ evalString2Bytes termLike sideCondition
+    | key == decodeBytesKey = Just $ evalDecodeBytes termLike sideCondition
+    | key == encodeBytesKey = Just $ evalEncodeBytes termLike sideCondition
+    | key == updateKey = Just $ evalUpdate termLike sideCondition
+    | key == getKey = Just $ evalGet termLike sideCondition
+    | key == substrKey = Just $ evalSubstr termLike sideCondition
+    | key == replaceAtKey = Just $ evalReplaceAt termLike sideCondition
+    | key == padRightKey = Just $ evalPadRight termLike sideCondition
+    | key == padLeftKey = Just $ evalPadLeft termLike sideCondition
+    | key == reverseKey = Just $ evalReverse termLike sideCondition
+    | key == lengthKey = Just $ evalLength termLike sideCondition
+    | key == concatKey = Just $ evalConcat termLike sideCondition
+    | key == int2bytesKey = Just $ evalInt2bytes termLike sideCondition
+    | key == bytes2intKey = Just $ evalBytes2int termLike sideCondition
     | otherwise = Nothing
 
 -- | @UnifyBytes@ matches unification problems on @\\dv{Bytes}(_)@ itself.

@@ -134,15 +134,13 @@ otherwise.
 -}
 builtinFunctions ::
     Text ->
-    Maybe
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
-        )
-builtinFunctions key
-    | key == eqKey = Just $ applicationAxiomSimplifier (evalKEq True)
-    | key == neqKey = Just $ applicationAxiomSimplifier (evalKEq False)
-    | key == iteKey = Just $ applicationAxiomSimplifier evalKIte
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
+builtinFunctions key termLike sideCondition
+    | key == eqKey = Just $ applicationAxiomSimplifier (evalKEq True) termLike sideCondition
+    | key == neqKey = Just $ applicationAxiomSimplifier (evalKEq False) termLike sideCondition
+    | key == iteKey = Just $ applicationAxiomSimplifier evalKIte termLike sideCondition
     | otherwise = Nothing
 
 evalKEq ::
