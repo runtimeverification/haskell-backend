@@ -10,7 +10,7 @@
         },
         "first": {
                 "tag": "EVar",
-                "name": "a",
+                "name": "X",
                 "sort": {
                     "tag": "SortApp",
                     "name": "SortK",
@@ -26,7 +26,7 @@
             },
             "arg": {
                 "tag": "EVar",
-                "name": "a",
+                "name": "X",
                 "sort": {
                     "tag": "SortApp",
                     "name": "SortK",

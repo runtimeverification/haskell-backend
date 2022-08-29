@@ -8,7 +8,7 @@
             "name": "SortK",
             "args": []
         },
-        "var": "x",
+        "var": "Z",
         "varSort": {
             "tag": "SortApp",
             "name": "SortK",
@@ -16,7 +16,7 @@
         },
         "arg": {
             "tag": "EVar",
-            "name": "x",
+            "name": "Z",
             "sort": {
                 "tag": "SortApp",
                 "name": "SortK",

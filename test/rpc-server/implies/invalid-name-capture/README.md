@@ -1,1 +1,1 @@
-`a => ∃ a. a`, confuses RHS's existential `a` with free variable `a` on LHS
+`X => ∃ X. X`, confuses RHS's existential `X` with free variable `X` on LHS

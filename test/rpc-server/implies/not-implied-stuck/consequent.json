@@ -2,12 +2,73 @@
     "format": "KORE",
     "version": 1,
     "term": {
-        "tag": "EVar",
-        "name": "b",
+        "tag": "Exists",
         "sort": {
             "tag": "SortApp",
             "name": "SortK",
             "args": []
+        },
+        "var": "Z",
+        "varSort": {
+            "tag": "SortApp",
+            "name": "SortK",
+            "args": []
+        },
+        "arg": {
+            "tag": "And",
+            "sort": {
+                "tag": "SortApp",
+                "name": "SortK",
+                "args": []
+            },
+            "first": {
+                "tag": "EVar",
+                "name": "Z",
+                "sort": {
+                    "tag": "SortApp",
+                    "name": "SortK",
+                    "args": []
+                }
+            },
+            "second": {
+                "tag": "Not",
+                "sort": {
+                    "tag": "SortApp",
+                    "name": "SortK",
+                    "args": []
+                },
+                "arg": {
+                    "tag":"Equals",
+                    "sort":{
+                        "tag": "SortApp",
+                        "name": "SortK",
+                        "args": []
+                    },
+                    "argSort":{
+                        "tag": "SortApp",
+                        "name": "SortK",
+                        "args": []
+                    },
+                    "first":{
+                        "tag":"EVar",
+                        "name":"X",
+                        "sort":{
+                            "tag": "SortApp",
+                            "name": "SortK",
+                            "args": []
+                        }
+                    },
+                    "second":{
+                        "tag":"EVar",
+                        "name":"Z",
+                        "sort":{
+                            "tag": "SortApp",
+                            "name": "SortK",
+                            "args": []
+                        }
+                    }
+                }
+            }
         }
     }
 }

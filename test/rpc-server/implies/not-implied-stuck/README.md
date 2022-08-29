@@ -1,1 +1,1 @@
-`a => b`, response `False`, with substitution `[b/a]`
+`X => ∃ Z. (Z ∧ ¬ (X = Z))`, response `False`, with substitution `[Z/X]`

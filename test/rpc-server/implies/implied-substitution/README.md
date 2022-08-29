@@ -1,1 +1,1 @@
-`a => ∃ x. x`, response `True`, with substitution `[x/a]`
+`X => ∃ Z. Z`, response `True`, with substitution `[Z/X]`
