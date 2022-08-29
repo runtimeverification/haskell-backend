@@ -72,19 +72,19 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
 import Kore.Internal.TermLike
 import Kore.Log.WarnNotImplemented
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.Simplify (
-    BuiltinAndAxiomSimplifier,
- )
+import Kore.Simplify.Simplify
 import Kore.Unification.Unify (
     MonadUnify,
  )
 import Kore.Verified qualified as Verified
-import Log (MonadLog)
 import Prelude.Kore
 import System.IO.Unsafe (
     unsafeDupablePerformIO,
@@ -223,7 +223,10 @@ matchBuiltinBytes :: Monad m => TermLike variable -> MaybeT m ByteString
 matchBuiltinBytes (InternalBytes_ _ byteString) = return $ ShortByteString.fromShort byteString
 matchBuiltinBytes _ = empty
 
-evalBytes2String :: BuiltinAndAxiomSimplifier
+evalBytes2String ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalBytes2String =
     Builtin.functionEvaluator evalBytes2String0
   where
@@ -235,7 +238,10 @@ evalBytes2String =
             & return
     evalBytes2String0 _ _ _ = Builtin.wrongArity bytes2StringKey
 
-evalString2Bytes :: BuiltinAndAxiomSimplifier
+evalString2Bytes ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalString2Bytes =
     Builtin.functionEvaluator evalString2Bytes0
   where
@@ -247,7 +253,10 @@ evalString2Bytes =
             & return
     evalString2Bytes0 _ _ _ = Builtin.wrongArity string2BytesKey
 
-evalDecodeBytes :: BuiltinAndAxiomSimplifier
+evalDecodeBytes ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalDecodeBytes = Builtin.applicationEvaluator evalDecodeBytes0
   where
     evalDecodeBytes0 _ app
@@ -288,7 +297,10 @@ decodeUtf app resultSort = \case
         Right str -> String.asPattern resultSort str
         Left _ -> Pattern.bottomOf resultSort
 
-evalEncodeBytes :: BuiltinAndAxiomSimplifier
+evalEncodeBytes ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalEncodeBytes = Builtin.applicationEvaluator evalEncodeBytes0
   where
     evalEncodeBytes0 _ app
@@ -307,7 +319,10 @@ evalEncodeBytes = Builtin.applicationEvaluator evalEncodeBytes0
                 _ -> warnNotImplemented app >> empty
     evalEncodeBytes0 _ _ = Builtin.wrongArity encodeBytesKey
 
-evalUpdate :: BuiltinAndAxiomSimplifier
+evalUpdate ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalUpdate =
     Builtin.functionEvaluator evalUpdate0
   where
@@ -327,7 +342,10 @@ evalUpdate =
         return result
     evalUpdate0 _ _ _ = Builtin.wrongArity updateKey
 
-evalGet :: BuiltinAndAxiomSimplifier
+evalGet ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalGet =
     Builtin.functionEvaluator evalGet0
   where
@@ -346,7 +364,10 @@ evalGet =
         return result
     evalGet0 _ _ _ = Builtin.wrongArity getKey
 
-evalSubstr :: BuiltinAndAxiomSimplifier
+evalSubstr ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalSubstr =
     Builtin.functionEvaluator evalSubstr0
   where
@@ -367,7 +388,10 @@ evalSubstr =
         return result
     evalSubstr0 _ _ _ = Builtin.wrongArity substrKey
 
-evalReplaceAt :: BuiltinAndAxiomSimplifier
+evalReplaceAt ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalReplaceAt =
     Builtin.functionEvaluator evalReplaceAt0
   where
@@ -394,7 +418,10 @@ evalReplaceAt =
       where
         delta = ByteString.length replacement
 
-evalPadRight :: BuiltinAndAxiomSimplifier
+evalPadRight ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalPadRight =
     Builtin.functionEvaluator evalPadRight0
   where
@@ -412,7 +439,10 @@ evalPadRight =
         len1 = ByteString.length bytes
         delta = len2 - len1
 
-evalPadLeft :: BuiltinAndAxiomSimplifier
+evalPadLeft ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalPadLeft =
     Builtin.functionEvaluator evalPadLeft0
   where
@@ -430,7 +460,10 @@ evalPadLeft =
         len1 = ByteString.length bytes
         delta = len2 - len1
 
-evalReverse :: BuiltinAndAxiomSimplifier
+evalReverse ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalReverse =
     Builtin.functionEvaluator evalReverse0
   where
@@ -442,7 +475,10 @@ evalReverse =
             & return
     evalReverse0 _ _ _ = Builtin.wrongArity reverseKey
 
-evalLength :: BuiltinAndAxiomSimplifier
+evalLength ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalLength =
     Builtin.functionEvaluator evalLength0
   where
@@ -454,7 +490,10 @@ evalLength =
             & return
     evalLength0 _ _ _ = Builtin.wrongArity lengthKey
 
-evalConcat :: BuiltinAndAxiomSimplifier
+evalConcat ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalConcat =
     Builtin.functionEvaluator evalConcat0
   where
@@ -467,7 +506,10 @@ evalConcat =
             & return
     evalConcat0 _ _ _ = Builtin.wrongArity concatKey
 
-evalInt2bytes :: BuiltinAndAxiomSimplifier
+evalInt2bytes ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalInt2bytes =
     Builtin.functionEvaluator evalInt2bytes0
   where
@@ -506,7 +548,10 @@ int2bytes len int end =
     word8 :: Integer -> Word8
     word8 = toEnum . fromEnum
 
-evalBytes2int :: BuiltinAndAxiomSimplifier
+evalBytes2int ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalBytes2int =
     Builtin.functionEvaluator evalBytes2int0
   where
@@ -538,7 +583,13 @@ bytes2int bytes end sign =
             LittleEndian _ -> bytes
             BigEndian _ -> ByteString.reverse bytes
 
-builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
+builtinFunctions ::
+    Text ->
+    Maybe
+        ( TermLike RewritingVariableName ->
+          SideCondition RewritingVariableName ->
+          Simplifier (AttemptedAxiom RewritingVariableName)
+        )
 builtinFunctions key
     | key == bytes2StringKey = Just evalBytes2String
     | key == string2BytesKey = Just evalString2Bytes

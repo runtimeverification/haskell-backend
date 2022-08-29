@@ -204,11 +204,22 @@ evaluatePattern
 lookupAxiomSimplifier ::
     MonadSimplify simplifier =>
     TermLike RewritingVariableName ->
-    MaybeT simplifier BuiltinAndAxiomSimplifier
+    MaybeT
+        simplifier
+        ( TermLike RewritingVariableName ->
+          SideCondition RewritingVariableName ->
+          Simplifier (AttemptedAxiom RewritingVariableName)
+        )
 lookupAxiomSimplifier termLike = do
     hookedSymbols <- lift askHookedSymbols
     axiomEquations <- lift askAxiomEquations
-    let getEvaluator :: Axiom.Identifier.AxiomIdentifier -> Maybe BuiltinAndAxiomSimplifier
+    let getEvaluator ::
+            Axiom.Identifier.AxiomIdentifier ->
+            Maybe
+                ( TermLike RewritingVariableName ->
+                  SideCondition RewritingVariableName ->
+                  Simplifier (AttemptedAxiom RewritingVariableName)
+                )
         getEvaluator axiomIdentifier = Map.lookup axiomIdentifier axiomEquations >>= mkEvaluator
 
     let missing = do
@@ -254,7 +265,18 @@ lookupAxiomSimplifier termLike = do
     getHook :: Symbol -> Maybe Text
     getHook = Attribute.getHook . Attribute.hook . symbolAttributes
 
-    combineEvaluators :: [Maybe BuiltinAndAxiomSimplifier] -> Maybe BuiltinAndAxiomSimplifier
+    combineEvaluators ::
+        [ Maybe
+            ( TermLike RewritingVariableName ->
+              SideCondition RewritingVariableName ->
+              Simplifier (AttemptedAxiom RewritingVariableName)
+            )
+        ] ->
+        Maybe
+            ( TermLike RewritingVariableName ->
+              SideCondition RewritingVariableName ->
+              Simplifier (AttemptedAxiom RewritingVariableName)
+            )
     combineEvaluators maybeEvaluators =
         case catMaybes maybeEvaluators of
             [] -> Nothing
@@ -262,8 +284,22 @@ lookupAxiomSimplifier termLike = do
             as -> Just $ firstFullEvaluation as
 
     combineEvaluatorsWithFallBack ::
-        (Maybe BuiltinAndAxiomSimplifier, Maybe BuiltinAndAxiomSimplifier) ->
-        Maybe BuiltinAndAxiomSimplifier
+        ( Maybe
+            ( TermLike RewritingVariableName ->
+              SideCondition RewritingVariableName ->
+              Simplifier (AttemptedAxiom RewritingVariableName)
+            )
+        , Maybe
+            ( TermLike RewritingVariableName ->
+              SideCondition RewritingVariableName ->
+              Simplifier (AttemptedAxiom RewritingVariableName)
+            )
+        ) ->
+        Maybe
+            ( TermLike RewritingVariableName ->
+              SideCondition RewritingVariableName ->
+              Simplifier (AttemptedAxiom RewritingVariableName)
+            )
     combineEvaluatorsWithFallBack = \case
         (Nothing, eval2) -> eval2
         (eval1, Nothing) -> eval1
@@ -309,7 +345,7 @@ maybeEvaluatePattern
     defaultValue
     sideCondition =
         do
-            BuiltinAndAxiomSimplifier evaluator <- lookupAxiomSimplifier termLike
+            evaluator <- lookupAxiomSimplifier termLike
             lift $ do
                 merged <- do
                     result <- liftSimplifier $ evaluator termLike sideCondition

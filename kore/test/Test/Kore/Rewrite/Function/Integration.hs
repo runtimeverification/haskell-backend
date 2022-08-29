@@ -41,6 +41,9 @@ import Kore.Internal.Predicate (
     makeEqualsPredicate,
     makeTruePredicate,
  )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
 import Kore.Internal.SideCondition qualified as SideCondition (
     top,
  )
@@ -447,12 +450,15 @@ evaluate axiomEquations termLike =
         TermLike.simplify SideCondition.top termLike
 
 evaluateWith ::
-    BuiltinAndAxiomSimplifier ->
+    ( TermLike RewritingVariableName ->
+      SideCondition RewritingVariableName ->
+      Simplifier (AttemptedAxiom RewritingVariableName)
+    ) ->
     TermLike RewritingVariableName ->
     IO CommonAttemptedAxiom
 evaluateWith simplifier patt =
     runSimplifierSMT testEnv $
-        runBuiltinAndAxiomSimplifier simplifier patt SideCondition.top
+        simplifier patt SideCondition.top
 
 -- Applied tests: check that one or more rules applies or not
 withApplied ::

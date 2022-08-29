@@ -113,7 +113,6 @@ import Kore.Simplify.NotSimplifier (
 import Kore.Simplify.Simplify (
     AttemptedAxiom (..),
     AttemptedAxiomResults (..),
-    BuiltinAndAxiomSimplifier (..),
     Simplifier,
     TermSimplifier,
     applicationAxiomSimplifier,
@@ -127,9 +126,12 @@ import Prelude.Kore
 
 -- TODO (thomas.tuegel): Include hook name here.
 
-notImplemented :: BuiltinAndAxiomSimplifier
+notImplemented ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 notImplemented =
-    BuiltinAndAxiomSimplifier notImplemented0
+    notImplemented0
   where
     notImplemented0 _ _ = pure NotApplicable
 
@@ -174,7 +176,9 @@ unaryOperator ::
     Text ->
     -- | Operation on builtin types
     (a -> b) ->
-    BuiltinAndAxiomSimplifier
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 unaryOperator extractVal asPattern ctx op =
     functionEvaluator unaryOperator0
   where
@@ -216,7 +220,9 @@ binaryOperator ::
     Text ->
     -- | Operation on builtin types
     (a -> a -> b) ->
-    BuiltinAndAxiomSimplifier
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 binaryOperator extractVal asPattern ctx op =
     functionEvaluator binaryOperator0
   where
@@ -257,7 +263,9 @@ ternaryOperator ::
     Text ->
     -- | Operation on builtin types
     (a -> a -> a -> b) ->
-    BuiltinAndAxiomSimplifier
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 ternaryOperator extractVal asPattern ctx op =
     functionEvaluator ternaryOperator0
   where
@@ -283,7 +291,11 @@ type Function =
     [TermLike variable] ->
     MaybeT Simplifier (Pattern variable)
 
-functionEvaluator :: Function -> BuiltinAndAxiomSimplifier
+functionEvaluator ::
+    Function ->
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 functionEvaluator impl =
     applicationEvaluator $ \sideCondition app -> do
         let Application{applicationSymbolOrAlias = symbol} = app
@@ -298,7 +310,9 @@ applicationEvaluator ::
       Application Symbol (TermLike variable) ->
       MaybeT Simplifier (Pattern variable)
     ) ->
-    BuiltinAndAxiomSimplifier
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 applicationEvaluator impl =
     applicationAxiomSimplifier evaluator
   where

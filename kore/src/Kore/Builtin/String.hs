@@ -76,6 +76,9 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugUnifyBottom (
     debugUnifyBottomAndReturnBottom,
@@ -84,9 +87,7 @@ import Kore.Log.WarnNotImplemented
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.Simplify (
-    BuiltinAndAxiomSimplifier,
- )
+import Kore.Simplify.Simplify
 import Kore.Unification.Unify as Unify
 import Numeric (
     readInt,
@@ -252,7 +253,10 @@ expectBuiltinString _ =
             InternalString{internalStringValue} = internal
         _ -> empty
 
-evalSubstr :: BuiltinAndAxiomSimplifier
+evalSubstr ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalSubstr = Builtin.functionEvaluator evalSubstr0
   where
     substr :: Int -> Int -> Text -> Text
@@ -268,7 +272,10 @@ evalSubstr = Builtin.functionEvaluator evalSubstr0
             & return
     evalSubstr0 _ _ _ = Builtin.wrongArity substrKey
 
-evalLength :: BuiltinAndAxiomSimplifier
+evalLength ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalLength = Builtin.functionEvaluator evalLength0
   where
     evalLength0 _ resultSort [_str] = do
@@ -279,7 +286,10 @@ evalLength = Builtin.functionEvaluator evalLength0
             & return
     evalLength0 _ _ _ = Builtin.wrongArity lengthKey
 
-evalFind :: BuiltinAndAxiomSimplifier
+evalFind ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalFind = Builtin.functionEvaluator evalFind0
   where
     maybeNotFound :: Maybe Int -> Integer
@@ -298,7 +308,10 @@ evalFind = Builtin.functionEvaluator evalFind0
             & return
     evalFind0 _ _ _ = Builtin.wrongArity findKey
 
-evalString2Base :: BuiltinAndAxiomSimplifier
+evalString2Base ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalString2Base = Builtin.applicationEvaluator evalString2Base0
   where
     evalString2Base0 _ app
@@ -329,7 +342,10 @@ readWithBase base = sign $ readInt base isDigit valDigit
         | 'A' <= c && c <= 'Z' = Just $ fromIntegral $ ord c - ord 'A' + 10
         | otherwise = Nothing
 
-evalBase2String :: BuiltinAndAxiomSimplifier
+evalBase2String ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalBase2String = Builtin.applicationEvaluator evalBase2String0
   where
     evalBase2String0 _ app
@@ -352,7 +368,10 @@ showWithBase int base = showSigned (showIntAtBase base toChar) 0 int ""
         | 0 <= digit && digit <= 9 = chr $ digit + 48
         | otherwise = chr $ digit + 87
 
-evalString2Int :: BuiltinAndAxiomSimplifier
+evalString2Int ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalString2Int = Builtin.functionEvaluator evalString2Int0
   where
     evalString2Int0 _ resultSort [_str] = do
@@ -363,7 +382,10 @@ evalString2Int = Builtin.functionEvaluator evalString2Int0
             _ -> return (Pattern.bottomOf resultSort)
     evalString2Int0 _ _ _ = Builtin.wrongArity string2IntKey
 
-evalInt2String :: BuiltinAndAxiomSimplifier
+evalInt2String ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalInt2String = Builtin.functionEvaluator evalInt2String0
   where
     evalInt2String0 _ resultSort [_int] = do
@@ -373,7 +395,10 @@ evalInt2String = Builtin.functionEvaluator evalInt2String0
             & return
     evalInt2String0 _ _ _ = Builtin.wrongArity int2StringKey
 
-evalChr :: BuiltinAndAxiomSimplifier
+evalChr ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalChr = Builtin.functionEvaluator evalChr0
   where
     evalChr0 _ resultSort [_n] = do
@@ -383,7 +408,10 @@ evalChr = Builtin.functionEvaluator evalChr0
             & return
     evalChr0 _ _ _ = Builtin.wrongArity chrKey
 
-evalOrd :: BuiltinAndAxiomSimplifier
+evalOrd ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalOrd = Builtin.functionEvaluator evalOrd0
   where
     evalOrd0 _ resultSort [_str] = do
@@ -399,7 +427,10 @@ evalOrd = Builtin.functionEvaluator evalOrd0
                 . ord
     evalOrd0 _ _ _ = Builtin.wrongArity ordKey
 
-evalToken2String :: BuiltinAndAxiomSimplifier
+evalToken2String ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalToken2String = Builtin.functionEvaluator evalToken2String0
   where
     evalToken2String0 _ resultSort [_dv] = do
@@ -407,7 +438,10 @@ evalToken2String = Builtin.functionEvaluator evalToken2String0
         return (asPattern resultSort _dv)
     evalToken2String0 _ _ _ = Builtin.wrongArity token2StringKey
 
-evalString2Token :: BuiltinAndAxiomSimplifier
+evalString2Token ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalString2Token = Builtin.functionEvaluator evalString2Token0
   where
     evalString2Token0 _ resultSort [_str] = do
@@ -417,7 +451,13 @@ evalString2Token = Builtin.functionEvaluator evalString2Token0
     evalString2Token0 _ _ _ = Builtin.wrongArity token2StringKey
 
 -- | Implement builtin function evaluation.
-builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
+builtinFunctions ::
+    Text ->
+    Maybe
+        ( TermLike RewritingVariableName ->
+          SideCondition RewritingVariableName ->
+          Simplifier (AttemptedAxiom RewritingVariableName)
+        )
 builtinFunctions key
     | key == eqKey = Just $ comparator eqKey (==)
     | key == ltKey = Just $ comparator ltKey (<)

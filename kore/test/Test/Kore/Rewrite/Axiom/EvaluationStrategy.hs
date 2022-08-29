@@ -24,6 +24,9 @@ import Kore.Internal.Predicate (
     makeNotPredicate,
     makeTruePredicate,
  )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
 import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike
 import Kore.Rewrite.Axiom.EvaluationStrategy
@@ -530,39 +533,50 @@ test_builtinEvaluation =
         )
     ]
 
-failingEvaluator :: BuiltinAndAxiomSimplifier
-failingEvaluator =
-    BuiltinAndAxiomSimplifier $ \_ _ ->
-        return AttemptedAxiom.NotApplicable
+failingEvaluator ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
+failingEvaluator _ _ = return AttemptedAxiom.NotApplicable
 
 axiomEvaluatorWithRequires ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     Predicate RewritingVariableName ->
-    BuiltinAndAxiomSimplifier
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 axiomEvaluatorWithRequires left right requires =
     simplificationEvaluation (axiom left right requires)
 
 axiomEvaluator ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    BuiltinAndAxiomSimplifier
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 axiomEvaluator left right =
     simplificationEvaluation (axiom left right makeTruePredicate)
 
 evaluate ::
-    BuiltinAndAxiomSimplifier ->
+    ( TermLike RewritingVariableName ->
+      SideCondition RewritingVariableName ->
+      Simplifier (AttemptedAxiom RewritingVariableName)
+    ) ->
     TermLike RewritingVariableName ->
     IO CommonAttemptedAxiom
 evaluate simplifier term =
     evaluateWithPredicate simplifier term makeTruePredicate
 
 evaluateWithPredicate ::
-    BuiltinAndAxiomSimplifier ->
+    ( TermLike RewritingVariableName ->
+      SideCondition RewritingVariableName ->
+      Simplifier (AttemptedAxiom RewritingVariableName)
+    ) ->
     TermLike RewritingVariableName ->
     Predicate RewritingVariableName ->
     IO CommonAttemptedAxiom
-evaluateWithPredicate (BuiltinAndAxiomSimplifier simplifier) term predicate =
+evaluateWithPredicate simplifier term predicate =
     runSimplifierSMT Mock.env $
         simplifier
             term

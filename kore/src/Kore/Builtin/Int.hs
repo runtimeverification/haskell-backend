@@ -112,6 +112,9 @@ import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeCeilPredicate,
  )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
 import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugUnifyBottom (debugUnifyBottomAndReturnBottom)
@@ -119,7 +122,8 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Simplify (
-    BuiltinAndAxiomSimplifier,
+    AttemptedAxiom,
+    Simplifier,
  )
 import Kore.Unification.Unify as Unify
 import Prelude.Kore
@@ -245,7 +249,13 @@ expectBuiltinInt _ =
         _ -> empty
 
 -- | Implement builtin function evaluation.
-builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
+builtinFunctions ::
+    Text ->
+    Maybe
+        ( TermLike RewritingVariableName ->
+          SideCondition RewritingVariableName ->
+          Simplifier (AttemptedAxiom RewritingVariableName)
+        )
 builtinFunctions key
     -- TODO (thomas.tuegel): Add MonadRandom to evaluation context to
     -- implement rand and srand.

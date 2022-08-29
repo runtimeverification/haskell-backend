@@ -50,6 +50,9 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Log.DebugUnifyBottom (
@@ -57,7 +60,8 @@ import Kore.Log.DebugUnifyBottom (
  )
 import Kore.Rewrite.RewritingVariable
 import Kore.Simplify.Simplify (
-    BuiltinAndAxiomSimplifier,
+    AttemptedAxiom,
+    Simplifier,
     TermSimplifier,
  )
 import Kore.Unification.Unify (
@@ -142,7 +146,13 @@ parse = (Parsec.<|>) true false
     false = Parsec.string "false" $> False
 
 -- | @builtinFunctions@ are builtin functions on the 'Bool' sort.
-builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
+builtinFunctions ::
+    Text ->
+    Maybe
+        ( TermLike RewritingVariableName ->
+          SideCondition RewritingVariableName ->
+          Simplifier (AttemptedAxiom RewritingVariableName)
+        )
 builtinFunctions key
     | key == orKey = Just $ binaryOperator orKey (||)
     | key == andKey = Just $ binaryOperator andKey (&&)

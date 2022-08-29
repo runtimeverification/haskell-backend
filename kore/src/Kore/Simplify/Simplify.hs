@@ -33,7 +33,6 @@ module Kore.Simplify.Simplify (
     initCache,
     updateCache,
     lookupCache,
-    BuiltinAndAxiomSimplifier (..),
     AttemptedAxiom (..),
     isApplicable,
     isNotApplicable,
@@ -414,34 +413,6 @@ lookupCache ::
 lookupCache key (SimplifierCache cache) =
     HashMap.lookup key cache
 
-{- | 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
-or builtin code.
-
-Arguments:
-
-* 'MetadataTools' are tools for finding additional information about
-patterns such as their sorts, whether they are constructors or hooked.
-
-* 'TermLikeSimplifier' is a Function for simplifying patterns, used for
-the post-processing of the function application results.
-
-* 'TermLike' is the pattern to be evaluated.
-
-Return value:
-
-It returns the result of simplifying the pattern with builtins and
-axioms, together with a proof certifying that it was simplified correctly
-(which is only a placeholder right now).
--}
-newtype BuiltinAndAxiomSimplifier =
-    -- TODO (thomas.tuegel): Rename me!
-    BuiltinAndAxiomSimplifier
-    { runBuiltinAndAxiomSimplifier ::
-        TermLike RewritingVariableName ->
-        SideCondition RewritingVariableName ->
-        Simplifier (AttemptedAxiom RewritingVariableName)
-    }
-
 -- |Describes whether simplifiers are allowed to return multiple results or not.
 data AcceptsMultipleResults = WithMultipleResults | OnlyOneResult
     deriving stock (Eq, Ord, Show)
@@ -458,11 +429,15 @@ If that result contains more than one pattern, or it contains a reminder,
 the evaluation fails with 'error' (may change in the future).
 -}
 firstFullEvaluation ::
-    [BuiltinAndAxiomSimplifier] ->
-    BuiltinAndAxiomSimplifier
+    [ TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
+    ] ->
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 firstFullEvaluation simplifiers =
-    BuiltinAndAxiomSimplifier
-        (applyFirstSimplifierThatWorks simplifiers OnlyOneResult)
+    applyFirstSimplifierThatWorks simplifiers OnlyOneResult
 
 {- |Whether a term cannot be simplified regardless of the side condition,
 or only with the current side condition.
@@ -491,7 +466,10 @@ data NonSimplifiability
     | Conditional
 
 applyFirstSimplifierThatWorks ::
-    [BuiltinAndAxiomSimplifier] ->
+    [ TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
+    ] ->
     AcceptsMultipleResults ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
@@ -500,7 +478,10 @@ applyFirstSimplifierThatWorks evaluators multipleResults =
     applyFirstSimplifierThatWorksWorker evaluators multipleResults Always
 
 applyFirstSimplifierThatWorksWorker ::
-    [BuiltinAndAxiomSimplifier] ->
+    [ TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
+    ] ->
     AcceptsMultipleResults ->
     NonSimplifiability ->
     TermLike RewritingVariableName ->
@@ -513,7 +494,7 @@ applyFirstSimplifierThatWorksWorker [] _ Conditional _ sideCondition =
         NotApplicableUntilConditionChanges $
             toRepresentation sideCondition
 applyFirstSimplifierThatWorksWorker
-    (BuiltinAndAxiomSimplifier evaluator : evaluators)
+    (evaluator : evaluators)
     multipleResults
     nonSimplifiability
     patt
@@ -690,7 +671,8 @@ purePatternAxiomEvaluator p =
                 }
         )
 
-{- | Creates an 'BuiltinAndAxiomSimplifier' from a similar function that takes an
+{- | TODO (breakerzirconia): refactor the documentation.
+Creates an 'BuiltinAndAxiomSimplifier' from a similar function that takes an
 'Application'.
 -}
 applicationAxiomSimplifier ::
@@ -701,9 +683,11 @@ applicationAxiomSimplifier ::
         (TermLike RewritingVariableName) ->
       Simplifier (AttemptedAxiom RewritingVariableName)
     ) ->
-    BuiltinAndAxiomSimplifier
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 applicationAxiomSimplifier applicationSimplifier =
-    BuiltinAndAxiomSimplifier helper
+    helper
   where
     helper ::
         TermLike RewritingVariableName ->
