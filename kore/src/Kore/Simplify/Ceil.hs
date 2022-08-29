@@ -41,6 +41,7 @@ import Kore.Internal.NormalForm qualified as NormalForm
 import Kore.Internal.OrPattern (OrPattern)
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (Pattern)
+import Kore.Internal.Pattern qualified as MultiAnd
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     Predicate,
@@ -69,7 +70,6 @@ import Kore.Unparser (
     unparseToString,
  )
 import Prelude.Kore
-import qualified Kore.Internal.Pattern as MultiAnd
 
 {- | Simplify a 'Ceil' of 'OrPattern'.
 

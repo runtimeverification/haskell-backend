@@ -6,8 +6,8 @@ import Data.Map.Strict qualified as Map
 import Kore.Equation (Equation)
 import Kore.Internal.Condition as Condition
 import Kore.Internal.From (fromTop_)
-import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.NormalForm (NormalForm)
 import Kore.Internal.NormalForm qualified as NormalForm (
     fromPredicate,
@@ -58,15 +58,15 @@ test_ceilSimplification =
         -- ceil(a or b) = (top and ceil(a)) or (top and ceil(b))
         let expected =
                 MultiOr.make
-                [ MultiAnd.make
-                    [ makeCeilPredicate somethingOfA
-                    , makeCeilPredicate Mock.a
+                    [ MultiAnd.make
+                        [ makeCeilPredicate somethingOfA
+                        , makeCeilPredicate Mock.a
+                        ]
+                    , MultiAnd.make
+                        [ makeCeilPredicate somethingOfB
+                        , makeCeilPredicate Mock.b
+                        ]
                     ]
-                , MultiAnd.make
-                    [ makeCeilPredicate somethingOfB
-                    , makeCeilPredicate Mock.b
-                    ]
-                ]
         actual <-
             evaluate
                 ( makeCeil
