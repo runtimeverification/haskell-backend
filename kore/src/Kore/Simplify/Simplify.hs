@@ -61,71 +61,61 @@ module Kore.Simplify.Simplify (
 
 import Control.Monad.Catch
 import Control.Monad.Counter
-import Control.Monad.Morph (MFunctor)
-import Control.Monad.Morph qualified as Monad.Morph
-import Control.Monad.RWS.Strict (RWST)
+import Control.Monad.Morph ( MFunctor )
+import qualified Control.Monad.Morph as Monad.Morph
+import Control.Monad.RWS.Strict ( RWST )
 import Control.Monad.Reader
 import Control.Monad.State.Strict
 import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe
-import Data.Functor.Foldable qualified as Recursive
-import Data.HashMap.Strict (HashMap)
-import Data.HashMap.Strict qualified as HashMap
-import Data.Map.Strict (Map)
-import Data.Map.Strict qualified as Map
-import Data.Text (Text)
-import GHC.Generics qualified as GHC
-import Generics.SOP qualified as SOP
-import Kore.Attribute.Symbol qualified as Attribute
+import qualified Data.Functor.Foldable as Recursive
+import Data.HashMap.Strict ( HashMap )
+import qualified Data.HashMap.Strict as HashMap
+import Data.Map.Strict ( Map )
+import qualified Data.Map.Strict as Map
+import Data.Text ( Text )
+import qualified GHC.Generics as GHC
+import qualified Generics.SOP as SOP
+import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Debug
-import Kore.Equation.DebugEquation (AttemptEquationError)
-import Kore.Equation.Equation (Equation)
-import Kore.IndexedModule.IndexedModule (VerifiedModuleSyntax)
-import Kore.IndexedModule.IndexedModule qualified as IndexedModule
-import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
-import Kore.Internal.Condition qualified as Condition
-import Kore.Internal.Conditional (Conditional)
-import Kore.Internal.MultiOr qualified as MultiOr
-import Kore.Internal.OrCondition (OrCondition)
-import Kore.Internal.OrCondition qualified as OrCondition
-import Kore.Internal.OrPattern (OrPattern)
-import Kore.Internal.OrPattern qualified as OrPattern
-import Kore.Internal.Pattern (Pattern)
-import Kore.Internal.Pattern qualified as Pattern
-import Kore.Internal.Predicate qualified as Predicate
-import Kore.Internal.SideCondition (SideCondition, toRepresentation)
-import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
-    Representation,
- )
+import Kore.Equation.DebugEquation ( AttemptEquationError )
+import Kore.Equation.Equation ( Equation )
+import Kore.IndexedModule.IndexedModule ( VerifiedModuleSyntax )
+import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import Kore.IndexedModule.MetadataTools ( SmtMetadataTools )
+import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Conditional ( Conditional )
+import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition ( OrCondition )
+import qualified Kore.Internal.OrCondition as OrCondition
+import Kore.Internal.OrPattern ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.Pattern ( Pattern )
+import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition ( SideCondition, toRepresentation )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
 import Kore.Internal.Symbol
-import Kore.Internal.TermLike (
-    Sort,
-    TermAttributes,
-    TermLike,
-    TermLikeF (..),
- )
-import Kore.Internal.Variable (InternalVariable)
-import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier (..))
-import Kore.Rewrite.Function.Memo qualified as Memo
-import Kore.Rewrite.RewritingVariable (RewritingVariableName)
-import Kore.Simplify.InjSimplifier (InjSimplifier)
-import Kore.Simplify.OverloadSimplifier (OverloadSimplifier (..))
-import Kore.Syntax (Id)
+import Kore.Internal.TermLike ( Sort, TermAttributes, TermLike, TermLikeF (..) )
+import Kore.Internal.Variable ( InternalVariable )
+import Kore.Rewrite.Axiom.Identifier ( AxiomIdentifier (..) )
+import qualified Kore.Rewrite.Function.Memo as Memo
+import Kore.Rewrite.RewritingVariable ( RewritingVariableName )
+import Kore.Simplify.InjSimplifier ( InjSimplifier )
+import Kore.Simplify.OverloadSimplifier ( OverloadSimplifier (..) )
+import Kore.Syntax ( Id )
 import Kore.Syntax.Application
 import Kore.Unparser
 import Log
 import Logic
 import Prelude.Kore
-import Pretty qualified
-import Prof (
-    MonadProf,
- )
-import SMT (
-    MonadSMT (..),
-    SMT,
- )
+import qualified Pretty
+import Prof ( MonadProf )
+import SMT ( MonadSMT (..), SMT )
 
 -- * Simplifier
 
@@ -429,9 +419,7 @@ If that result contains more than one pattern, or it contains a reminder,
 the evaluation fails with 'error' (may change in the future).
 -}
 firstFullEvaluation ::
-    [ TermLike RewritingVariableName ->
-    SideCondition RewritingVariableName ->
-    Simplifier (AttemptedAxiom RewritingVariableName)
+    [ Simplifier (AttemptedAxiom RewritingVariableName)
     ] ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
@@ -466,9 +454,7 @@ data NonSimplifiability
     | Conditional
 
 applyFirstSimplifierThatWorks ::
-    [ TermLike RewritingVariableName ->
-    SideCondition RewritingVariableName ->
-    Simplifier (AttemptedAxiom RewritingVariableName)
+    [ Simplifier (AttemptedAxiom RewritingVariableName)
     ] ->
     AcceptsMultipleResults ->
     TermLike RewritingVariableName ->
@@ -478,9 +464,7 @@ applyFirstSimplifierThatWorks evaluators multipleResults =
     applyFirstSimplifierThatWorksWorker evaluators multipleResults Always
 
 applyFirstSimplifierThatWorksWorker ::
-    [ TermLike RewritingVariableName ->
-    SideCondition RewritingVariableName ->
-    Simplifier (AttemptedAxiom RewritingVariableName)
+    [ Simplifier (AttemptedAxiom RewritingVariableName)
     ] ->
     AcceptsMultipleResults ->
     NonSimplifiability ->
@@ -500,7 +484,7 @@ applyFirstSimplifierThatWorksWorker
     patt
     sideCondition =
         do
-            applicationResult <- evaluator patt sideCondition
+            applicationResult <- evaluator
 
             case applicationResult of
                 Applied

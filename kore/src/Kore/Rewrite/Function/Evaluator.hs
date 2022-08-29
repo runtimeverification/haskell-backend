@@ -12,64 +12,45 @@ module Kore.Rewrite.Function.Evaluator (
     evaluatePattern,
 ) where
 
-import Control.Error (
-    ExceptT,
-    MaybeT (..),
-    exceptT,
-    maybeT,
-    throwE,
- )
-import Control.Monad qualified as Monad
-import Data.Map.Strict qualified as Map
-import Data.Text (Text)
-import Kore.Attribute.Pattern.Simplified qualified as Attribute.Simplified
-import Kore.Attribute.Symbol qualified as Attribute
+import Control.Error ( ExceptT, MaybeT (..), exceptT, maybeT, throwE )
+import qualified Control.Monad as Monad
+import qualified Data.Map.Strict as Map
+import Data.Text ( Text )
+import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
+import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Attribute.Synthetic
-import Kore.Builtin (koreEvaluators)
-import Kore.Internal.MultiOr qualified as MultiOr (
-    flatten,
-    merge,
- )
-import Kore.Internal.OrPattern (
-    OrPattern,
- )
-import Kore.Internal.OrPattern qualified as OrPattern
-import Kore.Internal.Pattern (
-    Condition,
-    Conditional (..),
-    Pattern,
- )
-import Kore.Internal.Pattern qualified as Pattern
-import Kore.Internal.SideCondition (
-    SideCondition,
- )
-import Kore.Internal.SideCondition qualified as SideCondition
-import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
-    Representation,
- )
-import Kore.Internal.Symbol (isDeclaredFunction)
-import Kore.Internal.Symbol qualified as Symbol
+import Kore.Builtin ( koreEvaluators )
+import qualified Kore.Internal.MultiOr as MultiOr ( flatten, merge )
+import Kore.Internal.OrPattern ( OrPattern )
+import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.Pattern ( Condition, Conditional (..), Pattern )
+import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.SideCondition ( SideCondition )
+import qualified Kore.Internal.SideCondition as SideCondition
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
+import Kore.Internal.Symbol ( isDeclaredFunction )
+import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Log.ErrorBottomTotalFunction (
-    errorBottomTotalFunction,
- )
-import Kore.Log.WarnFunctionWithoutEvaluators (warnFunctionWithoutEvaluators)
-import Kore.Rewrite.Axiom.EvaluationStrategy (builtinEvaluation, mkEvaluator, simplifierWithFallback)
-import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
-import Kore.Rewrite.Function.Memo qualified as Memo
-import Kore.Rewrite.RewritingVariable (
-    RewritingVariableName,
- )
-import Kore.Simplify.Simplify as AttemptedAxiom (
-    AttemptedAxiom (..),
- )
+import Kore.Log.ErrorBottomTotalFunction ( errorBottomTotalFunction )
+import Kore.Log.WarnFunctionWithoutEvaluators ( warnFunctionWithoutEvaluators )
+import Kore.Rewrite.Axiom.EvaluationStrategy
+    ( builtinEvaluation
+    , mkEvaluator
+    , simplifierWithFallback
+    )
+import qualified Kore.Rewrite.Axiom.Identifier as Axiom.Identifier
+import qualified Kore.Rewrite.Function.Memo as Memo
+import Kore.Rewrite.RewritingVariable ( RewritingVariableName )
+import Kore.Simplify.Simplify as AttemptedAxiom ( AttemptedAxiom (..) )
 import Kore.Simplify.Simplify as Simplifier
 import Kore.TopBottom
 import Kore.Unparser
-import Logic qualified
+import qualified Logic
 import Prelude.Kore
-import Pretty ((<+>))
-import Pretty qualified
+import Pretty ( (<+>) )
+import qualified Pretty
 
 -- | Evaluates functions on an application pattern.
 
@@ -204,23 +185,26 @@ evaluatePattern
 lookupAxiomSimplifier ::
     MonadSimplify simplifier =>
     TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
     MaybeT
         simplifier
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
+        ( Simplifier (AttemptedAxiom RewritingVariableName)
         )
-lookupAxiomSimplifier termLike = do
+lookupAxiomSimplifier termLike sideCondition = do
     hookedSymbols <- lift askHookedSymbols
     axiomEquations <- lift askAxiomEquations
     let getEvaluator ::
             Axiom.Identifier.AxiomIdentifier ->
-            Maybe
-                ( TermLike RewritingVariableName ->
-                  SideCondition RewritingVariableName ->
-                  Simplifier (AttemptedAxiom RewritingVariableName)
-                )
-        getEvaluator axiomIdentifier = Map.lookup axiomIdentifier axiomEquations >>= mkEvaluator
+                Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
+        getEvaluator axiomIdentifier = do
+            equations <- Map.lookup axiomIdentifier axiomEquations
+            mkEvaluator equations termLike sideCondition
+
+        applyEvaluator :: ( TermLike RewritingVariableName ->
+              SideCondition RewritingVariableName ->
+              Simplifier (AttemptedAxiom RewritingVariableName)
+            ) -> Simplifier (AttemptedAxiom RewritingVariableName)
+        applyEvaluator evaluator = evaluator termLike sideCondition
 
     let missing = do
             -- TODO (thomas.tuegel): Factor out a second function evaluator and
@@ -246,30 +230,29 @@ lookupAxiomSimplifier termLike = do
             Axiom.Identifier.Application appId ->
                 let builtinEvaluator = do
                         name <- Map.lookup appId hookedSymbols
-                        builtinEvaluation <$> koreEvaluators name
-                 in combineEvaluatorsWithFallBack (builtinEvaluator, exact)
+                        koreSimplifier <- koreEvaluators name termLike sideCondition
+                        Just (builtinEvaluation koreSimplifier termLike)
+                 in applyEvaluator <$> combineEvaluatorsWithFallBack (builtinEvaluator, exact)
             Axiom.Identifier.Variable -> exact
             Axiom.Identifier.DV -> exact
             Axiom.Identifier.Ceil _ ->
                 let inexact = getEvaluator $ Axiom.Identifier.Ceil Axiom.Identifier.Variable
-                 in combineEvaluators [exact, inexact]
+                 in applyEvaluator <$> combineEvaluators [exact, inexact]
             Axiom.Identifier.Exists _ ->
                 let inexact = getEvaluator $ Axiom.Identifier.Exists Axiom.Identifier.Variable
-                 in combineEvaluators [exact, inexact]
+                 in applyEvaluator <$> combineEvaluators [exact, inexact]
             Axiom.Identifier.Equals id1 id2 ->
                 let inexact1 = getEvaluator $ Axiom.Identifier.Equals Axiom.Identifier.Variable id2
                     inexact2 = getEvaluator $ Axiom.Identifier.Equals id1 Axiom.Identifier.Variable
                     inexact12 = getEvaluator $ Axiom.Identifier.Equals Axiom.Identifier.Variable Axiom.Identifier.Variable
-                 in combineEvaluators [exact, inexact1, inexact2, inexact12]
+                 in applyEvaluator <$> combineEvaluators [exact, inexact1, inexact2, inexact12]
   where
     getHook :: Symbol -> Maybe Text
     getHook = Attribute.getHook . Attribute.hook . symbolAttributes
 
     combineEvaluators ::
         [ Maybe
-            ( TermLike RewritingVariableName ->
-              SideCondition RewritingVariableName ->
-              Simplifier (AttemptedAxiom RewritingVariableName)
+            ( Simplifier (AttemptedAxiom RewritingVariableName)
             )
         ] ->
         Maybe
@@ -280,19 +263,15 @@ lookupAxiomSimplifier termLike = do
     combineEvaluators maybeEvaluators =
         case catMaybes maybeEvaluators of
             [] -> Nothing
-            [a] -> Just a
+            [a] -> Just $ const $ const a
             as -> Just $ firstFullEvaluation as
 
     combineEvaluatorsWithFallBack ::
         ( Maybe
-            ( TermLike RewritingVariableName ->
-              SideCondition RewritingVariableName ->
-              Simplifier (AttemptedAxiom RewritingVariableName)
+            ( Simplifier (AttemptedAxiom RewritingVariableName)
             )
         , Maybe
-            ( TermLike RewritingVariableName ->
-              SideCondition RewritingVariableName ->
-              Simplifier (AttemptedAxiom RewritingVariableName)
+            ( Simplifier (AttemptedAxiom RewritingVariableName)
             )
         ) ->
         Maybe
@@ -301,8 +280,8 @@ lookupAxiomSimplifier termLike = do
               Simplifier (AttemptedAxiom RewritingVariableName)
             )
     combineEvaluatorsWithFallBack = \case
-        (Nothing, eval2) -> eval2
-        (eval1, Nothing) -> eval1
+        (Nothing, eval2) -> const . const <$> eval2
+        (eval1, Nothing) -> const . const <$> eval1
         (Just eval1, Just eval2) -> Just $ simplifierWithFallback eval1 eval2
 
 criticalMissingHook :: Symbol -> Text -> a
@@ -345,10 +324,10 @@ maybeEvaluatePattern
     defaultValue
     sideCondition =
         do
-            evaluator <- lookupAxiomSimplifier termLike
+            evaluator <- lookupAxiomSimplifier termLike sideCondition
             lift $ do
                 merged <- do
-                    result <- liftSimplifier $ evaluator termLike sideCondition
+                    result <- liftSimplifier evaluator
                     flattened <- case result of
                         AttemptedAxiom.Applied
                             AttemptedAxiomResults
