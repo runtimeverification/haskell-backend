@@ -291,7 +291,7 @@ parsePatternFromTermLike original
     andParts (TermLike.And_ _ t1 t2) = andParts t1 <> andParts t2
     andParts other = NonEmpty.fromList [other]
 
-    -- invariant: one of the lists in non-empty
+    -- invariant: one of the lists is non-empty
     (actualTerms, predicates) =
         partitionEithers
             . toList
