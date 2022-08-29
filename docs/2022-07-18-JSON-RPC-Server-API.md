@@ -383,7 +383,7 @@ This error wraps an error message from the internal implication check routine, i
     "message": "Implication check error",
     "data": {
       "context": [
-        "/* Spa */ \\and{SortK{}}( /* Fl Fn D Sfa */ Configa:SortK{}, /* Fl Fn D Sfa */ Configb:SortK{} )"
+        "/* Sfa */ \\mu{}( Config@A:SortK{}, /* Sfa */ Config@A:SortK{} )"
       ],
       "error": "The check implication step expects the antecedent term to be function-like."
     }
