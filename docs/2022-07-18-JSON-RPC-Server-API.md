@@ -233,6 +233,7 @@ Other errors are specific to the implication checker and what it supports. These
 ```
 
 * The `antecedent` term must not have free variables that are used as existentials in the `consequent`.
+* The `consequent` term must not have free variables that are not also free in the `antecedent`.
 * The `antecedent` term must be function-like.
 * `antecedent` and `consequent` must have the same sort.
 

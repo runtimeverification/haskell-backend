@@ -64,7 +64,7 @@ import Data.Functor.Compose
 import Data.Generics.Product (
     field,
  )
-import Data.List (intersect, partition)
+import Data.List (intersect, partition, (\\))
 import Data.Monoid qualified as Monoid
 import Data.Stream.Infinite (
     Stream (..),
@@ -815,8 +815,8 @@ checkSimpleImplication inLeft inRight existentials =
                 (not $ isFunctionPattern leftTerm)
                 "The check implication step expects the antecedent term to be function-like."
         -- RHS existentials must not capture free variables of LHS
-        let nameCollisions =
-                existentials `intersect` getFreeElementVariables (freeVariables left)
+        let lhsFreeElemVars = getFreeElementVariables (freeVariables left)
+            nameCollisions = existentials `intersect` lhsFreeElemVars
             rightTerm = Pattern.term right
         withContext ("LHS: " <> showPretty leftTerm)
             . withContext ("RHS: " <> showPretty rightTerm)
@@ -825,6 +825,17 @@ checkSimpleImplication inLeft inRight existentials =
                 unwords
                     ( "Existentials capture free variables of the antecedent:" :
                       map (show . unparse2) nameCollisions
+                    )
+        -- RHS must not have free variables that aren't free in the LHS
+        let rhsFreeElemVars = getFreeElementVariables $ freeVariables right
+            offending = rhsFreeElemVars \\ (lhsFreeElemVars <> existentials)
+        withContext ("LHS: " <> showPretty leftTerm)
+            . withContext ("RHS: " <> showPretty rightTerm)
+            . withContext ("existentials: " <> show (map unparse2 existentials))
+            $ koreFailWhen (not $ null offending) $
+                unwords
+                    ( "The RHS must not have free variables not present in the LHS:" :
+                      map (show . unparse2) offending
                     )
         -- sorts of LHS and RHS have to agree
         let lSort = termLikeSort leftTerm

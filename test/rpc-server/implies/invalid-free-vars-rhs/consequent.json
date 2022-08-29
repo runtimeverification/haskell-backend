@@ -1,0 +1,44 @@
+{
+    "format": "KORE",
+    "version": 1,
+    "term": {
+        "tag": "Exists",
+        "sort": {
+            "tag": "SortApp",
+            "name": "SortK",
+            "args": []
+        },
+        "var": "Z",
+        "varSort": {
+            "tag": "SortApp",
+            "name": "SortK",
+            "args": []
+        },
+        "arg": {
+            "tag": "And",
+            "sort": {
+                "tag": "SortApp",
+                "name": "SortK",
+                "args": []
+            },
+            "first": {
+                "tag": "EVar",
+                "name": "Y",
+                "sort": {
+                    "tag": "SortApp",
+                    "name": "SortK",
+                    "args": []
+                }
+            },
+            "second": {
+                "tag": "EVar",
+                "name": "Z",
+                "sort": {
+                    "tag": "SortApp",
+                    "name": "SortK",
+                    "args": []
+                }
+            }
+        }
+    }
+}
