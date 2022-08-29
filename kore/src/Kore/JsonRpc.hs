@@ -363,7 +363,6 @@ respond runSMT serializedModule =
                     metadataTools
                     equations
 
-            --             renderCond :: TermLike.Sort -> Pattern.Condition RewritingVariable -> Condition
             renderCond sort cond =
                 let pat = Condition.mapVariables getRewritingVariable cond
                     predicate =
