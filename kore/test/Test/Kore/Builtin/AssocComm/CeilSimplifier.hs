@@ -71,16 +71,14 @@ hprop_Builtin_Set :: Property
     opaqueSets@[opaqueSet1, opaqueSet2, opaqueSet3] =
         Mock.opaqueSet . mkElemVar <$> elemVars
     genKeys = Gen.subsequence keys
-    concreteKeys@[cKey1, cKey2, _] = nullaryCtors
+    concreteKeys@[cKey1, _, _] = nullaryCtors
     symbolicKeys@[sKey1, sKey2, _] = Mock.f . mkElemVar <$> elemVars
     keys = concreteKeys ++ symbolicKeys
     genMapElement key = (,) key <$> genVal
     genVal = Gen.element vals
     concreteVals@[cVal1, cVal2, _] = Mock.constr10 <$> nullaryCtors
-    symbolicVals@[sVal1, sVal2, _] = Mock.g . mkElemVar <$> elemVars
+    symbolicVals = Mock.g . mkElemVar <$> elemVars
     vals = concreteVals ++ symbolicVals
-    cElt1 = (cKey1, cVal1)
-    cElt2 = (cKey2, cVal2)
     sElt1 = (sKey1, cVal1)
     sElt2 = (sKey2, cVal2)
 
@@ -89,7 +87,7 @@ hprop_Builtin_Set :: Property
         [makeCeilPredicate key | (not . isConcrete) key]
         ++
         -- symbolic values are defined
-        [makeCeilPredicate val | (not . isConcrete) val]
+        [makeCeilPredicate val]
 
     defineSetElement key =
         -- symbolic keys are defined
@@ -106,50 +104,18 @@ hprop_Builtin_Set :: Property
     mkNotMemberSet key term = makeCeilPredicate (Mock.framedSet [key] [term])
 
     testsMap =
-        [ let original = Mock.framedMap [(cKey1, sVal1)] []
-              expect = [makeCeilPredicate sVal1]
-           in test "values with concrete keys are defined" original expect
-        , let original = Mock.framedMap [(sKey2, sVal2)] []
-              expect =
-                [ makeCeilPredicate sKey2
-                , makeCeilPredicate sVal2
-                ]
-           in test "values with symbolic keys are defined" original expect
-        , let original = Mock.framedMap [cElt1] []
-              expect = []
-           in test "concrete keys are defined by assumption" original expect
-        , let original = Mock.framedMap [cElt1, cElt2] []
-              expect = []
-           in test "concrete keys are distinct by assumption" original expect
-        , let original = Mock.framedMap [sElt1] []
-              expect = [makeCeilPredicate sKey1]
-           in test "symbolic keys are defined" original expect
-        , let original = Mock.framedMap [cElt1, sElt1] []
-              expect =
-                [ makeCeilPredicate sKey1
-                , makeNotEqualsPredicate cKey1 sKey1
-                ]
-           in test "symbolic and concrete keys are distinct" original expect
-        , let original = Mock.framedMap [sElt1, sElt2] []
+        [ let original = Mock.framedMap [sElt1, sElt2] [opaqueMap1]
               expect =
                 [ makeCeilPredicate sKey1
                 , makeCeilPredicate sKey2
+                , makeCeilPredicate cVal1
+                , makeCeilPredicate cVal2
+                , makeCeilPredicate opaqueMap1
                 , makeNotEqualsPredicate sKey1 sKey2
+                , mkNotMemberMap sElt1 opaqueMap1
+                , mkNotMemberMap sElt2 opaqueMap1
                 ]
-           in test "symbolic keys are distinct" original expect
-        , let original = Mock.framedMap [cElt1] [opaqueMap1]
-              expect =
-                [ mkNotMemberMap cElt1 opaqueMap1
-                , makeCeilPredicate opaqueMap1
-                ]
-           in test "concrete keys are not in the frame" original expect
-        , let original = Mock.framedMap [sElt1] [opaqueMap1]
-              expect =
-                [ mkNotMemberMap sElt1 opaqueMap1
-                , makeCeilPredicate sKey1
-                , makeCeilPredicate opaqueMap1
-                ]
-           in test "symbolic keys are not in the frame" original expect
+           in test "generates required definedness conditions" original expect
         , let original =
                 Mock.framedMap [] [opaqueMap1, opaqueMap2, opaqueMap3]
               expect =
@@ -166,22 +132,7 @@ hprop_Builtin_Set :: Property
         ]
 
     testsSet =
-        [ let original = Mock.framedSet [cKey1] []
-              expect = []
-           in test "concrete keys are defined by assumption" original expect
-        , let original = Mock.framedSet [cKey1, cKey2] []
-              expect = []
-           in test "concrete keys are distinct by assumption" original expect
-        , let original = Mock.framedSet [sKey1] []
-              expect = [makeCeilPredicate sKey1]
-           in test "symbolic keys are defined" original expect
-        , let original = Mock.framedSet [cKey1, sKey1] []
-              expect =
-                [ makeCeilPredicate sKey1
-                , makeNotEqualsPredicate cKey1 sKey1
-                ]
-           in test "symbolic and concrete keys are distinct" original expect
-        , let original = Mock.framedSet [sKey1, sKey2] []
+        [ let original = Mock.framedSet [sKey1, sKey2] []
               expect =
                 [ makeCeilPredicate sKey1
                 , makeCeilPredicate sKey2

@@ -7,6 +7,7 @@ import Kore.Equation (Equation)
 import Kore.Internal.Condition as Condition
 import Kore.Internal.From (fromTop_)
 import Kore.Internal.MultiOr qualified as MultiOr
+import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.NormalForm (NormalForm)
 import Kore.Internal.NormalForm qualified as NormalForm (
     fromPredicate,
@@ -56,10 +57,16 @@ test_ceilSimplification =
     [ testCase "Ceil - or distribution" $ do
         -- ceil(a or b) = (top and ceil(a)) or (top and ceil(b))
         let expected =
-                NormalForm.fromPredicates
+                MultiOr.make
+                [ MultiAnd.make
                     [ makeCeilPredicate somethingOfA
-                    , makeCeilPredicate somethingOfB
+                    , makeCeilPredicate Mock.a
                     ]
+                , MultiAnd.make
+                    [ makeCeilPredicate somethingOfB
+                    , makeCeilPredicate Mock.b
+                    ]
+                ]
         actual <-
             evaluate
                 ( makeCeil
@@ -127,6 +134,7 @@ test_ceilSimplification =
         let expected =
                 NormalForm.fromPredicates
                     [ makeCeilPredicate somethingOfA
+                    , makeCeilPredicate Mock.a
                     , makeEqualsPredicate fOfA gOfA
                     , makeEqualsPredicate (mkElemVar Mock.xConfig) fOfB
                     ]
@@ -212,6 +220,7 @@ test_ceilSimplification =
         let expected =
                 NormalForm.fromPredicates
                     [ makeCeilPredicate fOfA
+                    , makeCeilPredicate Mock.a
                     , makeEqualsPredicate fOfA gOfA
                     , makeEqualsPredicate (mkElemVar Mock.xConfig) fOfB
                     ]

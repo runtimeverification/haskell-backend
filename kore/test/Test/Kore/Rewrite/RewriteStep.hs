@@ -1468,7 +1468,7 @@ test_applyRewriteRulesParallel =
                     (mkElemVar Mock.xConfig)
                     Mock.a
                     & MultiAnd.singleton
-                    & mappend definedBranches
+                    & mappend (MultiAnd.singleton (Predicate.fromMultiAnd definedBranches))
             aBranchNot =
                 Predicate.fromMultiAnd aBranch
                     & makeNotPredicate
@@ -1477,7 +1477,7 @@ test_applyRewriteRulesParallel =
                     (mkElemVar Mock.xConfig)
                     Mock.b
                     & MultiAnd.singleton
-                    & mappend definedBranches
+                    & mappend (MultiAnd.singleton (Predicate.fromMultiAnd definedBranches))
             bBranchNot =
                 Predicate.fromMultiAnd bBranch
                     & makeNotPredicate
@@ -1695,7 +1695,7 @@ test_applyRewriteRulesSequence =
                     (mkElemVar Mock.xConfig)
                     Mock.a
                     & MultiAnd.singleton
-                    & mappend definedBranches
+                    & mappend (MultiAnd.singleton (Predicate.fromMultiAnd definedBranches))
             aBranchNot =
                 Predicate.fromMultiAnd aBranch
                     & makeNotPredicate
@@ -1704,7 +1704,7 @@ test_applyRewriteRulesSequence =
                     (mkElemVar Mock.xConfig)
                     Mock.b
                     & MultiAnd.singleton
-                    & mappend definedBranches
+                    & mappend (MultiAnd.singleton (Predicate.fromMultiAnd definedBranches))
             bBranchNot =
                 Predicate.fromMultiAnd bBranch
                     & makeNotPredicate

@@ -66,7 +66,7 @@ toOrCondition =
     MultiOr.map (from @_ @(Condition _) . Predicate.fromMultiAnd)
 
 fromPredicate :: Predicate RewritingVariableName -> NormalForm
-fromPredicate = MultiOr.singleton . MultiAnd.singleton
+fromPredicate = MultiOr.singleton . Predicate.toMultiAnd
 
 fromPredicates :: [Predicate RewritingVariableName] -> NormalForm
 fromPredicates = MultiOr.singleton . MultiAnd.make

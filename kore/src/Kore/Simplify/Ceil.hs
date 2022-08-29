@@ -69,6 +69,7 @@ import Kore.Unparser (
     unparseToString,
  )
 import Prelude.Kore
+import qualified Kore.Internal.Pattern as MultiAnd
 
 {- | Simplify a 'Ceil' of 'OrPattern'.
 
@@ -245,8 +246,9 @@ newAxiomCeilSimplifier = CeilSimplifier $ \input -> do
             Condition.top
             (synthesize $ CeilF input)
             (const empty)
-    return (OrPattern.map (MultiAnd.singleton . toPredicate) evaluation)
+    return (OrPattern.map (Predicate.toMultiAnd . toPredicate) evaluation)
   where
+    -- TODO: probably want to parse MultiAnd here
     toPredicate Conditional{term = Top_ _, predicate, substitution} =
         Predicate.makeAndPredicate
             predicate
