@@ -72,6 +72,7 @@ import Kore.Syntax.Definition (
 import Kore.Unification.Unify as Unify
 import Logic qualified
 import Prelude.Kore
+import UnrollMaybe
 
 verifiers :: Builtin.Verifiers
 verifiers =
@@ -134,16 +135,14 @@ otherwise.
 -}
 builtinFunctions ::
     Text ->
-    Maybe
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
-        )
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
 builtinFunctions key
-    | key == eqKey = Just $ applicationAxiomSimplifier (evalKEq True)
-    | key == neqKey = Just $ applicationAxiomSimplifier (evalKEq False)
-    | key == iteKey = Just $ applicationAxiomSimplifier evalKIte
-    | otherwise = Nothing
+    | key == eqKey = unrollMaybe . Just $ applicationAxiomSimplifier (evalKEq True)
+    | key == neqKey = unrollMaybe . Just $ applicationAxiomSimplifier (evalKEq False)
+    | key == iteKey = unrollMaybe . Just $ applicationAxiomSimplifier evalKIte
+    | otherwise = unrollMaybe Nothing
 
 evalKEq ::
     forall variable.

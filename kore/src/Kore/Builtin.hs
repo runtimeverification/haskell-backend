@@ -91,13 +91,11 @@ koreVerifiers =
 -}
 koreEvaluators ::
     Text ->
-    Maybe
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
-        )
-koreEvaluators key =
-    asum
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
+koreEvaluators key termLike sideCondition =
+    asum $ map (\evaluator -> evaluator termLike sideCondition)
         [ Bool.builtinFunctions key
         , Int.builtinFunctions key
         , KEqual.builtinFunctions key

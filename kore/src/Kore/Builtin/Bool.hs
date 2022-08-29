@@ -70,6 +70,7 @@ import Kore.Unification.Unify (
 import Prelude.Kore
 import Text.Megaparsec qualified as Parsec
 import Text.Megaparsec.Char qualified as Parsec
+import UnrollMaybe
 
 {- | Verify that the sort is hooked to the builtin @Bool@ sort.
 
@@ -148,22 +149,20 @@ parse = (Parsec.<|>) true false
 -- | @builtinFunctions@ are builtin functions on the 'Bool' sort.
 builtinFunctions ::
     Text ->
-    Maybe
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
-        )
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
 builtinFunctions key
-    | key == orKey = Just $ binaryOperator orKey (||)
-    | key == andKey = Just $ binaryOperator andKey (&&)
-    | key == xorKey = Just $ binaryOperator xorKey xor
-    | key == neKey = Just $ binaryOperator neKey (/=)
-    | key == eqKey = Just $ binaryOperator eqKey (==)
-    | key == notKey = Just $ unaryOperator notKey not
-    | key == impliesKey = Just $ binaryOperator impliesKey implies
-    | key == andThenKey = Just $ binaryOperator andThenKey (&&)
-    | key == orElseKey = Just $ binaryOperator orElseKey (||)
-    | otherwise = Nothing
+    | key == orKey = unrollMaybe . Just $ binaryOperator orKey (||)
+    | key == andKey = unrollMaybe . Just $ binaryOperator andKey (&&)
+    | key == xorKey = unrollMaybe . Just $ binaryOperator xorKey xor
+    | key == neKey = unrollMaybe . Just $ binaryOperator neKey (/=)
+    | key == eqKey = unrollMaybe . Just $ binaryOperator eqKey (==)
+    | key == notKey = unrollMaybe . Just $ unaryOperator notKey not
+    | key == impliesKey = unrollMaybe . Just $ binaryOperator impliesKey implies
+    | key == andThenKey = unrollMaybe . Just $ binaryOperator andThenKey (&&)
+    | key == orElseKey = unrollMaybe . Just $ binaryOperator orElseKey (||)
+    | otherwise = unrollMaybe Nothing
   where
     unaryOperator =
         Builtin.unaryOperator extractBoolDomainValue asPattern

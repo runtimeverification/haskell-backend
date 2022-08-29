@@ -114,6 +114,7 @@ import Kore.Unification.Unify (
     MonadUnify,
  )
 import Prelude.Kore
+import UnrollMaybe
 
 -- | Builtin name of the @Set@ sort.
 sort :: Text
@@ -478,23 +479,21 @@ evalInclusion _ _ _ = Builtin.wrongArity Set.inclusionKey
 -- | Implement builtin function evaluation.
 builtinFunctions ::
     Text ->
-    Maybe
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
-        )
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
 builtinFunctions key
-    | key == Set.concatKey = Just $ Builtin.functionEvaluator evalConcat
-    | key == Set.elementKey = Just $ Builtin.functionEvaluator evalElement
-    | key == Set.unitKey = Just $ Builtin.functionEvaluator evalUnit
-    | key == Set.inKey = Just $ Builtin.functionEvaluator evalIn
-    | key == Set.differenceKey = Just $ Builtin.applicationEvaluator evalDifference
-    | key == Set.toListKey = Just $ Builtin.functionEvaluator evalToList
-    | key == Set.sizeKey = Just $ Builtin.functionEvaluator evalSize
-    | key == Set.intersectionKey = Just $ Builtin.functionEvaluator evalIntersection
-    | key == Set.list2setKey = Just $ Builtin.functionEvaluator evalList2set
-    | key == Set.inclusionKey = Just $ Builtin.functionEvaluator evalInclusion
-    | otherwise = Nothing
+    | key == Set.concatKey = unrollMaybe . Just $ Builtin.functionEvaluator evalConcat
+    | key == Set.elementKey = unrollMaybe . Just $ Builtin.functionEvaluator evalElement
+    | key == Set.unitKey = unrollMaybe . Just $ Builtin.functionEvaluator evalUnit
+    | key == Set.inKey = unrollMaybe . Just $ Builtin.functionEvaluator evalIn
+    | key == Set.differenceKey = unrollMaybe . Just $ Builtin.applicationEvaluator evalDifference
+    | key == Set.toListKey = unrollMaybe . Just $ Builtin.functionEvaluator evalToList
+    | key == Set.sizeKey = unrollMaybe . Just $ Builtin.functionEvaluator evalSize
+    | key == Set.intersectionKey = unrollMaybe . Just $ Builtin.functionEvaluator evalIntersection
+    | key == Set.list2setKey = unrollMaybe . Just $ Builtin.functionEvaluator evalList2set
+    | key == Set.inclusionKey = unrollMaybe . Just $ Builtin.functionEvaluator evalInclusion
+    | otherwise = unrollMaybe Nothing
 
 {- | Convert a Set-sorted 'TermLike' to its internal representation.
 

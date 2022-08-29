@@ -128,6 +128,7 @@ import Kore.Simplify.Simplify (
 import Kore.Unification.Unify as Unify
 import Prelude.Kore
 import Text.Megaparsec.Char.Lexer qualified as Parsec
+import UnrollMaybe
 
 {- | Verify that the sort is hooked to the builtin @Int@ sort.
 
@@ -251,47 +252,45 @@ expectBuiltinInt _ =
 -- | Implement builtin function evaluation.
 builtinFunctions ::
     Text ->
-    Maybe
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
-        )
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
 builtinFunctions key
     -- TODO (thomas.tuegel): Add MonadRandom to evaluation context to
     -- implement rand and srand.
-    | key == randKey = Just Builtin.notImplemented
-    | key == srandKey = Just Builtin.notImplemented
-    | key == gtKey = Just $ comparator gtKey (>)
-    | key == geKey = Just $ comparator geKey (>=)
-    | key == eqKey = Just $ Builtin.functionEvaluator evalEq
-    | key == leKey = Just $ comparator leKey (<=)
-    | key == ltKey = Just $ comparator ltKey (<)
-    | key == neKey = Just $ comparator neKey (/=)
+    | key == randKey = unrollMaybe $ Just Builtin.notImplemented
+    | key == srandKey = unrollMaybe $ Just Builtin.notImplemented
+    | key == gtKey = unrollMaybe . Just $ comparator gtKey (>)
+    | key == geKey = unrollMaybe . Just $ comparator geKey (>=)
+    | key == eqKey = unrollMaybe . Just $ Builtin.functionEvaluator evalEq
+    | key == leKey = unrollMaybe . Just $ comparator leKey (<=)
+    | key == ltKey = unrollMaybe . Just $ comparator ltKey (<)
+    | key == neKey = unrollMaybe . Just $ comparator neKey (/=)
     -- Ordering operations
-    | key == minKey = Just $ binaryOperator minKey min
-    | key == maxKey = Just $ binaryOperator maxKey max
+    | key == minKey = unrollMaybe . Just $ binaryOperator minKey min
+    | key == maxKey = unrollMaybe . Just $ binaryOperator maxKey max
     -- Arithmetic operations
-    | key == addKey = Just $ binaryOperator addKey (+)
-    | key == subKey = Just $ binaryOperator subKey (-)
-    | key == mulKey = Just $ binaryOperator mulKey (*)
-    | key == absKey = Just $ unaryOperator absKey abs
+    | key == addKey = unrollMaybe . Just $ binaryOperator addKey (+)
+    | key == subKey = unrollMaybe . Just $ binaryOperator subKey (-)
+    | key == mulKey = unrollMaybe . Just $ binaryOperator mulKey (*)
+    | key == absKey = unrollMaybe . Just $ unaryOperator absKey abs
     -- Division operations
-    | key == edivKey = Just $ partialBinaryOperator edivKey ediv
-    | key == emodKey = Just $ partialBinaryOperator emodKey emod
-    | key == tdivKey = Just $ partialBinaryOperator tdivKey tdiv
-    | key == tmodKey = Just $ partialBinaryOperator tmodKey tmod
+    | key == edivKey = unrollMaybe . Just $ partialBinaryOperator edivKey ediv
+    | key == emodKey = unrollMaybe . Just $ partialBinaryOperator emodKey emod
+    | key == tdivKey = unrollMaybe . Just $ partialBinaryOperator tdivKey tdiv
+    | key == tmodKey = unrollMaybe . Just $ partialBinaryOperator tmodKey tmod
     -- Bitwise operations
-    | key == andKey = Just $ binaryOperator andKey (.&.)
-    | key == orKey = Just $ binaryOperator orKey (.|.)
-    | key == xorKey = Just $ binaryOperator xorKey xor
-    | key == notKey = Just $ unaryOperator notKey complement
-    | key == shlKey = Just $ binaryOperator shlKey (\a -> shift a . fromInteger)
-    | key == shrKey = Just $ binaryOperator shrKey (\a -> shift a . fromInteger . negate)
+    | key == andKey = unrollMaybe . Just $ binaryOperator andKey (.&.)
+    | key == orKey = unrollMaybe . Just $ binaryOperator orKey (.|.)
+    | key == xorKey = unrollMaybe . Just $ binaryOperator xorKey xor
+    | key == notKey = unrollMaybe . Just $ unaryOperator notKey complement
+    | key == shlKey = unrollMaybe . Just $ binaryOperator shlKey (\a -> shift a . fromInteger)
+    | key == shrKey = unrollMaybe . Just $ binaryOperator shrKey (\a -> shift a . fromInteger . negate)
     -- Exponential and logarithmic operations
-    | key == powKey = Just $ partialBinaryOperator powKey pow
-    | key == powmodKey = Just $ partialTernaryOperator powmodKey powmod
-    | key == log2Key = Just $ partialUnaryOperator log2Key log2
-    | otherwise = Nothing
+    | key == powKey = unrollMaybe . Just $ partialBinaryOperator powKey pow
+    | key == powmodKey = unrollMaybe . Just $ partialTernaryOperator powmodKey powmod
+    | key == log2Key = unrollMaybe . Just $ partialUnaryOperator log2Key log2
+    | otherwise = unrollMaybe Nothing
   where
     unaryOperator name op =
         Builtin.unaryOperator

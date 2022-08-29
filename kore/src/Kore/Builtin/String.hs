@@ -96,6 +96,7 @@ import Numeric (
  )
 import Prelude.Kore
 import Text.Megaparsec qualified as Parsec
+import UnrollMaybe
 
 {- | Verify that the sort is hooked to the builtin @String@ sort.
 
@@ -453,27 +454,25 @@ evalString2Token = Builtin.functionEvaluator evalString2Token0
 -- | Implement builtin function evaluation.
 builtinFunctions ::
     Text ->
-    Maybe
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
-        )
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
 builtinFunctions key
-    | key == eqKey = Just $ comparator eqKey (==)
-    | key == ltKey = Just $ comparator ltKey (<)
-    | key == plusKey = Just $ binaryOperator plusKey Text.append
-    | key == substrKey = Just evalSubstr
-    | key == lengthKey = Just evalLength
-    | key == findKey = Just evalFind
-    | key == string2BaseKey = Just evalString2Base
-    | key == base2StringKey = Just evalBase2String
-    | key == string2IntKey = Just evalString2Int
-    | key == int2StringKey = Just evalInt2String
-    | key == chrKey = Just evalChr
-    | key == ordKey = Just evalOrd
-    | key == token2StringKey = Just evalToken2String
-    | key == string2TokenKey = Just evalString2Token
-    | otherwise = Nothing
+    | key == eqKey = unrollMaybe . Just $ comparator eqKey (==)
+    | key == ltKey = unrollMaybe . Just $ comparator ltKey (<)
+    | key == plusKey = unrollMaybe . Just $ binaryOperator plusKey Text.append
+    | key == substrKey = unrollMaybe $ Just evalSubstr
+    | key == lengthKey = unrollMaybe $ Just evalLength
+    | key == findKey = unrollMaybe $ Just evalFind
+    | key == string2BaseKey = unrollMaybe $ Just evalString2Base
+    | key == base2StringKey = unrollMaybe $ Just evalBase2String
+    | key == string2IntKey = unrollMaybe $ Just evalString2Int
+    | key == int2StringKey = unrollMaybe $ Just evalInt2String
+    | key == chrKey = unrollMaybe $ Just evalChr
+    | key == ordKey = unrollMaybe $ Just evalOrd
+    | key == token2StringKey = unrollMaybe $ Just evalToken2String
+    | key == string2TokenKey = unrollMaybe $ Just evalString2Token
+    | otherwise = unrollMaybe Nothing
   where
     comparator name op =
         Builtin.binaryOperator

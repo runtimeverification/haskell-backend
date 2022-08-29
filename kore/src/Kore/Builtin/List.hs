@@ -120,6 +120,7 @@ import Kore.Unification.Unify (
     MonadUnify,
  )
 import Prelude.Kore
+import UnrollMaybe
 
 {- | Verify that the sort is hooked to the builtin @List@ sort.
 
@@ -366,22 +367,20 @@ evalUpdateAll _ _ _ = Builtin.wrongArity updateKey
 -- | Implement builtin function evaluation.
 builtinFunctions ::
     Text ->
-    Maybe
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
-        )
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
 builtinFunctions key
-    | key == concatKey = Just $ Builtin.functionEvaluator evalConcat
-    | key == elementKey = Just $ Builtin.functionEvaluator evalElement
-    | key == unitKey = Just $ Builtin.functionEvaluator evalUnit
-    | key == getKey = Just $ Builtin.functionEvaluator evalGet
-    | key == updateKey = Just $ Builtin.functionEvaluator evalUpdate
-    | key == inKey = Just $ Builtin.functionEvaluator evalIn
-    | key == sizeKey = Just $ Builtin.functionEvaluator evalSize
-    | key == makeKey = Just $ Builtin.functionEvaluator evalMake
-    | key == updateAllKey = Just $ Builtin.functionEvaluator evalUpdateAll
-    | otherwise = Nothing
+    | key == concatKey = unrollMaybe . Just $ Builtin.functionEvaluator evalConcat
+    | key == elementKey = unrollMaybe . Just $ Builtin.functionEvaluator evalElement
+    | key == unitKey = unrollMaybe . Just $ Builtin.functionEvaluator evalUnit
+    | key == getKey = unrollMaybe . Just $ Builtin.functionEvaluator evalGet
+    | key == updateKey = unrollMaybe . Just $ Builtin.functionEvaluator evalUpdate
+    | key == inKey = unrollMaybe . Just $ Builtin.functionEvaluator evalIn
+    | key == sizeKey = unrollMaybe . Just $ Builtin.functionEvaluator evalSize
+    | key == makeKey = unrollMaybe . Just $ Builtin.functionEvaluator evalMake
+    | key == updateAllKey = unrollMaybe . Just $ Builtin.functionEvaluator evalUpdateAll
+    | otherwise = unrollMaybe Nothing
 
 data FirstElemVarData = FirstElemVarData
     { pat1, pat2 :: !(TermLike RewritingVariableName)

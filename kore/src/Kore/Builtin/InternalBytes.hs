@@ -89,6 +89,7 @@ import Prelude.Kore
 import System.IO.Unsafe (
     unsafeDupablePerformIO,
  )
+import UnrollMaybe
 
 {- | Verify that the sort is hooked to the @Bytes@ sort.
  | See also: 'sort', 'Builtin.verifySort'.
@@ -585,28 +586,26 @@ bytes2int bytes end sign =
 
 builtinFunctions ::
     Text ->
-    Maybe
-        ( TermLike RewritingVariableName ->
-          SideCondition RewritingVariableName ->
-          Simplifier (AttemptedAxiom RewritingVariableName)
-        )
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
 builtinFunctions key
-    | key == bytes2StringKey = Just evalBytes2String
-    | key == string2BytesKey = Just evalString2Bytes
-    | key == decodeBytesKey = Just evalDecodeBytes
-    | key == encodeBytesKey = Just evalEncodeBytes
-    | key == updateKey = Just evalUpdate
-    | key == getKey = Just evalGet
-    | key == substrKey = Just evalSubstr
-    | key == replaceAtKey = Just evalReplaceAt
-    | key == padRightKey = Just evalPadRight
-    | key == padLeftKey = Just evalPadLeft
-    | key == reverseKey = Just evalReverse
-    | key == lengthKey = Just evalLength
-    | key == concatKey = Just evalConcat
-    | key == int2bytesKey = Just evalInt2bytes
-    | key == bytes2intKey = Just evalBytes2int
-    | otherwise = Nothing
+    | key == bytes2StringKey = unrollMaybe $ Just evalBytes2String
+    | key == string2BytesKey = unrollMaybe $ Just evalString2Bytes
+    | key == decodeBytesKey = unrollMaybe $ Just evalDecodeBytes
+    | key == encodeBytesKey = unrollMaybe $ Just evalEncodeBytes
+    | key == updateKey = unrollMaybe $ Just evalUpdate
+    | key == getKey = unrollMaybe $ Just evalGet
+    | key == substrKey = unrollMaybe $ Just evalSubstr
+    | key == replaceAtKey = unrollMaybe $ Just evalReplaceAt
+    | key == padRightKey = unrollMaybe $ Just evalPadRight
+    | key == padLeftKey = unrollMaybe $ Just evalPadLeft
+    | key == reverseKey = unrollMaybe $ Just evalReverse
+    | key == lengthKey = unrollMaybe $ Just evalLength
+    | key == concatKey = unrollMaybe $ Just evalConcat
+    | key == int2bytesKey = unrollMaybe $ Just evalInt2bytes
+    | key == bytes2intKey = unrollMaybe $ Just evalBytes2int
+    | otherwise = unrollMaybe Nothing
 
 -- | @UnifyBytes@ matches unification problems on @\\dv{Bytes}(_)@ itself.
 data UnifyBytes = UnifyBytes
