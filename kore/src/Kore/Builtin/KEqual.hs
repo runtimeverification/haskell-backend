@@ -132,7 +132,13 @@ check whether they are equal or not, producing a builtin boolean value.
 sort) and return the first term if the expression is true, and the second
 otherwise.
 -}
-builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
+builtinFunctions ::
+    Text ->
+    Maybe
+        ( TermLike RewritingVariableName ->
+          SideCondition RewritingVariableName ->
+          Simplifier (AttemptedAxiom RewritingVariableName)
+        )
 builtinFunctions key
     | key == eqKey = Just $ applicationAxiomSimplifier (evalKEq True)
     | key == neqKey = Just $ applicationAxiomSimplifier (evalKEq False)

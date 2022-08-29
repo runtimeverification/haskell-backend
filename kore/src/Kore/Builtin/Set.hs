@@ -361,7 +361,13 @@ evalInclusion _ resultSort [_setLeft, _setRight] = do
 evalInclusion _ _ _ = Builtin.wrongArity Set.inclusionKey
 
 -- | Implement builtin function evaluation.
-builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
+builtinFunctions ::
+    Text ->
+    Maybe
+        ( TermLike RewritingVariableName ->
+          SideCondition RewritingVariableName ->
+          Simplifier (AttemptedAxiom RewritingVariableName)
+        )
 builtinFunctions key
     | key == Set.concatKey = Just $ Builtin.functionEvaluator evalConcat
     | key == Set.elementKey = Just $ Builtin.functionEvaluator evalElement

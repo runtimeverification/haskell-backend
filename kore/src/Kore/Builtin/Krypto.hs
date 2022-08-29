@@ -66,9 +66,14 @@ import Kore.Builtin.Encoding (
  )
 import Kore.Builtin.Int qualified as Int
 import Kore.Builtin.String qualified as String
-import Kore.Simplify.Simplify (
-    BuiltinAndAxiomSimplifier,
+import Kore.Internal.SideCondition (
+    SideCondition,
  )
+import Kore.Internal.TermLike
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
+import Kore.Simplify.Simplify
 import Prelude.Kore
 
 keccak256Key
@@ -142,7 +147,13 @@ symbolVerifiers =
         ]
 
 -- | Implement builtin function evaluation.
-builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
+builtinFunctions ::
+    Text ->
+    Maybe
+        ( TermLike RewritingVariableName ->
+          SideCondition RewritingVariableName ->
+          Simplifier (AttemptedAxiom RewritingVariableName)
+        )
 builtinFunctions key
     | key == keccak256Key = Just evalKeccak
     | key == hashKeccak256Key = Just evalKeccak
@@ -171,7 +182,9 @@ evalHashFunction ::
     String ->
     -- | hash function
     algorithm ->
-    BuiltinAndAxiomSimplifier
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalHashFunction context algorithm =
     Builtin.functionEvaluator evalHashFunctionWorker
   where
@@ -184,19 +197,34 @@ evalHashFunction context algorithm =
         return (String.asPattern resultSort result)
     evalHashFunctionWorker _ _ _ = Builtin.wrongArity context
 
-evalKeccak :: BuiltinAndAxiomSimplifier
+evalKeccak ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalKeccak = evalHashFunction keccak256Key Keccak_256
 
-evalSha256 :: BuiltinAndAxiomSimplifier
+evalSha256 ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalSha256 = evalHashFunction sha256Key SHA256
 
-evalSha3256 :: BuiltinAndAxiomSimplifier
+evalSha3256 ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalSha3256 = evalHashFunction sha3256Key SHA3_256
 
-evalRipemd160 :: BuiltinAndAxiomSimplifier
+evalRipemd160 ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalRipemd160 = evalHashFunction ripemd160Key RIPEMD160
 
-evalECDSARecover :: BuiltinAndAxiomSimplifier
+evalECDSARecover ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 evalECDSARecover =
     Builtin.functionEvaluator eval0
   where

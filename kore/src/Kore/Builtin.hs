@@ -16,7 +16,6 @@ This module is intended to be imported qualified.
 module Kore.Builtin (
     Builtin.Verifiers (..),
     Builtin.ApplicationVerifiers,
-    BuiltinAndAxiomSimplifier,
     Builtin.SymbolVerifier (..),
     Builtin.SortVerifier (..),
     Builtin.ApplicationVerifier (..),
@@ -53,10 +52,14 @@ import Kore.Builtin.String qualified as String
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
-import Kore.Internal.TermLike
-import Kore.Simplify.Simplify (
-    BuiltinAndAxiomSimplifier,
+import Kore.Internal.SideCondition (
+    SideCondition,
  )
+import Kore.Internal.TermLike
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
+import Kore.Simplify.Simplify
 import Prelude.Kore
 
 {- | Verifiers for Kore builtin sorts.
@@ -88,7 +91,13 @@ koreVerifiers =
 
   See also: 'Data.Step.Step.step'
 -}
-koreEvaluators :: Text -> Maybe BuiltinAndAxiomSimplifier
+koreEvaluators ::
+    Text ->
+    Maybe
+        ( TermLike RewritingVariableName ->
+          SideCondition RewritingVariableName ->
+          Simplifier (AttemptedAxiom RewritingVariableName)
+        )
 koreEvaluators key =
     asum
         [ Bool.builtinFunctions key

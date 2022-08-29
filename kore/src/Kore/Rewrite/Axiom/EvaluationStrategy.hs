@@ -76,27 +76,28 @@ that define it.
 -}
 definitionEvaluation ::
     [Equation RewritingVariableName] ->
-    BuiltinAndAxiomSimplifier
-definitionEvaluation equations =
-    BuiltinAndAxiomSimplifier $ \term condition -> do
-        let term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
-        result <-
-            attemptEquations
-                (attemptEquationAndAccumulateErrors condition term')
-                equations
-        case result of
-            Right results ->
-                (return . Applied)
-                    AttemptedAxiomResults
-                        { results
-                        , remainders = OrPattern.bottom
-                        }
-            Left minError ->
-                case getMin <$> minError of
-                    Just (Equation.WhileCheckRequires _) ->
-                        (return . NotApplicableUntilConditionChanges)
-                            (SideCondition.toRepresentation condition)
-                    _ -> return NotApplicable
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
+definitionEvaluation equations term condition = do
+    let term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
+    result <-
+        attemptEquations
+            (attemptEquationAndAccumulateErrors condition term')
+            equations
+    case result of
+        Right results ->
+            (return . Applied)
+                AttemptedAxiomResults
+                    { results
+                    , remainders = OrPattern.bottom
+                    }
+        Left minError ->
+            case getMin <$> minError of
+                Just (Equation.WhileCheckRequires _) ->
+                    (return . NotApplicableUntilConditionChanges)
+                        (SideCondition.toRepresentation condition)
+                _ -> return NotApplicable
 
 attemptEquationAndAccumulateErrors ::
     SideCondition RewritingVariableName ->
@@ -134,58 +135,74 @@ attemptEquations accumulator equations =
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation ::
     Equation RewritingVariableName ->
-    BuiltinAndAxiomSimplifier
-simplificationEvaluation equation =
-    BuiltinAndAxiomSimplifier $ \term condition -> do
-        result <-
-            Equation.attemptEquation
-                condition
-                term
-                equation
-        let apply = Equation.applyEquation condition equation
-        case result of
-            Right applied -> do
-                results <- apply applied
-                (return . Applied)
-                    AttemptedAxiomResults
-                        { results
-                        , remainders = OrPattern.bottom
-                        }
-            Left err ->
-                case err of
-                    Equation.WhileCheckRequires _ ->
-                        (return . NotApplicableUntilConditionChanges)
-                            (SideCondition.toRepresentation condition)
-                    _ -> return NotApplicable
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
+simplificationEvaluation equation term condition = do
+    result <-
+        Equation.attemptEquation
+            condition
+            term
+            equation
+    let apply = Equation.applyEquation condition equation
+    case result of
+        Right applied -> do
+            results <- apply applied
+            (return . Applied)
+                AttemptedAxiomResults
+                    { results
+                    , remainders = OrPattern.bottom
+                    }
+        Left err ->
+            case err of
+                Equation.WhileCheckRequires _ ->
+                    (return . NotApplicableUntilConditionChanges)
+                        (SideCondition.toRepresentation condition)
+                _ -> return NotApplicable
 
 {- | Creates an evaluator that choses the result of the first evaluator if it
 returns Applicable, otherwise returns the result of the second.
 -}
 simplifierWithFallback ::
-    BuiltinAndAxiomSimplifier ->
-    BuiltinAndAxiomSimplifier ->
-    BuiltinAndAxiomSimplifier
+    ( TermLike RewritingVariableName ->
+      SideCondition RewritingVariableName ->
+      Simplifier (AttemptedAxiom RewritingVariableName)
+    ) ->
+    ( TermLike RewritingVariableName ->
+      SideCondition RewritingVariableName ->
+      Simplifier (AttemptedAxiom RewritingVariableName)
+    ) ->
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 simplifierWithFallback first second =
-    BuiltinAndAxiomSimplifier
-        (applyFirstSimplifierThatWorks [first, second] WithMultipleResults)
+    applyFirstSimplifierThatWorks [first, second] WithMultipleResults
 
 {- | Wraps an evaluator for builtins. Will fail with error if there is no result
 on concrete patterns.
 -}
 builtinEvaluation ::
-    BuiltinAndAxiomSimplifier ->
-    BuiltinAndAxiomSimplifier
+    ( TermLike RewritingVariableName ->
+      SideCondition RewritingVariableName ->
+      Simplifier (AttemptedAxiom RewritingVariableName)
+    ) ->
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
 builtinEvaluation evaluator =
-    BuiltinAndAxiomSimplifier (evaluateBuiltin evaluator)
+    evaluateBuiltin evaluator
 
 evaluateBuiltin ::
     -- | Map from axiom IDs to axiom evaluators
-    BuiltinAndAxiomSimplifier ->
+    ( TermLike RewritingVariableName ->
+      SideCondition RewritingVariableName ->
+      Simplifier (AttemptedAxiom RewritingVariableName)
+    ) ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
     Simplifier (AttemptedAxiom RewritingVariableName)
 evaluateBuiltin
-    (BuiltinAndAxiomSimplifier builtinEvaluator)
+    builtinEvaluator
     patt
     sideCondition =
         do
@@ -206,10 +223,16 @@ evaluateBuiltin
         isValue pat =
             maybe False TermLike.isConstructorLike $ asConcrete pat
 
--- | Creates an 'BuiltinAndAxiomSimplifier' from a set of equations.
+{- | TODO (breakerzirconia): either refactor the documentation or inline this function.
+Creates an 'BuiltinAndAxiomSimplifier' from a set of equations.
+-}
 mkEvaluator ::
     [Equation RewritingVariableName] ->
-    Maybe BuiltinAndAxiomSimplifier
+    Maybe
+        ( TermLike RewritingVariableName ->
+          SideCondition RewritingVariableName ->
+          Simplifier (AttemptedAxiom RewritingVariableName)
+        )
 mkEvaluator equations =
     case (simplificationEvaluator, definitionEvaluator) of
         (Nothing, Nothing) -> Nothing

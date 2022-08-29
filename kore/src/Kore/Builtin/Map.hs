@@ -82,6 +82,9 @@ import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeCeilPredicate,
  )
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
 import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Symbol (
     Symbol (..),
@@ -478,7 +481,13 @@ evalValues _ resultSort [_map] = do
 evalValues _ _ _ = Builtin.wrongArity Map.valuesKey
 
 -- | Implement builtin function evaluation.
-builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
+builtinFunctions ::
+    Text ->
+    Maybe
+        ( TermLike RewritingVariableName ->
+          SideCondition RewritingVariableName ->
+          Simplifier (AttemptedAxiom RewritingVariableName)
+        )
 builtinFunctions key
     | key == Map.concatKey = Just $ Builtin.functionEvaluator evalConcat
     | key == Map.lookupKey = Just $ Builtin.functionEvaluator evalLookup

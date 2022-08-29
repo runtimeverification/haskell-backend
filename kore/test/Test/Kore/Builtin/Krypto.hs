@@ -41,7 +41,6 @@ import Kore.Simplify.API (
  )
 import Kore.Simplify.Simplify (
     AttemptedAxiomResults (..),
-    BuiltinAndAxiomSimplifier (..),
  )
 import Kore.TopBottom qualified as TopBottom
 import Prelude.Kore
@@ -291,7 +290,7 @@ evaluate builtin termLike = do
         Krypto.builtinFunctions builtin
             & expectConstructor @"Just"
     attempt <-
-        runBuiltinAndAxiomSimplifier evaluator termLike SideCondition.top
+        evaluator termLike SideCondition.top
             & runSimplifier testEnv
             & runNoSMT
     attemptResults <- expectConstructor @"Applied" attempt

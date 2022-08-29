@@ -83,6 +83,9 @@ import Kore.Internal.Pattern (
     Pattern,
  )
 import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike (
     Key,
@@ -361,7 +364,13 @@ evalUpdateAll _ resultSort [_list1, _ix, _list2] = do
 evalUpdateAll _ _ _ = Builtin.wrongArity updateKey
 
 -- | Implement builtin function evaluation.
-builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
+builtinFunctions ::
+    Text ->
+    Maybe
+        ( TermLike RewritingVariableName ->
+          SideCondition RewritingVariableName ->
+          Simplifier (AttemptedAxiom RewritingVariableName)
+        )
 builtinFunctions key
     | key == concatKey = Just $ Builtin.functionEvaluator evalConcat
     | key == elementKey = Just $ Builtin.functionEvaluator evalElement
