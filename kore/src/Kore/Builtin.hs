@@ -95,17 +95,19 @@ koreEvaluators ::
     SideCondition RewritingVariableName ->
     Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
 koreEvaluators key termLike sideCondition =
-    asum $ map (\evaluator -> evaluator termLike sideCondition)
-        [ Bool.builtinFunctions key
-        , Int.builtinFunctions key
-        , KEqual.builtinFunctions key
-        , List.builtinFunctions key
-        , Map.builtinFunctions key
-        , Set.builtinFunctions key
-        , String.builtinFunctions key
-        , Krypto.builtinFunctions key
-        , InternalBytes.builtinFunctions key
-        ]
+    asum $
+        map
+            (\evaluator -> evaluator termLike sideCondition)
+            [ Bool.builtinFunctions key
+            , Int.builtinFunctions key
+            , KEqual.builtinFunctions key
+            , List.builtinFunctions key
+            , Map.builtinFunctions key
+            , Set.builtinFunctions key
+            , String.builtinFunctions key
+            , Krypto.builtinFunctions key
+            , InternalBytes.builtinFunctions key
+            ]
 {-# INLINE koreEvaluators #-}
 
 {- | Convert a 'TermLike' to its internal representation.
