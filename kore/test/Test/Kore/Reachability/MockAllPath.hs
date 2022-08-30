@@ -342,9 +342,9 @@ instance Claim MockClaim where
         deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
         deriving anyclass (Debug, Diff)
 
-    checkImplication (MockClaim (src, dst))
-        | src' == Bot = return Claim.Implied
-        | src == NotDef = return Claim.Implied
+    checkImplication claim@(MockClaim (src, dst))
+        | src' == Bot = return $ Claim.Implied claim
+        | src == NotDef = return $ Claim.Implied claim
         | otherwise = return $ Claim.NotImplied (MockClaim (src', dst))
       where
         src' = difference src dst
