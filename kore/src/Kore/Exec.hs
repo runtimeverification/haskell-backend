@@ -458,17 +458,18 @@ rpcExec
 
 -- | Modify a 'TransitionRule' to track the depth of the execution graph.
 trackExecDepth ::
-    TransitionRule monad rule state ->
-    TransitionRule monad rule (ExecDepth, state)
+    TransitionRule monad rule (ProgramState p) ->
+    TransitionRule monad rule (ExecDepth, ProgramState p)
 trackExecDepth transit prim (execDepth, execState) = do
     execState' <- transit prim execState
     let execDepth' = (if didRewrite execState' then succ else id) execDepth
     pure (execDepth', execState')
   where
-    didRewrite _ = isRewrite prim
-
-    isRewrite Rewrite = True
-    isRewrite _ = False
+    -- The new state can become Bottom by simplification after rewriting,
+    -- or it remains Rewritten. If it is Remaining, it was not rewritten.
+    didRewrite Kore.Rewrite.Bottom = prim == Rewrite
+    didRewrite (Rewritten _) = prim == Rewrite
+    didRewrite _ = False
 
 -- | Add profiling markers to a 'TransitionRule'.
 profTransitionRule ::
