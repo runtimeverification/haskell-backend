@@ -27,6 +27,9 @@ import Control.Error (
     ExceptT,
     withExceptT,
  )
+import Data.Text (
+    Text,
+ )
 import Debug
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
@@ -111,6 +114,7 @@ instance Pretty (AttemptEquationError RewritingVariableName) where
 data MatchError variable = MatchError
     { matchTerm :: !(TermLike variable)
     , matchEquation :: !(Equation variable)
+    , matchFailReason :: !Text
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -118,7 +122,8 @@ data MatchError variable = MatchError
     deriving anyclass (Debug, Diff)
 
 instance Pretty (MatchError RewritingVariableName) where
-    pretty _ = "equation did not match term"
+    pretty MatchError{matchFailReason} =
+        Pretty.hsep ["equation did not match term: ", pretty matchFailReason]
 
 {- | Errors that can occur during 'applyMatchResult'.
 

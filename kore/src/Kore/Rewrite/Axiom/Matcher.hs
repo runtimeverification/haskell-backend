@@ -81,6 +81,9 @@ import Kore.Simplify.Simplify (
  )
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute
+import Kore.Unparser (
+    unparseToText,
+ )
 import Pair
 import Prelude.Kore
 
@@ -238,7 +241,7 @@ patternMatch' sideCondition ((pat, subject, boundVars, boundSet) : rest) deferre
         (And_ _ term1 term2, _) -> decomposeTwo term1 subject term2 subject
         (Forall_ _ variable1 term1, Forall_ _ variable2 term2) -> decomposeBinder (inject variable1) term1 (inject variable2) term2
         (Exists_ _ variable1 term1, Exists_ _ variable2 term2) -> decomposeBinder (inject variable1) term1 (inject variable2) term2
-        (App_ symbol1 children1, App_ symbol2 children2) -> if symbol1 == symbol2 then decomposeList (zip children1 children2) else failMatch "distinct application symbols"
+        (App_ symbol1 children1, App_ symbol2 children2) -> if symbol1 == symbol2 then decomposeList (zip children1 children2) else failMatch $ "distinct application symbols: " <> (unparseToText symbol1) <> ", " <> (unparseToText symbol2)
         (Inj_ inj1, Inj_ inj2) | Just unifyData <- matchInjs inj1 inj2 ->
             case unifyData of
                 UnifyInjDirect _ -> decompose (injChild inj1) (injChild inj2)

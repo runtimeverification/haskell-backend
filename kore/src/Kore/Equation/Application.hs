@@ -13,15 +13,12 @@ import Control.Error (
     ExceptT (..),
     MaybeT (..),
     maybeToList,
-    noteT,
     runExceptT,
+    withExceptT,
     throwE,
  )
 import Control.Monad (
     (>=>),
- )
-import Control.Monad.Trans.Maybe (
-    exceptToMaybeT,
  )
 import Data.Map.Strict (
     Map,
@@ -121,16 +118,16 @@ attemptEquation sideCondition termLike equation = do
             return $ Pattern.withCondition right $ from @(Predicate _) ensures
 
     equationRenamed = refreshVariables sideCondition termLike equation
-    matchError =
+    matchError matchFailReason =
         MatchError
             { matchTerm = termLike
             , matchEquation = equationRenamed
+            , matchFailReason
             }
     match term1 term2 =
         patternMatch sideCondition term1 term2
             & ExceptT
-            & exceptToMaybeT
-            & noteT matchError
+            & withExceptT matchError
 
     matchAndApplyResults left' = do
         matchResult <- match left' termLike & whileMatch
