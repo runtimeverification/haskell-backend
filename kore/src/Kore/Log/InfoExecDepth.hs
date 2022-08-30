@@ -12,6 +12,7 @@ module Kore.Log.InfoExecDepth (
 ) where
 
 import Data.Semigroup qualified as Semigroup
+import Debug
 import Log
 import Numeric.Natural (
     Natural,
@@ -32,7 +33,13 @@ instance Pretty ExecDepth where
         Pretty.hsep ["exec depth:", Pretty.pretty (getExecDepth execDepth)]
 
 data InfoExecDepth = InfoExecDepth ExecDepth
-    deriving stock (Show)
+    deriving stock (Eq, Show)
+
+instance Debug InfoExecDepth where
+    debugPrec w = \_ -> Pretty.pretty . show $ w
+
+instance Diff InfoExecDepth where
+    diffPrec = diffPrecEq
 
 instance Pretty InfoExecDepth where
     pretty (InfoExecDepth execDepth) =

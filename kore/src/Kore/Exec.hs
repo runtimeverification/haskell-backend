@@ -346,6 +346,7 @@ exec
                 toTransitionResult
 
         toTransitionResult ::
+            Eq p =>
             (ExecDepth, ProgramState p) ->
             [(ExecDepth, ProgramState p)] ->
             ( GraphTraversal.TransitionResult
@@ -357,11 +358,16 @@ exec
                 Rewritten _ -> GraphTraversal.Stop prior []
                 Remaining _ -> GraphTraversal.Stuck prior
                 Kore.Rewrite.Bottom -> GraphTraversal.Stuck prior
-        toTransitionResult _prior [next] =
+        toTransitionResult prior [next] =
             case snd next of
                 Start _ -> GraphTraversal.Continuing next
                 Rewritten _ -> GraphTraversal.Continuing next
-                Remaining _ -> GraphTraversal.Stuck next
+                Remaining next'
+                    -- has anything actually changed except the depth count?
+                    | maybe False (== next') $ extractProgramState (snd prior) ->
+                        GraphTraversal.Stuck prior
+                    | otherwise ->
+                        GraphTraversal.Stuck next
                 Kore.Rewrite.Bottom -> GraphTraversal.Stuck next
         toTransitionResult prior (s : ss) =
             GraphTraversal.Branch prior (s :| ss)
@@ -435,6 +441,7 @@ rpcExec
 
         -- TODO modify to implement stopping on given rule IDs/labels
         toTransitionResult ::
+            Eq p =>
             (ExecDepth, ProgramState p) ->
             [(ExecDepth, ProgramState p)] ->
             ( GraphTraversal.TransitionResult
@@ -447,11 +454,16 @@ rpcExec
                 -- returns `Final` to signal that no instructions were left.
                 Start _ -> GraphTraversal.Final prior
                 Rewritten _ -> GraphTraversal.Final prior
-        toTransitionResult _prior [next] =
+        toTransitionResult prior [next] =
             case snd next of
                 Start _ -> GraphTraversal.Continuing next
                 Rewritten _ -> GraphTraversal.Continuing next
-                Remaining _ -> GraphTraversal.Stuck next
+                Remaining next'
+                    -- has anything actually changed except the depth count?
+                    | maybe False (== next') $ extractProgramState (snd prior) ->
+                        GraphTraversal.Stuck prior
+                    | otherwise ->
+                        GraphTraversal.Stuck next
                 Kore.Rewrite.Bottom -> GraphTraversal.Stuck next
         toTransitionResult prior (s : ss) =
             GraphTraversal.Branch prior (s :| ss)
