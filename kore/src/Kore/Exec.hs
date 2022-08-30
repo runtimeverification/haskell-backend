@@ -465,6 +465,8 @@ trackExecDepth transit prim (execDepth, execState) = do
     let execDepth' = (if didRewrite execState' then succ else id) execDepth
     pure (execDepth', execState')
   where
+    -- The new state can become Bottom by simplification after rewriting,
+    -- or it remains Rewritten. If it is Remaining, it was not rewritten.
     didRewrite Kore.Rewrite.Bottom = prim == Rewrite
     didRewrite (Rewritten _) = prim == Rewrite
     didRewrite _ = False
