@@ -20,33 +20,56 @@ module Kore.Rewrite.Axiom.EvaluationStrategy (
     attemptEquations,
 ) where
 
-import Control.Monad.Except ( ExceptT (..), runExceptT )
-import Data.EitherR ( ExceptRT (..) )
-import Data.Semigroup ( Min (..) )
-import qualified Data.Text as Text
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Equation as Equation
-import Kore.Equation.DebugEquation ( AttemptEquationError )
-import qualified Kore.Equation.DebugEquation as Equation
-import Kore.Equation.Equation ( Equation )
-import Kore.Equation.Registry ( PartitionedEquations (..), partitionEquations )
-import Kore.Internal.OrPattern ( OrPattern )
-import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.SideCondition ( SideCondition )
-import qualified Kore.Internal.SideCondition as SideCondition
+import Control.Monad.Except (
+    ExceptT (..),
+    runExceptT,
+ )
+import Data.EitherR (
+    ExceptRT (..),
+ )
+import Data.Semigroup (
+    Min (..),
+ )
+import Data.Text qualified as Text
+import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Equation qualified as Equation
+import Kore.Equation.DebugEquation (
+    AttemptEquationError,
+ )
+import Kore.Equation.DebugEquation qualified as Equation
+import Kore.Equation.Equation (
+    Equation,
+ )
+import Kore.Equation.Registry (PartitionedEquations (..), partitionEquations)
+import Kore.Internal.OrPattern (
+    OrPattern,
+ )
+import Kore.Internal.OrPattern qualified as OrPattern
+import Kore.Internal.SideCondition (
+    SideCondition,
+ )
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Rewrite.RewritingVariable ( RewritingVariableName )
+import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+ )
 import Kore.Simplify.Simplify
-import qualified Kore.Simplify.Simplify as AttemptedAxiom
-    ( AttemptedAxiom (..)
-    )
-import Kore.Unparser ( unparse )
-import Kore.Variables.Target ( Target )
-import qualified Kore.Variables.Target as Target
+import Kore.Simplify.Simplify qualified as AttemptedAxiom (
+    AttemptedAxiom (..),
+ )
+import Kore.Unparser (
+    unparse,
+ )
+import Kore.Variables.Target (
+    Target,
+ )
+import Kore.Variables.Target qualified as Target
 import Prelude.Kore
-import Pretty ( Pretty (..) )
-import qualified Pretty
+import Pretty (
+    Pretty (..),
+ )
+import Pretty qualified
 
 {- | Creates an evaluator for a function from the full set of rules
 that define it.
@@ -141,10 +164,8 @@ simplificationEvaluation equation term condition = do
 returns Applicable, otherwise returns the result of the second.
 -}
 simplifierWithFallback ::
-    ( Simplifier (AttemptedAxiom RewritingVariableName)
-    ) ->
-    ( Simplifier (AttemptedAxiom RewritingVariableName)
-    ) ->
+    Simplifier (AttemptedAxiom RewritingVariableName) ->
+    Simplifier (AttemptedAxiom RewritingVariableName) ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
     Simplifier (AttemptedAxiom RewritingVariableName)
@@ -155,8 +176,7 @@ simplifierWithFallback first second =
 on concrete patterns.
 -}
 builtinEvaluation ::
-    ( Simplifier (AttemptedAxiom RewritingVariableName)
-    ) ->
+    Simplifier (AttemptedAxiom RewritingVariableName) ->
     TermLike RewritingVariableName ->
     Simplifier (AttemptedAxiom RewritingVariableName)
 builtinEvaluation evaluator =
@@ -164,28 +184,27 @@ builtinEvaluation evaluator =
 
 evaluateBuiltin ::
     -- | Map from axiom IDs to axiom evaluators
-    ( Simplifier (AttemptedAxiom RewritingVariableName)
-    ) ->
+    Simplifier (AttemptedAxiom RewritingVariableName) ->
     TermLike RewritingVariableName ->
     Simplifier (AttemptedAxiom RewritingVariableName)
 evaluateBuiltin builtinEvaluator patt =
-        do
-            result <- builtinEvaluator
-            case result of
-                AttemptedAxiom.NotApplicable
-                    | App_ appHead children <- patt
-                      , Just hook_ <- Text.unpack <$> Attribute.getHook (symbolHook appHead)
-                      , all isValue children ->
-                        (error . show . Pretty.vsep)
-                            [ "Expecting hook "
-                                <> Pretty.squotes (Pretty.pretty hook_)
-                                <> " to reduce concrete pattern:"
-                            , Pretty.indent 4 (unparse patt)
-                            ]
-                _ -> return result
-      where
-        isValue pat =
-            maybe False TermLike.isConstructorLike $ asConcrete pat
+    do
+        result <- builtinEvaluator
+        case result of
+            AttemptedAxiom.NotApplicable
+                | App_ appHead children <- patt
+                  , Just hook_ <- Text.unpack <$> Attribute.getHook (symbolHook appHead)
+                  , all isValue children ->
+                    (error . show . Pretty.vsep)
+                        [ "Expecting hook "
+                            <> Pretty.squotes (Pretty.pretty hook_)
+                            <> " to reduce concrete pattern:"
+                        , Pretty.indent 4 (unparse patt)
+                        ]
+            _ -> return result
+  where
+    isValue pat =
+        maybe False TermLike.isConstructorLike $ asConcrete pat
 
 {- | TODO (breakerzirconia): either refactor the documentation or inline this function.
 Creates an 'BuiltinAndAxiomSimplifier' from a set of equations.
@@ -194,9 +213,7 @@ mkEvaluator ::
     [Equation RewritingVariableName] ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
-    Maybe
-        (Simplifier (AttemptedAxiom RewritingVariableName)
-        )
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
 mkEvaluator equations termLike sideCondition =
     case (simplificationEvaluator, definitionEvaluator) of
         (Nothing, Nothing) -> Nothing
@@ -210,8 +227,11 @@ mkEvaluator equations termLike sideCondition =
         if null simplificationRules
             then Nothing
             else
-                let simplifiers = map (\equation -> simplificationEvaluation equation termLike sideCondition) simplificationRules
-                in Just $ firstFullEvaluation simplifiers termLike sideCondition
+                let simplifiers =
+                        map
+                            (\equation -> simplificationEvaluation equation termLike sideCondition)
+                            simplificationRules
+                 in Just $ firstFullEvaluation simplifiers termLike sideCondition
     definitionEvaluator =
         if null functionRules
             then Nothing
