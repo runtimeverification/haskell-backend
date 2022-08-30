@@ -147,7 +147,8 @@ patternMatch' ::
     Simplifier (Either Text (MatchResult RewritingVariableName))
 patternMatch' _ [] [] predicate subst = return $ Right (Predicate.fromMultiAnd predicate, finalizeSubst subst)
 patternMatch' sideCondition [] ((pat, subject, boundVars, boundSet) : rest) predicate subst = do
-    let pat' = renormalizeBuiltins $ substitute subst pat
+    injSimplifier <- Simplifier.askInjSimplifier
+    let pat' = renormalizeBuiltins $ InjSimplifier.normalize injSimplifier $ substitute subst pat
     case (pat', subject) of
         (InternalMap_ map1, InternalMap_ map2) ->
             matchNormalizedAc decomposeList unwrapMapValue unwrapMapElement (wrapMap map2) (unwrapAc $ builtinAcChild map1) (unwrapAc $ builtinAcChild map2)
