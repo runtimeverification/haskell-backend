@@ -96,7 +96,6 @@ import Numeric (
  )
 import Prelude.Kore
 import Text.Megaparsec qualified as Parsec
-import UnrollMaybe
 
 {- | Verify that the sort is hooked to the builtin @String@ sort.
 
@@ -457,22 +456,22 @@ builtinFunctions ::
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
     Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
-builtinFunctions key
-    | key == eqKey = unrollMaybe . Just $ comparator eqKey (==)
-    | key == ltKey = unrollMaybe . Just $ comparator ltKey (<)
-    | key == plusKey = unrollMaybe . Just $ binaryOperator plusKey Text.append
-    | key == substrKey = unrollMaybe $ Just evalSubstr
-    | key == lengthKey = unrollMaybe $ Just evalLength
-    | key == findKey = unrollMaybe $ Just evalFind
-    | key == string2BaseKey = unrollMaybe $ Just evalString2Base
-    | key == base2StringKey = unrollMaybe $ Just evalBase2String
-    | key == string2IntKey = unrollMaybe $ Just evalString2Int
-    | key == int2StringKey = unrollMaybe $ Just evalInt2String
-    | key == chrKey = unrollMaybe $ Just evalChr
-    | key == ordKey = unrollMaybe $ Just evalOrd
-    | key == token2StringKey = unrollMaybe $ Just evalToken2String
-    | key == string2TokenKey = unrollMaybe $ Just evalString2Token
-    | otherwise = unrollMaybe Nothing
+builtinFunctions key termLike sideCondition
+    | key == eqKey = Just $ comparator eqKey (==) termLike sideCondition
+    | key == ltKey = Just $ comparator ltKey (<) termLike sideCondition
+    | key == plusKey = Just $ binaryOperator plusKey Text.append termLike sideCondition
+    | key == substrKey = Just $ evalSubstr termLike sideCondition
+    | key == lengthKey = Just $ evalLength termLike sideCondition
+    | key == findKey = Just $ evalFind termLike sideCondition
+    | key == string2BaseKey = Just $ evalString2Base termLike sideCondition
+    | key == base2StringKey = Just $ evalBase2String termLike sideCondition
+    | key == string2IntKey = Just $ evalString2Int termLike sideCondition
+    | key == int2StringKey = Just $ evalInt2String termLike sideCondition
+    | key == chrKey = Just $ evalChr termLike sideCondition
+    | key == ordKey = Just $ evalOrd termLike sideCondition
+    | key == token2StringKey = Just $ evalToken2String termLike sideCondition
+    | key == string2TokenKey = Just $ evalString2Token termLike sideCondition
+    | otherwise = Nothing
   where
     comparator name op =
         Builtin.binaryOperator

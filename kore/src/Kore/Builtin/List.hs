@@ -120,7 +120,6 @@ import Kore.Unification.Unify (
     MonadUnify,
  )
 import Prelude.Kore
-import UnrollMaybe
 
 {- | Verify that the sort is hooked to the builtin @List@ sort.
 
@@ -370,17 +369,17 @@ builtinFunctions ::
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
     Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
-builtinFunctions key
-    | key == concatKey = unrollMaybe . Just $ Builtin.functionEvaluator evalConcat
-    | key == elementKey = unrollMaybe . Just $ Builtin.functionEvaluator evalElement
-    | key == unitKey = unrollMaybe . Just $ Builtin.functionEvaluator evalUnit
-    | key == getKey = unrollMaybe . Just $ Builtin.functionEvaluator evalGet
-    | key == updateKey = unrollMaybe . Just $ Builtin.functionEvaluator evalUpdate
-    | key == inKey = unrollMaybe . Just $ Builtin.functionEvaluator evalIn
-    | key == sizeKey = unrollMaybe . Just $ Builtin.functionEvaluator evalSize
-    | key == makeKey = unrollMaybe . Just $ Builtin.functionEvaluator evalMake
-    | key == updateAllKey = unrollMaybe . Just $ Builtin.functionEvaluator evalUpdateAll
-    | otherwise = unrollMaybe Nothing
+builtinFunctions key termLike sideCondition
+    | key == concatKey = Just $ Builtin.functionEvaluator evalConcat termLike sideCondition
+    | key == elementKey = Just $ Builtin.functionEvaluator evalElement termLike sideCondition
+    | key == unitKey = Just $ Builtin.functionEvaluator evalUnit termLike sideCondition
+    | key == getKey = Just $ Builtin.functionEvaluator evalGet termLike sideCondition
+    | key == updateKey = Just $ Builtin.functionEvaluator evalUpdate termLike sideCondition
+    | key == inKey = Just $ Builtin.functionEvaluator evalIn termLike sideCondition
+    | key == sizeKey = Just $ Builtin.functionEvaluator evalSize termLike sideCondition
+    | key == makeKey = Just $ Builtin.functionEvaluator evalMake termLike sideCondition
+    | key == updateAllKey = Just $ Builtin.functionEvaluator evalUpdateAll termLike sideCondition
+    | otherwise = Nothing
 
 data FirstElemVarData = FirstElemVarData
     { pat1, pat2 :: !(TermLike RewritingVariableName)

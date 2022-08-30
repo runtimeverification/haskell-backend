@@ -583,7 +583,6 @@ library
     SQL.SOP
     SQL.SQL
     Stats
-    UnrollMaybe
   hs-source-dirs:
     src
     app/share

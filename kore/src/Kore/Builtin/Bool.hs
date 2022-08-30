@@ -70,7 +70,6 @@ import Kore.Unification.Unify (
 import Prelude.Kore
 import Text.Megaparsec qualified as Parsec
 import Text.Megaparsec.Char qualified as Parsec
-import UnrollMaybe
 
 {- | Verify that the sort is hooked to the builtin @Bool@ sort.
 
@@ -152,17 +151,17 @@ builtinFunctions ::
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
     Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
-builtinFunctions key
-    | key == orKey = unrollMaybe . Just $ binaryOperator orKey (||)
-    | key == andKey = unrollMaybe . Just $ binaryOperator andKey (&&)
-    | key == xorKey = unrollMaybe . Just $ binaryOperator xorKey xor
-    | key == neKey = unrollMaybe . Just $ binaryOperator neKey (/=)
-    | key == eqKey = unrollMaybe . Just $ binaryOperator eqKey (==)
-    | key == notKey = unrollMaybe . Just $ unaryOperator notKey not
-    | key == impliesKey = unrollMaybe . Just $ binaryOperator impliesKey implies
-    | key == andThenKey = unrollMaybe . Just $ binaryOperator andThenKey (&&)
-    | key == orElseKey = unrollMaybe . Just $ binaryOperator orElseKey (||)
-    | otherwise = unrollMaybe Nothing
+builtinFunctions key termLike sideCondition
+    | key == orKey = Just $ binaryOperator orKey (||) termLike sideCondition
+    | key == andKey = Just $ binaryOperator andKey (&&) termLike sideCondition
+    | key == xorKey = Just $ binaryOperator xorKey xor termLike sideCondition
+    | key == neKey = Just $ binaryOperator neKey (/=) termLike sideCondition
+    | key == eqKey = Just $ binaryOperator eqKey (==) termLike sideCondition
+    | key == notKey = Just $ unaryOperator notKey not termLike sideCondition
+    | key == impliesKey = Just $ binaryOperator impliesKey implies termLike sideCondition
+    | key == andThenKey = Just $ binaryOperator andThenKey (&&) termLike sideCondition
+    | key == orElseKey = Just $ binaryOperator orElseKey (||) termLike sideCondition
+    | otherwise = Nothing
   where
     unaryOperator =
         Builtin.unaryOperator extractBoolDomainValue asPattern

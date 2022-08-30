@@ -75,7 +75,6 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Simplify.Simplify
 import Prelude.Kore
-import UnrollMaybe
 
 keccak256Key
     , ecdsaRecoverKey
@@ -153,18 +152,18 @@ builtinFunctions ::
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
     Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
-builtinFunctions key
-    | key == keccak256Key = unrollMaybe $ Just evalKeccak
-    | key == hashKeccak256Key = unrollMaybe $ Just evalKeccak
-    | key == sha256Key = unrollMaybe $ Just evalSha256
-    | key == hashSha256Key = unrollMaybe $ Just evalSha256
-    | key == sha3256Key = unrollMaybe $ Just evalSha3256
-    | key == hashSha3_256Key = unrollMaybe $ Just evalSha3256
-    | key == ripemd160Key = unrollMaybe $ Just evalRipemd160
-    | key == hashRipemd160Key = unrollMaybe $ Just evalRipemd160
-    | key == ecdsaRecoverKey = unrollMaybe $ Just evalECDSARecover
-    | key == secp256k1EcdsaRecoverKey = unrollMaybe $ Just evalECDSARecover
-    | otherwise = unrollMaybe Nothing
+builtinFunctions key termLike sideCondition
+    | key == keccak256Key = Just $ evalKeccak termLike sideCondition
+    | key == hashKeccak256Key = Just $ evalKeccak termLike sideCondition
+    | key == sha256Key = Just $ evalSha256 termLike sideCondition
+    | key == hashSha256Key = Just $ evalSha256 termLike sideCondition
+    | key == sha3256Key = Just $ evalSha3256 termLike sideCondition
+    | key == hashSha3_256Key = Just $ evalSha3256 termLike sideCondition
+    | key == ripemd160Key = Just $ evalRipemd160 termLike sideCondition
+    | key == hashRipemd160Key = Just $ evalRipemd160 termLike sideCondition
+    | key == ecdsaRecoverKey = Just $ evalECDSARecover termLike sideCondition
+    | key == secp256k1EcdsaRecoverKey = Just $ evalECDSARecover termLike sideCondition
+    | otherwise = Nothing
 
 verifyHashFunction :: Builtin.SymbolVerifier
 verifyHashFunction = Builtin.verifySymbol String.assertSort [String.assertSort]

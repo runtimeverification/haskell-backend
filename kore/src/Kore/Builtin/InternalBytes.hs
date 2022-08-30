@@ -89,7 +89,6 @@ import Prelude.Kore
 import System.IO.Unsafe (
     unsafeDupablePerformIO,
  )
-import UnrollMaybe
 
 {- | Verify that the sort is hooked to the @Bytes@ sort.
  | See also: 'sort', 'Builtin.verifySort'.
@@ -589,23 +588,23 @@ builtinFunctions ::
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
     Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
-builtinFunctions key
-    | key == bytes2StringKey = unrollMaybe $ Just evalBytes2String
-    | key == string2BytesKey = unrollMaybe $ Just evalString2Bytes
-    | key == decodeBytesKey = unrollMaybe $ Just evalDecodeBytes
-    | key == encodeBytesKey = unrollMaybe $ Just evalEncodeBytes
-    | key == updateKey = unrollMaybe $ Just evalUpdate
-    | key == getKey = unrollMaybe $ Just evalGet
-    | key == substrKey = unrollMaybe $ Just evalSubstr
-    | key == replaceAtKey = unrollMaybe $ Just evalReplaceAt
-    | key == padRightKey = unrollMaybe $ Just evalPadRight
-    | key == padLeftKey = unrollMaybe $ Just evalPadLeft
-    | key == reverseKey = unrollMaybe $ Just evalReverse
-    | key == lengthKey = unrollMaybe $ Just evalLength
-    | key == concatKey = unrollMaybe $ Just evalConcat
-    | key == int2bytesKey = unrollMaybe $ Just evalInt2bytes
-    | key == bytes2intKey = unrollMaybe $ Just evalBytes2int
-    | otherwise = unrollMaybe Nothing
+builtinFunctions key termLike sideCondition
+    | key == bytes2StringKey = Just $ evalBytes2String termLike sideCondition
+    | key == string2BytesKey = Just $ evalString2Bytes termLike sideCondition
+    | key == decodeBytesKey = Just $ evalDecodeBytes termLike sideCondition
+    | key == encodeBytesKey = Just $ evalEncodeBytes termLike sideCondition
+    | key == updateKey = Just $ evalUpdate termLike sideCondition
+    | key == getKey = Just $ evalGet termLike sideCondition
+    | key == substrKey = Just $ evalSubstr termLike sideCondition
+    | key == replaceAtKey = Just $ evalReplaceAt termLike sideCondition
+    | key == padRightKey = Just $ evalPadRight termLike sideCondition
+    | key == padLeftKey = Just $ evalPadLeft termLike sideCondition
+    | key == reverseKey = Just $ evalReverse termLike sideCondition
+    | key == lengthKey = Just $ evalLength termLike sideCondition
+    | key == concatKey = Just $ evalConcat termLike sideCondition
+    | key == int2bytesKey = Just $ evalInt2bytes termLike sideCondition
+    | key == bytes2intKey = Just $ evalBytes2int termLike sideCondition
+    | otherwise = Nothing
 
 -- | @UnifyBytes@ matches unification problems on @\\dv{Bytes}(_)@ itself.
 data UnifyBytes = UnifyBytes

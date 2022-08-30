@@ -97,16 +97,16 @@ koreEvaluators ::
 koreEvaluators key termLike sideCondition =
     asum $
         map
-            (\evaluator -> evaluator termLike sideCondition)
-            [ Bool.builtinFunctions key
-            , Int.builtinFunctions key
-            , KEqual.builtinFunctions key
-            , List.builtinFunctions key
-            , Map.builtinFunctions key
-            , Set.builtinFunctions key
-            , String.builtinFunctions key
-            , Krypto.builtinFunctions key
-            , InternalBytes.builtinFunctions key
+            (\evaluator -> evaluator key termLike sideCondition)
+            [ Bool.builtinFunctions
+            , Int.builtinFunctions
+            , KEqual.builtinFunctions
+            , List.builtinFunctions
+            , Map.builtinFunctions
+            , Set.builtinFunctions
+            , String.builtinFunctions
+            , Krypto.builtinFunctions
+            , InternalBytes.builtinFunctions
             ]
 {-# INLINE koreEvaluators #-}
 

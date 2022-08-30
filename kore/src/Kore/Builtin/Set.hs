@@ -114,7 +114,6 @@ import Kore.Unification.Unify (
     MonadUnify,
  )
 import Prelude.Kore
-import UnrollMaybe
 
 -- | Builtin name of the @Set@ sort.
 sort :: Text
@@ -482,18 +481,18 @@ builtinFunctions ::
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
     Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
-builtinFunctions key
-    | key == Set.concatKey = unrollMaybe . Just $ Builtin.functionEvaluator evalConcat
-    | key == Set.elementKey = unrollMaybe . Just $ Builtin.functionEvaluator evalElement
-    | key == Set.unitKey = unrollMaybe . Just $ Builtin.functionEvaluator evalUnit
-    | key == Set.inKey = unrollMaybe . Just $ Builtin.functionEvaluator evalIn
-    | key == Set.differenceKey = unrollMaybe . Just $ Builtin.applicationEvaluator evalDifference
-    | key == Set.toListKey = unrollMaybe . Just $ Builtin.functionEvaluator evalToList
-    | key == Set.sizeKey = unrollMaybe . Just $ Builtin.functionEvaluator evalSize
-    | key == Set.intersectionKey = unrollMaybe . Just $ Builtin.functionEvaluator evalIntersection
-    | key == Set.list2setKey = unrollMaybe . Just $ Builtin.functionEvaluator evalList2set
-    | key == Set.inclusionKey = unrollMaybe . Just $ Builtin.functionEvaluator evalInclusion
-    | otherwise = unrollMaybe Nothing
+builtinFunctions key termLike sideCondition
+    | key == Set.concatKey = Just $ Builtin.functionEvaluator evalConcat termLike sideCondition
+    | key == Set.elementKey = Just $ Builtin.functionEvaluator evalElement termLike sideCondition
+    | key == Set.unitKey = Just $ Builtin.functionEvaluator evalUnit termLike sideCondition
+    | key == Set.inKey = Just $ Builtin.functionEvaluator evalIn termLike sideCondition
+    | key == Set.differenceKey = Just $ Builtin.applicationEvaluator evalDifference termLike sideCondition
+    | key == Set.toListKey = Just $ Builtin.functionEvaluator evalToList termLike sideCondition
+    | key == Set.sizeKey = Just $ Builtin.functionEvaluator evalSize termLike sideCondition
+    | key == Set.intersectionKey = Just $ Builtin.functionEvaluator evalIntersection termLike sideCondition
+    | key == Set.list2setKey = Just $ Builtin.functionEvaluator evalList2set termLike sideCondition
+    | key == Set.inclusionKey = Just $ Builtin.functionEvaluator evalInclusion termLike sideCondition
+    | otherwise = Nothing
 
 {- | Convert a Set-sorted 'TermLike' to its internal representation.
 

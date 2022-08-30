@@ -128,7 +128,6 @@ import Kore.Simplify.Simplify (
 import Kore.Unification.Unify as Unify
 import Prelude.Kore
 import Text.Megaparsec.Char.Lexer qualified as Parsec
-import UnrollMaybe
 
 {- | Verify that the sort is hooked to the builtin @Int@ sort.
 
@@ -255,42 +254,42 @@ builtinFunctions ::
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
     Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
-builtinFunctions key
+builtinFunctions key termLike sideCondition
     -- TODO (thomas.tuegel): Add MonadRandom to evaluation context to
     -- implement rand and srand.
-    | key == randKey = unrollMaybe $ Just Builtin.notImplemented
-    | key == srandKey = unrollMaybe $ Just Builtin.notImplemented
-    | key == gtKey = unrollMaybe . Just $ comparator gtKey (>)
-    | key == geKey = unrollMaybe . Just $ comparator geKey (>=)
-    | key == eqKey = unrollMaybe . Just $ Builtin.functionEvaluator evalEq
-    | key == leKey = unrollMaybe . Just $ comparator leKey (<=)
-    | key == ltKey = unrollMaybe . Just $ comparator ltKey (<)
-    | key == neKey = unrollMaybe . Just $ comparator neKey (/=)
+    | key == randKey = Just $ Builtin.notImplemented termLike sideCondition
+    | key == srandKey = Just $ Builtin.notImplemented termLike sideCondition
+    | key == gtKey = Just $ comparator gtKey (>) termLike sideCondition
+    | key == geKey = Just $ comparator geKey (>=) termLike sideCondition
+    | key == eqKey = Just $ Builtin.functionEvaluator evalEq termLike sideCondition
+    | key == leKey = Just $ comparator leKey (<=) termLike sideCondition
+    | key == ltKey = Just $ comparator ltKey (<) termLike sideCondition
+    | key == neKey = Just $ comparator neKey (/=) termLike sideCondition
     -- Ordering operations
-    | key == minKey = unrollMaybe . Just $ binaryOperator minKey min
-    | key == maxKey = unrollMaybe . Just $ binaryOperator maxKey max
+    | key == minKey = Just $ binaryOperator minKey min termLike sideCondition
+    | key == maxKey = Just $ binaryOperator maxKey max termLike sideCondition
     -- Arithmetic operations
-    | key == addKey = unrollMaybe . Just $ binaryOperator addKey (+)
-    | key == subKey = unrollMaybe . Just $ binaryOperator subKey (-)
-    | key == mulKey = unrollMaybe . Just $ binaryOperator mulKey (*)
-    | key == absKey = unrollMaybe . Just $ unaryOperator absKey abs
+    | key == addKey = Just $ binaryOperator addKey (+) termLike sideCondition
+    | key == subKey = Just $ binaryOperator subKey (-) termLike sideCondition
+    | key == mulKey = Just $ binaryOperator mulKey (*) termLike sideCondition
+    | key == absKey = Just $ unaryOperator absKey abs termLike sideCondition
     -- Division operations
-    | key == edivKey = unrollMaybe . Just $ partialBinaryOperator edivKey ediv
-    | key == emodKey = unrollMaybe . Just $ partialBinaryOperator emodKey emod
-    | key == tdivKey = unrollMaybe . Just $ partialBinaryOperator tdivKey tdiv
-    | key == tmodKey = unrollMaybe . Just $ partialBinaryOperator tmodKey tmod
+    | key == edivKey = Just $ partialBinaryOperator edivKey ediv termLike sideCondition
+    | key == emodKey = Just $ partialBinaryOperator emodKey emod termLike sideCondition
+    | key == tdivKey = Just $ partialBinaryOperator tdivKey tdiv termLike sideCondition
+    | key == tmodKey = Just $ partialBinaryOperator tmodKey tmod termLike sideCondition
     -- Bitwise operations
-    | key == andKey = unrollMaybe . Just $ binaryOperator andKey (.&.)
-    | key == orKey = unrollMaybe . Just $ binaryOperator orKey (.|.)
-    | key == xorKey = unrollMaybe . Just $ binaryOperator xorKey xor
-    | key == notKey = unrollMaybe . Just $ unaryOperator notKey complement
-    | key == shlKey = unrollMaybe . Just $ binaryOperator shlKey (\a -> shift a . fromInteger)
-    | key == shrKey = unrollMaybe . Just $ binaryOperator shrKey (\a -> shift a . fromInteger . negate)
+    | key == andKey = Just $ binaryOperator andKey (.&.) termLike sideCondition
+    | key == orKey = Just $ binaryOperator orKey (.|.) termLike sideCondition
+    | key == xorKey = Just $ binaryOperator xorKey xor termLike sideCondition
+    | key == notKey = Just $ unaryOperator notKey complement termLike sideCondition
+    | key == shlKey = Just $ binaryOperator shlKey (\a -> shift a . fromInteger) termLike sideCondition
+    | key == shrKey = Just $ binaryOperator shrKey (\a -> shift a . fromInteger . negate) termLike sideCondition
     -- Exponential and logarithmic operations
-    | key == powKey = unrollMaybe . Just $ partialBinaryOperator powKey pow
-    | key == powmodKey = unrollMaybe . Just $ partialTernaryOperator powmodKey powmod
-    | key == log2Key = unrollMaybe . Just $ partialUnaryOperator log2Key log2
-    | otherwise = unrollMaybe Nothing
+    | key == powKey = Just $ partialBinaryOperator powKey pow termLike sideCondition
+    | key == powmodKey = Just $ partialTernaryOperator powmodKey powmod termLike sideCondition
+    | key == log2Key = Just $ partialUnaryOperator log2Key log2 termLike sideCondition
+    | otherwise = Nothing
   where
     unaryOperator name op =
         Builtin.unaryOperator
