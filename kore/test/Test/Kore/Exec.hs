@@ -4,6 +4,7 @@ module Test.Kore.Exec (
     test_execBottom,
     test_execBranch,
     test_execBranch1Stuck,
+    test_execDepthInfo,
     test_searchPriority,
     test_searchExceedingBreadthLimit,
     test_execGetExitCode,
@@ -11,6 +12,7 @@ module Test.Kore.Exec (
     test_matchDisjunction,
     test_checkFunctions,
     test_simplify,
+    test_rpcExecDepth,
 ) where
 
 import Control.Exception as Exception
@@ -45,6 +47,7 @@ import Kore.Equation.Equation (
  )
 import Kore.Error qualified
 import Kore.Exec
+import Kore.Exec.GraphTraversal (TraversalResult (..))
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Pattern (
@@ -63,10 +66,12 @@ import Kore.Log.ErrorEquationRightFunction (
 import Kore.Log.ErrorEquationsSameMatch (
     ErrorEquationsSameMatch,
  )
+import Kore.Log.InfoExecDepth (ExecDepth (..), InfoExecDepth (..))
 import Kore.Log.WarnDepthLimitExceeded
 import Kore.Rewrite (
     ExecutionMode (..),
     Natural,
+    ProgramState (..),
  )
 import Kore.Rewrite.AntiLeft (
     AntiLeft (AntiLeft),
@@ -187,6 +192,108 @@ test_execBranch1Stuck =
     inputPattern = applyToNoArgs mySort "a" -- rewrites to b or d
     expected =
         mkOr (applyToNoArgs mySort "b") (applyToNoArgs mySort "e")
+
+test_rpcExecDepth :: [TestTree]
+test_rpcExecDepth =
+    [ testCase "without depth limit" $ do
+        result <-
+            runDepth $ rpcExecTest Unlimited verifiedModule (state "c")
+        assertEqual "depth" (stuckAt 2) result
+    , testCase "with depth limit limiting execution" $ do
+        result <-
+            runDepth $ rpcExecTest (Limit 1) verifiedModule (state "c")
+        assertEqual "depth" (endsAt 1) result
+    , testCase "with depth limit above execution limit" $ do
+        result <-
+            runDepth $ rpcExecTest (Limit 3) verifiedModule (state "c")
+        assertEqual "depth" (stuckAt 2) result
+    , testCase "when branching" $ do
+        result <-
+            runDepth $ rpcExecTest Unlimited verifiedModule (state "a")
+        assertEqual "depth" (Stopped [0] [1, 1]) result
+    ]
+  where
+    state = applyToNoArgs mySort
+    stuckAt = GotStuck 0 . (: [])
+    endsAt = Ended . (: [])
+
+    runDepth = fmap (fmap (getExecDepth . fst)) . runNoSMT
+
+    verifiedModule =
+        verifiedMyModule
+            Module
+                { moduleName = ModuleName "MY-MODULE"
+                , moduleSentences =
+                    [ asSentence mySortDecl
+                    , asSentence $ constructorDecl "a"
+                    , asSentence $ constructorDecl "b"
+                    , asSentence $ constructorDecl "c"
+                    , asSentence $ constructorDecl "d"
+                    , asSentence $ constructorDecl "e"
+                    , functionalAxiom "a"
+                    , functionalAxiom "b"
+                    , functionalAxiom "c"
+                    , functionalAxiom "d"
+                    , functionalAxiom "d"
+                    , simpleRewriteAxiom "a" "b"
+                    , simpleRewriteAxiom "a" "c"
+                    , simpleRewriteAxiom "c" "d"
+                    , simpleRewriteAxiom "d" "e"
+                    ]
+                , moduleAttributes = Attributes []
+                }
+
+test_execDepthInfo :: [TestTree]
+test_execDepthInfo =
+    [ testCase "without depth limit" $ do
+        result <-
+            depthLogOf $ execTest Unlimited Unlimited verifiedModule Any (state "c")
+        assertEqual "" (depthInfo 2) result
+    , testCase "with depth limit limiting execution" $ do
+        result <-
+            depthLogOf $ execTest (Limit 1) Unlimited verifiedModule Any (state "c")
+        assertEqual "" (depthInfo 1) result
+    , testCase "with depth limit above execution limit" $ do
+        result <-
+            depthLogOf $ execTest (Limit 3) Unlimited verifiedModule Any (state "c")
+        assertEqual "" (depthInfo 2) result
+    , testCase "when branching" $ do
+        result <-
+            depthLogOf $ execTest Unlimited Unlimited verifiedModule Any (state "a")
+        assertEqual "max depth from two branches" (depthInfo 3) result
+    ]
+  where
+    state = applyToNoArgs mySort
+
+    depthLogOf = fmap (depthLogged . snd) . runTestLoggerT . SMT.runNoSMT
+
+    depthLogged = headMay . mapMaybe (fromEntry @InfoExecDepth)
+
+    depthInfo = Just . InfoExecDepth . ExecDepth
+
+    verifiedModule =
+        verifiedMyModule
+            Module
+                { moduleName = ModuleName "MY-MODULE"
+                , moduleSentences =
+                    [ asSentence mySortDecl
+                    , asSentence $ constructorDecl "a"
+                    , asSentence $ constructorDecl "b"
+                    , asSentence $ constructorDecl "c"
+                    , asSentence $ constructorDecl "d"
+                    , asSentence $ constructorDecl "e"
+                    , functionalAxiom "a"
+                    , functionalAxiom "b"
+                    , functionalAxiom "c"
+                    , functionalAxiom "d"
+                    , functionalAxiom "d"
+                    , simpleRewriteAxiom "a" "b"
+                    , simpleRewriteAxiom "a" "c"
+                    , simpleRewriteAxiom "c" "d"
+                    , simpleRewriteAxiom "d" "e"
+                    ]
+                , moduleAttributes = Attributes []
+                }
 
 test_execPriority :: TestTree
 test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
@@ -1093,6 +1200,15 @@ test_execGetExitCode =
                         }
                 , symbolSorts = applicationSorts [myIntSort] myIntSort
                 }
+
+rpcExecTest ::
+    Limit Natural ->
+    VerifiedModule Attribute.StepperAttributes ->
+    TermLike VariableName ->
+    SMT (TraversalResult (ExecDepth, ProgramState (Pattern VariableName)))
+rpcExecTest depthLimit verifiedModule initial =
+    makeSerializedModule verifiedModule >>= \serializedModule ->
+        rpcExec depthLimit serializedModule initial
 
 -- TODO(Ana): these functions should run the procedures twice,
 -- once with the experimental simplifier enabled and once with it

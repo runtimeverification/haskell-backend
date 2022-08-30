@@ -1,6 +1,7 @@
 module Test.Kore.Internal.Pattern (
     test_expandedPattern,
     test_hasSimplifiedChildren,
+    test_toFromTermLike,
     internalPatternGen,
     assertEquivalent,
     assertEquivalent',
@@ -20,6 +21,8 @@ import Data.Align (
 import Data.Map.Strict qualified as Map
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
+import Hedgehog ((===))
+import Hedgehog qualified
 import Kore.Attribute.Pattern.Simplified (
     Condition (..),
     Type (..),
@@ -69,12 +72,29 @@ import Test.Kore.Variables.V
 import Test.Kore.Variables.W
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
+import Test.Tasty.Hedgehog qualified as Hedgehog
 
 type TestPattern = Pattern VariableName
 
 internalPatternGen :: Gen TestPattern
 internalPatternGen =
     Pattern.fromTermLike <$> (termLikeChildGen =<< sortGen)
+
+test_toFromTermLike :: [TestTree]
+test_toFromTermLike =
+    [ Hedgehog.testProperty "Round trip from/to pattern" . Hedgehog.property $ do
+        pat <- Hedgehog.forAll (Pattern.parsePatternFromTermLike <$> termLikeGen)
+        let parseFromAfterToTerm = Pattern.parsePatternFromTermLike . Pattern.toTermLike
+        if (isBottom pat)
+            then -- bottom may be represented differently
+                Hedgehog.assert $ isBottom (parseFromAfterToTerm pat)
+            else parseFromAfterToTerm pat === pat
+    , Hedgehog.testProperty "Round trip from/to term-like" . Hedgehog.property $ do
+        termLike <- Hedgehog.forAll termLikeGen
+        Pattern.toTermLike (Pattern.fromTermLike termLike) === termLike
+        -- DOES NOT HOLD: (top/bottom simplification)
+        -- Pattern.toTermLike (Pattern.parsePatternFromTermLike termLike) === termLike
+    ]
 
 test_expandedPattern :: [TestTree]
 test_expandedPattern =

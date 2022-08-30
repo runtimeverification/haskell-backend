@@ -22,7 +22,10 @@ import Data.List.NonEmpty qualified as NE
 import Data.Maybe (fromJust)
 import Data.Sequence (Seq (..))
 import Data.Sequence qualified as Seq
+import Debug (Debug, Diff)
+import GHC.Generics qualified
 import GHC.Natural
+import Generics.SOP qualified as SOP
 import Kore.Rewrite.Strategy (
     -- FIXME assimilate definitions and remove import
     FinalNodeType (..),
@@ -326,6 +329,11 @@ data TraversalResult a
       -- (unproven) states and next states (from queue)
       Stopped [a] [a]
     deriving stock (Eq, Show)
+    deriving stock (GHC.Generics.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+
+instance Debug a => Debug (TraversalResult a)
+instance (Debug a, Diff a) => Diff (TraversalResult a)
 
 instance Pretty a => Pretty (TraversalResult a) where
     pretty = \case

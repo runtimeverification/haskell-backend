@@ -1,20 +1,28 @@
-# JSON RPC ROundtrip tests
+# JSON RPC Roundtrip tests
 
 This README provides a guide for adding more tests to this test suite.
 
 To add a test, you wil need to create a new folder in one of `execute/`, `simplify/`, etc. folders, corresponding to the API methods.
+Note that the folders for the API methods may not contain anything else but subfolders with tests.
 
-The new folder must contain:
+The new folder must contain input components according to the different endpoints:
 
+* For `execute`:
+  - `state.json` - a JSON Kore pattern file to be sent as the `state` parameter in the request (only necessary if we are sending `state`)
+  - `params.json` - additional parameters such as `max-depth` for the execute function
+* For `implies`:
+  - `antecedent.json` - a JSON Kore pattern file containing the antecedent term
+  - `consequent.json` - a JSON Kore pattern file containing the consequent term
+
+
+For all endpoints:
 * `definition.kore` - the definition file with a module `TEST` (this module name is hard coded for all tests)
-* `state.json` - a JSON Kore pattern file to be sent as the `state` parameter in the request (only necessary if we are sending `state`)
-* `params.json` - should contain additional parameters such as `max-depth` for the execute function
 * `response.golden` - golden file with the expected response from the server
 
-Optionally also include:
+Optionally, other files can be included, for instance
 
-* `test.k`
-* `state.test`
+* `test.k` - the K definition compiled to `definition.kore`
+* `state.test` - the start state for `execute` in the format of the source code
 
 
 ## How to generate the above files

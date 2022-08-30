@@ -9,8 +9,10 @@ import Colog (
  )
 import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
-import Control.Exception (Exception, catch, mask)
+import Control.Exception (ErrorCall (..), Exception, mask)
 import Control.Monad (forever)
+import Control.Monad.Catch (MonadCatch, catch, handle)
+import Control.Monad.Except (runExceptT)
 import Control.Monad.Logger (MonadLoggerIO, askLoggerIO, runLoggingT)
 import Control.Monad.Reader (ask, runReaderT)
 import Control.Monad.STM (atomically)
@@ -27,36 +29,33 @@ import Deriving.Aeson (
  )
 import GHC.Generics (Generic)
 import Kore.Builtin qualified as Builtin
+import Kore.Error (Error (..))
 import Kore.Exec qualified as Exec
 import Kore.Exec.GraphTraversal qualified as GraphTraversal
-
--- import Kore.Internal.OrPattern qualified as OrPattern
+import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (pattern PredicateTrue)
 import Kore.Internal.TermLike qualified as TermLike
-
--- import Kore.Reachability.Claim qualified as Claim
--- import  Kore.Rewrite.ClaimPattern qualified as ClaimPattern
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
+import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite (
     Natural,
     ProgramState,
     extractProgramState,
  )
-
--- import Kore.Simplify.API (
---     evalSimplifier,
---  )
+import Kore.Rewrite.ClaimPattern qualified as ClaimPattern
+import Kore.Rewrite.RewritingVariable (
+    getRewritingVariable,
+    mkRewritingPattern,
+    mkRewritingTerm,
+ )
+import Kore.Simplify.API (evalSimplifier)
 import Kore.Syntax.Json (KoreJson)
 import Kore.Syntax.Json qualified as PatternJson
-
--- import Kore.Unparser (unparseToText)
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Log qualified
-
--- import Logic qualified
 import Network.JSONRPC (
     BatchRequest (BatchRequest, SingleRequest),
     BatchResponse (BatchResponse, SingleResponse),
@@ -163,8 +162,8 @@ data ExecuteResult = ExecuteResult
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ExecuteResult
 
 data Condition = Condition
-    { substitution :: !KoreJson
-    , predicate :: !KoreJson
+    { substitution :: KoreJson
+    , predicate :: KoreJson
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -172,8 +171,9 @@ data Condition = Condition
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] Condition
 
 data ImpliesResult = ImpliesResult
-    { satisfiable :: !Bool
-    , condition :: !(Maybe Condition)
+    { implication :: KoreJson
+    , satisfiable :: Bool
+    , condition :: Maybe Condition
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -224,16 +224,15 @@ instance ToJSON (API 'Res) where
         Implies payload -> toJSON payload
         Simplify payload -> toJSON payload
 
-respond :: MonadIO m => (forall a. SMT.SMT a -> IO a) -> Exec.SerializedModule -> Respond (API 'Req) m (API 'Res)
-respond
-    runSMT
-    serializedModule@Exec.SerializedModule
-        { --sortGraph
-        -- , overloadGraph
-        -- , metadataTools
-        verifiedModule
-        -- , equations
-        } = \case
+respond ::
+    forall m.
+    MonadIO m =>
+    MonadCatch m =>
+    (forall a. SMT.SMT a -> IO a) ->
+    Exec.SerializedModule ->
+    Respond (API 'Req) m (API 'Res)
+respond runSMT serializedModule =
+    withErrHandler . \case
         Execute ExecuteRequest{state, maxDepth} ->
             case PatternVerifier.runPatternVerifier context $
                 PatternVerifier.verifyStandalonePattern Nothing $
@@ -296,9 +295,9 @@ respond
                                 }
                 -- these are programmer errors
                 result@GraphTraversal.Aborted{} ->
-                    Left $ serverError "aborted" result
+                    Left $ serverError "aborted" $ asText result
                 other ->
-                    Left $ serverError "multiple states in result" other
+                    Left $ serverError "multiple states in result" $ asText other
 
             patternToExecState ::
                 TermLike.Sort ->
@@ -320,29 +319,29 @@ respond
 
         -- Step StepRequest{} -> pure $ Right $ Step $ StepResult []
         Implies ImpliesRequest{antecedent, consequent} ->
-            pure $ case PatternVerifier.runPatternVerifier context verify of
-                Left err -> Left $ couldNotVerify $ toJSON err
-                Right (_antVerified, _consVerified) -> Right $ Implies $ ImpliesResult True Nothing
+            case PatternVerifier.runPatternVerifier context verify of
+                Left err ->
+                    pure $ Left $ couldNotVerify $ toJSON err
+                Right (antVerified, consVerified) -> do
+                    let leftPatt =
+                            mkRewritingPattern $ Pattern.parsePatternFromTermLike antVerified
+                        sort = TermLike.termLikeSort antVerified
+                        (consWOExistentials, existentialVars) =
+                            ClaimPattern.termToExistentials $
+                                mkRewritingTerm consVerified
+                        rightPatt = Pattern.parsePatternFromTermLike consWOExistentials
+
+                    result <-
+                        liftIO
+                            . runSMT
+                            . evalInContext
+                            . runExceptT
+                            $ Claim.checkSimpleImplication
+                                leftPatt
+                                rightPatt
+                                existentialVars
+                    pure $ buildResult sort result
           where
-            -- let leftPatt = mkRewritingPattern $ Pattern.fromTermLike antVerified
-            --     (consWOExistentials, existentialVars) =
-            --         ClaimPattern.termToExistentials $
-            --             RewritingVariable.mkRewritingTerm consVerified
-            --     rightPatts = OrPattern.fromPattern $ Pattern.fromTermLike consWOExistentials
-            --     claim = ClaimPattern.mkClaimPattern leftPatt rightPatts existentialVars
-            -- liftIO $ (do
-            --     res <-
-            --         runSMT $
-            --             evalSimplifier verifiedModule sortGraph overloadGraph metadataTools equations $
-            --                 Logic.observeAllT $
-            --                     Claim.checkImplicationWorker claim
-
-            --     pure $ Right $ Implies $ case res of
-            --         [Claim.Implied] -> ImpliesResult True Nothing
-            --         _ ->  ImpliesResult False Nothing)
-            --     `catch` \(err :: Error Claim.CheckImplicationError) ->
-            --         pure $ Left $ implicationError $ toJSON err
-
             context =
                 PatternVerifier.verifiedModuleContext verifiedModule
                     & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
@@ -355,19 +354,74 @@ respond
                     PatternVerifier.verifyStandalonePattern Nothing $
                         PatternJson.toParsedPattern $ PatternJson.term consequent
                 pure (antVerified, consVerified)
+
+            evalInContext =
+                evalSimplifier
+                    verifiedModule
+                    sortGraph
+                    overloadGraph
+                    metadataTools
+                    equations
+
+            renderCond sort cond =
+                let pat = Condition.mapVariables getRewritingVariable cond
+                    predicate =
+                        PatternJson.fromPredicate sort $ Condition.predicate pat
+                    mbSubstitution =
+                        PatternJson.fromSubstitution $ Condition.substitution pat
+                    noSubstitution = PatternJson.fromTermLike $ TermLike.mkTop sort
+                 in Condition
+                        { predicate
+                        , substitution = fromMaybe noSubstitution mbSubstitution
+                        }
+
+            buildResult _ (Left err) = Left $ implicationError $ toJSON err
+            buildResult sort (Right (term, r)) =
+                let jsonTerm =
+                        PatternJson.fromTermLike $
+                            TermLike.mapVariables getRewritingVariable term
+                 in Right . Implies $
+                        case r of
+                            Claim.Implied mbCond ->
+                                ImpliesResult jsonTerm True (fmap (renderCond sort) mbCond)
+                            Claim.NotImplied _ ->
+                                ImpliesResult jsonTerm False Nothing
+                            Claim.NotImpliedStuck (Just cond) ->
+                                let jsonCond = renderCond sort cond
+                                 in ImpliesResult jsonTerm False (Just jsonCond)
+                            Claim.NotImpliedStuck Nothing ->
+                                -- should not happen
+                                ImpliesResult jsonTerm False Nothing
         Simplify SimplifyRequest{state} -> pure $ Right $ Simplify SimplifyResult{state}
         -- this case is only reachable if the cancel appeared as part of a batch request
         Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
-      where
-        couldNotVerify err = ErrorObj "Could not verify KORE pattern" (-32002) err
+  where
+    Exec.SerializedModule
+        { sortGraph
+        , overloadGraph
+        , metadataTools
+        , verifiedModule
+        , equations
+        } = serializedModule
 
-        serverError detail payload =
-            ErrorObj ("Server error: " <> detail) (-32032) $ asText payload
+    couldNotVerify err = ErrorObj "Could not verify KORE pattern" (-32002) err
 
-        asText :: Pretty.Pretty a => a -> Value
-        asText = String . Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty
+    serverError detail payload =
+        ErrorObj ("Server error: " <> detail) (-32032) payload
 
--- implicationError err = ErrorObj "Implication check error" (-32003) err
+    asText :: Pretty.Pretty a => a -> Value
+    asText = String . Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty
+
+    implicationError err = ErrorObj "Implication check error" (-32003) err
+
+    -- catch all calls to `error` that may occur within the guts of the engine
+    withErrHandler ::
+        m (Either ErrorObj res) ->
+        m (Either ErrorObj res)
+    withErrHandler =
+        let mkError (ErrorCallWithLocation msg loc) =
+                Error{errorContext = [loc], errorError = msg}
+         in handle (pure . Left . serverError "crashed" . toJSON . mkError)
 
 runServer :: Int -> SMT.SolverSetup -> Log.LoggerEnv IO -> Exec.SerializedModule -> IO ()
 runServer port solverSetup Log.LoggerEnv{logAction, context = entryContext} serializedModule = do
