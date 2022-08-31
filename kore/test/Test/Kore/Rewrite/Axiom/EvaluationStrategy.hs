@@ -360,7 +360,7 @@ test_firstFullEvaluation =
                         { results =
                             OrPattern.fromPatterns
                                 [ Conditional
-                                    { term = Mock.g Mock.a
+                                    { term = Mock.g Mock.b
                                     , predicate = makeTruePredicate
                                     , substitution = mempty
                                     }
