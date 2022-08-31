@@ -376,8 +376,11 @@ emptyConditionSimplifier =
 newtype SimplifierCache = SimplifierCache
     { attemptedEquationsCache ::
         HashMap
-            EvaluationAttempt
-            (AttemptEquationError RewritingVariableName)
+            (Equation RewritingVariableName)
+            ( HashMap
+                (TermLike RewritingVariableName)
+                (AttemptEquationError RewritingVariableName)
+            )
     }
 
 {- | An evaluation attempt is determined by an equation-term pair, since the
@@ -402,8 +405,14 @@ updateCache ::
     AttemptEquationError RewritingVariableName ->
     SimplifierCache ->
     SimplifierCache
-updateCache key value (SimplifierCache oldCache) =
-    HashMap.insert key value oldCache
+updateCache EvaluationAttempt{cachedEquation, cachedTerm} value (SimplifierCache oldCache) =
+    HashMap.alter
+        (Just . maybe
+            (HashMap.singleton cachedTerm value)
+            (HashMap.insert cachedTerm value)
+        )
+        cachedEquation
+        oldCache
         & SimplifierCache
 
 -- | Lookup an entry in the cache.
@@ -411,8 +420,9 @@ lookupCache ::
     EvaluationAttempt ->
     SimplifierCache ->
     Maybe (AttemptEquationError RewritingVariableName)
-lookupCache key (SimplifierCache cache) =
-    HashMap.lookup key cache
+lookupCache EvaluationAttempt{cachedEquation, cachedTerm} (SimplifierCache cache) = do
+    innerMap <- HashMap.lookup cachedEquation cache
+    HashMap.lookup cachedTerm innerMap
 
 {- | 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
 or builtin code.
