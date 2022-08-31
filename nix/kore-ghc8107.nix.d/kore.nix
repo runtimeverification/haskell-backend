@@ -83,6 +83,7 @@
           "optparse-applicative"))
         (hsPkgs."parser-combinators" or (errorHandler.buildDepError
           "parser-combinators"))
+        (hsPkgs."pqueue" or (errorHandler.buildDepError "pqueue"))
         (hsPkgs."prettyprinter" or (errorHandler.buildDepError "prettyprinter"))
         (hsPkgs."process" or (errorHandler.buildDepError "process"))
         (hsPkgs."profunctors" or (errorHandler.buildDepError "profunctors"))
@@ -728,6 +729,7 @@
             "optparse-applicative"))
           (hsPkgs."parser-combinators" or (errorHandler.buildDepError
             "parser-combinators"))
+          (hsPkgs."pqueue" or (errorHandler.buildDepError "pqueue"))
           (hsPkgs."prettyprinter" or (errorHandler.buildDepError
             "prettyprinter"))
           (hsPkgs."process" or (errorHandler.buildDepError "process"))
