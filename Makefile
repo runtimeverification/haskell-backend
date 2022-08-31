@@ -76,3 +76,35 @@ clean:
 
 clean-execution:
 	$(MAKE) -C test clean-execution
+
+.PHONY: hoogle-cert hoogle-server
+HOOGLE_WORKDIR = .stack-work-haddock/hoogle
+HOOGLE        := $(shell which hoogle)
+HOOGLE_DB     := $(HOOGLE_WORKDIR)/*/*/*/database.hoo
+
+hoogle-data: $(HOOGLE_DB)
+
+$(HOOGLE_DB): # could depend on source code but would slow things down
+	$(STACK_HADDOCK) hoogle --setup
+
+hoogle-clean:
+	rm -rf $(HOOGLE_WORKDIR)
+
+hoogle-refresh: hoogle-clean hoogle-data
+
+hoogle: hoogle-data
+	@$(HOOGLE) --version || (echo "Hoogle app not available"; exit 1)
+	@read -p "Query:" QUERY && $(HOOGLE) --database $(HOOGLE_DB) "$$QUERY"
+
+hoogle-cert:
+	@openssl req -newkey rsa:1024 -x509 -sha256 -days 1 -nodes -out $(HOOGLE_WORKDIR)/hoogle.crt -keyout $(HOOGLE_WORKDIR)/hoogle.key -subj "/C=US/ST=MI/O=RuntimeVerification/CN=*"
+
+hoogle-server: hoogle-data hoogle-cert
+	@$(HOOGLE) --version || (echo "Hoogle app not available"; exit 1)
+	@echo "Running hoogle server (press ^C to exit)"
+	@$(HOOGLE) server \
+		--database $(HOOGLE_DB) \
+		--host=* \
+		--https \
+		--cert=$(HOOGLE_WORKDIR)/hoogle.crt \
+		--key=$(HOOGLE_WORKDIR)/hoogle.key
