@@ -407,9 +407,10 @@ updateCache ::
     SimplifierCache
 updateCache EvaluationAttempt{cachedEquation, cachedTerm} value (SimplifierCache oldCache) =
     HashMap.alter
-        (Just . maybe
-            (HashMap.singleton cachedTerm value)
-            (HashMap.insert cachedTerm value)
+        ( Just
+            . maybe
+                (HashMap.singleton cachedTerm value)
+                (HashMap.insert cachedTerm value)
         )
         cachedEquation
         oldCache
