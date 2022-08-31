@@ -20,10 +20,10 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
-import Data.PQueue.Min qualified as MinQueue
 import Data.PQueue.Min (
     MinQueue,
  )
+import Data.PQueue.Min qualified as MinQueue
 import Data.Sequence qualified as Seq
 import Data.Set (
     Set,
@@ -35,10 +35,10 @@ import Data.Text (
 import Data.These (
     These (..),
  )
-import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Builtin.AssociativeCommutative qualified as Ac
 import Kore.Builtin.List qualified as List
 import Kore.Internal.InternalList
@@ -174,10 +174,15 @@ needsAc collection term =
 
 instance Ord MatchItem where
     compare a@(MatchItem pat1 subject1 bound1 set1) b@(MatchItem pat2 subject2 bound2 set2) =
-        if a == b then EQ else
-        if pat1 `needs` pat2 then GT else
-        if pat2 `needs` pat1 then LT else
-        compare (pat1, subject1, bound1, set1) (pat2, subject2, bound2, set2)
+        if a == b
+            then EQ
+            else
+                if pat1 `needs` pat2
+                    then GT
+                    else
+                        if pat2 `needs` pat1
+                            then LT
+                            else compare (pat1, subject1, bound1, set1) (pat2, subject2, bound2, set2)
 
 finalizeSubst ::
     Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName) ->
@@ -205,7 +210,7 @@ patternMatch' sideCondition [] queue predicate subst = do
             matchNormalizedAc decomposeList unwrapSetValue unwrapSetElement (wrapSet set2) (unwrapAc $ builtinAcChild set1) (unwrapAc $ builtinAcChild set2)
         _ -> error "error in matching algorithm: unexpected deferred term"
   where
-    (MatchItem pat subject boundVars boundSet, rest) = MinQueue.deleteFindMin queue 
+    (MatchItem pat subject boundVars boundSet, rest) = MinQueue.deleteFindMin queue
 
     decomposeList ::
         [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->

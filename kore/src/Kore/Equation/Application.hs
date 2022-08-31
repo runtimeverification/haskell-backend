@@ -14,8 +14,8 @@ import Control.Error (
     MaybeT (..),
     maybeToList,
     runExceptT,
-    withExceptT,
     throwE,
+    withExceptT,
  )
 import Control.Monad (
     (>=>),
