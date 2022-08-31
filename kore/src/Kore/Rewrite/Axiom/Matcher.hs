@@ -20,6 +20,10 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import Data.PQueue.Min qualified as MinQueue
+import Data.PQueue.Min (
+    MinQueue,
+ )
 import Data.Sequence qualified as Seq
 import Data.Set (
     Set,
@@ -32,6 +36,9 @@ import Data.These (
     These (..),
  )
 import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables (
+    FreeVariables,
+ )
 import Kore.Builtin.AssociativeCommutative qualified as Ac
 import Kore.Builtin.List qualified as List
 import Kore.Internal.InternalList
@@ -129,9 +136,48 @@ patternMatch ::
     TermLike RewritingVariableName ->
     Simplifier (Either Text (MatchResult RewritingVariableName))
 patternMatch sideCondition pat subject =
-    patternMatch' sideCondition [(pat, subject, [], Set.empty)] [] MultiAnd.top Map.empty
+    patternMatch' sideCondition [MatchItem pat subject [] Set.empty] MinQueue.empty MultiAnd.top Map.empty
 
-type MatchItem = (TermLike RewritingVariableName, TermLike RewritingVariableName, [(SomeVariable RewritingVariableName, SomeVariable RewritingVariableName)], Set (SomeVariableName RewritingVariableName))
+data MatchItem = MatchItem (TermLike RewritingVariableName) (TermLike RewritingVariableName) [(SomeVariable RewritingVariableName, SomeVariable RewritingVariableName)] (Set (SomeVariableName RewritingVariableName))
+    deriving stock (Eq)
+
+type Element normalized =
+    Builtin.Element normalized (TermLike RewritingVariableName)
+
+type Value normalized =
+    Builtin.Value normalized (TermLike RewritingVariableName)
+
+type NormalizedAc normalized =
+    Builtin.NormalizedAc normalized Key (TermLike RewritingVariableName)
+
+needs ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Bool
+needs (InternalSet_ s) term = needsAc (builtinAcChild s) term
+needs (InternalMap_ m) term = needsAc (builtinAcChild m) term
+needs _ _ = False
+
+needsAc ::
+    forall normalized.
+    AcWrapper normalized =>
+    normalized Key (TermLike RewritingVariableName) ->
+    TermLike RewritingVariableName ->
+    Bool
+needsAc collection term =
+    not $ Set.disjoint (FreeVariables.toSet abstractFreeVars) $ FreeVariables.toSet $ freeVariables term
+  where
+    abstractKeys :: [TermLike RewritingVariableName]
+    abstractKeys = getSymbolicKeysOfAc collection
+    abstractFreeVars :: FreeVariables RewritingVariableName
+    abstractFreeVars = foldMap freeVariables abstractKeys
+
+instance Ord MatchItem where
+    compare a@(MatchItem pat1 subject1 bound1 set1) b@(MatchItem pat2 subject2 bound2 set2) =
+        if a == b then EQ else
+        if pat1 `needs` pat2 then GT else
+        if pat2 `needs` pat1 then LT else
+        compare (pat1, subject1, bound1, set1) (pat2, subject2, bound2, set2)
 
 finalizeSubst ::
     Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName) ->
@@ -144,12 +190,12 @@ finalizeSubst subst = Map.filterWithKey go subst
 patternMatch' ::
     SideCondition RewritingVariableName ->
     [MatchItem] ->
-    [MatchItem] ->
+    MinQueue MatchItem ->
     MultiAnd (Predicate RewritingVariableName) ->
     Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName) ->
     Simplifier (Either Text (MatchResult RewritingVariableName))
-patternMatch' _ [] [] predicate subst = return $ Right (Predicate.fromMultiAnd predicate, finalizeSubst subst)
-patternMatch' sideCondition [] ((pat, subject, boundVars, boundSet) : rest) predicate subst = do
+patternMatch' _ [] queue predicate subst | MinQueue.null queue = return $ Right (Predicate.fromMultiAnd predicate, finalizeSubst subst)
+patternMatch' sideCondition [] queue predicate subst = do
     injSimplifier <- Simplifier.askInjSimplifier
     let pat' = renormalizeBuiltins $ InjSimplifier.normalize injSimplifier $ substitute subst pat
     case (pat', subject) of
@@ -159,11 +205,13 @@ patternMatch' sideCondition [] ((pat, subject, boundVars, boundSet) : rest) pred
             matchNormalizedAc decomposeList unwrapSetValue unwrapSetElement (wrapSet set2) (unwrapAc $ builtinAcChild set1) (unwrapAc $ builtinAcChild set2)
         _ -> error "error in matching algorithm: unexpected deferred term"
   where
+    (MatchItem pat subject boundVars boundSet, rest) = MinQueue.deleteFindMin queue 
+
     decomposeList ::
         [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
         Simplifier (Either Text (MatchResult RewritingVariableName))
     decomposeList l =
-        let l' = map (\(p, s) -> (p, s, boundVars, boundSet)) l
+        let l' = map (\(p, s) -> MatchItem p s boundVars boundSet) l
          in patternMatch' sideCondition l' rest predicate $ Map.foldl' processSubst subst subst
 
     processSubst ::
@@ -216,7 +264,7 @@ patternMatch' sideCondition [] ((pat, subject, boundVars, boundSet) : rest) pred
         let (key1, val1) = getMapElement elem1
             (key2, val2) = getMapElement elem2
          in [(key1, key2), (val1, val2)]
-patternMatch' sideCondition ((pat, subject, boundVars, boundSet) : rest) deferred predicate subst = do
+patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) deferred predicate subst = do
     tools <- Simplifier.askMetadataTools
     injSimplifier <- Simplifier.askInjSimplifier
     overloadSimplifier <- Simplifier.askOverloadSimplifier
@@ -337,11 +385,11 @@ patternMatch' sideCondition ((pat, subject, boundVars, boundSet) : rest) deferre
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
         Simplifier (Either Text (MatchResult RewritingVariableName))
-    decompose term1 term2 = patternMatch' sideCondition ((term1, term2, boundVars, boundSet) : rest) deferred predicate subst
+    decompose term1 term2 = patternMatch' sideCondition ((MatchItem term1 term2 boundVars boundSet) : rest) deferred predicate subst
 
     defer ::
         Simplifier (Either Text (MatchResult RewritingVariableName))
-    ~defer = patternMatch' sideCondition rest ((pat, subject, boundVars, boundSet) : deferred) predicate subst
+    ~defer = patternMatch' sideCondition rest (MinQueue.insert (MatchItem pat subject boundVars boundSet) deferred) predicate subst
 
     decomposeTwo ::
         TermLike RewritingVariableName ->
@@ -349,13 +397,13 @@ patternMatch' sideCondition ((pat, subject, boundVars, boundSet) : rest) deferre
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
         Simplifier (Either Text (MatchResult RewritingVariableName))
-    decomposeTwo term11 term21 term12 term22 = patternMatch' sideCondition ((term11, term21, boundVars, boundSet) : (term12, term22, boundVars, boundSet) : rest) deferred predicate subst
+    decomposeTwo term11 term21 term12 term22 = patternMatch' sideCondition ((MatchItem term11 term21 boundVars boundSet) : (MatchItem term12 term22 boundVars boundSet) : rest) deferred predicate subst
 
     decomposeList ::
         [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
         Simplifier (Either Text (MatchResult RewritingVariableName))
     decomposeList l =
-        let l' = map (\(p, s) -> (p, s, boundVars, boundSet)) l
+        let l' = map (\(p, s) -> MatchItem p s boundVars boundSet) l
          in patternMatch' sideCondition (l' ++ rest) deferred predicate subst
 
     decomposeBinder ::
@@ -364,7 +412,7 @@ patternMatch' sideCondition ((pat, subject, boundVars, boundSet) : rest) deferre
         SomeVariable RewritingVariableName ->
         TermLike RewritingVariableName ->
         Simplifier (Either Text (MatchResult RewritingVariableName))
-    decomposeBinder var1 term1 var2 term2 = patternMatch' sideCondition ((term1, term2, (var1, var2) : boundVars, Set.insert (variableName var2) boundSet) : rest) deferred predicate subst
+    decomposeBinder var1 term1 var2 term2 = patternMatch' sideCondition ((MatchItem term1 term2 ((var1, var2) : boundVars) (Set.insert (variableName var2) boundSet)) : rest) deferred predicate subst
 
     decomposeOverload (Overloading.Resolution (Simple (Pair term1 term2))) = decompose term1 term2
     decomposeOverload _ = failMatch "unsupported overload case in matching"
@@ -387,15 +435,6 @@ failMatch msg = return $ Left msg
 type MatchingVariable variable = InternalVariable variable
 
 type PushList a = [(a, a)] -> Simplifier (Either Text (MatchResult RewritingVariableName))
-
-type Element normalized =
-    Builtin.Element normalized (TermLike RewritingVariableName)
-
-type Value normalized =
-    Builtin.Value normalized (TermLike RewritingVariableName)
-
-type NormalizedAc normalized =
-    Builtin.NormalizedAc normalized Key (TermLike RewritingVariableName)
 
 matchNormalizedAc ::
     forall normalized.
