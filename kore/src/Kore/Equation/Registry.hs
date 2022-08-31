@@ -5,6 +5,7 @@ License     : BSD-3-Clause
 module Kore.Equation.Registry (
     extractEquations,
     partitionEquations,
+    ignoreEquation,
     PartitionedEquations (..),
 ) where
 
