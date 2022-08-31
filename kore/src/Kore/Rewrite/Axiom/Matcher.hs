@@ -173,16 +173,11 @@ needsAc collection term =
     abstractFreeVars = foldMap freeVariables abstractKeys
 
 instance Ord MatchItem where
-    compare a@(MatchItem pat1 subject1 bound1 set1) b@(MatchItem pat2 subject2 bound2 set2) =
-        if a == b
-            then EQ
-            else
-                if pat1 `needs` pat2
-                    then GT
-                    else
-                        if pat2 `needs` pat1
-                            then LT
-                            else compare (pat1, subject1, bound1, set1) (pat2, subject2, bound2, set2)
+    compare a@(MatchItem pat1 subject1 bound1 set1) b@(MatchItem pat2 subject2 bound2 set2)
+    | a == b = EQ
+    | pat1 `needs` pat2 = GT
+    | pat2 `needs` pat1 = LT
+    | otherwise = compare (pat1, subject1, bound1, set1) (pat2, subject2, bound2, set2)
 
 finalizeSubst ::
     Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName) ->
