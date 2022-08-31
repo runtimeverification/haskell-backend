@@ -35,7 +35,6 @@ import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
-import Kore.Rewrite.Axiom.EvaluationStrategy (mkEvaluator)
 import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier (
     AxiomIdentifier (..),
  )
@@ -466,7 +465,7 @@ test_functionRegistry =
     [ testCase
         "Checking that a simplifier is found for f"
         ( let axiomId = AxiomIdentifier.Application (testId "f")
-           in ( case Map.lookup axiomId testEquations >>= mkEvaluator of
+           in ( case Map.lookup axiomId testEquations >>= find (not . ignoreEquation) of
                     Just _ -> return ()
                     _ -> assertFailure "Should find a simplifier for f"
               )
@@ -474,7 +473,7 @@ test_functionRegistry =
     , testCase
         "Checking that a simplifier is found for parametric inj"
         ( let axiomId = AxiomIdentifier.Application (testId "inj")
-           in ( case Map.lookup axiomId testEquations >>= mkEvaluator of
+           in ( case Map.lookup axiomId testEquations >>= find (not . ignoreEquation) of
                     Just _ -> return ()
                     _ -> assertFailure "Should find a simplifier for inj"
               )
@@ -483,7 +482,7 @@ test_functionRegistry =
         "Checking that a simplifier is found for ceil(f)"
         ( let axiomId =
                 AxiomIdentifier.Ceil (AxiomIdentifier.Application (testId "f"))
-           in ( case Map.lookup axiomId testEquations >>= mkEvaluator of
+           in ( case Map.lookup axiomId testEquations >>= find (not . ignoreEquation) of
                     Just _ -> return ()
                     _ -> assertFailure "Should find a simplifier for ceil(f)"
               )
@@ -493,7 +492,7 @@ test_functionRegistry =
         ( assertEqual
             ""
             5
-            (Map.size (mapMaybe mkEvaluator testEquations))
+            (Map.size (mapMaybe (find (not . ignoreEquation)) testEquations))
         )
     , testCase
         "Checking that the indexed module contains a rewrite axiom"

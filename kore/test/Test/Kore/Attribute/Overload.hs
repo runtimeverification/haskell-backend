@@ -12,7 +12,10 @@ import Data.Map.Strict qualified as Map
 import Kore.Attribute.Overload
 import Kore.Builtin qualified as Builtin
 import Kore.Equation qualified as Equation
-import Kore.Equation.Registry (extractEquations)
+import Kore.Equation.Registry (
+    extractEquations,
+    ignoreEquation,
+ )
 import Kore.Error
 import Kore.Internal.Symbol (
     applicationSorts,
@@ -21,7 +24,6 @@ import Kore.Internal.Symbol (
     toSymbolOrAlias,
  )
 import Kore.Internal.TermLike
-import Kore.Rewrite.Axiom.EvaluationStrategy (mkEvaluator)
 import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier
 import Kore.Rewrite.RewritingVariable (
     mkConfigVariable,
@@ -129,7 +131,7 @@ test_parameters =
 test_dont_ignore :: TestTree
 test_dont_ignore =
     testCase "Don't ignore overloaded production axioms" $
-        case Map.lookup (AxiomIdentifier.Application superId) equations >>= mkEvaluator of
+        case Map.lookup (AxiomIdentifier.Application superId) equations >>= find (not . ignoreEquation) of
             Nothing ->
                 assertFailure "Should not ignore overloaded production axiom"
             Just _ -> return ()

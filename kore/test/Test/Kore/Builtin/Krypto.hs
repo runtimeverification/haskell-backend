@@ -287,10 +287,10 @@ evaluate ::
     IO (Pattern RewritingVariableName)
 evaluate builtin termLike = do
     evaluator <-
-        Krypto.builtinFunctions builtin
+        Krypto.builtinFunctions builtin termLike SideCondition.top
             & expectConstructor @"Just"
     attempt <-
-        evaluator termLike SideCondition.top
+        evaluator
             & runSimplifier testEnv
             & runNoSMT
     attemptResults <- expectConstructor @"Applied" attempt

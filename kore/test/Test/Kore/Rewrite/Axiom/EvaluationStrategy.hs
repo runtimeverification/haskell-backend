@@ -206,15 +206,18 @@ test_firstFullEvaluation =
                                 ]
                         , remainders = OrPattern.fromPatterns []
                         }
+        let c = Mock.functionalConstr10 Mock.c
         actual <-
             evaluate
                 ( firstFullEvaluation
                     [ axiomEvaluator
                         (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
                         (Mock.g (mkElemVar Mock.xConfig))
+                        c
+                        trueSideCondition
                     ]
                 )
-                (Mock.functionalConstr10 Mock.c)
+                c
         assertEqual "" expect actual
     , testCase "Uses first matching" $ do
         let expect =
@@ -230,21 +233,28 @@ test_firstFullEvaluation =
                                 ]
                         , remainders = OrPattern.fromPatterns []
                         }
+        let a = Mock.functionalConstr10 Mock.a
         actual <-
             evaluate
                 ( firstFullEvaluation
                     [ axiomEvaluator
                         (Mock.functionalConstr10 Mock.b)
                         (Mock.g Mock.a)
+                        a
+                        trueSideCondition
                     , axiomEvaluator
                         (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
                         (Mock.f Mock.a)
+                        a
+                        trueSideCondition
                     , axiomEvaluator
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.a)
+                        a
+                        trueSideCondition
                     ]
                 )
-                (Mock.functionalConstr10 Mock.a)
+                a
         assertEqual "" expect actual
     , testCase "Skips partial matches" $ do
         let expect =
@@ -260,36 +270,48 @@ test_firstFullEvaluation =
                                 ]
                         , remainders = OrPattern.fromPatterns []
                         }
+        let xConfig = Mock.functionalConstr10 (mkElemVar Mock.xConfig)
         actual <-
             evaluate
                 ( firstFullEvaluation
                     [ axiomEvaluator
                         (Mock.functionalConstr10 Mock.b)
                         (Mock.g Mock.a)
+                        xConfig
+                        trueSideCondition
                     , axiomEvaluator
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.a)
+                        xConfig
+                        trueSideCondition
                     , axiomEvaluator
                         (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
                         (Mock.f Mock.a)
+                        xConfig
+                        trueSideCondition
                     ]
                 )
-                (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
+                xConfig
         assertEqual "" expect actual
     , testCase "None matching" $ do
         let expect = AttemptedAxiom.NotApplicable
+        let xConfig = Mock.functionalConstr10 (mkElemVar Mock.xConfig)
         actual <-
             evaluate
                 ( firstFullEvaluation
                     [ axiomEvaluator
                         (Mock.functionalConstr10 Mock.b)
                         (Mock.g Mock.a)
+                        xConfig
+                        trueSideCondition
                     , axiomEvaluator
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.a)
+                        xConfig
+                        trueSideCondition
                     ]
                 )
-                (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
+                xConfig
         assertEqual "" expect actual
     , testCase "Skip when remainder" $ do
         let expect =
@@ -306,6 +328,7 @@ test_firstFullEvaluation =
                         , remainders = OrPattern.fromPatterns []
                         }
         let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
+        let a = Mock.functionalConstr10 Mock.a
         actual <-
             evaluate
                 ( firstFullEvaluation
@@ -315,12 +338,16 @@ test_firstFullEvaluation =
                             (Mock.g Mock.a)
                             requirement
                         ]
+                        a
+                        trueSideCondition
                     , axiomEvaluator
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.b)
+                        a
+                        trueSideCondition
                     ]
                 )
-                (Mock.functionalConstr10 Mock.a)
+                a
         assertEqual "" expect actual
     , testCase "Apply with top configuration" $ do
         let requirement =
@@ -340,6 +367,7 @@ test_firstFullEvaluation =
                                 ]
                         , remainders = OrPattern.fromPatterns []
                         }
+        let a = Mock.functionalConstr10 Mock.a
         actual <-
             evaluateWithPredicate
                 ( firstFullEvaluation
@@ -347,12 +375,16 @@ test_firstFullEvaluation =
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.a)
                         requirement
+                        a
+                        trueSideCondition
                     , axiomEvaluator
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.b)
+                        a
+                        trueSideCondition
                     ]
                 )
-                (Mock.functionalConstr10 Mock.a)
+                a
                 requirement
         assertEqual "" expect actual
     , testCase "Don't apply due to top configuration" $ do
@@ -371,6 +403,7 @@ test_firstFullEvaluation =
                                 ]
                         , remainders = OrPattern.fromPatterns []
                         }
+        let a = Mock.functionalConstr10 Mock.a
         actual <-
             evaluateWithPredicate
                 ( firstFullEvaluation
@@ -378,12 +411,16 @@ test_firstFullEvaluation =
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.a)
                         requirement
+                        a
+                        trueSideCondition
                     , axiomEvaluator
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.b)
+                        a
+                        trueSideCondition
                     ]
                 )
-                (Mock.functionalConstr10 Mock.a)
+                a
                 not_requirement
         assertEqual "" expect actual
         {-
@@ -433,19 +470,24 @@ test_simplifierWithFallback =
                                 ]
                         , remainders = OrPattern.fromPatterns []
                         }
+        let a = Mock.functionalConstr10 Mock.a
         actual <-
             evaluate
                 ( simplifierWithFallback
                     ( axiomEvaluator
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.a)
+                        a
+                        trueSideCondition
                     )
                     ( axiomEvaluator
                         (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
                         (Mock.f Mock.a)
+                        a
+                        trueSideCondition
                     )
                 )
-                (Mock.functionalConstr10 Mock.a)
+                a
         assertEqual "" expect actual
     , testCase "Falls back to second" $ do
         let expect =
@@ -461,35 +503,45 @@ test_simplifierWithFallback =
                                 ]
                         , remainders = OrPattern.fromPatterns []
                         }
+        let b = Mock.functionalConstr10 Mock.b
         actual <-
             evaluate
                 ( simplifierWithFallback
                     ( axiomEvaluator
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.a)
+                        b
+                        trueSideCondition
                     )
                     ( axiomEvaluator
                         (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
                         (Mock.f Mock.a)
+                        b
+                        trueSideCondition
                     )
                 )
-                (Mock.functionalConstr10 Mock.b)
+                b
         assertEqual "" expect actual
     , testCase "None works" $ do
         let expect = AttemptedAxiom.NotApplicable
+        let c = Mock.functionalConstr10 Mock.c
         actual <-
             evaluate
                 ( simplifierWithFallback
                     ( axiomEvaluator
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.a)
+                        c
+                        trueSideCondition
                     )
                     ( axiomEvaluator
                         (Mock.functionalConstr10 Mock.b)
                         (Mock.f Mock.a)
+                        c
+                        trueSideCondition
                     )
                 )
-                (Mock.functionalConstr10 Mock.c)
+                c
         assertEqual "" expect actual
     ]
 
@@ -509,15 +561,19 @@ test_builtinEvaluation =
                                 ]
                         , remainders = OrPattern.fromPatterns []
                         }
+        let a = Mock.functionalConstr10 Mock.a
         actual <-
             evaluate
-                ( builtinEvaluation
-                    ( axiomEvaluator
-                        (Mock.functionalConstr10 Mock.a)
-                        (Mock.g Mock.a)
-                    )
+                ( const
+                    . builtinEvaluation
+                        ( axiomEvaluator
+                            (Mock.functionalConstr10 Mock.a)
+                            (Mock.g Mock.a)
+                            a
+                            trueSideCondition
+                        )
                 )
-                (Mock.functionalConstr10 Mock.a)
+                a
         assertEqual "" expect actual
     , testCase
         "Failed evaluation"
@@ -527,11 +583,14 @@ test_builtinEvaluation =
                 "Expecting hook 'MAP.unit' to reduce concrete pattern"
             )
             ( evaluate
-                (builtinEvaluation failingEvaluator)
+                (const . builtinEvaluation (failingEvaluator Mock.unitMap trueSideCondition))
                 Mock.unitMap
             )
         )
     ]
+
+trueSideCondition :: SideCondition RewritingVariableName
+trueSideCondition = SideCondition.fromPredicateWithReplacements makeTruePredicate
 
 failingEvaluator ::
     TermLike RewritingVariableName ->
