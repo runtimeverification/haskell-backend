@@ -17,6 +17,7 @@ module Kore.Syntax.Id (
     implicitId,
     generatedId,
     globalIdMap,
+    InternedTextCache (..),
 
     -- * Locations
     AstLocation (..),
@@ -35,6 +36,7 @@ import Data.Text (
     Text,
  )
 import Data.Text qualified as Text
+import GHC.Generics (Generic)
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Debug
@@ -43,8 +45,15 @@ import Prelude.Kore
 import Pretty qualified
 import System.IO.Unsafe (unsafePerformIO)
 
-globalIdMap :: IORef (HashMap Text Int)
-globalIdMap = unsafePerformIO $ newIORef HashMap.empty
+data InternedTextCache = InternedTextCache
+    { counter :: {-# UNPACK #-} !Int
+    , internedTexts :: !(HashMap Text Int)
+    }
+    deriving stock (Generic)
+    deriving anyclass (NFData)
+
+globalIdMap :: IORef InternedTextCache
+globalIdMap = unsafePerformIO $ newIORef $ InternedTextCache 0 HashMap.empty
 {-# NOINLINE globalIdMap #-}
 
 data InternedText = InternedText
@@ -65,24 +74,21 @@ instance Diff InternedText where
     diffPrec = diffPrec `on` getText
 
 internText :: Text -> InternedText
-internText text = unsafePerformIO $ do
-    atomicModifyIORef' globalIdMap modification
-  where
-    modification :: HashMap Text Int -> (HashMap Text Int, InternedText)
-    modification idMap =
-        swap $
-            HashMap.alterF
-                \case
-                    -- If this text is already interned, reuse it.
-                    existing@(Just iden) -> (InternedText text iden, existing)
-                    -- Otherwise, create a new ID for it and intern it.
-                    Nothing ->
-                        -- TODO: `HashMap.size` is O(n).
-                        -- We should save a counter alongside the hashmap instead of using `size`.
-                        let iden = HashMap.size idMap
-                         in (InternedText text iden, Just iden)
-                text
-                idMap
+internText text =
+    unsafePerformIO do
+        atomicModifyIORef' globalIdMap \InternedTextCache{counter, internedTexts} ->
+            let ((internedText, newCounter), newInternedTexts) =
+                    HashMap.alterF
+                        \case
+                            -- If this text is already interned, reuse it.
+                            existing@(Just iden) -> ((InternedText text iden, counter), existing)
+                            -- Otherwise, create a new ID for it and intern it.
+                            Nothing ->
+                                let newIden = counter
+                                 in ((InternedText text newIden, counter + 1), Just newIden)
+                        text
+                        internedTexts
+             in (InternedTextCache newCounter newInternedTexts, internedText)
 
 {- | 'Id' is a Kore identifier.
 

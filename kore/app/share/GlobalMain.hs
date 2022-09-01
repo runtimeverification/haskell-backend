@@ -58,7 +58,6 @@ import Data.Compact.Serialize (
 import Data.Generics.Product (
     field,
  )
-import Data.HashMap.Strict (HashMap)
 import Data.IORef (readIORef)
 import Data.List (
     intercalate,
@@ -576,7 +575,7 @@ data SerializedDefinition = SerializedDefinition
     { serializedModule :: SerializedModule
     , lemmas :: [SentenceAxiom (TermLike VariableName)]
     , locations :: KFileLocations
-    , idCache :: HashMap Text Int
+    , idCache :: InternedTextCache
     }
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
