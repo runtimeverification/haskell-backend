@@ -48,6 +48,7 @@ import Kore.Syntax.Exists qualified as Syntax
 import Kore.Syntax.Id (
     Id (..),
  )
+import Kore.Syntax.Not qualified as Syntax (notChild)
 import Kore.Unparser (
     unparse,
  )
@@ -74,6 +75,8 @@ data AxiomIdentifier
       Equals !AxiomIdentifier !AxiomIdentifier
     | -- | An @\\exists@ pattern with the given child.
       Exists !AxiomIdentifier
+    | -- | A @\\not@ pattern with the given child.
+      Not !AxiomIdentifier
     | -- | Any variable pattern.
       Variable
     deriving stock (Eq, Ord, Show)
@@ -93,6 +96,8 @@ instance Pretty AxiomIdentifier where
                 (pretty first Pretty.<+> "," Pretty.<+> pretty second)
     pretty (Exists axiomIdentifier) =
         "\\exists" <> Pretty.parens (pretty axiomIdentifier)
+    pretty (Not axiomIdentifier) =
+        "\\not" <> Pretty.parens (pretty axiomIdentifier)
     pretty Variable = "_"
 
 {- | Match 'TermLike' pattern to determine its 'AxiomIdentifier'.
@@ -115,6 +120,8 @@ matchAxiomIdentifier = Recursive.fold matchWorker
                     <$> Syntax.equalsFirst equals
                     <*> Syntax.equalsSecond equals
             ExistsF exists -> Exists <$> Syntax.existsChild exists
+            NotF not' ->
+                Not <$> Syntax.notChild not'
             VariableF _ ->
                 pure Variable
             EndiannessF endiannessF ->
@@ -125,8 +132,8 @@ matchAxiomIdentifier = Recursive.fold matchWorker
                     Signedness.toApplication $ getConst signednessF
             InjF inj -> mkAppId $ Inj.toApplication inj
             InternalListF internalList -> listToId internalList
-            InternalSetF internalSet -> mapToId internalSet
-            InternalMapF internalMap -> setToId internalMap
+            InternalSetF internalSet -> acToId internalSet
+            InternalMapF internalMap -> acToId internalMap
             DomainValueF _ -> pure DV
             InternalBoolF _ -> pure DV
             InternalBytesF _ -> pure DV
@@ -153,51 +160,32 @@ matchAxiomIdentifier = Recursive.fold matchWorker
         InternalList{internalListElement = elementSymbol} = internalList
         InternalList{internalListConcat = concatSymbol} = internalList
 
-    mapToId internalMap =
-        acToId
-            unitSymbol
-            elementSymbol
-            concatSymbol
-            elementsWithVariables
-            (HashMap.toList concreteElements)
-            opaque
-      where
-        InternalAc{builtinAcChild} = internalMap
-        InternalAc{builtinAcUnit = unitSymbol} = internalMap
-        InternalAc{builtinAcElement = elementSymbol} = internalMap
-        InternalAc{builtinAcConcat = concatSymbol} = internalMap
+    acToId
+        InternalAc
+            { builtinAcChild
+            , builtinAcUnit = unitSymbol
+            , builtinAcElement = elementSymbol
+            , builtinAcConcat = concatSymbol
+            } =
+            acToId'
+                unitSymbol
+                elementSymbol
+                concatSymbol
+                elementsWithVariables
+                (HashMap.toList concreteElements)
+                opaque
+          where
+            normalizedAc = unwrapAc builtinAcChild
 
-        normalizedAc = unwrapAc builtinAcChild
+            NormalizedAc{elementsWithVariables} = normalizedAc
+            NormalizedAc{concreteElements} = normalizedAc
+            NormalizedAc{opaque} = normalizedAc
 
-        NormalizedAc{elementsWithVariables} = normalizedAc
-        NormalizedAc{concreteElements} = normalizedAc
-        NormalizedAc{opaque} = normalizedAc
-
-    setToId internalSet =
-        acToId
-            unitSymbol
-            elementSymbol
-            concatSymbol
-            elementsWithVariables
-            (HashMap.toList concreteElements)
-            opaque
-      where
-        InternalAc{builtinAcChild} = internalSet
-        InternalAc{builtinAcUnit = unitSymbol} = internalSet
-        InternalAc{builtinAcElement = elementSymbol} = internalSet
-        InternalAc{builtinAcConcat = concatSymbol} = internalSet
-
-        normalizedAc = unwrapAc builtinAcChild
-
-        NormalizedAc{elementsWithVariables} = normalizedAc
-        NormalizedAc{concreteElements} = normalizedAc
-        NormalizedAc{opaque} = normalizedAc
-
-    acToId unitSymbol _ _ [] [] [] = pure $ Application $ symbolToId unitSymbol
-    acToId _ elementSymbol _ [_] [] [] = pure $ Application $ symbolToId elementSymbol
-    acToId _ elementSymbol _ [] [_] [] = pure $ Application $ symbolToId elementSymbol
-    acToId _ _ _ [] [] [opaque] = opaque
-    acToId _ _ concatSymbol _ _ _ = pure $ Application $ symbolToId concatSymbol
+    acToId' unitSymbol _ _ [] [] [] = pure $ Application $ symbolToId unitSymbol
+    acToId' _ elementSymbol _ [_] [] [] = pure $ Application $ symbolToId elementSymbol
+    acToId' _ elementSymbol _ [] [_] [] = pure $ Application $ symbolToId elementSymbol
+    acToId' _ _ _ [] [] [opaque] = opaque
+    acToId' _ _ concatSymbol _ _ _ = pure $ Application $ symbolToId concatSymbol
 
     mkAppId = pure . Application . symbolToId . Syntax.applicationSymbolOrAlias
     mkAliasId = pure . Application . aliasToId . Syntax.applicationSymbolOrAlias

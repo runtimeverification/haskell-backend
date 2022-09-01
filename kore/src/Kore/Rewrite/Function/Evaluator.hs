@@ -250,6 +250,9 @@ lookupAxiomSimplifier termLike = do
                     inexact2 = getEvaluator $ Axiom.Identifier.Equals id1 Axiom.Identifier.Variable
                     inexact12 = getEvaluator $ Axiom.Identifier.Equals Axiom.Identifier.Variable Axiom.Identifier.Variable
                  in combineEvaluators [exact, inexact1, inexact2, inexact12]
+            Axiom.Identifier.Not _ ->
+                let inexact = getEvaluator $ Axiom.Identifier.Not Axiom.Identifier.Variable
+                 in combineEvaluators [exact, inexact]
   where
     getHook :: Symbol -> Maybe Text
     getHook = Attribute.getHook . Attribute.hook . symbolAttributes

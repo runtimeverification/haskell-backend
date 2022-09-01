@@ -57,6 +57,14 @@ test_matchAxiomIdentifier =
                 (Mock.f Mock.a)
         )
         (Exists (Equals Variable (Application Mock.fId)))
+    , matches
+        "\\not(x)"
+        (TermLike.mkNot (TermLike.mkElemVar Mock.x))
+        (Not Variable)
+    , matches
+        "\\not(f(a))"
+        (TermLike.mkNot (Mock.f Mock.a))
+        (Not (Application Mock.fId))
     , testGroup
         "Map"
         [ test
@@ -104,6 +112,8 @@ test_matchAxiomIdentifier =
         ]
     ]
   where
+    -- FIXME add tests for DV cases
+
     test name termLike axiomIdentifier =
         testGroup
             name
