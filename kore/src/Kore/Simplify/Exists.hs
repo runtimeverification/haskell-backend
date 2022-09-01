@@ -120,6 +120,11 @@ simplify ::
     simplifier (OrPattern RewritingVariableName)
 simplify sideCondition Exists{existsVariable, existsChild} =
     simplifyEvaluated sideCondition existsVariable existsChild
+{-# SPECIALIZE simplify ::
+    SideCondition RewritingVariableName ->
+    Exists Sort RewritingVariableName (OrPattern RewritingVariableName) ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -148,6 +153,12 @@ simplifyEvaluated sideCondition variable simplified
             <$> OrPattern.traverse
                 (makeEvaluate sideCondition [variable])
                 simplified
+{-# SPECIALIZE simplifyEvaluated ::
+    SideCondition RewritingVariableName ->
+    ElementVariable RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 {- | Evaluates a multiple 'Exists' given a pattern and a list of
 variables which are existentially quantified in the pattern. This
@@ -224,6 +235,12 @@ makeEvaluate sideCondition variables original = do
             $ toList $
                 Substitution.variables
                     (Conditional.substitution original)
+{-# SPECIALIZE makeEvaluate ::
+    SideCondition RewritingVariableName ->
+    [ElementVariable RewritingVariableName] ->
+    Pattern RewritingVariableName ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 -- TODO (andrei.burdusa): this function must go away
 matchesToVariableSubstitution ::
@@ -247,6 +264,12 @@ matchesToVariableSubstitution
                         return (singleVariableSubstitution variable results)
                     _ -> return False
         | otherwise = return False
+{-# SPECIALIZE matchesToVariableSubstitution ::
+    SideCondition RewritingVariableName ->
+    ElementVariable RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    Simplifier Bool
+    #-}
 
 singleVariableSubstitution ::
     ElementVariable RewritingVariableName ->
@@ -308,6 +331,13 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized =
         Logic.scatter (toList orPattern)
   where
     someVariableName = inject (variableName variable)
+{-# SPECIALIZE makeEvaluateBoundLeft ::
+    SideCondition RewritingVariableName ->
+    ElementVariable RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    LogicT Simplifier (Pattern RewritingVariableName)
+    #-}
 
 {- | Existentially quantify a variable in the given 'Pattern'.
 
@@ -348,6 +378,13 @@ makeEvaluateBoundRight sideCondition variable freeSubstitution normalized = do
     (quantifyTerm, quantifyCondition) =
         Pattern.splitTerm
             (quantifyPattern variable normalized)
+{-# SPECIALIZE makeEvaluateBoundRight ::
+    SideCondition RewritingVariableName ->
+    ElementVariable RewritingVariableName ->
+    Substitution RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    LogicT Simplifier (Pattern RewritingVariableName)
+    #-}
 
 {- | Split the substitution on the given variable.
 

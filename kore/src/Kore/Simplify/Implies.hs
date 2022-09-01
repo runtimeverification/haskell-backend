@@ -62,6 +62,11 @@ simplify
     sideCondition
     Implies{impliesFirst = first, impliesSecond = second, impliesSort = sort} =
         simplifyEvaluated sort sideCondition first second
+{-# SPECIALIZE simplify ::
+    SideCondition RewritingVariableName ->
+    Implies Sort (OrPattern RewritingVariableName) ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 {- | simplifies an Implies given its two 'OrPattern' children.
 
@@ -99,6 +104,13 @@ simplifyEvaluated sort sideCondition first second
         OrPattern.observeAllT $
             Logic.scatter second
                 >>= simplifyEvaluateHalfImplies sort sideCondition first
+{-# SPECIALIZE simplifyEvaluated ::
+    Sort ->
+    SideCondition RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 simplifyEvaluateHalfImplies ::
     MonadSimplify simplifier =>
@@ -120,6 +132,13 @@ simplifyEvaluateHalfImplies sort sideCondition first second
             firstPatterns ->
                 distributeEvaluateImplies sideCondition firstPatterns second
                     >>= Logic.scatter
+{-# SPECIALIZE simplifyEvaluateHalfImplies ::
+    Sort ->
+    SideCondition RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    LogicT Simplifier (Pattern RewritingVariableName)
+    #-}
 
 distributeEvaluateImplies ::
     MonadSimplify simplifier =>
@@ -133,6 +152,12 @@ distributeEvaluateImplies sideCondition firsts second =
   where
     sort = Pattern.patternSort second
     implications = map (\first -> makeEvaluateImplies first second) firsts
+{-# SPECIALIZE distributeEvaluateImplies ::
+    SideCondition RewritingVariableName ->
+    [Pattern RewritingVariableName] ->
+    Pattern RewritingVariableName ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 makeEvaluateImplies ::
     Pattern RewritingVariableName ->

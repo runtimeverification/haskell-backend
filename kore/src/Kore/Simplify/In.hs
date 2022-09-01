@@ -59,6 +59,11 @@ simplify
     sideCondition
     In{inContainedChild = first, inContainingChild = second} =
         simplifyEvaluatedIn sideCondition first second
+{-# SPECIALIZE simplify ::
+    SideCondition RewritingVariableName ->
+    In sort (OrPattern RewritingVariableName) ->
+    Simplifier (OrCondition RewritingVariableName)
+    #-}
 
 simplifyEvaluatedIn ::
     forall simplifier.
@@ -77,6 +82,12 @@ simplifyEvaluatedIn sideCondition first second
             pattFirst <- Logic.scatter first
             pattSecond <- Logic.scatter second
             makeEvaluateIn sideCondition pattFirst pattSecond >>= Logic.scatter
+{-# SPECIALIZE simplifyEvaluatedIn ::
+    SideCondition RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    Simplifier (OrCondition RewritingVariableName)
+    #-}
 
 makeEvaluateIn ::
     MonadSimplify simplifier =>
@@ -95,3 +106,9 @@ makeEvaluateIn sideCondition first second
             >>= Ceil.simplifyEvaluated sideCondition
   where
     pattSort = patternSort first
+{-# SPECIALIZE makeEvaluateIn ::
+    SideCondition RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    Simplifier (OrCondition RewritingVariableName)
+    #-}

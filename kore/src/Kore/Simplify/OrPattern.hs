@@ -52,6 +52,7 @@ import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator (
  )
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    Simplifier,
     liftSimplifier,
     simplifyCondition,
  )
@@ -152,3 +153,8 @@ simplifyConditionsWithSmt sideCondition unsimplified =
         Conditional RewritingVariableName term
     addPredicate c@Conditional{predicate} =
         c{Conditional.predicate = makeAndPredicate predicate sidePredicate}
+{-# SPECIALIZE simplifyConditionsWithSmt ::
+    SideCondition RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}

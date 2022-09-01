@@ -86,6 +86,11 @@ simplify sideCondition not'@Not{notSort} =
         let evaluated = MultiAnd.map makeEvaluateNot (distributeNot not')
         andPattern <- scatterAnd evaluated
         mkMultiAndPattern notSort sideCondition andPattern
+{-# SPECIALIZE simplify ::
+    SideCondition RewritingVariableName ->
+    Not Sort (OrPattern RewritingVariableName) ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 simplifyEvaluatedPredicate ::
     MonadSimplify simplifier =>
@@ -101,6 +106,10 @@ simplifyEvaluatedPredicate notChild =
                     (distributeNot not')
                 )
         mkMultiAndPredicate andPredicate
+{-# SPECIALIZE simplifyEvaluatedPredicate ::
+    OrCondition RewritingVariableName ->
+    Simplifier (OrCondition RewritingVariableName)
+    #-}
 
 {- |'makeEvaluate' simplifies a 'Not' pattern given its 'Pattern'
 child.
@@ -202,6 +211,12 @@ mkMultiAndPattern ::
     MultiAnd (Pattern RewritingVariableName) ->
     LogicT simplifier (Pattern RewritingVariableName)
 mkMultiAndPattern resultSort = And.makeEvaluate resultSort notSimplifier
+{-# SPECIALIZE mkMultiAndPattern ::
+    Sort ->
+    SideCondition RewritingVariableName ->
+    MultiAnd (Pattern RewritingVariableName) ->
+    LogicT Simplifier (Pattern RewritingVariableName)
+    #-}
 
 -- | Conjoin and simplify a 'MultiAnd' of 'Condition'.
 mkMultiAndPredicate ::
@@ -214,3 +229,4 @@ mkMultiAndPredicate predicates =
 
 notSimplifier :: MonadSimplify simplifier => NotSimplifier simplifier
 notSimplifier = NotSimplifier simplify
+{-# SPECIALIZE notSimplifier :: NotSimplifier Simplifier #-}

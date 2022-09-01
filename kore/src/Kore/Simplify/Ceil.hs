@@ -16,6 +16,7 @@ import Control.Error (
  )
 import Control.Monad.Reader (
     MonadReader,
+    ReaderT,
  )
 import Control.Monad.Reader qualified as Reader
 import Data.Functor.Foldable qualified as Recursive
@@ -92,6 +93,11 @@ simplify
     sideCondition
     Ceil{ceilChild = child} =
         simplifyEvaluated sideCondition child
+{-# SPECIALIZE simplify ::
+    SideCondition RewritingVariableName ->
+    Ceil sort (OrPattern RewritingVariableName) ->
+    Simplifier (OrCondition RewritingVariableName)
+    #-}
 
 {- | 'simplifyEvaluated' evaluates a ceil given its child, see 'simplify'
 for details.
@@ -103,6 +109,11 @@ simplifyEvaluated ::
     simplifier (OrCondition RewritingVariableName)
 simplifyEvaluated sideCondition child =
     OrPattern.traverseOr (makeEvaluate sideCondition) child
+{-# SPECIALIZE simplifyEvaluated ::
+    SideCondition RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    Simplifier (OrCondition RewritingVariableName)
+    #-}
 
 {- | Evaluates a ceil given its child as an Pattern, see 'simplify'
 for details.
@@ -124,6 +135,11 @@ makeEvaluate sideCondition child
   where
     (term, condition) = Pattern.splitTerm child
     childSort = Pattern.patternSort child
+{-# SPECIALIZE makeEvaluate ::
+    SideCondition RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    Simplifier (OrCondition RewritingVariableName)
+    #-}
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
 -- implicit and explicit.
@@ -159,6 +175,12 @@ makeEvaluateTerm resultSort sideCondition ceilChild =
             , newBuiltinCeilSimplifier resultSort
             , newInjCeilSimplifier
             ]
+{-# SPECIALIZE makeEvaluateTerm ::
+    Sort ->
+    SideCondition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Simplifier (OrCondition RewritingVariableName)
+    #-}
 
 newPredicateCeilSimplifier ::
     Monad simplifier =>
@@ -206,6 +228,13 @@ newApplicationCeilSimplifier = CeilSimplifier $ \input ->
                     sideCondition
                     (MultiAnd.make ceils)
         _ -> empty
+{-# SPECIALIZE newApplicationCeilSimplifier ::
+    InternalVariable RewritingVariableName =>
+    CeilSimplifier
+        (ReaderT (SideCondition RewritingVariableName) Simplifier)
+        (TermLike RewritingVariableName)
+        (OrCondition RewritingVariableName)
+    #-}
 
 newInjCeilSimplifier ::
     MonadReader (SideCondition RewritingVariableName) simplifier =>
@@ -224,6 +253,12 @@ newInjCeilSimplifier = CeilSimplifier $ \input ->
                 & ceilChild
                 & makeEvaluateTermCeil sideCondition
         _ -> empty
+{-# SPECIALIZE newInjCeilSimplifier ::
+    CeilSimplifier
+        (ReaderT (SideCondition RewritingVariableName) Simplifier)
+        (TermLike RewritingVariableName)
+        (OrCondition RewritingVariableName)
+    #-}
 
 newBuiltinCeilSimplifier ::
     MonadReader (SideCondition RewritingVariableName) simplifier =>
@@ -245,6 +280,13 @@ newBuiltinCeilSimplifier ceilSort = CeilSimplifier $ \input ->
             sideCondition <- Reader.ask
             makeEvaluateInternalSet ceilSort sideCondition internalSet
         _ -> empty
+{-# SPECIALIZE newBuiltinCeilSimplifier ::
+    Sort ->
+    CeilSimplifier
+        (ReaderT (SideCondition RewritingVariableName) Simplifier)
+        (TermLike RewritingVariableName)
+        (OrCondition RewritingVariableName)
+    #-}
 
 newAxiomCeilSimplifier ::
     MonadReader (SideCondition RewritingVariableName) simplifier =>
@@ -275,6 +317,12 @@ newAxiomCeilSimplifier = CeilSimplifier $ \input -> do
                 ++ " and predicate symbols are currently unrecognized as such, "
                 ++ "and programming errors."
             )
+{-# SPECIALIZE newAxiomCeilSimplifier ::
+    CeilSimplifier
+        (ReaderT (SideCondition RewritingVariableName) Simplifier)
+        (TermLike RewritingVariableName)
+        (OrCondition RewritingVariableName)
+    #-}
 
 makeEvaluateInternalMap ::
     forall simplifier.
@@ -294,6 +342,12 @@ makeEvaluateInternalMap resultSort sideCondition internalMap =
             }
   where
     InternalAc{builtinAcSort} = internalMap
+{-# SPECIALIZE makeEvaluateInternalMap ::
+    Sort ->
+    SideCondition RewritingVariableName ->
+    InternalMap Key (TermLike RewritingVariableName) ->
+    MaybeT Simplifier (OrCondition RewritingVariableName)
+    #-}
 
 -- | Evaluates the ceil of a domain value.
 makeEvaluateInternalSet ::
@@ -314,6 +368,12 @@ makeEvaluateInternalSet resultSort sideCondition internalSet =
             }
   where
     InternalAc{builtinAcSort} = internalSet
+{-# SPECIALIZE makeEvaluateInternalSet ::
+    Sort ->
+    SideCondition RewritingVariableName ->
+    InternalSet Key (TermLike RewritingVariableName) ->
+    MaybeT Simplifier (OrCondition RewritingVariableName)
+    #-}
 
 makeEvaluateInternalList ::
     forall simplifier.
@@ -327,6 +387,12 @@ makeEvaluateInternalList listSort sideCondition internal = do
     let ceils :: [OrCondition RewritingVariableName]
         ceils = children
     And.simplifyEvaluatedMultiPredicate sideCondition (MultiAnd.make ceils)
+{-# SPECIALIZE makeEvaluateInternalList ::
+    Sort ->
+    SideCondition RewritingVariableName ->
+    InternalList (TermLike RewritingVariableName) ->
+    Simplifier (OrCondition RewritingVariableName)
+    #-}
 
 {- | This handles the case when we can't simplify a term's ceil.
 
@@ -404,3 +470,9 @@ makeSimplifiedCeil
 
         ~unexpectedError =
             error ("Unexpected term type: " ++ unparseToString termLike)
+{-# SPECIALIZE makeSimplifiedCeil ::
+    SideCondition RewritingVariableName ->
+    Maybe SideCondition.Representation ->
+    TermLike RewritingVariableName ->
+    Simplifier (OrCondition RewritingVariableName)
+    #-}

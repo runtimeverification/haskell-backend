@@ -483,6 +483,15 @@ proveClaimStep _ stuckCheck claims axioms executionGraph node =
                 (Lens.over lensClaimPattern mkGoal <$> state)
         | otherwise =
             transitionRule' stuckCheck claims axioms prim state
+{-# SPECIALIZE proveClaimStep ::
+    Maybe MinDepth ->
+    StuckCheck ->
+    [SomeClaim] ->
+    [Rule SomeClaim] ->
+    ExecutionGraph CommonClaimState (AppliedRule SomeClaim) ->
+    Graph.Node ->
+    Simplifier (ExecutionGraph CommonClaimState (AppliedRule SomeClaim))
+    #-}
 
 transitionRule' ::
     MonadSimplify simplifier =>
@@ -508,6 +517,12 @@ transitionRule' stuckCheck claims axioms = \prim proofState ->
         proofState
   where
     axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
+{-# SPECIALIZE transitionRule' ::
+    StuckCheck ->
+    [SomeClaim] ->
+    [Rule SomeClaim] ->
+    CommonTransitionRule Simplifier
+    #-}
 
 withWarnings ::
     forall m.
@@ -524,6 +539,10 @@ withWarnings rule prim claimState = do
                 _ -> return ()
         _ -> return ()
     return claimState'
+{-# SPECIALIZE withWarnings ::
+    CommonTransitionRule Simplifier ->
+    CommonTransitionRule Simplifier
+    #-}
 
 profTransitionRule ::
     forall m.
@@ -549,6 +568,10 @@ logTransitionRule ::
     CommonTransitionRule m
 logTransitionRule rule prim proofState =
     whileReachability prim $ rule prim proofState
+{-# SPECIALIZE logTransitionRule ::
+    CommonTransitionRule Simplifier ->
+    CommonTransitionRule Simplifier
+    #-}
 
 checkStuckConfiguration ::
     CommonTransitionRule m ->

@@ -77,6 +77,7 @@ import Kore.Rewrite.UnifyingRule
 import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    Simplifier,
     liftSimplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
@@ -131,6 +132,15 @@ unifyRules sideCondition initial rules =
             unifyRule sideCondition initial rule
         )
         <* marker "EndRules" ""
+{-# SPECIALIZE unifyRules ::
+    UnifyingRule rule =>
+    UnifyingRuleVariable rule ~ RewritingVariableName =>
+    From rule SourceLocation =>
+    SideCondition RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    [rule] ->
+    Simplifier [UnifiedRule rule]
+    #-}
 
 {- | Attempt to unify a rule with the initial configuration.
 
@@ -190,6 +200,15 @@ unifyRule sideCondition initial rule = do
             $ location rule
 
     ruleMarker tag = marker tag locString
+{-# SPECIALIZE unifyRule ::
+    RewritingVariableName ~ UnifyingRuleVariable rule =>
+    UnifyingRule rule =>
+    From rule SourceLocation =>
+    SideCondition RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    rule ->
+    LogicT Simplifier (UnifiedRule rule)
+    #-}
 
 marker :: MonadIO m => String -> String -> m ()
 marker tag extra =
@@ -310,6 +329,12 @@ applyInitialConditions sideCondition initial unification = do
     -- then the rule is considered to apply with a \bottom result.
     TopBottom.guardAgainstBottom evaluated
     return evaluated
+{-# SPECIALIZE applyInitialConditions ::
+    SideCondition RewritingVariableName ->
+    Condition RewritingVariableName ->
+    Condition RewritingVariableName ->
+    LogicT Simplifier (OrCondition RewritingVariableName)
+    #-}
 
 -- |Renames configuration variables to distinguish them from those in the rule.
 toConfigurationVariablesCondition ::
@@ -348,3 +373,9 @@ applyRemainder sideCondition initial remainder = do
         sideCondition
         (Pattern.andCondition initial partial)
         <&> Pattern.mapVariables resetConfigVariable
+{-# SPECIALIZE applyRemainder ::
+    SideCondition RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    Condition RewritingVariableName ->
+    LogicT Simplifier (Pattern RewritingVariableName)
+    #-}

@@ -29,6 +29,7 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Rewrite.Substitution qualified as Substitution
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    Simplifier,
     liftSimplifier,
  )
 import Logic qualified as LogicT
@@ -52,3 +53,8 @@ simplifyEvaluatedMultiPredicate sideCondition predicates =
         markSimplified =
             Condition.setPredicateSimplified
                 (foldMap Condition.simplifiedAttribute predicates')
+{-# SPECIALIZE simplifyEvaluatedMultiPredicate ::
+    SideCondition RewritingVariableName ->
+    MultiAnd (OrCondition RewritingVariableName) ->
+    Simplifier (OrCondition RewritingVariableName)
+    #-}

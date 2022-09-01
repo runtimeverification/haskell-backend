@@ -50,6 +50,7 @@ import Kore.Rewrite.UnifyingRule (
  )
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    Simplifier,
  )
 import Kore.Syntax.Sentence qualified as Syntax
 import Kore.TopBottom (
@@ -228,3 +229,11 @@ deriveSeqAxiomOnePath rules =
     deriveSeq' _Unwrapped OnePathRewriteRule rewrites
   where
     rewrites = unRuleOnePath <$> rules
+{-# SPECIALIZE deriveSeqAxiomOnePath ::
+    [Rule OnePathClaim] ->
+    OnePathClaim ->
+    TransitionT
+        (AppliedRule OnePathClaim)
+        Simplifier
+        (ApplyResult OnePathClaim)
+    #-}

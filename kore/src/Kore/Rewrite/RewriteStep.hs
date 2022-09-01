@@ -70,6 +70,7 @@ import Kore.Rewrite.Step (
  )
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    Simplifier,
     simplifyCondition,
  )
 import Kore.Substitute
@@ -122,6 +123,12 @@ finalizeAppliedRule
                 sideCondition
                 appliedCondition
                 finalPattern
+{-# SPECIALIZE finalizeAppliedRule ::
+    SideCondition RewritingVariableName ->
+    RulePattern RewritingVariableName ->
+    OrCondition RewritingVariableName ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 {- | Combine all the conditions to apply rule and construct the result.
 
@@ -170,6 +177,12 @@ constructConfiguration
         -- substitution?
         debugCreatedSubstitution substitution (termLikeSort finalTerm)
         return (finalTerm' `Pattern.withCondition` finalCondition)
+{-# SPECIALIZE constructConfiguration ::
+    SideCondition RewritingVariableName ->
+    Condition RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    LogicT Simplifier (Pattern RewritingVariableName)
+    #-}
 
 finalizeAppliedClaim ::
     forall simplifier.
@@ -196,6 +209,12 @@ finalizeAppliedClaim sideCondition renamedRule appliedConditions =
                 sideCondition
                 appliedCondition
                 finalPattern
+{-# SPECIALIZE finalizeAppliedClaim ::
+    SideCondition RewritingVariableName ->
+    ClaimPattern ->
+    OrCondition RewritingVariableName ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 type UnifyingRuleWithRepresentation representation rule =
     ( Rule.UnifyingRule representation
@@ -244,6 +263,16 @@ finalizeRule
             let result =
                     OrPattern.map (resetResultPattern initialVariables) final
             return Step.Result{appliedRule = unifiedRule, result}
+{-# SPECIALIZE finalizeRule ::
+    UnifyingRuleWithRepresentation representation rule =>
+    SideCondition RewritingVariableName ->
+    (representation -> rule) ->
+    FinalizeApplied representation Simplifier ->
+    FreeVariables RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    UnifiedRule representation ->
+    Simplifier [Result representation]
+    #-}
 
 -- | Finalizes a list of applied rules into 'Results'.
 type Finalizer rule simplifier =
@@ -364,6 +393,17 @@ applyWithFinalizer sideCondition finalize rules initial = do
   where
     locations = from @_ @SourceLocation . extract
 {-# INLINE applyWithFinalizer #-}
+{-# SPECIALIZE applyWithFinalizer ::
+    forall rule.
+    Rule.UnifyingRule rule =>
+    Rule.UnifyingRuleVariable rule ~ RewritingVariableName =>
+    From rule SourceLocation =>
+    SideCondition RewritingVariableName ->
+    Finalizer rule Simplifier ->
+    [rule] ->
+    Pattern RewritingVariableName ->
+    Simplifier (Results rule)
+    #-}
 
 {- | Apply the given rules to the initial configuration in parallel.
 
@@ -389,6 +429,12 @@ applyRulesParallel sideCondition rules initial =
         )
         rules
         initial
+{-# SPECIALIZE applyRulesParallel ::
+    SideCondition RewritingVariableName ->
+    [RulePattern RewritingVariableName] ->
+    Pattern RewritingVariableName ->
+    Simplifier (Results (RulePattern RewritingVariableName))
+    #-}
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
 
@@ -412,6 +458,11 @@ applyRewriteRulesParallel
             results <- applyRulesParallel sideCondition rules initial
             assertFunctionLikeResults (term initial) results
             return results
+{-# SPECIALIZE applyRewriteRulesParallel ::
+    [RewriteRule RewritingVariableName] ->
+    Pattern RewritingVariableName ->
+    Simplifier (Results (RulePattern RewritingVariableName))
+    #-}
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
@@ -437,6 +488,12 @@ applyRulesSequence sideCondition rules initial =
         )
         rules
         initial
+{-# SPECIALIZE applyRulesSequence ::
+    SideCondition RewritingVariableName ->
+    [RulePattern RewritingVariableName] ->
+    Pattern RewritingVariableName ->
+    Simplifier (Results (RulePattern RewritingVariableName))
+    #-}
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
@@ -460,6 +517,11 @@ applyRewriteRulesSequence
             results <- applyRulesSequence sideCondition rules initialConfig
             assertFunctionLikeResults (term initialConfig) results
             return results
+{-# SPECIALIZE applyRewriteRulesSequence ::
+    Pattern RewritingVariableName ->
+    [RewriteRule RewritingVariableName] ->
+    Simplifier (Results (RulePattern RewritingVariableName))
+    #-}
 
 applyClaimsSequence ::
     forall goal simplifier.
@@ -487,3 +549,11 @@ applyClaimsSequence mkClaim initialConfig claims = do
             initialConfig
     assertFunctionLikeResults (term initialConfig) results
     return results
+{-# SPECIALIZE applyClaimsSequence ::
+    forall goal.
+    UnifyingRuleWithRepresentation ClaimPattern goal =>
+    (ClaimPattern -> goal) ->
+    Pattern RewritingVariableName ->
+    [ClaimPattern] ->
+    Simplifier (Results ClaimPattern)
+    #-}

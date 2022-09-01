@@ -47,6 +47,10 @@ simplify injOrPattern = do
                 (TermLike.markSimplified . evaluateInj)
                 composed
     return evaluated
+{-# SPECIALIZE simplify ::
+    Inj (OrPattern RewritingVariableName) ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 distributeOr ::
     Ord a =>

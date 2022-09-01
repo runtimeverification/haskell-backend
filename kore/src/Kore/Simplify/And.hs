@@ -109,6 +109,13 @@ simplify resultSort notSimplifier sideCondition orPatterns =
     OrPattern.observeAllT $ do
         patterns <- MultiAnd.traverse scatter orPatterns
         makeEvaluate resultSort notSimplifier sideCondition patterns
+{-# SPECIALIZE simplify ::
+    Sort ->
+    NotSimplifier (UnifierT Simplifier) ->
+    SideCondition RewritingVariableName ->
+    MultiAnd (OrPattern RewritingVariableName) ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 {- | 'makeEvaluate' simplifies a 'MultiAnd' of 'Pattern's.
 See the comment for 'simplify' to find more details.
@@ -126,6 +133,14 @@ makeEvaluate resultSort notSimplifier sideCondition patterns
     | isBottom patterns = empty
     | Pattern.isTop patterns = return (Pattern.topOf resultSort)
     | otherwise = makeEvaluateNonBool resultSort notSimplifier sideCondition patterns
+{-# SPECIALIZE makeEvaluate ::
+    HasCallStack =>
+    Sort ->
+    NotSimplifier (UnifierT Simplifier) ->
+    SideCondition RewritingVariableName ->
+    MultiAnd (Pattern RewritingVariableName) ->
+    LogicT Simplifier (Pattern RewritingVariableName)
+    #-}
 
 makeEvaluateNonBool ::
     forall simplifier.
@@ -170,6 +185,14 @@ makeEvaluateNonBool resultSort notSimplifier sideCondition patterns = do
         simplified = foldMap Predicate.simplifiedAttribute predicates
      in Pattern.withCondition term (from substitution <> from predicate)
             & return
+{-# SPECIALIZE makeEvaluateNonBool ::
+    HasCallStack =>
+    Sort ->
+    NotSimplifier (UnifierT Simplifier) ->
+    SideCondition RewritingVariableName ->
+    MultiAnd (Pattern RewritingVariableName) ->
+    LogicT Simplifier (Pattern RewritingVariableName)
+    #-}
 
 applyAndIdempotenceAndFindContradictions ::
     HasCallStack =>
@@ -240,3 +263,10 @@ termAnd notSimplifier p1 p2 =
             & fmap (fromMaybe andPattern)
       where
         andPattern = Pattern.fromTermLike (mkAnd first second)
+{-# SPECIALIZE termAnd ::
+    HasCallStack =>
+    NotSimplifier (UnifierT Simplifier) ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    LogicT Simplifier (Pattern RewritingVariableName)
+    #-}

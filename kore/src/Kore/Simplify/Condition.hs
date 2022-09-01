@@ -73,6 +73,10 @@ create ::
     ConditionSimplifier simplifier
 create substitutionSimplifier =
     ConditionSimplifier $ simplify substitutionSimplifier
+{-# SPECIALIZE create ::
+    SubstitutionSimplifier Simplifier ->
+    ConditionSimplifier Simplifier
+    #-}
 
 {- | Simplify a 'Condition'.
 
@@ -162,6 +166,14 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition original = d
                 & lift
         predicate' <- scatter predicates'
         return $ Conditional.andCondition conditional' predicate'
+{-# SPECIALIZE simplify ::
+    forall any.
+    HasCallStack =>
+    SubstitutionSimplifier Simplifier ->
+    SideCondition RewritingVariableName ->
+    Conditional RewritingVariableName any ->
+    LogicT Simplifier (Conditional RewritingVariableName any)
+    #-}
 
 {- | Simplify a conjunction of predicates by applying predicate and term
 replacements and by simplifying each predicate with the assumption that the
@@ -195,6 +207,11 @@ simplifyPredicates sideCondition original = do
     if original == simplifiedPredicates
         then return (Condition.markSimplified simplified)
         else simplifyPredicates sideCondition simplifiedPredicates
+{-# SPECIALIZE simplifyPredicates ::
+    SideCondition RewritingVariableName ->
+    MultiAnd (Predicate RewritingVariableName) ->
+    LogicT Simplifier (Condition RewritingVariableName)
+    #-}
 
 {- | Simplify an existential predicate by removing the existential binder and refreshing
 all occurrences of the name within the child term
@@ -254,6 +271,13 @@ simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
 
     simplifyPredicate sideCondition' predicate =
         Predicate.simplify sideCondition' predicate >>= Logic.scatter & lift
+{-# SPECIALIZE simplifyPredicatesWithAssumptions ::
+    SideCondition RewritingVariableName ->
+    [Predicate RewritingVariableName] ->
+    LogicT
+        Simplifier
+        (MultiAnd (Predicate RewritingVariableName))
+    #-}
 
 mkCondition ::
     InternalVariable variable =>

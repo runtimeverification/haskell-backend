@@ -144,6 +144,12 @@ matchOverloading termPair = do
             _ -> empty
         Nothing -> empty
 
+{- The import of UnifierT yields multiple cyclic imports
+   SPECIALIZE matchOverloading ::
+   Pair (TermLike RewritingVariableName) ->
+   MatchOverloadingResult (UnifierT Simplifier) RewritingVariableName
+   -}
+
 data OverloadingData = OverloadingData
     { term1, term2 :: !(TermLike RewritingVariableName)
     , matchResult :: !MatchResult

@@ -13,6 +13,7 @@ import Control.Error (
  )
 import Control.Monad.Reader (
     MonadReader,
+    ReaderT,
  )
 import Control.Monad.Reader qualified as Reader
 import Data.Bifunctor qualified as Bifunctor
@@ -62,6 +63,7 @@ import Kore.Simplify.Equals qualified as Equals
 import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    Simplifier,
     makeEvaluateTermCeil,
  )
 import Kore.Variables.Fresh (
@@ -106,12 +108,12 @@ newSetCeilSimplifier =
                 mkNotMember
             )
             ceil
-
--- {-# SPECIALIZE newSetCeilSimplifier ::
---     CeilSimplifier
---         Simplifier
---         (BuiltinAssocComm NormalizedSet RewritingVariableName)
---         (OrCondition RewritingVariableName) #-}
+{-# SPECIALIZE newSetCeilSimplifier ::
+    CeilSimplifier
+        (ReaderT (SideCondition RewritingVariableName) Simplifier)
+        (BuiltinAssocComm NormalizedSet RewritingVariableName)
+        (OrCondition RewritingVariableName)
+    #-}
 
 newMapCeilSimplifier ::
     forall simplifier.
@@ -145,12 +147,12 @@ newMapCeilSimplifier =
                 mkNotMember
             )
             ceil
-
--- {-# SPECIALIZE newMapCeilSimplifier ::
---     CeilSimplifier
---         Simplifier
---         (BuiltinAssocComm NormalizedMap RewritingVariableName)
---         (OrCondition RewritingVariableName) #-}
+{-# SPECIALIZE newMapCeilSimplifier ::
+    CeilSimplifier
+        (ReaderT (SideCondition RewritingVariableName) Simplifier)
+        (BuiltinAssocComm NormalizedMap RewritingVariableName)
+        (OrCondition RewritingVariableName)
+    #-}
 
 {- | Generalize a 'MapElement' by replacing the 'MapValue' with a variable.
 
@@ -232,21 +234,21 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
         worker multiAnd termLike = do
             evaluated <- makeEvaluateTermCeil sideCondition termLike
             return (multiAnd <> MultiAnd.singleton evaluated)
-
--- {-# SPECIALIZE newBuiltinAssocCommCeilSimplifier ::
---     forall normalized.
---     Ord (Element normalized (TermLike RewritingVariableName)) =>
---     Ord (Value normalized (TermLike RewritingVariableName)) =>
---     Hashable (Element normalized (TermLike RewritingVariableName)) =>
---     Hashable (Value normalized (TermLike RewritingVariableName)) =>
---     Traversable (Value normalized) =>
---     AcWrapper normalized =>
---     MkBuiltinAssocComm normalized RewritingVariableName ->
---     MkNotMember normalized RewritingVariableName ->
---     CeilSimplifier
---         Simplifier
---         (BuiltinAssocComm normalized RewritingVariableName)
---         (OrCondition RewritingVariableName) #-}
+{-# SPECIALIZE newBuiltinAssocCommCeilSimplifier ::
+    forall normalized.
+    Ord (Element normalized (TermLike RewritingVariableName)) =>
+    Ord (Value normalized (TermLike RewritingVariableName)) =>
+    Hashable (Element normalized (TermLike RewritingVariableName)) =>
+    Hashable (Value normalized (TermLike RewritingVariableName)) =>
+    Traversable (Value normalized) =>
+    AcWrapper normalized =>
+    MkBuiltinAssocComm normalized RewritingVariableName ->
+    MkNotMember normalized RewritingVariableName ->
+    CeilSimplifier
+        (ReaderT (SideCondition RewritingVariableName) Simplifier)
+        (BuiltinAssocComm normalized RewritingVariableName)
+        (OrCondition RewritingVariableName)
+    #-}
 
 definePairWiseElements ::
     forall normalized simplifier.
@@ -349,17 +351,19 @@ definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
             & Predicate.markSimplifiedMaybeConditional Nothing
             & OrCondition.fromPredicate
             & MultiAnd.singleton
-
--- {-# SPECIALIZE definePairWiseElements ::
---     forall normalized.
---     Ord (Element normalized (TermLike RewritingVariableName)) =>
---     Hashable (Element normalized (TermLike RewritingVariableName)) =>
---     AcWrapper normalized =>
---     MkBuiltinAssocComm normalized RewritingVariableName ->
---     MkNotMember normalized RewritingVariableName ->
---     InternalAc Key normalized (TermLike RewritingVariableName) ->
---     PairWiseElements normalized Key (TermLike RewritingVariableName) ->
---     MaybeT Simplifier (MultiAnd (OrCondition RewritingVariableName)) #-}
+{-# SPECIALIZE definePairWiseElements ::
+    forall normalized.
+    Ord (Element normalized (TermLike RewritingVariableName)) =>
+    Hashable (Element normalized (TermLike RewritingVariableName)) =>
+    AcWrapper normalized =>
+    MkBuiltinAssocComm normalized RewritingVariableName ->
+    MkNotMember normalized RewritingVariableName ->
+    InternalAc Key normalized (TermLike RewritingVariableName) ->
+    PairWiseElements normalized Key (TermLike RewritingVariableName) ->
+    MaybeT
+        (ReaderT (SideCondition RewritingVariableName) Simplifier)
+        (MultiAnd (OrCondition RewritingVariableName))
+    #-}
 
 fromElement ::
     AcWrapper normalized =>

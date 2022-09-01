@@ -200,6 +200,15 @@ evaluatePattern
             defaultValue
             sideCondition
             & maybeT (defaultValue Nothing) return
+{-# SPECIALIZE evaluatePattern ::
+    SideCondition RewritingVariableName ->
+    Condition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    ( Maybe SideCondition.Representation ->
+      Simplifier (OrPattern RewritingVariableName)
+    ) ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 lookupAxiomSimplifier ::
     MonadSimplify simplifier =>
@@ -296,6 +305,13 @@ lookupAxiomSimplifier termLike sideCondition = do
         (Nothing, eval2) -> const . const <$> eval2
         (eval1, Nothing) -> const . const <$> eval1
         (Just eval1, Just eval2) -> Just $ simplifierWithFallback eval1 eval2
+{-# SPECIALIZE lookupAxiomSimplifier ::
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    MaybeT
+        Simplifier
+        (Simplifier (AttemptedAxiom RewritingVariableName))
+    #-}
 
 criticalMissingHook :: Symbol -> Text -> a
 criticalMissingHook symbol hookName =
@@ -389,6 +405,15 @@ maybeEvaluatePattern
                 return (OrPattern.fromPattern unchangedPatt)
             | otherwise =
                 simplifyPattern sideCondition toSimplify
+{-# SPECIALIZE maybeEvaluatePattern ::
+    Condition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    ( Maybe SideCondition.Representation ->
+      Simplifier (OrPattern RewritingVariableName)
+    ) ->
+    SideCondition RewritingVariableName ->
+    MaybeT Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 evaluateSortInjection ::
     InternalVariable variable =>
@@ -474,3 +499,9 @@ mergeWithConditionAndSubstitution
                         { results = evaluatedResults
                         , remainders = evaluatedRemainders
                         }
+{-# SPECIALIZE mergeWithConditionAndSubstitution ::
+    SideCondition RewritingVariableName ->
+    Condition RewritingVariableName ->
+    AttemptedAxiom RewritingVariableName ->
+    Simplifier (AttemptedAxiom RewritingVariableName)
+    #-}

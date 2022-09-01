@@ -58,6 +58,11 @@ simplify ::
     simplifier (OrPattern RewritingVariableName)
 simplify sideCondition Iff{iffFirst = first, iffSecond = second, iffSort = sort} =
     simplifyEvaluated sort sideCondition first second
+{-# SPECIALIZE simplify ::
+    SideCondition RewritingVariableName ->
+    Iff Sort (OrPattern RewritingVariableName) ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 {- | evaluates an 'Iff' given its two 'OrPattern' children.
 
@@ -101,6 +106,13 @@ simplifyEvaluated sort sideCondition first second
   where
     firstPatterns = toList first
     secondPatterns = toList second
+{-# SPECIALIZE simplifyEvaluated ::
+    Sort ->
+    SideCondition RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 {- | evaluates an 'Iff' given its two 'Pattern' children.
 

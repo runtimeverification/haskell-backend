@@ -148,3 +148,9 @@ makeExpandedApplication sideCondition symbol children = do
                 (fmap Pattern.term children)
 
     return $ Conditional.withCondition term merged
+{-# SPECIALIZE makeExpandedApplication ::
+    SideCondition RewritingVariableName ->
+    Symbol ->
+    [Pattern RewritingVariableName] ->
+    LogicT Simplifier (ExpandedApplication RewritingVariableName)
+    #-}

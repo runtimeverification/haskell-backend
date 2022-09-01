@@ -45,6 +45,7 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    Simplifier,
     simplifyCondition,
     simplifyTerm,
  )
@@ -60,6 +61,10 @@ simplifyTopConfiguration ::
     simplifier (OrPattern RewritingVariableName)
 simplifyTopConfiguration =
     simplify >=> return . removeTopExists
+{-# SPECIALIZE simplifyTopConfiguration ::
+    Pattern RewritingVariableName ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 {- | Simplifies the 'Pattern', with the assumption that the term is defined,
 and removes the exists quantifiers at the top.
@@ -84,6 +89,10 @@ simplifyTopConfigurationDefined configuration =
         makeCeilPredicate term
             & from @_ @(Condition _)
             & Pattern.andCondition configuration
+{-# SPECIALIZE simplifyTopConfigurationDefined ::
+    Pattern RewritingVariableName ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 -- | Removes all existential quantifiers at the top of every 'Pattern''s 'term'.
 removeTopExists ::
@@ -104,6 +113,10 @@ simplify ::
     Pattern RewritingVariableName ->
     simplifier (OrPattern RewritingVariableName)
 simplify = makeEvaluate SideCondition.top
+{-# SPECIALIZE simplify ::
+    Pattern RewritingVariableName ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 {- | Simplifies a 'Pattern' with a custom 'SideCondition'.
 This should only be used when it's certain that the
@@ -144,3 +157,8 @@ makeEvaluate sideCondition =
             let simplifiedPattern =
                     Conditional.andCondition simplifiedTerm simplifiedCondition
             simplifyCondition sideCondition simplifiedPattern
+{-# SPECIALIZE makeEvaluate ::
+    SideCondition RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}

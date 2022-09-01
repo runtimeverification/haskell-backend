@@ -172,6 +172,11 @@ simplify
       where
         (first', second') =
             minMaxBy (on compareForEquals (OrPattern.toTermLike sort)) first second
+{-# SPECIALIZE simplify ::
+    SideCondition RewritingVariableName ->
+    Equals Sort (OrPattern RewritingVariableName) ->
+    Simplifier (OrCondition RewritingVariableName)
+    #-}
 
 {-
 
@@ -219,6 +224,13 @@ simplifyEvaluated sort sideCondition first second
   where
     firstPatterns = toList first
     secondPatterns = toList second
+{-# SPECIALIZE simplifyEvaluated ::
+    Sort ->
+    SideCondition RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    OrPattern RewritingVariableName ->
+    Simplifier (OrCondition RewritingVariableName)
+    #-}
 
 makeEvaluateFunctionalOr ::
     forall simplifier.
@@ -258,6 +270,12 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
             do
                 equality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
                 Implies.simplifyEvaluated sort sideCondition secondCeil equality
+{-# SPECIALIZE makeEvaluateFunctionalOr ::
+    SideCondition RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    [Pattern RewritingVariableName] ->
+    Simplifier (OrCondition RewritingVariableName)
+    #-}
 
 {- | evaluates an 'Equals' given its two 'Pattern' children.
 
@@ -317,6 +335,12 @@ makeEvaluate
       where
         sort = sameSort (termLikeSort firstTerm) (termLikeSort secondTerm)
         termsAreEqual = firstTerm == secondTerm
+{-# SPECIALIZE makeEvaluate ::
+    Pattern RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (OrCondition RewritingVariableName)
+    #-}
 
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
@@ -341,6 +365,11 @@ makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
                         makeEqualsPredicate firstTerm secondTerm
                 , substitution = mempty
                 }
+{-# SPECIALIZE makeEvaluateTermsAssumesNoBottom ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
@@ -354,6 +383,11 @@ makeEvaluateTermsAssumesNoBottomMaybe first second = do
     result <- termEquals first second
     let sort = termLikeSort first
     return (MultiOr.map (Pattern.fromCondition sort) result)
+{-# SPECIALIZE makeEvaluateTermsAssumesNoBottomMaybe ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    MaybeT Simplifier (OrPattern RewritingVariableName)
+    #-}
 
 {- | Combines two terms with 'Equals' into a predicate-substitution.
 
@@ -392,6 +426,12 @@ makeEvaluateTermsToPredicate first second sideCondition
                         (MultiAnd.make [firstCeilNegation, secondCeilNegation])
 
                 return $ MultiOr.merge predicatedOr ceilNegationAnd
+{-# SPECIALIZE makeEvaluateTermsToPredicate ::
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Simplifier (OrCondition RewritingVariableName)
+    #-}
 
 {- | Simplify an equality relation of two patterns.
 
@@ -415,6 +455,12 @@ termEquals first second = MaybeT $ do
             return $
                 Just $
                     MultiOr.make (map Condition.eraseConditionalTerm results)
+{-# SPECIALIZE termEquals ::
+    HasCallStack =>
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    MaybeT Simplifier (OrCondition RewritingVariableName)
+    #-}
 
 termEqualsAnd ::
     forall simplifier.
@@ -467,3 +513,9 @@ termEqualsAnd p1 p2 =
                 -- prefer the first term because this is the "configuration" side
                 -- during rule unification.
                 & Pattern.withCondition first
+{-# SPECIALIZE termEqualsAnd ::
+    HasCallStack =>
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    MaybeT (LogicT Simplifier) (Pattern RewritingVariableName)
+    #-}

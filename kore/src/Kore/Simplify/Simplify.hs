@@ -349,6 +349,11 @@ simplifyPatternScatter ::
 simplifyPatternScatter sideCondition patt =
     Logic.scatter
         =<< simplifyPattern sideCondition patt
+{-# SPECIALIZE simplifyPatternScatter ::
+    SideCondition RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    LogicT Simplifier (Pattern RewritingVariableName)
+    #-}
 -- * Predicate simplifiers
 
 {- | 'ConditionSimplifier' wraps a function that simplifies
@@ -712,6 +717,11 @@ makeEvaluateTermCeil sideCondition child =
         & Condition.fromPredicate
         & simplifyCondition sideCondition
         & OrCondition.observeAllT
+{-# SPECIALIZE makeEvaluateTermCeil ::
+    SideCondition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    Simplifier (OrCondition RewritingVariableName)
+    #-}
 
 makeEvaluateCeil ::
     MonadSimplify simplifier =>
@@ -729,3 +739,9 @@ makeEvaluateCeil sort sideCondition child =
         Pattern.andCondition (Pattern.topOf sort) (ceilCondition <> childCondition)
             & pure
         & OrPattern.observeAllT
+{-# SPECIALIZE makeEvaluateCeil ::
+    Sort ->
+    SideCondition RewritingVariableName ->
+    Pattern RewritingVariableName ->
+    Simplifier (OrPattern RewritingVariableName)
+    #-}

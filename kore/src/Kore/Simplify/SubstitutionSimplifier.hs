@@ -85,6 +85,7 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    Simplifier,
     simplifyPattern,
     simplifyPatternScatter,
  )
@@ -131,6 +132,7 @@ substitutionSimplifier =
             return condition'
       where
         worker = simplifySubstitutionWorker sideCondition simplificationMakeAnd
+{-# SPECIALIZE substitutionSimplifier :: SubstitutionSimplifier Simplifier #-}
 
 -- * Implementation
 
@@ -157,6 +159,7 @@ simplificationMakeAnd =
                 & simplifyPatternScatter sideCondition
         TopBottom.guardAgainstBottom simplified
         return simplified
+{-# SPECIALIZE simplificationMakeAnd :: MakeAnd (LogicT Simplifier) #-}
 
 simplifyAnds ::
     forall monad.
@@ -397,6 +400,15 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
         return substitution'
 
     sideConditionRepresentation = SideCondition.toRepresentation sideCondition
+{-# SPECIALIZE simplifySubstitutionWorker ::
+    SideCondition RewritingVariableName ->
+    MakeAnd Simplifier ->
+    Substitution RewritingVariableName ->
+    MaybeT
+        Simplifier
+        (Predicate RewritingVariableName, Normalization RewritingVariableName)
+    #-}
+
 data Private variable = Private
     { -- | The current condition, accumulated during simplification.
       accum :: !(Condition variable)

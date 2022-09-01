@@ -196,6 +196,12 @@ simplify sideCondition original =
       where
         _ :< predicateF = Recursive.project predicate
         ~avoid = freeVariableNames sideCondition
+{-# SPECIALIZE simplify ::
+    HasCallStack =>
+    SideCondition RewritingVariableName ->
+    Predicate RewritingVariableName ->
+    Simplifier NormalForm
+    #-}
 
 -- | Construct a 'NormalForm' from a single 'Predicate'.
 mkSingleton ::
@@ -420,6 +426,11 @@ simplifyCeil ::
     simplifier NormalForm
 simplifyCeil sideCondition =
     Ceil.simplify sideCondition >=> return . fromOrCondition
+{-# SPECIALIZE simplifyCeil ::
+    SideCondition RewritingVariableName ->
+    Ceil sort (OrPattern RewritingVariableName) ->
+    Simplifier NormalForm
+    #-}
 
 {- |
  @
@@ -450,6 +461,12 @@ simplifyFloor termSort sideCondition floor' = do
                 , ceilResultSort = floorResultSort
                 , ceilChild
                 }
+{-# SPECIALIZE simplifyFloor ::
+    Sort ->
+    SideCondition RewritingVariableName ->
+    Floor sort (OrPattern RewritingVariableName) ->
+    Simplifier NormalForm
+    #-}
 
 simplifyExists ::
     forall simplifier.
@@ -585,6 +602,13 @@ simplifyEquals sideCondition sort equals = do
                     )
                     evaluatedTerms
                     & return
+{-# SPECIALIZE simplifyEquals ::
+    forall sort.
+    SideCondition RewritingVariableName ->
+    Sort ->
+    Equals sort (OrPattern RewritingVariableName) ->
+    Simplifier NormalForm
+    #-}
 
 simplifyIn ::
     MonadSimplify simplifier =>
@@ -593,3 +617,8 @@ simplifyIn ::
     simplifier NormalForm
 simplifyIn sideCondition =
     In.simplify sideCondition >=> return . fromOrCondition
+{-# SPECIALIZE simplifyIn ::
+    SideCondition RewritingVariableName ->
+    In sort (OrPattern RewritingVariableName) ->
+    Simplifier NormalForm
+    #-}

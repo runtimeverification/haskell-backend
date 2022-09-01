@@ -139,6 +139,7 @@ import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition qualified as Transition
 import Kore.Simplify.API (
     MonadSimplify,
+    Simplifier,
     liftSimplifier,
  )
 import Kore.Simplify.Exists qualified as Exists
@@ -488,6 +489,12 @@ checkImplication' lensRulePattern claim =
     claim
         & Lens.traverseOf lensRulePattern (Compose . checkImplicationWorker)
         & getCompose
+{-# SPECIALIZE checkImplication' ::
+    forall claim.
+    Lens' claim ClaimPattern ->
+    claim ->
+    LogicT Simplifier (CheckImplicationResult claim)
+    #-}
 
 assertFunctionLikeConfiguration ::
     forall m.
@@ -654,6 +661,10 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
                     & NotImpliedStuck
       where
         (_, condition) = Pattern.splitTerm stuck
+{-# SPECIALIZE checkImplicationWorker ::
+    ClaimPattern ->
+    LogicT Simplifier (CheckImplicationResult ClaimPattern)
+    #-}
 
 simplify' ::
     MonadSimplify m =>
@@ -687,6 +698,11 @@ simplify' lensClaimPattern claim = do
                     >>= liftSimplifier . SMT.Evaluator.filterMultiOr
                     & lift
             asum (pure <$> toList configs)
+{-# SPECIALIZE simplify' ::
+    Lens' claim ClaimPattern ->
+    claim ->
+    Strategy.TransitionT (AppliedRule claim) Simplifier claim
+    #-}
 
 simplifyRightHandSide ::
     MonadSimplify m =>
@@ -701,6 +717,12 @@ simplifyRightHandSide lensClaimPattern sideCondition =
                 >>= Pattern.makeEvaluate sideCondition . Pattern.requireDefined
                 >>= liftSimplifier . SMT.Evaluator.filterMultiOr
                 >>= Logic.scatter
+{-# SPECIALIZE simplifyRightHandSide ::
+    Lens' claim ClaimPattern ->
+    SideCondition RewritingVariableName ->
+    claim ->
+    Simplifier claim
+    #-}
 
 isTrusted :: From claim Attribute.Axiom.Trusted => claim -> Bool
 isTrusted = Attribute.Trusted.isTrusted . from @_ @Attribute.Axiom.Trusted
@@ -723,6 +745,14 @@ derivePar' ::
     Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 derivePar' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule Step.applyRewriteRulesParallel
+{-# SPECIALIZE derivePar' ::
+    forall claim.
+    Lens' claim ClaimPattern ->
+    (RewriteRule RewritingVariableName -> Rule claim) ->
+    [RewriteRule RewritingVariableName] ->
+    claim ->
+    Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
+    #-}
 
 type Deriver monad =
     [RewriteRule RewritingVariableName] ->
@@ -767,6 +797,14 @@ deriveSeq' ::
     Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 deriveSeq' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule $ flip Step.applyRewriteRulesSequence
+{-# SPECIALIZE deriveSeq' ::
+    forall claim.
+    Lens' claim ClaimPattern ->
+    (RewriteRule RewritingVariableName -> Rule claim) ->
+    [RewriteRule RewritingVariableName] ->
+    claim ->
+    Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
+    #-}
 
 deriveResults ::
     Step.UnifyingRuleVariable representation ~ RewritingVariableName =>

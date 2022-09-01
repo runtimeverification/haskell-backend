@@ -53,6 +53,7 @@ import Kore.Rewrite.UnifyingRule (
  )
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    Simplifier,
  )
 import Kore.Syntax.Sentence qualified as Syntax
 import Kore.TopBottom (
@@ -208,3 +209,11 @@ deriveParAxiomAllPath rules =
     derivePar' _Unwrapped AllPathRewriteRule rewrites
   where
     rewrites = unRuleAllPath <$> rules
+{-# SPECIALIZE deriveParAxiomAllPath ::
+    [Rule AllPathClaim] ->
+    AllPathClaim ->
+    TransitionT
+        (AppliedRule AllPathClaim)
+        Simplifier
+        (ApplyResult AllPathClaim)
+    #-}
