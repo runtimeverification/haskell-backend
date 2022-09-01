@@ -46,8 +46,8 @@ import Pretty qualified
 import System.IO.Unsafe (unsafePerformIO)
 
 data InternedTextCache = InternedTextCache
-    { counter :: {-# UNPACK #-} !Int
-    , internedTexts :: !(HashMap Text Int)
+    { counter :: {-# UNPACK #-} !Word
+    , internedTexts :: !(HashMap Text Word)
     }
     deriving stock (Generic)
     deriving anyclass (NFData)
@@ -58,7 +58,7 @@ globalIdMap = unsafePerformIO $ newIORef $ InternedTextCache 0 HashMap.empty
 
 data InternedText = InternedText
     { getText :: {-# UNPACK #-} !Text
-    , getUniqueId :: {-# UNPACK #-} !Int
+    , getUniqueId :: {-# UNPACK #-} !Word
     }
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
