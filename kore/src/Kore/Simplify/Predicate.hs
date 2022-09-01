@@ -327,13 +327,33 @@ normalizeTop _ = pure (MultiOr.singleton MultiAnd.top)
 simplifyNot ::
     forall simplifier sort.
     Monad simplifier =>
+    MonadSimplify simplifier =>
     Not sort NormalForm ->
     simplifier NormalForm
 simplifyNot Not{notChild = multiOr, notSort} = do
-    disjunctiveNormalForms <- Logic.observeAllT $ do
-        multiAnd <- Logic.scatter multiOr
-        normalizeNotAnd Not{notSort, notChild = multiAnd} & lift
-    normalizeMultiAnd (MultiAnd.make disjunctiveNormalForms)
+    -- try user-defined rules first
+    mbResult <- runMaybeT applyUserDefined
+    maybe standardSimplification pure mbResult
+  where
+    -- applyUserDefined :: MaybeT simplifier NormalForm -- ~ OrCondition RewritingVariable
+    applyUserDefined = do
+        -- produce a single termlike that we can use for matching
+        let arg = undefined
+        -- call the equation matcher
+        mbApplied <-
+            Axiom.evaluatePattern
+                SideCondition.top -- FIXME
+                Condition.top
+                (TermLike.mkNot arg)
+                (const empty) -- FIXME
+        fail "unfinished"
+
+    standardSimplification :: simplifier NormalForm
+    standardSimplification = do
+        disjunctiveNormalForms <- Logic.observeAllT $ do
+            multiAnd <- Logic.scatter multiOr
+            lift $ normalizeNotAnd Not{notSort, notChild = multiAnd}
+        normalizeMultiAnd (MultiAnd.make disjunctiveNormalForms)
 
 normalizeNotAnd ::
     forall simplifier sort.
@@ -375,6 +395,7 @@ normalizeNotAnd Not{notSort, notChild = predicates} =
 -}
 simplifyImplies ::
     Monad simplifier =>
+    MonadSimplify simplifier =>
     Implies sort NormalForm ->
     simplifier NormalForm
 simplifyImplies Implies{impliesFirst, impliesSecond, impliesSort} = do
@@ -396,6 +417,7 @@ simplifyImplies Implies{impliesFirst, impliesSecond, impliesSort} = do
 -}
 simplifyIff ::
     Monad simplifier =>
+    MonadSimplify simplifier =>
     Iff sort NormalForm ->
     simplifier NormalForm
 simplifyIff Iff{iffFirst, iffSecond, iffSort} = do
@@ -498,6 +520,7 @@ simplifyExists _ = \exists@Exists{existsChild} ->
 simplifyForall ::
     forall simplifier.
     Monad simplifier =>
+    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Forall () RewritingVariableName NormalForm ->
     simplifier NormalForm
