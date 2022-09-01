@@ -59,6 +59,7 @@ import Data.Generics.Product (
     field,
  )
 import Data.IORef (readIORef)
+import Data.InternedText (InternedTextCache, globalInternedTextCache)
 import Data.List (
     intercalate,
     nub,
@@ -575,7 +576,7 @@ data SerializedDefinition = SerializedDefinition
     { serializedModule :: SerializedModule
     , lemmas :: [SentenceAxiom (TermLike VariableName)]
     , locations :: KFileLocations
-    , idCache :: InternedTextCache
+    , internedTextCache :: InternedTextCache
     }
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
@@ -646,13 +647,13 @@ makeSerializedDefinition solverOptions definitionFileName mainModuleName = do
         execute solverOptions metadataTools lemmas $
             makeSerializedModule mainModule
     let locations = kFileLocations definition
-    idCache <- lift $ readIORef globalIdMap
+    internedTextCache <- lift $ readIORef globalInternedTextCache
     let serializedDefinition =
             SerializedDefinition
                 { serializedModule
                 , lemmas
                 , locations
-                , idCache
+                , internedTextCache
                 }
     serializedDefinition `deepseq` pure ()
     return serializedDefinition

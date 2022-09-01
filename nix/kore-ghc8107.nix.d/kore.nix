@@ -117,6 +117,7 @@
         "Changed"
         "Control/Monad/Counter"
         "Data/Graph/TopologicalSort"
+        "Data/InternedText"
         "Data/Limit"
         "Data/Sup"
         "Debug"

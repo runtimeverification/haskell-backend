@@ -1,5 +1,3 @@
-{-# LANGUAGE BlockArguments #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
@@ -16,8 +14,6 @@ module Kore.Syntax.Id (
     noLocationId,
     implicitId,
     generatedId,
-    globalIdMap,
-    InternedTextCache (..),
 
     -- * Locations
     AstLocation (..),
@@ -27,8 +23,7 @@ module Kore.Syntax.Id (
 
 import Control.Lens (lens)
 import Data.Generics.Product
-import Data.HashMap.Strict as HashMap
-import Data.IORef
+import Data.InternedText
 import Data.String (
     IsString (..),
  )
@@ -36,60 +31,12 @@ import Data.Text (
     Text,
  )
 import Data.Text qualified as Text
-import GHC.Generics (Generic)
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Debug
 import Kore.Unparser
 import Prelude.Kore
 import Pretty qualified
-import System.IO.Unsafe (unsafePerformIO)
-
-data InternedTextCache = InternedTextCache
-    { counter :: {-# UNPACK #-} !Word
-    , internedTexts :: !(HashMap Text InternedText)
-    }
-    deriving stock (Generic)
-    deriving anyclass (NFData)
-
-globalIdMap :: IORef InternedTextCache
-globalIdMap = unsafePerformIO $ newIORef $ InternedTextCache 0 HashMap.empty
-{-# NOINLINE globalIdMap #-}
-
-data InternedText = InternedText
-    { getText :: {-# UNPACK #-} !Text
-    , getUniqueId :: {-# UNPACK #-} !Word
-    }
-    deriving stock (GHC.Generic)
-    deriving anyclass (NFData)
-    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-
-instance Show InternedText where
-    showsPrec prec = showsPrec prec . getText
-
-instance Debug InternedText where
-    debugPrec = debugPrec . getText
-
-instance Diff InternedText where
-    diffPrec = diffPrec `on` getText
-
-internText :: Text -> InternedText
-internText text =
-    unsafePerformIO do
-        atomicModifyIORef' globalIdMap \InternedTextCache{counter, internedTexts} ->
-            let ((internedText, newCounter), newInternedTexts) =
-                    HashMap.alterF
-                        \case
-                            -- If this text is already interned, reuse it.
-                            existing@(Just interned) -> ((interned, counter), existing)
-                            -- Otherwise, create a new ID for it and intern it.
-                            Nothing ->
-                                let newIden = counter
-                                    newInterned = InternedText text newIden
-                                 in ((newInterned, counter + 1), Just newInterned)
-                        text
-                        internedTexts
-             in (InternedTextCache newCounter newInternedTexts, internedText)
 
 {- | 'Id' is a Kore identifier.
 
@@ -105,7 +52,7 @@ data Id = InternedId
 
 pattern Id :: Text -> AstLocation -> Id
 pattern Id{getId, idLocation} <-
-    InternedId (getText -> getId) idLocation
+    InternedId (internedText -> getId) idLocation
     where
         Id text location = InternedId (internText text) location
 
@@ -154,24 +101,19 @@ instance {-# OVERLAPPING #-} HasField "idLocation" Id Id AstLocation AstLocation
 
 -- | 'Ord' ignores the 'AstLocation'
 instance Ord Id where
-    a `compare` b
-        -- Quickly check if their interned IDs are equal.
-        | a == b = EQ
-        -- If they're not, fallback to using lexical order by comparing the strings' actual contents.
-        | otherwise = getId a `compare` getId b
+    compare first second =
+        compare (getInternedId first) (getInternedId second)
     {-# INLINE compare #-}
 
 -- | 'Eq' ignores the 'AstLocation'
 instance Eq Id where
-    first == second = getUniqueId (getInternedId first) == getUniqueId (getInternedId second)
+    first == second = getInternedId first == getInternedId second
     {-# INLINE (==) #-}
 
 -- | 'Hashable' ignores the 'AstLocation'
 instance Hashable Id where
-    hashWithSalt salt internedId = hashWithSalt salt $ getUniqueId (getInternedId internedId)
+    hashWithSalt salt iden = hashWithSalt salt $ getInternedId iden
     {-# INLINE hashWithSalt #-}
-    hash internedId = hash $ getUniqueId (getInternedId internedId)
-    {-# INLINE hash #-}
 
 instance Diff Id where
     diffPrec a b =

@@ -10,6 +10,7 @@ import Control.Monad.Reader (
     ReaderT (..),
  )
 import Data.IORef (writeIORef)
+import Data.InternedText (globalInternedTextCache)
 import GlobalMain qualified
 import Kore.BugReport (
     BugReportOption,
@@ -33,7 +34,6 @@ import Kore.Rewrite.SMT.Lemma (declareSMTLemmas)
 import Kore.Syntax.Definition (
     ModuleName (..),
  )
-import Kore.Syntax.Id (globalIdMap)
 import Log qualified
 import Options.Applicative (
     InfoMod,
@@ -143,12 +143,12 @@ koreRpcServerRun ::
     GlobalMain.LocalOptions KoreRpcServerOptions ->
     GlobalMain.Main ExitCode
 koreRpcServerRun GlobalMain.LocalOptions{execOptions} = do
-    GlobalMain.SerializedDefinition{serializedModule, lemmas, idCache} <-
+    GlobalMain.SerializedDefinition{serializedModule, lemmas, internedTextCache} <-
         GlobalMain.deserializeDefinition
             koreSolverOptions
             definitionFileName
             mainModuleName
-    lift $ writeIORef globalIdMap idCache
+    lift $ writeIORef globalInternedTextCache internedTextCache
 
     let SerializedModule{metadataTools} = serializedModule
 
