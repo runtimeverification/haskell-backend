@@ -47,7 +47,7 @@ import System.IO.Unsafe (unsafePerformIO)
 
 data InternedTextCache = InternedTextCache
     { counter :: {-# UNPACK #-} !Word
-    , internedTexts :: !(HashMap Text Word)
+    , internedTexts :: !(HashMap Text InternedText)
     }
     deriving stock (Generic)
     deriving anyclass (NFData)
@@ -81,11 +81,12 @@ internText text =
                     HashMap.alterF
                         \case
                             -- If this text is already interned, reuse it.
-                            existing@(Just iden) -> ((InternedText text iden, counter), existing)
+                            existing@(Just interned) -> ((interned, counter), existing)
                             -- Otherwise, create a new ID for it and intern it.
                             Nothing ->
                                 let newIden = counter
-                                 in ((InternedText text newIden, counter + 1), Just newIden)
+                                    newInterned = InternedText text newIden
+                                 in ((newInterned, counter + 1), Just newInterned)
                         text
                         internedTexts
              in (InternedTextCache newCounter newInternedTexts, internedText)
