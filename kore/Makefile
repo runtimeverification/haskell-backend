@@ -61,13 +61,6 @@ ghcid-format:
 ghcid-simplify:
 	$(stack) exec -- ghcid -c "stack ghci $(package) --test --ghci-options='-fobject-code -fno-warn-unused-do-bind' --main-is $(package):kore-simplify --work-dir .stack-work-ghci"
 
-# TODO(Vladimir): remove 'hyperlink-source' when we upgrade from lts-12.10 (8.4.3)
-hoogle-gen:
-	$(stack) haddock --work-dir .stack-work-hoogle; $(stack) hoogle generate --rebuild --work-dir .stack-work-hoogle -- --local
-
-hoogle:
-	$(stack) hoogle server --work-dir .stack-work-hoogle -- --local --port 8000
-
 dev-deps:
 	stack install ghcid
 
