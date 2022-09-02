@@ -46,9 +46,11 @@ data Id = InternedId
     { getInternedId :: !InternedText
     , internedIdLocation :: !AstLocation
     }
+    deriving stock (Show)
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug)
 
 pattern Id :: Text -> AstLocation -> Id
 pattern Id{getId, idLocation} <-
@@ -57,35 +59,6 @@ pattern Id{getId, idLocation} <-
         Id text location = InternedId (internText text) location
 
 {-# COMPLETE Id #-}
-
-instance Show Id where
-    showsPrec = showsPrecId False
-
-{- | Produces valid syntax for the 'Id' pattern synonym.
-   This hides the interning of the Text, including the unique identifier.
--}
-instance Debug Id where
-    debugPrec a prec = Pretty.pretty (showsPrecId True prec a "")
-
-{- | ShowS an 'Id' in accordance with the old uninterned interface.
-   If the predicate 'useSpace' is 'True', spaces are placed between the braces and the field
-   names.
--}
-showsPrecId :: Bool -> Int -> Id -> ShowS
-showsPrecId useSpace prec (Id iden location) = showParen (prec > 10) showId
-  where
-    showId =
-        showString "Id {"
-            . space
-            . showString "getId = "
-            . shows iden
-            . showString ", idLocation = "
-            . shows location
-            . space
-            . showChar '}'
-    space
-        | useSpace = showChar ' '
-        | otherwise = id
 
 {- | The @HasField "getId"@ instance for the Id type maintains compatibility with
    the old interface of non-interned Ids.
