@@ -74,17 +74,14 @@ import Kore.Rewrite.Result qualified as Step
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Rewrite.UnifyingRule
-import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify (
+    Simplifier,
     MonadSimplify,
     liftSimplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.TopBottom qualified as TopBottom
 import Kore.Unification.Procedure
-import Kore.Unification.UnifierT (
-    evalEnvUnifierT,
- )
 import Kore.Unparser
 import Kore.Variables.Target (
     Target,
@@ -111,7 +108,6 @@ type Results rule =
 
 -- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.
 unifyRules ::
-    MonadSimplify simplifier =>
     UnifyingRule rule =>
     UnifyingRuleVariable rule ~ RewritingVariableName =>
     From rule SourceLocation =>
@@ -121,7 +117,7 @@ unifyRules ::
     Pattern RewritingVariableName ->
     -- | Rule
     [rule] ->
-    simplifier [UnifiedRule rule]
+    Simplifier [UnifiedRule rule]
 unifyRules sideCondition initial rules =
     Logic.observeAllT
         ( do
@@ -146,7 +142,6 @@ unification. The substitution is not applied to the renamed rule.
 -}
 unifyRule ::
     RewritingVariableName ~ UnifyingRuleVariable rule =>
-    MonadSimplify simplifier =>
     UnifyingRule rule =>
     From rule SourceLocation =>
     -- | SideCondition containing metadata
@@ -155,7 +150,7 @@ unifyRule ::
     Pattern RewritingVariableName ->
     -- | Rule
     rule ->
-    LogicT simplifier (UnifiedRule rule)
+    LogicT Simplifier (UnifiedRule rule)
 unifyRule sideCondition initial rule = do
     debugAttemptedRewriteRule initial (location rule)
     ruleMarker "Init"
@@ -169,7 +164,6 @@ unifyRule sideCondition initial rule = do
     ruleMarker "Unify"
     unification <-
         unificationProcedure sideCondition' initialTerm ruleLeft
-            & evalEnvUnifierT Not.notSimplifier
     -- Combine the unification solution with the rule's requirement clause,
     ruleMarker "CheckSide"
     let ruleRequires = precondition rule

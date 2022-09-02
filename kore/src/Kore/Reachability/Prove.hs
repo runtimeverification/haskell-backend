@@ -25,7 +25,6 @@ import Control.DeepSeq (
 import Control.Lens qualified as Lens
 import Control.Monad.Catch (
     MonadCatch,
-    MonadMask,
     handleAll,
     throwM,
  )
@@ -429,10 +428,6 @@ proveClaim
  execution graph by inserting this step.
 -}
 proveClaimStep ::
-    forall simplifier.
-    MonadSimplify simplifier =>
-    MonadMask simplifier =>
-    MonadProf simplifier =>
     Maybe MinDepth ->
     StuckCheck ->
     -- | list of claims in the spec module
@@ -443,7 +438,7 @@ proveClaimStep ::
     ExecutionGraph CommonClaimState (AppliedRule SomeClaim) ->
     -- | selected node in the graph
     Graph.Node ->
-    simplifier (ExecutionGraph CommonClaimState (AppliedRule SomeClaim))
+    Simplifier (ExecutionGraph CommonClaimState (AppliedRule SomeClaim))
 proveClaimStep _ stuckCheck claims axioms executionGraph node =
     executionHistoryStep
         transitionRule''
@@ -485,13 +480,10 @@ proveClaimStep _ stuckCheck claims axioms executionGraph node =
             transitionRule' stuckCheck claims axioms prim state
 
 transitionRule' ::
-    MonadSimplify simplifier =>
-    MonadProf simplifier =>
-    MonadMask simplifier =>
     StuckCheck ->
     [SomeClaim] ->
     [Rule SomeClaim] ->
-    CommonTransitionRule simplifier
+    CommonTransitionRule Simplifier
 transitionRule' stuckCheck claims axioms = \prim proofState ->
     deepseq
         proofState
