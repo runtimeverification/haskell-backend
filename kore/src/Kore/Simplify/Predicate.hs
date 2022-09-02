@@ -21,6 +21,7 @@ import Kore.Attribute.Pattern.FreeVariables (
     occursIn,
  )
 import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.From
 import Kore.Internal.MultiAnd (
     MultiAnd,
@@ -89,8 +90,10 @@ import Kore.Syntax (
     Not (..),
     Or (..),
     SomeVariableName,
-    Sort,
+    Sort (SortVariableSort),
+    SortVariable (..),
     Top (..),
+    noLocationId,
     variableName,
  )
 import Kore.Syntax.Exists qualified as Exists
@@ -174,9 +177,9 @@ simplify sideCondition original =
                 OrF orF -> normalizeOr =<< traverse worker orF
                 BottomF bottomF -> normalizeBottom =<< traverse worker bottomF
                 TopF topF -> normalizeTop =<< traverse worker topF
-                NotF notF -> simplifyNot =<< traverse worker notF
-                ImpliesF impliesF -> simplifyImplies =<< traverse worker impliesF
-                IffF iffF -> simplifyIff =<< traverse worker iffF
+                NotF notF -> simplifyNot sideCondition =<< traverse worker notF
+                ImpliesF impliesF -> simplifyImplies sideCondition =<< traverse worker impliesF
+                IffF iffF -> simplifyIff sideCondition =<< traverse worker iffF
                 CeilF ceilF ->
                     simplifyCeil sideCondition =<< traverse simplifyTerm' ceilF
                 FloorF floorF@(Floor _ _ child) ->
@@ -328,25 +331,38 @@ simplifyNot ::
     forall simplifier sort.
     Monad simplifier =>
     MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
     Not sort NormalForm ->
     simplifier NormalForm
-simplifyNot Not{notChild = multiOr, notSort} = do
+simplifyNot sideCondition Not{notChild = multiOr, notSort} = do
     -- try user-defined rules first
     mbResult <- runMaybeT applyUserDefined
     maybe standardSimplification pure mbResult
   where
-    -- applyUserDefined :: MaybeT simplifier NormalForm -- ~ OrCondition RewritingVariable
+    applyUserDefined :: MaybeT simplifier NormalForm
     applyUserDefined = do
         -- produce a single termlike that we can use for matching
-        let arg = undefined
+        let arg :: TermLike RewritingVariableName
+            arg =
+                Pattern.toTermLike
+                    . OrPattern.toPattern helpSort
+                    . toOrPattern helpSort
+                    $ multiOr
+            -- HAAAACK: sort stripped in NormalForm of predicates
+            helpSort = SortVariableSort . SortVariable $ noLocationId "SomeSort"
         -- call the equation matcher
-        mbApplied <-
+        applied <-
             Axiom.evaluatePattern
-                SideCondition.top -- FIXME
+                sideCondition
                 Condition.top
                 (TermLike.mkNot arg)
-                (const empty) -- FIXME
-        fail "unfinished"
+                (const empty)
+        -- convert result back to NormalForm
+        traverse_ (guard . Conditional.isPredicate) applied
+        pure $
+            MultiOr.map
+                (Predicate.toMultiAnd . from . snd . Conditional.splitTerm)
+                applied
 
     standardSimplification :: simplifier NormalForm
     standardSimplification = do
@@ -396,15 +412,16 @@ normalizeNotAnd Not{notSort, notChild = predicates} =
 simplifyImplies ::
     Monad simplifier =>
     MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
     Implies sort NormalForm ->
     simplifier NormalForm
-simplifyImplies Implies{impliesFirst, impliesSecond, impliesSort} = do
+simplifyImplies sideCondition Implies{impliesFirst, impliesSecond, impliesSort} = do
     negative <- mkNotSimplified impliesFirst
     positive <- mkAndSimplified impliesFirst impliesSecond
     mkOrSimplified negative positive
   where
     mkNotSimplified notChild =
-        simplifyNot Not{notSort = impliesSort, notChild}
+        simplifyNot sideCondition Not{notSort = impliesSort, notChild}
     mkAndSimplified andFirst andSecond =
         normalizeAnd And{andSort = impliesSort, andFirst, andSecond}
     mkOrSimplified orFirst orSecond =
@@ -416,11 +433,11 @@ simplifyImplies Implies{impliesFirst, impliesSecond, impliesSort} = do
  @
 -}
 simplifyIff ::
-    Monad simplifier =>
     MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
     Iff sort NormalForm ->
     simplifier NormalForm
-simplifyIff Iff{iffFirst, iffSecond, iffSort} = do
+simplifyIff sideCondition Iff{iffFirst, iffSecond, iffSort} = do
     orFirst <- do
         andFirst <- mkNotSimplified iffFirst
         andSecond <- mkNotSimplified iffSecond
@@ -429,7 +446,7 @@ simplifyIff Iff{iffFirst, iffSecond, iffSort} = do
     mkOrSimplified orFirst orSecond
   where
     mkNotSimplified notChild =
-        simplifyNot Not{notSort = iffSort, notChild}
+        simplifyNot sideCondition Not{notSort = iffSort, notChild}
     mkAndSimplified andFirst andSecond =
         normalizeAnd And{andSort = iffSort, andFirst, andSecond}
     mkOrSimplified orFirst orSecond =
@@ -461,7 +478,7 @@ simplifyFloor termSort sideCondition floor' = do
   where
     Floor{floorOperandSort, floorResultSort, floorChild} = floor'
     mkNotSimplified notChild =
-        simplifyNot Not{notSort = floorResultSort, notChild}
+        simplifyNot sideCondition Not{notSort = floorResultSort, notChild}
     mkNotSimplifiedTerm notChild =
         Not.simplify sideCondition Not{notSort = termSort, notChild}
     mkCeilSimplified ceilChild =
@@ -519,7 +536,6 @@ simplifyExists _ = \exists@Exists{existsChild} ->
 -}
 simplifyForall ::
     forall simplifier.
-    Monad simplifier =>
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Forall () RewritingVariableName NormalForm ->
@@ -531,7 +547,7 @@ simplifyForall sideCondition forall' = do
   where
     Forall{forallSort, forallVariable, forallChild} = forall'
     mkNotSimplified notChild =
-        simplifyNot Not{notSort = forallSort, notChild}
+        simplifyNot sideCondition Not{notSort = forallSort, notChild}
     mkExistsSimplified existsChild =
         simplifyExists
             sideCondition
