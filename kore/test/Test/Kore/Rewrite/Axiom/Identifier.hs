@@ -32,9 +32,10 @@ test_matchAxiomIdentifier =
             (TermLike.mkCeil Mock.subSort (Mock.f Mock.a))
         )
         (Ceil (Ceil (Application Mock.fId)))
-    , notMatches
+    , matches
         "\\and(f(a), g(a))"
         (TermLike.mkAnd (Mock.f Mock.a) (Mock.g Mock.a))
+        Other
     , matches "x" (TermLike.mkElemVar Mock.x) Variable
     , matches
         "\\equals(x, f(a))"
@@ -126,28 +127,13 @@ test_matchAxiomIdentifier =
       where
         ceilName = "ceil " <> name
 
-match ::
-    HasCallStack =>
-    TestName ->
-    TermLike VariableName ->
-    Maybe AxiomIdentifier ->
-    TestTree
-match name input expect =
-    testCase name $
-        assertEqual "" expect $
-            matchAxiomIdentifier input
-
 matches ::
     HasCallStack =>
     TestName ->
     TermLike VariableName ->
     AxiomIdentifier ->
     TestTree
-matches name input expect = match ("matches " ++ name) input (Just expect)
-
-notMatches ::
-    HasCallStack =>
-    TestName ->
-    TermLike VariableName ->
-    TestTree
-notMatches name input = match ("does not match " ++ name) input Nothing
+matches name input expect =
+    testCase ("matches " ++ name) $
+        assertEqual "" expect $
+            matchAxiomIdentifier input

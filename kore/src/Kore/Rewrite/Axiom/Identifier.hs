@@ -63,6 +63,9 @@ these can be identified.
 
 The expectation is that an axiom can be applied to a term only if the
 identifier of its left-hand-side is the same as the term's identifier.
+
+In practice, recursion should be cut short at a level that is
+selective enough for good performance (see 'matchAxiomIdentifier').
 -}
 data AxiomIdentifier
     = -- | An application pattern with the given symbol identifier.
@@ -79,6 +82,8 @@ data AxiomIdentifier
       Not !AxiomIdentifier
     | -- | Any variable pattern.
       Variable
+    | -- | Anything else.
+      Other
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -99,6 +104,7 @@ instance Pretty AxiomIdentifier where
     pretty (Not axiomIdentifier) =
         "\\not" <> Pretty.parens (pretty axiomIdentifier)
     pretty Variable = "_"
+    pretty Other = "?"
 
 {- | Match 'TermLike' pattern to determine its 'AxiomIdentifier'.
 
@@ -107,23 +113,23 @@ recognize.
 -}
 matchAxiomIdentifier ::
     TermLike variable ->
-    Maybe AxiomIdentifier
+    AxiomIdentifier
 matchAxiomIdentifier = Recursive.fold matchWorker
   where
     matchWorker (_ :< termLikeF) =
         case termLikeF of
             ApplyAliasF application -> mkAliasId application
             ApplySymbolF application -> mkAppId application
-            CeilF ceil -> Ceil <$> Syntax.ceilChild ceil
+            CeilF ceil -> Ceil $ Syntax.ceilChild ceil
             EqualsF equals ->
                 Equals
-                    <$> Syntax.equalsFirst equals
-                    <*> Syntax.equalsSecond equals
-            ExistsF exists -> Exists <$> Syntax.existsChild exists
+                    (Syntax.equalsFirst equals)
+                    (Syntax.equalsSecond equals)
+            ExistsF exists -> Exists $ Syntax.existsChild exists
             NotF not' ->
-                Not <$> Syntax.notChild not'
+                Not $ Syntax.notChild not'
             VariableF _ ->
-                pure Variable
+                Variable
             EndiannessF endiannessF ->
                 mkAppId $
                     Endianness.toApplication $ getConst endiannessF
@@ -134,32 +140,29 @@ matchAxiomIdentifier = Recursive.fold matchWorker
             InternalListF internalList -> listToId internalList
             InternalSetF internalSet -> acToId internalSet
             InternalMapF internalMap -> acToId internalMap
-            DomainValueF _ -> pure DV
-            InternalBoolF _ -> pure DV
-            InternalBytesF _ -> pure DV
-            InternalIntF _ -> pure DV
-            InternalStringF _ -> pure DV
-            -- TODO(dwightguth): this is unsound. If we are simplifying a \ceil
-            -- or \equals pattern whose children is not one of the above types
-            -- of term, then this function will return Nothing, meaning that no
-            -- axioms are applied, even if the user explicitly wrote
-            -- simplification rules that do match. I have covered the cases for
-            -- the simplification rules I have needed so far, but this is still
-            -- a known issue which may lead to simplification rules that were
-            -- written by the user to simplify \equals or \ceil not being
-            -- applied.
-            _ -> empty
+            DomainValueF _ -> DV
+            InternalBoolF _ -> DV
+            InternalBytesF _ -> DV
+            InternalIntF _ -> DV
+            InternalStringF _ -> DV
+            -- Anything we do not want to handle specially returns this.
+            _ -> Other
 
-    listToId internalList
-        | Seq.null list = pure $ Application $ symbolToId unitSymbol
-        | Seq.length list == 1 = pure $ Application $ symbolToId elementSymbol
-        | otherwise = pure $ Application $ symbolToId concatSymbol
-      where
-        InternalList{internalListChild = list} = internalList
-        InternalList{internalListUnit = unitSymbol} = internalList
-        InternalList{internalListElement = elementSymbol} = internalList
-        InternalList{internalListConcat = concatSymbol} = internalList
+    listToId
+        InternalList
+            { internalListChild = list
+            , internalListUnit = unitSymbol
+            , internalListElement = elementSymbol
+            , internalListConcat = concatSymbol
+            }
+            | Seq.null list = Application $ symbolToId unitSymbol
+            | Seq.length list == 1 = Application $ symbolToId elementSymbol
+            | otherwise = Application $ symbolToId concatSymbol
 
+    acToId ::
+        AcWrapper wrapper =>
+        InternalAc k wrapper AxiomIdentifier ->
+        AxiomIdentifier
     acToId
         InternalAc
             { builtinAcChild
@@ -175,19 +178,19 @@ matchAxiomIdentifier = Recursive.fold matchWorker
                 (HashMap.toList concreteElements)
                 opaque
           where
-            normalizedAc = unwrapAc builtinAcChild
+            NormalizedAc
+                { elementsWithVariables
+                , concreteElements
+                , opaque
+                } = unwrapAc builtinAcChild
 
-            NormalizedAc{elementsWithVariables} = normalizedAc
-            NormalizedAc{concreteElements} = normalizedAc
-            NormalizedAc{opaque} = normalizedAc
-
-    acToId' unitSymbol _ _ [] [] [] = pure $ Application $ symbolToId unitSymbol
-    acToId' _ elementSymbol _ [_] [] [] = pure $ Application $ symbolToId elementSymbol
-    acToId' _ elementSymbol _ [] [_] [] = pure $ Application $ symbolToId elementSymbol
+    acToId' unitSymbol _ _ [] [] [] = Application $ symbolToId unitSymbol
+    acToId' _ elementSymbol _ [_] [] [] = Application $ symbolToId elementSymbol
+    acToId' _ elementSymbol _ [] [_] [] = Application $ symbolToId elementSymbol
     acToId' _ _ _ [] [] [opaque] = opaque
-    acToId' _ _ concatSymbol _ _ _ = pure $ Application $ symbolToId concatSymbol
+    acToId' _ _ concatSymbol _ _ _ = Application $ symbolToId concatSymbol
 
-    mkAppId = pure . Application . symbolToId . Syntax.applicationSymbolOrAlias
-    mkAliasId = pure . Application . aliasToId . Syntax.applicationSymbolOrAlias
+    mkAppId = Application . symbolToId . Syntax.applicationSymbolOrAlias
+    mkAliasId = Application . aliasToId . Syntax.applicationSymbolOrAlias
     symbolToId = Syntax.symbolOrAliasConstructor . Symbol.toSymbolOrAlias
     aliasToId = Syntax.symbolOrAliasConstructor . Alias.toSymbolOrAlias
