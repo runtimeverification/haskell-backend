@@ -63,9 +63,6 @@ these can be identified.
 
 The expectation is that an axiom can be applied to a term only if the
 identifier of its left-hand-side is the same as the term's identifier.
-
-In practice, recursion should be cut short at a level that is
-selective enough for good performance (see 'matchAxiomIdentifier').
 -}
 data AxiomIdentifier
     = -- | An application pattern with the given symbol identifier.

@@ -1,11 +1,16 @@
 module Test.Kore.Rewrite.Axiom.Identifier (test_matchAxiomIdentifier) where
 
+import Data.ByteString qualified as ByteString
+import Kore.Internal.InternalBool
+import Kore.Internal.InternalInt
+import Kore.Internal.InternalString
 import Kore.Internal.TermLike (
     TermLike,
     VariableName,
  )
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.Axiom.Identifier
+import Kore.Syntax.DomainValue
 import Prelude.Kore
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
@@ -110,6 +115,32 @@ test_matchAxiomIdentifier =
             "concatList"
             (Mock.builtinList [Mock.a, Mock.b])
             (Application Mock.concatListId)
+        ]
+    , testGroup
+        "Domain Values"
+        [ test
+            "domain value"
+            ( TermLike.mkDomainValue $
+                DomainValue Mock.testSort $
+                    TermLike.mkStringLiteral "hello"
+            )
+            DV
+        , test
+            "internal string"
+            (TermLike.mkInternalString $ InternalString Mock.testSort "world")
+            DV
+        , test
+            "internal bool"
+            (TermLike.mkInternalBool $ InternalBool Mock.testSort False)
+            DV
+        , test
+            "internal bytes"
+            (TermLike.mkInternalBytes Mock.testSort ByteString.empty)
+            DV
+        , test
+            "internal int"
+            (TermLike.mkInternalInt $ InternalInt Mock.testSort 42)
+            DV
         ]
     ]
   where
