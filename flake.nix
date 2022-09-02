@@ -210,7 +210,7 @@
           profile = let
             pkgs = nixpkgsFor system;
             script = pkgs.callPackage ./nix/profile.nix {
-              inherit (pkgs.haskellPackages) hp2pretty eventlog2html;
+              inherit (pkgs.haskellPackages) hp2pretty hs-speedscope eventlog2html;
               kore-exec-prof =
                 self.projectProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
               kore-exec-infotable =

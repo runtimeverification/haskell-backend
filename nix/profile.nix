@@ -1,4 +1,4 @@
-{ stdenv, writeScriptBin, gnutar, kore-exec-prof, kore-exec-infotable, hp2pretty, eventlog2html }:
+{ stdenv, writeScriptBin, gnutar, kore-exec-prof, kore-exec-infotable, hp2pretty, hs-speedscope, eventlog2html }:
 
 writeScriptBin "profile" ''
   #! ${stdenv.shell}
@@ -10,14 +10,16 @@ writeScriptBin "profile" ''
   cd profile
   # generate .prof and .eventlog profiles
   timeout --foreground -s INT "$timeout" env GHCRTS='-p -l-au' PATH='$PATH:${kore-exec-prof}/bin' ./kore-exec.sh
-  mkdir -p ../profile-$filename
+  mkdir -p ../profile-$filename/raw
   cp kore-exec.prof ../profile-$filename/
-  cp kore-exec.eventlog ../profile-$filename/prof.eventlog
+  cp kore-exec.eventlog ../profile-$filename/raw/prof.eventlog
+  ${hs-speedscope}/bin/hs-speedscope kore-exec.eventlog
+  cp kore-exec.eventlog.json ../profile-$filename/prof-speedscope.json
 
   # generate a heap profile based on cost centers
   timeout --foreground -s INT "$timeout" env GHCRTS='-l -hc' PATH='$PATH:${kore-exec-prof}/bin' ./kore-exec.sh
-  cp kore-exec.hp ../profile-$filename/heap-cost-centers.hp
-  cp kore-exec.eventlog ../profile-$filename/heap-cost-centers.eventlog
+  cp kore-exec.hp ../profile-$filename/raw/heap-cost-centers.hp
+  cp kore-exec.eventlog ../profile-$filename/raw/heap-cost-centers.eventlog
   ${hp2pretty}/bin/hp2pretty kore-exec.hp
   ${eventlog2html}/bin/eventlog2html kore-exec.eventlog
   cp kore-exec.svg ../profile-$filename/heap-cost-centers.svg
@@ -25,7 +27,7 @@ writeScriptBin "profile" ''
 
   # generate a heap profile based on infotables (GHC9)
   timeout --foreground -s INT "$timeout" env GHCRTS='-l -hi' PATH='$PATH:${kore-exec-infotable}/bin' ./kore-exec.sh
-  cp kore-exec.eventlog ../profile-$filename/heap-infotables.eventlog
+  cp kore-exec.eventlog ../profile-$filename/raw/heap-infotables.eventlog
   ${eventlog2html}/bin/eventlog2html kore-exec.eventlog
   cp kore-exec.eventlog.html ../profile-$filename/heap-infotables.html
 
