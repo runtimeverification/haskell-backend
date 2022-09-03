@@ -781,6 +781,7 @@
           "Driver"
           "Test/ConsistentKore"
           "Test/Data/Graph/TopologicalSort"
+          "Test/Data/InternedText"
           "Test/Data/Limit"
           "Test/Data/Sup"
           "Test/Debug"
