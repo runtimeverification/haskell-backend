@@ -21,8 +21,6 @@ module Kore.Syntax.Id (
     prettyPrintAstLocation,
 ) where
 
-import Control.Lens (lens)
-import Data.Generics.Product
 import Data.InternedText
 import Data.String (
     IsString (..),
@@ -52,6 +50,7 @@ data Id = InternedId
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 
+-- | A pattern synonym to abstract away `InternedText`.
 pattern Id :: Text -> AstLocation -> Id
 pattern Id{getId, idLocation} <-
     InternedId (internedText -> getId) idLocation
@@ -59,18 +58,6 @@ pattern Id{getId, idLocation} <-
         Id text location = InternedId (internText text) location
 
 {-# COMPLETE Id #-}
-
-{- | The @HasField "getId"@ instance for the Id type maintains compatibility with
-   the old interface of non-interned Ids.
--}
-instance {-# OVERLAPPING #-} HasField "getId" Id Id Text Text where
-    field = lens getId (\(Id _ iden) text -> Id text iden)
-
-{- | The @HasField "idLocation"@ instance for the Id type maintains compatibility with
-   the old interface of non-interned Ids.
--}
-instance {-# OVERLAPPING #-} HasField "idLocation" Id Id AstLocation AstLocation where
-    field = field @"internedIdLocation"
 
 -- | 'Ord' ignores the 'AstLocation'
 instance Ord Id where

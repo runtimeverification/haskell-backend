@@ -101,7 +101,7 @@ instance FreshPartialOrd VariableName where
     nextName name1 name2 =
         name1
             & Lens.set (field @"counter") counter'
-            & Lens.set (field @"base" . field @"idLocation") generated
+            & Lens.set (field @"base" . field @"internedIdLocation") generated
             & Just
       where
         generated = AstLocationGeneratedVariable
