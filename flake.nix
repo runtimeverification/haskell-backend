@@ -58,6 +58,8 @@
             "*.nix.sh"
             "/.github"
             "flake.lock"
+            "/profile"
+            "/profile-*"
             ./.gitignore
           ] ./.;
           postPatch = ''
@@ -157,7 +159,6 @@
         ghcOptions = [ "-eventlog" ];
       };
 
-
       projectGhc9 = projectForGhc {
         ghc = "ghc923";
         stack-yaml = "stack-nix-ghc9.yaml";
@@ -170,10 +171,9 @@
         ghcOptions = [ "-eventlog" ];
       };
 
-      projectGhc9ProfilingEventlogInfoTable = projectForGhc {
+      projectGhc9EventlogInfoTable = projectForGhc {
         ghc = "ghc923";
         stack-yaml = "stack-nix-ghc9.yaml";
-        profiling = true;
         ghcOptions =
           [ "-finfo-table-map" "-fdistinct-constructor-tables" "-eventlog" ];
       };
@@ -191,8 +191,8 @@
             self.projectProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
           kore-exec-prof-ghc9 =
             self.projectGhc9ProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
-          kore-exec-prof-infotable =
-            self.projectGhc9ProfilingEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
+          kore-exec-infotable =
+            self.projectGhc9EventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
 
           test-rpc = let pkgs = nixpkgsFor system;
           in pkgs.callPackage ./test/rpc-server {
@@ -205,7 +205,22 @@
           };
         });
 
-      apps = perSystem (system: self.flake.${system}.apps);
+      apps = perSystem (system:
+        self.flake.${system}.apps // {
+          profile = let
+            pkgs = nixpkgsFor system;
+            profiling-script = pkgs.callPackage ./nix/run-profiling.nix {
+              inherit (pkgs.haskellPackages) hp2pretty hs-speedscope eventlog2html;
+              kore-exec-prof =
+                self.projectProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
+              kore-exec-infotable =
+                self.projectGhc9EventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
+            };
+          in {
+            type = "app";
+            program = "${profiling-script}/bin/run-profiling";
+          };
+        });
 
       devShells = perSystem (system: {
         default = self.flake.${system}.devShell;
