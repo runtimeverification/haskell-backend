@@ -209,7 +209,7 @@
         self.flake.${system}.apps // {
           profile = let
             pkgs = nixpkgsFor system;
-            script = pkgs.callPackage ./nix/profile.nix {
+            profiling-script = pkgs.callPackage ./nix/run-profiling.nix {
               inherit (pkgs.haskellPackages) hp2pretty hs-speedscope eventlog2html;
               kore-exec-prof =
                 self.projectProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
@@ -218,7 +218,7 @@
             };
           in {
             type = "app";
-            program = "${script}/bin/profile";
+            program = "${profiling-script}/bin/run-profiling";
           };
         });
 
