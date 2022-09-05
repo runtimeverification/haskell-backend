@@ -144,8 +144,6 @@ test_matchAxiomIdentifier =
         ]
     ]
   where
-    -- FIXME add tests for DV cases
-
     test name termLike axiomIdentifier =
         testGroup
             name
