@@ -4,7 +4,10 @@ writeScriptBin "run-profiling" ''
   #! ${stdenv.shell}
   date=`date "+%Y%m%d-%H%M%S"`
   filename=$(basename -- "$1")
-  out_folder="profile-$filename-$date"
+  out_tar="profile-$date-$filename"
+
+  # expects a .tar.gz extension!
+  out_folder="''${out_tar%.*.*}"
   timeout="''${2:-4m}"
 
   mkdir -p profile
@@ -39,5 +42,6 @@ writeScriptBin "run-profiling" ''
 
   # cleanup
   cd ..
+  tar -czf $out_tar $out_folder
   rm -r profile
 ''
