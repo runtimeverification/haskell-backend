@@ -186,7 +186,7 @@ import Kore.Simplify.API (
  )
 import Kore.Syntax.Application
 import Kore.Syntax.Id qualified as Id (
-    Id (..),
+    getId,
  )
 import Kore.Syntax.Variable
 import Kore.Unparser (

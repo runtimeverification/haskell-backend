@@ -9,6 +9,8 @@ import Control.Monad.Catch (
 import Control.Monad.Reader (
     ReaderT (..),
  )
+import Data.IORef (writeIORef)
+import Data.InternedText (globalInternedTextCache)
 import GlobalMain qualified
 import Kore.BugReport (
     BugReportOption,
@@ -141,11 +143,13 @@ koreRpcServerRun ::
     GlobalMain.LocalOptions KoreRpcServerOptions ->
     GlobalMain.Main ExitCode
 koreRpcServerRun GlobalMain.LocalOptions{execOptions} = do
-    GlobalMain.SerializedDefinition{serializedModule, lemmas} <-
+    GlobalMain.SerializedDefinition{serializedModule, lemmas, internedTextCache} <-
         GlobalMain.deserializeDefinition
             koreSolverOptions
             definitionFileName
             mainModuleName
+    lift $ writeIORef globalInternedTextCache internedTextCache
+
     let SerializedModule{metadataTools} = serializedModule
 
     -- initialize an SMT solver with user declared lemmas

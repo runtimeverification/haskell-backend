@@ -1,3 +1,5 @@
+{-# LANGUAGE BlockArguments #-}
+
 {- |
 Module      : Kore.Validate.SentenceVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Sentence'.
@@ -126,12 +128,15 @@ verifyUniqueId ::
     UnparameterizedId ->
     Either (Error VerifyError) (Map.Map Text AstLocation)
 verifyUniqueId existing (UnparameterizedId name location) =
-    case Map.lookup name existing of
-        Just location' ->
-            koreFailWithLocations
-                [location, location']
-                ("Duplicated name: " <> name <> ".")
-        _ -> Right (Map.insert name location existing)
+    Map.alterF
+        \case
+            Just location' ->
+                koreFailWithLocations
+                    [location, location']
+                    ("Duplicated name: " <> name <> ".")
+            _ -> Right $ Just location
+        name
+        existing
 
 definedNamesForSentence :: Sentence pat -> [UnparameterizedId]
 definedNamesForSentence (SentenceAliasSentence sentenceAlias) =

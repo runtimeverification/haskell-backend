@@ -111,20 +111,20 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                         /* InternalMap: */ Lbl'Unds'Map'Unds'{}(
                             /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                                 /* Inj: */ inj{SortId{}, SortKItem{}}(
-                                    \dv{SortId{}}("n")
-                                ),
-                                /* Fl Fn D Spa */
-                                /* Inj: */ inj{SortInt{}, SortKItem{}}(
-                                    /* Fl Fn D Sfa */ VarN:SortInt{}
-                                )
-                            ),
-                            /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                                /* Inj: */ inj{SortId{}, SortKItem{}}(
                                     \dv{SortId{}}("sum")
                                 ),
                                 /* Fl Fn D Spa */
                                 /* Inj: */ inj{SortInt{}, SortKItem{}}(
                                     /* Fl Fn D Sfa */ VarS:SortInt{}
+                                )
+                            ),
+                            /* concrete element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                                /* Inj: */ inj{SortId{}, SortKItem{}}(
+                                    \dv{SortId{}}("n")
+                                ),
+                                /* Fl Fn D Spa */
+                                /* Inj: */ inj{SortInt{}, SortKItem{}}(
+                                    /* Fl Fn D Sfa */ VarN:SortInt{}
                                 )
                             )
                         )

@@ -83,7 +83,7 @@ import Kore.Sort (
  )
 import Kore.Syntax.Definition qualified as Syntax
 import Kore.Syntax.Id (
-    Id (..),
+    getId,
  )
 import Kore.Unparser (
     unparse,
