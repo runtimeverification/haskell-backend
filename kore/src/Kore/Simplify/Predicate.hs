@@ -210,7 +210,7 @@ mkSingleton = MultiOr.singleton . MultiAnd.singleton
 -- | See 'normalizeMultiAnd'.
 normalizeAnd ::
     Applicative simplifier =>
-    And sort NormalForm ->
+    And () NormalForm ->
     simplifier NormalForm
 normalizeAnd = normalizeMultiAnd . foldMap MultiAnd.singleton
 
@@ -276,7 +276,7 @@ normalizeMultiAnd andOr =
 -}
 normalizeOr ::
     Applicative simplifier =>
-    Or sort NormalForm ->
+    Or () NormalForm ->
     simplifier NormalForm
 normalizeOr = pure . fold
 {-# INLINE normalizeOr #-}
@@ -284,7 +284,7 @@ normalizeOr = pure . fold
 -- | 'Bottom' is regarded as trivially-normalizable.
 normalizeBottom ::
     Applicative simplifier =>
-    Bottom sort NormalForm ->
+    Bottom () NormalForm ->
     simplifier NormalForm
 normalizeBottom _ = pure MultiOr.bottom
 {-# INLINE normalizeBottom #-}
@@ -292,7 +292,7 @@ normalizeBottom _ = pure MultiOr.bottom
 -- | 'Top' is regarded as trivially-normalizable.
 normalizeTop ::
     Applicative simplifier =>
-    Top sort NormalForm ->
+    Top () NormalForm ->
     simplifier NormalForm
 normalizeTop _ = pure (MultiOr.singleton MultiAnd.top)
 {-# INLINE normalizeTop #-}
@@ -328,13 +328,13 @@ normalizeTop _ = pure (MultiOr.singleton MultiAnd.top)
  external solver or for the user, and the un-expanded form is more compact.
 -}
 simplifyNot ::
-    forall simplifier sort.
+    forall simplifier.
     Monad simplifier =>
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
-    Not sort NormalForm ->
+    Not () NormalForm ->
     simplifier NormalForm
-simplifyNot sideCondition Not{notChild = multiOr, notSort} = do
+simplifyNot sideCondition Not{notChild = multiOr} = do
     -- try user-defined rules first
     mbResult <- runMaybeT applyUserDefined
     maybe standardSimplification pure mbResult
@@ -368,15 +368,15 @@ simplifyNot sideCondition Not{notChild = multiOr, notSort} = do
     standardSimplification = do
         disjunctiveNormalForms <- Logic.observeAllT $ do
             multiAnd <- Logic.scatter multiOr
-            lift $ normalizeNotAnd Not{notSort, notChild = multiAnd}
+            lift $ normalizeNotAnd Not{notSort = (), notChild = multiAnd}
         normalizeMultiAnd (MultiAnd.make disjunctiveNormalForms)
 
 normalizeNotAnd ::
-    forall simplifier sort.
+    forall simplifier.
     Monad simplifier =>
-    Not sort (MultiAnd (Predicate RewritingVariableName)) ->
+    Not () (MultiAnd (Predicate RewritingVariableName)) ->
     simplifier NormalForm
-normalizeNotAnd Not{notSort, notChild = predicates} =
+normalizeNotAnd Not{notChild = predicates} =
     case toList predicates of
         [] ->
             -- \not(\top)
@@ -399,7 +399,7 @@ normalizeNotAnd Not{notSort, notChild = predicates} =
             & Predicate.markSimplified
             & mkSingleton
             & pure
-    bottom = normalizeBottom Bottom{bottomSort = notSort}
+    bottom = normalizeBottom Bottom{bottomSort = ()}
 
 {- |
  @
@@ -413,19 +413,19 @@ simplifyImplies ::
     Monad simplifier =>
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
-    Implies sort NormalForm ->
+    Implies () NormalForm ->
     simplifier NormalForm
-simplifyImplies sideCondition Implies{impliesFirst, impliesSecond, impliesSort} = do
+simplifyImplies sideCondition Implies{impliesFirst, impliesSecond} = do
     negative <- mkNotSimplified impliesFirst
     positive <- mkAndSimplified impliesFirst impliesSecond
     mkOrSimplified negative positive
   where
     mkNotSimplified notChild =
-        simplifyNot sideCondition Not{notSort = impliesSort, notChild}
+        simplifyNot sideCondition Not{notSort = (), notChild}
     mkAndSimplified andFirst andSecond =
-        normalizeAnd And{andSort = impliesSort, andFirst, andSecond}
+        normalizeAnd And{andSort = (), andFirst, andSecond}
     mkOrSimplified orFirst orSecond =
-        normalizeOr Or{orSort = impliesSort, orFirst, orSecond}
+        normalizeOr Or{orSort = (), orFirst, orSecond}
 
 {- |
  @
@@ -435,9 +435,9 @@ simplifyImplies sideCondition Implies{impliesFirst, impliesSecond, impliesSort} 
 simplifyIff ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
-    Iff sort NormalForm ->
+    Iff () NormalForm ->
     simplifier NormalForm
-simplifyIff sideCondition Iff{iffFirst, iffSecond, iffSort} = do
+simplifyIff sideCondition Iff{iffFirst, iffSecond} = do
     orFirst <- do
         andFirst <- mkNotSimplified iffFirst
         andSecond <- mkNotSimplified iffSecond
@@ -446,16 +446,16 @@ simplifyIff sideCondition Iff{iffFirst, iffSecond, iffSort} = do
     mkOrSimplified orFirst orSecond
   where
     mkNotSimplified notChild =
-        simplifyNot sideCondition Not{notSort = iffSort, notChild}
+        simplifyNot sideCondition Not{notSort = (), notChild}
     mkAndSimplified andFirst andSecond =
-        normalizeAnd And{andSort = iffSort, andFirst, andSecond}
+        normalizeAnd And{andSort = (), andFirst, andSecond}
     mkOrSimplified orFirst orSecond =
-        normalizeOr Or{orSort = iffSort, orFirst, orSecond}
+        normalizeOr Or{orSort = (), orFirst, orSecond}
 
 simplifyCeil ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
-    Ceil sort (OrPattern RewritingVariableName) ->
+    Ceil () (OrPattern RewritingVariableName) ->
     simplifier NormalForm
 simplifyCeil sideCondition =
     Ceil.simplify sideCondition >=> return . fromOrCondition
@@ -469,24 +469,24 @@ simplifyFloor ::
     MonadSimplify simplifier =>
     Sort ->
     SideCondition RewritingVariableName ->
-    Floor sort (OrPattern RewritingVariableName) ->
+    Floor () (OrPattern RewritingVariableName) ->
     simplifier NormalForm
 simplifyFloor termSort sideCondition floor' = do
     notTerm <- mkNotSimplifiedTerm floorChild
     ceilNotTerm <- mkCeilSimplified notTerm
     mkNotSimplified ceilNotTerm
   where
-    Floor{floorOperandSort, floorResultSort, floorChild} = floor'
+    Floor{floorChild} = floor'
     mkNotSimplified notChild =
-        simplifyNot sideCondition Not{notSort = floorResultSort, notChild}
+        simplifyNot sideCondition Not{notSort = (), notChild}
     mkNotSimplifiedTerm notChild =
         Not.simplify sideCondition Not{notSort = termSort, notChild}
     mkCeilSimplified ceilChild =
         simplifyCeil
             sideCondition
             Ceil
-                { ceilOperandSort = floorOperandSort
-                , ceilResultSort = floorResultSort
+                { ceilOperandSort = ()
+                , ceilResultSort = ()
                 , ceilChild
                 }
 
@@ -545,14 +545,14 @@ simplifyForall sideCondition forall' = do
     existsNotChild <- mkExistsSimplified notChild
     mkNotSimplified existsNotChild
   where
-    Forall{forallSort, forallVariable, forallChild} = forall'
+    Forall{forallVariable, forallChild} = forall'
     mkNotSimplified notChild =
-        simplifyNot sideCondition Not{notSort = forallSort, notChild}
+        simplifyNot sideCondition Not{notSort = (), notChild}
     mkExistsSimplified existsChild =
         simplifyExists
             sideCondition
             Exists
-                { existsSort = forallSort
+                { existsSort = ()
                 , existsVariable = forallVariable
                 , existsChild
                 }
@@ -578,17 +578,18 @@ extractFirstAssignment someVariableName predicates =
         pure termLike
 
 simplifyEquals ::
-    forall simplifier sort.
+    forall simplifier.
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Sort ->
-    Equals sort (OrPattern RewritingVariableName) ->
+    Equals () (OrPattern RewritingVariableName) ->
     simplifier NormalForm
 simplifyEquals sideCondition sort equals = do
     result <- runMaybeT applyUserSimplification
     maybe (Equals.simplify sideCondition equals') return result
         <&> MultiOr.map (from @(Condition _))
   where
+    equals' :: Equals Sort (OrPattern RewritingVariableName)
     equals' =
         equals
             { equalsOperandSort = sort
@@ -628,7 +629,7 @@ simplifyEquals sideCondition sort equals = do
 simplifyIn ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
-    In sort (OrPattern RewritingVariableName) ->
+    In () (OrPattern RewritingVariableName) ->
     simplifier NormalForm
 simplifyIn sideCondition =
     In.simplify sideCondition >=> return . fromOrCondition
