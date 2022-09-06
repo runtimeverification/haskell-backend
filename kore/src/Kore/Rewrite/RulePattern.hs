@@ -112,7 +112,9 @@ import Kore.Sort (
 import Kore.Substitute
 import Kore.Syntax.Id (
     AstLocation (..),
-    Id (..),
+    getId,
+    idLocation,
+    pattern Id,
  )
 import Kore.TopBottom (
     TopBottom (..),

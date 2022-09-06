@@ -3,6 +3,7 @@ module Test.Kore.AST.Common (
     test_prettyPrintAstLocation,
 ) where
 
+import Data.InternedText (internText)
 import Kore.Syntax.Id
 import Prelude.Kore
 import Test.Tasty
@@ -81,16 +82,16 @@ test_id =
             "Id show"
             ( assertEqual
                 ""
-                "Id {getId = \"a\", idLocation = AstLocationNone}"
+                "InternedId {getInternedId = \"a\", internedIdLocation = AstLocationNone}"
                 (show (Id "a" AstLocationNone))
             )
         , testCase
             "noLocationId"
             ( assertEqual
                 ""
-                Id
-                    { getId = "a"
-                    , idLocation = AstLocationNone
+                InternedId
+                    { getInternedId = internText "a"
+                    , internedIdLocation = AstLocationNone
                     }
                 (noLocationId "a")
             )

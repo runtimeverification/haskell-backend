@@ -29,9 +29,9 @@ import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.TermLike (
     ElementVariable,
-    Id (getId),
     TermLike,
     VariableName,
+    getId,
     weakExistsFinally,
  )
 import Kore.Internal.TermLike qualified as TermLike
