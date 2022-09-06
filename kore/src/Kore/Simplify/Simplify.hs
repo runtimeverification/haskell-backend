@@ -60,15 +60,11 @@ module Kore.Simplify.Simplify (
     MonadLog,
 ) where
 
+import Control.Lens qualified as Lens
 import Control.Monad.Catch
 import Control.Monad.Counter
-import Data.HashSet (HashSet)
 import Control.Monad.Morph (MFunctor)
 import Control.Monad.Morph qualified as Monad.Morph
-import Control.Lens qualified as Lens
-import Data.Generics.Product (
-    field,
- )
 import Control.Monad.RWS.Strict (RWST)
 import Control.Monad.Reader
 import Control.Monad.State.Strict
@@ -77,8 +73,12 @@ import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe
 import Data.Functor.Foldable qualified as Recursive
+import Data.Generics.Product (
+    field,
+ )
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HashMap
+import Data.HashSet (HashSet)
 import Data.HashSet qualified as HashSet
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
@@ -426,8 +426,8 @@ lookupAttemptedEquationsCache ::
     Maybe (AttemptEquationError RewritingVariableName)
 lookupAttemptedEquationsCache key cache@(SimplifierCache _ _) =
     HashMap.lookup key
-    . attemptedEquationsCache
-    $ cache
+        . attemptedEquationsCache
+        $ cache
 
 {- | 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
 or builtin code.

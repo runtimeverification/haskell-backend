@@ -59,7 +59,7 @@ import Kore.Rewrite.Strategy hiding (
  )
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Simplify.Pattern qualified as Pattern (
-    simplifyTopConfiguration
+    simplifyTopConfiguration,
  )
 import Kore.Simplify.Simplify as Simplifier
 import Kore.TopBottom (
