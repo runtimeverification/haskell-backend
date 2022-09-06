@@ -303,36 +303,7 @@ test_ceilSimplification =
             ""
             expected
             actual
-    , -- TODO: should be moved to predicate simplifier
-      -- , testCase "Ceil with axioms" $ do
-      --     let expected =
-      --                 (makeEqualsPredicate Mock.a Mock.cf)
-      --                 & NormalForm.fromPredicate
-      --     actual <-
-      --         makeEvaluateWithAxioms
-      --             ( Map.singleton
-      --                 ( AxiomIdentifier.Ceil
-      --                     (AxiomIdentifier.Application Mock.fId)
-      --                 )
-      --                 ( appliedMockEvaluator
-      --                     Conditional
-      --                         { term = mkTop Mock.testSort
-      --                         , predicate = makeEqualsPredicate Mock.a Mock.cf
-      --                         , substitution = mempty
-      --                         }
-      --                 )
-      --             )
-      --             (Pattern.fromTermAndPredicate (mkTop Mock.testSort) (makeCeilPredicate fOfA))
-      --     putStrLn $
-      --         "\nExpected\n"
-      --         <> unlines (show . Pretty.pretty . Predicate.fromMultiAnd <$> toList expected)
-      --         <> "\nActual\n"
-      --         <> unlines (show . Pretty.pretty . Predicate.fromMultiAnd <$> toList actual)
-      --     -- assertEqual
-      --     --     ""
-      --     --     expected
-      --     --     actual
-      testCase "ceil with normal domain value" $ do
+    , testCase "ceil with normal domain value" $ do
         -- ceil(1) = top
         let expected = NormalForm.fromPredicate fromTop_
         actual <-
