@@ -310,8 +310,8 @@ makeEvaluateInternalList ::
     InternalList (TermLike RewritingVariableName) ->
     simplifier NormalForm
 makeEvaluateInternalList _ _ internal =
-    return . NormalForm.fromPredicates
-    $ fromCeil_ <$> toList internal
+    return . NormalForm.fromPredicates $
+        fromCeil_ <$> toList internal
 
 {- | This handles the case when we can't simplify a term's ceil.
 
