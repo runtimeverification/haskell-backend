@@ -335,37 +335,51 @@ simplifyNot ::
     Not () NormalForm ->
     simplifier NormalForm
 simplifyNot sideCondition Not{notChild = multiOr} = do
-    -- try user-defined rules first
-    mbResult <- runMaybeT applyUserDefined
-    maybe standardSimplification pure mbResult
+    disjunctiveNormalForms <- Logic.observeAllT $ do
+        multiAnd <- Logic.scatter multiOr
+        lift $ normalizeNotAnd Not{notSort = (), notChild = multiAnd}
+    normal <- normalizeMultiAnd (MultiAnd.make disjunctiveNormalForms)
+
+    -- try user-defined rules on each component within the MultiAnds
+    -- of the normal form
+    (flags, andOrs) <-
+        fmap unzip . Logic.observeAllT $ do
+            multiAnd <- Logic.scatter normal
+            let ps = toList multiAnd
+            mbSimplifieds <-
+                mapM (lift . runMaybeT . applyUserDefined) ps
+            let anySimplified = any isJust mbSimplifieds
+                results :: [MultiOr (Predicate RewritingVariableName)]
+                results =
+                    zipWith fromMaybe (map MultiOr.singleton ps) mbSimplifieds
+            pure (anySimplified, MultiAnd.make results)
+
+    pure $
+        if (or flags)
+            then fold . MultiOr.make $ map liftOrs andOrs
+            else normal
   where
-    applyUserDefined :: MaybeT simplifier NormalForm
-    applyUserDefined = do
-        -- produce a single termlike that we can use for matching
-        let arg :: TermLike RewritingVariableName
-            arg = OrPattern.toTermLike helpSort $ toOrPattern helpSort multiOr
-            -- HAAAACK: sort stripped in NormalForm of predicates
+    applyUserDefined ::
+        Predicate RewritingVariableName ->
+        MaybeT simplifier (MultiOr (Predicate RewritingVariableName))
+    applyUserDefined predicate = do
+        -- produce a termlike that we can use for matching
+        let -- HAAAACK: sort stripped in NormalForm of predicates
             helpSort = SortVariableSort . SortVariable $ noLocationId "SomeSort"
         -- call the equation matcher
         applied <-
             Axiom.evaluatePattern
                 sideCondition
                 Condition.top
-                (TermLike.mkNot arg)
+                (Predicate.fromPredicate helpSort predicate)
                 (const empty)
-        -- convert result back to NormalForm
+        -- convert result back to Predicate
         traverse_ (guard . Conditional.isPredicate) applied
-        pure $
-            MultiOr.map
-                (Predicate.toMultiAnd . from . snd . Conditional.splitTerm)
-                applied
-
-    standardSimplification :: simplifier NormalForm
-    standardSimplification = do
-        disjunctiveNormalForms <- Logic.observeAllT $ do
-            multiAnd <- Logic.scatter multiOr
-            lift $ normalizeNotAnd Not{notSort = (), notChild = multiAnd}
-        normalizeMultiAnd (MultiAnd.make disjunctiveNormalForms)
+        pure $ MultiOr.map (from . snd . Conditional.splitTerm) applied
+    liftOrs ::
+        MultiAnd (MultiOr (Predicate RewritingVariableName)) -> NormalForm
+    liftOrs andOrs =
+        MultiOr.observeAll $ MultiAnd.traverse Logic.scatter andOrs
 
 normalizeNotAnd ::
     forall simplifier.
