@@ -31,8 +31,8 @@ module Kore.Simplify.Simplify (
     EvaluationAttempt (..),
     AcceptsMultipleResults (..),
     initCache,
-    updateCache,
-    lookupCache,
+    updateAttemptedEquationsCache,
+    lookupAttemptedEquationsCache,
     BuiltinAndAxiomSimplifier (..),
     AttemptedAxiom (..),
     isApplicable,
@@ -62,8 +62,13 @@ module Kore.Simplify.Simplify (
 
 import Control.Monad.Catch
 import Control.Monad.Counter
+import Data.HashSet (HashSet)
 import Control.Monad.Morph (MFunctor)
 import Control.Monad.Morph qualified as Monad.Morph
+import Control.Lens qualified as Lens
+import Data.Generics.Product (
+    field,
+ )
 import Control.Monad.RWS.Strict (RWST)
 import Control.Monad.Reader
 import Control.Monad.State.Strict
@@ -74,6 +79,7 @@ import Control.Monad.Trans.Maybe
 import Data.Functor.Foldable qualified as Recursive
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HashMap
+import Data.HashSet qualified as HashSet
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
@@ -371,14 +377,19 @@ emptyConditionSimplifier =
 -- * Builtin and axiom simplifiers
 
 {- | Used for keeping track of already attempted equations which failed to
- apply.
+ apply and for terms known to be globally defined (i.e. irrespective of the
+ value of the current 'SideCondition').
 -}
-newtype SimplifierCache = SimplifierCache
+data SimplifierCache = SimplifierCache
     { attemptedEquationsCache ::
         HashMap
             EvaluationAttempt
             (AttemptEquationError RewritingVariableName)
+    , globalDefinedTermsCache ::
+        HashSet (TermLike RewritingVariableName)
     }
+    deriving stock (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 {- | An evaluation attempt is determined by an equation-term pair, since the
  'AttemptEquationError' type contains any necessary information about the
@@ -394,25 +405,29 @@ data EvaluationAttempt = EvaluationAttempt
 
 -- | Initialize with an empty cache.
 initCache :: SimplifierCache
-initCache = SimplifierCache HashMap.empty
+initCache = SimplifierCache HashMap.empty HashSet.empty
 
 -- | Update by inserting a new entry into the cache.
-updateCache ::
+updateAttemptedEquationsCache ::
     EvaluationAttempt ->
     AttemptEquationError RewritingVariableName ->
     SimplifierCache ->
     SimplifierCache
-updateCache key value (SimplifierCache oldCache) =
-    HashMap.insert key value oldCache
-        & SimplifierCache
+updateAttemptedEquationsCache key value cache@(SimplifierCache _ _) =
+    Lens.over
+        (field @"attemptedEquationsCache")
+        (HashMap.insert key value)
+        cache
 
 -- | Lookup an entry in the cache.
-lookupCache ::
+lookupAttemptedEquationsCache ::
     EvaluationAttempt ->
     SimplifierCache ->
     Maybe (AttemptEquationError RewritingVariableName)
-lookupCache key (SimplifierCache cache) =
-    HashMap.lookup key cache
+lookupAttemptedEquationsCache key cache@(SimplifierCache _ _) =
+    HashMap.lookup key
+    . attemptedEquationsCache
+    $ cache
 
 {- | 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
 or builtin code.
