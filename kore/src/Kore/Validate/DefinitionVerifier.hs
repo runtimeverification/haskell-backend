@@ -23,6 +23,8 @@ import Control.Monad (
 import Data.Generics.Product (
     field,
  )
+import Data.HashMap.Strict (HashMap)
+import Data.InternedText (InternedText)
 import Data.List (
     sortOn,
  )
@@ -30,9 +32,6 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
-import Data.Text (
-    Text,
- )
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Parser as Attribute.Parser
 import Kore.Attribute.Symbol qualified as Attribute.Symbol
@@ -104,12 +103,12 @@ If verification is successfull, it returns the updated maps of indexed modules
 and defined names.
 -}
 verifyAndIndexDefinitionWithBase ::
-    (Map ModuleName VerifiedModule', Map Text AstLocation) ->
+    (Map ModuleName VerifiedModule', HashMap InternedText AstLocation) ->
     Builtin.Verifiers ->
     ParsedDefinition ->
     Either
         (Error VerifyError)
-        (Map ModuleName VerifiedModule', Map Text AstLocation)
+        (Map ModuleName VerifiedModule', HashMap InternedText AstLocation)
 verifyAndIndexDefinitionWithBase
     alreadyVerified
     builtinVerifiers

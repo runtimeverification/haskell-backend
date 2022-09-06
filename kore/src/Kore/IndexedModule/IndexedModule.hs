@@ -54,6 +54,7 @@ module Kore.IndexedModule.IndexedModule (
     implicitModules,
 ) where
 
+import Control.Arrow ((&&&))
 import Control.Lens qualified as Lens
 import Control.Monad.Extra (
     unlessM,
@@ -63,6 +64,9 @@ import Control.Monad.State.Strict (
  )
 import Control.Monad.State.Strict qualified as Monad.State
 import Data.Default as Default
+import Data.HashMap.Strict (HashMap)
+import Data.HashMap.Strict qualified as HashMap
+import Data.InternedText (InternedText)
 import Data.Map.Strict (
     Map,
  )
@@ -608,11 +612,11 @@ implicitIndexedModule =
             , sentenceSortAttributes = Attributes []
             }
 
-implicitNames :: Map Text AstLocation
+implicitNames :: HashMap InternedText AstLocation
 implicitNames =
-    Map.mapKeys getId $
-        Map.fromSet idLocation $
-            Set.insert predicateSortId implicitSortNames
+    HashMap.fromList $
+        (getInternedId &&& idLocation)
+            <$> (predicateSortId : Set.toList implicitSortNames)
 
 implicitSortNames :: Set Id
 implicitSortNames = Set.fromList [stringMetaSortId]
