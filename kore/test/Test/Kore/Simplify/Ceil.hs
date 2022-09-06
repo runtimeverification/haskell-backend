@@ -13,15 +13,10 @@ import Kore.Internal.NormalForm qualified as NormalForm (
     fromPredicate,
     fromPredicates,
  )
-import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     makeCeilPredicate,
     makeEqualsPredicate,
     makeTruePredicate,
- )
-import Kore.Internal.Predicate qualified as Predicate
-import Kore.Internal.SideCondition (
-    SideCondition,
  )
 import Kore.Internal.SideCondition qualified as SideCondition (
     top,
@@ -37,8 +32,6 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Simplify.Ceil qualified as Ceil
 import Kore.Simplify.Simplify
 import Prelude.Kore
-import Pretty qualified
-import Test.Kore.Equation.Common (axiomEnsures)
 import Test.Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -306,11 +299,6 @@ test_ceilSimplification =
                             Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.xConfig, fOfB)]
                     }
-        -- putStrLn $
-        --     "\nExpected\n"
-        --     <> unlines (show . Pretty.pretty . Predicate.fromMultiAnd <$> toList expected)
-        --     <> "\nActual\n"
-        --     <> unlines (show . Pretty.pretty . Predicate.fromMultiAnd <$> toList actual)
         assertEqual
             ""
             expected

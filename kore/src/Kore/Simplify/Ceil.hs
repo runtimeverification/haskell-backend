@@ -247,7 +247,7 @@ newAxiomCeilSimplifier = CeilSimplifier $ \input -> do
             (const empty)
     return (OrPattern.map (Predicate.toMultiAnd . toPredicate) evaluation)
   where
-    -- TODO: probably want to parse MultiAnd here
+    -- TODO(Ana): probably should parse MultiAnd here
     toPredicate Conditional{term = Top_ _, predicate, substitution} =
         Predicate.makeAndPredicate
             predicate
