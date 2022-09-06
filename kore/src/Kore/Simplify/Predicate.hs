@@ -343,11 +343,7 @@ simplifyNot sideCondition Not{notChild = multiOr} = do
     applyUserDefined = do
         -- produce a single termlike that we can use for matching
         let arg :: TermLike RewritingVariableName
-            arg =
-                Pattern.toTermLike
-                    . OrPattern.toPattern helpSort
-                    . toOrPattern helpSort
-                    $ multiOr
+            arg = OrPattern.toTermLike helpSort $ toOrPattern helpSort multiOr
             -- HAAAACK: sort stripped in NormalForm of predicates
             helpSort = SortVariableSort . SortVariable $ noLocationId "SomeSort"
         -- call the equation matcher
