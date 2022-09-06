@@ -65,8 +65,8 @@ import Kore.Log.DebugEvaluateCondition (
 import Kore.Log.DebugRetrySolverQuery (
     debugRetrySolverQuery,
  )
-import Kore.Log.ErrorDecidePredicateUnknown (
-    errorDecidePredicateUnknown,
+import Kore.Log.WarnDecidePredicateUnknown (
+    warnDecidePredicateUnknown,
  )
 import Kore.Rewrite.SMT.Translate
 import Kore.Simplify.Simplify as Simplifier
@@ -155,19 +155,18 @@ decidePredicate ::
     NonEmpty (Predicate variable) ->
     Simplifier (Maybe Bool)
 decidePredicate sideCondition predicates =
-    whileDebugEvaluateCondition predicates go
-  where
-    go =
+    whileDebugEvaluateCondition predicates $
         do
             result <- query >>= whenUnknown retry
             debugEvaluateConditionResult result
             case result of
                 Unsat -> return False
                 Sat -> empty
-                Unknown ->
-                    errorDecidePredicateUnknown predicates
+                Unknown -> do
+                    warnDecidePredicateUnknown predicates
+                    empty
             & runMaybeT
-
+  where
     whenUnknown f Unknown = f
     whenUnknown _ result = return result
 

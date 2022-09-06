@@ -76,9 +76,6 @@ import Kore.Log.DebugUnifyBottom (
 import Kore.Log.ErrorBottomTotalFunction (
     ErrorBottomTotalFunction,
  )
-import Kore.Log.ErrorDecidePredicateUnknown (
-    ErrorDecidePredicateUnknown,
- )
 import Kore.Log.ErrorEquationRightFunction (
     ErrorEquationRightFunction,
  )
@@ -123,6 +120,9 @@ import Kore.Log.WarnBoundedModelChecker (
  )
 import Kore.Log.WarnClaimRHSIsBottom (
     WarnClaimRHSIsBottom,
+ )
+import Kore.Log.WarnDecidePredicateUnknown (
+    WarnDecidePredicateUnknown,
  )
 import Kore.Log.WarnDepthLimitExceeded (
     WarnDepthLimitExceeded,
@@ -235,10 +235,10 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnUnsimplifiedCondition
             , mk $ Proxy @WarnRestartSolver
             , mk $ Proxy @DebugCreatedSubstitution
+            , mk $ Proxy @WarnDecidePredicateUnknown
             ]
         ,
             [ mk $ Proxy @ErrorBottomTotalFunction
-            , mk $ Proxy @ErrorDecidePredicateUnknown
             , mk $ Proxy @ErrorEquationRightFunction
             , mk $ Proxy @ErrorEquationsSameMatch
             , mk $ Proxy @ErrorOutOfDate

@@ -1,0 +1,1160 @@
+↓ test/Driver.hs
+↓ Test
+↓
+kore> Test suite kore-test failed
+Test suite failure for package kore-0.60.0.0
+    kore-test:  exited with: ExitFailure 1
+Logs printed to console
+
+tiOr
+{ getMultiOr =
+    Conditional
+    { term = _
+    , predicate =
+        Predicate
+        { getPredicate =
+            CofreeT
+            { runCofreeT =
+                Identity
+                { runIdentity =
+                    _
+                        :<
+                        AndF
+                            And
+                            { andSort = _
+                            , andFirst = _
+                            , andSecond =
+                                CofreeT
+                                { runCofreeT =
+                                    Identity
+                                    { runIdentity =
+                                        PredicatePattern
+                                        { freeVariables =
+                                            FreeVariables
+                                            { getFreeVariables =
+                                                Data.Map.Strict.fromList {- was:
+                                                []
+                                                -}
+                                                [ (,)
+                                                    (SomeVariableNameElement
+                                                        ElementVariableName
+                                                        { unElementVariableName =
+                                                            ConfigVariableName
+                                                                VariableName
+                                                                { base =
+                                                                    Id
+                                                                    { getId =
+                                                                        "y"
+                                                                    , idLocation =
+                                                                        AstLocationTest
+                                                                    }
+                                                                , counter =
+                                                                    Nothing
+                                                                }
+                                                        })
+                                                    FreeVariableInfo
+                                                    { sort =
+                                                        SortActualSort
+                                                            SortActual
+                                                            { sortActualName =
+                                                                Id
+                                                                { getId =
+                                                                    "testSort"
+                                                                , idLocation =
+                                                                    AstLocationTest
+                                                                }
+                                                            , sortActualSorts =
+                                                                []
+                                                            }
+                                                    , count = 1
+                                                    }
+                                                ]
+                                            }
+                                        , simplified = _
+                                        }
+                                            :<
+                                            {- was:
+                                            ExistsF
+                                                Exists
+                                                { existsSort = ()
+                                                , existsVariable =
+                                                    Variable
+                                                    { variableName =
+                                                        ElementVariableName
+                                                        { unElementVariableName =
+                                                            ConfigVariableName
+                                                                VariableName
+                                                                { base =
+                                                                    Id
+                                                                    { getId =
+                                                                        "y"
+                                                                    , idLocation =
+                                                                        AstLocationTest
+                                                                    }
+                                                                , counter =
+                                                                    Nothing
+                                                                }
+                                                        }
+                                                    , variableSort =
+                                                        SortActualSort
+                                                            SortActual
+                                                            { sortActualName =
+                                                                Id
+                                                                { getId =
+                                                                    "testSort"
+                                                                , idLocation =
+                                                                    AstLocationTest
+                                                                }
+                                                            , sortActualSorts =
+                                                                []
+                                                            }
+                                                    }
+                                                , existsChild =
+                                                    CofreeT
+                                                    { runCofreeT =
+                                                        Identity
+                                                        { runIdentity =
+                                                            _
+                                                                :<
+                                                                CeilF
+                                                                    Ceil
+                                                                    { ceilOperandSort =
+                                                                        ()
+                                                                    , ceilResultSort =
+                                                                        ()
+                                                                    , ceilChild =
+                                                                        TermLike
+                                                                        { getTermLike =
+                                                                            _
+                                                                                :<
+                                                                                ApplySymbolF
+                                                                                    Application
+                                                                                    { applicationSymbolOrAlias =
+                                                                                        Symbol
+                                                                                        { symbolConstructor =
+                                                                                            Id
+                                                                                            { getId =
+                                                                                                "f"
+                                                                                            , idLocation =
+                                                                                                AstLocationTest
+                                                                                            }
+                                                                                        , symbolParams =
+                                                                                            []
+                                                                                        , symbolSorts =
+                                                                                            ApplicationSorts
+                                                                                            { applicationSortsOperands =
+                                                                                                [ SortActualSort
+                                                                                                    SortActual
+                                                                                                    { sortActualName =
+                                                                                                        Id
+                                                                                                        { getId =
+                                                                                                            "testSort"
+                                                                                                        , idLocation =
+                                                                                                            AstLocationTest
+                                                                                                        }
+                                                                                                    , sortActualSorts =
+                                                                                                        []
+                                                                                                    }
+                                                                                                ]
+                                                                                            , applicationSortsResult =
+                                                                                                SortActualSort
+                                                                                                    SortActual
+                                                                                                    { sortActualName =
+                                                                                                        Id
+                                                                                                        { getId =
+                                                                                                            "testSort"
+                                                                                                        , idLocation =
+                                                                                                            AstLocationTest
+                                                                                                        }
+                                                                                                    , sortActualSorts =
+                                                                                                        []
+                                                                                                    }
+                                                                                            }
+                                                                                        , symbolAttributes =
+                                                                                            _
+                                                                                        }
+                                                                                    , applicationChildren =
+                                                                                        [ TermLike
+                                                                                          { getTermLike =
+                                                                                              _
+                                                                                                  :<
+                                                                                                  VariableF
+                                                                                                      Const
+                                                                                                      { getConst =
+                                                                                                          Variable
+                                                                                                          { variableName =
+                                                                                                              SomeVariableNameElement
+                                                                                                                  ElementVariableName
+                                                                                                                  { unElementVariableName =
+                                                                                                                      ConfigVariableName
+                                                                                                                          VariableName
+                                                                                                                          { base =
+                                                                                                                              Id
+                                                                                                                              { getId =
+                                                                                                                                  "y"
+                                                                                                                              , idLocation =
+                                                                                                                                  AstLocationTest
+                                                                                                                              }
+                                                                                                                          , counter =
+                                                                                                                              Nothing
+                                                                                                                          }
+                                                                                                                  }
+                                                                                                          , variableSort =
+                                                                                                              SortActualSort
+                                                                                                                  SortActual
+                                                                                                                  { sortActualName =
+                                                                                                                      Id
+                                                                                                                      { getId =
+                                                                                                                          "testSort"
+                                                                                                                      , idLocation =
+                                                                                                                          AstLocationTest
+                                                                                                                      }
+                                                                                                                  , sortActualSorts =
+                                                                                                                      []
+                                                                                                                  }
+                                                                                                          }
+                                                                                                      }
+                                                                                          }
+                                                                                        ]
+                                                                                    }
+                                                                        }
+                                                                    }
+                                                        }
+                                                    }
+                                                }
+                                            -}
+                                            CeilF
+                                                Ceil
+                                                { ceilOperandSort = ()
+                                                , ceilResultSort = ()
+                                                , ceilChild =
+                                                    TermLike
+                                                    { getTermLike =
+                                                        _
+                                                            :<
+                                                            ApplySymbolF
+                                                                Application
+                                                                { applicationSymbolOrAlias =
+                                                                    Symbol
+                                                                    { symbolConstructor =
+                                                                        Id
+                                                                        { getId =
+                                                                            "f"
+                                                                        , idLocation =
+                                                                            AstLocationTest
+                                                                        }
+                                                                    , symbolParams =
+                                                                        []
+                                                                    , symbolSorts =
+                                                                        ApplicationSorts
+                                                                        { applicationSortsOperands =
+                                                                            [ SortActualSort
+                                                                                SortActual
+                                                                                { sortActualName =
+                                                                                    Id
+                                                                                    { getId =
+                                                                                        "testSort"
+                                                                                    , idLocation =
+                                                                                        AstLocationTest
+                                                                                    }
+                                                                                , sortActualSorts =
+                                                                                    []
+                                                                                }
+                                                                            ]
+                                                                        , applicationSortsResult =
+                                                                            SortActualSort
+                                                                                SortActual
+                                                                                { sortActualName =
+                                                                                    Id
+                                                                                    { getId =
+                                                                                        "testSort"
+                                                                                    , idLocation =
+                                                                                        AstLocationTest
+                                                                                    }
+                                                                                , sortActualSorts =
+                                                                                    []
+                                                                                }
+                                                                        }
+                                                                    , symbolAttributes =
+                                                                        _
+                                                                    }
+                                                                , applicationChildren =
+                                                                    [ TermLike
+                                                                      { getTermLike =
+                                                                          _
+                                                                              :<
+                                                                              VariableF
+                                                                                  Const
+                                                                                  { getConst =
+                                                                                      Variable
+                                                                                      { variableName =
+                                                                                          SomeVariableNameElement
+                                                                                              ElementVariableName
+                                                                                              { unElementVariableName =
+                                                                                                  ConfigVariableName
+                                                                                                      VariableName
+                                                                                                      { base =
+                                                                                                          Id
+                                                                                                          { getId =
+                                                                                                              "y"
+                                                                                                          , idLocation =
+                                                                                                              AstLocationTest
+                                                                                                          }
+                                                                                                      , counter =
+                                                                                                          Nothing
+                                                                                                      }
+                                                                                              }
+                                                                                      , variableSort =
+                                                                                          SortActualSort
+                                                                                              SortActual
+                                                                                              { sortActualName =
+                                                                                                  Id
+                                                                                                  { getId =
+                                                                                                      "testSort"
+                                                                                                  , idLocation =
+                                                                                                      AstLocationTest
+                                                                                                  }
+                                                                                              , sortActualSorts =
+                                                                                                  []
+                                                                                              }
+                                                                                      }
+                                                                                  }
+                                                                      }
+                                                                    ]
+                                                                }
+                                                    }
+                                                }
+                                    }
+                                }
+                            }
+                }
+            }
+        }
+    , substitution = _
+    }
+        :
+        _
+}
+
+
+↓ test/Driver.hs
+↓ Test
+↓ Kore
+↓ Simplify
+↓ Pattern
+↓ Pattern simplify
+✗ Does not replace and terms under intersecting quantifiers
+
+test/Test/Kore/Simplify/Pattern.hs:137:
+Expected:
+    \and{testSort{}}(
+        /* term: */
+        /* Created: Test.Kore.Simplify.Pattern.constr10 */
+        /* Spa */
+        constr10{}(
+            /* Created: Test.Kore.Simplify.Pattern.f */
+            /* Fn Spa */
+            f{}(/* Fl Fn D Sfa */ Configx:testSort{})
+        ),
+    \and{testSort{}}(
+        /* predicate: */
+        \and{testSort{}}(
+            /* Spa */
+            \ceil{testSort{}, testSort{}}(
+                /* Created: Test.Kore.Simplify.Pattern.f */
+                /* Fn Spa */
+                f{}(/* Fl Fn D Sfa */ Configx:testSort{})
+            ),
+            /* Spa */
+            \exists{testSort{}}(
+                Configx0:testSort{},
+                /* Spa */
+                \ceil{testSort{}, testSort{}}(
+                    /* Created: Test.Kore.Simplify.Pattern.f */
+                    /* Fn Spa */
+                    f{}(/* Fl Fn D Sfa */ Configx0:testSort{})
+                )
+            )
+        ),
+        /* substitution: */
+        \top{testSort{}}()
+    ))
+but found:
+    \and{testSort{}}(
+        /* term: */
+        /* Sfa */
+        constr10{}(/* Fn Sfa */ f{}(/* Fl Fn D Sfa */ Configx:testSort{})),
+    \and{testSort{}}(
+        /* predicate: */
+        \and{testSort{}}(
+            /* Sfa */
+            \ceil{testSort{}, testSort{}}(
+                /* Fn Sfa */ f{}(/* Fl Fn D Sfa */ Configx:testSort{})
+            ),
+            /* Sfa */
+            \ceil{testSort{}, testSort{}}(
+                /* Fn Sfa */ f{}(/* Fl Fn D Sfa */ Configx0:testSort{})
+            )
+        ),
+        /* substitution: */
+        \top{testSort{}}()
+    ))
+NormalizedAndPattern
+{ term = _
+, predicate =
+    MultiAnd
+    { getMultiAnd =
+        _
+            :
+            (Predicate
+             { getPredicate =
+                 CofreeT
+                 { runCofreeT =
+                     Identity
+                     { runIdentity =
+                         _
+                             :<
+                             {- was:
+                             ExistsF
+                                 Exists
+                                 { existsSort = ()
+                                 , existsVariable =
+                                     Variable
+                                     { variableName =
+                                         ElementVariableName
+                                         { unElementVariableName =
+                                             ConfigVariableName
+                                                 VariableName
+                                                 { base =
+                                                     Id
+                                                     { getId = "x"
+                                                     , idLocation =
+                                                         AstLocationGeneratedVariable
+                                                     }
+                                                 , counter = Just (Element 0)
+                                                 }
+                                         }
+                                     , variableSort =
+                                         SortActualSort
+                                             SortActual
+                                             { sortActualName =
+                                                 Id
+                                                 { getId = "testSort"
+                                                 , idLocation = AstLocationTest
+                                                 }
+                                             , sortActualSorts = []
+                                             }
+                                     }
+                                 , existsChild =
+                                     CofreeT
+                                     { runCofreeT =
+                                         Identity
+                                         { runIdentity =
+                                             _
+                                                 :<
+                                                 CeilF
+                                                     Ceil
+                                                     { ceilOperandSort = ()
+                                                     , ceilResultSort = ()
+                                                     , ceilChild =
+                                                         TermLike
+                                                         { getTermLike =
+                                                             _
+                                                                 :<
+                                                                 ApplySymbolF
+                                                                     Application
+                                                                     { applicationSymbolOrAlias =
+                                                                         Symbol
+                                                                         { symbolConstructor =
+                                                                             Id
+                                                                             { getId =
+                                                                                 "f"
+                                                                             , idLocation =
+                                                                                 AstLocationTest
+                                                                             }
+                                                                         , symbolParams =
+                                                                             []
+                                                                         , symbolSorts =
+                                                                             ApplicationSorts
+                                                                             { applicationSortsOperands =
+                                                                                 [ SortActualSort
+                                                                                     SortActual
+                                                                                     { sortActualName =
+                                                                                         Id
+                                                                                         { getId =
+                                                                                             "testSort"
+                                                                                         , idLocation =
+                                                                                             AstLocationTest
+                                                                                         }
+                                                                                     , sortActualSorts =
+                                                                                         []
+                                                                                     }
+                                                                                 ]
+                                                                             , applicationSortsResult =
+                                                                                 SortActualSort
+                                                                                     SortActual
+                                                                                     { sortActualName =
+                                                                                         Id
+                                                                                         { getId =
+                                                                                             "testSort"
+                                                                                         , idLocation =
+                                                                                             AstLocationTest
+                                                                                         }
+                                                                                     , sortActualSorts =
+                                                                                         []
+                                                                                     }
+                                                                             }
+                                                                         , symbolAttributes =
+                                                                             _
+                                                                         }
+                                                                     , applicationChildren =
+                                                                         [ TermLike
+                                                                           { getTermLike =
+                                                                               _
+                                                                                   :<
+                                                                                   VariableF
+                                                                                       Const
+                                                                                       { getConst =
+                                                                                           Variable
+                                                                                           { variableName =
+                                                                                               SomeVariableNameElement
+                                                                                                   ElementVariableName
+                                                                                                   { unElementVariableName =
+                                                                                                       ConfigVariableName
+                                                                                                           VariableName
+                                                                                                           { base =
+                                                                                                               Id
+                                                                                                               { getId =
+                                                                                                                   "x"
+                                                                                                               , idLocation =
+                                                                                                                   AstLocationGeneratedVariable
+                                                                                                               }
+                                                                                                           , counter =
+                                                                                                               Just
+                                                                                                                   (Element
+                                                                                                                       0)
+                                                                                                           }
+                                                                                                   }
+                                                                                           , variableSort =
+                                                                                               SortActualSort
+                                                                                                   SortActual
+                                                                                                   { sortActualName =
+                                                                                                       Id
+                                                                                                       { getId =
+                                                                                                           "testSort"
+                                                                                                       , idLocation =
+                                                                                                           AstLocationTest
+                                                                                                       }
+                                                                                                   , sortActualSorts =
+                                                                                                       []
+                                                                                                   }
+                                                                                           }
+                                                                                       }
+                                                                           }
+                                                                         ]
+                                                                     }
+                                                         }
+                                                     }
+                                         }
+                                     }
+                                 }
+                             -}
+                             CeilF
+                                 Ceil
+                                 { ceilOperandSort = ()
+                                 , ceilResultSort = ()
+                                 , ceilChild =
+                                     TermLike
+                                     { getTermLike =
+                                         _
+                                             :<
+                                             ApplySymbolF
+                                                 Application
+                                                 { applicationSymbolOrAlias =
+                                                     Symbol
+                                                     { symbolConstructor =
+                                                         Id
+                                                         { getId = "f"
+                                                         , idLocation =
+                                                             AstLocationTest
+                                                         }
+                                                     , symbolParams = []
+                                                     , symbolSorts =
+                                                         ApplicationSorts
+                                                         { applicationSortsOperands =
+                                                             [ SortActualSort
+                                                                 SortActual
+                                                                 { sortActualName =
+                                                                     Id
+                                                                     { getId =
+                                                                         "testSort"
+                                                                     , idLocation =
+                                                                         AstLocationTest
+                                                                     }
+                                                                 , sortActualSorts =
+                                                                     []
+                                                                 }
+                                                             ]
+                                                         , applicationSortsResult =
+                                                             SortActualSort
+                                                                 SortActual
+                                                                 { sortActualName =
+                                                                     Id
+                                                                     { getId =
+                                                                         "testSort"
+                                                                     , idLocation =
+                                                                         AstLocationTest
+                                                                     }
+                                                                 , sortActualSorts =
+                                                                     []
+                                                                 }
+                                                         }
+                                                     , symbolAttributes = _
+                                                     }
+                                                 , applicationChildren =
+                                                     [ TermLike
+                                                       { getTermLike =
+                                                           _
+                                                               :<
+                                                               VariableF
+                                                                   Const
+                                                                   { getConst =
+                                                                       Variable
+                                                                       { variableName =
+                                                                           SomeVariableNameElement
+                                                                               ElementVariableName
+                                                                               { unElementVariableName =
+                                                                                   ConfigVariableName
+                                                                                       VariableName
+                                                                                       { base =
+                                                                                           Id
+                                                                                           { getId =
+                                                                                               "x"
+                                                                                           , idLocation =
+                                                                                               AstLocationGeneratedVariable
+                                                                                           }
+                                                                                       , counter =
+                                                                                           Just
+                                                                                               (Element
+                                                                                                   0)
+                                                                                       }
+                                                                               }
+                                                                       , variableSort =
+                                                                           SortActualSort
+                                                                               SortActual
+                                                                               { sortActualName =
+                                                                                   Id
+                                                                                   { getId =
+                                                                                       "testSort"
+                                                                                   , idLocation =
+                                                                                       AstLocationTest
+                                                                                   }
+                                                                               , sortActualSorts =
+                                                                                   []
+                                                                               }
+                                                                       }
+                                                                   }
+                                                       }
+                                                     ]
+                                                 }
+                                     }
+                                 }
+                     }
+                 }
+             }
+                :
+                _)
+    }
+, substitution = _
+}
+
+
+↓ test/Driver.hs
+↓ Test
+↓ Kore
+↓ Unification
+↓ UnifierT
+↓ simplifyCondition
+✗ ∃ y z. x = σ(y, z)
+
+test/Test/Kore/Unification/UnifierT.hs:52:
+Expected original result
+MultiOr
+{ getMultiOr =
+    Conditional
+    { term = _
+    , predicate =
+        Predicate
+        { getPredicate =
+            CofreeT
+            { runCofreeT =
+                Identity
+                { runIdentity =
+                    _
+                        :<
+                        {- was:
+                        ExistsF
+                            Exists
+                            { existsSort = ()
+                            , existsVariable =
+                                Variable
+                                { variableName =
+                                    ElementVariableName
+                                    { unElementVariableName =
+                                        ConfigVariableName
+                                            VariableName
+                                            { base =
+                                                Id
+                                                { getId = "y"
+                                                , idLocation = AstLocationTest
+                                                }
+                                            , counter = Nothing
+                                            }
+                                    }
+                                , variableSort =
+                                    SortActualSort
+                                        SortActual
+                                        { sortActualName =
+                                            Id
+                                            { getId = "testSort"
+                                            , idLocation = AstLocationTest
+                                            }
+                                        , sortActualSorts = []
+                                        }
+                                }
+                            , existsChild =
+                                CofreeT
+                                { runCofreeT =
+                                    Identity
+                                    { runIdentity =
+                                        _
+                                            :<
+                                            ExistsF
+                                                Exists
+                                                { existsSort = ()
+                                                , existsVariable =
+                                                    Variable
+                                                    { variableName =
+                                                        ElementVariableName
+                                                        { unElementVariableName =
+                                                            ConfigVariableName
+                                                                VariableName
+                                                                { base =
+                                                                    Id
+                                                                    { getId =
+                                                                        "z"
+                                                                    , idLocation =
+                                                                        AstLocationTest
+                                                                    }
+                                                                , counter =
+                                                                    Nothing
+                                                                }
+                                                        }
+                                                    , variableSort =
+                                                        SortActualSort
+                                                            SortActual
+                                                            { sortActualName =
+                                                                Id
+                                                                { getId =
+                                                                    "testSort"
+                                                                , idLocation =
+                                                                    AstLocationTest
+                                                                }
+                                                            , sortActualSorts =
+                                                                []
+                                                            }
+                                                    }
+                                                , existsChild =
+                                                    CofreeT
+                                                    { runCofreeT =
+                                                        Identity
+                                                        { runIdentity =
+                                                            _
+                                                                :<
+                                                                EqualsF
+                                                                    Equals
+                                                                    { equalsOperandSort =
+                                                                        ()
+                                                                    , equalsResultSort =
+                                                                        ()
+                                                                    , equalsFirst =
+                                                                        TermLike
+                                                                        { getTermLike =
+                                                                            _
+                                                                                :<
+                                                                                VariableF
+                                                                                    Const
+                                                                                    { getConst =
+                                                                                        Variable
+                                                                                        { variableName =
+                                                                                            SomeVariableNameElement
+                                                                                                ElementVariableName
+                                                                                                { unElementVariableName =
+                                                                                                    ConfigVariableName
+                                                                                                        VariableName
+                                                                                                        { base =
+                                                                                                            Id
+                                                                                                            { getId =
+                                                                                                                "x"
+                                                                                                            , idLocation =
+                                                                                                                AstLocationTest
+                                                                                                            }
+                                                                                                        , counter =
+                                                                                                            Nothing
+                                                                                                        }
+                                                                                                }
+                                                                                        , variableSort =
+                                                                                            SortActualSort
+                                                                                                SortActual
+                                                                                                { sortActualName =
+                                                                                                    Id
+                                                                                                    { getId =
+                                                                                                        "testSort"
+                                                                                                    , idLocation =
+                                                                                                        AstLocationTest
+                                                                                                    }
+                                                                                                , sortActualSorts =
+                                                                                                    []
+                                                                                                }
+                                                                                        }
+                                                                                    }
+                                                                        }
+                                                                    , equalsSecond =
+                                                                        TermLike
+                                                                        { getTermLike =
+                                                                            _
+                                                                                :<
+                                                                                ApplySymbolF
+                                                                                    Application
+                                                                                    { applicationSymbolOrAlias =
+                                                                                        Symbol
+                                                                                        { symbolConstructor =
+                                                                                            Id
+                                                                                            { getId =
+                                                                                                "sigma"
+                                                                                            , idLocation =
+                                                                                                AstLocationTest
+                                                                                            }
+                                                                                        , symbolParams =
+                                                                                            []
+                                                                                        , symbolSorts =
+                                                                                            ApplicationSorts
+                                                                                            { applicationSortsOperands =
+                                                                                                [ SortActualSort
+                                                                                                    SortActual
+                                                                                                    { sortActualName =
+                                                                                                        Id
+                                                                                                        { getId =
+                                                                                                            "testSort"
+                                                                                                        , idLocation =
+                                                                                                            AstLocationTest
+                                                                                                        }
+                                                                                                    , sortActualSorts =
+                                                                                                        []
+                                                                                                    }
+                                                                                                , SortActualSort
+                                                                                                    SortActual
+                                                                                                    { sortActualName =
+                                                                                                        Id
+                                                                                                        { getId =
+                                                                                                            "testSort"
+                                                                                                        , idLocation =
+                                                                                                            AstLocationTest
+                                                                                                        }
+                                                                                                    , sortActualSorts =
+                                                                                                        []
+                                                                                                    }
+                                                                                                ]
+                                                                                            , applicationSortsResult =
+                                                                                                SortActualSort
+                                                                                                    SortActual
+                                                                                                    { sortActualName =
+                                                                                                        Id
+                                                                                                        { getId =
+                                                                                                            "testSort"
+                                                                                                        , idLocation =
+                                                                                                            AstLocationTest
+                                                                                                        }
+                                                                                                    , sortActualSorts =
+                                                                                                        []
+                                                                                                    }
+                                                                                            }
+                                                                                        , symbolAttributes =
+                                                                                            _
+                                                                                        }
+                                                                                    , applicationChildren =
+                                                                                        [ TermLike
+                                                                                          { getTermLike =
+                                                                                              _
+                                                                                                  :<
+                                                                                                  VariableF
+                                                                                                      Const
+                                                                                                      { getConst =
+                                                                                                          Variable
+                                                                                                          { variableName =
+                                                                                                              SomeVariableNameElement
+                                                                                                                  ElementVariableName
+                                                                                                                  { unElementVariableName =
+                                                                                                                      ConfigVariableName
+                                                                                                                          VariableName
+                                                                                                                          { base =
+                                                                                                                              Id
+                                                                                                                              { getId =
+                                                                                                                                  "y"
+                                                                                                                              , idLocation =
+                                                                                                                                  AstLocationTest
+                                                                                                                              }
+                                                                                                                          , counter =
+                                                                                                                              Nothing
+                                                                                                                          }
+                                                                                                                  }
+                                                                                                          , variableSort =
+                                                                                                              SortActualSort
+                                                                                                                  SortActual
+                                                                                                                  { sortActualName =
+                                                                                                                      Id
+                                                                                                                      { getId =
+                                                                                                                          "testSort"
+                                                                                                                      , idLocation =
+                                                                                                                          AstLocationTest
+                                                                                                                      }
+                                                                                                                  , sortActualSorts =
+                                                                                                                      []
+                                                                                                                  }
+                                                                                                          }
+                                                                                                      }
+                                                                                          }
+                                                                                        , TermLike
+                                                                                          { getTermLike =
+                                                                                              _
+                                                                                                  :<
+                                                                                                  VariableF
+                                                                                                      Const
+                                                                                                      { getConst =
+                                                                                                          Variable
+                                                                                                          { variableName =
+                                                                                                              SomeVariableNameElement
+                                                                                                                  ElementVariableName
+                                                                                                                  { unElementVariableName =
+                                                                                                                      ConfigVariableName
+                                                                                                                          VariableName
+                                                                                                                          { base =
+                                                                                                                              Id
+                                                                                                                              { getId =
+                                                                                                                                  "z"
+                                                                                                                              , idLocation =
+                                                                                                                                  AstLocationTest
+                                                                                                                              }
+                                                                                                                          , counter =
+                                                                                                                              Nothing
+                                                                                                                          }
+                                                                                                                  }
+                                                                                                          , variableSort =
+                                                                                                              SortActualSort
+                                                                                                                  SortActual
+                                                                                                                  { sortActualName =
+                                                                                                                      Id
+                                                                                                                      { getId =
+                                                                                                                          "testSort"
+                                                                                                                      , idLocation =
+                                                                                                                          AstLocationTest
+                                                                                                                      }
+                                                                                                                  , sortActualSorts =
+                                                                                                                      []
+                                                                                                                  }
+                                                                                                          }
+                                                                                                      }
+                                                                                          }
+                                                                                        ]
+                                                                                    }
+                                                                        }
+                                                                    }
+                                                        }
+                                                    }
+                                                }
+                                    }
+                                }
+                            }
+                        -}
+                        TopF Top { topSort = () }
+                }
+            }
+        }
+    , substitution =
+        Kore.Internal.Substitution.wrap {- was:
+        []
+        -}
+        [ Assignment_
+          { assignedVariable =
+              Variable
+              { variableName =
+                  SomeVariableNameElement
+                      ElementVariableName
+                      { unElementVariableName =
+                          ConfigVariableName
+                              VariableName
+                              { base =
+                                  Id
+                                  { getId = "x"
+                                  , idLocation = AstLocationTest
+                                  }
+                              , counter = Nothing
+                              }
+                      }
+              , variableSort =
+                  SortActualSort
+                      SortActual
+                      { sortActualName =
+                          Id
+                          { getId = "testSort"
+                          , idLocation = AstLocationTest
+                          }
+                      , sortActualSorts = []
+                      }
+              }
+          , assignedTerm =
+              TermLike
+              { getTermLike =
+                  _
+                      :<
+                      ApplySymbolF
+                          Application
+                          { applicationSymbolOrAlias =
+                              Symbol
+                              { symbolConstructor =
+                                  Id
+                                  { getId = "sigma"
+                                  , idLocation = AstLocationTest
+                                  }
+                              , symbolParams = []
+                              , symbolSorts =
+                                  ApplicationSorts
+                                  { applicationSortsOperands =
+                                      [ SortActualSort
+                                          SortActual
+                                          { sortActualName =
+                                              Id
+                                              { getId = "testSort"
+                                              , idLocation = AstLocationTest
+                                              }
+                                          , sortActualSorts = []
+                                          }
+                                      , SortActualSort
+                                          SortActual
+                                          { sortActualName =
+                                              Id
+                                              { getId = "testSort"
+                                              , idLocation = AstLocationTest
+                                              }
+                                          , sortActualSorts = []
+                                          }
+                                      ]
+                                  , applicationSortsResult =
+                                      SortActualSort
+                                          SortActual
+                                          { sortActualName =
+                                              Id
+                                              { getId = "testSort"
+                                              , idLocation = AstLocationTest
+                                              }
+                                          , sortActualSorts = []
+                                          }
+                                  }
+                              , symbolAttributes = _
+                              }
+                          , applicationChildren =
+                              [ TermLike
+                                { getTermLike =
+                                    _
+                                        :<
+                                        VariableF
+                                            Const
+                                            { getConst =
+                                                Variable
+                                                { variableName =
+                                                    SomeVariableNameElement
+                                                        ElementVariableName
+                                                        { unElementVariableName =
+                                                            ConfigVariableName
+                                                                VariableName
+                                                                { base =
+                                                                    Id
+                                                                    { getId =
+                                                                        "y"
+                                                                    , idLocation =
+                                                                        AstLocationTest
+                                                                    }
+                                                                , counter =
+                                                                    Nothing
+                                                                }
+                                                        }
+                                                , variableSort =
+                                                    SortActualSort
+                                                        SortActual
+                                                        { sortActualName =
+                                                            Id
+                                                            { getId = "testSort"
+                                                            , idLocation =
+                                                                AstLocationTest
+                                                            }
+                                                        , sortActualSorts = []
+                                                        }
+                                                }
+                                            }
+                                }
+                              , TermLike
+                                { getTermLike =
+                                    _
+                                        :<
+                                        VariableF
+                                            Const
+                                            { getConst =
+                                                Variable
+                                                { variableName =
+                                                    SomeVariableNameElement
+                                                        ElementVariableName
+                                                        { unElementVariableName =
+                                                            ConfigVariableName
+                                                                VariableName
+                                                                { base =
+                                                                    Id
+                                                                    { getId =
+                                                                        "z"
+                                                                    , idLocation =
+                                                                        AstLocationTest
+                                                                    }
+                                                                , counter =
+                                                                    Nothing
+                                                                }
+                                                        }
+                                                , variableSort =
+                                                    SortActualSort
+                                                        SortActual
+                                                        { sortActualName =
+                                                            Id
+                                                            { getId = "testSort"
+                                                            , idLocation =
+                                                                AstLocationTest
+                                                            }
+                                                        , sortActualSorts = []
+                                                        }
+                                                }
+                                            }
+                                }
+                              ]
+                          }
+              }
+          }
+        ]
+    }
+        :
+        _
+}
+
+
+TEST RUN FAILED
+
+Duration:  6.067s
+Passed:    5027
+Failed:    3
+

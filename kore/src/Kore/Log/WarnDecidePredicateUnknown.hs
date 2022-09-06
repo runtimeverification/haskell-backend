@@ -5,15 +5,12 @@
 Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
 -}
-module Kore.Log.ErrorDecidePredicateUnknown (
-    ErrorDecidePredicateUnknown (..),
-    errorDecidePredicateUnknown,
+module Kore.Log.WarnDecidePredicateUnknown (
+    WarnDecidePredicateUnknown (..),
+    warnDecidePredicateUnknown,
 ) where
 
-import Control.Exception (
-    Exception (..),
-    throw,
- )
+import Debug
 import Kore.Internal.Predicate (
     Predicate,
  )
@@ -26,18 +23,19 @@ import Pretty (
  )
 import Pretty qualified
 
-newtype ErrorDecidePredicateUnknown = ErrorDecidePredicateUnknown
+newtype WarnDecidePredicateUnknown = WarnDecidePredicateUnknown
     { predicates :: NonEmpty (Predicate VariableName)
     }
-    deriving stock (Show)
+    deriving stock (Show, Eq)
 
-instance Exception ErrorDecidePredicateUnknown where
-    toException = toException . SomeEntry
-    fromException exn =
-        fromException exn >>= fromEntry
+instance Debug WarnDecidePredicateUnknown where
+    debugPrec w = \_ -> Pretty.pretty . show $ w
 
-instance Pretty ErrorDecidePredicateUnknown where
-    pretty ErrorDecidePredicateUnknown{predicates} =
+instance Diff WarnDecidePredicateUnknown where
+    diffPrec = diffPrecEq
+
+instance Pretty WarnDecidePredicateUnknown where
+    pretty WarnDecidePredicateUnknown{predicates} =
         Pretty.vsep
             ( [ "Failed to decide predicate:"
               , Pretty.indent 4 (pretty predicate)
@@ -51,17 +49,17 @@ instance Pretty ErrorDecidePredicateUnknown where
       where
         predicate :| sideConditions = predicates
 
-instance Entry ErrorDecidePredicateUnknown where
-    entrySeverity _ = Error
-    oneLineDoc _ = "ErrorDecidePredicateUnknown"
+instance Entry WarnDecidePredicateUnknown where
+    entrySeverity _ = Warning
+    oneLineDoc _ = "WarnDecidePredicateUnknown"
     helpDoc _ =
-        "errors raised when the solver cannot decide satisfiability of a formula"
+        "warning when the solver cannot decide satisfiability of a formula"
 
-errorDecidePredicateUnknown ::
-    InternalVariable variable =>
+warnDecidePredicateUnknown ::
+    (MonadLog log, InternalVariable variable) =>
     NonEmpty (Predicate variable) ->
-    log a
-errorDecidePredicateUnknown predicates' =
-    throw ErrorDecidePredicateUnknown{predicates}
+    log ()
+warnDecidePredicateUnknown predicates' =
+    logEntry WarnDecidePredicateUnknown{predicates}
   where
     predicates = Predicate.mapVariables (pure toVariableName) <$> predicates'
