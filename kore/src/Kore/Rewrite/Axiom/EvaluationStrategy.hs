@@ -176,17 +176,11 @@ simplifierWithFallback first second =
 on concrete patterns.
 -}
 builtinEvaluation ::
-    Simplifier (AttemptedAxiom RewritingVariableName) ->
-    TermLike RewritingVariableName ->
-    Simplifier (AttemptedAxiom RewritingVariableName)
-builtinEvaluation = evaluateBuiltin
-
-evaluateBuiltin ::
     -- | Map from axiom IDs to axiom evaluators
     Simplifier (AttemptedAxiom RewritingVariableName) ->
     TermLike RewritingVariableName ->
     Simplifier (AttemptedAxiom RewritingVariableName)
-evaluateBuiltin builtinEvaluator patt =
+builtinEvaluation builtinEvaluator patt =
     do
         result <- builtinEvaluator
         case result of
