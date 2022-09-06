@@ -206,9 +206,7 @@ lookupAxiomSimplifier ::
     MonadSimplify simplifier =>
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
-    MaybeT
-        simplifier
-        (Simplifier (AttemptedAxiom RewritingVariableName))
+    MaybeT simplifier (AttemptedAxiom RewritingVariableName)
 lookupAxiomSimplifier termLike sideCondition = do
     hookedSymbols <- lift askHookedSymbols
     axiomEquations <- lift askAxiomEquations
@@ -236,7 +234,7 @@ lookupAxiomSimplifier termLike sideCondition = do
                         maybe unhooked hooked $ getHook symbol
                 _ -> return ()
             empty
-    maybe missing return $ do
+    maybe missing (lift . liftSimplifier) $ do
         let axiomIdentifier = Axiom.Identifier.matchAxiomIdentifier termLike
         let exact = getSimplifier axiomIdentifier
         case axiomIdentifier of
@@ -342,11 +340,10 @@ maybeEvaluatePattern
     defaultValue
     sideCondition =
         do
-            evaluator <- lookupAxiomSimplifier termLike sideCondition
+            simplifierResult <- lookupAxiomSimplifier termLike sideCondition
             lift $ do
                 merged <- do
-                    result <- liftSimplifier evaluator
-                    flattened <- case result of
+                    flattened <- case simplifierResult of
                         AttemptedAxiom.Applied
                             AttemptedAxiomResults
                                 { results = orResults
@@ -361,7 +358,7 @@ maybeEvaluatePattern
                                             , remainders = orRemainders
                                             }
                                     )
-                        _ -> return result
+                        _ -> return simplifierResult
                     mergeWithConditionAndSubstitution
                         sideCondition
                         childrenCondition
