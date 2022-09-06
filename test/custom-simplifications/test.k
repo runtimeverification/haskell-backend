@@ -6,7 +6,7 @@ module TEST
 
     rule <k> runTest( X ) => doneTest ( X ) ... </k>
 
-    rule #Not ( { Y +Int Y +Int Y #Equals Y *Int 3 } ) => #Bottom [simplification]
-//    rule #Not (b) => #Bottom [simplification]
+    rule [IntegerArithmeticErrorIsBottom]:
+      #Not ( { Y +Int Y +Int Y #Equals Y *Int 3 } ) => #Bottom [simplification]
 
 endmodule
