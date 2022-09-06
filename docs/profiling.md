@@ -80,7 +80,7 @@ The table below lists compile and runtime options in (roughly) increasing level 
 | `-l -hy` | `-prof -eventlog`<br>(corresponds to `.#kore-exec-prof`) | Breaks down the graph by (approximate) type (e.g. `Int`, `Maybe String`, `(->)`). | `⟨program⟩.eventlog` |
 | `-l -hd` | `-prof -eventlog` | Breaks down the graph by closure description (e.g. `Just`, `THUNK`). | `⟨program⟩.eventlog` |
 | `-l -hc` | `-prof -eventlog` | Breaks down the graph by lexical scope (known as "cost-centres"). | `⟨program⟩.eventlog` |
-| `-l -hi` | `-prof -eventlog -fdistinct-constructor-tables -finfo-table-map` <br>(corresponds to `.#kore-exec-prof-infotable`) | `-hi` collates heap allocations by their info table identity<br/>`-fdistinct-constructor-tables` tells the code generator to produce a distinct info table for each constructor allocation (new in GHC 9.2)<br/>`-finfo-table-map` tells the code generator to produce an auxiliary data structure which allows distinct info tables to be mapped back to source locations | `⟨program⟩.eventlog` |
+| `-l -hi` | `(-prof optional) -eventlog -fdistinct-constructor-tables -finfo-table-map` <br>(corresponds to `.#kore-exec-prof-infotable`) | `-hi` collates heap allocations by their info table identity<br/>`-fdistinct-constructor-tables` tells the code generator to produce a distinct info table for each constructor allocation (new in GHC 9.2)<br/>`-finfo-table-map` tells the code generator to produce an auxiliary data structure which allows distinct info tables to be mapped back to source locations | `⟨program⟩.eventlog` |
 
 ### Debugging
 
