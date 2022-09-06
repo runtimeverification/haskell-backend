@@ -94,12 +94,11 @@ evaluateApplication
         finishT $ do
             for_ canMemoize recallOrPattern
             results <-
-                maybeEvaluatePattern
+                evaluatePattern
+                    sideCondition
                     childrenCondition
                     termLike
                     unevaluated
-                    sideCondition
-                    & maybeT (unevaluated Nothing) return
                     & lift
             for_ canMemoize (recordOrPattern results)
             let unexpectedBottomResult = Symbol.isFunctional symbol && isBottom results
