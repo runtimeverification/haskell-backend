@@ -57,7 +57,9 @@ import Kore.Sort qualified as Kore (
     Sort,
  )
 import Kore.Syntax.Id qualified as Kore (
-    Id (Id, getId),
+    Id,
+    getId,
+    pattern Id,
  )
 import Prelude.Kore
 import SMT.AST qualified as AST

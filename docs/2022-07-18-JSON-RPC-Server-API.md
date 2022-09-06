@@ -209,25 +209,46 @@ If `"reason": "cut-point-rule"`, the `next-states` field contains the next state
 
 ### Error Response:
 
-Same as for execute
+Errors in decoding the `antecedent` or `consequent` terms are reported similar as for execute.
 
-### Correct Response:
+Other errors are specific to the implication checker and what it supports. These errors are reported as `Implication check error` (also see below):
+
+* Currently, terms that do not simplify to a singleton pattern are not supported. Unsupported terms are typically those which have an `\or` at the top level.
 
 ```json
 {
   "jsonrpc": "2.0",
   "id": 1,
-  "result": {
-    "satisfiable": false
+  "error": {
+    "data": {
+      "context": [
+        "LHS: \\and{SortK{}}(     /* term: */ /* D Spa */ \\or{SortK{}}( /* Fl Fn D Sfa */ Configa:SortK{}, /* Spa */ \\not{SortK{}}( /* Fl Fn D Sfa */ Configa:SortK{} ) ), \\and{SortK{}}(     /* predicate: */ /* D Sfa */ \\top{SortK{}}(),     /* substitution: */ \\top{SortK{}}() ))"
+      ],
+      "error": "Term does not simplify to a singleton pattern"
+    }
+    "code": -32003,
+    "message": "Implication check error"
   }
 }
 ```
 
+* The `antecedent` term must not have free variables that are used as existentials in the `consequent`.
+* The `consequent` term must not have free variables that are not also free in the `antecedent`.
+* The `antecedent` term must be function-like.
+* `antecedent` and `consequent` must have the same sort.
+
+### Correct Response:
+
+The endpoint simplifies `antecedent` and `consequent` terms and checks whether the implication holds. The simplified implication is returned (as a KORE term) in field `implication`.
+
+If the implication holds, `satisfiable` is `true` and `condition` contains a unifying condition for the simplified antecedent and consequent (as provided in `implication`).
+
 ```json
 {
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
+    "implication":  {"format": "KORE", "version": 1, "term": {}},
     "satisfiable": true,
     "condition": {
       "substitution": {"format": "KORE", "version": 1, "term": {}},
@@ -237,6 +258,20 @@ Same as for execute
 }
 ```
 
+If the implication cannot be shown to hold, `satisfiable` is false.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "implication":  {"format": "KORE", "version": 1, "term": {}},
+    "satisfiable": false
+  }
+}
+```
+
+In some cases, a unifier `condition` for the implication can still be provided, although the implication cannot be shown to be true.
 
 ## Simplify
 
@@ -331,6 +366,27 @@ This error wraps the internal error thrown when validating the received pattern 
     "data": {
       "context": ["\\top (<unknown location>)","sort 'IntSort' (<unknown location>)","(<unknown location>)"],
       "error": "Sort 'IntSort' not defined."
+    }
+  }
+}
+```
+
+## -32003 Implication check error
+
+This error wraps an error message from the internal implication check routine, in case the input data is inconsistent or otherwise unsuitable for the check.
+
+```json
+{
+  "jsonrpc":"2.0",
+  "id":1
+  "error": {
+    "code": -32003,
+    "message": "Implication check error",
+    "data": {
+      "context": [
+        "/* Sfa */ \\mu{}( Config@A:SortK{}, /* Sfa */ Config@A:SortK{} )"
+      ],
+      "error": "The check implication step expects the antecedent term to be function-like."
     }
   }
 }

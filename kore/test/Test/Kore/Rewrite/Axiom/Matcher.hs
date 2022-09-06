@@ -1248,9 +1248,9 @@ test_matching_Map =
         "x:Int |-> y:Int  m:Map matches 0 |-> 1  2 |-> 3"
         (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
         (mkMap [(mkInt 0, mkInt 1), (mkInt 2, mkInt 3)] [])
-        [ (inject xInt, mkInt 2)
-        , (inject yInt, mkInt 3)
-        , (inject mMap, mkMap [(mkInt 0, mkInt 1)] [])
+        [ (inject xInt, mkInt 0)
+        , (inject yInt, mkInt 1)
+        , (inject mMap, mkMap [(mkInt 2, mkInt 3)] [])
         ]
     ]
 

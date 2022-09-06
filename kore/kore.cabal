@@ -199,6 +199,7 @@ library
     Changed
     Control.Monad.Counter
     Data.Graph.TopologicalSort
+    Data.InternedText
     Data.Limit
     Data.Sup
     Debug
@@ -701,6 +702,7 @@ test-suite kore-test
     Driver
     Test.ConsistentKore
     Test.Data.Graph.TopologicalSort
+    Test.Data.InternedText
     Test.Data.Limit
     Test.Data.Sup
     Test.Debug

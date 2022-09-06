@@ -94,6 +94,10 @@ jobs:
             ~/.cabal/packages
             ~/.cabal/store
           key: cabal-1-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}
+          restore-keys: |
+            cabal-1-${{ runner.os }}-ghc-${{ env.ghc_version }}-
+            cabal-1-${{ runner.os }}-ghc-
+            cabal-1-
 
       - uses: haskell/actions/setup@v1
         id: setup-haskell-cabal
@@ -129,6 +133,9 @@ jobs:
         with:
           path: ~/.stack
           key: stack-1-${{ runner.os }}-${{ hashFiles('stack.yaml.lock') }}
+          restore-keys: |
+            stack-1-${{ runner.os }}-
+            stack-1-
 
       - uses: haskell/actions/setup@v1
         id: setup-haskell-stack
