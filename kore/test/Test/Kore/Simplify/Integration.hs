@@ -212,17 +212,17 @@ test_simplificationIntegration =
                     ( AxiomIdentifier.Ceil
                         (AxiomIdentifier.Application Mock.fId)
                     )
-                    [mkEquation
-                        (makeCeilPredicate (Mock.f Mock.a)
+                    [ mkEquation
+                        ( makeCeilPredicate (Mock.f Mock.a)
                             & Predicate.fromPredicate Mock.testSort
                         )
-                        (makeEqualsPredicate Mock.a Mock.cf
+                        ( makeEqualsPredicate Mock.a Mock.cf
                             & Predicate.fromPredicate Mock.testSort
                         )
                         & Equation.mapVariables (pure mkRuleVariable)
                     ]
                 )
-                (Pattern.fromTermAndPredicate
+                ( Pattern.fromTermAndPredicate
                     (mkTop Mock.testSort)
                     (makeCeilPredicate (Mock.f Mock.a))
                 )
