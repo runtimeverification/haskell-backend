@@ -58,8 +58,9 @@ import Data.Compact.Serialize (
 import Data.Generics.Product (
     field,
  )
+import Data.HashMap.Strict (HashMap)
 import Data.IORef (readIORef)
-import Data.InternedText (InternedTextCache, globalInternedTextCache)
+import Data.InternedText (InternedText, InternedTextCache, globalInternedTextCache)
 import Data.List (
     intercalate,
     nub,
@@ -496,13 +497,13 @@ Also prints timing information; see 'mainParse'.
 verifyDefinitionWithBase ::
     -- | already verified definition
     ( Map.Map ModuleName (VerifiedModule Attribute.Symbol)
-    , Map.Map Text AstLocation
+    , HashMap InternedText AstLocation
     ) ->
     -- | Parsed definition to check well-formedness
     ParsedDefinition ->
     Main
         ( Map.Map ModuleName (VerifiedModule Attribute.Symbol)
-        , Map.Map Text AstLocation
+        , HashMap InternedText AstLocation
         )
 verifyDefinitionWithBase
     alreadyVerified
@@ -663,7 +664,7 @@ type LoadedModuleSyntax = VerifiedModuleSyntax Attribute.Symbol
 
 data LoadedDefinition = LoadedDefinition
     { indexedModules :: Map ModuleName LoadedModule
-    , definedNames :: Map Text AstLocation
+    , definedNames :: HashMap InternedText AstLocation
     , kFileLocations :: KFileLocations
     }
 
