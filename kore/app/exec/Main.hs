@@ -20,6 +20,8 @@ import Data.Default (
 import Data.Generics.Product (
     field,
  )
+import Data.IORef (writeIORef)
+import Data.InternedText (globalInternedTextCache)
 import Data.Limit (
     Limit (..),
     maybeLimit,
@@ -670,8 +672,9 @@ koreSearch LocalOptions{execOptions} searchOptions = do
     let KoreExecOptions{definitionFileName} = execOptions
     let KoreExecOptions{mainModuleName} = execOptions
     let KoreExecOptions{koreSolverOptions} = execOptions
-    SerializedDefinition{serializedModule, lemmas, locations} <-
+    SerializedDefinition{serializedModule, lemmas, locations, internedTextCache} <-
         deserializeDefinition koreSolverOptions definitionFileName mainModuleName
+    lift $ writeIORef globalInternedTextCache internedTextCache
     let SerializedModule{verifiedModule, metadataTools} = serializedModule
     let KoreSearchOptions{searchFileName} = searchOptions
     target <- mainParseSearchPattern verifiedModule searchFileName
@@ -698,11 +701,12 @@ koreRun LocalOptions{execOptions} = do
     let KoreExecOptions{definitionFileName} = execOptions
     let KoreExecOptions{mainModuleName} = execOptions
     let KoreExecOptions{koreSolverOptions} = execOptions
-    SerializedDefinition{serializedModule, lemmas, locations} <-
+    SerializedDefinition{serializedModule, lemmas, locations, internedTextCache} <-
         deserializeDefinition
             koreSolverOptions
             definitionFileName
             mainModuleName
+    lift $ writeIORef globalInternedTextCache internedTextCache
     let SerializedModule{verifiedModule, metadataTools} = serializedModule
     let KoreExecOptions{patternFileName} = execOptions
     initial <- loadPattern verifiedModule patternFileName

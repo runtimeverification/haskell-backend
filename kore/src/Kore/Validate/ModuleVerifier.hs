@@ -19,11 +19,10 @@ import Control.Lens qualified as Lens
 import Control.Monad.Reader.Class qualified as Reader
 import Control.Monad.State.Class qualified as State
 import Data.Generics.Product
+import Data.HashMap.Strict (HashMap)
+import Data.InternedText (InternedText)
 import Data.List qualified as List
 import Data.Map.Strict qualified as Map
-import Data.Text (
-    Text,
- )
 import Kore.AST.Error
 import Kore.Attribute.Parser (
     ParseAttributes,
@@ -54,11 +53,11 @@ within the module and outside, using the provided name set.
 -}
 verifyUniqueNames ::
     -- | Names that are already defined.
-    Map.Map Text AstLocation ->
+    HashMap InternedText AstLocation ->
     Module (Sentence pat) ->
     -- | On success returns the names that were previously defined together with
     -- the names defined in the given 'Module'.
-    Either (Error VerifyError) (Map.Map Text AstLocation)
+    Either (Error VerifyError) (HashMap InternedText AstLocation)
 verifyUniqueNames existingNames koreModule =
     withContext
         ("module '" ++ getModuleNameForError (moduleName koreModule) ++ "'")

@@ -159,18 +159,23 @@ test_Debug =
         `yields` "Variable\n\
                  \{ variableName =\n\
                  \    VariableName\n\
-                 \    { base = Id { getId = \"v\", idLocation = AstLocationTest }\n\
+                 \    { base =\n\
+                 \        InternedId { getInternedId = \"v\", internedIdLocation = AstLocationTest }\n\
                  \    , counter = Nothing\n\
                  \    }\n\
                  \, variableSort =\n\
                  \    SortVariableSort\n\
                  \        SortVariable\n\
-                 \        { getSortVariable = Id { getId = \"sv\", idLocation = AstLocationTest }\n\
+                 \        { getSortVariable =\n\
+                 \            InternedId\n\
+                 \            { getInternedId = \"sv\"\n\
+                 \            , internedIdLocation = AstLocationTest\n\
+                 \            }\n\
                  \        }\n\
                  \}"
         $ "Variable"
     , Just (testId "v")
-        `yields` "Just Id { getId = \"v\", idLocation = AstLocationTest }"
+        `yields` "Just InternedId { getInternedId = \"v\", internedIdLocation = AstLocationTest }"
         $ "Maybe - Just"
     , (Nothing :: Maybe Id)
         `yields` "Nothing"
