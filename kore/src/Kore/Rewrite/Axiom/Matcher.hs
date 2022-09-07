@@ -150,34 +150,34 @@ type Value normalized =
 type NormalizedAc normalized =
     Builtin.NormalizedAc normalized Key (TermLike RewritingVariableName)
 
-needs ::
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    Bool
-needs (InternalSet_ s) term = needsAc (builtinAcChild s) term
-needs (InternalMap_ m) term = needsAc (builtinAcChild m) term
-needs _ _ = False
-
-needsAc ::
-    forall normalized.
-    AcWrapper normalized =>
-    normalized Key (TermLike RewritingVariableName) ->
-    TermLike RewritingVariableName ->
-    Bool
-needsAc collection term =
-    not $ Set.disjoint (FreeVariables.toSet abstractFreeVars) $ FreeVariables.toSet $ freeVariables term
-  where
-    abstractKeys :: [TermLike RewritingVariableName]
-    abstractKeys = getSymbolicKeysOfAc collection
-    abstractFreeVars :: FreeVariables RewritingVariableName
-    abstractFreeVars = foldMap freeVariables abstractKeys
-
 instance Ord MatchItem where
     compare a@(MatchItem pat1 subject1 bound1 set1) b@(MatchItem pat2 subject2 bound2 set2)
         | a == b = EQ
         | pat1 `needs` pat2 = GT
         | pat2 `needs` pat1 = LT
         | otherwise = compare (pat1, subject1, bound1, set1) (pat2, subject2, bound2, set2)
+      where
+        needs ::
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            Bool
+        needs (InternalSet_ s) term = needsAc (builtinAcChild s) term
+        needs (InternalMap_ m) term = needsAc (builtinAcChild m) term
+        needs _ _ = False
+        
+        needsAc ::
+            forall normalized.
+            AcWrapper normalized =>
+            normalized Key (TermLike RewritingVariableName) ->
+            TermLike RewritingVariableName ->
+            Bool
+        needsAc collection term =
+            not $ Set.disjoint (FreeVariables.toSet abstractFreeVars) $ FreeVariables.toSet $ freeVariables term
+          where
+            abstractKeys :: [TermLike RewritingVariableName]
+            abstractKeys = getSymbolicKeysOfAc collection
+            abstractFreeVars :: FreeVariables RewritingVariableName
+            abstractFreeVars = foldMap freeVariables abstractKeys
 
 finalizeSubst ::
     Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName) ->
