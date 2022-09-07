@@ -1,3 +1,5 @@
+{-# LANGUAGE BlockArguments #-}
+
 {- |
 Module      : Kore.Validate.SentenceVerifier
 Description : Tools for verifying the wellformedness of a Kore 'Sentence'.
@@ -33,14 +35,14 @@ import Control.Monad.State.Strict (
  )
 import Control.Monad.State.Strict qualified as State
 import Data.Generics.Product.Fields
+import Data.HashMap.Strict (HashMap)
+import Data.HashMap.Strict qualified as HashMap
+import Data.InternedText (InternedText, internedText)
 import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
 import Data.Set qualified as Set
-import Data.Text (
-    Text,
- )
 import Kore.AST.Error
 import Kore.Attribute.Axiom qualified as Attribute (
     Axiom,
@@ -98,10 +100,10 @@ unique both within the list and outside, using the provided name set.
 verifyUniqueNames ::
     [Sentence pat] ->
     -- | Names that are already defined.
-    Map.Map Text AstLocation ->
+    HashMap InternedText AstLocation ->
     -- | On success returns the names that were previously defined together with
     -- the names defined in the given 'Module'.
-    Either (Error VerifyError) (Map.Map Text AstLocation)
+    Either (Error VerifyError) (HashMap InternedText AstLocation)
 verifyUniqueNames sentences existingNames =
     foldM verifyUniqueId existingNames definedNames
   where
@@ -109,29 +111,32 @@ verifyUniqueNames sentences existingNames =
         concatMap definedNamesForSentence sentences
 
 data UnparameterizedId = UnparameterizedId
-    { unparameterizedIdName :: Text
+    { unparameterizedIdName :: InternedText
     , unparameterizedIdLocation :: AstLocation
     }
     deriving stock (Show)
 
 toUnparameterizedId :: Id -> UnparameterizedId
-toUnparameterizedId Id{getId = name, idLocation = location} =
+toUnparameterizedId InternedId{getInternedId = name, internedIdLocation = location} =
     UnparameterizedId
         { unparameterizedIdName = name
         , unparameterizedIdLocation = location
         }
 
 verifyUniqueId ::
-    Map.Map Text AstLocation ->
+    HashMap InternedText AstLocation ->
     UnparameterizedId ->
-    Either (Error VerifyError) (Map.Map Text AstLocation)
+    Either (Error VerifyError) (HashMap InternedText AstLocation)
 verifyUniqueId existing (UnparameterizedId name location) =
-    case Map.lookup name existing of
-        Just location' ->
-            koreFailWithLocations
-                [location, location']
-                ("Duplicated name: " <> name <> ".")
-        _ -> Right (Map.insert name location existing)
+    HashMap.alterF
+        \case
+            Just location' ->
+                koreFailWithLocations
+                    [location, location']
+                    ("Duplicated name: " <> internedText name <> ".")
+            _ -> Right $ Just location
+        name
+        existing
 
 definedNamesForSentence :: Sentence pat -> [UnparameterizedId]
 definedNamesForSentence (SentenceAliasSentence sentenceAlias) =

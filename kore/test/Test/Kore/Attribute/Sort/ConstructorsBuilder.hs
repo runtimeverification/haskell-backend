@@ -34,7 +34,8 @@ import Kore.Sort (
     Sort (..),
  )
 import Kore.Syntax.Id (
-    Id (getId),
+    Id,
+    getId,
  )
 import Prelude.Kore
 import Test.Kore.Rewrite.SMT.Builders (

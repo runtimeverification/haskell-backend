@@ -58,6 +58,9 @@ import Data.Compact.Serialize (
 import Data.Generics.Product (
     field,
  )
+import Data.HashMap.Strict (HashMap)
+import Data.IORef (readIORef)
+import Data.InternedText (InternedText, InternedTextCache, globalInternedTextCache)
 import Data.List (
     intercalate,
     nub,
@@ -494,13 +497,13 @@ Also prints timing information; see 'mainParse'.
 verifyDefinitionWithBase ::
     -- | already verified definition
     ( Map.Map ModuleName (VerifiedModule Attribute.Symbol)
-    , Map.Map Text AstLocation
+    , HashMap InternedText AstLocation
     ) ->
     -- | Parsed definition to check well-formedness
     ParsedDefinition ->
     Main
         ( Map.Map ModuleName (VerifiedModule Attribute.Symbol)
-        , Map.Map Text AstLocation
+        , HashMap InternedText AstLocation
         )
 verifyDefinitionWithBase
     alreadyVerified
@@ -574,6 +577,7 @@ data SerializedDefinition = SerializedDefinition
     { serializedModule :: SerializedModule
     , lemmas :: [SentenceAxiom (TermLike VariableName)]
     , locations :: KFileLocations
+    , internedTextCache :: InternedTextCache
     }
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
@@ -644,11 +648,13 @@ makeSerializedDefinition solverOptions definitionFileName mainModuleName = do
         execute solverOptions metadataTools lemmas $
             makeSerializedModule mainModule
     let locations = kFileLocations definition
+    internedTextCache <- lift $ readIORef globalInternedTextCache
     let serializedDefinition =
             SerializedDefinition
                 { serializedModule
                 , lemmas
                 , locations
+                , internedTextCache
                 }
     serializedDefinition `deepseq` pure ()
     return serializedDefinition
@@ -658,7 +664,7 @@ type LoadedModuleSyntax = VerifiedModuleSyntax Attribute.Symbol
 
 data LoadedDefinition = LoadedDefinition
     { indexedModules :: Map ModuleName LoadedModule
-    , definedNames :: Map Text AstLocation
+    , definedNames :: HashMap InternedText AstLocation
     , kFileLocations :: KFileLocations
     }
 
