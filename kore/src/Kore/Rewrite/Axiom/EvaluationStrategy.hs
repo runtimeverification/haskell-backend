@@ -61,10 +61,6 @@ import Kore.Simplify.Simplify qualified as AttemptedAxiom (
 import Kore.Unparser (
     unparse,
  )
-import Kore.Variables.Target (
-    Target,
- )
-import Kore.Variables.Target qualified as Target
 import Prelude.Kore
 import Pretty (
     Pretty (..),
@@ -80,10 +76,9 @@ definitionEvaluation ::
     SideCondition RewritingVariableName ->
     Simplifier (AttemptedAxiom RewritingVariableName)
 definitionEvaluation equations term condition = do
-    let term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
     result <-
         attemptEquations
-            (attemptEquationAndAccumulateErrors condition term')
+            (attemptEquationAndAccumulateErrors condition term)
             equations
     case result of
         Right results ->
@@ -101,7 +96,7 @@ definitionEvaluation equations term condition = do
 
 attemptEquationAndAccumulateErrors ::
     SideCondition RewritingVariableName ->
-    TermLike (Target RewritingVariableName) ->
+    TermLike RewritingVariableName ->
     Equation RewritingVariableName ->
     ExceptRT
         (OrPattern RewritingVariableName)
@@ -114,7 +109,7 @@ attemptEquationAndAccumulateErrors condition term equation =
         ExceptRT . ExceptT $
             Equation.attemptEquation
                 condition
-                (TermLike.mapVariables (pure Target.unTarget) term)
+                term
                 equation
                 >>= either (return . Left . Just . Min) (fmap Right . apply)
     apply = Equation.applyEquation condition equation
