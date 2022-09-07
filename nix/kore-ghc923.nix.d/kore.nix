@@ -309,6 +309,7 @@
         "Kore/Log/WarnDepthLimitExceeded"
         "Kore/Log/WarnFunctionWithoutEvaluators"
         "Kore/Log/WarnIfLowProductivity"
+        "Kore/Log/WarnNotAPredicate"
         "Kore/Log/WarnNotImplemented"
         "Kore/Log/WarnRestartSolver"
         "Kore/Log/WarnStuckClaimState"
