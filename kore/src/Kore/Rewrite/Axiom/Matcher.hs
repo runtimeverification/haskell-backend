@@ -220,7 +220,9 @@ patternMatch' ::
     MultiAnd (Predicate RewritingVariableName) ->
     Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName) ->
     Simplifier (Either Text (MatchResult RewritingVariableName))
-patternMatch' _ [] queue predicate subst | MinQueue.null queue = return $ Right (Predicate.fromMultiAnd predicate, finalizeSubst subst)
+patternMatch' _ [] queue predicate subst
+    | MinQueue.null queue =
+        return $ Right (Predicate.fromMultiAnd predicate, finalizeSubst subst)
 patternMatch' sideCondition [] queue predicate subst = do
     injSimplifier <- Simplifier.askInjSimplifier
     let pat' = renormalizeBuiltins $ InjSimplifier.normalize injSimplifier $ substitute subst pat
@@ -301,27 +303,80 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
     overloadSimplifier <- Simplifier.askOverloadSimplifier
     let InjSimplifier{matchInjs, evaluateInj} = injSimplifier
     case (pat, subject) of
-        (Var_ var1, Var_ var2) | isFree var1, var1 == var2 -> discharge
-        (ElemVar_ var1, _) | isFree (inject var1), isFunctionPattern subject -> bind (inject var1) subject
-        (SetVar_ var1, _) | isFree (inject var1) -> bind (inject var1) subject
-        (Var_ var1, Var_ var2) | not $ isFree var1, var1 `isBoundToSameAs` var2 -> discharge
-        (StringLiteral_ str1, StringLiteral_ str2) -> if str1 == str2 then discharge else failMatch "distinct string literals"
-        (InternalInt_ int1, InternalInt_ int2) -> if int1 == int2 then discharge else failMatch "distinct builtin integers"
-        (InternalBool_ bool1, InternalBool_ bool2) -> if bool1 == bool2 then discharge else failMatch "distinct builtin booleans"
-        (InternalString_ string1, InternalString_ string2) -> if string1 == string2 then discharge else failMatch "distinct builtin strings"
-        (InternalBytes_ _ bytes1, InternalBytes_ _ bytes2) -> if bytes1 == bytes2 then discharge else failMatch "distinct builtin bytes"
-        (Endianness_ symbol1, Endianness_ symbol2) -> if symbol1 == symbol2 then discharge else failMatch "distinct endianness"
-        (Signedness_ symbol1, Signedness_ symbol2) -> if symbol1 == symbol2 then discharge else failMatch "distinct signedness"
-        (DV_ _ dv1, DV_ _ dv2) -> if dv1 == dv2 then discharge else failMatch "distinct domain values"
-        (Bottom_ _, Bottom_ _) -> discharge
-        (Top_ _, Top_ _) -> discharge
-        (Ceil_ _ _ term1, Ceil_ _ _ term2) -> decompose term1 term2
-        (Equals_ _ _ term11 term12, Equals_ _ _ term21 term22) -> decomposeTwo term11 term21 term12 term22
-        (And_ _ term1 term2, _) -> decomposeTwo term1 subject term2 subject
-        (Forall_ _ variable1 term1, Forall_ _ variable2 term2) -> decomposeBinder (inject variable1) term1 (inject variable2) term2
-        (Exists_ _ variable1 term1, Exists_ _ variable2 term2) -> decomposeBinder (inject variable1) term1 (inject variable2) term2
-        (App_ symbol1 children1, App_ symbol2 children2) -> if symbol1 == symbol2 then decomposeList (zip children1 children2) else failMatch $ "distinct application symbols: " <> (unparseToText symbol1) <> ", " <> (unparseToText symbol2)
-        (Inj_ inj1, Inj_ inj2) | Just unifyData <- matchInjs inj1 inj2 ->
+        (Var_ var1, Var_ var2)
+        | isFree var1, var1 == var2 ->
+            discharge
+        (ElemVar_ var1, _)
+        | isFree (inject var1)
+        , isFunctionPattern subject ->
+            bind (inject var1) subject
+        (SetVar_ var1, _)
+        | isFree (inject var1) ->
+            bind (inject var1) subject
+        (Var_ var1, Var_ var2)
+        | not $ isFree var1, var1 `isBoundToSameAs` var2 ->
+            discharge
+        (StringLiteral_ str1, StringLiteral_ str2) ->
+            if str1 == str2 then
+                discharge
+            else
+                failMatch "distinct string literals"
+        (InternalInt_ int1, InternalInt_ int2) ->
+            if int1 == int2 then
+                discharge
+            else
+                failMatch "distinct builtin integers"
+        (InternalBool_ bool1, InternalBool_ bool2) ->
+            if bool1 == bool2 then
+                discharge
+            else
+                failMatch "distinct builtin booleans"
+        (InternalString_ string1, InternalString_ string2) ->
+            if string1 == string2 then
+                discharge
+            else
+                failMatch "distinct builtin strings"
+        (InternalBytes_ _ bytes1, InternalBytes_ _ bytes2) ->
+            if bytes1 == bytes2 then
+                discharge
+            else
+                failMatch "distinct builtin bytes"
+        (Endianness_ symbol1, Endianness_ symbol2) ->
+            if symbol1 == symbol2 then
+                discharge
+            else
+                failMatch "distinct endianness"
+        (Signedness_ symbol1, Signedness_ symbol2) ->
+            if symbol1 == symbol2 then
+                discharge
+            else
+                failMatch "distinct signedness"
+        (DV_ _ dv1, DV_ _ dv2) ->
+            if dv1 == dv2 then
+                discharge
+            else
+                failMatch "distinct domain values"
+        (Bottom_ _, Bottom_ _) ->
+            discharge
+        (Top_ _, Top_ _) ->
+            discharge
+        (Ceil_ _ _ term1, Ceil_ _ _ term2) ->
+            decompose term1 term2
+        (Equals_ _ _ term11 term12, Equals_ _ _ term21 term22) ->
+            decomposeTwo term11 term21 term12 term22
+        (And_ _ term1 term2, _) ->
+            decomposeTwo term1 subject term2 subject
+        (Forall_ _ variable1 term1, Forall_ _ variable2 term2) ->
+            decomposeBinder (inject variable1) term1 (inject variable2) term2
+        (Exists_ _ variable1 term1, Exists_ _ variable2 term2) ->
+            decomposeBinder (inject variable1) term1 (inject variable2) term2
+        (App_ symbol1 children1, App_ symbol2 children2) ->
+            if symbol1 == symbol2 then
+                decomposeList (zip children1 children2)
+            else
+                failMatch $ "distinct application symbols: " <> (unparseToText symbol1) <> ", " <> (unparseToText symbol2)
+        (Inj_ inj1, Inj_ inj2)
+        | Just unifyData <- matchInjs inj1 inj2 ->
             case unifyData of
                 UnifyInjDirect _ -> decompose (injChild inj1) (injChild inj2)
                 UnifyInjSplit InjPair{inj1 = firstInj} ->
@@ -355,11 +410,17 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
                     (Application secondHead secondChildren)
                     inj1{injChild = ()} ->
                 decomposeOverload unifyData
-        (_, _) | Just True <- List.isListSort tools sort ->
+        (_, _)
+        | Just True <- List.isListSort tools sort ->
             case (List.normalize pat, List.normalize subject) of
-                (Var_ var1, Var_ var2) | var1 == var2 -> discharge
-                (ElemVar_ var1, _) | isFunctionPattern subject -> bind (inject var1) subject
-                (SetVar_ var1, _) -> bind (inject var1) subject
+                (Var_ var1, Var_ var2)
+                | var1 == var2 ->
+                    discharge
+                (ElemVar_ var1, _)
+                | isFunctionPattern subject ->
+                    bind (inject var1) subject
+                (SetVar_ var1, _) ->
+                    bind (inject var1) subject
                 (InternalList_ InternalList{internalListChild = l1}, InternalList_ InternalList{internalListChild = l2}) ->
                     if length l1 == length l2
                         then decomposeList $ zip (toList l1) (toList l2)
@@ -500,7 +561,10 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
             else case opaque1 of
                 -- Without opaques and syntactically equal
                 [] ->
-                    if not (null opaque2) || not (null excessConcrete2) || not (null excessAbstract2) then failMatch "AC collection without opaque terms has excess elements" else decomposeList $ unwrapValues $ concrete12 ++ abstractMerge
+                    if not (null opaque2) || not (null excessConcrete2) || not (null excessAbstract2) then
+                        failMatch "AC collection without opaque terms has excess elements"
+                    else
+                        decomposeList $ unwrapValues $ concrete12 ++ abstractMerge
                 [frame1]
                     -- One opaque each, rest are syntactically equal
                     | null excessAbstract2
