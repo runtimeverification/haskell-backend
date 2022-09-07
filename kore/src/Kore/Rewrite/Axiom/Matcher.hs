@@ -157,6 +157,9 @@ instance Ord MatchItem where
         | pat2 `needs` pat1 = LT
         | otherwise = compare (pat1, subject1, bound1, set1) (pat2, subject2, bound2, set2)
       where
+        -- term A needs term B if term A is a map or set pattern and the keys
+        -- of the map or set contain variables that are free vareiables in
+        -- term B
         needs ::
             TermLike RewritingVariableName ->
             TermLike RewritingVariableName ->
@@ -179,6 +182,13 @@ instance Ord MatchItem where
             abstractFreeVars :: FreeVariables RewritingVariableName
             abstractFreeVars = foldMap freeVariables abstractKeys
 
+-- AC matching works by substituting the current substitution into the
+-- pre-existing pattern. However, that substitution may bind variables to
+-- patterns that themselves contain variables, and those variables should not
+-- be matched on when doing pattern matching since pattern matching is
+-- unidirectional. We implement this behavior by adding a binding of a variable
+-- to itself to the substitution when this happens. `finalizeSubst` exists
+-- to remove this binding since it exists purely for internal purposes.
 finalizeSubst ::
     Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName) ->
     Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName)
@@ -187,6 +197,22 @@ finalizeSubst subst = Map.filterWithKey go subst
     go k (Var_ v) = k /= variableName v
     go _ _ = True
 
+{- | Match a collection of MatchItems, representing subject/pattern pairs to
+ - perform matching.
+ - 
+ - The MatchItems are divided into two lists. The first represents items to
+ - process immediately and uses a stack since the order within that list does
+ - not matter. The second represents Set/Map patterns to perform AC matching
+ - for. Items in the second list are processed once the first list empties.
+ - We use a priority queue to represent the second list since matching a
+ - Set/Map pattern may introduce new bindings which will in turn affect future
+ - Set/Map matching. As a result, we order the items so that matching proceeds
+ - in the correct order and is as deterministic as possible.
+ -
+ - The MultiAnd is used to construct the final predicate, which consists
+ - primarily of \ceil predicates. The Map represents the current substitution
+ - at this point in the matching process.
+ -}
 patternMatch' ::
     SideCondition RewritingVariableName ->
     [MatchItem] ->
@@ -207,6 +233,7 @@ patternMatch' sideCondition [] queue predicate subst = do
   where
     (MatchItem pat subject boundVars boundSet, rest) = MinQueue.deleteFindMin queue
 
+    -- recursively pattern match with a list of new MatchItems
     decomposeList ::
         [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
         Simplifier (Either Text (MatchResult RewritingVariableName))
@@ -214,6 +241,8 @@ patternMatch' sideCondition [] queue predicate subst = do
         let l' = map (\(p, s) -> MatchItem p s boundVars boundSet) l
          in patternMatch' sideCondition l' rest predicate $ Map.foldl' processSubst subst subst
 
+    -- add bindings of variables in the term to themselves. See comment above
+    -- on `finalizeSubst`.
     processSubst ::
         Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName) ->
         TermLike RewritingVariableName ->
@@ -223,6 +252,8 @@ patternMatch' sideCondition [] queue predicate subst = do
             newSubst = foldMap (\var -> Map.singleton (variableName var) (mkVar var)) vars
          in subst' <> newSubst
 
+    -- the below functions are used to guide matchNormalizedAc so that it can
+    -- reuse the same code for both maps and sets
     wrapSet ::
         InternalAc Key NormalizedSet (TermLike RewritingVariableName) ->
         NormalizedAc NormalizedSet ->
@@ -356,10 +387,12 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
   where
     sort = termLikeSort pat
 
+    -- recurse by deleting the current MatchItem
     discharge ::
         Simplifier (Either Text (MatchResult RewritingVariableName))
     ~discharge = patternMatch' sideCondition rest deferred predicate subst
 
+    -- recurse by adding a variable binding to the current substitution
     bind ::
         SomeVariable RewritingVariableName ->
         TermLike RewritingVariableName ->
@@ -373,6 +406,7 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
                     Nothing -> patternMatch' sideCondition rest deferred (isTermDefined var term) (Map.insert (variableName var) term subst)
                     Just binding -> if binding == term then patternMatch' sideCondition rest deferred predicate subst else failMatch "nonlinear matching fails equality test"
 
+    -- compute the new predicate of a `bind` operation
     isTermDefined ::
         SomeVariable RewritingVariableName ->
         TermLike RewritingVariableName ->
@@ -381,16 +415,19 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
         | SideCondition.isDefined sideCondition term || isSetVariable var = predicate
         | otherwise = (predicate <> MultiAnd.make [makeCeilPredicate term])
 
+    -- recurse by adding a new MatchItem
     decompose ::
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
         Simplifier (Either Text (MatchResult RewritingVariableName))
     decompose term1 term2 = patternMatch' sideCondition ((MatchItem term1 term2 boundVars boundSet) : rest) deferred predicate subst
 
+    -- recusre by moving a MatchItem to the priority queue
     defer ::
         Simplifier (Either Text (MatchResult RewritingVariableName))
     ~defer = patternMatch' sideCondition rest (MinQueue.insert (MatchItem pat subject boundVars boundSet) deferred) predicate subst
 
+    --- recurse by adding two new MatchItems
     decomposeTwo ::
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
@@ -399,6 +436,7 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
         Simplifier (Either Text (MatchResult RewritingVariableName))
     decomposeTwo term11 term21 term12 term22 = patternMatch' sideCondition ((MatchItem term11 term21 boundVars boundSet) : (MatchItem term12 term22 boundVars boundSet) : rest) deferred predicate subst
 
+    -- recurse by adding a list of MatchItems
     decomposeList ::
         [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
         Simplifier (Either Text (MatchResult RewritingVariableName))
@@ -406,6 +444,7 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
         let l' = map (\(p, s) -> MatchItem p s boundVars boundSet) l
          in patternMatch' sideCondition (l' ++ rest) deferred predicate subst
 
+    -- recurse on an \exists or \forall
     decomposeBinder ::
         SomeVariable RewritingVariableName ->
         TermLike RewritingVariableName ->
@@ -414,19 +453,23 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
         Simplifier (Either Text (MatchResult RewritingVariableName))
     decomposeBinder var1 term1 var2 term2 = patternMatch' sideCondition ((MatchItem term1 term2 ((var1, var2) : boundVars) (Set.insert (variableName var2) boundSet)) : rest) deferred predicate subst
 
+    -- recurse with a specified result from the overload simplifier
     decomposeOverload (Overloading.Resolution (Simple (Pair term1 term2))) = decompose term1 term2
     decomposeOverload _ = failMatch "unsupported overload case in matching"
 
+    -- returns true if a variable is not bound by a binder
     isFree ::
         SomeVariable RewritingVariableName ->
         Bool
     isFree var = not $ any ((== var) . fst) boundVars
 
+    -- returns true if two variables are the same bound variable
     isBoundToSameAs var1 var2 =
         case find ((== var1) . fst) boundVars of
             Nothing -> undefined
             Just (_, bound) -> var2 == bound
 
+-- fail pattern matching with an error message
 failMatch ::
     Text ->
     Simplifier (Either Text (MatchResult RewritingVariableName))
@@ -436,6 +479,7 @@ type MatchingVariable variable = InternalVariable variable
 
 type PushList a = [(a, a)] -> Simplifier (Either Text (MatchResult RewritingVariableName))
 
+-- perform AC matching on a particular Set/Map pair.
 matchNormalizedAc ::
     forall normalized.
     ( AcWrapper normalized
