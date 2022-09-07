@@ -61,6 +61,10 @@ import Kore.Internal.TermLike (
     termLikeSort,
  )
 import Kore.Internal.TermLike qualified as TermLike
+import Kore.Log.WarnNotAPredicate (
+    Severity (Warning),
+    warnNotAPredicate,
+ )
 import Kore.Log.WarnUnsimplified (
     warnUnsimplifiedPredicate,
  )
@@ -374,8 +378,17 @@ simplifyNot sideCondition Not{notChild = multiOr} = do
                 (Predicate.fromPredicate helpSort predicate)
                 (const empty)
         -- convert result back to Predicate
-        traverse_ (guard . Conditional.isPredicate) applied
+        traverse_ (warnIfNotPredicate predicate) applied
         pure $ MultiOr.map (from . snd . Conditional.splitTerm) applied
+
+    warnIfNotPredicate predicate patt
+        | Conditional.isPredicate patt = pure ()
+        | otherwise = do
+            -- print a warning to the user. No hard error because a
+            -- wrong user-defined rule should not crash the execution.
+            warnNotAPredicate Warning predicate patt
+            fail "The equation RHS appears to not be a predicate"
+
     liftOrs ::
         MultiAnd (MultiOr (Predicate RewritingVariableName)) -> NormalForm
     liftOrs andOrs =
