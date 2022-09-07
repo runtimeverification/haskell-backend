@@ -75,8 +75,8 @@ import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Rewrite.UnifyingRule
 import Kore.Simplify.Simplify (
-    Simplifier,
     MonadSimplify,
+    Simplifier,
     liftSimplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier

@@ -69,8 +69,8 @@ import Kore.Rewrite.Step (
     unifyRules,
  )
 import Kore.Simplify.Simplify (
-    Simplifier,
     MonadSimplify,
+    Simplifier,
     simplifyCondition,
  )
 import Kore.Substitute

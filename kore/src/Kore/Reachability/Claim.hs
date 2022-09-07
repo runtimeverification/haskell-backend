@@ -152,8 +152,8 @@ import Kore.Rewrite.Strategy (
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition qualified as Transition
 import Kore.Simplify.API (
-    Simplifier,
     MonadSimplify,
+    Simplifier,
     liftSimplifier,
  )
 import Kore.Simplify.Exists qualified as Exists
@@ -760,7 +760,8 @@ checkSimpleImplication inLeft inRight existentials =
             else do
                 -- attempt term unification (to remember the substitution
                 unified <-
-                    lift $ Logic.observeAllT $
+                    lift $
+                        Logic.observeAllT $
                             unificationProcedure SideCondition.top leftTerm rightTerm
 
                 -- for each unification result, attempt to refute the formula
