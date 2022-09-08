@@ -1792,7 +1792,7 @@ tests = do
 
     t708 <- testGroup "makeEvaluate" Test.Kore.Simplify.Iff.test_makeEvaluate
 
-    t709 <- testGroup "simplifiesToSimplified" Test.Kore.Simplify.IntegrationProperty.test_simplifiesToSimplified
+    -- t709 <- testGroup "simplifiesToSimplified" Test.Kore.Simplify.IntegrationProperty.test_simplifiesToSimplified
 
     t710 <- testGroup "regressionGeneratedTerms" Test.Kore.Simplify.IntegrationProperty.test_regressionGeneratedTerms
 
@@ -2084,7 +2084,7 @@ tests = do
                         , T.testGroup "Inj" [t689]
                         , T.testGroup "InjSimplifier" [t715, t716, t717]
                         , T.testGroup "Integration" [t665, t666, t667, t668, t669, t670]
-                        , T.testGroup "IntegrationProperty" [t709, t710]
+                        , T.testGroup "IntegrationProperty" [{- t709, -} t710]
                         , T.testGroup "InternalList" [t702]
                         , T.testGroup "InternalMap" [t685]
                         , T.testGroup "InternalSet" [t692]
@@ -2148,8 +2148,22 @@ tests = do
             ]
 ingredients :: [T.Ingredient]
 ingredients = Test.Tasty.Runners.listingTests : Test.Tasty.Runners.Reporter.ingredient : T.defaultIngredients
+
 main :: IO ()
 main = do
+--    run all -- all
+    run hanger -- known failing one
+--    run rest -- all the others
+
+hanger, rest, all :: IO T.TestTree
+-- | Hangs in ~10% of runs, consuming memory (slowly)
+hanger = testGroup "simplifiesToSimplified" Test.Kore.Simplify.IntegrationProperty.test_simplifiesToSimplified
+rest = tests
+all = hanger >>= \h -> rest >>= \r -> testGroup "all" [h,r]
+
+
+run :: IO T.TestTree -> IO ()
+run ts = do
     E.setEnv "TERM" "dumb"
     args <- E.getArgs
-    E.withArgs (["--hide-successes"] ++ args) $ tests >>= T.defaultMainWithIngredients ingredients
+    E.withArgs (["--hide-successes"] ++ args) $ ts >>= T.defaultMainWithIngredients ingredients
