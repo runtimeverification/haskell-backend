@@ -362,7 +362,8 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
             decompose term1 term2
         (Equals_ _ _ term11 term12, Equals_ _ _ term21 term22) ->
             decomposeTwo term11 term21 term12 term22
-        (And_ _ term1 term2, _) ->  -- subject should match _both_ term1 and term2
+        (And_ _ term1 term2, _) ->
+            -- subject should match _both_ term1 and term2
             decomposeTwo term1 subject term2 subject
         (Not_ _ term2, Not_ _ term2) ->
             decompose term1 term2
