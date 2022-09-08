@@ -1,0 +1,178 @@
+\and{testSort1{}}(
+    /* term: */
+    /*  */
+    \not{testSort1{}}(
+        /*  */
+        \nu{}(
+            @z:testSort1{},
+            /*  */
+            \or{testSort1{}}(
+                /* Spa */
+                \exists{testSort1{}}(
+                    VZ8:boolSort{},
+                    /* Spa */
+                    \iff{testSort1{}}(
+                        /* Fl Fn D Sfa Cl */ aSort1{}(),
+                        /* Fl Fn D Sfa Cl */ aSort1{}()
+                    )
+                ),
+                /*  */
+                \and{testSort1{}}(
+                    /* Sfa */ @z:testSort1{},
+                    /*  */
+                    \nu{}(
+                        @Y8:testSort1{},
+                        /* D */
+                        \or{testSort1{}}(
+                            /* D */
+                            \or{testSort1{}}(
+                                /*  */
+                                \iff{testSort1{}}(
+                                    /* Fn Sfa */ \bottom{testSort1{}}(),
+                                    /*  */
+                                    \implies{testSort1{}}(
+                                        /*  */
+                                        \not{testSort1{}}(/* Fn */ cfSort1{}()),
+                                        /* Fn */ cfSort1{}()
+                                    )
+                                ),
+                                /* Fl Fn D Sfa Cl */ aSort1{}()
+                            ),
+                            /* Spa */
+                            \nu{}(
+                                @BYSo:testSort1{},
+                                /* Fn Sfa */ \bottom{testSort1{}}()
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    ),
+\and{testSort1{}}(
+    /* predicate: */
+    /* Spa */
+    \floor{stringSort{}, testSort1{}}(
+        /* Spa */
+        \exists{stringSort{}}(
+            DLu:testSort{},
+            /* Spa */
+            \and{stringSort{}}(
+                /* Spa */
+                \iff{stringSort{}}(
+                    /* Spa */
+                    \exists{stringSort{}}(
+                        q:otherTopSort{},
+                        /* Spa */
+                        \and{stringSort{}}(
+                            /* Spa */
+                            \nu{}(
+                                @XM1':stringSort{},
+                                /* D Spa */
+                                \or{stringSort{}}(
+                                    /* Fl Fn D Sfa Cl */
+                                    \dv{stringSort{}}("\U000856a0"),
+                                    /* Spa */
+                                    \implies{stringSort{}}(
+                                        /* Spa */
+                                        \nu{}(
+                                            @WD:stringSort{},
+                                            /* Fl Fn D Sfa Cl */
+                                            \dv{stringSort{}}("")
+                                        ),
+                                        /* Spa */
+                                        \nu{}(
+                                            @BG0:stringSort{},
+                                            /* Spa */
+                                            \mu{}(
+                                                @X8:stringSort{},
+                                                /* Sfa */ @X8:stringSort{}
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
+                            /* D Sfa */ \top{stringSort{}}()
+                        )
+                    ),
+                    /* Spa */
+                    \not{stringSort{}}(
+                        /* Fl Fn D Sfa Cl */
+                        \dv{stringSort{}}("\U00036638\U000709bc")
+                    )
+                ),
+                /* Spa */
+                \not{stringSort{}}(
+                    /* Spa */
+                    \forall{stringSort{}}(
+                        nMWc:setSort{},
+                        /* Spa */
+                        \iff{stringSort{}}(
+                            /* Spa */
+                            \nu{}(
+                                @w'H:stringSort{},
+                                /* Spa */
+                                \or{stringSort{}}(
+                                    /* Spa */
+                                    \or{stringSort{}}(
+                                        /* Sfa */ @w'H:stringSort{},
+                                        /* Spa */
+                                        \nu{}(
+                                            @F:stringSort{},
+                                            /* Fl Fn D Sfa Cl */
+                                            \dv{stringSort{}}("\U0001df89\U00094174")
+                                        )
+                                    ),
+                                    /* Spa */
+                                    \and{stringSort{}}(
+                                        /* Spa */
+                                        \forall{stringSort{}}(
+                                            Pp6t:listSort{},
+                                            /* Spa */
+                                            \forall{stringSort{}}(
+                                                v:boolSort{},
+                                                /* Sfa */ w'H:stringSort{}
+                                            )
+                                        ),
+                                        /* Sfa */ @w'H:stringSort{}
+                                    )
+                                )
+                            ),
+                            /* Spa */
+                            \iff{stringSort{}}(
+                                /* Spa */
+                                \not{stringSort{}}(
+                                    /* Fn Sfa */ \bottom{stringSort{}}()
+                                ),
+                                /* Spa */
+                                \implies{stringSort{}}(
+                                    /* D Spa */
+                                    \or{stringSort{}}(
+                                        /* D Sfa */ \top{stringSort{}}(),
+                                        /* Spa */
+                                        \not{stringSort{}}(
+                                            /* D Spa */
+                                            \or{stringSort{}}(
+                                                /* D Sfa */
+                                                \top{stringSort{}}(),
+                                                /* Fn Sfa */
+                                                \bottom{stringSort{}}()
+                                            )
+                                        )
+                                    ),
+                                    /* Spa */
+                                    \nu{}(
+                                        @EuoZ:stringSort{},
+                                        /* Sfa */ @EuoZ:stringSort{}
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    ),
+    /* substitution: */
+    \top{testSort1{}}()
+))
