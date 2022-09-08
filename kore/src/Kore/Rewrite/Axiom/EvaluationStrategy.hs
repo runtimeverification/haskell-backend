@@ -165,7 +165,7 @@ simplifierWithFallback ::
     SideCondition RewritingVariableName ->
     Simplifier (AttemptedAxiom RewritingVariableName)
 simplifierWithFallback first second =
-    applyFirstSimplifierThatWorks [first, second] WithMultipleResults
+    applyFirstSimplifierThatWorks [first, second]
 
 {- | Wraps an evaluator for builtins. Will fail with error if there is no result
 on concrete patterns.

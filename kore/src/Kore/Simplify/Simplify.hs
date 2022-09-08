@@ -29,7 +29,6 @@ module Kore.Simplify.Simplify (
     -- * Builtin and axiom simplifiers
     SimplifierCache (attemptedEquationsCache),
     EvaluationAttempt (..),
-    AcceptsMultipleResults (..),
     initCache,
     updateCache,
     lookupCache,
@@ -413,15 +412,6 @@ lookupCache ::
 lookupCache key (SimplifierCache cache) =
     HashMap.lookup key cache
 
--- |Describes whether simplifiers are allowed to return multiple results or not.
-data AcceptsMultipleResults = WithMultipleResults | OnlyOneResult
-    deriving stock (Eq, Ord, Show)
-
--- |Converts 'AcceptsMultipleResults' to Bool.
-acceptsMultipleResults :: AcceptsMultipleResults -> Bool
-acceptsMultipleResults WithMultipleResults = True
-acceptsMultipleResults OnlyOneResult = False
-
 {- | Creates an evaluator that choses the result of the first evaluator that
 returns Applicable.
 
@@ -434,7 +424,7 @@ firstFullEvaluation ::
     SideCondition RewritingVariableName ->
     Simplifier (AttemptedAxiom RewritingVariableName)
 firstFullEvaluation simplifiers =
-    applyFirstSimplifierThatWorks simplifiers OnlyOneResult
+    applyFirstSimplifierThatWorks simplifiers
 
 {- |Whether a term cannot be simplified regardless of the side condition,
 or only with the current side condition.
@@ -464,29 +454,26 @@ data NonSimplifiability
 
 applyFirstSimplifierThatWorks ::
     [Simplifier (AttemptedAxiom RewritingVariableName)] ->
-    AcceptsMultipleResults ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
     Simplifier (AttemptedAxiom RewritingVariableName)
-applyFirstSimplifierThatWorks evaluators multipleResults =
-    applyFirstSimplifierThatWorksWorker evaluators multipleResults Always
+applyFirstSimplifierThatWorks evaluators =
+    applyFirstSimplifierThatWorksWorker evaluators Always
 
 applyFirstSimplifierThatWorksWorker ::
     [Simplifier (AttemptedAxiom RewritingVariableName)] ->
-    AcceptsMultipleResults ->
     NonSimplifiability ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
     Simplifier (AttemptedAxiom RewritingVariableName)
-applyFirstSimplifierThatWorksWorker [] _ Always _ _ =
+applyFirstSimplifierThatWorksWorker [] Always _ _ =
     return NotApplicable
-applyFirstSimplifierThatWorksWorker [] _ Conditional _ sideCondition =
+applyFirstSimplifierThatWorksWorker [] Conditional _ sideCondition =
     return $
         NotApplicableUntilConditionChanges $
             toRepresentation sideCondition
 applyFirstSimplifierThatWorksWorker
     (simplifier : simplifiers)
-    multipleResults
     nonSimplifiability
     patt
     sideCondition =
@@ -499,8 +486,6 @@ applyFirstSimplifierThatWorksWorker
                         { results = orResults
                         , remainders = orRemainders
                         }
-                        | acceptsMultipleResults multipleResults -> return applicationResult
-                        -- below this point multiple results are not accepted
                         | length orResults > 1 ->
                             -- We should only allow multiple simplification results
                             -- when they are created by unification splitting the
@@ -529,7 +514,6 @@ applyFirstSimplifierThatWorksWorker
         tryNextSimplifier nonSimplifiability' =
             applyFirstSimplifierThatWorksWorker
                 simplifiers
-                multipleResults
                 nonSimplifiability'
                 patt
                 sideCondition
