@@ -672,7 +672,7 @@
       };
     };
     tests = {
-      "kore-test" = {
+      "kore-test-bisect" = {
         depends = [
           (hsPkgs."base" or (errorHandler.buildDepError "base"))
           (hsPkgs."adjunctions" or (errorHandler.buildDepError "adjunctions"))
@@ -778,7 +778,6 @@
         ];
         buildable = true;
         modules = [
-          "Driver"
           "Test/ConsistentKore"
           "Test/Data/Graph/TopologicalSort"
           "Test/Data/InternedText"
@@ -985,7 +984,7 @@
           "Test/Terse"
         ];
         hsSourceDirs = [ "test" ];
-        mainPath = [ "Test.hs" ];
+        mainPath = [ "Bisector.hs" ];
       };
     };
   };
