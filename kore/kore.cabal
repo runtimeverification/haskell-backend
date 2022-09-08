@@ -691,14 +691,14 @@ executable kore-simplify
   build-depends: clock >=0.8
   build-depends: optparse-applicative >=0.14
 
-test-suite kore-test
+test-suite kore-test-bisect
   import: haskell
   import: library
   import: exe
   type: exitcode-stdio-1.0
-  main-is: Test.hs
+  main-is: Bisector.hs
   other-modules:
-    Driver
+--    Driver
     Test.ConsistentKore
     Test.Data.Graph.TopologicalSort
     Test.Data.InternedText
