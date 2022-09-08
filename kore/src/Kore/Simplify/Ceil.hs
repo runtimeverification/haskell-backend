@@ -150,8 +150,8 @@ makeEvaluateTerm resultSort sideCondition ceilChild = do
         (isTop result && sideCondition == SideCondition.top)
         $ do
             cache <- Simplifier.getCache
-            Simplifier.putCache
-                $ Simplifier.updateGlobalDefinedTermsCache ceilChild cache
+            Simplifier.putCache $
+                Simplifier.updateGlobalDefinedTermsCache ceilChild cache
     return result
   where
     ceilSimplifier =
