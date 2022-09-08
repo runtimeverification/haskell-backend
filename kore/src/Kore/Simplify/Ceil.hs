@@ -131,15 +131,28 @@ makeEvaluateTerm ::
     TermLike RewritingVariableName ->
     simplifier NormalForm
 makeEvaluateTerm resultSort sideCondition ceilChild = do
-    runCeilSimplifierWith
-        ceilSimplifier
-        sideCondition
-        Ceil
-            { ceilResultSort = resultSort
-            , ceilOperandSort = termLikeSort ceilChild
-            , ceilChild
-            }
-        & maybeT (makeSimplifiedCeil sideCondition Nothing ceilChild) return
+    result <-
+        runCeilSimplifierWith
+            ceilSimplifier
+            sideCondition
+            Ceil
+                { ceilResultSort = resultSort
+                , ceilOperandSort = termLikeSort ceilChild
+                , ceilChild
+                }
+            & maybeT (makeSimplifiedCeil sideCondition Nothing ceilChild) return
+    -- TODO: add TopBottom instance for SideCondition
+    -- TODO: where should we populate the cache?
+    -- We need to somehow keep track of the conditions generated in the Ceil
+    -- simplifier. If all of them are simplified to top, then we can populate the cache
+    -- with the initial term and avoid all the generation and simplification afterwards.
+    when
+        (isTop result && sideCondition == SideCondition.top)
+        $ do
+            cache <- Simplifier.getCache
+            Simplifier.putCache
+                $ Simplifier.updateGlobalDefinedTermsCache ceilChild cache
+    return result
   where
     ceilSimplifier =
         mconcat

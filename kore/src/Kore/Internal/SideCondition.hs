@@ -21,6 +21,7 @@ module Kore.Internal.SideCondition (
     replacePredicate,
     cannotReplacePredicate,
     assumeDefined,
+    assumeDefined',
     isDefined,
     fromDefinedTerms,
     generateNormalizedAcs,
@@ -724,9 +725,15 @@ assumeDefined ::
     TermLike variable ->
     Maybe (SideCondition variable)
 assumeDefined =
-    fmap fromDefinedTerms
-        . getPartial
-        . assumeDefinedWorker
+    fmap fromDefinedTerms . assumeDefined'
+
+assumeDefined' ::
+    forall variable.
+    InternalVariable variable =>
+    TermLike variable ->
+    Maybe (HashSet (TermLike variable))
+assumeDefined' =
+    getPartial . assumeDefinedWorker
   where
     assumeDefinedWorker ::
         TermLike variable ->

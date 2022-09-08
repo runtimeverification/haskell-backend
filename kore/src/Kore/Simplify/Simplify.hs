@@ -32,6 +32,7 @@ module Kore.Simplify.Simplify (
     AcceptsMultipleResults (..),
     initCache,
     updateAttemptedEquationsCache,
+    updateGlobalDefinedTermsCache,
     lookupAttemptedEquationsCache,
     BuiltinAndAxiomSimplifier (..),
     AttemptedAxiom (..),
@@ -103,6 +104,7 @@ import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (SideCondition, toRepresentation)
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
@@ -418,6 +420,22 @@ updateAttemptedEquationsCache key value cache@(SimplifierCache _ _) =
         (field @"attemptedEquationsCache")
         (HashMap.insert key value)
         cache
+
+-- | Update by inserting a new entry into the cache.
+updateGlobalDefinedTermsCache ::
+    TermLike RewritingVariableName ->
+    SimplifierCache ->
+    SimplifierCache
+updateGlobalDefinedTermsCache term cache@(SimplifierCache _ _) =
+    Lens.over
+        (field @"globalDefinedTermsCache")
+        (HashSet.union assumedDefined)
+        cache
+  where
+    assumedDefined =
+        fromMaybe
+            (error "Term cannot be defined.")
+            (SideCondition.assumeDefined' term)
 
 -- | Lookup an entry in the cache.
 lookupAttemptedEquationsCache ::
