@@ -14,15 +14,13 @@ import Control.Monad.Catch (
 import Data.List (
     isInfixOf,
  )
-import Data.Map.Strict qualified as Map
 import Hedgehog (
     PropertyT,
     annotate,
+    assert,
     discard,
     forAll,
-    (===),
  )
-import Kore.Equation (Equation)
 import Kore.Internal.From (fromIn_)
 import Kore.Internal.OrPattern (
     OrPattern,
@@ -44,7 +42,6 @@ import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Internal.TermLike
-import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier)
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkRewritingPattern,
@@ -71,13 +68,14 @@ test_simplifiesToSimplified =
     testPropertyWithoutSolver "simplify returns simplified pattern" $ do
         patt <- forAll (runKoreGen Mock.generatorSetup patternGen)
         let patt' = mkRewritingPattern patt
-        (annotate . unlines)
+        trace ("#######################\n" <> show (debug patt)) $ (annotate . unlines)
             [" ***** unparsed input =", unparseToString patt, " ***** "]
         simplified <-
             catch
                 (evaluateT patt')
                 (exceptionHandler patt)
-        (===) True (OrPattern.isSimplified sideRepresentation simplified)
+        assertSimplified simplified
+        Hedgehog.assert $ length (unparseToString patt) > 0
   where
     -- Discard exceptions that are normal for randomly generated patterns.
     exceptionHandler ::
@@ -168,16 +166,13 @@ evaluateT = lift . evaluate
 evaluate ::
     Pattern RewritingVariableName ->
     SMT.SMT (OrPattern RewritingVariableName)
-evaluate = evaluateWithAxioms Map.empty
+evaluate =
+    Simplification.runSimplifier Mock.env{hookedSymbols = Mock.builtinSimplifiers}
+        . Pattern.simplify
 
-evaluateWithAxioms ::
-    Map.Map AxiomIdentifier [Equation RewritingVariableName] ->
-    Pattern RewritingVariableName ->
-    SMT.SMT (OrPattern RewritingVariableName)
-evaluateWithAxioms axiomEquations =
-    Simplification.runSimplifier env . Pattern.simplify
-  where
-    env = Mock.env{axiomEquations, hookedSymbols = Mock.builtinSimplifiers}
+assertSimplified :: Monad m => OrPattern RewritingVariableName -> PropertyT m ()
+assertSimplified =
+    Hedgehog.assert . OrPattern.isSimplified sideRepresentation
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =
