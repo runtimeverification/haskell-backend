@@ -365,7 +365,7 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
         (And_ _ term1 term2, _) ->
             -- subject should match _both_ term1 and term2
             decomposeTwo term1 subject term2 subject
-        (Not_ _ term2, Not_ _ term2) ->
+        (Not_ _ term1, Not_ _ term2) ->
             decompose term1 term2
         (Forall_ _ variable1 term1, Forall_ _ variable2 term2) ->
             decomposeBinder (inject variable1) term1 (inject variable2) term2
