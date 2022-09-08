@@ -206,21 +206,39 @@
         });
 
       apps = perSystem (system:
-        self.flake.${system}.apps // {
-          profile = let
-            pkgs = nixpkgsFor system;
-            profiling-script = pkgs.callPackage ./nix/run-profiling.nix {
-              inherit (pkgs.haskellPackages) hp2pretty hs-speedscope eventlog2html;
-              kore-exec-prof =
-                self.projectProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
-              kore-exec-infotable =
-                self.projectGhc9EventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
-            };
-          in {
+        self.flake.${system}.apps // (let
+          pkgs = nixpkgsFor system;
+          profiling-script = pkgs.callPackage ./nix/run-profiling.nix {
+            inherit (pkgs.haskellPackages)
+              hp2pretty hs-speedscope eventlog2html;
+            kore-exec-prof =
+              self.projectProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
+            kore-exec-infotable =
+              self.projectGhc9EventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
+          };
+
+          scripts = pkgs.symlinkJoin {
+            name = "fourmolu-format";
+            paths = [ ./scripts ];
+            buildInputs = [ pkgs.makeWrapper pkgs.haskellPackages.fourmolu ];
+            postBuild = ''
+              wrapProgram $out/fourmolu.sh \
+                --set PATH ${
+                with pkgs; lib.makeBinPath [ haskellPackages.fourmolu fd findutils ]
+              }
+            '';
+          };
+
+        in {
+          profile = {
             type = "app";
             program = "${profiling-script}/bin/run-profiling";
           };
-        });
+          format = {
+            type = "app";
+            program = "${scripts}/fourmolu.sh";
+          };
+        }));
 
       devShells = perSystem (system: {
         default = self.flake.${system}.devShell;
