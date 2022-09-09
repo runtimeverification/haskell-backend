@@ -64,7 +64,6 @@ import Test.SMT (
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
-
 --------------------------------------------------
 -- test data collected from hanging test:
 import Hanger
@@ -80,7 +79,6 @@ test_simplifier_hangs =
         assertEqual "I survived!" True True
 
 --------------------------------------------------
-
 
 test_simplifiesToSimplified :: TestTree
 test_simplifiesToSimplified =

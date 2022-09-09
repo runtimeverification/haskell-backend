@@ -10,9 +10,9 @@ import Kore.Internal.Pattern
 import Kore.Internal.Predicate
 import Kore.Internal.Substitution
 import Kore.Internal.Symbol (ApplicationSorts (..), Symbol (..))
+import Kore.Internal.TermLike qualified as T
 import Kore.Internal.TermLike.TermLike hiding (AndF, BottomF, ExistsF, FloorF, ForallF, IffF, ImpliesF, InF, NotF, OrF, TopF)
 import Kore.Internal.TermLike.TermLike qualified as T
-import Kore.Internal.TermLike qualified as T
 
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Created
@@ -38,28 +38,33 @@ hanger
     , original
     , noTerm
     , noPredicate
-    , shrunkPredicate
-  :: Pattern VariableName
-
+    , shrunkPredicate ::
+        Pattern VariableName
 hanger = shrunkPredicate
 
 -- | passes (as expected)
-noPredicate = original { predicate = makeTruePredicate }
+noPredicate = original{predicate = makeTruePredicate}
 
 -- | hangs
 noTerm =
-    original { term =
-               T.mkTop $ SortActualSort
-                ( SortActual
-                    { sortActualName = InternedId{getInternedId = internText "subOthersort", internedIdLocation = AstLocationTest}
-                    , sortActualSorts = []
-                    }
-                )
-            }
+    original
+        { term =
+            T.mkTop $
+                SortActualSort
+                    ( SortActual
+                        { sortActualName = InternedId{getInternedId = internText "subOthersort", internedIdLocation = AstLocationTest}
+                        , sortActualSorts = []
+                        }
+                    )
+        }
 
 -- | extracted from the original, taking parts of the top level
 shrunkPredicate =
-    noTerm { predicate = Predicate { getPredicate = part21 } }
+    noTerm{predicate = Predicate{getPredicate = part21}}
+
+-- no auto-formatting below this point (disturbs the diff while
+-- disassembling the terms)
+{- ORMOLU_DISABLE -}
 
 {- | parts of original predicate
 
@@ -16117,3 +16122,4 @@ original =
       }
   , substitution = NormalizedSubstitution (fromList [])
   }
+{- ORMOLU_ENABLE -}

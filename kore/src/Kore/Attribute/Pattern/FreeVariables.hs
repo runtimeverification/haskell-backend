@@ -4,7 +4,7 @@ License     : BSD-3-Clause
 -}
 module Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
-    FreeVariableInfo(..), -- HACK
+    FreeVariableInfo (..), -- HACK
     toList,
     unsafe, -- HACK
     toMap,
