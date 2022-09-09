@@ -36,10 +36,10 @@ jobs:
         run: GC_DONT_GC=1 nix build .#kore-exec-ghc9
 
       - name: Check shell
-        run: nix develop --run "echo OK"
+        run: nix develop --command stack --version
 
       - name: Check GHC9 shell
-        run: nix develop .#ghc9 --run "echo OK"
+        run: nix develop .#ghc9 --command stack --version
 
       - name: Run unit tests
         run: nix-build -A project.kore.checks
