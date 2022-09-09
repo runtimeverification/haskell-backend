@@ -1,0 +1,28 @@
+---
+name: CI Performance Issue Collection
+on:
+  label:
+    created: 
+      - Performance
+
+  issues:
+    types: [opened]
+    
+    branches: 
+      - 'master'
+
+
+  workflow_dispatch:
+    inputs:
+      file: 
+      # Need to provide a file to run with. 
+    
+jobs: 
+  collect-data:
+    runs-on: ["linux", "performance"]
+    
+
+
+
+
+
