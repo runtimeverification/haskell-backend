@@ -57,7 +57,7 @@ noTerm =
                 )
             }
 
--- | extracted from the original, taking only parts of the top level
+-- | extracted from the original, taking parts of the top level
 shrunkPredicate =
     noTerm { predicate = Predicate { getPredicate = part21 } }
 
@@ -68,7 +68,7 @@ Structure:
    - part1
    - part2 =
      Iff
-      - part21 =
+      - part21 =     <-- hangs
         In
          - part211
          - part212
@@ -80,7 +80,7 @@ part1 -- Implies1
     , part21 -- Iff1 = In(part211, part212)
     , part22 -- Iff2
       :: Cofree (PredicateF VariableName) (PredicatePattern VariableName)
---part211, part212 :: TermLike VariableName
+part211, part212 :: TermLike VariableName
 
 part1 = -- first part of "implies", passes
                        CofreeT
@@ -151,10 +151,18 @@ part21 = -- Implies (Iff (*, _)), hangs
             , simplified = NotSimplified
             }
             :< InF
-                                             ( In
-                                                { inOperandSort = ()
-                                                , inResultSort = ()
-                                                , inContainedChild =
+              ( In
+                { inOperandSort = ()
+                , inResultSort = ()
+                , inContainedChild = part211
+                , inContainingChild = part212
+                }
+              )
+        )
+    )
+
+part211 =
+--                                                 , inContainedChild =
                                                    TermLike
                                                     { getTermLike =
                                                        TermAttributes
@@ -6654,7 +6662,8 @@ part21 = -- Implies (Iff (*, _)), hangs
                                                             }
                                                          )
                                                     }
-                                                , inContainingChild =
+part212 =
+--                                                 , inContainingChild =
                                                    TermLike
                                                     { getTermLike =
                                                        TermAttributes
@@ -6758,10 +6767,6 @@ part21 = -- Implies (Iff (*, _)), hangs
                                                             }
                                                          )
                                                     }
-                                                }
-                                             )
-                                         )
-                                      )
 
 part22 =
                                      CofreeT
