@@ -74,7 +74,7 @@ test_simplifier_hangs =
     testCase "hanger data makes the simplifier loop" $ do
         simplified <-
             Pattern.simplify
-                (mkRewritingPattern hanger2)
+                (mkRewritingPattern hanger)
                 & testRunSimplifier Mock.env
 
         assertEqual "I survived!" True True
