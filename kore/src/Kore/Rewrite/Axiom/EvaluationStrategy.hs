@@ -12,7 +12,6 @@ module Kore.Rewrite.Axiom.EvaluationStrategy (
     definitionEvaluation,
     simplificationEvaluation,
     firstFullEvaluation,
-    simplifierWithFallback,
     mkEvaluator,
 
     -- * For testing
@@ -155,18 +154,6 @@ simplificationEvaluation equation term condition = do
                         (SideCondition.toRepresentation condition)
                 _ -> return NotApplicable
 
-{- | Creates an evaluator that choses the result of the first evaluator if it
-returns Applicable, otherwise returns the result of the second.
--}
-simplifierWithFallback ::
-    Simplifier (AttemptedAxiom RewritingVariableName) ->
-    Simplifier (AttemptedAxiom RewritingVariableName) ->
-    TermLike RewritingVariableName ->
-    SideCondition RewritingVariableName ->
-    Simplifier (AttemptedAxiom RewritingVariableName)
-simplifierWithFallback first second =
-    applyFirstSimplifierThatWorks [first, second]
-
 {- | Wraps an evaluator for builtins. Will fail with error if there is no result
 on concrete patterns.
 -}
@@ -203,24 +190,18 @@ mkEvaluator ::
     SideCondition RewritingVariableName ->
     Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
 mkEvaluator equations termLike sideCondition =
-    case (simplificationEvaluator, definitionEvaluator) of
-        (Nothing, Nothing) -> Nothing
-        (Just evaluator, Nothing) -> Just evaluator
-        (Nothing, Just evaluator) -> Just evaluator
-        (Just sEvaluator, Just dEvaluator) ->
-            Just (simplifierWithFallback dEvaluator sEvaluator termLike sideCondition)
+    evaluator $ functionRules ++ simplificationRules
   where
     PartitionedEquations{functionRules, simplificationRules} = partitionEquations equations
-    simplificationEvaluator =
-        if null simplificationRules
-            then Nothing
-            else
-                let simplifiers =
-                        map
-                            (\equation -> simplificationEvaluation equation termLike sideCondition)
-                            simplificationRules
-                 in Just $ firstFullEvaluation simplifiers termLike sideCondition
-    definitionEvaluator =
-        if null functionRules
-            then Nothing
-            else Just $ definitionEvaluation functionRules termLike sideCondition
+
+    evaluator ::
+        [Equation RewritingVariableName] ->
+        Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
+    evaluator = \case
+        [] -> Nothing
+        rules ->
+            let simplifiers =
+                    map
+                        (\equation -> simplificationEvaluation equation termLike sideCondition)
+                        rules
+             in Just $ firstFullEvaluation simplifiers termLike sideCondition

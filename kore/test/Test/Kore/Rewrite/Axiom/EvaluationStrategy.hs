@@ -1,7 +1,7 @@
 module Test.Kore.Rewrite.Axiom.EvaluationStrategy (
     test_definitionEvaluation,
     test_firstFullEvaluation,
-    test_simplifierWithFallback,
+    test_applyFirstSimplifierThatWorks,
     test_builtinEvaluation,
     test_attemptEquations,
 ) where
@@ -454,8 +454,8 @@ test_firstFullEvaluation =
         -}
     ]
 
-test_simplifierWithFallback :: [TestTree]
-test_simplifierWithFallback =
+test_applyFirstSimplifierThatWorks :: [TestTree]
+test_applyFirstSimplifierThatWorks =
     [ testCase "Uses first" $ do
         let expect =
                 AttemptedAxiom.Applied
@@ -473,19 +473,18 @@ test_simplifierWithFallback =
         let a = Mock.functionalConstr10 Mock.a
         actual <-
             evaluate
-                ( simplifierWithFallback
-                    ( axiomEvaluator
+                ( applyFirstSimplifierThatWorks
+                    [ axiomEvaluator
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.a)
                         a
                         trueSideCondition
-                    )
-                    ( axiomEvaluator
+                    , axiomEvaluator
                         (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
                         (Mock.f Mock.a)
                         a
                         trueSideCondition
-                    )
+                    ]
                 )
                 a
         assertEqual "" expect actual
@@ -506,19 +505,18 @@ test_simplifierWithFallback =
         let b = Mock.functionalConstr10 Mock.b
         actual <-
             evaluate
-                ( simplifierWithFallback
-                    ( axiomEvaluator
+                ( applyFirstSimplifierThatWorks
+                    [ axiomEvaluator
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.a)
                         b
                         trueSideCondition
-                    )
-                    ( axiomEvaluator
+                    , axiomEvaluator
                         (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
                         (Mock.f Mock.a)
                         b
                         trueSideCondition
-                    )
+                    ]
                 )
                 b
         assertEqual "" expect actual
@@ -527,19 +525,18 @@ test_simplifierWithFallback =
         let c = Mock.functionalConstr10 Mock.c
         actual <-
             evaluate
-                ( simplifierWithFallback
-                    ( axiomEvaluator
+                ( applyFirstSimplifierThatWorks
+                    [ axiomEvaluator
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.a)
                         c
                         trueSideCondition
-                    )
-                    ( axiomEvaluator
+                    , axiomEvaluator
                         (Mock.functionalConstr10 Mock.b)
                         (Mock.f Mock.a)
                         c
                         trueSideCondition
-                    )
+                    ]
                 )
                 c
         assertEqual "" expect actual

@@ -54,8 +54,7 @@ import Kore.Log.ErrorBottomTotalFunction (
     errorBottomTotalFunction,
  )
 import Kore.Log.WarnFunctionWithoutEvaluators (warnFunctionWithoutEvaluators)
-import Kore.Rewrite.Axiom.EvaluationStrategy (builtinEvaluation, mkEvaluator, simplifierWithFallback)
-import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier)
+import Kore.Rewrite.Axiom.EvaluationStrategy (builtinEvaluation, mkEvaluator)
 import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
@@ -297,7 +296,7 @@ lookupAxiomSimplifier termLike sideCondition = do
         (Nothing, eval2) -> eval2
         (eval1, Nothing) -> eval1
         (Just eval1, Just eval2) ->
-            Just $ simplifierWithFallback eval1 eval2 termLike sideCondition
+            Just $ applyFirstSimplifierThatWorks [eval1, eval2] termLike sideCondition
 
 criticalMissingHook :: Symbol -> Text -> a
 criticalMissingHook symbol hookName =
