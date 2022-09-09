@@ -76,7 +76,16 @@ Structure:
              - part2111 =  <-- hangs
                Not
                 If
-                 - part21111 <-- needed to hang
+                 - part21111 = <-- needed to hang
+                   Implies
+                    - part21111_1
+                    - part21111_2 =  <-- hangs
+                      Iff
+                       - part21111_21 =  <-- hangs
+                         Or
+                          - part21111_21_1
+                          - part21111_21_2
+                       - part21111_22
                  - part21112 <-- also needed to hang
              - part2112
          - part212
@@ -92,6 +101,12 @@ part1 -- Implies1
 part211
     , part2111
     , part21111
+    , part21111_1
+    , part21111_2
+    , part21111_21
+    , part21111_21_1
+    , part21111_21_2
+    , part21111_22
     , part21112
     , part2112
     , part212
@@ -355,7 +370,13 @@ part21111 =
                  , sortActualSorts = []
                  }
               )
-          , impliesFirst =
+          , impliesFirst = topTerm "mapSort" -- part21111_1 -- <-- passes
+          , impliesSecond = part21111_2 -- <-- hangs
+          }
+       )
+  }
+
+part21111_1 =
              TermLike
               { getTermLike =
                  TermAttributes
@@ -1119,7 +1140,9 @@ part21111 =
                       }
                    )
               }
-          , impliesSecond =
+
+part21111_2 =
+--          , impliesSecond =
              TermLike
               { getTermLike =
                  TermAttributes
@@ -1147,7 +1170,14 @@ part21111 =
                              , sortActualSorts = []
                              }
                           )
-                      , iffFirst =
+                      , iffFirst = part21111_21 -- <-- hangs
+                      , iffSecond = topTerm "mapSort" -- part21111_22 <-- passes
+                      }
+                   )
+              }
+
+part21111_21 =
+--                      , iffFirst =
                          TermLike
                           { getTermLike =
                              TermAttributes
@@ -1175,7 +1205,13 @@ part21111 =
                                          , sortActualSorts = []
                                          }
                                       )
-                                  , orFirst =
+                                  , orFirst = part21111_21_1
+                                  , orSecond = part21111_21_2
+                                  }
+                               )
+                          }
+part21111_21_1 =
+--                                  , orFirst =
                                      TermLike
                                       { getTermLike =
                                          TermAttributes
@@ -1511,7 +1547,9 @@ part21111 =
                                               }
                                            )
                                       }
-                                  , orSecond =
+
+part21111_21_2 =
+--                                  , orSecond =
                                      TermLike
                                       { getTermLike =
                                          TermAttributes
@@ -1987,10 +2025,9 @@ part21111 =
                                               }
                                            )
                                       }
-                                  }
-                               )
-                          }
-                      , iffSecond =
+
+part21111_22 =
+--                      , iffSecond =
                          TermLike
                           { getTermLike =
                              TermAttributes
@@ -2404,12 +2441,6 @@ part21111 =
                                   }
                                )
                           }
-                      }
-                   )
-              }
-          }
-       )
-  }
 
 part21112 =
  --                                                                                                , iffSecond =
