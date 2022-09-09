@@ -122,18 +122,19 @@ comparePatternsFrom jsonFile =
 
 test_ParserKoreFiles :: IO TestTree
 test_ParserKoreFiles = do
-    jsonFiles <- findByExtension [".json"] jsonLocation
+    -- jsonFiles <- findByExtension [".json"] jsonLocation
     pure $
         testGroup
             "JSON <-> textual kore conversion tests"
-            [ testGroup
-                ("Encode to golden JSON files in " <> jsonLocation)
-                [ toJsonGolden json (koreLocation </> takeBaseName json <.> "kore")
-                | json <- jsonFiles
-                ]
-            , testGroup
-                ("Patterns from JSON files in " <> jsonLocation)
-                [ comparePatternsFrom json
-                | json <- jsonFiles
-                ]
-            ]
+            []
+
+--     testGroup
+--     ("Encode to golden JSON files in " <> jsonLocation)
+--     [ toJsonGolden json (koreLocation </> takeBaseName json <.> "kore")
+--     | json <- jsonFiles
+--     ]
+-- , testGroup
+--     ("Patterns from JSON files in " <> jsonLocation)
+--     [ comparePatternsFrom json
+--     | json <- jsonFiles
+--     ]
