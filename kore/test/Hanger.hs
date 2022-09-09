@@ -2,17 +2,9 @@ module Hanger (module Hanger) where
 
 import Control.Comonad.Trans.Cofree (CofreeT (..))
 import Data.Functor.Identity (Identity (..))
-
 import Data.InternedText
-
-import Kore.Internal.InternalInt
-import Kore.Internal.Pattern
-import Kore.Internal.Predicate
-import Kore.Internal.Substitution
-import Kore.Internal.Symbol (ApplicationSorts (..), Symbol (..))
-import Kore.Internal.TermLike qualified as T
-import Kore.Internal.TermLike.TermLike hiding (AndF, BottomF, ExistsF, FloorF, ForallF, IffF, ImpliesF, InF, NotF, OrF, TopF)
-
+import Data.Map (fromList)
+import Data.Text (Text)
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Created
 import Kore.Attribute.Pattern.Defined
@@ -26,12 +18,15 @@ import Kore.Attribute.Source
 import Kore.Attribute.SourceLocation
 import Kore.Attribute.Symbol hiding (Function, Functional, Symbol, isFunction, isFunctional)
 import Kore.Attribute.Symbol qualified as A
-
+import Kore.Internal.InternalInt
+import Kore.Internal.Pattern
+import Kore.Internal.Predicate
+import Kore.Internal.Substitution
+import Kore.Internal.Symbol (ApplicationSorts (..), Symbol (..))
+import Kore.Internal.TermLike qualified as T
+import Kore.Internal.TermLike.TermLike hiding (AndF, BottomF, ExistsF, FloorF, ForallF, IffF, ImpliesF, InF, NotF, OrF, TopF)
 import Kore.Sort
 import Kore.Syntax hiding (AndF, BottomF, ExistsF, FloorF, ForallF, IffF, ImpliesF, InF, MuF, NotF, NuF, OrF, Pattern, TopF, VariableF)
-
-import Data.Map (fromList)
-import Data.Text (Text)
 import Prelude.Kore
 
 hanger

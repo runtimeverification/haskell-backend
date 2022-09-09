@@ -3,368 +3,189 @@
 module Main (main, ingredients, tests) where
 
 import System.Environment qualified as E
+import Test.Data.Graph.TopologicalSort qualified
+import Test.Data.InternedText qualified
+import Test.Data.Limit qualified
+import Test.Data.Sup qualified
+import Test.Debug qualified
+import Test.Injection qualified
+import Test.Kore.AST.Common qualified
+import Test.Kore.Attribute.Assoc qualified
+import Test.Kore.Attribute.Axiom.Concrete qualified
+import Test.Kore.Attribute.Axiom.Symbolic qualified
+import Test.Kore.Attribute.Axiom.Unit qualified
+import Test.Kore.Attribute.Comm qualified
+import Test.Kore.Attribute.Constructor qualified
+import Test.Kore.Attribute.Function qualified
+import Test.Kore.Attribute.Functional qualified
+import Test.Kore.Attribute.Hook qualified
+import Test.Kore.Attribute.Idem qualified
+import Test.Kore.Attribute.Injective qualified
+import Test.Kore.Attribute.Label qualified
+import Test.Kore.Attribute.NonExecutable qualified
+import Test.Kore.Attribute.Overload qualified
+import Test.Kore.Attribute.Owise qualified
+import Test.Kore.Attribute.Pattern.ConstructorLike qualified
+import Test.Kore.Attribute.Pattern.Defined qualified
+import Test.Kore.Attribute.Pattern.FreeVariables qualified
+import Test.Kore.Attribute.Pattern.Function qualified
+import Test.Kore.Attribute.Pattern.Functional qualified
+import Test.Kore.Attribute.Pattern.Sort qualified
+import Test.Kore.Attribute.Priority qualified
+import Test.Kore.Attribute.ProductionID qualified
+import Test.Kore.Attribute.Simplification qualified
+import Test.Kore.Attribute.Smtlib qualified
+import Test.Kore.Attribute.Sort.ConstructorsBuilder qualified
+import Test.Kore.Attribute.Sort.HasDomainValues qualified
+import Test.Kore.Attribute.Sort.Unit qualified
+import Test.Kore.Attribute.SortInjection qualified
+import Test.Kore.Attribute.Subsort qualified
+import Test.Kore.Attribute.Symbol qualified
+import Test.Kore.Attribute.Symbol.Anywhere qualified
+import Test.Kore.Attribute.Symbol.Klabel qualified
+import Test.Kore.Attribute.Symbol.Memo qualified
+import Test.Kore.Attribute.Symbol.NoEvaluators qualified
+import Test.Kore.Attribute.Symbol.SymbolKywd qualified
+import Test.Kore.Attribute.Trusted qualified
+import Test.Kore.Attribute.UniqueId qualified
+import Test.Kore.BugReport qualified
+import Test.Kore.Builtin qualified
+import Test.Kore.Builtin.AssocComm.CeilSimplifier qualified
+import Test.Kore.Builtin.Bool qualified
+import Test.Kore.Builtin.Encoding qualified
+import Test.Kore.Builtin.Endianness qualified
+import Test.Kore.Builtin.Inj qualified
+import Test.Kore.Builtin.Int qualified
+import Test.Kore.Builtin.InternalBytes qualified
+import Test.Kore.Builtin.KEqual qualified
+import Test.Kore.Builtin.Krypto qualified
+import Test.Kore.Builtin.List qualified
+import Test.Kore.Builtin.Map qualified
+import Test.Kore.Builtin.Set qualified
+import Test.Kore.Builtin.Signedness qualified
+import Test.Kore.Builtin.String qualified
+import Test.Kore.Equation.Application qualified
+import Test.Kore.Equation.Sentence qualified
+import Test.Kore.Equation.Simplification qualified
+import Test.Kore.Error qualified
+import Test.Kore.Exec qualified
+import Test.Kore.IndexedModule.Error qualified
+import Test.Kore.IndexedModule.OverloadGraph qualified
+import Test.Kore.IndexedModule.Resolvers qualified
+import Test.Kore.IndexedModule.SortGraph qualified
+import Test.Kore.Internal.ApplicationSorts qualified
+import Test.Kore.Internal.From qualified
+import Test.Kore.Internal.Key qualified
+import Test.Kore.Internal.MultiAnd qualified
+import Test.Kore.Internal.MultiExists qualified
+import Test.Kore.Internal.OrPattern qualified
+import Test.Kore.Internal.Pattern qualified
+import Test.Kore.Internal.Predicate qualified
+import Test.Kore.Internal.SideCondition qualified
+import Test.Kore.Internal.Substitution qualified
+import Test.Kore.Internal.TermLike qualified
+import Test.Kore.Log.DebugEvaluateCondition qualified
+import Test.Kore.Log.ErrorBottomTotalFunction qualified
+import Test.Kore.Log.WarnFunctionWithoutEvaluators qualified
+import Test.Kore.Log.WarnSymbolSMTRepresentation qualified
+import Test.Kore.Options qualified
+import Test.Kore.Parser.Lexer qualified
+import Test.Kore.Parser.Parser qualified
+import Test.Kore.Reachability.Claim qualified
+import Test.Kore.Reachability.MockAllPath qualified
+import Test.Kore.Reachability.OnePathStrategy qualified
+import Test.Kore.Reachability.Prove qualified
+import Test.Kore.Reachability.SomeClaim qualified
+import Test.Kore.Repl.Graph qualified
+import Test.Kore.Repl.Interpreter qualified
+import Test.Kore.Repl.Parser qualified
+import Test.Kore.Rewrite qualified
+import Test.Kore.Rewrite.AntiLeft qualified
+import Test.Kore.Rewrite.Axiom.EvaluationStrategy qualified
+import Test.Kore.Rewrite.Axiom.Identifier qualified
+import Test.Kore.Rewrite.Axiom.Matcher qualified
+import Test.Kore.Rewrite.Axiom.Registry qualified
+import Test.Kore.Rewrite.ClaimPattern qualified
+import Test.Kore.Rewrite.Function.Evaluator qualified
+import Test.Kore.Rewrite.Function.Integration qualified
+import Test.Kore.Rewrite.Function.Memo qualified
+import Test.Kore.Rewrite.Implication qualified
+import Test.Kore.Rewrite.MockSymbols qualified
+import Test.Kore.Rewrite.Remainder qualified
+import Test.Kore.Rewrite.RewriteStep qualified
+import Test.Kore.Rewrite.RewritingVariable qualified
+import Test.Kore.Rewrite.Rule qualified
+import Test.Kore.Rewrite.Rule.Expand qualified
+import Test.Kore.Rewrite.Rule.Simplify qualified
+import Test.Kore.Rewrite.RulePattern qualified
+import Test.Kore.Rewrite.SMT.Evaluator qualified
+import Test.Kore.Rewrite.SMT.Representation.All qualified
+import Test.Kore.Rewrite.SMT.Representation.Sorts qualified
+import Test.Kore.Rewrite.SMT.Representation.Symbols qualified
+import Test.Kore.Rewrite.SMT.Sorts qualified
+import Test.Kore.Rewrite.SMT.Symbols qualified
+import Test.Kore.Rewrite.SMT.Translate qualified
+import Test.Kore.Rewrite.Strategy qualified
+import Test.Kore.Rewrite.Transition qualified
+import Test.Kore.Simplify.And qualified
+import Test.Kore.Simplify.AndTerms qualified
+import Test.Kore.Simplify.Application qualified
+import Test.Kore.Simplify.Bottom qualified
+import Test.Kore.Simplify.Ceil qualified
+import Test.Kore.Simplify.Condition qualified
+import Test.Kore.Simplify.DomainValue qualified
+import Test.Kore.Simplify.Equals qualified
+import Test.Kore.Simplify.Exists qualified
+import Test.Kore.Simplify.Floor qualified
+import Test.Kore.Simplify.Forall qualified
+import Test.Kore.Simplify.Iff qualified
+import Test.Kore.Simplify.Implies qualified
+import Test.Kore.Simplify.Inj qualified
+import Test.Kore.Simplify.InjSimplifier qualified
+import Test.Kore.Simplify.Integration qualified
+import Test.Kore.Simplify.IntegrationProperty qualified
+import Test.Kore.Simplify.InternalList qualified
+import Test.Kore.Simplify.InternalMap qualified
+import Test.Kore.Simplify.InternalSet qualified
+import Test.Kore.Simplify.Next qualified
+import Test.Kore.Simplify.Not qualified
+import Test.Kore.Simplify.Or qualified
+import Test.Kore.Simplify.OrPattern qualified
+import Test.Kore.Simplify.Overloading qualified
+import Test.Kore.Simplify.Pattern qualified
+import Test.Kore.Simplify.Predicate qualified
+import Test.Kore.Simplify.StringLiteral qualified
+import Test.Kore.Simplify.SubstitutionSimplifier qualified
+import Test.Kore.Simplify.TermLike qualified
+import Test.Kore.Simplify.Top qualified
+import Test.Kore.Syntax.Id qualified
+import Test.Kore.Syntax.Json qualified
+import Test.Kore.Syntax.Json.Roundtrips qualified
+import Test.Kore.Syntax.Variable qualified
+import Test.Kore.TopBottom qualified
+import Test.Kore.Unification.SubstitutionNormalization qualified
+import Test.Kore.Unification.Unifier qualified
+import Test.Kore.Unification.UnifierT qualified
+import Test.Kore.Unparser qualified
+import Test.Kore.Validate.DefinitionVerifier.Imports qualified
+import Test.Kore.Validate.DefinitionVerifier.PatternVerifier qualified
+import Test.Kore.Validate.DefinitionVerifier.SentenceVerifier qualified
+import Test.Kore.Validate.DefinitionVerifier.SortUsage qualified
+import Test.Kore.Validate.DefinitionVerifier.UniqueNames qualified
+import Test.Kore.Validate.DefinitionVerifier.UniqueSortVariables qualified
+import Test.Kore.Variables.Fresh qualified
+import Test.Kore.Variables.Target qualified
+import Test.Pretty qualified
+import Test.SMT.AST qualified
+import Test.SQL qualified
+import Test.Stats qualified
 import Test.Tasty qualified as T
 import Test.Tasty.Hedgehog qualified as H
 import Test.Tasty.Ingredients qualified as T
-import Prelude
-
 import Test.Tasty.QuickCheck qualified as QC
-
 import Test.Tasty.Runners qualified
-
 import Test.Tasty.Runners.Reporter qualified
-
-import Test.Pretty qualified
-
-import Test.Injection qualified
-
-import Test.SQL qualified
-
-import Test.Debug qualified
-
-import Test.Stats qualified
-
-import Test.Data.Sup qualified
-
-import Test.Data.Limit qualified
-
-import Test.Data.InternedText qualified
-
-import Test.Data.Graph.TopologicalSort qualified
-
-import Test.Kore.TopBottom qualified
-
-import Test.Kore.Exec qualified
-
-import Test.Kore.Builtin qualified
-
-import Test.Kore.Options qualified
-
-import Test.Kore.Error qualified
-
-import Test.Kore.BugReport qualified
-
-import Test.Kore.Unparser qualified
-
-import Test.Kore.Rewrite qualified
-
-import Test.Kore.Equation.Simplification qualified
-
-import Test.Kore.Equation.Sentence qualified
-
-import Test.Kore.Equation.Application qualified
-
-import Test.Kore.Validate.DefinitionVerifier.UniqueSortVariables qualified
-
-import Test.Kore.Validate.DefinitionVerifier.SentenceVerifier qualified
-
-import Test.Kore.Validate.DefinitionVerifier.UniqueNames qualified
-
-import Test.Kore.Validate.DefinitionVerifier.SortUsage qualified
-
-import Test.Kore.Validate.DefinitionVerifier.Imports qualified
-
-import Test.Kore.Validate.DefinitionVerifier.PatternVerifier qualified
-
-import Test.Kore.Log.ErrorBottomTotalFunction qualified
-
-import Test.Kore.Log.DebugEvaluateCondition qualified
-
-import Test.Kore.Log.WarnFunctionWithoutEvaluators qualified
-
-import Test.Kore.Log.WarnSymbolSMTRepresentation qualified
-
-import Test.Kore.AST.Common qualified
-
-import Test.Kore.Repl.Interpreter qualified
-
-import Test.Kore.Repl.Parser qualified
-
-import Test.Kore.Repl.Graph qualified
-
-import Test.Kore.Reachability.Claim qualified
-
-import Test.Kore.Reachability.Prove qualified
-
-import Test.Kore.Reachability.SomeClaim qualified
-
-import Test.Kore.Reachability.OnePathStrategy qualified
-
-import Test.Kore.Reachability.MockAllPath qualified
-
-import Test.Kore.Rewrite.Rule qualified
-
-import Test.Kore.Rewrite.MockSymbols qualified
-
-import Test.Kore.Rewrite.RewriteStep qualified
-
-import Test.Kore.Rewrite.Strategy qualified
-
-import Test.Kore.Rewrite.Remainder qualified
-
-import Test.Kore.Rewrite.RewritingVariable qualified
-
-import Test.Kore.Rewrite.AntiLeft qualified
-
-import Test.Kore.Rewrite.RulePattern qualified
-
-import Test.Kore.Rewrite.Transition qualified
-
-import Test.Kore.Rewrite.ClaimPattern qualified
-
-import Test.Kore.Rewrite.Implication qualified
-
-import Test.Kore.Rewrite.Rule.Simplify qualified
-
-import Test.Kore.Rewrite.Rule.Expand qualified
-
-import Test.Kore.Rewrite.Function.Integration qualified
-
-import Test.Kore.Rewrite.Function.Evaluator qualified
-
-import Test.Kore.Rewrite.Function.Memo qualified
-
-import Test.Kore.Rewrite.Axiom.Matcher qualified
-
-import Test.Kore.Rewrite.Axiom.Registry qualified
-
-import Test.Kore.Rewrite.Axiom.EvaluationStrategy qualified
-
-import Test.Kore.Rewrite.Axiom.Identifier qualified
-
-import Test.Kore.Rewrite.SMT.Translate qualified
-
-import Test.Kore.Rewrite.SMT.Symbols qualified
-
-import Test.Kore.Rewrite.SMT.Evaluator qualified
-
-import Test.Kore.Rewrite.SMT.Sorts qualified
-
-import Test.Kore.Rewrite.SMT.Representation.Symbols qualified
-
-import Test.Kore.Rewrite.SMT.Representation.All qualified
-
-import Test.Kore.Rewrite.SMT.Representation.Sorts qualified
-
-import Test.Kore.Builtin.Bool qualified
-
-import Test.Kore.Builtin.Signedness qualified
-
-import Test.Kore.Builtin.Krypto qualified
-
-import Test.Kore.Builtin.InternalBytes qualified
-
-import Test.Kore.Builtin.Inj qualified
-
-import Test.Kore.Builtin.String qualified
-
-import Test.Kore.Builtin.Encoding qualified
-
-import Test.Kore.Builtin.Map qualified
-
-import Test.Kore.Builtin.Set qualified
-
-import Test.Kore.Builtin.Endianness qualified
-
-import Test.Kore.Builtin.Int qualified
-
-import Test.Kore.Builtin.KEqual qualified
-
-import Test.Kore.Builtin.List qualified
-
-import Test.Kore.Builtin.AssocComm.CeilSimplifier qualified
-
-import Test.Kore.Attribute.ProductionID qualified
-
-import Test.Kore.Attribute.Trusted qualified
-
-import Test.Kore.Attribute.Simplification qualified
-
-import Test.Kore.Attribute.UniqueId qualified
-
-import Test.Kore.Attribute.SortInjection qualified
-
-import Test.Kore.Attribute.Functional qualified
-
-import Test.Kore.Attribute.Owise qualified
-
-import Test.Kore.Attribute.Hook qualified
-
-import Test.Kore.Attribute.Label qualified
-
-import Test.Kore.Attribute.Overload qualified
-
-import Test.Kore.Attribute.Subsort qualified
-
-import Test.Kore.Attribute.Smtlib qualified
-
-import Test.Kore.Attribute.Constructor qualified
-
-import Test.Kore.Attribute.Symbol qualified
-
-import Test.Kore.Attribute.Injective qualified
-
-import Test.Kore.Attribute.NonExecutable qualified
-
-import Test.Kore.Attribute.Idem qualified
-
-import Test.Kore.Attribute.Comm qualified
-
-import Test.Kore.Attribute.Function qualified
-
-import Test.Kore.Attribute.Priority qualified
-
-import Test.Kore.Attribute.Assoc qualified
-
-import Test.Kore.Attribute.Pattern.FreeVariables qualified
-
-import Test.Kore.Attribute.Pattern.Functional qualified
-
-import Test.Kore.Attribute.Pattern.ConstructorLike qualified
-
-import Test.Kore.Attribute.Pattern.Sort qualified
-
-import Test.Kore.Attribute.Pattern.Defined qualified
-
-import Test.Kore.Attribute.Pattern.Function qualified
-
-import Test.Kore.Attribute.Sort.ConstructorsBuilder qualified
-
-import Test.Kore.Attribute.Sort.HasDomainValues qualified
-
-import Test.Kore.Attribute.Sort.Unit qualified
-
-import Test.Kore.Attribute.Axiom.Unit qualified
-
-import Test.Kore.Attribute.Axiom.Concrete qualified
-
-import Test.Kore.Attribute.Axiom.Symbolic qualified
-
-import Test.Kore.Attribute.Symbol.NoEvaluators qualified
-
-import Test.Kore.Attribute.Symbol.Klabel qualified
-
-import Test.Kore.Attribute.Symbol.Anywhere qualified
-
-import Test.Kore.Attribute.Symbol.Memo qualified
-
-import Test.Kore.Attribute.Symbol.SymbolKywd qualified
-
-import Test.Kore.Syntax.Id qualified
-
-import Test.Kore.Syntax.Variable qualified
-
-import Test.Kore.Syntax.Json qualified
-
-import Test.Kore.Syntax.Json.Roundtrips qualified
-
-import Test.Kore.IndexedModule.OverloadGraph qualified
-
-import Test.Kore.IndexedModule.Resolvers qualified
-
-import Test.Kore.IndexedModule.SortGraph qualified
-
-import Test.Kore.IndexedModule.Error qualified
-
-import Test.Kore.Variables.Fresh qualified
-
-import Test.Kore.Variables.Target qualified
-
-import Test.Kore.Unification.UnifierT qualified
-
-import Test.Kore.Unification.Unifier qualified
-
-import Test.Kore.Unification.SubstitutionNormalization qualified
-
-import Test.Kore.Internal.Substitution qualified
-
-import Test.Kore.Internal.MultiAnd qualified
-
-import Test.Kore.Internal.From qualified
-
-import Test.Kore.Internal.ApplicationSorts qualified
-
-import Test.Kore.Internal.SideCondition qualified
-
-import Test.Kore.Internal.OrPattern qualified
-
-import Test.Kore.Internal.Key qualified
-
-import Test.Kore.Internal.Predicate qualified
-
-import Test.Kore.Internal.MultiExists qualified
-
-import Test.Kore.Internal.TermLike qualified
-
-import Test.Kore.Internal.Pattern qualified
-
-import Test.Kore.Simplify.Overloading qualified
-
-import Test.Kore.Simplify.SubstitutionSimplifier qualified
-
-import Test.Kore.Simplify.Integration qualified
-
-import Test.Kore.Simplify.Or qualified
-
-import Test.Kore.Simplify.DomainValue qualified
-
-import Test.Kore.Simplify.StringLiteral qualified
-
-import Test.Kore.Simplify.Forall qualified
-
-import Test.Kore.Simplify.Top qualified
-
-import Test.Kore.Simplify.Equals qualified
-
-import Test.Kore.Simplify.AndTerms qualified
-
-import Test.Kore.Simplify.InternalMap qualified
-
-import Test.Kore.Simplify.Next qualified
-
-import Test.Kore.Simplify.Floor qualified
-
-import Test.Kore.Simplify.And qualified
-
-import Test.Kore.Simplify.Inj qualified
-
-import Test.Kore.Simplify.Not qualified
-
-import Test.Kore.Simplify.OrPattern qualified
-
-import Test.Kore.Simplify.InternalSet qualified
-
-import Test.Kore.Simplify.Condition qualified
-
-import Test.Kore.Simplify.Predicate qualified
-
-import Test.Kore.Simplify.Implies qualified
-
-import Test.Kore.Simplify.Exists qualified
-
-import Test.Kore.Simplify.InternalList qualified
-
-import Test.Kore.Simplify.TermLike qualified
-
-import Test.Kore.Simplify.Ceil qualified
-
-import Test.Kore.Simplify.Application qualified
-
-import Test.Kore.Simplify.Iff qualified
-
-import Test.Kore.Simplify.IntegrationProperty qualified
-
-import Test.Kore.Simplify.Bottom qualified
-
-import Test.Kore.Simplify.Pattern qualified
-
-import Test.Kore.Simplify.InjSimplifier qualified
-
-import Test.Kore.Parser.Parser qualified
-
-import Test.Kore.Parser.Lexer qualified
-
-import Test.SMT.AST qualified
+import Prelude
 
 class TestGroup a where testGroup :: String -> a -> IO T.TestTree
 instance TestGroup T.TestTree where testGroup _ a = pure a
