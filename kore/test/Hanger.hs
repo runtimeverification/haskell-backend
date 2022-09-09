@@ -53,9 +53,8 @@ hanger =
           , termDefined = Defined{isDefined = False}
           , termCreated = Created{getCreated = Nothing}
           , termSimplified =
-             NotSimplified
-          , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-            termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+             Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+          , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
           }
           :< T.MuF
            ( Mu
@@ -94,9 +93,8 @@ hanger =
                       , termDefined = Defined{isDefined = False}
                       , termCreated = Created{getCreated = Nothing}
                       , termSimplified =
-                         NotSimplified
-                      , -- WAS: Simplified ( SimplifiedData{sType = Fully, condition = Any} )
-                        termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                         Simplified ( SimplifiedData{sType = Fully, condition = Any} )
+                      , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                       }
                       :< T.BottomF
                        ( Bottom
@@ -171,9 +169,8 @@ hanger =
                                         , termDefined = Defined{isDefined = False}
                                         , termCreated = Created{getCreated = Nothing}
                                         , termSimplified =
-                                           NotSimplified
-                                        , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                          termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                           Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                        , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                         }
                                         :< T.MuF
                                          ( Mu
@@ -235,9 +232,8 @@ hanger =
                                                     , termDefined = Defined{isDefined = False}
                                                     , termCreated = Created{getCreated = Nothing}
                                                     , termSimplified =
-                                                       NotSimplified
-                                                    , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                      termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                       Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                    , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                     }
                                                     :< T.IffF
                                                      ( Iff
@@ -288,9 +284,8 @@ hanger =
                                                                 , termDefined = Defined{isDefined = False}
                                                                 , termCreated = Created{getCreated = Nothing}
                                                                 , termSimplified =
-                                                                   NotSimplified
-                                                                , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                  termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                   Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                 }
                                                                 :< T.IffF
                                                                  ( Iff
@@ -318,9 +313,8 @@ hanger =
                                                                             , termDefined = Defined{isDefined = False}
                                                                             , termCreated = Created{getCreated = Nothing}
                                                                             , termSimplified =
-                                                                               NotSimplified
-                                                                            , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                              termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                               Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                            , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                             }
                                                                             :< T.ExistsF
                                                                              ( Exists
@@ -366,9 +360,8 @@ hanger =
                                                                                         , termDefined = Defined{isDefined = False}
                                                                                         , termCreated = Created{getCreated = Nothing}
                                                                                         , termSimplified =
-                                                                                           NotSimplified
-                                                                                        , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                                          termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                           Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                                        , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                         }
                                                                                         :< ApplySymbolF
                                                                                          ( Application
@@ -439,9 +432,8 @@ hanger =
                                                                                                       , termDefined = Defined{isDefined = False}
                                                                                                       , termCreated = Created{getCreated = Nothing}
                                                                                                       , termSimplified =
-                                                                                                         NotSimplified
-                                                                                                      , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                                                        termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                         Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                                                      , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                       }
                                                                                                       :< T.ExistsF
                                                                                                        ( Exists
@@ -487,9 +479,8 @@ hanger =
                                                                                                                   , termDefined = Defined{isDefined = True}
                                                                                                                   , termCreated = Created{getCreated = Nothing}
                                                                                                                   , termSimplified =
-                                                                                                                     NotSimplified
-                                                                                                                  , -- WAS: Simplified ( SimplifiedData{sType = Fully, condition = Any} )
-                                                                                                                    termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                                     Simplified ( SimplifiedData{sType = Fully, condition = Any} )
+                                                                                                                  , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                   }
                                                                                                                   :< T.TopF
                                                                                                                    ( Top
@@ -522,9 +513,8 @@ hanger =
                                                                                                       , termDefined = Defined{isDefined = False}
                                                                                                       , termCreated = Created{getCreated = Nothing}
                                                                                                       , termSimplified =
-                                                                                                         NotSimplified
-                                                                                                      , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                                                        termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                         Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                                                      , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                       }
                                                                                                       :< T.ForallF
                                                                                                        ( Forall
@@ -570,9 +560,8 @@ hanger =
                                                                                                                   , termDefined = Defined{isDefined = False}
                                                                                                                   , termCreated = Created{getCreated = Nothing}
                                                                                                                   , termSimplified =
-                                                                                                                     NotSimplified
-                                                                                                                  , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                                                                    termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                                     Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                                                                  , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                   }
                                                                                                                   :< T.NuF
                                                                                                                    ( Nu
@@ -611,9 +600,8 @@ hanger =
                                                                                                                               , termDefined = Defined{isDefined = False}
                                                                                                                               , termCreated = Created{getCreated = Nothing}
                                                                                                                               , termSimplified =
-                                                                                                                                 NotSimplified
-                                                                                                                              , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                                                                                termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                                                 Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                                                                              , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                               }
                                                                                                                               :< T.IffF
                                                                                                                                ( Iff
@@ -641,9 +629,8 @@ hanger =
                                                                                                                                           , termDefined = Defined{isDefined = False}
                                                                                                                                           , termCreated = Created{getCreated = Nothing}
                                                                                                                                           , termSimplified =
-                                                                                                                                             NotSimplified
-                                                                                                                                          , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                                                                                            termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                                                             Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                                                                                          , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                           }
                                                                                                                                           :< T.MuF
                                                                                                                                            ( Mu
@@ -682,9 +669,8 @@ hanger =
                                                                                                                                                       , termDefined = Defined{isDefined = False}
                                                                                                                                                       , termCreated = Created{getCreated = Nothing}
                                                                                                                                                       , termSimplified =
-                                                                                                                                                         NotSimplified
-                                                                                                                                                      , -- WAS: Simplified ( SimplifiedData{sType = Fully, condition = Any} )
-                                                                                                                                                        termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                                                                         Simplified ( SimplifiedData{sType = Fully, condition = Any} )
+                                                                                                                                                      , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                       }
                                                                                                                                                       :< T.BottomF
                                                                                                                                                        ( Bottom
@@ -718,9 +704,8 @@ hanger =
                                                                                                                                           , termDefined = Defined{isDefined = False}
                                                                                                                                           , termCreated = Created{getCreated = Nothing}
                                                                                                                                           , termSimplified =
-                                                                                                                                             NotSimplified
-                                                                                                                                          , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                                                                                            termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                                                             Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                                                                                          , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                           }
                                                                                                                                           :< T.AndF
                                                                                                                                            ( And
@@ -748,9 +733,8 @@ hanger =
                                                                                                                                                       , termDefined = Defined{isDefined = True}
                                                                                                                                                       , termCreated = Created{getCreated = Nothing}
                                                                                                                                                       , termSimplified =
-                                                                                                                                                         NotSimplified
-                                                                                                                                                      , -- WAS: Simplified ( SimplifiedData{sType = Fully, condition = Any} )
-                                                                                                                                                        termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
+                                                                                                                                                         Simplified ( SimplifiedData{sType = Fully, condition = Any} )
+                                                                                                                                                      , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                                                       }
                                                                                                                                                       :< InternalIntF
                                                                                                                                                        ( Const
@@ -784,9 +768,8 @@ hanger =
                                                                                                                                                       , termDefined = Defined{isDefined = True}
                                                                                                                                                       , termCreated = Created{getCreated = Nothing}
                                                                                                                                                       , termSimplified =
-                                                                                                                                                         NotSimplified
-                                                                                                                                                      , -- WAS: Simplified ( SimplifiedData{sType = Fully, condition = Any} )
-                                                                                                                                                        termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                                                                         Simplified ( SimplifiedData{sType = Fully, condition = Any} )
+                                                                                                                                                      , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                       }
                                                                                                                                                       :< T.TopF
                                                                                                                                                        ( Top
@@ -859,9 +842,8 @@ hanger =
                                                                             , termDefined = Defined{isDefined = False}
                                                                             , termCreated = Created{getCreated = Nothing}
                                                                             , termSimplified =
-                                                                               NotSimplified
-                                                                            , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                              termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                               Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                            , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                             }
                                                                             :< T.AndF
                                                                              ( And
@@ -912,9 +894,8 @@ hanger =
                                                                                         , termDefined = Defined{isDefined = False}
                                                                                         , termCreated = Created{getCreated = Nothing}
                                                                                         , termSimplified =
-                                                                                           NotSimplified
-                                                                                        , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                                          termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                           Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                                        , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                         }
                                                                                         :< T.OrF
                                                                                          ( Or
@@ -965,9 +946,8 @@ hanger =
                                                                                                     , termDefined = Defined{isDefined = False}
                                                                                                     , termCreated = Created{getCreated = Nothing}
                                                                                                     , termSimplified =
-                                                                                                       NotSimplified
-                                                                                                    , -- WAS: Simplified ( SimplifiedData{sType = Fully, condition = Any} )
-                                                                                                      termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                       Simplified ( SimplifiedData{sType = Fully, condition = Any} )
+                                                                                                    , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                     }
                                                                                                     :< VariableF
                                                                                                      ( Const
@@ -1010,9 +990,8 @@ hanger =
                                                                                                     , termDefined = Defined{isDefined = False}
                                                                                                     , termCreated = Created{getCreated = Nothing}
                                                                                                     , termSimplified =
-                                                                                                       NotSimplified
-                                                                                                    , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                                                      termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                       Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                                                    , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                     }
                                                                                                     :< T.NotF
                                                                                                      ( Not
@@ -1040,9 +1019,8 @@ hanger =
                                                                                                                 , termDefined = Defined{isDefined = True}
                                                                                                                 , termCreated = Created{getCreated = Nothing}
                                                                                                                 , termSimplified =
-                                                                                                                   NotSimplified
-                                                                                                                , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                                                                  termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                                   Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                                                                , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                 }
                                                                                                                 :< ApplySymbolF
                                                                                                                  ( Application
@@ -1113,9 +1091,8 @@ hanger =
                                                                                                                               , termDefined = Defined{isDefined = True}
                                                                                                                               , termCreated = Created{getCreated = Nothing}
                                                                                                                               , termSimplified =
-                                                                                                                                 NotSimplified
-                                                                                                                              , -- WAS: Simplified ( SimplifiedData{sType = Fully, condition = Any} )
-                                                                                                                                termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                                                 Simplified ( SimplifiedData{sType = Fully, condition = Any} )
+                                                                                                                              , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                               }
                                                                                                                               :< T.TopF
                                                                                                                                ( Top
@@ -1145,9 +1122,8 @@ hanger =
                                                                                                                               , termDefined = Defined{isDefined = True}
                                                                                                                               , termCreated = Created{getCreated = Nothing}
                                                                                                                               , termSimplified =
-                                                                                                                                 NotSimplified
-                                                                                                                              , -- WAS: Simplified ( SimplifiedData{sType = Fully, condition = Any} )
-                                                                                                                                termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
+                                                                                                                                 Simplified ( SimplifiedData{sType = Fully, condition = Any} )
+                                                                                                                              , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                               }
                                                                                                                               :< InternalIntF
                                                                                                                                ( Const
@@ -1214,9 +1190,8 @@ hanger =
                                                                                         , termDefined = Defined{isDefined = False}
                                                                                         , termCreated = Created{getCreated = Nothing}
                                                                                         , termSimplified =
-                                                                                           NotSimplified
-                                                                                        , -- WAS: Simplified ( SimplifiedData{sType = Fully, condition = Any} )
-                                                                                          termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                           Simplified ( SimplifiedData{sType = Fully, condition = Any} )
+                                                                                        , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                         }
                                                                                         :< VariableF
                                                                                          ( Const
@@ -1265,9 +1240,8 @@ hanger =
                                                                 , termDefined = Defined{isDefined = False}
                                                                 , termCreated = Created{getCreated = Nothing}
                                                                 , termSimplified =
-                                                                   NotSimplified
-                                                                , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                  termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                   Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                 }
                                                                 :< T.NuF
                                                                  ( Nu
@@ -1306,9 +1280,8 @@ hanger =
                                                                             , termDefined = Defined{isDefined = False}
                                                                             , termCreated = Created{getCreated = Nothing}
                                                                             , termSimplified =
-                                                                               NotSimplified
-                                                                            , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                              termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                               Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                            , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                             }
                                                                             :< T.ExistsF
                                                                              ( Exists
@@ -1354,9 +1327,8 @@ hanger =
                                                                                         , termDefined = Defined{isDefined = False}
                                                                                         , termCreated = Created{getCreated = Nothing}
                                                                                         , termSimplified =
-                                                                                           NotSimplified
-                                                                                        , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                                          termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                           Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                                        , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                         }
                                                                                         :< ApplySymbolF
                                                                                          ( Application
@@ -1427,9 +1399,8 @@ hanger =
                                                                                                       , termDefined = Defined{isDefined = False}
                                                                                                       , termCreated = Created{getCreated = Nothing}
                                                                                                       , termSimplified =
-                                                                                                         NotSimplified
-                                                                                                      , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                                                        termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                         Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                                                      , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                       }
                                                                                                       :< T.ExistsF
                                                                                                        ( Exists
@@ -1475,9 +1446,8 @@ hanger =
                                                                                                                   , termDefined = Defined{isDefined = False}
                                                                                                                   , termCreated = Created{getCreated = Nothing}
                                                                                                                   , termSimplified =
-                                                                                                                     NotSimplified
-                                                                                                                  , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                                                                    termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                                     Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                                                                  , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                   }
                                                                                                                   :< ApplySymbolF
                                                                                                                    ( Application
@@ -1548,9 +1518,8 @@ hanger =
                                                                                                                                 , termDefined = Defined{isDefined = False}
                                                                                                                                 , termCreated = Created{getCreated = Nothing}
                                                                                                                                 , termSimplified =
-                                                                                                                                   NotSimplified
-                                                                                                                                , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                                                                                  termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                                                   Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                                                                                , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                 }
                                                                                                                                 :< T.ForallF
                                                                                                                                  ( Forall
@@ -1619,9 +1588,8 @@ hanger =
                                                                                                                                             , termDefined = Defined{isDefined = True}
                                                                                                                                             , termCreated = Created{getCreated = Nothing}
                                                                                                                                             , termSimplified =
-                                                                                                                                               NotSimplified
-                                                                                                                                            , -- WAS: Simplified ( SimplifiedData{sType = Fully, condition = Any} )
-                                                                                                                                              termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                                                               Simplified ( SimplifiedData{sType = Fully, condition = Any} )
+                                                                                                                                            , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                             }
                                                                                                                                             :< VariableF
                                                                                                                                              ( Const
@@ -1666,9 +1634,8 @@ hanger =
                                                                                                                                 , termDefined = Defined{isDefined = False}
                                                                                                                                 , termCreated = Created{getCreated = Nothing}
                                                                                                                                 , termSimplified =
-                                                                                                                                   NotSimplified
-                                                                                                                                , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                                                                                  termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                                                   Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                                                                                , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                 }
                                                                                                                                 :< T.AndF
                                                                                                                                  ( And
@@ -1696,9 +1663,8 @@ hanger =
                                                                                                                                             , termDefined = Defined{isDefined = False}
                                                                                                                                             , termCreated = Created{getCreated = Nothing}
                                                                                                                                             , termSimplified =
-                                                                                                                                               NotSimplified
-                                                                                                                                            , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                                                                                              termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                                                               Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                                                                                            , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                             }
                                                                                                                                             :< T.IffF
                                                                                                                                              ( Iff
@@ -1726,9 +1692,8 @@ hanger =
                                                                                                                                                         , termDefined = Defined{isDefined = True}
                                                                                                                                                         , termCreated = Created{getCreated = Nothing}
                                                                                                                                                         , termSimplified =
-                                                                                                                                                           NotSimplified
-                                                                                                                                                        , -- WAS: Simplified ( SimplifiedData{sType = Fully, condition = Any} )
-                                                                                                                                                          termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                                                                           Simplified ( SimplifiedData{sType = Fully, condition = Any} )
+                                                                                                                                                        , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                         }
                                                                                                                                                         :< T.TopF
                                                                                                                                                          ( Top
@@ -1759,9 +1724,8 @@ hanger =
                                                                                                                                                         , termDefined = Defined{isDefined = False}
                                                                                                                                                         , termCreated = Created{getCreated = Nothing}
                                                                                                                                                         , termSimplified =
-                                                                                                                                                           NotSimplified
-                                                                                                                                                        , -- WAS: Simplified ( SimplifiedData{sType = Fully, condition = Any} )
-                                                                                                                                                          termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                                                                           Simplified ( SimplifiedData{sType = Fully, condition = Any} )
+                                                                                                                                                        , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                         }
                                                                                                                                                         :< T.BottomF
                                                                                                                                                          ( Bottom
@@ -1795,9 +1759,8 @@ hanger =
                                                                                                                                             , termDefined = Defined{isDefined = False}
                                                                                                                                             , termCreated = Created{getCreated = Nothing}
                                                                                                                                             , termSimplified =
-                                                                                                                                               NotSimplified
-                                                                                                                                            , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                                                                                                              termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                                                               Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                                                                                                            , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                             }
                                                                                                                                             :< T.ImpliesF
                                                                                                                                              ( Implies
@@ -1825,9 +1788,8 @@ hanger =
                                                                                                                                                         , termDefined = Defined{isDefined = False}
                                                                                                                                                         , termCreated = Created{getCreated = Nothing}
                                                                                                                                                         , termSimplified =
-                                                                                                                                                           NotSimplified
-                                                                                                                                                        , -- WAS: Simplified ( SimplifiedData{sType = Fully, condition = Any} )
-                                                                                                                                                          termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                                                                                                                           Simplified ( SimplifiedData{sType = Fully, condition = Any} )
+                                                                                                                                                        , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                         }
                                                                                                                                                         :< T.BottomF
                                                                                                                                                          ( Bottom
@@ -1858,9 +1820,8 @@ hanger =
                                                                                                                                                         , termDefined = Defined{isDefined = True}
                                                                                                                                                         , termCreated = Created{getCreated = Nothing}
                                                                                                                                                         , termSimplified =
-                                                                                                                                                           NotSimplified
-                                                                                                                                                        , -- WAS: Simplified ( SimplifiedData{sType = Fully, condition = Any} )
-                                                                                                                                                          termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
+                                                                                                                                                           Simplified ( SimplifiedData{sType = Fully, condition = Any} )
+                                                                                                                                                        , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                                                         }
                                                                                                                                                         :< InternalIntF
                                                                                                                                                          ( Const
@@ -1906,9 +1867,8 @@ hanger =
                                                                                                       , termDefined = Defined{isDefined = True}
                                                                                                       , termCreated = Created{getCreated = Nothing}
                                                                                                       , termSimplified =
-                                                                                                         NotSimplified
-                                                                                                      , -- WAS: Simplified ( SimplifiedData{sType = Fully, condition = Any} )
-                                                                                                        termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
+                                                                                                         Simplified ( SimplifiedData{sType = Fully, condition = Any} )
+                                                                                                      , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                       }
                                                                                                       :< InternalIntF
                                                                                                        ( Const
@@ -2029,9 +1989,8 @@ hanger =
                                                       , termDefined = Defined{isDefined = False}
                                                       , termCreated = Created{getCreated = Nothing}
                                                       , termSimplified =
-                                                         NotSimplified
-                                                      , -- WAS: Simplified ( SimplifiedData{sType = Partly, condition = Any} )
-                                                        termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
+                                                         Simplified ( SimplifiedData{sType = Partly, condition = Any} )
+                                                      , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                       }
                                                       :< ApplySymbolF
                                                        ( Application
@@ -2096,9 +2055,8 @@ hanger =
                                                                     , termDefined = Defined{isDefined = True}
                                                                     , termCreated = Created{getCreated = Nothing}
                                                                     , termSimplified =
-                                                                       NotSimplified
-                                                                    , -- WAS: Simplified ( SimplifiedData{sType = Fully, condition = Any} )
-                                                                      termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
+                                                                       Simplified ( SimplifiedData{sType = Fully, condition = Any} )
+                                                                    , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                     }
                                                                     :< ApplySymbolF
                                                                      ( Application
@@ -2234,9 +2192,8 @@ hanger =
                                                                     , termDefined = Defined{isDefined = True}
                                                                     , termCreated = Created{getCreated = Nothing}
                                                                     , termSimplified =
-                                                                       NotSimplified
-                                                                    , -- WAS: Simplified ( SimplifiedData{sType = Fully, condition = Any} )
-                                                                      termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
+                                                                       Simplified ( SimplifiedData{sType = Fully, condition = Any} )
+                                                                    , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                     }
                                                                     :< ApplySymbolF
                                                                      ( Application
@@ -2378,7 +2335,7 @@ hanger2 =
           , termFunction = Function{isFunction = False}
           , termDefined = Defined{isDefined = False}
           , termCreated = Created{getCreated = Nothing}
-          , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+          , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
           , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
           }
           :< T.NotF
@@ -2406,7 +2363,7 @@ hanger2 =
                       , termFunction = Function{isFunction = False}
                       , termDefined = Defined{isDefined = False}
                       , termCreated = Created{getCreated = Nothing}
-                      , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                      , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                       , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                       }
                       :< T.AndF
@@ -2434,7 +2391,7 @@ hanger2 =
                                   , termFunction = Function{isFunction = True}
                                   , termDefined = Defined{isDefined = True}
                                   , termCreated = Created{getCreated = Nothing}
-                                  , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                  , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                   , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                   }
                                   :< ApplySymbolF
@@ -2496,7 +2453,7 @@ hanger2 =
                                   , termFunction = Function{isFunction = False}
                                   , termDefined = Defined{isDefined = True}
                                   , termCreated = Created{getCreated = Nothing}
-                                  , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                  , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                   , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                   }
                                   :< T.TopF
@@ -2896,7 +2853,7 @@ hanger2 =
                                                                                                                                                                     , termFunction = Function{isFunction = False}
                                                                                                                                                                     , termDefined = Defined{isDefined = True}
                                                                                                                                                                     , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                    , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                    , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                     , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                     }
                                                                                                                                                                     :< T.TopF
@@ -3041,7 +2998,7 @@ hanger2 =
                                                                                                                                                         , termFunction = Function{isFunction = False}
                                                                                                                                                         , termDefined = Defined{isDefined = True}
                                                                                                                                                         , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                        , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                                        , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                                         , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                         }
                                                                                                                                                         :< ApplySymbolF
@@ -3112,7 +3069,7 @@ hanger2 =
                                                                                                                                                                       , termFunction = Function{isFunction = True}
                                                                                                                                                                       , termDefined = Defined{isDefined = True}
                                                                                                                                                                       , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                      , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                      , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                       , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                                                                       }
                                                                                                                                                                       :< ApplySymbolF
@@ -3173,7 +3130,7 @@ hanger2 =
                                                                                                                                                                       , termFunction = Function{isFunction = False}
                                                                                                                                                                       , termDefined = Defined{isDefined = True}
                                                                                                                                                                       , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                      , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                      , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                       , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                                                                       }
                                                                                                                                                                       :< ApplySymbolF
@@ -3244,7 +3201,7 @@ hanger2 =
                                                                                                                                                                                     , termFunction = Function{isFunction = True}
                                                                                                                                                                                     , termDefined = Defined{isDefined = True}
                                                                                                                                                                                     , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                                    , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                                    , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                                     , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                                                                                     }
                                                                                                                                                                                     :< ApplySymbolF
@@ -3305,7 +3262,7 @@ hanger2 =
                                                                                                                                                                                     , termFunction = Function{isFunction = True}
                                                                                                                                                                                     , termDefined = Defined{isDefined = True}
                                                                                                                                                                                     , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                                    , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                                    , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                                     , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                                                                                     }
                                                                                                                                                                                     :< ApplySymbolF
@@ -3586,7 +3543,7 @@ hanger2 =
                                                                                                                                             , termFunction = Function{isFunction = False}
                                                                                                                                             , termDefined = Defined{isDefined = True}
                                                                                                                                             , termCreated = Created{getCreated = Nothing}
-                                                                                                                                            , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                            , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                             , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                             }
                                                                                                                                             :< ApplySymbolF
@@ -3657,7 +3614,7 @@ hanger2 =
                                                                                                                                                           , termFunction = Function{isFunction = False}
                                                                                                                                                           , termDefined = Defined{isDefined = True}
                                                                                                                                                           , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                          , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                          , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                           , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                                                           }
                                                                                                                                                           :< ApplySymbolF
@@ -3718,7 +3675,7 @@ hanger2 =
                                                                                                                                                           , termFunction = Function{isFunction = False}
                                                                                                                                                           , termDefined = Defined{isDefined = True}
                                                                                                                                                           , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                          , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                          , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                           , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                                                           }
                                                                                                                                                           :< ApplySymbolF
@@ -3783,7 +3740,7 @@ hanger2 =
                                                                                                                                                                         , termFunction = Function{isFunction = False}
                                                                                                                                                                         , termDefined = Defined{isDefined = True}
                                                                                                                                                                         , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                        , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                        , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                         , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                                                                         }
                                                                                                                                                                         :< ApplySymbolF
@@ -3848,7 +3805,7 @@ hanger2 =
                                                                                                                                                                                       , termFunction = Function{isFunction = False}
                                                                                                                                                                                       , termDefined = Defined{isDefined = True}
                                                                                                                                                                                       , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                                      , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                                      , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                                       , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                                                                                       }
                                                                                                                                                                                       :< ApplySymbolF
@@ -3950,7 +3907,7 @@ hanger2 =
                                                                                                                                                         , termFunction = Function{isFunction = False}
                                                                                                                                                         , termDefined = Defined{isDefined = False}
                                                                                                                                                         , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                        , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                                        , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                                         , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                         }
                                                                                                                                                         :< T.ExistsF
@@ -3996,7 +3953,7 @@ hanger2 =
                                                                                                                                                                     , termFunction = Function{isFunction = True}
                                                                                                                                                                     , termDefined = Defined{isDefined = True}
                                                                                                                                                                     , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                    , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                                                    , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                                                     , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                     }
                                                                                                                                                                     :< ApplySymbolF
@@ -4067,7 +4024,7 @@ hanger2 =
                                                                                                                                                                                   , termFunction = Function{isFunction = True}
                                                                                                                                                                                   , termDefined = Defined{isDefined = True}
                                                                                                                                                                                   , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                                  , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                                  , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                                   , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                                                                                   }
                                                                                                                                                                                   :< ApplySymbolF
@@ -4128,7 +4085,7 @@ hanger2 =
                                                                                                                                                                                   , termFunction = Function{isFunction = True}
                                                                                                                                                                                   , termDefined = Defined{isDefined = True}
                                                                                                                                                                                   , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                                  , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                                  , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                                   , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                                                                                   }
                                                                                                                                                                                   :< ApplySymbolF
@@ -4360,7 +4317,7 @@ hanger2 =
                                                                                                                                                                       , termFunction = Function{isFunction = False}
                                                                                                                                                                       , termDefined = Defined{isDefined = True}
                                                                                                                                                                       , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                      , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                      , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                       , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                       }
                                                                                                                                                                       :< T.TopF
@@ -4519,7 +4476,7 @@ hanger2 =
                                                                                                                                                         , termFunction = Function{isFunction = False}
                                                                                                                                                         , termDefined = Defined{isDefined = False}
                                                                                                                                                         , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                        , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                                        , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                                         , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                         }
                                                                                                                                                         :< MuF
@@ -4558,7 +4515,7 @@ hanger2 =
                                                                                                                                                                     , termFunction = Function{isFunction = True}
                                                                                                                                                                     , termDefined = Defined{isDefined = False}
                                                                                                                                                                     , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                    , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                    , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                     , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                     }
                                                                                                                                                                     :< T.BottomF
@@ -4685,7 +4642,7 @@ hanger2 =
                                                                                                                                                         , termFunction = Function{isFunction = False}
                                                                                                                                                         , termDefined = Defined{isDefined = False}
                                                                                                                                                         , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                        , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                                        , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                                         , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                         }
                                                                                                                                                         :< T.AndF
@@ -4713,7 +4670,7 @@ hanger2 =
                                                                                                                                                                     , termFunction = Function{isFunction = False}
                                                                                                                                                                     , termDefined = Defined{isDefined = False}
                                                                                                                                                                     , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                    , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                                                    , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                                                     , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                     }
                                                                                                                                                                     :< T.NotF
@@ -4741,7 +4698,7 @@ hanger2 =
                                                                                                                                                                                 , termFunction = Function{isFunction = True}
                                                                                                                                                                                 , termDefined = Defined{isDefined = False}
                                                                                                                                                                                 , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                                , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                                , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                                 , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                                 }
                                                                                                                                                                                 :< T.BottomF
@@ -4775,7 +4732,7 @@ hanger2 =
                                                                                                                                                                     , termFunction = Function{isFunction = False}
                                                                                                                                                                     , termDefined = Defined{isDefined = True}
                                                                                                                                                                     , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                    , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                    , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                     , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                     }
                                                                                                                                                                     :< T.TopF
@@ -5141,7 +5098,7 @@ hanger2 =
                                                                                                                                                                       , termFunction = Function{isFunction = False}
                                                                                                                                                                       , termDefined = Defined{isDefined = False}
                                                                                                                                                                       , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                      , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                                                      , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                                                       , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                       }
                                                                                                                                                                       :< T.AndF
@@ -5169,7 +5126,7 @@ hanger2 =
                                                                                                                                                                                   , termFunction = Function{isFunction = True}
                                                                                                                                                                                   , termDefined = Defined{isDefined = False}
                                                                                                                                                                                   , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                                  , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                                  , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                                   , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                                   }
                                                                                                                                                                                   :< T.BottomF
@@ -5223,7 +5180,7 @@ hanger2 =
                                                                                                                                                                                   , termFunction = Function{isFunction = False}
                                                                                                                                                                                   , termDefined = Defined{isDefined = False}
                                                                                                                                                                                   , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                                  , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                                  , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                                   , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                                   }
                                                                                                                                                                                   :< VariableF
@@ -5431,7 +5388,7 @@ hanger2 =
                                                                                                                                                                       , termFunction = Function{isFunction = True}
                                                                                                                                                                       , termDefined = Defined{isDefined = False}
                                                                                                                                                                       , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                      , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                                                      , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                                                       , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                       }
                                                                                                                                                                       :< ApplySymbolF
@@ -5496,7 +5453,7 @@ hanger2 =
                                                                                                                                                                                     , termFunction = Function{isFunction = True}
                                                                                                                                                                                     , termDefined = Defined{isDefined = True}
                                                                                                                                                                                     , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                                    , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                                    , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                                     , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                                                                                     }
                                                                                                                                                                                     :< ApplySymbolF
@@ -6011,7 +5968,7 @@ hanger2 =
                                                                                                                                                                                     , termFunction = Function{isFunction = False}
                                                                                                                                                                                     , termDefined = Defined{isDefined = True}
                                                                                                                                                                                     , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                                    , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                                    , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                                     , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                                     }
                                                                                                                                                                                     :< T.TopF
@@ -6068,7 +6025,7 @@ hanger2 =
                                                                                                                                                                         , termFunction = Function{isFunction = False}
                                                                                                                                                                         , termDefined = Defined{isDefined = False}
                                                                                                                                                                         , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                        , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                                                        , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                                                         , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                         }
                                                                                                                                                                         :< T.NotF
@@ -6119,7 +6076,7 @@ hanger2 =
                                                                                                                                                                                     , termFunction = Function{isFunction = False}
                                                                                                                                                                                     , termDefined = Defined{isDefined = False}
                                                                                                                                                                                     , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                                    , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                                    , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                                     , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                                     }
                                                                                                                                                                                     :< VariableF
@@ -6167,7 +6124,7 @@ hanger2 =
                                                                                                                                                             , termFunction = Function{isFunction = False}
                                                                                                                                                             , termDefined = Defined{isDefined = False}
                                                                                                                                                             , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                            , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                                            , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                                             , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                             }
                                                                                                                                                             :< MuF
@@ -6229,7 +6186,7 @@ hanger2 =
                                                                                                                                                                         , termFunction = Function{isFunction = False}
                                                                                                                                                                         , termDefined = Defined{isDefined = False}
                                                                                                                                                                         , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                        , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                        , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                         , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                         }
                                                                                                                                                                         :< VariableF
@@ -6987,7 +6944,7 @@ hanger2 =
                                                                                                                                                                       , termFunction = Function{isFunction = False}
                                                                                                                                                                       , termDefined = Defined{isDefined = False}
                                                                                                                                                                       , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                      , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                                                      , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                                                       , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                       }
                                                                                                                                                                       :< T.IffF
@@ -7038,7 +6995,7 @@ hanger2 =
                                                                                                                                                                                   , termFunction = Function{isFunction = False}
                                                                                                                                                                                   , termDefined = Defined{isDefined = False}
                                                                                                                                                                                   , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                                  , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                                  , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                                   , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                                   }
                                                                                                                                                                                   :< VariableF
@@ -7081,7 +7038,7 @@ hanger2 =
                                                                                                                                                                                   , termFunction = Function{isFunction = True}
                                                                                                                                                                                   , termDefined = Defined{isDefined = False}
                                                                                                                                                                                   , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                                  , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                                  , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                                   , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                                   }
                                                                                                                                                                                   :< T.BottomF
@@ -7205,7 +7162,7 @@ hanger2 =
                                                                                                                                                                                   , termFunction = Function{isFunction = False}
                                                                                                                                                                                   , termDefined = Defined{isDefined = True}
                                                                                                                                                                                   , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                                  , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                                  , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                                   , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                                   }
                                                                                                                                                                                   :< T.TopF
@@ -7242,7 +7199,7 @@ hanger2 =
                                                                                                                                                           , termFunction = Function{isFunction = True}
                                                                                                                                                           , termDefined = Defined{isDefined = True}
                                                                                                                                                           , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                          , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                                          , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                                           , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                           }
                                                                                                                                                           :< ApplySymbolF
@@ -7313,7 +7270,7 @@ hanger2 =
                                                                                                                                                                         , termFunction = Function{isFunction = True}
                                                                                                                                                                         , termDefined = Defined{isDefined = True}
                                                                                                                                                                         , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                        , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                        , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                         , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                                                                         }
                                                                                                                                                                         :< ApplySymbolF
@@ -7374,7 +7331,7 @@ hanger2 =
                                                                                                                                                                         , termFunction = Function{isFunction = True}
                                                                                                                                                                         , termDefined = Defined{isDefined = True}
                                                                                                                                                                         , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                        , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                        , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                         , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                                                                         }
                                                                                                                                                                         :< ApplySymbolF
@@ -7997,7 +7954,7 @@ hanger2 =
                                                                                                                     , termFunction = Function{isFunction = False}
                                                                                                                     , termDefined = Defined{isDefined = True}
                                                                                                                     , termCreated = Created{getCreated = Nothing}
-                                                                                                                    , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                    , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                     , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                     }
                                                                                                                     :< T.TopF
@@ -8275,7 +8232,7 @@ hanger2 =
                                                                                                                                             , termFunction = Function{isFunction = True}
                                                                                                                                             , termDefined = Defined{isDefined = False}
                                                                                                                                             , termCreated = Created{getCreated = Nothing}
-                                                                                                                                            , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                            , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                             , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                             }
                                                                                                                                             :< ApplySymbolF
@@ -8340,7 +8297,7 @@ hanger2 =
                                                                                                                                                           , termFunction = Function{isFunction = True}
                                                                                                                                                           , termDefined = Defined{isDefined = True}
                                                                                                                                                           , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                          , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                          , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                           , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                                                           }
                                                                                                                                                           :< ApplySymbolF
@@ -8471,7 +8428,7 @@ hanger2 =
                                                                                                                                 , termFunction = Function{isFunction = True}
                                                                                                                                 , termDefined = Defined{isDefined = False}
                                                                                                                                 , termCreated = Created{getCreated = Nothing}
-                                                                                                                                , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                 , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                 }
                                                                                                                                 :< T.BottomF
@@ -8573,7 +8530,7 @@ hanger2 =
                                                                                                                                               , termFunction = Function{isFunction = False}
                                                                                                                                               , termDefined = Defined{isDefined = False}
                                                                                                                                               , termCreated = Created{getCreated = Nothing}
-                                                                                                                                              , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                              , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                               , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                               }
                                                                                                                                               :< T.NotF
@@ -8601,7 +8558,7 @@ hanger2 =
                                                                                                                                                           , termFunction = Function{isFunction = False}
                                                                                                                                                           , termDefined = Defined{isDefined = False}
                                                                                                                                                           , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                          , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                                          , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                                           , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                           }
                                                                                                                                                           :< T.ExistsF
@@ -8647,7 +8604,7 @@ hanger2 =
                                                                                                                                                                       , termFunction = Function{isFunction = False}
                                                                                                                                                                       , termDefined = Defined{isDefined = False}
                                                                                                                                                                       , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                      , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                                                      , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                                                       , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                       }
                                                                                                                                                                       :< T.NuF
@@ -8709,7 +8666,7 @@ hanger2 =
                                                                                                                                                                                   , termFunction = Function{isFunction = False}
                                                                                                                                                                                   , termDefined = Defined{isDefined = False}
                                                                                                                                                                                   , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                                  , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                                  , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                                   , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                                   }
                                                                                                                                                                                   :< VariableF
@@ -8941,7 +8898,7 @@ hanger2 =
                                                                                                                                                           , termFunction = Function{isFunction = False}
                                                                                                                                                           , termDefined = Defined{isDefined = False}
                                                                                                                                                           , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                          , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                                          , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                                           , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                           }
                                                                                                                                                           :< T.ForallF
@@ -8987,7 +8944,7 @@ hanger2 =
                                                                                                                                                                       , termFunction = Function{isFunction = False}
                                                                                                                                                                       , termDefined = Defined{isDefined = True}
                                                                                                                                                                       , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                                      , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                                      , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                                       , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                                       }
                                                                                                                                                                       :< T.TopF
@@ -9215,7 +9172,7 @@ hanger2 =
                                                     ( Identity
                                                        ( PredicatePattern
                                                           { freeVariables = FreeVars.unsafe []
-                                                          , simplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                          , simplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                           }
                                                           :< TopF (Top{topSort = ()})
                                                        )
@@ -9275,7 +9232,7 @@ hanger2 =
                                                                                   , termFunction = Function{isFunction = False}
                                                                                   , termDefined = Defined{isDefined = True}
                                                                                   , termCreated = Created{getCreated = Nothing}
-                                                                                  , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                  , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                   , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                   }
                                                                                   :< T.TopF
@@ -9537,7 +9494,7 @@ hanger2 =
                                                                                                                                                   , termFunction = Function{isFunction = True}
                                                                                                                                                   , termDefined = Defined{isDefined = True}
                                                                                                                                                   , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                  , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                  , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                   , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                                                   }
                                                                                                                                                   :< ApplySymbolF
@@ -9735,7 +9692,7 @@ hanger2 =
                                                                                                                           , termFunction = Function{isFunction = False}
                                                                                                                           , termDefined = Defined{isDefined = True}
                                                                                                                           , termCreated = Created{getCreated = Nothing}
-                                                                                                                          , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                          , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                           , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                           }
                                                                                                                           :< T.TopF
@@ -9830,7 +9787,7 @@ hanger2 =
                                                                                                                       , termFunction = Function{isFunction = True}
                                                                                                                       , termDefined = Defined{isDefined = True}
                                                                                                                       , termCreated = Created{getCreated = Nothing}
-                                                                                                                      , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                      , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                       , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                       }
                                                                                                                       :< InternalIntF
@@ -10159,7 +10116,7 @@ hanger2 =
                                                                                                                                   , termFunction = Function{isFunction = False}
                                                                                                                                   , termDefined = Defined{isDefined = False}
                                                                                                                                   , termCreated = Created{getCreated = Nothing}
-                                                                                                                                  , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                  , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                   , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                   }
                                                                                                                                   :< T.IffF
@@ -10187,7 +10144,7 @@ hanger2 =
                                                                                                                                               , termFunction = Function{isFunction = False}
                                                                                                                                               , termDefined = Defined{isDefined = False}
                                                                                                                                               , termCreated = Created{getCreated = Nothing}
-                                                                                                                                              , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                              , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                               , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                               }
                                                                                                                                               :< ApplySymbolF
@@ -10258,7 +10215,7 @@ hanger2 =
                                                                                                                                                             , termFunction = Function{isFunction = True}
                                                                                                                                                             , termDefined = Defined{isDefined = False}
                                                                                                                                                             , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                            , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                            , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                             , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                             }
                                                                                                                                                             :< T.BottomF
@@ -10288,7 +10245,7 @@ hanger2 =
                                                                                                                                                             , termFunction = Function{isFunction = False}
                                                                                                                                                             , termDefined = Defined{isDefined = True}
                                                                                                                                                             , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                            , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                            , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                             , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                                             }
                                                                                                                                                             :< T.TopF
@@ -10323,7 +10280,7 @@ hanger2 =
                                                                                                                                               , termFunction = Function{isFunction = False}
                                                                                                                                               , termDefined = Defined{isDefined = False}
                                                                                                                                               , termCreated = Created{getCreated = Nothing}
-                                                                                                                                              , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Partly, condition = Any}) -}
+                                                                                                                                              , termSimplified = Simplified (SimplifiedData {sType = Partly, condition = Any})
                                                                                                                                               , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                                                               }
                                                                                                                                               :< T.ForallF
@@ -10369,7 +10326,7 @@ hanger2 =
                                                                                                                                                           , termFunction = Function{isFunction = True}
                                                                                                                                                           , termDefined = Defined{isDefined = True}
                                                                                                                                                           , termCreated = Created{getCreated = Nothing}
-                                                                                                                                                          , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                                                                          , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                                                                           , termConstructorLike = ConstructorLike{getConstructorLike = Just ConstructorLikeHead}
                                                                                                                                                           }
                                                                                                                                                           :< InternalIntF
@@ -10415,7 +10372,7 @@ hanger2 =
                                                                                                           , termFunction = Function{isFunction = False}
                                                                                                           , termDefined = Defined{isDefined = True}
                                                                                                           , termCreated = Created{getCreated = Nothing}
-                                                                                                          , termSimplified = NotSimplified {- WAS: Simplified (SimplifiedData {sType = Fully, condition = Any}) -}
+                                                                                                          , termSimplified = Simplified (SimplifiedData {sType = Fully, condition = Any})
                                                                                                           , termConstructorLike = ConstructorLike{getConstructorLike = Nothing}
                                                                                                           }
                                                                                                           :< T.TopF

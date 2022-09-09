@@ -1,4 +1,5 @@
 module Test.Kore.Simplify.IntegrationProperty (
+    test_simplifier_hangs,
     test_simplifiesToSimplified,
     test_regressionGeneratedTerms,
 ) where
@@ -63,12 +64,30 @@ import Test.SMT (
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
+
+--------------------------------------------------
+-- test data collected from hanging test:
+import Hanger
+
+test_simplifier_hangs :: TestTree
+test_simplifier_hangs =
+    testCase "hanger data makes the simplifier loop" $ do
+        simplified <-
+            Pattern.simplify
+                (mkRewritingPattern hanger2)
+                & testRunSimplifier Mock.env
+
+        assertEqual "I survived!" True True
+
+--------------------------------------------------
+
+
 test_simplifiesToSimplified :: TestTree
 test_simplifiesToSimplified =
     testPropertyWithoutSolver "simplify returns simplified pattern" $ do
         patt <- forAll (runKoreGen Mock.generatorSetup patternGen)
         let patt' = mkRewritingPattern patt
-        trace ("#######################\n" <> show patt) $ (annotate . unlines)
+        (annotate . unlines)
             [" ***** unparsed input =", unparseToString patt, " ***** "]
         simplified <-
             catch
@@ -178,7 +197,3 @@ sideRepresentation :: SideCondition.Representation
 sideRepresentation =
     SideCondition.toRepresentation
         (SideCondition.top :: SideCondition VariableName)
-
---------------------------------------------------
---------------------------------------------------
--- test data collected from hanging test:

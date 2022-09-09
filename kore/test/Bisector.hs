@@ -2152,14 +2152,17 @@ ingredients = Test.Tasty.Runners.listingTests : Test.Tasty.Runners.Reporter.ingr
 main :: IO ()
 main = do
 --    run all -- all
-    run hanger -- known failing one
+--    run hangs -- known flaky property test
 --    run rest -- all the others
+    run hanger
 
-hanger, rest, all :: IO T.TestTree
+hanger, hangs, rest, all :: IO T.TestTree
+-- | extracted test data, expected to hang all the time
+hanger = testGroup "bye bye" Test.Kore.Simplify.IntegrationProperty.test_simplifier_hangs
 -- | Hangs in ~10% of runs, consuming memory (slowly)
-hanger = testGroup "simplifiesToSimplified" Test.Kore.Simplify.IntegrationProperty.test_simplifiesToSimplified
+hangs = testGroup "simplifiesToSimplified" Test.Kore.Simplify.IntegrationProperty.test_simplifiesToSimplified
 rest = tests
-all = hanger >>= \h -> rest >>= \r -> testGroup "all" [h,r]
+all = hangs >>= \h -> rest >>= \r -> testGroup "all" [h,r]
 
 
 run :: IO T.TestTree -> IO ()

@@ -4,6 +4,7 @@ License     : BSD-3-Clause
 -}
 module Kore.Attribute.Pattern.Simplified (
     Simplified (..),
+    SimplifiedData (..), -- HACKx
     Condition (..),
     pattern Simplified_,
     Type (..),
