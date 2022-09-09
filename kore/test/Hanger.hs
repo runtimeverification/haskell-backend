@@ -12,7 +12,6 @@ import Kore.Internal.Substitution
 import Kore.Internal.Symbol (ApplicationSorts (..), Symbol (..))
 import Kore.Internal.TermLike qualified as T
 import Kore.Internal.TermLike.TermLike hiding (AndF, BottomF, ExistsF, FloorF, ForallF, IffF, ImpliesF, InF, NotF, OrF, TopF)
-import Kore.Internal.TermLike.TermLike qualified as T
 
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Created
@@ -32,6 +31,7 @@ import Kore.Sort
 import Kore.Syntax hiding (AndF, BottomF, ExistsF, FloorF, ForallF, IffF, ImpliesF, InF, MuF, NotF, NuF, OrF, Pattern, TopF, VariableF)
 
 import Data.Map (fromList)
+import Data.Text (Text)
 import Prelude.Kore
 
 hanger
@@ -46,17 +46,17 @@ hanger = shrunkPredicate
 noPredicate = original{predicate = makeTruePredicate}
 
 -- | hangs
-noTerm =
-    original
-        { term =
-            T.mkTop $
-                SortActualSort
-                    ( SortActual
-                        { sortActualName = InternedId{getInternedId = internText "subOthersort", internedIdLocation = AstLocationTest}
-                        , sortActualSorts = []
-                        }
-                    )
-        }
+noTerm = original{term = topTerm "subOthersort"}
+
+topTerm :: Text -> TermLike VariableName
+topTerm sortName =
+    T.mkTop $
+        SortActualSort
+            ( SortActual
+                { sortActualName = InternedId{getInternedId = internText sortName, internedIdLocation = AstLocationTest}
+                , sortActualSorts = []
+                }
+            )
 
 -- | extracted from the original, taking parts of the top level
 shrunkPredicate =
@@ -159,8 +159,8 @@ part21 = -- Implies (Iff (*, _)), hangs
               ( In
                 { inOperandSort = ()
                 , inResultSort = ()
-                , inContainedChild = part211
-                , inContainingChild = part212
+                , inContainedChild = part211 -- <-- hangs
+                , inContainingChild = topTerm "mapSort" -- part212 <-- passes
                 }
               )
         )
