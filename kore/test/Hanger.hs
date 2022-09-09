@@ -81,8 +81,8 @@ Structure:
              - part2111 =  <-- hangs
                Not
                 If
-                 - part21111
-                 - part21112
+                 - part21111 <-- needed to hang
+                 - part21112 <-- also needed to hang
              - part2112
          - part212
       - part22
