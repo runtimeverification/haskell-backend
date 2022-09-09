@@ -68,7 +68,7 @@ test_simplifiesToSimplified =
     testPropertyWithoutSolver "simplify returns simplified pattern" $ do
         patt <- forAll (runKoreGen Mock.generatorSetup patternGen)
         let patt' = mkRewritingPattern patt
-        trace ("#######################\n" <> show (debug patt)) $ (annotate . unlines)
+        trace ("#######################\n" <> show patt) $ (annotate . unlines)
             [" ***** unparsed input =", unparseToString patt, " ***** "]
         simplified <-
             catch
@@ -178,3 +178,7 @@ sideRepresentation :: SideCondition.Representation
 sideRepresentation =
     SideCondition.toRepresentation
         (SideCondition.top :: SideCondition VariableName)
+
+--------------------------------------------------
+--------------------------------------------------
+-- test data collected from hanging test:

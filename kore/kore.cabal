@@ -699,6 +699,7 @@ test-suite kore-test-bisect
   main-is: Bisector.hs
   other-modules:
 --    Driver
+    Hanger
     Test.ConsistentKore
     Test.Data.Graph.TopologicalSort
     Test.Data.InternedText

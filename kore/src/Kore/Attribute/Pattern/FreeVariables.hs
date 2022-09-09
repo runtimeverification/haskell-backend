@@ -4,7 +4,9 @@ License     : BSD-3-Clause
 -}
 module Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
+    FreeVariableInfo(..), -- HACK
     toList,
+    unsafe, -- HACK
     toMap,
     toSet,
     toNames,
@@ -49,6 +51,9 @@ newtype FreeVariables variable = FreeVariables
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+
+unsafe :: Ord variable => [(SomeVariableName variable, FreeVariableInfo)] -> FreeVariables variable
+unsafe = FreeVariables . Map.fromList
 
 data FreeVariableInfo = FreeVariableInfo
     { sort :: Sort

@@ -3,7 +3,7 @@ Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
 -}
 module Kore.Internal.Substitution (
-    Substitution,
+    Substitution (..),
     -- Constructor for Assignment not exported
     -- on purpose
     Assignment,

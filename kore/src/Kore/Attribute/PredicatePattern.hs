@@ -5,8 +5,7 @@ Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
 -}
 module Kore.Attribute.PredicatePattern (
-    PredicatePattern (PredicatePattern, freeVariables),
-    -- simplified is excluded on purpose
+    PredicatePattern (..), -- HACK
     simplifiedAttribute,
     isSimplified,
     isSimplifiedAnyCondition,

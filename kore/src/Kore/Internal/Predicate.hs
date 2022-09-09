@@ -3,7 +3,7 @@ Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
 -}
 module Kore.Internal.Predicate (
-    Predicate, -- Constructor not exported on purpose
+    Predicate (..), -- Constructor not exported on purpose
     PredicateF (..),
     unparseWithSort,
     unparse2WithSort,
