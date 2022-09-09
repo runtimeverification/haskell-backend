@@ -73,9 +73,17 @@ Structure:
    - part1
    - part2 =
      Iff
-      - part21 =     <-- hangs
+      - part21 =
         In
-         - part211
+         - part211 =
+           Exists
+            Or
+             - part2111 =  <-- hangs
+               Not
+                If
+                 - part21111
+                 - part21112
+             - part2112
          - part212
       - part22
 
@@ -85,7 +93,14 @@ part1 -- Implies1
     , part21 -- Iff1 = In(part211, part212)
     , part22 -- Iff2
       :: Cofree (PredicateF VariableName) (PredicatePattern VariableName)
-part211, part212 :: TermLike VariableName
+
+part211
+    , part2111
+    , part21111
+    , part21112
+    , part2112
+    , part212
+      :: TermLike VariableName
 
 part1 = -- first part of "implies", passes
                        CofreeT
@@ -241,7 +256,17 @@ part211 =
                                                                                , sortActualSorts = []
                                                                                }
                                                                             )
-                                                                        , orFirst =
+                                                                        , orFirst = part2111 -- <-- hangs
+                                                                        , orSecond = topTerm "mapSort" -- part2112 -- <-- passes
+                                                                        }
+                                                                     )
+                                                                }
+                                                            }
+                                                         )
+                                                    }
+
+part2111 =
+--                                                                        , orFirst =
                                                                            TermLike
                                                                             { getTermLike =
                                                                                TermAttributes
@@ -297,7 +322,18 @@ part211 =
                                                                                                        , sortActualSorts = []
                                                                                                        }
                                                                                                     )
-                                                                                                , iffFirst =
+                                                                                                , iffFirst = part21111 -- both terms needed to make it get stuck
+                                                                                                , iffSecond = part21112
+                                                                                                }
+                                                                                             )
+                                                                                        }
+                                                                                    }
+                                                                                 )
+                                                                            }
+
+
+part21111 =
+--                                                                                                , iffFirst =
                                                                                                    TermLike
                                                                                                     { getTermLike =
                                                                                                        TermAttributes
@@ -2380,7 +2416,9 @@ part211 =
                                                                                                             }
                                                                                                          )
                                                                                                     }
-                                                                                                , iffSecond =
+
+part21112 =
+--                                                                                                , iffSecond =
                                                                                                    TermLike
                                                                                                     { getTermLike =
                                                                                                        TermAttributes
@@ -4146,13 +4184,9 @@ part211 =
                                                                                                             }
                                                                                                          )
                                                                                                     }
-                                                                                                }
-                                                                                             )
-                                                                                        }
-                                                                                    }
-                                                                                 )
-                                                                            }
-                                                                        , orSecond =
+
+part2112 =
+--                                                                        , orSecond =
                                                                            TermLike
                                                                             { getTermLike =
                                                                                TermAttributes
@@ -6661,12 +6695,7 @@ part211 =
                                                                                     }
                                                                                  )
                                                                             }
-                                                                        }
-                                                                     )
-                                                                }
-                                                            }
-                                                         )
-                                                    }
+
 part212 =
 --                                                 , inContainingChild =
                                                    TermLike
