@@ -778,6 +778,7 @@
         ];
         buildable = true;
         modules = [
+          "Hanger"
           "Test/ConsistentKore"
           "Test/Data/Graph/TopologicalSort"
           "Test/Data/InternedText"
