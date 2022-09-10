@@ -12,7 +12,6 @@ module Kore.Rewrite.Axiom.EvaluationStrategy (
     definitionEvaluation,
     simplificationEvaluation,
     firstFullEvaluation,
-    mkEvaluator,
 
     -- * For testing
     attemptEquationAndAccumulateErrors,
@@ -39,7 +38,6 @@ import Kore.Equation.DebugEquation qualified as Equation
 import Kore.Equation.Equation (
     Equation,
  )
-import Kore.Equation.Registry (PartitionedEquations (..), partitionEquations)
 import Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -180,28 +178,3 @@ builtinEvaluation builtinEvaluator patt =
   where
     isValue pat =
         maybe False TermLike.isConstructorLike $ asConcrete pat
-
-{- | TODO (breakerzirconia): either refactor the documentation or inline this function.
-Creates an 'BuiltinAndAxiomSimplifier' from a set of equations.
--}
-mkEvaluator ::
-    [Equation RewritingVariableName] ->
-    TermLike RewritingVariableName ->
-    SideCondition RewritingVariableName ->
-    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
-mkEvaluator equations termLike sideCondition =
-    evaluator $ functionRules ++ simplificationRules
-  where
-    PartitionedEquations{functionRules, simplificationRules} = partitionEquations equations
-
-    evaluator ::
-        [Equation RewritingVariableName] ->
-        Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
-    evaluator = \case
-        [] -> Nothing
-        rules ->
-            let simplifiers =
-                    map
-                        (\equation -> simplificationEvaluation equation termLike sideCondition)
-                        rules
-             in Just $ firstFullEvaluation simplifiers termLike sideCondition

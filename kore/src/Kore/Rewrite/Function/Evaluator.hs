@@ -26,6 +26,7 @@ import Kore.Attribute.Pattern.Simplified qualified as Attribute.Simplified
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Attribute.Synthetic
 import Kore.Builtin (koreEvaluators)
+import Kore.Equation.Registry (PartitionedEquations (..), partitionEquations)
 import Kore.Internal.MultiOr qualified as MultiOr (
     flatten,
     merge,
@@ -54,7 +55,7 @@ import Kore.Log.ErrorBottomTotalFunction (
     errorBottomTotalFunction,
  )
 import Kore.Log.WarnFunctionWithoutEvaluators (warnFunctionWithoutEvaluators)
-import Kore.Rewrite.Axiom.EvaluationStrategy (builtinEvaluation, mkEvaluator)
+import Kore.Rewrite.Axiom.EvaluationStrategy (builtinEvaluation, simplificationEvaluation)
 import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
@@ -213,7 +214,14 @@ lookupAxiomSimplifier termLike sideCondition = do
             Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
         getSimplifier axiomIdentifier = do
             equations <- Map.lookup axiomIdentifier axiomEquations
-            mkEvaluator equations termLike sideCondition
+            let PartitionedEquations{functionRules, simplificationRules} = partitionEquations equations
+            let simplifiers =
+                    map
+                        (\equation -> simplificationEvaluation equation termLike sideCondition)
+                        (functionRules ++ simplificationRules)
+            case simplifiers of
+                [] -> Nothing
+                _ -> Just $ firstFullEvaluation simplifiers termLike sideCondition
 
     let missing = do
             -- TODO (thomas.tuegel): Factor out a second function evaluator and
@@ -235,68 +243,52 @@ lookupAxiomSimplifier termLike sideCondition = do
     maybe missing (lift . liftSimplifier) $ do
         let axiomIdentifier = Axiom.Identifier.matchAxiomIdentifier termLike
         let exact = getSimplifier axiomIdentifier
-        case axiomIdentifier of
-            Axiom.Identifier.Application appId ->
-                let builtinEvaluator = do
-                        name <- Map.lookup appId hookedSymbols
-                        koreSimplifier <- koreEvaluators name termLike sideCondition
-                        Just (builtinEvaluation koreSimplifier termLike)
-                 in combineSimplifiersWithFallBack (builtinEvaluator, exact)
-            Axiom.Identifier.Ceil _ ->
-                let inexact =
-                        [ Axiom.Identifier.Ceil Axiom.Identifier.Variable
-                        , Axiom.Identifier.Ceil Axiom.Identifier.Other
-                        ]
-                 in combineSimplifiers $ exact : map getSimplifier inexact
-            Axiom.Identifier.Exists _ ->
-                let inexact =
-                        [ Axiom.Identifier.Exists Axiom.Identifier.Variable
-                        , Axiom.Identifier.Exists Axiom.Identifier.Other
-                        ]
-                 in combineSimplifiers $ exact : map getSimplifier inexact
-            Axiom.Identifier.Equals id1 id2 ->
-                let inexact =
-                        [ Axiom.Identifier.Equals Axiom.Identifier.Variable id2
-                        , Axiom.Identifier.Equals Axiom.Identifier.Other id2
-                        , Axiom.Identifier.Equals id1 Axiom.Identifier.Variable
-                        , Axiom.Identifier.Equals id1 Axiom.Identifier.Other
-                        , Axiom.Identifier.Equals Axiom.Identifier.Variable Axiom.Identifier.Variable
-                        , Axiom.Identifier.Equals Axiom.Identifier.Other Axiom.Identifier.Variable
-                        , Axiom.Identifier.Equals Axiom.Identifier.Variable Axiom.Identifier.Other
-                        ]
-                 in combineSimplifiers $ exact : map getSimplifier inexact
-            Axiom.Identifier.Not _ ->
-                let inexact =
-                        [ Axiom.Identifier.Not Axiom.Identifier.Variable
-                        , Axiom.Identifier.Not Axiom.Identifier.Other
-                        ]
-                 in combineSimplifiers $ exact : map getSimplifier inexact
-            Axiom.Identifier.Variable -> exact
-            Axiom.Identifier.DV -> exact
-            Axiom.Identifier.Other -> exact
-  where
-    getHook :: Symbol -> Maybe Text
-    getHook = Attribute.getHook . Attribute.hook . symbolAttributes
-
-    combineSimplifiers ::
-        [Maybe (Simplifier (AttemptedAxiom RewritingVariableName))] ->
-        Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
-    combineSimplifiers maybeEvaluators =
-        case catMaybes maybeEvaluators of
+        let evaluators = catMaybes $ case axiomIdentifier of
+                Axiom.Identifier.Application appId ->
+                    let builtinEvaluator = do
+                            name <- Map.lookup appId hookedSymbols
+                            koreSimplifier <- koreEvaluators name termLike sideCondition
+                            Just (builtinEvaluation koreSimplifier termLike)
+                     in [builtinEvaluator, exact]
+                Axiom.Identifier.Ceil _ ->
+                    let inexact =
+                            [ Axiom.Identifier.Ceil Axiom.Identifier.Variable
+                            , Axiom.Identifier.Ceil Axiom.Identifier.Other
+                            ]
+                     in exact : map getSimplifier inexact
+                Axiom.Identifier.Exists _ ->
+                    let inexact =
+                            [ Axiom.Identifier.Exists Axiom.Identifier.Variable
+                            , Axiom.Identifier.Exists Axiom.Identifier.Other
+                            ]
+                     in exact : map getSimplifier inexact
+                Axiom.Identifier.Equals id1 id2 ->
+                    let inexact =
+                            [ Axiom.Identifier.Equals Axiom.Identifier.Variable id2
+                            , Axiom.Identifier.Equals Axiom.Identifier.Other id2
+                            , Axiom.Identifier.Equals id1 Axiom.Identifier.Variable
+                            , Axiom.Identifier.Equals id1 Axiom.Identifier.Other
+                            , Axiom.Identifier.Equals Axiom.Identifier.Variable Axiom.Identifier.Variable
+                            , Axiom.Identifier.Equals Axiom.Identifier.Other Axiom.Identifier.Variable
+                            , Axiom.Identifier.Equals Axiom.Identifier.Variable Axiom.Identifier.Other
+                            ]
+                     in exact : map getSimplifier inexact
+                Axiom.Identifier.Not _ ->
+                    let inexact =
+                            [ Axiom.Identifier.Not Axiom.Identifier.Variable
+                            , Axiom.Identifier.Not Axiom.Identifier.Other
+                            ]
+                     in exact : map getSimplifier inexact
+                Axiom.Identifier.Variable -> exact
+                Axiom.Identifier.DV -> exact
+                Axiom.Identifier.Other -> exact
+        case evaluators of
             [] -> Nothing
             [a] -> Just a
             as -> Just $ firstFullEvaluation as termLike sideCondition
-
-    combineSimplifiersWithFallBack ::
-        ( Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
-        , Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
-        ) ->
-        Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
-    combineSimplifiersWithFallBack = \case
-        (Nothing, eval2) -> eval2
-        (eval1, Nothing) -> eval1
-        (Just eval1, Just eval2) ->
-            Just $ applyFirstSimplifierThatWorks [eval1, eval2] termLike sideCondition
+  where
+    getHook :: Symbol -> Maybe Text
+    getHook = Attribute.getHook . Attribute.hook . symbolAttributes
 
 criticalMissingHook :: Symbol -> Text -> a
 criticalMissingHook symbol hookName =
