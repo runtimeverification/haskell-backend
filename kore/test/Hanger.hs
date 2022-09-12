@@ -125,7 +125,8 @@ Structure:
                                - unitMap
                        - part21112'2 = <-- also needed to hang
                          Or
-                           - Application(concatMap)
+                           - part21112'21 =
+                             Application(concatMap)
                              - Iff
                                - Or
                                  - unitMap
@@ -134,7 +135,8 @@ Structure:
                                  - Variable (Mf)
                              - Mu
                                - Variable (QAPt)
-                           - Application(concatMap)
+                           - part21112'22 =
+                             Application(concatMap)
                              - unitMap
                              - Not
                                - Application(opaqueMap)
