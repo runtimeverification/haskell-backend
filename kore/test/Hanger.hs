@@ -59,30 +59,30 @@ shrunkPredicate =
 -- | reconstructed tree from the known hanging case, cutting out unnecessary nodes
 constructed =
     fromPredicateSorted (mkSort "subOtherSort") $
-        makeInPredicate   -- part211
-            (T.mkNot $    -- part2111
-                T.mkIff   -- part21111
-                    (T.mkOr  -- part21111_21
+        makeInPredicate -- part211
+            ( T.mkNot $ -- part2111
+                T.mkIff -- part21111
+                    ( T.mkOr -- part21111_21
                         ( -- part21111_21_1 -- elementMap ( constr00 -> functionalConstr10(constr10(constr00)) )
-                            eleMap (mkConst "constr00") (mkConst "funCon10(con10(constr00))")
+                          eleMap (mkConst "constr00") (mkConst "funCon10(con10(constr00))")
                         )
                         ( -- part21111_21_22 -- concatMap ( not (unitMap) , top )
-                            unitMap
+                          unitMap
                         )
                     )
-                    (-- part21112'
-                        concat
-                            (T.mkOr -- Nu (Or (Iff (And(bot, var)) (opaque(cf))) (Or(opaque(a),(Iff(unitMap, unitMap)))))
-                                (opaque "cf")
-                                (opaque "a")
+                    ( -- part21112'
+                      concat
+                        ( T.mkOr -- Nu (Or (Iff (And(bot, var)) (opaque(cf))) (Or(opaque(a),(Iff(unitMap, unitMap)))))
+                            (opaque "cf")
+                            (opaque "a")
+                        )
+                        ( T.mkOr -- Or(concat (Iff(Or(unitMap, top), not (var)), Mu(var)), concat(unitMap, not(opaque(..))))
+                            ( concat
+                                (T.mkTop mapSort)
+                                (T.mkTop mapSort)
                             )
-                            (T.mkOr -- Or(concat (Iff(Or(unitMap, top), not (var)), Mu(var)), concat(unitMap, not(opaque(..))))
-                                 (concat
-                                     (T.mkTop mapSort)
-                                     (T.mkTop mapSort)
-                                 )
-                                 (opaque "functional00")
-                            )
+                            (opaque "functional00")
+                        )
                     )
             )
             (topTerm "mapSort") -- replaces part212
@@ -93,22 +93,22 @@ constructed =
     unitMap :: TermLike VariableName
     unitMap =
         let unit = T.mkSymbol (mkId "unitMap") [] [] mapSort
-        in T.applySymbol unit [] []
+         in T.applySymbol unit [] []
 
     concat :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
     concat x1 x2 =
         let unit = T.mkSymbol (mkId "concatMap") [] [mapSort, mapSort] mapSort
-        in T.applySymbol unit [] [x1, x2]
+         in T.applySymbol unit [] [x1, x2]
 
     eleMap :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
     eleMap k v =
         let unit = T.mkSymbol (mkId "elementMap") [] [testSort, testSort] mapSort
-        in T.applySymbol unit [] [k, v]
+         in T.applySymbol unit [] [k, v]
 
     opaque :: Text -> TermLike VariableName
     opaque name =
         let opaque = T.mkSymbol (mkId "opaqueMap") [] [testSort] mapSort
-        in T.applySymbol opaque [] [mkConst name]
+         in T.applySymbol opaque [] [mkConst name]
 
     mkConst :: Text -> TermLike VariableName
     mkConst name =
