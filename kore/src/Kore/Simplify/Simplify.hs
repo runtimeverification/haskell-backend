@@ -661,20 +661,13 @@ applicationAxiomSimplifier ::
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
     Simplifier (AttemptedAxiom RewritingVariableName)
-applicationAxiomSimplifier applicationSimplifier =
-    helper
-  where
-    helper ::
-        TermLike RewritingVariableName ->
-        SideCondition RewritingVariableName ->
-        Simplifier (AttemptedAxiom RewritingVariableName)
-    helper termLike sideCondition =
-        case Recursive.project termLike of
-            (valid :< ApplySymbolF p) ->
-                applicationSimplifier sideCondition (valid :< p)
-            _ ->
-                error
-                    ("Expected an application pattern, but got: " ++ show termLike)
+applicationAxiomSimplifier applicationSimplifier termLike sideCondition =
+    case Recursive.project termLike of
+        (valid :< ApplySymbolF p) ->
+            applicationSimplifier sideCondition (valid :< p)
+        _ ->
+            error
+                ("Expected an application pattern, but got: " ++ show termLike)
 
 -- | Checks whether a symbol is a constructor or is overloaded.
 isConstructorOrOverloaded ::
