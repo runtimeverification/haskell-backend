@@ -1,4 +1,4 @@
-module Hanger (module Hanger) where
+module Hanger (hanger, original) where
 
 import Control.Comonad.Trans.Cofree (CofreeT (..))
 import Data.Functor.Identity (Identity (..))
@@ -68,9 +68,9 @@ Structure:
    - part1
    - part2 =
      Iff
-      - part21 =
+      - part21 =  <-- hangs
         In
-         - part211 =
+         - part211 =  <-- hangs
            Exists
             Or
              - part2111 =  <-- hangs
@@ -81,12 +81,64 @@ Structure:
                     - part21111_1
                     - part21111_2 =  <-- hangs
                       Iff
-                       - part21111_21 =  <-- hangs
+                       - part21111_21 =  <-- needed to hang
                          Or
-                          - part21111_21_1
-                          - part21111_21_2
+                          - part21111_21_1 = <- needed to hang
+                            Application (elementMap)
+                              - constr00
+                              - Application(functionalConstr10)
+                                - Application(constr10)
+                                  - constr00
+                          - part21111_21_2 =  <-- needed to hang
+                            And
+                            - part21111_21_21 =  <-- hangs (but deselected)
+                              Exists
+                                - Application(elementMap)
+                                  - c
+                                  - d
+                            - part21111_21_22 =  <-- hangs
+                              Application (concatMap)
+                                - Not
+                                  - unitMap
+                                - Top
                        - part21111_22
-                 - part21112 <-- also needed to hang
+                 - part21112 = <-- also needed to hang
+                   Nu
+                     - part21112' =
+                       Application(concatMap)
+                       - part21112'1 = <-- needed to hang
+                         Nu
+                         - Or
+                           - part21112'1'1 = <-- needed to hang
+                             Iff
+                             - And
+                               - Bottom
+                               - Variable
+                             - Application(opaqueMap)
+                               - cf
+                           - part21112'1'2 = <-- also needed to hang
+                             Or
+                             - Application(opaqueMap)
+                               - a
+                             - Iff
+                               - unitMap
+                               - unitMap
+                       - part21112'2 = <-- also needed to hang
+                         Or
+                           - Application(concatMap)
+                             - Iff
+                               - Or
+                                 - unitMap
+                                 - Top
+                               - Not
+                                 - Variable (Mf)
+                             - Mu
+                               - Variable (QAPt)
+                           - Application(concatMap)
+                             - unitMap
+                             - Not
+                               - Application(opaqueMap)
+                                 - functional00
              - part2112
          - part212
       - part22
@@ -106,8 +158,17 @@ part211
     , part21111_21
     , part21111_21_1
     , part21111_21_2
+    , part21111_21_21
+    , part21111_21_22
     , part21111_22
     , part21112
+    , part21112'
+    , part21112'1
+    , part21112'1'1
+    , part21112'1'2
+    , part21112'2
+    , part21112'21
+    , part21112'22
     , part2112
     , part212
       :: TermLike VariableName
@@ -155,8 +216,7 @@ part1 = -- first part of "implies", passes
                            )
                         )
 
--- second part of 'implies', hangs
-part2 =
+part2 = -- second part of 'implies', hangs because of part21
    CofreeT
     (Identity
      ( PredicatePattern
@@ -376,7 +436,7 @@ part21111 =
        )
   }
 
-part21111_1 =
+part21111_1 = -- passes
              TermLike
               { getTermLike =
                  TermAttributes
@@ -1577,7 +1637,14 @@ part21111_21_2 =
                                                      , sortActualSorts = []
                                                      }
                                                   )
-                                              , andFirst =
+                                              , andFirst = topTerm "mapSort" -- part21111_21_21
+                                              , andSecond = part21111_21_22
+                                              }
+                                           )
+                                      }
+
+part21111_21_21 = -- hangs, but not selected
+--                                            , andFirst
                                                  TermLike
                                                   { getTermLike =
                                                      TermAttributes
@@ -1824,7 +1891,9 @@ part21111_21_2 =
                                                           }
                                                        )
                                                   }
-                                              , andSecond =
+
+part21111_21_22 =
+--                                              , andSecond =
                                                  TermLike
                                                   { getTermLike =
                                                      TermAttributes
@@ -2022,11 +2091,8 @@ part21111_21_2 =
                                                           }
                                                        )
                                                   }
-                                              }
-                                           )
-                                      }
 
-part21111_22 =
+part21111_22 = -- passes
 --                      , iffSecond =
                          TermLike
                           { getTermLike =
@@ -2482,7 +2548,12 @@ part21112 =
                      }
                   )
               }
-          , nuChild =
+          , nuChild = part21112'
+          }
+       )
+  }
+
+part21112' =
              TermLike
               { getTermLike =
                  TermAttributes
@@ -2577,7 +2648,15 @@ part21112 =
                               }
                           }
                       , applicationChildren =
-                         [ TermLike
+                        [ part21112'1  -- both terms needed to hang
+                        , part21112'2
+                        ]
+                      }
+                   )
+              }
+
+part21112'1 = -- child 1 of concatMap
+                         TermLike
                             { getTermLike =
                                TermAttributes
                                 { termSort =
@@ -2689,7 +2768,16 @@ part21112 =
                                                        , sortActualSorts = []
                                                        }
                                                     )
-                                                , orFirst =
+                                                , orFirst = part21112'1'1 -- both needed to hang
+                                                , orSecond = part21112'1'2
+                                                }
+                                             )
+                                        }
+                                    }
+                                 )
+                            }
+
+part21112'1'1 = -- first part of Or within Nu inside concat's 1st arg
                                                    TermLike
                                                     { getTermLike =
                                                        TermAttributes
@@ -3025,7 +3113,9 @@ part21112 =
                                                             }
                                                          )
                                                     }
-                                                , orSecond =
+
+part21112'1'2 = -- second arg of Or within Nu inside 21112'1
+--                                                , orSecond =
                                                    TermLike
                                                     { getTermLike =
                                                        TermAttributes
@@ -3342,13 +3432,9 @@ part21112 =
                                                             }
                                                          )
                                                     }
-                                                }
-                                             )
-                                        }
-                                    }
-                                 )
-                            }
-                         , TermLike
+
+part21112'2 = -- second child of concatMap
+                         TermLike
                             { getTermLike =
                                TermAttributes
                                 { termSort =
@@ -3398,7 +3484,13 @@ part21112 =
                                            , sortActualSorts = []
                                            }
                                         )
-                                    , orFirst =
+                                    , orFirst = part21112'21 -- both terms needed to hang
+                                    , orSecond = part21112'22
+                                    }
+                                 )
+                            }
+
+part21112'21 = -- first part of Or inside second child of concatMap
                                        TermLike
                                         { getTermLike =
                                            TermAttributes
@@ -3901,7 +3993,9 @@ part21112 =
                                                 }
                                              )
                                         }
-                                    , orSecond =
+
+part21112'22 = -- second part of Or inside 2nd arg of concatMap
+--                                    , orSecond =
                                        TermLike
                                         { getTermLike =
                                            TermAttributes
@@ -4199,18 +4293,8 @@ part21112 =
                                                 }
                                              )
                                         }
-                                    }
-                                 )
-                            }
-                         ]
-                      }
-                   )
-              }
-          }
-       )
-  }
 
-part2112 =
+part2112 = -- passes
 --                                                                        , orSecond =
                                                                            TermLike
                                                                             { getTermLike =
