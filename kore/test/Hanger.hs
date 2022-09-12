@@ -63,24 +63,20 @@ constructed =
             ( T.mkNot $ -- part2111
                 T.mkIff -- part21111
                     ( T.mkOr -- part21111_21
-                        ( -- part21111_21_1 -- elementMap ( constr00 -> functionalConstr10(constr10(constr00)) )
+                        ( -- part21111_21_1
                           eleMap (mkConst "constr00") (mkConst "funCon10(con10(constr00))")
                         )
-                        ( -- part21111_21_22 -- concatMap ( not (unitMap) , top )
-                          unitMap
-                        )
+                        -- part21111_21_22
+                        unitMap
                     )
                     ( -- part21112'
                       concat
-                        ( T.mkOr -- Nu (Or (Iff (And(bot, var)) (opaque(cf))) (Or(opaque(a),(Iff(unitMap, unitMap)))))
+                        ( T.mkOr
                             (opaque "cf")
-                            (opaque "a")
+                            unitMap
                         )
-                        ( T.mkOr -- Or(concat (Iff(Or(unitMap, top), not (var)), Mu(var)), concat(unitMap, not(opaque(..))))
-                            ( concat
-                                (T.mkTop mapSort)
-                                (T.mkTop mapSort)
-                            )
+                        ( T.mkOr
+                            unitMap
                             (opaque "functional00")
                         )
                     )
