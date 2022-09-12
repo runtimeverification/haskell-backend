@@ -216,7 +216,6 @@
             kore-exec-infotable =
               self.projectGhc9EventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
           };
-
           scripts = pkgs.symlinkJoin {
             name = "fourmolu-format";
             paths = [ ./scripts ];
