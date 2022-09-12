@@ -51,6 +51,9 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import Kore.Internal.SideCondition qualified as SideCondition
+import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
+    Representation,
+ )
 import Kore.Internal.TermLike
 import Kore.Rewrite.Function.Evaluator qualified as Axiom (
     evaluatePattern,
@@ -136,7 +139,7 @@ makeEvaluateTerm resultSort sideCondition ceilChild = do
             , ceilOperandSort = termLikeSort ceilChild
             , ceilChild
             }
-        & maybeT (makeSimplifiedCeil ceilChild) return
+        & maybeT (makeSimplifiedCeil sideCondition Nothing ceilChild) return
   where
     ceilSimplifier =
         mconcat
@@ -325,9 +328,13 @@ know how to simplify @ceil(g(x))@, the return value will be
 -}
 makeSimplifiedCeil ::
     MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    Maybe SideCondition.Representation ->
     TermLike RewritingVariableName ->
     simplifier NormalForm
 makeSimplifiedCeil
+    _
+    maybeCurrentCondition
     termLike@(Recursive.project -> _ :< termLikeF) =
         if needsChildCeils
             then
@@ -371,7 +378,10 @@ makeSimplifiedCeil
             InternalStringF _ -> unexpectedError
             VariableF _ -> False
 
-        unsimplified = makeCeilPredicate termLike
+        unsimplified =
+            Predicate.markSimplifiedMaybeConditional maybeCurrentCondition
+                . makeCeilPredicate
+                $ termLike
 
         ~unexpectedError =
             error ("Unexpected term type: " ++ unparseToString termLike)

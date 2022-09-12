@@ -108,7 +108,7 @@ simplify sideCondition original =
     loop 0 (mkSingleton original)
   where
     limit :: Int
-    limit = 1000
+    limit = 10
 
     loop :: Int -> NormalForm -> simplifier NormalForm
     loop count input
