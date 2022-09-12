@@ -1,4 +1,4 @@
-module Hanger (hanger, original) where
+module Hanger (hanger, constructed, original) where
 
 import Control.Comonad.Trans.Cofree (CofreeT (..))
 import Data.Functor.Identity (Identity (..))
@@ -33,9 +33,10 @@ hanger
     , original
     , noTerm
     , noPredicate
-    , shrunkPredicate ::
+    , shrunkPredicate
+    , constructed ::
         Pattern VariableName
-hanger = shrunkPredicate
+hanger = constructed
 
 -- | passes (as expected)
 noPredicate = original{predicate = makeTruePredicate}
@@ -45,17 +46,75 @@ noTerm = original{term = topTerm "subOthersort"}
 
 topTerm :: Text -> TermLike VariableName
 topTerm sortName =
-    T.mkTop $
-        SortActualSort
-            ( SortActual
-                { sortActualName = InternedId{getInternedId = internText sortName, internedIdLocation = AstLocationTest}
-                , sortActualSorts = []
-                }
-            )
+    T.mkTop (mkSort sortName)
+
+mkSort :: Text -> Sort
+mkSort sortName =
+    SortActualSort (SortActual (InternedId (internText sortName) AstLocationTest) [])
 
 -- | extracted from the original, taking parts of the top level
 shrunkPredicate =
     noTerm{predicate = Predicate{getPredicate = part21}}
+
+-- | reconstructed tree from the known hanging case, cutting out unnecessary nodes
+constructed =
+    fromPredicateSorted (mkSort "subOtherSort") $
+        makeInPredicate   -- part211
+            (T.mkNot $    -- part2111
+                T.mkIff   -- part21111
+                    (T.mkOr  -- part21111_21
+                        ( -- part21111_21_1 -- elementMap ( constr00 -> functionalConstr10(constr10(constr00)) )
+                            eleMap (mkConst "constr00") (mkConst "funCon10(con10(constr00))")
+                        )
+                        ( -- part21111_21_22 -- concatMap ( not (unitMap) , top )
+                            unitMap
+                        )
+                    )
+                    (-- part21112'
+                        concat
+                            (T.mkOr -- Nu (Or (Iff (And(bot, var)) (opaque(cf))) (Or(opaque(a),(Iff(unitMap, unitMap)))))
+                                (opaque "cf")
+                                (opaque "a")
+                            )
+                            (T.mkOr -- Or(concat (Iff(Or(unitMap, top), not (var)), Mu(var)), concat(unitMap, not(opaque(..))))
+                                 (concat
+                                     (T.mkTop mapSort)
+                                     (T.mkTop mapSort)
+                                 )
+                                 (opaque "functional00")
+                            )
+                    )
+            )
+            (topTerm "mapSort") -- replaces part212
+  where
+    mapSort = mkSort "mapSort"
+    testSort = mkSort "testSort"
+
+    unitMap :: TermLike VariableName
+    unitMap =
+        let unit = T.mkSymbol (mkId "unitMap") [] [] mapSort
+        in T.applySymbol unit [] []
+
+    concat :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+    concat x1 x2 =
+        let unit = T.mkSymbol (mkId "concatMap") [] [mapSort, mapSort] mapSort
+        in T.applySymbol unit [] [x1, x2]
+
+    eleMap :: TermLike VariableName -> TermLike VariableName -> TermLike VariableName
+    eleMap k v =
+        let unit = T.mkSymbol (mkId "elementMap") [] [testSort, testSort] mapSort
+        in T.applySymbol unit [] [k, v]
+
+    opaque :: Text -> TermLike VariableName
+    opaque name =
+        let opaque = T.mkSymbol (mkId "opaqueMap") [] [testSort] mapSort
+        in T.applySymbol opaque [] [mkConst name]
+
+    mkConst :: Text -> TermLike VariableName
+    mkConst name =
+        T.applySymbol (T.mkSymbol (mkId name) [] [] testSort) [] []
+
+    mkId name = InternedId (internText name) AstLocationTest
 
 -- no auto-formatting below this point (disturbs the diff while
 -- disassembling the terms)
