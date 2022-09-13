@@ -962,12 +962,12 @@ allSuitableSolutions' ::
     Int ->
     [[Vector Int]]
 allSuitableSolutions' basis constrained n =
-    let legal = foldl' makeLegal BDD.true [0 .. n -1]
+    let legal = foldl' makeLegal BDD.true [0 .. n - 1]
         maximal = foldl' (makeMaximal legal) legal indexedBasis
         sat = BDD.allSatComplete (IntSet.fromDistinctAscList [0 .. length basis - 1]) maximal
      in map toSolution sat
   where
-    indexedBasis = zip basis [0 .. length basis -1]
+    indexedBasis = zip basis [0 .. length basis - 1]
     nonNullBasis i = filter (\v -> fst v ! i /= 0) indexedBasis
     toSolution ::
         IntMap Bool ->
@@ -1059,7 +1059,7 @@ solveDiophantineEquations system =
     n = Matrix.nrows system
     v1 :: Int -> Set (Vector Int)
     v1 0 = Set.empty
-    v1 i = Set.insert (e i) $ v1 (i -1)
+    v1 i = Set.insert (e i) $ v1 (i - 1)
     e :: Int -> Vector Int
     e i = Vector.generate m (\j -> if j + 1 == i then 1 else 0)
     makeMk :: Set (Vector Int) -> Set (Vector Int)
@@ -1075,7 +1075,7 @@ solveDiophantineEquations system =
 
     vk' :: Set (Vector Int) -> Set (Vector Int) -> Set (Vector Int)
     vk' vk mk =
-        Set.fromList [add v (e j) | v <- Set.toList $ Set.difference vk mk, j <- [0 .. m -1], isMinimal v (e j) mk, dot (defect' v) (defect' (e j)) < 0]
+        Set.fromList [add v (e j) | v <- Set.toList $ Set.difference vk mk, j <- [0 .. m - 1], isMinimal v (e j) mk, dot (defect' v) (defect' (e j)) < 0]
 
     isMinimal :: Vector Int -> Vector Int -> Set (Vector Int) -> Bool
     isMinimal v ej mk = all (not . gt (add v ej)) mk
@@ -1135,7 +1135,7 @@ mkVars sort n accum vars =
         newVar = Variable{variableName = varName, variableSort = sort}
         renamedVar = refreshVariable vars (inject newVar)
         finalVar = maybe newVar (fromJust . retract) renamedVar
-     in mkVars sort (n -1) (finalVar : accum) $ Set.insert (variableName $ inject finalVar) vars
+     in mkVars sort (n - 1) (finalVar : accum) $ Set.insert (variableName $ inject finalVar) vars
 
 variableAbstraction ::
     Sort ->
