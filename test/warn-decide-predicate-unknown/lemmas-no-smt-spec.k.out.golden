@@ -1,9 +1,3 @@
-  #Not ( {
-    B ==Bool true
-  #Equals
-    bool2Word ( B ) ==Int 1
-  } )
-#And
-  <k>
-    doneLemma ( bool2Word ( B ) ==Int 1 ) ~> _DotVar1 ~> .
-  </k>
+<k>
+  doneLemma ( bool2Word ( B ) ==Int 1 ) ~> _DotVar1 ~> .
+</k>
