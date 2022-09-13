@@ -60,6 +60,7 @@ import Kore.Rewrite.RulePattern (
 import Kore.Rewrite.Strategy (
     ExecutionGraph (..),
     GraphSearchOrder,
+    Step,
     pickFinal,
     runStrategyWithSearchOrder,
  )
@@ -86,7 +87,7 @@ newtype Axiom = Axiom {unAxiom :: RewriteRule RewritingVariableName}
 bmcStrategy ::
     [Axiom] ->
     CommonModalPattern ->
-    [[Prim CommonModalPattern (RewriteRule RewritingVariableName)]]
+    [Step (Prim CommonModalPattern (RewriteRule RewritingVariableName))]
 bmcStrategy
     axioms
     goal =
@@ -102,7 +103,7 @@ checkClaim ::
     -- | Creates a one-step strategy from a target pattern. See
     -- 'defaultStrategy'.
     ( CommonModalPattern ->
-      [[Prim CommonModalPattern (RewriteRule RewritingVariableName)]]
+      [Step (Prim CommonModalPattern (RewriteRule RewritingVariableName))]
     ) ->
     GraphSearchOrder ->
     (ImplicationRule RewritingVariableName, Limit Natural) ->

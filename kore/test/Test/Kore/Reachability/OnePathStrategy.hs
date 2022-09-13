@@ -46,6 +46,7 @@ import Kore.Rewrite.RulePattern (
  )
 import Kore.Rewrite.Strategy (
     ExecutionGraph (..),
+    Step,
     pickFinal,
     runStrategy,
  )
@@ -897,7 +898,7 @@ runSteps ::
     [[Rule claim]] ->
     -- |left-hand-side of unification
     claim ->
-    [[Prim]] ->
+    [Step Prim] ->
     IO a
 runSteps
     breadthLimit

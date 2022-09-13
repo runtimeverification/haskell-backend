@@ -23,6 +23,7 @@ import Data.Limit qualified as Limit
 import Data.Sequence qualified as Seq
 import Kore.Rewrite.Strategy (
     ExecutionGraph (..),
+    Step,
     TransitionT,
  )
 import Kore.Rewrite.Strategy qualified as Strategy
@@ -62,7 +63,7 @@ transitionPrim rule n = do
         Throw -> empty
 
 runStrategy ::
-    [[Prim]] ->
+    [Step Prim] ->
     Natural ->
     ExecutionGraph Natural Prim
 runStrategy strategy z =

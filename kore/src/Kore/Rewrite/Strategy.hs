@@ -11,6 +11,9 @@ import Kore.Rewrite.Strategy qualified as Strategy
 @
 -}
 module Kore.Rewrite.Strategy (
+    -- * Step, a.k.a Strategy
+    Step,
+
     -- * Running strategies
     unfoldSearchOrder,
     unfoldTransition,
@@ -68,6 +71,9 @@ import GHC.Generics qualified as GHC
 import Kore.Rewrite.Transition
 import Numeric.Natural
 import Prelude.Kore
+
+-- | A "step" (aka "strategy") is a sequence of primitive actions
+type Step action = [action]
 
 data ExecutionGraph config rule = ExecutionGraph
     { root :: Graph.Node
@@ -377,7 +383,7 @@ runStrategy ::
     -- | Primitive strategy rule
     (prim -> config -> TransitionT rule m config) ->
     -- | Steps
-    [[prim]] ->
+    [Step prim] ->
     -- | Initial configuration
     config ->
     m (ExecutionGraph config rule)
@@ -391,7 +397,7 @@ runStrategyWithSearchOrder ::
     -- | Primitive strategy rule
     (prim -> config -> TransitionT rule m config) ->
     -- | Steps
-    [[prim]] ->
+    [Step prim] ->
     -- | Search order of the execution graph
     GraphSearchOrder ->
     -- | Initial configuration

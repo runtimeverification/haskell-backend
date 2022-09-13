@@ -120,7 +120,7 @@ retractRemaining (Remaining a) = Just a
 retractRemaining _ = Nothing
 
 -- | The sequence of transitions for the symbolic execution strategy.
-executionStrategy :: Stream [Prim]
+executionStrategy :: Stream (Step Prim)
 executionStrategy =
     step1 Stream.:> Stream.iterate id stepN
   where
@@ -140,7 +140,7 @@ executionStrategy =
 
 See also: 'executionStrategy'
 -}
-limitedExecutionStrategy :: Limit Natural -> [[Prim]]
+limitedExecutionStrategy :: Limit Natural -> [Step Prim]
 limitedExecutionStrategy depthLimit =
     Limit.takeWithin depthLimit (toList executionStrategy)
 

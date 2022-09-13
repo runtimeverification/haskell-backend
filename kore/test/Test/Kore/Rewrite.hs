@@ -46,6 +46,7 @@ import Kore.Rewrite.RulePattern (
 import Kore.Rewrite.RulePattern as RulePattern (
     rulePattern,
  )
+import Kore.Rewrite.Strategy (Step)
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Syntax.Variable
 import Prelude.Kore
@@ -308,16 +309,16 @@ test_executionStrategy =
             Hedgehog.assert (isLastSimplify strategy)
     ]
   where
-    genStrategies :: Gen [[Prim]]
+    genStrategies :: Gen [Step Prim]
     genStrategies = do
         let range = Hedgehog.Gen.integral (Hedgehog.Range.linear 1 16)
         depthLimit <- Limit <$> range
         pure (limitedExecutionStrategy depthLimit)
 
-    hasRewrite :: [Prim] -> Bool
+    hasRewrite :: Step Prim -> Bool
     hasRewrite = elem Rewrite
 
-    isLastSimplify :: [Prim] -> Bool
+    isLastSimplify :: Step Prim -> Bool
     isLastSimplify ps
         | null ps = False
         | otherwise = last ps == Simplify

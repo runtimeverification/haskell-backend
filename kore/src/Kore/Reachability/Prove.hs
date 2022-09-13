@@ -107,6 +107,7 @@ import Kore.Rewrite.Strategy (
     ExecutionGraph (..),
     FinalNodeType,
     GraphSearchOrder,
+    Step,
     executionHistoryStep,
  )
 import Kore.Rewrite.Transition (
@@ -365,10 +366,10 @@ proveClaim
       where
         -------------------------------
         -- brought in from Claim.hs to remove Strategy type
-        infinite :: [GraphTraversal.Step Prim]
+        infinite :: [Step Prim]
         ~infinite = stepNoClaims : repeat stepWithClaims
 
-        withMinDepth :: MinDepth -> [GraphTraversal.Step Prim]
+        withMinDepth :: MinDepth -> [Step Prim]
         withMinDepth d =
             noCheckSteps <> repeat stepWithClaims
           where
@@ -456,7 +457,7 @@ proveClaimStep _ stuckCheck claims axioms executionGraph node =
     -- decide the appropriate strategy for the next step.
     -- We should also add a command for toggling this feature on and
     -- off.
-    strategy' :: [Prim]
+    strategy' :: Step Prim
     strategy'
         | isRoot = reachabilityFirstStep
         | otherwise = reachabilityNextStep

@@ -43,6 +43,7 @@ import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator (
     filterMultiOr,
  )
 import Kore.Rewrite.Strategy (
+    Step,
     TransitionT,
  )
 import Kore.Simplify.Pattern qualified as Pattern (
@@ -229,7 +230,7 @@ defaultOneStepStrategy ::
     patt ->
     -- | normal rewrites
     [rewrite] ->
-    [Prim patt rewrite]
+    Step (Prim patt rewrite)
 defaultOneStepStrategy goalrhs rewrites =
     [ checkProofState
     , simplify

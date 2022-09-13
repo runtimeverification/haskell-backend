@@ -146,6 +146,7 @@ import Kore.Rewrite.RulePattern (
  )
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Rewrite.Step qualified as Step
+import Kore.Rewrite.Strategy (Step)
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition qualified as Transition
 import Kore.Simplify.API (
@@ -385,7 +386,7 @@ isRemainder :: ClaimState a -> Bool
 isRemainder (Remaining _) = True
 isRemainder _ = False
 
-reachabilityFirstStep :: [Prim]
+reachabilityFirstStep :: Step Prim
 reachabilityFirstStep =
     [ Begin
     , Simplify
@@ -394,7 +395,7 @@ reachabilityFirstStep =
     , Simplify
     ]
 
-reachabilityNextStep :: [Prim]
+reachabilityNextStep :: Step Prim
 reachabilityNextStep =
     [ Begin
     , Simplify
@@ -404,7 +405,7 @@ reachabilityNextStep =
     , Simplify
     ]
 
-reachabilityFirstStepNoCheck :: [Prim]
+reachabilityFirstStepNoCheck :: Step Prim
 reachabilityFirstStepNoCheck =
     [ Begin
     , Simplify
@@ -412,7 +413,7 @@ reachabilityFirstStepNoCheck =
     , Simplify
     ]
 
-reachabilityNextStepNoCheck :: [Prim]
+reachabilityNextStepNoCheck :: Step Prim
 reachabilityNextStepNoCheck =
     [ Begin
     , Simplify
@@ -424,10 +425,10 @@ reachabilityNextStepNoCheck =
 {- | A strategy for the last step of depth-limited reachability proofs.
    The final such step should only perform a CheckImplication.
 -}
-reachabilityCheckOnly :: [Prim]
+reachabilityCheckOnly :: Step Prim
 reachabilityCheckOnly = [Begin, CheckImplication]
 
-strategy :: Stream [Prim]
+strategy :: Stream (Step Prim)
 strategy =
     reachabilityFirstStep :> Stream.iterate id reachabilityNextStep
 
@@ -435,7 +436,7 @@ newtype MinDepth = MinDepth
     { getMinDepth :: Int
     }
 
-strategyWithMinDepth :: MinDepth -> Stream [Prim]
+strategyWithMinDepth :: MinDepth -> Stream (Step Prim)
 strategyWithMinDepth (MinDepth minDepth) =
     Stream.prepend
         noCheckReachabilitySteps
