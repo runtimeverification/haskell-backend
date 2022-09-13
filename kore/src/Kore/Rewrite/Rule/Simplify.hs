@@ -27,6 +27,9 @@ import Kore.Internal.Predicate (
 import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike as TermLike
+import Kore.Log.DecidePredicateUnknown (
+    OnDecidePredicateUnknown(ErrorInSimplifyClaimRule)
+ )
 import Kore.Reachability (
     AllPathClaim (..),
     OnePathClaim (..),
@@ -137,7 +140,7 @@ simplifyClaimRule claimPattern = fmap MultiAnd.make $
         Pattern RewritingVariableName ->
         LogicT Simplifier (Pattern RewritingVariableName)
     filterWithSolver conditional = do
-        l <- lift $ SMT.Evaluator.evalConditional conditional Nothing
+        l <- lift $ SMT.Evaluator.evalConditional ErrorInSimplifyClaimRule conditional Nothing
         case l of
             Just False -> empty
             _ -> return conditional

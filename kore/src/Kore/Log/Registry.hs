@@ -73,6 +73,9 @@ import Kore.Log.DebugUnification (
 import Kore.Log.DebugUnifyBottom (
     DebugUnifyBottom,
  )
+import Kore.Log.DecidePredicateUnknown (
+    DecidePredicateUnknown,
+ )
 import Kore.Log.ErrorBottomTotalFunction (
     ErrorBottomTotalFunction,
  )
@@ -120,9 +123,6 @@ import Kore.Log.WarnBoundedModelChecker (
  )
 import Kore.Log.WarnClaimRHSIsBottom (
     WarnClaimRHSIsBottom,
- )
-import Kore.Log.WarnDecidePredicateUnknown (
-    WarnDecidePredicateUnknown,
  )
 import Kore.Log.WarnDepthLimitExceeded (
     WarnDepthLimitExceeded,
@@ -235,7 +235,6 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnUnsimplifiedCondition
             , mk $ Proxy @WarnRestartSolver
             , mk $ Proxy @DebugCreatedSubstitution
-            , mk $ Proxy @WarnDecidePredicateUnknown
             ]
         ,
             [ mk $ Proxy @ErrorBottomTotalFunction
@@ -247,6 +246,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @ErrorException
             , mk $ Proxy @ErrorRewriteLoop
             , mk $ Proxy @ErrorRewritesInstantiation
+            , mk $ Proxy @DecidePredicateUnknown
             ]
         )
             & Lens.each %~ unzip

@@ -367,6 +367,7 @@ library
     Kore.Log.DebugTransition
     Kore.Log.DebugUnification
     Kore.Log.DebugUnifyBottom
+    Kore.Log.DecidePredicateUnknown
     Kore.Log.ErrorBottomTotalFunction
     Kore.Log.ErrorEquationRightFunction
     Kore.Log.ErrorEquationsSameMatch
@@ -387,7 +388,6 @@ library
     Kore.Log.SQLite
     Kore.Log.WarnBoundedModelChecker
     Kore.Log.WarnClaimRHSIsBottom
-    Kore.Log.WarnDecidePredicateUnknown
     Kore.Log.WarnDepthLimitExceeded
     Kore.Log.WarnFunctionWithoutEvaluators
     Kore.Log.WarnIfLowProductivity

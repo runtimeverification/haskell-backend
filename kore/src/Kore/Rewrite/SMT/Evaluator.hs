@@ -65,8 +65,9 @@ import Kore.Log.DebugEvaluateCondition (
 import Kore.Log.DebugRetrySolverQuery (
     debugRetrySolverQuery,
  )
-import Kore.Log.WarnDecidePredicateUnknown (
-    warnDecidePredicateUnknown,
+import Kore.Log.DecidePredicateUnknown (
+    OnDecidePredicateUnknown (..),
+    throwDecidePredicateUnknown,
  )
 import Kore.Rewrite.SMT.Translate
 import Kore.Simplify.Simplify as Simplifier
@@ -92,30 +93,32 @@ import SMT.SimpleSMT qualified as SimpleSMT
 -}
 evalPredicate ::
     InternalVariable variable =>
+    OnDecidePredicateUnknown ->
     Predicate variable ->
     Maybe (SideCondition variable) ->
     Simplifier (Maybe Bool)
-evalPredicate predicate sideConditionM = case predicate of
+evalPredicate onUnknown predicate sideConditionM = case predicate of
     Predicate.PredicateTrue -> return $ Just True
     Predicate.PredicateFalse -> return $ Just False
     _ -> case sideConditionM of
         Nothing ->
             predicate :| []
-                & decidePredicate SideCondition.top
+                & decidePredicate onUnknown SideCondition.top
         Just sideCondition ->
             predicate :| [from @_ @(Predicate _) sideCondition]
-                & decidePredicate sideCondition
+                & decidePredicate onUnknown sideCondition
 
 {- | Attempt to evaluate the 'Conditional' argument with an optional side
  condition using an external SMT solver.
 -}
 evalConditional ::
     InternalVariable variable =>
+    OnDecidePredicateUnknown ->
     Conditional variable term ->
     Maybe (SideCondition variable) ->
     Simplifier (Maybe Bool)
-evalConditional conditional sideConditionM =
-    evalPredicate predicate sideConditionM
+evalConditional onUnknown conditional sideConditionM =
+    evalPredicate onUnknown predicate sideConditionM
         & assert (Conditional.isNormalized conditional)
   where
     predicate = case sideConditionM of
@@ -139,7 +142,7 @@ filterMultiOr multiOr = do
         Conditional variable term ->
         Simplifier (Maybe (Conditional variable term))
     refute p =
-        evalConditional p Nothing <&> \case
+        evalConditional ErrorInFilterMultiOr p Nothing <&> \case
             Nothing -> Just p
             Just False -> Nothing
             Just True -> Just p
@@ -150,11 +153,12 @@ The predicate is always sent to the external solver, even if it is trivial.
 -}
 decidePredicate ::
     forall variable.
+    OnDecidePredicateUnknown ->
     InternalVariable variable =>
     SideCondition variable ->
     NonEmpty (Predicate variable) ->
     Simplifier (Maybe Bool)
-decidePredicate sideCondition predicates =
+decidePredicate onUnknown sideCondition predicates =
     whileDebugEvaluateCondition predicates $
         do
             result <- query >>= whenUnknown retry
@@ -163,8 +167,17 @@ decidePredicate sideCondition predicates =
                 Unsat -> return False
                 Sat -> empty
                 Unknown -> do
-                    warnDecidePredicateUnknown predicates
+                    limit <- SMT.withSolver SMT.askRetryLimit
+                    -- depending on the value of `onUnknown`, this call will either log a warning
+                    -- or throw an error
+                    throwDecidePredicateUnknown onUnknown limit predicates
+                    case onUnknown of
+                        WarnSimplificationEquationInApplication _ ->
+                            -- the solver may be in an inconsistent state, so we re-initialize
+                            SMT.reinit
+                        _ -> pure ()
                     empty
+
             & runMaybeT
   where
     whenUnknown f Unknown = f
