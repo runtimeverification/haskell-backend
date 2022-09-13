@@ -179,7 +179,7 @@ test_transitionRule_ApplyAxioms =
     derives = derivesFrom run $ ClaimState.Remaining (MockClaim (A, C))
 
 unmodifiedAB ::
-    (Diff a, Diff b, Monoid b) =>
+    (Diff a, Diff b, Debug a, Debug b, Monoid b) =>
     ([Rule MockClaim] -> a -> IO [(a, b)]) ->
     a ->
     TestTree
