@@ -12,16 +12,10 @@ import Kore.Rewrite.Strategy qualified as Strategy
 -}
 module Kore.Rewrite.Strategy (
     -- * Running strategies
-    leavesM,
-    unfoldM_,
-    applyBreadthLimit,
-    unfoldBreadthFirst,
-    unfoldDepthFirst,
     unfoldSearchOrder,
     unfoldTransition,
     GraphSearchOrder (..),
     FinalNodeType (..),
-    constructExecutionGraph,
     ExecutionGraph (..),
     insNode,
     insEdge,
@@ -40,13 +34,9 @@ module Kore.Rewrite.Strategy (
     LimitExceeded (..),
 ) where
 
-import Control.Error (
-    maybeT,
- )
 import Control.Lens qualified as Lens
 import Control.Monad (
     foldM,
-    guard,
     (>=>),
  )
 import Control.Monad.Catch (
@@ -289,49 +279,10 @@ constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 =
 
 {- | Unfold the function from the initial vertex.
 
-@leavesM@ returns a disjunction of leaves (vertices without descendants) rather
-than constructing the entire graph.
-
-If the flag '--execute-to-branch' is given, branching nodes are also treated
-as leaves
+@unfoldM_@ visits (perform an effect on) every descendant in the graph.
 
 The queue updating function should be 'unfoldBreadthFirst' or
 'unfoldDepthFirst', optionally composed with 'applyBreadthLimit'.
--}
-leavesM ::
-    forall m a.
-    (Monad m, Alternative m) =>
-    FinalNodeType ->
-    -- | queue updating function
-    ([a] -> Seq a -> m (Seq a)) ->
-    -- | unfolding function
-    (a -> m [a]) ->
-    -- | initial vertex
-    a ->
-    m a
-leavesM finalNodeType mkQueue next a0 =
-    mkQueue [a0] Seq.empty >>= worker
-  where
-    worker Seq.Empty = empty
-    worker (a Seq.:<| as) =
-        ( do
-            as' <- lift (next a)
-            (guard . not) (null as' || needToStopOnBranching as')
-            lift (mkQueue as' as)
-        )
-            & maybeT (return a <|> worker as) worker
-    needToStopOnBranching as' =
-        finalNodeType == LeafOrBranching && (length as' > 1)
-
-{- | Unfold the function from the initial vertex.
-
-@unfoldM_@ visits every descendant in the graph, but unlike 'leavesM' does not
-return any values.
-
-The queue updating function should be 'unfoldBreadthFirst' or
-'unfoldDepthFirst', optionally composed with 'applyBreadthLimit'.
-
-See also: 'leavesM'
 -}
 unfoldM_ ::
     forall m a.

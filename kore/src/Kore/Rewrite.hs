@@ -17,9 +17,6 @@ module Kore.Rewrite (
 
     -- * Re-exports
     Natural,
-    pickLongest,
-    pickFinal,
-    runStrategy,
 ) where
 
 import Control.Monad (

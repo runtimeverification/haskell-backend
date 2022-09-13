@@ -568,7 +568,7 @@ search
                 rewriteGroups =
                     groupRewritesByPriority rewriteRules
                 runStrategy' =
-                    runStrategy
+                    Strategy.runStrategy
                         breadthLimit
                         -- search relies on exploring
                         -- the entire space of states.

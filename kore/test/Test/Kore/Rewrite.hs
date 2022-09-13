@@ -315,7 +315,7 @@ test_executionStrategy =
         pure (limitedExecutionStrategy depthLimit)
 
     hasRewrite :: [Prim] -> Bool
-    hasRewrite = any (== Rewrite)
+    hasRewrite = elem Rewrite
 
     isLastSimplify :: [Prim] -> Bool
     isLastSimplify ps
@@ -397,14 +397,14 @@ runStepWorker
         do
             result <-
                 simplifier Mock.env $
-                    runStrategy
+                    Strategy.runStrategy
                         breadthLimit
                         (transitionRule groupedRewrites execStrategy)
                         limitedDepth
                         (Step.Start $ mkRewritingPattern configuration)
             let finalResult =
                     fmap getRewritingPattern
-                        <$> pickFinal result
+                        <$> Strategy.pickFinal result
             return finalResult
       where
         groupedRewrites = groupRewritesByPriority rules
