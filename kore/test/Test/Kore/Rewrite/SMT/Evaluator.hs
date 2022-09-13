@@ -27,6 +27,7 @@ import Kore.Internal.Predicate (
  )
 import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike
+import Kore.Log.DecidePredicateUnknown (OnDecidePredicateUnknown (ErrorInTests))
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
@@ -165,13 +166,13 @@ evaluatePredicate ::
     Predicate VariableName ->
     IO (Maybe Bool)
 evaluatePredicate =
-    runSimplifierSMT Mock.env . flip SMT.Evaluator.evalPredicate Nothing
+    runSimplifierSMT Mock.env . flip (SMT.Evaluator.evalPredicate ErrorInTests) Nothing
 
 evaluateConditional ::
     Pattern VariableName ->
     IO (Maybe Bool)
 evaluateConditional =
-    runSimplifierSMT Mock.env . flip SMT.Evaluator.evalConditional Nothing
+    runSimplifierSMT Mock.env . flip (SMT.Evaluator.evalConditional ErrorInTests) Nothing
 
 evaluateMultiOr ::
     MultiOr (Conditional VariableName (TermLike VariableName)) ->
@@ -208,7 +209,7 @@ evaluateSMT ::
 evaluateSMT =
     lift
         . Kore.runSimplifier testEnv
-        . flip SMT.Evaluator.evalPredicate Nothing
+        . flip (SMT.Evaluator.evalPredicate ErrorInTests) Nothing
 
 -- ----------------------------------------------------------------
 -- Refute Int predicates
@@ -232,7 +233,7 @@ assertRefuted :: HasCallStack => Predicate RewritingVariableName -> Assertion
 assertRefuted prop = do
     let expect = Just False
     actual <-
-        SMT.Evaluator.decidePredicate SideCondition.top (prop :| [])
+        SMT.Evaluator.decidePredicate ErrorInTests SideCondition.top (prop :| [])
             & Test.runSimplifierSMT testEnv
     assertEqual "" expect actual
 

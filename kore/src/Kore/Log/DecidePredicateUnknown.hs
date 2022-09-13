@@ -39,6 +39,7 @@ data OnDecidePredicateUnknown
     | ErrorInMatchWith
     | ErrorInSimplifyClaimRule
     | ErrorInFilterMultiOr
+    | ErrorInTests
     deriving stock (Show, Eq)
 
 data DecidePredicateUnknown = DecidePredicateUnknown
@@ -111,6 +112,7 @@ instance Entry DecidePredicateUnknown where
                                 "Kore.Rewrite.Rule.Simplify.simplifyClaimRule"
                             ErrorInFilterMultiOr ->
                                 "Kore.Rewrite.SMT.Evaluator.filterMultiOr"
+                            ErrorInTests -> "unit tests"
                         ]
                     ]
     oneLineDoc _ = "DecidePredicateUnknown"
