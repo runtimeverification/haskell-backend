@@ -11,13 +11,6 @@ import Kore.Rewrite.Strategy qualified as Strategy
 @
 -}
 module Kore.Rewrite.Strategy (
-    -- * Strategies
-    Strategy (..),
-    apply,
-    seq,
-    sequence,
-    continue,
-
     -- * Running strategies
     leavesM,
     unfoldM_,
@@ -52,6 +45,7 @@ import Control.Error (
  )
 import Control.Lens qualified as Lens
 import Control.Monad (
+    foldM,
     guard,
     (>=>),
  )
@@ -83,59 +77,7 @@ import Data.Sequence qualified as Seq
 import GHC.Generics qualified as GHC
 import Kore.Rewrite.Transition
 import Numeric.Natural
-import Prelude.Kore hiding (
-    seq,
-    sequence,
- )
-
-{- | An execution strategy.
-
-    @Strategy prim@ represents a strategy for execution by applying rewrite
-    axioms of type @prim@.
--}
-data Strategy prim where
-    -- | Apply two strategies in sequence.
-    Seq :: Strategy prim -> Strategy prim -> Strategy prim
-    -- | Apply the rewrite rule, then advance to the next strategy.
-    Apply :: !prim -> Strategy prim
-    -- | @Continue@ produces one child identical to its parent.
-    Continue :: Strategy prim
-    deriving stock (Eq, Show, Functor)
-
-{- | Apply two strategies in sequence.
-
-The first strategy is applied, then the second is applied to all the children of
-the first.
--}
-seq :: Strategy prim -> Strategy prim -> Strategy prim
-seq = Seq
-
-{- | Apply all of the strategies in sequence.
-
-@
-sequence [] === continue
-@
--}
-sequence :: [Strategy prim] -> Strategy prim
-sequence = foldr seq continue
-
--- | Apply the rewrite rule, then advance to the next strategy.
-apply ::
-    -- | rule
-    prim ->
-    Strategy prim
-apply = Apply
-
-{- | Produce one child identical to its parent.
-
-@continue@ is the identity of 'seq':
-@
-seq continue a === a
-seq a continue === a
-@
--}
-continue :: Strategy prim
-continue = Continue
+import Prelude.Kore
 
 data ExecutionGraph config rule = ExecutionGraph
     { root :: Graph.Node
@@ -212,20 +154,20 @@ executionHistoryStep ::
     -- | Transition rule
     (prim -> config -> TransitionT rule m config) ->
     -- | Primitive strategy
-    Strategy prim ->
+    [prim] ->
     -- | execution graph so far
     ExecutionGraph config rule ->
     -- | current "selected" node
     Graph.Node ->
     -- | graph with one more step executed for the selected node
     m (ExecutionGraph config rule)
-executionHistoryStep transit prim exe@ExecutionGraph{graph} node
+executionHistoryStep transit step exe@ExecutionGraph{graph} node
     | nodeIsNotLeaf = error "Node has already been evaluated"
     | otherwise =
         case Graph.lab graph node of
             Nothing -> error "Node does not exist"
             Just config -> do
-                configs <- runTransitionT (transitionRule transit prim config)
+                configs <- runTransitionT (transitionRule transit step config)
                 let nodes = mkChildNode <$> configs
                     graph' =
                         State.execState
@@ -461,23 +403,9 @@ unfoldTransition transit (instrs, config) =
 transitionRule ::
     -- | Primitive strategy rule
     (prim -> config -> TransitionT rule m config) ->
-    (Strategy prim -> config -> TransitionT rule m config)
-transitionRule applyPrim = transitionRule0
-  where
-    transitionRule0 =
-        \case
-            Seq instr1 instr2 -> transitionSeq instr1 instr2
-            Apply prim -> transitionApply prim
-            Continue -> transitionContinue
-
-    transitionContinue result = return result
-
-    -- Apply the instructions in sequence.
-    transitionSeq instr1 instr2 =
-        transitionRule0 instr1 >=> transitionRule0 instr2
-
-    -- Apply a primitive rule. Throw an exception if the rule is not successful.
-    transitionApply = applyPrim
+    ([prim] -> config -> TransitionT rule m config)
+transitionRule applyPrim prims config =
+    foldM (flip applyPrim) config prims
 
 {- | Execute a 'Strategy'.
 
@@ -497,13 +425,13 @@ runStrategy ::
     Limit Natural ->
     -- | Primitive strategy rule
     (prim -> config -> TransitionT rule m config) ->
-    -- | Strategies
-    [Strategy prim] ->
+    -- | Steps
+    [[prim]] ->
     -- | Initial configuration
     config ->
     m (ExecutionGraph config rule)
-runStrategy breadthLimit applyPrim instrs0 config0 =
-    runStrategyWithSearchOrder breadthLimit applyPrim instrs0 BreadthFirst config0
+runStrategy breadthLimit applyPrim steps config0 =
+    runStrategyWithSearchOrder breadthLimit applyPrim steps BreadthFirst config0
 
 runStrategyWithSearchOrder ::
     forall m prim rule config.
@@ -511,18 +439,18 @@ runStrategyWithSearchOrder ::
     Limit Natural ->
     -- | Primitive strategy rule
     (prim -> config -> TransitionT rule m config) ->
-    -- | Strategies
-    [Strategy prim] ->
+    -- | Steps
+    [[prim]] ->
     -- | Search order of the execution graph
     GraphSearchOrder ->
     -- | Initial configuration
     config ->
     m (ExecutionGraph config rule)
-runStrategyWithSearchOrder breadthLimit applyPrim instrs0 searchOrder0 config0 =
+runStrategyWithSearchOrder breadthLimit applyPrim steps searchOrder0 config0 =
     constructExecutionGraph
         breadthLimit
         (transitionRule applyPrim)
-        instrs0
+        steps
         searchOrder0
         config0
 

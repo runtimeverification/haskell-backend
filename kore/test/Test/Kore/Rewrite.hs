@@ -308,24 +308,19 @@ test_executionStrategy =
             Hedgehog.assert (isLastSimplify strategy)
     ]
   where
-    genStrategies :: Gen [Strategy Prim]
+    genStrategies :: Gen [[Prim]]
     genStrategies = do
         let range = Hedgehog.Gen.integral (Hedgehog.Range.linear 1 16)
         depthLimit <- Limit <$> range
         pure (limitedExecutionStrategy depthLimit)
 
-    hasRewrite :: Strategy Prim -> Bool
-    hasRewrite = \case
-        Strategy.Seq s1 s2 -> hasRewrite s1 || hasRewrite s2
-        Strategy.Apply p -> p == Rewrite
-        Strategy.Continue -> False
+    hasRewrite :: [Prim] -> Bool
+    hasRewrite = any (== Rewrite)
 
-    isLastSimplify :: Strategy Prim -> Bool
-    isLastSimplify = \case
-        Strategy.Seq s Strategy.Continue -> isLastSimplify s
-        Strategy.Seq _ s -> isLastSimplify s
-        Strategy.Apply p -> p == Simplify
-        Strategy.Continue -> False
+    isLastSimplify :: [Prim] -> Bool
+    isLastSimplify ps
+        | null ps = False
+        | otherwise = last ps == Simplify
 
 simpleRewrite ::
     TermLike VariableName ->

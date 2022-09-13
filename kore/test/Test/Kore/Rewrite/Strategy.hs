@@ -2,8 +2,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Test.Kore.Rewrite.Strategy (
-    prop_SeqContinueIdentity,
-    prop_Continue,
     prop_depthLimit,
     prop_pickLongest,
     prop_pickFinal,
@@ -25,7 +23,6 @@ import Data.Limit qualified as Limit
 import Data.Sequence qualified as Seq
 import Kore.Rewrite.Strategy (
     ExecutionGraph (..),
-    Strategy,
     TransitionT,
  )
 import Kore.Rewrite.Strategy qualified as Strategy
@@ -56,21 +53,6 @@ instance Arbitrary Prim where
         Succ -> []
         Throw -> []
 
-instance Arbitrary prim => Arbitrary (Strategy prim) where
-    arbitrary = do
-        ~s <- Strategy.seq <$> arbitrary <*> arbitrary
-        ~p <- Strategy.apply <$> arbitrary
-        elements [s, p, Strategy.continue]
-
-    shrink =
-        \case
-            Strategy.Seq a b ->
-                [a, b]
-                    ++ (Strategy.Seq <$> shrink a <*> pure b)
-                    ++ (Strategy.Seq a <$> shrink b)
-            Strategy.Apply _ -> []
-            Strategy.Continue -> []
-
 transitionPrim :: Prim -> Natural -> TransitionT Prim Catch Natural
 transitionPrim rule n = do
     Transition.addRule rule
@@ -79,42 +61,14 @@ transitionPrim rule n = do
         Succ -> pure (succ n)
         Throw -> empty
 
-apply :: Prim -> Strategy Prim
-apply = Strategy.apply
-
-seq :: Strategy Prim -> Strategy Prim -> Strategy Prim
-seq = Strategy.seq
-
-continue :: Strategy Prim
-continue = Strategy.continue
-
-succ_ :: Strategy Prim
-succ_ = apply Succ
-
 runStrategy ::
-    [Strategy Prim] ->
+    [[Prim]] ->
     Natural ->
     ExecutionGraph Natural Prim
 runStrategy strategy z =
     Strategy.runStrategy Unlimited transitionPrim strategy z
         & runCatch
         & either Exception.throw id
-
-prop_SeqContinueIdentity :: Strategy Prim -> Natural -> Property
-prop_SeqContinueIdentity a n =
-    let expect = runStrategy [a] n
-        left = runStrategy [seq continue a] n
-        right = runStrategy [seq a continue] n
-     in (expect === left) .&&. (expect === right)
-
-prop_Continue :: Natural -> Property
-prop_Continue n =
-    let expect =
-            Graph.mkGraph
-                [(0, n), (1, n)]
-                [(0, 1, Seq.empty)]
-        actual = Strategy.graph $ runStrategy [continue] n
-     in expect === actual
 
 prop_depthLimit :: Integer -> Property
 prop_depthLimit i =
@@ -137,7 +91,7 @@ enumerate ::
     -- | @n@
     Natural ->
     ExecutionGraph Natural Prim
-enumerate n = runStrategy (Limit.replicate (Limit n) succ_) 0
+enumerate n = runStrategy (Limit.replicate (Limit n) [Succ]) 0
 
 prop_pickLongest :: Integer -> Property
 prop_pickLongest i =

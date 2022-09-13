@@ -107,7 +107,6 @@ import Kore.Rewrite.Strategy (
     ExecutionGraph (..),
     FinalNodeType,
     GraphSearchOrder,
-    Strategy,
     executionHistoryStep,
  )
 import Kore.Rewrite.Transition (
@@ -457,16 +456,10 @@ proveClaimStep _ stuckCheck claims axioms executionGraph node =
     -- decide the appropriate strategy for the next step.
     -- We should also add a command for toggling this feature on and
     -- off.
-    strategy' :: Strategy Prim
+    strategy' :: [Prim]
     strategy'
-        | isRoot = firstStep
-        | otherwise = followupStep
-
-    firstStep :: Strategy Prim
-    firstStep = reachabilityFirstStep
-
-    followupStep :: Strategy Prim
-    followupStep = reachabilityNextStep
+        | isRoot = reachabilityFirstStep
+        | otherwise = reachabilityNextStep
 
     ExecutionGraph{root} = executionGraph
 

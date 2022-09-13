@@ -17,7 +17,6 @@ module Kore.Rewrite (
 
     -- * Re-exports
     Natural,
-    Strategy,
     pickLongest,
     pickFinal,
     runStrategy,
@@ -124,29 +123,27 @@ retractRemaining (Remaining a) = Just a
 retractRemaining _ = Nothing
 
 -- | The sequence of transitions for the symbolic execution strategy.
-executionStrategy :: Stream (Strategy Prim)
+executionStrategy :: Stream [Prim]
 executionStrategy =
     step1 Stream.:> Stream.iterate id stepN
   where
     step1 =
-        (Strategy.sequence . fmap Strategy.apply)
-            [ Begin
-            , Simplify
-            , Rewrite
-            , Simplify
-            ]
+        [ Begin
+        , Simplify
+        , Rewrite
+        , Simplify
+        ]
     stepN =
-        (Strategy.sequence . fmap Strategy.apply)
-            [ Begin
-            , Rewrite
-            , Simplify
-            ]
+        [ Begin
+        , Rewrite
+        , Simplify
+        ]
 
 {- | The sequence of transitions under the specified depth limit.
 
 See also: 'executionStrategy'
 -}
-limitedExecutionStrategy :: Limit Natural -> [Strategy Prim]
+limitedExecutionStrategy :: Limit Natural -> [[Prim]]
 limitedExecutionStrategy depthLimit =
     Limit.takeWithin depthLimit (toList executionStrategy)
 
