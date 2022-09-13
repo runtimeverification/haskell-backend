@@ -27,7 +27,7 @@ newtype ErrorVerify = ErrorVerify {koreError :: Kore.Error VerifyError}
     deriving stock (Show)
 
 instance Exception ErrorVerify where
-    toException = toException . SomeEntry
+    toException = toException . SomeEntry []
     fromException exn = fromException exn >>= fromEntry
     displayException = Kore.printError . koreError
 

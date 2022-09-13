@@ -98,7 +98,7 @@ import Kore.Variables.Target (
     mkSetNonTarget,
     mkSetTarget,
  )
-import Log (LogAction (..), LoggerT, SomeEntry, actualEntry)
+import Log (LogAction (..), LoggerT, SomeEntry (..))
 import Prelude.Kore
 
 -- | @Context@ stores the variables and sort variables in scope.
@@ -776,7 +776,7 @@ runTestLoggerT action = do
     entriesRef <- newIORef []
     let logAction = LogAction $ \entry ->
             atomicModifyIORef' entriesRef $ \entries ->
-                (Log.actualEntry entry : entries, ())
+                (entry : entries, ())
     r <- Log.runLoggerT action logAction
     entries <- readIORef entriesRef
     return (r, entries)
