@@ -115,7 +115,7 @@ instance Entry DecidePredicateUnknown where
                     ]
     oneLineDoc _ = "DecidePredicateUnknown"
     helpDoc _ =
-        "error or a warning when the solver cannot decide satisfiability of a formula"
+        "error or a warning when the solver cannot decide the satisfiability of a formula"
 
 throwDecidePredicateUnknown ::
     (MonadLog log, InternalVariable variable) =>
