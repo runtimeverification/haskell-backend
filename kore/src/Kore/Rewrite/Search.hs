@@ -42,7 +42,7 @@ import Kore.Internal.Substitution (
     Substitution,
  )
 import Kore.Log.DecidePredicateUnknown (
-    OnDecidePredicateUnknown(ErrorInMatchWith)
+    OnDecidePredicateUnknown (ErrorInMatchWith),
  )
 import Kore.Rewrite.Axiom.Matcher (
     MatchResult,

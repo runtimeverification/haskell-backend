@@ -34,10 +34,10 @@ import Kore.Attribute.Pattern.FreeVariables (
  )
 import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Equation.DebugEquation
+import Kore.Equation.DebugEquation qualified as Equation
 import Kore.Equation.Equation (
     Equation (..),
  )
-import Kore.Equation.DebugEquation qualified as Equation
 import Kore.Equation.Equation qualified as Equation
 import Kore.Internal.Condition (
     Condition,
@@ -71,7 +71,7 @@ import Kore.Internal.TermLike (
  )
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.DecidePredicateUnknown (
-    OnDecidePredicateUnknown(..)
+    OnDecidePredicateUnknown (..),
  )
 import Kore.Rewrite.Axiom.Matcher (
     MatchResult,

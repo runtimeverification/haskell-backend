@@ -177,7 +177,6 @@ decidePredicate onUnknown sideCondition predicates =
                             SMT.reinit
                         _ -> pure ()
                     empty
-
             & runMaybeT
   where
     whenUnknown f Unknown = f

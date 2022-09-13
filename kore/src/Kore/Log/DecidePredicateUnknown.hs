@@ -33,28 +33,25 @@ import Pretty (
 import Pretty qualified
 import SMT qualified
 
-data OnDecidePredicateUnknown =
-   WarnSimplificationEquationInApplication (Maybe SourceLocation)
- | ErrorInApplication (Maybe SourceLocation)
- | ErrorInMatchWith
- | ErrorInSimplifyClaimRule
- | ErrorInFilterMultiOr
+data OnDecidePredicateUnknown
+    = WarnSimplificationEquationInApplication (Maybe SourceLocation)
+    | ErrorInApplication (Maybe SourceLocation)
+    | ErrorInMatchWith
+    | ErrorInSimplifyClaimRule
+    | ErrorInFilterMultiOr
     deriving stock (Show, Eq)
 
 data DecidePredicateUnknown = DecidePredicateUnknown
-    {
-        action :: OnDecidePredicateUnknown
+    { action :: OnDecidePredicateUnknown
     , smtLimit :: SMT.RetryLimit
     , predicates :: NonEmpty (Predicate VariableName)
     }
     deriving stock (Show, Eq)
 
-
 instance Exception DecidePredicateUnknown where
     toException = toException . SomeEntry
     fromException exn =
         fromException exn >>= fromEntry
-
 
 instance Debug DecidePredicateUnknown where
     debugPrec w = \_ -> Pretty.pretty . show $ w
@@ -73,12 +70,14 @@ instance Pretty DecidePredicateUnknown where
                     [ "with side condition:"
                         , Pretty.indent 4 (pretty sideCondition)
                         ]
-                ++ [
-                    "SMT limit set at:"
-                , Pretty.indent 4 (case limit of
-                    Limit n -> pretty n
-                    Unlimited -> "infinity")
-                ]
+                ++ [ "SMT limit set at:"
+                   , Pretty.indent
+                        4
+                        ( case limit of
+                            Limit n -> pretty n
+                            Unlimited -> "infinity"
+                        )
+                   ]
             )
       where
         predicate :| sideConditions = predicates
@@ -90,29 +89,30 @@ instance Entry DecidePredicateUnknown where
             _ -> Error
     contextDoc DecidePredicateUnknown{action} =
         Just $
-            Pretty.align $ Pretty.vsep [
-                Pretty.hsep . catMaybes $
-                    [ Just "while applying equation"
-                    , (\loc -> Pretty.hsep ["at", pretty loc]) <$> case action of
-                        WarnSimplificationEquationInApplication loc -> loc
-                        ErrorInApplication loc -> loc
-                        _ -> Nothing
-                    ],
-                Pretty.hsep [
-                    "in",
-                    case action of
-                        WarnSimplificationEquationInApplication _ ->
-                            "Kore.Equation.Application.checkRequires"
-                        ErrorInApplication _ ->
-                            "Kore.Equation.Application.checkRequires"
-                        ErrorInMatchWith ->
-                            "Kore.Rewrite.Search.matchWith"
-                        ErrorInSimplifyClaimRule ->
-                            "Kore.Rewrite.Rule.Simplify.simplifyClaimRule"
-                        ErrorInFilterMultiOr ->
-                            "Kore.Rewrite.SMT.Evaluator.filterMultiOr"
-                 ]
-             ]
+            Pretty.align $
+                Pretty.vsep
+                    [ Pretty.hsep . catMaybes $
+                        [ Just "while applying equation"
+                        , (\loc -> Pretty.hsep ["at", pretty loc]) <$> case action of
+                            WarnSimplificationEquationInApplication loc -> loc
+                            ErrorInApplication loc -> loc
+                            _ -> Nothing
+                        ]
+                    , Pretty.hsep
+                        [ "in"
+                        , case action of
+                            WarnSimplificationEquationInApplication _ ->
+                                "Kore.Equation.Application.checkRequires"
+                            ErrorInApplication _ ->
+                                "Kore.Equation.Application.checkRequires"
+                            ErrorInMatchWith ->
+                                "Kore.Rewrite.Search.matchWith"
+                            ErrorInSimplifyClaimRule ->
+                                "Kore.Rewrite.Rule.Simplify.simplifyClaimRule"
+                            ErrorInFilterMultiOr ->
+                                "Kore.Rewrite.SMT.Evaluator.filterMultiOr"
+                        ]
+                    ]
     oneLineDoc _ = "DecidePredicateUnknown"
     helpDoc _ =
         "error or a warning when the solver cannot decide satisfiability of a formula"

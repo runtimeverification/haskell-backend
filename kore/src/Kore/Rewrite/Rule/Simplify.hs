@@ -28,7 +28,7 @@ import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.DecidePredicateUnknown (
-    OnDecidePredicateUnknown(ErrorInSimplifyClaimRule)
+    OnDecidePredicateUnknown (ErrorInSimplifyClaimRule),
  )
 import Kore.Reachability (
     AllPathClaim (..),
