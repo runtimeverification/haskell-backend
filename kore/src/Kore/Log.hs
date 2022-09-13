@@ -236,8 +236,7 @@ makeKoreLogger exeName startTime timestampSwitch koreLogFormat logActionText =
         context' =
             (entry : entryContext)
                 & reverse
-                & map (\e -> (,type' e) <$> contextDoc e)
-                & catMaybes
+                & mapMaybe (\e -> (,type' e) <$> contextDoc e)
                 & prettyContext
         prettyContext =
             \case
