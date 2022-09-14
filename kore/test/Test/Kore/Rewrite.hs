@@ -46,6 +46,7 @@ import Kore.Rewrite.RulePattern (
 import Kore.Rewrite.RulePattern as RulePattern (
     rulePattern,
  )
+import Kore.Rewrite.Strategy (Step)
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Syntax.Variable
 import Prelude.Kore
@@ -308,24 +309,19 @@ test_executionStrategy =
             Hedgehog.assert (isLastSimplify strategy)
     ]
   where
-    genStrategies :: Gen [Strategy Prim]
+    genStrategies :: Gen [Step Prim]
     genStrategies = do
         let range = Hedgehog.Gen.integral (Hedgehog.Range.linear 1 16)
         depthLimit <- Limit <$> range
         pure (limitedExecutionStrategy depthLimit)
 
-    hasRewrite :: Strategy Prim -> Bool
-    hasRewrite = \case
-        Strategy.Seq s1 s2 -> hasRewrite s1 || hasRewrite s2
-        Strategy.Apply p -> p == Rewrite
-        Strategy.Continue -> False
+    hasRewrite :: Step Prim -> Bool
+    hasRewrite = elem Rewrite
 
-    isLastSimplify :: Strategy Prim -> Bool
-    isLastSimplify = \case
-        Strategy.Seq s Strategy.Continue -> isLastSimplify s
-        Strategy.Seq _ s -> isLastSimplify s
-        Strategy.Apply p -> p == Simplify
-        Strategy.Continue -> False
+    isLastSimplify :: Step Prim -> Bool
+    isLastSimplify ps
+        | null ps = False
+        | otherwise = last ps == Simplify
 
 simpleRewrite ::
     TermLike VariableName ->
@@ -402,14 +398,14 @@ runStepWorker
         do
             result <-
                 simplifier Mock.env $
-                    runStrategy
+                    Strategy.runStrategy
                         breadthLimit
                         (transitionRule groupedRewrites execStrategy)
                         limitedDepth
                         (Step.Start $ mkRewritingPattern configuration)
             let finalResult =
                     fmap getRewritingPattern
-                        <$> pickFinal result
+                        <$> Strategy.pickFinal result
             return finalResult
       where
         groupedRewrites = groupRewritesByPriority rules
