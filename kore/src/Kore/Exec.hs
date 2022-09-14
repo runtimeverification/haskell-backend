@@ -321,7 +321,7 @@ exec
                 verifiedModule
         initialSort = termLikeSort initialTerm
 
-        execStrategy :: [GraphTraversal.Step Prim]
+        execStrategy :: [Strategy.Step Prim]
         execStrategy =
             Limit.takeWithin depthLimit $
                 [Begin, Simplify, Rewrite, Simplify] :
@@ -409,7 +409,7 @@ rpcExec
                 (Builtin.internalize metadataTools)
                 verifiedModule
 
-        execStrategy :: [GraphTraversal.Step Prim]
+        execStrategy :: [Strategy.Step Prim]
         execStrategy =
             Limit.takeWithin depthLimit $
                 [Begin, Simplify, Rewrite, Simplify] :
@@ -568,7 +568,7 @@ search
                 rewriteGroups =
                     groupRewritesByPriority rewriteRules
                 runStrategy' =
-                    runStrategy
+                    Strategy.runStrategy
                         breadthLimit
                         -- search relies on exploring
                         -- the entire space of states.
