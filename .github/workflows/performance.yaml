@@ -4,22 +4,34 @@ on:
   label:
     created: 
       - Performance
-
+  
+  # Trigger on Issue created / Run against master branch
   issues:
     types: [opened]
-    
     branches: 
       - 'master'
 
+  issue_comment:
+    types: [created, edited]
+    branches: 
+      - 'master'
 
-  workflow_dispatch:
-    inputs:
-      file: 
-      # Need to provide a file to run with. 
+  # Manual Trigger 
+  # workflow_dispatch:
+  #   inputs:
+  #     file: 
+  #     # Need to provide a file to run with. 
     
 jobs: 
   collect-data:
-    runs-on: ["linux", "performance"]
+    runs-on: ["Linux"]
+    steps:
+      - name: Execution Info
+        run: |
+          echo ${github.actor}
+          
+
+
     
 
 
