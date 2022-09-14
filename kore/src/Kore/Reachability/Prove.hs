@@ -399,7 +399,6 @@ proveClaim
         -- result interpretation for GraphTraversal.simpleTransition
         toTransitionResultWithDepth ::
             Show c =>
-            -- | prior state, needed for [] and Proven cases
             (ProofDepth, ClaimState c) ->
             [(ProofDepth, ClaimState c)] ->
             GraphTraversal.TransitionResult (ProofDepth, ClaimState c)
