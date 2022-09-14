@@ -64,7 +64,7 @@ instance Pretty ErrorEquationsSameMatch where
             ]
 
 instance Exception ErrorEquationsSameMatch where
-    toException = toException . SomeEntry
+    toException = toException . SomeEntry []
     fromException exn =
         fromException exn >>= fromEntry
 

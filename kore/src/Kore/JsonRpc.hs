@@ -4,9 +4,6 @@ License     : BSD-3-Clause
 -}
 module Kore.JsonRpc (runServer) where
 
-import Colog (
-    cmap,
- )
 import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Exception (ErrorCall (..), Exception, mask)
@@ -424,17 +421,15 @@ respond runSMT serializedModule =
          in handle (pure . Left . serverError "crashed" . toJSON . mkError)
 
 runServer :: Int -> SMT.SolverSetup -> Log.LoggerEnv IO -> Exec.SerializedModule -> IO ()
-runServer port solverSetup Log.LoggerEnv{logAction, context = entryContext} serializedModule = do
+runServer port solverSetup Log.LoggerEnv{logAction} serializedModule = do
     flip runLoggingT logFun $
         jsonrpcTCPServer V2 False srvSettings $
             srv runSMT serializedModule
   where
     srvSettings = serverSettings port "*"
 
-    someLogAction = cmap (\actualEntry -> Log.ActualEntry{actualEntry, entryContext}) logAction
-
     logFun loc src level msg =
-        Log.logWith someLogAction $ LogJsonRpcServer{loc, src, level, msg}
+        Log.logWith logAction $ LogJsonRpcServer{loc, src, level, msg}
 
     runSMT :: forall a. SMT.SMT a -> IO a
     runSMT m = flip Log.runLoggerT logAction $ SMT.runWithSolver m solverSetup

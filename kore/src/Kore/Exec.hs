@@ -666,7 +666,7 @@ proveWithRepl ::
     VerifiedModule StepperAttributes ->
     -- | The module containing the claims that were proven in a previous run.
     Maybe (VerifiedModule StepperAttributes) ->
-    MVar (Log.LogAction IO Log.ActualEntry) ->
+    MVar (Log.LogAction IO Log.SomeEntry) ->
     -- | Optional script
     Repl.Data.ReplScript ->
     -- | Run in a specific repl mode
