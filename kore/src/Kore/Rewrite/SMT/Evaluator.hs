@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 {- |
 Module      : Kore.Rewrite.SMT.Evaluator
 Description : Uses a SMT solver for evaluating predicates.
