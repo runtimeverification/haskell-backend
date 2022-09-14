@@ -50,7 +50,7 @@ data DecidePredicateUnknown = DecidePredicateUnknown
     deriving stock (Show, Eq)
 
 instance Exception DecidePredicateUnknown where
-    toException = toException . SomeEntry
+    toException = toException . SomeEntry []
     fromException exn =
         fromException exn >>= fromEntry
 
