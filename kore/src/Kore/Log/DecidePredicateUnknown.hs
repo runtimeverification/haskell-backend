@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE NoStrict #-}
 {-# LANGUAGE NoStrictData #-}
 
@@ -9,6 +10,9 @@ module Kore.Log.DecidePredicateUnknown (
     OnDecidePredicateUnknown (..),
     DecidePredicateUnknown (..),
     throwDecidePredicateUnknown,
+    liftLoc,
+    srcLoc,
+    Loc,
 ) where
 
 import Control.Exception (
@@ -25,8 +29,9 @@ import Kore.Internal.Predicate (
  )
 import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.Variable
+import Language.Haskell.TH.Syntax (Exp, Lift (lift), Loc (..), Q, qLocation)
 import Log
-import Prelude.Kore
+import Prelude.Kore hiding (lift)
 import Pretty (
     Pretty (..),
  )
@@ -34,13 +39,23 @@ import Pretty qualified
 import SMT qualified
 
 data OnDecidePredicateUnknown
-    = WarnSimplificationEquationInApplication (Maybe SourceLocation)
-    | ErrorInApplication (Maybe SourceLocation)
-    | ErrorInMatchWith
-    | ErrorInSimplifyClaimRule
-    | ErrorInFilterMultiOr
-    | ErrorInTests
+    = WarnDecidePredicateUnknown Loc (Maybe SourceLocation)
+    | ErrorDecidePredicateUnknown Loc (Maybe SourceLocation)
     deriving stock (Show, Eq)
+
+liftLoc :: Loc -> Q Exp
+liftLoc (Loc a b c (d1, d2) (e1, e2)) =
+    [|
+        Loc
+            $(lift a)
+            $(lift b)
+            $(lift c)
+            ($(lift d1), $(lift d2))
+            ($(lift e1), $(lift e2))
+        |]
+
+srcLoc :: Q Exp
+srcLoc = [|$(qLocation >>= liftLoc)|]
 
 data DecidePredicateUnknown = DecidePredicateUnknown
     { action :: OnDecidePredicateUnknown
@@ -86,7 +101,7 @@ instance Pretty DecidePredicateUnknown where
 instance Entry DecidePredicateUnknown where
     entrySeverity DecidePredicateUnknown{action} =
         case action of
-            WarnSimplificationEquationInApplication _ -> Warning
+            WarnDecidePredicateUnknown _ _ -> Warning
             _ -> Error
     contextDoc DecidePredicateUnknown{action} =
         Just $
@@ -94,27 +109,20 @@ instance Entry DecidePredicateUnknown where
                 Pretty.vsep
                     [ Pretty.hsep . catMaybes $
                         [ Just "while applying equation"
-                        , (\loc -> Pretty.hsep ["at", pretty loc]) <$> case action of
-                            WarnSimplificationEquationInApplication loc -> loc
-                            ErrorInApplication loc -> loc
-                            _ -> Nothing
+                        , (\loc -> Pretty.hsep ["defined at", pretty loc]) <$> case action of
+                            WarnDecidePredicateUnknown _ koreLoc -> koreLoc
+                            ErrorDecidePredicateUnknown _ koreLoc -> koreLoc
                         ]
                     , Pretty.hsep
                         [ "in"
                         , case action of
-                            WarnSimplificationEquationInApplication _ ->
-                                "Kore.Equation.Application.checkRequires"
-                            ErrorInApplication _ ->
-                                "Kore.Equation.Application.checkRequires"
-                            ErrorInMatchWith ->
-                                "Kore.Rewrite.Search.matchWith"
-                            ErrorInSimplifyClaimRule ->
-                                "Kore.Rewrite.Rule.Simplify.simplifyClaimRule"
-                            ErrorInFilterMultiOr ->
-                                "Kore.Rewrite.SMT.Evaluator.filterMultiOr"
-                            ErrorInTests -> "unit tests"
+                            ErrorDecidePredicateUnknown hsLoc _ -> prettyHsLoc hsLoc
+                            WarnDecidePredicateUnknown hsLoc _ -> prettyHsLoc hsLoc
                         ]
                     ]
+      where
+        prettyHsLoc Loc{loc_module, loc_start = (row, col)} =
+            Pretty.pretty loc_module <> ":" <> Pretty.pretty row <> ":" <> Pretty.pretty col
     oneLineDoc _ = "DecidePredicateUnknown"
     helpDoc _ =
         "error or a warning when the solver cannot decide the satisfiability of a formula"
@@ -127,9 +135,9 @@ throwDecidePredicateUnknown ::
     log ()
 throwDecidePredicateUnknown action smtLimit predicates' =
     case action of
-        WarnSimplificationEquationInApplication _ ->
+        WarnDecidePredicateUnknown _ _ ->
             logEntry DecidePredicateUnknown{action, smtLimit, predicates}
-        _ ->
+        ErrorDecidePredicateUnknown _ _ ->
             throw DecidePredicateUnknown{action, smtLimit, predicates}
   where
     predicates = Predicate.mapVariables (pure toVariableName) <$> predicates'

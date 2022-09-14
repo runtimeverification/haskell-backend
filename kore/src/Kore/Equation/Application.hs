@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
@@ -33,7 +35,20 @@ import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
  )
 import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
-import Kore.Equation.DebugEquation
+import Kore.Equation.DebugEquation (
+    ApplyMatchResultError (..),
+    ApplyMatchResultErrors (..),
+    AttemptEquationError (..),
+    AttemptEquationResult,
+    CheckRequiresError (..),
+    MatchError (..),
+    debugApplyEquation,
+    debugAttemptEquationResult,
+    whileApplyMatchResult,
+    whileCheckRequires,
+    whileDebugAttemptEquation,
+    whileMatch,
+ )
 import Kore.Equation.DebugEquation qualified as Equation
 import Kore.Equation.Equation (
     Equation (..),
@@ -72,6 +87,7 @@ import Kore.Internal.TermLike (
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.DecidePredicateUnknown (
     OnDecidePredicateUnknown (..),
+    srcLoc,
  )
 import Kore.Rewrite.Axiom.Matcher (
     MatchResult,
@@ -119,8 +135,8 @@ attemptEquation sideCondition termLike equation = do
             let Equation{requires, attributes = Attribute.Axiom{simplification}} = equation'
                 eqSrc = Equation.srcLoc equation'
                 onDecidePredicateUnknown = case simplification of
-                    Attribute.NotSimplification -> ErrorInApplication eqSrc
-                    Attribute.IsSimplification _ -> WarnSimplificationEquationInApplication eqSrc
+                    Attribute.NotSimplification -> ErrorDecidePredicateUnknown $srcLoc eqSrc
+                    Attribute.IsSimplification _ -> WarnDecidePredicateUnknown $srcLoc eqSrc
             checkRequires onDecidePredicateUnknown sideCondition predicate requires & whileCheckRequires
             let Equation{right, ensures} = equation'
             return $ Pattern.withCondition right $ from @(Predicate _) ensures

@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
@@ -40,6 +42,7 @@ import Kore.Debug
 import Kore.Internal.Pattern (
     Pattern,
  )
+import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Rewrite.Result qualified as Result
 import Kore.Rewrite.RewriteStep qualified as Step
 import Kore.Rewrite.RewritingVariable
@@ -195,7 +198,7 @@ transitionRule rewriteGroups = transitionRuleWorker
 
     transitionSimplify prim config = do
         configs <- lift $ Pattern.simplifyTopConfiguration config
-        filteredConfigs <- liftSimplifier $ SMT.Evaluator.filterMultiOr configs
+        filteredConfigs <- liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc configs
         if isBottom filteredConfigs
             then pure Bottom
             else prim <$> asum (pure <$> toList filteredConfigs)

@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Module      : Kore.Rewrite.SMT.Evaluator
 Description : Uses a SMT solver for evaluating predicates.
@@ -66,6 +68,7 @@ import Kore.Log.DebugRetrySolverQuery (
     debugRetrySolverQuery,
  )
 import Kore.Log.DecidePredicateUnknown (
+    Loc,
     OnDecidePredicateUnknown (..),
     throwDecidePredicateUnknown,
  )
@@ -132,9 +135,10 @@ filterMultiOr ::
     , TopBottom term
     , InternalVariable variable
     ) =>
+    Loc ->
     MultiOr (Conditional variable term) ->
     Simplifier (MultiOr (Conditional variable term))
-filterMultiOr multiOr = do
+filterMultiOr hsLoc multiOr = do
     elements <- mapM refute (toList multiOr)
     return (MultiOr.make (catMaybes elements))
   where
@@ -142,7 +146,7 @@ filterMultiOr multiOr = do
         Conditional variable term ->
         Simplifier (Maybe (Conditional variable term))
     refute p =
-        evalConditional ErrorInFilterMultiOr p Nothing <&> \case
+        evalConditional (ErrorDecidePredicateUnknown hsLoc Nothing) p Nothing <&> \case
             Nothing -> Just p
             Just False -> Nothing
             Just True -> Just p
@@ -172,7 +176,7 @@ decidePredicate onUnknown sideCondition predicates =
                     -- or throw an error
                     throwDecidePredicateUnknown onUnknown limit predicates
                     case onUnknown of
-                        WarnSimplificationEquationInApplication _ ->
+                        WarnDecidePredicateUnknown _ _ ->
                             -- the solver may be in an inconsistent state, so we re-initialize
                             SMT.reinit
                         _ -> pure ()
