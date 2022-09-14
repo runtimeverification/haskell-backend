@@ -10,12 +10,12 @@ module Kore.Equation.Application (
 ) where
 
 import Control.Error (
-    ExceptT,
+    ExceptT (..),
     MaybeT (..),
     maybeToList,
-    noteT,
     runExceptT,
     throwE,
+    withExceptT,
  )
 import Control.Monad (
     (>=>),
@@ -71,7 +71,7 @@ import Kore.Internal.TermLike (
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.Axiom.Matcher (
     MatchResult,
-    matchIncremental,
+    patternMatch,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -118,15 +118,16 @@ attemptEquation sideCondition termLike equation = do
             return $ Pattern.withCondition right $ from @(Predicate _) ensures
 
     equationRenamed = refreshVariables sideCondition termLike equation
-    matchError =
+    matchError matchFailReason =
         MatchError
             { matchTerm = termLike
             , matchEquation = equationRenamed
+            , matchFailReason
             }
     match term1 term2 =
-        matchIncremental sideCondition term1 term2
-            & MaybeT
-            & noteT matchError
+        patternMatch sideCondition term1 term2
+            & ExceptT
+            & withExceptT matchError
 
     matchAndApplyResults left' = do
         matchResult <- match left' termLike & whileMatch
