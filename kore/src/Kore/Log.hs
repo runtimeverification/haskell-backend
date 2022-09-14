@@ -63,7 +63,7 @@ import System.FilePath (
  )
 
 -- | Internal type used to add timestamps to a 'LogMessage'.
-data WithTimestamp = WithTimestamp ActualEntry TimeSpec
+data WithTimestamp = WithTimestamp SomeEntry TimeSpec
 
 {- | Generates an appropriate logger for the given 'KoreLogOptions'. It uses
  the CPS style because some outputters require cleanup (e.g. files).
@@ -71,7 +71,7 @@ data WithTimestamp = WithTimestamp ActualEntry TimeSpec
 withLogger ::
     FilePath ->
     KoreLogOptions ->
-    (LogAction IO ActualEntry -> IO a) ->
+    (LogAction IO SomeEntry -> IO a) ->
     IO a
 withLogger reportDirectory koreLogOptions = runContT $ do
     mainLogger <- ContT $ withMainLogger reportDirectory koreLogOptions
@@ -84,7 +84,7 @@ withLogger reportDirectory koreLogOptions = runContT $ do
 withMainLogger ::
     FilePath ->
     KoreLogOptions ->
-    (LogAction IO ActualEntry -> IO a) ->
+    (LogAction IO SomeEntry -> IO a) ->
     IO a
 withMainLogger reportDirectory koreLogOptions = runContT $ do
     let KoreLogOptions{exeName, startTime} = koreLogOptions
@@ -104,7 +104,7 @@ withMainLogger reportDirectory koreLogOptions = runContT $ do
     pure logAction
 
 withSmtSolverLogger ::
-    DebugSolverOptions -> (LogAction IO ActualEntry -> IO a) -> IO a
+    DebugSolverOptions -> (LogAction IO SomeEntry -> IO a) -> IO a
 withSmtSolverLogger DebugSolverOptions{logFile} continue =
     case logFile of
         Nothing -> continue mempty
@@ -116,8 +116,8 @@ withSmtSolverLogger DebugSolverOptions{logFile} continue =
 
 koreLogTransformer ::
     KoreLogOptions ->
-    LogAction m ActualEntry ->
-    LogAction m ActualEntry
+    LogAction m SomeEntry ->
+    LogAction m SomeEntry
 koreLogTransformer koreLogOptions baseLogger =
     Colog.cmap
         (toErrors warningSwitch)
@@ -125,20 +125,20 @@ koreLogTransformer koreLogOptions baseLogger =
   where
     KoreLogOptions{turnedIntoErrors, warningSwitch} = koreLogOptions
 
-    toErrors :: WarningSwitch -> ActualEntry -> ActualEntry
-    toErrors AsError ActualEntry{actualEntry}
-        | entrySeverity actualEntry == Warning =
-            error . show . longDoc $ actualEntry
-    toErrors _ entry@ActualEntry{actualEntry}
-        | typeOfSomeEntry actualEntry `elem` turnedIntoErrors =
-            error . show . longDoc $ actualEntry
+    toErrors :: WarningSwitch -> SomeEntry -> SomeEntry
+    toErrors AsError entry
+        | entrySeverity entry == Warning =
+            error . show . longDoc $ entry
+    toErrors _ entry
+        | typeOfSomeEntry entry `elem` turnedIntoErrors =
+            error . show . longDoc $ entry
         | otherwise = entry
 
 koreLogFilters ::
     Applicative m =>
     KoreLogOptions ->
-    LogAction m ActualEntry ->
-    LogAction m ActualEntry
+    LogAction m SomeEntry ->
+    LogAction m SomeEntry
 koreLogFilters koreLogOptions baseLogger =
     Colog.cfilter
         ( \entry ->
@@ -158,17 +158,17 @@ koreLogFilters koreLogOptions baseLogger =
 -- | Select the log entry types present in the active set.
 filterEntry ::
     EntryTypes ->
-    ActualEntry ->
+    SomeEntry ->
     Bool
-filterEntry logEntries ActualEntry{actualEntry} =
-    typeOfSomeEntry actualEntry `elem` logEntries
+filterEntry logEntries entry =
+    typeOfSomeEntry entry `elem` logEntries
 
 -- | Select log entries with 'Severity' greater than or equal to the level.
 filterSeverity ::
     Severity ->
-    ActualEntry ->
+    SomeEntry ->
     Bool
-filterSeverity level ActualEntry{actualEntry = SomeEntry entry} =
+filterSeverity level entry =
     entrySeverity entry >= level
 
 -- | Run a 'LoggerT' with the given options.
@@ -190,7 +190,7 @@ makeKoreLogger ::
     TimestampsSwitch ->
     KoreLogFormat ->
     LogAction io Text ->
-    LogAction io ActualEntry
+    LogAction io SomeEntry
 makeKoreLogger exeName startTime timestampSwitch koreLogFormat logActionText =
     logActionText
         & contramap render
@@ -210,14 +210,14 @@ makeKoreLogger exeName startTime timestampSwitch koreLogFormat logActionText =
                         toMicroSecs (diffTimeSpec startTime entryTime)
         toMicroSecs = (`div` 1000) . toNanoSecs
     exeName' = Pretty.pretty exeName <> Pretty.colon
-    prettyActualEntry timestamp ActualEntry{actualEntry, entryContext}
+    prettyActualEntry timestamp entry@(SomeEntry entryContext actualEntry)
         | OneLine <- koreLogFormat =
             Pretty.hsep [header, oneLineDoc actualEntry]
         | otherwise =
             (Pretty.vsep . concat)
                 [ [header]
-                , indent <$> context'
                 , indent <$> [longDoc actualEntry]
+                , context'
                 ]
       where
         header =
@@ -225,30 +225,35 @@ makeKoreLogger exeName startTime timestampSwitch koreLogFormat logActionText =
                 [ Just exeName'
                 , timestamp
                 , Just severity'
-                , Just (Pretty.parens $ type' actualEntry)
+                , Just (Pretty.parens $ type' entry)
                 ]
                 <> Pretty.colon
         severity' = prettySeverity (entrySeverity actualEntry)
-        type' entry =
+        type' e =
             Pretty.pretty $
                 lookupTextFromTypeWithError $
-                    typeOfSomeEntry entry
+                    typeOfSomeEntry e
         context' =
-            entryContext
-                & mapMaybe prettyContext
+            (entry : entryContext)
                 & reverse
-        prettyContext someEntry' =
-            contextDoc someEntry'
-                & fmap
-                    ( \doc ->
-                        Pretty.hsep [Pretty.parens typeName, doc <> Pretty.colon]
-                    )
-          where
-            typeName = type' someEntry'
+                & mapMaybe (\e -> (,type' e) <$> contextDoc e)
+                & prettyContext
+        prettyContext =
+            \case
+                [] -> []
+                xs -> ("Context" <> Pretty.colon) : (indent <$> mkContext xs)
+
+        mkContext =
+            \case
+                [] -> []
+                [(doc, typeName)] ->
+                    [Pretty.hsep [Pretty.parens typeName, doc]]
+                (doc, typeName) : xs -> (Pretty.hsep [Pretty.parens typeName, doc]) : (indent <$> (mkContext xs))
+
     indent = Pretty.indent 4
 
 -- | Adds the current timestamp to a log entry.
-withTimestamp :: MonadIO io => ActualEntry -> io WithTimestamp
+withTimestamp :: MonadIO io => SomeEntry -> io WithTimestamp
 withTimestamp msg = liftIO $ do
     currentTime <- getTime Monotonic
     pure $ WithTimestamp msg currentTime
@@ -262,7 +267,7 @@ stderrLogger ::
     TimeSpec ->
     TimestampsSwitch ->
     KoreLogFormat ->
-    LogAction io ActualEntry
+    LogAction io SomeEntry
 stderrLogger exeName startTime timestampsSwitch logFormat =
     makeKoreLogger exeName startTime timestampsSwitch logFormat Colog.logTextStderr
 

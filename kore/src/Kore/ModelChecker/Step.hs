@@ -43,10 +43,9 @@ import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator (
     filterMultiOr,
  )
 import Kore.Rewrite.Strategy (
-    Strategy,
+    Step,
     TransitionT,
  )
-import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Simplify.Pattern qualified as Pattern (
     simplifyTopConfiguration,
  )
@@ -231,12 +230,11 @@ defaultOneStepStrategy ::
     patt ->
     -- | normal rewrites
     [rewrite] ->
-    Strategy (Prim patt rewrite)
+    Step (Prim patt rewrite)
 defaultOneStepStrategy goalrhs rewrites =
-    Strategy.sequence
-        [ Strategy.apply checkProofState
-        , Strategy.apply simplify
-        , Strategy.apply (unroll goalrhs)
-        , Strategy.apply (computeWeakNext rewrites)
-        , Strategy.apply simplify
-        ]
+    [ checkProofState
+    , simplify
+    , (unroll goalrhs)
+    , (computeWeakNext rewrites)
+    , simplify
+    ]
