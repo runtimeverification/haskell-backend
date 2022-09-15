@@ -14,8 +14,8 @@ kore-exec:  Warning (DecidePredicateUnknown):
         0
 Context:
     (DebugEvaluateCondition) while evaluating predicate
-        (DebugAttemptEquation) while applying equation at /build/kore/test/warn-decide-predicate-unknown/lemmas.k-7:45
-            (DecidePredicateUnknown) while applying equation defined at /build/kore/test/warn-decide-predicate-unknown/lemmas.k-7:45
+        (DebugAttemptEquation) while applying equation at
+            (DecidePredicateUnknown) while applying equation defined at
                                      in Kore.Equation.Application
 kore-exec:  Warning (DecidePredicateUnknown):
     Failed to decide predicate:
@@ -42,8 +42,8 @@ kore-exec:  Warning (DecidePredicateUnknown):
         0
 Context:
     (DebugEvaluateCondition) while evaluating predicate
-        (DebugAttemptEquation) while applying equation at /build/kore/test/warn-decide-predicate-unknown/lemmas.k-7:45
-            (DecidePredicateUnknown) while applying equation defined at /build/kore/test/warn-decide-predicate-unknown/lemmas.k-7:45
+        (DebugAttemptEquation) while applying equation at
+            (DecidePredicateUnknown) while applying equation defined at
                                      in Kore.Equation.Application
 kore-exec:  Warning (DecidePredicateUnknown):
     Failed to decide predicate:
@@ -61,9 +61,9 @@ kore-exec:  Warning (DecidePredicateUnknown):
         0
 Context:
     (DebugEvaluateCondition) while evaluating predicate
-        (DebugAttemptEquation) while applying equation at /build/kore/test/warn-decide-predicate-unknown/lemmas.k-7:45
+        (DebugAttemptEquation) while applying equation at
             (InfoReachability) while simplifying the claim
-                (DecidePredicateUnknown) while applying equation defined at /build/kore/test/warn-decide-predicate-unknown/lemmas.k-7:45
+                (DecidePredicateUnknown) while applying equation defined at
                                          in Kore.Equation.Application
 kore-exec:  Warning (DecidePredicateUnknown):
     Failed to decide predicate:
@@ -99,9 +99,9 @@ kore-exec:  Warning (DecidePredicateUnknown):
         0
 Context:
     (DebugEvaluateCondition) while evaluating predicate
-        (DebugAttemptEquation) while applying equation at /build/kore/test/warn-decide-predicate-unknown/lemmas.k-7:45
+        (DebugAttemptEquation) while applying equation at
             (InfoReachability) while checking the implication
-                (DecidePredicateUnknown) while applying equation defined at /build/kore/test/warn-decide-predicate-unknown/lemmas.k-7:45
+                (DecidePredicateUnknown) while applying equation defined at
                                          in Kore.Equation.Application
 kore-exec:  Error (DecidePredicateUnknown):
     Failed to decide predicate:

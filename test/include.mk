@@ -117,7 +117,9 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 	# remove timestamp from error
 	sed -i 's/\(kore-exec: \)\[[0-9]\+\]/\1/g' $@
 	# remove line numbers from error
-	sed -i 's/\:[0-9]\+\:[0-9]\+//g'  $@
+	sed -i 's/\:[0-9]\+\:[0-9]\+//g' $@
+	#remove file paths
+	sed -i 's/at \/.*$$/at/g' $@
 	$(DIFF) $@.golden $@ || $(FAILED)
 	$(if $(STORE_PROOFS),$(DIFF) $(STORE_PROOFS).golden $(STORE_PROOFS) || $(FAILED_STORE_PROOFS))
 
