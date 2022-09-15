@@ -417,16 +417,8 @@ termGenerators = do
     generators <-
         filterGeneratorsAndGroup
             [ andGenerator
-            , bottomGenerator
-            , existsGenerator
-            , forallGenerator
-            , iffGenerator
-            , impliesGenerator
-            , notGenerator
             , orGenerator
-            , topGenerator
-            , nuGenerator
-            , muGenerator
+            , topGenerator -- FIXME tests fail on a mem leak when removing this
             ]
     literals <-
         filterGeneratorsAndGroup
