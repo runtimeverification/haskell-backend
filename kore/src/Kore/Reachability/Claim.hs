@@ -146,9 +146,7 @@ import Kore.Rewrite.RulePattern (
  )
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Rewrite.Step qualified as Step
-import Kore.Rewrite.Strategy (
-    Strategy,
- )
+import Kore.Rewrite.Strategy (Step)
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition qualified as Transition
 import Kore.Simplify.API (
@@ -385,54 +383,49 @@ isRemainder :: ClaimState a -> Bool
 isRemainder (Remaining _) = True
 isRemainder _ = False
 
-reachabilityFirstStep :: Strategy Prim
+reachabilityFirstStep :: Step Prim
 reachabilityFirstStep =
-    (Strategy.sequence . map Strategy.apply)
-        [ Begin
-        , Simplify
-        , CheckImplication
-        , ApplyAxioms
-        , Simplify
-        ]
+    [ Begin
+    , Simplify
+    , CheckImplication
+    , ApplyAxioms
+    , Simplify
+    ]
 
-reachabilityNextStep :: Strategy Prim
+reachabilityNextStep :: Step Prim
 reachabilityNextStep =
-    (Strategy.sequence . map Strategy.apply)
-        [ Begin
-        , Simplify
-        , CheckImplication
-        , ApplyClaims
-        , ApplyAxioms
-        , Simplify
-        ]
+    [ Begin
+    , Simplify
+    , CheckImplication
+    , ApplyClaims
+    , ApplyAxioms
+    , Simplify
+    ]
 
-reachabilityFirstStepNoCheck :: Strategy Prim
+reachabilityFirstStepNoCheck :: Step Prim
 reachabilityFirstStepNoCheck =
-    (Strategy.sequence . map Strategy.apply)
-        [ Begin
-        , Simplify
-        , ApplyAxioms
-        , Simplify
-        ]
+    [ Begin
+    , Simplify
+    , ApplyAxioms
+    , Simplify
+    ]
 
-reachabilityNextStepNoCheck :: Strategy Prim
+reachabilityNextStepNoCheck :: Step Prim
 reachabilityNextStepNoCheck =
-    (Strategy.sequence . map Strategy.apply)
-        [ Begin
-        , Simplify
-        , ApplyClaims
-        , ApplyAxioms
-        , Simplify
-        ]
+    [ Begin
+    , Simplify
+    , ApplyClaims
+    , ApplyAxioms
+    , Simplify
+    ]
 
 {- | A strategy for the last step of depth-limited reachability proofs.
    The final such step should only perform a CheckImplication.
 -}
-reachabilityCheckOnly :: Strategy Prim
-reachabilityCheckOnly =
-    Strategy.sequence [Strategy.apply Begin, Strategy.apply CheckImplication]
+reachabilityCheckOnly :: Step Prim
+reachabilityCheckOnly = [Begin, CheckImplication]
 
-strategy :: Stream (Strategy Prim)
+strategy :: Stream (Step Prim)
 strategy =
     reachabilityFirstStep :> Stream.iterate id reachabilityNextStep
 
@@ -440,7 +433,7 @@ newtype MinDepth = MinDepth
     { getMinDepth :: Int
     }
 
-strategyWithMinDepth :: MinDepth -> Stream (Strategy Prim)
+strategyWithMinDepth :: MinDepth -> Stream (Step Prim)
 strategyWithMinDepth (MinDepth minDepth) =
     Stream.prepend
         noCheckReachabilitySteps

@@ -181,14 +181,25 @@ substituters = https://cache.nixos.org https://cache.iog.io
 trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
 ```
 
+### Formatting
+The CI requires all Haskell files to be formatted via [fourmolu](https://hackage.haskell.org/package/fourmolu). The easiest way to do this locally is to run
+
+```
+nix run .#format
+```
+
+This will format all the haskell files in the given folder and all sub-folders. You can `cd` into a particular subfolder and run the command there, or if you only want to format a specific file, you can provide it as an argument to the above command:
+
+```
+nix run .#format Foo.hs
+```
 
 ### Nix dev shell
 
-We provide a `shell.nix` expression with a suitable development environment and
-a binary cache at [runtimeverification.cachix.org]. The development environment is intended to
-be used with `nix-shell` and `cabal`.
+We provide a development nix shell with a suitable development environment and
+a binary cache at [runtimeverification.cachix.org]. The development can be launched via `nix develop` and then calling `stack build/test/etc`.
 
-When the `.cabal` package description file changes, run:
+When the `kore.cabal` package description file changes, run:
 
 
 ```
@@ -207,7 +218,7 @@ This script is also run by an automatic workflow.
 
 ### New GHC 9.2.3 dev shell
 
-In order to make use of the new profiling options in GHC 9.2, we've added a nix shell which builds kore with GHC 9.2.3, to open the shell, run
+In order to make use of the new profiling options in GHC 9.2, we've added a nix dev shell which builds kore with GHC 9.2.3. To open the shell, run
 
 ```
 nix develop .#ghc9

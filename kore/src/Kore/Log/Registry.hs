@@ -291,7 +291,7 @@ toSomeEntryType =
 
 -- | The entry type underlying the 'SomeEntry' wrapper.
 typeOfSomeEntry :: SomeEntry -> SomeTypeRep
-typeOfSomeEntry (SomeEntry entry) = SomeTypeRep (typeOf entry)
+typeOfSomeEntry (SomeEntry _ entry) = SomeTypeRep (typeOf entry)
 
 getEntryTypesAsText :: [String]
 getEntryTypesAsText = getNoErrEntryTypesAsText <> getErrEntryTypesAsText

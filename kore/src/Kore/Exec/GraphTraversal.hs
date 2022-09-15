@@ -8,7 +8,6 @@ Maintainer  : jost.berthold@runtimeverification.com
 module Kore.Exec.GraphTraversal (
     graphTraversal,
     simpleTransition,
-    Step,
     TState (..),
     TransitionResult (..),
     TraversalResult (..),
@@ -27,10 +26,10 @@ import GHC.Generics qualified
 import GHC.Natural
 import Generics.SOP qualified as SOP
 import Kore.Rewrite.Strategy (
-    -- FIXME assimilate definitions and remove import
     FinalNodeType (..),
     GraphSearchOrder (..),
     LimitExceeded (..),
+    Step,
     unfoldSearchOrder,
  )
 import Kore.Rewrite.Transition (
@@ -111,11 +110,6 @@ extractState = \case
     Stuck a -> Just a
     Final a -> Just a
     Stop a _ -> Just a
-
-{- | A sequence of transition instructions executed together as a
- single transition by the transition function.
--}
-type Step instr = [instr]
 
 {- | The traversal state, including subsequent steps to take in the
    traversal.
