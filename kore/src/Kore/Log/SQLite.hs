@@ -34,12 +34,10 @@ import Kore.Log.WarnSymbolSMTRepresentation (
     WarnSymbolSMTRepresentation,
  )
 import Log (
-    ActualEntry,
     Entry,
     LogAction (..),
     SomeEntry,
     fromEntry,
-    fromLogAction,
  )
 import Options.Applicative qualified as Options
 import Prelude.Kore
@@ -84,7 +82,7 @@ automatically.
 withLogSQLite ::
     LogSQLiteOptions ->
     -- | Continuation
-    (LogAction IO ActualEntry -> IO a) ->
+    (LogAction IO SomeEntry -> IO a) ->
     IO a
 withLogSQLite options cont =
     case sqlog of
@@ -134,9 +132,9 @@ If the 'Entry' cannot be entered in the database, it is ignored.
 database is already connected. See 'withLogSQLite' to obtain a 'LogAction' in
 'IO'.
 -}
-logSQLite :: LogAction SQL ActualEntry
+logSQLite :: LogAction SQL SomeEntry
 logSQLite =
-    foldMapEntries (fromLogAction @SomeEntry . logEntry)
+    foldMapEntries logEntry
   where
     logEntry ::
         forall entry.

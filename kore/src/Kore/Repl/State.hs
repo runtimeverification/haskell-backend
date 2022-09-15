@@ -510,7 +510,7 @@ liftSimplifierWithLogger ::
     forall a t.
     MonadState ReplState (t Simplifier) =>
     Monad.Trans.MonadTrans t =>
-    MVar (Log.LogAction IO Log.ActualEntry) ->
+    MVar (Log.LogAction IO Log.SomeEntry) ->
     Simplifier a ->
     t Simplifier a
 liftSimplifierWithLogger mLogger simplifier = do

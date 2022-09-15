@@ -81,8 +81,8 @@ import Kore.Internal.TermLike (
     TermLike,
  )
 import Kore.Log (
-    ActualEntry (..),
     LogAction (..),
+    SomeEntry (..),
  )
 import Kore.Log qualified as Log
 import Kore.Log.Registry qualified as Log
@@ -591,7 +591,7 @@ data Config = Config
         TermLike RewritingVariableName ->
         UnifierT Simplifier (Condition RewritingVariableName)
     , -- | Logger function, see 'logging'.
-      logger :: MVar (LogAction IO ActualEntry)
+      logger :: MVar (LogAction IO SomeEntry)
     , -- | Output resulting pattern to this file.
       outputFile :: OutputFile
     , mainModuleName :: ModuleName
