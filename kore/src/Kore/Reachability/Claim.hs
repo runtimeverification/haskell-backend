@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
@@ -121,6 +123,7 @@ import Kore.Internal.TermLike (
     mkImplies,
     termLikeSort,
  )
+import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Log.InfoReachability
 import Kore.Log.WarnClaimRHSIsBottom
 import Kore.Reachability.ClaimState hiding (
@@ -588,7 +591,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
         stuck <-
             Logic.scatter configs'
                 >>= Pattern.simplify
-                >>= liftSimplifier . SMT.Evaluator.filterMultiOr
+                >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
                 >>= Logic.scatter
         examine anyUnified stuck
         & elseImplied
@@ -749,7 +752,7 @@ checkSimpleImplication inLeft inRight existentials =
                     from $ makeCeilPredicate leftTerm
         trivial <-
             fmap isBottom $
-                (liftSimplifier . SMT.Evaluator.filterMultiOr)
+                (liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc)
                     =<< Pattern.simplify definedConfig
 
         if trivial
@@ -884,7 +887,7 @@ checkSimpleImplication inLeft inRight existentials =
                             . MultiOr.map combineWithAntecedent
                             $ notRhs
 
-                    liftSimplifier $ SMT.Evaluator.filterMultiOr toRefute
+                    liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc toRefute
 
 -- | type tag for errors thrown from the above
 data ImplicationError
@@ -918,7 +921,7 @@ simplify' lensClaimPattern claim = do
             configs <-
                 simplifyTopConfigurationDefined
                     config
-                    >>= liftSimplifier . SMT.Evaluator.filterMultiOr
+                    >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
                     & lift
             asum (pure <$> toList configs)
 
@@ -933,7 +936,7 @@ simplifyRightHandSide lensClaimPattern sideCondition =
         OrPattern.observeAllT $
             Logic.scatter dest
                 >>= Pattern.makeEvaluate sideCondition . Pattern.requireDefined
-                >>= liftSimplifier . SMT.Evaluator.filterMultiOr
+                >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
                 >>= Logic.scatter
 
 isTrusted :: From claim Attribute.Axiom.Trusted => claim -> Bool

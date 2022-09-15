@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
@@ -28,6 +30,7 @@ import Kore.Internal.TermLike (
     pattern Implies_,
  )
 import Kore.Internal.TermLike qualified as TermLike
+import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -73,7 +76,7 @@ checkImplicationIsTop lhs rhs =
                         }
             orResult <-
                 Pattern.simplifyTopConfiguration result
-            orFinalResult <- liftSimplifier $ SMT.Evaluator.filterMultiOr orResult
+            orFinalResult <- liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc orResult
             return (isBottom orFinalResult)
         _ ->
             (error . show . Pretty.vsep)

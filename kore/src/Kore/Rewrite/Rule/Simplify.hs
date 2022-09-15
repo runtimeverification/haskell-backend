@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
@@ -27,6 +29,10 @@ import Kore.Internal.Predicate (
 import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike as TermLike
+import Kore.Log.DecidePredicateUnknown (
+    OnDecidePredicateUnknown (ErrorDecidePredicateUnknown),
+    srcLoc,
+ )
 import Kore.Reachability (
     AllPathClaim (..),
     OnePathClaim (..),
@@ -72,7 +78,7 @@ instance SimplifyRuleLHS (RulePattern RewritingVariableName) where
         let lhsWithPredicate = Pattern.fromTermLike left
         simplifiedTerms <-
             Pattern.simplifyTopConfiguration lhsWithPredicate
-        fullySimplified <- SMT.Evaluator.filterMultiOr simplifiedTerms
+        fullySimplified <- SMT.Evaluator.filterMultiOr $srcLoc simplifiedTerms
         let rules = map (setRuleLeft rule) (toList fullySimplified)
         return (MultiAnd.make rules)
       where
@@ -137,7 +143,7 @@ simplifyClaimRule claimPattern = fmap MultiAnd.make $
         Pattern RewritingVariableName ->
         LogicT Simplifier (Pattern RewritingVariableName)
     filterWithSolver conditional = do
-        l <- lift $ SMT.Evaluator.evalConditional conditional Nothing
+        l <- lift $ SMT.Evaluator.evalConditional (ErrorDecidePredicateUnknown $srcLoc Nothing) conditional Nothing
         case l of
             Just False -> empty
             _ -> return conditional

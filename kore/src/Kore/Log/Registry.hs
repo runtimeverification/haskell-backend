@@ -73,11 +73,11 @@ import Kore.Log.DebugUnification (
 import Kore.Log.DebugUnifyBottom (
     DebugUnifyBottom,
  )
+import Kore.Log.DecidePredicateUnknown (
+    DecidePredicateUnknown,
+ )
 import Kore.Log.ErrorBottomTotalFunction (
     ErrorBottomTotalFunction,
- )
-import Kore.Log.ErrorDecidePredicateUnknown (
-    ErrorDecidePredicateUnknown,
  )
 import Kore.Log.ErrorEquationRightFunction (
     ErrorEquationRightFunction,
@@ -238,7 +238,6 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             ]
         ,
             [ mk $ Proxy @ErrorBottomTotalFunction
-            , mk $ Proxy @ErrorDecidePredicateUnknown
             , mk $ Proxy @ErrorEquationRightFunction
             , mk $ Proxy @ErrorEquationsSameMatch
             , mk $ Proxy @ErrorOutOfDate
@@ -247,6 +246,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @ErrorException
             , mk $ Proxy @ErrorRewriteLoop
             , mk $ Proxy @ErrorRewritesInstantiation
+            , mk $ Proxy @DecidePredicateUnknown
             ]
         )
             & Lens.each %~ unzip

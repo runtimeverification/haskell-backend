@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
@@ -29,6 +31,7 @@ import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.TermLike (
     TermLike,
  )
+import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.ModelChecker.Simplification (
     checkImplicationIsTop,
  )
@@ -153,7 +156,7 @@ transitionRule
                 configs <-
                     lift . lift $
                         Pattern.simplifyTopConfiguration config
-                filteredConfigs <- liftSimplifier $ SMT.Evaluator.filterMultiOr configs
+                filteredConfigs <- liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc configs
                 if null filteredConfigs
                     then return Proven
                     else

@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Module      : Kore.Rewrite.Search
 Description : Search functionality matching krun API
@@ -44,6 +46,10 @@ import Kore.Internal.SideCondition (
  )
 import Kore.Internal.Substitution (
     Substitution,
+ )
+import Kore.Log.DecidePredicateUnknown (
+    OnDecidePredicateUnknown (ErrorDecidePredicateUnknown),
+    srcLoc,
  )
 import Kore.Rewrite.Axiom.Matcher (
     MatchResult,
@@ -152,7 +158,7 @@ matchWith sideCondition e1 e2 = do
                     , Conditional.predicate e2
                     ]
                     [from @(Map.Map _ _) @(Substitution _) substitution]
-            liftSimplifier (SMT.evalConditional merged Nothing) >>= \case
+            liftSimplifier (SMT.evalConditional (ErrorDecidePredicateUnknown $srcLoc Nothing) merged Nothing) >>= \case
                 Nothing ->
                     mergePredicatesAndSubstitutions
                         sideCondition
