@@ -399,15 +399,17 @@ _checkTermImplemented term@(Recursive.project -> _ :< termF) =
 termGenerators :: Gen (Map.Map SortRequirements [TermGenerator])
 termGenerators = do
     (setup, Context{onlyConstructorLike, allowTermConnectives}) <- Reader.ask
+    -- One problem seems to be that there is no way to generate `otherTopSort`
+    -- except this. However, there is also a loop in the generator recursion.
+    let topHack = Map.singleton AnySort [topGenerator]
     connectives <-
         if allowTermConnectives
             then
                 filterGeneratorsAndGroup
                     [ andGenerator
                     , orGenerator
-                    , topGenerator -- FIXME tests fail on a mem leak when removing this
                     ]
-            else pure $ Map.singleton AnySort [topGenerator]
+            else pure Map.empty
     literals <-
         filterGeneratorsAndGroup
             ( catMaybes
@@ -428,6 +430,7 @@ termGenerators = do
                 , variable
                 , allBuiltin
                 , connectives
+                , topHack
                 ]
 
 nullaryFreeSortOperatorGenerator ::
