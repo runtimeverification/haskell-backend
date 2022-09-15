@@ -27,6 +27,7 @@ TESTS = \
 	$(wildcard $(DEF_DIR)/*.verify) \
 	$(wildcard $(TEST_DIR)/*.$(EXT)) \
 	$(wildcard $(TEST_DIR)/*-spec.k) \
+	$(wildcard $(TEST_DIR)/*-spec.stderr) \
 	$(wildcard $(TEST_DIR)/test-*.sh)
 
 OUTS += $(foreach TEST, $(TESTS), $(TEST).out)
@@ -106,6 +107,20 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 	$(KPROVE) $(KPROVE_OPTS) $(KPROVE_SPEC_OPTS) $(KPROVE_SPEC) >$@ || true
 	$(DIFF) $@.golden $@ || $(FAILED)
 	$(if $(STORE_PROOFS),$(DIFF) $(STORE_PROOFS).golden $(STORE_PROOFS) || $(FAILED_STORE_PROOFS))
+
+%-spec.stderr.out: $(TEST_DIR)/%-spec.stderr $(TEST_DEPS)
+	@echo ">>>" $(CURDIR) "kprove (stderr)" $<
+	@echo "KORE_EXEC_OPTS =" $(KORE_EXEC_OPTS)
+	rm -f $@
+	$(if $(STORE_PROOFS),rm -f $(STORE_PROOFS),$(if $(RECALL_PROOFS),cp $(RECALL_PROOFS) $(@:.out=.save-proofs.kore)))
+	$(KPROVE) $(KPROVE_OPTS) $(KPROVE_SPEC_OPTS) $(KPROVE_SPEC) 2>$@ || true
+	# remove timestamp from error
+	sed -i 's/\(kore-exec: \)\[[0-9]\+\]/\1/g' $@
+	# remove line numbers from error
+	sed -i 's/\:[0-9]\+\:[0-9]\+//g'  $@
+	$(DIFF) $@.golden $@ || $(FAILED)
+	$(if $(STORE_PROOFS),$(DIFF) $(STORE_PROOFS).golden $(STORE_PROOFS) || $(FAILED_STORE_PROOFS))
+
 
 %-save-proofs-spec.k.out: STORE_PROOFS = $(@:.out=.save-proofs.kore)
 
