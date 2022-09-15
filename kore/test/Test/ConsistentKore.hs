@@ -1,5 +1,6 @@
 module Test.ConsistentKore (
     CollectionSorts (..),
+    MapSorts (..),
     Setup (..),
     runKoreGen,
     patternGen,
@@ -963,8 +964,7 @@ filterGenerators = Monad.filterM acceptGenerator
     acceptGenerator
         TermGenerator{attributes} =
             do
-                (_, context@(Context _ _ _ _ _)) <- Reader.ask
-                let Context{onlyConcrete, onlyConstructorLike} = context
+                Context{onlyConcrete, onlyConstructorLike} <- Reader.asks snd
                 return $ case attributes of
                     AttributeRequirements{isConcrete, isConstructorLike} ->
                         (not onlyConcrete || isConcrete)
