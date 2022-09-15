@@ -154,10 +154,11 @@ data MapSorts = MapSorts
     }
 
 data Context = Context
-    { availableElementVariables :: !(Set.Set (ElementVariable VariableName))
-    , availableSetVariables :: !(Set.Set (SetVariable VariableName))
-    , onlyConstructorLike :: !Bool
-    , onlyConcrete :: !Bool
+    { availableElementVariables :: (Set.Set (ElementVariable VariableName))
+    , availableSetVariables :: (Set.Set (SetVariable VariableName))
+    , onlyConstructorLike :: Bool
+    , onlyConcrete :: Bool
+    , allowTermConnectives :: Bool
     }
     deriving stock (Eq, Ord, Show)
 
@@ -191,6 +192,7 @@ runKoreGen
                 , availableSetVariables = freeSetVariables
                 , onlyConstructorLike = False
                 , onlyConcrete = False
+                , allowTermConnectives = True
                 }
 
 patternGen :: Gen (Pattern VariableName)
@@ -211,6 +213,10 @@ requestConcrete :: Gen a -> Gen a
 requestConcrete =
     localContext (\context -> context{onlyConcrete = True})
 
+withoutConnectives :: Gen a -> Gen a
+withoutConnectives =
+    localContext (\context -> context{allowTermConnectives = False})
+
 termLikeGen :: Gen (TermLike VariableName)
 termLikeGen =
     sortGen >>= termLikeGenWithSort
@@ -221,7 +227,7 @@ termLikeGenWithSort topSort = do
         Gen.scale limitTermDepth $
             Gen.sized (\size -> termLikeGenImpl size topSort)
     case maybeResult of
-        Nothing -> error "Cannot generate terms."
+        Nothing -> error $ "Cannot generate terms for " <> show topSort
         Just result -> return result
   where
     limitTermDepth (Range.Size s)
@@ -232,7 +238,9 @@ predicateGen :: Gen (Predicate VariableName)
 predicateGen =
     Gen.recursive
         Gen.choice
-        [return fromTop_, return fromBottom_]
+        [ return fromTop_
+        , return fromBottom_
+        ]
         [ andPredicateGen
         , orPredicateGen
         , notPredicateGen
@@ -268,21 +276,21 @@ notPredicateGen =
 
 ceilGen :: Gen (Predicate VariableName)
 ceilGen =
-    fromCeil_ <$> termLikeGen
+    fromCeil_ <$> withoutConnectives termLikeGen
 
 floorGen :: Gen (Predicate VariableName)
 floorGen =
-    fromFloor_ <$> termLikeGen
+    fromFloor_ <$> withoutConnectives termLikeGen
 
 equalsGen :: Gen (Predicate VariableName)
-equalsGen = do
+equalsGen = withoutConnectives $ do
     sort' <- sortGen
     fromEquals_
         <$> termLikeGenWithSort sort'
         <*> termLikeGenWithSort sort'
 
 inGen :: Gen (Predicate VariableName)
-inGen = do
+inGen = withoutConnectives $ do
     sort' <- sortGen
     fromIn_
         <$> termLikeGenWithSort sort'
@@ -390,42 +398,37 @@ _checkTermImplemented term@(Recursive.project -> _ :< termF) =
 
 termGenerators :: Gen (Map.Map SortRequirements [TermGenerator])
 termGenerators = do
-    (setup, Context{onlyConstructorLike}) <- Reader.ask
-    generators <-
-        filterGeneratorsAndGroup
-            [ andGenerator
-            , orGenerator
-            , topGenerator -- FIXME tests fail on a mem leak when removing this
-            ]
+    (setup, Context{onlyConstructorLike, allowTermConnectives}) <- Reader.ask
+    connectives <-
+        if allowTermConnectives
+            then
+                filterGeneratorsAndGroup
+                    [ andGenerator
+                    , orGenerator
+                    , topGenerator -- FIXME tests fail on a mem leak when removing this
+                    ]
+            else pure $ Map.singleton AnySort [topGenerator]
     literals <-
         filterGeneratorsAndGroup
             ( catMaybes
                 [maybeStringLiteralGenerator setup]
             )
-    variable <- allVariableGenerators
+    variable <- Map.map (:[]) <$> allVariableGenerators
     symbol <- symbolGenerators
     alias <- aliasGenerators
-    allBuiltin <- allBuiltinGenerators
+    allBuiltin <- Map.map (:[]) <$> allBuiltinGenerators
     if onlyConstructorLike
         then return symbol
         else
-            return
-                ( generators
-                    `merge` literals
-                    `merge` wrap variable
-                    `merge` symbol
-                    `merge` alias
-                    `merge` wrap allBuiltin
-                )
-  where
-    merge :: Ord a => Map.Map a [b] -> Map.Map a [b] -> Map.Map a [b]
-    merge = Map.unionWith (++)
-
-    wrap :: Map.Map a b -> Map.Map a [b]
-    wrap a = listSingleton <$> a
-
-    listSingleton :: a -> [a]
-    listSingleton x = [x]
+            return $
+                Map.unionsWith (<>)
+                [ symbol
+                , alias
+                , literals
+                , variable
+                , allBuiltin
+                , connectives
+                ]
 
 nullaryFreeSortOperatorGenerator ::
     (Sort -> TermLike VariableName) ->
@@ -961,7 +964,7 @@ filterGenerators = Monad.filterM acceptGenerator
     acceptGenerator
         TermGenerator{attributes} =
             do
-                (_, context@(Context _ _ _ _)) <- Reader.ask
+                (_, context@(Context _ _ _ _ _)) <- Reader.ask
                 let Context{onlyConcrete, onlyConstructorLike} = context
                 return $ case attributes of
                     AttributeRequirements{isConcrete, isConstructorLike} ->
