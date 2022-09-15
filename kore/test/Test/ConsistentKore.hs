@@ -1,9 +1,9 @@
 module Test.ConsistentKore (
     CollectionSorts (..),
+    MapSorts (..),
     Setup (..),
     runKoreGen,
     patternGen,
-    termLikeGen,
 ) where
 
 import Control.Arrow qualified as Arrow
@@ -86,19 +86,11 @@ import Kore.Internal.TermLike (
     mkAnd,
     mkApplyAlias,
     mkApplySymbol,
-    mkBottom,
     mkElemVar,
-    mkExists,
-    mkForall,
-    mkIff,
-    mkImplies,
     mkInternalBool,
     mkInternalInt,
     mkInternalList,
     mkInternalString,
-    mkMu,
-    mkNot,
-    mkNu,
     mkOr,
     mkSetVar,
     mkStringLiteral,
@@ -162,10 +154,11 @@ data MapSorts = MapSorts
     }
 
 data Context = Context
-    { availableElementVariables :: !(Set.Set (ElementVariable VariableName))
-    , availableSetVariables :: !(Set.Set (SetVariable VariableName))
-    , onlyConstructorLike :: !Bool
-    , onlyConcrete :: !Bool
+    { availableElementVariables :: (Set.Set (ElementVariable VariableName))
+    , availableSetVariables :: (Set.Set (SetVariable VariableName))
+    , onlyConstructorLike :: Bool
+    , onlyConcrete :: Bool
+    , allowTermConnectives :: Bool
     }
     deriving stock (Eq, Ord, Show)
 
@@ -199,28 +192,14 @@ runKoreGen
                 , availableSetVariables = freeSetVariables
                 , onlyConstructorLike = False
                 , onlyConcrete = False
+                , allowTermConnectives = True
                 }
 
 patternGen :: Gen (Pattern VariableName)
 patternGen =
     Pattern.fromTermAndPredicate
-        <$> termLikeGen
+        <$> termGen
         <*> predicateGen
-
-addQuantifiedSetVariable :: SetVariable VariableName -> Context -> Context
-addQuantifiedSetVariable
-    variable
-    context@Context{availableSetVariables} =
-        context{availableSetVariables = Set.insert variable availableSetVariables}
-
-addQuantifiedElementVariable :: ElementVariable VariableName -> Context -> Context
-addQuantifiedElementVariable
-    variable
-    context@Context{availableElementVariables} =
-        context
-            { availableElementVariables =
-                Set.insert variable availableElementVariables
-            }
 
 localContext :: (Context -> Context) -> Gen a -> Gen a
 localContext transformer =
@@ -234,8 +213,12 @@ requestConcrete :: Gen a -> Gen a
 requestConcrete =
     localContext (\context -> context{onlyConcrete = True})
 
-termLikeGen :: Gen (TermLike VariableName)
-termLikeGen =
+withoutConnectives :: Gen a -> Gen a
+withoutConnectives =
+    localContext (\context -> context{allowTermConnectives = False})
+
+termGen :: Gen (TermLike VariableName)
+termGen =
     sortGen >>= termLikeGenWithSort
 
 termLikeGenWithSort :: Sort -> Gen (TermLike VariableName)
@@ -244,7 +227,7 @@ termLikeGenWithSort topSort = do
         Gen.scale limitTermDepth $
             Gen.sized (\size -> termLikeGenImpl size topSort)
     case maybeResult of
-        Nothing -> error "Cannot generate terms."
+        Nothing -> error $ "Cannot generate terms for " <> show topSort
         Just result -> return result
   where
     limitTermDepth (Range.Size s)
@@ -255,7 +238,9 @@ predicateGen :: Gen (Predicate VariableName)
 predicateGen =
     Gen.recursive
         Gen.choice
-        [return fromTop_, return fromBottom_]
+        [ return fromTop_
+        , return fromBottom_
+        ]
         [ andPredicateGen
         , orPredicateGen
         , notPredicateGen
@@ -291,21 +276,21 @@ notPredicateGen =
 
 ceilGen :: Gen (Predicate VariableName)
 ceilGen =
-    fromCeil_ <$> termLikeGen
+    fromCeil_ <$> withoutConnectives termGen
 
 floorGen :: Gen (Predicate VariableName)
 floorGen =
-    fromFloor_ <$> termLikeGen
+    fromFloor_ <$> withoutConnectives termGen
 
 equalsGen :: Gen (Predicate VariableName)
-equalsGen = do
+equalsGen = withoutConnectives $ do
     sort' <- sortGen
     fromEquals_
         <$> termLikeGenWithSort sort'
         <*> termLikeGenWithSort sort'
 
 inGen :: Gen (Predicate VariableName)
-inGen = do
+inGen = withoutConnectives $ do
     sort' <- sortGen
     fromIn_
         <$> termLikeGenWithSort sort'
@@ -413,57 +398,37 @@ _checkTermImplemented term@(Recursive.project -> _ :< termF) =
 
 termGenerators :: Gen (Map.Map SortRequirements [TermGenerator])
 termGenerators = do
-    (setup, Context{onlyConstructorLike}) <- Reader.ask
-    generators <-
-        filterGeneratorsAndGroup
-            [ andGenerator
-            , bottomGenerator
-            , existsGenerator
-            , forallGenerator
-            , iffGenerator
-            , impliesGenerator
-            , notGenerator
-            , orGenerator
-            , topGenerator
-            , nuGenerator
-            , muGenerator
-            ]
+    (setup, Context{onlyConstructorLike, allowTermConnectives}) <- Reader.ask
+    -- One problem seems to be that there is no way to generate `otherTopSort`
+    -- except this. However, there is also a loop in the generator recursion.
+    let topHack = Map.singleton AnySort [topGenerator]
+    connectives <-
+        if allowTermConnectives
+            then filterGeneratorsAndGroup [andGenerator, orGenerator]
+            else pure Map.empty
     literals <-
         filterGeneratorsAndGroup
             ( catMaybes
                 [maybeStringLiteralGenerator setup]
             )
-    variable <- allVariableGenerators
+    variable <- Map.map (: []) <$> allVariableGenerators
     symbol <- symbolGenerators
     alias <- aliasGenerators
-    allBuiltin <- allBuiltinGenerators
+    allBuiltin <- Map.map (: []) <$> allBuiltinGenerators
     if onlyConstructorLike
         then return symbol
         else
-            return
-                ( generators
-                    `merge` literals
-                    `merge` wrap variable
-                    `merge` symbol
-                    `merge` alias
-                    `merge` wrap allBuiltin
-                )
-  where
-    merge :: Ord a => Map.Map a [b] -> Map.Map a [b] -> Map.Map a [b]
-    merge = Map.unionWith (++)
-
-    wrap :: Map.Map a b -> Map.Map a [b]
-    wrap a = listSingleton <$> a
-
-    listSingleton :: a -> [a]
-    listSingleton x = [x]
-
-withContext ::
-    Monad m =>
-    Context ->
-    ReaderT (r, Context) m a ->
-    ReaderT (r, Context) m a
-withContext context = Reader.local (\(r, _) -> (r, context))
+            return $
+                Map.unionsWith
+                    (<>)
+                    [ symbol
+                    , alias
+                    , literals
+                    , variable
+                    , allBuiltin
+                    , connectives
+                    , topHack
+                    ]
 
 nullaryFreeSortOperatorGenerator ::
     (Sort -> TermLike VariableName) ->
@@ -482,75 +447,6 @@ nullaryFreeSortOperatorGenerator builder =
   where
     worker _childGenerator resultSort =
         return (Just (builder resultSort))
-
-unaryOperatorGenerator ::
-    (TermLike VariableName -> TermLike VariableName) ->
-    TermGenerator
-unaryOperatorGenerator builder =
-    TermGenerator
-        { arity = 1
-        , sort = AnySort
-        , attributes =
-            AttributeRequirements
-                { isConstructorLike = False
-                , isConcrete = True
-                }
-        , generator = worker
-        }
-  where
-    worker childGenerator childSort = do
-        child <- childGenerator childSort
-        return
-            (builder <$> child) -- Maybe functor
-
-unaryQuantifiedElementOperatorGenerator ::
-    (ElementVariable VariableName -> TermLike VariableName -> TermLike VariableName) ->
-    TermGenerator
-unaryQuantifiedElementOperatorGenerator builder =
-    TermGenerator
-        { arity = 1
-        , sort = AnySort
-        , attributes =
-            AttributeRequirements
-                { isConstructorLike = False
-                , isConcrete = False
-                }
-        , generator = worker
-        }
-  where
-    worker childGenerator childSort = do
-        (_, context) <- Reader.ask
-        variableSort <- sortGen
-        quantifiedVariable <- elementVariableGen variableSort
-        child <-
-            withContext
-                (addQuantifiedElementVariable quantifiedVariable context)
-                $ childGenerator childSort
-        return
-            (builder quantifiedVariable <$> child) -- Maybe functor
-
-muNuOperatorGenerator ::
-    (SetVariable VariableName -> TermLike VariableName -> TermLike VariableName) ->
-    TermGenerator
-muNuOperatorGenerator builder =
-    TermGenerator
-        { arity = 1
-        , sort = AnySort
-        , attributes =
-            AttributeRequirements
-                { isConstructorLike = False
-                , isConcrete = False
-                }
-        , generator = worker
-        }
-  where
-    worker childGenerator childSort = do
-        (_, context) <- Reader.ask
-        quantifiedVariable <- setVariableGen childSort
-        withContext (addQuantifiedSetVariable quantifiedVariable context) $ do
-            child <- childGenerator childSort
-            return
-                (builder quantifiedVariable <$> child) -- Maybe functor
 
 binaryOperatorGenerator ::
     (TermLike VariableName -> TermLike VariableName -> TermLike VariableName) ->
@@ -575,30 +471,6 @@ binaryOperatorGenerator builder =
 
 andGenerator :: TermGenerator
 andGenerator = binaryOperatorGenerator mkAnd
-
-bottomGenerator :: TermGenerator
-bottomGenerator = nullaryFreeSortOperatorGenerator mkBottom
-
-existsGenerator :: TermGenerator
-existsGenerator = unaryQuantifiedElementOperatorGenerator mkExists
-
-forallGenerator :: TermGenerator
-forallGenerator = unaryQuantifiedElementOperatorGenerator mkForall
-
-iffGenerator :: TermGenerator
-iffGenerator = binaryOperatorGenerator mkIff
-
-impliesGenerator :: TermGenerator
-impliesGenerator = binaryOperatorGenerator mkImplies
-
-muGenerator :: TermGenerator
-muGenerator = muNuOperatorGenerator mkMu
-
-notGenerator :: TermGenerator
-notGenerator = unaryOperatorGenerator mkNot
-
-nuGenerator :: TermGenerator
-nuGenerator = muNuOperatorGenerator mkNu
 
 orGenerator :: TermGenerator
 orGenerator = binaryOperatorGenerator mkOr
@@ -1092,8 +964,7 @@ filterGenerators = Monad.filterM acceptGenerator
     acceptGenerator
         TermGenerator{attributes} =
             do
-                (_, context@(Context _ _ _ _)) <- Reader.ask
-                let Context{onlyConcrete, onlyConstructorLike} = context
+                Context{onlyConcrete, onlyConstructorLike} <- Reader.asks snd
                 return $ case attributes of
                     AttributeRequirements{isConcrete, isConstructorLike} ->
                         (not onlyConcrete || isConcrete)
@@ -1117,9 +988,6 @@ sortGen :: Gen Sort
 sortGen = do
     (Setup{allSorts}, _) <- Reader.ask
     Gen.element allSorts
-
-setVariableGen :: Sort -> Gen (SetVariable VariableName)
-setVariableGen sort = (fmap . fmap) SetVariableName (variableGen sort)
 
 elementVariableGen :: Sort -> Gen (ElementVariable VariableName)
 elementVariableGen sort = (fmap . fmap) ElementVariableName (variableGen sort)

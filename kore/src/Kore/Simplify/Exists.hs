@@ -62,7 +62,7 @@ import Kore.Internal.TermLike (
  )
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.Axiom.Matcher (
-    matchIncremental,
+    patternMatch,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -240,9 +240,9 @@ matchesToVariableSubstitution
           , Substitution.null boundSubstitution
           , not (TermLike.hasFreeVariable (inject $ variableName variable) term) =
             do
-                matchResultFS <- liftSimplifier $ matchIncremental sideCondition first second
-                matchResultSF <- liftSimplifier $ matchIncremental sideCondition second first
-                case matchResultFS <|> matchResultSF of
+                matchResultFS <- liftSimplifier $ patternMatch sideCondition first second
+                matchResultSF <- liftSimplifier $ patternMatch sideCondition second first
+                case either (const Nothing) Just matchResultFS <|> either (const Nothing) Just matchResultSF of
                     Just (Predicate.PredicateTrue, results) ->
                         return (singleVariableSubstitution variable results)
                     _ -> return False

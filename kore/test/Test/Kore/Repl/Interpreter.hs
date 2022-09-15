@@ -831,7 +831,7 @@ mkState startTime axioms claims claim =
     graph' = emptyExecutionGraph claim
 
 mkConfig ::
-    MVar (Log.LogAction IO Log.ActualEntry) ->
+    MVar (Log.LogAction IO Log.SomeEntry) ->
     Config
 mkConfig logger =
     Config

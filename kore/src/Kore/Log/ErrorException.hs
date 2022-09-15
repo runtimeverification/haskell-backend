@@ -66,6 +66,6 @@ handleSomeException ::
     m a
 handleSomeException someException = do
     case fromException someException of
-        Just (SomeEntry entry) -> logEntry entry
+        Just entry@(SomeEntry _ _) -> logEntry entry
         Nothing -> errorException someException
     throwM someException

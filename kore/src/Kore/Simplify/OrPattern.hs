@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
@@ -44,6 +46,7 @@ import Kore.Internal.SideCondition qualified as SideCondition (
     toPredicate,
     top,
  )
+import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
@@ -122,7 +125,7 @@ simplifyConditionsWithSmt sideCondition unsimplified =
                 & OrCondition.observeAllT
         filteredConditions <-
             liftSimplifier $
-                SMT.Evaluator.filterMultiOr implicationNegation
+                SMT.Evaluator.filterMultiOr $srcLoc implicationNegation
         if isTop filteredConditions
             then return (Just False)
             else
@@ -137,7 +140,7 @@ simplifyConditionsWithSmt sideCondition unsimplified =
                 & OrCondition.observeAllT
         filteredConditions <-
             liftSimplifier $
-                SMT.Evaluator.filterMultiOr simplifiedConditions
+                SMT.Evaluator.filterMultiOr $srcLoc simplifiedConditions
         if isBottom filteredConditions
             then return (Just False)
             else

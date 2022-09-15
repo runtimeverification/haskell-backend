@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
@@ -29,6 +31,7 @@ import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.TermLike (
     TermLike,
  )
+import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.ModelChecker.Simplification (
     checkImplicationIsTop,
  )
@@ -43,10 +46,9 @@ import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator (
     filterMultiOr,
  )
 import Kore.Rewrite.Strategy (
-    Strategy,
+    Step,
     TransitionT,
  )
-import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Simplify.Pattern qualified as Pattern (
     simplifyTopConfiguration,
  )
@@ -154,7 +156,7 @@ transitionRule
                 configs <-
                     lift . lift $
                         Pattern.simplifyTopConfiguration config
-                filteredConfigs <- liftSimplifier $ SMT.Evaluator.filterMultiOr configs
+                filteredConfigs <- liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc configs
                 if null filteredConfigs
                     then return Proven
                     else
@@ -231,12 +233,11 @@ defaultOneStepStrategy ::
     patt ->
     -- | normal rewrites
     [rewrite] ->
-    Strategy (Prim patt rewrite)
+    Step (Prim patt rewrite)
 defaultOneStepStrategy goalrhs rewrites =
-    Strategy.sequence
-        [ Strategy.apply checkProofState
-        , Strategy.apply simplify
-        , Strategy.apply (unroll goalrhs)
-        , Strategy.apply (computeWeakNext rewrites)
-        , Strategy.apply simplify
-        ]
+    [ checkProofState
+    , simplify
+    , (unroll goalrhs)
+    , (computeWeakNext rewrites)
+    , simplify
+    ]
