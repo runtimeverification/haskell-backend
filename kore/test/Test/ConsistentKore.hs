@@ -86,19 +86,11 @@ import Kore.Internal.TermLike (
     mkAnd,
     mkApplyAlias,
     mkApplySymbol,
-    mkBottom,
     mkElemVar,
-    mkExists,
-    mkForall,
-    mkIff,
-    mkImplies,
     mkInternalBool,
     mkInternalInt,
     mkInternalList,
     mkInternalString,
-    mkMu,
-    mkNot,
-    mkNu,
     mkOr,
     mkSetVar,
     mkStringLiteral,
@@ -206,21 +198,6 @@ patternGen =
     Pattern.fromTermAndPredicate
         <$> termLikeGen
         <*> predicateGen
-
-addQuantifiedSetVariable :: SetVariable VariableName -> Context -> Context
-addQuantifiedSetVariable
-    variable
-    context@Context{availableSetVariables} =
-        context{availableSetVariables = Set.insert variable availableSetVariables}
-
-addQuantifiedElementVariable :: ElementVariable VariableName -> Context -> Context
-addQuantifiedElementVariable
-    variable
-    context@Context{availableElementVariables} =
-        context
-            { availableElementVariables =
-                Set.insert variable availableElementVariables
-            }
 
 localContext :: (Context -> Context) -> Gen a -> Gen a
 localContext transformer =
@@ -450,13 +427,6 @@ termGenerators = do
     listSingleton :: a -> [a]
     listSingleton x = [x]
 
-withContext ::
-    Monad m =>
-    Context ->
-    ReaderT (r, Context) m a ->
-    ReaderT (r, Context) m a
-withContext context = Reader.local (\(r, _) -> (r, context))
-
 nullaryFreeSortOperatorGenerator ::
     (Sort -> TermLike VariableName) ->
     TermGenerator
@@ -474,75 +444,6 @@ nullaryFreeSortOperatorGenerator builder =
   where
     worker _childGenerator resultSort =
         return (Just (builder resultSort))
-
-unaryOperatorGenerator ::
-    (TermLike VariableName -> TermLike VariableName) ->
-    TermGenerator
-unaryOperatorGenerator builder =
-    TermGenerator
-        { arity = 1
-        , sort = AnySort
-        , attributes =
-            AttributeRequirements
-                { isConstructorLike = False
-                , isConcrete = True
-                }
-        , generator = worker
-        }
-  where
-    worker childGenerator childSort = do
-        child <- childGenerator childSort
-        return
-            (builder <$> child) -- Maybe functor
-
-unaryQuantifiedElementOperatorGenerator ::
-    (ElementVariable VariableName -> TermLike VariableName -> TermLike VariableName) ->
-    TermGenerator
-unaryQuantifiedElementOperatorGenerator builder =
-    TermGenerator
-        { arity = 1
-        , sort = AnySort
-        , attributes =
-            AttributeRequirements
-                { isConstructorLike = False
-                , isConcrete = False
-                }
-        , generator = worker
-        }
-  where
-    worker childGenerator childSort = do
-        (_, context) <- Reader.ask
-        variableSort <- sortGen
-        quantifiedVariable <- elementVariableGen variableSort
-        child <-
-            withContext
-                (addQuantifiedElementVariable quantifiedVariable context)
-                $ childGenerator childSort
-        return
-            (builder quantifiedVariable <$> child) -- Maybe functor
-
-muNuOperatorGenerator ::
-    (SetVariable VariableName -> TermLike VariableName -> TermLike VariableName) ->
-    TermGenerator
-muNuOperatorGenerator builder =
-    TermGenerator
-        { arity = 1
-        , sort = AnySort
-        , attributes =
-            AttributeRequirements
-                { isConstructorLike = False
-                , isConcrete = False
-                }
-        , generator = worker
-        }
-  where
-    worker childGenerator childSort = do
-        (_, context) <- Reader.ask
-        quantifiedVariable <- setVariableGen childSort
-        withContext (addQuantifiedSetVariable quantifiedVariable context) $ do
-            child <- childGenerator childSort
-            return
-                (builder quantifiedVariable <$> child) -- Maybe functor
 
 binaryOperatorGenerator ::
     (TermLike VariableName -> TermLike VariableName -> TermLike VariableName) ->
@@ -567,30 +468,6 @@ binaryOperatorGenerator builder =
 
 andGenerator :: TermGenerator
 andGenerator = binaryOperatorGenerator mkAnd
-
-bottomGenerator :: TermGenerator
-bottomGenerator = nullaryFreeSortOperatorGenerator mkBottom
-
-existsGenerator :: TermGenerator
-existsGenerator = unaryQuantifiedElementOperatorGenerator mkExists
-
-forallGenerator :: TermGenerator
-forallGenerator = unaryQuantifiedElementOperatorGenerator mkForall
-
-iffGenerator :: TermGenerator
-iffGenerator = binaryOperatorGenerator mkIff
-
-impliesGenerator :: TermGenerator
-impliesGenerator = binaryOperatorGenerator mkImplies
-
-muGenerator :: TermGenerator
-muGenerator = muNuOperatorGenerator mkMu
-
-notGenerator :: TermGenerator
-notGenerator = unaryOperatorGenerator mkNot
-
-nuGenerator :: TermGenerator
-nuGenerator = muNuOperatorGenerator mkNu
 
 orGenerator :: TermGenerator
 orGenerator = binaryOperatorGenerator mkOr
@@ -1109,9 +986,6 @@ sortGen :: Gen Sort
 sortGen = do
     (Setup{allSorts}, _) <- Reader.ask
     Gen.element allSorts
-
-setVariableGen :: Sort -> Gen (SetVariable VariableName)
-setVariableGen sort = (fmap . fmap) SetVariableName (variableGen sort)
 
 elementVariableGen :: Sort -> Gen (ElementVariable VariableName)
 elementVariableGen sort = (fmap . fmap) ElementVariableName (variableGen sort)
