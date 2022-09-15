@@ -3,7 +3,6 @@ module Test.ConsistentKore (
     Setup (..),
     runKoreGen,
     patternGen,
-    termLikeGen,
 ) where
 
 import Control.Arrow qualified as Arrow
@@ -198,7 +197,7 @@ runKoreGen
 patternGen :: Gen (Pattern VariableName)
 patternGen =
     Pattern.fromTermAndPredicate
-        <$> termLikeGen
+        <$> termGen
         <*> predicateGen
 
 localContext :: (Context -> Context) -> Gen a -> Gen a
@@ -217,8 +216,8 @@ withoutConnectives :: Gen a -> Gen a
 withoutConnectives =
     localContext (\context -> context{allowTermConnectives = False})
 
-termLikeGen :: Gen (TermLike VariableName)
-termLikeGen =
+termGen :: Gen (TermLike VariableName)
+termGen =
     sortGen >>= termLikeGenWithSort
 
 termLikeGenWithSort :: Sort -> Gen (TermLike VariableName)
@@ -276,11 +275,11 @@ notPredicateGen =
 
 ceilGen :: Gen (Predicate VariableName)
 ceilGen =
-    fromCeil_ <$> withoutConnectives termLikeGen
+    fromCeil_ <$> withoutConnectives termGen
 
 floorGen :: Gen (Predicate VariableName)
 floorGen =
-    fromFloor_ <$> withoutConnectives termLikeGen
+    fromFloor_ <$> withoutConnectives termGen
 
 equalsGen :: Gen (Predicate VariableName)
 equalsGen = withoutConnectives $ do
