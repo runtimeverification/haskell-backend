@@ -132,13 +132,18 @@ attemptEquation sideCondition termLike equation = do
         whileDebugAttemptEquation' . runExceptT $ do
             let Equation{left} = equationRenamed
             (equation', predicate) <- matchAndApplyResults left
-            let Equation{requires, attributes = Attribute.Axiom{simplification}} = equation'
+            let Equation
+                    { requires
+                    , ensures
+                    , right
+                    , attributes = Attribute.Axiom{simplification}
+                    } = equation'
                 eqSrc = Equation.srcLoc equation'
                 onDecidePredicateUnknown = case simplification of
                     Attribute.NotSimplification -> ErrorDecidePredicateUnknown $srcLoc eqSrc
                     Attribute.IsSimplification _ -> WarnDecidePredicateUnknown $srcLoc eqSrc
-            checkRequires onDecidePredicateUnknown sideCondition predicate requires & whileCheckRequires
-            let Equation{right, ensures} = equation'
+            checkRequires onDecidePredicateUnknown sideCondition predicate requires
+                & whileCheckRequires
             return $ Pattern.withCondition right $ from @(Predicate _) ensures
 
     equationRenamed = refreshVariables sideCondition termLike equation
