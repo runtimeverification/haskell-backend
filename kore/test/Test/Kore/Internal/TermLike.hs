@@ -50,6 +50,7 @@ import Kore.Attribute.Synthetic (
 import Kore.Error qualified
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.InternalInt
+import Kore.Internal.Pattern qualified as IPattern
 import Kore.Internal.Substitution (
     orientSubstitution,
  )
@@ -720,7 +721,8 @@ test_uninternalize =
 
 test_toSyntaxPattern :: TestTree
 test_toSyntaxPattern = Hedgehog.testProperty "convert a valid pattern to a Syntax.Pattern and back" . Hedgehog.property $ do
-    trmLike <- forAll (runKoreGen Mock.generatorSetup ConsistentKore.termLikeGen)
+    -- generate a consistent (internal) pattern to turn into a (general) term
+    trmLike <- IPattern.toTermLike <$> forAll (runKoreGen Mock.generatorSetup ConsistentKore.patternGen)
     let patt = fmap (const Attribute.Null) (from trmLike :: Pattern.Pattern VariableName (TermAttributes VariableName))
 
     case PatternVerifier.runPatternVerifier Mock.verifiedModuleContext $
