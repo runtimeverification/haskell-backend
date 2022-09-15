@@ -404,34 +404,31 @@ termGenerators = do
     let topHack = Map.singleton AnySort [topGenerator]
     connectives <-
         if allowTermConnectives
-            then
-                filterGeneratorsAndGroup
-                    [ andGenerator
-                    , orGenerator
-                    ]
+            then filterGeneratorsAndGroup [andGenerator, orGenerator]
             else pure Map.empty
     literals <-
         filterGeneratorsAndGroup
             ( catMaybes
                 [maybeStringLiteralGenerator setup]
             )
-    variable <- Map.map (:[]) <$> allVariableGenerators
+    variable <- Map.map (: []) <$> allVariableGenerators
     symbol <- symbolGenerators
     alias <- aliasGenerators
-    allBuiltin <- Map.map (:[]) <$> allBuiltinGenerators
+    allBuiltin <- Map.map (: []) <$> allBuiltinGenerators
     if onlyConstructorLike
         then return symbol
         else
             return $
-                Map.unionsWith (<>)
-                [ symbol
-                , alias
-                , literals
-                , variable
-                , allBuiltin
-                , connectives
-                , topHack
-                ]
+                Map.unionsWith
+                    (<>)
+                    [ symbol
+                    , alias
+                    , literals
+                    , variable
+                    , allBuiltin
+                    , connectives
+                    , topHack
+                    ]
 
 nullaryFreeSortOperatorGenerator ::
     (Sort -> TermLike VariableName) ->
