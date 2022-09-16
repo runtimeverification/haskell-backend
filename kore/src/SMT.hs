@@ -446,8 +446,6 @@ data Config = Config
       timeOut :: !TimeOut
     , -- | reset solver after this number of queries
       resetInterval :: !ResetInterval
-    , tactic :: !String
-    , unknownAsSat :: !Bool
     }
 
 -- | Default configuration using the Z3 solver.
@@ -463,8 +461,6 @@ defaultConfig =
         , logFile = Nothing
         , timeOut = TimeOut (Limit 40)
         , resetInterval = ResetInterval 100
-        , tactic = "default"
-        , unknownAsSat = False
         }
 
 initSolver :: Config -> SMT ()
@@ -484,10 +480,10 @@ newSolver config =
     Exception.handle handleIOException $ do
         someLogAction <- Log.askLogAction
         Trans.liftIO $ do
-            solverHandle <- SimpleSMT.newSolver exe args tactic unknownAsSat someLogAction
+            solverHandle <- SimpleSMT.newSolver exe args someLogAction
             newMVar solverHandle
   where
-    Config{executable = exe, arguments = args, tactic, unknownAsSat} = config
+    Config{executable = exe, arguments = args} = config
     handleIOException :: IOException -> LoggerT IO a
     handleIOException e =
         (error . unlines)

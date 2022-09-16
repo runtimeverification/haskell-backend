@@ -890,15 +890,13 @@ execute options mainModule worker =
             )
             worker
     withoutSMT = SMT.runNoSMT worker
-    KoreSolverOptions{timeOut, resetInterval, prelude, solver, tactic, unknownAsSat} =
+    KoreSolverOptions{timeOut, resetInterval, prelude, solver} =
         Lens.view (field @"koreSolverOptions") options
     config =
         SMT.defaultConfig
             { SMT.timeOut = timeOut
             , SMT.resetInterval = resetInterval
             , SMT.prelude = prelude
-            , SMT.tactic = tactic
-            , SMT.unknownAsSat = unknownAsSat
             }
 
 loadPattern :: LoadedModule -> Maybe FilePath -> Main (TermLike VariableName)
