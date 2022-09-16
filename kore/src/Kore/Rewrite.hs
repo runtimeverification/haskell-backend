@@ -221,7 +221,7 @@ transitionRule rewriteGroups = transitionRuleWorker
 
     transitionAnyRewrite config = do
         let rules = concat rewriteGroups
-        results <- Step.applyRewriteRulesSequence config rules
+        results <- Step.applyRewriteRulesSequence config rules & lift
         deriveResults results
 
 deriveResults ::
