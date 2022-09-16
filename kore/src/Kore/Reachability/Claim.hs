@@ -154,6 +154,7 @@ import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition qualified as Transition
 import Kore.Simplify.API (
     MonadSimplify,
+    Simplifier,
     liftSimplifier,
  )
 import Kore.Simplify.Exists qualified as Exists
@@ -194,16 +195,14 @@ class Claim claim where
         Strategy.TransitionT (AppliedRule claim) m claim
 
     applyClaims ::
-        MonadSimplify m =>
         [claim] ->
         claim ->
-        Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+        Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
 
     applyAxioms ::
-        MonadSimplify m =>
         [[Rule claim]] ->
         claim ->
-        Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+        Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
 
 {- | 'ApplyResult' is the result of a rewriting step, like 'applyClaims' or 'applyAxioms'.
 
@@ -278,7 +277,6 @@ extractClaims ::
 extractClaims = mapMaybe extractClaim . indexedModuleClaims
 
 deriveSeqClaim ::
-    MonadSimplify m =>
     Step.UnifyingRule claim =>
     Step.UnifyingRuleVariable claim ~ RewritingVariableName =>
     From claim (AxiomPattern RewritingVariableName) =>
@@ -287,7 +285,7 @@ deriveSeqClaim ::
     (ClaimPattern -> claim) ->
     [claim] ->
     claim ->
-    Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+    Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
 deriveSeqClaim lensClaimPattern mkClaim claims claim =
     getCompose $
         Lens.forOf lensClaimPattern claim $
@@ -318,19 +316,18 @@ data StuckCheck
     deriving stock (Eq)
 
 transitionRule ::
-    forall m claim.
-    MonadSimplify m =>
+    forall claim.
     Claim claim =>
     StuckCheck ->
     [claim] ->
     [[Rule claim]] ->
-    TransitionRule m (AppliedRule claim) (ClaimState claim)
+    TransitionRule Simplifier (AppliedRule claim) (ClaimState claim)
 transitionRule stuckCheck claims axiomGroups = transitionRuleWorker
   where
     transitionRuleWorker ::
         Prim ->
         ClaimState claim ->
-        Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
+        Strategy.TransitionT (AppliedRule claim) Simplifier (ClaimState claim)
 
     transitionRuleWorker Begin Proven = empty
     transitionRuleWorker Begin (Stuck _) = empty
@@ -724,15 +721,14 @@ similar to @checkImplicationWorker@:
 * otherwise, the function returns 'NotImplied' without a substitution.
 -}
 checkSimpleImplication ::
-    forall m v.
-    (MonadSimplify m) =>
+    forall v.
     (v ~ RewritingVariableName) =>
     Pattern v -> -- left
     Pattern v -> -- right
     [ElementVariable v] -> -- existentials
     ExceptT
         (Error ImplicationError)
-        m
+        Simplifier
         (TermLike v, CheckImplicationResult (Maybe (Pattern.Condition v)))
 checkSimpleImplication inLeft inRight existentials =
     do
@@ -760,10 +756,9 @@ checkSimpleImplication inLeft inRight existentials =
             else do
                 -- attempt term unification (to remember the substitution
                 unified <-
-                    Logic.observeAllT $
-                        evalEnvUnifierT
-                            Not.notSimplifier
-                            (unificationProcedure SideCondition.top leftTerm rightTerm)
+                    lift $
+                        Logic.observeAllT $
+                            unificationProcedure SideCondition.top leftTerm rightTerm
 
                 -- for each unification result, attempt to refute the formula
                 remainders ::
@@ -789,7 +784,7 @@ checkSimpleImplication inLeft inRight existentials =
     simplifyToSingle ::
         String ->
         Pattern v ->
-        ExceptT (Error ImplicationError) m (Pattern v)
+        ExceptT (Error ImplicationError) Simplifier (Pattern v)
     simplifyToSingle ctx pat = do
         let patSort = termLikeSort (Pattern.term pat)
         simplified <- toList <$> lift (Pattern.simplify pat)
@@ -850,7 +845,7 @@ checkSimpleImplication inLeft inRight existentials =
         Pattern.Condition v ->
         Pattern.Condition v ->
         Pattern.Condition v ->
-        m (OrPattern v, Pattern.Condition v)
+        Simplifier (OrPattern v, Pattern.Condition v)
     checkUnifiedConsequent
         definedConfig
         leftCondition
@@ -951,13 +946,12 @@ instance Exception WithConfiguration
 
 -- | Apply 'Rule's to the claim in parallel.
 derivePar' ::
-    forall m claim.
-    MonadSimplify m =>
+    forall claim.
     Lens' claim ClaimPattern ->
     (RewriteRule RewritingVariableName -> Rule claim) ->
     [RewriteRule RewritingVariableName] ->
     claim ->
-    Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+    Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
 derivePar' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule Step.applyRewriteRulesParallel
 
@@ -995,13 +989,12 @@ deriveWith lensClaimPattern mkRule takeStep rewrites claim =
 
 -- | Apply 'Rule's to the claim in sequence.
 deriveSeq' ::
-    forall m claim.
-    MonadSimplify m =>
+    forall claim.
     Lens' claim ClaimPattern ->
     (RewriteRule RewritingVariableName -> Rule claim) ->
     [RewriteRule RewritingVariableName] ->
     claim ->
-    Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+    Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
 deriveSeq' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule $ flip Step.applyRewriteRulesSequence
 
