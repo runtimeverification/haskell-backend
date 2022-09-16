@@ -21,6 +21,7 @@ module Kore.Equation.DebugEquation (
     DebugApplyEquation (..),
     debugApplyEquation,
     debugAttemptEquationResult,
+    srcLoc,
 ) where
 
 import Control.Error (

@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
@@ -68,6 +70,7 @@ import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.DebugAttemptedRewriteRules (
     debugAttemptedRewriteRule,
  )
+import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Rewrite.Result qualified as Result
 import Kore.Rewrite.Result qualified as Results
 import Kore.Rewrite.Result qualified as Step
@@ -298,7 +301,7 @@ applyInitialConditions sideCondition initial unification = do
         -- the side condition!
         Simplifier.simplifyCondition sideCondition (initial <> unification)
             & MultiOr.gather
-    evaluated <- liftSimplifier $ SMT.Evaluator.filterMultiOr applied
+    evaluated <- liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc applied
     -- If 'evaluated' is \bottom, the rule is considered to not apply and
     -- no result is returned. If the result is \bottom after this check,
     -- then the rule is considered to apply with a \bottom result.
