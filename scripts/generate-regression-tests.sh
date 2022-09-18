@@ -5,20 +5,27 @@ set -exuo pipefail
 
 kollect() {
     local name="$1"
-    shift
-    echo '#!/bin/sh' > "$name.sh"
-    "$@" | xargs $KORE/scripts/kollect.sh "$name" >> "$name.sh"
-    chmod +x "$name.sh"
-}
+    mkdir kevm-$name
+    mv kevm-bug-$name.tar.gz kevm-$name
+    cd kevm-$name
+    tar -xf kevm-bug-$name.tar.gz
+    rm ./!(kore-exec.sh|spec.kore|vdefinition.kore)
+    $KORE/scripts/trim-source-paths.sh *.kore
+    cd $KORE/evm-semantics
 
-kollect-file() {
-    local name="$1"
-    local path="$2"
-    shift 2
-    echo '#!/bin/sh' > "$name.sh"
-    "$@"
-    cat $path | xargs $KORE/scripts/kollect.sh "$name" >> "$name.sh"
-    chmod +x "$name.sh"
+    local regression_evm=$KORE/test/regression-evm
+    local testdir=$regression_evm/kevm-$name
+
+    if [ -d $testdir ]
+    then
+        echo "Replacing $testdir..."
+        rm -rf $testdir
+    else
+        echo "Creating $testdir..."
+    fi
+
+    mv kevm-$name $regression_evm
+
 }
 
 build-evm() {
@@ -31,97 +38,36 @@ build-evm() {
     make build-haskell
 }
 
-build-wasm() {
-    cd $KORE
-    git clone git@github.com:runtimeverification/wasm-semantics.git
-    cd wasm-semantics
-    git submodule update --init --recursive
-    make build-haskell
-}
-
 generate-evm() {
     cd $KORE/evm-semantics
 
     export \
         TEST_CONCRETE_BACKEND=haskell \
         TEST_SYMBOLIC_BACKEND=haskell \
-        TEST_OPTIONS="--dry-run --debug" \
+        KEVM_OPTS=--bug-report \
         CHECK=true \
         KEEP_OUTPUTS=true
 
-    kollect test-sum-to-n \
-        make tests/specs/examples/sum-to-n-spec.k.prove -s -e
+    make tests/specs/examples/sum-to-n-spec.k.prove -s -e
+    kollect sum-to-n
 
-    kollect test-lemmas \
-        make tests/specs/functional/lemmas-spec.k.prove -s -e
+    make tests/specs/functional/lemmas-spec.k.prove -s -e
+    kollect lemmas
 
-    kollect test-storagevar03 \
-        make tests/specs/benchmarks/storagevar03-spec.k.prove -s -e
+    make tests/specs/benchmarks/storagevar03-spec.k.prove -s -e
+    kollect storagevar03
 
-    kollect test-totalSupply \
-        make tests/specs/erc20/ds/totalSupply-spec.k.prove -s -e
+    make tests/specs/erc20/ds/totalSupply-spec.k.prove -s -e
+    kollect totalSupply
 
-    kollect test-addu48u48 \
-        make tests/specs/mcd/flipper-addu48u48-fail-rough-spec.k.prove -s -e
+    make tests/specs/mcd/flipper-addu48u48-fail-rough-spec.k.prove -s -e
+    kollect flipper-addu48u48-fail-rough
 
-    kollect test-dsvalue-peek-pass-rough \
-        make tests/specs/mcd/dsvalue-peek-pass-rough-spec.k.prove -s -e
-
-    $KORE/scripts/trim-source-paths.sh *.kore
+    make tests/specs/mcd/dsvalue-peek-pass-rough-spec.k.prove -s -e
+    kollect dsvalue-peek-pass-rough
 }
 
-generate-wasm() {
-    cd $KORE/wasm-semantics
-
-    for spec in \
-        simple-arithmetic \
-        locals \
-        loops
-    do
-        kollect "test-$spec" \
-            ./kwasm prove --backend haskell \
-                tests/proofs/"$spec"-spec.k \
-                KWASM-LEMMAS --dry-run --save-temps
-    done
-
-    kollect "test-memory" \
-        ./kwasm prove --backend haskell \
-            tests/proofs/memory-spec.k \
-            KWASM-LEMMAS \
-            --concrete-rules WASM-DATA.wrap-Positive,WASM-DATA.setRange-Positive,WASM-DATA.getRange-Positive \
-            --dry-run --save-temps
-
-    kollect "test-wrc20" \
-        ./kwasm prove --backend haskell tests/proofs/wrc20-spec.k WRC20-LEMMAS --format-failures \
-        --concrete-rules WASM-DATA.wrap-Positive,WASM-DATA.setRange-Positive,WASM-DATA.getRange-Positive,WASM-DATA.get-Existing,WASM-DATA.set-Extend \
-        --dry-run --save-temps
-
-    $KORE/scripts/trim-source-paths.sh *.kore
-}
-
-replace-tests() {
-    local testdir=$KORE/$1
-    local tests=$KORE/$2/test-*
-
-    if [ -d $testdir ]
-    then
-        rm $testdir/!(*.golden|Makefile)
-    else
-        mkdir $testdir
-        echo "include \$(CURDIR)/../include.mk" > $testdir/Makefile
-        echo "" >> $testdir/Makefile
-        echo "test-%.sh.out: \$(TEST_DIR)/test-%-*" >> $testdir/Makefile
-    fi
-    mv $tests $testdir
-}
-
-build-evm
+# build-evm
 generate-evm
-replace-tests "test/regression-evm" "evm-semantics"
-rm -rf $KORE/evm-semantics
-
-# Temporarily disabled while it is blocked on wasm-semantics/#447.
-#build-wasm
-#generate-wasm
-#replace-tests "test/regression-wasm" "wasm-semantics"
-#rm -rf $KORE/wasm-semantics
+# replace-tests "test/regression-evm" "evm-semantics"
+# rm -rf $KORE/evm-semantics
