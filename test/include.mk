@@ -28,7 +28,7 @@ TESTS = \
 	$(wildcard $(TEST_DIR)/*.$(EXT)) \
 	$(wildcard $(TEST_DIR)/*-spec.k) \
 	$(wildcard $(TEST_DIR)/*-spec.stderr) \
-	$(wildcard $(TEST_DIR)/test-*.sh)
+	$(wildcard $(TEST_DIR)/*.sh.out)
 
 OUTS += $(foreach TEST, $(TESTS), $(TEST).out)
 GOLDEN += $(foreach OUT, $(OUTS), $(OUT).golden)
@@ -150,11 +150,12 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 
 ### SCRIPTS
 
-test-%.sh.out: $(TEST_DIR)/test-%.sh
-	@echo ">>>" $(CURDIR) $(@:.out=)
-	rm -f $@
-	$(TEST_DIR)/$(@:.out=) > $@ || $(IGNORE_EXIT)
-	$(DIFF) $@.golden $@ || $(FAILED)
+%.sh.out: $(TEST_DIR)/kore-exec.sh
+	printf '%s' '/* D Sfa */ \top{R}()' > $@
+	$(TEST_DIR)/kore-exec.sh
+	diff $(TEST_DIR)/result.kore $@
+	rm $@
+	rm $(TEST_DIR)/result.kore
 
 ### TARGETS
 
