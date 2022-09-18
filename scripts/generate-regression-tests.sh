@@ -67,7 +67,6 @@ generate-evm() {
     kollect dsvalue-peek-pass-rough
 }
 
-# build-evm
+build-evm
 generate-evm
-# replace-tests "test/regression-evm" "evm-semantics"
-# rm -rf $KORE/evm-semantics
+rm -rf $KORE/evm-semantics
