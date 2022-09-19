@@ -23,7 +23,7 @@ newtype ErrorOutOfDate = ErrorOutOfDate {message :: String}
     deriving stock (Show)
 
 instance Exception ErrorOutOfDate where
-    toException = toException . SomeEntry
+    toException = toException . SomeEntry []
     fromException exn = fromException exn >>= fromEntry
     displayException = message
 

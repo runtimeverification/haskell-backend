@@ -8,8 +8,9 @@
       flake = false;
     };
     mach-nix.url = "github:DavHau/mach-nix";
+    nixpkgs22_05.url = "nixpkgs/nixos-22.05";
   };
-  outputs = { self, nixpkgs, haskell-nix, z3-src, mach-nix }:
+  outputs = { self, nixpkgs, nixpkgs22_05, haskell-nix, z3-src, mach-nix }:
     let
       z3-overlay = (final: prev: {
         z3 = prev.z3.overrideAttrs (old: {
@@ -34,11 +35,10 @@
           overlays = [ haskell-nix.overlay ];
           inherit (haskell-nix) config;
         };
-      nixpkgsFor' = system:
-        import nixpkgs {
+      nixpkgs22_05For = system:
+        import nixpkgs22_05 {
           inherit system;
           overlays = [ z3-overlay ];
-          inherit (haskell-nix) config;
         };
       mkPython = system:
         mach-nix.lib.${system}.mkPython {
@@ -57,7 +57,7 @@
             "*.nix"
             "*.nix.sh"
             "/.github"
-            "flake.lock"
+            "flake.*"
             "/profile"
             "/profile-*"
             ./.gitignore
@@ -116,7 +116,7 @@
         perSystem (system:
           let
             pkgs = nixpkgsFor system;
-            pkgs' = nixpkgsFor' system;
+            pkgs' = nixpkgs22_05For system;
           in projectOverlay {
             inherit pkgs pkgs' profiling ghcOptions;
             compiler-nix-name = ghc;
@@ -194,7 +194,7 @@
           kore-exec-infotable =
             self.projectGhc9EventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
 
-          test-rpc = let pkgs = nixpkgsFor system;
+          rpc-tests = let pkgs = nixpkgsFor system;
           in pkgs.callPackage ./test/rpc-server {
             name = "haskell-backend-${self.rev or "dirty"}-json-rpc-tests";
             inherit (pkgs) stdenv;
@@ -206,27 +206,48 @@
         });
 
       apps = perSystem (system:
-        self.flake.${system}.apps // {
-          profile = let
-            pkgs = nixpkgsFor system;
-            profiling-script = pkgs.callPackage ./nix/run-profiling.nix {
-              inherit (pkgs.haskellPackages) hp2pretty hs-speedscope eventlog2html;
-              kore-exec-prof =
-                self.projectProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
-              kore-exec-infotable =
-                self.projectGhc9EventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
-            };
-          in {
+        self.flake.${system}.apps // (let
+          pkgs = nixpkgs22_05For system;
+          profiling-script = pkgs.callPackage ./nix/run-profiling.nix {
+            inherit (pkgs.haskellPackages)
+              hp2pretty hs-speedscope eventlog2html;
+            kore-exec-prof =
+              self.projectProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
+            kore-exec-infotable =
+              self.projectGhc9EventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
+          };
+          scripts = pkgs.symlinkJoin {
+            name = "fourmolu-format";
+            paths = [ ./scripts ];
+            buildInputs = [ pkgs.makeWrapper ];
+            postBuild = ''
+              wrapProgram $out/fourmolu.sh \
+                --set PATH ${
+                  with pkgs;
+                  lib.makeBinPath [ haskellPackages.fourmolu fd findutils ]
+                }
+            '';
+          };
+        in {
+          profile = {
             type = "app";
             program = "${profiling-script}/bin/run-profiling";
           };
-        });
+          format = {
+            type = "app";
+            program = "${scripts}/fourmolu.sh";
+          };
+          remove-import-groups = {
+            type = "app";
+            program = "${scripts}/fourmolu.sh";
+          };
+        }));
 
       devShells = perSystem (system: {
         default = self.flake.${system}.devShell;
         ghc9 = self.flakeGhc9.${system}.devShell;
 
-        test-rpc = let pkgs = nixpkgsFor system;
+        rpc-tests = let pkgs = nixpkgsFor system;
         in pkgs.mkShell {
           buildInputs = [
             (mkPython system)

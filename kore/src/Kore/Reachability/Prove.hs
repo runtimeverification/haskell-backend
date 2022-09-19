@@ -25,7 +25,6 @@ import Control.DeepSeq (
 import Control.Lens qualified as Lens
 import Control.Monad.Catch (
     MonadCatch,
-    MonadMask,
     handleAll,
     throwM,
  )
@@ -107,7 +106,7 @@ import Kore.Rewrite.Strategy (
     ExecutionGraph (..),
     FinalNodeType,
     GraphSearchOrder,
-    Strategy,
+    Step,
     executionHistoryStep,
  )
 import Kore.Rewrite.Transition (
@@ -366,10 +365,10 @@ proveClaim
       where
         -------------------------------
         -- brought in from Claim.hs to remove Strategy type
-        infinite :: [GraphTraversal.Step Prim]
+        infinite :: [Step Prim]
         ~infinite = stepNoClaims : repeat stepWithClaims
 
-        withMinDepth :: MinDepth -> [GraphTraversal.Step Prim]
+        withMinDepth :: MinDepth -> [Step Prim]
         withMinDepth d =
             noCheckSteps <> repeat stepWithClaims
           where
@@ -399,7 +398,6 @@ proveClaim
         -- result interpretation for GraphTraversal.simpleTransition
         toTransitionResultWithDepth ::
             Show c =>
-            -- | prior state, needed for [] and Proven cases
             (ProofDepth, ClaimState c) ->
             [(ProofDepth, ClaimState c)] ->
             GraphTraversal.TransitionResult (ProofDepth, ClaimState c)
@@ -429,10 +427,6 @@ proveClaim
  execution graph by inserting this step.
 -}
 proveClaimStep ::
-    forall simplifier.
-    MonadSimplify simplifier =>
-    MonadMask simplifier =>
-    MonadProf simplifier =>
     Maybe MinDepth ->
     StuckCheck ->
     -- | list of claims in the spec module
@@ -443,7 +437,7 @@ proveClaimStep ::
     ExecutionGraph CommonClaimState (AppliedRule SomeClaim) ->
     -- | selected node in the graph
     Graph.Node ->
-    simplifier (ExecutionGraph CommonClaimState (AppliedRule SomeClaim))
+    Simplifier (ExecutionGraph CommonClaimState (AppliedRule SomeClaim))
 proveClaimStep _ stuckCheck claims axioms executionGraph node =
     executionHistoryStep
         transitionRule''
@@ -457,16 +451,10 @@ proveClaimStep _ stuckCheck claims axioms executionGraph node =
     -- decide the appropriate strategy for the next step.
     -- We should also add a command for toggling this feature on and
     -- off.
-    strategy' :: Strategy Prim
+    strategy' :: Step Prim
     strategy'
-        | isRoot = firstStep
-        | otherwise = followupStep
-
-    firstStep :: Strategy Prim
-    firstStep = reachabilityFirstStep
-
-    followupStep :: Strategy Prim
-    followupStep = reachabilityNextStep
+        | isRoot = reachabilityFirstStep
+        | otherwise = reachabilityNextStep
 
     ExecutionGraph{root} = executionGraph
 
@@ -485,13 +473,10 @@ proveClaimStep _ stuckCheck claims axioms executionGraph node =
             transitionRule' stuckCheck claims axioms prim state
 
 transitionRule' ::
-    MonadSimplify simplifier =>
-    MonadProf simplifier =>
-    MonadMask simplifier =>
     StuckCheck ->
     [SomeClaim] ->
     [Rule SomeClaim] ->
-    CommonTransitionRule simplifier
+    CommonTransitionRule Simplifier
 transitionRule' stuckCheck claims axioms = \prim proofState ->
     deepseq
         proofState

@@ -110,7 +110,7 @@ runRepl ::
     [Axiom] ->
     -- | list of claims to be proven
     [SomeClaim] ->
-    MVar (Log.LogAction IO Log.ActualEntry) ->
+    MVar (Log.LogAction IO Log.SomeEntry) ->
     -- | optional script
     ReplScript ->
     -- | mode to run in
@@ -284,7 +284,7 @@ runRepl
         someExceptionHandler :: a -> Exception.SomeException -> Simplifier a
         someExceptionHandler a someException = do
             case Exception.fromException someException of
-                Just (Log.SomeEntry entry) ->
+                Just entry@(Log.SomeEntry _ _) ->
                     Log.logEntry entry
                 Nothing ->
                     errorException someException

@@ -27,16 +27,15 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Simplify (
+    Simplifier,
     makeEvaluateTermCeil,
     simplifyCondition,
  )
 import Kore.TopBottom qualified as TopBottom
 import Kore.Unification.NewUnifier
-import Kore.Unification.Unify (
-    MonadUnify,
- )
 import Kore.Unification.Unify qualified as Monad.Unify
 import Logic (
+    LogicT,
     lowerLogicT,
  )
 import Prelude.Kore
@@ -46,11 +45,10 @@ import Prelude.Kore
  If successful, it also produces a proof of how the substitution was obtained.
 -}
 unificationProcedure ::
-    MonadUnify unifier =>
     SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    unifier (Condition RewritingVariableName)
+    LogicT Simplifier (Condition RewritingVariableName)
 unificationProcedure sideCondition p1 p2
     | p1Sort /= p2Sort =
         debugUnifyBottomAndReturnBottom "Cannot unify different sorts." p1 p2
