@@ -36,6 +36,9 @@ import Data.Text (
     Text,
  )
 import Data.Text qualified as Text
+import Hedgehog as Hedgehog (diff, forAll, property, withTests)
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
 import Kore.Attribute.Hook (
     Hook (..),
  )
@@ -122,12 +125,15 @@ import SMT.SimpleSMT qualified as SMT
 import Test.ConsistentKore qualified as ConsistentKore (
     CollectionSorts (..),
     Setup (..),
+    runKoreGen,
+    termLikeGenWithSort,
  )
 import Test.Kore (
     testId,
  )
 import Test.Kore.IndexedModule.MockMetadataTools qualified as Mock
 import Test.Tasty
+import Test.Tasty.Hedgehog (testProperty)
 import Test.Tasty.HUnit.Ext
 
 aId :: Id
@@ -2325,7 +2331,7 @@ generatorSetup =
     ConsistentKore.Setup
         { allSymbols = filter doesNotHaveArguments symbols
         , allAliases = []
-        , allSorts = map fst sortAttributesMapping
+        , allSorts = filter (/= otherTopSort) $ map fst sortAttributesMapping
         , freeElementVariables = Set.empty
         , freeSetVariables = Set.empty
         , maybeIntSort = Just intSort
@@ -2348,6 +2354,30 @@ generatorSetup =
         }
   where
     doesNotHaveArguments Symbol{symbolParams} = null symbolParams
+
+-- | ensure that test data can be generated using the above setup
+test_canGenerateConsistentTerms :: TestTree
+test_canGenerateConsistentTerms =
+    testGroup "can generate consistent terms for all given sorts" $
+        map mkTest testSorts
+  where
+    testSorts = ConsistentKore.allSorts generatorSetup
+    sizes = map Range.Size [1..10]
+
+    mkTest :: Sort -> TestTree
+    mkTest sort@(SortActualSort SortActual{sortActualName=InternedId{getInternedId}}) =
+        testGroup (show getInternedId)
+            [ testProperty (show size) . withTests 1 . property $ do
+                    r <- forAll . Gen.resize size $
+                         ConsistentKore.runKoreGen
+                             generatorSetup
+                             (ConsistentKore.termLikeGenWithSort sort)
+                    -- just test that this works
+                    Hedgehog.diff 0 (<) (length $ show r)
+            | size <- sizes
+            ]
+    mkTest SortVariableSort{} =
+        error "Found a sort variable in the generator setup"
 
 builtinSimplifiers :: Map Id Text
 builtinSimplifiers =

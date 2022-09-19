@@ -4,6 +4,8 @@ module Test.ConsistentKore (
     Setup (..),
     runKoreGen,
     patternGen,
+    -- testing only
+    termLikeGenWithSort,
 ) where
 
 import Control.Arrow qualified as Arrow
@@ -94,7 +96,6 @@ import Kore.Internal.TermLike (
     mkOr,
     mkSetVar,
     mkStringLiteral,
-    mkTop,
     retractKey,
  )
 import Kore.Internal.TermLike qualified as TermLike (
@@ -399,9 +400,6 @@ _checkTermImplemented term@(Recursive.project -> _ :< termF) =
 termGenerators :: Gen (Map.Map SortRequirements [TermGenerator])
 termGenerators = do
     (setup, Context{onlyConstructorLike, allowTermConnectives}) <- Reader.ask
-    -- One problem seems to be that there is no way to generate `otherTopSort`
-    -- except this. However, there is also a loop in the generator recursion.
-    let topHack = Map.singleton AnySort [topGenerator]
     connectives <-
         if allowTermConnectives
             then filterGeneratorsAndGroup [andGenerator, orGenerator]
@@ -427,26 +425,7 @@ termGenerators = do
                     , variable
                     , allBuiltin
                     , connectives
-                    , topHack
                     ]
-
-nullaryFreeSortOperatorGenerator ::
-    (Sort -> TermLike VariableName) ->
-    TermGenerator
-nullaryFreeSortOperatorGenerator builder =
-    TermGenerator
-        { arity = 0
-        , sort = AnySort
-        , attributes =
-            AttributeRequirements
-                { isConstructorLike = False
-                , isConcrete = True
-                }
-        , generator = worker
-        }
-  where
-    worker _childGenerator resultSort =
-        return (Just (builder resultSort))
 
 binaryOperatorGenerator ::
     (TermLike VariableName -> TermLike VariableName -> TermLike VariableName) ->
@@ -474,9 +453,6 @@ andGenerator = binaryOperatorGenerator mkAnd
 
 orGenerator :: TermGenerator
 orGenerator = binaryOperatorGenerator mkOr
-
-topGenerator :: TermGenerator
-topGenerator = nullaryFreeSortOperatorGenerator mkTop
 
 maybeStringLiteralGenerator :: Setup -> Maybe TermGenerator
 maybeStringLiteralGenerator Setup{maybeStringLiteralSort} =
