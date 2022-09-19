@@ -133,8 +133,8 @@ import Test.Kore (
  )
 import Test.Kore.IndexedModule.MockMetadataTools qualified as Mock
 import Test.Tasty
-import Test.Tasty.Hedgehog (testProperty)
 import Test.Tasty.HUnit.Ext
+import Test.Tasty.Hedgehog (testProperty)
 
 aId :: Id
 aId = testId "a"
@@ -2362,18 +2362,20 @@ test_canGenerateConsistentTerms =
         map mkTest testSorts
   where
     testSorts = ConsistentKore.allSorts generatorSetup
-    sizes = map Range.Size [1..10]
+    sizes = map Range.Size [1 .. 10]
 
     mkTest :: Sort -> TestTree
-    mkTest sort@(SortActualSort SortActual{sortActualName=InternedId{getInternedId}}) =
-        testGroup (show getInternedId)
+    mkTest sort@(SortActualSort SortActual{sortActualName = InternedId{getInternedId}}) =
+        testGroup
+            (show getInternedId)
             [ testProperty (show size) . withTests 1 . property $ do
-                    r <- forAll . Gen.resize size $
-                         ConsistentKore.runKoreGen
-                             generatorSetup
-                             (ConsistentKore.termLikeGenWithSort sort)
-                    -- just test that this works
-                    Hedgehog.diff 0 (<) (length $ show r)
+                r <-
+                    forAll . Gen.resize size $
+                        ConsistentKore.runKoreGen
+                            generatorSetup
+                            (ConsistentKore.termLikeGenWithSort sort)
+                -- just test that this works
+                Hedgehog.diff 0 (<) (length $ show r)
             | size <- sizes
             ]
     mkTest SortVariableSort{} =
