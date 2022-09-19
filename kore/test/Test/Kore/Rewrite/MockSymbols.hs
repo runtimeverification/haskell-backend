@@ -36,7 +36,7 @@ import Data.Text (
     Text,
  )
 import Data.Text qualified as Text
-import Hedgehog as Hedgehog (diff, forAll, property, withTests)
+import Hedgehog (diff, forAll, property, withTests)
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 import Kore.Attribute.Hook (
