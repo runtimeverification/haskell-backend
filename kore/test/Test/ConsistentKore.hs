@@ -9,7 +9,6 @@ module Test.ConsistentKore (
 ) where
 
 import Control.Arrow qualified as Arrow
-import Control.Monad qualified as Monad
 import Control.Monad.Reader (
     ReaderT,
  )
@@ -40,6 +39,7 @@ import Kore.Attribute.Symbol qualified as Attribute (
  )
 import Kore.Attribute.Symbol qualified as Attribute.Symbol (
     Symbol (..),
+    isFunction,
  )
 import Kore.Builtin.AssociativeCommutative as AssociativeCommutative (
     TermWrapper,
@@ -794,14 +794,18 @@ symbolGenerator
       where
         applicationGenerator termGenerator sort = do
             when (sort /= applicationSortsResult) (error "Sort mismatch.")
-            let request =
-                    if BuiltinMap.isSymbolElement symbol
-                        || BuiltinSet.isSymbolElement symbol
-                        then requestConcrete . requestConstructorLike
-                        else -- TODO (virgil): also allow constructor-like stuff
-                        -- with variables.
-                            id
-            maybeTerms <- request $ mapM termGenerator applicationSortsOperands
+            let restrict
+                    | BuiltinMap.isSymbolElement symbol =
+                        requestConcrete . requestConstructorLike
+                    | BuiltinSet.isSymbolElement symbol =
+                        requestConcrete . requestConstructorLike
+                    | isFunction =
+                        withoutConnectives
+                    | otherwise = id
+                -- TODO (virgil): also allow constructor-like
+                -- stuff with variables.
+                isFunction = Attribute.Symbol.isFunction symbolAttributes
+            maybeTerms <- restrict $ mapM termGenerator applicationSortsOperands
             return (mkApplySymbol symbol <$> sequenceA maybeTerms)
 symbolGenerator
     Internal.Symbol
@@ -934,17 +938,15 @@ filterGeneratorsAndGroup generators = do
     return (groupBySort filteredGenerators)
 
 filterGenerators :: [TermGenerator] -> Gen [TermGenerator]
-filterGenerators = Monad.filterM acceptGenerator
+filterGenerators generators =
+    Reader.asks snd >>= \context -> pure $ filter (accept context) generators
   where
-    acceptGenerator :: TermGenerator -> Gen Bool
-    acceptGenerator
-        TermGenerator{attributes} =
-            do
-                Context{onlyConcrete, onlyConstructorLike} <- Reader.asks snd
-                return $ case attributes of
-                    AttributeRequirements{isConcrete, isConstructorLike} ->
-                        (not onlyConcrete || isConcrete)
-                            && (not onlyConstructorLike || isConstructorLike)
+    accept :: Context -> TermGenerator -> Bool
+    accept
+        Context{onlyConcrete, onlyConstructorLike}
+        TermGenerator{attributes = AttributeRequirements{isConcrete, isConstructorLike}} =
+            (not onlyConcrete || isConcrete)
+                && (not onlyConstructorLike || isConstructorLike)
 
 groupBySort :: [TermGenerator] -> Map.Map SortRequirements [TermGenerator]
 groupBySort = groupBy termGeneratorSort
