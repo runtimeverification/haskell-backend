@@ -799,12 +799,11 @@ symbolGenerator
                         requestConcrete . requestConstructorLike
                     | BuiltinSet.isSymbolElement symbol =
                         requestConcrete . requestConstructorLike
-                    | isFunction =
+                    | Attribute.Symbol.isFunction symbolAttributes =
                         withoutConnectives
                     | otherwise = id
                 -- TODO (virgil): also allow constructor-like
                 -- stuff with variables.
-                isFunction = Attribute.Symbol.isFunction symbolAttributes
             maybeTerms <- restrict $ mapM termGenerator applicationSortsOperands
             return (mkApplySymbol symbol <$> sequenceA maybeTerms)
 symbolGenerator
