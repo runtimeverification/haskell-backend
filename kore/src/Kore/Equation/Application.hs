@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
@@ -10,12 +12,12 @@ module Kore.Equation.Application (
 ) where
 
 import Control.Error (
-    ExceptT,
+    ExceptT (..),
     MaybeT (..),
     maybeToList,
-    noteT,
     runExceptT,
     throwE,
+    withExceptT,
  )
 import Control.Monad (
     (>=>),
@@ -33,7 +35,21 @@ import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
  )
 import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
-import Kore.Equation.DebugEquation
+import Kore.Equation.DebugEquation (
+    ApplyMatchResultError (..),
+    ApplyMatchResultErrors (..),
+    AttemptEquationError (..),
+    AttemptEquationResult,
+    CheckRequiresError (..),
+    MatchError (..),
+    debugApplyEquation,
+    debugAttemptEquationResult,
+    whileApplyMatchResult,
+    whileCheckRequires,
+    whileDebugAttemptEquation,
+    whileMatch,
+ )
+import Kore.Equation.DebugEquation qualified as Equation
 import Kore.Equation.Equation (
     Equation (..),
  )
@@ -69,9 +85,13 @@ import Kore.Internal.TermLike (
     TermLike,
  )
 import Kore.Internal.TermLike qualified as TermLike
+import Kore.Log.DecidePredicateUnknown (
+    OnDecidePredicateUnknown (..),
+    srcLoc,
+ )
 import Kore.Rewrite.Axiom.Matcher (
     MatchResult,
-    matchIncremental,
+    patternMatch,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -112,21 +132,31 @@ attemptEquation sideCondition termLike equation = do
         whileDebugAttemptEquation' . runExceptT $ do
             let Equation{left} = equationRenamed
             (equation', predicate) <- matchAndApplyResults left
-            let Equation{requires} = equation'
-            checkRequires sideCondition predicate requires & whileCheckRequires
-            let Equation{right, ensures} = equation'
+            let Equation
+                    { requires
+                    , ensures
+                    , right
+                    , attributes = Attribute.Axiom{simplification}
+                    } = equation'
+                eqSrc = Equation.srcLoc equation'
+                onDecidePredicateUnknown = case simplification of
+                    Attribute.NotSimplification -> ErrorDecidePredicateUnknown $srcLoc eqSrc
+                    Attribute.IsSimplification _ -> WarnDecidePredicateUnknown $srcLoc eqSrc
+            checkRequires onDecidePredicateUnknown sideCondition predicate requires
+                & whileCheckRequires
             return $ Pattern.withCondition right $ from @(Predicate _) ensures
 
     equationRenamed = refreshVariables sideCondition termLike equation
-    matchError =
+    matchError matchFailReason =
         MatchError
             { matchTerm = termLike
             , matchEquation = equationRenamed
+            , matchFailReason
             }
     match term1 term2 =
-        matchIncremental sideCondition term1 term2
-            & MaybeT
-            & noteT matchError
+        patternMatch sideCondition term1 term2
+            & ExceptT
+            & withExceptT matchError
 
     matchAndApplyResults left' = do
         matchResult <- match left' termLike & whileMatch
@@ -314,13 +344,14 @@ Throws 'RequiresNotMet' if the 'Predicate's do not hold under the
 'SideCondition'.
 -}
 checkRequires ::
+    OnDecidePredicateUnknown ->
     SideCondition RewritingVariableName ->
     -- | requires from matching
     Predicate RewritingVariableName ->
     -- | requires from 'Equation'
     Predicate RewritingVariableName ->
     ExceptT (CheckRequiresError RewritingVariableName) Simplifier ()
-checkRequires sideCondition predicate requires =
+checkRequires onUnknown sideCondition predicate requires =
     do
         let requires' = makeAndPredicate predicate requires
             -- The condition to refute:
@@ -346,6 +377,7 @@ checkRequires sideCondition predicate requires =
         l <-
             liftSimplifier $
                 SMT.evalConditional
+                    onUnknown
                     condition
                     (Just sideCondition)
         case l of

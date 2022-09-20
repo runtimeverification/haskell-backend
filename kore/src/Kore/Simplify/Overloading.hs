@@ -17,6 +17,7 @@ module Kore.Simplify.Overloading (
     Narrowing (..),
     OverloadingResolution (..),
     MatchResult (..),
+    flipResult,
 ) where
 
 import Control.Monad qualified as Monad

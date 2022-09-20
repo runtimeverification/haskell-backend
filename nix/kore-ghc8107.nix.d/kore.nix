@@ -83,6 +83,7 @@
           "optparse-applicative"))
         (hsPkgs."parser-combinators" or (errorHandler.buildDepError
           "parser-combinators"))
+        (hsPkgs."pqueue" or (errorHandler.buildDepError "pqueue"))
         (hsPkgs."prettyprinter" or (errorHandler.buildDepError "prettyprinter"))
         (hsPkgs."process" or (errorHandler.buildDepError "process"))
         (hsPkgs."profunctors" or (errorHandler.buildDepError "profunctors"))
@@ -285,8 +286,8 @@
         "Kore/Log/DebugTransition"
         "Kore/Log/DebugUnification"
         "Kore/Log/DebugUnifyBottom"
+        "Kore/Log/DecidePredicateUnknown"
         "Kore/Log/ErrorBottomTotalFunction"
-        "Kore/Log/ErrorDecidePredicateUnknown"
         "Kore/Log/ErrorEquationRightFunction"
         "Kore/Log/ErrorEquationsSameMatch"
         "Kore/Log/ErrorException"
@@ -730,6 +731,7 @@
             "optparse-applicative"))
           (hsPkgs."parser-combinators" or (errorHandler.buildDepError
             "parser-combinators"))
+          (hsPkgs."pqueue" or (errorHandler.buildDepError "pqueue"))
           (hsPkgs."prettyprinter" or (errorHandler.buildDepError
             "prettyprinter"))
           (hsPkgs."process" or (errorHandler.buildDepError "process"))
