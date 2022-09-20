@@ -252,6 +252,23 @@ test_matcherEqualHeads =
                     (Mock.plain10 Mock.a)
             assertEqual "" expect actual
         ]
+    , testGroup
+        "Not"
+        [ matches
+            "not equals"
+            (mkNot $ mkEquals Mock.topSort Mock.a (mkElemVar Mock.xConfig))
+            (mkNot $ mkEquals Mock.topSort Mock.a Mock.b)
+            [((inject Mock.xConfig), Mock.b)]
+        , matches
+            "not symbol"
+            (mkNot $ mkElemVar Mock.xConfig)
+            (mkNot Mock.a)
+            [((inject Mock.xConfig), Mock.a)]
+        , doesn'tMatch
+            "not with different arguments"
+            (mkNot $ mkElemVar Mock.xConfig)
+            (mkNot $ mkEquals Mock.topSort Mock.a Mock.b)
+        ]
     ]
 
 test_matcherVariableFunction :: [TestTree]
