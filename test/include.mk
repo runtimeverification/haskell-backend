@@ -150,12 +150,11 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 
 ### SCRIPTS
 
-%.sh.out: $(TEST_DIR)/kore-exec.sh
-	printf '%s' '/* D Sfa */ \top{R}()' > $@
-	$(TEST_DIR)/kore-exec.sh
-	diff $(TEST_DIR)/result.kore $@
-	rm $@
-	rm $(TEST_DIR)/result.kore
+test-%.sh.out: $(TEST_DIR)/test-%.sh
+	@echo ">>>" $(CURDIR) $(@:.out=)
+	rm -f $@
+	$(TEST_DIR)/$(@:.out=) > $@ || $(IGNORE_EXIT)
+	$(DIFF) $@.golden $@ || $(FAILED)
 
 ### TARGETS
 

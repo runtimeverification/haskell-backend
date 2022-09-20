@@ -5,27 +5,32 @@ set -exuo pipefail
 
 kollect() {
     local name="$1"
-    mkdir kevm-$name
-    mv kevm-bug-$name.tar.gz kevm-$name
-    cd kevm-$name
-    tar -xf kevm-bug-$name.tar.gz
-    rm ./!(kore-exec.sh|spec.kore|vdefinition.kore)
-    $KORE/scripts/trim-source-paths.sh *.kore
+
+    local archive=kevm-bug-$name.tar.gz
+    local script=test-$name.sh
+    local def=test-$name-definition.kore
+    local spec=test-$name-spec.kore
+    local tmp=$name-tmp
+
     cd $KORE/evm-semantics
 
-    local regression_evm=$KORE/test/regression-evm
-    local testdir=$regression_evm/kevm-$name
+    mkdir $tmp
+    mv $archive $tmp
+    cd $tmp
+    tar -xf $archive
+    rm ./!(kore-exec.sh|spec.kore|vdefinition.kore)
+    mv kore-exec.sh $script
+    mv vdefinition.kore $def
+    mv spec.kore $spec
 
-    if [ -d $testdir ]
-    then
-        echo "Replacing $testdir..."
-        rm -rf $testdir
-    else
-        echo "Creating $testdir..."
-    fi
+    $KORE/scripts/trim-source-paths.sh *.kore
+    gsed -i "s/result.kore/$script/g" test-$name.sh
+    gsed -i "s/vdefinition.kore/$def/g" test-$name.sh
+    gsed -i "s/spec.kore/$spec/g" test-$name.sh
 
-    mv kevm-$name $regression_evm
-
+    mv * $KORE/evm-semantics
+    cd $KORE/evm-semantics
+    rm -rf $tmp
 }
 
 build-evm() {
@@ -67,6 +72,22 @@ generate-evm() {
     kollect dsvalue-peek-pass-rough
 }
 
+replace-tests() {
+    local testdir=$KORE/$1
+    local tests=$KORE/$2/test-*
+
+    if [ -d $testdir ]
+    then
+        rm $testdir/!(*.golden|Makefile)
+    else
+        mkdir $testdir
+        echo "include \$(CURDIR)/../include.mk" > $testdir/Makefile
+        echo "" >> $testdir/Makefile
+        echo "test-%.sh.out: \$(TEST_DIR)/test-%-*" >> $testdir/Makefile
+    fi
+    mv $tests $testdir
+
 build-evm
 generate-evm
+replace-tests "test/regression-evm" "evm-semantics"
 rm -rf $KORE/evm-semantics
