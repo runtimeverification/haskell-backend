@@ -7,11 +7,6 @@ module Test.Kore.Reachability.MockAllPath (
     test_runStrategy,
 ) where
 
-import Control.Monad.Catch (
-    MonadCatch (catch),
-    MonadThrow (throwM),
- )
-import Data.Functor.Identity
 import Data.Graph.Inductive qualified as Gr
 import Data.Limit (
     Limit (..),
@@ -37,23 +32,17 @@ import Kore.Rewrite.Transition (
     runTransitionT,
  )
 import Kore.Rewrite.Transition qualified as Transition
-import Kore.Simplify.API (
-    MonadSimplify (..),
- )
 import Kore.TopBottom (
     TopBottom (..),
- )
-import Log (
-    MonadLog (..),
  )
 import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
-import SMT (
-    MonadSMT (..),
- )
+import Test.Kore.Rewrite.MockSymbols qualified as Mock (env)
+import Test.Kore.Simplify (testRunSimplifier)
 import Test.Tasty
+import Test.Tasty.HUnit.Ext
 import Test.Terse
 
 newtype MockInteger = MockInteger {unMockInteger :: Integer}
@@ -123,33 +112,32 @@ test_unprovenNodes =
 test_transitionRule_Begin :: [TestTree]
 test_transitionRule_Begin =
     [ done ClaimState.Proven
-    , unmodified (ClaimState.Claimed (MockClaim (A, B)))
-    , unmodified (ClaimState.Remaining (MockClaim (A, B)))
+    , unmodifiedAB run (ClaimState.Claimed (MockClaim (A, B)))
+    , unmodifiedAB run (ClaimState.Remaining (MockClaim (A, B)))
     ]
   where
-    run = runTransitionRule [] [] Prim.Begin
-    unmodified :: HasCallStack => MockClaimState -> TestTree
-    unmodified state = run state `equals_` [(state, mempty)]
-    done :: HasCallStack => MockClaimState -> TestTree
-    done state = run state `satisfies_` null
+    run _ = runTransitionRule [] [] Prim.Begin
+    done :: MockClaimState -> TestTree
+    done state =
+        testCase "null when done" $ run [] state >>= assertBool "" . null
 
 test_transitionRule_CheckImplication :: [TestTree]
 test_transitionRule_CheckImplication =
-    [ unmodified ClaimState.Proven
-    , unmodified (ClaimState.Stuck (MockClaim (A, B)))
+    [ unmodifiedAB run ClaimState.Proven
+    , unmodifiedAB run (ClaimState.Stuck (MockClaim (A, B)))
     , ClaimState.Claimed (MockClaim (B, B))
         `becomes` (ClaimState.Proven, mempty)
     ]
   where
-    run = runTransitionRule [] [] Prim.CheckImplication
-    unmodified :: HasCallStack => MockClaimState -> TestTree
-    unmodified state = run state `equals_` [(state, mempty)]
-    becomes initial final = run initial `equals_` [final]
+    run _rs = runTransitionRule [] [] Prim.CheckImplication
+    initial `becomes` final =
+        testCase "becomes" $
+            run [] initial >>= assertEqual "" [final]
 
 test_transitionRule_ApplyClaims :: [TestTree]
 test_transitionRule_ApplyClaims =
-    [ unmodified ClaimState.Proven
-    , unmodified (ClaimState.Rewritten (MockClaim (A, B)))
+    [ unmodifiedAB run ClaimState.Proven
+    , unmodifiedAB run (ClaimState.Rewritten (MockClaim (A, B)))
     , [Rule (A, C)]
         `derives` [ (,)
                         (ClaimState.Rewritten (MockClaim (C, C)))
@@ -166,21 +154,12 @@ test_transitionRule_ApplyClaims =
   where
     run rules =
         runTransitionRule (map (MockClaim . unRule) rules) [] Prim.ApplyClaims
-    unmodified :: HasCallStack => MockClaimState -> TestTree
-    unmodified state = run [Rule (A, B)] state `equals_` [(state, mempty)]
-    derives ::
-        HasCallStack =>
-        -- rules to apply in parallel
-        [MockRule] ->
-        -- transitions
-        [(MockClaimState, Seq MockAppliedRule)] ->
-        TestTree
-    derives rules = equals_ (run rules $ ClaimState.Claimed (MockClaim (A, C)))
+    derives = derivesFrom run $ ClaimState.Claimed (MockClaim (A, C))
 
 test_transitionRule_ApplyAxioms :: [TestTree]
 test_transitionRule_ApplyAxioms =
-    [ unmodified ClaimState.Proven
-    , unmodified (ClaimState.Rewritten (MockClaim (A, B)))
+    [ unmodifiedAB run ClaimState.Proven
+    , unmodifiedAB run (ClaimState.Rewritten (MockClaim (A, B)))
     , [Rule (A, C)]
         `derives` [ (,)
                         (ClaimState.Rewritten (MockClaim (C, C)))
@@ -197,17 +176,30 @@ test_transitionRule_ApplyAxioms =
   where
     run rules = runTransitionRule [] [rules] Prim.ApplyAxioms
     axiom = AppliedAxiom . Rule
-    unmodified :: HasCallStack => MockClaimState -> TestTree
-    unmodified state = run [Rule (A, B)] state `equals_` [(state, mempty)]
-    derives ::
-        HasCallStack =>
-        -- rules to apply in parallel
-        [MockRule] ->
-        -- transitions
-        [(MockClaimState, Seq MockAppliedRule)] ->
-        TestTree
-    derives rules =
-        equals_ (run rules $ ClaimState.Remaining (MockClaim (A, C)))
+    derives = derivesFrom run $ ClaimState.Remaining (MockClaim (A, C))
+
+unmodifiedAB ::
+    (Diff a, Diff b, Debug a, Debug b, Monoid b) =>
+    ([Rule MockClaim] -> a -> IO [(a, b)]) ->
+    a ->
+    TestTree
+unmodifiedAB run state =
+    testCase "unmodified" $
+        run [Rule (A, B)] state >>= assertEqual "" [(state, mempty)]
+
+derivesFrom ::
+    HasCallStack =>
+    ([MockRule] -> MockClaimState -> IO [(MockClaimState, Seq MockAppliedRule)]) ->
+    -- start state
+    MockClaimState ->
+    -- rules to apply in parallel
+    [MockRule] ->
+    -- transitions
+    [(MockClaimState, Seq MockAppliedRule)] ->
+    TestTree
+derivesFrom run state rules result =
+    testCase "derives" $
+        run rules state >>= assertEqual "" result
 
 test_runStrategy :: [TestTree]
 test_runStrategy =
@@ -231,11 +223,10 @@ test_runStrategy =
     run ::
         [MockRule] ->
         MockRule ->
-        Strategy.ExecutionGraph MockClaimState MockAppliedRule
+        IO (Strategy.ExecutionGraph MockClaimState MockAppliedRule)
     run axioms goal =
-        runIdentity
-            . unAllPathIdentity
-            $ Strategy.runStrategy
+        testRunSimplifier Mock.env $
+            Strategy.runStrategy
                 Unlimited
                 (Claim.transitionRule Claim.EnabledStuckCheck [MockClaim (unRule goal)] [axioms])
                 (toList Claim.strategy)
@@ -250,10 +241,9 @@ test_runStrategy =
         [MockClaim] ->
         TestTree
     disproves axioms (MockClaim goal) unproven =
-        equals
-            (unprovenNodes $ run axioms (Rule goal))
-            unproven
-            (show axioms ++ " disproves " ++ show goal)
+        testCase (show axioms ++ " disproves " ++ show goal) $
+            run axioms (Rule goal) >>= assertEqual "" unproven . unprovenNodes
+
     proves ::
         HasCallStack =>
         -- Axioms
@@ -262,10 +252,8 @@ test_runStrategy =
         MockClaim ->
         TestTree
     proves axioms (MockClaim goal) =
-        satisfies
-            (run axioms (Rule goal))
-            proven
-            (show axioms ++ " proves " ++ show goal)
+        testCase (show axioms ++ " proves " ++ show goal) $
+            run axioms (Rule goal) >>= assertBool "" . proven
 
 -- * Definitions
 
@@ -318,7 +306,7 @@ difference a b
     | otherwise = a
 
 newtype MockClaim = MockClaim {unMockClaim :: (K, K)}
-    deriving stock (Eq, Ord)
+    deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
@@ -382,36 +370,10 @@ runTransitionRule ::
     [[MockRule]] ->
     Prim ->
     MockClaimState ->
-    [(MockClaimState, Seq MockAppliedRule)]
+    IO [(MockClaimState, Seq MockAppliedRule)]
 runTransitionRule claims axiomGroups prim state =
-    (runIdentity . unAllPathIdentity . runTransitionT)
+    (testRunSimplifier Mock.env . runTransitionT)
         (Claim.transitionRule Claim.EnabledStuckCheck claims axiomGroups prim state)
-
-newtype AllPathIdentity a = AllPathIdentity {unAllPathIdentity :: Identity a}
-    deriving newtype (Functor, Applicative, Monad)
-
-instance MonadLog AllPathIdentity where
-    logEntry = undefined
-    logWhile _ = undefined
-
-instance MonadSMT AllPathIdentity where
-    withSolver = undefined
-    liftSMT = undefined
-
-instance MonadThrow AllPathIdentity where
-    throwM _ = error "Unimplemented"
-
-instance MonadCatch AllPathIdentity where
-    catch action _handler = action
-
-instance MonadSimplify AllPathIdentity where
-    liftSimplifier = undefined
-    simplifyCondition = undefined
-    localAxiomEquations = undefined
-    askMemo = undefined
-
-instance MonadIO AllPathIdentity where
-    liftIO _ = error "Unimplemented"
 
 differentLengthPaths :: [MockRule]
 differentLengthPaths =
