@@ -58,6 +58,9 @@ import Kore.Rewrite.RulePattern (
  )
 import Kore.Rewrite.RulePattern qualified as RulePattern
 import Kore.Rewrite.Step qualified as Step
+import Kore.Unification.Procedure (
+    runUnifier,
+ )
 import Kore.Variables.Fresh (
     nextName,
  )
@@ -145,7 +148,7 @@ unifyRule ::
     IO [Step.UnifiedRule rule]
 unifyRule initial rule =
     Step.unifyRule SideCondition.top initial rule
-        & Logic.observeAllT
+        & runUnifier
         & testRunSimplifier Mock.env
 
 claimPatternFromPatterns ::
