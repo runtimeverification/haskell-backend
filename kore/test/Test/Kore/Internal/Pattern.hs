@@ -78,7 +78,7 @@ type TestPattern = Pattern VariableName
 
 internalPatternGen :: Gen TestPattern
 internalPatternGen =
-    Pattern.fromTermLike <$> (termLikeChildGen =<< sortGen)
+    Pattern.parsePatternFromTermLike <$> (termLikeChildGen =<< sortGen)
 
 test_toFromTermLike :: [TestTree]
 test_toFromTermLike =
