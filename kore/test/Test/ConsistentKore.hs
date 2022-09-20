@@ -802,8 +802,8 @@ symbolGenerator
                     | Attribute.Symbol.isFunction symbolAttributes =
                         withoutConnectives
                     | otherwise = id
-                -- TODO (virgil): also allow constructor-like
-                -- stuff with variables.
+            -- TODO (virgil): also allow constructor-like
+            -- stuff with variables.
             maybeTerms <- restrict $ mapM termGenerator applicationSortsOperands
             return (mkApplySymbol symbol <$> sequenceA maybeTerms)
 symbolGenerator
