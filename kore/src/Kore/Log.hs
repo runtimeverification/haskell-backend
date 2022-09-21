@@ -113,6 +113,9 @@ withMainLogger reportDirectory koreLogOptions = runContT $ do
                 & koreLogTransformer koreLogOptions
     pure logAction
 
+{- | Checks if the user supplied path for logging exists. If it doesn't, or if the file
+    already exists, will return a default logging location at ./[exe-name]-[prefix]-[timestamp].log
+-}
 checkLogFilePath :: ExeName -> String -> FilePath -> IO FilePath
 checkLogFilePath exeName prefix logFile = do
     pathExists <- doesDirectoryExist $ takeDirectory logFile
