@@ -100,11 +100,11 @@ import Kore.Simplify.API (
 import Kore.Syntax.Module (
     ModuleName (..),
  )
-import Kore.Unification.Procedure (
-    runUnifier,
- )
 import Kore.Unification.NewUnifier (
     NewUnifier,
+ )
+import Kore.Unification.Procedure (
+    runUnifier,
  )
 import Logic
 import Numeric.Natural

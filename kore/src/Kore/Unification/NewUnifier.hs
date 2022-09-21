@@ -40,10 +40,10 @@ import Data.Either (
     lefts,
     rights,
  )
-import Data.HashMap.Strict qualified as HashMap
 import Data.HashMap.Strict (
     HashMap,
  )
+import Data.HashMap.Strict qualified as HashMap
 import Data.IntMap (
     IntMap,
  )
