@@ -58,17 +58,17 @@ import System.Clock (
     toNanoSecs,
  )
 import System.Directory (
-    doesFileExist,
     doesDirectoryExist,
+    doesFileExist,
  )
 import System.FilePath (
+    takeDirectory,
     (<.>),
     (</>),
-    takeDirectory,
  )
 import System.IO (
     hPutStrLn,
-    stderr
+    stderr,
  )
 
 -- | Internal type used to add timestamps to a 'LogMessage'.
@@ -113,7 +113,6 @@ withMainLogger reportDirectory koreLogOptions = runContT $ do
                 & koreLogTransformer koreLogOptions
     pure logAction
 
-
 checkLogFilePath :: ExeName -> String -> FilePath -> IO FilePath
 checkLogFilePath exeName prefix logFile = do
     pathExists <- doesDirectoryExist $ takeDirectory logFile
@@ -123,16 +122,21 @@ checkLogFilePath exeName prefix logFile = do
     if not pathExists
         then do
             hPutStrLn stderr $
-                getExeName exeName <> ": Warning: the path '" <> takeDirectory logFile <>
-                "' does not exist. Logging to '" <> defaultLogFile <> "' instead."
+                getExeName exeName <> ": Warning: the path '" <> takeDirectory logFile
+                    <> "' does not exist. Logging to '"
+                    <> defaultLogFile
+                    <> "' instead."
             pure defaultLogFile
-        else if fileExists
-            then do
-                hPutStrLn stderr $
-                    getExeName exeName <> ": Warning: the file '" <> logFile <>
-                    "' already exists. Logging to '" <> defaultLogFile <> "' instead."
-                pure defaultLogFile
-            else pure logFile
+        else
+            if fileExists
+                then do
+                    hPutStrLn stderr $
+                        getExeName exeName <> ": Warning: the file '" <> logFile
+                            <> "' already exists. Logging to '"
+                            <> defaultLogFile
+                            <> "' instead."
+                    pure defaultLogFile
+                else pure logFile
 
 withSmtSolverLogger ::
     ExeName -> DebugSolverOptions -> (LogAction IO SomeEntry -> IO a) -> IO a
