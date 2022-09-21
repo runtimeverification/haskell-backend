@@ -57,9 +57,18 @@ import System.Clock (
     getTime,
     toNanoSecs,
  )
+import System.Directory (
+    doesFileExist,
+    doesDirectoryExist,
+ )
 import System.FilePath (
     (<.>),
     (</>),
+    takeDirectory,
+ )
+import System.IO (
+    hPutStrLn,
+    stderr
  )
 
 -- | Internal type used to add timestamps to a 'LogMessage'.
@@ -75,8 +84,8 @@ withLogger ::
     IO a
 withLogger reportDirectory koreLogOptions = runContT $ do
     mainLogger <- ContT $ withMainLogger reportDirectory koreLogOptions
-    let KoreLogOptions{debugSolverOptions} = koreLogOptions
-    smtSolverLogger <- ContT $ withSmtSolverLogger debugSolverOptions
+    let KoreLogOptions{exeName, debugSolverOptions} = koreLogOptions
+    smtSolverLogger <- ContT $ withSmtSolverLogger exeName debugSolverOptions
     let KoreLogOptions{logSQLiteOptions} = koreLogOptions
     logSQLite <- ContT $ withLogSQLite logSQLiteOptions
     return $ mainLogger <> smtSolverLogger <> logSQLite
@@ -93,7 +102,8 @@ withMainLogger reportDirectory koreLogOptions = runContT $ do
     userLogAction <-
         case logType koreLogOptions of
             LogStdErr -> pure Colog.logTextStderr
-            LogFileText logFile -> ContT $ Colog.withLogTextFile logFile
+            LogFileText logFile -> do
+                lift (checkLogFilePath exeName "" logFile) >>= ContT . Colog.withLogTextFile
     let KoreLogOptions{timestampsSwitch} = koreLogOptions
         KoreLogOptions{logFormat} = koreLogOptions
         logAction =
@@ -103,12 +113,34 @@ withMainLogger reportDirectory koreLogOptions = runContT $ do
                 & koreLogTransformer koreLogOptions
     pure logAction
 
+
+checkLogFilePath :: ExeName -> String -> FilePath -> IO FilePath
+checkLogFilePath exeName prefix logFile = do
+    pathExists <- doesDirectoryExist $ takeDirectory logFile
+    fileExists <- doesFileExist logFile
+    currentTime <- (`div` 1000) . toNanoSecs <$> getTime Monotonic
+    let defaultLogFile = "." </> (getExeName exeName <> "-" <> prefix <> "-" <> show currentTime) <.> "log"
+    if not pathExists
+        then do
+            hPutStrLn stderr $
+                getExeName exeName <> ": Warning: the path '" <> takeDirectory logFile <>
+                "' does not exist. Logging to '" <> defaultLogFile <> "' instead."
+            pure defaultLogFile
+        else if fileExists
+            then do
+                hPutStrLn stderr $
+                    getExeName exeName <> ": Warning: the file '" <> logFile <>
+                    "' already exists. Logging to '" <> defaultLogFile <> "' instead."
+                pure defaultLogFile
+            else pure logFile
+
 withSmtSolverLogger ::
-    DebugSolverOptions -> (LogAction IO SomeEntry -> IO a) -> IO a
-withSmtSolverLogger DebugSolverOptions{logFile} continue =
+    ExeName -> DebugSolverOptions -> (LogAction IO SomeEntry -> IO a) -> IO a
+withSmtSolverLogger exeName DebugSolverOptions{logFile} continue =
     case logFile of
         Nothing -> continue mempty
-        Just filename -> do
+        Just filename' -> do
+            filename <- checkLogFilePath exeName "smt" filename'
             writeFile filename ""
             Colog.withLogTextFile
                 filename
