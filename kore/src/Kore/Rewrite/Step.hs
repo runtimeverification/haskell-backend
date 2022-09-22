@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
@@ -68,23 +70,21 @@ import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.DebugAttemptedRewriteRules (
     debugAttemptedRewriteRule,
  )
+import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Rewrite.Result qualified as Result
 import Kore.Rewrite.Result qualified as Results
 import Kore.Rewrite.Result qualified as Step
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Rewrite.UnifyingRule
-import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    Simplifier,
     liftSimplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.TopBottom qualified as TopBottom
 import Kore.Unification.Procedure
-import Kore.Unification.UnifierT (
-    evalEnvUnifierT,
- )
 import Kore.Unparser
 import Kore.Variables.Target (
     Target,
@@ -111,7 +111,6 @@ type Results rule =
 
 -- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.
 unifyRules ::
-    MonadSimplify simplifier =>
     UnifyingRule rule =>
     UnifyingRuleVariable rule ~ RewritingVariableName =>
     From rule SourceLocation =>
@@ -121,7 +120,7 @@ unifyRules ::
     Pattern RewritingVariableName ->
     -- | Rule
     [rule] ->
-    simplifier [UnifiedRule rule]
+    Simplifier [UnifiedRule rule]
 unifyRules sideCondition initial rules =
     Logic.observeAllT
         ( do
@@ -146,7 +145,6 @@ unification. The substitution is not applied to the renamed rule.
 -}
 unifyRule ::
     RewritingVariableName ~ UnifyingRuleVariable rule =>
-    MonadSimplify simplifier =>
     UnifyingRule rule =>
     From rule SourceLocation =>
     -- | SideCondition containing metadata
@@ -155,7 +153,7 @@ unifyRule ::
     Pattern RewritingVariableName ->
     -- | Rule
     rule ->
-    LogicT simplifier (UnifiedRule rule)
+    LogicT Simplifier (UnifiedRule rule)
 unifyRule sideCondition initial rule = do
     debugAttemptedRewriteRule initial (location rule)
     ruleMarker "Init"
@@ -169,7 +167,6 @@ unifyRule sideCondition initial rule = do
     ruleMarker "Unify"
     unification <-
         unificationProcedure sideCondition' initialTerm ruleLeft
-            & evalEnvUnifierT Not.notSimplifier
     -- Combine the unification solution with the rule's requirement clause,
     ruleMarker "CheckSide"
     let ruleRequires = precondition rule
@@ -304,7 +301,7 @@ applyInitialConditions sideCondition initial unification = do
         -- the side condition!
         Simplifier.simplifyCondition sideCondition (initial <> unification)
             & MultiOr.gather
-    evaluated <- liftSimplifier $ SMT.Evaluator.filterMultiOr applied
+    evaluated <- liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc applied
     -- If 'evaluated' is \bottom, the rule is considered to not apply and
     -- no result is returned. If the result is \bottom after this check,
     -- then the rule is considered to apply with a \bottom result.

@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
@@ -17,10 +19,6 @@ module Kore.Rewrite (
 
     -- * Re-exports
     Natural,
-    Strategy,
-    pickLongest,
-    pickFinal,
-    runStrategy,
 ) where
 
 import Control.Monad (
@@ -44,6 +42,7 @@ import Kore.Debug
 import Kore.Internal.Pattern (
     Pattern,
  )
+import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Rewrite.Result qualified as Result
 import Kore.Rewrite.RewriteStep qualified as Step
 import Kore.Rewrite.RewritingVariable
@@ -124,29 +123,27 @@ retractRemaining (Remaining a) = Just a
 retractRemaining _ = Nothing
 
 -- | The sequence of transitions for the symbolic execution strategy.
-executionStrategy :: Stream (Strategy Prim)
+executionStrategy :: Stream (Step Prim)
 executionStrategy =
     step1 Stream.:> Stream.iterate id stepN
   where
     step1 =
-        (Strategy.sequence . fmap Strategy.apply)
-            [ Begin
-            , Simplify
-            , Rewrite
-            , Simplify
-            ]
+        [ Begin
+        , Simplify
+        , Rewrite
+        , Simplify
+        ]
     stepN =
-        (Strategy.sequence . fmap Strategy.apply)
-            [ Begin
-            , Rewrite
-            , Simplify
-            ]
+        [ Begin
+        , Rewrite
+        , Simplify
+        ]
 
 {- | The sequence of transitions under the specified depth limit.
 
 See also: 'executionStrategy'
 -}
-limitedExecutionStrategy :: Limit Natural -> [Strategy Prim]
+limitedExecutionStrategy :: Limit Natural -> [Step Prim]
 limitedExecutionStrategy depthLimit =
     Limit.takeWithin depthLimit (toList executionStrategy)
 
@@ -201,7 +198,7 @@ transitionRule rewriteGroups = transitionRuleWorker
 
     transitionSimplify prim config = do
         configs <- lift $ Pattern.simplifyTopConfiguration config
-        filteredConfigs <- liftSimplifier $ SMT.Evaluator.filterMultiOr configs
+        filteredConfigs <- liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc configs
         if isBottom filteredConfigs
             then pure Bottom
             else prim <$> asum (pure <$> toList filteredConfigs)
@@ -224,7 +221,7 @@ transitionRule rewriteGroups = transitionRuleWorker
 
     transitionAnyRewrite config = do
         let rules = concat rewriteGroups
-        results <- Step.applyRewriteRulesSequence config rules
+        results <- Step.applyRewriteRulesSequence config rules & lift
         deriveResults results
 
 deriveResults ::

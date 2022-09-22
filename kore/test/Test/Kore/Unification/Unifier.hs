@@ -240,13 +240,13 @@ unificationProcedureSuccess
         testCase message $ do
             let mockEnv = testEnv
             results <-
-                unificationProcedure
-                    SideCondition.topTODO
-                    term1
-                    term2
-                    & Monad.Unify.runUnifierT Not.notSimplifier
-                    & runSimplifier mockEnv
-                    & runNoSMT
+                runNoSMT
+                    . runSimplifier mockEnv
+                    . Monad.Unify.observeAllT
+                    $ unificationProcedure
+                        SideCondition.topTODO
+                        term1
+                        term2
             let normalize ::
                     Condition RewritingVariableName ->
                     ( [Substitution.Assignment RewritingVariableName]

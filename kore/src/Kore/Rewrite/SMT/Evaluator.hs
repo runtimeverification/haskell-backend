@@ -65,8 +65,10 @@ import Kore.Log.DebugEvaluateCondition (
 import Kore.Log.DebugRetrySolverQuery (
     debugRetrySolverQuery,
  )
-import Kore.Log.ErrorDecidePredicateUnknown (
-    errorDecidePredicateUnknown,
+import Kore.Log.DecidePredicateUnknown (
+    Loc,
+    OnDecidePredicateUnknown (..),
+    throwDecidePredicateUnknown,
  )
 import Kore.Rewrite.SMT.Translate
 import Kore.Simplify.Simplify as Simplifier
@@ -92,30 +94,32 @@ import SMT.SimpleSMT qualified as SimpleSMT
 -}
 evalPredicate ::
     InternalVariable variable =>
+    OnDecidePredicateUnknown ->
     Predicate variable ->
     Maybe (SideCondition variable) ->
     Simplifier (Maybe Bool)
-evalPredicate predicate sideConditionM = case predicate of
+evalPredicate onUnknown predicate sideConditionM = case predicate of
     Predicate.PredicateTrue -> return $ Just True
     Predicate.PredicateFalse -> return $ Just False
     _ -> case sideConditionM of
         Nothing ->
             predicate :| []
-                & decidePredicate SideCondition.top
+                & decidePredicate onUnknown SideCondition.top
         Just sideCondition ->
             predicate :| [from @_ @(Predicate _) sideCondition]
-                & decidePredicate sideCondition
+                & decidePredicate onUnknown sideCondition
 
 {- | Attempt to evaluate the 'Conditional' argument with an optional side
  condition using an external SMT solver.
 -}
 evalConditional ::
     InternalVariable variable =>
+    OnDecidePredicateUnknown ->
     Conditional variable term ->
     Maybe (SideCondition variable) ->
     Simplifier (Maybe Bool)
-evalConditional conditional sideConditionM =
-    evalPredicate predicate sideConditionM
+evalConditional onUnknown conditional sideConditionM =
+    evalPredicate onUnknown predicate sideConditionM
         & assert (Conditional.isNormalized conditional)
   where
     predicate = case sideConditionM of
@@ -129,9 +133,10 @@ filterMultiOr ::
     , TopBottom term
     , InternalVariable variable
     ) =>
+    Loc ->
     MultiOr (Conditional variable term) ->
     Simplifier (MultiOr (Conditional variable term))
-filterMultiOr multiOr = do
+filterMultiOr hsLoc multiOr = do
     elements <- mapM refute (toList multiOr)
     return (MultiOr.make (catMaybes elements))
   where
@@ -139,7 +144,7 @@ filterMultiOr multiOr = do
         Conditional variable term ->
         Simplifier (Maybe (Conditional variable term))
     refute p =
-        evalConditional p Nothing <&> \case
+        evalConditional (ErrorDecidePredicateUnknown hsLoc Nothing) p Nothing <&> \case
             Nothing -> Just p
             Just False -> Nothing
             Just True -> Just p
@@ -150,24 +155,32 @@ The predicate is always sent to the external solver, even if it is trivial.
 -}
 decidePredicate ::
     forall variable.
+    OnDecidePredicateUnknown ->
     InternalVariable variable =>
     SideCondition variable ->
     NonEmpty (Predicate variable) ->
     Simplifier (Maybe Bool)
-decidePredicate sideCondition predicates =
-    whileDebugEvaluateCondition predicates go
-  where
-    go =
+decidePredicate onUnknown sideCondition predicates =
+    whileDebugEvaluateCondition predicates $
         do
             result <- query >>= whenUnknown retry
             debugEvaluateConditionResult result
             case result of
                 Unsat -> return False
                 Sat -> empty
-                Unknown ->
-                    errorDecidePredicateUnknown predicates
+                Unknown -> do
+                    limit <- SMT.withSolver SMT.askRetryLimit
+                    -- depending on the value of `onUnknown`, this call will either log a warning
+                    -- or throw an error
+                    throwDecidePredicateUnknown onUnknown limit predicates
+                    case onUnknown of
+                        WarnDecidePredicateUnknown _ _ ->
+                            -- the solver may be in an inconsistent state, so we re-initialize
+                            SMT.reinit
+                        _ -> pure ()
+                    empty
             & runMaybeT
-
+  where
     whenUnknown f Unknown = f
     whenUnknown _ result = return result
 

@@ -60,7 +60,7 @@ instance Pretty ErrorEquationRightFunction where
             ]
 
 instance Exception ErrorEquationRightFunction where
-    toException = toException . SomeEntry
+    toException = toException . SomeEntry []
     fromException exn =
         fromException exn >>= fromEntry
 

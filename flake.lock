@@ -390,6 +390,21 @@
         "type": "github"
       }
     },
+    "nixpkgs22_05": {
+      "locked": {
+        "lastModified": 1662099760,
+        "narHash": "sha256-MdZLCTJPeHi/9fg6R9fiunyDwP3XHJqDd51zWWz9px0=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "67e45078141102f45eff1589a831aeaa3182b41e",
+        "type": "github"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "ref": "nixos-22.05",
+        "type": "indirect"
+      }
+    },
     "nixpkgs_2": {
       "locked": {
         "lastModified": 1643805626,
@@ -446,6 +461,7 @@
           "haskell-nix",
           "nixpkgs-unstable"
         ],
+        "nixpkgs22_05": "nixpkgs22_05",
         "z3-src": "z3-src"
       }
     },

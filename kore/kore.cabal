@@ -170,6 +170,7 @@ common library
   build-depends: multiset >=0.3.4.3
   build-depends: optparse-applicative >=0.14
   build-depends: parser-combinators >=1.1
+  build-depends: pqueue >=1.4.1.3
   build-depends: prettyprinter >=1.2
   build-depends: process >=1.6
   build-depends: profunctors >=5.3
@@ -368,8 +369,8 @@ library
     Kore.Log.DebugTransition
     Kore.Log.DebugUnification
     Kore.Log.DebugUnifyBottom
+    Kore.Log.DecidePredicateUnknown
     Kore.Log.ErrorBottomTotalFunction
-    Kore.Log.ErrorDecidePredicateUnknown
     Kore.Log.ErrorEquationRightFunction
     Kore.Log.ErrorEquationsSameMatch
     Kore.Log.ErrorException
@@ -392,6 +393,7 @@ library
     Kore.Log.WarnDepthLimitExceeded
     Kore.Log.WarnFunctionWithoutEvaluators
     Kore.Log.WarnIfLowProductivity
+    Kore.Log.WarnNotAPredicate
     Kore.Log.WarnNotImplemented
     Kore.Log.WarnRestartSolver
     Kore.Log.WarnStuckClaimState
