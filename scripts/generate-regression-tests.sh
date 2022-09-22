@@ -24,9 +24,9 @@ kollect() {
     mv spec.kore $spec
 
     $KORE/scripts/trim-source-paths.sh *.kore
-    gsed -i "s/result.kore/$script.out/g" test-$name.sh
-    gsed -i "s/vdefinition.kore/$def/g" test-$name.sh
-    gsed -i "s/spec.kore/$spec/g" test-$name.sh
+    sed -i "s/result.kore/$script.out/g" test-$name.sh
+    sed -i "s/vdefinition.kore/$def/g" test-$name.sh
+    sed -i "s/spec.kore/$spec/g" test-$name.sh
 
     mv * $KORE/evm-semantics
     cd $KORE/evm-semantics
