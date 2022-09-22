@@ -92,15 +92,14 @@ traceProfSimplify ::
     Pattern RewritingVariableName ->
     prof a ->
     prof a
-traceProfSimplify (Pattern.toTermLike -> termLike) =
-    maybe id traceProf ident
-  where
-    ident =
-        (":simplify:" <>)
-            . Pretty.renderText
-            . Pretty.layoutOneLine
-            . Pretty.pretty
-            <$> matchAxiomIdentifier termLike
+traceProfSimplify =
+    traceProf
+        . (":simplify:" <>)
+        . Pretty.renderText
+        . Pretty.layoutOneLine
+        . Pretty.pretty
+        . matchAxiomIdentifier
+        . Pattern.toTermLike
 
 mkSimplifierEnv ::
     VerifiedModuleSyntax Attribute.Symbol ->

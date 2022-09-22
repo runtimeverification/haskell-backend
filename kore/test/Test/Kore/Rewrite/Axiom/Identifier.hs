@@ -1,11 +1,16 @@
 module Test.Kore.Rewrite.Axiom.Identifier (test_matchAxiomIdentifier) where
 
+import Data.ByteString qualified as ByteString
+import Kore.Internal.InternalBool
+import Kore.Internal.InternalInt
+import Kore.Internal.InternalString
 import Kore.Internal.TermLike (
     TermLike,
     VariableName,
  )
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.Axiom.Identifier
+import Kore.Syntax.DomainValue
 import Prelude.Kore
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Tasty
@@ -32,9 +37,10 @@ test_matchAxiomIdentifier =
             (TermLike.mkCeil Mock.subSort (Mock.f Mock.a))
         )
         (Ceil (Ceil (Application Mock.fId)))
-    , notMatches
+    , matches
         "\\and(f(a), g(a))"
         (TermLike.mkAnd (Mock.f Mock.a) (Mock.g Mock.a))
+        Other
     , matches "x" (TermLike.mkElemVar Mock.x) Variable
     , matches
         "\\equals(x, f(a))"
@@ -57,6 +63,14 @@ test_matchAxiomIdentifier =
                 (Mock.f Mock.a)
         )
         (Exists (Equals Variable (Application Mock.fId)))
+    , matches
+        "\\not(x)"
+        (TermLike.mkNot (TermLike.mkElemVar Mock.x))
+        (Not Variable)
+    , matches
+        "\\not(f(a))"
+        (TermLike.mkNot (Mock.f Mock.a))
+        (Not (Application Mock.fId))
     , testGroup
         "Map"
         [ test
@@ -102,6 +116,32 @@ test_matchAxiomIdentifier =
             (Mock.builtinList [Mock.a, Mock.b])
             (Application Mock.concatListId)
         ]
+    , testGroup
+        "Domain Values"
+        [ test
+            "domain value"
+            ( TermLike.mkDomainValue $
+                DomainValue Mock.testSort $
+                    TermLike.mkStringLiteral "hello"
+            )
+            DV
+        , test
+            "internal string"
+            (TermLike.mkInternalString $ InternalString Mock.testSort "world")
+            DV
+        , test
+            "internal bool"
+            (TermLike.mkInternalBool $ InternalBool Mock.testSort False)
+            DV
+        , test
+            "internal bytes"
+            (TermLike.mkInternalBytes Mock.testSort ByteString.empty)
+            DV
+        , test
+            "internal int"
+            (TermLike.mkInternalInt $ InternalInt Mock.testSort 42)
+            DV
+        ]
     ]
   where
     test name termLike axiomIdentifier =
@@ -116,28 +156,13 @@ test_matchAxiomIdentifier =
       where
         ceilName = "ceil " <> name
 
-match ::
-    HasCallStack =>
-    TestName ->
-    TermLike VariableName ->
-    Maybe AxiomIdentifier ->
-    TestTree
-match name input expect =
-    testCase name $
-        assertEqual "" expect $
-            matchAxiomIdentifier input
-
 matches ::
     HasCallStack =>
     TestName ->
     TermLike VariableName ->
     AxiomIdentifier ->
     TestTree
-matches name input expect = match ("matches " ++ name) input (Just expect)
-
-notMatches ::
-    HasCallStack =>
-    TestName ->
-    TermLike VariableName ->
-    TestTree
-notMatches name input = match ("does not match " ++ name) input Nothing
+matches name input expect =
+    testCase ("matches " ++ name) $
+        assertEqual "" expect $
+            matchAxiomIdentifier input
