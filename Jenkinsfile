@@ -20,11 +20,6 @@ pipeline {
   options {
     ansiColor('xterm')
   }
-  triggers {
-    parameterizedCron('''
-      H H * * 0 % STAGE=UPDATE-TESTS
-    ''')
-  }
   environment {
     LONG_REV = """${sh(returnStdout: true, script: 'git rev-parse HEAD').trim()}"""
   }
