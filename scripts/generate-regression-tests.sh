@@ -24,7 +24,7 @@ kollect() {
     mv spec.kore $spec
 
     $KORE/scripts/trim-source-paths.sh *.kore
-    gsed -i "s/result.kore/$script/g" test-$name.sh
+    gsed -i "s/result.kore/$script.out/g" test-$name.sh
     gsed -i "s/vdefinition.kore/$def/g" test-$name.sh
     gsed -i "s/spec.kore/$spec/g" test-$name.sh
 
@@ -86,6 +86,7 @@ replace-tests() {
         echo "test-%.sh.out: \$(TEST_DIR)/test-%-*" >> $testdir/Makefile
     fi
     mv $tests $testdir
+}
 
 build-evm
 generate-evm
