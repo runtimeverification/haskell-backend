@@ -28,6 +28,7 @@ import Kore.Internal.MultiAnd (
  )
 import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.MultiOr qualified as MultiOr
+import Kore.Internal.MultiOr (MultiOr)
 import Kore.Internal.NormalForm (NormalForm)
 import Kore.Internal.NormalForm qualified as NormalForm
 import Kore.Internal.OrCondition (
