@@ -70,6 +70,9 @@ generate-evm() {
 
     make tests/specs/mcd/dsvalue-peek-pass-rough-spec.k.prove -s -e
     kollect dsvalue-peek-pass-rough
+
+    make tests/specs/benchmarks/functional-spec.k.prove -s -e
+    kollect functional
 }
 
 replace-tests() {
