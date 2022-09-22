@@ -4,28 +4,20 @@ on:
   # Trigger on Issue created; Run against master branch
   issues:
     types: [opened, edited]
-    branches: 
-      - 'master'
   
   pull_request:
     types: [labeled, edited]
-    branches:
-      - 'master'
 
   # Trigger when an Issue is created or modified; Run against master branch only
   issue_comment:
     types: [created, edited]
     label: ['performance']
-    branches: 
-      - 'master'
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.actor }}
-  cancel-in-progress: true
 
 jobs: 
   Profiling:
-    if: contains(github.event.issue.labels.*.name, 'performance')
+    if: |
+      contains(github.event.issue.labels.*.name, 'performance') &&
+      contains(github.event.comment.body, '.tar.gz')
     runs-on: [Linux, performance]
     env:
       GH_TOKEN: ${{ secrets.ORG_PAT }}
@@ -42,7 +34,7 @@ jobs:
 
           echo "Testing User Org Relationship: $GITHUB_ACTOR"
           gh auth status
-          if ! gh api -H "Accept: application/vnd.github+json" /orgs/runtimeverification/members/$GITHUB_ACTOR; then
+          if ! ; then
             exit 1
           fi
           echo "Context: "
