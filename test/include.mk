@@ -28,7 +28,7 @@ TESTS = \
 	$(wildcard $(TEST_DIR)/*.$(EXT)) \
 	$(wildcard $(TEST_DIR)/*-spec.k) \
 	$(wildcard $(TEST_DIR)/*-spec.stderr) \
-	$(wildcard $(TEST_DIR)/*.sh.out)
+	$(wildcard $(TEST_DIR)/test-*.sh)
 
 OUTS += $(foreach TEST, $(TESTS), $(TEST).out)
 GOLDEN += $(foreach OUT, $(OUTS), $(OUT).golden)
