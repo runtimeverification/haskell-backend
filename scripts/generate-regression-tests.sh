@@ -5,20 +5,32 @@ set -exuo pipefail
 
 kollect() {
     local name="$1"
-    shift
-    echo '#!/bin/sh' > "$name.sh"
-    "$@" | xargs $KORE/scripts/kollect.sh "$name" >> "$name.sh"
-    chmod +x "$name.sh"
-}
 
-kollect-file() {
-    local name="$1"
-    local path="$2"
-    shift 2
-    echo '#!/bin/sh' > "$name.sh"
-    "$@"
-    cat $path | xargs $KORE/scripts/kollect.sh "$name" >> "$name.sh"
-    chmod +x "$name.sh"
+    local archive=kevm-bug-$name.tar.gz
+    local script=test-$name.sh
+    local def=test-$name-definition.kore
+    local spec=test-$name-spec.kore
+    local tmp=$name-tmp
+
+    cd $KORE/evm-semantics
+
+    mkdir $tmp
+    mv $archive $tmp
+    cd $tmp
+    tar -xf $archive
+    rm ./!(kore-exec.sh|spec.kore|vdefinition.kore)
+    mv kore-exec.sh $script
+    mv vdefinition.kore $def
+    mv spec.kore $spec
+
+    $KORE/scripts/trim-source-paths.sh *.kore
+    sed -i "s/result.kore/$script.out/g" test-$name.sh
+    sed -i "s/vdefinition.kore/$def/g" test-$name.sh
+    sed -i "s/spec.kore/$spec/g" test-$name.sh
+
+    mv * $KORE/evm-semantics
+    cd $KORE/evm-semantics
+    rm -rf $tmp
 }
 
 build-evm() {
@@ -31,72 +43,33 @@ build-evm() {
     make build-haskell
 }
 
-build-wasm() {
-    cd $KORE
-    git clone git@github.com:runtimeverification/wasm-semantics.git
-    cd wasm-semantics
-    git submodule update --init --recursive
-    make build-haskell
-}
-
 generate-evm() {
     cd $KORE/evm-semantics
 
     export \
         TEST_CONCRETE_BACKEND=haskell \
         TEST_SYMBOLIC_BACKEND=haskell \
-        TEST_OPTIONS="--dry-run --debug" \
+        KEVM_OPTS=--bug-report \
         CHECK=true \
         KEEP_OUTPUTS=true
 
-    kollect test-sum-to-n \
-        make tests/specs/examples/sum-to-n-spec.k.prove -s -e
+    make tests/specs/examples/sum-to-n-spec.k.prove -s -e
+    kollect sum-to-n
 
-    kollect test-lemmas \
-        make tests/specs/functional/lemmas-spec.k.prove -s -e
+    make tests/specs/functional/lemmas-spec.k.prove -s -e
+    kollect lemmas
 
-    kollect test-storagevar03 \
-        make tests/specs/benchmarks/storagevar03-spec.k.prove -s -e
+    make tests/specs/benchmarks/storagevar03-spec.k.prove -s -e
+    kollect storagevar03
 
-    kollect test-totalSupply \
-        make tests/specs/erc20/ds/totalSupply-spec.k.prove -s -e
+    make tests/specs/erc20/ds/totalSupply-spec.k.prove -s -e
+    kollect totalSupply
 
-    kollect test-addu48u48 \
-        make tests/specs/mcd/flipper-addu48u48-fail-rough-spec.k.prove -s -e
+    make tests/specs/mcd/flipper-addu48u48-fail-rough-spec.k.prove -s -e
+    kollect flipper-addu48u48-fail-rough
 
-    kollect test-dsvalue-peek-pass-rough \
-        make tests/specs/mcd/dsvalue-peek-pass-rough-spec.k.prove -s -e
-
-    $KORE/scripts/trim-source-paths.sh *.kore
-}
-
-generate-wasm() {
-    cd $KORE/wasm-semantics
-
-    for spec in \
-        simple-arithmetic \
-        locals \
-        loops
-    do
-        kollect "test-$spec" \
-            ./kwasm prove --backend haskell \
-                tests/proofs/"$spec"-spec.k \
-                KWASM-LEMMAS --dry-run --save-temps
-    done
-
-    kollect "test-memory" \
-        ./kwasm prove --backend haskell \
-            tests/proofs/memory-spec.k \
-            KWASM-LEMMAS \
-            --concrete-rules WASM-DATA.wrap-Positive,WASM-DATA.setRange-Positive,WASM-DATA.getRange-Positive \
-            --dry-run --save-temps
-
-    kollect "test-wrc20" \
-        ./kwasm prove --backend haskell tests/proofs/wrc20-spec.k WRC20-LEMMAS --format-failures \
-        --concrete-rules WASM-DATA.wrap-Positive,WASM-DATA.setRange-Positive,WASM-DATA.getRange-Positive,WASM-DATA.get-Existing,WASM-DATA.set-Extend \
-        --dry-run --save-temps
-
-    $KORE/scripts/trim-source-paths.sh *.kore
+    make tests/specs/mcd/dsvalue-peek-pass-rough-spec.k.prove -s -e
+    kollect dsvalue-peek-pass-rough
 }
 
 replace-tests() {
@@ -119,9 +92,3 @@ build-evm
 generate-evm
 replace-tests "test/regression-evm" "evm-semantics"
 rm -rf $KORE/evm-semantics
-
-# Temporarily disabled while it is blocked on wasm-semantics/#447.
-#build-wasm
-#generate-wasm
-#replace-tests "test/regression-wasm" "wasm-semantics"
-#rm -rf $KORE/wasm-semantics
