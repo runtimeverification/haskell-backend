@@ -167,7 +167,7 @@ import Kore.Syntax.Variable
 import Kore.TopBottom (
     TopBottom (..),
  )
-import Kore.Unification.Procedure (unificationProcedure)
+import Kore.Unification.Procedure
 import Kore.Unification.UnifierT as UnifierT
 import Kore.Unparser (
     Unparse (..),
@@ -757,7 +757,7 @@ checkSimpleImplication inLeft inRight existentials =
                 -- attempt term unification (to remember the substitution
                 unified <-
                     lift $
-                        Logic.observeAllT $
+                        runUnifier $
                             unificationProcedure SideCondition.top leftTerm rightTerm
 
                 -- for each unification result, attempt to refute the formula
