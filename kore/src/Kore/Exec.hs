@@ -23,6 +23,7 @@ module Kore.Exec (
     Initialized,
     makeSerializedModule,
     SerializedModule (..),
+    StopLabels (..),
 ) where
 
 import Control.Concurrent.MVar
@@ -53,6 +54,8 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import Data.Sequence (Seq)
+import Data.Text (Text)
 import GHC.Generics qualified as GHC
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Definition
@@ -366,16 +369,22 @@ exec
         toTransitionResult prior (s : ss) =
             GraphTraversal.Branch prior (s :| ss)
 
+-- | JSON RPC helper structure for cut points and terminal rules
+data StopLabels = StopLabels
+    { cutPointLabels :: [Text]
+    , terminalLabels :: [Text]
+    }
+
 {- | Version of @kore-exec@ suitable for the JSON RPC server. Cannot
   execute across branches, supports a depth limit, returns the raw
   traversal result for the RPC server to extract response elements.
-
-  TODO modify to implement stopping on given rule IDs/labels
 -}
 rpcExec ::
     Limit Natural ->
     -- | The main module
     SerializedModule ->
+    -- | additional labels/rule names for stopping
+    StopLabels ->
     -- | The input pattern
     TermLike VariableName ->
     SMT
@@ -392,6 +401,7 @@ rpcExec
         , rewrites = Initialized{rewriteRules}
         , equations
         }
+    StopLabels{cutPointLabels, terminalLabels}
     (mkRewritingTerm -> initialTerm) =
         evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations $
             fmap (second $ fmap getRewritingPattern)
@@ -427,16 +437,15 @@ rpcExec
                     )
                 )
         transit =
-            GraphTraversal.simpleTransition
+            GraphTraversal.transitionWithRule
                 ( trackExecDepth . profTransitionRule $
                     transitionRule (groupRewritesByPriority rewriteRules) All
                 )
                 toTransitionResult
 
-        -- TODO modify to implement stopping on given rule IDs/labels
         toTransitionResult ::
             (ExecDepth, ProgramState p) ->
-            [(ExecDepth, ProgramState p)] ->
+            [((ExecDepth, ProgramState p), Seq (RewriteRule RewritingVariableName))] ->
             ( GraphTraversal.TransitionResult
                 (ExecDepth, ProgramState p)
             )
@@ -447,14 +456,14 @@ rpcExec
                 -- returns `Final` to signal that no instructions were left.
                 Start _ -> GraphTraversal.Final prior
                 Rewritten _ -> GraphTraversal.Final prior
-        toTransitionResult _prior [next] =
+        toTransitionResult _prior [(next, _rules)] =
             case snd next of
                 Start _ -> GraphTraversal.Continuing next
                 Rewritten _ -> GraphTraversal.Continuing next
                 Remaining _ -> GraphTraversal.Stuck next
                 Kore.Rewrite.Bottom -> GraphTraversal.Stuck next
         toTransitionResult prior (s : ss) =
-            GraphTraversal.Branch prior (s :| ss)
+            GraphTraversal.Branch prior $ fmap fst (s :| ss)
 
 -- | Modify a 'TransitionRule' to track the depth of the execution graph.
 trackExecDepth ::

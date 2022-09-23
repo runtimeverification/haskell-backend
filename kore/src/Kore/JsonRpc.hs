@@ -230,7 +230,7 @@ respond ::
     Respond (API 'Req) m (API 'Res)
 respond runSMT serializedModule =
     withErrHandler . \case
-        Execute ExecuteRequest{state, maxDepth} ->
+        Execute ExecuteRequest{state, maxDepth, cutPointRules, terminalRules} ->
             case PatternVerifier.runPatternVerifier context $
                 PatternVerifier.verifyStandalonePattern Nothing $
                     PatternJson.toParsedPattern $ PatternJson.term state of
@@ -242,6 +242,7 @@ respond runSMT serializedModule =
                                 Exec.rpcExec
                                     (maybe Unlimited (\(Depth n) -> Limit n) maxDepth)
                                     serializedModule
+                                    (toStopLabels cutPointRules terminalRules)
                                     verifiedPattern
                             )
 
@@ -250,6 +251,10 @@ respond runSMT serializedModule =
             context =
                 PatternVerifier.verifiedModuleContext verifiedModule
                     & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
+
+            toStopLabels :: Maybe [Text] -> Maybe [Text] -> Exec.StopLabels
+            toStopLabels cpRs tRs =
+                Exec.StopLabels (fromMaybe [] cpRs) (fromMaybe [] tRs)
 
             buildResult ::
                 TermLike.Sort ->
@@ -280,7 +285,8 @@ respond runSMT serializedModule =
                                 , nextStates = Nothing
                                 }
                 GraphTraversal.Stopped [(ExecDepth depth, result)] nexts ->
-                    -- TODO add rule information, decide terminal or cut-point
+                    -- TODO add rule information to decide terminal or cut-point
+                    -- result needs to contain the exact rule name, no heuristics possible.
                     Right $
                         Execute $
                             ExecuteResult
