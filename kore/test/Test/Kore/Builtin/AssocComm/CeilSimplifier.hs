@@ -129,6 +129,9 @@ hprop_Builtin_Set :: Property
                     , opaqueMap3
                     ]
            in test "frames are disjoint" original expect
+        , let original = Mock.framedMap [(Mock.b, Mock.constr10 Mock.a)] []
+              expect = []
+           in test "map is known to be defined" original expect
         ]
 
     testsSet =
@@ -199,6 +202,7 @@ propertyBuiltinAssocComm
             elements <- forAll genElements
             let original = mkAssocComm elements opaques
                 keys = elementKey <$> elements
+            when (isDefined original) discard
             actualPredicates <- (liftIO . makeEvaluate) original
             let expectDefinedElements = elements >>= defineElement
 
@@ -235,6 +239,8 @@ propertyBuiltinAssocComm
         zipWithTails :: (a -> a -> b) -> [a] -> [b]
         zipWithTails _ [] = []
         zipWithTails f (x : xs) = map (f x) xs ++ zipWithTails f xs
+
+        isDefined = SideCondition.isDefined SideCondition.top
 
 makeNotEqualsPredicate ::
     TermLike RewritingVariableName ->
