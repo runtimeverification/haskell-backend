@@ -211,6 +211,8 @@
           profiling-script = pkgs.callPackage ./nix/run-profiling.nix {
             inherit (pkgs.haskellPackages)
               hp2pretty hs-speedscope eventlog2html;
+            kore-exec =
+              self.project.${system}.hsPkgs.kore.components.exes.kore-exec;
             kore-exec-prof =
               self.projectProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
             kore-exec-infotable =

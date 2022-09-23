@@ -175,8 +175,11 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           submodules: recursive
 
+      - name: Download hlint
+        run: curl -sSL https://github.com/ndmitchell/hlint/releases/download/v${{ env.hlint_version }}/hlint-${{ env.hlint_version }}-x86_64-linux.tar.gz | tar xvz
+
       - name: Run hlint
-        run: curl -sSL https://raw.github.com/ndmitchell/hlint/v${{ env.hlint_version }}/misc/run.sh | sh -s kore -j
+        run: hlint-${{ env.hlint_version }}/hlint kore -j
 
   performance:
     needs: [nix-build]
