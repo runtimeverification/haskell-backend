@@ -258,49 +258,76 @@ respond runSMT serializedModule =
 
             buildResult ::
                 TermLike.Sort ->
-                GraphTraversal.TraversalResult
-                    (ExecDepth, ProgramState (Pattern TermLike.VariableName)) ->
+                GraphTraversal.TraversalResult (Exec.RpcExecState TermLike.VariableName) ->
                 Either ErrorObj (API 'Res)
             buildResult sort = \case
-                GraphTraversal.Ended [(ExecDepth depth, result)] ->
-                    -- Actually not "ended" but out of instructions.
-                    -- See @toTransitionResult@ in @rpcExec@.
-                    Right $
-                        Execute $
-                            ExecuteResult
-                                { state = patternToExecState sort result
-                                , depth = Depth depth
-                                , reason = DepthBound
-                                , rule = Nothing
-                                , nextStates = Nothing
-                                }
-                GraphTraversal.GotStuck _n [(ExecDepth depth, result)] ->
-                    Right $
-                        Execute $
-                            ExecuteResult
-                                { state = patternToExecState sort result
-                                , depth = Depth depth
-                                , reason = Stuck
-                                , rule = Nothing
-                                , nextStates = Nothing
-                                }
-                GraphTraversal.Stopped [(ExecDepth depth, result)] nexts ->
-                    -- TODO add rule information to decide terminal or cut-point
-                    -- result needs to contain the exact rule name, no heuristics possible.
-                    Right $
-                        Execute $
-                            ExecuteResult
-                                { state = patternToExecState sort result
-                                , depth = Depth depth
-                                , reason = Branching
-                                , rule = Nothing
-                                , nextStates = Just $ map (patternToExecState sort . snd) nexts
-                                }
+                GraphTraversal.Ended
+                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result}] ->
+                        -- Actually not "ended" but out of instructions.
+                        -- See @toTransitionResult@ in @rpcExec@.
+                        Right $
+                            Execute $
+                                ExecuteResult
+                                    { state = patternToExecState sort result
+                                    , depth = Depth depth
+                                    , reason = DepthBound
+                                    , rule = Nothing
+                                    , nextStates = Nothing
+                                    }
+                GraphTraversal.GotStuck
+                    _n
+                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result}] ->
+                        Right $
+                            Execute $
+                                ExecuteResult
+                                    { state = patternToExecState sort result
+                                    , depth = Depth depth
+                                    , reason = Stuck
+                                    , rule = Nothing
+                                    , nextStates = Nothing
+                                    }
+                GraphTraversal.Stopped
+                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRule = Nothing}]
+                    nexts ->
+                        Right $
+                            Execute $
+                                ExecuteResult
+                                    { state = patternToExecState sort rpcProgState
+                                    , depth = Depth depth
+                                    , reason = Branching
+                                    , rule = Nothing
+                                    , nextStates =
+                                        Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
+                                    }
+                GraphTraversal.Stopped
+                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRule = Just lbl}]
+                    nexts
+                        | lbl `elem` fromMaybe [] cutPointRules ->
+                            Right $
+                                Execute $
+                                    ExecuteResult
+                                        { state = patternToExecState sort rpcProgState
+                                        , depth = Depth depth
+                                        , reason = CutPointRule
+                                        , rule = Just lbl
+                                        , nextStates =
+                                            Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
+                                        }
+                        | lbl `elem` fromMaybe [] terminalRules ->
+                            Right $
+                                Execute $
+                                    ExecuteResult
+                                        { state = patternToExecState sort rpcProgState
+                                        , depth = Depth depth
+                                        , reason = TerminalRule
+                                        , rule = Just lbl
+                                        , nextStates = Nothing
+                                        }
                 -- these are programmer errors
                 result@GraphTraversal.Aborted{} ->
-                    Left $ serverError "aborted" $ asText result
+                    Left $ serverError "aborted" $ asText (show result)
                 other ->
-                    Left $ serverError "multiple states in result" $ asText other
+                    Left $ serverError "multiple states in result" $ asText (show other)
 
             patternToExecState ::
                 TermLike.Sort ->

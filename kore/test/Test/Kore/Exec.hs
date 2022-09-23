@@ -71,7 +71,6 @@ import Kore.Log.WarnDepthLimitExceeded
 import Kore.Rewrite (
     ExecutionMode (..),
     Natural,
-    ProgramState (..),
  )
 import Kore.Rewrite.AntiLeft (
     AntiLeft (AntiLeft),
@@ -217,7 +216,7 @@ test_rpcExecDepth =
     stuckAt = GotStuck 0 . (: [])
     endsAt = Ended . (: [])
 
-    runDepth = fmap (fmap (getExecDepth . fst)) . runNoSMT
+    runDepth = fmap (fmap (getExecDepth . rpcDepth)) . runNoSMT
 
     verifiedModule =
         verifiedMyModule
@@ -1207,7 +1206,7 @@ rpcExecTest ::
     Limit Natural ->
     VerifiedModule Attribute.StepperAttributes ->
     TermLike VariableName ->
-    SMT (TraversalResult (ExecDepth, ProgramState (Pattern VariableName)))
+    SMT (TraversalResult (RpcExecState VariableName))
 rpcExecTest cutPointLs terminalLs depthLimit verifiedModule initial =
     makeSerializedModule verifiedModule >>= \serializedModule ->
         rpcExec depthLimit serializedModule (StopLabels cutPointLs terminalLs) initial
