@@ -254,7 +254,7 @@ newAxiomCeilSimplifier = CeilSimplifier $ \input -> do
             (from @_ @(Predicate _) substitution)
     toPredicate patt =
         error
-            ( "Ceil simplification is expected to result a predicate, but"
+            ( "Ceil simplification is expected to result in a predicate, but"
                 ++ " got ("
                 ++ show patt
                 ++ ")."
