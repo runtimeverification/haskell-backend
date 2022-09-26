@@ -84,6 +84,9 @@ import Kore.Simplify.Simplify (
  )
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.TopBottom qualified as TopBottom
+import Kore.Unification.NewUnifier (
+    NewUnifier,
+ )
 import Kore.Unification.Procedure
 import Kore.Unparser
 import Kore.Variables.Target (
@@ -122,7 +125,7 @@ unifyRules ::
     [rule] ->
     Simplifier [UnifiedRule rule]
 unifyRules sideCondition initial rules =
-    Logic.observeAllT
+    runUnifier
         ( do
             marker "Rules" ""
             rule <- Logic.scatter rules
@@ -153,7 +156,7 @@ unifyRule ::
     Pattern RewritingVariableName ->
     -- | Rule
     rule ->
-    LogicT Simplifier (UnifiedRule rule)
+    NewUnifier (UnifiedRule rule)
 unifyRule sideCondition initial rule = do
     debugAttemptedRewriteRule initial (location rule)
     ruleMarker "Init"
