@@ -71,7 +71,6 @@ import Kore.Log.WarnDepthLimitExceeded
 import Kore.Rewrite (
     ExecutionMode (..),
     Natural,
-    ProgramState (..),
  )
 import Kore.Rewrite.AntiLeft (
     AntiLeft (AntiLeft),
@@ -197,19 +196,19 @@ test_rpcExecDepth :: [TestTree]
 test_rpcExecDepth =
     [ testCase "without depth limit" $ do
         result <-
-            runDepth $ rpcExecTest Unlimited verifiedModule (state "c")
+            runDepth $ rpcExecTest [] [] Unlimited verifiedModule (state "c")
         assertEqual "depth" (stuckAt 2) result
     , testCase "with depth limit limiting execution" $ do
         result <-
-            runDepth $ rpcExecTest (Limit 1) verifiedModule (state "c")
+            runDepth $ rpcExecTest [] [] (Limit 1) verifiedModule (state "c")
         assertEqual "depth" (endsAt 1) result
     , testCase "with depth limit above execution limit" $ do
         result <-
-            runDepth $ rpcExecTest (Limit 3) verifiedModule (state "c")
+            runDepth $ rpcExecTest [] [] (Limit 3) verifiedModule (state "c")
         assertEqual "depth" (stuckAt 2) result
     , testCase "when branching" $ do
         result <-
-            runDepth $ rpcExecTest Unlimited verifiedModule (state "a")
+            runDepth $ rpcExecTest [] [] Unlimited verifiedModule (state "a")
         assertEqual "depth" (Stopped [0] [1, 1]) result
     ]
   where
@@ -217,7 +216,7 @@ test_rpcExecDepth =
     stuckAt = GotStuck 0 . (: [])
     endsAt = Ended . (: [])
 
-    runDepth = fmap (fmap (getExecDepth . fst)) . runNoSMT
+    runDepth = fmap (fmap (getExecDepth . rpcDepth)) . runNoSMT
 
     verifiedModule =
         verifiedMyModule
@@ -1202,13 +1201,15 @@ test_execGetExitCode =
                 }
 
 rpcExecTest ::
+    [Text] ->
+    [Text] ->
     Limit Natural ->
     VerifiedModule Attribute.StepperAttributes ->
     TermLike VariableName ->
-    SMT (TraversalResult (ExecDepth, ProgramState (Pattern VariableName)))
-rpcExecTest depthLimit verifiedModule initial =
+    SMT (TraversalResult (RpcExecState VariableName))
+rpcExecTest cutPointLs terminalLs depthLimit verifiedModule initial =
     makeSerializedModule verifiedModule >>= \serializedModule ->
-        rpcExec depthLimit serializedModule initial
+        rpcExec depthLimit serializedModule (StopLabels cutPointLs terminalLs) initial
 
 -- TODO(Ana): these functions should run the procedures twice,
 -- once with the experimental simplifier enabled and once with it
