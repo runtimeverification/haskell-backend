@@ -259,6 +259,7 @@
         "Kore/Internal/MultiAnd"
         "Kore/Internal/MultiExists"
         "Kore/Internal/MultiOr"
+        "Kore/Internal/NormalForm"
         "Kore/Internal/NormalizedAc"
         "Kore/Internal/OrCondition"
         "Kore/Internal/OrPattern"

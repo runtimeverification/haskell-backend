@@ -457,7 +457,6 @@ termEqualsAnd p1 p2 =
                 . sequence
         equalsPattern =
             makeEqualsPredicate first second
-                & Predicate.markSimplified
                 & Condition.fromPredicate
                 -- Although the term will eventually be discarded, the sub-term
                 -- unifier should return it in case the caller needs to

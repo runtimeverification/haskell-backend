@@ -100,6 +100,12 @@ import Kore.Simplify.API (
 import Kore.Syntax.Module (
     ModuleName (..),
  )
+import Kore.Unification.NewUnifier (
+    NewUnifier,
+ )
+import Kore.Unification.Procedure (
+    runUnifier,
+ )
 import Logic
 import Numeric.Natural
 import Prelude.Kore
@@ -584,7 +590,7 @@ data Config = Config
         SideCondition RewritingVariableName ->
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
-        LogicT Simplifier (Condition RewritingVariableName)
+        NewUnifier (Condition RewritingVariableName)
     , -- | Logger function, see 'logging'.
       logger :: MVar (LogAction IO SomeEntry)
     , -- | Output resulting pattern to this file.
@@ -629,13 +635,13 @@ makeKoreReplOutput str =
 
 runUnifierWithoutExplanation ::
     forall a.
-    LogicT Simplifier a ->
+    NewUnifier a ->
     Simplifier (Maybe (NonEmpty a))
 runUnifierWithoutExplanation unifier =
     failEmptyList <$> unificationResults
   where
     unificationResults :: Simplifier [a]
-    unificationResults = Logic.observeAllT unifier
+    unificationResults = runUnifier unifier
     failEmptyList :: [a] -> Maybe (NonEmpty a)
     failEmptyList results =
         case results of
