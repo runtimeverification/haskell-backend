@@ -27,10 +27,10 @@ import Kore.Internal.MultiAnd (
     MultiAnd,
  )
 import Kore.Internal.MultiAnd qualified as MultiAnd
-import Kore.Internal.MultiOr (
-    MultiOr,
- )
+import Kore.Internal.MultiOr (MultiOr)
 import Kore.Internal.MultiOr qualified as MultiOr
+import Kore.Internal.NormalForm (NormalForm)
+import Kore.Internal.NormalForm qualified as NormalForm
 import Kore.Internal.OrCondition (
     OrCondition,
  )
@@ -105,24 +105,6 @@ import Kore.Syntax.Forall qualified as Forall
 import Logic
 import Prelude.Kore
 
-{- | @NormalForm@ is the normal form result of simplifying 'Predicate'.
- The primary purpose of this form is to transmit to the external solver.
- Note that this is almost, but not quite, disjunctive normal form; see
- 'simplifyNot' for the most notable exception.
--}
-type NormalForm = MultiOr (MultiAnd (Predicate RewritingVariableName))
-
-toOrPattern :: Sort -> NormalForm -> OrPattern RewritingVariableName
-toOrPattern sort =
-    MultiOr.map
-        ( Pattern.fromPredicateSorted sort
-            . Predicate.makeMultipleAndPredicate
-            . toList
-        )
-
-fromOrCondition :: OrCondition RewritingVariableName -> NormalForm
-fromOrCondition = MultiOr.map (from @(Condition _))
-
 simplify ::
     forall simplifier.
     HasCallStack =>
@@ -134,7 +116,7 @@ simplify sideCondition original =
     loop 0 (mkSingleton original)
   where
     limit :: Int
-    limit = 4
+    limit = 20
 
     loop :: Int -> NormalForm -> simplifier NormalForm
     loop count input
@@ -156,7 +138,7 @@ simplify sideCondition original =
     -- accordingly.
     simplifyTerm' term
         | Right predicate <- Predicate.makePredicate term =
-            toOrPattern (termLikeSort term) <$> worker predicate
+            NormalForm.toOrPattern (termLikeSort term) <$> worker predicate
         | otherwise =
             simplifyTerm sideCondition term
 
@@ -185,6 +167,7 @@ simplify sideCondition original =
                 ImpliesF impliesF -> simplifyImplies sideCondition =<< traverse worker impliesF
                 IffF iffF -> simplifyIff sideCondition =<< traverse worker iffF
                 CeilF ceilF ->
+                    -- TODO(Ana): don't simplify children first
                     simplifyCeil sideCondition =<< traverse simplifyTerm' ceilF
                 FloorF floorF@(Floor _ _ child) ->
                     simplifyFloor (termLikeSort child) sideCondition
@@ -416,10 +399,8 @@ normalizeNotAnd Not{notChild = predicates} =
         _ -> fallback
   where
     fallback =
-        -- \not(\and(_, ...))
         Predicate.fromMultiAnd predicates
             & fromNot
-            & Predicate.markSimplified
             & mkSingleton
             & pure
     bottom = normalizeBottom Bottom{bottomSort = ()}
@@ -480,8 +461,8 @@ simplifyCeil ::
     SideCondition RewritingVariableName ->
     Ceil () (OrPattern RewritingVariableName) ->
     simplifier NormalForm
-simplifyCeil sideCondition =
-    Ceil.simplify sideCondition >=> return . fromOrCondition
+simplifyCeil sideCondition input =
+    Ceil.simplify sideCondition input
 
 {- |
  @
@@ -505,7 +486,7 @@ simplifyFloor termSort sideCondition floor' = do
     mkNotSimplifiedTerm notChild =
         Not.simplify sideCondition Not{notSort = termSort, notChild}
     mkCeilSimplified ceilChild =
-        simplifyCeil
+        Ceil.simplify
             sideCondition
             Ceil
                 { ceilOperandSort = ()
@@ -655,4 +636,4 @@ simplifyIn ::
     In () (OrPattern RewritingVariableName) ->
     simplifier NormalForm
 simplifyIn sideCondition =
-    In.simplify sideCondition >=> return . fromOrCondition
+    In.simplify sideCondition >=> return . NormalForm.fromOrCondition
