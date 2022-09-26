@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
@@ -10,18 +12,15 @@ module Kore.Equation.Application (
 ) where
 
 import Control.Error (
-    ExceptT,
+    ExceptT (..),
     MaybeT (..),
     maybeToList,
-    noteT,
     runExceptT,
     throwE,
+    withExceptT,
  )
 import Control.Monad (
     (>=>),
- )
-import Control.Monad.Except (
-    catchError,
  )
 import Data.Map.Strict (
     Map,
@@ -36,7 +35,21 @@ import Kore.Attribute.Pattern.FreeVariables (
     HasFreeVariables (..),
  )
 import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
-import Kore.Equation.DebugEquation
+import Kore.Equation.DebugEquation (
+    ApplyMatchResultError (..),
+    ApplyMatchResultErrors (..),
+    AttemptEquationError (..),
+    AttemptEquationResult,
+    CheckRequiresError (..),
+    MatchError (..),
+    debugApplyEquation,
+    debugAttemptEquationResult,
+    whileApplyMatchResult,
+    whileCheckRequires,
+    whileDebugAttemptEquation,
+    whileMatch,
+ )
+import Kore.Equation.DebugEquation qualified as Equation
 import Kore.Equation.Equation (
     Equation (..),
  )
@@ -72,9 +85,13 @@ import Kore.Internal.TermLike (
     TermLike,
  )
 import Kore.Internal.TermLike qualified as TermLike
+import Kore.Log.DecidePredicateUnknown (
+    OnDecidePredicateUnknown (..),
+    srcLoc,
+ )
 import Kore.Rewrite.Axiom.Matcher (
     MatchResult,
-    matchIncremental,
+    patternMatch,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -82,7 +99,8 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Rewrite.SMT.Evaluator qualified as SMT
 import Kore.Rewrite.Substitution qualified as Substitution
 import Kore.Simplify.Simplify (
-    MonadSimplify,
+    Simplifier,
+    liftSimplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute
@@ -100,13 +118,10 @@ equation is actually used; @attemptEquation@ will only log when an equation is
 applicable.
 -}
 attemptEquation ::
-    forall simplifier.
-    HasCallStack =>
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
     Equation RewritingVariableName ->
-    simplifier (AttemptEquationResult RewritingVariableName)
+    Simplifier (AttemptEquationResult RewritingVariableName)
 attemptEquation sideCondition termLike equation = do
     result <- runMaybeT alreadyAttempted
     case result of
@@ -115,65 +130,42 @@ attemptEquation sideCondition termLike equation = do
   where
     attemptEquationWorker =
         whileDebugAttemptEquation' . runExceptT $ do
-            let Equation{left, argument, antiLeft} = equationRenamed
-            (equation', predicate) <- matchAndApplyResults left argument antiLeft
-            let Equation{requires} = equation'
-            checkRequires sideCondition predicate requires & whileCheckRequires
-            let Equation{right, ensures} = equation'
+            let Equation{left} = equationRenamed
+            (equation', predicate) <- matchAndApplyResults left
+            let Equation
+                    { requires
+                    , ensures
+                    , right
+                    , attributes = Attribute.Axiom{simplification}
+                    } = equation'
+                eqSrc = Equation.srcLoc equation'
+                onDecidePredicateUnknown = case simplification of
+                    Attribute.NotSimplification -> ErrorDecidePredicateUnknown $srcLoc eqSrc
+                    Attribute.IsSimplification _ -> WarnDecidePredicateUnknown $srcLoc eqSrc
+            checkRequires onDecidePredicateUnknown sideCondition predicate requires
+                & whileCheckRequires
             return $ Pattern.withCondition right $ from @(Predicate _) ensures
 
     equationRenamed = refreshVariables sideCondition termLike equation
-    matchError =
+    matchError matchFailReason =
         MatchError
             { matchTerm = termLike
             , matchEquation = equationRenamed
+            , matchFailReason
             }
     match term1 term2 =
-        matchIncremental sideCondition term1 term2
-            & MaybeT
-            & noteT matchError
+        patternMatch sideCondition term1 term2
+            & ExceptT
+            & withExceptT matchError
 
-    matchAndApplyResults left' argument' antiLeft'
-        | isNothing argument'
-          , isNothing antiLeft' = do
-            matchResult <- match left' termLike & whileMatch
-            applyMatchResult equationRenamed matchResult
-                & whileApplyMatchResult
-        | otherwise = do
-            (matchPredicate, matchSubstitution) <-
-                match left' termLike
-                    & whileMatch
-            matchResults <-
-                applySubstitutionAndSimplify
-                    argument'
-                    antiLeft'
-                    matchSubstitution
-                    & whileMatch
-            (equation', predicate) <-
-                applyAndSelectMatchResult matchResults
-            return
-                ( equation'
-                , makeAndPredicate predicate matchPredicate
-                )
-
-    applyAndSelectMatchResult ::
-        [MatchResult RewritingVariableName] ->
-        ExceptT
-            (AttemptEquationError RewritingVariableName)
-            simplifier
-            (Equation RewritingVariableName, Predicate RewritingVariableName)
-    applyAndSelectMatchResult [] =
-        throwE (WhileMatch matchError)
-    applyAndSelectMatchResult results =
-        whileApplyMatchResult $
-            foldr1
-                takeFirstSuccess
-                (applyMatchResult equationRenamed <$> results)
-    takeFirstSuccess first second = catchError first (const second)
+    matchAndApplyResults left' = do
+        matchResult <- match left' termLike & whileMatch
+        applyMatchResult equationRenamed matchResult
+            & whileApplyMatchResult
 
     whileDebugAttemptEquation' ::
-        simplifier (AttemptEquationResult RewritingVariableName) ->
-        simplifier (AttemptEquationResult RewritingVariableName)
+        Simplifier (AttemptEquationResult RewritingVariableName) ->
+        Simplifier (AttemptEquationResult RewritingVariableName)
     whileDebugAttemptEquation' action =
         whileDebugAttemptEquation termLike equationRenamed $ do
             result <- action
@@ -231,7 +223,6 @@ attemptEquation sideCondition termLike equation = do
 -}
 applySubstitutionAndSimplify ::
     HasCallStack =>
-    MonadSimplify simplifier =>
     Maybe (Predicate RewritingVariableName) ->
     Maybe (Predicate RewritingVariableName) ->
     Map
@@ -239,13 +230,13 @@ applySubstitutionAndSimplify ::
         (TermLike RewritingVariableName) ->
     ExceptT
         (MatchError RewritingVariableName)
-        simplifier
+        Simplifier
         [MatchResult RewritingVariableName]
 applySubstitutionAndSimplify
     argument
     antiLeft
     matchSubstitution =
-        lift . Simplifier.localSimplifierAxioms mempty $ do
+        lift . Simplifier.localAxiomEquations mempty $ do
             let toMatchResult Conditional{predicate, substitution} =
                     (predicate, Substitution.toMap substitution)
             Substitution.mergePredicatesAndSubstitutions
@@ -256,12 +247,10 @@ applySubstitutionAndSimplify
                 & (fmap . fmap) toMatchResult
 
 applyEquation ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Equation RewritingVariableName ->
     Pattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 applyEquation _ equation result = do
     let results = OrPattern.fromPattern result
     let simplify = return
@@ -355,15 +344,14 @@ Throws 'RequiresNotMet' if the 'Predicate's do not hold under the
 'SideCondition'.
 -}
 checkRequires ::
-    forall simplifier.
-    MonadSimplify simplifier =>
+    OnDecidePredicateUnknown ->
     SideCondition RewritingVariableName ->
     -- | requires from matching
     Predicate RewritingVariableName ->
     -- | requires from 'Equation'
     Predicate RewritingVariableName ->
-    ExceptT (CheckRequiresError RewritingVariableName) simplifier ()
-checkRequires sideCondition predicate requires =
+    ExceptT (CheckRequiresError RewritingVariableName) Simplifier ()
+checkRequires onUnknown sideCondition predicate requires =
     do
         let requires' = makeAndPredicate predicate requires
             -- The condition to refute:
@@ -385,13 +373,16 @@ checkRequires sideCondition predicate requires =
   where
     simplifyCondition = Simplifier.simplifyCondition sideCondition
 
-    filterBranch condition =
-        SMT.evalConditional
-            condition
-            (Just sideCondition)
-            >>= \case
-                Just False -> empty
-                _ -> return condition
+    filterBranch condition = do
+        l <-
+            liftSimplifier $
+                SMT.evalConditional
+                    onUnknown
+                    condition
+                    (Just sideCondition)
+        case l of
+            Just False -> empty
+            _ -> return condition
 
     assertBottom negatedImplication
         | isBottom negatedImplication = done
@@ -408,7 +399,7 @@ checkRequires sideCondition predicate requires =
 
     withoutAxioms =
         fmap Condition.forgetSimplified
-            . Simplifier.localSimplifierAxioms (const mempty)
+            . Simplifier.localAxiomEquations (const mempty)
     withAxioms = id
 
 refreshVariables ::

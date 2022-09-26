@@ -62,7 +62,7 @@ import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     rulePattern,
  )
-import Kore.Simplify.Data qualified as Kore
+import Kore.Simplify.API qualified as Kore
 import Kore.Syntax.Module (
     ModuleName (..),
  )
@@ -84,8 +84,7 @@ import System.Console.Haskeline (
     runInputT,
  )
 import Test.Kore (
-    TestLog,
-    runTestLog,
+    runTestLoggerT,
  )
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
@@ -334,7 +333,7 @@ unificationFailure =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    mkDebugUnifyBottom "distinct integers" one zero
+                    mkDebugUnifyBottom "Distinct integer domain values" one zero
                 actualdebugUnifyBottom =
                     catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
             head actualdebugUnifyBottom `equals` expectedLogEntry
@@ -353,7 +352,7 @@ unificationFailureWithName =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    mkDebugUnifyBottom "distinct integers" one zero
+                    mkDebugUnifyBottom "Distinct integer domain values" one zero
                 actualdebugUnifyBottom =
                     catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
             head actualdebugUnifyBottom `equals` expectedLogEntry
@@ -402,7 +401,7 @@ forceFailure =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    mkDebugUnifyBottom "distinct integers" one zero
+                    mkDebugUnifyBottom "Distinct integer domain values" one zero
                 actualdebugUnifyBottom =
                     catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
             head actualdebugUnifyBottom `equals` expectedLogEntry
@@ -421,7 +420,7 @@ forceFailureWithName =
      in do
             Result{logEntries, continue, state} <- run command axioms [claim] claim
             let expectedLogEntry =
-                    mkDebugUnifyBottom "distinct integers" one zero
+                    mkDebugUnifyBottom "Distinct integer domain values" one zero
                 actualdebugUnifyBottom =
                     catMaybes $ Log.fromEntry @DebugUnifyBottom <$> logEntries
             head actualdebugUnifyBottom `equals` expectedLogEntry
@@ -741,14 +740,13 @@ runWithState command axioms claims claim stateTransformer = do
     let state = stateTransformer $ mkState startTime axioms claims claim
     let config = mkConfig mvar
         runLogger =
-            runTestLog (flip Log.runLoggerT mempty . liftSimplifier)
+            runTestLoggerT . liftSimplifier
                 . flip runStateT state
                 . flip runReaderT config
                 . runInputT defaultSettings
     ((c, s), logEntries) <-
         runLogger $
             replInterpreter0
-                @(TestLog (SimplifierT NoSMT))
                 (modifyAuxOutput output)
                 (modifyKoreOutput output)
                 command
@@ -833,8 +831,8 @@ mkState startTime axioms claims claim =
     graph' = emptyExecutionGraph claim
 
 mkConfig ::
-    MVar (Log.LogAction IO Log.ActualEntry) ->
-    Config (TestLog (SimplifierT NoSMT))
+    MVar (Log.LogAction IO Log.SomeEntry) ->
+    Config
 mkConfig logger =
     Config
         { stepper = stepper0
@@ -850,9 +848,9 @@ mkConfig logger =
         [Axiom] ->
         ExecutionGraph ->
         ReplNode ->
-        TestLog (SimplifierT NoSMT) ExecutionGraph
+        Simplifier ExecutionGraph
     stepper0 claims' axioms' graph (ReplNode node) =
-        proveClaimStep claims' axioms' graph node
+        proveClaimStep Nothing EnabledStuckCheck claims' axioms' graph node
 
 formatUnifiers ::
     NonEmpty (Condition RewritingVariableName) ->

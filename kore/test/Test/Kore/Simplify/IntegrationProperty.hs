@@ -3,23 +3,25 @@ module Test.Kore.Simplify.IntegrationProperty (
     test_regressionGeneratedTerms,
 ) where
 
+import Control.Concurrent (threadDelay)
+import Control.Concurrent.Async (race)
 import Control.Exception (
     ErrorCall (..),
  )
 import Control.Monad.Catch (
     MonadThrow,
-    catch,
+    handle,
     throwM,
  )
 import Data.List (
     isInfixOf,
  )
-import Data.Map.Strict qualified as Map
 import Hedgehog (
     PropertyT,
     annotate,
     discard,
     forAll,
+    property,
     (===),
  )
 import Kore.Internal.From (fromIn_)
@@ -43,14 +45,11 @@ import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Internal.TermLike
-import Kore.Rewrite.Axiom.EvaluationStrategy (
-    simplifierWithFallback,
- )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkRewritingPattern,
  )
-import Kore.Simplify.Data qualified as Simplification
+import Kore.Simplify.API qualified as Simplification
 import Kore.Simplify.Pattern qualified as Pattern (
     simplify,
  )
@@ -62,23 +61,30 @@ import Test.ConsistentKore
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.SMT (
-    testPropertyWithoutSolver,
+    runNoSMT,
  )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
+import Test.Tasty.Hedgehog (testProperty)
 
 test_simplifiesToSimplified :: TestTree
 test_simplifiesToSimplified =
-    testPropertyWithoutSolver "simplify returns simplified pattern" $ do
+    testProperty "simplify returns simplified pattern" . property $ do
         patt <- forAll (runKoreGen Mock.generatorSetup patternGen)
         let patt' = mkRewritingPattern patt
         (annotate . unlines)
             [" ***** unparsed input =", unparseToString patt, " ***** "]
-        simplified <-
-            catch
-                (evaluateT patt')
-                (exceptionHandler patt)
-        (===) True (OrPattern.isSimplified sideRepresentation simplified)
+        -- avoid hanging tests by making the simplifier time out
+        let timeout = 30 * 10 ^ (6 :: Int) -- usec
+            simplify = runNoSMT $ evaluate patt'
+            checkResult simplified =
+                (===) True (OrPattern.isSimplified sideRepresentation simplified)
+            warnThread = do
+                threadDelay timeout
+                pure $ "WARNING: unable to simplify pattern\n" <> unparseToString patt
+        result <-
+            handle (exceptionHandler patt) $ lift (race warnThread simplify)
+        either (flip trace discard) checkResult result
   where
     -- Discard exceptions that are normal for randomly generated patterns.
     exceptionHandler ::
@@ -126,7 +132,7 @@ test_regressionGeneratedTerms =
         simplified <-
             Pattern.simplify
                 (Pattern.fromTermLike term)
-                & runSimplifier Mock.env
+                & testRunSimplifier Mock.env
         assertEqual "" True (OrPattern.isSimplified sideRepresentation simplified)
     , -- See https://github.com/runtimeverification/haskell-backend/pull/2819#issuecomment-929492780
       testCase "Don't forget simplified of sub-term predicates" $ do
@@ -156,35 +162,17 @@ test_regressionGeneratedTerms =
         simplified <-
             Pattern.simplify
                 patt
-                & runSimplifier Mock.env
+                & testRunSimplifier Mock.env
         assertEqual "" True (OrPattern.isSimplified sideRepresentation simplified)
     ]
 
-evaluateT ::
-    MonadTrans t =>
-    Pattern RewritingVariableName ->
-    t SMT.NoSMT (OrPattern RewritingVariableName)
-evaluateT = lift . evaluate
-
 evaluate ::
     Pattern RewritingVariableName ->
-    SMT.NoSMT (OrPattern RewritingVariableName)
-evaluate = evaluateWithAxioms Map.empty
-
-evaluateWithAxioms ::
-    BuiltinAndAxiomSimplifierMap ->
-    Pattern RewritingVariableName ->
-    SMT.NoSMT (OrPattern RewritingVariableName)
-evaluateWithAxioms axioms =
+    SMT.SMT (OrPattern RewritingVariableName)
+evaluate =
     Simplification.runSimplifier env . Pattern.simplify
   where
-    env = Mock.env{simplifierAxioms}
-    simplifierAxioms :: BuiltinAndAxiomSimplifierMap
-    simplifierAxioms =
-        Map.unionWith
-            simplifierWithFallback
-            Mock.builtinSimplifiers
-            axioms
+    env = Mock.env{hookedSymbols = Mock.builtinSimplifiers}
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =

@@ -1,22 +1,19 @@
-{ default ? import ./default.nix {}
-, checkMaterialization ? false
-}:
+{ default ? import ./default.nix { }, checkMaterialization ? false }:
 
 let
   inherit (default) project;
   inherit (project) shellFor;
 
   sources = import ./nix/sources.nix;
-  pkgs = import sources."nixpkgs" {};
+  pkgs = import sources."nixpkgs" { };
 
   inherit (pkgs) cabal-install ghcid stack;
   inherit (pkgs) fd gnumake yq z3;
 
   inherit (default) compiler-nix-name index-state;
 
-  hls-project = import sources."haskell-hls-nix" {
-    inherit (default) ghcVersion;
-  };
+  hls-project =
+    import sources."haskell-hls-nix" { inherit (default) ghcVersion; };
   inherit (hls-project) hls-renamed;
 
   hlint-project = default.pkgs.haskell-nix.cabalProject {
@@ -26,18 +23,12 @@ let
   };
   inherit (hlint-project.hlint.components.exes) hlint;
 
-  fourmolu = import ./nix/fourmolu.nix { inherit default checkMaterialization; };
+  fourmolu =
+    import ./nix/fourmolu.nix { inherit default checkMaterialization; };
 
-in
-
-shellFor {
+in shellFor {
   buildInputs =
-    [
-      gnumake fd z3
-      hls-renamed
-      ghcid hlint fourmolu
-      cabal-install stack
-    ];
+    [ gnumake fd z3 hls-renamed ghcid hlint fourmolu cabal-install stack ];
   passthru.rematerialize = pkgs.writeScript "rematerialize-shell.sh" ''
     #!/bin/sh
     ${hlint-project.plan-nix.passthru.updateMaterialized}

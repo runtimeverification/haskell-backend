@@ -18,7 +18,7 @@ import Test.Kore.Equation.Common (
  )
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify (
-    runSimplifier,
+    testRunSimplifier,
  )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
@@ -37,8 +37,7 @@ test_simplifyEquation =
                         a
                 expected =
                     mkSimplifiedEquation (f a) a
-                        & pure
-                        & MultiAnd.make
+                        & MultiAnd.singleton
             actual <- simplify equation
             assertEqual "" expected actual
         , testCase "Gets split into two equations" $ do
@@ -54,22 +53,7 @@ test_simplifyEquation =
                         & MultiAnd.make
             actual <- simplify equation
             assertEqual "" expected actual
-        , testCase
-            "Return original equation is any of the\
-            \ predicates from the simplified patterns\
-            \ is not \\top"
-            $ do
-                let equation =
-                        functionAxiomUnification_
-                            Mock.fMapSymbol
-                            [mkOr symbolicMap xMap]
-                            c
-                    expected = [equation] & MultiAnd.make
-                actual <- simplify equation
-                assertEqual "" expected actual
         ]
-        -- TODO(ana.pantilie): after #2341 we should check that equations which
-        --   don't have an 'argument' are not simplified
     ]
 
 a, b, c :: InternalVariable variable => TermLike variable
@@ -78,16 +62,6 @@ b = Mock.b
 c = Mock.c
 f :: TermLike RewritingVariableName -> TermLike RewritingVariableName
 f = Mock.f
-xMap :: TermLike RewritingVariableName
-xMap = mkElemVar Mock.xMapConfig
-symbolicMap :: TermLike RewritingVariableName
-symbolicMap =
-    Mock.concatMap
-        ( Mock.elementMap
-            (mkElemVar Mock.xConfig)
-            (mkElemVar Mock.yConfig)
-        )
-        xMap
 
 mkSimplifiedEquation ::
     TermLike RewritingVariableName ->
@@ -101,4 +75,4 @@ simplify ::
     IO (MultiAnd (Equation RewritingVariableName))
 simplify equation =
     simplifyEquation equation
-        & runSimplifier Mock.env
+        & testRunSimplifier Mock.env

@@ -1,3 +1,6 @@
+{-# LANGUAGE NoStrict #-}
+{-# LANGUAGE NoStrictData #-}
+
 {- |
 Copyright : (c) Runtime Verification 2021
 License   : BSD-3-Clause
@@ -57,7 +60,7 @@ instance Pretty ErrorEquationRightFunction where
             ]
 
 instance Exception ErrorEquationRightFunction where
-    toException = toException . SomeEntry
+    toException = toException . SomeEntry []
     fromException exn =
         fromException exn >>= fromEntry
 

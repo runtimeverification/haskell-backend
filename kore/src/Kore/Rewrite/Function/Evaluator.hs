@@ -19,11 +19,13 @@ import Control.Error (
     maybeT,
     throwE,
  )
-import Control.Monad.Catch (
-    MonadThrow,
- )
+import Control.Monad qualified as Monad
+import Data.Map.Strict qualified as Map
+import Data.Text (Text)
 import Kore.Attribute.Pattern.Simplified qualified as Attribute.Simplified
+import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Attribute.Synthetic
+import Kore.Builtin (koreEvaluators)
 import Kore.Internal.MultiOr qualified as MultiOr (
     flatten,
     merge,
@@ -45,11 +47,16 @@ import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
+import Kore.Internal.Symbol (isDeclaredFunction)
 import Kore.Internal.Symbol qualified as Symbol
 import Kore.Internal.TermLike as TermLike
 import Kore.Log.ErrorBottomTotalFunction (
     errorBottomTotalFunction,
  )
+import Kore.Log.WarnFunctionWithoutEvaluators (warnFunctionWithoutEvaluators)
+import Kore.Rewrite.Axiom.EvaluationStrategy (builtinEvaluation, mkEvaluator, simplifierWithFallback)
+import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier)
+import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -62,6 +69,7 @@ import Kore.TopBottom
 import Kore.Unparser
 import Logic qualified
 import Prelude.Kore
+import Pretty ((<+>))
 import Pretty qualified
 
 -- | Evaluates functions on an application pattern.
@@ -72,16 +80,13 @@ import Pretty qualified
 --   memoize :: Evaluator.Self state -> Memo.Self state -> Evaluator.Self state
 -- to add memoization to a function evaluator.
 evaluateApplication ::
-    forall simplifier.
-    MonadSimplify simplifier =>
-    MonadThrow simplifier =>
     -- | The predicate from the configuration
     SideCondition RewritingVariableName ->
     -- | Aggregated children predicate and substitution.
     Condition RewritingVariableName ->
     -- | The pattern to be evaluated
     Application Symbol (TermLike RewritingVariableName) ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 evaluateApplication
     sideCondition
     childrenCondition
@@ -102,7 +107,7 @@ evaluateApplication
                 lift $ errorBottomTotalFunction termLike
             return results
       where
-        finishT :: ExceptT r simplifier r -> simplifier r
+        finishT :: ExceptT r Simplifier r -> Simplifier r
         finishT = exceptT return return
 
         Application{applicationSymbolOrAlias = symbol} = application
@@ -197,6 +202,109 @@ evaluatePattern
             sideCondition
             & maybeT (defaultValue Nothing) return
 
+lookupAxiomSimplifier ::
+    MonadSimplify simplifier =>
+    TermLike RewritingVariableName ->
+    MaybeT simplifier BuiltinAndAxiomSimplifier
+lookupAxiomSimplifier termLike = do
+    hookedSymbols <- lift askHookedSymbols
+    axiomEquations <- lift askAxiomEquations
+    let getEvaluator :: AxiomIdentifier -> Maybe BuiltinAndAxiomSimplifier
+        getEvaluator axiomIdentifier = Map.lookup axiomIdentifier axiomEquations >>= mkEvaluator
+
+        combineEvaluators :: [AxiomIdentifier] -> Maybe BuiltinAndAxiomSimplifier
+        combineEvaluators identifiers =
+            case mapMaybe getEvaluator identifiers of
+                [] -> Nothing
+                [a] -> Just a
+                as -> Just $ firstFullEvaluation as
+
+    let missing = do
+            -- TODO (thomas.tuegel): Factor out a second function evaluator and
+            -- remove this check. At startup, the definition's rules are
+            -- simplified using Matching Logic only (no function
+            -- evaluation). During this stage, all the hooks are expected to be
+            -- missing, so that is not an error. If any function evaluators are
+            -- present, we assume that startup is finished, but we should really
+            -- have a separate evaluator for startup.
+            Monad.guard (not $ null axiomEquations)
+            case termLike of
+                App_ symbol _
+                    | isDeclaredFunction symbol -> do
+                        let hooked = criticalMissingHook symbol
+                            unhooked = warnFunctionWithoutEvaluators symbol
+                        maybe unhooked hooked $ getHook symbol
+                _ -> return ()
+            empty
+    maybe missing return $ do
+        let axiomIdentifier = Axiom.Identifier.matchAxiomIdentifier termLike
+        case axiomIdentifier of
+            Axiom.Identifier.Application appId ->
+                let builtinEvaluator = do
+                        name <- Map.lookup appId hookedSymbols
+                        builtinEvaluation <$> koreEvaluators name
+                 in combineEvaluatorsWithFallBack (builtinEvaluator, getEvaluator axiomIdentifier)
+            Axiom.Identifier.Ceil _ ->
+                let inexact =
+                        [ Axiom.Identifier.Ceil Axiom.Identifier.Variable
+                        , Axiom.Identifier.Ceil Axiom.Identifier.Other
+                        ]
+                 in combineEvaluators $ axiomIdentifier : inexact
+            Axiom.Identifier.Exists _ ->
+                let inexact =
+                        [ Axiom.Identifier.Exists Axiom.Identifier.Variable
+                        , Axiom.Identifier.Exists Axiom.Identifier.Other
+                        ]
+                 in combineEvaluators $ axiomIdentifier : inexact
+            Axiom.Identifier.Equals id1 id2 ->
+                let inexact =
+                        [ Axiom.Identifier.Equals Axiom.Identifier.Variable id2
+                        , Axiom.Identifier.Equals Axiom.Identifier.Other id2
+                        , Axiom.Identifier.Equals id1 Axiom.Identifier.Variable
+                        , Axiom.Identifier.Equals id1 Axiom.Identifier.Other
+                        , Axiom.Identifier.Equals Axiom.Identifier.Variable Axiom.Identifier.Variable
+                        , Axiom.Identifier.Equals Axiom.Identifier.Other Axiom.Identifier.Variable
+                        , Axiom.Identifier.Equals Axiom.Identifier.Variable Axiom.Identifier.Other
+                        ]
+                 in combineEvaluators $ axiomIdentifier : inexact
+            Axiom.Identifier.Not _ ->
+                let inexact =
+                        [ Axiom.Identifier.Not Axiom.Identifier.Variable
+                        , Axiom.Identifier.Not Axiom.Identifier.Other
+                        ]
+                 in combineEvaluators $ axiomIdentifier : inexact
+            Axiom.Identifier.Variable -> getEvaluator axiomIdentifier
+            Axiom.Identifier.DV -> getEvaluator axiomIdentifier
+            Axiom.Identifier.Other -> getEvaluator axiomIdentifier
+  where
+    getHook :: Symbol -> Maybe Text
+    getHook = Attribute.getHook . Attribute.hook . symbolAttributes
+
+    combineEvaluatorsWithFallBack ::
+        (Maybe BuiltinAndAxiomSimplifier, Maybe BuiltinAndAxiomSimplifier) ->
+        Maybe BuiltinAndAxiomSimplifier
+    combineEvaluatorsWithFallBack = \case
+        (Nothing, eval2) -> eval2
+        (eval1, Nothing) -> eval1
+        (Just eval1, Just eval2) -> Just $ simplifierWithFallback eval1 eval2
+
+criticalMissingHook :: Symbol -> Text -> a
+criticalMissingHook symbol hookName =
+    (error . show . Pretty.vsep)
+        [ "Error: missing hook"
+        , "Symbol"
+        , Pretty.indent 4 (unparse symbol)
+        , "declared with attribute"
+        , Pretty.indent 4 (unparse attribute)
+        , "We don't recognize that hook and it was not given any rules."
+        , "Please open a feature request at"
+        , Pretty.indent 4 "https://github.com/runtimeverification/haskell-backend/issues"
+        , "and include the text of this message."
+        , "Workaround: Give rules for" <+> unparse symbol
+        ]
+  where
+    attribute = Attribute.hookAttribute hookName
+
 {- | Evaluates axioms on patterns.
 
 Returns Nothing if there is no axiom for the pattern's identifier.
@@ -223,7 +331,7 @@ maybeEvaluatePattern
             BuiltinAndAxiomSimplifier evaluator <- lookupAxiomSimplifier termLike
             lift $ do
                 merged <- do
-                    result <- evaluator termLike sideCondition
+                    result <- liftSimplifier $ evaluator termLike sideCondition
                     flattened <- case result of
                         AttemptedAxiom.Applied
                             AttemptedAxiomResults

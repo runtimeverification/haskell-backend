@@ -221,7 +221,7 @@ simplify ::
     Iff Sort (OrPattern RewritingVariableName) ->
     IO (OrPattern RewritingVariableName)
 simplify =
-    runSimplifier mockEnv
+    testRunSimplifier mockEnv
         . Iff.simplify SideCondition.top
         . fmap simplifiedOrPattern
   where

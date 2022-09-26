@@ -1,3 +1,6 @@
+{-# LANGUAGE NoStrict #-}
+{-# LANGUAGE NoStrictData #-}
+
 {- |
 Copyright : (c) Runtime Verification 2021
 License   : BSD-3-Clause
@@ -61,7 +64,7 @@ instance Pretty ErrorEquationsSameMatch where
             ]
 
 instance Exception ErrorEquationsSameMatch where
-    toException = toException . SomeEntry
+    toException = toException . SomeEntry []
     fromException exn =
         fromException exn >>= fromEntry
 

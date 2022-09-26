@@ -217,14 +217,14 @@ test_translatePredicateWith =
 
 translatePredicate ::
     Predicate VariableName ->
-    Translator VariableName NoSMT SExpr
+    Translator VariableName SMT SExpr
 translatePredicate =
     Evaluator.translatePredicate SideCondition.top Mock.metadataTools
 
 translatePattern ::
     SideCondition VariableName ->
     TermLike VariableName ->
-    Translator VariableName NoSMT SExpr
+    Translator VariableName SMT SExpr
 translatePattern sideCondition =
     SMT.translatePattern
         Mock.metadataTools

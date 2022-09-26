@@ -1,6 +1,4 @@
-{ default ? import ../default.nix {}
-, checkMaterialization ? false
-}:
+{ default ? import ../default.nix { }, checkMaterialization ? false }:
 
 let
   sources = import ./sources.nix;
@@ -14,10 +12,9 @@ let
   };
 
   inherit (fourmolu-project.fourmolu.components.exes) fourmolu;
-in
 
-fourmolu // {
-  passthru =
-    (fourmolu.passthru or {})
-    // { inherit (fourmolu-project.plan-nix.passthru) updateMaterialized; };
+in fourmolu // {
+  passthru = (fourmolu.passthru or { }) // {
+    inherit (fourmolu-project.plan-nix.passthru) updateMaterialized;
+  };
 }

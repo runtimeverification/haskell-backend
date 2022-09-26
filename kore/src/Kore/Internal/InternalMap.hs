@@ -82,6 +82,9 @@ instance AcWrapper NormalizedMap where
     unparseConcreteElement keyUnparser childUnparser (key, MapValue value) =
         arguments' [keyUnparser key, childUnparser value]
 
+    elementToApplicationArgs (MapElement (key, value)) = [key, value]
+    concreteElementToApplicationArgs (MapValue value) = [value]
+
 -- | Internal representation of the builtin @MAP.Map@ domain.
 type InternalMap key = InternalAc key NormalizedMap
 

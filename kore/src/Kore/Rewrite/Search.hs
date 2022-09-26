@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Module      : Kore.Rewrite.Search
 Description : Search functionality matching krun API
@@ -13,7 +15,11 @@ module Kore.Rewrite.Search (
 ) where
 
 import Control.Error (
+    ExceptT (..),
     MaybeT (..),
+ )
+import Control.Monad.Trans.Maybe (
+    exceptToMaybeT,
  )
 import Data.Limit (
     Limit (..),
@@ -41,9 +47,13 @@ import Kore.Internal.SideCondition (
 import Kore.Internal.Substitution (
     Substitution,
  )
+import Kore.Log.DecidePredicateUnknown (
+    OnDecidePredicateUnknown (ErrorDecidePredicateUnknown),
+    srcLoc,
+ )
 import Kore.Rewrite.Axiom.Matcher (
     MatchResult,
-    matchIncremental,
+    patternMatch,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -104,14 +114,13 @@ solutions returned is limited by 'bound'.
 See also: 'Kore.Rewrite.Strategy.runStrategy', 'matchWith'
 -}
 searchGraph ::
-    MonadSimplify m =>
     -- | Search options
     Config ->
     -- | Matching criterion
-    (config -> MaybeT m substitution) ->
+    (config -> MaybeT Simplifier substitution) ->
     -- | Execution tree
     Strategy.ExecutionGraph config rule ->
-    m [substitution]
+    Simplifier [substitution]
 searchGraph Config{searchType, bound} match executionGraph = do
     let selectedConfigs = pick executionGraph
     matches <- catMaybes <$> traverse (runMaybeT . match) selectedConfigs
@@ -125,23 +134,21 @@ searchGraph Config{searchType, bound} match executionGraph = do
             FINAL -> Strategy.pickFinal
 
 matchWith ::
-    forall m.
-    MonadSimplify m =>
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
     Pattern RewritingVariableName ->
-    MaybeT m (OrCondition RewritingVariableName)
+    MaybeT Simplifier (OrCondition RewritingVariableName)
 matchWith sideCondition e1 e2 = do
-    matchResults <- MaybeT $ matchIncremental sideCondition t1 t2
+    matchResults <- exceptToMaybeT $ ExceptT $ patternMatch sideCondition t1 t2
     let mergeAndEvaluate ::
             MatchResult RewritingVariableName ->
-            m (OrCondition RewritingVariableName)
+            Simplifier (OrCondition RewritingVariableName)
         mergeAndEvaluate predSubst = do
             results <- Logic.observeAllT $ mergeAndEvaluateBranches predSubst
             return (MultiOr.make results)
         mergeAndEvaluateBranches ::
             MatchResult RewritingVariableName ->
-            LogicT m (Condition RewritingVariableName)
+            LogicT Simplifier (Condition RewritingVariableName)
         mergeAndEvaluateBranches (predicate, substitution) = do
             merged <-
                 mergePredicatesAndSubstitutions
@@ -151,7 +158,7 @@ matchWith sideCondition e1 e2 = do
                     , Conditional.predicate e2
                     ]
                     [from @(Map.Map _ _) @(Substitution _) substitution]
-            lift (SMT.evalConditional merged Nothing) >>= \case
+            liftSimplifier (SMT.evalConditional (ErrorDecidePredicateUnknown $srcLoc Nothing) merged Nothing) >>= \case
                 Nothing ->
                     mergePredicatesAndSubstitutions
                         sideCondition

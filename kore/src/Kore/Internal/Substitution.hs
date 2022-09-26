@@ -66,7 +66,12 @@ import Data.Set qualified as Set
 import ErrorContext
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
-import Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables (
+    HasFreeVariables,
+    freeVariable,
+    freeVariables,
+ )
+import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Attribute.Pattern.Simplified qualified as Attribute (
     Simplified (..),
  )
@@ -266,7 +271,7 @@ instance
             (if precOut >= 10 then Pretty.parens else id)
                 ("Kore.Internal.Substitution.wrap" Pretty.<+> diff' 10)
 
-instance Hashable variable => Hashable (Substitution variable) where
+instance (Ord variable, SubstitutionOrd variable, Hashable variable) => Hashable (Substitution variable) where
     hashWithSalt salt (Substitution denorm) =
         salt `hashWithSalt` (0 :: Int) `hashWithSalt` denorm
     hashWithSalt salt (NormalizedSubstitution norm) =
@@ -502,7 +507,7 @@ unsafeWrap =
             -- must be defined.
             -- TODO (thomas.tuegel): isBottom -> SideCondition.isDefined
             & assert (not $ isElementVariable var && isBottom termLike)
-            & withErrorContext "while wrapping substitution" (assign var termLike)
+            & withErrorContext "while wrapping substitution" (assign var termLike, unwrap $ fromMap subst)
       where
         Variable{variableName} = var
         occurs = TermLike.hasFreeVariable variableName

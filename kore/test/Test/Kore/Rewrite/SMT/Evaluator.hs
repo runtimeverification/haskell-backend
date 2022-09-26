@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Test.Kore.Rewrite.SMT.Evaluator (
     test_evaluableSyntaxPredicate,
     test_evaluableConditional,
@@ -27,16 +29,14 @@ import Kore.Internal.Predicate (
  )
 import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike
+import Kore.Log.DecidePredicateUnknown (OnDecidePredicateUnknown (ErrorDecidePredicateUnknown), srcLoc)
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
  )
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
-import Kore.Simplify.Data qualified as Kore
+import Kore.Simplify.API qualified as Kore
 import Prelude.Kore
-import SMT (
-    SMT,
- )
 import Test.Kore
 import Test.Kore.Builtin.Bool qualified as Builtin.Bool
 import Test.Kore.Builtin.Builtin (
@@ -168,19 +168,19 @@ evaluatePredicate ::
     Predicate VariableName ->
     IO (Maybe Bool)
 evaluatePredicate =
-    runSimplifierSMT Mock.env . flip SMT.Evaluator.evalPredicate Nothing
+    runSimplifierSMT Mock.env . flip (SMT.Evaluator.evalPredicate $ ErrorDecidePredicateUnknown $srcLoc Nothing) Nothing
 
 evaluateConditional ::
     Pattern VariableName ->
     IO (Maybe Bool)
 evaluateConditional =
-    runSimplifierSMT Mock.env . flip SMT.Evaluator.evalConditional Nothing
+    runSimplifierSMT Mock.env . flip (SMT.Evaluator.evalConditional $ ErrorDecidePredicateUnknown $srcLoc Nothing) Nothing
 
 evaluateMultiOr ::
     MultiOr (Conditional VariableName (TermLike VariableName)) ->
     IO (MultiOr (Conditional VariableName (TermLike VariableName)))
 evaluateMultiOr =
-    runSimplifierSMT Mock.env . SMT.Evaluator.filterMultiOr
+    runSimplifierSMT Mock.env . SMT.Evaluator.filterMultiOr $srcLoc
 
 test_andNegation :: TestTree
 test_andNegation =
@@ -211,7 +211,7 @@ evaluateSMT ::
 evaluateSMT =
     lift
         . Kore.runSimplifier testEnv
-        . flip SMT.Evaluator.evalPredicate Nothing
+        . flip (SMT.Evaluator.evalPredicate $ ErrorDecidePredicateUnknown $srcLoc Nothing) Nothing
 
 -- ----------------------------------------------------------------
 -- Refute Int predicates
@@ -235,7 +235,7 @@ assertRefuted :: HasCallStack => Predicate RewritingVariableName -> Assertion
 assertRefuted prop = do
     let expect = Just False
     actual <-
-        SMT.Evaluator.decidePredicate SideCondition.top (prop :| [])
+        SMT.Evaluator.decidePredicate (ErrorDecidePredicateUnknown $srcLoc Nothing) SideCondition.top (prop :| [])
             & Test.runSimplifierSMT testEnv
     assertEqual "" expect actual
 

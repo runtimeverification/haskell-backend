@@ -1,3 +1,6 @@
+{-# LANGUAGE NoStrict #-}
+{-# LANGUAGE NoStrictData #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
@@ -63,6 +66,6 @@ handleSomeException ::
     m a
 handleSomeException someException = do
     case fromException someException of
-        Just (SomeEntry entry) -> logEntry entry
+        Just entry@(SomeEntry _ _) -> logEntry entry
         Nothing -> errorException someException
     throwM someException

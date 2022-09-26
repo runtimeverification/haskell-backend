@@ -27,6 +27,7 @@ TESTS = \
 	$(wildcard $(DEF_DIR)/*.verify) \
 	$(wildcard $(TEST_DIR)/*.$(EXT)) \
 	$(wildcard $(TEST_DIR)/*-spec.k) \
+	$(wildcard $(TEST_DIR)/*-spec.stderr) \
 	$(wildcard $(TEST_DIR)/test-*.sh)
 
 OUTS += $(foreach TEST, $(TESTS), $(TEST).out)
@@ -47,7 +48,7 @@ KPROVE_SPEC_OPTS =
 $(DEF_KORE_DEFAULT): $(DEF_DIR)/$(DEF).k $(K)
 	@echo ">>>" $(CURDIR) "kompile" $<
 	rm -fr $(KOMPILED)
-	$(KOMPILE) $(KOMPILE_OPTS) $<
+	env -u KORE_EXEC_OPTS $(KOMPILE) $(KOMPILE_OPTS) $<
 
 # From make 3.82 news: http://cvs.savannah.gnu.org/viewvc/*checkout*/make/make/NEWS?revision=2.120
 # * WARNING: Backward-incompatibility!
@@ -99,7 +100,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 ### PROVE
 
 %-spec.k.out: $(TEST_DIR)/%-spec.k $(TEST_DEPS)
-	@echo ">>>" $(CURDIR) "kprovex" $<
+	@echo ">>>" $(CURDIR) "kprove" $<
 	@echo "KORE_EXEC_OPTS =" $(KORE_EXEC_OPTS)
 	rm -f $@
 	$(if $(STORE_PROOFS),rm -f $(STORE_PROOFS),$(if $(RECALL_PROOFS),cp $(RECALL_PROOFS) $(@:.out=.save-proofs.kore)))

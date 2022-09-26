@@ -27,6 +27,7 @@ import Data.Bifunctor qualified as Bifunctor
 import Data.Default qualified as Default
 import Data.Generics.Product
 import Data.HashMap.Strict qualified as HashMap
+import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Sequence qualified as Seq
 import Data.Set qualified as Set
@@ -35,6 +36,9 @@ import Data.Text (
     Text,
  )
 import Data.Text qualified as Text
+import Hedgehog (diff, forAll, property, withTests)
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
 import Kore.Attribute.Hook (
     Hook (..),
  )
@@ -47,20 +51,23 @@ import Kore.Attribute.Sort.Constructors qualified as Attribute (
     Constructors,
  )
 import Kore.Attribute.Sort.Element qualified as Attribute
+import Kore.Attribute.Sort.HasDomainValues qualified as Attribute
 import Kore.Attribute.Sort.Unit qualified as Attribute
 import Kore.Attribute.Subsort
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Attribute.Synthetic (
     synthesize,
  )
+import Kore.Builtin qualified as Builtin
 import Kore.Builtin.Bool qualified as Builtin.Bool
-import Kore.Builtin.Builtin qualified as Builtin
 import Kore.Builtin.Int qualified as Builtin.Int
 import Kore.Builtin.KEqual qualified as Builtin.KEqual
 import Kore.Builtin.List qualified as List
-import Kore.Builtin.Map qualified as Map
-import Kore.Builtin.Set qualified as Set
+import Kore.Builtin.Map.Map qualified as Map
+import Kore.Builtin.Set.Set qualified as Set
 import Kore.Builtin.String qualified as Builtin.String
+import Kore.Equation (Equation)
+import Kore.IndexedModule.IndexedModule qualified as IndexedModule
 import Kore.IndexedModule.MetadataTools (
     SmtMetadataTools,
  )
@@ -79,12 +86,7 @@ import Kore.Internal.TermLike (
     retractKey,
  )
 import Kore.Internal.TermLike qualified as Internal
-import Kore.Rewrite.Axiom.EvaluationStrategy (
-    builtinEvaluation,
- )
-import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier (
-    AxiomIdentifier (..),
- )
+import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier)
 import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -96,29 +98,35 @@ import Kore.Rewrite.SMT.AST qualified as SMT
 import Kore.Rewrite.SMT.Representation.Resolve qualified as SMT (
     resolve,
  )
-import Kore.Simplify.Condition qualified as Simplifier.Condition
-import Kore.Simplify.Data (
+import Kore.Simplify.API (
     Env (Env),
     MonadSimplify,
  )
-import Kore.Simplify.Data qualified as SimplificationData.DoNotUse
+import Kore.Simplify.API qualified as SimplificationAPI.DoNotUse
+import Kore.Simplify.Condition qualified as Simplifier.Condition
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.OverloadSimplifier
+import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
-    BuiltinAndAxiomSimplifierMap,
     ConditionSimplifier,
-    SimplifierXSwitch (..),
  )
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
+import Kore.Simplify.TermLike qualified as TermLike
 import Kore.Sort
 import Kore.Syntax.Application
+import Kore.Syntax.Module (ModuleName (..))
+import Kore.Syntax.Sentence (SentenceSort (..), SentenceSymbol (..))
+import Kore.Syntax.Sentence qualified
 import Kore.Syntax.Variable
+import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Prelude.Kore
 import SMT.AST qualified as SMT
 import SMT.SimpleSMT qualified as SMT
 import Test.ConsistentKore qualified as ConsistentKore (
     CollectionSorts (..),
     Setup (..),
+    runKoreGen,
+    termLikeGenWithSort,
  )
 import Test.Kore (
     testId,
@@ -126,6 +134,7 @@ import Test.Kore (
 import Test.Kore.IndexedModule.MockMetadataTools qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
+import Test.Tasty.Hedgehog (testProperty)
 
 aId :: Id
 aId = testId "a"
@@ -887,6 +896,8 @@ xRuleSet :: MockRewritingElementVariable
 xRuleSet = mkRuleElementVariable (testId "xSet") mempty setSort
 xConfigSet :: MockRewritingElementVariable
 xConfigSet = mkConfigElementVariable (testId "xSet") mempty setSort
+yConfigSet :: MockRewritingElementVariable
+yConfigSet = mkConfigElementVariable (testId "ySet") mempty setSort
 xEquationSet :: MockRewritingElementVariable
 xEquationSet = mkEquationElementVariable (testId "xSet") mempty setSort
 ySet :: MockElementVariable
@@ -984,6 +995,12 @@ eConfigSubSubsort =
 e2ConfigSubSubsort :: MockRewritingSetVariable
 e2ConfigSubSubsort =
     mkConfigSetVariable (testId "e2ConfigSubSubsort") mempty subSubsort
+setXConfigSetSort :: MockRewritingSetVariable
+setXConfigSetSort =
+    mkConfigSetVariable (testId "XSetSort") mempty setSort
+setYConfigSetSort :: MockRewritingSetVariable
+setYConfigSetSort =
+    mkConfigSetVariable (testId "YSetSort") mempty setSort
 
 makeSomeVariable :: Text -> Sort -> SomeVariable VariableName
 makeSomeVariable name variableSort =
@@ -2271,8 +2288,8 @@ metadataTools =
         smtDeclarations
         sortConstructors
 
-axiomSimplifiers :: BuiltinAndAxiomSimplifierMap
-axiomSimplifiers = Map.empty
+axiomEquations :: Map AxiomIdentifier [Equation RewritingVariableName]
+axiomEquations = Map.empty
 
 predicateSimplifier ::
     MonadSimplify simplifier => ConditionSimplifier simplifier
@@ -2295,16 +2312,18 @@ overloadSimplifier = mkOverloadSimplifier overloadGraph injSimplifier
 
 -- TODO(Ana): if needed, create copy with experimental simplifier
 -- enabled
-env :: MonadSimplify simplifier => Env simplifier
+env :: Env
 env =
     Env
         { metadataTools = Test.Kore.Rewrite.MockSymbols.metadataTools
         , simplifierCondition = predicateSimplifier
-        , simplifierAxioms = axiomSimplifiers
+        , simplifierPattern = Pattern.makeEvaluate
+        , simplifierTerm = TermLike.simplify
+        , axiomEquations = axiomEquations
         , memo = Memo.forgetful
         , injSimplifier
         , overloadSimplifier
-        , simplifierXSwitch = DisabledSimplifierX
+        , hookedSymbols = Map.empty
         }
 
 generatorSetup :: ConsistentKore.Setup
@@ -2312,7 +2331,7 @@ generatorSetup =
     ConsistentKore.Setup
         { allSymbols = filter doesNotHaveArguments symbols
         , allAliases = []
-        , allSorts = map fst sortAttributesMapping
+        , allSorts = filter (/= otherTopSort) $ map fst sortAttributesMapping
         , freeElementVariables = Set.empty
         , freeSetVariables = Set.empty
         , maybeIntSort = Just intSort
@@ -2336,63 +2355,131 @@ generatorSetup =
   where
     doesNotHaveArguments Symbol{symbolParams} = null symbolParams
 
-builtinSimplifiers :: BuiltinAndAxiomSimplifierMap
+-- | ensure that test data can be generated using the above setup
+test_canGenerateConsistentTerms :: TestTree
+test_canGenerateConsistentTerms =
+    testGroup "can generate consistent terms for all given sorts" $
+        map mkTest testSorts
+  where
+    testSorts = ConsistentKore.allSorts generatorSetup
+    sizes = map Range.Size [1 .. 10]
+
+    mkTest :: Sort -> TestTree
+    mkTest sort@(SortActualSort SortActual{sortActualName = InternedId{getInternedId}}) =
+        testGroup
+            (show getInternedId)
+            [ testProperty (show size) . withTests 1 . property $ do
+                r <-
+                    forAll . Gen.resize size $
+                        ConsistentKore.runKoreGen
+                            generatorSetup
+                            (ConsistentKore.termLikeGenWithSort sort)
+                -- just test that this works
+                Hedgehog.diff 0 (<) (length $ show r)
+            | size <- sizes
+            ]
+    mkTest SortVariableSort{} =
+        error "Found a sort variable in the generator setup"
+
+builtinSimplifiers :: Map Id Text
 builtinSimplifiers =
     Map.fromList
         [
-            ( AxiomIdentifier.Application unitMapId
-            , Builtin.functionEvaluator Map.evalUnit
+            ( unitMapId
+            , Map.unitKey
             )
         ,
-            ( AxiomIdentifier.Application elementMapId
-            , Builtin.functionEvaluator Map.evalElement
+            ( elementMapId
+            , Map.elementKey
             )
         ,
-            ( AxiomIdentifier.Application concatMapId
-            , Builtin.functionEvaluator Map.evalConcat
+            ( concatMapId
+            , Map.concatKey
             )
         ,
-            ( AxiomIdentifier.Application unitSetId
-            , Builtin.functionEvaluator Set.evalUnit
+            ( unitSetId
+            , Set.unitKey
             )
         ,
-            ( AxiomIdentifier.Application elementSetId
-            , Builtin.functionEvaluator Set.evalElement
+            ( elementSetId
+            , Set.elementKey
             )
         ,
-            ( AxiomIdentifier.Application concatSetId
-            , Builtin.functionEvaluator Set.evalConcat
+            ( concatSetId
+            , Set.concatKey
             )
         ,
-            ( AxiomIdentifier.Application unitListId
-            , Builtin.functionEvaluator List.evalUnit
+            ( unitListId
+            , List.unitKey
             )
         ,
-            ( AxiomIdentifier.Application elementListId
-            , Builtin.functionEvaluator List.evalElement
+            ( elementListId
+            , List.elementKey
             )
         ,
-            ( AxiomIdentifier.Application concatListId
-            , Builtin.functionEvaluator List.evalConcat
+            ( concatListId
+            , List.concatKey
             )
         ,
-            ( AxiomIdentifier.Application tdivIntId
-            , builtinEvaluation
-                (Builtin.Int.builtinFunctions Map.! Builtin.Int.tdivKey)
+            ( tdivIntId
+            , Builtin.Int.tdivKey
             )
         ,
-            ( AxiomIdentifier.Application lessIntId
-            , builtinEvaluation
-                (Builtin.Int.builtinFunctions Map.! Builtin.Int.ltKey)
+            ( lessIntId
+            , Builtin.Int.ltKey
             )
         ,
-            ( AxiomIdentifier.Application greaterEqIntId
-            , builtinEvaluation
-                (Builtin.Int.builtinFunctions Map.! Builtin.Int.geKey)
+            ( greaterEqIntId
+            , Builtin.Int.geKey
             )
         ,
-            ( AxiomIdentifier.Application keqBoolId
-            , builtinEvaluation
-                (Builtin.KEqual.builtinFunctions Map.! Builtin.KEqual.eqKey)
+            ( keqBoolId
+            , Builtin.KEqual.eqKey
             )
         ]
+
+verifiedModuleContext :: PatternVerifier.Context
+verifiedModuleContext =
+    PatternVerifier.verifiedModuleContext
+        IndexedModule.IndexedModuleSyntax
+            { indexedModuleName = ModuleName "MOCK"
+            , indexedModuleAliasSentences = mempty
+            , indexedModuleSymbolSentences =
+                Map.fromList
+                    [ ( symbolConstructor
+                      ,
+                          ( symbolAttributes
+                          , SentenceSymbol
+                                { sentenceSymbolSymbol =
+                                    Kore.Syntax.Sentence.Symbol
+                                        { symbolConstructor
+                                        , symbolParams = []
+                                        }
+                                , sentenceSymbolSorts = applicationSortsOperands
+                                , sentenceSymbolResultSort = applicationSortsResult
+                                , sentenceSymbolAttributes = Default.def
+                                }
+                          )
+                      )
+                    | Symbol
+                        { symbolConstructor
+                        , symbolAttributes
+                        , symbolSorts =
+                            ApplicationSorts
+                                { applicationSortsOperands
+                                , applicationSortsResult
+                                }
+                        } <-
+                        allSymbols
+                    ]
+            , indexedModuleSortDescriptions =
+                Map.fromList
+                    [ (sortActualName, (attr{Attribute.hasDomainValues = Attribute.HasDomainValues True}, SentenceSort sortActualName [] Default.def))
+                    | (SortActualSort (SortActual{sortActualName}), attr) <- sortAttributesMapping
+                    ]
+            , indexedModuleImportsSyntax = mempty
+            , indexedModuleHookedIdentifiers = mempty
+            }
+        & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
+  where
+    ConsistentKore.Setup{allSymbols} = generatorSetup

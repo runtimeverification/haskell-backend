@@ -1,5 +1,6 @@
 module Test.Kore.Rewrite.Function.Evaluator (test_evaluateApplication) where
 
+import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Kore.Attribute.Synthetic (
     synthesize,
@@ -22,13 +23,12 @@ import Kore.Internal.TermLike (
     TermLike,
  )
 import Kore.Internal.TermLike qualified as TermLike
-import Kore.Rewrite.Axiom.EvaluationStrategy qualified as Kore
+import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier)
 import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.Function.Evaluator qualified as Kore
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.Simplify qualified as Kore
 import Kore.Syntax.Application (
     Application (..),
  )
@@ -97,10 +97,9 @@ mkApplySymbol' ::
     TermLike RewritingVariableName
 mkApplySymbol' = synthesize . TermLike.ApplySymbolF
 
-fEvaluator :: Kore.BuiltinAndAxiomSimplifier
-fEvaluator =
-    Kore.simplificationEvaluation $
-        Equation.mkEquation left right
+fEquation :: Equation.Equation RewritingVariableName
+fEquation =
+    Equation.mkEquation left right
   where
     left = mkApplySymbol' (f x)
     right = x
@@ -111,13 +110,13 @@ evaluateApplication ::
     Application Symbol (TermLike RewritingVariableName) ->
     IO (OrPattern RewritingVariableName)
 evaluateApplication predicate =
-    Test.runSimplifier env
+    Test.testRunSimplifier env
         . Kore.evaluateApplication SideCondition.top predicate
 
-simplifierAxioms :: Kore.BuiltinAndAxiomSimplifierMap
-simplifierAxioms = Map.fromList [(fId, fEvaluator)]
+axiomEquations :: Map AxiomIdentifier [Equation.Equation RewritingVariableName]
+axiomEquations = Map.fromList [(fId, [fEquation])]
   where
     fId = Axiom.Identifier.Application (TermLike.symbolConstructor fSymbol)
 
-env :: Test.Env (Test.SimplifierT Test.NoSMT)
-env = Mock.env{Test.simplifierAxioms = simplifierAxioms}
+env :: Test.Env
+env = Mock.env{Test.axiomEquations = axiomEquations}

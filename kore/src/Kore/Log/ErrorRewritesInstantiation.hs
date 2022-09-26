@@ -1,3 +1,6 @@
+{-# LANGUAGE NoStrict #-}
+{-# LANGUAGE NoStrictData #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
@@ -80,7 +83,7 @@ data SubstitutionCoverageError = SubstitutionCoverageError
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Exception ErrorRewritesInstantiation where
-    toException = toException . SomeEntry
+    toException = toException . SomeEntry []
     fromException exn =
         fromException exn >>= fromEntry
 

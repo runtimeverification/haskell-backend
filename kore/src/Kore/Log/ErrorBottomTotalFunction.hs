@@ -1,3 +1,6 @@
+{-# LANGUAGE NoStrict #-}
+{-# LANGUAGE NoStrictData #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
@@ -45,7 +48,7 @@ instance Pretty ErrorBottomTotalFunction where
             ]
 
 instance Exception ErrorBottomTotalFunction where
-    toException = toException . SomeEntry
+    toException = toException . SomeEntry []
     fromException exn =
         fromException exn >>= fromEntry
 

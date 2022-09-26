@@ -7,6 +7,9 @@ Please refer to <http://github.com/runtimeverification/haskell-backend/blob/mast
 module Kore.Syntax.Id (
     -- * Identifiers
     Id (..),
+    pattern Id,
+    getId,
+    idLocation,
     getIdForError,
     noLocationId,
     implicitId,
@@ -18,6 +21,7 @@ module Kore.Syntax.Id (
     prettyPrintAstLocation,
 ) where
 
+import Data.InternedText
 import Data.String (
     IsString (..),
  )
@@ -36,9 +40,9 @@ import Pretty qualified
 
 'Id' corresponds to the @identifier@ syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#identifiers kore-syntax.md#identifiers>.
 -}
-data Id = Id
-    { getId :: !Text
-    , idLocation :: !AstLocation
+data Id = InternedId
+    { getInternedId :: !InternedText
+    , internedIdLocation :: !AstLocation
     }
     deriving stock (Show)
     deriving stock (GHC.Generic)
@@ -46,19 +50,29 @@ data Id = Id
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 
+-- | A pattern synonym to abstract away `InternedText`.
+pattern Id :: Text -> AstLocation -> Id
+pattern Id{getId, idLocation} <-
+    InternedId (internedText -> getId) idLocation
+    where
+        Id text location = InternedId (internText text) location
+
+{-# COMPLETE Id #-}
+
 -- | 'Ord' ignores the 'AstLocation'
 instance Ord Id where
-    compare first@(Id _ _) second@(Id _ _) =
-        compare (getId first) (getId second)
+    compare first second =
+        compare (getInternedId first) (getInternedId second)
+    {-# INLINE compare #-}
 
 -- | 'Eq' ignores the 'AstLocation'
 instance Eq Id where
-    first == second = compare first second == EQ
+    first == second = getInternedId first == getInternedId second
     {-# INLINE (==) #-}
 
 -- | 'Hashable' ignores the 'AstLocation'
 instance Hashable Id where
-    hashWithSalt salt (Id text _) = hashWithSalt salt text
+    hashWithSalt salt iden = hashWithSalt salt $ getInternedId iden
     {-# INLINE hashWithSalt #-}
 
 instance Diff Id where
@@ -91,10 +105,10 @@ implicitId name = Id name AstLocationImplicit
 The location will be 'AstLocationGeneratedVariable'.
 -}
 generatedId :: Text -> Id
-generatedId getId =
-    Id{getId, idLocation}
+generatedId text =
+    Id{getId = text, idLocation = location}
   where
-    idLocation = AstLocationGeneratedVariable
+    location = AstLocationGeneratedVariable
 
 -- | Get the identifier name for an error message 'String'.
 getIdForError :: Id -> String

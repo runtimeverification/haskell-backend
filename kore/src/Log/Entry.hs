@@ -13,7 +13,6 @@ module Log.Entry (
     -- * Entry
     Entry (..),
     SomeEntry (..),
-    ActualEntry (..),
     someEntry,
     entryTypeText,
 ) where
@@ -47,10 +46,10 @@ import Type.Reflection qualified as Reflection
 
 class (Show entry, Typeable entry) => Entry entry where
     toEntry :: entry -> SomeEntry
-    toEntry = SomeEntry
+    toEntry = SomeEntry []
 
     fromEntry :: SomeEntry -> Maybe entry
-    fromEntry (SomeEntry entry) = Data.Typeable.cast entry
+    fromEntry (SomeEntry _ entry) = Data.Typeable.cast entry
 
     entrySeverity :: entry -> Severity
 
@@ -67,10 +66,10 @@ class (Show entry, Typeable entry) => Entry entry where
     helpDoc _ = Pretty.emptyDoc
 
 data SomeEntry where
-    SomeEntry :: Entry entry => entry -> SomeEntry
+    SomeEntry :: Entry entry => [SomeEntry] -> entry -> SomeEntry
 
 instance Show SomeEntry where
-    show (SomeEntry entry) = show entry
+    show (SomeEntry _ entry) = show entry
 
 instance Exception SomeEntry where
     displayException = show . longDoc
@@ -78,28 +77,17 @@ instance Exception SomeEntry where
 instance Entry SomeEntry where
     toEntry = id
     fromEntry = Just
-    entrySeverity (SomeEntry entry) = entrySeverity entry
-    longDoc (SomeEntry entry) = longDoc entry
-    oneLineDoc (SomeEntry entry) = oneLineDoc entry
-    contextDoc (SomeEntry entry) = contextDoc entry
+    entrySeverity (SomeEntry _ entry) = entrySeverity entry
+    longDoc (SomeEntry _ entry) = longDoc entry
+    oneLineDoc (SomeEntry _ entry) = oneLineDoc entry
+    contextDoc (SomeEntry _ entry) = contextDoc entry
 
 someEntry :: (Entry e1, Entry e2) => Prism SomeEntry SomeEntry e1 e2
 someEntry = Lens.prism' toEntry fromEntry
 
 entryTypeText :: SomeEntry -> Text
-entryTypeText (SomeEntry entry) =
+entryTypeText (SomeEntry _ entry) =
     Text.pack . show . Reflection.typeOf $ entry
-
-data ActualEntry = ActualEntry
-    { actualEntry :: !SomeEntry
-    , entryContext :: ![SomeEntry]
-    }
-
-instance From ActualEntry SomeEntry where
-    from ActualEntry{actualEntry} = actualEntry
-
-instance From SomeEntry ActualEntry where
-    from actualEntry = ActualEntry{actualEntry, entryContext = mempty}
 
 prettySeverity :: Severity -> Pretty.Doc ann
 prettySeverity = Pretty.pretty . show

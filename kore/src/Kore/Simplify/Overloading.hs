@@ -6,6 +6,10 @@ module Kore.Simplify.Overloading (
     matchOverloading,
     -- for testing purposes
     unifyOverloading,
+    unifyOverloadingCommonOverload,
+    unifyOverloadingInjVsVariable,
+    unifyOverloadingVsOverloaded,
+    unifyOverloadingVsOverloadedVariable,
     OverloadingData (..),
     UnifyOverloadingResult,
     MatchOverloadingResult,
@@ -13,6 +17,7 @@ module Kore.Simplify.Overloading (
     Narrowing (..),
     OverloadingResolution (..),
     MatchResult (..),
+    flipResult,
 ) where
 
 import Control.Monad qualified as Monad
@@ -45,6 +50,7 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Simplify as Simplifier (
     MonadSimplify (..),
+    askOverloadSimplifier,
  )
 import Pair
 import Prelude.Kore hiding (

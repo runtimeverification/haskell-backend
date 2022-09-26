@@ -32,9 +32,9 @@ import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.TermLike (
     ElementVariable,
-    Id (getId),
     TermLike,
     VariableName,
+    getId,
     weakAlwaysFinally,
  )
 import Kore.Internal.TermLike qualified as TermLike
@@ -52,7 +52,7 @@ import Kore.Rewrite.UnifyingRule (
     UnifyingRule (..),
  )
 import Kore.Simplify.Simplify (
-    MonadSimplify,
+    Simplifier,
  )
 import Kore.Syntax.Sentence qualified as Syntax
 import Kore.TopBottom (
@@ -197,12 +197,11 @@ instance ClaimExtractor AllPathClaim where
             (Syntax.sentenceAxiomPattern . Syntax.getSentenceClaim) sentence
 
 deriveParAxiomAllPath ::
-    MonadSimplify simplifier =>
     [Rule AllPathClaim] ->
     AllPathClaim ->
     TransitionT
         (AppliedRule AllPathClaim)
-        simplifier
+        Simplifier
         (ApplyResult AllPathClaim)
 deriveParAxiomAllPath rules =
     derivePar' _Unwrapped AllPathRewriteRule rewrites

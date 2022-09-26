@@ -9,8 +9,13 @@ Portability : portable
 -}
 module Kore.Unification.Procedure (
     unificationProcedure,
+    runUnifier,
 ) where
 
+import Control.Monad.State.Strict (
+    evalStateT,
+ )
+import Data.HashMap.Strict qualified as HashMap
 import Kore.Internal.Condition (
     Condition,
  )
@@ -26,45 +31,49 @@ import Kore.Log.InfoAttemptUnification (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.AndTerms (
-    termUnification,
- )
-import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify (
+    Simplifier,
     makeEvaluateTermCeil,
     simplifyCondition,
  )
 import Kore.TopBottom qualified as TopBottom
-import Kore.Unification.Unify (
-    MonadUnify,
- )
+import Kore.Unification.NewUnifier
 import Kore.Unification.Unify qualified as Monad.Unify
 import Logic (
     lowerLogicT,
+    observeAllT,
  )
 import Prelude.Kore
+
+runUnifier ::
+    NewUnifier a ->
+    Simplifier [a]
+runUnifier unifier = evalStateT (Logic.observeAllT unifier) HashMap.empty
 
 {- |'unificationProcedure' attempts to simplify @t1 = t2@, assuming @t1@ and
  @t2@ are terms (functional patterns) to a substitution.
  If successful, it also produces a proof of how the substitution was obtained.
 -}
 unificationProcedure ::
-    MonadUnify unifier =>
     SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    unifier (Condition RewritingVariableName)
+    NewUnifier (Condition RewritingVariableName)
 unificationProcedure sideCondition p1 p2
     | p1Sort /= p2Sort =
         debugUnifyBottomAndReturnBottom "Cannot unify different sorts." p1 p2
     | otherwise = infoAttemptUnification p1 p2 $ do
-        pat <- termUnification Not.notSimplifier p1 p2
-        TopBottom.guardAgainstBottom pat
-        let (term, conditions) = Conditional.splitTerm pat
+        condition <- unifyTerms p1 p2 sideCondition
+        TopBottom.guardAgainstBottom condition
+        marker "unify" "MakeCeil"
+        let term = unifiedTermAnd p1 p2 condition
         orCeil <- makeEvaluateTermCeil sideCondition term
+        marker "unify" "CombineCeil"
         ceil' <- Monad.Unify.scatter orCeil
         lowerLogicT . simplifyCondition sideCondition $
-            Conditional.andCondition ceil' conditions
+            Conditional.andCondition ceil' condition
   where
     p1Sort = termLikeSort p1
     p2Sort = termLikeSort p2
+
+    marker c t = liftIO . traceMarkerIO $ concat [c, ":", t, ":"]

@@ -46,7 +46,7 @@ import Kore.Rewrite.RulePattern (
     rulePattern,
  )
 import Kore.Rewrite.Strategy (
-    FinalNodeType (Leaf),
+    FinalNodeType (..),
     GraphSearchOrder (..),
  )
 import Kore.Rewrite.Transition (runTransitionT)
@@ -771,6 +771,69 @@ test_proveClaims =
          in [ mkTest "OnePath" simpleOnePathClaim
             , mkTest "AllPath" simpleAllPathClaim
             ]
+    , testGroup "warns about unexplored branch when one of several stuck claims returned" $
+        let axioms = [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
+            mkTest name mkSimpleClaim =
+                testCase name $ do
+                    actual <-
+                        Test.Kore.Reachability.Prove.proveClaims
+                            Unlimited
+                            Unlimited
+                            1
+                            Leaf
+                            axioms
+                            [mkSimpleClaim Mock.a Mock.d]
+                            []
+                    let stuck = mkSimpleClaim Mock.b Mock.d
+                        expect =
+                            ProveClaimsResult
+                                { stuckClaims = MultiAnd.singleton (StuckClaim stuck)
+                                , provenClaims = MultiAnd.top
+                                , unexplored = 1
+                                }
+                    assertEqual "count" (unexplored expect) (unexplored actual)
+                    assertEqual "claim" (stuckClaims expect) (stuckClaims actual)
+         in [ mkTest "OnePath" simpleOnePathClaim
+            , mkTest "AllPath" simpleAllPathClaim
+            ]
+    , testGroup "returns branch state when stopping at branch points" $
+        let axioms =
+                [ simpleAxiom Mock.a Mock.d
+                , simpleAxiom Mock.d (mkOr Mock.b Mock.c)
+                ]
+            mkTest name mkSimpleClaim mkSomeClaim =
+                testCase name $ do
+                    actual <-
+                        Test.Kore.Reachability.Prove.proveClaims
+                            Unlimited
+                            Unlimited
+                            1
+                            LeafOrBranching
+                            axioms
+                            [mkSimpleClaim Mock.a $ mkOr Mock.b Mock.c]
+                            []
+                    let stuck =
+                            mkSomeClaim
+                                (Pattern.fromTermLike Mock.d)
+                                ( OrPattern.fromPatterns $
+                                    map
+                                        Pattern.fromTermLike
+                                        [ Mock.b
+                                        , Mock.c
+                                        ]
+                                )
+                                []
+                        expect =
+                            ProveClaimsResult
+                                { stuckClaims = MultiAnd.singleton $ StuckClaim stuck
+                                , provenClaims = MultiAnd.top
+                                , unexplored = 2
+                                }
+                    assertEqual "count" (unexplored expect) (unexplored actual)
+                    assertEqual "claim" (stuckClaims expect) (stuckClaims actual)
+         in [ mkTest "OnePath" simpleOnePathClaim mkSomeClaimOnePath
+            , mkTest "AllPath" simpleAllPathClaim mkSomeClaimAllPath
+            ]
     ]
 
 test_transitionRule :: TestTree
@@ -795,7 +858,7 @@ test_transitionRule =
     claim = AllPathClaim $ simpleClaim (mkBottom Mock.testSort) Mock.a
     runTransitionRule claims axiomGroups prim cState =
         runSimplifierSMT Mock.env . runTransitionT $
-            transitionRule claims axiomGroups prim cState
+            transitionRule EnabledStuckCheck claims axiomGroups prim cState
 
 simpleAxiom ::
     TermLike VariableName ->
@@ -868,6 +931,7 @@ proveClaims ::
     Limit Natural ->
     Limit Natural ->
     Natural ->
+    FinalNodeType ->
     [Rule SomeClaim] ->
     [SomeClaim] ->
     [SomeClaim] ->
@@ -876,14 +940,17 @@ proveClaims
     breadthLimit
     depthLimit
     maxCounterexamples
+    finalNodeType
     axioms
     claims
     alreadyProven =
         Kore.Reachability.proveClaims
+            Nothing
+            EnabledStuckCheck
             breadthLimit
             BreadthFirst
             maxCounterexamples
-            Leaf
+            finalNodeType
             (AllClaims claims)
             (Axioms axioms)
             (AlreadyProven (map unparseToText2 alreadyProven))
@@ -915,6 +982,7 @@ proveClaimsMaxCounterexamples_
                     breadthLimit
                     depthLimit
                     maxCounterexamples
+                    Leaf
                     axioms
                     claims
                     alreadyProven

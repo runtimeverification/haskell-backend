@@ -81,8 +81,8 @@ import Kore.Internal.TermLike (
     TermLike,
  )
 import Kore.Log (
-    ActualEntry (..),
     LogAction (..),
+    SomeEntry (..),
  )
 import Kore.Log qualified as Log
 import Kore.Log.Registry qualified as Log
@@ -94,17 +94,18 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Rewrite.Strategy qualified as Strategy
-import Kore.Simplify.Data (
-    MonadSimplify (..),
+import Kore.Simplify.API (
+    Simplifier,
  )
-import Kore.Simplify.Not qualified as Not
 import Kore.Syntax.Module (
     ModuleName (..),
  )
-import Kore.Unification.UnifierT (
-    UnifierT (..),
+import Kore.Unification.NewUnifier (
+    NewUnifier,
  )
-import Kore.Unification.UnifierT qualified as Monad.Unify
+import Kore.Unification.Procedure (
+    runUnifier,
+ )
 import Logic
 import Numeric.Natural
 import Prelude.Kore
@@ -574,14 +575,14 @@ data ReplState = ReplState
     deriving stock (GHC.Generic)
 
 -- | Configuration environment for the repl.
-data Config m = Config
+data Config = Config
     { -- | Stepper function
       stepper ::
         [SomeClaim] ->
         [Axiom] ->
         ExecutionGraph ->
         ReplNode ->
-        m ExecutionGraph
+        Simplifier ExecutionGraph
     , -- | Unifier function, it is a partially applied 'unificationProcedure'
       --   where we discard the result since we are looking for unification
       --   failures
@@ -589,9 +590,9 @@ data Config m = Config
         SideCondition RewritingVariableName ->
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
-        UnifierT m (Condition RewritingVariableName)
+        NewUnifier (Condition RewritingVariableName)
     , -- | Logger function, see 'logging'.
-      logger :: MVar (LogAction IO ActualEntry)
+      logger :: MVar (LogAction IO SomeEntry)
     , -- | Output resulting pattern to this file.
       outputFile :: OutputFile
     , mainModuleName :: ModuleName
@@ -633,15 +634,14 @@ makeKoreReplOutput str =
     ReplOutput . return . KoreOut $ str <> "\n"
 
 runUnifierWithoutExplanation ::
-    forall m a.
-    MonadSimplify m =>
-    UnifierT m a ->
-    m (Maybe (NonEmpty a))
+    forall a.
+    NewUnifier a ->
+    Simplifier (Maybe (NonEmpty a))
 runUnifierWithoutExplanation unifier =
     failEmptyList <$> unificationResults
   where
-    unificationResults :: m [a]
-    unificationResults = Monad.Unify.runUnifierT Not.notSimplifier unifier
+    unificationResults :: Simplifier [a]
+    unificationResults = runUnifier unifier
     failEmptyList :: [a] -> Maybe (NonEmpty a)
     failEmptyList results =
         case results of

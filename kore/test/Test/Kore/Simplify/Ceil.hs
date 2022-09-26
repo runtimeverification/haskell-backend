@@ -3,7 +3,7 @@ module Test.Kore.Simplify.Ceil (
 ) where
 
 import Data.Map.Strict qualified as Map
-import Data.Sup qualified as Sup
+import Kore.Equation (Equation)
 import Kore.Internal.Condition as Condition
 import Kore.Internal.OrCondition (
     OrCondition,
@@ -38,10 +38,8 @@ import Kore.Simplify.Ceil qualified as Ceil (
     simplify,
  )
 import Kore.Simplify.Simplify
-import Kore.Simplify.Simplify qualified as AttemptedAxiom (
-    AttemptedAxiom (..),
- )
 import Prelude.Kore
+import Test.Kore.Equation.Common (axiomEnsures)
 import Test.Kore.Internal.OrPattern (
     OrPattern,
  )
@@ -348,13 +346,9 @@ test_ceilSimplification =
                     ( AxiomIdentifier.Ceil
                         (AxiomIdentifier.Application Mock.fId)
                     )
-                    ( appliedMockEvaluator
-                        Conditional
-                            { term = mkTop Mock.testSort
-                            , predicate = makeEqualsPredicate Mock.a Mock.cf
-                            , substitution = mempty
-                            }
-                    )
+                    [ axiomEnsures (mkCeil Mock.testSort $ Mock.f Mock.a) (mkTop Mock.testSort) (makeEqualsPredicate Mock.a Mock.cf)
+                    , axiomEnsures (mkCeil Mock.testSort $ Mock.f Mock.b) (mkTop Mock.testSort) (makeEqualsPredicate Mock.a Mock.cf)
+                    ]
                 )
                 Conditional
                     { term = Mock.functional20 fOfA fOfB
@@ -418,42 +412,6 @@ test_ceilSimplification =
     somethingOfAExpanded = Pattern.fromTermLike somethingOfA
     somethingOfBExpanded = Pattern.fromTermLike somethingOfB
 
-appliedMockEvaluator ::
-    Pattern RewritingVariableName -> BuiltinAndAxiomSimplifier
-appliedMockEvaluator result =
-    BuiltinAndAxiomSimplifier $
-        mockEvaluator $
-            AttemptedAxiom.Applied
-                AttemptedAxiomResults
-                    { results =
-                        OrPattern.fromPatterns
-                            [Test.Kore.Simplify.Ceil.mapVariables result]
-                    , remainders = OrPattern.fromPatterns []
-                    }
-
-mockEvaluator ::
-    MonadSimplify simplifier =>
-    AttemptedAxiom RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    SideCondition RewritingVariableName ->
-    simplifier (AttemptedAxiom RewritingVariableName)
-mockEvaluator evaluation _ _ = return evaluation
-
-mapVariables ::
-    forall variable.
-    InternalVariable variable =>
-    Pattern RewritingVariableName ->
-    Pattern variable
-mapVariables =
-    Pattern.mapVariables (pure worker)
-  where
-    worker :: RewritingVariableName -> variable
-    worker v =
-        fromVariableName $
-            (from @RewritingVariableName @VariableName v)
-                { counter = Just (Sup.Element 1)
-                }
-
 makeCeil ::
     [Pattern RewritingVariableName] ->
     Ceil Sort (OrPattern RewritingVariableName)
@@ -468,7 +426,7 @@ evaluate ::
     Ceil Sort (OrPattern RewritingVariableName) ->
     IO (OrCondition RewritingVariableName)
 evaluate ceil =
-    runSimplifier mockEnv $
+    testRunSimplifier mockEnv $
         Ceil.simplify SideCondition.top ceil
   where
     mockEnv = Mock.env
@@ -478,15 +436,14 @@ makeEvaluate ::
 makeEvaluate = makeEvaluateWithAxioms Map.empty
 
 makeEvaluateWithAxioms ::
-    -- | Map from symbol IDs to defined functions
-    BuiltinAndAxiomSimplifierMap ->
+    Map.Map AxiomIdentifier.AxiomIdentifier [Equation RewritingVariableName] ->
     Pattern RewritingVariableName ->
     IO (OrCondition RewritingVariableName)
-makeEvaluateWithAxioms axiomIdToSimplifier child =
-    runSimplifier mockEnv $
+makeEvaluateWithAxioms axiomEquations child =
+    testRunSimplifier mockEnv $
         Ceil.makeEvaluate SideCondition.top child
   where
-    mockEnv = Mock.env{simplifierAxioms = axiomIdToSimplifier}
+    mockEnv = Mock.env{axiomEquations}
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =

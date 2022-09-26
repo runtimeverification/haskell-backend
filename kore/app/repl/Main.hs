@@ -11,6 +11,7 @@ import Control.Monad.Catch (
     handle,
     throwM,
  )
+import Control.Monad.Extra (whenJust)
 import GlobalMain
 import Kore.BugReport
 import Kore.Exec (
@@ -189,12 +190,10 @@ main = do
             (Just envName)
             (parseKoreReplOptions startTime)
             parserInfoModifiers
-    case localOptions options of
-        Nothing -> pure ()
-        Just koreReplOptions -> mainWithOptions koreReplOptions
+    whenJust (localOptions options) mainWithOptions
 
 mainWithOptions :: LocalOptions KoreReplOptions -> IO ()
-mainWithOptions LocalOptions{execOptions, simplifierx} = do
+mainWithOptions LocalOptions{execOptions} = do
     exitCode <-
         withBugReport Main.exeName bugReportOption $ \tempDirectory ->
             withLogger tempDirectory koreLogOptions $ \actualLogAction -> do
@@ -246,7 +245,8 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
                                 (getSMTLemmas validatedDefinition)
                             )
                             $ proveWithRepl
-                                simplifierx
+                                replMinDepth
+                                replStuckCheck
                                 validatedDefinition
                                 specDefIndexedModule
                                 Nothing
@@ -297,7 +297,7 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
     someExceptionHandler :: SomeException -> Main ExitCode
     someExceptionHandler someException = do
         case fromException someException of
-            Just (SomeEntry entry) -> logEntry entry
+            Just entry@(SomeEntry _ _) -> logEntry entry
             Nothing -> errorException someException
         throwM someException
 
@@ -324,3 +324,9 @@ mainWithOptions LocalOptions{execOptions, simplifierx} = do
 
     smtPrelude :: SMT.Prelude
     smtPrelude = prelude smtOptions
+
+    replStuckCheck :: Claim.StuckCheck
+    replStuckCheck = stuckCheck proveOptions
+
+    replMinDepth :: Maybe Claim.MinDepth
+    replMinDepth = minDepth proveOptions

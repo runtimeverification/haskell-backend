@@ -111,7 +111,7 @@ mergeResults = fold
 
 -- | Take the 'Results' without any 'remainders'.
 withoutRemainders ::
-    (Ord config, TopBottom config) =>
+    Ord config =>
     Results rule config ->
     Results rule config
 withoutRemainders results = results{remainders = mempty}
@@ -122,7 +122,7 @@ remainder config = mempty{remainders = MultiOr.singleton config}
 
 -- | Gather all the final configurations from the 'Results'.
 gatherResults ::
-    (Ord config, TopBottom config) =>
+    Ord config =>
     Results rule config ->
     MultiOr config
 gatherResults = foldMap result . results

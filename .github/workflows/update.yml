@@ -27,22 +27,26 @@ jobs:
           ref: ${{ steps.config.outputs.ref }}
           submodules: recursive
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v14.1
+      - name: 'Install Nix'
+        uses: cachix/install-nix-action@v15
         with:
           extra_nix_config: |
-            substituters = http://cache.nixos.org https://hydra.iohk.io
+            substituters = http://cache.nixos.org https://cache.iog.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
-          install_url: "https://releases.nixos.org/nix/nix-2.3.16/install"
 
-      - name: Install Cachix
+      - name: 'Install Cachix'
         uses: cachix/cachix-action@v10
         with:
           name: runtimeverification
+          extraPullNames: kore
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
 
+
       - name: Materialize
-        run: ./nix/rematerialize.sh
+        run: nix run .#update-cabal
+
+      - name: Materialize GHC 9
+        run: nix run .#update-cabal-ghc9
 
       - name: Update branch
         env:
@@ -92,22 +96,23 @@ jobs:
           ref: ${{ steps.config.outputs.ref }}
           submodules: recursive
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v14.1
+      - name: 'Install Nix'
+        uses: cachix/install-nix-action@v15
         with:
           extra_nix_config: |
-            substituters = http://cache.nixos.org https://hydra.iohk.io
+            substituters = http://cache.nixos.org https://cache.iog.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
-          install_url: "https://releases.nixos.org/nix/nix-2.3.16/install"
 
-      - name: Install Cachix
+      - name: 'Install Cachix'
         uses: cachix/cachix-action@v10
         with:
           name: runtimeverification
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
 
       - name: Format
-        run: ./nix/fourmolu.sh
+        run: |
+          nix run .#remove-import-groups
+          nix run .#format
 
       - name: Update branch
         env:

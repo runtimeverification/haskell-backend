@@ -7,11 +7,6 @@ module Kore.Equation.Simplification (
     simplifyExtractedEquations,
 ) where
 
-import Control.Monad qualified as Monad
-import Control.Monad.Trans.Except (
-    runExceptT,
-    throwE,
- )
 import Data.Map.Strict (
     Map,
  )
@@ -24,6 +19,7 @@ import Kore.Internal.MultiAnd (
     MultiAnd,
  )
 import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.Predicate (makeAndPredicate)
 import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Substitution qualified as Substitution
@@ -32,11 +28,10 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Simplify (
-    MonadSimplify,
+    Simplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute
-import Kore.TopBottom
 import Logic qualified
 import Prelude.Kore
 
@@ -45,9 +40,8 @@ import Prelude.Kore
 See also: 'Kore.Equation.Registry.extractEquations'
 -}
 simplifyExtractedEquations ::
-    MonadSimplify simplifier =>
     Map identifier [Equation RewritingVariableName] ->
-    simplifier (Map identifier [Equation RewritingVariableName])
+    Simplifier (Map identifier [Equation RewritingVariableName])
 simplifyExtractedEquations = do
     results <- (traverse . traverse) simplifyEquation
     return $ collectResults results
@@ -65,21 +59,18 @@ argument contain a predicate which is not 'Top', 'simplifyEquation'
 returns the original equation.
 -}
 simplifyEquation ::
-    MonadSimplify simplifier =>
     Equation RewritingVariableName ->
-    simplifier (MultiAnd (Equation RewritingVariableName))
+    Simplifier (MultiAnd (Equation RewritingVariableName))
 simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
     do
         simplifiedCond <-
             Simplifier.simplifyCondition
                 SideCondition.top
-                (fromPredicate argument')
+                (makeAndPredicate argument' antiLeft' & fromPredicate)
         let Conditional{substitution, predicate} = simplifiedCond
-        lift $ Monad.unless (isTop predicate) (throwE equation)
-        let subst = Substitution.toMap substitution
+            subst = Substitution.toMap substitution
             left' = substitute subst left
-            requires' = substitute subst requires
-            antiLeft' = substitute subst <$> antiLeft
+            requires' = makeAndPredicate (substitute subst requires) predicate
             right' = substitute subst right
             ensures' = substitute subst ensures
         return
@@ -87,19 +78,18 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
                 { left = TermLike.forgetSimplified left'
                 , requires = Predicate.forgetSimplified requires'
                 , argument = Nothing
-                , antiLeft = Predicate.forgetSimplified <$> antiLeft'
+                , antiLeft = Nothing
                 , right = TermLike.forgetSimplified right'
                 , ensures = Predicate.forgetSimplified ensures'
                 , attributes = attributes
                 }
         & Logic.observeAllT
-        & returnOriginalIfAborted
         & fmap MultiAnd.make
   where
     argument' =
         fromMaybe Predicate.makeTruePredicate argument
-    returnOriginalIfAborted =
-        fmap (either (: []) id) . runExceptT
+    antiLeft' =
+        fromMaybe Predicate.makeTruePredicate antiLeft
     Equation
         { requires
         , argument

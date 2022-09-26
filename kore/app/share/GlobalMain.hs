@@ -1,5 +1,9 @@
 {-# LANGUAGE TemplateHaskell #-}
 
+{- |
+Copyright   : (c) Runtime Verification, 2020-2022
+License     : BSD-3-Clause
+-}
 module GlobalMain (
     MainOptions (..),
     GlobalOptions (..),
@@ -43,20 +47,20 @@ import Control.Lens (
  )
 import Control.Lens qualified as Lens
 import Control.Monad qualified as Monad
-import Control.Monad.Catch (
-    MonadMask,
- )
 import Data.Binary qualified as Binary
 import Data.ByteString.Lazy qualified as ByteString
 import Data.Compact (
     getCompact,
  )
 import Data.Compact.Serialize (
-    unsafeReadCompact,
+    hUnsafeGetCompact,
  )
 import Data.Generics.Product (
     field,
  )
+import Data.HashMap.Strict (HashMap)
+import Data.IORef (readIORef)
+import Data.InternedText (InternedText, InternedTextCache, globalInternedTextCache)
 import Data.List (
     intercalate,
     nub,
@@ -70,13 +74,11 @@ import Data.Text (
     pack,
  )
 import Data.Text.IO qualified as Text
-import Data.Time.Clock (
-    UTCTime (..),
- )
 import Data.Version (
     showVersion,
  )
 import Data.Word
+import GHC.Fingerprint as Fingerprint
 import GHC.Generics qualified as GHC
 import GHC.Stack (
     emptyCallStack,
@@ -115,9 +117,6 @@ import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Predicate (makePredicate)
 import Kore.Internal.TermLike (TermLike, pattern And_)
 import Kore.Log as Log
-import Kore.Log.ErrorOutOfDate (
-    errorOutOfDate,
- )
 import Kore.Log.ErrorParse (
     errorParse,
  )
@@ -129,11 +128,14 @@ import Kore.Parser (
     parseKoreDefinition,
     parseKorePattern,
  )
+import Kore.Parser.ParserUtils (
+    readPositiveIntegral,
+ )
+import Kore.Reachability.Claim (MinDepth (..), StuckCheck (..))
 import Kore.Rewrite.SMT.Lemma
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
-import Kore.Simplify.Simplify (SimplifierXSwitch (..))
 import Kore.Syntax hiding (Pattern)
 import Kore.Syntax.Definition (
     ModuleName (..),
@@ -186,11 +188,8 @@ import Paths_kore qualified as MetaData (
  )
 import Prelude.Kore
 import Pretty qualified as KorePretty
-import Prof (
-    MonadProf,
- )
 import SMT (
-    MonadSMT,
+    SMT,
  )
 import SMT qualified
 import System.Clock (
@@ -198,10 +197,9 @@ import System.Clock (
     diffTimeSpec,
     getTime,
  )
-import System.Directory (
-    getModificationTime,
- )
+import System.Environment (getExecutablePath)
 import System.Environment qualified as Env
+import System.IO (IOMode (..), SeekMode (..), hSeek, withFile)
 
 type Main = LoggerT IO
 
@@ -217,6 +215,10 @@ data KoreProveOptions = KoreProveOptions
     , -- | The file in which to save the proven claims in case the prover
       -- fails.
       saveProofs :: !(Maybe FilePath)
+    , -- | Whether to apply the stuck state detection heuristic
+      stuckCheck :: !StuckCheck
+    , -- | Forces the prover to run at least n steps
+      minDepth :: !(Maybe MinDepth)
     }
 
 parseModuleName :: String -> String -> String -> Parser ModuleName
@@ -260,7 +262,24 @@ parseKoreProveOptions =
                         \in case the prover fails."
                 )
             )
+        <*> Options.flag
+            EnabledStuckCheck
+            DisabledStuckCheck
+            ( long "disable-stuck-check"
+                <> help "Disable the heuristic for detecting stuck states."
+            )
+        <*> optional
+            ( option
+                parseMinDepth
+                ( metavar "MIN_DEPTH"
+                    <> long "min-depth"
+                    <> help "Force the prover to execute at least n steps."
+                )
+            )
   where
+    parseMinDepth =
+        let minDepth = readPositiveIntegral MinDepth "min-depth"
+         in minDepth <|> pure (MinDepth 1)
     parseGraphSearch =
         option
             readGraphSearch
@@ -302,9 +321,8 @@ data MainOptions a = MainOptions
     , localOptions :: !(Maybe (LocalOptions a))
     }
 
-data LocalOptions a = LocalOptions
-    { execOptions :: !a
-    , simplifierx :: !SimplifierXSwitch
+newtype LocalOptions a = LocalOptions
+    { execOptions :: a
     }
 
 {- |
@@ -354,15 +372,6 @@ globalCommandLineParser =
                 <> help "Print version information"
             )
 
-parseSimplifierX :: Parser SimplifierXSwitch
-parseSimplifierX =
-    flag
-        DisabledSimplifierX
-        EnabledSimplifierX
-        ( long "simplifierx"
-            <> help "Enable the experimental simplifier"
-        )
-
 getArgs ::
     -- | environment variable name for extra arguments
     Maybe String ->
@@ -401,7 +410,6 @@ commandLineParse (ExeName exeName) maybeEnv parser infoMod = do
     parseLocalOptions =
         LocalOptions
             <$> parser
-            <*> parseSimplifierX
     parseMainOptions =
         MainOptions
             <$> globalCommandLineParser
@@ -489,13 +497,13 @@ Also prints timing information; see 'mainParse'.
 verifyDefinitionWithBase ::
     -- | already verified definition
     ( Map.Map ModuleName (VerifiedModule Attribute.Symbol)
-    , Map.Map Text AstLocation
+    , HashMap InternedText AstLocation
     ) ->
     -- | Parsed definition to check well-formedness
     ParsedDefinition ->
     Main
         ( Map.Map ModuleName (VerifiedModule Attribute.Symbol)
-        , Map.Map Text AstLocation
+        , HashMap InternedText AstLocation
         )
 verifyDefinitionWithBase
     alreadyVerified
@@ -533,14 +541,6 @@ mainParse parser fileName = do
         Left err -> errorParse err
         Right definition -> return definition
 
-type MonadExecute exe =
-    ( MonadMask exe
-    , MonadIO exe
-    , MonadSMT exe
-    , MonadProf exe
-    , WithLog LogMessage exe
-    )
-
 -- | Run the worker in the context of the main module.
 execute ::
     forall r.
@@ -549,7 +549,7 @@ execute ::
     SmtMetadataTools StepperAttributes ->
     [SentenceAxiom (TermLike VariableName)] ->
     -- | Worker
-    (forall exe. MonadExecute exe => exe r) ->
+    SMT r ->
     Main r
 execute options metadataTools lemmas worker =
     clockSomethingIO "Executing" $
@@ -577,6 +577,7 @@ data SerializedDefinition = SerializedDefinition
     { serializedModule :: SerializedModule
     , lemmas :: [SentenceAxiom (TermLike VariableName)]
     , locations :: KFileLocations
+    , internedTextCache :: InternedTextCache
     }
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
@@ -586,67 +587,74 @@ and either deserialize it, or else treat it as a text KORE definition and manual
 construct the needed SerializedDefinition object from it.
 -}
 deserializeDefinition ::
-    SimplifierXSwitch ->
     KoreSolverOptions ->
     FilePath ->
     ModuleName ->
-    UTCTime ->
     Main SerializedDefinition
 deserializeDefinition
-    simplifierx
     solverOptions
     definitionFilePath
-    mainModuleName
-    exeLastModifiedTime =
+    mainModuleName =
         do
-            bytes <- ByteString.readFile definitionFilePath & liftIO
-            let magicBytes = ByteString.drop 8 $ ByteString.take 16 bytes
-            let magic = Binary.decode @Word64 magicBytes
-            case magic of
-                -- This magic number comes from the Data.Compact.Serialize moduile source:
-                -- https://hackage.haskell.org/package/compact-0.2.0.0/docs/src/Data.Compact.Serialize.html#magicNumber
-                -- The field is not exported by the package so we have to manually specify it here.
-                -- If you update the version of the compact package, you should double check that
-                -- the file format has not changed. They don't provide any particular guarantees
-                -- of stability across versions because the serialized data becomes invalid when
-                -- any changes are made to the binary at all, so there would be no point.
-                --
-                -- We use this magic number to detect if the input file for the definition is
-                -- a serialized Data.Compact region or if it is a textual KORE definition.
-                0x7c155e7a53f094f2 -> do
-                    defnLastModifiedTime <- getModificationTime definitionFilePath & liftIO
-                    if defnLastModifiedTime < exeLastModifiedTime
-                        then errorOutOfDate "serialized definition is out of date. Rerun kompile or kore-exec --serialize."
-                        else do
-                            result <- unsafeReadCompact definitionFilePath & liftIO
-                            either errorParse (return . getCompact) result
-                _ ->
+            maybeSerializedDefinition <-
+                withFile definitionFilePath ReadMode readContents & liftIO
+            case maybeSerializedDefinition of
+                Just serializedDefinition ->
+                    return serializedDefinition
+                Nothing ->
                     makeSerializedDefinition
-                        simplifierx
                         solverOptions
                         definitionFilePath
                         mainModuleName
+      where
+        readContents definitionHandle = do
+            fingerprint <-
+                ByteString.hGet definitionHandle 16
+                    <&> Binary.decode
+            magicNumber <-
+                ByteString.hGet definitionHandle 16
+                    <&> ByteString.drop 8
+                    <&> Binary.decode @Word64
+            case magicNumber of
+                0x7c155e7a53f094f2 -> do
+                    checkFingerprint fingerprint
+                    hSeek definitionHandle AbsoluteSeek 16
+                    serializedDefinition <-
+                        hUnsafeGetCompact definitionHandle
+                            >>= either errorParse (return . getCompact)
+                    return (Just serializedDefinition)
+                _ -> return Nothing
+
+        checkFingerprint fingerprint = do
+            execHash <- getExecutablePath >>= Fingerprint.getFileHash
+            unless
+                (execHash == fingerprint)
+                ( errorParse
+                    "The definition was serialized with a different version of kore-exec. \
+                    \Re-run kompile with the current executable."
+                )
 
 makeSerializedDefinition ::
-    SimplifierXSwitch ->
     KoreSolverOptions ->
     FilePath ->
     ModuleName ->
     Main SerializedDefinition
-makeSerializedDefinition simplifierx solverOptions definitionFileName mainModuleName = do
+makeSerializedDefinition solverOptions definitionFileName mainModuleName = do
     definition <- loadDefinitions [definitionFileName]
     mainModule <- loadModule mainModuleName definition
     let metadataTools = MetadataTools.build mainModule
     let lemmas = getSMTLemmas mainModule
     serializedModule <-
         execute solverOptions metadataTools lemmas $
-            makeSerializedModule simplifierx mainModule
+            makeSerializedModule mainModule
     let locations = kFileLocations definition
+    internedTextCache <- lift $ readIORef globalInternedTextCache
     let serializedDefinition =
             SerializedDefinition
                 { serializedModule
                 , lemmas
                 , locations
+                , internedTextCache
                 }
     serializedDefinition `deepseq` pure ()
     return serializedDefinition
@@ -656,7 +664,7 @@ type LoadedModuleSyntax = VerifiedModuleSyntax Attribute.Symbol
 
 data LoadedDefinition = LoadedDefinition
     { indexedModules :: Map ModuleName LoadedModule
-    , definedNames :: Map Text AstLocation
+    , definedNames :: HashMap InternedText AstLocation
     , kFileLocations :: KFileLocations
     }
 

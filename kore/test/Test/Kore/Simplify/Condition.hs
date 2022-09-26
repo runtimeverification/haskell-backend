@@ -5,6 +5,7 @@ module Test.Kore.Simplify.Condition (
 ) where
 
 import Data.Map.Strict qualified as Map
+import Kore.Equation (Equation)
 import Kore.Internal.Condition (
     Condition,
     Conditional (..),
@@ -19,7 +20,6 @@ import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrCondition (
     OrCondition,
  )
-import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Predicate (
     Predicate,
     makeAndPredicate,
@@ -28,17 +28,11 @@ import Kore.Internal.Predicate (
     makeFalsePredicate,
     makeTruePredicate,
  )
-import Kore.Internal.SideCondition (
-    SideCondition,
- )
 import Kore.Internal.SideCondition qualified as SideCondition (
     top,
  )
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
-import Kore.Rewrite.Axiom.EvaluationStrategy (
-    firstFullEvaluation,
- )
 import Kore.Rewrite.Axiom.Identifier qualified as AxiomIdentifier (
     AxiomIdentifier (..),
  )
@@ -50,6 +44,7 @@ import Kore.Simplify.Simplify
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
 import Kore.TopBottom
 import Prelude.Kore
+import Test.Kore.Equation.Common (axiom_)
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify qualified as Test
 import Test.Tasty
@@ -119,9 +114,9 @@ test_simplify_local_functions =
 test_predicateSimplification :: [TestTree]
 test_predicateSimplification =
     [ testCase "Identity for top and bottom" $ do
-        actualBottom <- runSimplifier Map.empty Conditional.bottomCondition
+        actualBottom <- simplify Conditional.bottomCondition
         assertEqual "" mempty actualBottom
-        actualTop <- runSimplifier Map.empty Conditional.topCondition
+        actualTop <- simplify Conditional.topCondition
         assertEqual
             ""
             (MultiOr.singleton Conditional.topCondition)
@@ -141,8 +136,7 @@ test_predicateSimplification =
                             ]
                     }
         actual <-
-            runSimplifier
-                Map.empty
+            simplify
                 Conditional
                     { term = ()
                     , predicate =
@@ -171,8 +165,7 @@ test_predicateSimplification =
                             ]
                     }
         actual <-
-            runSimplifier
-                Map.empty
+            simplify
                 Conditional
                     { term = ()
                     , predicate =
@@ -198,18 +191,13 @@ test_predicateSimplification =
                             ]
                     }
         actual <-
-            runSimplifier
+            conditionRunSimplifier
                 ( Map.fromList
                     [
                         ( AxiomIdentifier.Application Mock.fId
-                        , simplificationEvaluator
-                            [ makeEvaluator
-                                [
-                                    ( Mock.f Mock.functional00
-                                    , Mock.functional00
-                                    )
-                                , (Mock.f Mock.functional01, Mock.a)
-                                ]
+                        ,
+                            [ axiom_ (Mock.f Mock.functional00) Mock.functional00
+                            , axiom_ (Mock.f Mock.functional01) Mock.a
                             ]
                         )
                     ]
@@ -239,14 +227,11 @@ test_predicateSimplification =
                             ]
                     }
         actual <-
-            runSimplifier
+            conditionRunSimplifier
                 ( Map.fromList
                     [
                         ( AxiomIdentifier.Application Mock.fId
-                        , simplificationEvaluator
-                            [ makeEvaluator
-                                [(Mock.f Mock.b, Mock.constr10 Mock.a)]
-                            ]
+                        , [axiom_ (Mock.f Mock.b) (Mock.constr10 Mock.a)]
                         )
                     ]
                 )
@@ -277,15 +262,11 @@ test_predicateSimplification =
                             ]
                     }
         actual <-
-            runSimplifier
+            conditionRunSimplifier
                 ( Map.fromList
                     [
                         ( AxiomIdentifier.Application Mock.fId
-                        , simplificationEvaluator
-                            [ makeEvaluator
-                                [ (Mock.f Mock.b, Mock.constr10 Mock.a)
-                                ]
-                            ]
+                        , [axiom_ (Mock.f Mock.b) (Mock.constr10 Mock.a)]
                         )
                     ]
                 )
@@ -322,15 +303,13 @@ test_predicateSimplification =
                             ]
                     }
         actual <-
-            runSimplifier
+            conditionRunSimplifier
                 ( Map.fromList
                     [
                         ( AxiomIdentifier.Application Mock.fId
-                        , simplificationEvaluator
-                            [ makeEvaluator
-                                [ (Mock.f Mock.b, Mock.constr10 Mock.a)
-                                , (Mock.f Mock.a, Mock.g Mock.b)
-                                ]
+                        ,
+                            [ axiom_ (Mock.f Mock.b) (Mock.constr10 Mock.a)
+                            , axiom_ (Mock.f Mock.a) (Mock.g Mock.b)
                             ]
                         )
                     ]
@@ -385,55 +364,24 @@ test_simplifyPredicates =
 simplify ::
     Condition RewritingVariableName ->
     IO (OrCondition RewritingVariableName)
-simplify condition = runSimplifier mempty condition
+simplify condition = conditionRunSimplifier mempty condition
 
-runSimplifier ::
-    BuiltinAndAxiomSimplifierMap ->
+conditionRunSimplifier ::
+    Map.Map AxiomIdentifier.AxiomIdentifier [Equation RewritingVariableName] ->
     Condition RewritingVariableName ->
     IO (OrCondition RewritingVariableName)
-runSimplifier patternSimplifierMap predicate =
+conditionRunSimplifier axiomEquations predicate =
     fmap MultiOr.make $
-        Test.runSimplifierBranch env $
+        Test.testRunSimplifierBranch env $
             simplifier SideCondition.top predicate
   where
-    env = Mock.env{Test.simplifierAxioms = patternSimplifierMap}
+    env = Mock.env{axiomEquations}
     ConditionSimplifier simplifier =
         Condition.create SubstitutionSimplifier.substitutionSimplifier
-
-simplificationEvaluator ::
-    [BuiltinAndAxiomSimplifier] ->
-    BuiltinAndAxiomSimplifier
-simplificationEvaluator = firstFullEvaluation
-
-makeEvaluator ::
-    ( forall variable.
-      InternalVariable variable =>
-      [(TermLike variable, TermLike variable)]
-    ) ->
-    BuiltinAndAxiomSimplifier
-makeEvaluator mapping = BuiltinAndAxiomSimplifier $ simpleEvaluator mapping
-
-simpleEvaluator ::
-    MonadSimplify simplifier =>
-    [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
-    TermLike RewritingVariableName ->
-    SideCondition RewritingVariableName ->
-    simplifier (AttemptedAxiom RewritingVariableName)
-simpleEvaluator [] _ _ = return NotApplicable
-simpleEvaluator ((fromTermLike, toTermLike) : ps) patt sideCondition
-    | fromTermLike == patt =
-        return $
-            Applied
-                AttemptedAxiomResults
-                    { results = OrPattern.fromTermLike toTermLike
-                    , remainders = OrPattern.bottom
-                    }
-    | otherwise =
-        simpleEvaluator ps patt sideCondition
 
 simplifyPredicates ::
     MultiAnd (Predicate RewritingVariableName) ->
     IO [Condition RewritingVariableName]
 simplifyPredicates predicate =
     Condition.simplifyPredicates SideCondition.top predicate
-        & Test.runSimplifierBranch Mock.env
+        & Test.testRunSimplifierBranch Mock.env

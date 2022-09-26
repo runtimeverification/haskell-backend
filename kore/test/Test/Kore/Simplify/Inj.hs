@@ -25,7 +25,7 @@ import Kore.Simplify.Inj qualified as Kore
 import Prelude.Kore
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify (
-    runSimplifier,
+    testRunSimplifier,
  )
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -84,4 +84,4 @@ simplify ::
     IO (OrPattern RewritingVariableName)
 simplify injOrPattern =
     Kore.simplify injOrPattern
-        & runSimplifier Mock.env
+        & testRunSimplifier Mock.env

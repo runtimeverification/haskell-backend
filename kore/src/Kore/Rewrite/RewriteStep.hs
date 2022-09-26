@@ -39,6 +39,7 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Log.DebugAppliedRewriteRules (
     debugAppliedRewriteRules,
  )
+import Kore.Log.DebugCreatedSubstitution (debugCreatedSubstitution)
 import Kore.Log.ErrorRewritesInstantiation (
     checkSubstitutionCoverage,
  )
@@ -69,6 +70,7 @@ import Kore.Rewrite.Step (
  )
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    Simplifier,
     simplifyCondition,
  )
 import Kore.Substitute
@@ -167,6 +169,7 @@ constructConfiguration
             finalTerm' = substitute substitution' finalTerm
         -- TODO (thomas.tuegel): Should the final term be simplified after
         -- substitution?
+        debugCreatedSubstitution substitution (termLikeSort finalTerm)
         return (finalTerm' `Pattern.withCondition` finalCondition)
 
 finalizeAppliedClaim ::
@@ -204,23 +207,22 @@ type UnifyingRuleWithRepresentation representation rule =
     , From rule SourceLocation
     )
 
-type FinalizeApplied rule simplifier =
+type FinalizeApplied rule =
     rule ->
     OrCondition RewritingVariableName ->
-    LogicT simplifier (OrPattern RewritingVariableName)
+    LogicT Simplifier (OrPattern RewritingVariableName)
 
 finalizeRule ::
     UnifyingRuleWithRepresentation representation rule =>
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     (representation -> rule) ->
-    FinalizeApplied representation simplifier ->
+    FinalizeApplied representation ->
     FreeVariables RewritingVariableName ->
     -- | Initial conditions
     Pattern RewritingVariableName ->
     -- | Rewriting axiom
     UnifiedRule representation ->
-    simplifier [Result representation]
+    Simplifier [Result representation]
 finalizeRule
     sideCondition
     toRule
@@ -244,20 +246,19 @@ finalizeRule
             return Step.Result{appliedRule = unifiedRule, result}
 
 -- | Finalizes a list of applied rules into 'Results'.
-type Finalizer rule simplifier =
-    MonadSimplify simplifier =>
+type Finalizer rule =
     FreeVariables RewritingVariableName ->
     Pattern RewritingVariableName ->
     [UnifiedRule rule] ->
-    simplifier (Results rule)
+    Simplifier (Results rule)
 
 finalizeRulesParallel ::
-    forall representation rule simplifier.
+    forall representation rule.
     UnifyingRuleWithRepresentation representation rule =>
     SideCondition RewritingVariableName ->
     (representation -> rule) ->
-    FinalizeApplied representation simplifier ->
-    Finalizer representation simplifier
+    FinalizeApplied representation ->
+    Finalizer representation
 finalizeRulesParallel
     sideCondition
     toRule
@@ -290,12 +291,12 @@ finalizeRulesParallel
                     }
 
 finalizeSequence ::
-    forall representation rule simplifier.
+    forall representation rule.
     UnifyingRuleWithRepresentation representation rule =>
     SideCondition RewritingVariableName ->
     (representation -> rule) ->
-    FinalizeApplied representation simplifier ->
-    Finalizer representation simplifier
+    FinalizeApplied representation ->
+    Finalizer representation
 finalizeSequence
     sideCondition
     toRule
@@ -340,20 +341,19 @@ finalizeSequence
             return results
 
 applyWithFinalizer ::
-    forall rule simplifier.
-    MonadSimplify simplifier =>
+    forall rule.
     Rule.UnifyingRule rule =>
     Rule.UnifyingRuleVariable rule ~ RewritingVariableName =>
     From rule SourceLocation =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Finalizing function
-    Finalizer rule simplifier ->
+    Finalizer rule ->
     -- | Rewrite rules
     [rule] ->
     -- | Configuration being rewritten
     Pattern RewritingVariableName ->
-    simplifier (Results rule)
+    Simplifier (Results rule)
 applyWithFinalizer sideCondition finalize rules initial = do
     results <- unifyRules sideCondition initial rules
     debugAppliedRewriteRules initial (locations <$> results)
@@ -368,15 +368,13 @@ applyWithFinalizer sideCondition finalize rules initial = do
 See also: 'applyRewriteRule'
 -}
 applyRulesParallel ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Rewrite rules
     [RulePattern RewritingVariableName] ->
     -- | Configuration being rewritten
     Pattern RewritingVariableName ->
-    simplifier (Results (RulePattern RewritingVariableName))
+    Simplifier (Results (RulePattern RewritingVariableName))
 applyRulesParallel sideCondition rules initial =
     applyWithFinalizer
         sideCondition
@@ -393,13 +391,11 @@ applyRulesParallel sideCondition rules initial =
 See also: 'applyRewriteRule'
 -}
 applyRewriteRulesParallel ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     -- | Rewrite rules
     [RewriteRule RewritingVariableName] ->
     -- | Configuration being rewritten
     Pattern RewritingVariableName ->
-    simplifier (Results (RulePattern RewritingVariableName))
+    Simplifier (Results (RulePattern RewritingVariableName))
 applyRewriteRulesParallel
     (map getRewriteRule -> rules)
     initial =
@@ -416,15 +412,13 @@ applyRewriteRulesParallel
 See also: 'applyRewriteRule'
 -}
 applyRulesSequence ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Rewrite rules
     [RulePattern RewritingVariableName] ->
     -- | Configuration being rewritten
     Pattern RewritingVariableName ->
-    simplifier (Results (RulePattern RewritingVariableName))
+    Simplifier (Results (RulePattern RewritingVariableName))
 applyRulesSequence sideCondition rules initial =
     applyWithFinalizer
         sideCondition
@@ -441,13 +435,11 @@ applyRulesSequence sideCondition rules initial =
 See also: 'applyRewriteRulesParallel'
 -}
 applyRewriteRulesSequence ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     -- | Configuration being rewritten
     Pattern RewritingVariableName ->
     -- | Rewrite rules
     [RewriteRule RewritingVariableName] ->
-    simplifier (Results (RulePattern RewritingVariableName))
+    Simplifier (Results (RulePattern RewritingVariableName))
 applyRewriteRulesSequence
     initialConfig
     (map getRewriteRule -> rules) =
@@ -460,15 +452,14 @@ applyRewriteRulesSequence
             return results
 
 applyClaimsSequence ::
-    forall goal simplifier.
-    MonadSimplify simplifier =>
+    forall goal.
     UnifyingRuleWithRepresentation ClaimPattern goal =>
     (ClaimPattern -> goal) ->
     -- | Configuration being rewritten
     Pattern RewritingVariableName ->
     -- | Rewrite rules
     [ClaimPattern] ->
-    simplifier (Results ClaimPattern)
+    Simplifier (Results ClaimPattern)
 applyClaimsSequence mkClaim initialConfig claims = do
     let sideCondition =
             SideCondition.cacheSimplifiedFunctions

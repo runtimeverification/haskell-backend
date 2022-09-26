@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
@@ -68,22 +70,24 @@ import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.DebugAttemptedRewriteRules (
     debugAttemptedRewriteRule,
  )
+import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Rewrite.Result qualified as Result
 import Kore.Rewrite.Result qualified as Results
 import Kore.Rewrite.Result qualified as Step
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Rewrite.UnifyingRule
-import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    Simplifier,
+    liftSimplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.TopBottom qualified as TopBottom
-import Kore.Unification.Procedure
-import Kore.Unification.UnifierT (
-    evalEnvUnifierT,
+import Kore.Unification.NewUnifier (
+    NewUnifier,
  )
+import Kore.Unification.Procedure
 import Kore.Unparser
 import Kore.Variables.Target (
     Target,
@@ -110,7 +114,6 @@ type Results rule =
 
 -- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.
 unifyRules ::
-    MonadSimplify simplifier =>
     UnifyingRule rule =>
     UnifyingRuleVariable rule ~ RewritingVariableName =>
     From rule SourceLocation =>
@@ -120,11 +123,16 @@ unifyRules ::
     Pattern RewritingVariableName ->
     -- | Rule
     [rule] ->
-    simplifier [UnifiedRule rule]
+    Simplifier [UnifiedRule rule]
 unifyRules sideCondition initial rules =
-    Logic.observeAllT $ do
-        rule <- Logic.scatter rules
-        unifyRule sideCondition initial rule
+    runUnifier
+        ( do
+            marker "Rules" ""
+            rule <- Logic.scatter rules
+            marker "Rule" ""
+            unifyRule sideCondition initial rule
+        )
+        <* marker "EndRules" ""
 
 {- | Attempt to unify a rule with the initial configuration.
 
@@ -140,7 +148,6 @@ unification. The substitution is not applied to the renamed rule.
 -}
 unifyRule ::
     RewritingVariableName ~ UnifyingRuleVariable rule =>
-    MonadSimplify simplifier =>
     UnifyingRule rule =>
     From rule SourceLocation =>
     -- | SideCondition containing metadata
@@ -149,9 +156,10 @@ unifyRule ::
     Pattern RewritingVariableName ->
     -- | Rule
     rule ->
-    LogicT simplifier (UnifiedRule rule)
+    NewUnifier (UnifiedRule rule)
 unifyRule sideCondition initial rule = do
     debugAttemptedRewriteRule initial (location rule)
+    ruleMarker "Init"
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         sideCondition' =
             sideCondition
@@ -159,19 +167,33 @@ unifyRule sideCondition initial rule = do
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let ruleLeft = matchingPattern rule
+    ruleMarker "Unify"
     unification <-
         unificationProcedure sideCondition' initialTerm ruleLeft
-            & evalEnvUnifierT Not.notSimplifier
     -- Combine the unification solution with the rule's requirement clause,
+    ruleMarker "CheckSide"
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
     unification' <-
         Simplifier.simplifyCondition
             sideCondition'
             (unification <> requires')
+    ruleMarker "Success"
     return (rule `Conditional.withCondition` unification')
   where
     location = from @_ @SourceLocation
+
+    locString =
+        Pretty.renderString
+            . Pretty.layoutCompact
+            . Pretty.pretty
+            $ location rule
+
+    ruleMarker tag = marker tag locString
+
+marker :: MonadIO m => String -> String -> m ()
+marker tag extra =
+    liftIO . traceMarkerIO $ concat ["unify:", tag, ":", extra]
 
 -- | The 'Set' of variables that would be introduced by narrowing.
 
@@ -213,6 +235,7 @@ assertFunctionLikeResults termLike results =
 
 -- |Checks whether configuration and matching pattern are function-like
 checkFunctionLike ::
+    forall variable rule f.
     InternalVariable variable =>
     InternalVariable (UnifyingRuleVariable rule) =>
     Foldable f =>
@@ -232,14 +255,22 @@ checkFunctionLike unifiedRules pat
             , Pretty.indent 4 (unparse pat)
             ]
   where
-    checkFunctionLikeRule Conditional{term}
-        | TermLike.isFunctionPattern left = return ()
+    checkFunctionLikeRule ::
+        UnifiedRule rule ->
+        Either String ()
+    checkFunctionLikeRule Conditional{term, substitution}
+        | all (TermLike.isFunctionPattern . Substitution.assignedTerm) $
+            Substitution.unwrap substitution =
+            return ()
         | otherwise =
             Left . show . Pretty.vsep $
-                [ "Expected function-like left-hand side of rule, but found:"
-                , Pretty.indent 4 (unparse left)
+                [ "Expected function-like unification solution, but found:"
+                , Pretty.indent 4 (unparse conditional)
                 ]
       where
+        conditional =
+            TermLike.mkTop (TermLike.termLikeSort left)
+                `Pattern.withCondition` Condition.fromSubstitution substitution
         left = matchingPattern term
 
 {- | Apply the initial conditions to the results of rule unification.
@@ -273,7 +304,7 @@ applyInitialConditions sideCondition initial unification = do
         -- the side condition!
         Simplifier.simplifyCondition sideCondition (initial <> unification)
             & MultiOr.gather
-    evaluated <- SMT.Evaluator.filterMultiOr applied
+    evaluated <- liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc applied
     -- If 'evaluated' is \bottom, the rule is considered to not apply and
     -- no result is returned. If the result is \bottom after this check,
     -- then the rule is considered to apply with a \bottom result.

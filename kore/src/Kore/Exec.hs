@@ -10,6 +10,7 @@ Expose concrete execution as a library
 -}
 module Kore.Exec (
     exec,
+    rpcExec,
     search,
     prove,
     proveWithRepl,
@@ -36,15 +37,14 @@ import Control.Monad (
     filterM,
     (>=>),
  )
-import Control.Monad.Catch (
-    MonadMask,
- )
 import Control.Monad.Trans.Maybe (runMaybeT)
+import Data.Bifunctor (second)
 import Data.Coerce (
     coerce,
  )
-import Data.Limit (
+import Data.Limit as Limit (
     Limit (..),
+    takeWithin,
  )
 import Data.List (
     tails,
@@ -72,6 +72,7 @@ import Kore.Equation qualified as Equation (
     argument,
     requires,
  )
+import Kore.Exec.GraphTraversal qualified as GraphTraversal
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (..),
     VerifiedModule,
@@ -128,9 +129,11 @@ import Kore.Reachability (
     AllClaims (AllClaims),
     AlreadyProven (AlreadyProven),
     Axioms (Axioms),
+    MinDepth,
     ProveClaimsResult (..),
     Rule (ReachabilityRewriteRule),
     SomeClaim (..),
+    StuckCheck (..),
     ToProve (ToProve),
     extractClaims,
     isTrusted,
@@ -169,22 +172,18 @@ import Kore.Rewrite.Search (
     searchGraph,
  )
 import Kore.Rewrite.Search qualified as Search
-import Kore.Rewrite.Strategy (FinalNodeType (Leaf))
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition (
     runTransitionT,
     scatter,
  )
-import Kore.Simplify.Data (
+import Kore.Simplify.API (
+    Simplifier,
     evalSimplifier,
     evalSimplifierProofs,
  )
-import Kore.Simplify.Data qualified as Simplifier
+import Kore.Simplify.API qualified as Simplifier
 import Kore.Simplify.Pattern qualified as Pattern
-import Kore.Simplify.Simplify (
-    MonadSimplify,
-    SimplifierXSwitch,
- )
 import Kore.Syntax.Module (
     ModuleName,
  )
@@ -195,9 +194,6 @@ import Kore.Unparser (
     unparseToText,
     unparseToText2,
  )
-import Log (
-    MonadLog,
- )
 import Log qualified
 import Logic (
     LogicT,
@@ -207,7 +203,6 @@ import Logic qualified
 import Prelude.Kore
 import Prof
 import SMT (
-    MonadSMT,
     SMT,
  )
 import System.Exit (
@@ -237,18 +232,10 @@ data SerializedModule = SerializedModule
     deriving anyclass (NFData)
 
 makeSerializedModule ::
-    forall smt.
-    ( MonadIO smt
-    , MonadLog smt
-    , MonadSMT smt
-    , MonadMask smt
-    , MonadProf smt
-    ) =>
-    SimplifierXSwitch ->
     VerifiedModule StepperAttributes ->
-    smt SerializedModule
-makeSerializedModule simplifierx verifiedModule =
-    evalSimplifier simplifierx (indexedModuleSyntax verifiedModule') sortGraph overloadGraph metadataTools equations $ do
+    SMT SerializedModule
+makeSerializedModule verifiedModule =
+    evalSimplifier (indexedModuleSyntax verifiedModule') sortGraph overloadGraph metadataTools equations $ do
         rewrites <- initializeAndSimplify verifiedModule
         return
             SerializedModule
@@ -272,14 +259,6 @@ makeSerializedModule simplifierx verifiedModule =
 
 -- | Symbolic execution
 exec ::
-    forall smt.
-    ( MonadIO smt
-    , MonadLog smt
-    , MonadSMT smt
-    , MonadMask smt
-    , MonadProf smt
-    ) =>
-    SimplifierXSwitch ->
     Limit Natural ->
     Limit Natural ->
     -- | The main module
@@ -287,9 +266,8 @@ exec ::
     ExecutionMode ->
     -- | The input pattern
     TermLike VariableName ->
-    smt (ExitCode, TermLike VariableName)
+    SMT (ExitCode, TermLike VariableName)
 exec
-    simplifierx
     depthLimit
     breadthLimit
     SerializedModule
@@ -297,44 +275,33 @@ exec
         , overloadGraph
         , metadataTools
         , verifiedModule
-        , rewrites
+        , rewrites = Initialized{rewriteRules}
         , equations
         }
-    strategy
+    execMode
     (mkRewritingTerm -> initialTerm) =
-        evalSimplifier simplifierx verifiedModule' sortGraph overloadGraph metadataTools equations $ do
-            let Initialized{rewriteRules} = rewrites
+        evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations $ do
             finals <-
-                getFinalConfigsOf $ do
-                    initialConfig <-
-                        Pattern.simplify
-                            (Pattern.fromTermLike initialTerm)
-                            >>= Logic.scatter
-                    let updateQueue = \as ->
-                            Strategy.unfoldDepthFirst as
-                                >=> lift
-                                    . Strategy.applyBreadthLimit
-                                        breadthLimit
-                                        dropStrategy
-                        rewriteGroups = groupRewritesByPriority rewriteRules
-                        transit instr config =
-                            Strategy.transitionRule
-                                ( transitionRule rewriteGroups strategy
-                                    & profTransitionRule
-                                    & trackExecDepth
-                                )
-                                instr
-                                config
-                                & runTransitionT
-                                & fmap (map fst)
-                                & lift
-                    Strategy.leavesM
-                        Leaf
-                        updateQueue
-                        (unfoldTransition transit)
-                        ( limitedExecutionStrategy depthLimit
-                        , (ExecDepth 0, Start initialConfig)
-                        )
+                GraphTraversal.graphTraversal
+                    Strategy.Leaf
+                    Strategy.DepthFirst
+                    breadthLimit
+                    transit
+                    Limit.Unlimited
+                    execStrategy
+                    (ExecDepth 0, Start $ Pattern.fromTermLike initialTerm)
+                    >>= \case
+                        GraphTraversal.Ended results ->
+                            pure results
+                        GraphTraversal.GotStuck _ results ->
+                            pure results
+                        GraphTraversal.Stopped results nexts -> do
+                            when (null nexts) $
+                                forM_ depthLimit warnDepthLimitExceeded
+                            pure results
+                        GraphTraversal.Aborted results -> do
+                            pure results
+
             let (depths, finalConfigs) = unzip finals
             infoExecDepth (maximum (ExecDepth 0 : depths))
             let finalConfigs' =
@@ -347,31 +314,162 @@ exec
                         & sameTermLikeSort initialSort
             return (exitCode, finalTerm)
       where
-        dropStrategy = snd
-        getFinalConfigsOf act = observeAllT $ fmap snd act
         verifiedModule' =
             IndexedModule.mapAliasPatterns
                 -- TODO (thomas.tuegel): Move this into Kore.Builtin
                 (Builtin.internalize metadataTools)
                 verifiedModule
         initialSort = termLikeSort initialTerm
-        unfoldTransition transit (instrs, config) = do
-            when (null instrs) $ forM_ depthLimit warnDepthLimitExceeded
-            Strategy.unfoldTransition transit (instrs, config)
+
+        execStrategy :: [Strategy.Step Prim]
+        execStrategy =
+            Limit.takeWithin depthLimit $
+                [Begin, Simplify, Rewrite, Simplify] :
+                repeat [Begin, Rewrite, Simplify]
+
+        transit ::
+            GraphTraversal.TState
+                Prim
+                (ExecDepth, ProgramState (Pattern RewritingVariableName)) ->
+            Simplifier.Simplifier
+                ( GraphTraversal.TransitionResult
+                    ( GraphTraversal.TState
+                        Prim
+                        (ExecDepth, ProgramState (Pattern RewritingVariableName))
+                    )
+                )
+        transit =
+            GraphTraversal.simpleTransition
+                ( trackExecDepth . profTransitionRule $
+                    transitionRule (groupRewritesByPriority rewriteRules) execMode
+                )
+                toTransitionResult
+
+        toTransitionResult ::
+            (ExecDepth, ProgramState p) ->
+            [(ExecDepth, ProgramState p)] ->
+            ( GraphTraversal.TransitionResult
+                (ExecDepth, ProgramState p)
+            )
+        toTransitionResult prior [] =
+            case snd prior of
+                Start _ -> GraphTraversal.Stop prior []
+                Rewritten _ -> GraphTraversal.Stop prior []
+                Remaining _ -> GraphTraversal.Stuck prior
+                Kore.Rewrite.Bottom -> GraphTraversal.Stuck prior
+        toTransitionResult _prior [next] =
+            case snd next of
+                Start _ -> GraphTraversal.Continuing next
+                Rewritten _ -> GraphTraversal.Continuing next
+                Remaining _ -> GraphTraversal.Stuck next
+                Kore.Rewrite.Bottom -> GraphTraversal.Stuck next
+        toTransitionResult prior (s : ss) =
+            GraphTraversal.Branch prior (s :| ss)
+
+{- | Version of @kore-exec@ suitable for the JSON RPC server. Cannot
+  execute across branches, supports a depth limit, returns the raw
+  traversal result for the RPC server to extract response elements.
+
+  TODO modify to implement stopping on given rule IDs/labels
+-}
+rpcExec ::
+    Limit Natural ->
+    -- | The main module
+    SerializedModule ->
+    -- | The input pattern
+    TermLike VariableName ->
+    SMT
+        ( GraphTraversal.TraversalResult
+            (ExecDepth, ProgramState (Pattern VariableName))
+        )
+rpcExec
+    depthLimit
+    SerializedModule
+        { sortGraph
+        , overloadGraph
+        , metadataTools
+        , verifiedModule
+        , rewrites = Initialized{rewriteRules}
+        , equations
+        }
+    (mkRewritingTerm -> initialTerm) =
+        evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations $
+            fmap (second $ fmap getRewritingPattern)
+                <$> GraphTraversal.graphTraversal
+                    Strategy.LeafOrBranching
+                    Strategy.DepthFirst
+                    (Limit 2) -- breadth limit 2 because we never go beyond a branch
+                    transit
+                    Limit.Unlimited
+                    execStrategy
+                    (ExecDepth 0, Start $ Pattern.fromTermLike initialTerm)
+      where
+        verifiedModule' =
+            IndexedModule.mapAliasPatterns
+                (Builtin.internalize metadataTools)
+                verifiedModule
+
+        execStrategy :: [Strategy.Step Prim]
+        execStrategy =
+            Limit.takeWithin depthLimit $
+                [Begin, Simplify, Rewrite, Simplify] :
+                repeat [Begin, Rewrite, Simplify]
+
+        transit ::
+            GraphTraversal.TState
+                Prim
+                (ExecDepth, ProgramState (Pattern RewritingVariableName)) ->
+            Simplifier.Simplifier
+                ( GraphTraversal.TransitionResult
+                    ( GraphTraversal.TState
+                        Prim
+                        (ExecDepth, ProgramState (Pattern RewritingVariableName))
+                    )
+                )
+        transit =
+            GraphTraversal.simpleTransition
+                ( trackExecDepth . profTransitionRule $
+                    transitionRule (groupRewritesByPriority rewriteRules) All
+                )
+                toTransitionResult
+
+        -- TODO modify to implement stopping on given rule IDs/labels
+        toTransitionResult ::
+            (ExecDepth, ProgramState p) ->
+            [(ExecDepth, ProgramState p)] ->
+            ( GraphTraversal.TransitionResult
+                (ExecDepth, ProgramState p)
+            )
+        toTransitionResult prior [] =
+            case snd prior of
+                Remaining _ -> GraphTraversal.Stuck prior
+                Kore.Rewrite.Bottom -> GraphTraversal.Stuck prior
+                -- returns `Final` to signal that no instructions were left.
+                Start _ -> GraphTraversal.Final prior
+                Rewritten _ -> GraphTraversal.Final prior
+        toTransitionResult _prior [next] =
+            case snd next of
+                Start _ -> GraphTraversal.Continuing next
+                Rewritten _ -> GraphTraversal.Continuing next
+                Remaining _ -> GraphTraversal.Stuck next
+                Kore.Rewrite.Bottom -> GraphTraversal.Stuck next
+        toTransitionResult prior (s : ss) =
+            GraphTraversal.Branch prior (s :| ss)
 
 -- | Modify a 'TransitionRule' to track the depth of the execution graph.
 trackExecDepth ::
-    TransitionRule monad rule state ->
-    TransitionRule monad rule (ExecDepth, state)
+    TransitionRule monad rule (ProgramState p) ->
+    TransitionRule monad rule (ExecDepth, ProgramState p)
 trackExecDepth transit prim (execDepth, execState) = do
     execState' <- transit prim execState
     let execDepth' = (if didRewrite execState' then succ else id) execDepth
     pure (execDepth', execState')
   where
-    didRewrite _ = isRewrite prim
-
-    isRewrite Rewrite = True
-    isRewrite _ = False
+    -- The new state can become Bottom by simplification after rewriting,
+    -- or it remains Rewritten. If it is Remaining, it was not rewritten.
+    didRewrite Kore.Rewrite.Bottom = prim == Rewrite
+    didRewrite (Rewritten _) = prim == Rewrite
+    didRewrite _ = False
 
 -- | Add profiling markers to a 'TransitionRule'.
 profTransitionRule ::
@@ -392,13 +490,11 @@ profTransitionRule rule prim proofState =
 
 -- | Project the value of the exit cell, if it is present.
 getExitCode ::
-    forall simplifier.
-    (MonadIO simplifier, MonadSimplify simplifier) =>
     -- | The main module
     VerifiedModuleSyntax StepperAttributes ->
     -- | The final configuration(s) of execution
     OrPattern.OrPattern RewritingVariableName ->
-    simplifier ExitCode
+    Simplifier ExitCode
 getExitCode
     indexedModule
     configs =
@@ -427,21 +523,14 @@ getExitCode
                 . noLocationId
 
         takeExitCode ::
-            (([Sort] -> Symbol) -> simplifier ExitCode) ->
-            simplifier ExitCode
+            (([Sort] -> Symbol) -> Simplifier ExitCode) ->
+            Simplifier ExitCode
         takeExitCode act =
             resolve "LblgetExitCode"
                 & maybe (pure ExitSuccess) act
 
 -- | Symbolic search
 search ::
-    ( MonadIO smt
-    , MonadLog smt
-    , MonadSMT smt
-    , MonadMask smt
-    , MonadProf smt
-    ) =>
-    SimplifierXSwitch ->
     Limit Natural ->
     Limit Natural ->
     -- | The main module
@@ -452,9 +541,8 @@ search ::
     Pattern VariableName ->
     -- | The bound on the number of search matches and the search type
     Search.Config ->
-    smt (TermLike VariableName)
+    SMT (TermLike VariableName)
 search
-    simplifierx
     depthLimit
     breadthLimit
     SerializedModule
@@ -468,7 +556,7 @@ search
     (mkRewritingTerm -> termLike)
     searchPattern
     searchConfig =
-        evalSimplifier simplifierx verifiedModule sortGraph overloadGraph metadataTools equations $ do
+        evalSimplifier verifiedModule sortGraph overloadGraph metadataTools equations $ do
             let Initialized{rewriteRules} = rewrites
             simplifiedPatterns <-
                 Pattern.simplify $
@@ -480,7 +568,7 @@ search
                 rewriteGroups =
                     groupRewritesByPriority rewriteRules
                 runStrategy' =
-                    runStrategy
+                    Strategy.runStrategy
                         breadthLimit
                         -- search relies on exploring
                         -- the entire space of states.
@@ -514,28 +602,23 @@ search
 
 -- | Proving a spec given as a module containing rules to be proven
 prove ::
-    forall smt.
-    ( MonadLog smt
-    , MonadMask smt
-    , MonadIO smt
-    , MonadSMT smt
-    , MonadProf smt
-    ) =>
-    SimplifierXSwitch ->
+    Maybe MinDepth ->
+    StuckCheck ->
     Strategy.GraphSearchOrder ->
     Limit Natural ->
     Limit Natural ->
     Natural ->
-    FinalNodeType ->
+    Strategy.FinalNodeType ->
     -- | The main module
     VerifiedModule StepperAttributes ->
     -- | The spec module
     VerifiedModule StepperAttributes ->
     -- | The module containing the claims that were proven in a previous run.
     Maybe (VerifiedModule StepperAttributes) ->
-    smt ProveClaimsResult
+    SMT ProveClaimsResult
 prove
-    simplifierx
+    maybeMinDepth
+    stuckCheck
     searchOrder
     breadthLimit
     depthLimit
@@ -544,7 +627,7 @@ prove
     definitionModule
     specModule
     trustedModule =
-        evalSimplifierProofs simplifierx definitionModule $ do
+        evalSimplifierProofs definitionModule $ do
             initialized <-
                 initializeProver
                     definitionModule
@@ -552,6 +635,8 @@ prove
                     trustedModule
             let InitializedProver{axioms, claims, alreadyProven} = initialized
             proveClaims
+                maybeMinDepth
+                stuckCheck
                 breadthLimit
                 searchOrder
                 maxCounterexamples
@@ -573,14 +658,15 @@ prove
  the repl until the user exits.
 -}
 proveWithRepl ::
-    SimplifierXSwitch ->
+    Maybe MinDepth ->
+    StuckCheck ->
     -- | The main module
     VerifiedModule StepperAttributes ->
     -- | The spec module
     VerifiedModule StepperAttributes ->
     -- | The module containing the claims that were proven in a previous run.
     Maybe (VerifiedModule StepperAttributes) ->
-    MVar (Log.LogAction IO Log.ActualEntry) ->
+    MVar (Log.LogAction IO Log.SomeEntry) ->
     -- | Optional script
     Repl.Data.ReplScript ->
     -- | Run in a specific repl mode
@@ -594,7 +680,8 @@ proveWithRepl ::
     KFileLocations ->
     SMT ()
 proveWithRepl
-    simplifierx
+    minDepth
+    stuckCheck
     definitionModule
     specModule
     trustedModule
@@ -606,7 +693,7 @@ proveWithRepl
     mainModuleName
     logOptions
     kFileLocations =
-        evalSimplifierProofs simplifierx definitionModule $ do
+        evalSimplifierProofs definitionModule $ do
             initialized <-
                 initializeProver
                     definitionModule
@@ -614,6 +701,8 @@ proveWithRepl
                     trustedModule
             let InitializedProver{axioms, claims} = initialized
             Repl.runRepl
+                minDepth
+                stuckCheck
                 axioms
                 claims
                 mvar
@@ -627,13 +716,6 @@ proveWithRepl
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck ::
-    ( MonadLog smt
-    , MonadSMT smt
-    , MonadIO smt
-    , MonadMask smt
-    , MonadProf smt
-    ) =>
-    SimplifierXSwitch ->
     Limit Natural ->
     Limit Natural ->
     -- | The main module
@@ -641,19 +723,18 @@ boundedModelCheck ::
     -- | The spec module
     VerifiedModule StepperAttributes ->
     Strategy.GraphSearchOrder ->
-    smt
+    SMT
         ( Bounded.CheckResult
             (TermLike VariableName)
             (ImplicationRule VariableName)
         )
 boundedModelCheck
-    simplifierx
     breadthLimit
     depthLimit
     definitionModule
     specModule
     searchOrder =
-        evalSimplifierProofs simplifierx definitionModule $ do
+        evalSimplifierProofs definitionModule $ do
             initialized <- initializeAndSimplify definitionModule
             let Initialized{rewriteRules} = initialized
                 specClaims = extractImplicationClaims specModule
@@ -671,19 +752,12 @@ boundedModelCheck
                 (head claims, depthLimit)
 
 matchDisjunction ::
-    ( MonadLog smt
-    , MonadSMT smt
-    , MonadIO smt
-    , MonadMask smt
-    , MonadProf smt
-    ) =>
-    SimplifierXSwitch ->
     VerifiedModule Attribute.Symbol ->
     Pattern RewritingVariableName ->
     [Pattern RewritingVariableName] ->
-    smt (TermLike VariableName)
-matchDisjunction simplifierx mainModule matchPattern disjunctionPattern =
-    evalSimplifierProofs simplifierx mainModule $ do
+    SMT (TermLike VariableName)
+matchDisjunction mainModule matchPattern disjunctionPattern =
+    evalSimplifierProofs mainModule $ do
         results <-
             traverse (runMaybeT . match matchPattern) disjunctionPattern
                 <&> catMaybes
@@ -716,18 +790,11 @@ See 'checkEquation',
 'Kore.Log.ErrorEquationsSameMatch.errorEquationsSameMatch'.
 -}
 checkFunctions ::
-    ( MonadLog smt
-    , MonadSMT smt
-    , MonadIO smt
-    , MonadMask smt
-    , MonadProf smt
-    ) =>
-    SimplifierXSwitch ->
     -- | The main module
     VerifiedModule StepperAttributes ->
-    smt ()
-checkFunctions simplifierx verifiedModule =
-    evalSimplifierProofs simplifierx verifiedModule $ do
+    SMT ()
+checkFunctions verifiedModule =
+    evalSimplifierProofs verifiedModule $ do
         -- check if RHS is function pattern
         equations >>= filter (not . isFunctionPattern . right)
             & mapM_ errorEquationRightFunction
@@ -748,10 +815,9 @@ checkFunctions simplifierx verifiedModule =
 https://github.com/runtimeverification/haskell-backend/issues/2472#issue-833143685
 -}
 bothMatch ::
-    MonadSimplify m =>
     Equation VariableName ->
     Equation VariableName ->
-    m Bool
+    Simplifier Bool
 bothMatch eq1 eq2 =
     let pre1 = Equation.requires eq1
         pre2 = Equation.requires eq2
@@ -795,28 +861,24 @@ makeImplicationRule (attributes, ImplicationRule rulePattern) =
     ImplicationRule rulePattern{attributes}
 
 simplifySomeClaim ::
-    MonadSimplify simplifier =>
     SomeClaim ->
-    simplifier SomeClaim
+    Simplifier SomeClaim
 simplifySomeClaim rule = do
     let claim = Lens.view lensClaimPattern rule
     claim' <- Rule.simplifyClaimPattern claim
     return $ Lens.set lensClaimPattern claim' rule
 
 initializeAndSimplify ::
-    MonadSimplify simplifier =>
     VerifiedModule StepperAttributes ->
-    simplifier Initialized
+    Simplifier Initialized
 initializeAndSimplify verifiedModule =
-    initialize (simplifyRuleLhs >=> Logic.scatter) verifiedModule
+    initialize (lift . simplifyRuleLhs >=> Logic.scatter) verifiedModule
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize ::
-    forall simplifier.
-    MonadSimplify simplifier =>
-    (RewriteRule RewritingVariableName -> LogicT simplifier (RewriteRule RewritingVariableName)) ->
+    (RewriteRule RewritingVariableName -> LogicT Simplifier (RewriteRule RewritingVariableName)) ->
     VerifiedModule StepperAttributes ->
-    simplifier Initialized
+    Simplifier Initialized
 initialize simplificationProcedure verifiedModule = do
     rewriteRules <-
         Logic.observeAllT $ do
@@ -826,7 +888,7 @@ initialize simplificationProcedure verifiedModule = do
   where
     initializeRule ::
         RewriteRule RewritingVariableName ->
-        LogicT simplifier (RewriteRule RewritingVariableName)
+        LogicT Simplifier (RewriteRule RewritingVariableName)
     initializeRule rule = do
         simplRule <- simplificationProcedure rule
         when
@@ -848,19 +910,17 @@ fromMaybeChanged (Unchanged a) = a
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initializeProver ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     VerifiedModule StepperAttributes ->
     VerifiedModule StepperAttributes ->
     Maybe (VerifiedModule StepperAttributes) ->
-    simplifier InitializedProver
+    Simplifier InitializedProver
 initializeProver definitionModule specModule maybeTrustedModule = do
     initialized <- initializeAndSimplify definitionModule
     tools <- Simplifier.askMetadataTools
     let Initialized{rewriteRules} = initialized
         changedSpecClaims :: [MaybeChanged SomeClaim]
         changedSpecClaims = expandClaim tools <$> extractClaims specModule
-        simplifyToList :: SomeClaim -> simplifier [SomeClaim]
+        simplifyToList :: SomeClaim -> Simplifier [SomeClaim]
         simplifyToList rule = do
             simplified <- simplifyRuleLhs rule
             let result = toList simplified
@@ -896,7 +956,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
 
     logChangedClaim ::
         MaybeChanged SomeClaim ->
-        simplifier ()
+        Simplifier ()
     logChangedClaim (Changed claim) =
         Log.logInfo ("Claim variables were expanded:\n" <> unparseToText claim)
     logChangedClaim (Unchanged _) = return ()

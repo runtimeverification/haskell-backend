@@ -25,10 +25,17 @@ module Kore.Error (
 import Control.Monad.Except (
     MonadError (..),
  )
+import Data.Aeson.Types (ToJSON)
 import Data.Text (
     Text,
  )
 import Data.Text qualified as Text
+import Deriving.Aeson (
+    CamelToKebab,
+    CustomJSON (..),
+    FieldLabelModifier,
+    StripPrefix,
+ )
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Debug
@@ -47,6 +54,9 @@ data Error a = Error
     deriving anyclass (NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
+    deriving
+        (ToJSON)
+        via CustomJSON '[FieldLabelModifier '[StripPrefix "error", CamelToKebab]] (Error a)
 
 -- |'printError' provides a one-line representation of a string.
 printError :: Error a -> String

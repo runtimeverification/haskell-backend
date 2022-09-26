@@ -1,3 +1,6 @@
+{-# LANGUAGE NoStrict #-}
+{-# LANGUAGE NoStrictData #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
@@ -41,7 +44,7 @@ data ErrorRewriteLoop = ErrorRewriteLoop
     deriving stock (Show)
 
 instance Exception ErrorRewriteLoop where
-    toException = toException . SomeEntry
+    toException = toException . SomeEntry []
     fromException exn =
         fromException exn >>= fromEntry
 

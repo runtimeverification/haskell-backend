@@ -16,10 +16,10 @@ BUILD_DIR = $(TOP)/.build
 KOMPILE = kompile
 KRUN = krun
 export KRUN
-KPROVE = kprovex
+KPROVE = kprove
 KBMC = kbmc
 
-KOMPILE_OPTS = --backend haskell
+KOMPILE_OPTS = --backend haskell --haskell-backend-command $(KORE_EXEC)
 KRUN_OPTS = --haskell-backend-command $(KORE_EXEC)
 export KRUN_OPTS
 KPROVE_OPTS = --haskell-backend-command $(KORE_EXEC)

@@ -83,10 +83,6 @@ import Data.Bits (
  )
 import Data.Functor.Const
 import Data.HashMap.Strict qualified as HashMap
-import Data.Map.Strict (
-    Map,
- )
-import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
@@ -249,93 +245,80 @@ expectBuiltinInt _ =
         _ -> empty
 
 -- | Implement builtin function evaluation.
-builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
-builtinFunctions =
-    Map.fromList
-        [ -- TODO (thomas.tuegel): Add MonadRandom to evaluation context to
-          -- implement rand and srand.
-          (randKey, Builtin.notImplemented)
-        , (srandKey, Builtin.notImplemented)
-        , comparator gtKey (>)
-        , comparator geKey (>=)
-        , (eqKey, Builtin.functionEvaluator evalEq)
-        , comparator leKey (<=)
-        , comparator ltKey (<)
-        , comparator neKey (/=)
-        , -- Ordering operations
-          binaryOperator minKey min
-        , binaryOperator maxKey max
-        , -- Arithmetic operations
-          binaryOperator addKey (+)
-        , binaryOperator subKey (-)
-        , binaryOperator mulKey (*)
-        , unaryOperator absKey abs
-        , -- Division operations
-          partialBinaryOperator edivKey ediv
-        , partialBinaryOperator emodKey emod
-        , partialBinaryOperator tdivKey tdiv
-        , partialBinaryOperator tmodKey tmod
-        , -- Bitwise operations
-          binaryOperator andKey (.&.)
-        , binaryOperator orKey (.|.)
-        , binaryOperator xorKey xor
-        , unaryOperator notKey complement
-        , binaryOperator shlKey (\a -> shift a . fromInteger)
-        , binaryOperator shrKey (\a -> shift a . fromInteger . negate)
-        , -- Exponential and logarithmic operations
-          partialBinaryOperator powKey pow
-        , partialTernaryOperator powmodKey powmod
-        , partialUnaryOperator log2Key log2
-        ]
+builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
+builtinFunctions key
+    -- TODO (thomas.tuegel): Add MonadRandom to evaluation context to
+    -- implement rand and srand.
+    | key == randKey = Just Builtin.notImplemented
+    | key == srandKey = Just Builtin.notImplemented
+    | key == gtKey = Just $ comparator gtKey (>)
+    | key == geKey = Just $ comparator geKey (>=)
+    | key == eqKey = Just $ Builtin.functionEvaluator evalEq
+    | key == leKey = Just $ comparator leKey (<=)
+    | key == ltKey = Just $ comparator ltKey (<)
+    | key == neKey = Just $ comparator neKey (/=)
+    -- Ordering operations
+    | key == minKey = Just $ binaryOperator minKey min
+    | key == maxKey = Just $ binaryOperator maxKey max
+    -- Arithmetic operations
+    | key == addKey = Just $ binaryOperator addKey (+)
+    | key == subKey = Just $ binaryOperator subKey (-)
+    | key == mulKey = Just $ binaryOperator mulKey (*)
+    | key == absKey = Just $ unaryOperator absKey abs
+    -- Division operations
+    | key == edivKey = Just $ partialBinaryOperator edivKey ediv
+    | key == emodKey = Just $ partialBinaryOperator emodKey emod
+    | key == tdivKey = Just $ partialBinaryOperator tdivKey tdiv
+    | key == tmodKey = Just $ partialBinaryOperator tmodKey tmod
+    -- Bitwise operations
+    | key == andKey = Just $ binaryOperator andKey (.&.)
+    | key == orKey = Just $ binaryOperator orKey (.|.)
+    | key == xorKey = Just $ binaryOperator xorKey xor
+    | key == notKey = Just $ unaryOperator notKey complement
+    | key == shlKey = Just $ binaryOperator shlKey (\a -> shift a . fromInteger)
+    | key == shrKey = Just $ binaryOperator shrKey (\a -> shift a . fromInteger . negate)
+    -- Exponential and logarithmic operations
+    | key == powKey = Just $ partialBinaryOperator powKey pow
+    | key == powmodKey = Just $ partialTernaryOperator powmodKey powmod
+    | key == log2Key = Just $ partialUnaryOperator log2Key log2
+    | otherwise = Nothing
   where
     unaryOperator name op =
-        ( name
-        , Builtin.unaryOperator
+        Builtin.unaryOperator
             extractIntDomainValue
             asPattern
             name
             op
-        )
     binaryOperator name op =
-        ( name
-        , Builtin.binaryOperator
+        Builtin.binaryOperator
             extractIntDomainValue
             asPattern
             name
             op
-        )
     comparator name op =
-        ( name
-        , Builtin.binaryOperator
+        Builtin.binaryOperator
             extractIntDomainValue
             Bool.asPattern
             name
             op
-        )
     partialUnaryOperator name op =
-        ( name
-        , Builtin.unaryOperator
+        Builtin.unaryOperator
             extractIntDomainValue
             asPartialPattern
             name
             op
-        )
     partialBinaryOperator name op =
-        ( name
-        , Builtin.binaryOperator
+        Builtin.binaryOperator
             extractIntDomainValue
             asPartialPattern
             name
             op
-        )
     partialTernaryOperator name op =
-        ( name
-        , Builtin.ternaryOperator
+        Builtin.ternaryOperator
             extractIntDomainValue
             asPartialPattern
             name
             op
-        )
 
 tdiv
     , tmod
@@ -354,7 +337,7 @@ ediv n d
     | n < 0
       , d < 0
       , mod n d /= 0 =
-        Just (1 + div (- n) (- d))
+        Just (1 + div (-n) (-d))
     | d < 0 = Just (quot n d)
     | otherwise = Just (div n d)
 emod n d
@@ -362,7 +345,7 @@ emod n d
     | n < 0
       , d < 0
       , mod n d /= 0 =
-        Just (n - d * (1 + div (- n) (- d)))
+        Just (n - d * (1 + div (-n) (-d)))
     | d < 0 = Just (rem n d)
     | otherwise = Just (mod n d)
 pow b e

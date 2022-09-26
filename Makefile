@@ -31,12 +31,13 @@ haddock:
 		--fast \
 		>haddock.log 2>&1 \
 		|| ( cat haddock.log; exit 1; )
-	cat haddock.log
-	if grep -B 2 'Module header' haddock.log; then \
+        #remove header warning for Paths_kore
+	sed -e "/.*in 'Paths_kore'$/{n;n;/^ *Module header$/d}" haddock.log | tee haddock.log.noPaths
+	if grep -B 2 'Module header' haddock.log.noPaths; then \
 		echo >&2 "Please fix the missing documentation!"; \
 		exit 1; \
 	else \
-		rm haddock.log; \
+		rm haddock.log*; \
 	fi
 
 haskell_documentation: haddock
@@ -75,3 +76,46 @@ clean:
 
 clean-execution:
 	$(MAKE) -C test clean-execution
+
+.PHONY: hoogle-cert hoogle-server
+HOOGLE_WORKDIR = .stack-work-haddock/hoogle
+HOOGLE        ?= $(shell which hoogle)
+HOOGLE_DB     := $(HOOGLE_WORKDIR)/*/*/*/database.hoo
+
+
+hoogle-data: $(HOOGLE_DB)
+
+$(HOOGLE_DB): # could depend on source code but would slow things down
+	$(STACK_HADDOCK) hoogle --setup
+
+hoogle-clean:
+	rm -rf $(HOOGLE_WORKDIR)
+
+hoogle-refresh: hoogle-clean hoogle-data
+
+define check_hoogle
+	@if ${HOOGLE} --version; then return 0; else echo "Hoogle not installed"; exit 1; fi
+endef
+
+
+hoogle: hoogle-data
+	$(call check_hoogle)
+	@read -p "Query:" QUERY && $(HOOGLE) --database $(HOOGLE_DB) "$$QUERY"
+
+ifeq ($(HOOGLE_USE_SSL),yes)
+
+SSL_OPTS=--https --cert=$(HOOGLE_WORKDIR)/hoogle.crt --key=$(HOOGLE_WORKDIR)/hoogle.key
+
+hoogle-cert:
+	@openssl req -newkey rsa:1024 -x509 -sha256 -days 1 -nodes -out $(HOOGLE_WORKDIR)/hoogle.crt -keyout $(HOOGLE_WORKDIR)/hoogle.key -subj "/C=US/ST=MI/O=RuntimeVerification/CN=*"
+
+hoogle-server: hoogle-cert
+endif
+
+hoogle-server: hoogle-data
+	$(call check_hoogle)
+	@echo "Running hoogle server (press ^C to exit)"
+	@$(HOOGLE) server \
+		--database $(HOOGLE_DB) \
+		--host=* \
+		$(SSL_OPTS)

@@ -2,6 +2,9 @@ module Test.Kore.Exec (
     test_exec,
     test_execPriority,
     test_execBottom,
+    test_execBranch,
+    test_execBranch1Stuck,
+    test_execDepthInfo,
     test_searchPriority,
     test_searchExceedingBreadthLimit,
     test_execGetExitCode,
@@ -9,12 +12,10 @@ module Test.Kore.Exec (
     test_matchDisjunction,
     test_checkFunctions,
     test_simplify,
+    test_rpcExecDepth,
 ) where
 
 import Control.Exception as Exception
-import Control.Monad.Catch (
-    MonadMask,
- )
 import Data.Default (
     def,
  )
@@ -46,6 +47,7 @@ import Kore.Equation.Equation (
  )
 import Kore.Error qualified
 import Kore.Exec
+import Kore.Exec.GraphTraversal (TraversalResult (..))
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Pattern (
@@ -58,23 +60,23 @@ import Kore.Internal.Predicate (
     makeTruePredicate,
  )
 import Kore.Internal.TermLike
-import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.ErrorEquationRightFunction (
     ErrorEquationRightFunction,
  )
 import Kore.Log.ErrorEquationsSameMatch (
     ErrorEquationsSameMatch,
  )
+import Kore.Log.InfoExecDepth (ExecDepth (..), InfoExecDepth (..))
 import Kore.Log.WarnDepthLimitExceeded
 import Kore.Rewrite (
     ExecutionMode (..),
     Natural,
+    ProgramState (..),
  )
 import Kore.Rewrite.AntiLeft (
     AntiLeft (AntiLeft),
  )
 import Kore.Rewrite.AntiLeft qualified as AntiLeft.DoNotUse
-import Kore.Rewrite.RewritingVariable (RewritingVariableName)
 import Kore.Rewrite.Rule
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
@@ -89,10 +91,6 @@ import Kore.Rewrite.Search qualified as Search
 import Kore.Rewrite.Strategy (
     LimitExceeded (..),
  )
-import Kore.Simplify.Data (
-    MonadProf,
- )
-import Kore.Simplify.Simplify (MonadSMT, SimplifierXSwitch (..))
 import Kore.Syntax.Definition hiding (
     Alias,
     Symbol,
@@ -107,9 +105,10 @@ import Kore.Validate.DefinitionVerifier (
 import Kore.Verified qualified as Verified
 import Log (
     Entry (..),
-    MonadLog (..),
  )
 import Prelude.Kore
+import SMT (SMT)
+import SMT qualified
 import System.Exit (
     ExitCode (..),
  )
@@ -121,6 +120,180 @@ import Test.SMT (
  )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
+
+test_execBranch :: TestTree
+test_execBranch = testCase "execBranch" $ actual >>= assertEqual "" (ExitSuccess, expected)
+  where
+    actual =
+        execTest
+            Unlimited
+            Unlimited
+            verifiedModule
+            All
+            inputPattern
+            & runNoSMT
+    verifiedModule =
+        verifiedMyModule
+            Module
+                { moduleName = ModuleName "MY-MODULE"
+                , moduleSentences =
+                    [ asSentence mySortDecl
+                    , asSentence $ constructorDecl "a"
+                    , asSentence $ constructorDecl "b"
+                    , asSentence $ constructorDecl "c"
+                    , functionalAxiom "a"
+                    , functionalAxiom "b"
+                    , functionalAxiom "c"
+                    , simpleRewriteAxiom "a" "b"
+                    , simpleRewriteAxiom "a" "c"
+                    ]
+                , moduleAttributes = Attributes []
+                }
+    inputPattern = applyToNoArgs mySort "a" -- rewrites to b or c
+    expected =
+        mkOr (applyToNoArgs mySort "b") (applyToNoArgs mySort "c")
+
+test_execBranch1Stuck :: TestTree
+test_execBranch1Stuck =
+    testCase "execBranch1Stuck" $
+        actual >>= assertEqual "" (ExitSuccess, expected)
+  where
+    actual =
+        execTest
+            Unlimited
+            Unlimited
+            verifiedModule
+            All
+            inputPattern
+            & runNoSMT
+    verifiedModule =
+        verifiedMyModule
+            Module
+                { moduleName = ModuleName "MY-MODULE"
+                , moduleSentences =
+                    [ asSentence mySortDecl
+                    , asSentence $ constructorDecl "a"
+                    , asSentence $ constructorDecl "b"
+                    , asSentence $ constructorDecl "c"
+                    , asSentence $ constructorDecl "d"
+                    , asSentence $ constructorDecl "e"
+                    , functionalAxiom "a"
+                    , functionalAxiom "b"
+                    , functionalAxiom "c"
+                    , functionalAxiom "d"
+                    , functionalAxiom "d"
+                    , simpleRewriteAxiom "a" "b"
+                    , simpleRewriteAxiom "a" "c"
+                    , simpleRewriteAxiom "c" "d"
+                    , simpleRewriteAxiom "d" "e"
+                    ]
+                , moduleAttributes = Attributes []
+                }
+    inputPattern = applyToNoArgs mySort "a" -- rewrites to b or d
+    expected =
+        mkOr (applyToNoArgs mySort "b") (applyToNoArgs mySort "e")
+
+test_rpcExecDepth :: [TestTree]
+test_rpcExecDepth =
+    [ testCase "without depth limit" $ do
+        result <-
+            runDepth $ rpcExecTest Unlimited verifiedModule (state "c")
+        assertEqual "depth" (stuckAt 2) result
+    , testCase "with depth limit limiting execution" $ do
+        result <-
+            runDepth $ rpcExecTest (Limit 1) verifiedModule (state "c")
+        assertEqual "depth" (endsAt 1) result
+    , testCase "with depth limit above execution limit" $ do
+        result <-
+            runDepth $ rpcExecTest (Limit 3) verifiedModule (state "c")
+        assertEqual "depth" (stuckAt 2) result
+    , testCase "when branching" $ do
+        result <-
+            runDepth $ rpcExecTest Unlimited verifiedModule (state "a")
+        assertEqual "depth" (Stopped [0] [1, 1]) result
+    ]
+  where
+    state = applyToNoArgs mySort
+    stuckAt = GotStuck 0 . (: [])
+    endsAt = Ended . (: [])
+
+    runDepth = fmap (fmap (getExecDepth . fst)) . runNoSMT
+
+    verifiedModule =
+        verifiedMyModule
+            Module
+                { moduleName = ModuleName "MY-MODULE"
+                , moduleSentences =
+                    [ asSentence mySortDecl
+                    , asSentence $ constructorDecl "a"
+                    , asSentence $ constructorDecl "b"
+                    , asSentence $ constructorDecl "c"
+                    , asSentence $ constructorDecl "d"
+                    , asSentence $ constructorDecl "e"
+                    , functionalAxiom "a"
+                    , functionalAxiom "b"
+                    , functionalAxiom "c"
+                    , functionalAxiom "d"
+                    , functionalAxiom "d"
+                    , simpleRewriteAxiom "a" "b"
+                    , simpleRewriteAxiom "a" "c"
+                    , simpleRewriteAxiom "c" "d"
+                    , simpleRewriteAxiom "d" "e"
+                    ]
+                , moduleAttributes = Attributes []
+                }
+
+test_execDepthInfo :: [TestTree]
+test_execDepthInfo =
+    [ testCase "without depth limit" $ do
+        result <-
+            depthLogOf $ execTest Unlimited Unlimited verifiedModule Any (state "c")
+        assertEqual "" (depthInfo 2) result
+    , testCase "with depth limit limiting execution" $ do
+        result <-
+            depthLogOf $ execTest (Limit 1) Unlimited verifiedModule Any (state "c")
+        assertEqual "" (depthInfo 1) result
+    , testCase "with depth limit above execution limit" $ do
+        result <-
+            depthLogOf $ execTest (Limit 3) Unlimited verifiedModule Any (state "c")
+        assertEqual "" (depthInfo 2) result
+    , testCase "when branching" $ do
+        result <-
+            depthLogOf $ execTest Unlimited Unlimited verifiedModule Any (state "a")
+        assertEqual "max depth from two branches" (depthInfo 3) result
+    ]
+  where
+    state = applyToNoArgs mySort
+
+    depthLogOf = fmap (depthLogged . snd) . runTestLoggerT . SMT.runNoSMT
+
+    depthLogged = headMay . mapMaybe (fromEntry @InfoExecDepth)
+
+    depthInfo = Just . InfoExecDepth . ExecDepth
+
+    verifiedModule =
+        verifiedMyModule
+            Module
+                { moduleName = ModuleName "MY-MODULE"
+                , moduleSentences =
+                    [ asSentence mySortDecl
+                    , asSentence $ constructorDecl "a"
+                    , asSentence $ constructorDecl "b"
+                    , asSentence $ constructorDecl "c"
+                    , asSentence $ constructorDecl "d"
+                    , asSentence $ constructorDecl "e"
+                    , functionalAxiom "a"
+                    , functionalAxiom "b"
+                    , functionalAxiom "c"
+                    , functionalAxiom "d"
+                    , functionalAxiom "d"
+                    , simpleRewriteAxiom "a" "b"
+                    , simpleRewriteAxiom "a" "c"
+                    , simpleRewriteAxiom "c" "d"
+                    , simpleRewriteAxiom "d" "e"
+                    ]
+                , moduleAttributes = Attributes []
+                }
 
 test_execPriority :: TestTree
 test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
@@ -164,10 +337,11 @@ test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
 test_execDepthLimitExceeded :: TestTree
 test_execDepthLimitExceeded = testCase "exec exceeds depth limit" $
     do
-        (_, entries) <- actual
+        (output, entries) <- actual
         let actualDepthWarnings =
                 catMaybes $ fromEntry @WarnDepthLimitExceeded <$> entries
             expectedWarning = WarnDepthLimitExceeded 1
+        assertEqual "output" expected output
         assertEqual "" [expectedWarning] actualDepthWarnings
   where
     actual =
@@ -177,7 +351,8 @@ test_execDepthLimitExceeded = testCase "exec exceeds depth limit" $
             verifiedModule
             Any
             inputPattern
-            & runTestLog runNoSMT
+            & runTestLoggerT . SMT.runNoSMT
+    expected = (ExitSuccess, applyToNoArgs mySort "b")
     verifiedModule =
         verifiedMyModule
             Module
@@ -199,14 +374,14 @@ test_matchDisjunction =
     [ testCase "match disjunction" $
         do
             let actual =
-                    matchDisjunctionTest verifiedModule initial [final1, final2]
+                    matchDisjunction verifiedModule initial [final1, final2]
                         & runNoSMT
             result <- actual
             assertEqual "" (mkBottom mySort) result
     , testCase "match disjunction - bottom 1" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         unreachable
                         [final1, final2, next1, next2]
@@ -216,7 +391,7 @@ test_matchDisjunction =
     , testCase "match disjunction - bottom 2" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         initial
                         [final1, final2, next1, next2]
@@ -226,7 +401,7 @@ test_matchDisjunction =
     , testCase "match disjunction - bottom 3" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         unreachable
                         [final1, final2]
@@ -236,7 +411,7 @@ test_matchDisjunction =
     , testCase "match disjunction - bottom 4" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         initial
                         [next1, next2]
@@ -246,7 +421,7 @@ test_matchDisjunction =
     , testCase "match disjunction - bottom 5" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         unreachable
                         [next1, next2]
@@ -256,7 +431,7 @@ test_matchDisjunction =
     , testCase "match disjunction - bottom 6" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         unreachable
                         [final1, final2, initial, next1, next2]
@@ -266,7 +441,7 @@ test_matchDisjunction =
     , testCase "match disjunction - top" $
         do
             let actual =
-                    matchDisjunctionTest
+                    matchDisjunction
                         verifiedModule
                         initial
                         [final1, final2, initial, next1, next2]
@@ -323,8 +498,8 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctionsTest verifiedModule
-                    & runTestLog runNoSMT
+                checkFunctions verifiedModule
+                    & runTestLoggerT . SMT.runNoSMT
                     & try @ErrorEquationRightFunction
             assertEqual "" True $ isRight actual
         , testCase "Not every equation RHS is a function pattern." $ do
@@ -342,8 +517,8 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctionsTest verifiedModule
-                    & runTestLog runNoSMT
+                checkFunctions verifiedModule
+                    & runTestLoggerT . SMT.runNoSMT
                     & try @ErrorEquationRightFunction
             assertEqual "" True $ isLeft actual
         , testCase "Test RHS ignore simplification equations." $ do
@@ -359,8 +534,8 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctionsTest verifiedModule
-                    & runTestLog runNoSMT
+                checkFunctions verifiedModule
+                    & runTestLoggerT . SMT.runNoSMT
                     & try @ErrorEquationRightFunction
             assertEqual "" True $ isRight actual
         , testCase "Function patterns do not both match." $ do
@@ -378,8 +553,8 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctionsTest verifiedModule
-                    & runTestLog runNoSMT
+                checkFunctions verifiedModule
+                    & runTestLoggerT . SMT.runNoSMT
                     & try @ErrorEquationsSameMatch
             assertEqual "" True $ isRight actual
         , testCase "Two function patterns both match." $ do
@@ -398,8 +573,8 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctionsTest verifiedModule
-                    & runTestLog runNoSMT
+                checkFunctions verifiedModule
+                    & runTestLoggerT . SMT.runNoSMT
                     & try @ErrorEquationsSameMatch
             assertEqual "" True $ isLeft actual
         , testCase "Test both match ignore simplification equations." $ do
@@ -418,8 +593,8 @@ test_checkFunctions =
                             , moduleAttributes = Attributes []
                             }
             actual <-
-                checkFunctionsTest verifiedModule
-                    & runTestLog runNoSMT
+                checkFunctions verifiedModule
+                    & runTestLoggerT . SMT.runNoSMT
                     & try @ErrorEquationsSameMatch
             assertEqual "" True $ isRight actual
         ]
@@ -553,7 +728,7 @@ test_execBottom = testCase "exec returns bottom on unsatisfiable input patterns.
             verifiedModule
             Any
             inputPattern
-            & runTestLog runNoSMT
+            & runTestLoggerT . SMT.runNoSMT
     verifiedModule =
         verifiedMyModule
             Module
@@ -860,7 +1035,7 @@ rewriteAxiomPriority ::
 rewriteAxiomPriority lhsName rhsName priority antiLeft =
     ( Syntax.SentenceAxiomSentence
         . withPriority priority
-        . TermLike.mkAxiom_
+        . mkAxiom_
     )
         $ rewriteRuleToTerm $
             RewriteRule
@@ -1026,26 +1201,29 @@ test_execGetExitCode =
                 , symbolSorts = applicationSorts [myIntSort] myIntSort
                 }
 
+rpcExecTest ::
+    Limit Natural ->
+    VerifiedModule Attribute.StepperAttributes ->
+    TermLike VariableName ->
+    SMT (TraversalResult (ExecDepth, ProgramState (Pattern VariableName)))
+rpcExecTest depthLimit verifiedModule initial =
+    makeSerializedModule verifiedModule >>= \serializedModule ->
+        rpcExec depthLimit serializedModule initial
+
 -- TODO(Ana): these functions should run the procedures twice,
 -- once with the experimental simplifier enabled and once with it
 -- disabled; this change should be made when we add the first
 -- experimental feature;
 execTest ::
-    MonadIO smt =>
-    MonadLog smt =>
-    MonadSMT smt =>
-    MonadMask smt =>
-    MonadProf smt =>
     Limit Natural ->
     Limit Natural ->
     VerifiedModule Attribute.StepperAttributes ->
     ExecutionMode ->
     TermLike VariableName ->
-    smt (ExitCode, TermLike VariableName)
+    SMT (ExitCode, TermLike VariableName)
 execTest depthLimit breadthLimit verifiedModule strategy initial = do
-    serializedModule <- makeSerializedModule DisabledSimplifierX verifiedModule
+    serializedModule <- makeSerializedModule verifiedModule
     exec
-        DisabledSimplifierX
         depthLimit
         breadthLimit
         serializedModule
@@ -1053,47 +1231,19 @@ execTest depthLimit breadthLimit verifiedModule strategy initial = do
         initial
 
 searchTest ::
-    MonadIO smt =>
-    MonadLog smt =>
-    MonadSMT smt =>
-    MonadMask smt =>
-    MonadProf smt =>
     Limit Natural ->
     Limit Natural ->
     VerifiedModule Attribute.StepperAttributes ->
     TermLike VariableName ->
     Pattern VariableName ->
     Search.Config ->
-    smt (TermLike VariableName)
+    SMT (TermLike VariableName)
 searchTest depthLimit breadthLimit verifiedModule initial currentSearchPattern config = do
-    serializedModule <- makeSerializedModule DisabledSimplifierX verifiedModule
+    serializedModule <- makeSerializedModule verifiedModule
     search
-        DisabledSimplifierX
         depthLimit
         breadthLimit
         serializedModule
         initial
         currentSearchPattern
         config
-
-matchDisjunctionTest ::
-    MonadLog smt =>
-    MonadSMT smt =>
-    MonadIO smt =>
-    MonadMask smt =>
-    MonadProf smt =>
-    VerifiedModule Attribute.Symbol ->
-    Pattern RewritingVariableName ->
-    [Pattern RewritingVariableName] ->
-    smt (TermLike VariableName)
-matchDisjunctionTest = matchDisjunction DisabledSimplifierX
-
-checkFunctionsTest ::
-    MonadLog smt =>
-    MonadSMT smt =>
-    MonadIO smt =>
-    MonadMask smt =>
-    MonadProf smt =>
-    VerifiedModule Attribute.StepperAttributes ->
-    smt ()
-checkFunctionsTest = checkFunctions DisabledSimplifierX

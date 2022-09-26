@@ -1,3 +1,6 @@
+{-# LANGUAGE NoStrict #-}
+{-# LANGUAGE NoStrictData #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
@@ -24,7 +27,7 @@ newtype ErrorVerify = ErrorVerify {koreError :: Kore.Error VerifyError}
     deriving stock (Show)
 
 instance Exception ErrorVerify where
-    toException = toException . SomeEntry
+    toException = toException . SomeEntry []
     fromException exn = fromException exn >>= fromEntry
     displayException = Kore.printError . koreError
 

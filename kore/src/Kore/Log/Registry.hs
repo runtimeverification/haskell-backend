@@ -47,6 +47,7 @@ import Kore.Log.DebugAttemptedRewriteRules (
 import Kore.Log.DebugBeginClaim (
     DebugBeginClaim,
  )
+import Kore.Log.DebugCreatedSubstitution (DebugCreatedSubstitution)
 import Kore.Log.DebugEvaluateCondition (
     DebugEvaluateCondition,
  )
@@ -72,11 +73,11 @@ import Kore.Log.DebugUnification (
 import Kore.Log.DebugUnifyBottom (
     DebugUnifyBottom,
  )
+import Kore.Log.DecidePredicateUnknown (
+    DecidePredicateUnknown,
+ )
 import Kore.Log.ErrorBottomTotalFunction (
     ErrorBottomTotalFunction,
- )
-import Kore.Log.ErrorDecidePredicateUnknown (
-    ErrorDecidePredicateUnknown,
  )
 import Kore.Log.ErrorEquationRightFunction (
     ErrorEquationRightFunction,
@@ -143,6 +144,9 @@ import Kore.Log.WarnSymbolSMTRepresentation (
  )
 import Kore.Log.WarnTrivialClaim (
     WarnTrivialClaim,
+ )
+import Kore.Log.WarnUnexploredBranches (
+    WarnUnexploredBranches,
  )
 import Kore.Log.WarnUnsimplified (
     WarnUnsimplifiedCondition,
@@ -212,6 +216,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnClaimRHSIsBottom
             , mk $ Proxy @WarnIfLowProductivity
             , mk $ Proxy @WarnTrivialClaim
+            , mk $ Proxy @WarnUnexploredBranches
             , mk $ Proxy @DebugRetrySolverQuery
             , mk $ Proxy @DebugUnifyBottom
             , mk $ Proxy @DebugEvaluateCondition
@@ -229,10 +234,10 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnUnsimplifiedPredicate
             , mk $ Proxy @WarnUnsimplifiedCondition
             , mk $ Proxy @WarnRestartSolver
+            , mk $ Proxy @DebugCreatedSubstitution
             ]
         ,
             [ mk $ Proxy @ErrorBottomTotalFunction
-            , mk $ Proxy @ErrorDecidePredicateUnknown
             , mk $ Proxy @ErrorEquationRightFunction
             , mk $ Proxy @ErrorEquationsSameMatch
             , mk $ Proxy @ErrorOutOfDate
@@ -241,6 +246,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @ErrorException
             , mk $ Proxy @ErrorRewriteLoop
             , mk $ Proxy @ErrorRewritesInstantiation
+            , mk $ Proxy @DecidePredicateUnknown
             ]
         )
             & Lens.each %~ unzip
@@ -285,7 +291,7 @@ toSomeEntryType =
 
 -- | The entry type underlying the 'SomeEntry' wrapper.
 typeOfSomeEntry :: SomeEntry -> SomeTypeRep
-typeOfSomeEntry (SomeEntry entry) = SomeTypeRep (typeOf entry)
+typeOfSomeEntry (SomeEntry _ entry) = SomeTypeRep (typeOf entry)
 
 getEntryTypesAsText :: [String]
 getEntryTypesAsText = getNoErrEntryTypesAsText <> getErrEntryTypesAsText

@@ -130,7 +130,7 @@ simplifyEvaluated ::
     OrPattern.OrPattern RewritingVariableName ->
     IO (OrPattern.OrPattern RewritingVariableName)
 simplifyEvaluated first second =
-    runSimplifier mockEnv $
+    testRunSimplifier mockEnv $
         Implies.simplifyEvaluated Mock.testSort SideCondition.top first second
   where
     mockEnv = Mock.env

@@ -222,7 +222,7 @@ parseEntryTypes =
     allEntryTypes :: OptPretty.Doc
     allEntryTypes =
         OptPretty.vsep
-            [ "Log entries: logs entries of supplied types"
+            [ "Log entries: comma-separated list logs entries to enable"
             , "Available entry types:"
             , (OptPretty.indent 4 . OptPretty.vsep)
                 (OptPretty.text <$> getEntryTypesAsText)
@@ -333,10 +333,10 @@ parseDebugApplyEquationOptions =
 
 selectDebugApplyEquation ::
     DebugApplyEquationOptions ->
-    ActualEntry ->
+    SomeEntry ->
     Bool
-selectDebugApplyEquation options ActualEntry{actualEntry}
-    | Just (DebugApplyEquation equation _) <- fromEntry actualEntry =
+selectDebugApplyEquation options entry
+    | Just (DebugApplyEquation equation _) <- fromEntry entry =
         any (flip HashSet.member selected) (Equation.identifiers equation)
     | otherwise = False
   where
@@ -374,15 +374,15 @@ parseDebugAttemptEquationOptions =
 
 selectDebugAttemptEquation ::
     DebugAttemptEquationOptions ->
-    ActualEntry ->
+    SomeEntry ->
     Bool
-selectDebugAttemptEquation options ActualEntry{actualEntry}
+selectDebugAttemptEquation options entry
     | Just equation <- getEquation =
         any (flip HashSet.member selected) (Equation.identifiers equation)
     | otherwise = False
   where
     getEquation = do
-        debugAttemptEquation <- fromEntry actualEntry
+        debugAttemptEquation <- fromEntry entry
         case debugAttemptEquation of
             DebugAttemptEquation equation _ -> pure equation
             DebugAttemptEquationResult equation _ -> pure equation
@@ -419,7 +419,7 @@ parseDebugEquationOptions =
 
 selectDebugEquation ::
     DebugEquationOptions ->
-    ActualEntry ->
+    SomeEntry ->
     Bool
 selectDebugEquation DebugEquationOptions{selected} =
     (fmap or . sequence)

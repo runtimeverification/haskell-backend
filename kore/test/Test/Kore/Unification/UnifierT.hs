@@ -27,15 +27,14 @@ import Kore.Internal.Substitution (
  )
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
-import Kore.Rewrite.Axiom.EvaluationStrategy qualified as EvaluationStrategy
 import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.Condition qualified as Condition
-import Kore.Simplify.Data (
+import Kore.Simplify.API (
     Env (..),
  )
+import Kore.Simplify.Condition qualified as Condition
 import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Unification.UnifierT qualified as Monad.Unify
@@ -62,9 +61,12 @@ test_simplifyCondition =
         actual <- normalize Condition.bottomCondition
         assertEqual "Expected empty result" expect actual
         assertNormalizedPredicatesMulti actual
-    , testCase "∃ y z. x = σ(y, z)" $ do
-        let expect = Condition.fromPredicate existsPredicate
-        assertNormalized expect
+    , testCase
+        ( "∃ y z. x = σ(y, z) normalized to a substitution x = σ(y, z) "
+            <> "(top-level exists get removed, and y,z must be fresh in the context)"
+        )
+        $ do
+            assertNormalized existsSubst
     , testCase "¬∃ y z. x = σ(y, z)" $ do
         let expect =
                 Condition.fromPredicate $
@@ -95,6 +97,10 @@ test_simplifyCondition =
         assertEqual "Expected \\top" expect actual
     ]
   where
+    existsSubst =
+        Condition.fromSubstitution $
+            Substitution.unsafeWrap
+                [(inject Mock.xConfig, (Mock.sigma (mkElemVar Mock.yConfig) (mkElemVar Mock.zConfig)))]
     existsPredicate =
         Predicate.makeMultipleExists [Mock.yConfig, Mock.zConfig] $
             Predicate.makeEqualsPredicate
@@ -399,7 +405,7 @@ merge ::
 merge
     (Substitution.mkUnwrappedSubstitution -> s1)
     (Substitution.mkUnwrappedSubstitution -> s2) =
-        Test.runSimplifier mockEnv $
+        Test.testRunSimplifier mockEnv $
             Monad.Unify.runUnifierT Not.notSimplifier $
                 mergeSubstitutionsExcept $
                     Substitution.wrap
@@ -423,7 +429,7 @@ normalize ::
     Conditional RewritingVariableName term ->
     IO [Conditional RewritingVariableName term]
 normalize =
-    Test.runSimplifierBranch mockEnv
+    Test.testRunSimplifierBranch mockEnv
         . Condition.simplifyCondition SideCondition.top
   where
     mockEnv = Mock.env
@@ -433,18 +439,18 @@ normalizeExcept ::
     IO (MultiOr (Conditional RewritingVariableName ()))
 normalizeExcept predicated =
     fmap MultiOr.make $
-        Test.runSimplifier mockEnv $
+        Test.testRunSimplifier mockEnv $
             Monad.Unify.runUnifierT Not.notSimplifier $
                 Logic.lowerLogicT $
                     Simplifier.simplifyCondition SideCondition.top predicated
   where
-    mockEnv = Mock.env{simplifierAxioms}
-    simplifierAxioms =
+    mockEnv = Mock.env{axiomEquations}
+    axiomEquations =
         -- Use Mock.functional10 as the identity function.
         Map.fromList
             [
                 ( Axiom.Identifier.Application Mock.functional10Id
-                , EvaluationStrategy.definitionEvaluation
+                ,
                     [ Equation.mkEquation
                         (Mock.functional10 (mkElemVar Mock.xConfig))
                         (mkElemVar Mock.xConfig)

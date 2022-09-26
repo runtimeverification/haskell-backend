@@ -1,3 +1,6 @@
+{-# LANGUAGE NoStrict #-}
+{-# LANGUAGE NoStrictData #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
@@ -20,7 +23,7 @@ newtype ErrorOutOfDate = ErrorOutOfDate {message :: String}
     deriving stock (Show)
 
 instance Exception ErrorOutOfDate where
-    toException = toException . SomeEntry
+    toException = toException . SomeEntry []
     fromException exn = fromException exn >>= fromEntry
     displayException = message
 

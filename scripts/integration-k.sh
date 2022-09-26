@@ -24,5 +24,3 @@ fi
 $MAKE kore
 $MAKE build-test
 $MAKE test-k
-$MAKE clean-execution
-$MAKE test-k-simplifierx

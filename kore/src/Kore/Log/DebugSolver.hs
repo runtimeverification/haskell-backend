@@ -1,3 +1,6 @@
+{-# LANGUAGE NoStrict #-}
+{-# LANGUAGE NoStrictData #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
@@ -20,11 +23,10 @@ import Data.Text (
 import Data.Text.Lazy qualified as Text.Lazy
 import Data.Text.Lazy.Builder qualified as Text.Lazy.Builder
 import Log (
-    ActualEntry (..),
     Entry (..),
     LogAction (..),
     Severity (Debug),
-    SomeEntry,
+    SomeEntry (..),
     logWith,
  )
 import Options.Applicative (
@@ -87,14 +89,14 @@ logDebugSolverRecvWith logger smtText =
 solverTranscriptLogger ::
     Applicative m =>
     LogAction m Text ->
-    LogAction m ActualEntry
+    LogAction m SomeEntry
 solverTranscriptLogger textLogger =
     LogAction action
   where
-    action ActualEntry{actualEntry}
-        | Just sendEntry <- matchDebugSolverSend actualEntry =
+    action entry
+        | Just sendEntry <- matchDebugSolverSend entry =
             unLogAction textLogger (sentText sendEntry)
-        | Just recvEntry <- matchDebugSolverRecv actualEntry =
+        | Just recvEntry <- matchDebugSolverRecv entry =
             unLogAction textLogger (receivedText recvEntry)
         | otherwise =
             pure ()

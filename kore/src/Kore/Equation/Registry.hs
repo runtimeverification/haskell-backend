@@ -87,7 +87,7 @@ identifyEquation ::
     Maybe (AxiomIdentifier, Equation VariableName)
 identifyEquation axiom = do
     equation@Equation{left} <- hush $ Equation.fromSentenceAxiom axiom
-    identifier <- AxiomIdentifier.matchAxiomIdentifier left
+    let identifier = AxiomIdentifier.matchAxiomIdentifier left
     pure (identifier, equation)
 
 data PartitionedEquations = PartitionedEquations

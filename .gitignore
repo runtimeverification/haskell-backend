@@ -49,3 +49,5 @@ cabal.project.local
 kore-exec.tar.gz
 hie.yaml
 .hie/
+.direnv
+*~

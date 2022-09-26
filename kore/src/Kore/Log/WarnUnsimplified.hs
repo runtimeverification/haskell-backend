@@ -1,3 +1,6 @@
+{-# LANGUAGE NoStrict #-}
+{-# LANGUAGE NoStrictData #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2021
 License     : BSD-3-Clause
@@ -34,16 +37,16 @@ import Pretty (
 import Pretty qualified
 
 data WarnUnsimplifiedPredicate = WarnUnsimplifiedPredicate
-    { limit :: !Int
-    , original :: !(Predicate RewritingVariableName)
-    , output :: !(MultiOr (MultiAnd (Predicate RewritingVariableName)))
+    { limit :: Int
+    , original :: (Predicate RewritingVariableName)
+    , output :: (MultiOr (MultiAnd (Predicate RewritingVariableName)))
     }
     deriving stock (Show)
 
 data WarnUnsimplifiedCondition = WarnUnsimplifiedCondition
-    { limit :: !Int
-    , original :: !(Condition RewritingVariableName)
-    , output :: !(Condition RewritingVariableName)
+    { limit :: Int
+    , original :: (Condition RewritingVariableName)
+    , output :: (Condition RewritingVariableName)
     }
     deriving stock (Show)
 

@@ -171,7 +171,7 @@ representation instead.
 -}
 data MetaSortType
     = StringSort
-    deriving stock (GHC.Generic)
+    deriving stock (GHC.Generic, Eq)
 
 instance Hashable MetaSortType
 

@@ -46,7 +46,7 @@ import Kore.Rewrite.RulePattern (
  )
 import Kore.Rewrite.Strategy (
     ExecutionGraph (..),
-    Strategy,
+    Step,
     pickFinal,
     runStrategy,
  )
@@ -898,7 +898,7 @@ runSteps ::
     [[Rule claim]] ->
     -- |left-hand-side of unification
     claim ->
-    [Strategy Prim] ->
+    [Step Prim] ->
     IO a
 runSteps
     breadthLimit
@@ -913,7 +913,7 @@ runSteps
                 fromMaybe (error "Unexpected missing tree") . graphFilter
                     <$> runStrategy
                         breadthLimit
-                        (transitionRule claims axiomGroups)
+                        (transitionRule EnabledStuckCheck claims axiomGroups)
                         strategy'
                         (Claimed configuration)
       where

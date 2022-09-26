@@ -1,7 +1,7 @@
 module Test.Kore.Simplify (
-    runSimplifier,
     runSimplifierSMT,
-    runSimplifierBranch,
+    testRunSimplifier,
+    testRunSimplifierBranch,
     simplifiedCondition,
     simplifiedOrCondition,
     simplifiedOrPattern,
@@ -12,8 +12,7 @@ module Test.Kore.Simplify (
 
     -- * Re-exports
     Simplifier,
-    SimplifierT,
-    NoSMT,
+    SMT,
     Env (..),
     Kore.MonadSimplify,
 ) where
@@ -62,35 +61,34 @@ import Kore.Internal.Variable (
 import Kore.Rewrite.SMT.Declaration (
     declareSortsSymbols,
  )
-import Kore.Simplify.Data (
+import Kore.Simplify.API (
     Env (..),
     Simplifier,
-    SimplifierT,
  )
-import Kore.Simplify.Data qualified as Kore
+import Kore.Simplify.API qualified as Kore
 import Logic (
     LogicT,
  )
 import Prelude.Kore
 import SMT (
-    NoSMT,
+    SMT,
  )
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.SMT qualified as Test
 
-runSimplifierSMT :: Env Simplifier -> Simplifier a -> IO a
+runSimplifierSMT :: Env -> Simplifier a -> IO a
 runSimplifierSMT env = Test.runSMT userInit . Kore.runSimplifier env
   where
     userInit = declareSortsSymbols Mock.smtDeclarations
 
-runSimplifier :: Env (SimplifierT NoSMT) -> SimplifierT NoSMT a -> IO a
-runSimplifier env = Test.runNoSMT . Kore.runSimplifier env
+testRunSimplifier :: Env -> Simplifier a -> IO a
+testRunSimplifier env = Test.runNoSMT . Kore.runSimplifier env
 
-runSimplifierBranch ::
-    Env (SimplifierT NoSMT) ->
-    LogicT (SimplifierT NoSMT) a ->
+testRunSimplifierBranch ::
+    Env ->
+    LogicT Simplifier a ->
     IO [a]
-runSimplifierBranch env = Test.runNoSMT . Kore.runSimplifierBranch env
+testRunSimplifierBranch env = Test.runNoSMT . Kore.runSimplifierBranch env
 
 simplifiedTerm :: TermLike variable -> TermLike variable
 simplifiedTerm =

@@ -12,9 +12,6 @@ module Kore.ModelChecker.Bounded (
 ) where
 
 import Control.Lens qualified as Lens
-import Control.Monad.Catch (
-    MonadThrow,
- )
 import Control.Monad.State.Strict qualified as State
 import Data.Generics.Sum (
     _Ctor,
@@ -63,12 +60,12 @@ import Kore.Rewrite.RulePattern (
 import Kore.Rewrite.Strategy (
     ExecutionGraph (..),
     GraphSearchOrder,
-    Strategy,
+    Step,
     pickFinal,
     runStrategyWithSearchOrder,
  )
 import Kore.Simplify.Simplify (
-    MonadSimplify,
+    Simplifier,
  )
 import Log qualified
 import Numeric.Natural (
@@ -90,7 +87,7 @@ newtype Axiom = Axiom {unAxiom :: RewriteRule RewritingVariableName}
 bmcStrategy ::
     [Axiom] ->
     CommonModalPattern ->
-    [Strategy (Prim CommonModalPattern (RewriteRule RewritingVariableName))]
+    [Step (Prim CommonModalPattern (RewriteRule RewritingVariableName))]
 bmcStrategy
     axioms
     goal =
@@ -102,19 +99,17 @@ bmcStrategy
             unwrap (Axiom a) = a
 
 checkClaim ::
-    forall m.
-    (MonadSimplify m, MonadThrow m) =>
     Limit Natural ->
     -- | Creates a one-step strategy from a target pattern. See
     -- 'defaultStrategy'.
     ( CommonModalPattern ->
-      [Strategy (Prim CommonModalPattern (RewriteRule RewritingVariableName))]
+      [Step (Prim CommonModalPattern (RewriteRule RewritingVariableName))]
     ) ->
     GraphSearchOrder ->
     (ImplicationRule RewritingVariableName, Limit Natural) ->
     -- a claim to check, together with a maximum number of verification steps
     -- for each.
-    m
+    Simplifier
         ( CheckResult
             (TermLike VariableName)
             (ImplicationRule VariableName)
@@ -165,7 +160,7 @@ checkClaim
         transitionRule' ::
             Prim CommonModalPattern (RewriteRule RewritingVariableName) ->
             CommonProofState ->
-            ModelChecker.Transition m CommonProofState
+            ModelChecker.Transition Simplifier CommonProofState
         transitionRule' = ModelChecker.transitionRule
 
         checkFinalNodes ::

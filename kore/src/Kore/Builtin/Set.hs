@@ -42,10 +42,6 @@ import Data.HashMap.Strict (
  )
 import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet qualified as HashSet
-import Data.Map.Strict (
-    Map,
- )
-import Data.Map.Strict qualified as Map
 import Data.Sequence qualified as Seq
 import Data.Text (
     Text,
@@ -223,12 +219,11 @@ symbolVerifiers =
 Returns the @NormalizedSet@ otherwise.
 -}
 expectBuiltinSet ::
-    MonadSimplify m =>
     -- | Context for error message
     Text ->
     -- | Operand pattern
     TermLike variable ->
-    MaybeT m (Ac.TermNormalizedAc NormalizedSet variable)
+    MaybeT Simplifier (Ac.TermNormalizedAc NormalizedSet variable)
 expectBuiltinSet _ (InternalSet_ internalSet) =
     return (builtinAcChild internalSet)
 expectBuiltinSet _ _ = empty
@@ -239,12 +234,11 @@ which consists only of concrete elements.
 Returns the @Set@ of concrete elements otherwise.
 -}
 expectConcreteBuiltinSet ::
-    MonadSimplify m =>
     -- | Context for error message
     Text ->
     -- | Operand pattern
     TermLike variable ->
-    MaybeT m (HashMap Key (SetValue (TermLike variable)))
+    MaybeT Simplifier (HashMap Key (SetValue (TermLike variable)))
 expectConcreteBuiltinSet ctx _set = do
     _set <- expectBuiltinSet ctx _set
     case unwrapAc _set of
@@ -256,12 +250,11 @@ expectConcreteBuiltinSet ctx _set = do
         _ -> empty
 
 expectEmptySet ::
-    MonadSimplify m =>
     -- | Context for error message
     Text ->
     -- | Operand pattern
     TermLike variable ->
-    MaybeT m ()
+    MaybeT Simplifier ()
 expectEmptySet cxt _set = do
     _set <- expectConcreteBuiltinSet cxt _set
     Monad.guard (HashMap.null _set)
@@ -270,22 +263,22 @@ expectEmptySet cxt _set = do
 as a function result.
 -}
 returnConcreteSet ::
-    (MonadSimplify m, InternalVariable variable) =>
+    (InternalVariable variable) =>
     Sort ->
     HashMap Key (SetValue (TermLike variable)) ->
-    m (Pattern variable)
+    Simplifier (Pattern variable)
 returnConcreteSet = Ac.returnConcreteAc
 
 evalElement :: Builtin.Function
 evalElement _ resultSort [_elem] =
     case retractKey _elem of
         Just concrete ->
-            TermLike.assertConstructorLikeKeys [_elem] $
+            lift . TermLike.assertConstructorLikeKeys [_elem] $
                 returnConcreteSet
                     resultSort
                     (HashMap.singleton concrete SetValue)
         Nothing ->
-            (Ac.returnAc resultSort . wrapAc)
+            (lift . Ac.returnAc resultSort . wrapAc)
                 NormalizedAc
                     { elementsWithVariables =
                         [SetElement _elem]
@@ -333,7 +326,7 @@ evalIn _ _ _ = Builtin.wrongArity Set.inKey
 evalUnit :: Builtin.Function
 evalUnit _ resultSort =
     \case
-        [] -> returnConcreteSet resultSort HashMap.empty
+        [] -> lift $ returnConcreteSet resultSort HashMap.empty
         _ -> Builtin.wrongArity Set.unitKey
 
 evalConcat :: Builtin.Function
@@ -345,12 +338,11 @@ evalConcat _ resultSort [set1, set2] =
 evalConcat _ _ _ = Builtin.wrongArity Set.concatKey
 
 evalDifference ::
-    forall variable simplifier.
+    forall variable.
     InternalVariable variable =>
-    MonadSimplify simplifier =>
     SideCondition variable ->
     TermLike.Application TermLike.Symbol (TermLike variable) ->
-    MaybeT simplifier (Pattern variable)
+    MaybeT Simplifier (Pattern variable)
 evalDifference
     _
     ( TermLike.Application
@@ -359,7 +351,7 @@ evalDifference
         ) = do
         _set1 <- expectConcreteBuiltinSet ctx _set1
         _set2 <- expectConcreteBuiltinSet ctx _set2
-        returnConcreteSet resultSort (HashMap.difference _set1 _set2)
+        lift $ returnConcreteSet resultSort (HashMap.difference _set1 _set2)
       where
         ctx = Set.differenceKey
 evalDifference _ _ =
@@ -373,6 +365,7 @@ evalToList _ resultSort [_set] = do
         & Seq.fromList
         & fmap (from @Key)
         & List.returnList resultSort
+        & lift
 evalToList _ _ _ = Builtin.wrongArity Set.toListKey
 
 evalSize :: Builtin.Function
@@ -388,7 +381,7 @@ evalIntersection :: Builtin.Function
 evalIntersection _ resultSort [_set1, _set2] = do
     _set1 <- expectConcreteBuiltinSet ctx _set1
     _set2 <- expectConcreteBuiltinSet ctx _set2
-    returnConcreteSet resultSort (HashMap.intersection _set1 _set2)
+    lift $ returnConcreteSet resultSort (HashMap.intersection _set1 _set2)
   where
     ctx = Set.intersectionKey
 evalIntersection _ _ _ = Builtin.wrongArity Set.intersectionKey
@@ -400,7 +393,7 @@ evalList2set _ resultSort [_list] = do
             fmap (\x -> (x, SetValue)) _list
                 & toList
                 & HashMap.fromList
-    returnConcreteSet resultSort _set
+    lift $ returnConcreteSet resultSort _set
 evalList2set _ _ _ = Builtin.wrongArity Set.list2setKey
 
 evalInclusion :: Builtin.Function
@@ -413,20 +406,19 @@ evalInclusion _ resultSort [_setLeft, _setRight] = do
 evalInclusion _ _ _ = Builtin.wrongArity Set.inclusionKey
 
 -- | Implement builtin function evaluation.
-builtinFunctions :: Map Text BuiltinAndAxiomSimplifier
-builtinFunctions =
-    Map.fromList
-        [ (Set.concatKey, Builtin.functionEvaluator evalConcat)
-        , (Set.elementKey, Builtin.functionEvaluator evalElement)
-        , (Set.unitKey, Builtin.functionEvaluator evalUnit)
-        , (Set.inKey, Builtin.functionEvaluator evalIn)
-        , (Set.differenceKey, Builtin.applicationEvaluator evalDifference)
-        , (Set.toListKey, Builtin.functionEvaluator evalToList)
-        , (Set.sizeKey, Builtin.functionEvaluator evalSize)
-        , (Set.intersectionKey, Builtin.functionEvaluator evalIntersection)
-        , (Set.list2setKey, Builtin.functionEvaluator evalList2set)
-        , (Set.inclusionKey, Builtin.functionEvaluator evalInclusion)
-        ]
+builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
+builtinFunctions key
+    | key == Set.concatKey = Just $ Builtin.functionEvaluator evalConcat
+    | key == Set.elementKey = Just $ Builtin.functionEvaluator evalElement
+    | key == Set.unitKey = Just $ Builtin.functionEvaluator evalUnit
+    | key == Set.inKey = Just $ Builtin.functionEvaluator evalIn
+    | key == Set.differenceKey = Just $ Builtin.applicationEvaluator evalDifference
+    | key == Set.toListKey = Just $ Builtin.functionEvaluator evalToList
+    | key == Set.sizeKey = Just $ Builtin.functionEvaluator evalSize
+    | key == Set.intersectionKey = Just $ Builtin.functionEvaluator evalIntersection
+    | key == Set.list2setKey = Just $ Builtin.functionEvaluator evalList2set
+    | key == Set.inclusionKey = Just $ Builtin.functionEvaluator evalInclusion
+    | otherwise = Nothing
 
 {- | Convert a Set-sorted 'TermLike' to its internal representation.
 

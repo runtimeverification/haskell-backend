@@ -1,3 +1,6 @@
+{-# LANGUAGE NoStrict #-}
+{-# LANGUAGE NoStrictData #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
@@ -13,6 +16,7 @@ module Log (
 
     -- * Implementation
     LoggerT (..),
+    LoggerEnv (..),
     runLoggerT,
     askLogAction,
 
@@ -37,11 +41,10 @@ import Colog (
     cmap,
     (<&),
  )
-import Control.Lens qualified as Lens
 import Control.Monad.Catch (
-    MonadCatch,
+    MonadCatch (catch),
     MonadMask,
-    MonadThrow,
+    MonadThrow (throwM),
  )
 import Control.Monad.Counter (
     CounterT,
@@ -69,9 +72,6 @@ import Control.Monad.Trans.Maybe (
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.State.Strict qualified as Strict (
     StateT,
- )
-import Data.Generics.Product (
-    field,
  )
 import Data.Text (
     Text,
@@ -239,28 +239,26 @@ newtype LoggerT m a = LoggerT {getLoggerT :: ReaderT (LoggerEnv m) m a}
     deriving newtype (Functor, Applicative, Monad)
     deriving newtype (MonadIO, MonadThrow, MonadCatch, MonadMask)
 
-data LoggerEnv monad = LoggerEnv
-    { logAction :: !(LogAction monad ActualEntry)
-    , context :: ![SomeEntry]
+newtype LoggerEnv monad = LoggerEnv
+    { logAction :: LogAction monad SomeEntry
     }
     deriving stock (GHC.Generic)
 
 askLogAction :: Monad m => LoggerT m (LogAction m SomeEntry)
 askLogAction = LoggerT $ do
-    LoggerEnv{logAction, context = entryContext} <- ask
-    let mkActualEntry actualEntry = ActualEntry{actualEntry, entryContext}
-    pure (Colog.cmap mkActualEntry logAction)
+    LoggerEnv{logAction} <- ask
+    pure logAction
 {-# INLINE askLogAction #-}
 
 runLoggerT ::
     LoggerT monad a ->
-    LogAction monad ActualEntry ->
+    LogAction monad SomeEntry ->
     monad a
 runLoggerT LoggerT{getLoggerT} logAction =
-    runReaderT getLoggerT LoggerEnv{logAction, context = mempty}
+    runReaderT getLoggerT LoggerEnv{logAction}
 {-# INLINE runLoggerT #-}
 
-instance Monad m => MonadLog (LoggerT m) where
+instance (MonadCatch m, MonadThrow m) => MonadLog (LoggerT m) where
     logEntry entry = do
         someLogAction <- askLogAction
         lift $ someLogAction <& toEntry entry
@@ -268,9 +266,12 @@ instance Monad m => MonadLog (LoggerT m) where
 
     logWhile entry2 action = do
         logEntry entry2
-        LoggerT . addContext $ getLoggerT action
+        (LoggerT . addContext $ getLoggerT action)
+            `catch` (\(SomeEntry ctxt e) -> throwM $ SomeEntry (toEntry entry2 : ctxt) e)
       where
-        addContext = local $ Lens.over (field @"context") (toEntry entry2 :)
+        addContext = local $
+            \LoggerEnv{logAction} ->
+                LoggerEnv $ Colog.cmap (\(SomeEntry ctxt e) -> SomeEntry (toEntry entry2 : ctxt) e) logAction
     {-# INLINE logWhile #-}
 
 instance MonadTrans LoggerT where

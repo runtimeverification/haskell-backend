@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
@@ -8,6 +10,8 @@ module Kore.Reachability.Claim (
     AppliedRule (..),
     retractApplyRemainder,
     strategy,
+    MinDepth (..),
+    strategyWithMinDepth,
     TransitionRule,
     Prim,
     ClaimExtractor (..),
@@ -19,6 +23,7 @@ module Kore.Reachability.Claim (
     reachabilityCheckOnly,
     transitionRule,
     isTrusted,
+    StuckCheck (..),
 
     -- * Re-exports
     RewriteRule (..),
@@ -30,6 +35,10 @@ module Kore.Reachability.Claim (
     simplify',
     derivePar',
     deriveSeq',
+
+    -- * For JSON-RPC
+    checkSimpleImplication,
+    ImplicationError,
 
     -- * For testing
     checkImplicationWorker,
@@ -44,6 +53,9 @@ import Control.Monad.Catch (
     Exception (..),
     SomeException (..),
  )
+import Control.Monad.Except (
+    ExceptT,
+ )
 import Control.Monad.State.Strict (
     MonadState,
     StateT,
@@ -54,6 +66,7 @@ import Data.Functor.Compose
 import Data.Generics.Product (
     field,
  )
+import Data.List (intersect, partition, (\\))
 import Data.Monoid qualified as Monoid
 import Data.Stream.Infinite (
     Stream (..),
@@ -66,6 +79,7 @@ import Kore.Attribute.Axiom qualified as Attribute.Axiom
 import Kore.Attribute.Label qualified as Attribute (
     Label,
  )
+import Kore.Attribute.Pattern.FreeVariables (getFreeElementVariables)
 import Kore.Attribute.RuleIndex qualified as Attribute (
     RuleIndex,
  )
@@ -73,6 +87,7 @@ import Kore.Attribute.SourceLocation qualified as Attribute (
     SourceLocation,
  )
 import Kore.Attribute.Trusted qualified as Attribute.Trusted
+import Kore.Error (Error (..), koreFailWhen, withContext)
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (indexedModuleClaims),
     VerifiedModule,
@@ -101,9 +116,14 @@ import Kore.Internal.Symbol (
 import Kore.Internal.TermLike (
     Not (..),
     Sort,
+    TermLike,
+    freeVariables,
     isFunctionPattern,
+    mkExistsN,
+    mkImplies,
     termLikeSort,
  )
+import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Log.InfoReachability
 import Kore.Log.WarnClaimRHSIsBottom
 import Kore.Reachability.ClaimState hiding (
@@ -129,13 +149,13 @@ import Kore.Rewrite.RulePattern (
  )
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Rewrite.Step qualified as Step
-import Kore.Rewrite.Strategy (
-    Strategy,
- )
+import Kore.Rewrite.Strategy (Step)
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition qualified as Transition
-import Kore.Simplify.Data (
+import Kore.Simplify.API (
     MonadSimplify,
+    Simplifier,
+    liftSimplifier,
  )
 import Kore.Simplify.Exists qualified as Exists
 import Kore.Simplify.Not qualified as Not
@@ -147,14 +167,12 @@ import Kore.Syntax.Variable
 import Kore.TopBottom (
     TopBottom (..),
  )
+import Kore.Unification.Procedure
+import Kore.Unification.UnifierT as UnifierT
 import Kore.Unparser (
     Unparse (..),
  )
 import Kore.Verified qualified as Verified
-import Logic (
-    LogicT,
-    MonadLogic,
- )
 import Logic qualified
 import Prelude.Kore
 import Pretty (
@@ -177,16 +195,14 @@ class Claim claim where
         Strategy.TransitionT (AppliedRule claim) m claim
 
     applyClaims ::
-        MonadSimplify m =>
         [claim] ->
         claim ->
-        Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+        Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
 
     applyAxioms ::
-        MonadSimplify m =>
         [[Rule claim]] ->
         claim ->
-        Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+        Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
 
 {- | 'ApplyResult' is the result of a rewriting step, like 'applyClaims' or 'applyAxioms'.
 
@@ -261,7 +277,6 @@ extractClaims ::
 extractClaims = mapMaybe extractClaim . indexedModuleClaims
 
 deriveSeqClaim ::
-    MonadSimplify m =>
     Step.UnifyingRule claim =>
     Step.UnifyingRuleVariable claim ~ RewritingVariableName =>
     From claim (AxiomPattern RewritingVariableName) =>
@@ -270,7 +285,7 @@ deriveSeqClaim ::
     (ClaimPattern -> claim) ->
     [claim] ->
     claim ->
-    Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+    Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
 deriveSeqClaim lensClaimPattern mkClaim claims claim =
     getCompose $
         Lens.forOf lensClaimPattern claim $
@@ -295,19 +310,24 @@ deriveSeqClaim lensClaimPattern mkClaim claims claim =
 type TransitionRule m rule state =
     Prim -> state -> Strategy.TransitionT rule m state
 
+data StuckCheck
+    = EnabledStuckCheck
+    | DisabledStuckCheck
+    deriving stock (Eq)
+
 transitionRule ::
-    forall m claim.
-    MonadSimplify m =>
+    forall claim.
     Claim claim =>
+    StuckCheck ->
     [claim] ->
     [[Rule claim]] ->
-    TransitionRule m (AppliedRule claim) (ClaimState claim)
-transitionRule claims axiomGroups = transitionRuleWorker
+    TransitionRule Simplifier (AppliedRule claim) (ClaimState claim)
+transitionRule stuckCheck claims axiomGroups = transitionRuleWorker
   where
     transitionRuleWorker ::
         Prim ->
         ClaimState claim ->
-        Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
+        Strategy.TransitionT (AppliedRule claim) Simplifier (ClaimState claim)
 
     transitionRuleWorker Begin Proven = empty
     transitionRuleWorker Begin (Stuck _) = empty
@@ -322,9 +342,9 @@ transitionRule claims axiomGroups = transitionRuleWorker
         | Just claim <- retractRewritable claimState = do
             result <- checkImplication claim & Logic.lowerLogicT
             case result of
-                Implied -> pure Proven
-                NotImpliedStuck a -> do
-                    pure (Stuck a)
+                Implied _ -> pure Proven
+                NotImpliedStuck a ->
+                    returnStuckOrContinue a
                 NotImplied a
                     | isRemainder claimState -> do
                         pure (Stuck a)
@@ -347,6 +367,11 @@ transitionRule claims axiomGroups = transitionRuleWorker
     applyResultToClaimState (ApplyRewritten a) = Rewritten a
     applyResultToClaimState (ApplyRemainder a) = Remaining a
 
+    returnStuckOrContinue state =
+        case stuckCheck of
+            EnabledStuckCheck -> return (Stuck state)
+            DisabledStuckCheck -> return (Claimed state)
+
 retractSimplifiable :: ClaimState a -> Maybe a
 retractSimplifiable (Claimed a) = Just a
 retractSimplifiable (Rewritten a) = Just a
@@ -361,37 +386,67 @@ isRemainder :: ClaimState a -> Bool
 isRemainder (Remaining _) = True
 isRemainder _ = False
 
-reachabilityFirstStep :: Strategy Prim
+reachabilityFirstStep :: Step Prim
 reachabilityFirstStep =
-    (Strategy.sequence . map Strategy.apply)
-        [ Begin
-        , Simplify
-        , CheckImplication
-        , ApplyAxioms
-        , Simplify
-        ]
+    [ Begin
+    , Simplify
+    , CheckImplication
+    , ApplyAxioms
+    , Simplify
+    ]
 
-reachabilityNextStep :: Strategy Prim
+reachabilityNextStep :: Step Prim
 reachabilityNextStep =
-    (Strategy.sequence . map Strategy.apply)
-        [ Begin
-        , Simplify
-        , CheckImplication
-        , ApplyClaims
-        , ApplyAxioms
-        , Simplify
-        ]
+    [ Begin
+    , Simplify
+    , CheckImplication
+    , ApplyClaims
+    , ApplyAxioms
+    , Simplify
+    ]
+
+reachabilityFirstStepNoCheck :: Step Prim
+reachabilityFirstStepNoCheck =
+    [ Begin
+    , Simplify
+    , ApplyAxioms
+    , Simplify
+    ]
+
+reachabilityNextStepNoCheck :: Step Prim
+reachabilityNextStepNoCheck =
+    [ Begin
+    , Simplify
+    , ApplyClaims
+    , ApplyAxioms
+    , Simplify
+    ]
 
 {- | A strategy for the last step of depth-limited reachability proofs.
    The final such step should only perform a CheckImplication.
 -}
-reachabilityCheckOnly :: Strategy Prim
-reachabilityCheckOnly =
-    Strategy.sequence [Strategy.apply Begin, Strategy.apply CheckImplication]
+reachabilityCheckOnly :: Step Prim
+reachabilityCheckOnly = [Begin, CheckImplication]
 
-strategy :: Stream (Strategy Prim)
+strategy :: Stream (Step Prim)
 strategy =
     reachabilityFirstStep :> Stream.iterate id reachabilityNextStep
+
+newtype MinDepth = MinDepth
+    { getMinDepth :: Int
+    }
+
+strategyWithMinDepth :: MinDepth -> Stream (Step Prim)
+strategyWithMinDepth (MinDepth minDepth) =
+    Stream.prepend
+        noCheckReachabilitySteps
+        reachabilitySteps
+  where
+    noCheckReachabilitySteps =
+        reachabilityFirstStepNoCheck :
+        replicate (minDepth - 1) reachabilityNextStepNoCheck
+    reachabilitySteps =
+        Stream.iterate id reachabilityNextStep
 
 {- | The result of checking the direct implication of a proof claim.
 
@@ -401,7 +456,7 @@ conditions does not hold.
 -}
 data CheckImplicationResult a
     = -- | The implication is valid.
-      Implied
+      Implied !a
     | -- | The implication is not valid.
       NotImplied !a
     | -- | The implication between /terms/ is valid, but the implication between
@@ -415,7 +470,11 @@ data CheckImplicationResult a
     deriving anyclass (Debug, Diff)
 
 instance Pretty a => Pretty (CheckImplicationResult a) where
-    pretty Implied = "implied"
+    pretty (Implied a) =
+        Pretty.vsep
+            [ "implied:"
+            , Pretty.indent 4 $ pretty a
+            ]
     pretty (NotImplied a) =
         Pretty.vsep
             [ "not implied:"
@@ -529,7 +588,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
         stuck <-
             Logic.scatter configs'
                 >>= Pattern.simplify
-                >>= SMT.Evaluator.filterMultiOr
+                >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
                 >>= Logic.scatter
         examine anyUnified stuck
         & elseImplied
@@ -583,7 +642,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
     didUnify :: MonadState AnyUnified state => state ()
     didUnify = State.put (AnyUnified True)
 
-    elseImplied acts = Logic.ifte acts pure (pure Implied)
+    elseImplied acts = Logic.ifte acts pure (pure $ Implied claimPattern)
 
     examine ::
         AnyUnified ->
@@ -592,7 +651,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
     examine AnyUnified{didAnyUnify} stuck
         | didAnyUnify
           , isBottom condition =
-            pure Implied
+            pure $ Implied claimPattern
         | not didAnyUnify
           , not (isBottom right) =
             pure $ NotImplied claimPattern
@@ -604,6 +663,229 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
                     & NotImpliedStuck
       where
         (_, condition) = Pattern.splitTerm stuck
+
+{- | Check a simple implication (with a single consequent), and return a
+  substitution that witnesses it if the implication is true.
+
+Requirements:
+* The LHS pattern must be function-like
+* Free variables of the LHS must not be used as existentials on the RHS
+* Both LHS and RHS must simplify to single patterns (OrPattern singletons)
+
+The implication has the form
+
+@
+φ(X) → ∃ Y. ψ(X, Y)
+@
+
+again with @X@ and @Y@ disjoint families of variables, and @φ@ and @ψ@
+assumed to be function-like patterns,
+
+Let @φ(X) = t(X) ∧ P(X)@ and @ψ(X, Y) = t'(X, Y) ∧ P'(X, Y)@. Following
+the reasoning from above in @'checkImplicationWorker'@, the
+implication is valid when
+
+@
+(¬ ∃ Y. ⌈t(X) ∧ t'(X, Y)⌉ ∧ P'(X, Y)) ∧ ⌈t(X)⌉ ∧ P(X)
+@
+
+is unsatisfiable.
+
+1) If
+
+@
+⌈t(X)⌉ ∧ P(X)
+@
+
+is already unsatisfiable by itself, the implication holds trivially
+(ex falso quodlibet) with an empty substitution.
+
+2) Otherwise, we must refute
+
+@
+¬ ∃ Y. ⌈t(X) ∧ t'(X, Y)⌉ ∧ P'(X, Y) ∧ ⌈t(X)⌉ ∧ P(X)
+@
+
+which involves unification ⌈t(X) ∧ t'(X, Y)⌉ providing the desired
+substitution.
+
+When the implication formula is valid, @checkImplicationWorker@
+returns 'Implied' with a witness substitution.
+
+When the implication formula is not valid, the function behaves
+similar to @checkImplicationWorker@:
+
+* If unification @⌈t(X) ∧ t'(X, Y)⌉@ succeeded, the return value is
+  'NotImpliedStuck' with terms that could not be refuted, and the
+  substitution for the unification.
+* otherwise, the function returns 'NotImplied' without a substitution.
+-}
+checkSimpleImplication ::
+    forall v.
+    (v ~ RewritingVariableName) =>
+    Pattern v -> -- left
+    Pattern v -> -- right
+    [ElementVariable v] -> -- existentials
+    ExceptT
+        (Error ImplicationError)
+        Simplifier
+        (TermLike v, CheckImplicationResult (Maybe (Pattern.Condition v)))
+checkSimpleImplication inLeft inRight existentials =
+    do
+        left <- simplifyToSingle "LHS: " inLeft
+        right <- simplifyToSingle "RHS: " inRight
+        checkAssumptions left right
+        let (rightTerm, rightCondition) = Pattern.splitTerm right
+            (leftTerm, leftCondition) = Pattern.splitTerm left
+            claimToCheck =
+                -- this will be returned with the result
+                mkImplies
+                    (Pattern.toTermLike left)
+                    (mkExistsN existentials (Pattern.toTermLike right))
+
+        let definedConfig =
+                Pattern.andCondition left $
+                    from $ makeCeilPredicate leftTerm
+        trivial <-
+            fmap isBottom $
+                (liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc)
+                    =<< Pattern.simplify definedConfig
+
+        if trivial
+            then pure (claimToCheck, Implied . Just $ Condition.top) -- trivial unifier
+            else do
+                -- attempt term unification (to remember the substitution
+                unified <-
+                    lift $
+                        runUnifier $
+                            unificationProcedure SideCondition.top leftTerm rightTerm
+
+                -- for each unification result, attempt to refute the formula
+                remainders ::
+                    [(OrPattern v, Pattern.Condition v)] <-
+                    mapM (lift . checkUnifiedConsequent definedConfig leftCondition rightCondition) unified
+
+                let (successes, stucks) = partition (isBottom . fst) remainders
+
+                pure . (claimToCheck,) $ case (successes, stucks) of
+                    ((_bottom, unifier) : _, _) ->
+                        -- success for at least one, return (ignore other failures)
+                        Implied $ Just unifier
+                    ([], []) ->
+                        -- no successful unification, thus not implied
+                        NotImplied Nothing
+                    ([], (_stuck, unifier) : _) ->
+                        -- successful unification but all stuck,
+                        -- return original left term and unifier
+                        NotImpliedStuck $ Just unifier
+  where
+    sort = termLikeSort (Pattern.term inLeft)
+
+    simplifyToSingle ::
+        String ->
+        Pattern v ->
+        ExceptT (Error ImplicationError) Simplifier (Pattern v)
+    simplifyToSingle ctx pat = do
+        let patSort = termLikeSort (Pattern.term pat)
+        simplified <- toList <$> lift (Pattern.simplify pat)
+        withContext (ctx <> showPretty pat) $
+            koreFailWhen
+                (length simplified > 1)
+                "Term does not simplify to a singleton pattern"
+        pure $
+            fromMaybe (Pattern.bottomOf patSort) $ headMay simplified
+
+    showPretty :: Pretty a => a -> String
+    showPretty = Pretty.renderString . Pretty.layoutOneLine . Pretty.pretty
+
+    checkAssumptions left right = do
+        let leftTerm = Pattern.term left
+        -- must be function-like
+        withContext (showPretty leftTerm) $
+            koreFailWhen
+                (not $ isFunctionPattern leftTerm)
+                "The check implication step expects the antecedent term to be function-like."
+        -- RHS existentials must not capture free variables of LHS
+        let lhsFreeElemVars = getFreeElementVariables (freeVariables left)
+            nameCollisions = existentials `intersect` lhsFreeElemVars
+            rightTerm = Pattern.term right
+        withContext ("LHS: " <> showPretty leftTerm)
+            . withContext ("RHS: " <> showPretty rightTerm)
+            . withContext ("existentials: " <> show (map unparse2 existentials))
+            $ koreFailWhen (not $ null nameCollisions) $
+                unwords
+                    ( "Existentials capture free variables of the antecedent:" :
+                      map (show . unparse2) nameCollisions
+                    )
+        -- RHS must not have free variables that aren't free in the LHS
+        let rhsFreeElemVars = getFreeElementVariables $ freeVariables right
+            offending = rhsFreeElemVars \\ (lhsFreeElemVars <> existentials)
+        withContext ("LHS: " <> showPretty leftTerm)
+            . withContext ("RHS: " <> showPretty rightTerm)
+            . withContext ("existentials: " <> show (map unparse2 existentials))
+            $ koreFailWhen (not $ null offending) $
+                unwords
+                    ( "The RHS must not have free variables not present in the LHS:" :
+                      map (show . unparse2) offending
+                    )
+        -- sorts of LHS and RHS have to agree
+        let lSort = termLikeSort leftTerm
+            rSort = termLikeSort rightTerm
+        withContext ("LHS sort: " <> show (unparse2 lSort))
+            . withContext ("RHS sort: " <> show (unparse2 rSort))
+            $ koreFailWhen
+                (lSort /= rSort)
+                "Antecedent and consequent must have the same sort."
+
+    -- using a successful unification result (Condition), build term
+    -- to refute and try to refute (returning non-refutable parts and
+    -- the substitution for unification)
+    checkUnifiedConsequent ::
+        Pattern v ->
+        Pattern.Condition v ->
+        Pattern.Condition v ->
+        Pattern.Condition v ->
+        Simplifier (OrPattern v, Pattern.Condition v)
+    checkUnifiedConsequent
+        definedConfig
+        leftCondition
+        rightCondition
+        unified =
+            fmap ((,unified) . MultiOr.mergeAll) $
+                Logic.observeAllT $ do
+                    let existsChild =
+                            Pattern.andCondition
+                                (Pattern.fromCondition sort unified)
+                                rightCondition
+                        sideCondition =
+                            SideCondition.fromConditionWithReplacements
+                                -- (NB this from . to applies the substitution)
+                                (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
+
+                    notChild <- -- ∃ Y. ⌈t(X) ∧ t'(X, Y)⌉ ∧ P'(X, Y) (Or pattern)
+                        Exists.makeEvaluate sideCondition existentials existsChild
+
+                    notRhs <- -- not notChild (Or pattern)
+                        Not.simplify sideCondition Not{notSort = sort, notChild}
+
+                    let combineWithAntecedent :: Pattern v -> Pattern v
+                        combineWithAntecedent = (definedConfig <*)
+                    -- (<*) takes the 1st arg.s term but combines
+                    -- both arg.s predicate and substitution
+
+                    -- The result's substitution needs to be renormalized,
+                    -- which we achieve by simplifying it
+
+                    toRefute <-
+                        Pattern.simplify
+                            . OrPattern.toPattern sort
+                            . MultiOr.map combineWithAntecedent
+                            $ notRhs
+
+                    liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc toRefute
+
+-- | type tag for errors thrown from the above
+data ImplicationError
 
 simplify' ::
     MonadSimplify m =>
@@ -634,7 +916,7 @@ simplify' lensClaimPattern claim = do
             configs <-
                 simplifyTopConfigurationDefined
                     config
-                    >>= SMT.Evaluator.filterMultiOr
+                    >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
                     & lift
             asum (pure <$> toList configs)
 
@@ -649,7 +931,7 @@ simplifyRightHandSide lensClaimPattern sideCondition =
         OrPattern.observeAllT $
             Logic.scatter dest
                 >>= Pattern.makeEvaluate sideCondition . Pattern.requireDefined
-                >>= SMT.Evaluator.filterMultiOr
+                >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
                 >>= Logic.scatter
 
 isTrusted :: From claim Attribute.Axiom.Trusted => claim -> Bool
@@ -664,13 +946,12 @@ instance Exception WithConfiguration
 
 -- | Apply 'Rule's to the claim in parallel.
 derivePar' ::
-    forall m claim.
-    MonadSimplify m =>
+    forall claim.
     Lens' claim ClaimPattern ->
     (RewriteRule RewritingVariableName -> Rule claim) ->
     [RewriteRule RewritingVariableName] ->
     claim ->
-    Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+    Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
 derivePar' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule Step.applyRewriteRulesParallel
 
@@ -708,13 +989,12 @@ deriveWith lensClaimPattern mkRule takeStep rewrites claim =
 
 -- | Apply 'Rule's to the claim in sequence.
 deriveSeq' ::
-    forall m claim.
-    MonadSimplify m =>
+    forall claim.
     Lens' claim ClaimPattern ->
     (RewriteRule RewritingVariableName -> Rule claim) ->
     [RewriteRule RewritingVariableName] ->
     claim ->
-    Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+    Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
 deriveSeq' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule $ flip Step.applyRewriteRulesSequence
 

@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
@@ -29,6 +31,7 @@ import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.TermLike (
     TermLike,
  )
+import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.ModelChecker.Simplification (
     checkImplicationIsTop,
  )
@@ -43,15 +46,15 @@ import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator (
     filterMultiOr,
  )
 import Kore.Rewrite.Strategy (
-    Strategy,
+    Step,
     TransitionT,
  )
-import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Simplify.Pattern qualified as Pattern (
     simplifyTopConfiguration,
  )
 import Kore.Simplify.Simplify (
-    MonadSimplify,
+    Simplifier,
+    liftSimplifier,
  )
 import Kore.TopBottom
 import Prelude.Kore
@@ -113,11 +116,9 @@ type Transition m =
     TransitionT (RewriteRule RewritingVariableName) (StateT (Maybe ()) m)
 
 transitionRule ::
-    forall m.
-    MonadSimplify m =>
     Prim CommonModalPattern (RewriteRule RewritingVariableName) ->
     CommonProofState ->
-    Transition m CommonProofState
+    Transition Simplifier CommonProofState
 transitionRule
     strategyPrim
     proofState =
@@ -130,7 +131,7 @@ transitionRule
       where
         transitionCheckProofState ::
             CommonProofState ->
-            Transition m CommonProofState
+            Transition Simplifier CommonProofState
         transitionCheckProofState proofState0 = do
             execState <- lift State.get
             -- End early if any unprovable state was reached
@@ -142,7 +143,7 @@ transitionRule
 
         transitionSimplify ::
             CommonProofState ->
-            Transition m CommonProofState
+            Transition Simplifier CommonProofState
         transitionSimplify Proven = return Proven
         transitionSimplify (Unprovable config) = return (Unprovable config)
         transitionSimplify (GoalLHS config) =
@@ -155,7 +156,7 @@ transitionRule
                 configs <-
                     lift . lift $
                         Pattern.simplifyTopConfiguration config
-                filteredConfigs <- SMT.Evaluator.filterMultiOr configs
+                filteredConfigs <- liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc configs
                 if null filteredConfigs
                     then return Proven
                     else
@@ -166,7 +167,7 @@ transitionRule
         transitionUnroll ::
             CommonModalPattern ->
             CommonProofState ->
-            Transition m CommonProofState
+            Transition Simplifier CommonProofState
         transitionUnroll _ Proven = empty
         transitionUnroll _ (Unprovable _) = empty
         transitionUnroll goalrhs (GoalLHS config)
@@ -196,7 +197,7 @@ transitionRule
         transitionComputeWeakNext ::
             [RewriteRule RewritingVariableName] ->
             CommonProofState ->
-            Transition m CommonProofState
+            Transition Simplifier CommonProofState
         transitionComputeWeakNext _ Proven = return Proven
         transitionComputeWeakNext _ (Unprovable config) = return (Unprovable config)
         transitionComputeWeakNext rules (GoalLHS config) =
@@ -208,7 +209,7 @@ transitionRule
         transitionComputeWeakNextHelper ::
             [RewriteRule RewritingVariableName] ->
             Pattern RewritingVariableName ->
-            Transition m CommonProofState
+            Transition Simplifier CommonProofState
         transitionComputeWeakNextHelper _ config
             | Pattern.isBottom config = return Proven
         transitionComputeWeakNextHelper rules config = do
@@ -232,12 +233,11 @@ defaultOneStepStrategy ::
     patt ->
     -- | normal rewrites
     [rewrite] ->
-    Strategy (Prim patt rewrite)
+    Step (Prim patt rewrite)
 defaultOneStepStrategy goalrhs rewrites =
-    Strategy.sequence
-        [ Strategy.apply checkProofState
-        , Strategy.apply simplify
-        , Strategy.apply (unroll goalrhs)
-        , Strategy.apply (computeWeakNext rewrites)
-        , Strategy.apply simplify
-        ]
+    [ checkProofState
+    , simplify
+    , (unroll goalrhs)
+    , (computeWeakNext rewrites)
+    , simplify
+    ]
