@@ -9,8 +9,13 @@ Portability : portable
 -}
 module Kore.Unification.Procedure (
     unificationProcedure,
+    runUnifier,
 ) where
 
+import Control.Monad.State.Strict (
+    evalStateT,
+ )
+import Data.HashMap.Strict qualified as HashMap
 import Kore.Internal.Condition (
     Condition,
  )
@@ -35,10 +40,15 @@ import Kore.TopBottom qualified as TopBottom
 import Kore.Unification.NewUnifier
 import Kore.Unification.Unify qualified as Monad.Unify
 import Logic (
-    LogicT,
     lowerLogicT,
+    observeAllT,
  )
 import Prelude.Kore
+
+runUnifier ::
+    NewUnifier a ->
+    Simplifier [a]
+runUnifier unifier = evalStateT (Logic.observeAllT unifier) HashMap.empty
 
 {- |'unificationProcedure' attempts to simplify @t1 = t2@, assuming @t1@ and
  @t2@ are terms (functional patterns) to a substitution.
@@ -48,7 +58,7 @@ unificationProcedure ::
     SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    LogicT Simplifier (Condition RewritingVariableName)
+    NewUnifier (Condition RewritingVariableName)
 unificationProcedure sideCondition p1 p2
     | p1Sort /= p2Sort =
         debugUnifyBottomAndReturnBottom "Cannot unify different sorts." p1 p2
