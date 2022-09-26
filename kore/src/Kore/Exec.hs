@@ -394,7 +394,9 @@ startState t =
         , rpcDepth = ExecDepth 0
         }
 
-stateGetRewritingPattern :: RpcExecState RewritingVariableName -> RpcExecState VariableName
+stateGetRewritingPattern ::
+    RpcExecState RewritingVariableName ->
+    RpcExecState VariableName
 stateGetRewritingPattern state@RpcExecState{rpcProgState} =
     state{rpcProgState = fmap getRewritingPattern rpcProgState}
 
