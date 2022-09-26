@@ -211,10 +211,7 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
     defineValue ::
         Value normalized (TermLike RewritingVariableName) ->
         (MultiAnd (Predicate RewritingVariableName))
-    defineValue = foldl worker mempty
-      where
-        worker multiAnd termLike = do
-            multiAnd <> MultiAnd.singleton (fromCeil_ termLike)
+    defineValue = foldMap (MultiAnd.singleton . fromCeil_)
 
 -- {-# SPECIALIZE newBuiltinAssocCommCeilSimplifier ::
 --     forall normalized.

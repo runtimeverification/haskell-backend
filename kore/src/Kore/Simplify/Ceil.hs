@@ -130,7 +130,7 @@ makeEvaluateTerm ::
     SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
     simplifier NormalForm
-makeEvaluateTerm resultSort sideCondition ceilChild = do
+makeEvaluateTerm resultSort sideCondition ceilChild =
     runCeilSimplifierWith
         ceilSimplifier
         sideCondition
