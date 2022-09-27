@@ -765,6 +765,7 @@ test-suite kore-test
     Test.Kore.Builtin.Inj
     Test.Kore.Builtin.Int
     Test.Kore.Builtin.InternalBytes
+    Test.Kore.Builtin.IO
     Test.Kore.Builtin.KEqual
     Test.Kore.Builtin.Krypto
     Test.Kore.Builtin.List
