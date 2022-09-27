@@ -1020,3 +1020,16 @@ using the provided value.
     hooked-symbol encodeBytes{}(/* encoding */ String{}, /* contents */ String{}) : Bytes{}
         [hook{}("BYTES.encodeBytes")]
 ~~~
+
+## IO
+
+Depends on `STRING`.
+
+### IO.logString
+
+Log string to terminal: The string argument is logged as a InfoUserLog log message. The hook returns `dotk{}()`.
+
+~~~
+    hooked-symbol logString{}(String{}) : K{}
+        [hook{}("IO.logString")]
+~~~
