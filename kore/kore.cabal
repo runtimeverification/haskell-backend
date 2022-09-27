@@ -385,6 +385,7 @@ library
     Kore.Log.InfoExecDepth
     Kore.Log.InfoProofDepth
     Kore.Log.InfoReachability
+    Kore.Log.InfoUserLog
     Kore.Log.KoreLogOptions
     Kore.Log.Registry
     Kore.Log.SQLite
