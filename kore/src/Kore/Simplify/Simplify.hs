@@ -63,15 +63,10 @@ module Kore.Simplify.Simplify (
     MonadLog,
 ) where
 
+import Control.Lens qualified as Lens
 import Control.Monad.Catch
-import Partial (
-    getPartial,
- )
 import Control.Monad.Counter
 import Control.Monad.Morph (MFunctor)
-import Data.Generics.Product (
-    field,
- )
 import Control.Monad.Morph qualified as Monad.Morph
 import Control.Monad.RWS.Strict (RWST)
 import Control.Monad.Reader
@@ -80,11 +75,13 @@ import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe
-import Control.Lens qualified as Lens
 import Data.Functor.Foldable qualified as Recursive
+import Data.Generics.Product (
+    field,
+ )
 import Data.HashMap.Strict (HashMap)
-import Data.HashSet (HashSet)
 import Data.HashMap.Strict qualified as HashMap
+import Data.HashSet (HashSet)
 import Data.HashSet qualified as HashSet
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
@@ -109,6 +106,7 @@ import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition (SideCondition, toRepresentation)
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
@@ -122,7 +120,7 @@ import Kore.Internal.TermLike (
 import Kore.Internal.Variable (InternalVariable)
 import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier (..))
 import Kore.Rewrite.Function.Memo qualified as Memo
-import Kore.Rewrite.RewritingVariable (RewritingVariableName, RewritingVariable)
+import Kore.Rewrite.RewritingVariable (RewritingVariable, RewritingVariableName)
 import Kore.Simplify.InjSimplifier (InjSimplifier)
 import Kore.Simplify.OverloadSimplifier (OverloadSimplifier (..))
 import Kore.Syntax (Id)
@@ -130,6 +128,9 @@ import Kore.Syntax.Application
 import Kore.Unparser
 import Log
 import Logic
+import Partial (
+    getPartial,
+ )
 import Prelude.Kore
 import Pretty qualified
 import Prof (
@@ -139,7 +140,6 @@ import SMT (
     MonadSMT (..),
     SMT,
  )
-import qualified Kore.Internal.SideCondition as SideCondition
 
 -- * Simplifier
 
@@ -432,9 +432,8 @@ lookupAttemptedEquationsCache ::
     Maybe (AttemptEquationError RewritingVariableName)
 lookupAttemptedEquationsCache
     key
-    SimplifierCache { attemptedEquationsCache}
-  =
-    HashMap.lookup key attemptedEquationsCache
+    SimplifierCache{attemptedEquationsCache} =
+        HashMap.lookup key attemptedEquationsCache
 
 assumeDefined ::
     MonadSimplify simplifier =>
@@ -445,11 +444,11 @@ assumeDefined definedTerm = do
     case getPartial $ SideCondition.assumeDefinedWorker definedTerm of
         Nothing -> return ()
         Just newDefinedness ->
-            putCache
-            $ Lens.set
-                (field @"globalDefinednessCache")
-                newDefinedness
-                oldCache
+            putCache $
+                Lens.set
+                    (field @"globalDefinednessCache")
+                    newDefinedness
+                    oldCache
 
 isDefined ::
     MonadSimplify simplifier =>
@@ -457,7 +456,7 @@ isDefined ::
     TermLike RewritingVariableName ->
     simplifier Bool
 isDefined sideCondition term = do
-    SimplifierCache { globalDefinednessCache } <- getCache
+    SimplifierCache{globalDefinednessCache} <- getCache
     return (isDefinedPure sideCondition globalDefinednessCache term)
 
 isDefinedPure ::
@@ -466,9 +465,8 @@ isDefinedPure ::
     HashSet (TermLike variable) ->
     TermLike variable ->
     Bool
-isDefinedPure SideCondition.SideCondition {definedTerms} globalCache term =
+isDefinedPure SideCondition.SideCondition{definedTerms} globalCache term =
     SideCondition.isDefined' (definedTerms <> globalCache) term
-
 
 {- | 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
 or builtin code.

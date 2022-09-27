@@ -193,16 +193,16 @@ evalSimplifier
     overloadGraph
     metadataTools
     rawEquations
-    simplifier
-  = do
-    env <-
-        mkSimplifierEnv
-            verifiedModule
-            sortGraph
-            overloadGraph
-            metadataTools
-            rawEquations
-    runSimplifier env simplifier
+    simplifier =
+        do
+            env <-
+                mkSimplifierEnv
+                    verifiedModule
+                    sortGraph
+                    overloadGraph
+                    metadataTools
+                    rawEquations
+            runSimplifier env simplifier
 
 evalSimplifierProofs ::
     VerifiedModule Attribute.Symbol ->
