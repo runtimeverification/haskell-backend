@@ -40,10 +40,10 @@ import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Symbol (
     Symbol (..),
  )
-import Kore.Internal.TermLike qualified as TermLike
 import Kore.Internal.TermLike (
     pattern InternalString_,
  )
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.InfoUserLog
 import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
@@ -78,7 +78,7 @@ builtinFunctions key
 
 evalLogString :: Builtin.Function
 evalLogString _ _ [] = Builtin.wrongArity logStringKey
-evalLogString _ sort [InternalString_ InternalString { internalStringValue }] = do
+evalLogString _ sort [InternalString_ InternalString{internalStringValue}] = do
     tools <- askMetadataTools
     infoUserLog internalStringValue
     return $ Pattern.fromTermLike $ TermLike.mkApplySymbol (dotk tools) []
@@ -96,7 +96,7 @@ evalLogString _ sort [InternalString_ InternalString { internalStringValue }] = 
             }
     ident = implicitId "dotk"
 evalLogString _ _ [_] = empty
-evalLogString _ _ (_:_:_) = Builtin.wrongArity logStringKey
+evalLogString _ _ (_ : _ : _) = Builtin.wrongArity logStringKey
 
 logStringKey :: IsString s => s
 logStringKey = "IO.logString"

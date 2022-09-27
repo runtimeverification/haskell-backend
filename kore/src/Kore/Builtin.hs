@@ -38,10 +38,10 @@ import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Builtin.Bool qualified as Bool
 import Kore.Builtin.Builtin qualified as Builtin
 import Kore.Builtin.Endianness qualified as Endianness
+import Kore.Builtin.IO qualified as IO
 import Kore.Builtin.Inj qualified as Inj
 import Kore.Builtin.Int qualified as Int
 import Kore.Builtin.InternalBytes qualified as InternalBytes
-import Kore.Builtin.IO qualified as IO
 import Kore.Builtin.KEqual qualified as KEqual
 import Kore.Builtin.Kreflection qualified as Kreflection
 import Kore.Builtin.Krypto qualified as Krypto

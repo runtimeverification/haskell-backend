@@ -1,6 +1,6 @@
 module Test.Kore.Builtin.IO (
-   test_logString,
- ) where
+    test_logString,
+) where
 
 import Hedgehog
 import Kore.Internal.OrPattern qualified as OrPattern
@@ -9,8 +9,8 @@ import Prelude.Kore
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.Kore.Builtin.String (
-    genString,
     asInternal,
+    genString,
  )
 import Test.SMT
 import Test.Tasty
