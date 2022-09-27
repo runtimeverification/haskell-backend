@@ -284,6 +284,7 @@ exec
     execMode
     (mkRewritingTerm -> initialTerm) =
         evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations $ do
+            Simplifier.assumeDefined initialTerm
             finals <-
                 GraphTraversal.graphTraversal
                     Strategy.Leaf

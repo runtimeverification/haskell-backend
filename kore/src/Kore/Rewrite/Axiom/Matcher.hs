@@ -464,17 +464,21 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
          in if not $ Set.disjoint freeVars boundSet
                 then failMatch "bound variable would escape binder"
                 else case Map.lookup varName subst of
-                    Nothing -> patternMatch' sideCondition rest deferred (isTermDefined var term) (Map.insert (variableName var) term subst)
+                    Nothing -> do
+                        newPredicate <- isTermDefined var term
+                        patternMatch' sideCondition rest deferred newPredicate (Map.insert (variableName var) term subst)
                     Just binding -> if binding == term then patternMatch' sideCondition rest deferred predicate subst else failMatch "nonlinear matching fails equality test"
 
     -- compute the new predicate of a `bind` operation
     isTermDefined ::
         SomeVariable RewritingVariableName ->
         TermLike RewritingVariableName ->
-        MultiAnd (Predicate RewritingVariableName)
-    isTermDefined var term
-        | SideCondition.isDefined sideCondition term || isSetVariable var = predicate
-        | otherwise = (predicate <> MultiAnd.make [makeCeilPredicate term])
+        Simplifier (MultiAnd (Predicate RewritingVariableName))
+    isTermDefined var term = do
+        val <- Simplifier.isDefined sideCondition term
+        if val || isSetVariable var
+            then return predicate
+            else return $ predicate <> MultiAnd.make [makeCeilPredicate term]
 
     -- recurse by adding a new MatchItem
     decompose ::

@@ -17,6 +17,9 @@ module Kore.Simplify.Simplify (
     askOverloadSimplifier,
     getCache,
     putCache,
+    assumeDefined,
+    isDefined,
+    isDefinedPure,
     askHookedSymbols,
     mkHookedSymbols,
     simplifyPatternScatter,
@@ -31,8 +34,8 @@ module Kore.Simplify.Simplify (
     EvaluationAttempt (..),
     AcceptsMultipleResults (..),
     initCache,
-    updateCache,
-    lookupCache,
+    updateAttemptedEquationsCache,
+    lookupAttemptedEquationsCache,
     BuiltinAndAxiomSimplifier (..),
     AttemptedAxiom (..),
     isApplicable,
@@ -61,8 +64,14 @@ module Kore.Simplify.Simplify (
 ) where
 
 import Control.Monad.Catch
+import Partial (
+    getPartial,
+ )
 import Control.Monad.Counter
 import Control.Monad.Morph (MFunctor)
+import Data.Generics.Product (
+    field,
+ )
 import Control.Monad.Morph qualified as Monad.Morph
 import Control.Monad.RWS.Strict (RWST)
 import Control.Monad.Reader
@@ -71,9 +80,12 @@ import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe
+import Control.Lens qualified as Lens
 import Data.Functor.Foldable qualified as Recursive
 import Data.HashMap.Strict (HashMap)
+import Data.HashSet (HashSet)
 import Data.HashMap.Strict qualified as HashMap
+import Data.HashSet qualified as HashSet
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
@@ -81,7 +93,7 @@ import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Debug
-import Kore.Equation.DebugEquation (AttemptEquationError)
+import Kore.Equation.DebugEquation (AttemptEquationError, CheckRequiresError (sideCondition))
 import Kore.Equation.Equation (Equation)
 import Kore.IndexedModule.IndexedModule (VerifiedModuleSyntax)
 import Kore.IndexedModule.IndexedModule qualified as IndexedModule
@@ -110,7 +122,7 @@ import Kore.Internal.TermLike (
 import Kore.Internal.Variable (InternalVariable)
 import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier (..))
 import Kore.Rewrite.Function.Memo qualified as Memo
-import Kore.Rewrite.RewritingVariable (RewritingVariableName)
+import Kore.Rewrite.RewritingVariable (RewritingVariableName, RewritingVariable)
 import Kore.Simplify.InjSimplifier (InjSimplifier)
 import Kore.Simplify.OverloadSimplifier (OverloadSimplifier (..))
 import Kore.Syntax (Id)
@@ -127,6 +139,7 @@ import SMT (
     MonadSMT (..),
     SMT,
  )
+import qualified Kore.Internal.SideCondition as SideCondition
 
 -- * Simplifier
 
@@ -373,12 +386,16 @@ emptyConditionSimplifier =
 {- | Used for keeping track of already attempted equations which failed to
  apply.
 -}
-newtype SimplifierCache = SimplifierCache
+data SimplifierCache = SimplifierCache
     { attemptedEquationsCache ::
         HashMap
             EvaluationAttempt
             (AttemptEquationError RewritingVariableName)
+    , globalDefinednessCache ::
+        HashSet (TermLike RewritingVariableName)
     }
+    deriving stock (GHC.Generic)
+    deriving anyclass (SOP.Generic)
 
 {- | An evaluation attempt is determined by an equation-term pair, since the
  'AttemptEquationError' type contains any necessary information about the
@@ -390,29 +407,68 @@ data EvaluationAttempt = EvaluationAttempt
     }
     deriving stock (Eq, Ord)
     deriving stock (GHC.Generic)
-    deriving anyclass (Hashable)
+    deriving anyclass (SOP.Generic, Hashable)
 
 -- | Initialize with an empty cache.
 initCache :: SimplifierCache
-initCache = SimplifierCache HashMap.empty
+initCache = SimplifierCache HashMap.empty HashSet.empty
 
 -- | Update by inserting a new entry into the cache.
-updateCache ::
+updateAttemptedEquationsCache ::
     EvaluationAttempt ->
     AttemptEquationError RewritingVariableName ->
     SimplifierCache ->
     SimplifierCache
-updateCache key value (SimplifierCache oldCache) =
-    HashMap.insert key value oldCache
-        & SimplifierCache
+updateAttemptedEquationsCache key value simplifierCache =
+    Lens.over
+        (field @"attemptedEquationsCache")
+        (HashMap.insert key value)
+        simplifierCache
 
 -- | Lookup an entry in the cache.
-lookupCache ::
+lookupAttemptedEquationsCache ::
     EvaluationAttempt ->
     SimplifierCache ->
     Maybe (AttemptEquationError RewritingVariableName)
-lookupCache key (SimplifierCache cache) =
-    HashMap.lookup key cache
+lookupAttemptedEquationsCache
+    key
+    SimplifierCache { attemptedEquationsCache}
+  =
+    HashMap.lookup key attemptedEquationsCache
+
+assumeDefined ::
+    MonadSimplify simplifier =>
+    TermLike RewritingVariableName ->
+    simplifier ()
+assumeDefined definedTerm = do
+    oldCache <- getCache
+    case getPartial $ SideCondition.assumeDefinedWorker definedTerm of
+        Nothing -> return ()
+        Just newDefinedness ->
+            putCache
+            $ Lens.set
+                (field @"globalDefinednessCache")
+                newDefinedness
+                oldCache
+
+isDefined ::
+    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    simplifier Bool
+isDefined sideCondition term = do
+    SimplifierCache { globalDefinednessCache } <- getCache
+    return (isDefinedPure sideCondition globalDefinednessCache term)
+
+isDefinedPure ::
+    InternalVariable variable =>
+    SideCondition variable ->
+    HashSet (TermLike variable) ->
+    TermLike variable ->
+    Bool
+isDefinedPure SideCondition.SideCondition {definedTerms} globalCache term =
+    SideCondition.isDefined' (definedTerms <> globalCache) term
+
 
 {- | 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
 or builtin code.

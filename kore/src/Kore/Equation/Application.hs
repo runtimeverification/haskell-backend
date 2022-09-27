@@ -187,7 +187,7 @@ attemptEquation sideCondition termLike equation = do
                     , cachedTerm = termLike
                     }
             newCache =
-                Simplifier.updateCache newEntry result oldCache
+                Simplifier.updateAttemptedEquationsCache newEntry result oldCache
         Simplifier.putCache newCache
 
     alreadyAttempted = do
@@ -198,7 +198,7 @@ attemptEquation sideCondition termLike equation = do
                     , cachedTerm = termLike
                     }
         value <-
-            Simplifier.lookupCache entry cache
+            Simplifier.lookupAttemptedEquationsCache entry cache
                 & (MaybeT . return)
         checkWithSideCondition value
       where

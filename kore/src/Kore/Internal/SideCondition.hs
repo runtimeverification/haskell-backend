@@ -3,7 +3,7 @@ Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
 -}
 module Kore.Internal.SideCondition (
-    SideCondition, -- Constructor not exported on purpose
+    SideCondition (..), -- Constructor not exported on purpose
     addAssumption,
     addAssumptions,
     assumeTrue,
@@ -21,7 +21,9 @@ module Kore.Internal.SideCondition (
     replacePredicate,
     cannotReplacePredicate,
     assumeDefined,
+    assumeDefinedWorker,
     isDefined,
+    isDefined',
     fromDefinedTerms,
     generateNormalizedAcs,
     simplifyConjunctionByAssumption,
@@ -727,50 +729,53 @@ assumeDefined =
     fmap fromDefinedTerms
         . getPartial
         . assumeDefinedWorker
+
+assumeDefinedWorker ::
+    forall variable.
+    InternalVariable variable =>
+    TermLike variable ->
+    Partial (HashSet (TermLike variable))
+assumeDefinedWorker term' =
+    case term' of
+        TermLike.And_ _ child1 child2 ->
+            let result1 = assumeDefinedWorker child1
+                result2 = assumeDefinedWorker child2
+             in asSet term' <> result1 <> result2
+        TermLike.App_ symbol children ->
+            checkFunctional symbol term'
+                <> foldMap assumeDefinedWorker children
+        TermLike.Ceil_ _ _ child ->
+            asSet term' <> assumeDefinedWorker child
+        TermLike.InternalList_ internalList ->
+            asSet term'
+                <> foldMap assumeDefinedWorker (internalListChild internalList)
+        TermLike.InternalMap_ internalMap ->
+            let definedElems =
+                    getDefinedElementsOfAc internalMap
+                definedMaps =
+                    generateNormalizedAcs internalMap
+                        & HashSet.map TermLike.mkInternalMap
+                        & Defined
+             in foldMap assumeDefinedWorker definedElems
+                    <> definedMaps
+        TermLike.InternalSet_ internalSet ->
+            let definedElems =
+                    getDefinedElementsOfAc internalSet
+                definedSets =
+                    generateNormalizedAcs internalSet
+                        & HashSet.map TermLike.mkInternalSet
+                        & Defined
+             in foldMap assumeDefinedWorker definedElems
+                    <> definedSets
+        TermLike.Forall_ _ _ child ->
+            asSet term' <> assumeDefinedWorker child
+        TermLike.In_ _ _ child1 child2 ->
+            let result1 = assumeDefinedWorker child1
+                result2 = assumeDefinedWorker child2
+             in asSet term' <> result1 <> result2
+        TermLike.Bottom_ _ -> Bottom
+        _ -> asSet term'
   where
-    assumeDefinedWorker ::
-        TermLike variable ->
-        Partial (HashSet (TermLike variable))
-    assumeDefinedWorker term' =
-        case term' of
-            TermLike.And_ _ child1 child2 ->
-                let result1 = assumeDefinedWorker child1
-                    result2 = assumeDefinedWorker child2
-                 in asSet term' <> result1 <> result2
-            TermLike.App_ symbol children ->
-                checkFunctional symbol term'
-                    <> foldMap assumeDefinedWorker children
-            TermLike.Ceil_ _ _ child ->
-                asSet term' <> assumeDefinedWorker child
-            TermLike.InternalList_ internalList ->
-                asSet term'
-                    <> foldMap assumeDefinedWorker (internalListChild internalList)
-            TermLike.InternalMap_ internalMap ->
-                let definedElems =
-                        getDefinedElementsOfAc internalMap
-                    definedMaps =
-                        generateNormalizedAcs internalMap
-                            & HashSet.map TermLike.mkInternalMap
-                            & Defined
-                 in foldMap assumeDefinedWorker definedElems
-                        <> definedMaps
-            TermLike.InternalSet_ internalSet ->
-                let definedElems =
-                        getDefinedElementsOfAc internalSet
-                    definedSets =
-                        generateNormalizedAcs internalSet
-                            & HashSet.map TermLike.mkInternalSet
-                            & Defined
-                 in foldMap assumeDefinedWorker definedElems
-                        <> definedSets
-            TermLike.Forall_ _ _ child ->
-                asSet term' <> assumeDefinedWorker child
-            TermLike.In_ _ _ child1 child2 ->
-                let result1 = assumeDefinedWorker child1
-                    result2 = assumeDefinedWorker child2
-                 in asSet term' <> result1 <> result2
-            TermLike.Bottom_ _ -> Bottom
-            _ -> asSet term'
     asSet newTerm
         | isDefinedInternal newTerm = Defined HashSet.empty
         | otherwise = Defined $ HashSet.singleton newTerm
@@ -846,6 +851,67 @@ isDefined sideCondition@SideCondition{definedTerms} term =
             all (isDefined sideCondition) symbolicKeys
                 && all (isDefined sideCondition) opaqueElems
                 && all (isDefined sideCondition) values
+        | otherwise = False
+      where
+        symbolicKeys = getSymbolicKeysOfAc builtinAcChild
+        concreteKeys = getConcreteKeysOfAc builtinAcChild
+        opaqueElems = opaque . unwrapAc $ builtinAcChild
+        values =
+            getSymbolicValuesOfAc builtinAcChild
+                <> getConcreteValuesOfAc builtinAcChild
+                & foldMap toList
+        numberOfElements =
+            length symbolicKeys
+                + length concreteKeys
+                + length opaqueElems
+
+isDefined' ::
+    forall variable.
+    InternalVariable variable =>
+    HashSet (TermLike variable) ->
+    TermLike variable ->
+    Bool
+isDefined' definedTerms term =
+    isDefinedInternal term
+        || isFunctionalSymbol term
+        || HashSet.member term definedTerms
+        || isDefinedAc
+  where
+    isDefinedAc =
+        case term of
+            TermLike.InternalMap_ internalMap ->
+                let subMaps =
+                        generateNormalizedAcs internalMap
+                            & HashSet.map TermLike.mkInternalMap
+                 in isSymbolicSingleton internalMap
+                        || subMaps `isNonEmptySubset` definedTerms
+            TermLike.InternalSet_ internalSet ->
+                let subSets =
+                        generateNormalizedAcs internalSet
+                            & HashSet.map TermLike.mkInternalSet
+                 in isSymbolicSingleton internalSet
+                        || subSets `isNonEmptySubset` definedTerms
+            _ -> False
+
+    isNonEmptySubset subset set
+        | null subset = False
+        | otherwise = all (`HashSet.member` set) subset
+
+    isFunctionalSymbol (App_ symbol children)
+        | isFunctional symbol =
+            all (isDefined' definedTerms) children
+    isFunctionalSymbol _ = False
+
+    isSymbolicSingleton ::
+        AcWrapper normalized =>
+        Foldable (Value normalized) =>
+        InternalAc Key normalized (TermLike variable) ->
+        Bool
+    isSymbolicSingleton InternalAc{builtinAcChild}
+        | numberOfElements == 1 =
+            all (isDefined' definedTerms) symbolicKeys
+                && all (isDefined' definedTerms) opaqueElems
+                && all (isDefined' definedTerms) values
         | otherwise = False
       where
         symbolicKeys = getSymbolicKeysOfAc builtinAcChild

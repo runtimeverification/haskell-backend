@@ -12,6 +12,7 @@ Portability : portable
 module Kore.Simplify.API (
     evalSimplifier,
     evalSimplifierProofs,
+    assumeDefined,
 
     -- * Re-exports
     Env (..),
@@ -186,8 +187,21 @@ evalSimplifier ::
     Map AxiomIdentifier [Equation VariableName] ->
     Simplifier a ->
     SMT a
-evalSimplifier verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
-    env <- mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquations
+evalSimplifier
+    verifiedModule
+    sortGraph
+    overloadGraph
+    metadataTools
+    rawEquations
+    simplifier
+  = do
+    env <-
+        mkSimplifierEnv
+            verifiedModule
+            sortGraph
+            overloadGraph
+            metadataTools
+            rawEquations
     runSimplifier env simplifier
 
 evalSimplifierProofs ::
@@ -195,7 +209,13 @@ evalSimplifierProofs ::
     Simplifier a ->
     SMT a
 evalSimplifierProofs verifiedModule simplifier =
-    evalSimplifier (indexedModuleSyntax verifiedModule) sortGraph overloadGraph metadataTools rawEquations simplifier
+    evalSimplifier
+        (indexedModuleSyntax verifiedModule)
+        sortGraph
+        overloadGraph
+        metadataTools
+        rawEquations
+        simplifier
   where
     sortGraph =
         {-# SCC "evalSimplifier/sortGraph" #-}

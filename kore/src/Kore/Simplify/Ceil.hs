@@ -166,14 +166,15 @@ newPredicateCeilSimplifier = CeilSimplifier $ \input ->
         Right predicate -> return (NormalForm.fromPredicate predicate)
 
 newDefinedCeilSimplifier ::
-    Monad simplifier =>
+    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     CeilSimplifier
         simplifier
         (TermLike RewritingVariableName)
         NormalForm
-newDefinedCeilSimplifier sideCondition = CeilSimplifier $ \input ->
-    if SideCondition.isDefined sideCondition (ceilChild input)
+newDefinedCeilSimplifier sideCondition = CeilSimplifier $ \input -> do
+    val <- Simplifier.isDefined sideCondition (ceilChild input)
+    if val
         then return (MultiOr.singleton MultiAnd.top)
         else empty
 
