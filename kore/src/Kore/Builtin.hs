@@ -41,6 +41,7 @@ import Kore.Builtin.Endianness qualified as Endianness
 import Kore.Builtin.Inj qualified as Inj
 import Kore.Builtin.Int qualified as Int
 import Kore.Builtin.InternalBytes qualified as InternalBytes
+import Kore.Builtin.IO qualified as IO
 import Kore.Builtin.KEqual qualified as KEqual
 import Kore.Builtin.Kreflection qualified as Kreflection
 import Kore.Builtin.Krypto qualified as Krypto
@@ -70,6 +71,7 @@ koreVerifiers =
         <> Inj.verifiers
         <> Int.verifiers
         <> InternalBytes.verifiers
+        <> IO.verifiers
         <> KEqual.verifiers
         <> Krypto.verifiers
         <> List.verifiers
@@ -91,6 +93,7 @@ koreEvaluators key =
     asum
         [ Bool.builtinFunctions key
         , Int.builtinFunctions key
+        , IO.builtinFunctions key
         , KEqual.builtinFunctions key
         , List.builtinFunctions key
         , Map.builtinFunctions key

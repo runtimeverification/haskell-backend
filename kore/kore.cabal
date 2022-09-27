@@ -290,6 +290,7 @@ library
     Kore.Builtin.Int.Int
     Kore.Builtin.InternalBytes
     Kore.Builtin.InternalBytes.InternalBytes
+    Kore.Builtin.IO
     Kore.Builtin.KEqual
     Kore.Builtin.Kreflection
     Kore.Builtin.Krypto
