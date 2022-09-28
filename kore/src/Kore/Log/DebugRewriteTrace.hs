@@ -85,10 +85,10 @@ import Pretty (
 data DebugInitialClaim = DebugInitialClaim UniqueId (TermLike VariableName)
     deriving stock (Show)
 
-data DebugInitialPattern = DebugInitialPattern (TermLike VariableName)
+newtype DebugInitialPattern = DebugInitialPattern (TermLike VariableName)
     deriving stock (Show)
 
-data DebugFinalPatterns = DebugFinalPatterns [Pattern VariableName]
+newtype DebugFinalPatterns = DebugFinalPatterns [Pattern VariableName]
     deriving stock (Show)
 
 data RewriteResult = RewriteResult
@@ -228,7 +228,7 @@ debugRewriteTrace ::
     Results rule ->
     log ()
 debugRewriteTrace initial Result.Results{results = (toList -> results), remainders} =
-    when (not (null results)) $
+    unless (null results) $
         logEntry
             DebugRewriteTrace
                 { initialPattern = getRewritingPattern initial
@@ -243,7 +243,7 @@ debugRewriteTrace initial Result.Results{results = (toList -> results), remainde
     getResult Result.Result{appliedRule, result} =
         RewriteResult
             { ruleId = from @_ @UniqueId $ extract appliedRule
-            , substitution = mapSubstitutionVariables $ Conditional.substitution $ appliedRule
+            , substitution = mapSubstitutionVariables $ Conditional.substitution appliedRule
             , results = multiOrToList result
             }
 
