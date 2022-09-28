@@ -9,6 +9,7 @@ jobs:
   nix-build:
     name: 'Nix / Build'
     strategy:
+      fail-fast: false
       matrix:
         include:
           - runner: ubuntu-latest
