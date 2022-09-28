@@ -105,6 +105,7 @@
           "unordered-containers"))
         (hsPkgs."vector" or (errorHandler.buildDepError "vector"))
         (hsPkgs."witherable" or (errorHandler.buildDepError "witherable"))
+        (hsPkgs."yaml" or (errorHandler.buildDepError "yaml"))
         (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
       ];
       build-tools = [
@@ -281,6 +282,7 @@
         "Kore/Log/DebugEvaluateCondition"
         "Kore/Log/DebugProven"
         "Kore/Log/DebugRetrySolverQuery"
+        "Kore/Log/DebugRewriteTrace"
         "Kore/Log/DebugSolver"
         "Kore/Log/DebugSubstitutionSimplifier"
         "Kore/Log/DebugTransition"
@@ -755,6 +757,7 @@
             "unordered-containers"))
           (hsPkgs."vector" or (errorHandler.buildDepError "vector"))
           (hsPkgs."witherable" or (errorHandler.buildDepError "witherable"))
+          (hsPkgs."yaml" or (errorHandler.buildDepError "yaml"))
           (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
           (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
           (hsPkgs."QuickCheck" or (errorHandler.buildDepError "QuickCheck"))
