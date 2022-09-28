@@ -242,7 +242,7 @@ unificationProcedureSuccess
             results <-
                 runNoSMT
                     . runSimplifier mockEnv
-                    . Monad.Unify.observeAllT
+                    . runUnifier
                     $ unificationProcedure
                         SideCondition.topTODO
                         term1

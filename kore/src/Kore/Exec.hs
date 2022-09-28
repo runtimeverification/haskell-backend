@@ -11,6 +11,8 @@ Expose concrete execution as a library
 module Kore.Exec (
     exec,
     rpcExec,
+    StopLabels (..),
+    RpcExecState (..),
     search,
     prove,
     proveWithRepl,
@@ -38,7 +40,6 @@ import Control.Monad (
     (>=>),
  )
 import Control.Monad.Trans.Maybe (runMaybeT)
-import Data.Bifunctor (second)
 import Data.Coerce (
     coerce,
  )
@@ -53,6 +54,8 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import Data.Sequence (Seq)
+import Data.Text (Text)
 import GHC.Generics qualified as GHC
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Definition
@@ -372,22 +375,55 @@ exec
         toTransitionResult prior (s : ss) =
             GraphTraversal.Branch prior (s :| ss)
 
-{- | Version of @kore-exec@ suitable for the JSON RPC server. Cannot
-  execute across branches, supports a depth limit, returns the raw
-  traversal result for the RPC server to extract response elements.
+-- | JSON RPC helper structure for cut points and terminal rules
+data StopLabels = StopLabels
+    { cutPointLabels :: [Text]
+    , terminalLabels :: [Text]
+    }
 
-  TODO modify to implement stopping on given rule IDs/labels
+-- | Type for json-rpc execution state, for readability
+data RpcExecState v = RpcExecState
+    { -- | program state
+      rpcProgState :: ProgramState (Pattern v)
+    , -- | rule label/id we have stopped on
+      rpcRule :: Maybe Text
+    , -- | execution depth
+      rpcDepth :: ExecDepth
+    }
+    deriving stock (Eq, Show)
+
+startState :: TermLike RewritingVariableName -> RpcExecState RewritingVariableName
+startState t =
+    RpcExecState
+        { rpcProgState = Start $ Pattern.fromTermLike t
+        , rpcRule = Nothing
+        , rpcDepth = ExecDepth 0
+        }
+
+stateGetRewritingPattern ::
+    RpcExecState RewritingVariableName ->
+    RpcExecState VariableName
+stateGetRewritingPattern state@RpcExecState{rpcProgState} =
+    state{rpcProgState = fmap getRewritingPattern rpcProgState}
+
+{- | Version of @kore-exec@ suitable for the JSON RPC server. Cannot
+  execute across branches, supports a depth limit and rule labels to
+  stop on (distinguished as cut-points for LHS or terminal-rules for
+  RHS).
+
+  Returns the raw traversal result for the RPC server to extract
+  response elements, containing program state with an optional stop
+  label and a depth counter.
 -}
 rpcExec ::
     Limit Natural ->
     -- | The main module
     SerializedModule ->
+    -- | additional labels/rule names for stopping
+    StopLabels ->
     -- | The input pattern
     TermLike VariableName ->
-    SMT
-        ( GraphTraversal.TraversalResult
-            (ExecDepth, ProgramState (Pattern VariableName))
-        )
+    SMT (GraphTraversal.TraversalResult (RpcExecState VariableName))
 rpcExec
     depthLimit
     SerializedModule
@@ -398,9 +434,10 @@ rpcExec
         , rewrites = Initialized{rewriteRules}
         , equations
         }
+    StopLabels{cutPointLabels, terminalLabels}
     (mkRewritingTerm -> initialTerm) =
         evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations $
-            fmap (second $ fmap getRewritingPattern)
+            fmap stateGetRewritingPattern
                 <$> GraphTraversal.graphTraversal
                     Strategy.LeafOrBranching
                     Strategy.DepthFirst
@@ -408,7 +445,7 @@ rpcExec
                     transit
                     Limit.Unlimited
                     execStrategy
-                    (ExecDepth 0, Start $ Pattern.fromTermLike initialTerm)
+                    (startState initialTerm)
       where
         verifiedModule' =
             IndexedModule.mapAliasPatterns
@@ -422,45 +459,73 @@ rpcExec
                 repeat [Begin, Rewrite, Simplify]
 
         transit ::
-            GraphTraversal.TState
-                Prim
-                (ExecDepth, ProgramState (Pattern RewritingVariableName)) ->
+            GraphTraversal.TState Prim (RpcExecState RewritingVariableName) ->
             Simplifier.Simplifier
                 ( GraphTraversal.TransitionResult
-                    ( GraphTraversal.TState
-                        Prim
-                        (ExecDepth, ProgramState (Pattern RewritingVariableName))
-                    )
+                    (GraphTraversal.TState Prim (RpcExecState RewritingVariableName))
                 )
         transit =
-            GraphTraversal.simpleTransition
-                ( trackExecDepth . profTransitionRule $
+            GraphTraversal.transitionWithRule
+                ( withRpcExecState . trackExecDepth . profTransitionRule $
                     transitionRule (groupRewritesByPriority rewriteRules) All
                 )
                 toTransitionResult
 
-        -- TODO modify to implement stopping on given rule IDs/labels
+        -- The rule label is carried around unmodified in the
+        -- transition, and adjusted in `toTransitionResult`
+        withRpcExecState ::
+            TransitionRule m r (ExecDepth, ProgramState (Pattern v)) ->
+            TransitionRule m r (RpcExecState v)
+        withRpcExecState transition =
+            \prim RpcExecState{rpcProgState, rpcRule, rpcDepth} ->
+                fmap (\(d, st) -> RpcExecState st rpcRule d) $
+                    transition prim (rpcDepth, rpcProgState)
+
         toTransitionResult ::
-            (ExecDepth, ProgramState p) ->
-            [(ExecDepth, ProgramState p)] ->
-            ( GraphTraversal.TransitionResult
-                (ExecDepth, ProgramState p)
-            )
-        toTransitionResult prior [] =
-            case snd prior of
+            RpcExecState v ->
+            [(RpcExecState v, Seq (RewriteRule v))] ->
+            (GraphTraversal.TransitionResult (RpcExecState v))
+        toTransitionResult prior@RpcExecState{rpcProgState = priorPState} [] =
+            case priorPState of
                 Remaining _ -> GraphTraversal.Stuck prior
                 Kore.Rewrite.Bottom -> GraphTraversal.Stuck prior
                 -- returns `Final` to signal that no instructions were left.
                 Start _ -> GraphTraversal.Final prior
                 Rewritten _ -> GraphTraversal.Final prior
-        toTransitionResult _prior [next] =
-            case snd next of
+        toTransitionResult prior [(next, rules)]
+            | (l : _) <- mapMaybe isCutPoint $ toList rules =
+                GraphTraversal.Stop
+                    prior{rpcRule = Just l}
+                    [next]
+            | (l : _) <- mapMaybe isTerminalRule $ toList rules =
+                GraphTraversal.Stop
+                    next{rpcRule = Just l}
+                    []
+        toTransitionResult _prior [(next@RpcExecState{rpcProgState = nextPState}, _rules)] =
+            case nextPState of
                 Start _ -> GraphTraversal.Continuing next
                 Rewritten _ -> GraphTraversal.Continuing next
                 Remaining _ -> GraphTraversal.Stuck next
                 Kore.Rewrite.Bottom -> GraphTraversal.Stuck next
         toTransitionResult prior (s : ss) =
-            GraphTraversal.Branch prior (s :| ss)
+            GraphTraversal.Branch prior $ fmap fst (s :| ss)
+
+        -- helpers to extract a matched rule label or identifier
+        isCutPoint, isTerminalRule :: RewriteRule v -> Maybe Text
+        isCutPoint = retractIfElement cutPointLabels
+        isTerminalRule = retractIfElement terminalLabels
+
+        retractIfElement
+            labels
+            (RewriteRule RulePattern{attributes = Attribute.Axiom{label, uniqueId}})
+                | Just lbl <- Attribute.unLabel label
+                  , lbl `elem` labels =
+                    Just lbl
+                | Just uid <- Attribute.getUniqueId uniqueId
+                  , uid `elem` labels =
+                    Just uid
+                | otherwise =
+                    Nothing
 
 -- | Modify a 'TransitionRule' to track the depth of the execution graph.
 trackExecDepth ::
