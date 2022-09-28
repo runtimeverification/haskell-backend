@@ -62,8 +62,8 @@ import Kore.Internal.Variable (
     VariableName,
     toVariableName,
  )
-import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.Result qualified as Result
+import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     UnifyingRuleVariable,
  )
