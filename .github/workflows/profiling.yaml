@@ -1,14 +1,6 @@
 ---
 name: Performance Profiling
 on:
-  # Trigger on Issue created; edited, labeled events
-  issues:
-    types: [opened, edited, labeled]
-  
-  # Trigger on Pull Request created; edited, labeled events 
-  pull_request:
-    types: [opened, labeled, edited]
-
   # Trigger when an Issue created, edited; Issue MUST already be labeled properly
   issue_comment:
     types: [created, edited]
@@ -20,7 +12,7 @@ jobs:
       ( contains(github.event.comment.body, '.tar.gz') || contains(github.event.issue.body, '.tar.gz') )
     runs-on: [Linux, performance]
     env:
-      GH_TOKEN: ${{ secrets.ORG_PAT }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Clean _work Folder
         run: |
@@ -41,15 +33,9 @@ jobs:
           cat ${GITHUB_EVENT_PATH}
 
           echo "Creating Download URL from ISSUE"
-          if ! echo "DOWNLOAD_URL=$(cat ${GITHUB_EVENT_PATH} | jq '.comment.body' | grep -oP '(https:)(.*?)(?=\))' )" >> ${GITHUB_ENV}; then
-            echo "Must be an issue body"
-          else
-            echo "DOWNLOAD_URL=$(cat ${GITHUB_EVENT_PATH} | jq '.issue.body' | grep -oP '(https:)(.*?)(?=\))' )" >> ${GITHUB_ENV}
-            echo "Found it in the issue body"
-          fi 
-          
+          echo "DOWNLOAD_URL=$(cat ${GITHUB_EVENT_PATH} | jq '.comment.body' | grep -oP '(https:)(.*?)(?=\))' )" >> ${GITHUB_ENV}
+
           echo "GITHUB_ISSUE_ID=$(cat ${GITHUB_EVENT_PATH} | jq '.issue.number')" >> ${GITHUB_ENV}
-          echo "FILE_NAME=profiling-data.tar.gz" >> ${GITHUB_ENV}
 
       - name: Download Files & Test
         run: |
@@ -59,13 +45,23 @@ jobs:
           echo "FILE_NAME=$(basename ${DOWNLOAD_URL})" >> ${GITHUB_ENV}
           file $(basename ${DOWNLOAD_URL})
 
+      - uses: slackapi/slack-github-action@v1.22.0
+        id: slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+          payload: |
+            {
+              "pass_fail": "IN PROGRESS",
+              "link_to_result": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }
+
       - name: Run Tests
         run: |
           set -euo pipefail
 
           . /home/github-runner/.nix-profile/etc/profile.d/nix.sh
           echo "Starting Test Execution"
-          mkdir -p profile/tests/$(echo ${FILE_NAME} | cut -d '.' -f 1)
           echo "RUNNING PROFILE: ${FILE_NAME}"
           nix run github:runtimeverification/haskell-backend#profile ./${FILE_NAME}
 
