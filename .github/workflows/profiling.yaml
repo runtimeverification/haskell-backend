@@ -6,19 +6,14 @@ on:
     types: [created, edited]
 
 jobs: 
-  Profiling:
+  Prepare:
     if: |
       contains(github.event.issue.labels.*.name, 'performance') &&
       ( contains(github.event.comment.body, '.tar.gz') )
-    runs-on: [Linux, performance]
+    runs-on: [Linux, flyweight]
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Clean _work Folder
-        run: |
-          echo "Cleaning Folder"
-          rm -rf ./*
-      
       - name: Check User Org Association
         run: |
           set -euo pipefail
@@ -32,19 +27,17 @@ jobs:
           echo "Context: "
           cat ${GITHUB_EVENT_PATH}
 
-          echo "Creating Download URL from ISSUE"
-          echo "DOWNLOAD_URL=$(cat ${GITHUB_EVENT_PATH} | jq '.comment.body' | grep -oP '(https:)(.*?)(?=\))' )" >> ${GITHUB_ENV}
-
-          echo "GITHUB_ISSUE_ID=$(cat ${GITHUB_EVENT_PATH} | jq '.issue.number')" >> ${GITHUB_ENV}
-
-      - name: Download Files & Test
+  Profiling:
+    needs: Prepare
+    runs-on: [Linux, performance]
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Clean _work Folder
         run: |
-          set -euo pipefail
-          echo "${DOWNLOAD_URL}"
-          curl -LO ${DOWNLOAD_URL}
-          echo "FILE_NAME=$(basename ${DOWNLOAD_URL})" >> ${GITHUB_ENV}
-          file $(basename ${DOWNLOAD_URL})
-
+          echo "Cleaning Folder"
+          rm -rf ./*
+      
       - uses: slackapi/slack-github-action@v1.22.0
         id: slack
         env:
@@ -59,28 +52,30 @@ jobs:
       - name: Run Tests
         run: |
           set -euo pipefail
+          DOWNLOAD_URL=$(cat ${GITHUB_EVENT_PATH} | jq '.comment.body' | grep -oP '(https:)(.*?)(?=\))' )
+          FILE_NAME=$(basename ${DOWNLOAD_URL})
+          echo "Download Test File"
+          curl -LOsS ${DOWNLOAD_URL}
 
           . /home/github-runner/.nix-profile/etc/profile.d/nix.sh
           echo "Starting Test Execution"
+          mkdir -p profile/tests/$(echo ${FILE_NAME} | cut -d '.' -f 1)
           echo "RUNNING PROFILE: ${FILE_NAME}"
           nix run github:runtimeverification/haskell-backend#profile ./${FILE_NAME}
 
-      - name: Publish Profile Results
-        uses: actions/upload-artifact@v3.1.0
-        with:
-          path: ./profile-*.tar.gz
-
   on-success:
     needs: Profiling
-    runs-on: [Linux]
+    runs-on: [Linux, flyweight]
     if: ${{ always() && contains(join(needs.*.result, ','), 'success') }}
     container: dockerhub-runtimeverification.com:5000/base/build-image:1
     env:
       GH_TOKEN: ${{ secrets.ORG_PAT }}
     steps:
-      - name: collect-info
-        run: |
-          echo "Use Context Info from Failed Run Triggering"
+      - name: Publish Profile Results
+        uses: actions/upload-artifact@v3.1.0
+        with:
+          path: ./profile-*.tar.gz
+   
       - uses: slackapi/slack-github-action@v1.22.0
         id: slack
         env:
@@ -93,7 +88,7 @@ jobs:
             }
   on-failure:
     needs: Profiling
-    runs-on: [Linux]
+    runs-on: [Linux, flyweight]
     if: ${{ always() && contains(join(needs.*.result, ','), 'failure') }}
     env:
       GH_TOKEN: ${{ secrets.ORG_PAT }}
