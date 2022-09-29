@@ -106,35 +106,32 @@ data DebugRewriteTrace = DebugRewriteTrace
     }
     deriving stock (Show)
 
-instance ToJSON (TermLike VariableName) where
-    toJSON = toJSON . unparseOneLine
+encodePattern :: Pattern VariableName -> Value
+encodePattern Conditional.Conditional{term, predicate, substitution} =
+    object
+        [ "term" .= unparseOneLine term
+        , "constraint" .= encodedConstraint
+        , "substitution" .= encodeSubstitution substitution
+        ]
+  where
+    sort = TermLike.termLikeSort term
+    encodedConstraint = (renderText $ layoutOneLine $ unparseWithSort sort predicate) :: Text
 
-instance ToJSON (Pattern VariableName) where
-    toJSON Conditional.Conditional{term, predicate, substitution} =
+encodeSubstitution :: Substitution VariableName -> Value
+encodeSubstitution substitution =
+    array (encodeKV <$> unwrap substitution)
+  where
+    encodeKV assignment =
         object
-            [ "term" .= term
-            , "constraint" .= encodedConstraint
-            , "substitution" .= substitution
+            [ "key" .= unparseOneLine (assignedVariable assignment)
+            , "value" .= unparseOneLine (assignedTerm assignment)
             ]
-      where
-        sort = TermLike.termLikeSort term
-        encodedConstraint = (renderText $ layoutOneLine $ unparseWithSort sort predicate) :: Text
-
-instance ToJSON (Substitution VariableName) where
-    toJSON substitution =
-        array (encodeKV <$> unwrap substitution)
-      where
-        encodeKV assignment =
-            object
-                [ "key" .= unparseOneLine (assignedVariable assignment)
-                , "value" .= unparseOneLine (assignedTerm assignment)
-                ]
 
 instance ToJSON DebugInitialClaim where
     toJSON (DebugInitialClaim uniqueId claim) =
         object
             [ "task" .= ("reachability" :: Text)
-            , "claim" .= claim
+            , "claim" .= unparseOneLine claim
             , "claim-id" .= maybe Null toJSON (getUniqueId uniqueId)
             ]
 
@@ -142,29 +139,29 @@ instance ToJSON DebugInitialPattern where
     toJSON (DebugInitialPattern initial) =
         object
             [ "task" .= ("rewriting" :: Text)
-            , "initial" .= initial
+            , "initial" .= unparseOneLine initial
             ]
 
 instance ToJSON DebugFinalPatterns where
     toJSON (DebugFinalPatterns finals) =
         object
-            [ "finals" .= finals
+            [ "finals" .= map encodePattern finals
             ]
 
 instance ToJSON RewriteResult where
     toJSON RewriteResult{ruleId, substitution, results} =
         object
             [ "rule-id" .= maybe Null toJSON (getUniqueId ruleId)
-            , "substitution" .= substitution
-            , "results" .= results
+            , "substitution" .= encodeSubstitution substitution
+            , "results" .= map encodePattern results
             ]
 
 instance ToJSON DebugRewriteTrace where
     toJSON DebugRewriteTrace{initialPattern, rewriteResults, remainders} =
         object
-            [ "initial" .= initialPattern
+            [ "initial" .= encodePattern initialPattern
             , "applied-rules" .= rewriteResults
-            , "remainders" .= remainders
+            , "remainders" .= map encodePattern remainders
             ]
 
 instance Pretty DebugInitialClaim where
@@ -260,6 +257,9 @@ rewriteTraceLogger textLogger =
             unLogAction textLogger $ "---\n" <> encode initial <> "steps:"
         | Just initial <- fromEntry @DebugInitialPattern entry =
             unLogAction textLogger $ encode initial <> "steps:"
-...
+        | Just final <- fromEntry @DebugFinalPatterns entry =
+            unLogAction textLogger $ encode final
+        | Just rewrite <- fromEntry @DebugRewriteTrace entry =
+            unLogAction textLogger $ encode [rewrite]
         | otherwise =
             pure ()
