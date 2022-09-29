@@ -189,6 +189,7 @@ common library
   build-depends: unordered-containers >=0.2
   build-depends: vector >=0.12
   build-depends: witherable ==0.3.*
+  build-depends: yaml >=0.11.5.0
   build-depends: zlib >=0.6
   build-tool-depends: happy:happy
   build-tool-depends: alex:alex
@@ -365,6 +366,7 @@ library
     Kore.Log.DebugEvaluateCondition
     Kore.Log.DebugProven
     Kore.Log.DebugRetrySolverQuery
+    Kore.Log.DebugRewriteTrace
     Kore.Log.DebugSolver
     Kore.Log.DebugSubstitutionSimplifier
     Kore.Log.DebugTransition

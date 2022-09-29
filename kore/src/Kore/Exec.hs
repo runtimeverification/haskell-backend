@@ -110,6 +110,10 @@ import Kore.Internal.Predicate (
 import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike
+import Kore.Log.DebugRewriteTrace (
+    debugFinalPatterns,
+    debugInitialPattern,
+ )
 import Kore.Log.ErrorEquationRightFunction (
     errorEquationRightFunction,
  )
@@ -282,7 +286,8 @@ exec
         , equations
         }
     execMode
-    (mkRewritingTerm -> initialTerm) =
+    inputPattern@(mkRewritingTerm -> initialTerm) = do
+        debugInitialPattern inputPattern
         evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations $ do
             finals <-
                 GraphTraversal.graphTraversal
@@ -310,6 +315,7 @@ exec
             let finalConfigs' =
                     MultiOr.make $
                         mapMaybe extractProgramState finalConfigs
+            debugFinalPatterns finalConfigs'
             exitCode <- getExitCode verifiedModule finalConfigs'
             let finalTerm =
                     MultiOr.map getRewritingPattern finalConfigs'
