@@ -57,6 +57,12 @@ import Kore.Log.DebugProven (
 import Kore.Log.DebugRetrySolverQuery (
     DebugRetrySolverQuery,
  )
+import Kore.Log.DebugRewriteTrace (
+    DebugFinalPatterns,
+    DebugInitialClaim,
+    DebugInitialPattern,
+    DebugRewriteTrace,
+ )
 import Kore.Log.DebugSolver (
     DebugSolverRecv,
     DebugSolverSend,
@@ -239,6 +245,10 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnUnsimplifiedCondition
             , mk $ Proxy @WarnRestartSolver
             , mk $ Proxy @DebugCreatedSubstitution
+            , mk $ Proxy @DebugInitialClaim
+            , mk $ Proxy @DebugInitialPattern
+            , mk $ Proxy @DebugFinalPatterns
+            , mk $ Proxy @DebugRewriteTrace
             ]
         ,
             [ mk $ Proxy @ErrorBottomTotalFunction
