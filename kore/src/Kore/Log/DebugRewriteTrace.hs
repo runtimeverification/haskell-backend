@@ -1,4 +1,5 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE NoStrict #-}
+{-# LANGUAGE NoStrictData #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2022
@@ -255,13 +256,10 @@ rewriteTraceLogger textLogger =
     LogAction action
   where
     action entry
-        | Just initial <- fromEntry entry =
-            unLogAction textLogger $ "---\n" <> encode (initial :: DebugInitialClaim) <> "steps:"
-        | Just initial <- fromEntry entry =
-            unLogAction textLogger $ encode (initial :: DebugInitialPattern) <> "steps:"
-        | Just final <- fromEntry entry =
-            unLogAction textLogger $ encode (final :: DebugFinalPatterns)
-        | Just rewrite <- fromEntry entry =
-            unLogAction textLogger $ encode [rewrite :: DebugRewriteTrace]
+        | Just initial <- fromEntry @DebugInitialClaim entry =
+            unLogAction textLogger $ "---\n" <> encode initial <> "steps:"
+        | Just initial <- fromEntry @DebugInitialPattern entry =
+            unLogAction textLogger $ encode initial <> "steps:"
+...
         | otherwise =
             pure ()
