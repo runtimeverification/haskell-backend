@@ -62,6 +62,11 @@ jobs:
           mkdir -p profile/tests/$(echo ${FILE_NAME} | cut -d '.' -f 1)
           echo "RUNNING PROFILE: ${FILE_NAME}"
           nix run github:runtimeverification/haskell-backend#profile ./${FILE_NAME}
+   
+      - name: Publish Profile Results
+        uses: actions/upload-artifact@v3.1.0
+        with:
+          path: ./profile-*.tar.gz
 
   on-success:
     needs: Profiling
@@ -70,11 +75,6 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.ORG_PAT }}
     steps:
-      - name: Publish Profile Results
-        uses: actions/upload-artifact@v3.1.0
-        with:
-          path: ./profile-*.tar.gz
-   
       - uses: slackapi/slack-github-action@v1.22.0
         id: slack
         env:
