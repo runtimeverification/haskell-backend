@@ -87,6 +87,9 @@ import Kore.Attribute.SourceLocation qualified as Attribute (
     SourceLocation,
  )
 import Kore.Attribute.Trusted qualified as Attribute.Trusted
+import Kore.Attribute.UniqueId qualified as Attribute (
+    UniqueId,
+ )
 import Kore.Error (Error (..), koreFailWhen, withContext)
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (indexedModuleClaims),
@@ -281,6 +284,7 @@ deriveSeqClaim ::
     Step.UnifyingRuleVariable claim ~ RewritingVariableName =>
     From claim (AxiomPattern RewritingVariableName) =>
     From claim Attribute.SourceLocation =>
+    From claim Attribute.UniqueId =>
     Lens' claim ClaimPattern ->
     (ClaimPattern -> claim) ->
     [claim] ->

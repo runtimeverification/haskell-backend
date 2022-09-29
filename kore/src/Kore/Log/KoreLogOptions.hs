@@ -97,6 +97,7 @@ data KoreLogOptions = KoreLogOptions
     , debugApplyEquationOptions :: !DebugApplyEquationOptions
     , debugAttemptEquationOptions :: !DebugAttemptEquationOptions
     , debugEquationOptions :: !DebugEquationOptions
+    , rewriteTraceFileName :: !(Maybe FilePath)
     }
     deriving stock (Eq, Show, GHC.Generic)
 
@@ -120,6 +121,7 @@ defaultKoreLogOptions exeName startTime =
         , debugApplyEquationOptions = def @DebugApplyEquationOptions
         , debugAttemptEquationOptions = def @DebugAttemptEquationOptions
         , debugEquationOptions = def @DebugEquationOptions
+        , rewriteTraceFileName = Nothing
         }
 
 {- | 'KoreLogType' is passed via command line arguments and decides if and how
@@ -209,6 +211,7 @@ parseKoreLogOptions exeName startTime =
         <*> parseDebugApplyEquationOptions
         <*> parseDebugAttemptEquationOptions
         <*> parseDebugEquationOptions
+        <*> parseTraceRewrites
 
 parseEntryTypes :: Parser EntryTypes
 parseEntryTypes =
@@ -427,6 +430,16 @@ selectDebugEquation DebugEquationOptions{selected} =
         , selectDebugAttemptEquation DebugAttemptEquationOptions{selected}
         ]
 
+parseTraceRewrites :: Parser (Maybe FilePath)
+parseTraceRewrites =
+    Options.optional
+        ( Options.strOption
+            ( Options.metavar "FILENAME"
+                <> Options.long "trace-rewrites"
+                <> Options.help "Output rewrite trace to a YAML file"
+            )
+        )
+
 unparseKoreLogOptions :: KoreLogOptions -> [String]
 unparseKoreLogOptions
     ( KoreLogOptions
@@ -444,6 +457,7 @@ unparseKoreLogOptions
             debugApplyEquationOptions
             debugAttemptEquationOptions
             debugEquationOptions
+            _
         ) =
         concat
             [ koreLogTypeFlag logType

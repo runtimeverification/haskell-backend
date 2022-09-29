@@ -105,6 +105,7 @@
           "unordered-containers"))
         (hsPkgs."vector" or (errorHandler.buildDepError "vector"))
         (hsPkgs."witherable" or (errorHandler.buildDepError "witherable"))
+        (hsPkgs."yaml" or (errorHandler.buildDepError "yaml"))
         (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
       ];
       build-tools = [
@@ -208,6 +209,7 @@
         "Kore/Builtin/Int/Int"
         "Kore/Builtin/InternalBytes"
         "Kore/Builtin/InternalBytes/InternalBytes"
+        "Kore/Builtin/IO"
         "Kore/Builtin/KEqual"
         "Kore/Builtin/Kreflection"
         "Kore/Builtin/Krypto"
@@ -282,6 +284,7 @@
         "Kore/Log/DebugEvaluateCondition"
         "Kore/Log/DebugProven"
         "Kore/Log/DebugRetrySolverQuery"
+        "Kore/Log/DebugRewriteTrace"
         "Kore/Log/DebugSolver"
         "Kore/Log/DebugSubstitutionSimplifier"
         "Kore/Log/DebugTransition"
@@ -303,6 +306,7 @@
         "Kore/Log/InfoExecDepth"
         "Kore/Log/InfoProofDepth"
         "Kore/Log/InfoReachability"
+        "Kore/Log/InfoUserLog"
         "Kore/Log/KoreLogOptions"
         "Kore/Log/Registry"
         "Kore/Log/SQLite"
@@ -756,6 +760,7 @@
             "unordered-containers"))
           (hsPkgs."vector" or (errorHandler.buildDepError "vector"))
           (hsPkgs."witherable" or (errorHandler.buildDepError "witherable"))
+          (hsPkgs."yaml" or (errorHandler.buildDepError "yaml"))
           (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
           (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
           (hsPkgs."QuickCheck" or (errorHandler.buildDepError "QuickCheck"))
@@ -844,6 +849,7 @@
           "Test/Kore/Builtin/Inj"
           "Test/Kore/Builtin/Int"
           "Test/Kore/Builtin/InternalBytes"
+          "Test/Kore/Builtin/IO"
           "Test/Kore/Builtin/KEqual"
           "Test/Kore/Builtin/Krypto"
           "Test/Kore/Builtin/List"
