@@ -118,6 +118,9 @@ import Kore.Log.InfoProofDepth (
 import Kore.Log.InfoReachability (
     InfoReachability,
  )
+import Kore.Log.InfoUserLog (
+    InfoUserLog,
+ )
 import Kore.Log.WarnBoundedModelChecker (
     WarnBoundedModelChecker,
  )
@@ -224,6 +227,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @InfoAttemptUnification
             , mk $ Proxy @InfoReachability
             , mk $ Proxy @InfoExecBreadth
+            , mk $ Proxy @InfoUserLog
             , mk $ Proxy @DebugAttemptEquation
             , mk $ Proxy @DebugApplyEquation
             , mk $ Proxy @DebugUnification

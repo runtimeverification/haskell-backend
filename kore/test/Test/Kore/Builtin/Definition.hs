@@ -662,6 +662,10 @@ inclusionSet ::
     TermLike RewritingVariableName
 inclusionSet setLeft setRight =
     mkApplySymbol inclusionSetSymbol [setLeft, setRight]
+-- ** IO
+logStringSymbol :: Internal.Symbol
+logStringSymbol =
+    builtinSymbol "logString" kSort [stringSort] & hook "IO.logString" & hook "IO.logString" & hook "IO.logString" & hook "IO.logString"
 -- ** String
 eqStringSymbol :: Internal.Symbol
 eqStringSymbol =
@@ -1670,6 +1674,23 @@ stringModule =
             ]
         }
 
+-- ** IO
+
+ioModuleName :: ModuleName
+ioModuleName = ModuleName "IO"
+
+ioModule :: ParsedModule
+ioModule =
+    Module
+        { moduleName = ioModuleName
+        , moduleAttributes = Attributes []
+        , moduleSentences =
+            [ importParsedModule kEqualModuleName
+            , importParsedModule stringModuleName
+            , hookedSymbolDecl logStringSymbol
+            ]
+        }
+
 -- ** BYTES
 
 bytesModuleName :: ModuleName
@@ -1753,6 +1774,7 @@ testModule =
             , importParsedModule stringModuleName
             , importParsedModule bytesModuleName
             , importParsedModule kryptoModuleName
+            , importParsedModule ioModuleName
             , subsortDecl boolSort kItemSort
             , subsortDecl intSort kItemSort
             , subsortDecl idSort kItemSort
@@ -1814,6 +1836,7 @@ testDefinition =
             , pairModule
             , setModule
             , stringModule
+            , ioModule
             , bytesModule
             , kryptoModule
             , testModule
