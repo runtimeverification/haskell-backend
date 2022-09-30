@@ -73,8 +73,13 @@ import Kore.Internal.Predicate (
     pattern PredicateNot,
  )
 import Kore.Internal.TermLike (Sort)
-import Kore.Log.DebugBeginClaim
+import Kore.Log.DebugBeginClaim (
+    debugBeginClaim,
+ )
 import Kore.Log.DebugProven
+import Kore.Log.DebugRewriteTrace (
+    debugInitialClaim,
+ )
 import Kore.Log.DebugTransition (
     debugAfterTransition,
     debugBeforeTransition,
@@ -83,6 +88,9 @@ import Kore.Log.DebugTransition (
 import Kore.Log.InfoProofDepth
 import Kore.Log.WarnStuckClaimState
 import Kore.Log.WarnTrivialClaim
+import Kore.Reachability.AllPathClaim (
+    allPathRuleToTerm,
+ )
 import Kore.Reachability.Claim
 import Kore.Reachability.ClaimState (
     ClaimState,
@@ -91,6 +99,9 @@ import Kore.Reachability.ClaimState (
     extractUnproven,
  )
 import Kore.Reachability.ClaimState qualified as ClaimState
+import Kore.Reachability.OnePathClaim (
+    onePathRuleToTerm,
+ )
 import Kore.Reachability.Prim as Prim (
     Prim (..),
  )
@@ -280,6 +291,9 @@ proveClaimsWorker
         verifyWorker unprovenClaim@(claim, _) =
             traceExceptT D_OnePath_verifyClaim [debugArg "rule" claim] $ do
                 debugBeginClaim claim
+                debugInitialClaim (from claim) $ case claim of
+                    OnePath term -> onePathRuleToTerm term
+                    AllPath term -> allPathRuleToTerm term
                 result <-
                     lift . lift $
                         proveClaim

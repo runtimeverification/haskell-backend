@@ -21,6 +21,9 @@ import Kore.Attribute.Pattern.FreeVariables (
 import Kore.Attribute.SourceLocation (
     SourceLocation,
  )
+import Kore.Attribute.UniqueId (
+    UniqueId,
+ )
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.MultiOr qualified as MultiOr
@@ -40,6 +43,9 @@ import Kore.Log.DebugAppliedRewriteRules (
     debugAppliedRewriteRules,
  )
 import Kore.Log.DebugCreatedSubstitution (debugCreatedSubstitution)
+import Kore.Log.DebugRewriteTrace (
+    debugRewriteTrace,
+ )
 import Kore.Log.ErrorRewritesInstantiation (
     checkSubstitutionCoverage,
  )
@@ -205,6 +211,7 @@ type UnifyingRuleWithRepresentation representation rule =
     , Rule.UnifyingRuleVariable rule ~ RewritingVariableName
     , From rule (AxiomPattern RewritingVariableName)
     , From rule SourceLocation
+    , From rule UniqueId
     )
 
 type FinalizeApplied rule =
@@ -345,6 +352,7 @@ applyWithFinalizer ::
     Rule.UnifyingRule rule =>
     Rule.UnifyingRuleVariable rule ~ RewritingVariableName =>
     From rule SourceLocation =>
+    From rule UniqueId =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Finalizing function
@@ -358,7 +366,9 @@ applyWithFinalizer sideCondition finalize rules initial = do
     results <- unifyRules sideCondition initial rules
     debugAppliedRewriteRules initial (locations <$> results)
     let initialVariables = freeVariables initial
-    finalize initialVariables initial results
+    finalizedResults <- finalize initialVariables initial results
+    debugRewriteTrace initial finalizedResults
+    return finalizedResults
   where
     locations = from @_ @SourceLocation . extract
 {-# INLINE applyWithFinalizer #-}
