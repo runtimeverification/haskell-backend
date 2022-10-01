@@ -37,21 +37,10 @@ jobs:
         run: |
           echo "Cleaning Folder"
           rm -rf ./*
-      
-      - uses: slackapi/slack-github-action@v1.22.0
-        id: slack
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        with:
-          payload: |
-            {
-              "pass_fail": "IN PROGRESS",
-              "link_to_result": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-            }
-
       - name: Run Tests
         run: |
           set -euo pipefail
+          gh issue comment ${{ github.issue.number }} --body "IN PROGRESS: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           DOWNLOAD_URL=$(cat ${GITHUB_EVENT_PATH} | jq '.comment.body' | grep -oP '(https:)(.*?)(?=\))' )
           FILE_NAME=$(basename ${DOWNLOAD_URL})
           echo "Download Test File"
@@ -75,16 +64,8 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.ORG_PAT }}
     steps:
-      - uses: slackapi/slack-github-action@v1.22.0
-        id: slack
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        with:
-          payload: |
-            {
-              "pass_fail": "PASSED",
-              "link_to_result": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-            }
+      - run: |
+          gh issue comment ${{ github.issue.number }} --body "PASSED: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   on-failure:
     needs: Profiling
     runs-on: [Linux, flyweight]
@@ -92,16 +73,5 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.ORG_PAT }}
     steps:
-      - name: collect-info
-        run: |
-          echo "Use Context Info from Failed Run Triggering"
-      - uses: slackapi/slack-github-action@v1.22.0
-        id: slack
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        with:
-          payload: |
-            {
-              "pass_fail": "FAILED",
-              "link_to_result": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-            }
+      - run: |
+          gh issue comment ${{ github.issue.number }} --body "FAILED: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
