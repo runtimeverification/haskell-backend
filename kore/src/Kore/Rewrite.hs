@@ -58,7 +58,7 @@ import Kore.Rewrite.Strategy hiding (
  )
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Simplify.Pattern qualified as Pattern (
-    simplifyTopConfiguration,
+    simplifyTopConfigurationDefined,
  )
 import Kore.Simplify.Simplify as Simplifier
 import Kore.TopBottom (
@@ -197,7 +197,7 @@ transitionRule rewriteGroups = transitionRuleWorker
         empty
 
     transitionSimplify prim config = do
-        configs <- lift $ Pattern.simplifyTopConfiguration config
+        configs <- lift $ Pattern.simplifyTopConfigurationDefined config
         filteredConfigs <- liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc configs
         if isBottom filteredConfigs
             then pure Bottom
