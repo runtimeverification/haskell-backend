@@ -13,6 +13,7 @@ module Kore.Log (
     Colog.logTextStderr,
     Colog.logTextHandle,
     runKoreLog,
+    runKoreLogThreadSafe,
     module Log,
     module KoreLogOptions,
 ) where
@@ -229,6 +230,14 @@ filterSeverity level entry =
 runKoreLog :: FilePath -> KoreLogOptions -> LoggerT IO a -> IO a
 runKoreLog reportDirectory options loggerT =
     withLogger reportDirectory options $ runLoggerT loggerT
+
+-- | Run a 'LoggerT' with the given options, using `swappableLogger` to make it thread safe.
+runKoreLogThreadSafe :: FilePath -> KoreLogOptions -> LoggerT IO a -> IO a
+runKoreLogThreadSafe reportDirectory options loggerT =
+    withLogger reportDirectory options $ \actualLogAction -> do
+        mvarLogAction <- newMVar actualLogAction
+        let swapLogAction = swappableLogger mvarLogAction
+        runLoggerT loggerT swapLogAction
 
 {- | The default Kore logger.
 
