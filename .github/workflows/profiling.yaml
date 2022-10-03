@@ -65,6 +65,8 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.ORG_PAT }}
     steps:
+      - name: Check out code
+        uses: actions/checkout@v3.0.2
       - run: |
           ISSUE_NUMBER=$(cat ${GITHUB_EVENT_PATH} | jq '.issue.number')
           gh issue comment ${ISSUE_NUMBER} --body "PASSED: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
@@ -75,6 +77,8 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.ORG_PAT }}
     steps:
+      - name: Check out code
+        uses: actions/checkout@v3.0.2    
       - run: |
           ISSUE_NUMBER=$(cat ${GITHUB_EVENT_PATH} | jq '.issue.number')
           gh issue comment ${ISSUE_NUMBER} --body "FAILED: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
