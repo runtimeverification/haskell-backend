@@ -40,7 +40,8 @@ jobs:
       - name: Run Tests
         run: |
           set -euo pipefail
-          gh issue comment ${{ github.issue.number }} --body "IN PROGRESS: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          ISSUE_NUMBER=$(cat ${GITHUB_EVENT_PATH} | jq '.issue.number')
+          gh issue comment ${ISSUE_NUMBER} --body "IN PROGRESS: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           DOWNLOAD_URL=$(cat ${GITHUB_EVENT_PATH} | jq '.comment.body' | grep -oP '(https:)(.*?)(?=\))' )
           FILE_NAME=$(basename ${DOWNLOAD_URL})
           echo "Download Test File"
@@ -65,7 +66,8 @@ jobs:
       GH_TOKEN: ${{ secrets.ORG_PAT }}
     steps:
       - run: |
-          gh issue comment ${{ github.issue.number }} --body "PASSED: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          ISSUE_NUMBER=$(cat ${GITHUB_EVENT_PATH} | jq '.issue.number')
+          gh issue comment ${ISSUE_NUMBER} --body "PASSED: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   on-failure:
     needs: Profiling
     runs-on: [Linux, flyweight]
@@ -74,4 +76,5 @@ jobs:
       GH_TOKEN: ${{ secrets.ORG_PAT }}
     steps:
       - run: |
-          gh issue comment ${{ github.issue.number }} --body "FAILED: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          ISSUE_NUMBER=$(cat ${GITHUB_EVENT_PATH} | jq '.issue.number')
+          gh issue comment ${ISSUE_NUMBER} --body "FAILED: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
