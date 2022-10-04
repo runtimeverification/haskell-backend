@@ -189,6 +189,7 @@ common library
   build-depends: unordered-containers >=0.2
   build-depends: vector >=0.12
   build-depends: witherable ==0.3.*
+  build-depends: yaml >=0.11.5.0
   build-depends: zlib >=0.6
   build-tool-depends: happy:happy
   build-tool-depends: alex:alex
@@ -290,6 +291,7 @@ library
     Kore.Builtin.Int.Int
     Kore.Builtin.InternalBytes
     Kore.Builtin.InternalBytes.InternalBytes
+    Kore.Builtin.IO
     Kore.Builtin.KEqual
     Kore.Builtin.Kreflection
     Kore.Builtin.Krypto
@@ -341,6 +343,7 @@ library
     Kore.Internal.MultiAnd
     Kore.Internal.MultiExists
     Kore.Internal.MultiOr
+    Kore.Internal.NormalForm
     Kore.Internal.NormalizedAc
     Kore.Internal.OrCondition
     Kore.Internal.OrPattern
@@ -363,6 +366,7 @@ library
     Kore.Log.DebugEvaluateCondition
     Kore.Log.DebugProven
     Kore.Log.DebugRetrySolverQuery
+    Kore.Log.DebugRewriteTrace
     Kore.Log.DebugSolver
     Kore.Log.DebugSubstitutionSimplifier
     Kore.Log.DebugTransition
@@ -384,6 +388,7 @@ library
     Kore.Log.InfoExecDepth
     Kore.Log.InfoProofDepth
     Kore.Log.InfoReachability
+    Kore.Log.InfoUserLog
     Kore.Log.KoreLogOptions
     Kore.Log.Registry
     Kore.Log.SQLite
@@ -762,6 +767,7 @@ test-suite kore-test
     Test.Kore.Builtin.Inj
     Test.Kore.Builtin.Int
     Test.Kore.Builtin.InternalBytes
+    Test.Kore.Builtin.IO
     Test.Kore.Builtin.KEqual
     Test.Kore.Builtin.Krypto
     Test.Kore.Builtin.List

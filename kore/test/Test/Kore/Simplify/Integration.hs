@@ -200,6 +200,36 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
         Pattern.assertEquivalentPatterns expects actuals
+    , testCase "Ceil with axioms" $ do
+        let expected =
+                Pattern.fromTermAndPredicate
+                    (mkTop Mock.testSort)
+                    (makeEqualsPredicate Mock.a Mock.cf)
+                    & OrPattern.fromPattern
+        actual <-
+            evaluateWithAxioms
+                ( Map.singleton
+                    ( AxiomIdentifier.Ceil
+                        (AxiomIdentifier.Application Mock.fId)
+                    )
+                    [ mkEquation
+                        ( makeCeilPredicate (Mock.f Mock.a)
+                            & Predicate.fromPredicate Mock.testSort
+                        )
+                        ( makeEqualsPredicate Mock.a Mock.cf
+                            & Predicate.fromPredicate Mock.testSort
+                        )
+                        & Equation.mapVariables (pure mkRuleVariable)
+                    ]
+                )
+                ( Pattern.fromTermAndPredicate
+                    (mkTop Mock.testSort)
+                    (makeCeilPredicate (Mock.f Mock.a))
+                )
+        assertEqual
+            ""
+            expected
+            actual
     , testCase "map function, non-matching" $ do
         let initial =
                 Pattern.fromTermLike $

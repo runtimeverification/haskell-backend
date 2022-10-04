@@ -57,6 +57,12 @@ import Kore.Log.DebugProven (
 import Kore.Log.DebugRetrySolverQuery (
     DebugRetrySolverQuery,
  )
+import Kore.Log.DebugRewriteTrace (
+    DebugFinalPatterns,
+    DebugInitialClaim,
+    DebugInitialPattern,
+    DebugRewriteTrace,
+ )
 import Kore.Log.DebugSolver (
     DebugSolverRecv,
     DebugSolverSend,
@@ -117,6 +123,9 @@ import Kore.Log.InfoProofDepth (
  )
 import Kore.Log.InfoReachability (
     InfoReachability,
+ )
+import Kore.Log.InfoUserLog (
+    InfoUserLog,
  )
 import Kore.Log.WarnBoundedModelChecker (
     WarnBoundedModelChecker,
@@ -224,6 +233,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @InfoAttemptUnification
             , mk $ Proxy @InfoReachability
             , mk $ Proxy @InfoExecBreadth
+            , mk $ Proxy @InfoUserLog
             , mk $ Proxy @DebugAttemptEquation
             , mk $ Proxy @DebugApplyEquation
             , mk $ Proxy @DebugUnification
@@ -235,6 +245,10 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnUnsimplifiedCondition
             , mk $ Proxy @WarnRestartSolver
             , mk $ Proxy @DebugCreatedSubstitution
+            , mk $ Proxy @DebugInitialClaim
+            , mk $ Proxy @DebugInitialPattern
+            , mk $ Proxy @DebugFinalPatterns
+            , mk $ Proxy @DebugRewriteTrace
             ]
         ,
             [ mk $ Proxy @ErrorBottomTotalFunction

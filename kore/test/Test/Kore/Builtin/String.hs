@@ -19,6 +19,7 @@ module Test.Kore.Builtin.String (
     asPattern,
     asOrPattern,
     asInternal,
+    genString,
 ) where
 
 import Control.Exception (ErrorCall (..), try)
