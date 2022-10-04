@@ -35,6 +35,8 @@ import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (pattern PredicateTrue)
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.InfoExecDepth (ExecDepth (..))
+import Kore.Log.InfoJsonRpcCancelRequest (InfoJsonRpcCancelRequest (..))
+import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
 import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite (
@@ -220,6 +222,13 @@ instance ToJSON (API 'Res) where
         -- Step payload -> toJSON payload
         Implies payload -> toJSON payload
         Simplify payload -> toJSON payload
+
+instance Pretty.Pretty (API 'Req) where
+    pretty = \case
+        Execute _ -> "execute"
+        Implies _ -> "implies"
+        Simplify _ -> "simplify"
+        Cancel -> "cancel"
 
 respond ::
     forall m.
@@ -454,10 +463,10 @@ respond runSMT serializedModule =
          in handle (pure . Left . serverError "crashed" . toJSON . mkError)
 
 runServer :: Int -> SMT.SolverSetup -> Log.LoggerEnv IO -> Exec.SerializedModule -> IO ()
-runServer port solverSetup Log.LoggerEnv{logAction} serializedModule = do
+runServer port solverSetup loggerEnv@Log.LoggerEnv{logAction} serializedModule = do
     flip runLoggingT logFun $
         jsonrpcTCPServer V2 False srvSettings $
-            srv runSMT serializedModule
+            srv loggerEnv runSMT serializedModule
   where
     srvSettings = serverSettings port "*"
 
@@ -467,8 +476,8 @@ runServer port solverSetup Log.LoggerEnv{logAction} serializedModule = do
     runSMT :: forall a. SMT.SMT a -> IO a
     runSMT m = flip Log.runLoggerT logAction $ SMT.runWithSolver m solverSetup
 
-srv :: MonadLoggerIO m => (forall a. SMT.SMT a -> IO a) -> Exec.SerializedModule -> JSONRPCT m ()
-srv runSMT serializedModule = do
+srv :: MonadLoggerIO m => Log.LoggerEnv IO -> (forall a. SMT.SMT a -> IO a) -> Exec.SerializedModule -> JSONRPCT m ()
+srv Log.LoggerEnv{logAction} runSMT serializedModule = do
     reqQueue <- liftIO $ atomically newTChan
     let mainLoop tid =
             receiveBatchRequest >>= \case
@@ -482,6 +491,9 @@ srv runSMT serializedModule = do
                     mainLoop tid
     spawnWorker reqQueue >>= mainLoop
   where
+    log :: MonadIO m => Log.Entry entry => entry -> m ()
+    log = Log.logWith $ Log.hoistLogAction liftIO logAction
+
     isRequest = \case
         Request{} -> True
         _ -> False
@@ -497,22 +509,26 @@ srv runSMT serializedModule = do
         rpcSession <- ask
         logger <- askLoggerIO
         let sendResponses r = flip runLoggingT logger $ flip runReaderT rpcSession $ sendBatchResponse r
+            respondTo :: MonadIO m => MonadCatch m => Request -> m (Maybe Response)
+            respondTo req = buildResponse (\req' -> log (InfoJsonRpcProcessRequest (getReqId req) req') >> respond runSMT serializedModule req') req
 
             cancelReq = \case
                 SingleRequest req@Request{} -> do
-                    let v = getReqVer req
-                        i = getReqId req
-                    sendResponses $ SingleResponse $ ResponseError v cancelError i
+                    let reqVersion = getReqVer req
+                        reqId = getReqId req
+                    log $ InfoJsonRpcCancelRequest reqId
+                    sendResponses $ SingleResponse $ ResponseError reqVersion cancelError reqId
                 SingleRequest Notif{} -> pure ()
-                BatchRequest reqs ->
+                BatchRequest reqs -> do
+                    forM_ reqs $ \req -> log $ InfoJsonRpcCancelRequest $ getReqId req
                     sendResponses $ BatchResponse $ [ResponseError (getReqVer req) cancelError (getReqId req) | req <- reqs, isRequest req]
 
             processReq = \case
                 SingleRequest req -> do
-                    rM <- buildResponse (respond runSMT serializedModule) req
+                    rM <- respondTo req
                     mapM_ (sendResponses . SingleResponse) rM
                 BatchRequest reqs -> do
-                    rs <- catMaybes <$> forM reqs (buildResponse (respond runSMT serializedModule))
+                    rs <- catMaybes <$> mapM respondTo reqs
                     sendResponses $ BatchResponse rs
 
         liftIO $

@@ -304,6 +304,8 @@
         "Kore/Log/JsonRpc"
         "Kore/Log/InfoExecBreadth"
         "Kore/Log/InfoExecDepth"
+        "Kore/Log/InfoJsonRpcCancelRequest"
+        "Kore/Log/InfoJsonRpcProcessRequest"
         "Kore/Log/InfoProofDepth"
         "Kore/Log/InfoReachability"
         "Kore/Log/InfoUserLog"
