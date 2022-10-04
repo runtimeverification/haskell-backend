@@ -7,11 +7,10 @@ module Kore.Log.JsonRpc (
 ) where
 
 import Control.Monad.Logger (
-    Loc,
+    Loc (..),
     LogLevel (..),
     LogSource,
     LogStr,
-    defaultLogStr,
     fromLogStr,
  )
 import Data.Text qualified as Text
@@ -31,7 +30,7 @@ data LogJsonRpcServer = LogJsonRpcServer
     deriving stock (Show)
 
 instance Pretty LogJsonRpcServer where
-    pretty LogJsonRpcServer{loc, src, level, msg} = pretty $ Text.decodeUtf8 $ fromLogStr $ defaultLogStr loc src level msg
+    pretty LogJsonRpcServer{msg} = pretty $ Text.decodeUtf8 $ fromLogStr msg
 
 instance Entry LogJsonRpcServer where
     entrySeverity LogJsonRpcServer{level} = case level of
@@ -42,3 +41,21 @@ instance Entry LogJsonRpcServer where
         _ -> Debug
     helpDoc _ = "log JSON RPC Server messages"
     oneLineDoc LogJsonRpcServer{msg} = pretty $ Text.replace "\n" " " $ Text.decodeUtf8 $ fromLogStr msg
+
+    contextDoc LogJsonRpcServer{loc} =
+        if isDefaultLoc loc
+            then Nothing
+            else Just $ pretty fileLocStr
+      where
+        isDefaultLoc :: Loc -> Bool
+        isDefaultLoc (Loc "<unknown>" "<unknown>" "<unknown>" (0, 0) (0, 0)) = True
+        isDefaultLoc _ = False
+
+        fileLocStr =
+            (loc_package loc) ++ ':' :
+            (loc_module loc)
+                ++ ' ' :
+            (loc_filename loc) ++ ':' : (line loc) ++ ':' : (char loc)
+          where
+            line = show . fst . loc_start
+            char = show . snd . loc_start

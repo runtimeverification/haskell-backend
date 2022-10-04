@@ -118,6 +118,12 @@ import Kore.Log.InfoExecBreadth (
 import Kore.Log.InfoExecDepth (
     InfoExecDepth,
  )
+import Kore.Log.InfoJsonRpcCancelRequest (
+    InfoJsonRpcCancelRequest,
+ )
+import Kore.Log.InfoJsonRpcProcessRequest (
+    InfoJsonRpcProcessRequest,
+ )
 import Kore.Log.InfoProofDepth (
     InfoProofDepth,
  )
@@ -126,6 +132,9 @@ import Kore.Log.InfoReachability (
  )
 import Kore.Log.InfoUserLog (
     InfoUserLog,
+ )
+import Kore.Log.JsonRpc (
+    LogJsonRpcServer,
  )
 import Kore.Log.WarnBoundedModelChecker (
     WarnBoundedModelChecker,
@@ -249,6 +258,9 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @DebugInitialPattern
             , mk $ Proxy @DebugFinalPatterns
             , mk $ Proxy @DebugRewriteTrace
+            , mk $ Proxy @LogJsonRpcServer
+            , mk $ Proxy @InfoJsonRpcProcessRequest
+            , mk $ Proxy @InfoJsonRpcCancelRequest
             ]
         ,
             [ mk $ Proxy @ErrorBottomTotalFunction
