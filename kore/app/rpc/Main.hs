@@ -25,7 +25,7 @@ import Kore.JsonRpc (runServer)
 import Kore.Log (
     KoreLogOptions (..),
     parseKoreLogOptions,
-    runKoreLog,
+    runKoreLogThreadSafe,
  )
 import Kore.Log.ErrorException (
     handleSomeException,
@@ -134,7 +134,7 @@ mainWithOptions localOptions@GlobalMain.LocalOptions{execOptions = KoreRpcServer
             ( \tmpDir ->
                 koreRpcServerRun localOptions
                     & handle handleSomeException
-                    & runKoreLog
+                    & runKoreLogThreadSafe
                         tmpDir
                         koreLogOptions
             )
