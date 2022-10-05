@@ -133,6 +133,7 @@ common library
   build-depends: co-log >=0.4
   build-depends: comonad >=5.0
   build-depends: compact >= 0.2.0.0
+  build-depends: conduit >= 1.3
   build-depends: conduit-extra >=1.3
   build-depends: containers >=0.5.8
   build-depends: cryptonite >=0.25
@@ -178,6 +179,7 @@ common library
   build-depends: semialign >=1
   build-depends: sqlite-simple >=0.4
   build-depends: stm >=2.5
+  build-depends: stm-conduit >= 4.0
   build-depends: streams
   build-depends: tar >=0.5
   build-depends: template-haskell >=2.14
@@ -186,6 +188,7 @@ common library
   build-depends: these >=1.0
   build-depends: time >=1.9.3
   build-depends: transformers >=0.4
+  build-depends: unliftio >= 0.2
   build-depends: unordered-containers >=0.2
   build-depends: vector >=0.12
   build-depends: witherable ==0.3.*
@@ -410,6 +413,7 @@ library
     Kore.ModelChecker.Bounded
     Kore.ModelChecker.Simplification
     Kore.ModelChecker.Step
+    Kore.Network.JSONRPC
     Kore.Options
     Kore.Parser
     Kore.Parser.CString
