@@ -13,8 +13,8 @@ import Control.Monad.Except (runExceptT)
 import Control.Monad.Logger (MonadLoggerIO, askLoggerIO, runLoggingT)
 import Control.Monad.Reader (ask, runReaderT)
 import Control.Monad.STM (atomically)
-import Data.Aeson.Types (FromJSON (..), ToJSON (..), Value (..))
 import Data.Aeson.Encode.Pretty as Json
+import Data.Aeson.Types (FromJSON (..), ToJSON (..), Value (..))
 import Data.Conduit.Network (serverSettings)
 import Data.Limit (Limit (..))
 import Data.Text (Text)
@@ -470,8 +470,8 @@ runServer port solverSetup loggerEnv@Log.LoggerEnv{logAction} serializedModule =
             Json.defConfig{Json.confIndent = Spaces 0, confCompare}
             V2
             False
-            srvSettings $
-            srv loggerEnv runSMT serializedModule
+            srvSettings
+            $ srv loggerEnv runSMT serializedModule
   where
     srvSettings = serverSettings port "*"
     confCompare =
