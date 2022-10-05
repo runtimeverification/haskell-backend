@@ -475,7 +475,7 @@ runServer port solverSetup loggerEnv@Log.LoggerEnv{logAction} serializedModule =
   where
     srvSettings = serverSettings port "*"
     confCompare =
-        Json.keyOrder -- retains the field order in all constructors
+        Json.keyOrder
             [ "format"
             , "version"
             , "term"
