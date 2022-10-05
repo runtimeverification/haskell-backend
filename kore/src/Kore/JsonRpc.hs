@@ -467,7 +467,7 @@ runServer :: Int -> SMT.SolverSetup -> Log.LoggerEnv IO -> Exec.SerializedModule
 runServer port solverSetup loggerEnv@Log.LoggerEnv{logAction} serializedModule = do
     flip runLoggingT logFun $
         jsonrpcTCPServer
-            Json.defConfig{Json.confIndent = Spaces 0, confCompare}
+            Json.defConfig{confCompare}
             V2
             False
             srvSettings
