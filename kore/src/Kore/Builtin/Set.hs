@@ -36,7 +36,6 @@ import Control.Error (
     MaybeT,
     hoistMaybe,
  )
-import Control.Monad qualified as Monad
 import Data.HashMap.Strict (
     HashMap,
  )
@@ -70,14 +69,9 @@ import Kore.IndexedModule.MetadataTools (
 import Kore.Internal.ApplicationSorts (
     ApplicationSorts (..),
  )
-import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.InternalSet
 import Kore.Internal.Pattern (
     Pattern,
- )
-import Kore.Internal.Pattern qualified as Pattern
-import Kore.Internal.Predicate (
-    makeCeilPredicate,
  )
 import Kore.Internal.SideCondition (
     SideCondition,
@@ -249,16 +243,6 @@ expectConcreteBuiltinSet ctx _set = do
             } -> return concreteElements
         _ -> empty
 
-expectEmptySet ::
-    -- | Context for error message
-    Text ->
-    -- | Operand pattern
-    TermLike variable ->
-    MaybeT Simplifier ()
-expectEmptySet cxt _set = do
-    _set <- expectConcreteBuiltinSet cxt _set
-    Monad.guard (HashMap.null _set)
-
 {- | Converts a @Set@ of concrete elements to a @NormalizedSet@ and returns it
 as a function result.
 -}
@@ -289,38 +273,9 @@ evalElement _ _ _ = Builtin.wrongArity Set.elementKey
 
 evalIn :: Builtin.Function
 evalIn _ resultSort [_elem, _set] = do
-    let setSymbolic = do
-            _elem <- hoistMaybe $ retractKey _elem
-            _set' <- expectBuiltinSet Set.inKey _set
-            let result = isConcreteKeyOfAc _elem _set'
-            returnIfTrueAndDefined result _set
-        bothSymbolic = do
-            _set' <- expectBuiltinSet Set.inKey _set
-            let result = isSymbolicKeyOfAc _elem _set'
-            returnIfTrueAndDefined result _set
-        emptySet = do
-            expectEmptySet Set.inKey _set
-            Monad.guard (TermLike.isFunctionalPattern _elem)
-            return $ asExpandedBoolPattern False
-        bothConcrete = do
-            _elem <- hoistMaybe $ retractKey _elem
-            _set <- expectConcreteBuiltinSet Set.inKey _set
-            HashMap.member _elem _set
-                & asExpandedBoolPattern
-                & return
-    setSymbolic <|> bothSymbolic <|> emptySet <|> bothConcrete
-  where
-    asExpandedBoolPattern = Bool.asPattern resultSort
-    returnIfTrueAndDefined result setTerm
-        | result = do
-            let condition =
-                    Conditional.fromPredicate $ makeCeilPredicate setTerm
-                trueWithCondition =
-                    Pattern.andCondition
-                        (asExpandedBoolPattern result)
-                        condition
-            return trueWithCondition
-        | otherwise = empty
+    e <- hoistMaybe $ retractKey _elem
+    s <- expectConcreteBuiltinSet Set.inKey _set
+    pure $ Bool.asPattern resultSort $ HashMap.member e s
 evalIn _ _ _ = Builtin.wrongArity Set.inKey
 
 evalUnit :: Builtin.Function

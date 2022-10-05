@@ -4,10 +4,7 @@ module Test.Kore.Builtin.Set (
     test_unit,
     test_getUnit,
     test_inElement,
-    test_inUnitSymbolic,
-    test_inElementSymbolic,
     test_inConcat,
-    test_inConcatSymbolic,
     test_concatUnit,
     test_concatAssociates,
     test_concatNormalizes,
@@ -79,8 +76,6 @@ import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 import Kore.Builtin.AssociativeCommutative qualified as Ac
 import Kore.Builtin.Set.Set qualified as Set
-import Kore.Internal.Condition qualified as Condition
-import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.From
 import Kore.Internal.InternalSet
 import Kore.Internal.MultiOr qualified as MultiOr
@@ -128,7 +123,6 @@ import Test.Kore.Builtin.Int (
 import Test.Kore.Builtin.Int qualified as Test.Int
 import Test.Kore.Builtin.List qualified as Test.List
 import Test.Kore.Internal.OrPattern qualified as OrPattern
-import Test.Kore.Internal.Pattern qualified as Pattern
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Kore.With
@@ -140,27 +134,6 @@ import Test.SMT (
  )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-
-genKeys :: Gen [TermLike RewritingVariableName]
-genKeys = Gen.subsequence (concreteKeys <> symbolicKeys <> functionalKeys)
-
-genKey :: Gen (TermLike RewritingVariableName)
-genKey = Gen.element (concreteKeys <> symbolicKeys <> functionalKeys)
-
-genFunctionalKey :: Gen (TermLike RewritingVariableName)
-genFunctionalKey = Gen.element (functionalKeys <> concreteKeys)
-
-functionalKeys :: [TermLike RewritingVariableName]
-functionalKeys = Mock.functional10 . mkElemVar <$> elemVars'
-
-concreteKeys :: [TermLike RewritingVariableName]
-concreteKeys = [Mock.a, Mock.b, Mock.c]
-
-symbolicKeys :: [TermLike RewritingVariableName]
-symbolicKeys = Mock.f . mkElemVar <$> elemVars'
-
-elemVars' :: [ElementVariable RewritingVariableName]
-elemVars' = [Mock.xConfig, Mock.yConfig, Mock.zConfig]
 
 genSetInteger :: Gen (HashSet Integer)
 genSetInteger =
@@ -238,67 +211,6 @@ test_inElement =
                 predicate = fromEquals_ patIn patTrue
             (===) (Test.Bool.asOrPattern True) =<< evaluateTermT patIn
             (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
-        )
-
-test_inUnitSymbolic :: TestTree
-test_inUnitSymbolic =
-    testPropertyWithSolver
-        "in{}(x, unit{}()) === \\dv{Bool{}}(\"false\")"
-        ( do
-            patKey <- forAll genFunctionalKey
-            let patIn =
-                    mkApplySymbol
-                        inSetSymbolTestSort
-                        [ patKey
-                        , mkApplySymbol unitSetSymbol []
-                        ]
-                patFalse = Test.Bool.asInternal False
-                predicate = fromEquals_ patFalse patIn
-            (===) (Test.Bool.asOrPattern False) =<< evaluateTermT patIn
-            (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
-        )
-
-test_inElementSymbolic :: TestTree
-test_inElementSymbolic =
-    testPropertyWithSolver
-        "in{}(x, element{}(x)) === and(\\dv{Bool{}}(\"true\"), \\top())"
-        ( do
-            patKey <- forAll genKey
-            let patElement = mkApplySymbol elementSetSymbolTestSort [patKey]
-                patIn = mkApplySymbol inSetSymbolTestSort [patKey, patElement]
-                patTrue = Test.Bool.asInternal True
-                conditionTerm = mkAnd patTrue (mkCeil boolSort patElement)
-            actual <- evaluateTermT patIn
-            expected <- evaluateTermT conditionTerm
-            actual === expected
-        )
-
-test_inConcatSymbolic :: TestTree
-test_inConcatSymbolic =
-    testPropertyWithSolver
-        "in{}(concat{}(_, element{}(e)), e)\
-        \ === and(\\dv{Bool{}}(\"true\"), ceil(concat{}(_, element{}(e))))"
-        ( do
-            keys <- forAll genKeys
-            patKey <- forAll genKey
-            let patSet =
-                    mkSet_ $
-                        HashSet.insert patKey (HashSet.fromList keys)
-                patIn = mkApplySymbol inSetSymbolTestSort [patKey, patSet]
-                patTrue = Test.Bool.asPattern True
-                conditionTerm = fromCeil_ patSet
-            condition <- evaluatePredicateT conditionTerm
-            let expected =
-                    MultiOr.map
-                        ( Condition.andCondition patTrue
-                            . Conditional.withoutTerm
-                        )
-                        condition
-            actual <- evaluateTermT patIn
-            Pattern.assertEquivalent'
-                (===)
-                (from expected :: [Pattern RewritingVariableName])
-                (from actual :: [Pattern RewritingVariableName])
         )
 
 test_inConcat :: TestTree
