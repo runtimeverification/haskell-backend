@@ -279,9 +279,9 @@ lookupAxiomSimplifier termLike sideCondition = do
                             , Axiom.Identifier.Not Axiom.Identifier.Other
                             ]
                      in exact : map getSimplifier inexact
-                Axiom.Identifier.Variable -> exact
-                Axiom.Identifier.DV -> exact
-                Axiom.Identifier.Other -> exact
+                Axiom.Identifier.Variable -> [exact]
+                Axiom.Identifier.DV -> [exact]
+                Axiom.Identifier.Other -> [exact]
         case evaluators of
             [] -> Nothing
             [a] -> Just a

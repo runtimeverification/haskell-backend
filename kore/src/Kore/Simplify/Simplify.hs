@@ -646,10 +646,7 @@ purePatternAxiomEvaluator p =
                 }
         )
 
-{- | TODO (breakerzirconia): refactor the documentation.
-Creates an 'BuiltinAndAxiomSimplifier' from a similar function that takes an
-'Application'.
--}
+-- | Creates a 'Simplifier' from a similar function that takes an 'Application'.
 applicationAxiomSimplifier ::
     ( SideCondition RewritingVariableName ->
       CofreeF

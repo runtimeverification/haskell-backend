@@ -102,6 +102,7 @@ koreEvaluators key termLike sideCondition =
             (\evaluator -> evaluator key termLike sideCondition)
             [ Bool.builtinFunctions
             , Int.builtinFunctions
+            , IO.builtinFunctions
             , KEqual.builtinFunctions
             , List.builtinFunctions
             , Map.builtinFunctions

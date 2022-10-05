@@ -37,16 +37,20 @@ import Kore.Internal.InternalString (
     InternalString (..),
  )
 import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.SideCondition (SideCondition)
 import Kore.Internal.Symbol (
     Symbol (..),
  )
 import Kore.Internal.TermLike (
+    TermLike,
     pattern InternalString_,
  )
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.InfoUserLog
+import Kore.Rewrite.RewritingVariable (RewritingVariableName)
 import Kore.Simplify.Simplify (
-    BuiltinAndAxiomSimplifier,
+    AttemptedAxiom,
+    Simplifier,
     askMetadataTools,
  )
 import Kore.Syntax.Id (
@@ -71,9 +75,13 @@ symbolVerifiers =
             )
         ]
 
-builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
-builtinFunctions key
-    | key == logStringKey = Just $ Builtin.functionEvaluator evalLogString
+builtinFunctions ::
+    Text ->
+    TermLike RewritingVariableName ->
+    SideCondition RewritingVariableName ->
+    Maybe (Simplifier (AttemptedAxiom RewritingVariableName))
+builtinFunctions key termLike sideCondition
+    | key == logStringKey = Just $ Builtin.functionEvaluator evalLogString termLike sideCondition
     | otherwise = Nothing
 
 evalLogString :: Builtin.Function
