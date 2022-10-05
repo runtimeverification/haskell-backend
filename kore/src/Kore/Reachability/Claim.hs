@@ -128,7 +128,6 @@ import Kore.Internal.TermLike (
  )
 import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Log.InfoReachability
-import Kore.Log.WarnClaimRHSIsBottom
 import Kore.Reachability.ClaimState hiding (
     claimState,
  )
@@ -182,6 +181,7 @@ import Pretty (
     Pretty (..),
  )
 import Pretty qualified
+import Kore.Log.WarnBottom
 
 class Claim claim where
     -- | @Rule claim@ is the type of rule to take a single step toward @claim@.
@@ -922,6 +922,7 @@ simplify' lensClaimPattern claim = do
                     config
                     >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
                     & lift
+            when (isBottom configs) (warnConfigIsBottom config)
             asum (pure <$> toList configs)
 
 simplifyRightHandSide ::

@@ -5,9 +5,11 @@
 Copyright   : (c) Runtime Verification, 2021
 License     : BSD-3-Clause
 -}
-module Kore.Log.WarnClaimRHSIsBottom (
+module Kore.Log.WarnBottom (
     WarnClaimRHSIsBottom (..),
     warnClaimRHSIsBottom,
+    WarnConfigIsBottom (..),
+    warnConfigIsBottom,
 ) where
 
 import Kore.Attribute.SourceLocation
@@ -18,6 +20,9 @@ import Pretty (
     Pretty,
  )
 import Pretty qualified
+import Kore.Internal.Pattern (Pattern)
+import Kore.Rewrite.RewritingVariable (RewritingVariableName)
+import Kore.Unparser (unparse)
 
 newtype WarnClaimRHSIsBottom = WarnClaimRHSIsBottom {claim :: ClaimPattern}
     deriving stock (Show)
@@ -42,3 +47,27 @@ warnClaimRHSIsBottom ::
     ClaimPattern ->
     log ()
 warnClaimRHSIsBottom = logEntry . WarnClaimRHSIsBottom
+
+newtype WarnConfigIsBottom =
+    WarnConfigIsBottom
+        { config :: Pattern RewritingVariableName
+        }
+    deriving stock (Show)
+
+instance Pretty WarnConfigIsBottom where
+    pretty WarnConfigIsBottom {config} =
+        Pretty.vsep
+            [ "The following configuration has been simplified to bottom:"
+            , Pretty.indent 4 $ unparse config
+            ]
+
+instance Entry WarnConfigIsBottom where
+    entrySeverity _ = Warning
+    helpDoc _ = "warn when the configuration is bottom"
+    oneLineDoc _ = "A configuration has been simplified to bottom."
+
+warnConfigIsBottom ::
+    MonadLog log =>
+    Pattern RewritingVariableName ->
+    log ()
+warnConfigIsBottom = logEntry . WarnConfigIsBottom
