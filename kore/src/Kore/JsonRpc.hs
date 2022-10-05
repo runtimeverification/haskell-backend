@@ -14,6 +14,7 @@ import Control.Monad.Logger (MonadLoggerIO, askLoggerIO, runLoggingT)
 import Control.Monad.Reader (ask, runReaderT)
 import Control.Monad.STM (atomically)
 import Data.Aeson.Types (FromJSON (..), ToJSON (..), Value (..))
+import Data.Aeson.Encode.Pretty as Json
 import Data.Conduit.Network (serverSettings)
 import Data.Limit (Limit (..))
 import Data.Text (Text)
@@ -38,6 +39,7 @@ import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcCancelRequest (InfoJsonRpcCancelRequest (..))
 import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
+import Kore.Network.JSONRPC (jsonrpcTCPServer)
 import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite (
     Natural,
@@ -67,7 +69,6 @@ import Network.JSONRPC (
     Ver (V2),
     buildResponse,
     fromRequest,
-    jsonrpcTCPServer,
     receiveBatchRequest,
     sendBatchResponse,
  )
@@ -465,10 +466,47 @@ respond runSMT serializedModule =
 runServer :: Int -> SMT.SolverSetup -> Log.LoggerEnv IO -> Exec.SerializedModule -> IO ()
 runServer port solverSetup loggerEnv@Log.LoggerEnv{logAction} serializedModule = do
     flip runLoggingT logFun $
-        jsonrpcTCPServer V2 False srvSettings $
+        jsonrpcTCPServer
+            Json.defConfig{Json.confIndent = Spaces 0, confCompare}
+            V2
+            False
+            srvSettings $
             srv loggerEnv runSMT serializedModule
   where
     srvSettings = serverSettings port "*"
+    confCompare =
+        Json.keyOrder -- retains the field order in all constructors
+            [ "format"
+            , "version"
+            , "term"
+            , "tag"
+            , "assoc"
+            , "name"
+            , "symbol"
+            , "argSort"
+            , "sort"
+            , "sorts"
+            , "var"
+            , "varSort"
+            , "arg"
+            , "args"
+            , "argss"
+            , "source"
+            , "dest"
+            , "value"
+            , "jsonrpc"
+            , "id"
+            , "reason"
+            , "depth"
+            , "rule"
+            , "state"
+            , "next-states"
+            , "substitution"
+            , "predicate"
+            , "satisfiable"
+            , "implication"
+            , "condition"
+            ]
 
     logFun loc src level msg =
         Log.logWith logAction $ LogJsonRpcServer{loc, src, level, msg}
