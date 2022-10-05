@@ -88,6 +88,7 @@ import Kore.Rewrite.Search (
  )
 import Kore.Rewrite.Search qualified as Search
 import Kore.Rewrite.Strategy (
+    FinalNodeType (..),
     LimitExceeded (..),
  )
 import Kore.Syntax.Definition hiding (
@@ -1227,6 +1228,7 @@ execTest depthLimit breadthLimit verifiedModule strategy initial = do
     exec
         depthLimit
         breadthLimit
+        Leaf
         serializedModule
         strategy
         initial
