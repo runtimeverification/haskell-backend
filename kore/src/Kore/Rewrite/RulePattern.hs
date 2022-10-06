@@ -218,6 +218,9 @@ instance From (RulePattern variable) Attribute.RuleIndex where
 instance From (RulePattern variable) Attribute.UniqueId where
     from = Attribute.uniqueId . attributes
 
+instance From (RulePattern variable) Attribute.PreservesDefinedness where
+    from = Attribute.preservesDefinedness . attributes
+
 instance InternalVariable variable => Pretty (RulePattern variable) where
     pretty rulePattern'@(RulePattern _ _ _ _ _) =
         Pretty.vsep

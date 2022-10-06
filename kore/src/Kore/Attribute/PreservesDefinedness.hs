@@ -27,7 +27,7 @@ instance Default PreservesDefinedness where
     def = PreservesDefinedness False
 
 preservesDefinednessId :: Id
-preservesDefinednessId = "preservesDefinedness"
+preservesDefinednessId = "preserves-definedness"
 
 preservesDefinednessSymbol :: SymbolOrAlias
 preservesDefinednessSymbol =

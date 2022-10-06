@@ -9,6 +9,8 @@ module Kore.Rewrite.Rule.Simplify (
     simplifyClaimPattern,
 ) where
 
+import qualified Pretty
+import qualified Data.Text as Text
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
     Conditional (Conditional),
@@ -48,6 +50,7 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
     RulePattern (RulePattern),
+    RHS (..),
  )
 import Kore.Rewrite.RulePattern qualified as RulePattern (
     RulePattern (..),
@@ -57,7 +60,9 @@ import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     Simplifier,
+    makeEvaluateTermCeil,
  )
+import Kore.TopBottom
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute (
     Substitute (..),
@@ -67,6 +72,8 @@ import Logic (
  )
 import Logic qualified
 import Prelude.Kore
+import qualified Kore.Attribute.Axiom as Attribute
+import Log (logWarning)
 
 -- | Simplifies the left-hand-side of a rewrite rule (claim or axiom)
 class SimplifyRuleLHS rule where
@@ -80,9 +87,20 @@ instance SimplifyRuleLHS (RulePattern RewritingVariableName) where
             Pattern.simplifyTopConfiguration lhsWithPredicate
         fullySimplified <- SMT.Evaluator.filterMultiOr $srcLoc simplifiedTerms
         let rules = map (setRuleLeft rule) (toList fullySimplified)
+        when (preservesDefinedness rule) checkIfCorrect
         return (MultiAnd.make rules)
       where
-        RulePattern{left} = rule
+        RulePattern{left, rhs} = rule
+        RHS{right} = rhs
+
+        checkIfCorrect = do
+            result <- makeEvaluateTermCeil SideCondition.top right
+            unless
+                (isTop result)
+                (logWarning $ "The following rule was incorrectly marked preserves-definedness: " <> (Text.pack . show . Pretty.pretty) (from @_ @Attribute.SourceLocation rule))
+
+        preservesDefinedness r =
+            Attribute.doesPreserveDefinedness $ from @_ @Attribute.PreservesDefinedness r
 
         setRuleLeft ::
             RulePattern RewritingVariableName ->
