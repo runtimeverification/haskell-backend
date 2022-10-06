@@ -36,7 +36,6 @@ import Control.Error (
     MaybeT,
     hoistMaybe,
  )
-import Control.Monad qualified as Monad
 import Data.HashMap.Strict (
     HashMap,
  )
@@ -70,20 +69,13 @@ import Kore.IndexedModule.MetadataTools (
 import Kore.Internal.ApplicationSorts (
     ApplicationSorts (..),
  )
-import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.InternalSet
 import Kore.Internal.Pattern (
     Pattern,
  )
-import Kore.Internal.Pattern qualified as Pattern
-import Kore.Internal.Predicate (
-    makeCeilPredicate,
-    makeMultipleAndPredicate,
- )
 import Kore.Internal.SideCondition (
     SideCondition,
  )
-import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike (
     Key,
     TermLike,
@@ -251,16 +243,6 @@ expectConcreteBuiltinSet ctx _set = do
             } -> return concreteElements
         _ -> empty
 
-expectEmptySet ::
-    -- | Context for error message
-    Text ->
-    -- | Operand pattern
-    TermLike variable ->
-    MaybeT Simplifier ()
-expectEmptySet cxt _set = do
-    _set <- expectConcreteBuiltinSet cxt _set
-    Monad.guard (HashMap.null _set)
-
 {- | Converts a @Set@ of concrete elements to a @NormalizedSet@ and returns it
 as a function result.
 -}
@@ -291,38 +273,9 @@ evalElement _ _ _ = Builtin.wrongArity Set.elementKey
 
 evalIn :: Builtin.Function
 evalIn _ resultSort [_elem, _set] = do
-    let setSymbolic = do
-            _elem <- hoistMaybe $ retractKey _elem
-            _set' <- expectBuiltinSet Set.inKey _set
-            let result = isConcreteKeyOfAc _elem _set'
-            returnIfTrueAndDefined result _set
-        bothSymbolic = do
-            _set' <- expectBuiltinSet Set.inKey _set
-            let result = isSymbolicKeyOfAc _elem _set'
-            returnIfTrueAndDefined result _set
-        emptySet = do
-            expectEmptySet Set.inKey _set
-            Monad.guard (TermLike.isFunctionalPattern _elem)
-            return $ asExpandedBoolPattern False
-        bothConcrete = do
-            _elem <- hoistMaybe $ retractKey _elem
-            _set <- expectConcreteBuiltinSet Set.inKey _set
-            HashMap.member _elem _set
-                & asExpandedBoolPattern
-                & return
-    setSymbolic <|> bothSymbolic <|> emptySet <|> bothConcrete
-  where
-    asExpandedBoolPattern = Bool.asPattern resultSort
-    returnIfTrueAndDefined result setTerm
-        | result = do
-            let condition =
-                    Conditional.fromPredicate $ makeCeilPredicate setTerm
-                trueWithCondition =
-                    Pattern.andCondition
-                        (asExpandedBoolPattern result)
-                        condition
-            return trueWithCondition
-        | otherwise = empty
+    e <- hoistMaybe $ retractKey _elem
+    s <- expectConcreteBuiltinSet Set.inKey _set
+    pure $ Bool.asPattern resultSort $ HashMap.member e s
 evalIn _ _ _ = Builtin.wrongArity Set.inKey
 
 evalUnit :: Builtin.Function
@@ -346,84 +299,16 @@ evalDifference ::
     TermLike.Application TermLike.Symbol (TermLike variable) ->
     MaybeT Simplifier (Pattern variable)
 evalDifference
-    sideCondition
+    _
     ( TermLike.Application
-            symbol@TermLike.Symbol{symbolSorts = ApplicationSorts _ resultSort}
-            args@[_set1, _set2]
-        ) =
-        do
-            let rightIdentity = do
-                    _set2 <- expectConcreteBuiltinSet ctx _set2
-                    if HashMap.null _set2
-                        then return (Pattern.fromTermLike _set1)
-                        else empty
-                bothConcrete = do
-                    _set1 <- expectConcreteBuiltinSet ctx _set1
-                    _set2 <- expectConcreteBuiltinSet ctx _set2
-                    lift $ returnConcreteSet resultSort (HashMap.difference _set1 _set2)
-                symbolic = do
-                    _set1 <- expectBuiltinSet ctx _set1
-                    _set2 <- expectBuiltinSet ctx _set2
-                    let definedArgs =
-                            filter (not . SideCondition.isDefined sideCondition) args
-                                & map makeCeilPredicate
-                                & makeMultipleAndPredicate
-                                & Conditional.fromPredicate
-                    let NormalizedAc
-                            { concreteElements = concrete1
-                            , elementsWithVariables = symbolic1'
-                            , opaque = opaque1'
-                            } =
-                                unwrapAc _set1
-                        symbolic1 =
-                            unwrapElement <$> symbolic1'
-                                & HashMap.fromList
-                        opaque1 = HashSet.fromList opaque1'
-                    let NormalizedAc
-                            { concreteElements = concrete2
-                            , elementsWithVariables = symbolic2'
-                            , opaque = opaque2'
-                            } =
-                                unwrapAc _set2
-                        symbolic2 =
-                            unwrapElement <$> symbolic2'
-                                & HashMap.fromList
-                        opaque2 = HashSet.fromList opaque2'
-                    let set1' =
-                            NormalizedAc
-                                { concreteElements =
-                                    HashMap.difference concrete1 concrete2
-                                , elementsWithVariables =
-                                    HashMap.difference symbolic1 symbolic2
-                                        & HashMap.toList
-                                        & map wrapElement
-                                , opaque =
-                                    HashSet.difference opaque1 opaque2 & HashSet.toList
-                                }
-                        set2' =
-                            NormalizedAc
-                                { concreteElements =
-                                    HashMap.difference concrete2 concrete1
-                                , elementsWithVariables =
-                                    HashMap.difference symbolic2 symbolic1
-                                        & HashMap.toList
-                                        & map wrapElement
-                                , opaque =
-                                    HashSet.difference opaque1 opaque1 & HashSet.toList
-                                }
-                    pat1 <- lift $ Ac.returnAc resultSort (NormalizedSet set1')
-                    pat2 <- lift $ Ac.returnAc resultSort (NormalizedSet set2')
-                    let pat
-                            | (not . nullAc) set1'
-                              , (not . nullAc) set2' =
-                                differenceSet <$> pat1 <*> pat2
-                            | otherwise = pat1
-                    return (Pattern.andCondition pat definedArgs)
-
-            rightIdentity <|> bothConcrete <|> symbolic
+            TermLike.Symbol{symbolSorts = ApplicationSorts _ resultSort}
+            [_set1, _set2]
+        ) = do
+        _set1 <- expectConcreteBuiltinSet ctx _set1
+        _set2 <- expectConcreteBuiltinSet ctx _set2
+        lift $ returnConcreteSet resultSort (HashMap.difference _set1 _set2)
       where
         ctx = Set.differenceKey
-        differenceSet set1 set2 = TermLike.mkApplySymbol symbol [set1, set2]
 evalDifference _ _ =
     Builtin.wrongArity Set.differenceKey
 
