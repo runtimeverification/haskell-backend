@@ -268,6 +268,7 @@ makeSerializedModule verifiedModule =
 exec ::
     Limit Natural ->
     Limit Natural ->
+    Strategy.FinalNodeType ->
     -- | The main module
     SerializedModule ->
     ExecutionMode ->
@@ -277,6 +278,7 @@ exec ::
 exec
     depthLimit
     breadthLimit
+    finalNodeType
     SerializedModule
         { sortGraph
         , overloadGraph
@@ -291,7 +293,7 @@ exec
         evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations $ do
             finals <-
                 GraphTraversal.graphTraversal
-                    Strategy.Leaf
+                    finalNodeType
                     Strategy.DepthFirst
                     breadthLimit
                     transit
