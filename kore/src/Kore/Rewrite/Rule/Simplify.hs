@@ -97,7 +97,10 @@ instance SimplifyRuleLHS (RulePattern RewritingVariableName) where
             result <- makeEvaluateTermCeil SideCondition.top right
             unless
                 (isTop result)
-                (logWarning $ "The following rule was incorrectly marked preserves-definedness: " <> (Text.pack . show . Pretty.pretty) (from @_ @Attribute.SourceLocation rule))
+                (logWarning
+                    $ "The following rule was incorrectly marked preserves-definedness: "
+                    <> (Text.pack . show . Pretty.pretty) (from @_ @Attribute.SourceLocation rule)
+                )
 
         preservesDefinedness r =
             Attribute.doesPreserveDefinedness $ from @_ @Attribute.PreservesDefinedness r

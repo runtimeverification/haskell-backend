@@ -7,6 +7,8 @@ module Kore.Equation.Simplification (
     simplifyExtractedEquations,
 ) where
 
+import qualified Pretty
+import qualified Data.Text as Text
 import Data.Map.Strict (
     Map,
  )
@@ -15,6 +17,7 @@ import Kore.Internal.Conditional (
     Conditional (..),
     fromPredicate,
  )
+import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
@@ -34,6 +37,8 @@ import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute
 import Logic qualified
 import Prelude.Kore
+import Kore.Equation.DebugEquation (srcLoc)
+import Log (logWarning)
 
 {- | Simplify a 'Map' of 'Equation's using only Matching Logic rules.
 
@@ -63,6 +68,12 @@ simplifyEquation ::
     Simplifier (MultiAnd (Equation RewritingVariableName))
 simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
     do
+        when
+            preservesDefinedness
+            (logWarning
+                $ "The following equation was marked with preserves-definedness: "
+                <> maybe "" (Text.pack . show . Pretty.pretty) (srcLoc equation)
+            )
         simplifiedCond <-
             Simplifier.simplifyCondition
                 SideCondition.top
@@ -86,6 +97,8 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
         & Logic.observeAllT
         & fmap MultiAnd.make
   where
+    preservesDefinedness =
+        Attribute.doesPreserveDefinedness (Attribute.preservesDefinedness attributes)
     argument' =
         fromMaybe Predicate.makeTruePredicate argument
     antiLeft' =
