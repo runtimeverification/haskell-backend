@@ -708,13 +708,14 @@ koreRun LocalOptions{execOptions} = do
             mainModuleName
     lift $ writeIORef globalInternedTextCache internedTextCache
     let SerializedModule{verifiedModule, metadataTools} = serializedModule
-    let KoreExecOptions{patternFileName} = execOptions
+    let KoreExecOptions{patternFileName, finalNodeType} = execOptions
     initial <- loadPattern verifiedModule patternFileName
     (exitCode, final) <-
         execute koreSolverOptions metadataTools lemmas $
             exec
                 depthLimit
                 breadthLimit
+                finalNodeType
                 serializedModule
                 strategy
                 initial
