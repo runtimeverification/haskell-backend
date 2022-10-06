@@ -13,16 +13,16 @@ module Kore.Log.WarnBottom (
 ) where
 
 import Kore.Attribute.SourceLocation
+import Kore.Internal.Pattern (Pattern)
 import Kore.Rewrite.ClaimPattern
+import Kore.Rewrite.RewritingVariable (RewritingVariableName)
+import Kore.Unparser (unparse)
 import Log
 import Prelude.Kore
 import Pretty (
     Pretty,
  )
 import Pretty qualified
-import Kore.Internal.Pattern (Pattern)
-import Kore.Rewrite.RewritingVariable (RewritingVariableName)
-import Kore.Unparser (unparse)
 
 newtype WarnClaimRHSIsBottom = WarnClaimRHSIsBottom {claim :: ClaimPattern}
     deriving stock (Show)
@@ -48,14 +48,13 @@ warnClaimRHSIsBottom ::
     log ()
 warnClaimRHSIsBottom = logEntry . WarnClaimRHSIsBottom
 
-newtype WarnConfigIsBottom =
-    WarnConfigIsBottom
-        { config :: Pattern RewritingVariableName
-        }
+newtype WarnConfigIsBottom = WarnConfigIsBottom
+    { config :: Pattern RewritingVariableName
+    }
     deriving stock (Show)
 
 instance Pretty WarnConfigIsBottom where
-    pretty WarnConfigIsBottom {config} =
+    pretty WarnConfigIsBottom{config} =
         Pretty.vsep
             [ "The following configuration has been simplified to bottom:"
             , Pretty.indent 4 $ unparse config

@@ -136,11 +136,12 @@ import Kore.Log.InfoUserLog (
 import Kore.Log.JsonRpc (
     LogJsonRpcServer,
  )
+import Kore.Log.WarnBottom (
+    WarnClaimRHSIsBottom,
+    WarnConfigIsBottom,
+ )
 import Kore.Log.WarnBoundedModelChecker (
     WarnBoundedModelChecker,
- )
-import Kore.Log.WarnBottom (
-    WarnClaimRHSIsBottom, WarnConfigIsBottom
  )
 import Kore.Log.WarnDepthLimitExceeded (
     WarnDepthLimitExceeded,
