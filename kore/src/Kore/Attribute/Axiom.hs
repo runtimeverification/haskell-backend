@@ -27,6 +27,7 @@ module Kore.Attribute.Axiom (
     RuleIndexCase (..),
     UniqueId (..),
     NonExecutable (..),
+    PreservesDefinedness (..),
     PriorityAttributes (..),
     axiomSymbolToSymbolOrAlias,
     mapAxiomVariables,
@@ -82,6 +83,7 @@ import Kore.Syntax.Variable hiding (
  )
 import Prelude.Kore
 import SQL qualified
+import Kore.Attribute.PreservesDefinedness
 
 -- | Attributes specific to Kore axiom sentences.
 data Axiom symbol variable = Axiom
@@ -128,6 +130,8 @@ data Axiom symbol variable = Axiom
       owise :: !Owise
     , -- | Won't be used during execution.
       nonExecutable :: !NonExecutable
+      -- | The rule rewrites to a defined configuration.
+    , preservesDefinedness :: !PreservesDefinedness
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -160,6 +164,7 @@ instance Default (Axiom symbol variable) where
             , uniqueId = def
             , owise = def
             , nonExecutable = def
+            , preservesDefinedness = def
             }
 
 instance
@@ -189,6 +194,7 @@ instance
                 , from . uniqueId
                 , from . nonExecutable
                 , from . owise
+                , from . preservesDefinedness
                 ]
 
 instance From (Axiom symbol variable) PriorityAttributes where
@@ -245,6 +251,7 @@ parseAxiomAttribute freeVariables attr =
         Monad.>=> typed @UniqueId (parseAttribute attr)
         Monad.>=> typed @NonExecutable (parseAttribute attr)
         Monad.>=> typed @Owise (parseAttribute attr)
+        Monad.>=> typed @PreservesDefinedness (parseAttribute attr)
 
 parseAxiomAttributes ::
     FreeVariables VariableName ->
