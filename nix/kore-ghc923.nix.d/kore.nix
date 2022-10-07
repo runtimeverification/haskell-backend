@@ -164,6 +164,7 @@
         "Kore/Attribute/Pattern/Functional"
         "Kore/Attribute/Pattern/Simplified"
         "Kore/Attribute/PredicatePattern"
+        "Kore/Attribute/PreservesDefinedness"
         "Kore/Attribute/Priority"
         "Kore/Attribute/ProductionID"
         "Kore/Attribute/RuleIndex"
