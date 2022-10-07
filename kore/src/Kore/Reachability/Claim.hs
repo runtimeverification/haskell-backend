@@ -167,6 +167,7 @@ import Kore.Simplify.Pattern (
     simplifyTopConfigurationDefined,
  )
 import Kore.Simplify.Pattern qualified as Pattern
+import Kore.Simplify.Simplify (assumeDefined, don'tAssumeDefined)
 import Kore.Syntax.Variable
 import Kore.TopBottom (
     TopBottom (..),
@@ -183,7 +184,6 @@ import Pretty (
     Pretty (..),
  )
 import Pretty qualified
-import Kore.Simplify.Simplify (don'tAssumeDefined, assumeDefined)
 
 class Claim claim where
     -- | @Rule claim@ is the type of rule to take a single step toward @claim@.

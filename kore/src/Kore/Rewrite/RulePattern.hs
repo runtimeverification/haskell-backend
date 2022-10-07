@@ -684,7 +684,7 @@ unRewritingRule ::
 unRewritingRule = mapRuleVariables getRewritingVariable
 
 preservesDefinedness :: RulePattern variable -> Bool
-preservesDefinedness RulePattern {attributes} =
+preservesDefinedness RulePattern{attributes} =
     Attribute.doesPreserveDefinedness
-    . Attribute.preservesDefinedness
-    $ attributes
+        . Attribute.preservesDefinedness
+        $ attributes
