@@ -109,6 +109,7 @@ instance
     , Diff child
     , Debug variable
     , Diff variable
+    , Hashable variable
     , Ord variable
     , SubstitutionOrd variable
     ) =>
