@@ -16,7 +16,7 @@ import Kore.Internal.TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.API (
+import Kore.Simplify.Simplify (
     runSimplifier,
  )
 import Kore.Simplify.AndTerms (

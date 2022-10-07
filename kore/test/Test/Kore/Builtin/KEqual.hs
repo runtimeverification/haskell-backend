@@ -25,13 +25,13 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
  )
-import Kore.Simplify.API (
-    runSimplifierBranch,
- )
 import Kore.Simplify.AndTerms (
     termUnification,
  )
 import Kore.Simplify.Not qualified as Not
+import Kore.Simplify.Simplify (
+    runSimplifierBranch,
+ )
 import Kore.Unification.UnifierT (
     evalEnvUnifierT,
  )

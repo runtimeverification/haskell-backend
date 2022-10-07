@@ -31,7 +31,7 @@ import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.API (
+import Kore.Simplify.Simplify (
     Env (..),
  )
 import Kore.Simplify.Condition qualified as Condition

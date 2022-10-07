@@ -98,17 +98,14 @@ import Kore.Rewrite.SMT.AST qualified as SMT
 import Kore.Rewrite.SMT.Representation.Resolve qualified as SMT (
     resolve,
  )
-import Kore.Simplify.API (
-    Env (Env),
-    MonadSimplify,
- )
-import Kore.Simplify.API qualified as SimplificationAPI.DoNotUse
 import Kore.Simplify.Condition qualified as Simplifier.Condition
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     ConditionSimplifier,
+    Env(..),
+    MonadSimplify
  )
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
 import Kore.Simplify.TermLike qualified as TermLike
@@ -2308,7 +2305,7 @@ overloadGraph :: OverloadGraph.OverloadGraph
 overloadGraph = OverloadGraph.fromOverloads overloads
 
 overloadSimplifier :: OverloadSimplifier
-overloadSimplifier = mkOverloadSimplifier overloadGraph injSimplifier
+overloadSimplifier = mkOverloadSimplifier overloadGraph Test.Kore.Rewrite.MockSymbols.injSimplifier
 
 -- TODO(Ana): if needed, create copy with experimental simplifier
 -- enabled
@@ -2319,10 +2316,10 @@ env =
         , simplifierCondition = predicateSimplifier
         , simplifierPattern = Pattern.makeEvaluate
         , simplifierTerm = TermLike.simplify
-        , axiomEquations = axiomEquations
+        , axiomEquations = Test.Kore.Rewrite.MockSymbols.axiomEquations
         , memo = Memo.forgetful
-        , injSimplifier
-        , overloadSimplifier
+        , injSimplifier = Test.Kore.Rewrite.MockSymbols.injSimplifier
+        , overloadSimplifier = Test.Kore.Rewrite.MockSymbols.overloadSimplifier
         , hookedSymbols = Map.empty
         }
 
@@ -2350,7 +2347,7 @@ generatorSetup =
           -- map generators
           maybeStringLiteralSort = Just stringMetaSort
         , maybeStringBuiltinSort = Just stringSort
-        , metadataTools = metadataTools
+        , metadataTools = Test.Kore.Rewrite.MockSymbols.metadataTools
         }
   where
     doesNotHaveArguments Symbol{symbolParams} = null symbolParams

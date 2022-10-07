@@ -49,7 +49,7 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkRewritingPattern,
  )
-import Kore.Simplify.API qualified as Simplification
+import Kore.Simplify.Simplify qualified as Simplification
 import Kore.Simplify.Pattern qualified as Pattern (
     simplify,
  )

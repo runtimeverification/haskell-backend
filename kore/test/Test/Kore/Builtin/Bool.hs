@@ -39,7 +39,7 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
  )
-import Kore.Simplify.API (
+import Kore.Simplify.Simplify (
     Simplifier,
     runSimplifier,
  )

@@ -420,7 +420,7 @@ respond runSMT serializedModule =
                                 -- should not happen
                                 ImpliesResult jsonTerm False Nothing
         Simplify SimplifyRequest{state} ->
-            case PatternVerifier.runPatternVerifier verifierContext verify of
+            case PatternVerifier.runPatternVerifier verifierContext verifyState of
                 Left err ->
                     pure $ Left $ couldNotVerify $ toJSON err
                 Right stateVerified -> do
@@ -445,11 +445,10 @@ respond runSMT serializedModule =
                                                     OrPattern.toPattern sort result
                                     }
           where
-            verify =
+            verifyState =
                 PatternVerifier.verifyStandalonePattern Nothing $
                     PatternJson.toParsedPattern $ PatternJson.term state
 
-        -- pure $ Right $ Simplify SimplifyResult{state}
         -- this case is only reachable if the cancel appeared as part of a batch request
         Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
   where

@@ -24,7 +24,7 @@ import Kore.Internal.SideCondition qualified as SideCondition (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.API (
+import Kore.Simplify.Simplify (
     Env (..),
     runSimplifier,
  )
