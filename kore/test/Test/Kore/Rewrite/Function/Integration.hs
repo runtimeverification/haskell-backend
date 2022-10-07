@@ -50,7 +50,6 @@ import Kore.Internal.SideCondition qualified as SideCondition (
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Rewrite.Axiom.EvaluationStrategy (
-    definitionEvaluation,
     simplificationEvaluation,
  )
 import Kore.Rewrite.Axiom.Identifier (
@@ -471,6 +470,15 @@ withApplied check comment rules term =
     testCase comment $ do
         actual <- evaluateWith (definitionEvaluation rules) term
         check actual
+  where
+    definitionEvaluation equations term' condition =
+        applyFirstSimplifierThatWorks
+            ( map
+                (\equation -> simplificationEvaluation equation term' condition)
+                equations
+            )
+            term'
+            condition
 
 applies
     , notApplies ::

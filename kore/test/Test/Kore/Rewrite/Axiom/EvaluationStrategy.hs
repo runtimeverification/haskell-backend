@@ -1,15 +1,9 @@
 module Test.Kore.Rewrite.Axiom.EvaluationStrategy (
-    test_definitionEvaluation,
+    test_simplificationEvaluation,
     test_applyFirstSimplifierThatWorks,
     test_builtinEvaluation,
-    test_attemptEquations,
 ) where
 
-import Data.IORef (
-    modifyIORef',
-    newIORef,
-    readIORef,
- )
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern as Pattern (
     Conditional (Conditional),
@@ -47,48 +41,8 @@ import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
-test_attemptEquations :: [TestTree]
-test_attemptEquations =
-    [ testCase "Stops attempting equations at first successful result" $ do
-        counter <- newIORef (0 :: Int)
-        let condition = SideCondition.top
-            term = Mock.functionalConstr10 Mock.a
-            equations =
-                [ notApplicable1
-                , applicable
-                , notApplicable2
-                , applicable
-                ]
-        _ <-
-            attemptEquations
-                (attemptEquationAndAccumulateErrors' counter condition term)
-                equations
-                & testRunSimplifier Mock.env
-        updatedCounter <- readIORef counter
-        assertEqual "" 2 updatedCounter
-    ]
-  where
-    attemptEquationAndAccumulateErrors' counter condition term equation = do
-        liftIO $ modifyIORef' counter (+ 1)
-        attemptEquationAndAccumulateErrors condition term equation
-    applicable =
-        axiom
-            (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
-            Mock.a
-            (makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.a)
-    notApplicable1 =
-        axiom
-            (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
-            Mock.c
-            (makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.c)
-    notApplicable2 =
-        axiom
-            (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
-            Mock.b
-            (makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.b)
-
-test_definitionEvaluation :: [TestTree]
-test_definitionEvaluation =
+test_simplificationEvaluation :: [TestTree]
+test_simplificationEvaluation =
     [ testCase "Simple evaluation" $ do
         let expect =
                 AttemptedAxiom.Applied
@@ -105,12 +59,11 @@ test_definitionEvaluation =
                         }
         actual <-
             evaluate
-                ( definitionEvaluation
-                    [ axiom
+                ( simplificationEvaluation $
+                    axiom
                         (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
                         (Mock.g (mkElemVar Mock.xConfig))
                         makeTruePredicate
-                    ]
                 )
                 (Mock.functionalConstr10 Mock.c)
         assertEqual "" expect actual
@@ -118,50 +71,15 @@ test_definitionEvaluation =
         let expect = AttemptedAxiom.NotApplicable
         actual <-
             evaluate
-                ( definitionEvaluation
-                    [ axiom
+                ( simplificationEvaluation $
+                    axiom
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.a)
                         makeTruePredicate
-                    ]
                 )
                 (Mock.functionalConstr10 Mock.b)
         assertEqual "" expect actual
-    , {-
-      Uncomment this if we ever go back to having multiple evaluation branches
-      for functions.
-
-      , testCase "Evaluation with multiple branches SMT prunes remainders" $ do
-          let initial = Mock.functionalConstr10 Mock.a
-              final1 = Mock.g Mock.a
-              final2 = Mock.g Mock.b
-              requirement1 = makeEqualsPredicate
-                  (Mock.f Mock.a)
-                  (Mock.g Mock.b)
-              requirement2 = makeNotPredicate requirement1
-              axiom1 = axiom initial final1 requirement1
-              axiom2 = axiom initial final2 requirement2
-              evaluator = definitionEvaluation [axiom1, axiom2]
-              expect =
-                  AttemptedAxiom.Applied AttemptedAxiomResults
-                      { results = OrPattern.fromPatterns
-                          [ Conditional
-                              { term = final1
-                              , predicate = requirement1
-                              , substitution = mempty
-                              }
-                          , Conditional
-                              { term = final2
-                              , predicate = requirement2
-                              , substitution = mempty
-                              }
-                          ]
-                      , remainders = OrPattern.bottom
-                      }
-          actual <- evaluate evaluator initial
-          assertEqual "" expect actual
-      -}
-      testCase "Does not evaluate concrete axiom with symbolic input" $ do
+    , testCase "Does not evaluate concrete axiom with symbolic input" $ do
         let expectConcrete =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
@@ -175,12 +93,11 @@ test_definitionEvaluation =
             expectSymbolic = AttemptedAxiom.NotApplicable
 
             evaluator =
-                definitionEvaluation
-                    [ axiom_
+                simplificationEvaluation $
+                    axiom_
                         (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
                         (Mock.g (mkElemVar Mock.xConfig))
                         & concrete [mkElemVar Mock.xConfig]
-                    ]
 
         actualConcrete <- evaluate evaluator (Mock.functionalConstr10 Mock.c)
         assertEqual "" expectConcrete actualConcrete
@@ -331,12 +248,12 @@ test_applyFirstSimplifierThatWorks =
         actual <-
             evaluate
                 ( applyFirstSimplifierThatWorks
-                    [ definitionEvaluation
-                        [ axiom
+                    [ simplificationEvaluation
+                        ( axiom
                             (Mock.functionalConstr10 Mock.a)
                             (Mock.g Mock.a)
                             requirement
-                        ]
+                        )
                         a
                         trueSideCondition
                     , axiomEvaluator
@@ -422,35 +339,6 @@ test_applyFirstSimplifierThatWorks =
                 a
                 not_requirement
         assertEqual "" expect actual
-        {-
-        Uncomment this if we ever go back to allowing multiple results for equality
-        simplification.
-
-        , testCase "Error with multiple results" $ do
-            let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
-            assertErrorIO
-                (assertSubstring ""
-                    (  "Unexpected simplification result with more than one "
-                    ++ "configuration"
-                    )
-                )
-                (evaluate
-                    ( applyFirstSimplifierThatWorks
-                        [ definitionEvaluation
-                            [ axiom
-                                (Mock.functionalConstr10 Mock.a)
-                                (Mock.g Mock.a)
-                                requirement
-                            , axiom
-                                (Mock.functionalConstr10 Mock.a)
-                                (Mock.g Mock.b)
-                                (makeNotPredicate requirement)
-                            ]
-                        ]
-                    )
-                    (Mock.functionalConstr10 Mock.a)
-                )
-        -}
     ]
 
 test_builtinEvaluation :: [TestTree]

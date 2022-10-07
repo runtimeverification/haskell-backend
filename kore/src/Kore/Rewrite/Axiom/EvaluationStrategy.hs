@@ -9,36 +9,15 @@ Portability : portable
 -}
 module Kore.Rewrite.Axiom.EvaluationStrategy (
     builtinEvaluation,
-    definitionEvaluation,
     simplificationEvaluation,
-
-    -- * For testing
-    attemptEquationAndAccumulateErrors,
-    attemptEquations,
 ) where
 
-import Control.Monad.Except (
-    ExceptT (..),
-    runExceptT,
- )
-import Data.EitherR (
-    ExceptRT (..),
- )
-import Data.Semigroup (
-    Min (..),
- )
 import Data.Text qualified as Text
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Equation qualified as Equation
-import Kore.Equation.DebugEquation (
-    AttemptEquationError,
- )
 import Kore.Equation.DebugEquation qualified as Equation
 import Kore.Equation.Equation (
     Equation,
- )
-import Kore.Internal.OrPattern (
-    OrPattern,
  )
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.SideCondition (
@@ -62,66 +41,6 @@ import Pretty (
     Pretty (..),
  )
 import Pretty qualified
-
-{- | Creates an evaluator for a function from the full set of rules
-that define it.
--}
-definitionEvaluation ::
-    [Equation RewritingVariableName] ->
-    TermLike RewritingVariableName ->
-    SideCondition RewritingVariableName ->
-    Simplifier (AttemptedAxiom RewritingVariableName)
-definitionEvaluation equations term condition = do
-    result <-
-        attemptEquations
-            (attemptEquationAndAccumulateErrors condition term)
-            equations
-    case result of
-        Right results ->
-            (return . Applied)
-                AttemptedAxiomResults
-                    { results
-                    , remainders = OrPattern.bottom
-                    }
-        Left minError ->
-            case getMin <$> minError of
-                Just (Equation.WhileCheckRequires _) ->
-                    (return . NotApplicableUntilConditionChanges)
-                        (SideCondition.toRepresentation condition)
-                _ -> return NotApplicable
-
-attemptEquationAndAccumulateErrors ::
-    SideCondition RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    Equation RewritingVariableName ->
-    ExceptRT
-        (OrPattern RewritingVariableName)
-        Simplifier
-        (Maybe (Min (AttemptEquationError RewritingVariableName)))
-attemptEquationAndAccumulateErrors condition term equation =
-    attemptEquation
-  where
-    attemptEquation =
-        ExceptRT . ExceptT $
-            Equation.attemptEquation
-                condition
-                term
-                equation
-                >>= either (return . Left . Just . Min) (fmap Right . apply)
-    apply = Equation.applyEquation condition equation
-
-attemptEquations ::
-    Monoid error =>
-    (Equation variable -> ExceptRT result Simplifier error) ->
-    [Equation variable] ->
-    Simplifier (Either error result)
-attemptEquations accumulator equations =
-    foldlM
-        (\err equation -> mappend err <$> accumulator equation)
-        mempty
-        equations
-        & runExceptRT
-        & runExceptT
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation ::
