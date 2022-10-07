@@ -26,8 +26,8 @@ module Kore.Simplify.API (
     askAxiomEquations,
     askInjSimplifier,
     askOverloadSimplifier,
-    getCache,
-    putCache,
+    getEquationsCache,
+    putEquationsCache,
     InternalVariable,
     MonadProf,
 ) where

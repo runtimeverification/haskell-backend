@@ -180,7 +180,7 @@ attemptEquation sideCondition termLike equation = do
             _ -> return ()
 
     addToCache result = do
-        oldCache <- Simplifier.getCache
+        oldCache <- Simplifier.getEquationsCache
         let newEntry =
                 Simplifier.EvaluationAttempt
                     { cachedEquation = equation
@@ -188,10 +188,10 @@ attemptEquation sideCondition termLike equation = do
                     }
             newCache =
                 Simplifier.updateCache newEntry result oldCache
-        Simplifier.putCache newCache
+        Simplifier.putEquationsCache newCache
 
     alreadyAttempted = do
-        cache <- Simplifier.getCache
+        cache <- Simplifier.getEquationsCache
         let entry =
                 Simplifier.EvaluationAttempt
                     { cachedEquation = equation
