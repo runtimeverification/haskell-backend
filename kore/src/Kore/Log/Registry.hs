@@ -136,11 +136,12 @@ import Kore.Log.InfoUserLog (
 import Kore.Log.JsonRpc (
     LogJsonRpcServer,
  )
+import Kore.Log.WarnBottom (
+    WarnClaimRHSIsBottom,
+    WarnConfigIsBottom,
+ )
 import Kore.Log.WarnBoundedModelChecker (
     WarnBoundedModelChecker,
- )
-import Kore.Log.WarnClaimRHSIsBottom (
-    WarnClaimRHSIsBottom,
  )
 import Kore.Log.WarnDepthLimitExceeded (
     WarnDepthLimitExceeded,
@@ -232,6 +233,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnDepthLimitExceeded
             , mk $ Proxy @WarnBoundedModelChecker
             , mk $ Proxy @WarnClaimRHSIsBottom
+            , mk $ Proxy @WarnConfigIsBottom
             , mk $ Proxy @WarnIfLowProductivity
             , mk $ Proxy @WarnTrivialClaim
             , mk $ Proxy @WarnUnexploredBranches
