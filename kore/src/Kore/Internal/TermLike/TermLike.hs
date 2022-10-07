@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
@@ -651,12 +652,13 @@ instance HasFreeVariables (TermAttributes variable) variable where
 @TermLike@ is essentially 'Control.Comonad.Cofree.Cofree', but it caches hashes.
 -}
 data TermLike variable = TermLike__
-    { _tlAttributes :: TermAttributes variable -- Should this be strict?
-    -- The hash is stored lazily to avoid computing it unnecessarily. Do we generally
-    -- need the hash? If so, it should probably be strict.
-    , -- | A hash of _tlTermLikeF
-      _tlHash :: Int
-    , _tlTermLikeF :: TermLikeF variable (TermLike variable) -- Should this be strict?
+    -- Some fields below are lazy to better match Cofree. Which do we actually
+    -- want to be lazy, if any? The hash is currently strict; if we're using
+    -- -XStrict, we're not going to get anything out of making it lazy, so we
+    -- might as well drop the box.
+    { _tlAttributes :: ~(TermAttributes variable)
+    , _tlHash :: Int -- ^ A hash of @_tlTermLikeF@
+    , _tlTermLikeF :: ~(TermLikeF variable (TermLike variable))
     }
     deriving stock (Show)
     -- Deriving the stock Generic risks breaking the hash cache invariant
@@ -697,7 +699,12 @@ instance
         (Recursive.project -> _ :< pat2) =
             compare pat1 pat2
 
-instance Hashable (TermLike variable) where
+instance
+#if MIN_VERSION_hashable(1,4,0)
+    Eq variable =>
+#endif
+    Hashable (TermLike variable)
+    where
     hashWithSalt salt (TermLike__ _ hsh _) =
         salt `hashWithSalt` hsh -- HACK
     {-# INLINE hashWithSalt #-}
