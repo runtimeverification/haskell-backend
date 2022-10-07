@@ -185,12 +185,14 @@ import Kore.Rewrite.Transition (
     scatter,
  )
 import Kore.Simplify.API (
-    Simplifier,
     evalSimplifier,
     evalSimplifierProofs,
  )
-import Kore.Simplify.API qualified as Simplifier
 import Kore.Simplify.Pattern qualified as Pattern
+import Kore.Simplify.Simplify (
+    Simplifier,
+    askMetadataTools,
+ )
 import Kore.Syntax.Module (
     ModuleName,
  )
@@ -342,7 +344,7 @@ exec
             GraphTraversal.TState
                 Prim
                 (ExecDepth, ProgramState (Pattern RewritingVariableName)) ->
-            Simplifier.Simplifier
+            Simplifier
                 ( GraphTraversal.TransitionResult
                     ( GraphTraversal.TState
                         Prim
@@ -462,7 +464,7 @@ rpcExec
 
         transit ::
             GraphTraversal.TState Prim (RpcExecState RewritingVariableName) ->
-            Simplifier.Simplifier
+            Simplifier
                 ( GraphTraversal.TransitionResult
                     (GraphTraversal.TState Prim (RpcExecState RewritingVariableName))
                 )
@@ -989,7 +991,7 @@ initializeProver ::
     Simplifier InitializedProver
 initializeProver definitionModule specModule maybeTrustedModule = do
     initialized <- initializeAndSimplify definitionModule
-    tools <- Simplifier.askMetadataTools
+    tools <- askMetadataTools
     let Initialized{rewriteRules} = initialized
         changedSpecClaims :: [MaybeChanged SomeClaim]
         changedSpecClaims = expandClaim tools <$> extractClaims specModule
