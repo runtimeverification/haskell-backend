@@ -104,8 +104,8 @@ import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     ConditionSimplifier,
-    Env(..),
-    MonadSimplify
+    Env (..),
+    MonadSimplify,
  )
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
 import Kore.Simplify.TermLike qualified as TermLike

@@ -49,11 +49,11 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkRewritingPattern,
  )
-import Kore.Simplify.Simplify qualified as Simplification
 import Kore.Simplify.Pattern qualified as Pattern (
     simplify,
  )
 import Kore.Simplify.Simplify
+import Kore.Simplify.Simplify qualified as Simplification
 import Kore.Unparser
 import Prelude.Kore
 import SMT qualified

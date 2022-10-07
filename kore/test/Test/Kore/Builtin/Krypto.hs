@@ -37,11 +37,9 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Simplify (
-    runSimplifier,
- )
-import Kore.Simplify.Simplify (
     AttemptedAxiomResults (..),
     BuiltinAndAxiomSimplifier (..),
+    runSimplifier,
  )
 import Kore.TopBottom qualified as TopBottom
 import Prelude.Kore

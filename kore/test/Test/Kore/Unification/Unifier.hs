@@ -24,12 +24,12 @@ import Kore.Internal.SideCondition qualified as SideCondition (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
+import Kore.Simplify.Not qualified as Not
+import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     Env (..),
     runSimplifier,
  )
-import Kore.Simplify.Not qualified as Not
-import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
 import Kore.Unification.Procedure
 import Kore.Unification.SubstitutionSimplifier qualified as Unification

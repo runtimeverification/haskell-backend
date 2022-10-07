@@ -39,11 +39,11 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
  )
+import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify (
     Simplifier,
     runSimplifier,
  )
-import Kore.Simplify.Not qualified as Not
 import Kore.Unification.UnifierT (
     UnifierT,
     runUnifierT,
