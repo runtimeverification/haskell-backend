@@ -8,6 +8,7 @@ module Kore.Internal.TermLike (
     TermLikeF (..),
     TermAttributes (..),
     TermLike (..),
+    termLikeAttributes,
     extractAttributes,
     isSimplified,
     isSimplifiedSomeCondition,
@@ -400,7 +401,7 @@ polymorphic in the variable type.
 composes with other tree transformations without allocating intermediates.
 -}
 fromConcrete ::
-    FreshPartialOrd variable =>
+    (FreshPartialOrd variable, Hashable variable) =>
     TermLike Concrete ->
     TermLike variable
 fromConcrete = mapVariables (pure $ from @Concrete)
@@ -1285,6 +1286,7 @@ See also: 'mkTop_'
 -}
 mkTop ::
     HasCallStack =>
+    Hashable variable =>
     Ord variable =>
     Sort ->
     TermLike variable
@@ -1346,6 +1348,7 @@ mkInhabitant = updateCallStack . synthesize . InhabitantF . Inhabitant
 -- | Construct an 'Endianness' pattern.
 mkEndianness ::
     HasCallStack =>
+    Hashable variable =>
     Ord variable =>
     Endianness ->
     TermLike variable
@@ -1354,6 +1357,7 @@ mkEndianness = updateCallStack . synthesize . EndiannessF . Const
 -- | Construct an 'Signedness' pattern.
 mkSignedness ::
     HasCallStack =>
+    Hashable variable =>
     Ord variable =>
     Signedness ->
     TermLike variable
