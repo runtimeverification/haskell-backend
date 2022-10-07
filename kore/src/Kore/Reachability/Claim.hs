@@ -1022,9 +1022,6 @@ deriveResults sort fromAppliedRule Results{results, remainders} =
 
     addResult Result{appliedRule, result} = do
         addRule appliedRule
-        if (preservesDefinedness (extract appliedRule))
-            then assumeDefined
-            else don'tAssumeDefined
         case toList result of
             [] -> addRewritten (Pattern.bottomOf sort)
             configs -> asum (addRewritten <$> configs)
@@ -1032,7 +1029,11 @@ deriveResults sort fromAppliedRule Results{results, remainders} =
     addRewritten = pure . ApplyRewritten
     addRemainder = pure . ApplyRemainder
 
-    addRule = Transition.addRule . fromAppliedRule
+    addRule rule = do
+        if (preservesDefinedness (extract rule))
+            then trace "yes" assumeDefined
+            else trace "no" don'tAssumeDefined
+        Transition.addRule . fromAppliedRule $ rule
 
 deriveResultsClaim ::
     Sort ->
