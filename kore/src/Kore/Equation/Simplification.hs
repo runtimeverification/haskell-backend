@@ -7,17 +7,17 @@ module Kore.Equation.Simplification (
     simplifyExtractedEquations,
 ) where
 
-import qualified Pretty
-import qualified Data.Text as Text
 import Data.Map.Strict (
     Map,
  )
+import Data.Text qualified as Text
+import Kore.Attribute.Axiom qualified as Attribute
+import Kore.Equation.DebugEquation (srcLoc)
 import Kore.Equation.Equation
 import Kore.Internal.Conditional (
     Conditional (..),
     fromPredicate,
  )
-import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Internal.MultiAnd (
     MultiAnd,
  )
@@ -35,10 +35,10 @@ import Kore.Simplify.Simplify (
  )
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute
+import Log (logWarning)
 import Logic qualified
 import Prelude.Kore
-import Kore.Equation.DebugEquation (srcLoc)
-import Log (logWarning)
+import Pretty qualified
 
 {- | Simplify a 'Map' of 'Equation's using only Matching Logic rules.
 
@@ -70,9 +70,9 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
     do
         when
             preservesDefinedness
-            (logWarning
-                $ "The following equation was marked with preserves-definedness: "
-                <> maybe "" (Text.pack . show . Pretty.pretty) (srcLoc equation)
+            ( logWarning $
+                "The following equation was marked with preserves-definedness: "
+                    <> maybe "" (Text.pack . show . Pretty.pretty) (srcLoc equation)
             )
         simplifiedCond <-
             Simplifier.simplifyCondition

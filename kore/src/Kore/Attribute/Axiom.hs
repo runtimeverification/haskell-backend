@@ -64,6 +64,7 @@ import Kore.Attribute.Parser (
     SymbolOrAlias,
     toAttributes,
  )
+import Kore.Attribute.PreservesDefinedness
 import Kore.Attribute.Priority
 import Kore.Attribute.ProductionID
 import Kore.Attribute.RuleIndex
@@ -83,7 +84,6 @@ import Kore.Syntax.Variable hiding (
  )
 import Prelude.Kore
 import SQL qualified
-import Kore.Attribute.PreservesDefinedness
 
 -- | Attributes specific to Kore axiom sentences.
 data Axiom symbol variable = Axiom
@@ -130,8 +130,8 @@ data Axiom symbol variable = Axiom
       owise :: !Owise
     , -- | Won't be used during execution.
       nonExecutable :: !NonExecutable
-      -- | The rule rewrites to a defined configuration.
-    , preservesDefinedness :: !PreservesDefinedness
+    , -- | The rule rewrites to a defined configuration.
+      preservesDefinedness :: !PreservesDefinedness
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)

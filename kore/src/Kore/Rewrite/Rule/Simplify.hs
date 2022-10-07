@@ -9,8 +9,8 @@ module Kore.Rewrite.Rule.Simplify (
     simplifyClaimPattern,
 ) where
 
-import qualified Pretty
-import qualified Data.Text as Text
+import Data.Text qualified as Text
+import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional (
     Conditional (Conditional),
@@ -48,9 +48,9 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Rewrite.RulePattern (
+    RHS (..),
     RewriteRule (..),
     RulePattern (RulePattern),
-    RHS (..),
  )
 import Kore.Rewrite.RulePattern qualified as RulePattern (
     RulePattern (..),
@@ -62,18 +62,18 @@ import Kore.Simplify.Simplify (
     Simplifier,
     makeEvaluateTermCeil,
  )
-import Kore.TopBottom
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute (
     Substitute (..),
  )
+import Kore.TopBottom
+import Log (logWarning)
 import Logic (
     LogicT,
  )
 import Logic qualified
 import Prelude.Kore
-import qualified Kore.Attribute.Axiom as Attribute
-import Log (logWarning)
+import Pretty qualified
 
 -- | Simplifies the left-hand-side of a rewrite rule (claim or axiom)
 class SimplifyRuleLHS rule where
@@ -97,9 +97,9 @@ instance SimplifyRuleLHS (RulePattern RewritingVariableName) where
             result <- makeEvaluateTermCeil SideCondition.top right
             unless
                 (isTop result)
-                (logWarning
-                    $ "The following rule was incorrectly marked preserves-definedness: "
-                    <> (Text.pack . show . Pretty.pretty) (from @_ @Attribute.SourceLocation rule)
+                ( logWarning $
+                    "The following rule was incorrectly marked preserves-definedness: "
+                        <> (Text.pack . show . Pretty.pretty) (from @_ @Attribute.SourceLocation rule)
                 )
 
         preservesDefinedness r =

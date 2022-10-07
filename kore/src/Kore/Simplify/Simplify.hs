@@ -274,8 +274,8 @@ getEquationsCache = liftSimplifier (equationsCache <$> get)
 
 putEquationsCache :: MonadSimplify m => EquationsCache -> m ()
 putEquationsCache equationsCache = liftSimplifier $ do
-    SimplifierCache {definednessAssumption} <- get
-    put SimplifierCache {equationsCache, definednessAssumption}
+    SimplifierCache{definednessAssumption} <- get
+    put SimplifierCache{equationsCache, definednessAssumption}
 
 askHookedSymbols :: MonadSimplify m => m (Map Id Text)
 askHookedSymbols = liftSimplifier $ asks hookedSymbols
@@ -375,11 +375,10 @@ emptyConditionSimplifier =
 
 -- * Builtin and axiom simplifiers
 
-data SimplifierCache =
-    SimplifierCache
-        { equationsCache :: EquationsCache
-        , definednessAssumption :: Bool
-        }
+data SimplifierCache = SimplifierCache
+    { equationsCache :: EquationsCache
+    , definednessAssumption :: Bool
+    }
 
 {- | Used for keeping track of already attempted equations which failed to
  apply.
@@ -408,7 +407,7 @@ initCache :: SimplifierCache
 initCache =
     let equationsCache = EquationsCache HashMap.empty
         definednessAssumption = False
-     in SimplifierCache { equationsCache, definednessAssumption }
+     in SimplifierCache{equationsCache, definednessAssumption}
 
 -- | Update by inserting a new entry into the cache.
 updateCache ::
@@ -435,13 +434,13 @@ isAssumedDefined =
 
 assumeDefined :: MonadSimplify m => m ()
 assumeDefined = liftSimplifier $ do
-    SimplifierCache {equationsCache} <- get
-    put SimplifierCache {equationsCache, definednessAssumption = True }
+    SimplifierCache{equationsCache} <- get
+    put SimplifierCache{equationsCache, definednessAssumption = True}
 
 assumePartial :: MonadSimplify m => m ()
 assumePartial = liftSimplifier $ do
-    SimplifierCache {equationsCache} <- get
-    put SimplifierCache {equationsCache, definednessAssumption = False }
+    SimplifierCache{equationsCache} <- get
+    put SimplifierCache{equationsCache, definednessAssumption = False}
 
 {- | 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
 or builtin code.
