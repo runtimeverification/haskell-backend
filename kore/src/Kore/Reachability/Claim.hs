@@ -128,7 +128,7 @@ import Kore.Internal.TermLike (
  )
 import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Log.InfoReachability
-import Kore.Log.WarnClaimRHSIsBottom
+import Kore.Log.WarnBottom
 import Kore.Reachability.ClaimState hiding (
     claimState,
  )
@@ -922,6 +922,7 @@ simplify' lensClaimPattern claim = do
                     config
                     >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
                     & lift
+            when (isBottom configs) (warnConfigIsBottom config)
             asum (pure <$> toList configs)
 
 simplifyRightHandSide ::
