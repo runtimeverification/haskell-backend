@@ -1,1 +1,1 @@
-`X => ¬ X`, response `False`, without substitution
+`¬ X /\ X`, simplified to `_|_`

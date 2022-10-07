@@ -1,1 +1,1 @@
-`X => ¬ X`, response `False`, without substitution
+`¬ ¬ X`, simplified to `X`
