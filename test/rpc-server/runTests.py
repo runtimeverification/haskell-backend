@@ -146,3 +146,18 @@ for name in os.listdir("./implies"):
       params["consequent"] = consequent
       req = rpc_request_id1("implies", params)
       runTest(implies_def_path, req, resp_golden_path)
+
+
+print("Running simplify tests:")
+
+for name in os.listdir("./simplify"):
+  info(f"- test '{name}'...")
+  simplify_def_path = os.path.join("./simplify", name, "definition.kore")
+  state_json_path = os.path.join("./simplify", name, "state.json")
+  resp_golden_path = os.path.join("./simplify", name, "response.golden")
+  with open(state_json_path, 'r') as state_json:
+      state = json.loads(state_json.read())
+      params = {}
+      params["state"] = state
+      req = rpc_request_id1("simplify", params)
+      runTest(simplify_def_path, req, resp_golden_path)
