@@ -1,7 +1,8 @@
 ---
 name: Performance Profiling
 on:
-  # Trigger when an Issue created, edited; Issue MUST already be labeled properly
+  # Trigger when commenting on an issue or PR, or editing a comment
+  # Issue/PR MUST already be labeled properly
   issue_comment:
     types: [created, edited]
 
@@ -9,7 +10,9 @@ jobs:
   Prepare:
     if: |
       contains(github.event.issue.labels.*.name, 'performance') &&
-      ( contains(github.event.comment.body, '.tar.gz') )
+      ( contains(github.event.comment.body, '.tar.gz)') )
+    # Comment must contain something that looks like a link to a
+    # *.tar.gz in markdown, therefore matching the suffix with ')'
     runs-on: [Linux, flyweight]
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -26,6 +29,15 @@ jobs:
           fi
           echo "Context: "
           cat ${GITHUB_EVENT_PATH}
+      - name: Check File Downloadable
+        # Note that the reg.ex will only match a URL within parentheses
+        # (perl reg.ex context) while the guard above uses a simple substring
+        run: |
+          set -euo pipefail
+
+          DOWNLOAD_URL=$(jq '.comment.body' ${GITHUB_EVENT_PATH} | (grep -oP '(?<=\()https://github\.com/${{ github.repository }}/files/[A-Za-z0-9._~!$&*+,;=@%/-]*\.tar\.gz(?=\))' || echo "No-valid-URL-found") | head -1 )
+          echo "Testing whether '${DOWNLOAD_URL}' exists"
+          curl -sS --head --fail "${DOWNLOAD_URL}"
 
   Profiling:
     needs: Prepare
@@ -41,10 +53,11 @@ jobs:
         run: |
           set -euo pipefail
           ISSUE_NUMBER=$(cat ${GITHUB_EVENT_PATH} | jq '.issue.number')
-          gh issue comment ${ISSUE_NUMBER} --body "IN PROGRESS: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          DOWNLOAD_URL=$(cat ${GITHUB_EVENT_PATH} | jq '.comment.body' | grep -oP '(https:)(.*?)(?=\))' )
+          DOWNLOAD_URL=$(jq '.comment.body' ${GITHUB_EVENT_PATH} | (grep -oP '(?<=\()https://github\.com/${{ github.repository }}/files/[A-Za-z0-9._~!$&*+,;=@%/-]*\.tar\.gz(?=\))' || echo "No-valid-URL-found") | head -1 )
           FILE_NAME=$(basename ${DOWNLOAD_URL})
-          echo "Download Test File"
+          gh issue comment ${ISSUE_NUMBER} --body "Running ${FILE_NAME} as ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          echo "Download Test File from ${DOWNLOAD_URL}"
           curl -LOsS ${DOWNLOAD_URL}
 
           . /home/github-runner/.nix-profile/etc/profile.d/nix.sh
