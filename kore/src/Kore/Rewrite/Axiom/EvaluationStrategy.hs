@@ -11,7 +11,6 @@ module Kore.Rewrite.Axiom.EvaluationStrategy (
     builtinEvaluation,
     definitionEvaluation,
     simplificationEvaluation,
-    firstFullEvaluation,
 
     -- * For testing
     attemptEquationAndAccumulateErrors,

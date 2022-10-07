@@ -47,7 +47,6 @@ module Kore.Simplify.Simplify (
     purePatternAxiomEvaluator,
     isConstructorOrOverloaded,
     applyFirstSimplifierThatWorks,
-    firstFullEvaluation,
 
     -- * Term and predicate simplifiers
     makeEvaluateTermCeil,
@@ -411,20 +410,6 @@ lookupCache ::
     Maybe (AttemptEquationError RewritingVariableName)
 lookupCache key (SimplifierCache cache) =
     HashMap.lookup key cache
-
-{- | Creates an evaluator that choses the result of the first evaluator that
-returns Applicable.
-
-If that result contains more than one pattern, or it contains a reminder,
-the evaluation fails with 'error' (may change in the future).
--}
-firstFullEvaluation ::
-    [Simplifier (AttemptedAxiom RewritingVariableName)] ->
-    TermLike RewritingVariableName ->
-    SideCondition RewritingVariableName ->
-    Simplifier (AttemptedAxiom RewritingVariableName)
-firstFullEvaluation simplifiers =
-    applyFirstSimplifierThatWorks simplifiers
 
 {- |Whether a term cannot be simplified regardless of the side condition,
 or only with the current side condition.

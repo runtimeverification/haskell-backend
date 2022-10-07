@@ -1,6 +1,5 @@
 module Test.Kore.Rewrite.Axiom.EvaluationStrategy (
     test_definitionEvaluation,
-    test_firstFullEvaluation,
     test_applyFirstSimplifierThatWorks,
     test_builtinEvaluation,
     test_attemptEquations,
@@ -190,8 +189,8 @@ test_definitionEvaluation =
         assertEqual "" expectSymbolic actualSymbolic
     ]
 
-test_firstFullEvaluation :: [TestTree]
-test_firstFullEvaluation =
+test_applyFirstSimplifierThatWorks :: [TestTree]
+test_applyFirstSimplifierThatWorks =
     [ testCase "Simple evaluation" $ do
         let expect =
                 AttemptedAxiom.Applied
@@ -209,7 +208,7 @@ test_firstFullEvaluation =
         let c = Mock.functionalConstr10 Mock.c
         actual <-
             evaluate
-                ( firstFullEvaluation
+                ( applyFirstSimplifierThatWorks
                     [ axiomEvaluator
                         (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
                         (Mock.g (mkElemVar Mock.xConfig))
@@ -236,7 +235,7 @@ test_firstFullEvaluation =
         let a = Mock.functionalConstr10 Mock.a
         actual <-
             evaluate
-                ( firstFullEvaluation
+                ( applyFirstSimplifierThatWorks
                     [ axiomEvaluator
                         (Mock.functionalConstr10 Mock.b)
                         (Mock.g Mock.a)
@@ -273,7 +272,7 @@ test_firstFullEvaluation =
         let xConfig = Mock.functionalConstr10 (mkElemVar Mock.xConfig)
         actual <-
             evaluate
-                ( firstFullEvaluation
+                ( applyFirstSimplifierThatWorks
                     [ axiomEvaluator
                         (Mock.functionalConstr10 Mock.b)
                         (Mock.g Mock.a)
@@ -298,7 +297,7 @@ test_firstFullEvaluation =
         let xConfig = Mock.functionalConstr10 (mkElemVar Mock.xConfig)
         actual <-
             evaluate
-                ( firstFullEvaluation
+                ( applyFirstSimplifierThatWorks
                     [ axiomEvaluator
                         (Mock.functionalConstr10 Mock.b)
                         (Mock.g Mock.a)
@@ -331,7 +330,7 @@ test_firstFullEvaluation =
         let a = Mock.functionalConstr10 Mock.a
         actual <-
             evaluate
-                ( firstFullEvaluation
+                ( applyFirstSimplifierThatWorks
                     [ definitionEvaluation
                         [ axiom
                             (Mock.functionalConstr10 Mock.a)
@@ -370,7 +369,7 @@ test_firstFullEvaluation =
         let a = Mock.functionalConstr10 Mock.a
         actual <-
             evaluateWithPredicate
-                ( firstFullEvaluation
+                ( applyFirstSimplifierThatWorks
                     [ axiomEvaluatorWithRequires
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.a)
@@ -406,7 +405,7 @@ test_firstFullEvaluation =
         let a = Mock.functionalConstr10 Mock.a
         actual <-
             evaluateWithPredicate
-                ( firstFullEvaluation
+                ( applyFirstSimplifierThatWorks
                     [ axiomEvaluatorWithRequires
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.a)
@@ -436,7 +435,7 @@ test_firstFullEvaluation =
                     )
                 )
                 (evaluate
-                    (firstFullEvaluation
+                    ( applyFirstSimplifierThatWorks
                         [ definitionEvaluation
                             [ axiom
                                 (Mock.functionalConstr10 Mock.a)
@@ -452,94 +451,6 @@ test_firstFullEvaluation =
                     (Mock.functionalConstr10 Mock.a)
                 )
         -}
-    ]
-
-test_applyFirstSimplifierThatWorks :: [TestTree]
-test_applyFirstSimplifierThatWorks =
-    [ testCase "Uses first" $ do
-        let expect =
-                AttemptedAxiom.Applied
-                    AttemptedAxiomResults
-                        { results =
-                            OrPattern.fromPatterns
-                                [ Conditional
-                                    { term = Mock.g Mock.a
-                                    , predicate = makeTruePredicate
-                                    , substitution = mempty
-                                    }
-                                ]
-                        , remainders = OrPattern.fromPatterns []
-                        }
-        let a = Mock.functionalConstr10 Mock.a
-        actual <-
-            evaluate
-                ( applyFirstSimplifierThatWorks
-                    [ axiomEvaluator
-                        (Mock.functionalConstr10 Mock.a)
-                        (Mock.g Mock.a)
-                        a
-                        trueSideCondition
-                    , axiomEvaluator
-                        (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
-                        (Mock.f Mock.a)
-                        a
-                        trueSideCondition
-                    ]
-                )
-                a
-        assertEqual "" expect actual
-    , testCase "Falls back to second" $ do
-        let expect =
-                AttemptedAxiom.Applied
-                    AttemptedAxiomResults
-                        { results =
-                            OrPattern.fromPatterns
-                                [ Conditional
-                                    { term = Mock.f Mock.a
-                                    , predicate = makeTruePredicate
-                                    , substitution = mempty
-                                    }
-                                ]
-                        , remainders = OrPattern.fromPatterns []
-                        }
-        let b = Mock.functionalConstr10 Mock.b
-        actual <-
-            evaluate
-                ( applyFirstSimplifierThatWorks
-                    [ axiomEvaluator
-                        (Mock.functionalConstr10 Mock.a)
-                        (Mock.g Mock.a)
-                        b
-                        trueSideCondition
-                    , axiomEvaluator
-                        (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
-                        (Mock.f Mock.a)
-                        b
-                        trueSideCondition
-                    ]
-                )
-                b
-        assertEqual "" expect actual
-    , testCase "None works" $ do
-        let expect = AttemptedAxiom.NotApplicable
-        let c = Mock.functionalConstr10 Mock.c
-        actual <-
-            evaluate
-                ( applyFirstSimplifierThatWorks
-                    [ axiomEvaluator
-                        (Mock.functionalConstr10 Mock.a)
-                        (Mock.g Mock.a)
-                        c
-                        trueSideCondition
-                    , axiomEvaluator
-                        (Mock.functionalConstr10 Mock.b)
-                        (Mock.f Mock.a)
-                        c
-                        trueSideCondition
-                    ]
-                )
-                c
-        assertEqual "" expect actual
     ]
 
 test_builtinEvaluation :: [TestTree]

@@ -221,7 +221,7 @@ lookupAxiomSimplifier termLike sideCondition = do
                         (functionRules ++ simplificationRules)
             case simplifiers of
                 [] -> Nothing
-                _ -> Just $ firstFullEvaluation simplifiers termLike sideCondition
+                _ -> Just $ applyFirstSimplifierThatWorks simplifiers termLike sideCondition
 
     let missing = do
             -- TODO (thomas.tuegel): Factor out a second function evaluator and
@@ -285,7 +285,7 @@ lookupAxiomSimplifier termLike sideCondition = do
         case evaluators of
             [] -> Nothing
             [a] -> Just a
-            as -> Just $ firstFullEvaluation as termLike sideCondition
+            as -> Just $ applyFirstSimplifierThatWorks as termLike sideCondition
   where
     getHook :: Symbol -> Maybe Text
     getHook = Attribute.getHook . Attribute.hook . symbolAttributes
