@@ -19,7 +19,7 @@ module Kore.Simplify.Simplify (
     putEquationsCache,
     isAssumedDefined,
     assumeDefined,
-    assumePartial,
+    don'tAssumeDefined,
     askHookedSymbols,
     mkHookedSymbols,
     simplifyPatternScatter,
@@ -437,8 +437,8 @@ assumeDefined = liftSimplifier $ do
     SimplifierCache{equationsCache} <- get
     put SimplifierCache{equationsCache, definednessAssumption = True}
 
-assumePartial :: MonadSimplify m => m ()
-assumePartial = liftSimplifier $ do
+don'tAssumeDefined :: MonadSimplify m => m ()
+don'tAssumeDefined = liftSimplifier $ do
     SimplifierCache{equationsCache} <- get
     put SimplifierCache{equationsCache, definednessAssumption = False}
 

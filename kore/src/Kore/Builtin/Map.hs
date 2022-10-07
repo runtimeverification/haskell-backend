@@ -361,13 +361,15 @@ evalInKeys :: Builtin.Function
 evalInKeys sideCondition resultSort arguments@[_key, _map] =
     emptyMap <|> concreteMap <|> symbolicMap
   where
-    mkCeilUnlessDefined termLike
-        | SideCondition.isDefined sideCondition termLike = Condition.top
-        | otherwise =
-            Condition.fromPredicate (makeCeilPredicate termLike)
+    mkCeilUnlessDefined termLike = do
+        globallyDefined <- isAssumedDefined
+        if globallyDefined || SideCondition.isDefined sideCondition termLike
+            then return Condition.top
+            else return (Condition.fromPredicate (makeCeilPredicate termLike))
 
-    returnPattern = return . flip Pattern.andCondition conditions
-    conditions = foldMap mkCeilUnlessDefined arguments
+    returnPattern p = Pattern.andCondition p <$> conditions
+    conditions =
+        fold <$> traverse mkCeilUnlessDefined arguments
 
     -- The empty map contains no keys.
     emptyMap = do

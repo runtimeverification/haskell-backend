@@ -120,6 +120,7 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
+    isAssumedDefined,
  )
 import Kore.Unification.Unify as Unify
 import Prelude.Kore
@@ -384,12 +385,15 @@ evalEq sideCondition resultSort arguments@[_intLeft, _intRight] =
             then True & Bool.asPattern resultSort & returnPattern
             else empty
 
-    mkCeilUnlessDefined termLike
-        | SideCondition.isDefined sideCondition termLike = Condition.top
-        | otherwise =
-            Condition.fromPredicate (makeCeilPredicate termLike)
-    returnPattern = return . flip Pattern.andCondition conditions
-    conditions = foldMap mkCeilUnlessDefined arguments
+    mkCeilUnlessDefined termLike = do
+        globallyDefined <- isAssumedDefined
+        if globallyDefined || SideCondition.isDefined sideCondition termLike
+            then return Condition.top
+            else return (Condition.fromPredicate (makeCeilPredicate termLike))
+
+    returnPattern p = Pattern.andCondition p <$> conditions
+    conditions =
+        fold <$> traverse mkCeilUnlessDefined arguments
 evalEq _ _ _ = Builtin.wrongArity eqKey
 
 data UnifyInt = UnifyInt

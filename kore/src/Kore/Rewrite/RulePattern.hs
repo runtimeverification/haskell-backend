@@ -29,6 +29,7 @@ module Kore.Rewrite.RulePattern (
     mapRuleVariables,
     mkRewritingRule,
     unRewritingRule,
+    preservesDefinedness,
 ) where
 
 import Control.Lens (
@@ -681,3 +682,9 @@ unRewritingRule ::
     rule RewritingVariableName ->
     rule VariableName
 unRewritingRule = mapRuleVariables getRewritingVariable
+
+preservesDefinedness :: RulePattern variable -> Bool
+preservesDefinedness RulePattern {attributes} =
+    Attribute.doesPreserveDefinedness
+    . Attribute.preservesDefinedness
+    $ attributes

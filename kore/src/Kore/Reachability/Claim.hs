@@ -149,6 +149,7 @@ import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
     RulePattern (..),
+    preservesDefinedness,
  )
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Rewrite.Step qualified as Step
@@ -182,6 +183,7 @@ import Pretty (
     Pretty (..),
  )
 import Pretty qualified
+import Kore.Simplify.Simplify (don'tAssumeDefined, assumeDefined)
 
 class Claim claim where
     -- | @Rule claim@ is the type of rule to take a single step toward @claim@.
@@ -304,7 +306,7 @@ deriveSeqClaim lensClaimPattern mkClaim claims claim =
                                     config
                                     (Lens.view lensClaimPattern <$> claims)
                                     & lift
-                            deriveResults claimPatSort fromAppliedRule results
+                            deriveResultsClaim claimPatSort fromAppliedRule results
   where
     fromAppliedRule =
         AppliedClaim
@@ -967,7 +969,7 @@ type Deriver monad =
 -- | Apply 'Rule's to the claim in parallel.
 deriveWith ::
     forall m claim.
-    Monad m =>
+    MonadSimplify m =>
     Lens' claim ClaimPattern ->
     (RewriteRule RewritingVariableName -> Rule claim) ->
     Deriver m ->
@@ -1003,16 +1005,45 @@ deriveSeq' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule $ flip Step.applyRewriteRulesSequence
 
 deriveResults ::
-    Step.UnifyingRuleVariable representation ~ RewritingVariableName =>
+    MonadSimplify simplifier =>
     Sort ->
-    (Step.UnifiedRule representation -> AppliedRule claim) ->
-    Step.Results representation ->
+    (Step.UnifiedRule (RulePattern RewritingVariableName) -> AppliedRule claim) ->
+    Step.Results (RulePattern RewritingVariableName) ->
     Strategy.TransitionT
         (AppliedRule claim)
         simplifier
         (ApplyResult (Pattern RewritingVariableName))
 -- TODO (thomas.tuegel): Remove claim argument.
 deriveResults sort fromAppliedRule Results{results, remainders} =
+    addResults <|> addRemainders
+  where
+    addResults = asum (addResult <$> results)
+    addRemainders = asum (addRemainder <$> toList remainders)
+
+    addResult Result{appliedRule, result} = do
+        addRule appliedRule
+        if (preservesDefinedness (extract appliedRule))
+            then assumeDefined
+            else don'tAssumeDefined
+        case toList result of
+            [] -> addRewritten (Pattern.bottomOf sort)
+            configs -> asum (addRewritten <$> configs)
+
+    addRewritten = pure . ApplyRewritten
+    addRemainder = pure . ApplyRemainder
+
+    addRule = Transition.addRule . fromAppliedRule
+
+deriveResultsClaim ::
+    Sort ->
+    (Step.UnifiedRule ClaimPattern -> AppliedRule claim) ->
+    Step.Results ClaimPattern ->
+    Strategy.TransitionT
+        (AppliedRule claim)
+        simplifier
+        (ApplyResult (Pattern RewritingVariableName))
+-- TODO (thomas.tuegel): Remove claim argument.
+deriveResultsClaim sort fromAppliedRule Results{results, remainders} =
     addResults <|> addRemainders
   where
     addResults = asum (addResult <$> results)
