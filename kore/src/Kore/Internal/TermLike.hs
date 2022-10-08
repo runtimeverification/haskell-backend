@@ -401,10 +401,9 @@ polymorphic in the variable type.
 composes with other tree transformations without allocating intermediates.
 -}
 fromConcrete ::
-    (FreshPartialOrd variable, Hashable variable) =>
     TermLike Concrete ->
     TermLike variable
-fromConcrete = mapVariables (pure $ from @Concrete)
+fromConcrete = from
 
 {- | Is the 'TermLike' fully simplified under the given side condition?
 
