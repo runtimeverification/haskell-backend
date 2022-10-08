@@ -154,10 +154,10 @@ test_internalize =
     mkSet = Set.asInternal . HashSet.fromList
     s = mkElemVar (configElementVariableFromId "s" setSort)
 
-    mkInt :: InternalVariable variable => Integer -> TermLike variable
+    mkInt :: Integer -> TermLike variable
     mkInt = Int.asInternal
     intSort = Builtin.intSort
-    zero, one :: InternalVariable variable => TermLike variable
+    zero, one :: TermLike variable
     zero = mkInt 0
     one = mkInt 1
     x = mkElemVar (configElementVariableFromId "x" intSort)

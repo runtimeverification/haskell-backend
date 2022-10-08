@@ -64,6 +64,7 @@ import Data.Set (
  )
 import Data.Set qualified as Set
 import Data.Text qualified as Text
+import Data.Void (absurd)
 import GHC.Generics qualified as GHC
 import GHC.Stack qualified as GHC
 import Generics.SOP qualified as SOP
@@ -834,12 +835,19 @@ instance Unparse (TermLike variable) => SQL.Column (TermLike variable) where
     defineColumn = SQL.defineTextColumn
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
-instance
-    (FreshPartialOrd variable, Hashable variable) =>
-    From (TermLike Concrete) (TermLike variable)
-    where
-    from = mapVariables (pure $ from @Concrete)
+instance From (TermLike Concrete) (TermLike variable) where
+    from = vacuousVariables
     {-# INLINE from #-}
+
+vacuousVariables :: forall variable. TermLike Concrete -> TermLike variable
+vacuousVariables (TermLike__ attrs hsh termLikeF) = TermLike__ attrs' hsh (vacuousVariablesF termLikeF)
+  where
+    !attrs' = attrs{termFreeVariables=FreeVariables.emptyFreeVariables}
+
+vacuousVariablesF :: forall variable. TermLikeF Concrete (TermLike Concrete) -> TermLikeF variable (TermLike variable)
+vacuousVariablesF = runIdentity . traverseVariablesF adjuster . fmap vacuousVariables
+  where
+    adjuster = AdjSomeVariableName (ElementVariableName absurd) (SetVariableName absurd)
 
 instance (Hashable variable, Ord variable) => From Key (TermLike variable) where
     from = Recursive.unfold worker

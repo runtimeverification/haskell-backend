@@ -2253,7 +2253,6 @@ framedInternalSet elements opaque =
             & partitionEithers
 
 builtinInt ::
-    InternalVariable variable =>
     Integer ->
     TermLike variable
 builtinInt = Builtin.Int.asInternal intSort
@@ -2265,7 +2264,6 @@ builtinBool ::
 builtinBool = Builtin.Bool.asInternal boolSort
 
 builtinString ::
-    InternalVariable variable =>
     Text ->
     TermLike variable
 builtinString = Builtin.String.asInternal stringSort

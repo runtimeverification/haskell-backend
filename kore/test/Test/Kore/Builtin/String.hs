@@ -444,7 +444,7 @@ test_string2Token =
     ]
 
 -- | Specialize 'String.asInternal' to the builtin sort 'stringSort'.
-asInternal :: InternalVariable variable => Text -> TermLike variable
+asInternal :: Text -> TermLike variable
 asInternal = String.asInternal stringSort
 
 -- | Specialize 'String.asPattern' to the builtin sort 'stringSort'.

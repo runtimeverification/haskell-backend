@@ -1319,7 +1319,7 @@ xInt = configElementVariableFromId (testId "xInt") Mock.intSort
 yInt = configElementVariableFromId (testId "yInt") Mock.intSort
 zInt = configElementVariableFromId (testId "zInt") Mock.intSort
 
-mkInt :: InternalVariable variable => Integer -> TermLike variable
+mkInt :: Integer -> TermLike variable
 mkInt = Mock.builtinInt
 
 mkMap ::
