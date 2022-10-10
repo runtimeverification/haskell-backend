@@ -441,8 +441,7 @@ respond runSMT serializedModule =
                                     { state =
                                         PatternJson.fromTermLike $
                                             TermLike.mapVariables getRewritingVariable $
-                                                Pattern.toTermLike $
-                                                    OrPattern.toPattern sort result
+                                                OrPattern.toTermLike sort result
                                     }
           where
             verifyState =
