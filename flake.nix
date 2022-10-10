@@ -231,14 +231,6 @@
       devShells = perSystem (system: {
         default = self.flake.${system}.devShell;
         ghc9 = self.flakeGhc9.${system}.devShell;
-
-        rpc-tests = let pkgs = nixpkgsFor system;
-        in pkgs.mkShell {
-          buildInputs = [
-            (mkPython system)
-            self.project.${system}.hsPkgs.kore.components.exes.kore-rpc
-          ];
-        };
       });
       devShell = perSystem (system: self.devShells.${system}.default);
 
