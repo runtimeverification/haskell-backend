@@ -7,10 +7,9 @@
       url = "github:Z3Prover/z3/z3-4.8.15";
       flake = false;
     };
-    mach-nix.url = "github:DavHau/mach-nix";
     nixpkgs22_05.url = "nixpkgs/nixos-22.05";
   };
-  outputs = { self, nixpkgs, nixpkgs22_05, haskell-nix, z3-src, mach-nix }:
+  outputs = { self, nixpkgs, nixpkgs22_05, haskell-nix, z3-src }:
     let
       z3-overlay = (final: prev: {
         z3 = prev.z3.overrideAttrs (old: {
@@ -39,12 +38,6 @@
         import nixpkgs22_05 {
           inherit system;
           overlays = [ z3-overlay ];
-        };
-      mkPython = system:
-        mach-nix.lib.${system}.mkPython {
-          requirements = ''
-            jsonrpcclient
-          '';
         };
 
       haskell-backend-src = { pkgs, ghc, postPatch ? "" }:
@@ -193,16 +186,6 @@
             self.projectGhc9ProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
           kore-exec-infotable =
             self.projectGhc9EventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
-
-          rpc-tests = let pkgs = nixpkgsFor system;
-          in pkgs.callPackage ./test/rpc-server {
-            name = "haskell-backend-${self.rev or "dirty"}-json-rpc-tests";
-            inherit (pkgs) stdenv;
-            inherit (pkgs.lib) cleanSource;
-            python = mkPython system;
-            kore-rpc =
-              self.project.${system}.hsPkgs.kore.components.exes.kore-rpc;
-          };
         });
 
       apps = perSystem (system:
