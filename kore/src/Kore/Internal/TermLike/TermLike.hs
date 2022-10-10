@@ -654,11 +654,9 @@ instance HasFreeVariables (TermAttributes variable) variable where
 -}
 data TermLike variable = TermLike__
     -- Some fields below are lazy to better match Cofree. Which do we actually
-    -- want to be lazy, if any? The hash is currently strict; if we're using
-    -- -XStrict, we're not going to get anything out of making it lazy, so we
-    -- might as well drop the box.
+    -- want to be lazy, if any?
     { _tlAttributes :: ~(TermAttributes variable)
-    , _tlHash :: Int -- ^ A hash of @_tlTermLikeF@
+    , _tlHash :: ~Int -- ^ A hash of @_tlTermLikeF@
     , _tlTermLikeF :: ~(TermLikeF variable (TermLike variable))
     }
     deriving stock (Show)
@@ -706,9 +704,9 @@ instance
 #endif
     Hashable (TermLike variable)
     where
-    hashWithSalt salt (TermLike__ _ hsh _) =
+      hashWithSalt salt (TermLike__ _ hsh _) =
         salt `hashWithSalt` hsh -- HACK
-    {-# INLINE hashWithSalt #-}
+      {-# INLINE hashWithSalt #-}
 
 instance NFData variable => NFData (TermLike variable) where
     rnf (Recursive.project -> annotation :< pat) =
