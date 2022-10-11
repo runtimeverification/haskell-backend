@@ -78,22 +78,18 @@ jobs:
     runs-on: [Linux, flyweight]
     if: ${{ always() && contains(join(needs.*.result, ','), 'success') }}
     env:
-      GH_TOKEN: ${{ secrets.ORG_PAT }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Check out code
-        uses: actions/checkout@v3.0.2
       - run: |
           ISSUE_NUMBER=$(cat ${GITHUB_EVENT_PATH} | jq '.issue.number')
-          gh issue comment ${ISSUE_NUMBER} --body "PASSED: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          gh issue -R ${{ github.repository }} comment ${ISSUE_NUMBER} --body "PASSED: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   on-failure:
     needs: Profiling
     runs-on: [Linux, flyweight]
     if: ${{ always() && contains(join(needs.*.result, ','), 'failure') }}
     env:
-      GH_TOKEN: ${{ secrets.ORG_PAT }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Check out code
-        uses: actions/checkout@v3.0.2    
       - run: |
           ISSUE_NUMBER=$(cat ${GITHUB_EVENT_PATH} | jq '.issue.number')
-          gh issue comment ${ISSUE_NUMBER} --body "FAILED: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          gh issue -R ${{ github.repository }} comment ${ISSUE_NUMBER} --body "FAILED: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
