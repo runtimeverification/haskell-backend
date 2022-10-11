@@ -1,6 +1,7 @@
 ---
 name: Performance Profiling
 on:
+  workflow_dispatch:
   # Trigger when commenting on an issue or PR, or editing a comment
   # Issue/PR MUST already be labeled properly
   issue_comment:
