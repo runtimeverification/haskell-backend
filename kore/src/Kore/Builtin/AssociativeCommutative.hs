@@ -508,24 +508,22 @@ instance
 otherwise.
 -}
 addToMapDisjoint ::
-    (Ord a, Traversable t, Hashable a) =>
+    (Ord a, Foldable t, Hashable a) =>
     HashMap a b ->
     t (a, b) ->
     Maybe (HashMap a b)
-addToMapDisjoint existing traversable = do
-    (_, mapResult) <- Monad.foldM addElementDisjoint ([], existing) traversable
-    return mapResult
+addToMapDisjoint = Monad.foldM addElementDisjoint
 
 addElementDisjoint ::
     Ord a =>
     Hashable a =>
-    ([(a, b)], HashMap a b) ->
+    HashMap a b ->
     (a, b) ->
-    Maybe ([(a, b)], HashMap a b)
-addElementDisjoint (list, existing) (key, value) =
+    Maybe (HashMap a b)
+addElementDisjoint existing (key, value) =
     if key `HashMap.member` existing
         then Nothing
-        else return ((key, value) : list, HashMap.insert key value existing)
+        else return (HashMap.insert key value existing)
 
 -- | Given a @NormalizedAc@, returns it as a function result.
 returnAc ::
@@ -640,12 +638,7 @@ evalConcatNormalizedOrBottom
             concatNormalized normalized1 normalized2
 
 disjointMap :: Ord a => Hashable a => [(a, b)] -> Maybe (HashMap a b)
-disjointMap input =
-    if length input == HashMap.size asMap
-        then Just asMap
-        else Nothing
-  where
-    asMap = HashMap.fromList input
+disjointMap = addToMapDisjoint HashMap.empty
 
 splitVariableConcrete ::
     forall variable a.
