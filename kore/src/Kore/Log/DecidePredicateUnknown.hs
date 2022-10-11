@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskellQuotes #-}
 {-# LANGUAGE NoStrict #-}
 {-# LANGUAGE NoStrictData #-}
 
@@ -29,9 +29,9 @@ import Kore.Internal.Predicate (
  )
 import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.Variable
-import Language.Haskell.TH.Syntax (Exp, Lift (lift), Loc (..), Q, qLocation)
+import Language.Haskell.TH.Syntax (Exp, Loc (..), Q, qLocation)
 import Log
-import Prelude.Kore hiding (lift)
+import Prelude.Kore
 import Pretty (
     Pretty (..),
  )
@@ -45,17 +45,10 @@ data OnDecidePredicateUnknown
 
 liftLoc :: Loc -> Q Exp
 liftLoc (Loc a b c (d1, d2) (e1, e2)) =
-    [|
-        Loc
-            $(lift a)
-            $(lift b)
-            $(lift c)
-            ($(lift d1), $(lift d2))
-            ($(lift e1), $(lift e2))
-        |]
+    [|Loc a b c (d1, d2) (e1, e2)|]
 
 srcLoc :: Q Exp
-srcLoc = [|$(qLocation >>= liftLoc)|]
+srcLoc = qLocation >>= liftLoc
 
 data DecidePredicateUnknown = DecidePredicateUnknown
     { action :: OnDecidePredicateUnknown
