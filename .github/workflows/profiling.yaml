@@ -49,6 +49,8 @@ jobs:
         run: |
           echo "Cleaning Folder"
           rm -rf ./*
+      - name: Check out code
+        uses: actions/checkout@v3
       - name: Run Tests
         run: |
           set -euo pipefail
