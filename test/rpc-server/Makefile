@@ -3,4 +3,6 @@ test:
 
 clean: ;
 
-.PHONY: test clean
+build-test: ;
+
+.PHONY: test clean build-test
