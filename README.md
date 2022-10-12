@@ -1,4 +1,4 @@
-# The Kore Language
+# The Kore Language (a.k.a the Haskell backend for K)
 
 Kore is the "core" part of the K framework.
 
