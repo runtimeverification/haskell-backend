@@ -28,7 +28,7 @@ jobs:
           if ! gh api -H "Accept: application/vnd.github+json" /orgs/runtimeverification/members/$GITHUB_ACTOR; then
             exit 1
           fi
-          echo "Github Ref: '${{ env.GITHUB_REF }}'"
+          echo "Github Ref: '${{ env.GITHUB_REF }}', PR head: '${{ github.event.pull_request.head.sha }}'"
           echo "Context: "
           cat ${GITHUB_EVENT_PATH}
       - name: Check File Downloadable
