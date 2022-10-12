@@ -28,6 +28,7 @@ jobs:
           if ! gh api -H "Accept: application/vnd.github+json" /orgs/runtimeverification/members/$GITHUB_ACTOR; then
             exit 1
           fi
+          echo "Github Ref: '${{ env.GITHUB_REF }}'"
           echo "Context: "
           cat ${GITHUB_EVENT_PATH}
       - name: Check File Downloadable
@@ -52,13 +53,15 @@ jobs:
           rm -rf ./*
       - name: Check out code
         uses: actions/checkout@v3
+        with:
+          ref: '${{ env.GITHUB_REF }}'
       - name: Run Tests
         run: |
           set -euo pipefail
           ISSUE_NUMBER=$(cat ${GITHUB_EVENT_PATH} | jq '.issue.number')
           DOWNLOAD_URL=$(jq '.comment.body' ${GITHUB_EVENT_PATH} | (grep -oP '(?<=\()https://github\.com/${{ github.repository }}/files/[A-Za-z0-9._~!$&*+,;=@%/-]*\.tar\.gz(?=\))' || echo "No-valid-URL-found") | head -1 )
           FILE_NAME=$(basename ${DOWNLOAD_URL})
-          gh issue comment ${ISSUE_NUMBER} --body "Running ${FILE_NAME} as ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          gh issue comment ${ISSUE_NUMBER} --body "Running test with ${GITHUB_REF:-master} and ${FILE_NAME} as ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
           echo "Download Test File from ${DOWNLOAD_URL}"
           curl -LOsS ${DOWNLOAD_URL}
