@@ -14,6 +14,8 @@ export PATH="$(stack path --local-bin)${PATH:+:$PATH}"
 # We must set a limit, or we will surely run out of memory.
 [[ -n "${JOBS:-}" ]] || JOBS=$(nproc) || JOBS=$(sysctl -n hw.ncpus) || JOBS=1
 
+pip3 install jsonrpcclient || true
+
 if make --version | grep -q 'GNU Make 4' 2>/dev/null
 then
     MAKE="make --output-sync --jobs ${JOBS:?} --directory $TOP"
