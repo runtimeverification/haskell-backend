@@ -276,7 +276,7 @@ test_applyFirstSimplifierThatWorks =
                         { results =
                             OrPattern.fromPatterns
                                 [ Conditional
-                                    { term = Mock.g Mock.b
+                                    { term = Mock.g Mock.a
                                     , predicate = makeTruePredicate
                                     , substitution = mempty
                                     }
@@ -288,16 +288,16 @@ test_applyFirstSimplifierThatWorks =
             evaluateWithPredicate
                 ( applyFirstSimplifierThatWorks
                     [ axiomEvaluatorWithRequires
-                        (Mock.functionalConstr10 Mock.a)
+                        a
                         (Mock.g Mock.a)
                         requirement
                         a
-                        trueSideCondition
+                        (SideCondition.fromPredicateWithReplacements requirement)
                     , axiomEvaluator
-                        (Mock.functionalConstr10 Mock.a)
+                        a
                         (Mock.g Mock.b)
                         a
-                        trueSideCondition
+                        (SideCondition.fromPredicateWithReplacements requirement)
                     ]
                 )
                 a
@@ -324,16 +324,16 @@ test_applyFirstSimplifierThatWorks =
             evaluateWithPredicate
                 ( applyFirstSimplifierThatWorks
                     [ axiomEvaluatorWithRequires
-                        (Mock.functionalConstr10 Mock.a)
+                        a
                         (Mock.g Mock.a)
                         requirement
                         a
-                        trueSideCondition
+                        (SideCondition.fromPredicateWithReplacements not_requirement)
                     , axiomEvaluator
-                        (Mock.functionalConstr10 Mock.a)
+                        a
                         (Mock.g Mock.b)
                         a
-                        trueSideCondition
+                        (SideCondition.fromPredicateWithReplacements not_requirement)
                     ]
                 )
                 a
