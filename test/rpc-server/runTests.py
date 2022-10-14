@@ -100,6 +100,9 @@ def runTest(def_path, req, resp_golden_path):
                   with open(resp_golden_path, 'wb') as resp_golden_writer:
                     resp_golden_writer.write(resp)
                 else:
+                  info("Expected")
+                  info(golden_json)
+                  info("but got")
                   info(resp)
                   exit(1)
               else:
