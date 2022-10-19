@@ -16,7 +16,7 @@ export PATH="$(stack path --local-bin)${PATH:+:$PATH}"
 
 pip3 install jsonrpcclient || true
 
-git show
+kore-exec --version
 
 if make --version | grep -q 'GNU Make 4' 2>/dev/null
 then
