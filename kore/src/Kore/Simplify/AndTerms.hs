@@ -3,8 +3,7 @@ Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
 -}
 module Kore.Simplify.AndTerms (
-    termUnification,
-    maybeTermAnd,
+    -- termUnification,
     maybeTermEquals,
     TermSimplifier,
     TermTransformationOld,
@@ -89,51 +88,6 @@ import Pair
 import Prelude.Kore
 import Pretty qualified
 
-{- | Unify two terms without discarding the terms.
-
-We want to keep the terms because substitution relies on the result not being
-@\\bottom@.
-
-When a case is not implemented, @termUnification@ will create a @\\ceil@ of
-the conjunction of the two terms.
-
-The comment for 'Kore.Simplify.And.simplify' describes all
-the special cases handled by this.
--}
-termUnification ::
-    forall unifier.
-    MonadUnify unifier =>
-    HasCallStack =>
-    NotSimplifier unifier ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    unifier (Pattern RewritingVariableName)
-termUnification notSimplifier = \term1 term2 ->
-    whileDebugUnification term1 term2 $ do
-        result <- termUnificationWorker term1 term2
-        debugUnificationSolved result
-        pure result
-  where
-    termUnificationWorker ::
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        unifier (Pattern RewritingVariableName)
-    termUnificationWorker term1 term2 = do
-        let maybeTermUnification ::
-                MaybeT unifier (Pattern RewritingVariableName)
-            maybeTermUnification =
-                maybeTermAnd notSimplifier termUnificationWorker term1 term2
-        Error.maybeT
-            (incompleteUnificationPattern term1 term2)
-            pure
-            maybeTermUnification
-
-    incompleteUnificationPattern term1 term2 = do
-        debugUnificationUnsolved term1 term2
-        mkAnd term1 term2
-            & Pattern.fromTermLike
-            & return
-
 maybeTermEquals ::
     MonadUnify unifier =>
     HasCallStack =>
@@ -217,93 +171,6 @@ maybeTermEquals notSimplifier childTransformers first second = do
                     unifyData
         | Just unifyData <- matchDomainValueAndConstructorErrors first second =
             lift $ domainValueAndConstructorErrors unifyData
-        | otherwise = empty
-
-maybeTermAnd ::
-    MonadUnify unifier =>
-    HasCallStack =>
-    NotSimplifier unifier ->
-    -- | Used to simplify subterm "and".
-    TermSimplifier RewritingVariableName unifier ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    MaybeT unifier (Pattern RewritingVariableName)
-maybeTermAnd notSimplifier childTransformers first second = do
-    injSimplifier <- Simplifier.askInjSimplifier
-    overloadSimplifier <- Simplifier.askOverloadSimplifier
-    tools <- Simplifier.askMetadataTools
-    worker injSimplifier overloadSimplifier tools
-  where
-    worker injSimplifier overloadSimplifier tools
-        | Just unifyData <- matchExpandAlias first second =
-            let UnifyExpandAlias{term1, term2} = unifyData
-             in maybeTermAnd
-                    notSimplifier
-                    childTransformers
-                    term1
-                    term2
-        | Just unifyData <- matchBoolAnd first second =
-            lift $ boolAnd unifyData
-        | Just unifyData <- Builtin.Int.matchInt first second =
-            lift $ Builtin.Int.unifyInt unifyData
-        | Just unifyData <- Builtin.Bool.matchBools first second =
-            lift $ Builtin.Bool.unifyBool unifyData
-        | Just unifyData <- Builtin.String.matchString first second =
-            lift $ Builtin.String.unifyString unifyData
-        | Just unifyData <- matchDomainValue first second =
-            lift $ unifyDomainValue unifyData
-        | Just unifyData <- matchStringLiteral first second =
-            lift $ unifyStringLiteral unifyData
-        | Just term <- matchEqualsAndEquals first second =
-            lift $ equalAndEquals term
-        | Just unifyData <- matchBytes first second =
-            lift $ unifyBytes unifyData
-        | Just matched <- matchVariables first second =
-            lift $ unifyVariables matched
-        | Just matched <- matchVariableFunction second first =
-            lift $ unifyVariableFunction matched
-        | Just unifyData <- matchEqualInjectiveHeadsAndEquals first second =
-            lift $ equalInjectiveHeadsAndEquals childTransformers unifyData
-        | Just unifyData <- matchInj injSimplifier first second =
-            lift $ unifySortInjection childTransformers unifyData
-        | Just unifyData <- matchConstructorSortInjectionAndEquals first second =
-            lift $ constructorSortInjectionAndEquals unifyData
-        | Just unifyData <- matchDifferentConstructors overloadSimplifier first second =
-            lift $ constructorAndEqualsAssumesDifferentHeads unifyData
-        | Just unifyData <- unifyOverloading overloadSimplifier (Pair first second) =
-            lift $ overloadedConstructorSortInjectionAndEquals childTransformers unifyData
-        | Just unifyData <- Builtin.Bool.matchUnifyBoolAnd first second =
-            lift $ Builtin.Bool.unifyBoolAnd childTransformers unifyData
-        | Just unifyData <- Builtin.Bool.matchUnifyBoolOr first second =
-            lift $ Builtin.Bool.unifyBoolOr childTransformers unifyData
-        | Just boolNotData <- Builtin.Bool.matchUnifyBoolNot first second =
-            lift $ Builtin.Bool.unifyBoolNot childTransformers boolNotData
-        | Just unifyData <- Builtin.KEqual.matchUnifyKequalsEq first second =
-            lift $ Builtin.unifyEq childTransformers notSimplifier unifyData
-        | Just unifyData <- Builtin.Int.matchUnifyIntEq first second =
-            lift $ Builtin.unifyEq childTransformers notSimplifier unifyData
-        | Just unifyData <- Builtin.String.matchUnifyStringEq first second =
-            lift $ Builtin.unifyEq childTransformers notSimplifier unifyData
-        | Just unifyData <- Builtin.KEqual.matchIfThenElse first second =
-            lift $ Builtin.KEqual.unifyIfThenElse childTransformers unifyData
-        | Just unifyData <- Builtin.Endianness.matchUnifyEqualsEndianness first second =
-            lift $ Builtin.Endianness.unifyEquals unifyData
-        | Just unifyData <- Builtin.Signedness.matchUnifyEqualsSignedness first second =
-            lift $ Builtin.Signedness.unifyEquals unifyData
-        | Just unifyData <- Builtin.Map.matchUnifyEquals tools first second =
-            lift $ Builtin.Map.unifyEquals childTransformers tools unifyData
-        | Just unifyData <- Builtin.Set.matchUnifyEquals tools first second =
-            lift $ Builtin.Set.unifyEquals childTransformers tools unifyData
-        | Just unifyData <- Builtin.List.matchUnifyEqualsList tools first second =
-            lift $
-                Builtin.List.unifyEquals
-                    childTransformers
-                    tools
-                    unifyData
-        | Just unifyData <- matchDomainValueAndConstructorErrors first second =
-            lift $ domainValueAndConstructorErrors unifyData
-        | Just unifyData <- matchFunctionAnd first second =
-            return $ functionAnd unifyData
         | otherwise = empty
 
 {- | Construct the conjunction or unification of two terms.

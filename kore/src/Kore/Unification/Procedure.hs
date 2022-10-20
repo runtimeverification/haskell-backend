@@ -48,7 +48,8 @@ import Prelude.Kore
 runUnifier ::
     NewUnifier a ->
     Simplifier [a]
-runUnifier unifier = evalStateT (Logic.observeAllT unifier) HashMap.empty
+runUnifier unifier =
+    evalStateT (Logic.observeAllT . getNewUnifier $ unifier) HashMap.empty
 
 {- |'unificationProcedure' attempts to simplify @t1 = t2@, assuming @t1@ and
  @t2@ are terms (functional patterns) to a substitution.

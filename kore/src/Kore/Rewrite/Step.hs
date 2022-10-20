@@ -85,7 +85,7 @@ import Kore.Simplify.Simplify (
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.TopBottom qualified as TopBottom
 import Kore.Unification.NewUnifier (
-    NewUnifier,
+    NewUnifier (..),
  )
 import Kore.Unification.Procedure
 import Kore.Unparser
@@ -175,7 +175,8 @@ unifyRule sideCondition initial rule = do
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
     unification' <-
-        Simplifier.simplifyCondition
+        NewUnifier
+        $ Simplifier.simplifyCondition
             sideCondition'
             (unification <> requires')
     ruleMarker "Success"

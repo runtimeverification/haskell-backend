@@ -17,17 +17,21 @@ a single ACU constructor, concatenation.
 module Kore.Unification.NewUnifier (
     unifyTerms,
     unifiedTermAnd,
-    NewUnifier,
+    NewUnifier (..),
+    runNewUnifier,
+    UnifierCache,
     -- exported for debugging and testing
     solveDiophantineEquations,
     allSuitableSolutions',
     combine,
 ) where
 
+import Log (MonadLog)
 import Control.Monad.State.Strict (
     StateT,
+    MonadState,
     get,
-    put,
+    put, evalStateT,
  )
 import Data.DecisionDiagram.BDD (
     AscOrder,
@@ -177,6 +181,8 @@ import Kore.Simplify.Overloading (
  )
 import Kore.Simplify.Simplify (
     Simplifier,
+    MonadSMT,
+    MonadSimplify,
     askInjSimplifier,
     askMetadataTools,
     askOverloadSimplifier,
@@ -214,7 +220,18 @@ data Binding
     | Ac AcTerm
     deriving stock (Show, Eq)
 
-type NewUnifier a = LogicT (StateT (HashMap (TermLike RewritingVariableName) (OrPattern RewritingVariableName)) Simplifier) a
+type UnifierCache = StateT (HashMap (TermLike RewritingVariableName) (OrPattern RewritingVariableName))
+
+newtype NewUnifier a =
+    NewUnifier
+        { getNewUnifier ::
+            LogicT (UnifierCache Simplifier) a
+        }
+        deriving newtype (Functor, Applicative, Monad, Alternative, MonadLog, MonadSimplify, MonadIO, MonadSMT, MonadLogic, MonadState ((HashMap (TermLike RewritingVariableName) (OrPattern RewritingVariableName))))
+
+runNewUnifier :: NewUnifier a -> LogicT Simplifier a
+runNewUnifier (NewUnifier unifier) =
+    mapLogicT (flip evalStateT HashMap.empty) unifier
 
 fromFree :: Binding -> TermLike RewritingVariableName
 fromFree (Free a) = a

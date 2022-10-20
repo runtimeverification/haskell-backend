@@ -54,15 +54,13 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Rewrite.Substitution qualified as Substitution
-import Kore.Simplify.AndTerms (
-    maybeTermAnd,
- )
 import Kore.Simplify.NotSimplifier
 import Kore.Simplify.Simplify
-import Kore.Unification.UnifierT (
-    UnifierT (..),
-    runUnifierT,
+import Kore.Unification.NewUnifier (
+    NewUnifier (..),
+    runNewUnifier,
  )
+import Kore.Unification.Procedure (unificationProcedure)
 import Logic
 import Prelude.Kore
 
@@ -99,47 +97,39 @@ Also, we have
     the same for two string literals and two chars
 -}
 simplify ::
-    MonadSimplify simplifier =>
     Sort ->
-    NotSimplifier (UnifierT simplifier) ->
     SideCondition RewritingVariableName ->
     MultiAnd (OrPattern RewritingVariableName) ->
-    simplifier (OrPattern RewritingVariableName)
-simplify resultSort notSimplifier sideCondition orPatterns =
+    Simplifier (OrPattern RewritingVariableName)
+simplify resultSort sideCondition orPatterns =
     OrPattern.observeAllT $ do
         patterns <- MultiAnd.traverse scatter orPatterns
-        makeEvaluate resultSort notSimplifier sideCondition patterns
+        makeEvaluate resultSort sideCondition patterns
 
 {- | 'makeEvaluate' simplifies a 'MultiAnd' of 'Pattern's.
 See the comment for 'simplify' to find more details.
 -}
 makeEvaluate ::
-    forall simplifier.
     HasCallStack =>
-    MonadSimplify simplifier =>
     Sort ->
-    NotSimplifier (UnifierT simplifier) ->
     SideCondition RewritingVariableName ->
     MultiAnd (Pattern RewritingVariableName) ->
-    LogicT simplifier (Pattern RewritingVariableName)
-makeEvaluate resultSort notSimplifier sideCondition patterns
+    LogicT Simplifier (Pattern RewritingVariableName)
+makeEvaluate resultSort sideCondition patterns
     | isBottom patterns = empty
     | Pattern.isTop patterns = return (Pattern.topOf resultSort)
-    | otherwise = makeEvaluateNonBool resultSort notSimplifier sideCondition patterns
+    | otherwise = makeEvaluateNonBool resultSort sideCondition patterns
 
 makeEvaluateNonBool ::
-    forall simplifier.
     HasCallStack =>
-    MonadSimplify simplifier =>
     Sort ->
-    NotSimplifier (UnifierT simplifier) ->
     SideCondition RewritingVariableName ->
     MultiAnd (Pattern RewritingVariableName) ->
-    LogicT simplifier (Pattern RewritingVariableName)
-makeEvaluateNonBool resultSort notSimplifier sideCondition patterns = do
+    LogicT Simplifier (Pattern RewritingVariableName)
+makeEvaluateNonBool resultSort sideCondition patterns = do
     let unify pattern1 term2 = do
             let (term1, condition1) = Pattern.splitTerm pattern1
-            unified <- termAnd notSimplifier term1 term2
+            unified <- termAnd sideCondition term1 term2
             pure (Pattern.andCondition unified condition1)
     unified <-
         foldlM
@@ -219,24 +209,20 @@ partitionWith f = partitionEithers . fmap f
 The comment for 'simplify' describes all the special cases handled by this.
 -}
 termAnd ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     HasCallStack =>
-    NotSimplifier (UnifierT simplifier) ->
+    SideCondition RewritingVariableName->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    LogicT simplifier (Pattern RewritingVariableName)
-termAnd notSimplifier p1 p2 =
-    Logic.scatter
-        =<< (lift . runUnifierT notSimplifier) (termAndWorker p1 p2)
+    LogicT Simplifier (Pattern RewritingVariableName)
+termAnd sideCondition p1 p2 =
+    runNewUnifier $ termAndWorker p1 p2
   where
     termAndWorker ::
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
-        UnifierT simplifier (Pattern RewritingVariableName)
+        NewUnifier (Pattern RewritingVariableName)
     termAndWorker first second =
-        maybeTermAnd notSimplifier termAndWorker first second
-            & runMaybeT
-            & fmap (fromMaybe andPattern)
+        unificationProcedure sideCondition first second
+        <&> fmap (const andPattern)
       where
-        andPattern = Pattern.fromTermLike (mkAnd first second)
+        andPattern = mkAnd first second

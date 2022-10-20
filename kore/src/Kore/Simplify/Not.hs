@@ -77,10 +77,9 @@ Right now this uses the following:
 * not bottom = top
 -}
 simplify ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Not Sort (OrPattern RewritingVariableName) ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 simplify sideCondition not'@Not{notSort} =
     OrPattern.observeAllT $ do
         let evaluated = MultiAnd.map makeEvaluateNot (distributeNot not')
@@ -196,14 +195,13 @@ scatterAnd = scatter . MultiAnd.distributeAnd
 
 -- | Conjoin and simplify a 'MultiAnd' of 'Pattern'.
 mkMultiAndPattern ::
-    MonadSimplify simplifier =>
     Sort ->
     SideCondition RewritingVariableName ->
     MultiAnd (Pattern RewritingVariableName) ->
-    LogicT simplifier (Pattern RewritingVariableName)
-mkMultiAndPattern resultSort = And.makeEvaluate resultSort notSimplifier
+    LogicT Simplifier (Pattern RewritingVariableName)
+mkMultiAndPattern resultSort = And.makeEvaluate resultSort
 
--- | Conjoin and simplify a 'MultiAnd' of 'Condition'.
+-- | Conjoin and simplify a 'MultiAnd' of 'Conditon'.
 mkMultiAndPredicate ::
     MultiAnd (Condition RewritingVariableName) ->
     LogicT simplifier (Condition RewritingVariableName)
@@ -212,5 +210,5 @@ mkMultiAndPredicate predicates =
     -- implements And semantics.
     return $ fold predicates
 
-notSimplifier :: MonadSimplify simplifier => NotSimplifier simplifier
+notSimplifier :: NotSimplifier Simplifier
 notSimplifier = NotSimplifier simplify

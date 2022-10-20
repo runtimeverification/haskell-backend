@@ -54,7 +54,7 @@ import Kore.Log.WarnUnsimplified (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import {-# SOURCE #-} Kore.Simplify.Predicate qualified as Predicate
+import Kore.Simplify.Predicate qualified as Predicate
 import Kore.Simplify.Simplify
 import Kore.Simplify.SubstitutionSimplifier (
     SubstitutionSimplifier (..),

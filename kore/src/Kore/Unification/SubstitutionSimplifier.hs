@@ -22,6 +22,7 @@ import Kore.Internal.OrCondition qualified as OrCondition
 import Kore.Internal.Pattern (
     Pattern,
  )
+import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.Predicate (
     Predicate,
  )
@@ -42,10 +43,9 @@ import Kore.Log.DebugSubstitutionSimplifier (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.AndTerms (
-    termUnification,
- )
 import Kore.Simplify.NotSimplifier
+import Kore.Unification.Procedure (unificationProcedure)
+import Kore.Unification.NewUnifier (NewUnifier)
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Simplify.SubstitutionSimplifier (
     MakeAnd (..),
@@ -58,23 +58,22 @@ import Kore.Unification.Unify
 import Logic qualified
 import Prelude.Kore
 
+
+-- TODO: refactor, now that we've removed the dependency on the
+-- not simplifier
 {- | A 'SubstitutionSimplifier' to use during unification.
 
 If multiple assignments to a single variable cannot be unified, this simplifier
 uses 'Unifier.throwUnificationError'.
 -}
-substitutionSimplifier ::
-    forall unifier.
-    MonadUnify unifier =>
-    NotSimplifier unifier ->
-    SubstitutionSimplifier unifier
-substitutionSimplifier notSimplifier =
+substitutionSimplifier :: SubstitutionSimplifier NewUnifier
+substitutionSimplifier =
     SubstitutionSimplifier wrapper
   where
     wrapper ::
         SideCondition RewritingVariableName ->
         Substitution RewritingVariableName ->
-        unifier (OrCondition RewritingVariableName)
+        NewUnifier (OrCondition RewritingVariableName)
     wrapper sideCondition substitution =
         whileDebugSubstitutionSimplifier $ do
             (predicate, result) <-
@@ -90,29 +89,28 @@ substitutionSimplifier notSimplifier =
         worker ::
             Substitution RewritingVariableName ->
             MaybeT
-                unifier
+                NewUnifier
                 ( Predicate RewritingVariableName
                 , Normalization RewritingVariableName
                 )
         worker =
             simplifySubstitutionWorker
                 sideCondition
-                (unificationMakeAnd notSimplifier)
+                unificationMakeAnd
 
-unificationMakeAnd ::
-    forall unifier.
-    MonadUnify unifier =>
-    NotSimplifier unifier ->
-    MakeAnd unifier
-unificationMakeAnd notSimplifier =
+unificationMakeAnd :: MakeAnd NewUnifier
+unificationMakeAnd =
     MakeAnd{makeAnd}
   where
     makeAnd ::
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
         SideCondition RewritingVariableName ->
-        unifier (Pattern RewritingVariableName)
+        NewUnifier (Pattern RewritingVariableName)
     makeAnd termLike1 termLike2 sideCondition = do
-        unified <- termUnification notSimplifier termLike1 termLike2
-        Simplifier.simplifyCondition sideCondition unified
+        unified <- unificationProcedure sideCondition termLike1 termLike2
+        Simplifier.simplifyCondition
+            sideCondition
+            -- Since this is \\and unification, we default to returning the first term
+            (Conditional.withCondition termLike1 unified)
             & Logic.lowerLogicT
