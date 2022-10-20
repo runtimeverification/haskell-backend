@@ -11,6 +11,7 @@ module Kore.Simplify.In (
     simplify,
 ) where
 
+import Kore.Internal.Conditional qualified as Condition
 import Kore.Internal.OrCondition (
     OrCondition,
  )
@@ -27,10 +28,9 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Simplify
-import Logic qualified
 import Kore.Unification.Procedure (runUnifier, unificationProcedure)
+import Logic qualified
 import Prelude.Kore
-import qualified Kore.Internal.Conditional as Condition
 
 {- |'simplify' simplifies an 'In' pattern with 'OrPattern'
 children.
