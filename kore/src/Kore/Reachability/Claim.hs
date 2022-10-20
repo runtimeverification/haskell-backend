@@ -155,17 +155,17 @@ import Kore.Rewrite.Step qualified as Step
 import Kore.Rewrite.Strategy (Step)
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition qualified as Transition
-import Kore.Simplify.API (
-    MonadSimplify,
-    Simplifier,
-    liftSimplifier,
- )
 import Kore.Simplify.Exists qualified as Exists
 import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Pattern (
     simplifyTopConfigurationDefined,
  )
 import Kore.Simplify.Pattern qualified as Pattern
+import Kore.Simplify.Simplify (
+    MonadSimplify,
+    Simplifier,
+    liftSimplifier,
+ )
 import Kore.Syntax.Variable
 import Kore.TopBottom (
     TopBottom (..),
@@ -922,7 +922,6 @@ simplify' lensClaimPattern claim = do
                     config
                     >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
                     & lift
-            when (isBottom configs) (warnConfigIsBottom config)
             asum (pure <$> toList configs)
 
 simplifyRightHandSide ::
