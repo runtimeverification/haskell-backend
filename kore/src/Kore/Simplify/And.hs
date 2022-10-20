@@ -210,7 +210,7 @@ The comment for 'simplify' describes all the special cases handled by this.
 -}
 termAnd ::
     HasCallStack =>
-    SideCondition RewritingVariableName->
+    SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     LogicT Simplifier (Pattern RewritingVariableName)
@@ -223,6 +223,6 @@ termAnd sideCondition p1 p2 =
         NewUnifier (Pattern RewritingVariableName)
     termAndWorker first second =
         unificationProcedure sideCondition first second
-        <&> fmap (const andPattern)
+            <&> fmap (const andPattern)
       where
         andPattern = mkAnd first second

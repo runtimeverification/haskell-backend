@@ -15,6 +15,7 @@ import Control.Error (
     maybeT,
  )
 import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.OrCondition (
     OrCondition,
  )
@@ -22,7 +23,6 @@ import Kore.Internal.OrCondition qualified as OrCondition
 import Kore.Internal.Pattern (
     Pattern,
  )
-import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.Predicate (
     Predicate,
  )
@@ -44,8 +44,6 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.NotSimplifier
-import Kore.Unification.Procedure (unificationProcedure)
-import Kore.Unification.NewUnifier (NewUnifier)
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Simplify.SubstitutionSimplifier (
     MakeAnd (..),
@@ -54,13 +52,15 @@ import Kore.Simplify.SubstitutionSimplifier (
     simplifySubstitutionWorker,
  )
 import Kore.TopBottom qualified as TopBottom
+import Kore.Unification.NewUnifier (NewUnifier)
+import Kore.Unification.Procedure (unificationProcedure)
 import Kore.Unification.Unify
 import Logic qualified
 import Prelude.Kore
 
-
 -- TODO: refactor, now that we've removed the dependency on the
 -- not simplifier
+
 {- | A 'SubstitutionSimplifier' to use during unification.
 
 If multiple assignments to a single variable cannot be unified, this simplifier

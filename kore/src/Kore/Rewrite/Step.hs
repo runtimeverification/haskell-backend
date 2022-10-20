@@ -175,10 +175,10 @@ unifyRule sideCondition initial rule = do
     let ruleRequires = precondition rule
         requires' = Condition.fromPredicate ruleRequires
     unification' <-
-        NewUnifier
-        $ Simplifier.simplifyCondition
-            sideCondition'
-            (unification <> requires')
+        NewUnifier $
+            Simplifier.simplifyCondition
+                sideCondition'
+                (unification <> requires')
     ruleMarker "Success"
     return (rule `Conditional.withCondition` unification')
   where

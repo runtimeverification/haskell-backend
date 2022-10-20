@@ -26,12 +26,12 @@ module Kore.Unification.NewUnifier (
     combine,
 ) where
 
-import Log (MonadLog)
 import Control.Monad.State.Strict (
-    StateT,
     MonadState,
+    StateT,
+    evalStateT,
     get,
-    put, evalStateT,
+    put,
  )
 import Data.DecisionDiagram.BDD (
     AscOrder,
@@ -180,9 +180,9 @@ import Kore.Simplify.Overloading (
     unifyOverloadingVsOverloadedVariable,
  )
 import Kore.Simplify.Simplify (
-    Simplifier,
     MonadSMT,
     MonadSimplify,
+    Simplifier,
     askInjSimplifier,
     askMetadataTools,
     askOverloadSimplifier,
@@ -194,6 +194,7 @@ import Kore.Unification.Unify
 import Kore.Variables.Fresh (
     refreshVariable,
  )
+import Log (MonadLog)
 import Logic
 import Pair
 import Prelude.Kore
@@ -222,12 +223,11 @@ data Binding
 
 type UnifierCache = StateT (HashMap (TermLike RewritingVariableName) (OrPattern RewritingVariableName))
 
-newtype NewUnifier a =
-    NewUnifier
-        { getNewUnifier ::
-            LogicT (UnifierCache Simplifier) a
-        }
-        deriving newtype (Functor, Applicative, Monad, Alternative, MonadLog, MonadSimplify, MonadIO, MonadSMT, MonadLogic, MonadState ((HashMap (TermLike RewritingVariableName) (OrPattern RewritingVariableName))))
+newtype NewUnifier a = NewUnifier
+    { getNewUnifier ::
+        LogicT (UnifierCache Simplifier) a
+    }
+    deriving newtype (Functor, Applicative, Monad, Alternative, MonadLog, MonadSimplify, MonadIO, MonadSMT, MonadLogic, MonadState ((HashMap (TermLike RewritingVariableName) (OrPattern RewritingVariableName))))
 
 runNewUnifier :: NewUnifier a -> LogicT Simplifier a
 runNewUnifier (NewUnifier unifier) =
