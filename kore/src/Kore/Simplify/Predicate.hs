@@ -106,19 +106,17 @@ import Logic
 import Prelude.Kore
 
 simplify ::
-    forall simplifier.
     HasCallStack =>
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Predicate RewritingVariableName ->
-    simplifier NormalForm
+    Simplifier NormalForm
 simplify sideCondition original =
     loop 0 (mkSingleton original)
   where
     limit :: Int
     limit = 20
 
-    loop :: Int -> NormalForm -> simplifier NormalForm
+    loop :: Int -> NormalForm -> Simplifier NormalForm
     loop count input
         | count >= limit = do
             warnUnsimplifiedPredicate limit original input
@@ -151,7 +149,7 @@ simplify sideCondition original =
     -- this function.
     worker ::
         Predicate RewritingVariableName ->
-        simplifier NormalForm
+        Simplifier NormalForm
     worker predicate
         | Just predicate' <- replacePredicate predicate =
             worker predicate'
@@ -470,11 +468,10 @@ simplifyCeil sideCondition input =
  @
 -}
 simplifyFloor ::
-    MonadSimplify simplifier =>
     Sort ->
     SideCondition RewritingVariableName ->
     Floor () (OrPattern RewritingVariableName) ->
-    simplifier NormalForm
+    Simplifier NormalForm
 simplifyFloor termSort sideCondition floor' = do
     notTerm <- mkNotSimplifiedTerm floorChild
     ceilNotTerm <- mkCeilSimplified notTerm
@@ -582,12 +579,10 @@ extractFirstAssignment someVariableName predicates =
         pure termLike
 
 simplifyEquals ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Sort ->
     Equals () (OrPattern RewritingVariableName) ->
-    simplifier NormalForm
+    Simplifier NormalForm
 simplifyEquals sideCondition sort equals = do
     result <- runMaybeT applyUserSimplification
     maybe (Equals.simplify sideCondition equals') return result
@@ -610,7 +605,7 @@ simplifyEquals sideCondition sort equals = do
     applyEquations ::
         Pattern RewritingVariableName ->
         Pattern RewritingVariableName ->
-        MaybeT simplifier (OrCondition RewritingVariableName)
+        MaybeT Simplifier (OrCondition RewritingVariableName)
     applyEquations
         (Pattern.splitTerm -> (leftTerm, leftCondition))
         (Pattern.splitTerm -> (rightTerm, rightCondition)) =
@@ -631,9 +626,8 @@ simplifyEquals sideCondition sort equals = do
                     & return
 
 simplifyIn ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     In () (OrPattern RewritingVariableName) ->
-    simplifier NormalForm
+    Simplifier NormalForm
 simplifyIn sideCondition =
     In.simplify sideCondition >=> return . NormalForm.fromOrCondition

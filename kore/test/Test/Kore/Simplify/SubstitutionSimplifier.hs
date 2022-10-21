@@ -26,8 +26,8 @@ import Kore.Unification.SubstitutionNormalization
 import Kore.Unification.SubstitutionSimplifier qualified as Unification (
     substitutionSimplifier,
  )
-import Kore.Unification.UnifierT (
-    runUnifierT,
+import Kore.Unification.Procedure (
+    runUnifier,
  )
 import Prelude.Kore
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
@@ -251,9 +251,9 @@ test_SubstitutionSimplifier =
                         (all Substitution.isNormalized actualSubstitutions)
                 , testCase "unification" $ do
                     let SubstitutionSimplifier{simplifySubstitution} =
-                            Unification.substitutionSimplifier Not.notSimplifier
+                            Unification.substitutionSimplifier
                     actual <-
-                        testRunSimplifier Mock.env . runUnifierT Not.notSimplifier $
+                        testRunSimplifier Mock.env . runUnifier $
                             simplifySubstitution SideCondition.top input
                     let expect = Condition.fromNormalizationSimplified <$> results
                         actualConditions = OrCondition.toConditions <$> actual

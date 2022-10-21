@@ -44,9 +44,10 @@ import Kore.Simplify.API (
     runSimplifier,
  )
 import Kore.Simplify.Not qualified as Not
-import Kore.Unification.UnifierT (
-    UnifierT,
-    runUnifierT,
+import Kore.Unification.NewUnifier (NewUnifier)
+import Kore.Unification.Procedure (
+    runUnifier,
+    unificationProcedure,
  )
 import Prelude.Kore
 import Test.Kore.Builtin.Builtin
@@ -235,17 +236,17 @@ test_unifyBoolOr =
             & lift
             & run
 
-run :: MaybeT (UnifierT Simplifier) a -> IO [Maybe a]
+run :: MaybeT NewUnifier a -> IO [Maybe a]
 run =
     runNoSMT
         . runSimplifier testEnv
-        . runUnifierT Not.notSimplifier
+        . runUnifier
         . runMaybeT
 
 termSimplifier ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    UnifierT Simplifier (Pattern RewritingVariableName)
+    NewUnifier (Pattern RewritingVariableName)
 termSimplifier = \term1 term2 ->
     runMaybeT (worker term1 term2 <|> worker term2 term1)
         >>= maybe (fallback term1 term2) return

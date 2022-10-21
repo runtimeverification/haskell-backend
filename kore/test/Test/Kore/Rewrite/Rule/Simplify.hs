@@ -231,10 +231,8 @@ test_simplifyRule_OnePathClaim =
     ]
   where
     simplClaim ::
-        forall simplifier.
-        MonadSimplify simplifier =>
         OnePathClaim ->
-        simplifier [OnePathClaim]
+        Simplifier [OnePathClaim]
     simplClaim claim =
         runTransitionT (simplify claim)
             & (fmap . fmap) fst

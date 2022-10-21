@@ -9,6 +9,7 @@ import Control.Exception (
     evaluate,
  )
 import Data.Bifunctor qualified as Bifunctor
+import Kore.Unification.NewUnifier
 import Data.Text (
     Text,
  )
@@ -50,6 +51,7 @@ import Test.SMT (
  )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
+import Kore.Unification.NewUnifier (NewUnifier)
 
 var :: Text -> Sort -> Mock.MockRewritingElementVariable
 var name variableSort =
@@ -168,12 +170,11 @@ data UnificationResult = UnificationResult
     }
 
 simplifyAnds ::
-    Monad.Unify.MonadUnify unifier =>
     NonEmpty (TermLike RewritingVariableName) ->
-    unifier (Pattern RewritingVariableName)
+    NewUnifier (Pattern RewritingVariableName)
 simplifyAnds =
     SubstitutionSimplifier.simplifyAnds
-        (Unification.unificationMakeAnd Not.notSimplifier)
+        Unification.unificationMakeAnd
         SideCondition.top
 
 andSimplify ::
@@ -186,7 +187,7 @@ andSimplify term1 term2 results = do
     let expect = OrPattern.fromPatterns $ map unificationResult results
     subst' <-
         simplifyAnds (unificationProblem term1 term2 :| [])
-            & Monad.Unify.runUnifierT Not.notSimplifier
+            & runUnifier
             & runSimplifier testEnv
             & runNoSMT
             & fmap OrPattern.fromPatterns
@@ -219,7 +220,7 @@ andSimplifyException message term1 term2 exceptionMessage =
         assignment <-
             runNoSMT $
                 runSimplifier testEnv $
-                    Monad.Unify.runUnifierT Not.notSimplifier $
+                    runUnifier $
                         simplifyAnds (unificationProblem term1 term2 :| [])
         _ <- evaluate assignment
         assertFailure "This evaluation should fail"

@@ -13,6 +13,7 @@ import Kore.Internal.Conditional (
     Conditional (..),
  )
 import Kore.Internal.Conditional qualified as Conditional
+import Kore.Unification.Procedure
 import Kore.Internal.MultiOr (
     MultiOr,
  )
@@ -406,7 +407,7 @@ merge
     (Substitution.mkUnwrappedSubstitution -> s1)
     (Substitution.mkUnwrappedSubstitution -> s2) =
         Test.testRunSimplifier mockEnv $
-            Monad.Unify.runUnifierT Not.notSimplifier $
+            runUnifier $
                 mergeSubstitutionsExcept $
                     Substitution.wrap
                         . fmap simplifiedAssignment
@@ -440,7 +441,7 @@ normalizeExcept ::
 normalizeExcept predicated =
     fmap MultiOr.make $
         Test.testRunSimplifier mockEnv $
-            Monad.Unify.runUnifierT Not.notSimplifier $
+            runUnifier $
                 Logic.lowerLogicT $
                     Simplifier.simplifyCondition SideCondition.top predicated
   where

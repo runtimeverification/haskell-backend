@@ -655,7 +655,7 @@ test_unifyIntEq =
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
         IO [Maybe (Pattern RewritingVariableName)]
-    unifyIntEq = unifyEq Int.eqKey
+    unifyIntEq = undefined -- unifyEq Int.eqKey
 
 test_contradiction :: TestTree
 test_contradiction =

@@ -53,6 +53,7 @@ import Control.Monad.Catch (
     Exception (..),
     SomeException (..),
  )
+import Logic
 import Control.Monad.Except (
     ExceptT,
  )
@@ -188,14 +189,12 @@ class Claim claim where
     data Rule claim
 
     checkImplication ::
-        MonadSimplify m =>
         claim ->
-        LogicT m (CheckImplicationResult claim)
+        LogicT Simplifier (CheckImplicationResult claim)
 
     simplify ::
-        MonadSimplify m =>
         claim ->
-        Strategy.TransitionT (AppliedRule claim) m claim
+        Strategy.TransitionT (AppliedRule claim) Simplifier claim
 
     applyClaims ::
         [claim] ->
@@ -344,7 +343,7 @@ transitionRule stuckCheck claims axiomGroups = transitionRuleWorker
             pure claimState
     transitionRuleWorker CheckImplication claimState
         | Just claim <- retractRewritable claimState = do
-            result <- checkImplication claim & Logic.lowerLogicT
+            result <- Logic.lowerLogicT . Logic.mapLogicT lift $ checkImplication claim
             case result of
                 Implied _ -> pure Proven
                 NotImpliedStuck a ->
@@ -492,11 +491,10 @@ instance Pretty a => Pretty (CheckImplicationResult a) where
 
 -- | Remove the destination of the claim.
 checkImplication' ::
-    forall claim m.
-    (MonadLogic m, MonadSimplify m) =>
+    forall claim .
     Lens' claim ClaimPattern ->
     claim ->
-    m (CheckImplicationResult claim)
+    LogicT Simplifier (CheckImplicationResult claim)
 checkImplication' lensRulePattern claim =
     claim
         & Lens.traverseOf lensRulePattern (Compose . checkImplicationWorker)
@@ -578,10 +576,8 @@ proofs should not require the prover to visit the final program state twice,
 anyway.
 -}
 checkImplicationWorker ::
-    forall m.
-    (MonadLogic m, MonadSimplify m) =>
     ClaimPattern ->
-    m (CheckImplicationResult ClaimPattern)
+    LogicT Simplifier (CheckImplicationResult ClaimPattern)
 checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
     do
         (anyUnified, removal) <- getNegativeConjuncts
@@ -615,7 +611,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
                 $ leftCondition
             )
 
-    getNegativeConjuncts :: m (AnyUnified, OrPattern RewritingVariableName)
+    getNegativeConjuncts :: LogicT Simplifier (AnyUnified, OrPattern RewritingVariableName)
     getNegativeConjuncts =
         do
             assertFunctionLikeConfiguration claimPattern
@@ -632,18 +628,17 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
                     & Pattern.simplify
                     & (>>= Logic.scatter)
             Exists.makeEvaluate sideCondition existentials removed
-                >>= Logic.scatter
-            & OrPattern.observeAllT
-            & (>>= mkNotSimplified)
-            & wereAnyUnified
+                >>= mkNotSimplified
+                & lift . lift
+        & wereAnyUnified
       where
         mkNotSimplified notChild =
             Not.simplify sideCondition Not{notSort = sort, notChild}
 
-    wereAnyUnified :: StateT AnyUnified m a -> m (AnyUnified, a)
+    wereAnyUnified :: StateT AnyUnified (LogicT Simplifier) a -> LogicT Simplifier (AnyUnified, a)
     wereAnyUnified act = swap <$> runStateT act mempty
 
-    didUnify :: MonadState AnyUnified state => state ()
+    didUnify :: StateT AnyUnified (LogicT Simplifier) ()
     didUnify = State.put (AnyUnified True)
 
     elseImplied acts = Logic.ifte acts pure (pure $ Implied claimPattern)
@@ -651,7 +646,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
     examine ::
         AnyUnified ->
         Pattern RewritingVariableName ->
-        m (CheckImplicationResult ClaimPattern)
+        LogicT Simplifier (CheckImplicationResult ClaimPattern)
     examine AnyUnified{didAnyUnify} stuck
         | didAnyUnify
           , isBottom condition =
@@ -870,7 +865,7 @@ checkSimpleImplication inLeft inRight existentials =
                         Exists.makeEvaluate sideCondition existentials existsChild
 
                     notRhs <- -- not notChild (Or pattern)
-                        Not.simplify sideCondition Not{notSort = sort, notChild}
+                        lift $ Not.simplify sideCondition Not{notSort = sort, notChild}
 
                     let combineWithAntecedent :: Pattern v -> Pattern v
                         combineWithAntecedent = (definedConfig <*)

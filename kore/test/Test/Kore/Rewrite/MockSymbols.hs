@@ -102,7 +102,8 @@ import Kore.Simplify.API (
     Env (Env),
     MonadSimplify,
  )
-import Kore.Simplify.API qualified as SimplificationAPI.DoNotUse
+import Kore.Simplify.API qualified as Simplifier
+import Kore.Simplify.API (Simplifier)
 import Kore.Simplify.Condition qualified as Simplifier.Condition
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.OverloadSimplifier
@@ -2291,8 +2292,7 @@ metadataTools =
 axiomEquations :: Map AxiomIdentifier [Equation RewritingVariableName]
 axiomEquations = Map.empty
 
-predicateSimplifier ::
-    MonadSimplify simplifier => ConditionSimplifier simplifier
+predicateSimplifier :: ConditionSimplifier Simplifier
 predicateSimplifier =
     Simplifier.Condition.create SubstitutionSimplifier.substitutionSimplifier
 

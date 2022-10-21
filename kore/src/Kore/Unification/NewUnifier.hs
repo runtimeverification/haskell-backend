@@ -227,7 +227,7 @@ newtype NewUnifier a = NewUnifier
     { getNewUnifier ::
         LogicT (UnifierCache Simplifier) a
     }
-    deriving newtype (Functor, Applicative, Monad, Alternative, MonadLog, MonadSimplify, MonadIO, MonadSMT, MonadLogic, MonadState ((HashMap (TermLike RewritingVariableName) (OrPattern RewritingVariableName))))
+    deriving newtype (Functor, Applicative, Monad, Alternative, MonadLog, MonadSimplify, MonadIO, MonadSMT, MonadLogic, MonadUnify, MonadState ((HashMap (TermLike RewritingVariableName) (OrPattern RewritingVariableName))))
 
 runNewUnifier :: NewUnifier a -> LogicT Simplifier a
 runNewUnifier (NewUnifier unifier) =

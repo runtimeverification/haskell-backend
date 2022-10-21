@@ -17,7 +17,10 @@ module Kore.Simplify.Equals (
 import Control.Error (
     MaybeT (..),
  )
+import Data.Maybe (listToMaybe)
 import Kore.Internal.Condition qualified as Condition
+import Kore.Unification.NewUnifier (NewUnifier)
+import Kore.Unification.Procedure (runUnifier, unificationProcedure)
 import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrCondition (
@@ -69,9 +72,6 @@ import Kore.Simplify.Or qualified as Or (
  )
 import Kore.Simplify.Simplify
 import Kore.Sort (sameSort)
-import Kore.Unification.UnifierT (
-    runUnifierT,
- )
 import Kore.Unification.Unify (
     MonadUnify,
  )
@@ -80,6 +80,7 @@ import Logic (
  )
 import Logic qualified
 import Prelude.Kore
+import Data.GraphViz.Attributes.HTML (Side)
 
 {- ORMOLU_DISABLE -}
 {-|'simplify' simplifies an 'Equals' pattern made of 'OrPattern's.
@@ -158,10 +159,9 @@ Equals(a and b, b and a) will not be evaluated to Top.
 -}
 {- ORMOLU_ENABLE -}
 simplify ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Equals Sort (OrPattern RewritingVariableName) ->
-    simplifier (OrCondition RewritingVariableName)
+    Simplifier (OrCondition RewritingVariableName)
 simplify
     sideCondition
     Equals
@@ -187,12 +187,11 @@ carry around.
 
 -}
 simplifyEvaluated ::
-    MonadSimplify simplifier =>
     Sort ->
     SideCondition RewritingVariableName ->
     OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName ->
-    simplifier (OrCondition RewritingVariableName)
+    Simplifier (OrCondition RewritingVariableName)
 simplifyEvaluated sort sideCondition first second
     | first == second = return OrCondition.top
     -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
@@ -221,12 +220,10 @@ simplifyEvaluated sort sideCondition first second
     secondPatterns = toList second
 
 makeEvaluateFunctionalOr ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
     [Pattern RewritingVariableName] ->
-    simplifier (OrCondition RewritingVariableName)
+    Simplifier (OrCondition RewritingVariableName)
 makeEvaluateFunctionalOr sideCondition first seconds = do
     let sort = Pattern.patternSort first
     firstCeil <- makeEvaluateCeil sort sideCondition first
@@ -238,14 +235,14 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
     secondNotCeils <- traverse mkNotSimplified secondCeils
     let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
     allAreBottom <-
-        (And.simplify sort Not.notSimplifier sideCondition)
+        (And.simplify sort sideCondition)
             (MultiAnd.make (firstNotCeil : secondNotCeils))
     firstEqualsSeconds <-
         mapM
             (makeEvaluateEqualsIfSecondNotBottom sort first)
             (zip seconds secondCeils)
     oneIsNotBottomEquals <-
-        (And.simplify sort Not.notSimplifier sideCondition)
+        (And.simplify sort sideCondition)
             (MultiAnd.make (firstCeil : oneNotBottom : firstEqualsSeconds))
     MultiOr.merge allAreBottom oneIsNotBottomEquals
         & MultiOr.map Pattern.withoutTerm
@@ -256,7 +253,7 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
         Conditional{term = firstTerm}
         (Conditional{term = secondTerm}, secondCeil) =
             do
-                equality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
+                equality <- makeEvaluateTermsAssumesNoBottom sideCondition firstTerm secondTerm
                 Implies.simplifyEvaluated sort sideCondition secondCeil equality
 
 {- | evaluates an 'Equals' given its two 'Pattern' children.
@@ -264,11 +261,10 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate ::
-    MonadSimplify simplifier =>
     Pattern RewritingVariableName ->
     Pattern RewritingVariableName ->
     SideCondition RewritingVariableName ->
-    simplifier (OrCondition RewritingVariableName)
+    Simplifier (OrCondition RewritingVariableName)
 makeEvaluate
     first@Conditional{term = Top_ _}
     second@Conditional{term = Top_ _}
@@ -304,12 +300,12 @@ makeEvaluate
                     Not.simplify sideCondition Not{notSort = sort, notChild}
             firstCeilNegation <- mkNotSimplified firstCeil
             secondCeilNegation <- mkNotSimplified secondCeil
-            termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
+            termEquality <- makeEvaluateTermsAssumesNoBottom sideCondition firstTerm secondTerm
             negationAnd <-
-                (And.simplify sort Not.notSimplifier sideCondition)
+                (And.simplify sort sideCondition)
                     (MultiAnd.make [firstCeilNegation, secondCeilNegation])
             equalityAnd <-
-                (And.simplify sort Not.notSimplifier sideCondition)
+                (And.simplify sort sideCondition)
                     (MultiAnd.make [termEquality, firstCeil, secondCeil])
             Or.simplifyEvaluated equalityAnd negationAnd
                 & MultiOr.map Pattern.withoutTerm
@@ -321,15 +317,15 @@ makeEvaluate
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
 makeEvaluateTermsAssumesNoBottom ::
-    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
-makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
-    result <-
-        runMaybeT $
-            makeEvaluateTermsAssumesNoBottomMaybe firstTerm secondTerm
-    (return . fromMaybe def) result
+    Simplifier (OrPattern RewritingVariableName)
+makeEvaluateTermsAssumesNoBottom sideCondition firstTerm secondTerm = do
+    result <- makeEvaluateTermsAssumesNoBottomMaybe sideCondition firstTerm secondTerm
+    case toList result of
+        [] -> return def
+        _ -> return result
   where
     sort = termLikeSort firstTerm
     def =
@@ -345,13 +341,12 @@ makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
 makeEvaluateTermsAssumesNoBottomMaybe ::
-    forall simplifier.
-    MonadSimplify simplifier =>
+    SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    MaybeT simplifier (OrPattern RewritingVariableName)
-makeEvaluateTermsAssumesNoBottomMaybe first second = do
-    result <- termEquals first second
+    Simplifier (OrPattern RewritingVariableName)
+makeEvaluateTermsAssumesNoBottomMaybe sideCondition first second = do
+    result <- termEquals sideCondition first second
     let sort = termLikeSort first
     return (MultiOr.map (Pattern.fromCondition sort) result)
 
@@ -366,22 +361,21 @@ because it returns an 'or').
 See 'simplify' for detailed documentation.
 -}
 makeEvaluateTermsToPredicate ::
-    MonadSimplify simplifier =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
-    simplifier (OrCondition RewritingVariableName)
+    Simplifier (OrCondition RewritingVariableName)
 makeEvaluateTermsToPredicate first second sideCondition
     | first == second = return OrCondition.top
     | otherwise = do
-        result <- runMaybeT $ termEquals first second
-        case result of
-            Nothing ->
+        result <- termEquals sideCondition first second
+        case toList result of
+            [] ->
                 return $
                     OrCondition.fromCondition . Condition.fromPredicate $
                         Predicate.markSimplified $
                             makeEqualsPredicate first second
-            Just predicatedOr -> do
+            _ -> do
                 firstCeilOr <- makeEvaluateTermCeil sideCondition first
                 secondCeilOr <- makeEvaluateTermCeil sideCondition second
                 firstCeilNegation <- Not.simplifyEvaluatedPredicate firstCeilOr
@@ -391,7 +385,7 @@ makeEvaluateTermsToPredicate first second sideCondition
                         sideCondition
                         (MultiAnd.make [firstCeilNegation, secondCeilNegation])
 
-                return $ MultiOr.merge predicatedOr ceilNegationAnd
+                return $ MultiOr.merge result ceilNegationAnd
 
 {- | Simplify an equality relation of two patterns.
 
@@ -402,67 +396,11 @@ The comment for 'Kore.Simplify.And.simplify' describes all
 the special cases handled by this.
 -}
 termEquals ::
-    MonadSimplify simplifier =>
     HasCallStack =>
+    SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    MaybeT simplifier (OrCondition RewritingVariableName)
-termEquals first second = MaybeT $ do
-    maybeResults <- Logic.observeAllT $ runMaybeT $ termEqualsAnd first second
-    case sequence maybeResults of
-        Nothing -> return Nothing
-        Just results ->
-            return $
-                Just $
-                    MultiOr.make (map Condition.eraseConditionalTerm results)
-
-termEqualsAnd ::
-    forall simplifier.
-    MonadSimplify simplifier =>
-    HasCallStack =>
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    MaybeT (LogicT simplifier) (Pattern RewritingVariableName)
-termEqualsAnd p1 p2 =
-    MaybeT $ run $ maybeTermEqualsWorker p1 p2
-  where
-    run it =
-        (runUnifierT Not.notSimplifier . runMaybeT) it
-            >>= Logic.scatter
-
-    maybeTermEqualsWorker ::
-        forall unifier.
-        MonadUnify unifier =>
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        MaybeT unifier (Pattern RewritingVariableName)
-    maybeTermEqualsWorker =
-        maybeTermEquals Not.notSimplifier termEqualsAndWorker
-
-    termEqualsAndWorker ::
-        forall unifier.
-        MonadUnify unifier =>
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        unifier (Pattern RewritingVariableName)
-    termEqualsAndWorker first second =
-        scatterResults
-            =<< runUnification (maybeTermEqualsWorker first second)
-      where
-        runUnification = runUnifierT Not.notSimplifier . runMaybeT
-        scatterResults =
-            maybe
-                (return equalsPattern) -- default if no results
-                Logic.scatter
-                . sequence
-        equalsPattern =
-            makeEqualsPredicate first second
-                & Condition.fromPredicate
-                -- Although the term will eventually be discarded, the sub-term
-                -- unifier should return it in case the caller needs to
-                -- reconstruct the unified term. If we returned \top here, then
-                -- the unified pattern wouldn't be a function-like term. Because the
-                -- terms are equal, it does not matter which one is returned; we
-                -- prefer the first term because this is the "configuration" side
-                -- during rule unification.
-                & Pattern.withCondition first
+    Simplifier (OrCondition RewritingVariableName)
+termEquals sideCondition first second = do
+    results <- runUnifier (unificationProcedure sideCondition first second)
+    return $ MultiOr.make (map Condition.eraseConditionalTerm results)

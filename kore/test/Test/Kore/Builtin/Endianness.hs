@@ -5,6 +5,7 @@ module Test.Kore.Builtin.Endianness (
 ) where
 
 import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -19,12 +20,10 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Simplify.API (
     runSimplifier,
  )
-import Kore.Simplify.AndTerms (
-    termUnification,
- )
 import Kore.Simplify.Not qualified as Not
-import Kore.Unification.UnifierT (
-    runUnifierT,
+import Kore.Unification.Procedure (
+    runUnifier,
+    unificationProcedure,
  )
 import Prelude.Kore
 import Test.Kore.Builtin.Builtin
@@ -118,5 +117,6 @@ unify ::
 unify term1 term2 =
     runNoSMT $
         runSimplifier testEnv $
-            runUnifierT Not.notSimplifier $
-                termUnification Not.notSimplifier term1 term2
+            runUnifier $
+                Pattern.fromCondition (termLikeSort term1) <$>
+                    unificationProcedure SideCondition.top term1 term2

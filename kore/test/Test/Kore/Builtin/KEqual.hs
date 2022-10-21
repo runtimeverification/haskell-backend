@@ -3,7 +3,7 @@ module Test.Kore.Builtin.KEqual (
     test_kneq,
     test_KEqual,
     test_KIte,
-    test_KEqualSimplification,
+    -- test_KEqualSimplification,
 ) where
 
 import Control.Monad.Trans.Maybe (
@@ -28,12 +28,10 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Simplify.API (
     runSimplifierBranch,
  )
-import Kore.Simplify.AndTerms (
-    termUnification,
- )
 import Kore.Simplify.Not qualified as Not
-import Kore.Unification.UnifierT (
-    evalEnvUnifierT,
+import Kore.Unification.NewUnifier (runNewUnifier)
+import Kore.Unification.Procedure (
+    unificationProcedure,
  )
 import Prelude.Kore
 import SMT (
@@ -199,18 +197,18 @@ test_KIte =
         assertEqual' "" expect actual
     ]
 
-test_KEqualSimplification :: [TestTree]
-test_KEqualSimplification =
-    [ testCaseWithoutSMT "constructor1 =/=K constructor2" $ do
-        let term1 = Test.Bool.asInternal False
-            term2 =
-                keqBool
-                    (kseq (inj kItemSort dvX) dotk)
-                    (kseq (inj kItemSort dvT) dotk)
-            expect = [Just (Pattern.fromTermLike term1)]
-        actual <- runKEqualSimplification term1 term2
-        assertEqual' "" expect actual
-    ]
+-- test_KEqualSimplification :: [TestTree]
+-- test_KEqualSimplification =
+--     [ testCaseWithoutSMT "constructor1 =/=K constructor2" $ do
+--         let term1 = Test.Bool.asInternal False
+--             term2 =
+--                 keqBool
+--                     (kseq (inj kItemSort dvX) dotk)
+--                     (kseq (inj kItemSort dvT) dotk)
+--             expect = [Just (Pattern.fromTermLike term1)]
+--         actual <- runKEqualSimplification term1 term2
+--         assertEqual' "" expect actual
+--     ]
 
 dvT, dvX :: TermLike RewritingVariableName
 dvT =
@@ -226,23 +224,23 @@ dvX =
             , domainValueChild = mkStringLiteral "x"
             }
 
-runKEqualSimplification ::
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    SMT [Maybe (Pattern RewritingVariableName)]
-runKEqualSimplification term1 term2 =
-    unify matched
-        & runMaybeT
-        & evalEnvUnifierT Not.notSimplifier
-        & runSimplifierBranch testEnv
-  where
-    matched =
-        KEqual.matchUnifyKequalsEq term1 term2
-            <|> KEqual.matchUnifyKequalsEq term2 term1
-    unify (Just unifyData) =
-        Builtin.unifyEq
-            (termUnification Not.notSimplifier)
-            Not.notSimplifier
-            unifyData
-            & lift
-    unify Nothing = empty
+-- runKEqualSimplification ::
+--     TermLike RewritingVariableName ->
+--     TermLike RewritingVariableName ->
+--     SMT [Maybe (Pattern RewritingVariableName)]
+-- runKEqualSimplification term1 term2 =
+--     unify matched
+--         & runMaybeT
+--         & runNewUnifier
+--         & runSimplifierBranch testEnv
+--   where
+--     matched =
+--         KEqual.matchUnifyKequalsEq term1 term2
+--             <|> KEqual.matchUnifyKequalsEq term2 term1
+--     unify (Just unifyData) =
+--         Builtin.unifyEq
+--             (termUnification Not.notSimplifier)
+--             Not.notSimplifier
+--             unifyData
+--             & lift
+--     unify Nothing = empty

@@ -20,7 +20,7 @@ module Test.Kore.Builtin.Builtin (
     runStep,
     runSMT,
     runSMTWithConfig,
-    unifyEq,
+    -- unifyEq,
     simplifyCondition',
     simplifyPattern,
 ) where
@@ -85,10 +85,11 @@ import Kore.Rewrite.RulePattern (
  )
 import Kore.Rewrite.Step qualified as Step
 import Kore.Simplify.API hiding (simplifyPattern)
-import Kore.Simplify.AndTerms (termUnification)
+import Kore.Unification.Procedure (unificationProcedure)
 import Kore.Simplify.Condition qualified as Simplifier.Condition
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.Not qualified as Not
+import Kore.Simplify.NotSimplifier qualified as Not
 import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify hiding (simplifyPattern)
@@ -98,7 +99,6 @@ import Kore.Syntax.Definition (
     ModuleName,
     ParsedDefinition,
  )
-import Kore.Unification.UnifierT (evalEnvUnifierT)
 import Kore.Unparser (
     unparseToText,
  )
@@ -126,6 +126,7 @@ import Test.Tasty.HUnit (
     assertEqual,
     testCase,
  )
+import Kore.Unification.NewUnifier (runNewUnifier, NewUnifier (..))
 
 emptyNormalizedSet :: NormalizedAc NormalizedSet key child
 emptyNormalizedSet = emptyNormalizedAc
@@ -215,8 +216,7 @@ verifyPattern expectedSort termLike =
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build verifiedModule
 
-testConditionSimplifier ::
-    MonadSimplify simplifier => ConditionSimplifier simplifier
+testConditionSimplifier :: ConditionSimplifier Simplifier
 testConditionSimplifier =
     Simplifier.Condition.create SubstitutionSimplifier.substitutionSimplifier
 
@@ -337,28 +337,38 @@ hpropUnparse gen = Hedgehog.property $ do
         expected = externalize builtin
     Right expected Hedgehog.=== parseKorePattern "<test>" syntax
 
-unifyEq ::
-    Text ->
-    TermLike RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    IO [Maybe (Pattern RewritingVariableName)]
-unifyEq eqKey term1 term2 =
-    unify matched
-        & runMaybeT
-        & evalEnvUnifierT Not.notSimplifier
-        & runSimplifierBranch testEnv
-        & runNoSMT
-  where
-    unify Nothing = empty
-    unify (Just unifyData) =
-        Builtin.unifyEq
-            (termUnification Not.notSimplifier)
-            Not.notSimplifier
-            unifyData
-            & lift
-
-    matched =
-        Builtin.matchUnifyEq eqKey term1 term2
+-- unifyEq ::
+--     Text ->
+--     TermLike RewritingVariableName ->
+--     TermLike RewritingVariableName ->
+--     IO [Pattern RewritingVariableName]
+-- unifyEq eqKey term1 term2 =
+--     unify matched
+--         & runNewUnifier
+--         & runSimplifierBranch testEnv
+--         & runNoSMT
+--   where
+--     unify :: Maybe Builtin.UnifyEq -> NewUnifier (Pattern RewritingVariableName)
+--     unify Nothing = empty
+--     unify (Just unifyData) =
+--         -- this is NewUnifier
+--         Builtin.unifyEq
+--             (\t1 t2 ->
+--                 Pattern.fromCondition (termLikeSort term1)
+--                 <$> unificationProcedure SideCondition.top t1 t2
+--             )
+--             -- this is Simplifier
+--             (notSimplifier Not.notSimplifier)
+--             unifyData
+--
+--     notSimplifier ::
+--         Not.NotSimplifier Simplifier ->
+--         Not.NotSimplifier NewUnifier
+--     notSimplifier (Not.NotSimplifier notSimpl) =
+--         Not.NotSimplifier $ \sc n -> NewUnifier $ lift $ notSimpl sc n
+--
+--     matched =
+--         Builtin.matchUnifyEq eqKey term1 term2
 
 simplifyCondition' ::
     Condition RewritingVariableName ->
