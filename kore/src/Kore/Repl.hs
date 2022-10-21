@@ -65,7 +65,7 @@ import Kore.Repl.Interpreter
 import Kore.Repl.Parser
 import Kore.Repl.State
 import Kore.Rewrite.Strategy qualified as Strategy
-import Kore.Simplify.API (
+import Kore.Simplify.Simplify (
     Simplifier,
  )
 import Kore.Syntax.Module (

@@ -50,10 +50,8 @@ import Kore.Rewrite.Rule.Simplify
 import Kore.Rewrite.Transition (
     runTransitionT,
  )
-import Kore.Simplify.API (
-    Env (..),
- )
 import Kore.Simplify.Simplify (
+    Env (..),
     MonadSimplify (..),
     Simplifier,
     emptyConditionSimplifier,

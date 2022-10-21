@@ -31,6 +31,7 @@ import Kore.Error (Error (..))
 import Kore.Exec qualified as Exec
 import Kore.Exec.GraphTraversal qualified as GraphTraversal
 import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (pattern PredicateTrue)
@@ -53,6 +54,8 @@ import Kore.Rewrite.RewritingVariable (
     mkRewritingTerm,
  )
 import Kore.Simplify.API (evalSimplifier)
+import Kore.Simplify.Pattern qualified as Pattern
+import Kore.Simplify.Simplify (Simplifier)
 import Kore.Syntax.Json (KoreJson)
 import Kore.Syntax.Json qualified as PatternJson
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
@@ -241,7 +244,7 @@ respond ::
 respond runSMT serializedModule =
     withErrHandler . \case
         Execute ExecuteRequest{state, maxDepth, cutPointRules, terminalRules} ->
-            case PatternVerifier.runPatternVerifier context $
+            case PatternVerifier.runPatternVerifier verifierContext $
                 PatternVerifier.verifyStandalonePattern Nothing $
                     PatternJson.toParsedPattern $ PatternJson.term state of
                 Left err -> pure $ Left $ couldNotVerify $ toJSON err
@@ -258,10 +261,6 @@ respond runSMT serializedModule =
 
                     pure $ buildResult (TermLike.termLikeSort verifiedPattern) traversalResult
           where
-            context =
-                PatternVerifier.verifiedModuleContext verifiedModule
-                    & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
-
             toStopLabels :: Maybe [Text] -> Maybe [Text] -> Exec.StopLabels
             toStopLabels cpRs tRs =
                 Exec.StopLabels (fromMaybe [] cpRs) (fromMaybe [] tRs)
@@ -359,7 +358,7 @@ respond runSMT serializedModule =
 
         -- Step StepRequest{} -> pure $ Right $ Step $ StepResult []
         Implies ImpliesRequest{antecedent, consequent} ->
-            case PatternVerifier.runPatternVerifier context verify of
+            case PatternVerifier.runPatternVerifier verifierContext verify of
                 Left err ->
                     pure $ Left $ couldNotVerify $ toJSON err
                 Right (antVerified, consVerified) -> do
@@ -374,7 +373,7 @@ respond runSMT serializedModule =
                     result <-
                         liftIO
                             . runSMT
-                            . evalInContext
+                            . evalInSimplifierContext
                             . runExceptT
                             $ Claim.checkSimpleImplication
                                 leftPatt
@@ -382,10 +381,6 @@ respond runSMT serializedModule =
                                 existentialVars
                     pure $ buildResult sort result
           where
-            context =
-                PatternVerifier.verifiedModuleContext verifiedModule
-                    & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
-
             verify = do
                 antVerified <-
                     PatternVerifier.verifyStandalonePattern Nothing $
@@ -394,14 +389,6 @@ respond runSMT serializedModule =
                     PatternVerifier.verifyStandalonePattern Nothing $
                         PatternJson.toParsedPattern $ PatternJson.term consequent
                 pure (antVerified, consVerified)
-
-            evalInContext =
-                evalSimplifier
-                    verifiedModule
-                    sortGraph
-                    overloadGraph
-                    metadataTools
-                    equations
 
             renderCond sort cond =
                 let pat = Condition.mapVariables getRewritingVariable cond
@@ -432,7 +419,35 @@ respond runSMT serializedModule =
                             Claim.NotImpliedStuck Nothing ->
                                 -- should not happen
                                 ImpliesResult jsonTerm False Nothing
-        Simplify SimplifyRequest{state} -> pure $ Right $ Simplify SimplifyResult{state}
+        Simplify SimplifyRequest{state} ->
+            case PatternVerifier.runPatternVerifier verifierContext verifyState of
+                Left err ->
+                    pure $ Left $ couldNotVerify $ toJSON err
+                Right stateVerified -> do
+                    let patt =
+                            mkRewritingPattern $ Pattern.parsePatternFromTermLike stateVerified
+                        sort = TermLike.termLikeSort stateVerified
+
+                    result <-
+                        liftIO
+                            . runSMT
+                            . evalInSimplifierContext
+                            $ Pattern.simplify patt
+
+                    pure $
+                        Right $
+                            Simplify
+                                SimplifyResult
+                                    { state =
+                                        PatternJson.fromTermLike $
+                                            TermLike.mapVariables getRewritingVariable $
+                                                OrPattern.toTermLike sort result
+                                    }
+          where
+            verifyState =
+                PatternVerifier.verifyStandalonePattern Nothing $
+                    PatternJson.toParsedPattern $ PatternJson.term state
+
         -- this case is only reachable if the cancel appeared as part of a batch request
         Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
   where
@@ -462,6 +477,19 @@ respond runSMT serializedModule =
         let mkError (ErrorCallWithLocation msg loc) =
                 Error{errorContext = [loc], errorError = msg}
          in handle (pure . Left . serverError "crashed" . toJSON . mkError)
+
+    verifierContext =
+        PatternVerifier.verifiedModuleContext verifiedModule
+            & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
+
+    evalInSimplifierContext :: Simplifier a -> SMT.SMT a
+    evalInSimplifierContext =
+        evalSimplifier
+            verifiedModule
+            sortGraph
+            overloadGraph
+            metadataTools
+            equations
 
 runServer :: Int -> SMT.SolverSetup -> Log.LoggerEnv IO -> Exec.SerializedModule -> IO ()
 runServer port solverSetup loggerEnv@Log.LoggerEnv{logAction} serializedModule = do

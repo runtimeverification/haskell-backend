@@ -12,24 +12,6 @@ Portability : portable
 module Kore.Simplify.API (
     evalSimplifier,
     evalSimplifierProofs,
-
-    -- * Re-exports
-    Env (..),
-    Simplifier,
-    runSimplifier,
-    runSimplifierBranch,
-    TermSimplifier,
-    MonadSimplify (..),
-    askMetadataTools,
-    simplifyPattern,
-    simplifyTerm,
-    askAxiomEquations,
-    askInjSimplifier,
-    askOverloadSimplifier,
-    getCache,
-    putCache,
-    InternalVariable,
-    MonadProf,
 ) where
 
 import Control.Monad.Reader

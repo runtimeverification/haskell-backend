@@ -31,11 +31,11 @@ import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.API (
-    Env (..),
- )
 import Kore.Simplify.Condition qualified as Condition
 import Kore.Simplify.Not qualified as Not
+import Kore.Simplify.Simplify (
+    Env (..),
+ )
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Unification.UnifierT qualified as Monad.Unify
 import Logic qualified

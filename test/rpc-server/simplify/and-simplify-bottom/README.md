@@ -1,0 +1,1 @@
+`¬ X /\ X`, simplified to `_|_`
