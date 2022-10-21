@@ -5,11 +5,11 @@ module Test.Kore.Builtin.Endianness (
 ) where
 
 import Kore.Internal.Condition qualified as Condition
-import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Pattern (
     Pattern,
  )
 import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Substitution (
     Assignment,
  )
@@ -118,5 +118,5 @@ unify term1 term2 =
     runNoSMT $
         runSimplifier testEnv $
             runUnifier $
-                Pattern.fromCondition (termLikeSort term1) <$>
-                    unificationProcedure SideCondition.top term1 term2
+                Pattern.fromCondition (termLikeSort term1)
+                    <$> unificationProcedure SideCondition.top term1 term2

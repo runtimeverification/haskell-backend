@@ -17,10 +17,9 @@ module Kore.Simplify.Equals (
 import Control.Error (
     MaybeT (..),
  )
+import Data.GraphViz.Attributes.HTML (Side)
 import Data.Maybe (listToMaybe)
 import Kore.Internal.Condition qualified as Condition
-import Kore.Unification.NewUnifier (NewUnifier)
-import Kore.Unification.Procedure (runUnifier, unificationProcedure)
 import Kore.Internal.MultiAnd qualified as MultiAnd
 import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrCondition (
@@ -72,6 +71,8 @@ import Kore.Simplify.Or qualified as Or (
  )
 import Kore.Simplify.Simplify
 import Kore.Sort (sameSort)
+import Kore.Unification.NewUnifier (NewUnifier)
+import Kore.Unification.Procedure (runUnifier, unificationProcedure)
 import Kore.Unification.Unify (
     MonadUnify,
  )
@@ -80,7 +81,6 @@ import Logic (
  )
 import Logic qualified
 import Prelude.Kore
-import Data.GraphViz.Attributes.HTML (Side)
 
 {- ORMOLU_DISABLE -}
 {-|'simplify' simplifies an 'Equals' pattern made of 'OrPattern's.

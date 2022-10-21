@@ -22,12 +22,12 @@ import Kore.Simplify.SubstitutionSimplifier (
     SubstitutionSimplifier (..),
  )
 import Kore.Simplify.SubstitutionSimplifier qualified as Simplification
+import Kore.Unification.Procedure (
+    runUnifier,
+ )
 import Kore.Unification.SubstitutionNormalization
 import Kore.Unification.SubstitutionSimplifier qualified as Unification (
     substitutionSimplifier,
- )
-import Kore.Unification.Procedure (
-    runUnifier,
  )
 import Prelude.Kore
 import Test.Kore.Rewrite.MockSymbols qualified as Mock

@@ -98,12 +98,8 @@ import Kore.Rewrite.SMT.AST qualified as SMT
 import Kore.Rewrite.SMT.Representation.Resolve qualified as SMT (
     resolve,
  )
-import Kore.Simplify.API (
-    Env (Env),
-    MonadSimplify,
- )
+import Kore.Simplify.API (Env (Env), MonadSimplify, Simplifier)
 import Kore.Simplify.API qualified as Simplifier
-import Kore.Simplify.API (Simplifier)
 import Kore.Simplify.Condition qualified as Simplifier.Condition
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.OverloadSimplifier

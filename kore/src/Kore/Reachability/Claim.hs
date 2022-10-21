@@ -53,7 +53,6 @@ import Control.Monad.Catch (
     Exception (..),
     SomeException (..),
  )
-import Logic
 import Control.Monad.Except (
     ExceptT,
  )
@@ -177,6 +176,7 @@ import Kore.Unparser (
     Unparse (..),
  )
 import Kore.Verified qualified as Verified
+import Logic
 import Logic qualified
 import Prelude.Kore
 import Pretty (
@@ -491,7 +491,7 @@ instance Pretty a => Pretty (CheckImplicationResult a) where
 
 -- | Remove the destination of the claim.
 checkImplication' ::
-    forall claim .
+    forall claim.
     Lens' claim ClaimPattern ->
     claim ->
     LogicT Simplifier (CheckImplicationResult claim)
@@ -630,7 +630,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
             Exists.makeEvaluate sideCondition existentials removed
                 >>= mkNotSimplified
                 & lift . lift
-        & wereAnyUnified
+            & wereAnyUnified
       where
         mkNotSimplified notChild =
             Not.simplify sideCondition Not{notSort = sort, notChild}

@@ -9,7 +9,6 @@ import Control.Exception (
     evaluate,
  )
 import Data.Bifunctor qualified as Bifunctor
-import Kore.Unification.NewUnifier
 import Data.Text (
     Text,
  )
@@ -32,6 +31,8 @@ import Kore.Simplify.API (
 import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
+import Kore.Unification.NewUnifier
+import Kore.Unification.NewUnifier (NewUnifier)
 import Kore.Unification.Procedure
 import Kore.Unification.SubstitutionSimplifier qualified as Unification
 import Kore.Unification.UnifierT qualified as Monad.Unify
@@ -51,7 +52,6 @@ import Test.SMT (
  )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-import Kore.Unification.NewUnifier (NewUnifier)
 
 var :: Text -> Sort -> Mock.MockRewritingElementVariable
 var name variableSort =

@@ -85,7 +85,6 @@ import Kore.Rewrite.RulePattern (
  )
 import Kore.Rewrite.Step qualified as Step
 import Kore.Simplify.API hiding (simplifyPattern)
-import Kore.Unification.Procedure (unificationProcedure)
 import Kore.Simplify.Condition qualified as Simplifier.Condition
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.Not qualified as Not
@@ -99,6 +98,8 @@ import Kore.Syntax.Definition (
     ModuleName,
     ParsedDefinition,
  )
+import Kore.Unification.NewUnifier (NewUnifier (..), runNewUnifier)
+import Kore.Unification.Procedure (unificationProcedure)
 import Kore.Unparser (
     unparseToText,
  )
@@ -126,7 +127,6 @@ import Test.Tasty.HUnit (
     assertEqual,
     testCase,
  )
-import Kore.Unification.NewUnifier (runNewUnifier, NewUnifier (..))
 
 emptyNormalizedSet :: NormalizedAc NormalizedSet key child
 emptyNormalizedSet = emptyNormalizedAc

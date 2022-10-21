@@ -5,11 +5,11 @@ module Test.Kore.Builtin.Signedness (
 ) where
 
 import Kore.Internal.Condition qualified as Condition
-import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Pattern (
     Pattern,
  )
 import Kore.Internal.Pattern qualified as Pattern
+import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Substitution (
     Assignment,
  )
@@ -20,11 +20,11 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Simplify.API (
     runSimplifier,
  )
-import Kore.Unification.Procedure (
-    unificationProcedure,
-    runUnifier,
- )
 import Kore.Simplify.Not qualified as Not
+import Kore.Unification.Procedure (
+    runUnifier,
+    unificationProcedure,
+ )
 import Prelude.Kore
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
@@ -118,5 +118,5 @@ unify term1 term2 =
     runNoSMT $
         runSimplifier testEnv $
             runUnifier $
-                Pattern.fromCondition (termLikeSort term1) <$>
-                    unificationProcedure SideCondition.top term1 term2
+                Pattern.fromCondition (termLikeSort term1)
+                    <$> unificationProcedure SideCondition.top term1 term2

@@ -13,7 +13,6 @@ import Kore.Internal.Conditional (
     Conditional (..),
  )
 import Kore.Internal.Conditional qualified as Conditional
-import Kore.Unification.Procedure
 import Kore.Internal.MultiOr (
     MultiOr,
  )
@@ -38,6 +37,7 @@ import Kore.Simplify.API (
 import Kore.Simplify.Condition qualified as Condition
 import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify qualified as Simplifier
+import Kore.Unification.Procedure
 import Kore.Unification.UnifierT qualified as Monad.Unify
 import Logic qualified
 import Prelude.Kore

@@ -82,7 +82,7 @@ The 'term' of 'Conditional' may be any type; it passes through @simplify@
 unmodified.
 -}
 simplify ::
-    forall any .
+    forall any.
     HasCallStack =>
     SubstitutionSimplifier Simplifier ->
     SideCondition RewritingVariableName ->
