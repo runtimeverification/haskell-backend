@@ -175,6 +175,19 @@ jobs:
       - name: Run unit tests
         run: stack test --pedantic
 
+      - name: Check documentation
+        run: |
+          stack haddock \
+            --fast \
+            >haddock.log 2>&1 \
+            || ( cat haddock.log; exit 1; )
+          #remove header warning for Paths_kore
+          sed -e "/.*in 'Paths_kore'$/{n;n;/^ *Module header$/d}" haddock.log | tee haddock.log.noPaths
+          if grep -B 2 'Module header' haddock.log.noPaths; then \
+            echo >&2 "Please fix the missing documentation!"; \
+            exit 1; \
+          fi
+
   hlint:
     name: 'HLint'
     runs-on: ubuntu-latest
