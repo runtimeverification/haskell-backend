@@ -42,7 +42,7 @@ pipeline {
     stage('Test') {
       when { expression { return params.STAGE == 'TEST' } }
       stages {
-        stage('Init title') {
+        stage('Init') {
           when { changeRequest() }
           steps {
             script {
@@ -50,7 +50,7 @@ pipeline {
             }
           }
         }
-        stage('Dependencies') {
+        stage('Clean') {
           steps {
             sh '''
               ./scripts/clean.sh
