@@ -405,7 +405,6 @@ termEquals sideCondition first second = do
     results <- runUnifier (unificationProcedure sideCondition first second)
     return $ MultiOr.make (map Condition.eraseConditionalTerm results)
 
-
 -- termEquals ::
 --     MonadSimplify simplifier =>
 --     HasCallStack =>
