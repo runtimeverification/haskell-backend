@@ -169,7 +169,7 @@ unifyRule sideCondition initial rule = do
     let ruleLeft = matchingPattern rule
     ruleMarker "Unify"
     unification <-
-        unificationProcedure sideCondition' initialTerm ruleLeft
+        unificationProcedure' sideCondition' initialTerm ruleLeft
     -- Combine the unification solution with the rule's requirement clause,
     ruleMarker "CheckSide"
     let ruleRequires = precondition rule

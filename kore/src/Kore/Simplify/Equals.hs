@@ -404,3 +404,70 @@ termEquals ::
 termEquals sideCondition first second = do
     results <- runUnifier (unificationProcedure sideCondition first second)
     return $ MultiOr.make (map Condition.eraseConditionalTerm results)
+
+
+-- termEquals ::
+--     MonadSimplify simplifier =>
+--     HasCallStack =>
+--     TermLike RewritingVariableName ->
+--     TermLike RewritingVariableName ->
+--     MaybeT simplifier (OrCondition RewritingVariableName)
+-- termEquals first second = MaybeT $ do
+--     maybeResults <- Logic.observeAllT $ runMaybeT $ termEqualsAnd first second
+--     case sequence maybeResults of
+--         Nothing -> return Nothing
+--         Just results ->
+--             return $
+--                 Just $
+--                     MultiOr.make (map Condition.eraseConditionalTerm results)
+--
+-- termEqualsAnd ::
+--     forall simplifier.
+--     MonadSimplify simplifier =>
+--     HasCallStack =>
+--     TermLike RewritingVariableName ->
+--     TermLike RewritingVariableName ->
+--     MaybeT (LogicT simplifier) (Pattern RewritingVariableName)
+-- termEqualsAnd p1 p2 =
+--     MaybeT $ run $ maybeTermEqualsWorker p1 p2
+--   where
+--     run it =
+--         (runUnifierT Not.notSimplifier . runMaybeT) it
+--             >>= Logic.scatter
+--
+--     maybeTermEqualsWorker ::
+--         forall unifier.
+--         MonadUnify unifier =>
+--         TermLike RewritingVariableName ->
+--         TermLike RewritingVariableName ->
+--         MaybeT unifier (Pattern RewritingVariableName)
+--     maybeTermEqualsWorker =
+--         maybeTermEquals Not.notSimplifier termEqualsAndWorker
+--
+--     termEqualsAndWorker ::
+--         forall unifier.
+--         MonadUnify unifier =>
+--         TermLike RewritingVariableName ->
+--         TermLike RewritingVariableName ->
+--         unifier (Pattern RewritingVariableName)
+--     termEqualsAndWorker first second =
+--         scatterResults
+--             =<< runUnification (maybeTermEqualsWorker first second)
+--       where
+--         runUnification = runUnifierT Not.notSimplifier . runMaybeT
+--         scatterResults =
+--             maybe
+--                 (return equalsPattern) -- default if no results
+--                 Logic.scatter
+--                 . sequence
+--         equalsPattern =
+--             makeEqualsPredicate first second
+--                 & Condition.fromPredicate
+--                 -- Although the term will eventually be discarded, the sub-term
+--                 -- unifier should return it in case the caller needs to
+--                 -- reconstruct the unified term. If we returned \top here, then
+--                 -- the unified pattern wouldn't be a function-like term. Because the
+--                 -- terms are equal, it does not matter which one is returned; we
+--                 -- prefer the first term because this is the "configuration" side
+--                 -- during rule unification.
+--                 & Pattern.withCondition first

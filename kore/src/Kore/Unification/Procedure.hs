@@ -9,6 +9,7 @@ Portability : portable
 -}
 module Kore.Unification.Procedure (
     unificationProcedure,
+    unificationProcedure',
     runUnifier,
 ) where
 
@@ -61,6 +62,31 @@ unificationProcedure ::
     TermLike RewritingVariableName ->
     NewUnifier (Condition RewritingVariableName)
 unificationProcedure sideCondition p1 p2
+    | p1Sort /= p2Sort =
+        debugUnifyBottomAndReturnBottom "Cannot unify different sorts." p1 p2
+    | otherwise = infoAttemptUnification p1 p2 $ do
+        condition <- unifyTerms p1 p2 sideCondition
+        TopBottom.guardAgainstBottom condition
+        return condition
+        -- marker "unify" "MakeCeil"
+        -- let term = unifiedTermAnd p1 p2 condition
+        -- orCeil <- makeEvaluateTermCeil sideCondition term
+        -- marker "unify" "CombineCeil"
+        -- ceil' <- Monad.Unify.scatter orCeil
+        -- lowerLogicT . simplifyCondition sideCondition $
+        --     Conditional.andCondition ceil' condition
+  where
+    p1Sort = termLikeSort p1
+    p2Sort = termLikeSort p2
+
+    marker c t = liftIO . traceMarkerIO $ concat [c, ":", t, ":"]
+
+unificationProcedure' ::
+    SideCondition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    NewUnifier (Condition RewritingVariableName)
+unificationProcedure' sideCondition p1 p2
     | p1Sort /= p2Sort =
         debugUnifyBottomAndReturnBottom "Cannot unify different sorts." p1 p2
     | otherwise = infoAttemptUnification p1 p2 $ do

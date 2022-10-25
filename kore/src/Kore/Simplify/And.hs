@@ -221,8 +221,6 @@ termAnd sideCondition p1 p2 =
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
         NewUnifier (Pattern RewritingVariableName)
-    termAndWorker first second =
+    termAndWorker first second = do
         unificationProcedure sideCondition first second
-            <&> fmap (const andPattern)
-      where
-        andPattern = mkAnd first second
+        <&> fmap (const first)
