@@ -36,9 +36,9 @@ import Kore.Simplify.Ceil qualified as Ceil (
  )
 import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify
-import Logic qualified
 import Kore.Unification.NewUnifier (unifyTerms)
 import Kore.Unification.Procedure (runUnifier)
+import Logic qualified
 import Prelude.Kore
 
 {- |'simplify' simplifies an 'In' pattern with 'OrPattern'
@@ -59,16 +59,15 @@ simplify ::
     Simplifier (OrCondition RewritingVariableName)
 simplify
     sideCondition
-    In{inContainedChild = first, inContainingChild = second}
-  =
-    OrPattern.observeAllT $ do
-        pattFirst <- Logic.scatter first
-        pattSecond <- Logic.scatter second
-        let termFirst = Pattern.term pattFirst
-            termSecond = Pattern.term pattSecond
-            remainingCondition =
-                Pattern.withoutTerm pattFirst <> Pattern.withoutTerm pattSecond
-        unificationResult <-
-            (lift . runUnifier $ unifyTerms termFirst termSecond sideCondition)
-                >>= Logic.scatter
-        return (unificationResult <> remainingCondition)
+    In{inContainedChild = first, inContainingChild = second} =
+        OrPattern.observeAllT $ do
+            pattFirst <- Logic.scatter first
+            pattSecond <- Logic.scatter second
+            let termFirst = Pattern.term pattFirst
+                termSecond = Pattern.term pattSecond
+                remainingCondition =
+                    Pattern.withoutTerm pattFirst <> Pattern.withoutTerm pattSecond
+            unificationResult <-
+                (lift . runUnifier $ unifyTerms termFirst termSecond sideCondition)
+                    >>= Logic.scatter
+            return (unificationResult <> remainingCondition)

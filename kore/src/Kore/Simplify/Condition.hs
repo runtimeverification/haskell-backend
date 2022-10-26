@@ -32,6 +32,7 @@ import Kore.Internal.MultiAnd (
     MultiAnd,
  )
 import Kore.Internal.MultiAnd qualified as MultiAnd
+import Kore.Internal.NormalForm (NormalForm)
 import Kore.Internal.Pattern (
     Condition,
     Conditional (..),
@@ -65,7 +66,6 @@ import Kore.Syntax.Variable (SomeVariableName)
 import Kore.TopBottom qualified as TopBottom
 import Logic
 import Prelude.Kore
-import Kore.Internal.NormalForm (NormalForm)
 
 -- | Create a 'ConditionSimplifier' using 'simplify'.
 create ::
