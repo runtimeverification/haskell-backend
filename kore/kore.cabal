@@ -483,7 +483,6 @@ library
     Kore.Simplify.Equals
     Kore.Simplify.Exists
     Kore.Simplify.ExpandAlias
-    Kore.Simplify.Floor
     Kore.Simplify.Forall
     Kore.Simplify.Iff
     Kore.Simplify.Implies
@@ -867,7 +866,6 @@ test-suite kore-test
     Test.Kore.Simplify.DomainValue
     Test.Kore.Simplify.Equals
     Test.Kore.Simplify.Exists
-    Test.Kore.Simplify.Floor
     Test.Kore.Simplify.Forall
     Test.Kore.Simplify.Iff
     Test.Kore.Simplify.Implies
