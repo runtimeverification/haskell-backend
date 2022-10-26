@@ -96,17 +96,17 @@ simplifyEvaluated sort sideCondition first second
     | OrPattern.isFalse second =
         Not.simplify sideCondition Not{notSort = sort, notChild = first}
     | otherwise =
-        OrPattern.observeAllT $
-            Logic.scatter second
-                >>= simplifyEvaluateHalfImplies sort sideCondition first
+        liftSimplifier $
+            OrPattern.observeAllT $
+                Logic.scatter second
+                    >>= simplifyEvaluateHalfImplies sort sideCondition first
 
 simplifyEvaluateHalfImplies ::
-    MonadSimplify simplifier =>
     Sort ->
     SideCondition RewritingVariableName ->
     OrPattern RewritingVariableName ->
     Pattern RewritingVariableName ->
-    LogicT simplifier (Pattern RewritingVariableName)
+    LogicT Simplifier (Pattern RewritingVariableName)
 simplifyEvaluateHalfImplies sort sideCondition first second
     | OrPattern.isTrue first = return second
     | OrPattern.isFalse first = return (Pattern.topOf sort)
@@ -118,15 +118,14 @@ simplifyEvaluateHalfImplies sort sideCondition first second
         case toList first of
             [firstP] -> Logic.scatter $ makeEvaluateImplies firstP second
             firstPatterns ->
-                distributeEvaluateImplies sideCondition firstPatterns second
+                lift (distributeEvaluateImplies sideCondition firstPatterns second)
                     >>= Logic.scatter
 
 distributeEvaluateImplies ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     [Pattern RewritingVariableName] ->
     Pattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 distributeEvaluateImplies sideCondition firsts second =
     (And.simplify sort Not.notSimplifier sideCondition)
         (MultiAnd.make implications)
