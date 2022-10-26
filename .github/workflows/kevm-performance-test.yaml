@@ -1,5 +1,5 @@
 ---
-name: Performance Profiling
+name: KEVM Performance Test
 on:
   # Trigger when commenting on an issue or PR, or editing a comment
   # Issue/PR MUST already be labeled properly
@@ -10,9 +10,8 @@ jobs:
   Prepare:
     if: |
       contains(github.event.issue.labels.*.name, 'performance') &&
-      ( contains(github.event.comment.body, '.tar.gz)') )
-    # Comment must contain something that looks like a link to a
-    # *.tar.gz in markdown, therefore matching the suffix with ')'
+      ( contains(github.event.comment.body, '/ KEVM-perf-run') )
+    # Comment must contain this exact string to trigger a run
     runs-on: [Linux, flyweight]
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -27,15 +26,9 @@ jobs:
           if ! gh api -H "Accept: application/vnd.github+json" /orgs/runtimeverification/members/$GITHUB_ACTOR; then
             exit 1
           fi
-      - name: Check File Downloadable
-        # Note that the reg.ex will only match a URL within parentheses
-        # (perl reg.ex context) while the guard above uses a simple substring
+      - name: Check that we are on a PR
         run: |
-          set -euo pipefail
-
-          DOWNLOAD_URL=$(jq '.comment.body' ${GITHUB_EVENT_PATH} | (grep -oP '(?<=\()https://github\.com/${{ github.repository }}/files/[A-Za-z0-9._~!$&*+,;=@%/-]*\.tar\.gz(?=\))' || echo "No-valid-URL-found") | head -1 )
-          echo "Testing whether '${DOWNLOAD_URL}' exists"
-          curl -sS --head --fail "${DOWNLOAD_URL}"
+          [ -n "${{ github.even.issue.pull_request }}" ] && echo "OK, we are on a PR"
 
   Profiling:
     needs: Prepare
@@ -51,32 +44,34 @@ jobs:
         id: determine-commit
         run: |
           echo "PR_HEAD=$(curl -s ${{ github.event.issue.pull_request.url }} | jq '.head.sha' | xargs echo)" | tee -a $GITHUB_OUTPUT
-      - name: Check out code
-        uses: actions/checkout@v3
-        with:
-          ref: '${{ steps.determine-commit.outputs.PR_HEAD }}'
       - name: Run Tests
         run: |
           set -euo pipefail
           ISSUE_NUMBER=$(cat ${GITHUB_EVENT_PATH} | jq '.issue.number')
           PR_HEAD=${{ steps.determine-commit.outputs.PR_HEAD }}
-          DOWNLOAD_URL=$(jq '.comment.body' ${GITHUB_EVENT_PATH} | (grep -oP '(?<=\()https://github\.com/${{ github.repository }}/files/[A-Za-z0-9._~!$&*+,;=@%/-]*\.tar\.gz(?=\))' || echo "No-valid-URL-found") | head -1 )
-          FILE_NAME=$(basename ${DOWNLOAD_URL})
-          gh issue comment ${ISSUE_NUMBER} --body "Running test with ${PR_HEAD:-master} and ${FILE_NAME} as ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          TIMESTAMP=$(date +"%Y%m%dT%H%M%S")
 
-          echo "Download Test File from ${DOWNLOAD_URL}"
-          curl -LOsS ${DOWNLOAD_URL}
+          # FIXME can we use a reaction emoji instead?
+          gh issue comment ${ISSUE_NUMBER} --body "Running KEVM test with ${PR_HEAD:-master} as ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
           . /home/github-runner/.nix-profile/etc/profile.d/nix.sh
           echo "Starting Test Execution"
-          mkdir -p profile/tests/$(echo ${FILE_NAME} | cut -d '.' -f 1)
-          echo "RUNNING PROFILE: ${FILE_NAME}"
-          nix run .#profile ./${FILE_NAME}
+          echo "RUNNING TEST"
+          nix build github:runtimeverification/evm-semantics#profile \
+              --override-input k-framework/haskell-backend github:runtimeverification/haskell-backend/${PR_HEAD} \
+              -o KEVM-timing-${TIMESTAMP}-${PR_HEAD}.data
 
-      - name: Publish Profile Results
+          echo "Comparing with current master"
+          nix build github:runtimeverification/evm-semantics#profile \
+              --override-input k-framework/haskell-backend github:runtimeverification/haskell-backend/$GITHUB_SHA \
+              -o KEVM-timing-${TIMESTAMP}-master.data
+
+          nix run github:runtimeverification/evm-semantics#compare-profiles -- KEVM-timing-$TIMESTAMP-${PR_HEAD}.data KEVM-timing-$TIMESTAMP-master.data | tee KEVM-timing-comparison.data
+
+      - name: Publish Results
         uses: actions/upload-artifact@v3.1.0
         with:
-          path: ./profile-*.tar.gz
+          path: ./KEVM-timing*.data
 
   on-success:
     needs: Profiling
@@ -87,7 +82,7 @@ jobs:
     steps:
       - run: |
           ISSUE_NUMBER=$(cat ${GITHUB_EVENT_PATH} | jq '.issue.number')
-          gh issue -R ${{ github.repository }} comment ${ISSUE_NUMBER} --body "PASSED: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          gh issue -R ${{ github.repository }} comment ${ISSUE_NUMBER} --body "KEVM test finished: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   on-failure:
     needs: Profiling
     runs-on: [Linux, flyweight]
@@ -97,4 +92,4 @@ jobs:
     steps:
       - run: |
           ISSUE_NUMBER=$(cat ${GITHUB_EVENT_PATH} | jq '.issue.number')
-          gh issue -R ${{ github.repository }} comment ${ISSUE_NUMBER} --body "FAILED: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          gh issue -R ${{ github.repository }} comment ${ISSUE_NUMBER} --body "KEVM test FAILED: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
