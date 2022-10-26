@@ -1,6 +1,6 @@
 {- |
 Module      : Kore.Network.JSONRPC
-Description : JSON RPC server for kore
+Description : JSON RPC server
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
 -}
