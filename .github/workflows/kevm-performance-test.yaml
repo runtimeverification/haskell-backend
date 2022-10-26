@@ -28,7 +28,7 @@ jobs:
           fi
       - name: Check that we are on a PR
         run: |
-          [ -n "${{ github.even.issue.pull_request }}" ] && echo "OK, we are on a PR"
+          [ -n "${{ github.event.issue.pull_request }}" ] && echo "OK, we are on a PR"
 
   Profiling:
     needs: Prepare
