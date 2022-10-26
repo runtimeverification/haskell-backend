@@ -1,0 +1,10 @@
+  #Not ( {
+    _X
+  #Equals
+    a
+  } )
+#And
+  <k>
+    result ( intersectSet ( SetItem ( _X )
+    SetItem ( a ) , SetItem ( b ) ) ) ~> .
+  </k>

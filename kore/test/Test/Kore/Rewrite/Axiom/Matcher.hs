@@ -1012,6 +1012,10 @@ test_matching_Set =
         (mkSet [mkInt 0] [])
         (mkSet [] [])
     , doesn'tMatch
+        "[0] does not match [1]"
+        (mkSet [mkInt 0] [])
+        (mkSet [mkInt 1] [])
+    , doesn'tMatch
         "[x:Int] does not match [0]"
         (mkSet [mkElemVar xInt] [])
         (mkSet [mkInt 0] [])
@@ -1044,6 +1048,10 @@ test_matching_Set =
         "[y:Int, 1] doesn't match [x:Int]"
         (mkSet [mkElemVar yInt, mkInt 1] [])
         (mkSet [mkElemVar xInt] [])
+    , doesn'tMatch
+        "[0, y:Int] doesn't match [1, x:Int]"
+        (mkSet [mkInt 0, mkElemVar yInt] [])
+        (mkSet [mkInt 1, mkElemVar xInt] [])
     , matches
         "[y:Int, 1] matches [1, x:Int]"
         (mkSet [mkElemVar yInt, mkInt 1] [])
