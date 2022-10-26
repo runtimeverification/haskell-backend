@@ -704,7 +704,8 @@ instance
 #endif
     Hashable (TermLike variable)
     where
-      hashWithSalt _salt (TermLike__ _ hsh _) = hsh -- HACK
+      hashWithSalt salt (TermLike__ _ hsh _) =
+        salt `hashWithSalt` hsh -- HACK
       {-# INLINE hashWithSalt #-}
 
 instance NFData variable => NFData (TermLike variable) where
