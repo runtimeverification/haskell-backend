@@ -24,7 +24,6 @@ import Control.DeepSeq (
  )
 import Control.Lens qualified as Lens
 import Control.Monad.Catch (
-    MonadCatch,
     handleAll,
     throwM,
  )
@@ -509,10 +508,8 @@ transitionRule' stuckCheck claims axioms = \prim proofState ->
     axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
 
 withWarnings ::
-    forall m.
-    MonadSimplify m =>
-    CommonTransitionRule m ->
-    CommonTransitionRule m
+    CommonTransitionRule Simplifier ->
+    CommonTransitionRule Simplifier
 withWarnings rule prim claimState = do
     claimState' <- rule prim claimState
     case prim of
@@ -525,10 +522,8 @@ withWarnings rule prim claimState = do
     return claimState'
 
 profTransitionRule ::
-    forall m.
-    MonadProf m =>
-    CommonTransitionRule m ->
-    CommonTransitionRule m
+    CommonTransitionRule Simplifier ->
+    CommonTransitionRule Simplifier
 profTransitionRule rule prim proofState =
     case prim of
         Prim.ApplyClaims -> tracing ":transit:apply-claims"
@@ -542,16 +537,14 @@ profTransitionRule rule prim proofState =
             >>= Transition.scatter
 
 logTransitionRule ::
-    forall m.
-    MonadSimplify m =>
-    CommonTransitionRule m ->
-    CommonTransitionRule m
+    CommonTransitionRule Simplifier ->
+    CommonTransitionRule Simplifier
 logTransitionRule rule prim proofState =
     whileReachability prim $ rule prim proofState
 
 checkStuckConfiguration ::
-    CommonTransitionRule m ->
-    CommonTransitionRule m
+    CommonTransitionRule Simplifier ->
+    CommonTransitionRule Simplifier
 checkStuckConfiguration rule prim proofState = do
     proofState' <- rule prim proofState
     for_ (extractStuck proofState) $ \rule' -> do
@@ -622,10 +615,8 @@ debugClaimStateFinal transition = do
     empty
 
 withDebugClaimState ::
-    forall monad.
-    MonadLog monad =>
-    CommonTransitionRule monad ->
-    CommonTransitionRule monad
+    CommonTransitionRule Simplifier ->
+    CommonTransitionRule Simplifier
 withDebugClaimState transitionFunc transition state =
     Transition.orElse
         ( debugClaimStateBracket
@@ -638,10 +629,8 @@ withDebugClaimState transitionFunc transition state =
         )
 
 withDebugProven ::
-    forall monad.
-    MonadLog monad =>
-    CommonTransitionRule monad ->
-    CommonTransitionRule monad
+    CommonTransitionRule Simplifier ->
+    CommonTransitionRule Simplifier
 withDebugProven rule prim state =
     do
         state' <- rule prim state
@@ -656,9 +645,8 @@ withDebugProven rule prim state =
             _ -> pure state'
 
 withConfiguration ::
-    MonadCatch monad =>
-    CommonTransitionRule monad ->
-    CommonTransitionRule monad
+    CommonTransitionRule Simplifier ->
+    CommonTransitionRule Simplifier
 withConfiguration transit prim proofState =
     handle' (transit prim proofState)
   where
