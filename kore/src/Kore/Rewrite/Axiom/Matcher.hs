@@ -553,12 +553,13 @@ matchNormalizedAc ::
     NormalizedAc normalized ->
     Simplifier (Either Text (MatchResult RewritingVariableName))
 matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLike normalized1 normalized2
+    -- all concrete elements in the AC pattern must appear in the AC subject
+    | not (null excessConcrete1) =
+        failMatch "AC collection missing concrete elements"
     -- Case for when all symbolic elements in normalized1 appear in normalized2:
     | [] <- excessAbstract1 =
-        -- All concrete elements in normalized1 appear in normalized2
-        if not $ null excessConcrete1
-            then failMatch "AC collection missing concrete elements"
-            else case opaque1 of
+        do
+            case opaque1 of
                 -- Without opaques and syntactically equal
                 [] ->
                     if not (null opaque2) || not (null excessConcrete2) || not (null excessAbstract2)
