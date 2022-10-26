@@ -134,7 +134,7 @@ jobs:
 
       - name: Build dependencies
         run: |
-          stack build --test --only-dependencies
+          stack build --test
 
   cache-stack-haddock:
     name: 'Cache Stack Haddock'
