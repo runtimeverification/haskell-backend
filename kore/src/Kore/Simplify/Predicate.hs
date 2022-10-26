@@ -106,19 +106,17 @@ import Logic
 import Prelude.Kore
 
 simplify ::
-    forall simplifier.
     HasCallStack =>
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Predicate RewritingVariableName ->
-    simplifier NormalForm
+    Simplifier NormalForm
 simplify sideCondition original =
     loop 0 (mkSingleton original)
   where
     limit :: Int
     limit = 20
 
-    loop :: Int -> NormalForm -> simplifier NormalForm
+    loop :: Int -> NormalForm -> Simplifier NormalForm
     loop count input
         | count >= limit = do
             warnUnsimplifiedPredicate limit original input
@@ -151,7 +149,7 @@ simplify sideCondition original =
     -- this function.
     worker ::
         Predicate RewritingVariableName ->
-        simplifier NormalForm
+        Simplifier NormalForm
     worker predicate
         | Just predicate' <- replacePredicate predicate =
             worker predicate'
@@ -631,9 +629,8 @@ simplifyEquals sideCondition sort equals = do
                     & return
 
 simplifyIn ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     In () (OrPattern RewritingVariableName) ->
-    simplifier NormalForm
+    Simplifier NormalForm
 simplifyIn sideCondition =
     In.simplify sideCondition >=> return . NormalForm.fromOrCondition

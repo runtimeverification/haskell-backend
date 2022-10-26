@@ -37,6 +37,8 @@ import Kore.Simplify.Ceil qualified as Ceil (
 import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify
 import Logic qualified
+import Kore.Unification.NewUnifier (unifyTerms)
+import Kore.Unification.Procedure (runUnifier)
 import Prelude.Kore
 
 {- |'simplify' simplifies an 'In' pattern with 'OrPattern'
@@ -52,52 +54,21 @@ Right now this uses the following simplifications:
 TODO(virgil): It does not have yet a special case for children with top terms.
 -}
 simplify ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     In sort (OrPattern RewritingVariableName) ->
-    simplifier (OrCondition RewritingVariableName)
+    Simplifier (OrCondition RewritingVariableName)
 simplify
     sideCondition
-    In{inContainedChild = first, inContainingChild = second} =
-        simplifyEvaluatedIn sideCondition first second
-
-simplifyEvaluatedIn ::
-    forall simplifier.
-    MonadSimplify simplifier =>
-    SideCondition RewritingVariableName ->
-    OrPattern RewritingVariableName ->
-    OrPattern RewritingVariableName ->
-    simplifier (OrCondition RewritingVariableName)
-simplifyEvaluatedIn sideCondition first second
-    | OrPattern.isFalse first = return OrCondition.bottom
-    | OrPattern.isFalse second = return OrCondition.bottom
-    | OrPattern.isTrue first =
-        NormalForm.toOrCondition <$> Ceil.simplifyEvaluated sideCondition second
-    | OrPattern.isTrue second =
-        NormalForm.toOrCondition <$> Ceil.simplifyEvaluated sideCondition first
-    | otherwise =
-        OrPattern.observeAllT $ do
-            pattFirst <- Logic.scatter first
-            pattSecond <- Logic.scatter second
-            makeEvaluateIn sideCondition pattFirst pattSecond >>= Logic.scatter
-
-makeEvaluateIn ::
-    MonadSimplify simplifier =>
-    SideCondition RewritingVariableName ->
-    Pattern RewritingVariableName ->
-    Pattern RewritingVariableName ->
-    simplifier (OrCondition RewritingVariableName)
-makeEvaluateIn sideCondition first second
-    | Pattern.isTop first =
-        NormalForm.toOrCondition <$> Ceil.makeEvaluate sideCondition second
-    | Pattern.isTop second =
-        NormalForm.toOrCondition <$> Ceil.makeEvaluate sideCondition first
-    | Pattern.isBottom first || Pattern.isBottom second = return OrCondition.bottom
-    | otherwise =
-        (And.makeEvaluate pattSort Not.notSimplifier sideCondition)
-            (MultiAnd.make [first, second])
-            & OrPattern.observeAllT
-            >>= Ceil.simplifyEvaluated sideCondition
-            <&> NormalForm.toOrCondition
-  where
-    pattSort = patternSort first
+    In{inContainedChild = first, inContainingChild = second}
+  =
+    OrPattern.observeAllT $ do
+        pattFirst <- Logic.scatter first
+        pattSecond <- Logic.scatter second
+        let termFirst = Pattern.term pattFirst
+            termSecond = Pattern.term pattSecond
+            remainingCondition =
+                Pattern.withoutTerm pattFirst <> Pattern.withoutTerm pattSecond
+        unificationResult <-
+            (lift . runUnifier $ unifyTerms termFirst termSecond sideCondition)
+                >>= Logic.scatter
+        return (unificationResult <> remainingCondition)
