@@ -61,11 +61,11 @@ import Kore.Internal.Variable (
 import Kore.Rewrite.SMT.Declaration (
     declareSortsSymbols,
  )
-import Kore.Simplify.API (
+import Kore.Simplify.Simplify (
     Env (..),
     Simplifier,
  )
-import Kore.Simplify.API qualified as Kore
+import Kore.Simplify.Simplify qualified as Kore
 import Logic (
     LogicT,
  )

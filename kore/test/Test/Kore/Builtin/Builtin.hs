@@ -84,7 +84,6 @@ import Kore.Rewrite.RulePattern (
     RulePattern,
  )
 import Kore.Rewrite.Step qualified as Step
-import Kore.Simplify.API hiding (simplifyPattern)
 import Kore.Simplify.AndTerms (termUnification)
 import Kore.Simplify.Condition qualified as Simplifier.Condition
 import Kore.Simplify.InjSimplifier
