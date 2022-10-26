@@ -207,10 +207,7 @@ jobs:
 
       - name: Check documentation
         run: |
-          stack haddock \
-            --fast \
-            >haddock.log 2>&1 \
-            || ( cat haddock.log; exit 1; )
+          stack haddock --fast 2>&1 | tee haddock.log
           #remove header warning for Paths_kore
           sed -e "/.*in 'Paths_kore'$/{n;n;/^ *Module header$/d}" haddock.log | tee haddock.log.noPaths
           if grep -B 2 'Module header' haddock.log.noPaths; then \
