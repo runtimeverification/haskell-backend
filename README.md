@@ -237,7 +237,6 @@ If you modified the `kore.cabal` file and want to build with GHC 9, you will hav
 nix run .#update-cabal-ghc9
 ```
 
-
 ### Integration tests
 
 We provide a `test.nix` for running integration tests:
