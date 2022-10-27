@@ -1,3 +1,9 @@
+{- |
+Module      : Kore.Network.JSONRPC
+Description : JSON RPC server for kore-rpc
+Copyright   : (c) Runtime Verification, 2022
+License     : BSD-3-Clause
+-}
 module Kore.Network.JSONRPC (jsonrpcTCPServer) where
 
 import Control.Monad.Logger (MonadLoggerIO)
