@@ -11,7 +11,9 @@ jobs:
     if: |
       contains(github.event.issue.labels.*.name, 'performance') &&
       ( contains(github.event.comment.body, '/ KEVM-perf-run') )
-    # Comment must contain this exact string to trigger a run
+    # Comment must contain this exact string to trigger a test run.
+    # The comment _may_ also contain a (version) tag for the K version,
+    # after this trigger, like "/KEVM-perf-run v5.4.32".
     runs-on: [Linux, flyweight]
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -44,26 +46,34 @@ jobs:
         id: determine-commit
         run: |
           echo "PR_HEAD=$(curl -s ${{ github.event.issue.pull_request.url }} | jq '.head.sha' | xargs echo)" | tee -a $GITHUB_OUTPUT
+          echo "K_TAG=$(echo ${{ github.event.comment.body }} | grep -oP '(?<=/KEVM-perf-run )v[0-9]+(\.[0-9]+){2} ?')" | tee -a $GITHUB_OUTPUT
       - name: Run Tests
         run: |
           set -euo pipefail
           ISSUE_NUMBER=$(cat ${GITHUB_EVENT_PATH} | jq '.issue.number')
           PR_HEAD=${{ steps.determine-commit.outputs.PR_HEAD }}
+          if [ -n "${{ steps.determine-commit.outputs.K_TAG }}" ]; then
+              K_OVERRIDE="--override-input k-framework github:runtimeverification/k/${{ steps.determine-commit.outputs.K_TAG }}"
+          else
+              K_OVERRIDE=""
+          fi
           TIMESTAMP=$(date +"%Y%m%dT%H%M%S")
 
           # FIXME can we use a reaction emoji instead?
-          gh issue comment ${ISSUE_NUMBER} --body "Running KEVM test with ${PR_HEAD:-master} as ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          gh issue comment ${ISSUE_NUMBER} --body "Running KEVM test with ${PR_HEAD:-master} and K version ${K_TAG:-master} as ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
           . /home/github-runner/.nix-profile/etc/profile.d/nix.sh
           echo "Starting Test Execution"
           echo "RUNNING TEST"
           nix build github:runtimeverification/evm-semantics#profile \
               --override-input k-framework/haskell-backend github:runtimeverification/haskell-backend/${PR_HEAD} \
+              ${K_OVERRIDE} \
               -o KEVM-timing-${TIMESTAMP}-${PR_HEAD}.data
 
           echo "Comparing with current master"
           nix build github:runtimeverification/evm-semantics#profile \
               --override-input k-framework/haskell-backend github:runtimeverification/haskell-backend/$GITHUB_SHA \
+              ${K_OVERRIDE} \
               -o KEVM-timing-${TIMESTAMP}-master.data
 
           nix run github:runtimeverification/evm-semantics#compare-profiles -- KEVM-timing-$TIMESTAMP-${PR_HEAD}.data KEVM-timing-$TIMESTAMP-master.data | tee KEVM-timing-comparison.data
