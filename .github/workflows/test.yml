@@ -207,15 +207,7 @@ jobs:
 
       - name: Build documentation
         run: |
-          stack haddock --fast 2>&1 | tee haddock.log
-      - name: Check headers
-        run: |
-          #remove header warning for Paths_kore
-          sed -e "/.*in 'Paths_kore'$/{n;n;/^ *Module header$/d}" haddock.log | tee haddock.log.noPaths
-          if grep -B 2 'Module header' haddock.log.noPaths; then \
-            echo >&2 "Please fix the missing documentation!"; \
-            exit 1; \
-          fi
+          stack haddock --fast
   hlint:
     name: 'HLint'
     runs-on: ubuntu-latest
