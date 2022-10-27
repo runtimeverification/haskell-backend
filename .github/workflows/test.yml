@@ -7,7 +7,7 @@ concurrency:
 
 jobs:
   nix-build:
-    name: 'Nix / Build'
+    name: 'Nix / Unit Tests'
     strategy:
       fail-fast: false
       matrix:
@@ -31,7 +31,7 @@ jobs:
         if: ${{ contains(matrix.os, 'macos') }}
         run: brew install bash
 
-      # Do the Following only on Public Runners; Mac Runner is pre-installed with build tools 
+      # Do the Following only on Public Runners; Mac Runner is pre-installed with build tools
       - name: 'Install Nix'
         if: ${{ !startsWith(matrix.os, 'self') }}
         uses: cachix/install-nix-action@v15
@@ -95,7 +95,7 @@ jobs:
         run: nix-build test.nix
 
   cabal:
-    name: 'Cabal'
+    name: 'Cabal / Unit Tests'
     runs-on: ubuntu-latest
     env:
       ghc_version: "8.10.7"
@@ -128,9 +128,6 @@ jobs:
           ghc-version: ${{ env.ghc_version }}
           cabal-version: "3.2"
 
-      - name: Build
-        run: cabal v2-build --enable-tests --enable-benchmarks all
-
       - name: Run unit tests
         run: cabal v2-test --enable-tests --test-show-details=direct all
 
@@ -138,7 +135,7 @@ jobs:
         run: cabal v2-configure --enable-profiling -f-threaded
 
   stack:
-    name: 'Stack'
+    name: 'Stack / Unit Tests'
     runs-on: ubuntu-latest
     steps:
       - name: Install prerequisites
@@ -175,12 +172,42 @@ jobs:
             exit 1
           fi
 
-      - name: Build project
-        run: stack build --pedantic
-
       - name: Run unit tests
         run: stack test --pedantic
 
+  stack-haddock:
+    name: 'Stack / Haddock check'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install prerequisites
+        run: |
+          sudo apt install --yes z3
+
+      - uses: actions/checkout@v2.3.4
+        with:
+          # Check out pull request HEAD instead of merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
+          submodules: recursive
+
+      - name: Cache Stack root
+        uses: actions/cache@v2
+        with:
+          path: ~/.stack
+          key: stack-haddock-${{ runner.os }}-${{ hashFiles('stack.yaml.lock') }}
+          restore-keys: |
+            stack-haddock-${{ runner.os }}-
+            stack-haddock-
+
+      - uses: haskell/actions/setup@v1
+        id: setup-haskell-stack
+        with:
+          enable-stack: true
+          stack-no-global: true
+          stack-setup-ghc: true
+
+      - name: Build documentation
+        run: |
+          stack haddock --fast
   hlint:
     name: 'HLint'
     runs-on: ubuntu-latest

@@ -42,7 +42,7 @@ pipeline {
     stage('Test') {
       when { expression { return params.STAGE == 'TEST' } }
       stages {
-        stage('Init title') {
+        stage('Init') {
           when { changeRequest() }
           steps {
             script {
@@ -50,11 +50,10 @@ pipeline {
             }
           }
         }
-        stage('Dependencies') {
+        stage('Clean') {
           steps {
             sh '''
               ./scripts/clean.sh
-              ./scripts/deps.sh
             '''
           }
         }
@@ -65,34 +64,6 @@ pipeline {
               steps {
                 sh '''
                   ./scripts/docs.sh
-                '''
-              }
-            }
-            stage('Unit Tests') {
-              options {
-                timeout(time: 24, unit: 'MINUTES')
-              }
-              steps {
-                sh '''
-                  ./scripts/unit-test.sh
-                '''
-              }
-              post {
-                always {
-                  junit 'kore/test-results.xml'
-                }
-              }
-            }
-            stage('Integration Tests') {
-              environment {
-                JOBS = 2
-              }
-              options {
-                timeout(time: 96, unit: 'MINUTES')
-              }
-              steps {
-                sh '''
-                  ./scripts/integration-k.sh
                 '''
               }
             }
