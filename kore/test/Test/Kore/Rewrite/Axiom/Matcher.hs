@@ -1078,6 +1078,13 @@ test_matching_Set =
         (mkVar sSet)
         (mkSet [mkElemVar xInt] [])
         [(sSet, mkSet [mkElemVar xInt] [])]
+    , matches
+        "[x:Int] s:Set matches [1] s':Set"
+        (mkSet [mkElemVar xInt] [mkVar sSet])
+        (mkSet [mkInt 1] [mkVar s'Set])
+        [ (inject xInt, mkInt 1)
+        , (sSet, mkVar s'Set)
+        ]
     ]
 
 sSet :: SomeVariable RewritingVariableName
