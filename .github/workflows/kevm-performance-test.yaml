@@ -10,7 +10,7 @@ jobs:
   Prepare:
     if: |
       contains(github.event.issue.labels.*.name, 'performance') &&
-      ( contains(github.event.comment.body, '/ KEVM-perf-run') )
+      ( contains(github.event.comment.body, '/KEVM-perf-run') )
     # Comment must contain this exact string to trigger a test run.
     # The comment _may_ also contain a (version) tag for the K version,
     # after this trigger, like "/KEVM-perf-run v5.4.32".
