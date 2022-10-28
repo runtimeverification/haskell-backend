@@ -561,17 +561,17 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
     | null excessConcrete1 -- see above, should not happen
       , [element1] <- excessAbstract1 -- excess in pattern is single K |-> V
       , null opaque1
-      , [concrete2] <- HashMap.toList excessConcrete2 -- excess in subject is single assoc
+      , [concElem2] <- HashMap.toList excessConcrete2 -- excess in subject is single assoc
       , null excessAbstract2
       , null opaque2 -- ? do we need this? could also mean opaques are all empty?
       -- ensure the symbolic key is not in the subject map
       -- (see intersectionMerge, should not happen)
-      , (key1, value1) <- unwrapElement element1
-      , not (isJust $ lookupSymbolicKeyOfAc key1 normalized2) =
-        -- bind element1 <- concrete2, deal with the identical parts
-        let concrete2' = wrapElement $ Bifunctor.first (from @Key) concrete2
+      , (key1, _) <- unwrapElement element1
+      , isNothing (lookupSymbolicKeyOfAc key1 normalized2) =
+        -- bind element1 <- concElem2, deal with the identical parts
+        let concElem2' = wrapElement $ Bifunctor.first (from @Key) concElem2
          in decomposeList $
-                unwrapElementToTermLike element1 concrete2'
+                unwrapElementToTermLike element1 concElem2'
                     <> unwrapValues (concrete12 <> abstractMerge)
     -- Case for when all symbolic elements in normalized1 appear in normalized2:
     | [] <- excessAbstract1 =
