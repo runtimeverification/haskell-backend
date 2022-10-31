@@ -1015,10 +1015,11 @@ test_matching_Set =
         "[0] does not match [1]"
         (mkSet [mkInt 0] [])
         (mkSet [mkInt 1] [])
-    , doesn'tMatch
-        "[x:Int] does not match [0]"
+    , matches
+        "[x:Int] matches [0]"
         (mkSet [mkElemVar xInt] [])
         (mkSet [mkInt 0] [])
+        [(inject xInt, mkInt 0)]
     , matches
         "[x:Int] s:Set matches [0]"
         (mkSet [mkElemVar xInt] [mkVar sSet])
@@ -1078,6 +1079,13 @@ test_matching_Set =
         (mkVar sSet)
         (mkSet [mkElemVar xInt] [])
         [(sSet, mkSet [mkElemVar xInt] [])]
+    , matches
+        "[x:Int] s:Set matches [1] s':Set"
+        (mkSet [mkElemVar xInt] [mkVar sSet])
+        (mkSet [mkInt 1] [mkVar s'Set])
+        [ (inject xInt, mkInt 1)
+        , (sSet, mkSet [] [mkVar s'Set])
+        ]
     ]
 
 sSet :: SomeVariable RewritingVariableName

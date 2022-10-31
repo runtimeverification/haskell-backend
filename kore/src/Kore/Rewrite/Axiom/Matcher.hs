@@ -556,6 +556,23 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
     -- all concrete elements in the AC pattern must appear in the AC subject
     | not (null excessConcrete1) =
         failMatch "AC collection missing concrete elements"
+    -- (exactly) one concrete excess elements is mapped to an abstract
+    -- element in the pattern
+    | null excessConcrete1 -- see above, should not happen
+      , [element1] <- excessAbstract1 -- excess in pattern is single K |-> V
+      , null opaque1
+      , [concElem2] <- HashMap.toList excessConcrete2 -- excess in subject is single assoc
+      , null excessAbstract2
+      , null opaque2 -- ? do we need this? could also mean opaques are all empty?
+      -- ensure the symbolic key is not in the subject map
+      -- (see intersectionMerge, should not happen)
+      , (key1, _) <- unwrapElement element1
+      , isNothing (lookupSymbolicKeyOfAc key1 normalized2) =
+        -- bind element1 <- concElem2, deal with the identical parts
+        let concElem2' = wrapElement $ Bifunctor.first (from @Key) concElem2
+         in decomposeList $
+                unwrapElementToTermLike element1 concElem2'
+                    <> unwrapValues (concrete12 <> abstractMerge)
     -- Case for when all symbolic elements in normalized1 appear in normalized2:
     | [] <- excessAbstract1 =
         do
