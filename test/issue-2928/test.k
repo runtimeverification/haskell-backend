@@ -3,7 +3,9 @@ requires "domains.md"
 module TEST
     imports INT
     imports SET
-    imports BOOL 
+    imports SET-SYMBOLIC
+    imports BOOL
+    imports K-EQUAL
 
     configuration <k> $PGM:Foo </k>
 
@@ -18,8 +20,7 @@ module TEST
 
     rule X in SetItem(Y) => false requires X =/=Int Y [simplification]
 
-    rule .Set -Set S => .Set [simplification]
-    rule (SetItem(X) REST) -Set S => REST -Set S requires X in S [simplification]
-    rule (SetItem(X) REST) -Set S => SetItem(X) (REST -Set S) requires notBool (X in S) [simplification, label(toApply)]
-    
+    rule SetItem(X) |Set SetItem(Y) => SetItem(X) SetItem(Y)
+      requires X =/=K Y [simplification]
+
 endmodule
