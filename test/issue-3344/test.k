@@ -18,4 +18,7 @@ module TEST
     rule [set-3]: SetItem(E) -Set RESTE => SetItem(E)
       requires notBool (E in RESTE) [simplification]
 
+    rule [set-4]: SetItem(F) -Set RESTF => .Set
+      requires F in RESTF [simplification]
+
 endmodule
