@@ -1,3 +1,5 @@
+{-# LANGUAGE Trustworthy #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
@@ -42,6 +44,9 @@ import Data.Functor.Identity (
 import Data.Kind (
     Type,
  )
+import Data.Monoid (
+    All (..),
+ )
 import Data.Text (
     Text,
  )
@@ -84,6 +89,7 @@ import Kore.Unparser
 import Prelude.Kore
 import Pretty qualified
 import SQL qualified
+import Unsafe.Coerce (unsafeCoerce)
 
 {- | The abstract syntax of Kore.
 
@@ -509,18 +515,24 @@ asConcretePattern ::
     Maybe (Pattern Concrete annotation)
 asConcretePattern = traverseVariables (pure toConcrete)
 
-isConcrete :: Pattern variable annotation -> Bool
-isConcrete = isJust . asConcretePattern
+-- | Check whether a pattern is concrete.
+isConcrete :: forall variable annotation. Pattern variable annotation -> Bool
+isConcrete = Recursive.fold worker
+  where
+    worker :: CofreeF (PatternF variable) annotation Bool -> Bool
+    worker (_ann :< t) = isConcreteF t && and t
+
+isConcreteF :: PatternF variable child -> Bool
+isConcreteF = getAll . getConst . PatternF.traverseVariables (pure (\_var -> Const (All False)))
 
 {- | Construct a 'Pattern' from a @ConcretePattern@.
 
 The concrete pattern contains no variables, so the result is fully
 polymorphic in the variable type.
 
-'fromConcretePattern' unfolds the resulting syntax tree lazily, so it
-composes with other tree transformations without allocating intermediates.
+'fromConcretePattern' uses 'unsafeCoerce' to avoid traversing the pattern.
 -}
 fromConcretePattern ::
     Pattern Concrete annotation ->
     Pattern variable annotation
-fromConcretePattern = mapVariables (pure $ from @Concrete)
+fromConcretePattern = unsafeCoerce

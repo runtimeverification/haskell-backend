@@ -198,8 +198,7 @@ evaluateBuiltin
                             ]
                 _ -> return result
       where
-        isValue pat =
-            maybe False TermLike.isConstructorLike $ asConcrete pat
+        isValue pat = isConcrete pat && TermLike.isConstructorLike pat
 
 -- | Creates an 'BuiltinAndAxiomSimplifier' from a set of equations.
 mkEvaluator ::

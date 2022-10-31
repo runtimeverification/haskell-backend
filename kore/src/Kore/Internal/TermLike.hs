@@ -1,3 +1,4 @@
+{-# LANGUAGE Trustworthy #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
@@ -204,6 +205,7 @@ import Data.Functor.Foldable (
 import Data.Functor.Foldable qualified as Recursive
 import Data.Map.Strict qualified as Map
 import Data.Monoid (
+    All (..),
     Endo (..),
  )
 import Data.Set (
@@ -294,6 +296,7 @@ import Kore.Variables.Fresh (
 import Kore.Variables.Fresh qualified as Fresh
 import Prelude.Kore
 import Pretty qualified
+import Unsafe.Coerce (unsafeCoerce)
 
 hasFreeVariable ::
     Ord variable =>
@@ -388,22 +391,37 @@ asConcrete ::
     Maybe (TermLike Concrete)
 asConcrete = traverseVariables (pure toConcrete)
 
-isConcrete :: Ord variable => TermLike variable -> Bool
-isConcrete = isJust . asConcrete
+-- | Check whether a @TermLike@ is concrete.
+isConcrete :: forall variable. TermLike variable -> Bool
+-- It seems very tempting to write
+--
+--   isConcrete = getAll . getConst .
+--      traverseVariables (pure (const (Const (All False))))
+--
+-- Unfortunately, this won't work, for the simple reason that traverseVariables
+-- requires a Monad, and Const isn't one. We used to implement isConcrete using
+-- asConcrete, but that wastefully reconstructs the term and then throws the
+-- result away.
+isConcrete = Recursive.fold worker
+  where
+    worker :: CofreeF (TermLikeF variable) (TermAttributes variable) Bool -> Bool
+    worker (_attrs :< t) = isConcreteF t && and t
+
+isConcreteF :: TermLikeF variable child -> Bool
+isConcreteF = getAll . getConst . traverseVariablesF (pure (\_var -> Const (All False)))
 
 {- | Construct any 'TermLike' from a @'TermLike' 'Concrete'@.
 
 The concrete pattern contains no variables, so the result is fully
 polymorphic in the variable type.
 
-@fromConcrete@ unfolds the resulting syntax tree lazily, so it
-composes with other tree transformations without allocating intermediates.
+@fromConcrete@ is implemented using 'unsafeCoerce' to avoid actually
+traversing the tree.
 -}
 fromConcrete ::
-    FreshPartialOrd variable =>
     TermLike Concrete ->
     TermLike variable
-fromConcrete = mapVariables (pure $ from @Concrete)
+fromConcrete = unsafeCoerce
 
 {- | Is the 'TermLike' fully simplified under the given side condition?
 

@@ -1,3 +1,4 @@
+{-# LANGUAGE Trustworthy #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
@@ -155,6 +156,7 @@ import Pretty (
  )
 import Pretty qualified
 import SQL qualified
+import Unsafe.Coerce (unsafeCoerce)
 
 -- | 'TermLikeF' is the 'Base' functor of internal term-like patterns.
 data TermLikeF variable child
@@ -823,11 +825,8 @@ instance Unparse (TermLike variable) => SQL.Column (TermLike variable) where
     defineColumn = SQL.defineTextColumn
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
-instance
-    (FreshPartialOrd variable) =>
-    From (TermLike Concrete) (TermLike variable)
-    where
-    from = mapVariables (pure $ from @Concrete)
+instance From (TermLike Concrete) (TermLike variable) where
+    from = unsafeCoerce
     {-# INLINE from #-}
 
 instance Ord variable => From Key (TermLike variable) where
