@@ -389,8 +389,9 @@ asConcrete ::
 asConcrete = traverseVariables id (pure toConcrete)
 
 isConcrete ::
-  Ord variable =>
-  TermLike variable -> Bool
+    Ord variable =>
+    TermLike variable ->
+    Bool
 isConcrete = isJust . asConcrete
 
 {- | Construct any 'TermLike' from a @'TermLike' 'Concrete'@.
