@@ -181,7 +181,7 @@ instance From OnePathClaim (AxiomPattern VariableName) where
 instance From OnePathClaim (AxiomPattern RewritingVariableName) where
     from =
         AxiomPattern
-            . TermLike.mapVariables (pure mkRuleVariable)
+            . TermLike.mapVariables id (pure mkRuleVariable)
             . onePathRuleToTerm
 
 instance ClaimExtractor OnePathClaim where
@@ -192,7 +192,7 @@ instance ClaimExtractor OnePathClaim where
                 (TermLike.And_ _ requires lhs)
                 (TermLike.ApplyAlias_ alias [rhs])
                     | aliasId == weakExistsFinally -> do
-                        let rhs' = TermLike.mapVariables (pure mkRuleVariable) rhs
+                        let rhs' = TermLike.mapVariables id (pure mkRuleVariable) rhs
                             attributes' =
                                 Attribute.mapAxiomVariables
                                     (pure mkRuleVariable)

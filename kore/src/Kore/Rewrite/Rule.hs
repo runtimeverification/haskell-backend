@@ -312,7 +312,7 @@ termToAxiomPattern attributes pat =
             (TermLike.And_ _ requires lhs)
             (TermLike.ApplyAlias_ op [rhs])
                 | Just constructor <- reachabilityModalityToConstructor op -> do
-                    let rhs' = TermLike.mapVariables (pure mkRuleVariable) rhs
+                    let rhs' = TermLike.mapVariables id (pure mkRuleVariable) rhs
                         attributes' =
                             Attribute.mapAxiomVariables
                                 (pure mkRuleVariable)

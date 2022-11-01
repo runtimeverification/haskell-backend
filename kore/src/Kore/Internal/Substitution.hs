@@ -541,7 +541,7 @@ mapAssignmentVariables adj (Assignment variable term) =
     assign mappedVariable mappedTerm
   where
     mappedVariable = mapSomeVariable adj variable
-    mappedTerm = TermLike.mapVariables adj term
+    mappedTerm = TermLike.mapVariables id adj term
 
 {- | 'mapVariables' changes all the variables in the substitution
  with the given function.

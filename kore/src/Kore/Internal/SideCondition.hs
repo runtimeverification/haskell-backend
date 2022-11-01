@@ -418,13 +418,13 @@ mapVariables adj condition@(SideCondition _ _ _ _ _) =
     let assumedTrue' =
             MultiAnd.map (Predicate.mapVariables adj) assumedTrue
         replacementsTermLike' =
-            mapKeysAndValues (TermLike.mapVariables adj) replacementsTermLike
+            mapKeysAndValues (TermLike.mapVariables id adj) replacementsTermLike
         replacementsPredicate' =
             mapKeysAndValues (Predicate.mapVariables adj) replacementsPredicate
         definedTerms' =
-            HashSet.map (TermLike.mapVariables adj) definedTerms
+            HashSet.map (TermLike.mapVariables id adj) definedTerms
         simplifiedFunctions' =
-            (HashSet.map . fmap) (TermLike.mapVariables adj) simplifiedFunctions
+            (HashSet.map . fmap) (TermLike.mapVariables id adj) simplifiedFunctions
      in SideCondition
             { assumedTrue = assumedTrue'
             , replacementsTermLike = replacementsTermLike'

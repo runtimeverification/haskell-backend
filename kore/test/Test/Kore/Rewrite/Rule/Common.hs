@@ -44,8 +44,8 @@ instance RuleBase Pair OnePathClaim where
             (Pattern.fromTermAndPredicate t2' p2' & OrPattern.fromPattern)
             []
       where
-        t1' = TermLike.mapVariables (pure mkRuleVariable) t1
-        t2' = TermLike.mapVariables (pure mkRuleVariable) t2
+        t1' = TermLike.mapVariables id (pure mkRuleVariable) t1
+        t2' = TermLike.mapVariables id (pure mkRuleVariable) t2
         p1' = Predicate.mapVariables (pure mkRuleVariable) p1
         p2' = Predicate.mapVariables (pure mkRuleVariable) p2
 

@@ -406,7 +406,7 @@ respond runSMT serializedModule =
             buildResult sort (Right (term, r)) =
                 let jsonTerm =
                         PatternJson.fromTermLike $
-                            TermLike.mapVariables getRewritingVariable term
+                            TermLike.mapVariables id getRewritingVariable term
                  in Right . Implies $
                         case r of
                             Claim.Implied mbCond ->

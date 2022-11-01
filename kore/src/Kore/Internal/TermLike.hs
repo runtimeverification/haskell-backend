@@ -386,9 +386,11 @@ asConcrete ::
     Ord variable =>
     TermLike variable ->
     Maybe (TermLike Concrete)
-asConcrete = traverseVariables (pure toConcrete)
+asConcrete = traverseVariables id (pure toConcrete)
 
-isConcrete :: Ord variable => TermLike variable -> Bool
+isConcrete ::
+  Ord variable =>
+  TermLike variable -> Bool
 isConcrete = isJust . asConcrete
 
 {- | Construct any 'TermLike' from a @'TermLike' 'Concrete'@.
@@ -401,9 +403,10 @@ composes with other tree transformations without allocating intermediates.
 -}
 fromConcrete ::
     FreshPartialOrd variable =>
+    Show variable =>
     TermLike Concrete ->
     TermLike variable
-fromConcrete = mapVariables (pure $ from @Concrete)
+fromConcrete = mapVariables id (pure $ from @Concrete)
 
 {- | Is the 'TermLike' fully simplified under the given side condition?
 

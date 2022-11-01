@@ -633,7 +633,7 @@ mapRuleVariables adj (coerce -> rule1@(RulePattern _ _ _ _ _)) =
         , rhs = RHS{existentials, right, ensures}
         , attributes
         } = rule1
-    mapTermLikeVariables = TermLike.mapVariables adj
+    mapTermLikeVariables = TermLike.mapVariables id adj
     mapPredicateVariables = Predicate.mapVariables adj
     mapAntiLeftVariables = AntiLeft.mapVariables adj
 

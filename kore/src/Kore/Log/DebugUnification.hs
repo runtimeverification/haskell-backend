@@ -89,8 +89,8 @@ whileDebugUnification ::
 whileDebugUnification term1' term2' =
     logWhile $ DebugUnificationWhile WhileDebugUnification{term1, term2}
   where
-    term1 = TermLike.mapVariables (pure toVariableName) term1'
-    term2 = TermLike.mapVariables (pure toVariableName) term2'
+    term1 = TermLike.mapVariables id (pure toVariableName) term1'
+    term2 = TermLike.mapVariables id (pure toVariableName) term2'
 
 debugUnificationSolved ::
     MonadLog m =>
@@ -111,5 +111,5 @@ debugUnificationUnsolved ::
 debugUnificationUnsolved term1' term2' =
     logEntry $ DebugUnificationUnsolved UnificationUnsolved{term1, term2}
   where
-    term1 = TermLike.mapVariables (pure toVariableName) term1'
-    term2 = TermLike.mapVariables (pure toVariableName) term2'
+    term1 = TermLike.mapVariables id (pure toVariableName) term1'
+    term2 = TermLike.mapVariables id (pure toVariableName) term2'

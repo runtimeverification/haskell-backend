@@ -872,8 +872,8 @@ simpleClaim ::
     TermLike VariableName ->
     ClaimPattern
 simpleClaim
-    (TermLike.mapVariables (pure mkRuleVariable) -> left)
-    (TermLike.mapVariables (pure mkRuleVariable) -> right) =
+    (TermLike.mapVariables id (pure mkRuleVariable) -> left)
+    (TermLike.mapVariables id (pure mkRuleVariable) -> right) =
         ClaimPattern
             { left =
                 Pattern.fromTermAndPredicate

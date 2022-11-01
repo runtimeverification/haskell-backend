@@ -314,7 +314,7 @@ mapVariables mapping equation@(Equation _ _ _ _ _ _ _) =
         , ensures
         , attributes
         } = equation
-    mapTermLikeVariables = TermLike.mapVariables mapping
+    mapTermLikeVariables = TermLike.mapVariables id mapping
     mapPredicateVariables = Predicate.mapVariables mapping
 
 refreshVariables ::

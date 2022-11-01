@@ -1774,7 +1774,7 @@ test_concretizeKeysAxiom =
         actual <- MultiOr.traverse (flip runStep axiom) config
         assertEqual "" expected (MultiOr.flatten actual)
   where
-    x = mkIntVar (testId "x") & TermLike.mapVariables (pure mkRuleVariable)
+    x = mkIntVar (testId "x") & TermLike.mapVariables id (pure mkRuleVariable)
     key = 1
     symbolicKey = Test.Int.asInternal key
     concreteKey = Test.Int.asInternal key

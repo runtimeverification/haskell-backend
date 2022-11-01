@@ -129,7 +129,7 @@ instance From AllPathClaim (AxiomPattern VariableName) where
 instance From AllPathClaim (AxiomPattern RewritingVariableName) where
     from =
         AxiomPattern
-            . TermLike.mapVariables (pure mkRuleVariable)
+            . TermLike.mapVariables id (pure mkRuleVariable)
             . allPathRuleToTerm
 
 instance Claim AllPathClaim where
@@ -172,7 +172,7 @@ instance ClaimExtractor AllPathClaim where
                 (TermLike.And_ _ requires lhs)
                 (TermLike.ApplyAlias_ alias [rhs])
                     | aliasId == weakAlwaysFinally -> do
-                        let rhs' = TermLike.mapVariables (pure mkRuleVariable) rhs
+                        let rhs' = TermLike.mapVariables id (pure mkRuleVariable) rhs
                             attributes' =
                                 Attribute.mapAxiomVariables
                                     (pure mkRuleVariable)

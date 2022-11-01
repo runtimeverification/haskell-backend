@@ -450,25 +450,25 @@ test_renaming =
     ]
   where
     mapElementVariables' Variable{variableName} =
-        mapVariables
+        mapVariables id
             (pure id)
                 { adjSomeVariableNameElement = const <$> variableName
                 }
     mapSetVariables' Variable{variableName} =
-        mapVariables
+        mapVariables id
             (pure id)
                 { adjSomeVariableNameSet = const <$> variableName
                 }
 
     traverseElementVariables' Variable{variableName} =
         runIdentity
-            . traverseVariables
+            . traverseVariables id
                 (pure return)
                     { adjSomeVariableNameElement = const . return <$> variableName
                     }
     traverseSetVariables' Variable{variableName} =
         runIdentity
-            . traverseVariables
+            . traverseVariables id
                 (pure return)
                     { adjSomeVariableNameSet = const . return <$> variableName
                     }

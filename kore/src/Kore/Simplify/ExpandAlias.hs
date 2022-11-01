@@ -66,7 +66,7 @@ substituteInAlias ::
 substituteInAlias Alias{aliasLeft, aliasRight} children =
     assert (length aliasLeft == length children) $
         substitute substitutionMap $
-            mapVariables (pure fromVariableName) aliasRight
+            mapVariables id (pure fromVariableName) aliasRight
   where
     aliasLeft' =
         mapSomeVariableName (pure fromVariableName) . variableName

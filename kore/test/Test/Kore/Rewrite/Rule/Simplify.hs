@@ -410,7 +410,7 @@ testSimplifyTerm testEnv sideCondition termLike = do
         TermLike RewritingVariableName ->
         TermLike variable
     liftTermLike =
-        TermLike.mapVariables liftRewritingVariable
+        TermLike.mapVariables id liftRewritingVariable
 
     liftReplacement ::
         InternalVariable variable =>

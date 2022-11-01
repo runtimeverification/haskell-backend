@@ -59,6 +59,6 @@ infoAttemptUnification ::
 infoAttemptUnification term1' term2' =
     logWhile InfoAttemptUnification{term1, term2}
   where
-    mapVariables = TermLike.mapVariables (pure toVariableName)
+    mapVariables = TermLike.mapVariables id (pure toVariableName)
     term1 = mapVariables term1'
     term2 = mapVariables term2'

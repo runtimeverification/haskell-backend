@@ -14,6 +14,7 @@ module Kore.Internal.TermLike.TermLike (
     mapVariables,
     traverseVariables,
     mkVar,
+    traverseAttributeVariables,
     traverseVariablesF,
     updateCallStack,
     depth,
@@ -824,10 +825,10 @@ instance Unparse (TermLike variable) => SQL.Column (TermLike variable) where
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
 instance
-    (FreshPartialOrd variable) =>
+    (FreshPartialOrd variable, Show variable) =>
     From (TermLike Concrete) (TermLike variable)
     where
-    from = mapVariables (pure $ from @Concrete)
+    from = mapVariables id (pure $ from @Concrete)
     {-# INLINE from #-}
 
 instance Ord variable => From Key (TermLike variable) where
@@ -1161,11 +1162,13 @@ mapVariables ::
     forall variable1 variable2.
     Ord variable1 =>
     FreshPartialOrd variable2 =>
+    Show variable2 =>
+    (VariableNameMap variable1 variable2 -> VariableNameMap variable1 variable2) ->
     AdjSomeVariableName (variable1 -> variable2) ->
     TermLike variable1 ->
     TermLike variable2
-mapVariables adj termLike =
-    runIdentity (traverseVariables ((.) pure <$> adj) termLike)
+mapVariables f adj termLike =
+    runIdentity (traverseVariables f ((.) pure <$> adj) termLike)
 {-# INLINE mapVariables #-}
 
 {- | Use the provided traversal to replace all variables in a 'TermLike'.
@@ -1181,15 +1184,17 @@ traverseVariables ::
     forall variable1 variable2 m.
     Ord variable1 =>
     FreshPartialOrd variable2 =>
+    Show variable2 =>
     Monad m =>
+    (VariableNameMap variable1 variable2 -> VariableNameMap variable1 variable2) ->
     AdjSomeVariableName (variable1 -> m variable2) ->
     TermLike variable1 ->
     m (TermLike variable2)
-traverseVariables adj termLike =
+traverseVariables f adj termLike =
     renameFreeVariables
         adj
         (Attribute.freeVariables @_ @variable1 termLike)
-        >>= Reader.runReaderT (Recursive.fold worker termLike)
+        >>= Reader.runReaderT (Reader.local f (Recursive.fold worker termLike))
   where
     adjReader = (.) lift <$> adj
     trElemVar = traverse $ traverseElementVariableName adjReader

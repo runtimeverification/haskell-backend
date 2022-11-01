@@ -79,7 +79,7 @@ definitionEvaluation ::
     BuiltinAndAxiomSimplifier
 definitionEvaluation equations =
     BuiltinAndAxiomSimplifier $ \term condition -> do
-        let term' = TermLike.mapVariables Target.mkUnifiedNonTarget term
+        let term' = TermLike.mapVariables id Target.mkUnifiedNonTarget term
         result <-
             attemptEquations
                 (attemptEquationAndAccumulateErrors condition term')
@@ -113,7 +113,7 @@ attemptEquationAndAccumulateErrors condition term equation =
         ExceptRT . ExceptT $
             Equation.attemptEquation
                 condition
-                (TermLike.mapVariables (pure Target.unTarget) term)
+                (TermLike.mapVariables id (pure Target.unTarget) term)
                 equation
                 >>= either (return . Left . Just . Min) (fmap Right . apply)
     apply = Equation.applyEquation condition equation

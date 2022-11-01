@@ -209,7 +209,7 @@ mapVariables ::
     AntiLeft variable2
 mapVariables adj antiLeft@(AntiLeft _ _ _) =
     AntiLeft
-        { aliasTerm = TermLike.mapVariables adj aliasTerm
+        { aliasTerm = TermLike.mapVariables id adj aliasTerm
         , maybeInner = mapVariables adj <$> maybeInner
         , leftHands = map (mapVariablesLeft adj) leftHands
         }
@@ -225,7 +225,7 @@ mapVariablesLeft adj antiLeft@(AntiLeftLhs _ _ _) =
     AntiLeftLhs
         { existentials = map (mapElementVariable adj) existentials
         , predicate = Predicate.mapVariables adj predicate
-        , term = TermLike.mapVariables adj term
+        , term = TermLike.mapVariables id adj term
         }
   where
     AntiLeftLhs{existentials, predicate, term} = antiLeft

@@ -68,6 +68,6 @@ debugAttemptedRewriteRule initial attemptedRewriteRule =
             , attemptedRewriteRule
             }
   where
-    configuration = mapConditionalVariables TermLike.mapVariables initial
+    configuration = mapConditionalVariables (TermLike.mapVariables id) initial
     mapConditionalVariables mapTermVariables =
         Conditional.mapVariables mapTermVariables (pure toVariableName)

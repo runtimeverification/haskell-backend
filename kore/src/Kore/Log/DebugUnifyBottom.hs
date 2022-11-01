@@ -70,8 +70,8 @@ mkDebugUnifyBottom ::
 mkDebugUnifyBottom info first second =
     DebugUnifyBottom
         info
-        (TermLike.mapVariables (pure $ from @_ @VariableName) first)
-        (TermLike.mapVariables (pure $ from @_ @VariableName) second)
+        (TermLike.mapVariables id (pure $ from @_ @VariableName) first)
+        (TermLike.mapVariables id (pure $ from @_ @VariableName) second)
 
 debugUnifyBottom ::
     MonadLog log =>
@@ -84,8 +84,8 @@ debugUnifyBottom info first second =
     logEntry $
         DebugUnifyBottom
             info
-            (TermLike.mapVariables (pure $ from @_ @VariableName) first)
-            (TermLike.mapVariables (pure $ from @_ @VariableName) second)
+            (TermLike.mapVariables id (pure $ from @_ @VariableName) first)
+            (TermLike.mapVariables id (pure $ from @_ @VariableName) second)
 
 debugUnifyBottomAndReturnBottom ::
     MonadLog log =>

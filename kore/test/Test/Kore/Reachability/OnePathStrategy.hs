@@ -91,8 +91,8 @@ makeOnePathClaim ::
     TermLike' ->
     OnePathClaim
 makeOnePathClaim
-    (TermLike.mapVariables (pure mkRuleVariable) -> left)
-    (TermLike.mapVariables (pure mkRuleVariable) -> right) =
+    (TermLike.mapVariables id (pure mkRuleVariable) -> left)
+    (TermLike.mapVariables id (pure mkRuleVariable) -> right) =
         OnePathClaim $
             ClaimPattern
                 { left =

@@ -124,7 +124,7 @@ checkClaim
                 goalPattern =
                     ModalPattern
                         { modalOp = getId alias
-                        , term = prop & TermLike.mapVariables resetConfigVariable
+                        , term = prop & TermLike.mapVariables id resetConfigVariable
                         }
                 strategy =
                     Limit.takeWithin

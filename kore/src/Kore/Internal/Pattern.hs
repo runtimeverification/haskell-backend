@@ -192,7 +192,7 @@ mapVariables ::
     Pattern variable2
 mapVariables adj Conditional{term, predicate, substitution} =
     Conditional
-        { term = TermLike.mapVariables adj term
+        { term = TermLike.mapVariables id adj term
         , predicate = Predicate.mapVariables adj predicate
         , substitution = Substitution.mapVariables adj substitution
         }

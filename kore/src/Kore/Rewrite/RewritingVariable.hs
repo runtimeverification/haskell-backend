@@ -193,7 +193,7 @@ getRewritingPattern = Pattern.mapVariables getRewritingVariable
 getRewritingTerm ::
     TermLike RewritingVariableName ->
     TermLike VariableName
-getRewritingTerm = TermLike.mapVariables getRewritingVariable
+getRewritingTerm = TermLike.mapVariables id getRewritingVariable
 
 resetConfigVariable ::
     AdjSomeVariableName
@@ -267,7 +267,7 @@ mkRewritingPattern :: Pattern VariableName -> Pattern RewritingVariableName
 mkRewritingPattern = Pattern.mapVariables (pure ConfigVariableName)
 
 mkRewritingTerm :: TermLike VariableName -> TermLike RewritingVariableName
-mkRewritingTerm = TermLike.mapVariables (pure mkConfigVariable)
+mkRewritingTerm = TermLike.mapVariables id (pure mkConfigVariable)
 
 getRemainderPredicate ::
     Predicate RewritingVariableName ->

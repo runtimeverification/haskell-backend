@@ -64,5 +64,5 @@ errorBottomTotalFunction ::
     InternalVariable variable =>
     TermLike variable ->
     logger ()
-errorBottomTotalFunction (mapVariables (pure toVariableName) -> term) =
+errorBottomTotalFunction (mapVariables id (pure toVariableName) -> term) =
     throwM ErrorBottomTotalFunction{term}
