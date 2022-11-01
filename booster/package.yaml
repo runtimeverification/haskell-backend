@@ -16,19 +16,25 @@ extra-source-files:
 
 default-extensions:
   BangPatterns
+  DataKinds
   DefaultSignatures
   DeriveAnyClass
   DeriveGeneric
   DerivingStrategies
+  DerivingVia
   DuplicateRecordFields
-  FlexibleContexts
+  FlexibleInstances
+  GADTs
   GeneralizedNewtypeDeriving
   ImportQualifiedPost
+  KindSignatures
   LambdaCase
   NamedFieldPuns
   ScopedTypeVariables
+  StandaloneDeriving
   TupleSections
   TypeApplications
+  TypeFamilies
   ViewPatterns
 
 ghc-options:
@@ -48,7 +54,14 @@ library:
   - aeson-pretty
   - base
   - bytestring
+  - conduit-extra
+  - deriving-aeson
+  - exceptions
   - extra
+  - json-rpc
+  - mtl
+  - prettyprinter
+  - stm
   - text
   source-dirs: library
 
@@ -68,7 +81,7 @@ tests:
   test-suite:
     source-dirs: test-suite
     main: Driver.hs
-    build-tool-depends: tasty-discover:tasty-discover
+    build-tools: tasty-discover:tasty-discover
     dependencies:
     - base
     - bytestring
