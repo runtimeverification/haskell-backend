@@ -26,6 +26,7 @@ jobs:
         with:
           ref: ${{ steps.config.outputs.ref }}
           submodules: recursive
+          token: ${{ secrets.JENKINS_GITHUB_PAT }}
 
       - name: 'Install Nix'
         uses: cachix/install-nix-action@v15
@@ -95,6 +96,7 @@ jobs:
         with:
           ref: ${{ steps.config.outputs.ref }}
           submodules: recursive
+          token: ${{ secrets.JENKINS_GITHUB_PAT }}
 
       - name: 'Install Nix'
         uses: cachix/install-nix-action@v15
