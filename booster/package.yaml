@@ -67,7 +67,8 @@ executables:
 tests:
   test-suite:
     source-dirs: test-suite
-    main: Main.hs
+    main: Driver.hs
+    build-tool-depends: tasty-discover:tasty-discover
     dependencies:
     - base
     - bytestring
@@ -75,10 +76,9 @@ tests:
     - filepath
     - hedgehog
     - hs-backend-booster
-    - hspec
     - tasty
-    - tasty-hspec
     - tasty-hedgehog
+    - tasty-test-reporter
     - text
     ghc-options:
     - -rtsopts
