@@ -1,0 +1,58 @@
+name: hs-backend-booster
+version: '0.0.0'
+github: "runtimeverification/hs-backend-booster"
+license: BSD3
+author: "Runtime Verification Inc"
+maintainer: "jost.berthold@runtimeverification.com"
+synopsis: A simple rewrite engine to accelerate K Framework's Haskell backend
+description: See [README](README.md)
+category: Language
+
+extra-source-files:
+- LICENSE
+- package.yaml
+- README.md
+- stack.yaml
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+- -j6
+library:
+  dependencies:
+  - base
+  source-dirs: library
+
+executables:
+  hs-backend-booster:
+    source-dirs: executable
+    main: Main.hs
+    dependencies:
+    - base
+    - hs-backend-booster
+    ghc-options:
+    - -rtsopts
+    # - -threaded
+    # - -with-rtsopts=-N
+
+tests:
+  test-suite:
+    source-dirs: test-suite
+    main: Main.hs
+    dependencies:
+    - base
+    - hs-backend-booster
+    - hspec
+    - tasty
+    - tasty-hspec
+    ghc-options:
+    - -rtsopts
+    - -threaded
+    - -with-rtsopts=-N
