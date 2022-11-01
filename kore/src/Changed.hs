@@ -11,11 +11,10 @@ import Prelude.Kore
 
 -- | @'Changed' thing@ carries a @thing@ and a marker.
 data Changed thing
-    =   -- | The @thing@ was not changed.
-      Unchanged    !thing
-
-    |     -- | The @thing@ was changed.
-      Changed    !thing
+    = -- | The @thing@ was not changed.
+      Unchanged !thing
+    | -- | The @thing@ was changed.
+      Changed !thing
     deriving stock (Eq, Functor, Show)
 
 instance Applicative Changed where
