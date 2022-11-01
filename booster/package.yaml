@@ -14,6 +14,23 @@ extra-source-files:
 - README.md
 - stack.yaml
 
+default-extensions:
+  BangPatterns
+  DefaultSignatures
+  DeriveAnyClass
+  DeriveGeneric
+  DerivingStrategies
+  DuplicateRecordFields
+  FlexibleContexts
+  GeneralizedNewtypeDeriving
+  ImportQualifiedPost
+  LambdaCase
+  NamedFieldPuns
+  ScopedTypeVariables
+  TupleSections
+  TypeApplications
+  ViewPatterns
+
 ghc-options:
 - -Wall
 - -Wcompat
@@ -27,7 +44,12 @@ ghc-options:
 - -j6
 library:
   dependencies:
+  - aeson
+  - aeson-pretty
   - base
+  - bytestring
+  - extra
+  - text
   source-dirs: library
 
 executables:
@@ -48,10 +70,16 @@ tests:
     main: Main.hs
     dependencies:
     - base
+    - bytestring
+    - directory
+    - filepath
+    - hedgehog
     - hs-backend-booster
     - hspec
     - tasty
     - tasty-hspec
+    - tasty-hedgehog
+    - text
     ghc-options:
     - -rtsopts
     - -threaded
