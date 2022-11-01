@@ -1,0 +1,19 @@
+resolver: nightly-2022-10-31
+
+packages:
+- .
+
+# Dependency packages to be pulled from upstream that are not in the resolver.
+extra-deps: []
+
+# Control whether we use the GHC we find on the path
+# system-ghc: true
+
+# Extra directories used by stack for building
+# extra-include-dirs: [/path/to/dir]
+# extra-lib-dirs: [/path/to/dir]
+
+# Allow a newer minor version of GHC than the snapshot specifies
+compiler-check: newer-minor
+
+local-bin-path: ./.build/kore/bin
