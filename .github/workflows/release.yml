@@ -3,7 +3,9 @@ on:
   push:
     branches:
       - master
+
 jobs:
+
   check:
     name: 'Check'
     runs-on: ubuntu-latest
@@ -168,3 +170,20 @@ jobs:
       - name: Check documentation
         run: |
           stack haddock --fast
+
+  update-dependents:
+    name: 'Publish Release'
+    runs-on: ubuntu-latest
+    environment: production
+    needs: [check, release, cache-cabal, cache-stack, cache-stack-haddock]
+    steps:
+      - name: Update dependents
+        env:
+          JENKINS_DEVOPS_TOKEN: ${{ secrets.JENKINS_DEVOPS_TOKEN }}
+        run: |
+          curl --fail 'https://ci.runtimeverification.com/jenkins/buildByToken/buildWithParameters' \
+              --data job=Devops/master                                                              \
+              --data token=$JENKINS_DEVOPS_TOKEN                                                    \
+              --data UPDATE_DEPS=true                                                               \
+              --data UPDATE_DEPS_REPO=runtimeverification/haskell-backend                           \
+              --data UPDATE_DEPS_VERSION=${GITHUB_SHA}
