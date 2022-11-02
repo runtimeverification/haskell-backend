@@ -16,7 +16,6 @@ data Term
     = AndTerm Sort Term Term  -- used in #as patterns
     | SymbolApplication Sort [Sort] SymbolName [Term]
     | DomainValue Sort Term
-    | StringLiteral String
     | BuiltinInt Int
     | BuiltinBool Bool
     | BuiltinBytes ByteString
