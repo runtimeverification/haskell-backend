@@ -46,15 +46,29 @@ data Predicate
     | Top
     deriving stock (Eq, Ord, Show)
 
-data Pattern =
-    Pattern
-    { term :: Term
-    , constraints :: [Predicate]
-    }
+data Pattern
+    = Pattern
+      { term :: Term
+      , constraints :: [Predicate]
+      }
     deriving stock (Eq, Ord, Show)
 
 type VarName = Text
 type SymbolName = Text
+type SortName = Text
 
-data Sort = Sort -- TODO
+data Sort
+    = SortApp SymbolName [Sort]
+    | SortVar VarName
+    | Builtin BuiltinSort
     deriving stock (Eq, Ord, Show)
+
+data BuiltinSort
+    = SortInt
+    | SortBool
+    | SortBytes
+    | SortString
+    | SortList
+    | SortMap
+    | SortSet
+    deriving (Eq, Ord, Show)
