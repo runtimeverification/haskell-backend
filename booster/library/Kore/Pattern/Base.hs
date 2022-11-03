@@ -8,8 +8,6 @@ module Kore.Pattern.Base (
 ) where
 
 import Data.ByteString (ByteString)
-import Data.Map.Strict (Map)
-import Data.Set (Set)
 import Data.Text (Text)
 
 -- Currently these are draft types from
@@ -23,9 +21,6 @@ data Term
     | BuiltinBool Bool
     | BuiltinBytes ByteString
     | BuiltinString String
-    | BuiltinList InternalList
-    | BuiltinMap InternalMap
-    | BuiltinSet InternalSet
     | Var Variable
     | Inj Sort Sort Term
     deriving stock (Eq, Ord, Show)
@@ -68,9 +63,6 @@ data BuiltinSort
     | SortBool
     | SortBytes
     | SortString
-    | SortList
-    | SortMap
-    | SortSet
     deriving (Eq, Ord, Show)
 
 data Variable = Variable
@@ -78,31 +70,3 @@ data Variable = Variable
     , variableName :: VarName
     }
     deriving (Eq, Ord, Show)
-
-data InternalMap = InternalMap
-    { mapElements :: Map Term Term
-    , mapOpaque :: Set Variable
-    }
-    deriving (Eq, Ord, Show)
-
-data InternalSet = InternalSet
-    { setElements :: Set Term
-    , setOpaque :: Set Variable
-    }
-    deriving (Eq, Ord, Show)
-
-data InternalList = InternalList
-    { listElements :: [Term]
-    , listOpaque :: Set Variable
-    }
-    deriving (Eq, Ord, Show)
-
-data Index
-    = Index SymbolName -- we want fast comparisons here
-    | Any
-
-data RewriteRule = RewriteRule
-    { lhs :: Pattern
-    , rhs :: Pattern
-    , index :: Index
-    }
