@@ -55,6 +55,7 @@ library:
   - base
   - bytestring
   - conduit-extra
+  - containers
   - deriving-aeson
   - exceptions
   - extra
