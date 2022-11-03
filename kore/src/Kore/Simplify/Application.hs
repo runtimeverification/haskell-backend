@@ -130,11 +130,10 @@ evaluateApplicationFunction
                 term
 
 makeExpandedApplication ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Symbol ->
     [Pattern RewritingVariableName] ->
-    LogicT simplifier (ExpandedApplication RewritingVariableName)
+    LogicT Simplifier (ExpandedApplication RewritingVariableName)
 makeExpandedApplication sideCondition symbol children = do
     merged <-
         mapLogicT liftSimplifier $

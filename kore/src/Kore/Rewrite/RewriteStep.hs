@@ -75,7 +75,6 @@ import Kore.Rewrite.Step (
     unifyRules,
  )
 import Kore.Simplify.Simplify (
-    MonadSimplify,
     Simplifier,
     simplifyCondition,
  )
@@ -101,15 +100,13 @@ one branch.
 See also: 'applyInitialConditions'
 -}
 finalizeAppliedRule ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Applied rule
     RulePattern RewritingVariableName ->
     -- | Conditions of applied rule
     OrCondition RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    LogicT Simplifier (OrPattern RewritingVariableName)
 finalizeAppliedRule
     sideCondition
     renamedRule
@@ -141,14 +138,13 @@ finalizeAppliedRule
 The parts of the applied condition were already combined by 'unifyRule'. First, the @ensures@ clause is simplified under the applied condition. Then, the conditions are conjoined and simplified again.
 -}
 constructConfiguration ::
-    MonadSimplify simplifier =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Applied condition
     Condition RewritingVariableName ->
     -- | Final configuration
     Pattern RewritingVariableName ->
-    LogicT simplifier (Pattern RewritingVariableName)
+    LogicT (LogicT Simplifier) (Pattern RewritingVariableName)
 constructConfiguration
     sideCondition
     appliedCondition
@@ -179,15 +175,13 @@ constructConfiguration
         return (finalTerm' `Pattern.withCondition` finalCondition)
 
 finalizeAppliedClaim ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Applied rule
     ClaimPattern ->
     -- | Conditions of applied rule
     OrCondition RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    LogicT Simplifier (OrPattern RewritingVariableName)
 finalizeAppliedClaim sideCondition renamedRule appliedConditions =
     MultiOr.observeAllT $
         finalizeAppliedRuleWorker =<< Logic.scatter appliedConditions

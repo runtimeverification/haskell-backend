@@ -78,7 +78,6 @@ import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Rewrite.UnifyingRule
 import Kore.Simplify.Simplify (
-    MonadSimplify,
     Simplifier,
     liftSimplifier,
  )
@@ -282,15 +281,13 @@ The rule is considered to apply if the result is not @\\bottom@.
 respect to the initial condition.
 -}
 applyInitialConditions ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Initial conditions
     Condition RewritingVariableName ->
     -- | Unification conditions
     Condition RewritingVariableName ->
-    LogicT simplifier (OrCondition RewritingVariableName)
+    LogicT Simplifier (OrCondition RewritingVariableName)
 -- TODO(virgil): This should take advantage of the LogicT and not return
 -- an OrCondition.
 applyInitialConditions sideCondition initial unification = do
@@ -321,15 +318,13 @@ toConfigurationVariablesCondition =
 
 -- | Apply the remainder predicate to the given initial configuration.
 applyRemainder ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Initial configuration
     Pattern RewritingVariableName ->
     -- | Remainder
     Condition RewritingVariableName ->
-    LogicT simplifier (Pattern RewritingVariableName)
+    LogicT Simplifier (Pattern RewritingVariableName)
 applyRemainder sideCondition initial remainder = do
     -- Simplify the remainder predicate under the initial conditions. We must
     -- ensure that functions in the remainder are evaluated using the top-level
