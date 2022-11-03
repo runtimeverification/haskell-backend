@@ -85,6 +85,7 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    Simplifier,
     simplifyPattern,
     simplifyPatternScatter,
  )
@@ -112,16 +113,14 @@ denormalized part into the predicate, but returns the normalized part as a
 substitution.
 -}
 substitutionSimplifier ::
-    forall simplifier.
-    MonadSimplify simplifier =>
-    SubstitutionSimplifier simplifier
+    SubstitutionSimplifier Simplifier
 substitutionSimplifier =
     SubstitutionSimplifier wrapper
   where
     wrapper ::
         SideCondition RewritingVariableName ->
         Substitution RewritingVariableName ->
-        simplifier (OrCondition RewritingVariableName)
+        Simplifier (OrCondition RewritingVariableName)
     wrapper sideCondition substitution =
         OrCondition.observeAllT $ do
             (predicate, result) <- worker substitution & maybeT empty return
@@ -146,7 +145,7 @@ newtype MakeAnd monad = MakeAnd
     }
 
 simplificationMakeAnd ::
-    MonadSimplify simplifier => MakeAnd (LogicT simplifier)
+    MakeAnd (LogicT Simplifier)
 simplificationMakeAnd =
     MakeAnd{makeAnd}
   where
