@@ -54,13 +54,15 @@ jobs:
           PR_HEAD=${{ steps.determine-commit.outputs.PR_HEAD }}
           if [ -n "${{ steps.determine-commit.outputs.K_TAG }}" ]; then
               K_OVERRIDE="--override-input k-framework github:runtimeverification/k/${{ steps.determine-commit.outputs.K_TAG }}"
+              K_TAG=${{ steps.determine-commit.outputs.K_TAG }}
           else
               K_OVERRIDE=""
+              K_TAG=""
           fi
           TIMESTAMP=$(date +"%Y%m%dT%H%M%S")
 
           # FIXME can we use a reaction emoji instead?
-          gh issue comment ${ISSUE_NUMBER} --body "Running KEVM test with ${PR_HEAD:-master} and K version ${K_TAG:-master} as ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          gh issue comment ${ISSUE_NUMBER} --body "Running KEVM test with ${PR_HEAD:-master} and K version ${K_TAG} as ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
           . /home/github-runner/.nix-profile/etc/profile.d/nix.sh
           echo "Starting Test Execution"
