@@ -8,6 +8,8 @@ module Kore.Pattern.Base
 
 import Data.ByteString (ByteString)
 import Data.Text (Text)
+import Data.Map.Strict (Map)
+import Data.Set (Set)
 
 -- Currently these are draft types from
 -- https://github.com/runtimeverification/haskell-backend/issues/3349
@@ -20,11 +22,10 @@ data Term
     | BuiltinBool Bool
     | BuiltinBytes ByteString
     | BuiltinString String
-    | BuiltinList [Term]
-    | BuiltinMap [(Term, Term)]
-    | BuiltinSet [(Term, ())]
-    | ElementVariable Sort VarName
-    | SetVariable Sort VarName  -- debatable if we will ever need this or not, AFAIK they are only used for #Ceil simplification rules
+    | BuiltinList InternalList 
+    | BuiltinMap InternalMap
+    | BuiltinSet InternalSet 
+    | Var Variable
     | Inj Sort Sort Term
     deriving stock (Eq, Ord, Show)
 
@@ -71,3 +72,42 @@ data BuiltinSort
     | SortMap
     | SortSet
     deriving (Eq, Ord, Show)
+
+data Variable
+    = Variable
+      { variableSort :: Sort
+      , variableName :: VarName
+      }
+    deriving (Eq, Ord, Show)
+
+data InternalMap
+    = InternalMap
+      { mapElements :: Map Term Term
+      , mapOpaque :: Set Variable
+      }
+    deriving (Eq, Ord, Show)
+
+data InternalSet
+    = InternalSet
+      { setElements :: Set Term
+      , setOpaque :: Set Variable
+      }
+    deriving (Eq, Ord, Show)
+
+data InternalList
+    = InternalList
+      { listElements :: [Term]
+      , listOpaque :: Set Variable
+      }
+    deriving (Eq, Ord, Show)
+
+data Index
+    = Index SymbolName  -- we want fast comparisons here
+    | Any
+
+data RewriteRule
+    = RewriteRule
+      { lhs :: Pattern
+      , rhs :: Pattern
+      , index :: Index
+      }
