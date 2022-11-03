@@ -87,12 +87,12 @@ instance Pretty WarnUnsimplifiedCondition where
             ]
 
 instance Entry WarnUnsimplifiedPredicate where
-    entrySeverity _ = Warning
+    entrySeverity _ = Debug
     oneLineDoc WarnUnsimplifiedPredicate{limit} = Pretty.pretty limit
     helpDoc _ = "warn when a predicate is not simplified"
 
 instance Entry WarnUnsimplifiedCondition where
-    entrySeverity _ = Warning
+    entrySeverity _ = Debug
     oneLineDoc WarnUnsimplifiedCondition{limit} = Pretty.pretty limit
     helpDoc _ = "warn when a condition is not simplified"
 
