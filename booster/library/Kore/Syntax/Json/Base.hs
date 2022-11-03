@@ -20,6 +20,7 @@ import Data.List.NonEmpty qualified as NE
 import Data.Text (Text)
 import Data.Text qualified as T
 import GHC.Generics (Generic)
+
 ------------------------------------------------------------
 
 -- | Top-level boilerplate to version the format
@@ -295,12 +296,12 @@ checkIdChars name
     | T.null name = ["Empty"]
     | otherwise =
         ["Illegal initial character " <> show first | not $ isAlpha first]
-        ++ [ "Contains illegal characters: " <> show (nub $ T.unpack illegalChars)
-           | not $ T.null illegalChars
-           ]
+            ++ [ "Contains illegal characters: " <> show (nub $ T.unpack illegalChars)
+               | not $ T.null illegalChars
+               ]
   where
-    ~first = T.head name
-    ~illegalChars = T.filter (not . isIdChar) $ T.tail name
+    first = T.head name
+    illegalChars = T.filter (not . isIdChar) $ T.tail name
 
 isIdChar :: Char -> Bool
 isIdChar c = isAlpha c || isDigit c || c `elem` ['-', '\'']
@@ -311,7 +312,7 @@ checkSVarName name
     | T.null name = ["Empty"]
     | otherwise =
         ["Must start with `@'" | T.head name /= '@']
-        <> checkIdChars (T.tail name)
+            <> checkIdChars (T.tail name)
 
 -- | Symbols _may_ start by a backslash.
 checkSymbolName :: Text -> [String]
