@@ -30,13 +30,13 @@ import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 import Kore.Syntax.Json
 import Kore.Syntax.Json.Base -- for testing and generating test data
-import Prelude hiding (Left, Right)
-import Prelude qualified
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath ((<.>), (</>))
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Hedgehog
 import Text.Printf (printf)
+import Prelude hiding (Left, Right)
+import Prelude qualified
 
 genKoreJson :: Gen KorePattern -> Gen KoreJson
 genKoreJson = fmap (KoreJson KORE KJ1)
@@ -55,7 +55,7 @@ genKorePattern =
         [ do
             sorts <- between 1 10 genSort
             args <- exactly (length sorts - 1) genKorePattern
-            name <- (Gen.element [('\\' -:), id] <*> genId)
+            name <- Gen.element [('\\' -:), id] <*> genId
             pure KJApp{name, sorts, args}
         , KJNot <$> genSort <*> genKorePattern
         , KJAnd <$> genSort <*> genKorePattern <*> genKorePattern
@@ -328,34 +328,40 @@ headerTests =
         [
             ( "Correct test data parses"
             , assert . isRight $
-                decodeKoreJson $ withHeader "KORE" "1" aString
+                decodeKoreJson $
+                    withHeader "KORE" "1" aString
             )
         ,
             ( "Format string errors are reported"
             , diffLeft "Error in $.format: expected \"KORE\"" $
-                decodeKoreJson $ withHeader "Gore" "1" aString
+                decodeKoreJson $
+                    withHeader "Gore" "1" aString
             )
         ,
             ( "Version string errors are reported"
             , diffLeft "Error in $.version: expected 1.0" $
-                decodeKoreJson $ withHeader "KORE" "2" aString
+                decodeKoreJson $
+                    withHeader "KORE" "2" aString
             )
         ,
             ( "Payload errors are reported"
             , expectLeft ("key \"tag\" not found" `isInfixOf`) $
-                decodeKoreJson $ withHeader "KORE" "1" rubbish
+                decodeKoreJson $
+                    withHeader "KORE" "1" rubbish
             )
         ,
             ( "Format errors take precedence"
             , diffLeft "Error in $.format: expected \"KORE\"" $
-                decodeKoreJson $ withHeader "Gore" "42" rubbish
+                decodeKoreJson $
+                    withHeader "Gore" "42" rubbish
             )
         ,
             ( "Version errors take precedence"
             , diffLeft "Error in $.version: expected 1.0" $
-                decodeKoreJson $ withHeader "KORE" "42" rubbish
-                -- NB if the payload is not an object, the version
-                -- error does _not_ take precedence!
+                decodeKoreJson $
+                    withHeader "KORE" "42" rubbish
+                    -- NB if the payload is not an object, the version
+                    -- error does _not_ take precedence!
             )
         ]
   where
