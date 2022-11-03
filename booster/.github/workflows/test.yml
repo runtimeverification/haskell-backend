@@ -1,0 +1,117 @@
+name: "Build + Test"
+on:
+  pull_request:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ghc_version: "9.2.4"
+  hlint_version: "3.4.1"
+  fourmolu_version: "0.8.2.0"
+  hpack_version: "0.34.2"
+
+jobs:
+  stack:
+    name: 'Stack / Unit Tests'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install prerequisites
+        run: |
+          sudo apt install --yes z3
+
+      - uses: actions/checkout@v3
+        with:
+          # Check out pull request HEAD instead of merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Cache Stack root
+        uses: actions/cache@v2
+        with:
+          path: ~/.stack
+          key: stack-1-${{ runner.os }}-${{ hashFiles('stack.yaml.lock') }}
+          restore-keys: |
+            stack-1-${{ runner.os }}-
+
+      - uses: haskell/actions/setup@v2
+        id: setup-haskell-stack
+        with:
+          ghc-version: ${{ env.ghc_version }}
+          enable-stack: true
+
+      - name: Build dependencies
+        run: |
+          stack build --test --only-dependencies
+          if [ -n "$(git status --porcelain)" ]; then
+            git diff
+            exit 1
+          fi
+
+      - name: Run unit tests
+        run: stack test --pedantic
+
+  cabal:
+    name: 'Cabal / Unit Tests'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          # Check out pull request HEAD instead of merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install prerequisites
+        run: |
+          sudo apt install --yes z3
+          curl -sSL https://github.com/sol/hpack/releases/download/${{ env.hpack_version }}/hpack_linux.gz | gunzip -c > hpack && chmod +x hpack
+
+      - name: Run Hpack
+        run: ./hpack
+
+      - name: Cache Cabal package database and store
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cabal/packages
+            ~/.cabal/store
+          key: cabal-1-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('hs-backend-booster.cabal') }}
+          restore-keys: |
+            cabal-1-${{ runner.os }}-ghc-${{ env.ghc_version }}-
+            cabal-1-${{ runner.os }}-ghc-
+            cabal-1-
+
+      - uses: haskell/actions/setup@v2
+        id: setup-haskell-cabal
+        with:
+          ghc-version: ${{ env.ghc_version }}
+          cabal-version: "3.2"
+
+      - name: Run unit tests
+        run: cabal v2-test --enable-tests --test-show-details=direct
+
+      - name: Configure with profiling
+        run: cabal v2-configure --enable-profiling -f-threaded
+
+
+  style:
+    name: 'Formatting and Style'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          # Check out pull request HEAD instead of merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Download prerequisites
+        # this could be cached but is probably fast anyway
+        run: |
+          curl -sSL https://github.com/fourmolu/fourmolu/releases/download/v${{ env.fourmolu_version }}/fourmolu-${{ env.fourmolu_version }}-linux-x86_64 -o fourmolu && chmod +x fourmolu && ./fourmolu --version
+          curl -sSL https://github.com/ndmitchell/hlint/releases/download/v${{ env.hlint_version }}/hlint-${{ env.hlint_version }}-x86_64-linux.tar.gz | tar xvz hlint-${{ env.hlint_version }}/hlint
+
+      - name: Check formatting
+        run: |
+          PATH=$PWD:$PATH scripts/fourmolu.sh
+          echo "Checking diff"
+          git diff --exit-code
+
+      - name: Run hlint
+        run: hlint-${{ env.hlint_version }}/hlint -g -j
