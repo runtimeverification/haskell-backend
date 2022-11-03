@@ -19,7 +19,7 @@ Actions are implemented as nix derivations, i.e. they run in their own isolated 
 [run-profiling.nix](../nix/run-profiling.nix)
 
 ### Trigger Event
-- a comment containing the string `".tar.gz)"` (anywhere)
+- a comment containing the string `".tar.gz)"` (anywhere); note that the `)` is mandatory, because it should be a _link_, not just a mention of some archive 
 - written or edited by a member of the RV organization
 - on an issue or PR with label `(performance)`
 
