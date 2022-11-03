@@ -55,6 +55,7 @@ import Data.Functor.Identity (
 import Data.Generics.Product
 import Data.Generics.Product qualified as Lens.Product
 import Data.HashMap.Strict qualified as HashMap
+import Data.Kind (Constraint)
 import Data.Map.Strict (
     Map,
  )
@@ -656,7 +657,8 @@ data TermLike variable = TermLike__
     -- Some fields below are lazy to better match Cofree. Which do we actually
     -- want to be lazy, if any?
     { _tlAttributes :: ~(TermAttributes variable)
-    , _tlHash :: ~Int -- ^ A hash of @_tlTermLikeF@
+    , -- | A hash of @_tlTermLikeF@
+      _tlHash :: ~Int
     , _tlTermLikeF :: ~(TermLikeF variable (TermLike variable))
     }
     deriving stock (Show)
@@ -698,15 +700,16 @@ instance
         (Recursive.project -> _ :< pat2) =
             compare pat1 pat2
 
-instance
 #if MIN_VERSION_hashable(1,4,0)
-    Eq variable =>
+type HashableConstraint variable = Eq variable
+#else
+type HashableConstraint variable = () :: Constraint
 #endif
-    Hashable (TermLike variable)
-    where
-      hashWithSalt salt (TermLike__ _ hsh _) =
+
+instance HashableConstraint variable => Hashable (TermLike variable) where
+    hashWithSalt salt (TermLike__ _ hsh _) =
         salt `hashWithSalt` hsh -- HACK
-      {-# INLINE hashWithSalt #-}
+    {-# INLINE hashWithSalt #-}
 
 instance NFData variable => NFData (TermLike variable) where
     rnf (Recursive.project -> annotation :< pat) =
@@ -840,7 +843,7 @@ instance From (TermLike Concrete) (TermLike variable) where
 vacuousVariables :: forall variable. TermLike Concrete -> TermLike variable
 vacuousVariables (TermLike__ attrs hsh termLikeF) = TermLike__ attrs' hsh (vacuousVariablesF termLikeF)
   where
-    !attrs' = attrs{termFreeVariables=FreeVariables.emptyFreeVariables}
+    !attrs' = attrs{termFreeVariables = FreeVariables.emptyFreeVariables}
 
 vacuousVariablesF :: forall variable. TermLikeF Concrete (TermLike Concrete) -> TermLikeF variable (TermLike variable)
 vacuousVariablesF = runIdentity . traverseVariablesF adjuster . fmap vacuousVariables
