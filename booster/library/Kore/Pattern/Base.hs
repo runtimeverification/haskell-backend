@@ -2,29 +2,30 @@
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
 -}
-
-module Kore.Pattern.Base
-  where
+module Kore.Pattern.Base (
+    -- export everything, modules above can re-export only type names
+    module Kore.Pattern.Base,
+) where
 
 import Data.ByteString (ByteString)
-import Data.Text (Text)
 import Data.Map.Strict (Map)
 import Data.Set (Set)
+import Data.Text (Text)
 
 -- Currently these are draft types from
 -- https://github.com/runtimeverification/haskell-backend/issues/3349
 
 data Term
-    = AndTerm Sort Term Term  -- used in #as patterns
+    = AndTerm Sort Term Term -- used in #as patterns
     | SymbolApplication Sort [Sort] SymbolName [Term]
     | DomainValue Sort Term
     | BuiltinInt Int
     | BuiltinBool Bool
     | BuiltinBytes ByteString
     | BuiltinString String
-    | BuiltinList InternalList 
+    | BuiltinList InternalList
     | BuiltinMap InternalMap
-    | BuiltinSet InternalSet 
+    | BuiltinSet InternalSet
     | Var Variable
     | Inj Sort Sort Term
     deriving stock (Eq, Ord, Show)
@@ -35,7 +36,7 @@ data Predicate
     | Bottom
     | Ceil Term
     | EqualsTerm Sort Term Term
-    | EqualsPredicate Predicate Predicate  -- I remember running into this one a few times, but I'm not sure if it was an integration test or a unit test
+    | EqualsPredicate Predicate Predicate -- I remember running into this one a few times, but I'm not sure if it was an integration test or a unit test
     | Exists VarName Predicate
     | Forall VarName Predicate -- do we need forall?
     | Iff Predicate Predicate
@@ -46,11 +47,10 @@ data Predicate
     | Top
     deriving stock (Eq, Ord, Show)
 
-data Pattern
-    = Pattern
-      { term :: Term
-      , constraints :: [Predicate]
-      }
+data Pattern = Pattern
+    { term :: Term
+    , constraints :: [Predicate]
+    }
     deriving stock (Eq, Ord, Show)
 
 type VarName = Text
@@ -73,41 +73,36 @@ data BuiltinSort
     | SortSet
     deriving (Eq, Ord, Show)
 
-data Variable
-    = Variable
-      { variableSort :: Sort
-      , variableName :: VarName
-      }
+data Variable = Variable
+    { variableSort :: Sort
+    , variableName :: VarName
+    }
     deriving (Eq, Ord, Show)
 
-data InternalMap
-    = InternalMap
-      { mapElements :: Map Term Term
-      , mapOpaque :: Set Variable
-      }
+data InternalMap = InternalMap
+    { mapElements :: Map Term Term
+    , mapOpaque :: Set Variable
+    }
     deriving (Eq, Ord, Show)
 
-data InternalSet
-    = InternalSet
-      { setElements :: Set Term
-      , setOpaque :: Set Variable
-      }
+data InternalSet = InternalSet
+    { setElements :: Set Term
+    , setOpaque :: Set Variable
+    }
     deriving (Eq, Ord, Show)
 
-data InternalList
-    = InternalList
-      { listElements :: [Term]
-      , listOpaque :: Set Variable
-      }
+data InternalList = InternalList
+    { listElements :: [Term]
+    , listOpaque :: Set Variable
+    }
     deriving (Eq, Ord, Show)
 
 data Index
-    = Index SymbolName  -- we want fast comparisons here
+    = Index SymbolName -- we want fast comparisons here
     | Any
 
-data RewriteRule
-    = RewriteRule
-      { lhs :: Pattern
-      , rhs :: Pattern
-      , index :: Index
-      }
+data RewriteRule = RewriteRule
+    { lhs :: Pattern
+    , rhs :: Pattern
+    , index :: Index
+    }
