@@ -1056,7 +1056,7 @@ Close a file descriptor and return `dotk{}()` if no error was thrown, otherwise 
 
 ### IO.getc
 
-Read a single character from a file. Returns an `#EOF{}()` if no mor characters are available.
+Read a single character from a file. Returns an `#EOF{}()` if no more characters are available.
 
 ~~~
     hooked-symbol getc{}(/* fd */ Int{}) : IOInt{}

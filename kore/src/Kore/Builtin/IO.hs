@@ -170,6 +170,8 @@ parseMode :: Text -> Maybe (OpenMode, OpenFileFlags, Maybe FileMode)
 parseMode = \case
     "r" -> Just (ReadOnly, defaultFileFlags, Nothing)
     "r+" -> Just (ReadWrite, defaultFileFlags, Nothing)
+    -- 0o666 is a magical constant found here:
+    -- https://github.com/ghc/ghc/blob/311251543f2e37af4a121e58028bfc46267a7fc9/libraries/base/GHC/IO/FD.hs#L238
     "w" -> Just (WriteOnly, defaultFileFlags{trunc = True}, Just 0o666)
     "w+" -> Just (ReadWrite, defaultFileFlags{trunc = True}, Just 0o666)
     "a" -> Just (WriteOnly, defaultFileFlags{append = True}, Just 0o666)
@@ -211,6 +213,9 @@ open_ str how maybe_mode OpenFileFlags{..} =
 foreign import capi unsafe "HsUnix.h open"
     c_open :: CString -> CInt -> CMode -> IO CInt
 
+-- most of the *Raw functions were taken from the System.Posix.IO module,
+-- but needed to be adapted to return the error code as K's IOError,
+-- rather than throwing the error within Haskell.
 openRaw ::
     -- | Pathname to open
     FilePath ->
