@@ -355,7 +355,7 @@ mkIOError sort err = do
                     , symbolAttributes = Tools.symbolAttributes tools ident
                     }
         ioErrorUnknown =
-            let ident = implicitId $ "Lbl'Hash'unknownIOError"
+            let ident = implicitId "Lbl'Hash'unknownIOError"
              in Symbol
                     { symbolConstructor = ident
                     , symbolParams = []
@@ -502,9 +502,8 @@ writeRaw :: Fd -> Text -> IO (Maybe Errno)
 writeRaw fd str =
     unsafeUseAsCStringLen (encodeUtf8 str) $ \(buf, len) ->
         either Just (const Nothing)
-            <$> ( returnErrnoIfMinus1OrRetry $
-                    c_safe_write (fromIntegral fd) (castPtr buf) (fromIntegral len)
-                )
+            <$> returnErrnoIfMinus1OrRetry
+                (c_safe_write (fromIntegral fd) (castPtr buf) (fromIntegral len))
 
 foreign import ccall safe "write"
     c_safe_write :: CInt -> Ptr CChar -> CSize -> IO CSsize
