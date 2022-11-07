@@ -188,6 +188,7 @@ common library
   build-depends: these >=1.0
   build-depends: time >=1.9.3
   build-depends: transformers >=0.4
+  build-depends: unix >=2.7
   build-depends: unliftio >= 0.2
   build-depends: unordered-containers >=0.2
   build-depends: vector >=0.12

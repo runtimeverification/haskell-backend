@@ -103,6 +103,7 @@
         (hsPkgs."these" or (errorHandler.buildDepError "these"))
         (hsPkgs."time" or (errorHandler.buildDepError "time"))
         (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
+        (hsPkgs."unix" or (errorHandler.buildDepError "unix"))
         (hsPkgs."unliftio" or (errorHandler.buildDepError "unliftio"))
         (hsPkgs."unordered-containers" or (errorHandler.buildDepError
           "unordered-containers"))
@@ -763,6 +764,7 @@
           (hsPkgs."these" or (errorHandler.buildDepError "these"))
           (hsPkgs."time" or (errorHandler.buildDepError "time"))
           (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
+          (hsPkgs."unix" or (errorHandler.buildDepError "unix"))
           (hsPkgs."unliftio" or (errorHandler.buildDepError "unliftio"))
           (hsPkgs."unordered-containers" or (errorHandler.buildDepError
             "unordered-containers"))
