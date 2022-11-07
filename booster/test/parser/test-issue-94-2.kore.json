@@ -1,0 +1,260 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST",
+      "sorts": [
+        {
+          "name": "Int",
+          "attributes": [
+            [
+              "hasDomainValues",
+              null
+            ]
+          ],
+          "isHooked": false,
+          "sortVars": []
+        },
+        {
+          "name": "String",
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        },
+        {
+          "name": "Exp",
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ],
+      "attributes": [],
+      "axioms": [
+        {
+          "attributes": [],
+          "axiom": {
+            "tag": "App",
+            "name": "info",
+            "sorts": [
+              {
+                "tag": "SortApp",
+                "name": "Exp",
+                "args": []
+              }
+            ],
+            "args": [
+              {
+                "tag": "App",
+                "name": "input",
+                "sorts": [],
+                "args": [
+                  {
+                    "tag": "DV",
+                    "sort": {
+                      "tag": "SortApp",
+                      "name": "Int",
+                      "args": []
+                    },
+                    "value": "1"
+                  },
+                  {
+                    "tag": "DV",
+                    "sort": {
+                      "tag": "SortApp",
+                      "name": "Int",
+                      "args": []
+                    },
+                    "value": "2"
+                  }
+                ]
+              },
+              {
+                "tag": "App",
+                "name": "inj",
+                "sorts": [
+                  {
+                    "tag": "SortApp",
+                    "name": "Int",
+                    "args": []
+                  },
+                  {
+                    "tag": "SortApp",
+                    "name": "Exp",
+                    "args": []
+                  }
+                ],
+                "args": [
+                  {
+                    "tag": "App",
+                    "name": "info",
+                    "sorts": [
+                      {
+                        "tag": "SortApp",
+                        "name": "Int",
+                        "args": []
+                      }
+                    ],
+                    "args": [
+                      {
+                        "tag": "And",
+                        "sort": {
+                          "tag": "SortApp",
+                          "name": "String",
+                          "args": []
+                        },
+                        "first": {
+                          "tag": "App",
+                          "name": "input",
+                          "sorts": [],
+                          "args": [
+                            {
+                              "tag": "DV",
+                              "sort": {
+                                "tag": "SortApp",
+                                "name": "Int",
+                                "args": []
+                              },
+                              "value": "1"
+                            },
+                            {
+                              "tag": "DV",
+                              "sort": {
+                                "tag": "SortApp",
+                                "name": "Int",
+                                "args": []
+                              },
+                              "value": "2"
+                            }
+                          ]
+                        },
+                        "second": {
+                          "tag": "Equals",
+                          "argSort": {
+                            "tag": "SortApp",
+                            "name": "String",
+                            "args": []
+                          },
+                          "sort": {
+                            "tag": "SortApp",
+                            "name": "String",
+                            "args": []
+                          },
+                          "first": {
+                            "tag": "App",
+                            "name": "input",
+                            "sorts": [],
+                            "args": [
+                              {
+                                "tag": "DV",
+                                "sort": {
+                                  "tag": "SortApp",
+                                  "name": "Int",
+                                  "args": []
+                                },
+                                "value": "1"
+                              },
+                              {
+                                "tag": "DV",
+                                "sort": {
+                                  "tag": "SortApp",
+                                  "name": "Int",
+                                  "args": []
+                                },
+                                "value": "2"
+                              }
+                            ]
+                          },
+                          "second": {
+                            "tag": "String",
+                            "value": "-15"
+                          }
+                        }
+                      },
+                      {
+                        "tag": "DV",
+                        "sort": {
+                          "tag": "SortApp",
+                          "name": "Int",
+                          "args": []
+                        },
+                        "value": "-1"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "sortVars": []
+        }
+      ],
+      "symbols": [
+        {
+          "name": "inj",
+          "sort": {
+            "tag": "SortVar",
+            "name": "SOut"
+          },
+          "argSorts": [
+            {
+              "tag": "SortVar",
+              "name": "SIn"
+            }
+          ],
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": [
+            "SIn",
+            "SOut"
+          ]
+        },
+        {
+          "name": "info",
+          "sort": {
+            "tag": "SortVar",
+            "name": "S"
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "String",
+              "args": []
+            },
+            {
+              "tag": "SortVar",
+              "name": "S"
+            }
+          ],
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": [
+            "S"
+          ]
+        },
+        {
+          "name": "input",
+          "sort": {
+            "tag": "SortApp",
+            "name": "String",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ]
+    }
+  ]
+}

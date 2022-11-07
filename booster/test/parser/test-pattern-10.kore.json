@@ -1,0 +1,51 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-PATTERN-10",
+      "sorts": [],
+      "attributes": [],
+      "axioms": [
+        {
+          "attributes": [
+            [
+              "simplification",
+              null
+            ]
+          ],
+          "axiom": {
+            "tag": "Equals",
+            "argSort": {
+              "tag": "SortVar",
+              "name": "S"
+            },
+            "sort": {
+              "tag": "SortVar",
+              "name": "S"
+            },
+            "first": {
+              "tag": "EVar",
+              "name": "X",
+              "sort": {
+                "tag": "SortVar",
+                "name": "S"
+              }
+            },
+            "second": {
+              "tag": "EVar",
+              "name": "X",
+              "sort": {
+                "tag": "SortVar",
+                "name": "S"
+              }
+            }
+          },
+          "sortVars": [
+            "S"
+          ]
+        }
+      ],
+      "symbols": []
+    }
+  ]
+}

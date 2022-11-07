@@ -1,0 +1,864 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "K",
+      "sorts": [
+        {
+          "name": "K",
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ],
+      "attributes": [],
+      "axioms": [],
+      "symbols": []
+    },
+    {
+      "name": "BOOL",
+      "sorts": [
+        {
+          "name": "Bool",
+          "attributes": [
+            [
+              "hook",
+              "BOOL.Bool"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ],
+      "attributes": [],
+      "axioms": [],
+      "symbols": []
+    },
+    {
+      "name": "INT",
+      "sorts": [
+        {
+          "name": "Int",
+          "attributes": [
+            [
+              "hook",
+              "INT.Int"
+            ],
+            [
+              "hasDomainValues",
+              null
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ],
+      "attributes": [],
+      "axioms": [],
+      "symbols": [
+        {
+          "name": "bitRangeInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.bitRange"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "geInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Bool",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.ge"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "xorInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.xor"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "addInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.add"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "neInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Bool",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.ne"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "randInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.rand"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "leInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Bool",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.le"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "log2Int",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.log2"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "andInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.and"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "srandInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "K",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.srand"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "edivInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.ediv"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "powmodInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.powmod"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "eqInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Bool",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.eq"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "tmodInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.tmod"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "absInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.abs"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "notInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.not"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "shlInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.shl"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "signExtendBitRangeInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.signExtendBitRange"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "emodInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.emod"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "orInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.or"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "shrInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.shr"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "mulInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.mul"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "gtInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Bool",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.gt"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "tdivInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.tdiv"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "minInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.min"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "ltInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Bool",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.lt"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "subInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.sub"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "maxInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.max"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        },
+        {
+          "name": "pow",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.pow"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-SYMBOL-5",
+      "sorts": [],
+      "attributes": [],
+      "axioms": [],
+      "symbols": [
+        {
+          "name": "f",
+          "sort": {
+            "tag": "SortVar",
+            "name": "S"
+          },
+          "argSorts": [
+            {
+              "tag": "SortVar",
+              "name": "S"
+            }
+          ],
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": [
+            "S"
+          ]
+        }
+      ]
+    }
+  ]
+}
