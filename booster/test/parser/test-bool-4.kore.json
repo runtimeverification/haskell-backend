@@ -1,0 +1,28 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "BOOL",
+      "sorts": [
+        {
+          "name": "Bool",
+          "attributes": [
+            [
+              "hook",
+              "BOOL.Bool"
+            ],
+            [
+              "hasDomainValues",
+              null
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ],
+      "attributes": [],
+      "axioms": [],
+      "symbols": []
+    }
+  ]
+}

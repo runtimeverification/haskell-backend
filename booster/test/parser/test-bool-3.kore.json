@@ -1,0 +1,48 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "BOOL",
+      "sorts": [
+        {
+          "name": "Bool",
+          "attributes": [
+            [
+              "hook",
+              "BOOL.Bool"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ],
+      "attributes": [],
+      "axioms": [],
+      "symbols": [
+        {
+          "name": "andBool",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Bool",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Bool",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "BOOL.and"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ]
+    }
+  ]
+}

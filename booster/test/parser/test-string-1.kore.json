@@ -1,0 +1,17 @@
+{
+  "attributes": [
+    [
+      "key",
+      "?"
+    ]
+  ],
+  "modules": [
+    {
+      "name": "TEST-STRING-1",
+      "sorts": [],
+      "attributes": [],
+      "axioms": [],
+      "symbols": []
+    }
+  ]
+}

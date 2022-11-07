@@ -1,0 +1,34 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-PATTERN-5",
+      "sorts": [],
+      "attributes": [],
+      "axioms": [
+        {
+          "attributes": [],
+          "axiom": {
+            "tag": "Not",
+            "sort": {
+              "tag": "SortVar",
+              "name": "S"
+            },
+            "arg": {
+              "tag": "EVar",
+              "name": "X",
+              "sort": {
+                "tag": "SortVar",
+                "name": "S"
+              }
+            }
+          },
+          "sortVars": [
+            "S"
+          ]
+        }
+      ],
+      "symbols": []
+    }
+  ]
+}

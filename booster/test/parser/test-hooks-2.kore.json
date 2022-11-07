@@ -1,0 +1,37 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-HOOKSORT-1",
+      "sorts": [
+        {
+          "name": "S",
+          "attributes": [
+            [
+              "hook",
+              "S.S"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ],
+      "attributes": [],
+      "axioms": [],
+      "symbols": [
+        {
+          "name": "g",
+          "sort": {
+            "tag": "SortApp",
+            "name": "S",
+            "args": []
+          },
+          "argSorts": [],
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ]
+    }
+  ]
+}

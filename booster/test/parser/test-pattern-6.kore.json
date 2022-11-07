@@ -1,0 +1,42 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-PATTERN-6",
+      "sorts": [],
+      "attributes": [],
+      "axioms": [
+        {
+          "attributes": [],
+          "axiom": {
+            "tag": "Implies",
+            "sort": {
+              "tag": "SortVar",
+              "name": "S"
+            },
+            "first": {
+              "tag": "EVar",
+              "name": "X",
+              "sort": {
+                "tag": "SortVar",
+                "name": "S"
+              }
+            },
+            "second": {
+              "tag": "EVar",
+              "name": "X",
+              "sort": {
+                "tag": "SortVar",
+                "name": "S"
+              }
+            }
+          },
+          "sortVars": [
+            "S"
+          ]
+        }
+      ],
+      "symbols": []
+    }
+  ]
+}

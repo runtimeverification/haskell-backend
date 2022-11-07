@@ -13,6 +13,7 @@ extra-source-files:
 - package.yaml
 - README.md
 - stack.yaml
+- test/parser/*
 
 default-extensions:
   BangPatterns
@@ -52,12 +53,15 @@ library:
   dependencies:
   - aeson
   - aeson-pretty
+  - array
   - base
   - bytestring
   - conduit-extra
+  - containers
   - deriving-aeson
   - exceptions
   - extra
+  - filepath
   - json-rpc
   - mtl
   - prettyprinter
@@ -81,7 +85,10 @@ tests:
   test-suite:
     source-dirs: test-suite
     main: Driver.hs
-    build-tools: tasty-discover:tasty-discover
+    build-tools:
+      - tasty-discover:tasty-discover
+      - happy
+      - alex
     dependencies:
     - base
     - bytestring
@@ -90,6 +97,7 @@ tests:
     - hedgehog
     - hs-backend-booster
     - tasty
+    - tasty-golden
     - tasty-hedgehog
     - tasty-test-reporter
     - text
