@@ -1,0 +1,62 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "S",
+      "sorts": [
+        {
+          "name": "S",
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ],
+      "attributes": [],
+      "axioms": [],
+      "symbols": [
+        {
+          "name": "f",
+          "sort": {
+            "tag": "SortApp",
+            "name": "S",
+            "args": []
+          },
+          "argSorts": [],
+          "attributes": [
+            [
+              "hook",
+              "S.f"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ]
+    },
+    {
+      "name": "T",
+      "sorts": [],
+      "attributes": [],
+      "axioms": [],
+      "symbols": [
+        {
+          "name": "g",
+          "sort": {
+            "tag": "SortApp",
+            "name": "S",
+            "args": []
+          },
+          "argSorts": [],
+          "attributes": [
+            [
+              "hook",
+              "S.f"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ]
+    }
+  ]
+}

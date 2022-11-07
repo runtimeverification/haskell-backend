@@ -1,0 +1,35 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-ALIAS-6",
+      "sorts": [],
+      "attributes": [],
+      "axioms": [],
+      "symbols": [
+        {
+          "name": "g",
+          "sort": {
+            "tag": "SortVar",
+            "name": "S"
+          },
+          "argSorts": [
+            {
+              "tag": "SortVar",
+              "name": "S"
+            },
+            {
+              "tag": "SortVar",
+              "name": "S"
+            }
+          ],
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": [
+            "S"
+          ]
+        }
+      ]
+    }
+  ]
+}

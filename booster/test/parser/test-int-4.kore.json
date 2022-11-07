@@ -1,0 +1,86 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "K",
+      "sorts": [
+        {
+          "name": "K",
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ],
+      "attributes": [],
+      "axioms": [],
+      "symbols": []
+    },
+    {
+      "name": "BOOL",
+      "sorts": [
+        {
+          "name": "Bool",
+          "attributes": [
+            [
+              "hook",
+              "NOT-BOOL.Bool"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ],
+      "attributes": [],
+      "axioms": [],
+      "symbols": []
+    },
+    {
+      "name": "INT",
+      "sorts": [
+        {
+          "name": "Int",
+          "attributes": [
+            [
+              "hook",
+              "INT.Int"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ],
+      "attributes": [],
+      "axioms": [],
+      "symbols": [
+        {
+          "name": "geInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Bool",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              "INT.ge"
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-ALIAS-10",
+      "sorts": [
+        {
+          "name": "Nat",
+          "attributes": [
+            [
+              "hasDomainValues",
+              null
+            ]
+          ],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ],
+      "attributes": [],
+      "axioms": [],
+      "symbols": []
+    }
+  ]
+}
