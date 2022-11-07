@@ -73,6 +73,9 @@ executables:
   hs-backend-booster:
     source-dirs: executable
     main: Main.hs
+    build-tools:
+      - happy
+      - alex
     dependencies:
     - base
     - hs-backend-booster
