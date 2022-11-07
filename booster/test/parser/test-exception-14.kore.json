@@ -1,0 +1,29 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-EXCEPTION-14",
+      "sorts": [],
+      "attributes": [],
+      "axioms": [
+        {
+          "attributes": [],
+          "axiom": {
+            "tag": "App",
+            "name": "f",
+            "sorts": [
+              {
+                "tag": "SortApp",
+                "name": "S",
+                "args": []
+              }
+            ],
+            "args": []
+          },
+          "sortVars": []
+        }
+      ],
+      "symbols": []
+    }
+  ]
+}

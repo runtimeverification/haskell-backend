@@ -83,7 +83,12 @@ jobs:
         id: setup-haskell-cabal
         with:
           ghc-version: ${{ env.ghc_version }}
-          cabal-version: "3.2"
+          cabal-version: "3.6"
+
+      - name: Install tools
+        run: |
+          cabal install happy
+          cabal install alex
 
       - name: Run unit tests
         run: cabal v2-test --enable-tests --test-show-details=direct

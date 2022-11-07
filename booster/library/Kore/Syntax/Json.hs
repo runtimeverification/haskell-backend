@@ -13,6 +13,7 @@ module Kore.Syntax.Json (
     encodeKoreJson,
     decodePattern,
     decodeKoreJson,
+    prettyJsonOpts,
 ) where
 
 import Data.Aeson as Json

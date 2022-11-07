@@ -1,0 +1,32 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-HOOKS-5",
+      "sorts": [
+        {
+          "name": "S",
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ],
+      "attributes": [],
+      "axioms": [],
+      "symbols": [
+        {
+          "name": "f",
+          "sort": {
+            "tag": "SortApp",
+            "name": "S",
+            "args": []
+          },
+          "argSorts": [],
+          "attributes": [],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ]
+    }
+  ]
+}

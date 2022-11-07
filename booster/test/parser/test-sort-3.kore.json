@@ -1,0 +1,22 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-SORT-3",
+      "sorts": [
+        {
+          "name": "Map",
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": [
+            "S1",
+            "S2"
+          ]
+        }
+      ],
+      "attributes": [],
+      "axioms": [],
+      "symbols": []
+    }
+  ]
+}

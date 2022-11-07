@@ -1,0 +1,28 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "INT",
+      "sorts": [
+        {
+          "name": "Int",
+          "attributes": [
+            [
+              "hook",
+              "INT.Int"
+            ],
+            [
+              "hasDomainValues",
+              null
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ],
+      "attributes": [],
+      "axioms": [],
+      "symbols": []
+    }
+  ]
+}

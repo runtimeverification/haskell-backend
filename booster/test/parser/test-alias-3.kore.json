@@ -1,0 +1,49 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-ALIAS-3",
+      "sorts": [
+        {
+          "name": "S",
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        },
+        {
+          "name": "T",
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ],
+      "attributes": [],
+      "axioms": [],
+      "symbols": [
+        {
+          "name": "g",
+          "sort": {
+            "tag": "SortApp",
+            "name": "S",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "S",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "S",
+              "args": []
+            }
+          ],
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ]
+    }
+  ]
+}
