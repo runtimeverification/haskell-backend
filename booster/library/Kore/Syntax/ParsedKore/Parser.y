@@ -127,7 +127,7 @@ Sentences :: {[ParsedSentence]}
 
 Sentence :: {ParsedSentence}
 	  : import ident Attributes
-            { SentenceImport {- ($2, $3) -} }
+            { SentenceImport (mkId $2, $3) }
           | sort Id SortVariables Attributes
             { SentenceSort ParsedSort{name=$2, sortVars=$3, isHooked=False, attributes=$4} }
           | hookedSort Id SortVariables Attributes
@@ -286,7 +286,7 @@ PatternList :: { [KorePattern] }
 -- | helpers for parsing module components
 data ParsedSentence
     =
-      SentenceImport -- (Json.Id, ParsedAttributes)
+      SentenceImport (Json.Id, ParsedAttributes)
     | SentenceSort ParsedSort
     | SentenceSymbol ParsedSymbol
     | SentenceAlias -- ParsedAlias
@@ -297,18 +297,19 @@ data ParsedSentence
 mkModule :: Json.Id -> ParsedAttributes -> [ParsedSentence] -> ParsedModule
 mkModule name attributes sentences
 --     = ParsedModule {name, imports, sorts, symbols, aliases, axioms, claims, attributes}
-    = ParsedModule {name, sorts, symbols, axioms, attributes}
+    = ParsedModule {name, imports, sorts, symbols, axioms, attributes}
   where
-    (sorts, symbols, axioms) = foldl' collect ([], [], []) sentences
+    (imports, sorts, symbols, axioms) = foldl' collect ([], [], [], []) sentences
     -- intentionally reversing the list
     collect ::
-        ([ParsedSort], [ParsedSymbol], [ParsedAxiom]) ->
+        ([(Json.Id, ParsedAttributes)], [ParsedSort], [ParsedSymbol], [ParsedAxiom]) ->
         ParsedSentence ->
-        ([ParsedSort], [ParsedSymbol], [ParsedAxiom])
-    collect acc@(!sorts, !symbols, !axioms) = \case
-        SentenceSort s -> (s:sorts, symbols, axioms)
-        SentenceSymbol s -> (sorts, s:symbols, axioms)
-        SentenceAxiom a -> (sorts, symbols, a:axioms)
+        ([(Json.Id, ParsedAttributes)], [ParsedSort], [ParsedSymbol], [ParsedAxiom])
+    collect acc@(!imports, !sorts, !symbols, !axioms) = \case
+        SentenceImport id -> (id:imports, sorts, symbols, axioms)
+        SentenceSort s -> (imports, s:sorts, symbols, axioms)
+        SentenceSymbol s -> (imports, sorts, s:symbols, axioms)
+        SentenceAxiom a -> (imports, sorts, symbols, a:axioms)
         _other -> acc
 
 -- helper to parse attributes
