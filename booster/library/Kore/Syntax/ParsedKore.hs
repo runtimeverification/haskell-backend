@@ -8,15 +8,21 @@ module Kore.Syntax.ParsedKore (
     parseKorePattern,
     decodeJsonKoreDefinition,
     encodeJsonKoreDefinition,
+
+    -- * Validating and converting
+    internalise,
 ) where
 
+import Control.Monad.Trans.Except (runExcept)
 import Data.Aeson qualified as Json
 import Data.Aeson.Encode.Pretty qualified as Json
 import Data.ByteString.Lazy (ByteString)
 import Data.Text (Text)
 
+import Kore.Definition.Base
 import Kore.Syntax.Json qualified as KoreJson
 import Kore.Syntax.ParsedKore.Base
+import Kore.Syntax.ParsedKore.Internalise as Internalise
 import Kore.Syntax.ParsedKore.Parser qualified as Parser
 
 -- Parsing text
@@ -67,6 +73,5 @@ encodeJsonKoreDefinition :: ParsedDefinition -> ByteString
 encodeJsonKoreDefinition = Json.encodePretty' KoreJson.prettyJsonOpts
 
 -- internalising parsed data
-
--- validates the parsed data and extracts everything we need internally
--- internalise :: ParsedDefinition -> Either [DefinitionError] TypeToBeDefined
+internalise :: ParsedDefinition -> Either DefinitionError KoreDefinition
+internalise = runExcept . Internalise.buildDefinition
