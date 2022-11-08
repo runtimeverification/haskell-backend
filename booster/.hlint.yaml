@@ -1,0 +1,6 @@
+# HLint configuration file
+#
+# see `hlint --default` for help
+################################
+
+- ignore: { name: "Use <$>" }

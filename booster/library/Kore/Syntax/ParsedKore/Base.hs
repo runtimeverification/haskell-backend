@@ -30,8 +30,8 @@ data ParsedDefinition = ParsedDefinition
 
 data ParsedModule = ParsedModule
     { name :: Json.Id
-    , -- , imports :: [(Json.Id, ParsedAttributes)]
-      sorts :: [ParsedSort]
+    , imports :: [(Json.Id, ParsedAttributes)]
+    , sorts :: [ParsedSort]
     , symbols :: [ParsedSymbol]
     , -- , aliases :: [ParsedAlias]
       axioms :: [ParsedAxiom]
@@ -77,3 +77,6 @@ data ParsedAxiom = ParsedAxiom
 type ParsedAttributes = [(AttributeName, AttributeValue)]
 type AttributeName = Json.Id
 type AttributeValue = Maybe Text
+
+getAttribute :: Text -> ParsedAttributes -> Maybe AttributeValue
+getAttribute = lookup . Json.Id

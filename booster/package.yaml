@@ -25,11 +25,13 @@ default-extensions:
   DerivingVia
   DuplicateRecordFields
   FlexibleInstances
+  FunctionalDependencies
   GADTs
   GeneralizedNewtypeDeriving
   ImportQualifiedPost
   KindSignatures
   LambdaCase
+  MultiParamTypeClasses
   NamedFieldPuns
   ScopedTypeVariables
   StandaloneDeriving
@@ -65,8 +67,11 @@ library:
   - json-rpc
   - mtl
   - prettyprinter
+  - regex-base
+  - regex-pcre-builtin
   - stm
   - text
+  - transformers
   source-dirs: library
 
 executables:

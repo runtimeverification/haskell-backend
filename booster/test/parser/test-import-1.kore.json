@@ -6,6 +6,7 @@
       "sorts": [],
       "attributes": [],
       "axioms": [],
+      "imports": [],
       "symbols": []
     },
     {
@@ -13,6 +14,12 @@
       "sorts": [],
       "attributes": [],
       "axioms": [],
+      "imports": [
+        [
+          "TEST-1",
+          []
+        ]
+      ],
       "symbols": []
     }
   ]

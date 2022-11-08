@@ -53,7 +53,7 @@ type SymbolName = Text
 type SortName = Text
 
 data Sort
-    = SortApp SymbolName [Sort]
+    = SortApp SortName [Sort]
     | SortVar VarName
     | Builtin BuiltinSort
     deriving stock (Eq, Ord, Show)
