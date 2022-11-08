@@ -188,6 +188,7 @@
           "sortVars": []
         }
       ],
+      "imports": [],
       "symbols": [
         {
           "name": "inj",

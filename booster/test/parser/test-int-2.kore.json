@@ -13,6 +13,7 @@
       ],
       "attributes": [],
       "axioms": [],
+      "imports": [],
       "symbols": []
     },
     {
@@ -32,6 +33,7 @@
       ],
       "attributes": [],
       "axioms": [],
+      "imports": [],
       "symbols": []
     },
     {
@@ -53,6 +55,16 @@
       ],
       "attributes": [],
       "axioms": [],
+      "imports": [
+        [
+          "K",
+          []
+        ],
+        [
+          "BOOL",
+          []
+        ]
+      ],
       "symbols": [
         {
           "name": "geInt",
