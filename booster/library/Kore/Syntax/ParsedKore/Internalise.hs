@@ -14,13 +14,20 @@ module Kore.Syntax.ParsedKore.Internalise (
 
 import Control.Monad.State
 import Control.Monad.Trans.Except
+import Data.Bifunctor (first)
+import Data.Function (on)
+import Data.List (groupBy, partition, sortOn)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Data.Text (Text)
 
+import Kore.Definition.Attributes.Base
 import Kore.Definition.Attributes.Reader
 import Kore.Definition.Base as Def
-import Kore.Syntax.Json.Base (Id (..))
+import Kore.Pattern.Base (SortName)
+import Kore.Syntax.Json.Base qualified as Json
+import Kore.Syntax.Json.Internalise
 import Kore.Syntax.ParsedKore.Base
 
 {- | Traverses all modules of a parsed definition, to build an
@@ -51,7 +58,7 @@ traverseModules modules start =
     moduleMap = Map.fromList [(moduleName m, m) | m <- modules]
     mainModule = moduleName $ last modules -- just by convention
     moduleName :: ParsedModule -> Text
-    moduleName ParsedModule{name = Id n} = n
+    moduleName ParsedModule{name = Json.Id n} = n
 
 {- | Traverses the import graph bottom up, ending in the given named
    module. All entities (sorts, symbols, axioms) that are in scope in
@@ -64,7 +71,7 @@ descendFrom m = do
         Just _ -> pure () -- already internalised (present in the definition)
         Nothing -> do
             let mbModule = Map.lookup m moduleMap
-            theModule <- maybe (lift . throwE $ NoSuchModule m) pure mbModule
+            theModule <- maybe (defError $ NoSuchModule m) pure mbModule
 
             -- traverse imports recursively in pre-order before
             -- dealing with the current module.
@@ -83,9 +90,6 @@ descendFrom m = do
             newDef <- addModule theModule def
             modify $ \s -> s{definition = newDef}
 
-fromJsonId :: Id -> Text
-fromJsonId (Id n) = n
-
 -- | currently no validations are performed
 addModule ::
     ParsedModule ->
@@ -93,9 +97,9 @@ addModule ::
     StateT DefinitionState (Except DefinitionError) KoreDefinition
 addModule
     m@ParsedModule
-        { name = Id n
+        { name = Json.Id n
         , sorts = parsedSorts
-        , symbols = _parsedSymbols
+        , symbols = parsedSymbols
         , axioms = _parsedAxioms
         }
     KoreDefinition
@@ -113,30 +117,100 @@ addModule
 
             -- ensure sorts are unique and only refer to known other sorts
             -- TODO, will need sort attributes to determine sub-sorts
-            let newSorts =
-                    Map.fromList
-                        [ (fromJsonId sortName, sort)
-                        | sort@ParsedSort{name = sortName} <- parsedSorts
-                        ]
-                nameCollisions :: [ParsedSort]
-                nameCollisions =
+
+            let (newSorts, sortDups) = parsedSorts `mappedBy` sortName
+            unless (null sortDups) $
+                defError $
+                    DuplicateSorts (concatMap snd sortDups)
+            let sortCollisions :: [ParsedSort]
+                sortCollisions =
                     Map.elems $ Map.intersection newSorts currentSorts
-            unless (null nameCollisions) $
-                lift . throwE $
-                    DuplicateSorts nameCollisions
+            unless (null sortCollisions) $
+                defError $
+                    DuplicateSorts sortCollisions
             let sorts = Map.map extract newSorts <> currentSorts
+
+            -- ensure parsed symbols are not duplicates and only refer
+            -- to known sorts
+            let (newSymbols, symDups) = parsedSymbols `mappedBy` symbolName
+            unless (null symDups) $
+                defError $
+                    DuplicateSymbols (concatMap snd symDups)
+            let symCollisions :: [ParsedSymbol]
+                symCollisions =
+                    Map.elems $ Map.intersection newSymbols currentSymbols
+            unless (null symCollisions) $
+                defError $
+                    DuplicateSymbols symCollisions
+            mapM_ (checkSymbolSorts sorts) $ Map.elems newSymbols
+            let symbols = Map.map extract newSymbols <> currentSymbols
 
             pure
                 KoreDefinition
                     { attributes
                     , modules
                     , sorts
-                    , symbols = currentSymbols -- FIXME
+                    , symbols
                     , axioms = currentAxioms -- FIXME
                     }
+      where
+        -- returns the
+        mappedBy ::
+            forall a k.
+            (Ord k) =>
+            [a] ->
+            (a -> k) ->
+            (Map k a, [(k, [a])])
+        things `mappedBy` getKey =
+            let sorted :: [[a]]
+                sorted = groupBy ((==) `on` getKey) $ sortOn getKey things
+                (good, dups) = partition (null . tail) sorted
+             in ( Map.fromAscList [(getKey a, a) | [a] <- good]
+                , [(getKey $ head d, d) | d <- dups]
+                )
+
+defError :: DefinitionError -> StateT s (Except DefinitionError) a
+defError = lift . throwE
+
+{- | Checks if a given parsed symbol uses only sorts from the provided
+   sort map, and whether they are consistent (wrt. sort parameter count).
+-}
+checkSymbolSorts ::
+    Map SortName SortAttributes ->
+    ParsedSymbol ->
+    StateT s (Except DefinitionError) ()
+checkSymbolSorts sortMap ParsedSymbol{sortVars, argSorts, sort} =
+    do
+        unless (Set.size knownVars == length sortVars) $
+            defError $
+                DuplicateNames (map fromJsonId sortVars)
+        mapM_ (lift . check) $ sort : argSorts
+  where
+    knownVars = Set.fromList $ map fromJsonId sortVars
+
+    check :: Json.Sort -> Except DefinitionError ()
+    check =
+        void
+            . mapExcept (first DefinitionSortError)
+            . checkSort knownVars sortMap
+
+-- monomorphic name functions for different entities (avoiding field
+-- name ambiguity)
+sortName :: ParsedSort -> Text
+sortName ParsedSort{name} = fromJsonId name
+
+symbolName :: ParsedSymbol -> Text
+symbolName ParsedSymbol{name} = fromJsonId name
+
+fromJsonId :: Json.Id -> Text
+fromJsonId (Json.Id n) = n
 
 ----------------------------------------
 data DefinitionError
     = GeneralError Text
     | NoSuchModule Text
     | DuplicateSorts [ParsedSort]
+    | DuplicateSymbols [ParsedSymbol]
+    | DuplicateNames [Text]
+    | DefinitionSortError SortError
+    deriving stock (Eq, Show)
