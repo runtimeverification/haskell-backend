@@ -41,6 +41,14 @@ data ExecuteRequest = ExecuteRequest
         (FromJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ExecuteRequest
 
+-- newtype StepRequest = StepRequest
+--     { state :: KoreJson
+--     }
+--     deriving stock (Generic, Show, Eq)
+--     deriving
+--         (FromJSON)
+--         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] StepRequest
+
 data ImpliesRequest = ImpliesRequest
     { antecedent :: !KoreJson
     , consequent :: !KoreJson
@@ -72,13 +80,30 @@ instance FromRequest (API 'Req) where
 
 data ExecuteState = ExecuteState
     { term :: KoreJson
-    , substitution :: Maybe KoreJson
     , predicate :: Maybe KoreJson
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ExecuteState
+
+data ImpliesResult = ImpliesResult
+    { implication :: KoreJson
+    , satisfiable :: Bool
+    , condition :: Maybe Condition
+    }
+    deriving stock (Generic, Show, Eq)
+    deriving
+        (ToJSON)
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ImpliesResult
+
+newtype SimplifyResult = SimplifyResult
+    { state :: KoreJson
+    }
+    deriving stock (Generic, Show, Eq)
+    deriving
+        (ToJSON)
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] SimplifyResult
 
 data HaltReason
     = Branching
@@ -103,32 +128,13 @@ data ExecuteResult = ExecuteResult
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ExecuteResult
 
-data Condition = Condition
-    { substitution :: KoreJson
-    , predicate :: KoreJson
+newtype Condition = Condition
+    { predicate :: KoreJson
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] Condition
-
-data ImpliesResult = ImpliesResult
-    { implication :: KoreJson
-    , satisfiable :: Bool
-    , condition :: Maybe Condition
-    }
-    deriving stock (Generic, Show, Eq)
-    deriving
-        (ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ImpliesResult
-
-newtype SimplifyResult = SimplifyResult
-    { state :: KoreJson
-    }
-    deriving stock (Generic, Show, Eq)
-    deriving
-        (ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] SimplifyResult
 
 data ReqOrRes = Req | Res
 
