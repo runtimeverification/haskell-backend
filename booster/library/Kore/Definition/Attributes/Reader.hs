@@ -74,7 +74,10 @@ instance HasAttributes ParsedSymbol where
 instance HasAttributes ParsedSort where
     type Attributes ParsedSort = SortAttributes
 
-    extract _ = SortAttributes
+    extract ParsedSort{sortVars} =
+        SortAttributes
+            { argCount = length sortVars
+            }
 
 ----------------------------------------
 

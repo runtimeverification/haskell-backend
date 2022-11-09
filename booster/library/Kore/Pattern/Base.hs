@@ -20,7 +20,7 @@ import Data.Text (Text)
 data Term
     = AndTerm Sort Term Term -- used in #as patterns
     | SymbolApplication Sort [Sort] SymbolName [Term]
-    | DomainValue Sort Term
+    | DomainValue Sort Text
     | Var Variable
     deriving stock (Eq, Ord, Show)
 
