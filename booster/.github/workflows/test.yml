@@ -1,8 +1,13 @@
 name: "Build + Test"
 on:
   pull_request:
+  push:
+    branches: ['main']
+
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # head_ref is defined for PRs only, so we use run_id (unique) for
+  # the main branch to ensure all commits are built
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 env:
