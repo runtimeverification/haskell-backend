@@ -7,25 +7,26 @@ module Kore.Pattern.Base (
     module Kore.Pattern.Base,
 ) where
 
-import Data.ByteString (ByteString)
 import Data.Text (Text)
 
--- Currently these are draft types from
--- https://github.com/runtimeverification/haskell-backend/issues/3349
+{- | A term consists of an AST of constructors and function calls, as
+   well as domain values (tokens and built-in types) and (element)
+   variables.
+   This is anything that can be part of a K configuration.
 
+   Deliberately kept simple in this codebase (leaving out built-in
+   types and containers).
+-}
 data Term
     = AndTerm Sort Term Term -- used in #as patterns
     | SymbolApplication Sort [Sort] SymbolName [Term]
     | DomainValue Sort Term
-    | BuiltinInt Int
-    | BuiltinBool Bool
-    | BuiltinBytes ByteString
-    | BuiltinString String
     | Var Variable
-    | Inj Sort Sort Term
     deriving stock (Eq, Ord, Show)
 
--- Notice that Predicates don't have sorts
+{- | A predicate describes constraints on terms. It will always evaluate
+   to 'Top' or 'Bottom'. Notice that 'Predicate's don't have a sort.
+-}
 data Predicate
     = AndPredicate Predicate Predicate
     | Bottom
@@ -42,6 +43,7 @@ data Predicate
     | Top
     deriving stock (Eq, Ord, Show)
 
+-- | A term (configuration) constrained by a number of predicates.
 data Pattern = Pattern
     { term :: Term
     , constraints :: [Predicate]
@@ -52,19 +54,17 @@ type VarName = Text
 type SymbolName = Text
 type SortName = Text
 
+{- | A term has a particular 'Sort', which is part of a definition, and
+  sorts can be subsorts of other sorts (represented in the definition).
+-}
 data Sort
-    = SortApp SortName [Sort]
-    | SortVar VarName
-    | Builtin BuiltinSort
+    = -- | sort constructor, potentially with arguments
+      SortApp SortName [Sort]
+    | -- | sort variable (symbolic)
+      SortVar VarName
     deriving stock (Eq, Ord, Show)
 
-data BuiltinSort
-    = SortInt
-    | SortBool
-    | SortBytes
-    | SortString
-    deriving (Eq, Ord, Show)
-
+-- | A variable for symbolic execution or for terms in a rule.
 data Variable = Variable
     { variableSort :: Sort
     , variableName :: VarName
