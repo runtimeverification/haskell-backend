@@ -33,6 +33,7 @@ default-extensions:
   LambdaCase
   MultiParamTypeClasses
   NamedFieldPuns
+  OverloadedStrings
   ScopedTypeVariables
   StandaloneDeriving
   TupleSections
@@ -58,20 +59,27 @@ library:
   - array
   - base
   - bytestring
+  - conduit
   - conduit-extra
   - containers
   - deriving-aeson
   - exceptions
   - extra
   - filepath
+  - gitrev
   - json-rpc
+  - monad-logger
   - mtl
+  - optparse-applicative
   - prettyprinter
   - regex-base
   - regex-pcre-builtin
   - stm
+  - stm-conduit
+  - template-haskell
   - text
   - transformers
+  - unliftio
   source-dirs: library
 
 executables:
