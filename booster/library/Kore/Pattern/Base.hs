@@ -54,8 +54,8 @@ type VarName = Text
 type SymbolName = Text
 type SortName = Text
 
-{- | A term has a particular 'Sort', which is part of a definition, and
-  sorts can be subsorts of other sorts (represented in the definition).
+{- | A term has a particular 'Sort', which is part of a definition.
+  Sorts can be subsorts of others (not represented in the definition).
 -}
 data Sort
     = -- | sort constructor, potentially with arguments
