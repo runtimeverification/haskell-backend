@@ -18,6 +18,7 @@ import Data.List (
     foldl',
     foldl1'
  )
+import Data.Maybe (mapMaybe)
 import Data.Text (
     Text,
  )
@@ -318,8 +319,27 @@ attributeFromPattern KJApp {name, sorts = [], args = []}
     = (name, Nothing)
 attributeFromPattern KJApp {name, sorts = [], args = [KJString{value}]}
     = (name, Just value)
+-- attributes of AC structure sorts have this shape
+attributeFromPattern KJApp {name, sorts = [], args = [KJApp{name = Json.Id name2, args = []}]}
+    = (name, Just name2)
+-- priorities attribute has this shape
+attributeFromPattern KJApp {name, sorts = [], args}
+    = (name, Just $ asTextList args)
+-- The subsort attribute information is given in the sort field
+attributeFromPattern KJApp {name, sorts = [SortApp{name = Json.Id s1}, SortApp{name = Json.Id s2}], args = []}
+    = (name, Just $ s1 <> " < " <> s2)
 attributeFromPattern badPat
     = error $ "Unexpected attribute shape: " <> show badPat
+
+-- extract attributes from patterns used for attributes
+asText :: KorePattern -> Maybe Text
+asText KJString{value} = Just value
+asText KJApp{name = Json.Id n, sorts = [], args = []} = Just n
+asText other = Nothing  -- HACK
+
+asTextList :: [KorePattern] -> Text
+asTextList = Text.intercalate "," . mapMaybe asText
+
 
 {- | Expand a \\left-assoc or \\right-assoc directive into a ParsedPattern. First
 argument is True for \\left-assoc and False for \\right-assoc.

@@ -66,9 +66,9 @@ instance HasAttributes ParsedSymbol where
 
     extract ParsedSymbol{attributes} =
         SymbolAttributes
-            { isFunction = attributes .: "function"
-            , isTotal = attributes .: "functional" || attributes .: "total"
-            , isConstructor = attributes .: "constructor"
+            { isFunction = attributes .! "function" || (attributes .! "functional")
+            , isTotal = (attributes .! "functional") || (attributes .! "total")
+            , isConstructor = attributes .! "constructor"
             }
 
 instance HasAttributes ParsedSort where

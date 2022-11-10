@@ -76,10 +76,17 @@ data KoreDefinition = KoreDefinition
     { attributes :: DefinitionAttributes
     , modules :: Map Text ModuleAttributes
     , sorts :: Map SortName SortAttributes -- TODO store a lattice of subsorts?
-    , symbols :: Map SymbolName SymbolAttributes -- constructors and functions
+    , symbols :: Map SymbolName (SymbolAttributes, SymbolSort) -- constructors and functions
     , axioms :: Map TermIndex [Set Axiom] -- grouped by decreasing priority
     }
     deriving (Eq, Show)
+
+-- | Sort information related to a symbol: result and argument sorts
+data SymbolSort = SymbolSort
+    { resultSort :: Sort
+    , argSorts :: [Sort]
+    }
+    deriving stock (Eq, Show)
 
 {- | The starting point for building up the definition. Could be
  'Monoid' instance if the attributes had a Default.
