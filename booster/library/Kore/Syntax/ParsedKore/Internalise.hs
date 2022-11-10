@@ -25,7 +25,7 @@ import Data.Text (Text)
 import Kore.Definition.Attributes.Base
 import Kore.Definition.Attributes.Reader
 import Kore.Definition.Base as Def
-import Kore.Pattern.Base (SortName)
+import Kore.Pattern.Base qualified as Def
 import Kore.Syntax.Json.Base qualified as Json
 import Kore.Syntax.Json.Internalise
 import Kore.Syntax.ParsedKore.Base
@@ -133,17 +133,23 @@ addModule
             -- ensure parsed symbols are not duplicates and only refer
             -- to known sorts
             let (newSymbols, symDups) = parsedSymbols `mappedBy` symbolName
+                symCollisions =
+                    Map.elems $ Map.intersection newSymbols currentSymbols
             unless (null symDups) $
                 defError $
                     DuplicateSymbols (concatMap snd symDups)
-            let symCollisions :: [ParsedSymbol]
-                symCollisions =
-                    Map.elems $ Map.intersection newSymbols currentSymbols
             unless (null symCollisions) $
                 defError $
                     DuplicateSymbols symCollisions
-            mapM_ (checkSymbolSorts sorts) $ Map.elems newSymbols
-            let symbols = Map.map extract newSymbols <> currentSymbols
+            -- internalise (in a new pass over the list)
+            let internaliseSymbol ::
+                    ParsedSymbol ->
+                    StateT s (Except DefinitionError) (Def.SymbolName, (SymbolAttributes, SymbolSort))
+                internaliseSymbol s@ParsedSymbol{name} = do
+                    info <- mkSymbolSorts sorts s
+                    pure (fromJsonId name, (extract s, info))
+            newSymbols' <- mapM internaliseSymbol parsedSymbols
+            let symbols = Map.fromList newSymbols' <> currentSymbols
 
             pure
                 KoreDefinition
@@ -173,25 +179,28 @@ defError :: DefinitionError -> StateT s (Except DefinitionError) a
 defError = lift . throwE
 
 {- | Checks if a given parsed symbol uses only sorts from the provided
-   sort map, and whether they are consistent (wrt. sort parameter count).
+   sort map, and whether they are consistent (wrt. sort parameter
+   count), and returns a @SymbolSort@ (sort information record) for
+   the symbol.
 -}
-checkSymbolSorts ::
-    Map SortName SortAttributes ->
+mkSymbolSorts ::
+    Map Def.SortName SortAttributes ->
     ParsedSymbol ->
-    StateT s (Except DefinitionError) ()
-checkSymbolSorts sortMap ParsedSymbol{sortVars, argSorts, sort} =
+    StateT s (Except DefinitionError) SymbolSort
+mkSymbolSorts sortMap ParsedSymbol{sortVars, argSorts = sorts, sort} =
     do
         unless (Set.size knownVars == length sortVars) $
             defError $
                 DuplicateNames (map fromJsonId sortVars)
-        mapM_ (lift . check) $ sort : argSorts
+        resultSort <- lift $ check sort
+        argSorts <- mapM (lift . check) sorts
+        pure $ SymbolSort{resultSort, argSorts}
   where
     knownVars = Set.fromList $ map fromJsonId sortVars
 
-    check :: Json.Sort -> Except DefinitionError ()
+    check :: Json.Sort -> Except DefinitionError Def.Sort
     check =
-        void
-            . mapExcept (first DefinitionSortError)
+        mapExcept (first DefinitionSortError)
             . checkSort knownVars sortMap
 
 -- monomorphic name functions for different entities (avoiding field
