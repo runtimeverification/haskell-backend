@@ -46,8 +46,8 @@ jobs:
         if: ${{ !startsWith(matrix.os, 'self') }}
         uses: cachix/cachix-action@v10
         with:
-          name: runtimeverification
-          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+          name: k-framework
+          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
 
       - name: Build
         run: nix-build -A kore
@@ -87,9 +87,8 @@ jobs:
       - name: Install Cachix
         uses: cachix/cachix-action@v10
         with:
-          name: runtimeverification
+          name: k-framework
           skipPush: true
-          extraPullNames: runtimeverification
 
       - name: Run integration tests
         run: nix-build test.nix
@@ -249,9 +248,8 @@ jobs:
       - name: Install Cachix
         uses: cachix/cachix-action@v10
         with:
-          name: runtimeverification
-          extraPullNames: runtimeverification
-          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+          name: k-framework
+          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
           skipPush: true
 
       - name: Collect performance statistics
