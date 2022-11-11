@@ -21,6 +21,9 @@ import Kore.Attribute.Pattern.FreeVariables (
 import Kore.Attribute.SourceLocation (
     SourceLocation,
  )
+import Kore.Attribute.UniqueId (
+    UniqueId,
+ )
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.MultiOr qualified as MultiOr
@@ -40,6 +43,9 @@ import Kore.Log.DebugAppliedRewriteRules (
     debugAppliedRewriteRules,
  )
 import Kore.Log.DebugCreatedSubstitution (debugCreatedSubstitution)
+import Kore.Log.DebugRewriteTrace (
+    debugRewriteTrace,
+ )
 import Kore.Log.ErrorRewritesInstantiation (
     checkSubstitutionCoverage,
  )
@@ -69,7 +75,7 @@ import Kore.Rewrite.Step (
     unifyRules,
  )
 import Kore.Simplify.Simplify (
-    MonadSimplify,
+    Simplifier,
     simplifyCondition,
  )
 import Kore.Substitute
@@ -94,15 +100,13 @@ one branch.
 See also: 'applyInitialConditions'
 -}
 finalizeAppliedRule ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Applied rule
     RulePattern RewritingVariableName ->
     -- | Conditions of applied rule
     OrCondition RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    LogicT Simplifier (OrPattern RewritingVariableName)
 finalizeAppliedRule
     sideCondition
     renamedRule
@@ -134,14 +138,13 @@ finalizeAppliedRule
 The parts of the applied condition were already combined by 'unifyRule'. First, the @ensures@ clause is simplified under the applied condition. Then, the conditions are conjoined and simplified again.
 -}
 constructConfiguration ::
-    MonadSimplify simplifier =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Applied condition
     Condition RewritingVariableName ->
     -- | Final configuration
     Pattern RewritingVariableName ->
-    LogicT simplifier (Pattern RewritingVariableName)
+    LogicT (LogicT Simplifier) (Pattern RewritingVariableName)
 constructConfiguration
     sideCondition
     appliedCondition
@@ -172,15 +175,13 @@ constructConfiguration
         return (finalTerm' `Pattern.withCondition` finalCondition)
 
 finalizeAppliedClaim ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Applied rule
     ClaimPattern ->
     -- | Conditions of applied rule
     OrCondition RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    LogicT Simplifier (OrPattern RewritingVariableName)
 finalizeAppliedClaim sideCondition renamedRule appliedConditions =
     MultiOr.observeAllT $
         finalizeAppliedRuleWorker =<< Logic.scatter appliedConditions
@@ -204,25 +205,25 @@ type UnifyingRuleWithRepresentation representation rule =
     , Rule.UnifyingRuleVariable rule ~ RewritingVariableName
     , From rule (AxiomPattern RewritingVariableName)
     , From rule SourceLocation
+    , From rule UniqueId
     )
 
-type FinalizeApplied rule simplifier =
+type FinalizeApplied rule =
     rule ->
     OrCondition RewritingVariableName ->
-    LogicT simplifier (OrPattern RewritingVariableName)
+    LogicT Simplifier (OrPattern RewritingVariableName)
 
 finalizeRule ::
     UnifyingRuleWithRepresentation representation rule =>
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     (representation -> rule) ->
-    FinalizeApplied representation simplifier ->
+    FinalizeApplied representation ->
     FreeVariables RewritingVariableName ->
     -- | Initial conditions
     Pattern RewritingVariableName ->
     -- | Rewriting axiom
     UnifiedRule representation ->
-    simplifier [Result representation]
+    Simplifier [Result representation]
 finalizeRule
     sideCondition
     toRule
@@ -246,20 +247,19 @@ finalizeRule
             return Step.Result{appliedRule = unifiedRule, result}
 
 -- | Finalizes a list of applied rules into 'Results'.
-type Finalizer rule simplifier =
-    MonadSimplify simplifier =>
+type Finalizer rule =
     FreeVariables RewritingVariableName ->
     Pattern RewritingVariableName ->
     [UnifiedRule rule] ->
-    simplifier (Results rule)
+    Simplifier (Results rule)
 
 finalizeRulesParallel ::
-    forall representation rule simplifier.
+    forall representation rule.
     UnifyingRuleWithRepresentation representation rule =>
     SideCondition RewritingVariableName ->
     (representation -> rule) ->
-    FinalizeApplied representation simplifier ->
-    Finalizer representation simplifier
+    FinalizeApplied representation ->
+    Finalizer representation
 finalizeRulesParallel
     sideCondition
     toRule
@@ -292,12 +292,12 @@ finalizeRulesParallel
                     }
 
 finalizeSequence ::
-    forall representation rule simplifier.
+    forall representation rule.
     UnifyingRuleWithRepresentation representation rule =>
     SideCondition RewritingVariableName ->
     (representation -> rule) ->
-    FinalizeApplied representation simplifier ->
-    Finalizer representation simplifier
+    FinalizeApplied representation ->
+    Finalizer representation
 finalizeSequence
     sideCondition
     toRule
@@ -342,25 +342,27 @@ finalizeSequence
             return results
 
 applyWithFinalizer ::
-    forall rule simplifier.
-    MonadSimplify simplifier =>
+    forall rule.
     Rule.UnifyingRule rule =>
     Rule.UnifyingRuleVariable rule ~ RewritingVariableName =>
     From rule SourceLocation =>
+    From rule UniqueId =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Finalizing function
-    Finalizer rule simplifier ->
+    Finalizer rule ->
     -- | Rewrite rules
     [rule] ->
     -- | Configuration being rewritten
     Pattern RewritingVariableName ->
-    simplifier (Results rule)
+    Simplifier (Results rule)
 applyWithFinalizer sideCondition finalize rules initial = do
     results <- unifyRules sideCondition initial rules
     debugAppliedRewriteRules initial (locations <$> results)
     let initialVariables = freeVariables initial
-    finalize initialVariables initial results
+    finalizedResults <- finalize initialVariables initial results
+    debugRewriteTrace initial finalizedResults
+    return finalizedResults
   where
     locations = from @_ @SourceLocation . extract
 {-# INLINE applyWithFinalizer #-}
@@ -370,15 +372,13 @@ applyWithFinalizer sideCondition finalize rules initial = do
 See also: 'applyRewriteRule'
 -}
 applyRulesParallel ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Rewrite rules
     [RulePattern RewritingVariableName] ->
     -- | Configuration being rewritten
     Pattern RewritingVariableName ->
-    simplifier (Results (RulePattern RewritingVariableName))
+    Simplifier (Results (RulePattern RewritingVariableName))
 applyRulesParallel sideCondition rules initial =
     applyWithFinalizer
         sideCondition
@@ -395,13 +395,11 @@ applyRulesParallel sideCondition rules initial =
 See also: 'applyRewriteRule'
 -}
 applyRewriteRulesParallel ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     -- | Rewrite rules
     [RewriteRule RewritingVariableName] ->
     -- | Configuration being rewritten
     Pattern RewritingVariableName ->
-    simplifier (Results (RulePattern RewritingVariableName))
+    Simplifier (Results (RulePattern RewritingVariableName))
 applyRewriteRulesParallel
     (map getRewriteRule -> rules)
     initial =
@@ -418,15 +416,13 @@ applyRewriteRulesParallel
 See also: 'applyRewriteRule'
 -}
 applyRulesSequence ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Rewrite rules
     [RulePattern RewritingVariableName] ->
     -- | Configuration being rewritten
     Pattern RewritingVariableName ->
-    simplifier (Results (RulePattern RewritingVariableName))
+    Simplifier (Results (RulePattern RewritingVariableName))
 applyRulesSequence sideCondition rules initial =
     applyWithFinalizer
         sideCondition
@@ -443,13 +439,11 @@ applyRulesSequence sideCondition rules initial =
 See also: 'applyRewriteRulesParallel'
 -}
 applyRewriteRulesSequence ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     -- | Configuration being rewritten
     Pattern RewritingVariableName ->
     -- | Rewrite rules
     [RewriteRule RewritingVariableName] ->
-    simplifier (Results (RulePattern RewritingVariableName))
+    Simplifier (Results (RulePattern RewritingVariableName))
 applyRewriteRulesSequence
     initialConfig
     (map getRewriteRule -> rules) =
@@ -462,15 +456,14 @@ applyRewriteRulesSequence
             return results
 
 applyClaimsSequence ::
-    forall goal simplifier.
-    MonadSimplify simplifier =>
+    forall goal.
     UnifyingRuleWithRepresentation ClaimPattern goal =>
     (ClaimPattern -> goal) ->
     -- | Configuration being rewritten
     Pattern RewritingVariableName ->
     -- | Rewrite rules
     [ClaimPattern] ->
-    simplifier (Results ClaimPattern)
+    Simplifier (Results ClaimPattern)
 applyClaimsSequence mkClaim initialConfig claims = do
     let sideCondition =
             SideCondition.cacheSimplifiedFunctions

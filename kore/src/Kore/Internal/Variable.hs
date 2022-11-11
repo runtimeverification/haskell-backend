@@ -48,7 +48,7 @@ class Eq variable => SubstitutionOrd variable where
     compareSubstitution :: variable -> variable -> Ordering
 
 instance SubstitutionOrd Void where
-    compareSubstitution = \case
+    compareSubstitution = \case {}
     {-# INLINE compareSubstitution #-}
 
 instance SubstitutionOrd VariableName where

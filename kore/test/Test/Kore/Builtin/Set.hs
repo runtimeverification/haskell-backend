@@ -4,15 +4,11 @@ module Test.Kore.Builtin.Set (
     test_unit,
     test_getUnit,
     test_inElement,
-    test_inUnitSymbolic,
-    test_inElementSymbolic,
     test_inConcat,
-    test_inConcatSymbolic,
     test_concatUnit,
     test_concatAssociates,
     test_concatNormalizes,
     test_difference,
-    test_difference_symbolic,
     test_toList,
     test_size,
     test_intersection_unit,
@@ -60,9 +56,6 @@ module Test.Kore.Builtin.Set (
     asInternal,
 ) where
 
-import Control.Error (
-    runMaybeT,
- )
 import Data.Default qualified as Default
 import Data.HashMap.Strict qualified as HashMap
 import Data.HashSet (
@@ -74,7 +67,6 @@ import Data.Maybe qualified as Maybe (
     fromJust,
  )
 import Data.Sequence qualified as Seq
-import Data.Text qualified as Text
 import Hedgehog hiding (
     Concrete,
     opaque,
@@ -83,22 +75,17 @@ import Hedgehog hiding (
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 import Kore.Builtin.AssociativeCommutative qualified as Ac
-import Kore.Builtin.Set qualified as Set
 import Kore.Builtin.Set.Set qualified as Set
-import Kore.Internal.Condition qualified as Condition
-import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.From
 import Kore.Internal.InternalSet
 import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
-import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
-    configElementVariableFromId,
     mkConfigVariable,
     mkRewritingTerm,
     mkRuleVariable,
@@ -133,40 +120,20 @@ import Test.Kore.Builtin.Int (
     genIntegerKey,
     genIntegerPattern,
  )
-import Test.Kore.Builtin.Int qualified as Int
 import Test.Kore.Builtin.Int qualified as Test.Int
 import Test.Kore.Builtin.List qualified as Test.List
 import Test.Kore.Internal.OrPattern qualified as OrPattern
-import Test.Kore.Internal.Pattern qualified as Pattern
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
 import Test.Kore.Simplify
 import Test.Kore.With
-import Test.SMT hiding (
-    runSMT,
+import Test.SMT (
+    runNoSMT,
+    testCaseWithoutSMT,
+    testPropertyWithSolver,
+    testPropertyWithoutSolver,
  )
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
-
-genKeys :: Gen [TermLike RewritingVariableName]
-genKeys = Gen.subsequence (concreteKeys <> symbolicKeys <> functionalKeys)
-
-genKey :: Gen (TermLike RewritingVariableName)
-genKey = Gen.element (concreteKeys <> symbolicKeys <> functionalKeys)
-
-genFunctionalKey :: Gen (TermLike RewritingVariableName)
-genFunctionalKey = Gen.element (functionalKeys <> concreteKeys)
-
-functionalKeys :: [TermLike RewritingVariableName]
-functionalKeys = Mock.functional10 . mkElemVar <$> elemVars'
-
-concreteKeys :: [TermLike RewritingVariableName]
-concreteKeys = [Mock.a, Mock.b, Mock.c]
-
-symbolicKeys :: [TermLike RewritingVariableName]
-symbolicKeys = Mock.f . mkElemVar <$> elemVars'
-
-elemVars' :: [ElementVariable RewritingVariableName]
-elemVars' = [Mock.xConfig, Mock.yConfig, Mock.zConfig]
 
 genSetInteger :: Gen (HashSet Integer)
 genSetInteger =
@@ -244,67 +211,6 @@ test_inElement =
                 predicate = fromEquals_ patIn patTrue
             (===) (Test.Bool.asOrPattern True) =<< evaluateTermT patIn
             (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
-        )
-
-test_inUnitSymbolic :: TestTree
-test_inUnitSymbolic =
-    testPropertyWithSolver
-        "in{}(x, unit{}()) === \\dv{Bool{}}(\"false\")"
-        ( do
-            patKey <- forAll genFunctionalKey
-            let patIn =
-                    mkApplySymbol
-                        inSetSymbolTestSort
-                        [ patKey
-                        , mkApplySymbol unitSetSymbol []
-                        ]
-                patFalse = Test.Bool.asInternal False
-                predicate = fromEquals_ patFalse patIn
-            (===) (Test.Bool.asOrPattern False) =<< evaluateTermT patIn
-            (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
-        )
-
-test_inElementSymbolic :: TestTree
-test_inElementSymbolic =
-    testPropertyWithSolver
-        "in{}(x, element{}(x)) === and(\\dv{Bool{}}(\"true\"), \\top())"
-        ( do
-            patKey <- forAll genKey
-            let patElement = mkApplySymbol elementSetSymbolTestSort [patKey]
-                patIn = mkApplySymbol inSetSymbolTestSort [patKey, patElement]
-                patTrue = Test.Bool.asInternal True
-                conditionTerm = mkAnd patTrue (mkCeil boolSort patElement)
-            actual <- evaluateTermT patIn
-            expected <- evaluateTermT conditionTerm
-            actual === expected
-        )
-
-test_inConcatSymbolic :: TestTree
-test_inConcatSymbolic =
-    testPropertyWithSolver
-        "in{}(concat{}(_, element{}(e)), e)\
-        \ === and(\\dv{Bool{}}(\"true\"), ceil(concat{}(_, element{}(e))))"
-        ( do
-            keys <- forAll genKeys
-            patKey <- forAll genKey
-            let patSet =
-                    mkSet_ $
-                        HashSet.insert patKey (HashSet.fromList keys)
-                patIn = mkApplySymbol inSetSymbolTestSort [patKey, patSet]
-                patTrue = Test.Bool.asPattern True
-                conditionTerm = fromCeil_ patSet
-            condition <- evaluatePredicateT conditionTerm
-            let expected =
-                    MultiOr.map
-                        ( Condition.andCondition patTrue
-                            . Conditional.withoutTerm
-                        )
-                        condition
-            actual <- evaluateTermT patIn
-            Pattern.assertEquivalent'
-                (===)
-                (from expected :: [Pattern RewritingVariableName])
-                (from actual :: [Pattern RewritingVariableName])
         )
 
 test_inConcat :: TestTree
@@ -449,78 +355,6 @@ test_difference =
             (===) expect =<< evaluateTermT patDifference
             (===) (OrPattern.topOf kSort) =<< evaluatePredicateT predicate
         )
-
-test_difference_symbolic :: [TestTree]
-test_difference_symbolic =
-    [ testCase "[X, 0, 1] -Set [X, 0] = [1]" $ do
-        let args =
-                [ mkSet_ [x, zero, one]
-                , mkSet_ [x, zero]
-                ]
-            expect =
-                makeMultipleAndPredicate (makeCeilPredicate <$> args)
-                    & Condition.fromPredicate
-                    & Pattern.withCondition oneSingleton
-        evalDifference (Just expect) args
-    , testCase "[X, 1] -Set [X, Y] = [1] -Set [Y]" $ do
-        let args =
-                [ mkSet_ [x, one]
-                , mkSet_ [x, y]
-                ]
-            expect =
-                makeMultipleAndPredicate (makeCeilPredicate <$> args)
-                    & Condition.fromPredicate
-                    & Pattern.withCondition (differenceSet oneSingleton ySingleton)
-        evalDifference (Just expect) args
-    , testCase "[X] -Set [X, Y] = []" $ do
-        let args =
-                [ mkSet_ [x]
-                , mkSet_ [x, y]
-                ]
-            expect =
-                makeMultipleAndPredicate
-                    (makeCeilPredicate <$> tail args)
-                    & Condition.fromPredicate
-                    & Pattern.withCondition (mkSet_ [])
-        evalDifference (Just expect) args
-    , testCase "[f(X), 1] -Set [f(X)] = [1]" $ do
-        let args =
-                [ mkSet_ [fx, one]
-                , mkSet_ [fx]
-                ]
-            expect =
-                makeCeilPredicate (head args)
-                    & Condition.fromPredicate
-                    & Pattern.withCondition oneSingleton
-        evalDifference (Just expect) args
-    ]
-  where
-    x = mkElemVar ("x" `ofSort` intSort)
-    y = mkElemVar ("y" `ofSort` intSort)
-    zero = Int.asInternal 0
-    one = Int.asInternal 1
-    fx = addInt x one
-    ySingleton = mkSet_ [y]
-    oneSingleton = mkSet_ [one]
-
-    ofSort :: Text.Text -> Sort -> ElementVariable RewritingVariableName
-    idName `ofSort` sort = configElementVariableFromId (testId idName) sort
-
-    evalDifference ::
-        HasCallStack =>
-        -- expected result
-        Maybe (Pattern RewritingVariableName) ->
-        -- arguments of 'differenceSet'
-        [TermLike RewritingVariableName] ->
-        Assertion
-    evalDifference expect args = do
-        actual <-
-            Set.evalDifference
-                SideCondition.top
-                (Application differenceSetSymbol args)
-                & runMaybeT
-                & testRunSimplifier testEnv
-        assertEqual "" expect actual
 
 test_toList :: TestTree
 test_toList =

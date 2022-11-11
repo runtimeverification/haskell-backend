@@ -62,7 +62,7 @@ import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     rulePattern,
  )
-import Kore.Simplify.API qualified as Kore
+import Kore.Simplify.Simplify qualified as Kore
 import Kore.Syntax.Module (
     ModuleName (..),
  )
@@ -831,7 +831,7 @@ mkState startTime axioms claims claim =
     graph' = emptyExecutionGraph claim
 
 mkConfig ::
-    MVar (Log.LogAction IO Log.ActualEntry) ->
+    MVar (Log.LogAction IO Log.SomeEntry) ->
     Config
 mkConfig logger =
     Config

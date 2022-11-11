@@ -97,6 +97,7 @@ data KoreLogOptions = KoreLogOptions
     , debugApplyEquationOptions :: !DebugApplyEquationOptions
     , debugAttemptEquationOptions :: !DebugAttemptEquationOptions
     , debugEquationOptions :: !DebugEquationOptions
+    , rewriteTraceFileName :: !(Maybe FilePath)
     }
     deriving stock (Eq, Show, GHC.Generic)
 
@@ -120,6 +121,7 @@ defaultKoreLogOptions exeName startTime =
         , debugApplyEquationOptions = def @DebugApplyEquationOptions
         , debugAttemptEquationOptions = def @DebugAttemptEquationOptions
         , debugEquationOptions = def @DebugEquationOptions
+        , rewriteTraceFileName = Nothing
         }
 
 {- | 'KoreLogType' is passed via command line arguments and decides if and how
@@ -209,6 +211,7 @@ parseKoreLogOptions exeName startTime =
         <*> parseDebugApplyEquationOptions
         <*> parseDebugAttemptEquationOptions
         <*> parseDebugEquationOptions
+        <*> parseTraceRewrites
 
 parseEntryTypes :: Parser EntryTypes
 parseEntryTypes =
@@ -333,10 +336,10 @@ parseDebugApplyEquationOptions =
 
 selectDebugApplyEquation ::
     DebugApplyEquationOptions ->
-    ActualEntry ->
+    SomeEntry ->
     Bool
-selectDebugApplyEquation options ActualEntry{actualEntry}
-    | Just (DebugApplyEquation equation _) <- fromEntry actualEntry =
+selectDebugApplyEquation options entry
+    | Just (DebugApplyEquation equation _) <- fromEntry entry =
         any (flip HashSet.member selected) (Equation.identifiers equation)
     | otherwise = False
   where
@@ -374,15 +377,15 @@ parseDebugAttemptEquationOptions =
 
 selectDebugAttemptEquation ::
     DebugAttemptEquationOptions ->
-    ActualEntry ->
+    SomeEntry ->
     Bool
-selectDebugAttemptEquation options ActualEntry{actualEntry}
+selectDebugAttemptEquation options entry
     | Just equation <- getEquation =
         any (flip HashSet.member selected) (Equation.identifiers equation)
     | otherwise = False
   where
     getEquation = do
-        debugAttemptEquation <- fromEntry actualEntry
+        debugAttemptEquation <- fromEntry entry
         case debugAttemptEquation of
             DebugAttemptEquation equation _ -> pure equation
             DebugAttemptEquationResult equation _ -> pure equation
@@ -419,13 +422,23 @@ parseDebugEquationOptions =
 
 selectDebugEquation ::
     DebugEquationOptions ->
-    ActualEntry ->
+    SomeEntry ->
     Bool
 selectDebugEquation DebugEquationOptions{selected} =
     (fmap or . sequence)
         [ selectDebugApplyEquation DebugApplyEquationOptions{selected}
         , selectDebugAttemptEquation DebugAttemptEquationOptions{selected}
         ]
+
+parseTraceRewrites :: Parser (Maybe FilePath)
+parseTraceRewrites =
+    Options.optional
+        ( Options.strOption
+            ( Options.metavar "FILENAME"
+                <> Options.long "trace-rewrites"
+                <> Options.help "Output rewrite trace to a YAML file"
+            )
+        )
 
 unparseKoreLogOptions :: KoreLogOptions -> [String]
 unparseKoreLogOptions
@@ -444,6 +457,7 @@ unparseKoreLogOptions
             debugApplyEquationOptions
             debugAttemptEquationOptions
             debugEquationOptions
+            _
         ) =
         concat
             [ koreLogTypeFlag logType

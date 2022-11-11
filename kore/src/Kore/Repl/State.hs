@@ -145,7 +145,7 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Rewrite.Strategy qualified as Strategy
-import Kore.Simplify.API (
+import Kore.Simplify.Simplify (
     Simplifier,
  )
 import Kore.Syntax.Definition (
@@ -510,7 +510,7 @@ liftSimplifierWithLogger ::
     forall a t.
     MonadState ReplState (t Simplifier) =>
     Monad.Trans.MonadTrans t =>
-    MVar (Log.LogAction IO Log.ActualEntry) ->
+    MVar (Log.LogAction IO Log.SomeEntry) ->
     Simplifier a ->
     t Simplifier a
 liftSimplifierWithLogger mLogger simplifier = do

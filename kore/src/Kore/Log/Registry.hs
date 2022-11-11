@@ -57,6 +57,12 @@ import Kore.Log.DebugProven (
 import Kore.Log.DebugRetrySolverQuery (
     DebugRetrySolverQuery,
  )
+import Kore.Log.DebugRewriteTrace (
+    DebugFinalPatterns,
+    DebugInitialClaim,
+    DebugInitialPattern,
+    DebugRewriteTrace,
+ )
 import Kore.Log.DebugSolver (
     DebugSolverRecv,
     DebugSolverSend,
@@ -73,11 +79,11 @@ import Kore.Log.DebugUnification (
 import Kore.Log.DebugUnifyBottom (
     DebugUnifyBottom,
  )
+import Kore.Log.DecidePredicateUnknown (
+    DecidePredicateUnknown,
+ )
 import Kore.Log.ErrorBottomTotalFunction (
     ErrorBottomTotalFunction,
- )
-import Kore.Log.ErrorDecidePredicateUnknown (
-    ErrorDecidePredicateUnknown,
  )
 import Kore.Log.ErrorEquationRightFunction (
     ErrorEquationRightFunction,
@@ -112,17 +118,30 @@ import Kore.Log.InfoExecBreadth (
 import Kore.Log.InfoExecDepth (
     InfoExecDepth,
  )
+import Kore.Log.InfoJsonRpcCancelRequest (
+    InfoJsonRpcCancelRequest,
+ )
+import Kore.Log.InfoJsonRpcProcessRequest (
+    InfoJsonRpcProcessRequest,
+ )
 import Kore.Log.InfoProofDepth (
     InfoProofDepth,
  )
 import Kore.Log.InfoReachability (
     InfoReachability,
  )
+import Kore.Log.InfoUserLog (
+    InfoUserLog,
+ )
+import Kore.Log.JsonRpc (
+    LogJsonRpcServer,
+ )
+import Kore.Log.WarnBottom (
+    WarnClaimRHSIsBottom,
+    WarnConfigIsBottom,
+ )
 import Kore.Log.WarnBoundedModelChecker (
     WarnBoundedModelChecker,
- )
-import Kore.Log.WarnClaimRHSIsBottom (
-    WarnClaimRHSIsBottom,
  )
 import Kore.Log.WarnDepthLimitExceeded (
     WarnDepthLimitExceeded,
@@ -214,6 +233,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnDepthLimitExceeded
             , mk $ Proxy @WarnBoundedModelChecker
             , mk $ Proxy @WarnClaimRHSIsBottom
+            , mk $ Proxy @WarnConfigIsBottom
             , mk $ Proxy @WarnIfLowProductivity
             , mk $ Proxy @WarnTrivialClaim
             , mk $ Proxy @WarnUnexploredBranches
@@ -224,6 +244,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @InfoAttemptUnification
             , mk $ Proxy @InfoReachability
             , mk $ Proxy @InfoExecBreadth
+            , mk $ Proxy @InfoUserLog
             , mk $ Proxy @DebugAttemptEquation
             , mk $ Proxy @DebugApplyEquation
             , mk $ Proxy @DebugUnification
@@ -235,10 +256,16 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnUnsimplifiedCondition
             , mk $ Proxy @WarnRestartSolver
             , mk $ Proxy @DebugCreatedSubstitution
+            , mk $ Proxy @DebugInitialClaim
+            , mk $ Proxy @DebugInitialPattern
+            , mk $ Proxy @DebugFinalPatterns
+            , mk $ Proxy @DebugRewriteTrace
+            , mk $ Proxy @LogJsonRpcServer
+            , mk $ Proxy @InfoJsonRpcProcessRequest
+            , mk $ Proxy @InfoJsonRpcCancelRequest
             ]
         ,
             [ mk $ Proxy @ErrorBottomTotalFunction
-            , mk $ Proxy @ErrorDecidePredicateUnknown
             , mk $ Proxy @ErrorEquationRightFunction
             , mk $ Proxy @ErrorEquationsSameMatch
             , mk $ Proxy @ErrorOutOfDate
@@ -247,6 +274,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @ErrorException
             , mk $ Proxy @ErrorRewriteLoop
             , mk $ Proxy @ErrorRewritesInstantiation
+            , mk $ Proxy @DecidePredicateUnknown
             ]
         )
             & Lens.each %~ unzip
@@ -291,7 +319,7 @@ toSomeEntryType =
 
 -- | The entry type underlying the 'SomeEntry' wrapper.
 typeOfSomeEntry :: SomeEntry -> SomeTypeRep
-typeOfSomeEntry (SomeEntry entry) = SomeTypeRep (typeOf entry)
+typeOfSomeEntry (SomeEntry _ entry) = SomeTypeRep (typeOf entry)
 
 getEntryTypesAsText :: [String]
 getEntryTypesAsText = getNoErrEntryTypesAsText <> getErrEntryTypesAsText

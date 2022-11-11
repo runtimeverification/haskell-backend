@@ -49,7 +49,7 @@ import Kore.Rewrite.UnifyingRule (
     UnifyingRule (..),
  )
 import Kore.Simplify.Simplify (
-    MonadSimplify,
+    Simplifier,
  )
 import Kore.Syntax.Sentence qualified as Syntax
 import Kore.TopBottom (
@@ -106,6 +106,9 @@ instance From OnePathClaim Attribute.RuleIndex where
 
 instance From OnePathClaim Attribute.Trusted where
     from = Attribute.trusted . attributes . getOnePathClaim
+
+instance From OnePathClaim Attribute.UniqueId where
+    from = Attribute.uniqueId . attributes . getOnePathClaim
 
 instance UnifyingRule OnePathClaim where
     type UnifyingRuleVariable OnePathClaim = RewritingVariableName
@@ -217,12 +220,11 @@ instance ClaimExtractor OnePathClaim where
             (Syntax.sentenceAxiomPattern . Syntax.getSentenceClaim) sentence
 
 deriveSeqAxiomOnePath ::
-    MonadSimplify simplifier =>
     [Rule OnePathClaim] ->
     OnePathClaim ->
     TransitionT
         (AppliedRule OnePathClaim)
-        simplifier
+        Simplifier
         (ApplyResult OnePathClaim)
 deriveSeqAxiomOnePath rules =
     deriveSeq' _Unwrapped OnePathRewriteRule rewrites

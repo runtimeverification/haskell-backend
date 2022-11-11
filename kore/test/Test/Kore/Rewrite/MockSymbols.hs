@@ -36,6 +36,9 @@ import Data.Text (
     Text,
  )
 import Data.Text qualified as Text
+import Hedgehog (diff, forAll, property, withTests)
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
 import Kore.Attribute.Hook (
     Hook (..),
  )
@@ -95,17 +98,14 @@ import Kore.Rewrite.SMT.AST qualified as SMT
 import Kore.Rewrite.SMT.Representation.Resolve qualified as SMT (
     resolve,
  )
-import Kore.Simplify.API (
-    Env (Env),
-    MonadSimplify,
- )
-import Kore.Simplify.API qualified as SimplificationAPI.DoNotUse
 import Kore.Simplify.Condition qualified as Simplifier.Condition
 import Kore.Simplify.InjSimplifier
 import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     ConditionSimplifier,
+    Env (..),
+    MonadSimplify,
  )
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
 import Kore.Simplify.TermLike qualified as TermLike
@@ -122,6 +122,8 @@ import SMT.SimpleSMT qualified as SMT
 import Test.ConsistentKore qualified as ConsistentKore (
     CollectionSorts (..),
     Setup (..),
+    runKoreGen,
+    termLikeGenWithSort,
  )
 import Test.Kore (
     testId,
@@ -129,6 +131,7 @@ import Test.Kore (
 import Test.Kore.IndexedModule.MockMetadataTools qualified as Mock
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
+import Test.Tasty.Hedgehog (testProperty)
 
 aId :: Id
 aId = testId "a"
@@ -2302,7 +2305,7 @@ overloadGraph :: OverloadGraph.OverloadGraph
 overloadGraph = OverloadGraph.fromOverloads overloads
 
 overloadSimplifier :: OverloadSimplifier
-overloadSimplifier = mkOverloadSimplifier overloadGraph injSimplifier
+overloadSimplifier = mkOverloadSimplifier overloadGraph Test.Kore.Rewrite.MockSymbols.injSimplifier
 
 -- TODO(Ana): if needed, create copy with experimental simplifier
 -- enabled
@@ -2313,10 +2316,10 @@ env =
         , simplifierCondition = predicateSimplifier
         , simplifierPattern = Pattern.makeEvaluate
         , simplifierTerm = TermLike.simplify
-        , axiomEquations = axiomEquations
+        , axiomEquations = Test.Kore.Rewrite.MockSymbols.axiomEquations
         , memo = Memo.forgetful
-        , injSimplifier
-        , overloadSimplifier
+        , injSimplifier = Test.Kore.Rewrite.MockSymbols.injSimplifier
+        , overloadSimplifier = Test.Kore.Rewrite.MockSymbols.overloadSimplifier
         , hookedSymbols = Map.empty
         }
 
@@ -2325,7 +2328,7 @@ generatorSetup =
     ConsistentKore.Setup
         { allSymbols = filter doesNotHaveArguments symbols
         , allAliases = []
-        , allSorts = map fst sortAttributesMapping
+        , allSorts = filter (/= otherTopSort) $ map fst sortAttributesMapping
         , freeElementVariables = Set.empty
         , freeSetVariables = Set.empty
         , maybeIntSort = Just intSort
@@ -2344,10 +2347,36 @@ generatorSetup =
           -- map generators
           maybeStringLiteralSort = Just stringMetaSort
         , maybeStringBuiltinSort = Just stringSort
-        , metadataTools = metadataTools
+        , metadataTools = Test.Kore.Rewrite.MockSymbols.metadataTools
         }
   where
     doesNotHaveArguments Symbol{symbolParams} = null symbolParams
+
+-- | ensure that test data can be generated using the above setup
+test_canGenerateConsistentTerms :: TestTree
+test_canGenerateConsistentTerms =
+    testGroup "can generate consistent terms for all given sorts" $
+        map mkTest testSorts
+  where
+    testSorts = ConsistentKore.allSorts generatorSetup
+    sizes = map Range.Size [1 .. 10]
+
+    mkTest :: Sort -> TestTree
+    mkTest sort@(SortActualSort SortActual{sortActualName = InternedId{getInternedId}}) =
+        testGroup
+            (show getInternedId)
+            [ testProperty (show size) . withTests 1 . property $ do
+                r <-
+                    forAll . Gen.resize size $
+                        ConsistentKore.runKoreGen
+                            generatorSetup
+                            (ConsistentKore.termLikeGenWithSort sort)
+                -- just test that this works
+                Hedgehog.diff 0 (<) (length $ show r)
+            | size <- sizes
+            ]
+    mkTest SortVariableSort{} =
+        error "Found a sort variable in the generator setup"
 
 builtinSimplifiers :: Map Id Text
 builtinSimplifiers =

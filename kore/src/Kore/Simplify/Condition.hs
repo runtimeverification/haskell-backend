@@ -97,7 +97,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition original = d
     return result
   where
     limit :: Int
-    limit = 4
+    limit = 10
 
     simplifyingCondition ::
         (Bool, Conditional RewritingVariableName any) ->

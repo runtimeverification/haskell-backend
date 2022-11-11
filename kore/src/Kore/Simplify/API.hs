@@ -12,24 +12,6 @@ Portability : portable
 module Kore.Simplify.API (
     evalSimplifier,
     evalSimplifierProofs,
-
-    -- * Re-exports
-    Env (..),
-    Simplifier,
-    runSimplifier,
-    runSimplifierBranch,
-    TermSimplifier,
-    MonadSimplify (..),
-    askMetadataTools,
-    simplifyPattern,
-    simplifyTerm,
-    askAxiomEquations,
-    askInjSimplifier,
-    askOverloadSimplifier,
-    getCache,
-    putCache,
-    InternalVariable,
-    MonadProf,
 ) where
 
 import Control.Monad.Reader
@@ -92,15 +74,14 @@ traceProfSimplify ::
     Pattern RewritingVariableName ->
     prof a ->
     prof a
-traceProfSimplify (Pattern.toTermLike -> termLike) =
-    maybe id traceProf ident
-  where
-    ident =
-        (":simplify:" <>)
-            . Pretty.renderText
-            . Pretty.layoutOneLine
-            . Pretty.pretty
-            <$> matchAxiomIdentifier termLike
+traceProfSimplify =
+    traceProf
+        . (":simplify:" <>)
+        . Pretty.renderText
+        . Pretty.layoutOneLine
+        . Pretty.pretty
+        . matchAxiomIdentifier
+        . Pattern.toTermLike
 
 mkSimplifierEnv ::
     VerifiedModuleSyntax Attribute.Symbol ->

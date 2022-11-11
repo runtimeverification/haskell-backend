@@ -19,6 +19,12 @@ let
     };
   in import src { inherit pkgs; };
 
+  mach-nix = import (builtins.fetchGit {
+    url = "https://github.com/DavHau/mach-nix/";
+    # place version number with the latest one from the github releases page
+    ref = "refs/tags/3.5.0";
+  }) { };
+
   default = import ./. { };
   inherit (default) kore prelude-kore;
 
@@ -49,6 +55,11 @@ in stdenv.mkDerivation {
     jq
     miller # processing test statistics
     z3
+    (mach-nix.mkPython {
+      requirements = ''
+        jsonrpcclient
+      '';
+    })
   ];
   configurePhase = ''
     export TOP=$(pwd)

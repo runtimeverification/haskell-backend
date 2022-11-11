@@ -3,7 +3,9 @@ on:
   push:
     branches:
       - master
+
 jobs:
+
   check:
     name: 'Check'
     runs-on: ubuntu-latest
@@ -23,8 +25,7 @@ jobs:
       - name: Install Cachix
         uses: cachix/cachix-action@v10
         with:
-          name: runtimeverification
-          extraPullNames: 'kore'
+          name: k-framework
           skipPush: true
 
       - name: Materialize
@@ -61,9 +62,8 @@ jobs:
       - name: Install Cachix
         uses: cachix/cachix-action@v10
         with:
-          name: runtimeverification
-          signingKey: '${{ secrets.RUNTIMEVERIFICATION_CACHIX_SIGNING_KEY }}'
-          extraPullNames: 'kore'
+          name: k-framework
+          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
 
       - name: Build
         run: nix-build -A kore -A project.kore.checks
@@ -134,4 +134,54 @@ jobs:
 
       - name: Build dependencies
         run: |
-          stack build --test --only-dependencies
+          stack build --test
+
+  cache-stack-haddock:
+    name: 'Cache Stack Haddock'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install prerequisites
+        run: |
+          sudo apt install --yes z3
+
+      - name: Check out code
+        uses: actions/checkout@v2.3.4
+        with:
+          submodules: recursive
+
+      - name: Cache Stack root
+        uses: actions/cache@v2
+        with:
+          path: ~/.stack
+          key: stack-haddock-${{ runner.os }}-${{ hashFiles('stack.yaml.lock') }}
+          restore-keys: |
+            stack-haddock-${{ runner.os }}-
+            stack-haddock-
+
+      - uses: haskell/actions/setup@v1
+        id: setup-haskell-stack
+        with:
+          enable-stack: true
+          stack-no-global: true
+          stack-setup-ghc: true
+
+      - name: Check documentation
+        run: |
+          stack haddock --fast
+
+  update-dependents:
+    name: 'Publish Release'
+    runs-on: ubuntu-latest
+    environment: production
+    needs: [check, release, cache-cabal, cache-stack, cache-stack-haddock]
+    steps:
+      - name: Update dependents
+        env:
+          JENKINS_DEVOPS_TOKEN: ${{ secrets.JENKINS_DEVOPS_TOKEN }}
+        run: |
+          curl --fail 'https://ci.runtimeverification.com/jenkins/buildByToken/buildWithParameters' \
+              --data job=Devops/master                                                              \
+              --data token=$JENKINS_DEVOPS_TOKEN                                                    \
+              --data UPDATE_DEPS=true                                                               \
+              --data UPDATE_DEPS_REPO=runtimeverification/haskell-backend                           \
+              --data UPDATE_DEPS_VERSION=${GITHUB_SHA}

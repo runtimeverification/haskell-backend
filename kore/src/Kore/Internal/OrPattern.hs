@@ -223,7 +223,7 @@ getSortIfNotBottom multiOr =
         [] -> Nothing
         p : _ -> Just (Pattern.patternSort p)
 
--- | Transforms a 'Pattern' into a 'TermLike'.
+-- | Transforms an 'OrPattern' into a 'TermLike'.
 toTermLike ::
     InternalVariable variable =>
     Sort ->

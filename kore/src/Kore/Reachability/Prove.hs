@@ -24,8 +24,6 @@ import Control.DeepSeq (
  )
 import Control.Lens qualified as Lens
 import Control.Monad.Catch (
-    MonadCatch,
-    MonadMask,
     handleAll,
     throwM,
  )
@@ -74,8 +72,13 @@ import Kore.Internal.Predicate (
     pattern PredicateNot,
  )
 import Kore.Internal.TermLike (Sort)
-import Kore.Log.DebugBeginClaim
+import Kore.Log.DebugBeginClaim (
+    debugBeginClaim,
+ )
 import Kore.Log.DebugProven
+import Kore.Log.DebugRewriteTrace (
+    debugInitialClaim,
+ )
 import Kore.Log.DebugTransition (
     debugAfterTransition,
     debugBeforeTransition,
@@ -84,6 +87,9 @@ import Kore.Log.DebugTransition (
 import Kore.Log.InfoProofDepth
 import Kore.Log.WarnStuckClaimState
 import Kore.Log.WarnTrivialClaim
+import Kore.Reachability.AllPathClaim (
+    allPathRuleToTerm,
+ )
 import Kore.Reachability.Claim
 import Kore.Reachability.ClaimState (
     ClaimState,
@@ -92,6 +98,9 @@ import Kore.Reachability.ClaimState (
     extractUnproven,
  )
 import Kore.Reachability.ClaimState qualified as ClaimState
+import Kore.Reachability.OnePathClaim (
+    onePathRuleToTerm,
+ )
 import Kore.Reachability.Prim as Prim (
     Prim (..),
  )
@@ -107,14 +116,14 @@ import Kore.Rewrite.Strategy (
     ExecutionGraph (..),
     FinalNodeType,
     GraphSearchOrder,
-    Strategy,
+    Step,
     executionHistoryStep,
  )
 import Kore.Rewrite.Transition (
     runTransitionT,
  )
 import Kore.Rewrite.Transition qualified as Transition
-import Kore.Simplify.API
+import Kore.Simplify.Simplify
 import Kore.TopBottom
 import Kore.Unparser
 import Log (
@@ -281,6 +290,9 @@ proveClaimsWorker
         verifyWorker unprovenClaim@(claim, _) =
             traceExceptT D_OnePath_verifyClaim [debugArg "rule" claim] $ do
                 debugBeginClaim claim
+                debugInitialClaim (from claim) $ case claim of
+                    OnePath term -> onePathRuleToTerm term
+                    AllPath term -> allPathRuleToTerm term
                 result <-
                     lift . lift $
                         proveClaim
@@ -366,10 +378,10 @@ proveClaim
       where
         -------------------------------
         -- brought in from Claim.hs to remove Strategy type
-        infinite :: [GraphTraversal.Step Prim]
+        infinite :: [Step Prim]
         ~infinite = stepNoClaims : repeat stepWithClaims
 
-        withMinDepth :: MinDepth -> [GraphTraversal.Step Prim]
+        withMinDepth :: MinDepth -> [Step Prim]
         withMinDepth d =
             noCheckSteps <> repeat stepWithClaims
           where
@@ -399,7 +411,6 @@ proveClaim
         -- result interpretation for GraphTraversal.simpleTransition
         toTransitionResultWithDepth ::
             Show c =>
-            -- | prior state, needed for [] and Proven cases
             (ProofDepth, ClaimState c) ->
             [(ProofDepth, ClaimState c)] ->
             GraphTraversal.TransitionResult (ProofDepth, ClaimState c)
@@ -429,10 +440,6 @@ proveClaim
  execution graph by inserting this step.
 -}
 proveClaimStep ::
-    forall simplifier.
-    MonadSimplify simplifier =>
-    MonadMask simplifier =>
-    MonadProf simplifier =>
     Maybe MinDepth ->
     StuckCheck ->
     -- | list of claims in the spec module
@@ -443,7 +450,7 @@ proveClaimStep ::
     ExecutionGraph CommonClaimState (AppliedRule SomeClaim) ->
     -- | selected node in the graph
     Graph.Node ->
-    simplifier (ExecutionGraph CommonClaimState (AppliedRule SomeClaim))
+    Simplifier (ExecutionGraph CommonClaimState (AppliedRule SomeClaim))
 proveClaimStep _ stuckCheck claims axioms executionGraph node =
     executionHistoryStep
         transitionRule''
@@ -457,16 +464,10 @@ proveClaimStep _ stuckCheck claims axioms executionGraph node =
     -- decide the appropriate strategy for the next step.
     -- We should also add a command for toggling this feature on and
     -- off.
-    strategy' :: Strategy Prim
+    strategy' :: Step Prim
     strategy'
-        | isRoot = firstStep
-        | otherwise = followupStep
-
-    firstStep :: Strategy Prim
-    firstStep = reachabilityFirstStep
-
-    followupStep :: Strategy Prim
-    followupStep = reachabilityNextStep
+        | isRoot = reachabilityFirstStep
+        | otherwise = reachabilityNextStep
 
     ExecutionGraph{root} = executionGraph
 
@@ -485,13 +486,10 @@ proveClaimStep _ stuckCheck claims axioms executionGraph node =
             transitionRule' stuckCheck claims axioms prim state
 
 transitionRule' ::
-    MonadSimplify simplifier =>
-    MonadProf simplifier =>
-    MonadMask simplifier =>
     StuckCheck ->
     [SomeClaim] ->
     [Rule SomeClaim] ->
-    CommonTransitionRule simplifier
+    CommonTransitionRule Simplifier
 transitionRule' stuckCheck claims axioms = \prim proofState ->
     deepseq
         proofState
@@ -510,10 +508,8 @@ transitionRule' stuckCheck claims axioms = \prim proofState ->
     axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
 
 withWarnings ::
-    forall m.
-    MonadSimplify m =>
-    CommonTransitionRule m ->
-    CommonTransitionRule m
+    CommonTransitionRule Simplifier ->
+    CommonTransitionRule Simplifier
 withWarnings rule prim claimState = do
     claimState' <- rule prim claimState
     case prim of
@@ -526,10 +522,8 @@ withWarnings rule prim claimState = do
     return claimState'
 
 profTransitionRule ::
-    forall m.
-    MonadProf m =>
-    CommonTransitionRule m ->
-    CommonTransitionRule m
+    CommonTransitionRule Simplifier ->
+    CommonTransitionRule Simplifier
 profTransitionRule rule prim proofState =
     case prim of
         Prim.ApplyClaims -> tracing ":transit:apply-claims"
@@ -543,16 +537,14 @@ profTransitionRule rule prim proofState =
             >>= Transition.scatter
 
 logTransitionRule ::
-    forall m.
-    MonadSimplify m =>
-    CommonTransitionRule m ->
-    CommonTransitionRule m
+    CommonTransitionRule Simplifier ->
+    CommonTransitionRule Simplifier
 logTransitionRule rule prim proofState =
     whileReachability prim $ rule prim proofState
 
 checkStuckConfiguration ::
-    CommonTransitionRule m ->
-    CommonTransitionRule m
+    CommonTransitionRule Simplifier ->
+    CommonTransitionRule Simplifier
 checkStuckConfiguration rule prim proofState = do
     proofState' <- rule prim proofState
     for_ (extractStuck proofState) $ \rule' -> do
@@ -623,10 +615,8 @@ debugClaimStateFinal transition = do
     empty
 
 withDebugClaimState ::
-    forall monad.
-    MonadLog monad =>
-    CommonTransitionRule monad ->
-    CommonTransitionRule monad
+    CommonTransitionRule Simplifier ->
+    CommonTransitionRule Simplifier
 withDebugClaimState transitionFunc transition state =
     Transition.orElse
         ( debugClaimStateBracket
@@ -639,10 +629,8 @@ withDebugClaimState transitionFunc transition state =
         )
 
 withDebugProven ::
-    forall monad.
-    MonadLog monad =>
-    CommonTransitionRule monad ->
-    CommonTransitionRule monad
+    CommonTransitionRule Simplifier ->
+    CommonTransitionRule Simplifier
 withDebugProven rule prim state =
     do
         state' <- rule prim state
@@ -657,9 +645,8 @@ withDebugProven rule prim state =
             _ -> pure state'
 
 withConfiguration ::
-    MonadCatch monad =>
-    CommonTransitionRule monad ->
-    CommonTransitionRule monad
+    CommonTransitionRule Simplifier ->
+    CommonTransitionRule Simplifier
 withConfiguration transit prim proofState =
     handle' (transit prim proofState)
   where

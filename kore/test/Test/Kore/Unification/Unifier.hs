@@ -24,12 +24,12 @@ import Kore.Internal.SideCondition qualified as SideCondition (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.API (
+import Kore.Simplify.Not qualified as Not
+import Kore.Simplify.Pattern qualified as Pattern
+import Kore.Simplify.Simplify (
     Env (..),
     runSimplifier,
  )
-import Kore.Simplify.Not qualified as Not
-import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
 import Kore.Unification.Procedure
 import Kore.Unification.SubstitutionSimplifier qualified as Unification
@@ -240,13 +240,13 @@ unificationProcedureSuccess
         testCase message $ do
             let mockEnv = testEnv
             results <-
-                unificationProcedure
-                    SideCondition.topTODO
-                    term1
-                    term2
-                    & Monad.Unify.runUnifierT Not.notSimplifier
-                    & runSimplifier mockEnv
-                    & runNoSMT
+                runNoSMT
+                    . runSimplifier mockEnv
+                    . runUnifier
+                    $ unificationProcedure
+                        SideCondition.topTODO
+                        term1
+                        term2
             let normalize ::
                     Condition RewritingVariableName ->
                     ( [Substitution.Assignment RewritingVariableName]

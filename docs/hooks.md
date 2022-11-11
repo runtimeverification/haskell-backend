@@ -1020,3 +1020,63 @@ using the provided value.
     hooked-symbol encodeBytes{}(/* encoding */ String{}, /* contents */ String{}) : Bytes{}
         [hook{}("BYTES.encodeBytes")]
 ~~~
+
+## IO
+
+Depends on `STRING`.
+
+### IO.logString
+
+Log string to terminal: The string argument is logged as a InfoUserLog log message. The hook returns `dotk{}()`.
+
+~~~
+    hooked-symbol logString{}(String{}) : K{}
+        [hook{}("IO.logString")]
+~~~
+
+
+### IO.open
+
+Open a file and return the file descriptor or an IOError
+
+~~~
+    hooked-symbol open{}(/* path */ String{}, /* mode */ String{}) : IOInt{}
+        [hook{}("IO.open")]
+~~~
+
+
+### IO.close
+
+Close a file descriptor and return `dotk{}()` if no error was thrown, otherwise return an IOError.
+
+~~~
+    hooked-symbol close{}(/* fd */ Int{}) : Item{}
+        [hook{}("IO.close")]
+~~~
+
+### IO.getc
+
+Read a single character from a file. Returns an `#EOF{}()` if no more characters are available.
+
+~~~
+    hooked-symbol getc{}(/* fd */ Int{}) : IOInt{}
+        [hook{}("IO.getc")]
+~~~
+
+
+### IO.read
+Read from a file into a buffer of size `length` and return a `String{}()` if successfull, otherwise return an `IOError{}()`
+
+~~~
+    hooked-symbol read{}(/* fd */ Int{}, /* length */ Int{}) : IOString{}
+        [hook{}("IO.read")]
+~~~
+
+
+### IO.write
+Write the given string into a file. Returns an `IOError{}()` if the write fails and `dotk{}()` otherwise.
+
+~~~
+    hooked-symbol write{}(/* fd */ Int{}, /* value */ String{}) : Item{}
+        [hook{}("IO.read")]
+~~~

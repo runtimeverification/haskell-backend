@@ -1,0 +1,1 @@
+`¬ ¬ X`, simplified to `X`

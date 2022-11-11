@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
@@ -85,6 +87,9 @@ import Kore.Attribute.SourceLocation qualified as Attribute (
     SourceLocation,
  )
 import Kore.Attribute.Trusted qualified as Attribute.Trusted
+import Kore.Attribute.UniqueId qualified as Attribute (
+    UniqueId,
+ )
 import Kore.Error (Error (..), koreFailWhen, withContext)
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (indexedModuleClaims),
@@ -121,8 +126,9 @@ import Kore.Internal.TermLike (
     mkImplies,
     termLikeSort,
  )
+import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Log.InfoReachability
-import Kore.Log.WarnClaimRHSIsBottom
+import Kore.Log.WarnBottom
 import Kore.Reachability.ClaimState hiding (
     claimState,
  )
@@ -146,26 +152,25 @@ import Kore.Rewrite.RulePattern (
  )
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Rewrite.Step qualified as Step
-import Kore.Rewrite.Strategy (
-    Strategy,
- )
+import Kore.Rewrite.Strategy (Step)
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition qualified as Transition
-import Kore.Simplify.API (
-    MonadSimplify,
-    liftSimplifier,
- )
 import Kore.Simplify.Exists qualified as Exists
 import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Pattern (
     simplifyTopConfigurationDefined,
  )
 import Kore.Simplify.Pattern qualified as Pattern
+import Kore.Simplify.Simplify (
+    MonadSimplify,
+    Simplifier,
+    liftSimplifier,
+ )
 import Kore.Syntax.Variable
 import Kore.TopBottom (
     TopBottom (..),
  )
-import Kore.Unification.Procedure (unificationProcedure)
+import Kore.Unification.Procedure
 import Kore.Unification.UnifierT as UnifierT
 import Kore.Unparser (
     Unparse (..),
@@ -193,16 +198,14 @@ class Claim claim where
         Strategy.TransitionT (AppliedRule claim) m claim
 
     applyClaims ::
-        MonadSimplify m =>
         [claim] ->
         claim ->
-        Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+        Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
 
     applyAxioms ::
-        MonadSimplify m =>
         [[Rule claim]] ->
         claim ->
-        Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+        Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
 
 {- | 'ApplyResult' is the result of a rewriting step, like 'applyClaims' or 'applyAxioms'.
 
@@ -277,16 +280,16 @@ extractClaims ::
 extractClaims = mapMaybe extractClaim . indexedModuleClaims
 
 deriveSeqClaim ::
-    MonadSimplify m =>
     Step.UnifyingRule claim =>
     Step.UnifyingRuleVariable claim ~ RewritingVariableName =>
     From claim (AxiomPattern RewritingVariableName) =>
     From claim Attribute.SourceLocation =>
+    From claim Attribute.UniqueId =>
     Lens' claim ClaimPattern ->
     (ClaimPattern -> claim) ->
     [claim] ->
     claim ->
-    Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+    Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
 deriveSeqClaim lensClaimPattern mkClaim claims claim =
     getCompose $
         Lens.forOf lensClaimPattern claim $
@@ -317,19 +320,18 @@ data StuckCheck
     deriving stock (Eq)
 
 transitionRule ::
-    forall m claim.
-    MonadSimplify m =>
+    forall claim.
     Claim claim =>
     StuckCheck ->
     [claim] ->
     [[Rule claim]] ->
-    TransitionRule m (AppliedRule claim) (ClaimState claim)
+    TransitionRule Simplifier (AppliedRule claim) (ClaimState claim)
 transitionRule stuckCheck claims axiomGroups = transitionRuleWorker
   where
     transitionRuleWorker ::
         Prim ->
         ClaimState claim ->
-        Strategy.TransitionT (AppliedRule claim) m (ClaimState claim)
+        Strategy.TransitionT (AppliedRule claim) Simplifier (ClaimState claim)
 
     transitionRuleWorker Begin Proven = empty
     transitionRuleWorker Begin (Stuck _) = empty
@@ -388,54 +390,49 @@ isRemainder :: ClaimState a -> Bool
 isRemainder (Remaining _) = True
 isRemainder _ = False
 
-reachabilityFirstStep :: Strategy Prim
+reachabilityFirstStep :: Step Prim
 reachabilityFirstStep =
-    (Strategy.sequence . map Strategy.apply)
-        [ Begin
-        , Simplify
-        , CheckImplication
-        , ApplyAxioms
-        , Simplify
-        ]
+    [ Begin
+    , Simplify
+    , CheckImplication
+    , ApplyAxioms
+    , Simplify
+    ]
 
-reachabilityNextStep :: Strategy Prim
+reachabilityNextStep :: Step Prim
 reachabilityNextStep =
-    (Strategy.sequence . map Strategy.apply)
-        [ Begin
-        , Simplify
-        , CheckImplication
-        , ApplyClaims
-        , ApplyAxioms
-        , Simplify
-        ]
+    [ Begin
+    , Simplify
+    , CheckImplication
+    , ApplyClaims
+    , ApplyAxioms
+    , Simplify
+    ]
 
-reachabilityFirstStepNoCheck :: Strategy Prim
+reachabilityFirstStepNoCheck :: Step Prim
 reachabilityFirstStepNoCheck =
-    (Strategy.sequence . map Strategy.apply)
-        [ Begin
-        , Simplify
-        , ApplyAxioms
-        , Simplify
-        ]
+    [ Begin
+    , Simplify
+    , ApplyAxioms
+    , Simplify
+    ]
 
-reachabilityNextStepNoCheck :: Strategy Prim
+reachabilityNextStepNoCheck :: Step Prim
 reachabilityNextStepNoCheck =
-    (Strategy.sequence . map Strategy.apply)
-        [ Begin
-        , Simplify
-        , ApplyClaims
-        , ApplyAxioms
-        , Simplify
-        ]
+    [ Begin
+    , Simplify
+    , ApplyClaims
+    , ApplyAxioms
+    , Simplify
+    ]
 
 {- | A strategy for the last step of depth-limited reachability proofs.
    The final such step should only perform a CheckImplication.
 -}
-reachabilityCheckOnly :: Strategy Prim
-reachabilityCheckOnly =
-    Strategy.sequence [Strategy.apply Begin, Strategy.apply CheckImplication]
+reachabilityCheckOnly :: Step Prim
+reachabilityCheckOnly = [Begin, CheckImplication]
 
-strategy :: Stream (Strategy Prim)
+strategy :: Stream (Step Prim)
 strategy =
     reachabilityFirstStep :> Stream.iterate id reachabilityNextStep
 
@@ -443,7 +440,7 @@ newtype MinDepth = MinDepth
     { getMinDepth :: Int
     }
 
-strategyWithMinDepth :: MinDepth -> Stream (Strategy Prim)
+strategyWithMinDepth :: MinDepth -> Stream (Step Prim)
 strategyWithMinDepth (MinDepth minDepth) =
     Stream.prepend
         noCheckReachabilitySteps
@@ -595,7 +592,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
         stuck <-
             Logic.scatter configs'
                 >>= Pattern.simplify
-                >>= liftSimplifier . SMT.Evaluator.filterMultiOr
+                >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
                 >>= Logic.scatter
         examine anyUnified stuck
         & elseImplied
@@ -728,15 +725,14 @@ similar to @checkImplicationWorker@:
 * otherwise, the function returns 'NotImplied' without a substitution.
 -}
 checkSimpleImplication ::
-    forall m v.
-    (MonadSimplify m) =>
+    forall v.
     (v ~ RewritingVariableName) =>
     Pattern v -> -- left
     Pattern v -> -- right
     [ElementVariable v] -> -- existentials
     ExceptT
         (Error ImplicationError)
-        m
+        Simplifier
         (TermLike v, CheckImplicationResult (Maybe (Pattern.Condition v)))
 checkSimpleImplication inLeft inRight existentials =
     do
@@ -756,7 +752,7 @@ checkSimpleImplication inLeft inRight existentials =
                     from $ makeCeilPredicate leftTerm
         trivial <-
             fmap isBottom $
-                (liftSimplifier . SMT.Evaluator.filterMultiOr)
+                (liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc)
                     =<< Pattern.simplify definedConfig
 
         if trivial
@@ -764,10 +760,9 @@ checkSimpleImplication inLeft inRight existentials =
             else do
                 -- attempt term unification (to remember the substitution
                 unified <-
-                    Logic.observeAllT $
-                        evalEnvUnifierT
-                            Not.notSimplifier
-                            (unificationProcedure SideCondition.top leftTerm rightTerm)
+                    lift $
+                        runUnifier $
+                            unificationProcedure SideCondition.top leftTerm rightTerm
 
                 -- for each unification result, attempt to refute the formula
                 remainders ::
@@ -793,7 +788,7 @@ checkSimpleImplication inLeft inRight existentials =
     simplifyToSingle ::
         String ->
         Pattern v ->
-        ExceptT (Error ImplicationError) m (Pattern v)
+        ExceptT (Error ImplicationError) Simplifier (Pattern v)
     simplifyToSingle ctx pat = do
         let patSort = termLikeSort (Pattern.term pat)
         simplified <- toList <$> lift (Pattern.simplify pat)
@@ -854,7 +849,7 @@ checkSimpleImplication inLeft inRight existentials =
         Pattern.Condition v ->
         Pattern.Condition v ->
         Pattern.Condition v ->
-        m (OrPattern v, Pattern.Condition v)
+        Simplifier (OrPattern v, Pattern.Condition v)
     checkUnifiedConsequent
         definedConfig
         leftCondition
@@ -891,7 +886,7 @@ checkSimpleImplication inLeft inRight existentials =
                             . MultiOr.map combineWithAntecedent
                             $ notRhs
 
-                    liftSimplifier $ SMT.Evaluator.filterMultiOr toRefute
+                    liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc toRefute
 
 -- | type tag for errors thrown from the above
 data ImplicationError
@@ -925,7 +920,7 @@ simplify' lensClaimPattern claim = do
             configs <-
                 simplifyTopConfigurationDefined
                     config
-                    >>= liftSimplifier . SMT.Evaluator.filterMultiOr
+                    >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
                     & lift
             asum (pure <$> toList configs)
 
@@ -940,7 +935,7 @@ simplifyRightHandSide lensClaimPattern sideCondition =
         OrPattern.observeAllT $
             Logic.scatter dest
                 >>= Pattern.makeEvaluate sideCondition . Pattern.requireDefined
-                >>= liftSimplifier . SMT.Evaluator.filterMultiOr
+                >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
                 >>= Logic.scatter
 
 isTrusted :: From claim Attribute.Axiom.Trusted => claim -> Bool
@@ -955,13 +950,12 @@ instance Exception WithConfiguration
 
 -- | Apply 'Rule's to the claim in parallel.
 derivePar' ::
-    forall m claim.
-    MonadSimplify m =>
+    forall claim.
     Lens' claim ClaimPattern ->
     (RewriteRule RewritingVariableName -> Rule claim) ->
     [RewriteRule RewritingVariableName] ->
     claim ->
-    Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+    Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
 derivePar' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule Step.applyRewriteRulesParallel
 
@@ -999,13 +993,12 @@ deriveWith lensClaimPattern mkRule takeStep rewrites claim =
 
 -- | Apply 'Rule's to the claim in sequence.
 deriveSeq' ::
-    forall m claim.
-    MonadSimplify m =>
+    forall claim.
     Lens' claim ClaimPattern ->
     (RewriteRule RewritingVariableName -> Rule claim) ->
     [RewriteRule RewritingVariableName] ->
     claim ->
-    Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
+    Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
 deriveSeq' lensRulePattern mkRule =
     deriveWith lensRulePattern mkRule $ flip Step.applyRewriteRulesSequence
 

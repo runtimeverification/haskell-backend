@@ -48,7 +48,7 @@ instance Pretty ErrorBottomTotalFunction where
             ]
 
 instance Exception ErrorBottomTotalFunction where
-    toException = toException . SomeEntry
+    toException = toException . SomeEntry []
     fromException exn =
         fromException exn >>= fromEntry
 

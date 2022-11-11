@@ -81,8 +81,8 @@ import Kore.Internal.TermLike (
     TermLike,
  )
 import Kore.Log (
-    ActualEntry (..),
     LogAction (..),
+    SomeEntry (..),
  )
 import Kore.Log qualified as Log
 import Kore.Log.Registry qualified as Log
@@ -94,17 +94,18 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Rewrite.Strategy qualified as Strategy
-import Kore.Simplify.API (
+import Kore.Simplify.Simplify (
     Simplifier,
  )
-import Kore.Simplify.Not qualified as Not
 import Kore.Syntax.Module (
     ModuleName (..),
  )
-import Kore.Unification.UnifierT (
-    UnifierT (..),
+import Kore.Unification.NewUnifier (
+    NewUnifier,
  )
-import Kore.Unification.UnifierT qualified as Monad.Unify
+import Kore.Unification.Procedure (
+    runUnifier,
+ )
 import Logic
 import Numeric.Natural
 import Prelude.Kore
@@ -589,9 +590,9 @@ data Config = Config
         SideCondition RewritingVariableName ->
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
-        UnifierT Simplifier (Condition RewritingVariableName)
+        NewUnifier (Condition RewritingVariableName)
     , -- | Logger function, see 'logging'.
-      logger :: MVar (LogAction IO ActualEntry)
+      logger :: MVar (LogAction IO SomeEntry)
     , -- | Output resulting pattern to this file.
       outputFile :: OutputFile
     , mainModuleName :: ModuleName
@@ -634,13 +635,13 @@ makeKoreReplOutput str =
 
 runUnifierWithoutExplanation ::
     forall a.
-    UnifierT Simplifier a ->
+    NewUnifier a ->
     Simplifier (Maybe (NonEmpty a))
 runUnifierWithoutExplanation unifier =
     failEmptyList <$> unificationResults
   where
     unificationResults :: Simplifier [a]
-    unificationResults = Monad.Unify.runUnifierT Not.notSimplifier unifier
+    unificationResults = runUnifier unifier
     failEmptyList :: [a] -> Maybe (NonEmpty a)
     failEmptyList results =
         case results of

@@ -52,7 +52,7 @@ import Kore.Rewrite.UnifyingRule (
     UnifyingRule (..),
  )
 import Kore.Simplify.Simplify (
-    MonadSimplify,
+    Simplifier,
  )
 import Kore.Syntax.Sentence qualified as Syntax
 import Kore.TopBottom (
@@ -100,6 +100,9 @@ instance From AllPathClaim Attribute.RuleIndex where
 
 instance From AllPathClaim Attribute.Trusted where
     from = Attribute.trusted . attributes . getAllPathClaim
+
+instance From AllPathClaim Attribute.UniqueId where
+    from = Attribute.uniqueId . attributes . getAllPathClaim
 
 {- | Converts an 'AllPathClaim' into its term representation.
  This is intended to be used only in unparsing situations,
@@ -197,12 +200,11 @@ instance ClaimExtractor AllPathClaim where
             (Syntax.sentenceAxiomPattern . Syntax.getSentenceClaim) sentence
 
 deriveParAxiomAllPath ::
-    MonadSimplify simplifier =>
     [Rule AllPathClaim] ->
     AllPathClaim ->
     TransitionT
         (AppliedRule AllPathClaim)
-        simplifier
+        Simplifier
         (ApplyResult AllPathClaim)
 deriveParAxiomAllPath rules =
     derivePar' _Unwrapped AllPathRewriteRule rewrites

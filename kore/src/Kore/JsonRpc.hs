@@ -4,9 +4,6 @@ License     : BSD-3-Clause
 -}
 module Kore.JsonRpc (runServer) where
 
-import Colog (
-    cmap,
- )
 import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Exception (ErrorCall (..), Exception, mask)
@@ -16,6 +13,7 @@ import Control.Monad.Except (runExceptT)
 import Control.Monad.Logger (MonadLoggerIO, askLoggerIO, runLoggingT)
 import Control.Monad.Reader (ask, runReaderT)
 import Control.Monad.STM (atomically)
+import Data.Aeson.Encode.Pretty as Json
 import Data.Aeson.Types (FromJSON (..), ToJSON (..), Value (..))
 import Data.Conduit.Network (serverSettings)
 import Data.Limit (Limit (..))
@@ -33,12 +31,16 @@ import Kore.Error (Error (..))
 import Kore.Exec qualified as Exec
 import Kore.Exec.GraphTraversal qualified as GraphTraversal
 import Kore.Internal.Condition qualified as Condition
+import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (pattern PredicateTrue)
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.InfoExecDepth (ExecDepth (..))
+import Kore.Log.InfoJsonRpcCancelRequest (InfoJsonRpcCancelRequest (..))
+import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
+import Kore.Network.JSONRPC (jsonrpcTCPServer)
 import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite (
     Natural,
@@ -52,6 +54,8 @@ import Kore.Rewrite.RewritingVariable (
     mkRewritingTerm,
  )
 import Kore.Simplify.API (evalSimplifier)
+import Kore.Simplify.Pattern qualified as Pattern
+import Kore.Simplify.Simplify (Simplifier)
 import Kore.Syntax.Json (KoreJson)
 import Kore.Syntax.Json qualified as PatternJson
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
@@ -68,7 +72,6 @@ import Network.JSONRPC (
     Ver (V2),
     buildResponse,
     fromRequest,
-    jsonrpcTCPServer,
     receiveBatchRequest,
     sendBatchResponse,
  )
@@ -224,6 +227,13 @@ instance ToJSON (API 'Res) where
         Implies payload -> toJSON payload
         Simplify payload -> toJSON payload
 
+instance Pretty.Pretty (API 'Req) where
+    pretty = \case
+        Execute _ -> "execute"
+        Implies _ -> "implies"
+        Simplify _ -> "simplify"
+        Cancel -> "cancel"
+
 respond ::
     forall m.
     MonadIO m =>
@@ -233,8 +243,8 @@ respond ::
     Respond (API 'Req) m (API 'Res)
 respond runSMT serializedModule =
     withErrHandler . \case
-        Execute ExecuteRequest{state, maxDepth} ->
-            case PatternVerifier.runPatternVerifier context $
+        Execute ExecuteRequest{state, maxDepth, cutPointRules, terminalRules} ->
+            case PatternVerifier.runPatternVerifier verifierContext $
                 PatternVerifier.verifyStandalonePattern Nothing $
                     PatternJson.toParsedPattern $ PatternJson.term state of
                 Left err -> pure $ Left $ couldNotVerify $ toJSON err
@@ -245,59 +255,88 @@ respond runSMT serializedModule =
                                 Exec.rpcExec
                                     (maybe Unlimited (\(Depth n) -> Limit n) maxDepth)
                                     serializedModule
+                                    (toStopLabels cutPointRules terminalRules)
                                     verifiedPattern
                             )
 
                     pure $ buildResult (TermLike.termLikeSort verifiedPattern) traversalResult
           where
-            context =
-                PatternVerifier.verifiedModuleContext verifiedModule
-                    & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
+            toStopLabels :: Maybe [Text] -> Maybe [Text] -> Exec.StopLabels
+            toStopLabels cpRs tRs =
+                Exec.StopLabels (fromMaybe [] cpRs) (fromMaybe [] tRs)
 
             buildResult ::
                 TermLike.Sort ->
-                GraphTraversal.TraversalResult
-                    (ExecDepth, ProgramState (Pattern TermLike.VariableName)) ->
+                GraphTraversal.TraversalResult (Exec.RpcExecState TermLike.VariableName) ->
                 Either ErrorObj (API 'Res)
             buildResult sort = \case
-                GraphTraversal.Ended [(ExecDepth depth, result)] ->
-                    -- Actually not "ended" but out of instructions.
-                    -- See @toTransitionResult@ in @rpcExec@.
-                    Right $
-                        Execute $
-                            ExecuteResult
-                                { state = patternToExecState sort result
-                                , depth = Depth depth
-                                , reason = DepthBound
-                                , rule = Nothing
-                                , nextStates = Nothing
-                                }
-                GraphTraversal.GotStuck _n [(ExecDepth depth, result)] ->
-                    Right $
-                        Execute $
-                            ExecuteResult
-                                { state = patternToExecState sort result
-                                , depth = Depth depth
-                                , reason = Stuck
-                                , rule = Nothing
-                                , nextStates = Nothing
-                                }
-                GraphTraversal.Stopped [(ExecDepth depth, result)] nexts ->
-                    -- TODO add rule information, decide terminal or cut-point
-                    Right $
-                        Execute $
-                            ExecuteResult
-                                { state = patternToExecState sort result
-                                , depth = Depth depth
-                                , reason = Branching
-                                , rule = Nothing
-                                , nextStates = Just $ map (patternToExecState sort . snd) nexts
-                                }
+                GraphTraversal.Ended
+                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result}] ->
+                        -- Actually not "ended" but out of instructions.
+                        -- See @toTransitionResult@ in @rpcExec@.
+                        Right $
+                            Execute $
+                                ExecuteResult
+                                    { state = patternToExecState sort result
+                                    , depth = Depth depth
+                                    , reason = DepthBound
+                                    , rule = Nothing
+                                    , nextStates = Nothing
+                                    }
+                GraphTraversal.GotStuck
+                    _n
+                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result}] ->
+                        Right $
+                            Execute $
+                                ExecuteResult
+                                    { state = patternToExecState sort result
+                                    , depth = Depth depth
+                                    , reason = Stuck
+                                    , rule = Nothing
+                                    , nextStates = Nothing
+                                    }
+                GraphTraversal.Stopped
+                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRule = Nothing}]
+                    nexts ->
+                        Right $
+                            Execute $
+                                ExecuteResult
+                                    { state = patternToExecState sort rpcProgState
+                                    , depth = Depth depth
+                                    , reason = Branching
+                                    , rule = Nothing
+                                    , nextStates =
+                                        Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
+                                    }
+                GraphTraversal.Stopped
+                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRule = Just lbl}]
+                    nexts
+                        | lbl `elem` fromMaybe [] cutPointRules ->
+                            Right $
+                                Execute $
+                                    ExecuteResult
+                                        { state = patternToExecState sort rpcProgState
+                                        , depth = Depth depth
+                                        , reason = CutPointRule
+                                        , rule = Just lbl
+                                        , nextStates =
+                                            Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
+                                        }
+                        | lbl `elem` fromMaybe [] terminalRules ->
+                            Right $
+                                Execute $
+                                    ExecuteResult
+                                        { state = patternToExecState sort rpcProgState
+                                        , depth = Depth depth
+                                        , reason = TerminalRule
+                                        , rule = Just lbl
+                                        , nextStates = Nothing
+                                        }
                 -- these are programmer errors
                 result@GraphTraversal.Aborted{} ->
-                    Left $ serverError "aborted" $ asText result
+                    Left $ serverError "aborted" $ asText (show result)
                 other ->
-                    Left $ serverError "multiple states in result" $ asText other
+                    Left $ serverError "multiple states in result" $ asText (show other)
 
             patternToExecState ::
                 TermLike.Sort ->
@@ -319,7 +358,7 @@ respond runSMT serializedModule =
 
         -- Step StepRequest{} -> pure $ Right $ Step $ StepResult []
         Implies ImpliesRequest{antecedent, consequent} ->
-            case PatternVerifier.runPatternVerifier context verify of
+            case PatternVerifier.runPatternVerifier verifierContext verify of
                 Left err ->
                     pure $ Left $ couldNotVerify $ toJSON err
                 Right (antVerified, consVerified) -> do
@@ -334,7 +373,7 @@ respond runSMT serializedModule =
                     result <-
                         liftIO
                             . runSMT
-                            . evalInContext
+                            . evalInSimplifierContext
                             . runExceptT
                             $ Claim.checkSimpleImplication
                                 leftPatt
@@ -342,10 +381,6 @@ respond runSMT serializedModule =
                                 existentialVars
                     pure $ buildResult sort result
           where
-            context =
-                PatternVerifier.verifiedModuleContext verifiedModule
-                    & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
-
             verify = do
                 antVerified <-
                     PatternVerifier.verifyStandalonePattern Nothing $
@@ -354,14 +389,6 @@ respond runSMT serializedModule =
                     PatternVerifier.verifyStandalonePattern Nothing $
                         PatternJson.toParsedPattern $ PatternJson.term consequent
                 pure (antVerified, consVerified)
-
-            evalInContext =
-                evalSimplifier
-                    verifiedModule
-                    sortGraph
-                    overloadGraph
-                    metadataTools
-                    equations
 
             renderCond sort cond =
                 let pat = Condition.mapVariables getRewritingVariable cond
@@ -392,7 +419,35 @@ respond runSMT serializedModule =
                             Claim.NotImpliedStuck Nothing ->
                                 -- should not happen
                                 ImpliesResult jsonTerm False Nothing
-        Simplify SimplifyRequest{state} -> pure $ Right $ Simplify SimplifyResult{state}
+        Simplify SimplifyRequest{state} ->
+            case PatternVerifier.runPatternVerifier verifierContext verifyState of
+                Left err ->
+                    pure $ Left $ couldNotVerify $ toJSON err
+                Right stateVerified -> do
+                    let patt =
+                            mkRewritingPattern $ Pattern.parsePatternFromTermLike stateVerified
+                        sort = TermLike.termLikeSort stateVerified
+
+                    result <-
+                        liftIO
+                            . runSMT
+                            . evalInSimplifierContext
+                            $ Pattern.simplify patt
+
+                    pure $
+                        Right $
+                            Simplify
+                                SimplifyResult
+                                    { state =
+                                        PatternJson.fromTermLike $
+                                            TermLike.mapVariables getRewritingVariable $
+                                                OrPattern.toTermLike sort result
+                                    }
+          where
+            verifyState =
+                PatternVerifier.verifyStandalonePattern Nothing $
+                    PatternJson.toParsedPattern $ PatternJson.term state
+
         -- this case is only reachable if the cancel appeared as part of a batch request
         Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
   where
@@ -423,24 +478,72 @@ respond runSMT serializedModule =
                 Error{errorContext = [loc], errorError = msg}
          in handle (pure . Left . serverError "crashed" . toJSON . mkError)
 
+    verifierContext =
+        PatternVerifier.verifiedModuleContext verifiedModule
+            & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
+
+    evalInSimplifierContext :: Simplifier a -> SMT.SMT a
+    evalInSimplifierContext =
+        evalSimplifier
+            verifiedModule
+            sortGraph
+            overloadGraph
+            metadataTools
+            equations
+
 runServer :: Int -> SMT.SolverSetup -> Log.LoggerEnv IO -> Exec.SerializedModule -> IO ()
-runServer port solverSetup Log.LoggerEnv{logAction, context = entryContext} serializedModule = do
+runServer port solverSetup loggerEnv@Log.LoggerEnv{logAction} serializedModule = do
     flip runLoggingT logFun $
-        jsonrpcTCPServer V2 False srvSettings $
-            srv runSMT serializedModule
+        jsonrpcTCPServer
+            Json.defConfig{confCompare}
+            V2
+            False
+            srvSettings
+            $ srv loggerEnv runSMT serializedModule
   where
     srvSettings = serverSettings port "*"
-
-    someLogAction = cmap (\actualEntry -> Log.ActualEntry{actualEntry, entryContext}) logAction
+    confCompare =
+        Json.keyOrder
+            [ "format"
+            , "version"
+            , "term"
+            , "tag"
+            , "assoc"
+            , "name"
+            , "symbol"
+            , "argSort"
+            , "sort"
+            , "sorts"
+            , "var"
+            , "varSort"
+            , "arg"
+            , "args"
+            , "argss"
+            , "source"
+            , "dest"
+            , "value"
+            , "jsonrpc"
+            , "id"
+            , "reason"
+            , "depth"
+            , "rule"
+            , "state"
+            , "next-states"
+            , "substitution"
+            , "predicate"
+            , "satisfiable"
+            , "implication"
+            , "condition"
+            ]
 
     logFun loc src level msg =
-        Log.logWith someLogAction $ LogJsonRpcServer{loc, src, level, msg}
+        Log.logWith logAction $ LogJsonRpcServer{loc, src, level, msg}
 
     runSMT :: forall a. SMT.SMT a -> IO a
     runSMT m = flip Log.runLoggerT logAction $ SMT.runWithSolver m solverSetup
 
-srv :: MonadLoggerIO m => (forall a. SMT.SMT a -> IO a) -> Exec.SerializedModule -> JSONRPCT m ()
-srv runSMT serializedModule = do
+srv :: MonadLoggerIO m => Log.LoggerEnv IO -> (forall a. SMT.SMT a -> IO a) -> Exec.SerializedModule -> JSONRPCT m ()
+srv Log.LoggerEnv{logAction} runSMT serializedModule = do
     reqQueue <- liftIO $ atomically newTChan
     let mainLoop tid =
             receiveBatchRequest >>= \case
@@ -454,6 +557,9 @@ srv runSMT serializedModule = do
                     mainLoop tid
     spawnWorker reqQueue >>= mainLoop
   where
+    log :: MonadIO m => Log.Entry entry => entry -> m ()
+    log = Log.logWith $ Log.hoistLogAction liftIO logAction
+
     isRequest = \case
         Request{} -> True
         _ -> False
@@ -469,22 +575,26 @@ srv runSMT serializedModule = do
         rpcSession <- ask
         logger <- askLoggerIO
         let sendResponses r = flip runLoggingT logger $ flip runReaderT rpcSession $ sendBatchResponse r
+            respondTo :: MonadIO m => MonadCatch m => Request -> m (Maybe Response)
+            respondTo req = buildResponse (\req' -> log (InfoJsonRpcProcessRequest (getReqId req) req') >> respond runSMT serializedModule req') req
 
             cancelReq = \case
                 SingleRequest req@Request{} -> do
-                    let v = getReqVer req
-                        i = getReqId req
-                    sendResponses $ SingleResponse $ ResponseError v cancelError i
+                    let reqVersion = getReqVer req
+                        reqId = getReqId req
+                    log $ InfoJsonRpcCancelRequest reqId
+                    sendResponses $ SingleResponse $ ResponseError reqVersion cancelError reqId
                 SingleRequest Notif{} -> pure ()
-                BatchRequest reqs ->
+                BatchRequest reqs -> do
+                    forM_ reqs $ \req -> log $ InfoJsonRpcCancelRequest $ getReqId req
                     sendResponses $ BatchResponse $ [ResponseError (getReqVer req) cancelError (getReqId req) | req <- reqs, isRequest req]
 
             processReq = \case
                 SingleRequest req -> do
-                    rM <- buildResponse (respond runSMT serializedModule) req
+                    rM <- respondTo req
                     mapM_ (sendResponses . SingleResponse) rM
                 BatchRequest reqs -> do
-                    rs <- catMaybes <$> forM reqs (buildResponse (respond runSMT serializedModule))
+                    rs <- catMaybes <$> mapM respondTo reqs
                     sendResponses $ BatchResponse rs
 
         liftIO $

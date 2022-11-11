@@ -215,6 +215,9 @@ instance From (RulePattern variable) Attribute.Label where
 instance From (RulePattern variable) Attribute.RuleIndex where
     from = Attribute.identifier . attributes
 
+instance From (RulePattern variable) Attribute.UniqueId where
+    from = Attribute.uniqueId . attributes
+
 instance InternalVariable variable => Pretty (RulePattern variable) where
     pretty rulePattern'@(RulePattern _ _ _ _ _) =
         Pretty.vsep
@@ -465,6 +468,9 @@ instance From (RewriteRule variable) Attribute.Label where
 
 instance From (RewriteRule variable) Attribute.RuleIndex where
     from = Attribute.identifier . attributes . getRewriteRule
+
+instance From (RewriteRule variable) Attribute.UniqueId where
+    from = Attribute.uniqueId . attributes . getRewriteRule
 
 instance
     InternalVariable variable =>

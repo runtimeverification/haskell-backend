@@ -55,6 +55,7 @@ import Kore.Log.ErrorBottomTotalFunction (
  )
 import Kore.Log.WarnFunctionWithoutEvaluators (warnFunctionWithoutEvaluators)
 import Kore.Rewrite.Axiom.EvaluationStrategy (builtinEvaluation, mkEvaluator, simplifierWithFallback)
+import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier)
 import Kore.Rewrite.Axiom.Identifier qualified as Axiom.Identifier
 import Kore.Rewrite.Function.Memo qualified as Memo
 import Kore.Rewrite.RewritingVariable (
@@ -208,8 +209,15 @@ lookupAxiomSimplifier ::
 lookupAxiomSimplifier termLike = do
     hookedSymbols <- lift askHookedSymbols
     axiomEquations <- lift askAxiomEquations
-    let getEvaluator :: Axiom.Identifier.AxiomIdentifier -> Maybe BuiltinAndAxiomSimplifier
+    let getEvaluator :: AxiomIdentifier -> Maybe BuiltinAndAxiomSimplifier
         getEvaluator axiomIdentifier = Map.lookup axiomIdentifier axiomEquations >>= mkEvaluator
+
+        combineEvaluators :: [AxiomIdentifier] -> Maybe BuiltinAndAxiomSimplifier
+        combineEvaluators identifiers =
+            case mapMaybe getEvaluator identifiers of
+                [] -> Nothing
+                [a] -> Just a
+                as -> Just $ firstFullEvaluation as
 
     let missing = do
             -- TODO (thomas.tuegel): Factor out a second function evaluator and
@@ -229,37 +237,48 @@ lookupAxiomSimplifier termLike = do
                 _ -> return ()
             empty
     maybe missing return $ do
-        axiomIdentifier <- Axiom.Identifier.matchAxiomIdentifier termLike
-        let exact = getEvaluator axiomIdentifier
+        let axiomIdentifier = Axiom.Identifier.matchAxiomIdentifier termLike
         case axiomIdentifier of
             Axiom.Identifier.Application appId ->
                 let builtinEvaluator = do
                         name <- Map.lookup appId hookedSymbols
                         builtinEvaluation <$> koreEvaluators name
-                 in combineEvaluatorsWithFallBack (builtinEvaluator, exact)
-            Axiom.Identifier.Variable -> exact
-            Axiom.Identifier.DV -> exact
+                 in combineEvaluatorsWithFallBack (builtinEvaluator, getEvaluator axiomIdentifier)
             Axiom.Identifier.Ceil _ ->
-                let inexact = getEvaluator $ Axiom.Identifier.Ceil Axiom.Identifier.Variable
-                 in combineEvaluators [exact, inexact]
+                let inexact =
+                        [ Axiom.Identifier.Ceil Axiom.Identifier.Variable
+                        , Axiom.Identifier.Ceil Axiom.Identifier.Other
+                        ]
+                 in combineEvaluators $ axiomIdentifier : inexact
             Axiom.Identifier.Exists _ ->
-                let inexact = getEvaluator $ Axiom.Identifier.Exists Axiom.Identifier.Variable
-                 in combineEvaluators [exact, inexact]
+                let inexact =
+                        [ Axiom.Identifier.Exists Axiom.Identifier.Variable
+                        , Axiom.Identifier.Exists Axiom.Identifier.Other
+                        ]
+                 in combineEvaluators $ axiomIdentifier : inexact
             Axiom.Identifier.Equals id1 id2 ->
-                let inexact1 = getEvaluator $ Axiom.Identifier.Equals Axiom.Identifier.Variable id2
-                    inexact2 = getEvaluator $ Axiom.Identifier.Equals id1 Axiom.Identifier.Variable
-                    inexact12 = getEvaluator $ Axiom.Identifier.Equals Axiom.Identifier.Variable Axiom.Identifier.Variable
-                 in combineEvaluators [exact, inexact1, inexact2, inexact12]
+                let inexact =
+                        [ Axiom.Identifier.Equals Axiom.Identifier.Variable id2
+                        , Axiom.Identifier.Equals Axiom.Identifier.Other id2
+                        , Axiom.Identifier.Equals id1 Axiom.Identifier.Variable
+                        , Axiom.Identifier.Equals id1 Axiom.Identifier.Other
+                        , Axiom.Identifier.Equals Axiom.Identifier.Variable Axiom.Identifier.Variable
+                        , Axiom.Identifier.Equals Axiom.Identifier.Other Axiom.Identifier.Variable
+                        , Axiom.Identifier.Equals Axiom.Identifier.Variable Axiom.Identifier.Other
+                        ]
+                 in combineEvaluators $ axiomIdentifier : inexact
+            Axiom.Identifier.Not _ ->
+                let inexact =
+                        [ Axiom.Identifier.Not Axiom.Identifier.Variable
+                        , Axiom.Identifier.Not Axiom.Identifier.Other
+                        ]
+                 in combineEvaluators $ axiomIdentifier : inexact
+            Axiom.Identifier.Variable -> getEvaluator axiomIdentifier
+            Axiom.Identifier.DV -> getEvaluator axiomIdentifier
+            Axiom.Identifier.Other -> getEvaluator axiomIdentifier
   where
     getHook :: Symbol -> Maybe Text
     getHook = Attribute.getHook . Attribute.hook . symbolAttributes
-
-    combineEvaluators :: [Maybe BuiltinAndAxiomSimplifier] -> Maybe BuiltinAndAxiomSimplifier
-    combineEvaluators maybeEvaluators =
-        case catMaybes maybeEvaluators of
-            [] -> Nothing
-            [a] -> Just a
-            as -> Just $ firstFullEvaluation as
 
     combineEvaluatorsWithFallBack ::
         (Maybe BuiltinAndAxiomSimplifier, Maybe BuiltinAndAxiomSimplifier) ->

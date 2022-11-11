@@ -41,6 +41,7 @@
         (hsPkgs."co-log" or (errorHandler.buildDepError "co-log"))
         (hsPkgs."comonad" or (errorHandler.buildDepError "comonad"))
         (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
+        (hsPkgs."conduit" or (errorHandler.buildDepError "conduit"))
         (hsPkgs."conduit-extra" or (errorHandler.buildDepError "conduit-extra"))
         (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
         (hsPkgs."cryptonite" or (errorHandler.buildDepError "cryptonite"))
@@ -83,6 +84,7 @@
           "optparse-applicative"))
         (hsPkgs."parser-combinators" or (errorHandler.buildDepError
           "parser-combinators"))
+        (hsPkgs."pqueue" or (errorHandler.buildDepError "pqueue"))
         (hsPkgs."prettyprinter" or (errorHandler.buildDepError "prettyprinter"))
         (hsPkgs."process" or (errorHandler.buildDepError "process"))
         (hsPkgs."profunctors" or (errorHandler.buildDepError "profunctors"))
@@ -91,6 +93,7 @@
         (hsPkgs."semialign" or (errorHandler.buildDepError "semialign"))
         (hsPkgs."sqlite-simple" or (errorHandler.buildDepError "sqlite-simple"))
         (hsPkgs."stm" or (errorHandler.buildDepError "stm"))
+        (hsPkgs."stm-conduit" or (errorHandler.buildDepError "stm-conduit"))
         (hsPkgs."streams" or (errorHandler.buildDepError "streams"))
         (hsPkgs."tar" or (errorHandler.buildDepError "tar"))
         (hsPkgs."template-haskell" or (errorHandler.buildDepError
@@ -100,10 +103,13 @@
         (hsPkgs."these" or (errorHandler.buildDepError "these"))
         (hsPkgs."time" or (errorHandler.buildDepError "time"))
         (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
+        (hsPkgs."unix" or (errorHandler.buildDepError "unix"))
+        (hsPkgs."unliftio" or (errorHandler.buildDepError "unliftio"))
         (hsPkgs."unordered-containers" or (errorHandler.buildDepError
           "unordered-containers"))
         (hsPkgs."vector" or (errorHandler.buildDepError "vector"))
         (hsPkgs."witherable" or (errorHandler.buildDepError "witherable"))
+        (hsPkgs."yaml" or (errorHandler.buildDepError "yaml"))
         (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
       ];
       build-tools = [
@@ -207,6 +213,7 @@
         "Kore/Builtin/Int/Int"
         "Kore/Builtin/InternalBytes"
         "Kore/Builtin/InternalBytes/InternalBytes"
+        "Kore/Builtin/IO"
         "Kore/Builtin/KEqual"
         "Kore/Builtin/Kreflection"
         "Kore/Builtin/Krypto"
@@ -258,6 +265,7 @@
         "Kore/Internal/MultiAnd"
         "Kore/Internal/MultiExists"
         "Kore/Internal/MultiOr"
+        "Kore/Internal/NormalForm"
         "Kore/Internal/NormalizedAc"
         "Kore/Internal/OrCondition"
         "Kore/Internal/OrPattern"
@@ -280,13 +288,14 @@
         "Kore/Log/DebugEvaluateCondition"
         "Kore/Log/DebugProven"
         "Kore/Log/DebugRetrySolverQuery"
+        "Kore/Log/DebugRewriteTrace"
         "Kore/Log/DebugSolver"
         "Kore/Log/DebugSubstitutionSimplifier"
         "Kore/Log/DebugTransition"
         "Kore/Log/DebugUnification"
         "Kore/Log/DebugUnifyBottom"
+        "Kore/Log/DecidePredicateUnknown"
         "Kore/Log/ErrorBottomTotalFunction"
-        "Kore/Log/ErrorDecidePredicateUnknown"
         "Kore/Log/ErrorEquationRightFunction"
         "Kore/Log/ErrorEquationsSameMatch"
         "Kore/Log/ErrorException"
@@ -299,16 +308,20 @@
         "Kore/Log/JsonRpc"
         "Kore/Log/InfoExecBreadth"
         "Kore/Log/InfoExecDepth"
+        "Kore/Log/InfoJsonRpcCancelRequest"
+        "Kore/Log/InfoJsonRpcProcessRequest"
         "Kore/Log/InfoProofDepth"
         "Kore/Log/InfoReachability"
+        "Kore/Log/InfoUserLog"
         "Kore/Log/KoreLogOptions"
         "Kore/Log/Registry"
         "Kore/Log/SQLite"
+        "Kore/Log/WarnBottom"
         "Kore/Log/WarnBoundedModelChecker"
-        "Kore/Log/WarnClaimRHSIsBottom"
         "Kore/Log/WarnDepthLimitExceeded"
         "Kore/Log/WarnFunctionWithoutEvaluators"
         "Kore/Log/WarnIfLowProductivity"
+        "Kore/Log/WarnNotAPredicate"
         "Kore/Log/WarnNotImplemented"
         "Kore/Log/WarnRestartSolver"
         "Kore/Log/WarnStuckClaimState"
@@ -319,6 +332,7 @@
         "Kore/ModelChecker/Bounded"
         "Kore/ModelChecker/Simplification"
         "Kore/ModelChecker/Step"
+        "Kore/Network/JSONRPC"
         "Kore/Options"
         "Kore/Parser"
         "Kore/Parser/CString"
@@ -388,7 +402,6 @@
         "Kore/Simplify/Equals"
         "Kore/Simplify/Exists"
         "Kore/Simplify/ExpandAlias"
-        "Kore/Simplify/Floor"
         "Kore/Simplify/Forall"
         "Kore/Simplify/Iff"
         "Kore/Simplify/Implies"
@@ -686,6 +699,7 @@
           (hsPkgs."co-log" or (errorHandler.buildDepError "co-log"))
           (hsPkgs."comonad" or (errorHandler.buildDepError "comonad"))
           (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
+          (hsPkgs."conduit" or (errorHandler.buildDepError "conduit"))
           (hsPkgs."conduit-extra" or (errorHandler.buildDepError
             "conduit-extra"))
           (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
@@ -729,6 +743,7 @@
             "optparse-applicative"))
           (hsPkgs."parser-combinators" or (errorHandler.buildDepError
             "parser-combinators"))
+          (hsPkgs."pqueue" or (errorHandler.buildDepError "pqueue"))
           (hsPkgs."prettyprinter" or (errorHandler.buildDepError
             "prettyprinter"))
           (hsPkgs."process" or (errorHandler.buildDepError "process"))
@@ -739,6 +754,7 @@
           (hsPkgs."sqlite-simple" or (errorHandler.buildDepError
             "sqlite-simple"))
           (hsPkgs."stm" or (errorHandler.buildDepError "stm"))
+          (hsPkgs."stm-conduit" or (errorHandler.buildDepError "stm-conduit"))
           (hsPkgs."streams" or (errorHandler.buildDepError "streams"))
           (hsPkgs."tar" or (errorHandler.buildDepError "tar"))
           (hsPkgs."template-haskell" or (errorHandler.buildDepError
@@ -748,10 +764,13 @@
           (hsPkgs."these" or (errorHandler.buildDepError "these"))
           (hsPkgs."time" or (errorHandler.buildDepError "time"))
           (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
+          (hsPkgs."unix" or (errorHandler.buildDepError "unix"))
+          (hsPkgs."unliftio" or (errorHandler.buildDepError "unliftio"))
           (hsPkgs."unordered-containers" or (errorHandler.buildDepError
             "unordered-containers"))
           (hsPkgs."vector" or (errorHandler.buildDepError "vector"))
           (hsPkgs."witherable" or (errorHandler.buildDepError "witherable"))
+          (hsPkgs."yaml" or (errorHandler.buildDepError "yaml"))
           (hsPkgs."zlib" or (errorHandler.buildDepError "zlib"))
           (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
           (hsPkgs."QuickCheck" or (errorHandler.buildDepError "QuickCheck"))
@@ -840,6 +859,7 @@
           "Test/Kore/Builtin/Inj"
           "Test/Kore/Builtin/Int"
           "Test/Kore/Builtin/InternalBytes"
+          "Test/Kore/Builtin/IO"
           "Test/Kore/Builtin/KEqual"
           "Test/Kore/Builtin/Krypto"
           "Test/Kore/Builtin/List"
@@ -933,7 +953,6 @@
           "Test/Kore/Simplify/DomainValue"
           "Test/Kore/Simplify/Equals"
           "Test/Kore/Simplify/Exists"
-          "Test/Kore/Simplify/Floor"
           "Test/Kore/Simplify/Forall"
           "Test/Kore/Simplify/Iff"
           "Test/Kore/Simplify/Implies"

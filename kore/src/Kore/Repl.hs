@@ -65,7 +65,7 @@ import Kore.Repl.Interpreter
 import Kore.Repl.Parser
 import Kore.Repl.State
 import Kore.Rewrite.Strategy qualified as Strategy
-import Kore.Simplify.API (
+import Kore.Simplify.Simplify (
     Simplifier,
  )
 import Kore.Syntax.Module (
@@ -110,7 +110,7 @@ runRepl ::
     [Axiom] ->
     -- | list of claims to be proven
     [SomeClaim] ->
-    MVar (Log.LogAction IO Log.ActualEntry) ->
+    MVar (Log.LogAction IO Log.SomeEntry) ->
     -- | optional script
     ReplScript ->
     -- | mode to run in
@@ -284,7 +284,7 @@ runRepl
         someExceptionHandler :: a -> Exception.SomeException -> Simplifier a
         someExceptionHandler a someException = do
             case Exception.fromException someException of
-                Just (Log.SomeEntry entry) ->
+                Just entry@(Log.SomeEntry _ _) ->
                     Log.logEntry entry
                 Nothing ->
                     errorException someException
