@@ -96,6 +96,20 @@ executables:
     - -rtsopts
     # - -threaded
     # - -with-rtsopts=-N
+  parsetest:
+    source-dirs: tools/parsetest
+    main: Parsetest.hs
+    dependencies:
+      - base
+      - containers
+      - deepseq
+      - directory
+      - filepath
+      - hs-backend-booster
+      - text
+      - transformers
+    ghc-options:
+    - -rtsopts
 
 tests:
   test-suite:
