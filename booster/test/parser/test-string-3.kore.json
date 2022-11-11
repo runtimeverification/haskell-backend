@@ -9,6 +9,7 @@
     {
       "name": "TEST-STRING-3",
       "sorts": [],
+      "aliases": [],
       "attributes": [],
       "axioms": [],
       "imports": [],

@@ -4,6 +4,7 @@
     {
       "name": "TEST-EXCEPTION-14",
       "sorts": [],
+      "aliases": [],
       "attributes": [],
       "axioms": [
         {

@@ -16,6 +16,31 @@
           "sortVars": []
         }
       ],
+      "aliases": [
+        {
+          "name": "f",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Nat",
+            "args": []
+          },
+          "args": [],
+          "argSorts": [],
+          "attributes": [],
+          "rhs": {
+            "tag": "DV",
+            "sort": {
+              "tag": "SortApp",
+              "name": "Nat",
+              "args": []
+            },
+            "value": "f"
+          },
+          "sortVars": [
+            "s"
+          ]
+        }
+      ],
       "attributes": [],
       "axioms": [],
       "imports": [],
