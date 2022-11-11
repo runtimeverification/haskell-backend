@@ -4,6 +4,48 @@
     {
       "name": "TEST-ALIAS-5",
       "sorts": [],
+      "aliases": [
+        {
+          "name": "f",
+          "sort": {
+            "tag": "SortVar",
+            "name": "S"
+          },
+          "args": [
+            "X"
+          ],
+          "argSorts": [
+            {
+              "tag": "SortVar",
+              "name": "S"
+            }
+          ],
+          "attributes": [],
+          "rhs": {
+            "tag": "App",
+            "name": "g",
+            "sorts": [
+              {
+                "tag": "SortVar",
+                "name": "S"
+              }
+            ],
+            "args": [
+              {
+                "tag": "EVar",
+                "name": "X",
+                "sort": {
+                  "tag": "SortVar",
+                  "name": "S"
+                }
+              }
+            ]
+          },
+          "sortVars": [
+            "S"
+          ]
+        }
+      ],
       "attributes": [],
       "axioms": [],
       "imports": [],

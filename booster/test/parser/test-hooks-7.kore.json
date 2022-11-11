@@ -11,6 +11,7 @@
           "sortVars": []
         }
       ],
+      "aliases": [],
       "attributes": [],
       "axioms": [],
       "imports": [],
@@ -37,6 +38,7 @@
     {
       "name": "T",
       "sorts": [],
+      "aliases": [],
       "attributes": [],
       "axioms": [],
       "imports": [

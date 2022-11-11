@@ -11,6 +11,7 @@
           "sortVars": []
         }
       ],
+      "aliases": [],
       "attributes": [],
       "axioms": [],
       "imports": [],
@@ -31,6 +32,7 @@
           "sortVars": []
         }
       ],
+      "aliases": [],
       "attributes": [],
       "axioms": [],
       "imports": [],
@@ -52,6 +54,50 @@
             ]
           ],
           "isHooked": true,
+          "sortVars": []
+        }
+      ],
+      "aliases": [
+        {
+          "name": "zeroInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "args": [],
+          "argSorts": [],
+          "attributes": [],
+          "rhs": {
+            "tag": "DV",
+            "sort": {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            "value": "0"
+          },
+          "sortVars": []
+        },
+        {
+          "name": "oneInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "args": [],
+          "argSorts": [],
+          "attributes": [],
+          "rhs": {
+            "tag": "DV",
+            "sort": {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            "value": "1"
+          },
           "sortVars": []
         }
       ],

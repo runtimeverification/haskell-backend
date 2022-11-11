@@ -11,6 +11,50 @@
           "sortVars": []
         }
       ],
+      "aliases": [
+        {
+          "name": "f",
+          "sort": {
+            "tag": "SortVar",
+            "name": "S"
+          },
+          "args": [
+            "N"
+          ],
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Nat",
+              "args": []
+            }
+          ],
+          "attributes": [],
+          "rhs": {
+            "tag": "App",
+            "name": "g",
+            "sorts": [
+              {
+                "tag": "SortVar",
+                "name": "S"
+              }
+            ],
+            "args": [
+              {
+                "tag": "EVar",
+                "name": "N",
+                "sort": {
+                  "tag": "SortApp",
+                  "name": "Nat",
+                  "args": []
+                }
+              }
+            ]
+          },
+          "sortVars": [
+            "S"
+          ]
+        }
+      ],
       "attributes": [],
       "axioms": [],
       "imports": [],

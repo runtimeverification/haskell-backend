@@ -11,6 +11,53 @@
           "sortVars": []
         }
       ],
+      "aliases": [
+        {
+          "name": "twice",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Nat",
+            "args": []
+          },
+          "args": [
+            "X"
+          ],
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Nat",
+              "args": []
+            }
+          ],
+          "attributes": [],
+          "rhs": {
+            "tag": "App",
+            "name": "plus",
+            "sorts": [],
+            "args": [
+              {
+                "tag": "EVar",
+                "name": "X",
+                "sort": {
+                  "tag": "SortApp",
+                  "name": "Nat",
+                  "args": []
+                }
+              },
+              {
+                "tag": "EVar",
+                "name": "X",
+                "sort": {
+                  "tag": "SortApp",
+                  "name": "Nat",
+                  "args": []
+                }
+              }
+            ]
+          },
+          "sortVars": []
+        }
+      ],
       "attributes": [],
       "axioms": [],
       "imports": [],
