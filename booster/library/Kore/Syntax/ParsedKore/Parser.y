@@ -138,7 +138,7 @@ Sentence :: {ParsedSentence}
           | hookedSymbol SymbolHead SortsParen ':' Sort Attributes
             { SentenceSymbol ($2 $3 $5 True $6) }
           | alias AliasHead SortsParen ':' Sort where Application ':=' Pattern Attributes
-            { SentenceAlias {- $2 $3 $5 $7 $9 $10 -} }
+            { SentenceAlias $2 $3 $5 $7 $9 $10 }
           | axiom SortVariables Pattern Attributes
             { SentenceAxiom ParsedAxiom{axiom=$3, sortVars=$2, attributes=$4} }
           | claim SortVariables Pattern Attributes
@@ -147,8 +147,8 @@ Sentence :: {ParsedSentence}
 Id :: { Id }
     : ident { mkId $1 }
 
-AliasHead :: { () }
-	   : Id SortVariables { () {- -} }
+AliasHead :: { ParsedAliasHead }
+	   : Id SortVariables { ParsedAliasHead $1 $2 }
 
 SymbolHead :: { [Sort] -> Sort -> Bool -> ParsedAttributes -> ParsedSymbol }
 	    : Id SortVariables { ParsedSymbol $1 $2 }
@@ -260,8 +260,8 @@ ApplicationPattern :: { KorePattern }
                     | Id SortsBrace Patterns
                       { KJApp{name = $1, sorts = $2, args = $3} }
 
-Application :: { () }
-	     : Id SortsBrace SomeVariables { () }
+Application :: { AliasApp }
+	     : Id SortsBrace SomeVariables { AliasApp $1 $2 $3 }
 
 SomeVariables :: { [KorePattern] }
 	       : '(' SomeVariableList ')' { reverse $2 }
@@ -284,13 +284,18 @@ PatternList :: { [KorePattern] }
 
 {
 
+data AliasApp = AliasApp Id [Sort] [KorePattern]
+    deriving (Eq, Show)
+  
+data ParsedAliasHead = ParsedAliasHead Json.Id [Json.Id]
+    deriving (Eq, Show)
+
 -- | helpers for parsing module components
 data ParsedSentence
-    =
-      SentenceImport (Json.Id, ParsedAttributes)
+    = SentenceImport (Json.Id, ParsedAttributes)
     | SentenceSort ParsedSort
     | SentenceSymbol ParsedSymbol
-    | SentenceAlias -- ParsedAlias
+    | SentenceAlias ParsedAliasHead [Sort] Sort AliasApp KorePattern ParsedAttributes 
     | SentenceAxiom ParsedAxiom
     | SentenceClaim -- ParsedClaim
     deriving (Eq, Show)
@@ -298,20 +303,56 @@ data ParsedSentence
 mkModule :: Json.Id -> ParsedAttributes -> [ParsedSentence] -> ParsedModule
 mkModule name attributes sentences
 --     = ParsedModule {name, imports, sorts, symbols, aliases, axioms, claims, attributes}
-    = ParsedModule {name, imports, sorts, symbols, axioms, attributes}
+    = ParsedModule {name, imports, sorts, symbols, axioms, aliases, attributes}
   where
-    (imports, sorts, symbols, axioms) = foldl' collect ([], [], [], []) sentences
+    (imports, sorts, symbols, axioms, aliases) = foldl' collect ([], [], [], [], []) sentences
     -- intentionally reversing the list
     collect ::
-        ([(Json.Id, ParsedAttributes)], [ParsedSort], [ParsedSymbol], [ParsedAxiom]) ->
+        ([(Json.Id, ParsedAttributes)], [ParsedSort], [ParsedSymbol], [ParsedAxiom], [ParsedAlias]) ->
         ParsedSentence ->
-        ([(Json.Id, ParsedAttributes)], [ParsedSort], [ParsedSymbol], [ParsedAxiom])
-    collect acc@(!imports, !sorts, !symbols, !axioms) = \case
-        SentenceImport id -> (id:imports, sorts, symbols, axioms)
-        SentenceSort s -> (imports, s:sorts, symbols, axioms)
-        SentenceSymbol s -> (imports, sorts, s:symbols, axioms)
-        SentenceAxiom a -> (imports, sorts, symbols, a:axioms)
+        ([(Json.Id, ParsedAttributes)], [ParsedSort], [ParsedSymbol], [ParsedAxiom], [ParsedAlias])
+    collect acc@(!imports, !sorts, !symbols, !axioms, !aliases) = \case
+        SentenceImport id -> (id:imports, sorts, symbols, axioms, aliases)
+        SentenceSort s -> (imports, s:sorts, symbols, axioms, aliases)
+        SentenceSymbol s -> (imports, sorts, s:symbols, axioms, aliases)
+        SentenceAxiom a -> (imports, sorts, symbols, a:axioms, aliases)
+        SentenceAlias aliasHead argSorts resSort aliasApp rhs attributes ->
+            let a = mkParsedAlias aliasHead argSorts resSort aliasApp rhs attributes
+             in (imports, sorts, symbols, axioms, a:aliases)
         _other -> acc
+
+mkParsedAlias ::
+    ParsedAliasHead ->
+    [Sort] ->
+    Sort ->
+    AliasApp ->
+    KorePattern ->
+    ParsedAttributes ->
+    ParsedAlias
+mkParsedAlias
+    (ParsedAliasHead name sortVars)
+    argSorts
+    sort
+    (AliasApp appName appSortVars pattArgs)
+    rhs
+    attributes
+    | name /= appName =
+        error ("Alias declaration inconsistency: " <> show name <> " is different from " <> show appName)
+    | Just appSortVarIds <- traverse Json.retractSortVariable appSortVars
+    , sortVars /= appSortVarIds =
+        error ("Alias declaration inconsistency: " <> show sortVars <> " is different from " <> show appSortVarIds <> " in declaration for " <> show name)
+    | Just args <- traverse Json.retractVariable pattArgs =
+        ParsedAlias
+            { name
+            , sortVars
+            , argSorts
+            , sort
+            , args
+            , rhs
+            , attributes
+            }
+    | otherwise =
+        error ("Alias " <> show name <> " should only have variables as arguments.")
 
 -- helper to parse attributes
 attributeFromPattern :: KorePattern -> (AttributeName, AttributeValue)
@@ -383,7 +424,7 @@ parseNonTerminal a fp s = runAlex fp (Text.encodeUtf8 s) a
 
 -- Functions for parsing specific NonTerminals.
 
-parseAliasHead :: Parser ()
+parseAliasHead :: Parser ParsedAliasHead
 parseAliasHead = parseNonTerminal aliasHeadStart
 
 parseAttributes :: Parser ParsedAttributes

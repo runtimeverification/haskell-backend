@@ -11,6 +11,26 @@
           "sortVars": []
         }
       ],
+      "aliases": [
+        {
+          "name": "f",
+          "sort": {
+            "tag": "SortApp",
+            "name": "S",
+            "args": []
+          },
+          "args": [],
+          "argSorts": [],
+          "attributes": [],
+          "rhs": {
+            "tag": "App",
+            "name": "g",
+            "sorts": [],
+            "args": []
+          },
+          "sortVars": []
+        }
+      ],
       "attributes": [],
       "axioms": [],
       "imports": [],

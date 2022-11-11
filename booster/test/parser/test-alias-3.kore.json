@@ -17,6 +17,59 @@
           "sortVars": []
         }
       ],
+      "aliases": [
+        {
+          "name": "f",
+          "sort": {
+            "tag": "SortApp",
+            "name": "S",
+            "args": []
+          },
+          "args": [
+            "X",
+            "Y"
+          ],
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "S",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "S",
+              "args": []
+            }
+          ],
+          "attributes": [],
+          "rhs": {
+            "tag": "App",
+            "name": "g",
+            "sorts": [],
+            "args": [
+              {
+                "tag": "EVar",
+                "name": "Y",
+                "sort": {
+                  "tag": "SortApp",
+                  "name": "S",
+                  "args": []
+                }
+              },
+              {
+                "tag": "EVar",
+                "name": "X",
+                "sort": {
+                  "tag": "SortApp",
+                  "name": "S",
+                  "args": []
+                }
+              }
+            ]
+          },
+          "sortVars": []
+        }
+      ],
       "attributes": [],
       "axioms": [],
       "imports": [],

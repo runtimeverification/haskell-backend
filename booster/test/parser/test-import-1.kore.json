@@ -4,6 +4,7 @@
     {
       "name": "TEST-1",
       "sorts": [],
+      "aliases": [],
       "attributes": [],
       "axioms": [],
       "imports": [],
@@ -12,6 +13,7 @@
     {
       "name": "TEST-2",
       "sorts": [],
+      "aliases": [],
       "attributes": [],
       "axioms": [],
       "imports": [

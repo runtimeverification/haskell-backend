@@ -11,6 +11,7 @@
           "sortVars": []
         }
       ],
+      "aliases": [],
       "attributes": [],
       "axioms": [],
       "imports": [],
@@ -31,6 +32,7 @@
           "sortVars": []
         }
       ],
+      "aliases": [],
       "attributes": [],
       "axioms": [],
       "imports": [],
@@ -51,6 +53,7 @@
           "sortVars": []
         }
       ],
+      "aliases": [],
       "attributes": [],
       "axioms": [],
       "imports": [
