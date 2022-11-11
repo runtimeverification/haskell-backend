@@ -345,3 +345,12 @@ data LeftRight
     | Right
     deriving stock (Eq, Show, Generic, Enum, Bounded)
     deriving anyclass (ToJSON, FromJSON)
+
+retractVariable :: KorePattern -> Maybe Id
+retractVariable KJEVar{name} = Just name
+retractVariable KJSVar{name} = Just name
+retractVariable _ = Nothing
+
+retractSortVariable :: Sort -> Maybe Id
+retractSortVariable SortVar{name} = Just name
+retractSortVariable _ = Nothing

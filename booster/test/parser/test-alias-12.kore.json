@@ -4,6 +4,43 @@
     {
       "name": "TEST-ALIAS-12",
       "sorts": [],
+      "aliases": [
+        {
+          "name": "f",
+          "sort": {
+            "tag": "SortVar",
+            "name": "s"
+          },
+          "args": [
+            "a"
+          ],
+          "argSorts": [
+            {
+              "tag": "SortVar",
+              "name": "s"
+            }
+          ],
+          "attributes": [],
+          "rhs": {
+            "tag": "Next",
+            "sort": {
+              "tag": "SortVar",
+              "name": "s"
+            },
+            "dest": {
+              "tag": "EVar",
+              "name": "a",
+              "sort": {
+                "tag": "SortVar",
+                "name": "s"
+              }
+            }
+          },
+          "sortVars": [
+            "s"
+          ]
+        }
+      ],
       "attributes": [],
       "axioms": [],
       "imports": [],

@@ -20,6 +20,29 @@
           "sortVars": []
         }
       ],
+      "aliases": [
+        {
+          "name": "abcdInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Int",
+            "args": []
+          },
+          "args": [],
+          "argSorts": [],
+          "attributes": [],
+          "rhs": {
+            "tag": "DV",
+            "sort": {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": []
+            },
+            "value": "abcd"
+          },
+          "sortVars": []
+        }
+      ],
       "attributes": [],
       "axioms": [],
       "imports": [],

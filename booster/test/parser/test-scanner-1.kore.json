@@ -4,6 +4,7 @@
     {
       "name": "TEST-SCANNER-1",
       "sorts": [],
+      "aliases": [],
       "attributes": [],
       "axioms": [],
       "imports": [],

@@ -4,6 +4,7 @@
     {
       "name": "TEST-PATTERN-8",
       "sorts": [],
+      "aliases": [],
       "attributes": [],
       "axioms": [
         {

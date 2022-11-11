@@ -20,6 +20,50 @@
           "sortVars": []
         }
       ],
+      "aliases": [
+        {
+          "name": "trueBool",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Bool",
+            "args": []
+          },
+          "args": [],
+          "argSorts": [],
+          "attributes": [],
+          "rhs": {
+            "tag": "DV",
+            "sort": {
+              "tag": "SortApp",
+              "name": "Bool",
+              "args": []
+            },
+            "value": "true"
+          },
+          "sortVars": []
+        },
+        {
+          "name": "falseBool",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Bool",
+            "args": []
+          },
+          "args": [],
+          "argSorts": [],
+          "attributes": [],
+          "rhs": {
+            "tag": "DV",
+            "sort": {
+              "tag": "SortApp",
+              "name": "Bool",
+              "args": []
+            },
+            "value": "false"
+          },
+          "sortVars": []
+        }
+      ],
       "attributes": [],
       "axioms": [],
       "imports": [],

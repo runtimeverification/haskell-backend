@@ -4,6 +4,7 @@
     {
       "name": "TEST-SYMBOL-6",
       "sorts": [],
+      "aliases": [],
       "attributes": [],
       "axioms": [],
       "imports": [],

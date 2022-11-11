@@ -4,6 +4,7 @@
     {
       "name": "TEST-COMMENT-1",
       "sorts": [],
+      "aliases": [],
       "attributes": [],
       "axioms": [],
       "imports": [],

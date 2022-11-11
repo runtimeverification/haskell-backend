@@ -20,6 +20,29 @@
           "sortVars": []
         }
       ],
+      "aliases": [
+        {
+          "name": "falseBool",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Bool",
+            "args": []
+          },
+          "args": [],
+          "argSorts": [],
+          "attributes": [],
+          "rhs": {
+            "tag": "DV",
+            "sort": {
+              "tag": "SortApp",
+              "name": "Bool",
+              "args": []
+            },
+            "value": "untrue"
+          },
+          "sortVars": []
+        }
+      ],
       "attributes": [],
       "axioms": [],
       "imports": [],
