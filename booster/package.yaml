@@ -96,6 +96,24 @@ executables:
     - -rtsopts
     # - -threaded
     # - -with-rtsopts=-N
+  rpc-client:
+    source-dirs: tools/rpc-client
+    main: RpcClient
+    main-is: RpcClient.main
+    dependencies:
+      - aeson
+      - aeson-pretty
+      - base
+      - bytestring
+      - extra
+      - hs-backend-booster
+      - network
+      - network-run
+      - optparse-applicative
+      - text
+      - vector
+    ghc-options:
+      - -rtsopts
   parsetest:
     source-dirs: tools/parsetest
     main: Parsetest.hs
