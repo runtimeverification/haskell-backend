@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Test.Kore.Syntax.Json (
     -- Tasty wrappers
     test_JsonRoundTrips,
