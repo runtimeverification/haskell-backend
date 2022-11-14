@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 {-# Options -Wno-partial-fields #-}
 
 {- |
