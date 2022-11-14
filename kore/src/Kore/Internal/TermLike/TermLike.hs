@@ -654,12 +654,10 @@ instance HasFreeVariables (TermAttributes variable) variable where
 @TermLike@ is essentially 'Control.Comonad.Cofree.Cofree', but it caches hashes.
 -}
 data TermLike variable = TermLike__
-    -- Some fields below are lazy to better match Cofree. Which do we actually
-    -- want to be lazy, if any?
-    { _tlAttributes :: ~(TermAttributes variable)
+    { _tlAttributes :: !(TermAttributes variable)
     , -- | A hash of @_tlTermLikeF@
-      _tlHash :: ~Int
-    , _tlTermLikeF :: ~(TermLikeF variable (TermLike variable))
+      _tlHash :: !Int
+    , _tlTermLikeF :: !(TermLikeF variable (TermLike variable))
     }
     deriving stock (Show)
     -- Deriving the stock Generic risks breaking the hash cache invariant
