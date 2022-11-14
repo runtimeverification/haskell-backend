@@ -5,7 +5,6 @@ License     : BSD-3-Clause
 -}
 module Kore.JsonRpc (
     runServer,
-    TODOInternalizedModule (..),
 ) where
 
 import Control.Concurrent (forkIO, throwTo)
@@ -13,17 +12,17 @@ import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Exception (mask)
 import Control.Monad (forever)
 import Control.Monad.Catch (catch)
-import Control.Monad.Logger (MonadLoggerIO, askLoggerIO, runLoggingT)
-import Control.Monad.Logger qualified as Log
-import Control.Monad.Reader (MonadIO, ask, liftIO, runReaderT)
+import Control.Monad.Logger.CallStack (LogLevel, MonadLoggerIO)
+import Control.Monad.Logger.CallStack qualified as Log
+import Control.Monad.Reader (ask, liftIO, runReaderT)
 import Control.Monad.STM (atomically)
+import Control.Monad.Trans.Except (runExcept)
+import Data.Aeson (toJSON)
 import Data.Aeson.Encode.Pretty as Json
 import Data.Aeson.Types (Value (..))
 import Data.Conduit.Network (serverSettings)
 import Data.Maybe (catMaybes)
-import Kore.JsonRpc.Base
-import Kore.Network.JsonRpc (jsonrpcTCPServer)
-import Kore.Syntax.Json.Base (Id (..), KORE (..), KoreJson (..), KorePattern (..), Sort (..), Version (..))
+import Data.Text qualified as Text
 import Network.JSONRPC (
     BatchRequest (BatchRequest, SingleRequest),
     BatchResponse (BatchResponse, SingleResponse),
@@ -39,53 +38,67 @@ import Network.JSONRPC (
     sendBatchResponse,
  )
 
-data TODOInternalizedModule = TODOInternalizedModule
+import Kore.Definition.Base (KoreDefinition (..))
+import Kore.JsonRpc.Base
+import Kore.Network.JsonRpc (jsonrpcTCPServer)
+import Kore.Pattern.Base (Pattern)
+import Kore.Syntax.Json (KoreJson (..), KorePattern, addHeader)
+import Kore.Syntax.Json.Externalise (externalisePattern)
+import Kore.Syntax.Json.Internalise (PatternError, internalisePattern)
 
 respond ::
     forall m.
-    MonadIO m =>
-    TODOInternalizedModule ->
+    MonadLoggerIO m =>
+    KoreDefinition ->
     Respond (API 'Req) m (API 'Res)
-respond _ =
+respond def@KoreDefinition{} =
     \case
-        Execute _ -> do
-            liftIO $ putStrLn "Testing JSON-RPC server."
-            pure $ Right dummyExecuteResult
+        Execute ExecuteRequest{state = startState} -> do
+            Log.logDebug "Testing JSON-RPC server."
+            -- internalise given constrained term
+            let cterm :: KorePattern
+                KoreJson{term = cterm} = startState
+                internalised = runExcept $ internalisePattern def cterm
+
+            case internalised of
+                Left patternError -> do
+                    Log.logDebug $ "Error internalising cterm" <> Text.pack (show patternError)
+                    pure $ Left $ reportPatternError patternError
+                Right pat -> do
+                    -- processing goes here
+                    pure $ Right $ dummyExecuteResult pat
+
         -- this case is only reachable if the cancel appeared as part of a batch request
         Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
         -- using "Method does not exist" error code
+
         _ -> pure $ Left $ ErrorObj "Not implemented" (-32601) Null
   where
-    dummyExecuteState :: ExecuteState
-    dummyExecuteState =
-        ExecuteState
-            { term = dummyKoreJson
-            , predicate = Nothing
-            }
-
-    dummyExecuteResult :: API 'Res
-    dummyExecuteResult =
+    dummyExecuteResult :: Pattern -> API 'Res
+    dummyExecuteResult pat =
         Execute
             ExecuteResult
                 { reason = Stuck
                 , depth = Depth 0
-                , state = dummyExecuteState
+                , state = toExecState pat
                 , nextStates = Nothing
                 , rule = Nothing
                 }
 
-    dummyKoreJson :: KoreJson
-    dummyKoreJson =
-        KoreJson
-            { format = KORE
-            , version = KJ1
-            , term = KJTop (SortVar (Id "SV"))
-            }
+    toExecState :: Pattern -> ExecuteState
+    toExecState pat =
+        ExecuteState{term = addHeader t, predicate = fmap addHeader p}
+      where
+        (t, p) = externalisePattern pat
 
-runServer :: Int -> TODOInternalizedModule -> IO ()
-runServer port internalizedModule =
+    reportPatternError :: PatternError -> ErrorObj
+    reportPatternError pErr =
+        ErrorObj "Could not verify KORE pattern" (-32002) $ toJSON pErr
+
+runServer :: Int -> KoreDefinition -> LogLevel -> IO ()
+runServer port internalizedModule logLevel =
     do
-        Log.runStderrLoggingT
+        Log.runStderrLoggingT . logFilter
         $ jsonrpcTCPServer
             Json.defConfig{confCompare}
             V2
@@ -93,6 +106,7 @@ runServer port internalizedModule =
             srvSettings
             (srv internalizedModule)
   where
+    logFilter = Log.filterLogger $ \_source lvl -> lvl >= logLevel
     srvSettings = serverSettings port "*"
     confCompare =
         Json.keyOrder
@@ -128,7 +142,7 @@ runServer port internalizedModule =
             , "condition"
             ]
 
-srv :: MonadLoggerIO m => TODOInternalizedModule -> JSONRPCT m ()
+srv :: MonadLoggerIO m => KoreDefinition -> JSONRPCT m ()
 srv internalizedModule = do
     reqQueue <- liftIO $ atomically newTChan
     let mainLoop tid =
@@ -136,9 +150,11 @@ srv internalizedModule = do
                 Nothing -> do
                     return ()
                 Just (SingleRequest req) | Right (Cancel :: API 'Req) <- fromRequest req -> do
+                    Log.logInfoN "Cancel Request"
                     liftIO $ throwTo tid CancelRequest
-                    spawnWorker reqQueue >>= mainLoop
+                    mainLoop tid
                 Just req -> do
+                    Log.logInfoN $ Text.pack (show req)
                     liftIO $ atomically $ writeTChan reqQueue req
                     mainLoop tid
     spawnWorker reqQueue >>= mainLoop
@@ -156,11 +172,16 @@ srv internalizedModule = do
 
     spawnWorker reqQueue = do
         rpcSession <- ask
-        logger <- askLoggerIO
-        let sendResponses r = flip runLoggingT logger $ flip runReaderT rpcSession $ sendBatchResponse r
-            respondTo :: MonadIO m => Request -> m (Maybe Response)
+        logger <- Log.askLoggerIO
+        let withLog :: Log.LoggingT IO a -> IO a
+            withLog = flip Log.runLoggingT logger
+
+            sendResponses :: BatchResponse -> Log.LoggingT IO ()
+            sendResponses r = flip Log.runLoggingT logger $ flip runReaderT rpcSession $ sendBatchResponse r
+            respondTo :: MonadLoggerIO m => Request -> m (Maybe Response)
             respondTo = buildResponse (respond internalizedModule)
 
+            cancelReq :: BatchRequest -> Log.LoggingT IO ()
             cancelReq = \case
                 SingleRequest req@Request{} -> do
                     let reqVersion = getReqVer req
@@ -170,6 +191,7 @@ srv internalizedModule = do
                 BatchRequest reqs -> do
                     sendResponses $ BatchResponse $ [ResponseError (getReqVer req) cancelError (getReqId req) | req <- reqs, isRequest req]
 
+            processReq :: BatchRequest -> Log.LoggingT IO ()
             processReq = \case
                 SingleRequest req -> do
                     rM <- respondTo req
@@ -183,5 +205,5 @@ srv internalizedModule = do
                 forever $
                     bracketOnReqException
                         (atomically $ readTChan reqQueue)
-                        cancelReq
-                        processReq
+                        (withLog . cancelReq)
+                        (withLog . processReq)

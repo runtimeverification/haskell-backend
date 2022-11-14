@@ -58,7 +58,7 @@ testParse verbose f = do
 report :: FilePath -> IO (Either String Report)
 report file = runExceptT $ do
     parsedDef <- liftIO (Text.readFile file) >>= except . parseKoreDefinition file
-    internalDef <- except (first show $ internalise parsedDef)
+    internalDef <- except (first show $ internalise Nothing parsedDef)
     pure $ mkReport file internalDef
 
 mkReport :: FilePath -> KoreDefinition -> Report

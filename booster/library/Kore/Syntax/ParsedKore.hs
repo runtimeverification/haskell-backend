@@ -11,13 +11,20 @@ module Kore.Syntax.ParsedKore (
 
     -- * Validating and converting
     internalise,
+
+    -- * loading a definition from a file
+    loadDefinition,
 ) where
 
-import Control.Monad.Trans.Except (runExcept)
+import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Trans.Except (except, runExcept, runExceptT)
 import Data.Aeson qualified as Json
 import Data.Aeson.Encode.Pretty qualified as Json
+import Data.Bifunctor (first)
 import Data.ByteString.Lazy (ByteString)
 import Data.Text (Text)
+import Data.Text qualified as Text
+import Data.Text.IO qualified as Text
 
 import Kore.Definition.Base
 import Kore.Syntax.Json qualified as KoreJson
@@ -73,5 +80,16 @@ encodeJsonKoreDefinition :: ParsedDefinition -> ByteString
 encodeJsonKoreDefinition = Json.encodePretty' KoreJson.prettyJsonOpts
 
 -- internalising parsed data
-internalise :: ParsedDefinition -> Either DefinitionError KoreDefinition
-internalise = runExcept . Internalise.buildDefinition
+
+internalise :: Maybe Text -> ParsedDefinition -> Either DefinitionError KoreDefinition
+internalise mbMainModule = runExcept . Internalise.buildDefinition mbMainModule
+
+{- | Loads a Kore definition from the given file, using the given name
+as the main module (combined parsing and internalisation)
+-}
+loadDefinition :: Text -> FilePath -> IO (Either DefinitionError KoreDefinition)
+loadDefinition mainModuleName file = runExceptT $ do
+    parsedDef <-
+        liftIO (Text.readFile file)
+            >>= except . first (ParseError . Text.pack) . parseKoreDefinition file
+    except $ internalise (Just mainModuleName) parsedDef

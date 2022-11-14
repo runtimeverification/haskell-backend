@@ -19,11 +19,14 @@ import Kore.Syntax.Json.Base qualified as Syntax
 -}
 externalisePattern ::
     Internal.Pattern ->
-    (Syntax.KorePattern, Syntax.KorePattern)
+    (Syntax.KorePattern, Maybe Syntax.KorePattern)
 externalisePattern Internal.Pattern{term = term, constraints} =
     -- need a sort for the predicates in external format
     let sort = externaliseSort $ sortOfTerm term
-        predicate = multiAnd sort $ map (externalisePredicate sort) constraints
+        predicate =
+            if null constraints
+                then Nothing
+                else Just $ multiAnd sort $ map (externalisePredicate sort) constraints
      in (externaliseTerm term, predicate)
   where
     multiAnd :: Syntax.Sort -> [Syntax.KorePattern] -> Syntax.KorePattern
