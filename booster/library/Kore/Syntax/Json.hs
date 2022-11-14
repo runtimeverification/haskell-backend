@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2019-2022
 License     : BSD-3-Clause
