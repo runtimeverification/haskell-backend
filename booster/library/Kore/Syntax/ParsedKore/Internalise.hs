@@ -17,6 +17,7 @@ import Data.Function (on)
 import Data.List (groupBy, partition, sortOn)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
 import Data.Text (Text)
 
@@ -28,14 +29,21 @@ import Kore.Syntax.Json.Base qualified as Json
 import Kore.Syntax.Json.Internalise
 import Kore.Syntax.ParsedKore.Base
 
-{- | Traverses all modules of a parsed definition, to build an
-internal @KoreDefinition@.
+{- | Traverses all modules of a parsed definition, to build an internal
+@KoreDefinition@. Traversal starts on the given module name if
+present, otherwise it starts at the last module in the file ('kompile'
+default).
 
 Only very few validations are performed on the parsed data.
 -}
-buildDefinition :: ParsedDefinition -> Except DefinitionError KoreDefinition
-buildDefinition def@ParsedDefinition{modules} =
-    traverseModules modules $ emptyKoreDefinition (extract def)
+buildDefinition :: Maybe Text -> ParsedDefinition -> Except DefinitionError KoreDefinition
+buildDefinition mbMainModule def@ParsedDefinition{modules} =
+    definition
+        <$> execStateT (descendFrom mainModule) State{moduleMap, definition = start}
+  where
+    mainModule = fromMaybe (moduleName $ last modules) mbMainModule
+    moduleMap = Map.fromList [(moduleName m, m) | m <- modules]
+    start = emptyKoreDefinition (extract def)
 
 {- | The state while traversing the module import graph. This is
  internal only, but the definition is the result of the traversal.
@@ -44,19 +52,6 @@ data DefinitionState = State
     { moduleMap :: Map Text ParsedModule
     , definition :: KoreDefinition
     }
-
-traverseModules ::
-    [ParsedModule] ->
-    KoreDefinition ->
-    Except DefinitionError KoreDefinition
-traverseModules modules start =
-    definition
-        <$> execStateT (descendFrom mainModule) State{moduleMap, definition = start}
-  where
-    moduleMap = Map.fromList [(moduleName m, m) | m <- modules]
-    mainModule = moduleName $ last modules -- just by convention
-    moduleName :: ParsedModule -> Text
-    moduleName ParsedModule{name = Json.Id n} = n
 
 {- | Traverses the import graph bottom up, ending in the given named
    module. All entities (sorts, symbols, axioms) that are in scope in
@@ -203,6 +198,9 @@ mkSymbolSorts sortMap ParsedSymbol{sortVars, argSorts = sorts, sort} =
 
 -- monomorphic name functions for different entities (avoiding field
 -- name ambiguity)
+moduleName :: ParsedModule -> Text
+moduleName ParsedModule{name = Json.Id n} = n
+
 sortName :: ParsedSort -> Text
 sortName ParsedSort{name} = fromJsonId name
 
@@ -214,7 +212,7 @@ fromJsonId (Json.Id n) = n
 
 ----------------------------------------
 data DefinitionError
-    = GeneralError Text
+    = ParseError Text
     | NoSuchModule Text
     | DuplicateSorts [ParsedSort]
     | DuplicateSymbols [ParsedSymbol]
