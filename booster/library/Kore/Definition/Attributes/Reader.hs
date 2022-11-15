@@ -91,7 +91,7 @@ extractAttributeOrDefault def name attribs =
     maybe def (either error id . readT) $ getAttribute name attribs
 
 (.:?) :: ReadT a => ParsedAttributes -> Text -> Maybe a
-attribs .:? name = fmap (either error id . readT) $ getAttribute name attribs
+attribs .:? name = either error id . readT <$> getAttribute name attribs
 
 extractFlag :: Text -> ParsedAttributes -> Bool
 extractFlag = extractAttributeOrDefault False

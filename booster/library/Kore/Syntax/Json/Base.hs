@@ -233,7 +233,7 @@ codecOptions =
 ----------------------------------------
 -- Identifiers and lexical checks
 
-newtype Id = Id Text
+newtype Id = Id {getId :: Text}
     deriving stock (Eq, Show)
     deriving newtype (ToJSON, FromJSON)
 
