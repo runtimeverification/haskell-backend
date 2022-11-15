@@ -25,8 +25,7 @@ jobs:
       - name: Install Cachix
         uses: cachix/cachix-action@v10
         with:
-          name: runtimeverification
-          extraPullNames: 'kore'
+          name: k-framework
           skipPush: true
 
       - name: Materialize
@@ -63,9 +62,8 @@ jobs:
       - name: Install Cachix
         uses: cachix/cachix-action@v10
         with:
-          name: runtimeverification
-          signingKey: '${{ secrets.RUNTIMEVERIFICATION_CACHIX_SIGNING_KEY }}'
-          extraPullNames: 'kore'
+          name: k-framework
+          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
 
       - name: Build
         run: nix-build -A kore -A project.kore.checks
