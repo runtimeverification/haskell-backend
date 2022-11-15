@@ -16,52 +16,10 @@ module Kore.Definition.Base (
 ) where
 
 import Data.Map.Strict as Map (Map, empty)
-import Data.Set (Set)
 import Data.Text (Text)
 
 import Kore.Definition.Attributes.Base
 import Kore.Pattern.Base
-
-{- | Index data allowing for a quick lookup of potential axioms.
-
-A @Term@ is indexed by inspecting the top term component of the
-head of the K cell. Only constructor and (other) symbol
-applications are indexed, all other terms have index @Anything@.
-
-In particular, function applications are treated as opaque, like
-variables.
-
-Also, non-free constructors won't get any index, any rules headed by
-those can be ignored.
-
-Rather than making the term indexing function partial, we introduce a
-unique bottom element @None@ to the index type (to make it a lattice).
-This can then handle @AndTerm@ by indexing both arguments and
-combining them.
-
-NB we should not derive an 'Ord' instance since it would not reflect
-the fact that different symbols (and likewise different constructors)
-are incompatible.
--}
-data TermIndex
-    = None -- bottom element
-    | Symbol SymbolName
-    | Anything -- top element
-    -- should we have  | Value Sort ?? (see Term type)
-    deriving (Eq, Show)
-
--- | Combines two indexes (an "infimum" function on the index lattice)
-combine :: TermIndex -> TermIndex -> TermIndex
-combine None _ = None
-combine _ None = None
-combine x Anything = x
-combine Anything x = x
-combine s@(Symbol s1) (Symbol s2)
-    | s1 == s2 = s
---     | otherwise = None -- redundant
-combine _ _ = None -- incompatible indexes
-
-----------------------------------------
 
 {- | A Kore definition is constructed from a main module with its
    transitive imports.
@@ -77,9 +35,13 @@ data KoreDefinition = KoreDefinition
     , modules :: Map Text ModuleAttributes
     , sorts :: Map SortName SortAttributes -- TODO store a lattice of subsorts?
     , symbols :: Map SymbolName (SymbolAttributes, SymbolSort) -- constructors and functions
-    , axioms :: Map TermIndex [Set Axiom] -- grouped by decreasing priority
+    , aliases :: Map AliasName Alias
+    , rewriteTheory :: RewriteTheory
     }
     deriving (Eq, Show)
+
+-- | Optimized for lookup by term-index
+type RewriteTheory = Map TermIndex (Map Priority [RewriteRule])
 
 -- | Sort information related to a symbol: result and argument sorts
 data SymbolSort = SymbolSort
@@ -98,12 +60,26 @@ emptyKoreDefinition attributes =
         , modules = Map.empty
         , sorts = Map.empty
         , symbols = Map.empty
-        , axioms = Map.empty
+        , aliases = Map.empty
+        , rewriteTheory = Map.empty
         }
 
-data Axiom = Axiom
+data RewriteRule = RewriteRule
     { lhs :: Pattern
     , rhs :: Pattern
     , attributes :: AxiomAttributes
     }
-    deriving (Eq, Show)
+    deriving stock (Eq, Ord, Show)
+
+extractPriority :: RewriteRule -> Priority
+extractPriority RewriteRule{attributes} = priority attributes
+
+type AliasName = Text
+
+data Alias = Alias
+    { name :: AliasName
+    , params :: [Sort]
+    , args :: [Variable]
+    , rhs :: TermOrPredicate
+    }
+    deriving stock (Eq, Show)

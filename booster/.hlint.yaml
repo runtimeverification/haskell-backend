@@ -3,4 +3,4 @@
 # see `hlint --default` for help
 ################################
 
-- ignore: { name: "Use <$>" }
+- ignore: { name: "Use <$>", name: "Move brackets to avoid $" }
