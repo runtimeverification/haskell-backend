@@ -14,7 +14,6 @@ import Control.Monad.Trans.Except
 import Data.Bifunctor (first)
 import Data.List (isPrefixOf, partition)
 import Data.Map qualified as Map
-import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.IO qualified as Text
@@ -62,13 +61,13 @@ report file = runExceptT $ do
     pure $ mkReport file internalDef
 
 mkReport :: FilePath -> KoreDefinition -> Report
-mkReport file KoreDefinition{modules, sorts, symbols, axioms} =
+mkReport file KoreDefinition{modules, sorts, symbols, rewriteTheory} =
     Report
         { file
         , modNames = Map.keys modules
         , sortNames = Map.keys sorts
         , symbolNames = Map.keys symbols
-        , axiomCount = sum . map (sum . map Set.size) $ Map.elems axioms
+        , axiomCount = length $ concat $ concatMap Map.elems (Map.elems rewriteTheory)
         }
 
 prettify :: Report -> String

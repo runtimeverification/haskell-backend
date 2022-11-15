@@ -14,6 +14,7 @@ module Kore.Definition.Attributes.Base (
     Label,
     Location (..),
     Position (..),
+    Priority,
 ) where
 
 import Data.Text (Text)
@@ -40,25 +41,26 @@ data ModuleAttributes = ModuleAttributes
 -}
 data AxiomAttributes = AxiomAttributes
     { location :: Location
-    , priority :: Word8 -- priorities are <= 200
+    , priority :: Priority -- priorities are <= 200
     , label :: Maybe Label
     , simplification :: Bool
     }
-    deriving (Eq, Show)
+    deriving stock (Eq, Ord, Show)
 
 type Label = Text
+type Priority = Word8
 
 data Location = Location
     { file :: FilePath
     , position :: Position
     }
-    deriving (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show)
 
 data Position = Position
     { line :: Int
     , column :: Int
     }
-    deriving (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show)
 
 {- | Things needed for booster rewrite engine:
   * function flag (won't evaluate)
@@ -73,11 +75,11 @@ data SymbolAttributes = SymbolAttributes
     , isTotal :: Bool
     , isConstructor :: Bool
     }
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 newtype SortAttributes = SortAttributes
     { argCount :: Int
     }
     -- none needed
 
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
