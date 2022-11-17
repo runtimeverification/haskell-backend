@@ -19,6 +19,7 @@ import Kore.Definition.Base
 import Kore.Syntax.ParsedKore
 
 import Data.Map qualified as Map
+import Data.Set qualified as Set
 import Data.Text qualified as Text
 
 -- Assumption: contains textual kore (<name>.kore) and expected
@@ -55,25 +56,28 @@ mkReport file KoreDefinition{modules, sorts, symbols, rewriteTheory} =
         { file
         , modNames = Map.keys modules
         , sortNames = Map.keys sorts
+        , subSorts = Map.map (Set.toList . snd) sorts
         , symbolNames = Map.keys symbols
         , axiomCount = length $ concat $ concatMap Map.elems (Map.elems rewriteTheory)
         }
 
 prettify :: Report -> String
-prettify Report{modNames, sortNames, symbolNames, axiomCount} =
+prettify Report{modNames, sortNames, subSorts, symbolNames, axiomCount} =
     Text.unpack $
-        Text.unlines
+        Text.unlines $
             [ list "Modules" modNames
             , list "Sorts" sortNames
             , list "Symbols" symbolNames
             , "Axioms: " <> Text.pack (show axiomCount)
             ]
+                <> ("Subsorts:" : map (("- " <>) . uncurry list) (Map.assocs subSorts))
   where
     list header = ((header <> ": ") <>) . Text.intercalate ", "
 
 data Report = Report
     { file :: FilePath
     , modNames, sortNames, symbolNames :: [Text]
+    , subSorts :: Map.Map Text [Text]
     , axiomCount :: Int
     }
     deriving stock (Eq, Show)

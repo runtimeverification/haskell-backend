@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-ambiguous-fields #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
@@ -10,15 +12,17 @@ module Kore.Syntax.ParsedKore.Internalise (
     DefinitionError (..),
 ) where
 
+import Control.Monad.Extra (mapMaybeM)
 import Control.Monad.State
 import Control.Monad.Trans.Except
 import Data.Bifunctor (first)
 import Data.Function (on)
-import Data.List (groupBy, partition, sortOn)
+import Data.List (foldl', groupBy, partition, sortOn)
 import Data.List.Extra (groupSort)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (catMaybes, fromMaybe)
+import Data.Maybe (fromMaybe)
+import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -40,13 +44,31 @@ default).
 Only very few validations are performed on the parsed data.
 -}
 buildDefinition :: Maybe Text -> ParsedDefinition -> Except DefinitionError KoreDefinition
-buildDefinition mbMainModule def@ParsedDefinition{modules} =
-    definition
-        <$> execStateT (descendFrom mainModule) State{moduleMap, definition = start}
+buildDefinition mbMainModule def@ParsedDefinition{modules} = do
+    State{definition = d@KoreDefinition{sorts = allSorts}, subsorts} <-
+        execStateT (descendFrom mainModule) startState
+    let finalSorts = foldr addSubsortInfo allSorts $ Map.assocs (transitiveClosure subsorts)
+        finalDefinition :: KoreDefinition
+        finalDefinition = d{sorts = finalSorts}
+    pure finalDefinition
   where
     mainModule = fromMaybe (moduleName $ last modules) mbMainModule
     moduleMap = Map.fromList [(moduleName m, m) | m <- modules]
-    start = emptyKoreDefinition (extract def)
+    startState =
+        State
+            { moduleMap
+            , definition = emptyKoreDefinition $ extract def
+            , subsorts = Map.empty
+            }
+
+    addSubsortInfo ::
+        (Def.SortName, Set Def.SortName) ->
+        Map Def.SortName (SortAttributes, Set Def.SortName) ->
+        Map Def.SortName (SortAttributes, Set Def.SortName)
+    addSubsortInfo (super, subs) = Map.update (\(a, b) -> Just (a, b <> subs)) super
+
+-- Some sorts do not occur in the subsort map at all (even though
+-- we _should_ have S < KItem for _every_ sort).
 
 {- | The state while traversing the module import graph. This is
  internal only, but the definition is the result of the traversal.
@@ -54,6 +76,7 @@ buildDefinition mbMainModule def@ParsedDefinition{modules} =
 data DefinitionState = State
     { moduleMap :: Map Text ParsedModule
     , definition :: KoreDefinition
+    , subsorts :: Map Def.SortName (Set Def.SortName)
     }
 
 {- | Traverses the import graph bottom up, ending in the given named
@@ -67,7 +90,7 @@ descendFrom m = do
         Just _ -> pure () -- already internalised (present in the definition)
         Nothing -> do
             let mbModule = Map.lookup m moduleMap
-            theModule <- maybe (defError $ NoSuchModule m) pure mbModule
+            theModule <- maybe (lift . throwE $ NoSuchModule m) pure mbModule
 
             -- traverse imports recursively in pre-order before
             -- dealing with the current module.
@@ -83,14 +106,23 @@ descendFrom m = do
 
             -- validate and add new module in context of the existing
             -- definition
-            newDef <- addModule theModule def
-            modify $ \s -> s{definition = newDef}
+            (newSubsorts, newDef) <- lift $ addModule theModule def
+
+            modify (updateState newDef newSubsorts)
+  where
+    updateState :: KoreDefinition -> Map Def.SortName (Set Def.SortName) -> DefinitionState -> DefinitionState
+    updateState newDef newSubsorts State{moduleMap, subsorts} =
+        State
+            { moduleMap
+            , definition = newDef
+            , subsorts = Map.unionWith (<>) subsorts newSubsorts
+            }
 
 -- | currently no validations are performed
 addModule ::
     ParsedModule ->
     KoreDefinition ->
-    StateT DefinitionState (Except DefinitionError) KoreDefinition
+    Except DefinitionError (Map Def.SortName (Set Def.SortName), KoreDefinition)
 addModule
     m@ParsedModule
         { name = Json.Id n
@@ -118,15 +150,17 @@ addModule
 
             let (newSorts, sortDups) = parsedSorts `mappedBy` sortName
             unless (null sortDups) $
-                defError $
+                throwE $
                     DuplicateSorts (concatMap snd sortDups)
             let sortCollisions :: [ParsedSort]
                 sortCollisions =
                     Map.elems $ Map.intersection newSorts currentSorts
             unless (null sortCollisions) $
-                defError $
+                throwE $
                     DuplicateSorts sortCollisions
-            let sorts = Map.map extract newSorts <> currentSorts
+            let sorts =
+                    Map.map (\s -> (extract s, Set.singleton (sortName s))) newSorts
+                        <> currentSorts
 
             -- ensure parsed symbols are not duplicates and only refer
             -- to known sorts
@@ -134,15 +168,15 @@ addModule
                 symCollisions =
                     Map.elems $ Map.intersection newSymbols currentSymbols
             unless (null symDups) $
-                defError $
+                throwE $
                     DuplicateSymbols (concatMap snd symDups)
             unless (null symCollisions) $
-                defError $
+                throwE $
                     DuplicateSymbols symCollisions
             -- internalise (in a new pass over the list)
             let internaliseSymbol ::
                     ParsedSymbol ->
-                    StateT s (Except DefinitionError) (Def.SymbolName, (SymbolAttributes, SymbolSort))
+                    Except DefinitionError (Def.SymbolName, (SymbolAttributes, SymbolSort))
                 internaliseSymbol s@ParsedSymbol{name} = do
                     info <- mkSymbolSorts sorts s
                     -- TODO(Ana): rename extract
@@ -152,9 +186,9 @@ addModule
 
             let internaliseAlias ::
                     ParsedAlias ->
-                    StateT s (Except DefinitionError) (Def.AliasName, Alias)
+                    Except DefinitionError (Def.AliasName, Alias)
                 -- TODO(Ana): do we need to handle attributes?
-                internaliseAlias palias@ParsedAlias{name, sortVars, argSorts, sort, args, rhs} = lift $ do
+                internaliseAlias palias@ParsedAlias{name, sortVars, argSorts, sort, args, rhs} = do
                     unless (length argSorts == length args) (throwE (DefinitionAliasError (Json.getId name) . WrongAliasSortCount $ palias))
                     let paramNames = Json.getId <$> sortVars
                         params = Def.SortVar <$> paramNames
@@ -178,28 +212,21 @@ addModule
 
             let partialDefinition = KoreDefinition{attributes, modules, sorts, symbols, aliases, rewriteTheory = currentRewriteTheory}
 
-            -- TODO(Ana): this should return a sum type of different kinds of information
-            -- regarding the theory: rewrite rules (which we apply), subsort relationships, other
-            -- things that are encoded into Kore as axioms
-            let internaliseRewriteTheoryData ::
-                    ParsedAxiom ->
-                    StateT s (Except DefinitionError) (Maybe RewriteRule)
-                internaliseRewriteTheoryData parsedAx@ParsedAxiom{axiom} = lift $ do
-                    case axiom of
-                        Json.KJRewrites _ left right ->
-                            case left of
-                                Json.KJAnd _ (Json.KJNot _ _) (Json.KJApp (Json.Id aliasName) _ aliasArgs) ->
-                                    Just <$> internaliseRewriteRule partialDefinition parsedAx aliasName aliasArgs right
-                                (Json.KJApp (Json.Id aliasName) _ aliasArgs) ->
-                                    Just <$> internaliseRewriteRule partialDefinition parsedAx aliasName aliasArgs right
-                                _ -> throwE (DefinitionRewriteRuleError . MalformedRewriteRule $ parsedAx)
-                        _ -> return Nothing
+            (newRewriteRules, subsortPairs) <-
+                partitionAxioms
+                    <$> mapMaybeM (internaliseAxiom partialDefinition) parsedAxioms
 
-            newRewriteRules <- catMaybes <$> traverse internaliseRewriteTheoryData parsedAxioms
             let rewriteTheory = addToTheory newRewriteRules currentRewriteTheory
 
+            -- add subsorts to the subsort map
+            let newSubsorts =
+                    Map.fromListWith
+                        (<>)
+                        [(super, Set.singleton sub) | (sub, super) <- subsortPairs]
+
             pure
-                KoreDefinition
+                ( newSubsorts
+                , KoreDefinition
                     { attributes
                     , modules
                     , sorts
@@ -207,6 +234,7 @@ addModule
                     , aliases
                     , rewriteTheory
                     }
+                )
       where
         -- returns the
         mappedBy ::
@@ -223,17 +251,91 @@ addModule
                 , [(getKey $ head d, d) | d <- dups]
                 )
 
+        partitionAxioms :: [AxiomResult] -> ([RewriteRule], [(Def.SortName, Def.SortName)])
+        partitionAxioms = go [] []
+          where
+            go rules sorts [] = (rules, sorts)
+            go rules sorts (RewriteRuleAxiom r : rest) = go (r : rules) sorts rest
+            go rules sorts (SubsortAxiom pair : rest) = go rules (pair : sorts) rest
+
+-- Result type from internalisation of different axioms
+data AxiomResult
+    = -- | Rewrite rule
+      RewriteRuleAxiom RewriteRule
+    | -- | subsort data: a pair of sorts
+      SubsortAxiom (Def.SortName, Def.SortName)
+
+-- helper type to carry relevant extracted data from a pattern (what
+-- is passed to the internalising function later)
+data AxiomData
+    = RewriteRuleAxiom' AliasName [Json.KorePattern] Json.KorePattern AxiomAttributes [Json.Id]
+    | SubsortAxiom' Json.Sort Json.Sort
+
+classifyAxiom :: ParsedAxiom -> Except DefinitionError (Maybe AxiomData)
+classifyAxiom parsedAx@ParsedAxiom{axiom, sortVars} = case axiom of
+    -- rewrite: an actual rewrite rule
+    Json.KJRewrites _ lhs rhs
+        | Json.KJAnd _ (Json.KJNot _ _) (Json.KJApp (Json.Id aliasName) _ aliasArgs) <- lhs ->
+            pure $ Just $ RewriteRuleAxiom' aliasName aliasArgs rhs (extract parsedAx) sortVars
+        | Json.KJApp (Json.Id aliasName) _ aliasArgs <- lhs ->
+            pure $ Just $ RewriteRuleAxiom' aliasName aliasArgs rhs (extract parsedAx) sortVars
+        | otherwise ->
+            throwE $ DefinitionRewriteRuleError $ MalformedRewriteRule parsedAx
+    -- subsort axiom formulated as an existential rule
+    Json.KJExists{var, varSort = super, arg}
+        | Json.KJEquals{first = aVar, second} <- arg
+        , aVar == Json.KJEVar{name = var, sort = super}
+        , Json.KJApp{name, args} <- second
+        , Json.Id "inj" <- name
+        , [Json.KJEVar{name = _, sort = sub}] <- args ->
+            pure $ Just $ SubsortAxiom' sub super
+    -- implies: an equation
+    Json.KJImplies{} ->
+        pure Nothing -- not handled yet
+
+    -- anything else: not handled yet but not an error (this case
+    -- becomes an error if the list becomes comprehensive)
+    _ -> pure Nothing
+
+internaliseAxiom ::
+    KoreDefinition ->
+    ParsedAxiom ->
+    Except DefinitionError (Maybe AxiomResult)
+internaliseAxiom partialDefinition parsedAxiom =
+    classifyAxiom parsedAxiom >>= maybe (pure Nothing) processAxiom
+  where
+    processAxiom :: AxiomData -> Except DefinitionError (Maybe AxiomResult)
+    processAxiom = \case
+        SubsortAxiom' Json.SortApp{name = Json.Id sub} Json.SortApp{name = Json.Id super} -> do
+            when (sub == super) $
+                throwE $
+                    DefinitionSortError $
+                        GeneralError ("Bad subsort rule " <> sub <> " < " <> super)
+            pure $ Just $ SubsortAxiom (sub, super)
+        SubsortAxiom' Json.SortVar{name = Json.Id sub} _ ->
+            throwE $
+                DefinitionSortError $
+                    GeneralError ("Sort variable " <> sub <> " in subsort axiom")
+        SubsortAxiom' _ Json.SortVar{name = Json.Id super} ->
+            throwE $
+                DefinitionSortError $
+                    GeneralError ("Sort variable " <> super <> " in subsort axiom")
+        RewriteRuleAxiom' alias args rhs attribs sortVars ->
+            Just . RewriteRuleAxiom
+                <$> internaliseRewriteRule partialDefinition alias args rhs attribs sortVars
+
 orFailWith :: Maybe a -> e -> Except e a
 mbX `orFailWith` err = maybe (throwE err) pure mbX
 
 internaliseRewriteRule ::
     KoreDefinition ->
-    ParsedAxiom ->
     AliasName ->
     [Json.KorePattern] ->
     Json.KorePattern ->
+    AxiomAttributes ->
+    [Json.Id] ->
     Except DefinitionError RewriteRule
-internaliseRewriteRule partialDefinition@KoreDefinition{aliases} parsedAx@ParsedAxiom{sortVars} aliasName aliasArgs right = do
+internaliseRewriteRule partialDefinition@KoreDefinition{aliases} aliasName aliasArgs right axAttributes sortVars = do
     alias <-
         withExcept (DefinitionAliasError aliasName) $
             Map.lookup aliasName aliases
@@ -246,11 +348,7 @@ internaliseRewriteRule partialDefinition@KoreDefinition{aliases} parsedAx@Parsed
     rhs <-
         withExcept DefinitionPatternError $
             internalisePattern (Just sortVars) partialDefinition right
-    let axAttributes = extract parsedAx
     return RewriteRule{lhs, rhs, attributes = axAttributes}
-
-defError :: DefinitionError -> StateT s (Except DefinitionError) a
-defError = lift . throwE
 
 expandAlias :: Alias -> [Def.Term] -> Except DefinitionError Def.TermOrPredicate
 expandAlias alias@Alias{name, args, rhs} currentArgs
@@ -337,16 +435,16 @@ groupByPriority axioms =
    the symbol.
 -}
 mkSymbolSorts ::
-    Map Def.SortName SortAttributes ->
+    Map Def.SortName (SortAttributes, Set Def.SortName) ->
     ParsedSymbol ->
-    StateT s (Except DefinitionError) SymbolSort
+    Except DefinitionError SymbolSort
 mkSymbolSorts sortMap ParsedSymbol{sortVars, argSorts = sorts, sort} =
     do
         unless (Set.size knownVars == length sortVars) $
-            defError $
+            throwE $
                 DuplicateNames (map Json.getId sortVars)
-        resultSort <- lift $ check sort
-        argSorts <- mapM (lift . check) sorts
+        resultSort <- check sort
+        argSorts <- mapM check sorts
         pure $ SymbolSort{resultSort, argSorts}
   where
     knownVars = Set.fromList $ map Json.getId sortVars
@@ -366,6 +464,36 @@ sortName ParsedSort{name} = Json.getId name
 
 symbolName :: ParsedSymbol -> Text
 symbolName ParsedSymbol{name} = Json.getId name
+
+{- | Computes all-pairs reachability in a directed graph given as an
+   adjacency list mapping. Internally uses Warshall's algorithm but
+   converts the result back to a reachability list.
+-}
+transitiveClosure :: forall k. (Ord k) => Map k (Set.Set k) -> Map k (Set.Set k)
+transitiveClosure adjacencies = toAdjacencies $ foldl' update matrix allKeys
+  where
+    allKeys = Map.keys adjacencies
+
+    matrix :: Map (k, k) Bool
+    matrix =
+        Map.fromList
+            [ ((a, b), a == b || (maybe False (b `Set.member`) $ Map.lookup a adjacencies))
+            | a <- allKeys
+            , b <- allKeys
+            ]
+
+    toAdjacencies :: Map (k, k) Bool -> Map k (Set.Set k)
+    toAdjacencies matrix' =
+        Map.fromListWith
+            (<>)
+            [(a, Set.singleton b) | ((a, b), True) <- Map.assocs matrix']
+
+    update :: Map (k, k) Bool -> k -> Map (k, k) Bool
+    update matrix' k =
+        let newPath :: k -> k -> Map (k, k) Bool -> Bool
+            newPath a b m = fromMaybe False $ liftM2 (&&) (Map.lookup (a, k) m) (Map.lookup (k, b) m)
+            upd m (a, b) = Map.update (Just . (|| newPath a b m)) (a, b) m
+         in foldl upd matrix' $ [(x, x') | x <- allKeys, x' <- allKeys]
 
 ----------------------------------------
 data DefinitionError
