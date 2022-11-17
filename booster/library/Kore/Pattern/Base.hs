@@ -50,10 +50,9 @@ data Pattern = Pattern
     }
     deriving stock (Eq, Ord, Show)
 
-data TermOrPredicate
-    = ATerm Term
-    | APredicate Predicate
-    | Both Pattern
+data TermOrPredicate -- = Either Predicate Pattern
+    = APredicate Predicate
+    | TermAndPredicate Pattern
     deriving stock (Eq, Ord, Show)
 
 type VarName = Text
@@ -117,4 +116,4 @@ combine s@(Symbol s1) (Symbol s2)
 combine _ _ = None -- incompatible indexes
 
 computeTermIndex :: Term -> TermIndex
-computeTermIndex = undefined
+computeTermIndex = const None -- FIXME
