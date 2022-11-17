@@ -16,6 +16,7 @@ module Kore.Definition.Base (
 ) where
 
 import Data.Map.Strict as Map (Map, empty)
+import Data.Set (Set)
 import Data.Text (Text)
 
 import Kore.Definition.Attributes.Base
@@ -33,7 +34,7 @@ data type, but rather by its construction from a @ParsedDefinition@.
 data KoreDefinition = KoreDefinition
     { attributes :: DefinitionAttributes
     , modules :: Map Text ModuleAttributes
-    , sorts :: Map SortName SortAttributes -- TODO store a lattice of subsorts?
+    , sorts :: Map SortName (SortAttributes, Set SortName)
     , symbols :: Map SymbolName (SymbolAttributes, SymbolSort) -- constructors and functions
     , aliases :: Map AliasName Alias
     , rewriteTheory :: RewriteTheory
