@@ -29,6 +29,9 @@ jobs:
       nix: ${{ steps.filter.outputs.nix }}
     steps:
     # For pull requests it's not necessary to checkout the code
+    - name: Check out code
+      uses: actions/checkout@v3
+      if: ${{ github.event_name == 'push' }}
     - uses: dorny/paths-filter@v2
       id: filter
       with:
