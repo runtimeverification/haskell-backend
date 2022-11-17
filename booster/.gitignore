@@ -2,3 +2,8 @@
 /*.cabal
 *~
 /dist-newstyle
+/.direnv
+/.build
+/.vscode
+result*
+.envrc
