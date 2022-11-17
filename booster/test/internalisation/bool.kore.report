@@ -1,0 +1,4 @@
+Modules: BOOL
+Sorts: Bool
+Symbols: andBool, false, notBool, orBool, true
+Axioms: 0
