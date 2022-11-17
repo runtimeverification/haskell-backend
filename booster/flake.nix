@@ -48,7 +48,6 @@
           nativeBuildInputs = with nixpkgs.legacyPackages.${pkgs.system}; [
             nixpkgs-fmt
             hpack
-            # haskellPackages.fourmolu
             zlib
           ];
           shellHook = "rm -f *.cabal && hpack";

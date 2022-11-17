@@ -12,7 +12,6 @@ import Data.Text.IO qualified as Text
 import System.FilePath
 import Test.Tasty
 import Test.Tasty.Golden
-
 import Kore.Syntax.ParsedKore
 
 -- Assumption: directory contains textual kore named <name>.kore and
