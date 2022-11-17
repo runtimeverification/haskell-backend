@@ -78,7 +78,7 @@ internaliseTermOrPredicate sortVars definition syntaxPatt =
 
 internaliseSort ::
     Maybe [Syntax.Id] ->
-    Map Internal.SortName SortAttributes ->
+    Map Internal.SortName (SortAttributes, Set Internal.SortName) ->
     Syntax.KorePattern ->
     Syntax.Sort ->
     Except PatternError Internal.Sort
@@ -269,7 +269,7 @@ mkF symbol argSorts a b = Syntax.KJApp symbol argSorts [a, b]
 -}
 checkSort ::
     Set Text ->
-    Map Internal.SortName SortAttributes ->
+    Map Internal.SortName (SortAttributes, Set Internal.SortName) ->
     Syntax.Sort ->
     Except SortError Internal.Sort
 checkSort knownVars sortMap = check'
@@ -283,7 +283,7 @@ checkSort knownVars sortMap = check'
         do
             maybe
                 (throwE $ UnknownSort app)
-                ( \SortAttributes{argCount} ->
+                ( \(SortAttributes{argCount}, _) ->
                     unless (length args == argCount) $
                         throwE (WrongSortArgCount app argCount)
                 )
