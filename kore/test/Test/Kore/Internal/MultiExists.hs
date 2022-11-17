@@ -33,7 +33,7 @@ test_refresh :: [TestTree]
 test_refresh =
     [ testCase "refresh relevant variables" $ do
         let input = quantify x (unquantified $ mkElemVar x)
-            avoid = (Set.map (inject . variableName) . Set.fromList) [x]
+            avoid = Set.singleton . inject . variableName $ x
             actual = refresh avoid input
             expect = quantify x' (unquantified $ mkElemVar x')
         assertEqual "" expect actual
