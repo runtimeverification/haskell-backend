@@ -58,7 +58,7 @@ respond def@KoreDefinition{} =
             -- internalise given constrained term
             let cterm :: KorePattern
                 KoreJson{term = cterm} = startState
-                internalised = runExcept $ internalisePattern def cterm
+                internalised = runExcept $ internalisePattern Nothing def cterm
 
             case internalised of
                 Left patternError -> do
