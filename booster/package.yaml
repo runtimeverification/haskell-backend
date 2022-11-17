@@ -81,6 +81,9 @@ library:
   - transformers
   - unliftio
   source-dirs: library
+  build-tools:
+    - happy
+    - alex
 
 executables:
   hs-backend-booster:
@@ -99,7 +102,6 @@ executables:
   rpc-client:
     source-dirs: tools/rpc-client
     main: RpcClient
-    main-is: RpcClient.main
     dependencies:
       - aeson
       - aeson-pretty
