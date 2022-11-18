@@ -12,9 +12,11 @@ module Kore.Syntax.ParsedKore.Internalise (
     DefinitionError (..),
 ) where
 
+import Control.Monad
 import Control.Monad.Extra (mapMaybeM)
-import Control.Monad.State
+import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
+import Control.Monad.Trans.State
 import Data.Bifunctor (first)
 import Data.Function (on)
 import Data.List (foldl', groupBy, partition, sortOn)
@@ -466,34 +468,30 @@ symbolName :: ParsedSymbol -> Text
 symbolName ParsedSymbol{name} = Json.getId name
 
 {- | Computes all-pairs reachability in a directed graph given as an
-   adjacency list mapping. Internally uses Warshall's algorithm but
-   converts the result back to a reachability list.
+   adjacency list mapping. Using a naive algorithm because the subsort
+   graph will usually be broad and flat rather than deep.
 -}
 transitiveClosure :: forall k. (Ord k) => Map k (Set.Set k) -> Map k (Set.Set k)
-transitiveClosure adjacencies = toAdjacencies $ foldl' update matrix allKeys
+transitiveClosure adjacencies = snd $ update adjacencies
   where
     allKeys = Map.keys adjacencies
 
-    matrix :: Map (k, k) Bool
-    matrix =
-        Map.fromList
-            [ ((a, b), a == b || (maybe False (b `Set.member`) $ Map.lookup a adjacencies))
-            | a <- allKeys
-            , b <- allKeys
-            ]
+    update :: Map k (Set.Set k) -> (Bool, Map k (Set.Set k))
+    update m =
+        let result@(changed, newM) = foldl' updateKey (False, m) allKeys
+         in if changed then update newM else result
 
-    toAdjacencies :: Map (k, k) Bool -> Map k (Set.Set k)
-    toAdjacencies matrix' =
-        Map.fromListWith
-            (<>)
-            [(a, Set.singleton b) | ((a, b), True) <- Map.assocs matrix']
+    -- add all children's children for a key, mark if changed
+    updateKey :: (Bool, Map k (Set.Set k)) -> k -> (Bool, Map k (Set.Set k))
+    updateKey (changed, m) key = (changed || thisChanged, newM)
+      where
+        cs = children m key
+        new = cs <> foldMap (children m) cs
+        newM = Map.update (Just . const new) key m
+        thisChanged = cs /= new
 
-    update :: Map (k, k) Bool -> k -> Map (k, k) Bool
-    update matrix' k =
-        let newPath :: k -> k -> Map (k, k) Bool -> Bool
-            newPath a b m = fromMaybe False $ liftM2 (&&) (Map.lookup (a, k) m) (Map.lookup (k, b) m)
-            upd m (a, b) = Map.update (Just . (|| newPath a b m)) (a, b) m
-         in foldl upd matrix' $ [(x, x') | x <- allKeys, x' <- allKeys]
+    children :: Map k (Set.Set k) -> k -> Set.Set k
+    children m k = fromMaybe Set.empty $ Map.lookup k m
 
 ----------------------------------------
 data DefinitionError
