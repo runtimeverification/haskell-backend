@@ -182,7 +182,7 @@ simplify sideCondition original =
                     simplifyEquals sideCondition (termLikeSort term)
                         =<< traverse simplifyTerm' equalsF
                 InF inF ->
-                    simplifyIn sideCondition =<< traverse simplifyTerm' inF
+                    liftSimplifier . simplifyIn sideCondition =<< traverse simplifyTerm' inF
       where
         _ :< predicateF = Recursive.project predicate
         ~avoid = freeVariableNames sideCondition
@@ -631,9 +631,8 @@ simplifyEquals sideCondition sort equals = do
                     & return
 
 simplifyIn ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     In () (OrPattern RewritingVariableName) ->
-    simplifier NormalForm
+    Simplifier NormalForm
 simplifyIn sideCondition =
     In.simplify sideCondition >=> return . NormalForm.fromOrCondition
