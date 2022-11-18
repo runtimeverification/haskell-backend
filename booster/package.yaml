@@ -69,7 +69,6 @@ library:
   - gitrev
   - json-rpc
   - monad-logger
-  - mtl
   - optparse-applicative
   - prettyprinter
   - regex-base

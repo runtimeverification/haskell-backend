@@ -8,7 +8,7 @@ module Kore.Network.JsonRpc (
 ) where
 
 import Control.Monad.Logger (MonadLoggerIO)
-import Control.Monad.Reader (runReaderT)
+import Control.Monad.Trans.Reader (runReaderT)
 import Data.Aeson (ToJSON)
 import Data.Aeson.Encode.Pretty as Json
 import Data.ByteString (ByteString)

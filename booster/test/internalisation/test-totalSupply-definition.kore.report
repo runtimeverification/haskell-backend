@@ -5,254 +5,254 @@ Axioms: 352
 Subsorts:
 - SortAccessListTx: SortAccessListTx
 - SortAccessedAccountsCell: SortAccessedAccountsCell
-- SortAccessedAccountsCellOpt: SortAccessedAccountsCellOpt
+- SortAccessedAccountsCellOpt: SortAccessedAccountsCell, SortAccessedAccountsCellOpt
 - SortAccessedStorageCell: SortAccessedStorageCell
-- SortAccessedStorageCellOpt: SortAccessedStorageCellOpt
-- SortAccount: SortAccount
+- SortAccessedStorageCellOpt: SortAccessedStorageCell, SortAccessedStorageCellOpt
+- SortAccount: SortAccount, SortInt
 - SortAccountCell: SortAccountCell
 - SortAccountCellFragment: SortAccountCellFragment
-- SortAccountCellMap: SortAccountCellMap
-- SortAccountCode: SortAccountCode
+- SortAccountCellMap: SortAccountCell, SortAccountCellMap
+- SortAccountCode: SortAccountCode, SortBytes
 - SortAccounts: SortAccounts
 - SortAccountsCell: SortAccountsCell
 - SortAccountsCellFragment: SortAccountsCellFragment
-- SortAccountsCellOpt: SortAccountsCellOpt
+- SortAccountsCellOpt: SortAccountsCell, SortAccountsCellOpt
 - SortAcctIDCell: SortAcctIDCell
-- SortAcctIDCellOpt: SortAcctIDCellOpt
+- SortAcctIDCellOpt: SortAcctIDCell, SortAcctIDCellOpt
 - SortActiveAccountsCell: SortActiveAccountsCell
-- SortActiveAccountsCellOpt: SortActiveAccountsCellOpt
-- SortBExp: SortBExp
+- SortActiveAccountsCellOpt: SortActiveAccountsCell, SortActiveAccountsCellOpt
+- SortBExp: SortBExp, SortBool
 - SortBalanceCell: SortBalanceCell
-- SortBalanceCellOpt: SortBalanceCellOpt
+- SortBalanceCellOpt: SortBalanceCell, SortBalanceCellOpt
 - SortBaseFeeCell: SortBaseFeeCell
-- SortBaseFeeCellOpt: SortBaseFeeCellOpt
-- SortBinStackOp: SortBinStackOp
+- SortBaseFeeCellOpt: SortBaseFeeCell, SortBaseFeeCellOpt
+- SortBinStackOp: SortBinStackOp, SortLogOp
 - SortBlockCell: SortBlockCell
 - SortBlockCellFragment: SortBlockCellFragment
-- SortBlockCellOpt: SortBlockCellOpt
+- SortBlockCellOpt: SortBlockCell, SortBlockCellOpt
 - SortBlockNonceCell: SortBlockNonceCell
-- SortBlockNonceCellOpt: SortBlockNonceCellOpt
+- SortBlockNonceCellOpt: SortBlockNonceCell, SortBlockNonceCellOpt
 - SortBlockhashesCell: SortBlockhashesCell
-- SortBlockhashesCellOpt: SortBlockhashesCellOpt
+- SortBlockhashesCellOpt: SortBlockhashesCell, SortBlockhashesCellOpt
 - SortBool: SortBool
 - SortBytes: SortBytes
 - SortCallDataCell: SortCallDataCell
-- SortCallDataCellOpt: SortCallDataCellOpt
+- SortCallDataCellOpt: SortCallDataCell, SortCallDataCellOpt
 - SortCallDepthCell: SortCallDepthCell
-- SortCallDepthCellOpt: SortCallDepthCellOpt
+- SortCallDepthCellOpt: SortCallDepthCell, SortCallDepthCellOpt
 - SortCallGasCell: SortCallGasCell
-- SortCallGasCellOpt: SortCallGasCellOpt
+- SortCallGasCellOpt: SortCallGasCell, SortCallGasCellOpt
 - SortCallOp: SortCallOp
 - SortCallSixOp: SortCallSixOp
 - SortCallStackCell: SortCallStackCell
-- SortCallStackCellOpt: SortCallStackCellOpt
+- SortCallStackCellOpt: SortCallStackCell, SortCallStackCellOpt
 - SortCallStateCell: SortCallStateCell
 - SortCallStateCellFragment: SortCallStateCellFragment
-- SortCallStateCellOpt: SortCallStateCellOpt
+- SortCallStateCellOpt: SortCallStateCell, SortCallStateCellOpt
 - SortCallValueCell: SortCallValueCell
-- SortCallValueCellOpt: SortCallValueCellOpt
+- SortCallValueCellOpt: SortCallValueCell, SortCallValueCellOpt
 - SortCallerCell: SortCallerCell
-- SortCallerCellOpt: SortCallerCellOpt
+- SortCallerCellOpt: SortCallerCell, SortCallerCellOpt
 - SortChainIDCell: SortChainIDCell
-- SortChainIDCellOpt: SortChainIDCellOpt
+- SortChainIDCellOpt: SortChainIDCell, SortChainIDCellOpt
 - SortCodeCell: SortCodeCell
-- SortCodeCellOpt: SortCodeCellOpt
+- SortCodeCellOpt: SortCodeCell, SortCodeCellOpt
 - SortCoinbaseCell: SortCoinbaseCell
-- SortCoinbaseCellOpt: SortCoinbaseCellOpt
-- SortContract: SortContract
-- SortContractAccess: SortContract, SortContractAccess
+- SortCoinbaseCellOpt: SortCoinbaseCell, SortCoinbaseCellOpt
+- SortContract: SortContract, SortFoundryContract
+- SortContractAccess: SortContract, SortContractAccess, SortFoundryContract
 - SortDataCell: SortDataCell
-- SortDataCellOpt: SortDataCellOpt
+- SortDataCellOpt: SortDataCell, SortDataCellOpt
 - SortDifficultyCell: SortDifficultyCell
-- SortDifficultyCellOpt: SortDifficultyCellOpt
+- SortDifficultyCellOpt: SortDifficultyCell, SortDifficultyCellOpt
 - SortDynamicFeeTx: SortDynamicFeeTx
 - SortEndPCCell: SortEndPCCell
-- SortEndPCCellOpt: SortEndPCCellOpt
-- SortEndStatusCode: SortEndStatusCode
+- SortEndPCCellOpt: SortEndPCCell, SortEndPCCellOpt
+- SortEndStatusCode: SortEndStatusCode, SortExceptionalStatusCode
 - SortEndianness: SortEndianness
 - SortEthereumCell: SortEthereumCell
 - SortEthereumCellFragment: SortEthereumCellFragment
-- SortEthereumCellOpt: SortEthereumCellOpt
+- SortEthereumCellOpt: SortEthereumCell, SortEthereumCellOpt
 - SortEthereumCommand: SortEthereumCommand
 - SortEthereumSimulation: SortEthereumSimulation
-- SortEventArg: SortEventArg
+- SortEventArg: SortEventArg, SortTypedArg
 - SortEventArgs: SortEventArgs
 - SortEvmCell: SortEvmCell
 - SortEvmCellFragment: SortEvmCellFragment
-- SortEvmCellOpt: SortEvmCellOpt
+- SortEvmCellOpt: SortEvmCell, SortEvmCellOpt
 - SortExceptionalStatusCode: SortExceptionalStatusCode
 - SortExitCodeCell: SortExitCodeCell
-- SortExitCodeCellOpt: SortExitCodeCellOpt
-- SortExp: SortExp
+- SortExitCodeCellOpt: SortExitCodeCell, SortExitCodeCellOpt
+- SortExp: SortExp, SortInt
 - SortExtraDataCell: SortExtraDataCell
-- SortExtraDataCellOpt: SortExtraDataCellOpt
-- SortField: SortField
+- SortExtraDataCellOpt: SortExtraDataCell, SortExtraDataCellOpt
+- SortField: SortField, SortFoundryField
 - SortFloat: SortFloat
 - SortFoundryContract: SortFoundryContract
 - SortFoundryField: SortFoundryField
 - SortG1Point: SortG1Point
 - SortG2Point: SortG2Point
 - SortGasCell: SortGasCell
-- SortGasCellOpt: SortGasCellOpt
+- SortGasCellOpt: SortGasCell, SortGasCellOpt
 - SortGasLimitCell: SortGasLimitCell
-- SortGasLimitCellOpt: SortGasLimitCellOpt
+- SortGasLimitCellOpt: SortGasLimitCell, SortGasLimitCellOpt
 - SortGasPriceCell: SortGasPriceCell
-- SortGasPriceCellOpt: SortGasPriceCellOpt
+- SortGasPriceCellOpt: SortGasPriceCell, SortGasPriceCellOpt
 - SortGasUsedCell: SortGasUsedCell
-- SortGasUsedCellOpt: SortGasUsedCellOpt
+- SortGasUsedCellOpt: SortGasUsedCell, SortGasUsedCellOpt
 - SortGeneratedCounterCell: SortGeneratedCounterCell
-- SortGeneratedCounterCellOpt: SortGeneratedCounterCellOpt
+- SortGeneratedCounterCellOpt: SortGeneratedCounterCell, SortGeneratedCounterCellOpt
 - SortGeneratedTopCell: SortGeneratedTopCell
 - SortGeneratedTopCellFragment: SortGeneratedTopCellFragment
 - SortIdCell: SortIdCell
-- SortIdCellOpt: SortIdCellOpt
+- SortIdCellOpt: SortIdCell, SortIdCellOpt
 - SortInt: SortInt
 - SortIntList: SortIntList
 - SortInterimStatesCell: SortInterimStatesCell
-- SortInterimStatesCellOpt: SortInterimStatesCellOpt
+- SortInterimStatesCellOpt: SortInterimStatesCell, SortInterimStatesCellOpt
 - SortInternalOp: SortInternalOp
 - SortInvalidOp: SortInvalidOp
-- SortJSON: SortJSON
-- SortJSONKey: SortJSONKey
+- SortJSON: SortBool, SortBytes, SortFloat, SortInt, SortJSON, SortString
+- SortJSONKey: SortInt, SortJSONKey, SortString
 - SortJSONs: SortJSONs
 - SortJumpDestsCell: SortJumpDestsCell
-- SortJumpDestsCellOpt: SortJumpDestsCellOpt
+- SortJumpDestsCellOpt: SortJumpDestsCell, SortJumpDestsCellOpt
 - SortK: SortK
 - SortKCell: SortKCell
-- SortKCellOpt: SortKCellOpt
+- SortKCellOpt: SortKCell, SortKCellOpt
 - SortKConfigVar: SortKConfigVar
-- SortKItem: SortAccessedAccountsCellOpt, SortAccessedStorageCellOpt, SortAccount, SortAccountCellMap, SortAccountCode, SortAccountsCellOpt, SortAcctIDCellOpt, SortActiveAccountsCellOpt, SortBExp, SortBalanceCellOpt, SortBaseFeeCellOpt, SortBinStackOp, SortBlockCellOpt, SortBlockNonceCellOpt, SortBlockhashesCellOpt, SortCallDataCellOpt, SortCallDepthCellOpt, SortCallGasCellOpt, SortCallStackCellOpt, SortCallStateCellOpt, SortCallValueCellOpt, SortCallerCellOpt, SortChainIDCellOpt, SortCodeCellOpt, SortCoinbaseCellOpt, SortContract, SortContractAccess, SortDataCellOpt, SortDifficultyCellOpt, SortEndPCCellOpt, SortEndStatusCode, SortEthereumCellOpt, SortEventArg, SortEvmCellOpt, SortExitCodeCellOpt, SortExp, SortExtraDataCellOpt, SortField, SortGasCellOpt, SortGasLimitCellOpt, SortGasPriceCellOpt, SortGasUsedCellOpt, SortGeneratedCounterCellOpt, SortIdCellOpt, SortInterimStatesCellOpt, SortJSON, SortJSONKey, SortJumpDestsCellOpt, SortKCellOpt, SortKItem, SortKResult, SortKevmCellOpt, SortLocalMemCellOpt, SortLogCellOpt, SortLogsBloomCellOpt, SortMemoryUsedCellOpt, SortMessageCellMap, SortMessagesCellOpt, SortMixHashCellOpt, SortModeCellOpt, SortMsgIDCellOpt, SortNetworkCellOpt, SortNonceCellOpt, SortNullStackOp, SortNumberCellOpt, SortOmmerBlockHeadersCellOpt, SortOmmersHashCellOpt, SortOpCode, SortOrigStorageCellOpt, SortOriginCellOpt, SortOutputCellOpt, SortPcCellOpt, SortPreviousHashCellOpt, SortProgramCellOpt, SortReceiptsRootCellOpt, SortRefundCellOpt, SortScheduleCellOpt, SortSelfDestructCellOpt, SortSigRCellOpt, SortSigSCellOpt, SortSigVCellOpt, SortStateRootCellOpt, SortStaticCellOpt, SortStatusCode, SortStatusCodeCellOpt, SortStorageCellOpt, SortStringBuffer, SortSubstateCellOpt, SortTimestampCellOpt, SortToCellOpt, SortTouchedAccountsCellOpt, SortTransactionsRootCellOpt, SortTxAccessCellOpt, SortTxChainIDCellOpt, SortTxData, SortTxGasLimitCellOpt, SortTxGasPriceCellOpt, SortTxMaxFeeCellOpt, SortTxNonceCellOpt, SortTxOrderCellOpt, SortTxPendingCellOpt, SortTxPriorityFeeCellOpt, SortTxTypeCellOpt, SortValueCellOpt, SortWordStackCellOpt
-- SortKResult: SortKResult
+- SortKItem: SortAccessListTx, SortAccessedAccountsCell, SortAccessedAccountsCellOpt, SortAccessedStorageCell, SortAccessedStorageCellOpt, SortAccount, SortAccountCell, SortAccountCellFragment, SortAccountCellMap, SortAccountCode, SortAccounts, SortAccountsCell, SortAccountsCellFragment, SortAccountsCellOpt, SortAcctIDCell, SortAcctIDCellOpt, SortActiveAccountsCell, SortActiveAccountsCellOpt, SortBExp, SortBalanceCell, SortBalanceCellOpt, SortBaseFeeCell, SortBaseFeeCellOpt, SortBinStackOp, SortBlockCell, SortBlockCellFragment, SortBlockCellOpt, SortBlockNonceCell, SortBlockNonceCellOpt, SortBlockhashesCell, SortBlockhashesCellOpt, SortBool, SortBytes, SortCallDataCell, SortCallDataCellOpt, SortCallDepthCell, SortCallDepthCellOpt, SortCallGasCell, SortCallGasCellOpt, SortCallOp, SortCallSixOp, SortCallStackCell, SortCallStackCellOpt, SortCallStateCell, SortCallStateCellFragment, SortCallStateCellOpt, SortCallValueCell, SortCallValueCellOpt, SortCallerCell, SortCallerCellOpt, SortChainIDCell, SortChainIDCellOpt, SortCodeCell, SortCodeCellOpt, SortCoinbaseCell, SortCoinbaseCellOpt, SortContract, SortContractAccess, SortDataCell, SortDataCellOpt, SortDifficultyCell, SortDifficultyCellOpt, SortDynamicFeeTx, SortEndPCCell, SortEndPCCellOpt, SortEndStatusCode, SortEndianness, SortEthereumCell, SortEthereumCellFragment, SortEthereumCellOpt, SortEthereumCommand, SortEthereumSimulation, SortEventArg, SortEventArgs, SortEvmCell, SortEvmCellFragment, SortEvmCellOpt, SortExceptionalStatusCode, SortExitCodeCell, SortExitCodeCellOpt, SortExp, SortExtraDataCell, SortExtraDataCellOpt, SortField, SortFloat, SortFoundryContract, SortFoundryField, SortG1Point, SortG2Point, SortGasCell, SortGasCellOpt, SortGasLimitCell, SortGasLimitCellOpt, SortGasPriceCell, SortGasPriceCellOpt, SortGasUsedCell, SortGasUsedCellOpt, SortGeneratedCounterCell, SortGeneratedCounterCellOpt, SortGeneratedTopCell, SortGeneratedTopCellFragment, SortIdCell, SortIdCellOpt, SortInt, SortIntList, SortInterimStatesCell, SortInterimStatesCellOpt, SortInternalOp, SortInvalidOp, SortJSON, SortJSONKey, SortJSONs, SortJumpDestsCell, SortJumpDestsCellOpt, SortKCell, SortKCellOpt, SortKItem, SortKResult, SortKevmCell, SortKevmCellFragment, SortKevmCellOpt, SortLegacyTx, SortLengthPrefix, SortLengthPrefixType, SortList, SortLocalMemCell, SortLocalMemCellOpt, SortLogCell, SortLogCellOpt, SortLogOp, SortLogsBloomCell, SortLogsBloomCellOpt, SortMap, SortMemoryUsedCell, SortMemoryUsedCellOpt, SortMerkleTree, SortMessageCell, SortMessageCellFragment, SortMessageCellMap, SortMessagesCell, SortMessagesCellFragment, SortMessagesCellOpt, SortMixHashCell, SortMixHashCellOpt, SortMode, SortModeCell, SortModeCellOpt, SortMsgIDCell, SortMsgIDCellOpt, SortNetworkCell, SortNetworkCellFragment, SortNetworkCellOpt, SortNonceCell, SortNonceCellOpt, SortNullStackOp, SortNumberCell, SortNumberCellOpt, SortOmmerBlockHeadersCell, SortOmmerBlockHeadersCellOpt, SortOmmersHashCell, SortOmmersHashCellOpt, SortOpCode, SortOrigStorageCell, SortOrigStorageCellOpt, SortOriginCell, SortOriginCellOpt, SortOutputCell, SortOutputCellOpt, SortPcCell, SortPcCellOpt, SortPrecompiledOp, SortPreviousHashCell, SortPreviousHashCellOpt, SortProgramCell, SortProgramCellOpt, SortPushOp, SortQuadStackOp, SortReceiptsRootCell, SortReceiptsRootCellOpt, SortRefundCell, SortRefundCellOpt, SortSchedule, SortScheduleCell, SortScheduleCellOpt, SortScheduleConst, SortScheduleFlag, SortSelfDestructCell, SortSelfDestructCellOpt, SortSet, SortSigRCell, SortSigRCellOpt, SortSigSCell, SortSigSCellOpt, SortSigVCell, SortSigVCellOpt, SortSignedness, SortStackOp, SortStateRootCell, SortStateRootCellOpt, SortStaticCell, SortStaticCellOpt, SortStatusCode, SortStatusCodeCell, SortStatusCodeCellOpt, SortStorageCell, SortStorageCellOpt, SortString, SortStringBuffer, SortSubstateCell, SortSubstateCellFragment, SortSubstateCellOpt, SortSubstateLogEntry, SortTernStackOp, SortTimestampCell, SortTimestampCellOpt, SortToCell, SortToCellOpt, SortTouchedAccountsCell, SortTouchedAccountsCellOpt, SortTransactionsRootCell, SortTransactionsRootCellOpt, SortTxAccessCell, SortTxAccessCellOpt, SortTxChainIDCell, SortTxChainIDCellOpt, SortTxData, SortTxGasLimitCell, SortTxGasLimitCellOpt, SortTxGasPriceCell, SortTxGasPriceCellOpt, SortTxMaxFeeCell, SortTxMaxFeeCellOpt, SortTxNonceCell, SortTxNonceCellOpt, SortTxOrderCell, SortTxOrderCellOpt, SortTxPendingCell, SortTxPendingCellOpt, SortTxPriorityFeeCell, SortTxPriorityFeeCellOpt, SortTxType, SortTxTypeCell, SortTxTypeCellOpt, SortTypedArg, SortTypedArgs, SortUnStackOp, SortValueCell, SortValueCellOpt, SortWordStack, SortWordStackCell, SortWordStackCellOpt
+- SortKResult: SortBool, SortInt, SortKResult
 - SortKevmCell: SortKevmCell
 - SortKevmCellFragment: SortKevmCellFragment
-- SortKevmCellOpt: SortKevmCellOpt
+- SortKevmCellOpt: SortKevmCell, SortKevmCellOpt
 - SortLegacyTx: SortLegacyTx
 - SortLengthPrefix: SortLengthPrefix
 - SortLengthPrefixType: SortLengthPrefixType
 - SortList: SortList
 - SortLocalMemCell: SortLocalMemCell
-- SortLocalMemCellOpt: SortLocalMemCellOpt
+- SortLocalMemCellOpt: SortLocalMemCell, SortLocalMemCellOpt
 - SortLogCell: SortLogCell
-- SortLogCellOpt: SortLogCellOpt
+- SortLogCellOpt: SortLogCell, SortLogCellOpt
 - SortLogOp: SortLogOp
 - SortLogsBloomCell: SortLogsBloomCell
-- SortLogsBloomCellOpt: SortLogsBloomCellOpt
+- SortLogsBloomCellOpt: SortLogsBloomCell, SortLogsBloomCellOpt
 - SortMap: SortMap
 - SortMemoryUsedCell: SortMemoryUsedCell
-- SortMemoryUsedCellOpt: SortMemoryUsedCellOpt
+- SortMemoryUsedCellOpt: SortMemoryUsedCell, SortMemoryUsedCellOpt
 - SortMerkleTree: SortMerkleTree
 - SortMessageCell: SortMessageCell
 - SortMessageCellFragment: SortMessageCellFragment
-- SortMessageCellMap: SortMessageCellMap
+- SortMessageCellMap: SortMessageCell, SortMessageCellMap
 - SortMessagesCell: SortMessagesCell
 - SortMessagesCellFragment: SortMessagesCellFragment
-- SortMessagesCellOpt: SortMessagesCellOpt
+- SortMessagesCellOpt: SortMessagesCell, SortMessagesCellOpt
 - SortMixHashCell: SortMixHashCell
-- SortMixHashCellOpt: SortMixHashCellOpt
+- SortMixHashCellOpt: SortMixHashCell, SortMixHashCellOpt
 - SortMode: SortMode
 - SortModeCell: SortModeCell
-- SortModeCellOpt: SortModeCellOpt
+- SortModeCellOpt: SortModeCell, SortModeCellOpt
 - SortMsgIDCell: SortMsgIDCell
-- SortMsgIDCellOpt: SortMsgIDCellOpt
+- SortMsgIDCellOpt: SortMsgIDCell, SortMsgIDCellOpt
 - SortNetworkCell: SortNetworkCell
 - SortNetworkCellFragment: SortNetworkCellFragment
-- SortNetworkCellOpt: SortNetworkCellOpt
+- SortNetworkCellOpt: SortNetworkCell, SortNetworkCellOpt
 - SortNonceCell: SortNonceCell
-- SortNonceCellOpt: SortNonceCellOpt
-- SortNullStackOp: SortNullStackOp
+- SortNonceCellOpt: SortNonceCell, SortNonceCellOpt
+- SortNullStackOp: SortNullStackOp, SortPrecompiledOp
 - SortNumberCell: SortNumberCell
-- SortNumberCellOpt: SortNumberCellOpt
+- SortNumberCellOpt: SortNumberCell, SortNumberCellOpt
 - SortOmmerBlockHeadersCell: SortOmmerBlockHeadersCell
-- SortOmmerBlockHeadersCellOpt: SortOmmerBlockHeadersCellOpt
+- SortOmmerBlockHeadersCellOpt: SortOmmerBlockHeadersCell, SortOmmerBlockHeadersCellOpt
 - SortOmmersHashCell: SortOmmersHashCell
-- SortOmmersHashCellOpt: SortOmmersHashCellOpt
-- SortOpCode: SortBinStackOp, SortNullStackOp, SortOpCode
+- SortOmmersHashCellOpt: SortOmmersHashCell, SortOmmersHashCellOpt
+- SortOpCode: SortBinStackOp, SortCallOp, SortCallSixOp, SortInternalOp, SortInvalidOp, SortLogOp, SortNullStackOp, SortOpCode, SortPrecompiledOp, SortPushOp, SortQuadStackOp, SortStackOp, SortTernStackOp, SortUnStackOp
 - SortOrigStorageCell: SortOrigStorageCell
-- SortOrigStorageCellOpt: SortOrigStorageCellOpt
+- SortOrigStorageCellOpt: SortOrigStorageCell, SortOrigStorageCellOpt
 - SortOriginCell: SortOriginCell
-- SortOriginCellOpt: SortOriginCellOpt
+- SortOriginCellOpt: SortOriginCell, SortOriginCellOpt
 - SortOutputCell: SortOutputCell
-- SortOutputCellOpt: SortOutputCellOpt
+- SortOutputCellOpt: SortOutputCell, SortOutputCellOpt
 - SortPcCell: SortPcCell
-- SortPcCellOpt: SortPcCellOpt
+- SortPcCellOpt: SortPcCell, SortPcCellOpt
 - SortPrecompiledOp: SortPrecompiledOp
 - SortPreviousHashCell: SortPreviousHashCell
-- SortPreviousHashCellOpt: SortPreviousHashCellOpt
+- SortPreviousHashCellOpt: SortPreviousHashCell, SortPreviousHashCellOpt
 - SortProgramCell: SortProgramCell
-- SortProgramCellOpt: SortProgramCellOpt
+- SortProgramCellOpt: SortProgramCell, SortProgramCellOpt
 - SortPushOp: SortPushOp
 - SortQuadStackOp: SortQuadStackOp
 - SortReceiptsRootCell: SortReceiptsRootCell
-- SortReceiptsRootCellOpt: SortReceiptsRootCellOpt
+- SortReceiptsRootCellOpt: SortReceiptsRootCell, SortReceiptsRootCellOpt
 - SortRefundCell: SortRefundCell
-- SortRefundCellOpt: SortRefundCellOpt
+- SortRefundCellOpt: SortRefundCell, SortRefundCellOpt
 - SortSchedule: SortSchedule
 - SortScheduleCell: SortScheduleCell
-- SortScheduleCellOpt: SortScheduleCellOpt
+- SortScheduleCellOpt: SortScheduleCell, SortScheduleCellOpt
 - SortScheduleConst: SortScheduleConst
 - SortScheduleFlag: SortScheduleFlag
 - SortSelfDestructCell: SortSelfDestructCell
-- SortSelfDestructCellOpt: SortSelfDestructCellOpt
+- SortSelfDestructCellOpt: SortSelfDestructCell, SortSelfDestructCellOpt
 - SortSet: SortSet
 - SortSigRCell: SortSigRCell
-- SortSigRCellOpt: SortSigRCellOpt
+- SortSigRCellOpt: SortSigRCell, SortSigRCellOpt
 - SortSigSCell: SortSigSCell
-- SortSigSCellOpt: SortSigSCellOpt
+- SortSigSCellOpt: SortSigSCell, SortSigSCellOpt
 - SortSigVCell: SortSigVCell
-- SortSigVCellOpt: SortSigVCellOpt
+- SortSigVCellOpt: SortSigVCell, SortSigVCellOpt
 - SortSignedness: SortSignedness
 - SortStackOp: SortStackOp
 - SortStateRootCell: SortStateRootCell
-- SortStateRootCellOpt: SortStateRootCellOpt
+- SortStateRootCellOpt: SortStateRootCell, SortStateRootCellOpt
 - SortStaticCell: SortStaticCell
-- SortStaticCellOpt: SortStaticCellOpt
-- SortStatusCode: SortEndStatusCode, SortStatusCode
+- SortStaticCellOpt: SortStaticCell, SortStaticCellOpt
+- SortStatusCode: SortEndStatusCode, SortExceptionalStatusCode, SortStatusCode
 - SortStatusCodeCell: SortStatusCodeCell
-- SortStatusCodeCellOpt: SortStatusCodeCellOpt
+- SortStatusCodeCellOpt: SortStatusCodeCell, SortStatusCodeCellOpt
 - SortStorageCell: SortStorageCell
-- SortStorageCellOpt: SortStorageCellOpt
+- SortStorageCellOpt: SortStorageCell, SortStorageCellOpt
 - SortString: SortString
-- SortStringBuffer: SortStringBuffer
+- SortStringBuffer: SortString, SortStringBuffer
 - SortSubstateCell: SortSubstateCell
 - SortSubstateCellFragment: SortSubstateCellFragment
-- SortSubstateCellOpt: SortSubstateCellOpt
+- SortSubstateCellOpt: SortSubstateCell, SortSubstateCellOpt
 - SortSubstateLogEntry: SortSubstateLogEntry
 - SortTernStackOp: SortTernStackOp
 - SortTimestampCell: SortTimestampCell
-- SortTimestampCellOpt: SortTimestampCellOpt
+- SortTimestampCellOpt: SortTimestampCell, SortTimestampCellOpt
 - SortToCell: SortToCell
-- SortToCellOpt: SortToCellOpt
+- SortToCellOpt: SortToCell, SortToCellOpt
 - SortTouchedAccountsCell: SortTouchedAccountsCell
-- SortTouchedAccountsCellOpt: SortTouchedAccountsCellOpt
+- SortTouchedAccountsCellOpt: SortTouchedAccountsCell, SortTouchedAccountsCellOpt
 - SortTransactionsRootCell: SortTransactionsRootCell
-- SortTransactionsRootCellOpt: SortTransactionsRootCellOpt
+- SortTransactionsRootCellOpt: SortTransactionsRootCell, SortTransactionsRootCellOpt
 - SortTxAccessCell: SortTxAccessCell
-- SortTxAccessCellOpt: SortTxAccessCellOpt
+- SortTxAccessCellOpt: SortTxAccessCell, SortTxAccessCellOpt
 - SortTxChainIDCell: SortTxChainIDCell
-- SortTxChainIDCellOpt: SortTxChainIDCellOpt
-- SortTxData: SortTxData
+- SortTxChainIDCellOpt: SortTxChainIDCell, SortTxChainIDCellOpt
+- SortTxData: SortAccessListTx, SortDynamicFeeTx, SortLegacyTx, SortTxData
 - SortTxGasLimitCell: SortTxGasLimitCell
-- SortTxGasLimitCellOpt: SortTxGasLimitCellOpt
+- SortTxGasLimitCellOpt: SortTxGasLimitCell, SortTxGasLimitCellOpt
 - SortTxGasPriceCell: SortTxGasPriceCell
-- SortTxGasPriceCellOpt: SortTxGasPriceCellOpt
+- SortTxGasPriceCellOpt: SortTxGasPriceCell, SortTxGasPriceCellOpt
 - SortTxMaxFeeCell: SortTxMaxFeeCell
-- SortTxMaxFeeCellOpt: SortTxMaxFeeCellOpt
+- SortTxMaxFeeCellOpt: SortTxMaxFeeCell, SortTxMaxFeeCellOpt
 - SortTxNonceCell: SortTxNonceCell
-- SortTxNonceCellOpt: SortTxNonceCellOpt
+- SortTxNonceCellOpt: SortTxNonceCell, SortTxNonceCellOpt
 - SortTxOrderCell: SortTxOrderCell
-- SortTxOrderCellOpt: SortTxOrderCellOpt
+- SortTxOrderCellOpt: SortTxOrderCell, SortTxOrderCellOpt
 - SortTxPendingCell: SortTxPendingCell
-- SortTxPendingCellOpt: SortTxPendingCellOpt
+- SortTxPendingCellOpt: SortTxPendingCell, SortTxPendingCellOpt
 - SortTxPriorityFeeCell: SortTxPriorityFeeCell
-- SortTxPriorityFeeCellOpt: SortTxPriorityFeeCellOpt
+- SortTxPriorityFeeCellOpt: SortTxPriorityFeeCell, SortTxPriorityFeeCellOpt
 - SortTxType: SortTxType
 - SortTxTypeCell: SortTxTypeCell
-- SortTxTypeCellOpt: SortTxTypeCellOpt
+- SortTxTypeCellOpt: SortTxTypeCell, SortTxTypeCellOpt
 - SortTypedArg: SortTypedArg
 - SortTypedArgs: SortTypedArgs
 - SortUnStackOp: SortUnStackOp
 - SortValueCell: SortValueCell
-- SortValueCellOpt: SortValueCellOpt
+- SortValueCellOpt: SortValueCell, SortValueCellOpt
 - SortWordStack: SortWordStack
 - SortWordStackCell: SortWordStackCell
-- SortWordStackCellOpt: SortWordStackCellOpt
+- SortWordStackCellOpt: SortWordStackCell, SortWordStackCellOpt
