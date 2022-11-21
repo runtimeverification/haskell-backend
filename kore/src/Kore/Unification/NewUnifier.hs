@@ -1103,10 +1103,10 @@ makeAcSubstitution ::
     Map (SomeVariable RewritingVariableName) AcTerm
 makeAcSubstitution sort vars basis =
     Map.fromDistinctAscList
-      [ (ui, acTerm)
-      | (i, ui) <- zip [0..] (Set.toAscList vars)
-      , let !acTerm = makeAcSubstitutionTerm sort basis i
-      ]
+        [ (ui, acTerm)
+        | (i, ui) <- zip [0 ..] (Set.toAscList vars)
+        , let !acTerm = makeAcSubstitutionTerm sort basis i
+        ]
 
 makeAcSubstitutionTerm ::
     Sort ->
