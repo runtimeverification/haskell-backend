@@ -1153,8 +1153,7 @@ Just verifiedModule = Map.lookup testModuleName verifiedModules
 testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build verifiedModule
 
-testConditionSimplifier ::
-    MonadSimplify simplifier => ConditionSimplifier simplifier
+testConditionSimplifier :: ConditionSimplifier Simplifier
 testConditionSimplifier =
     Simplifier.Condition.create SubstitutionSimplifier.substitutionSimplifier
 

@@ -140,7 +140,7 @@ simplify sideCondition original =
         | Right predicate <- Predicate.makePredicate term =
             NormalForm.toOrPattern (termLikeSort term) <$> worker predicate
         | otherwise =
-            simplifyTerm sideCondition term
+            liftSimplifier $ simplifyTerm sideCondition term
 
     repr = SideCondition.toRepresentation sideCondition
 
@@ -164,13 +164,17 @@ simplify sideCondition original =
                 BottomF bottomF -> normalizeBottom =<< traverse worker bottomF
                 TopF topF -> normalizeTop =<< traverse worker topF
                 NotF notF -> simplifyNot sideCondition =<< traverse worker notF
-                ImpliesF impliesF -> simplifyImplies sideCondition =<< traverse worker impliesF
-                IffF iffF -> simplifyIff sideCondition =<< traverse worker iffF
+                ImpliesF impliesF ->
+                    liftSimplifier . simplifyImplies sideCondition
+                        =<< traverse worker impliesF
+                IffF iffF ->
+                    liftSimplifier . simplifyIff sideCondition
+                        =<< traverse worker iffF
                 CeilF ceilF ->
                     -- TODO(Ana): don't simplify children first
                     simplifyCeil sideCondition =<< traverse simplifyTerm' ceilF
                 FloorF floorF@(Floor _ _ child) ->
-                    simplifyFloor (termLikeSort child) sideCondition
+                    liftSimplifier . simplifyFloor (termLikeSort child) sideCondition
                         =<< traverse simplifyTerm' floorF
                 ExistsF existsF ->
                     traverse worker (Exists.refreshExists avoid existsF)
@@ -414,11 +418,9 @@ normalizeNotAnd Not{notChild = predicates} =
  the information content of that branch.
 -}
 simplifyImplies ::
-    Monad simplifier =>
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Implies () NormalForm ->
-    simplifier NormalForm
+    Simplifier NormalForm
 simplifyImplies sideCondition Implies{impliesFirst, impliesSecond} = do
     negative <- mkNotSimplified impliesFirst
     positive <- mkAndSimplified impliesFirst impliesSecond
@@ -437,10 +439,9 @@ simplifyImplies sideCondition Implies{impliesFirst, impliesSecond} = do
  @
 -}
 simplifyIff ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Iff () NormalForm ->
-    simplifier NormalForm
+    Simplifier NormalForm
 simplifyIff sideCondition Iff{iffFirst, iffSecond} = do
     orFirst <- do
         andFirst <- mkNotSimplified iffFirst
@@ -470,11 +471,10 @@ simplifyCeil sideCondition input =
  @
 -}
 simplifyFloor ::
-    MonadSimplify simplifier =>
     Sort ->
     SideCondition RewritingVariableName ->
     Floor () (OrPattern RewritingVariableName) ->
-    simplifier NormalForm
+    Simplifier NormalForm
 simplifyFloor termSort sideCondition floor' = do
     notTerm <- mkNotSimplifiedTerm floorChild
     ceilNotTerm <- mkCeilSimplified notTerm

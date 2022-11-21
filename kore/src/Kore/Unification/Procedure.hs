@@ -33,6 +33,7 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Simplify.Simplify (
     Simplifier,
+    liftSimplifier,
     makeEvaluateTermCeil,
     simplifyCondition,
  )
@@ -67,7 +68,7 @@ unificationProcedure sideCondition p1 p2
         TopBottom.guardAgainstBottom condition
         marker "unify" "MakeCeil"
         let term = unifiedTermAnd p1 p2 condition
-        orCeil <- makeEvaluateTermCeil sideCondition term
+        orCeil <- liftSimplifier $ makeEvaluateTermCeil sideCondition term
         marker "unify" "CombineCeil"
         ceil' <- Monad.Unify.scatter orCeil
         lowerLogicT . simplifyCondition sideCondition $

@@ -200,19 +200,19 @@ simplifyEvaluated sort sideCondition first second
         let isFunctionConditional Conditional{term} = isFunctionPattern term
         case (firstPatterns, secondPatterns) of
             ([firstP], [secondP]) ->
-                makeEvaluate firstP secondP sideCondition
+                liftSimplifier $ makeEvaluate firstP secondP sideCondition
             ([firstP], _)
                 | isFunctionConditional firstP ->
-                    makeEvaluateFunctionalOr sideCondition firstP secondPatterns
+                    liftSimplifier $ makeEvaluateFunctionalOr sideCondition firstP secondPatterns
             (_, [secondP])
                 | isFunctionConditional secondP ->
-                    makeEvaluateFunctionalOr sideCondition secondP firstPatterns
+                    liftSimplifier $ makeEvaluateFunctionalOr sideCondition secondP firstPatterns
             _
                 | OrPattern.isPredicate first && OrPattern.isPredicate second ->
-                    Iff.simplifyEvaluated sort sideCondition first second
+                    liftSimplifier $ Iff.simplifyEvaluated sort sideCondition first second
                         & fmap (MultiOr.map Pattern.withoutTerm)
                 | otherwise ->
-                    makeEvaluate
+                    liftSimplifier $ makeEvaluate
                         (OrPattern.toPattern sort first)
                         (OrPattern.toPattern sort second)
                         sideCondition
@@ -221,12 +221,10 @@ simplifyEvaluated sort sideCondition first second
     secondPatterns = toList second
 
 makeEvaluateFunctionalOr ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
     [Pattern RewritingVariableName] ->
-    simplifier (OrCondition RewritingVariableName)
+    Simplifier (OrCondition RewritingVariableName)
 makeEvaluateFunctionalOr sideCondition first seconds = do
     let sort = Pattern.patternSort first
     firstCeil <- makeEvaluateCeil sort sideCondition first
@@ -243,7 +241,7 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
                 (MultiAnd.make (firstNotCeil : secondNotCeils))
     firstEqualsSeconds <-
         mapM
-            (makeEvaluateEqualsIfSecondNotBottom sort first)
+            (liftSimplifier . makeEvaluateEqualsIfSecondNotBottom sort first)
             (zip seconds secondCeils)
     oneIsNotBottomEquals <-
         liftSimplifier $
@@ -266,11 +264,10 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate ::
-    MonadSimplify simplifier =>
     Pattern RewritingVariableName ->
     Pattern RewritingVariableName ->
     SideCondition RewritingVariableName ->
-    simplifier (OrCondition RewritingVariableName)
+    Simplifier (OrCondition RewritingVariableName)
 makeEvaluate
     first@Conditional{term = Top_ _}
     second@Conditional{term = Top_ _}
@@ -325,10 +322,9 @@ makeEvaluate
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
 makeEvaluateTermsAssumesNoBottom ::
-    MonadSimplify simplifier =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
     result <-
         runMaybeT $
@@ -349,11 +345,9 @@ makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
 makeEvaluateTermsAssumesNoBottomMaybe ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    MaybeT simplifier (OrPattern RewritingVariableName)
+    MaybeT Simplifier (OrPattern RewritingVariableName)
 makeEvaluateTermsAssumesNoBottomMaybe first second = do
     result <- termEquals first second
     let sort = termLikeSort first
@@ -378,7 +372,7 @@ makeEvaluateTermsToPredicate ::
 makeEvaluateTermsToPredicate first second sideCondition
     | first == second = return OrCondition.top
     | otherwise = do
-        result <- runMaybeT $ termEquals first second
+        result <- liftSimplifier . runMaybeT $ termEquals first second
         case result of
             Nothing ->
                 return $
@@ -386,8 +380,8 @@ makeEvaluateTermsToPredicate first second sideCondition
                         Predicate.markSimplified $
                             makeEqualsPredicate first second
             Just predicatedOr -> do
-                firstCeilOr <- makeEvaluateTermCeil sideCondition first
-                secondCeilOr <- makeEvaluateTermCeil sideCondition second
+                firstCeilOr <- liftSimplifier $ makeEvaluateTermCeil sideCondition first
+                secondCeilOr <- liftSimplifier $ makeEvaluateTermCeil sideCondition second
                 firstCeilNegation <- Not.simplifyEvaluatedPredicate firstCeilOr
                 secondCeilNegation <- Not.simplifyEvaluatedPredicate secondCeilOr
                 ceilNegationAnd <-
@@ -406,11 +400,10 @@ The comment for 'Kore.Simplify.And.simplify' describes all
 the special cases handled by this.
 -}
 termEquals ::
-    MonadSimplify simplifier =>
     HasCallStack =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    MaybeT simplifier (OrCondition RewritingVariableName)
+    MaybeT Simplifier (OrCondition RewritingVariableName)
 termEquals first second = MaybeT $ do
     maybeResults <- Logic.observeAllT $ runMaybeT $ termEqualsAnd first second
     case sequence maybeResults of
@@ -421,12 +414,10 @@ termEquals first second = MaybeT $ do
                     MultiOr.make (map Condition.eraseConditionalTerm results)
 
 termEqualsAnd ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     HasCallStack =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    MaybeT (LogicT simplifier) (Pattern RewritingVariableName)
+    MaybeT (LogicT Simplifier) (Pattern RewritingVariableName)
 termEqualsAnd p1 p2 =
     MaybeT $ run $ maybeTermEqualsWorker p1 p2
   where

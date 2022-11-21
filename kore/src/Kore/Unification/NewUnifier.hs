@@ -176,6 +176,7 @@ import Kore.Simplify.Simplify (
     askInjSimplifier,
     askMetadataTools,
     askOverloadSimplifier,
+    liftSimplifier,
     simplifyTerm,
  )
 import Kore.Substitute
@@ -773,7 +774,7 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
         cache <- get
         case HashMap.lookup term cache of
             Nothing -> do
-                simplified <- simplifyTerm sideCondition term
+                simplified <- liftSimplifier $ simplifyTerm sideCondition term
                 let cache' = HashMap.insert term simplified cache
                 put cache'
                 return simplified

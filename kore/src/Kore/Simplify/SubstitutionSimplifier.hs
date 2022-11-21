@@ -86,6 +86,7 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Simplify.Simplify (
     MonadSimplify,
     Simplifier,
+    liftSimplifier,
     simplifyPattern,
     simplifyPatternScatter,
  )
@@ -368,7 +369,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
             simplifier
             (TermLike RewritingVariableName)
     simplifyTermLike termLike = do
-        orPattern <- simplifyPattern sideCondition (Pattern.fromTermLike termLike)
+        orPattern <- liftSimplifier $ simplifyPattern sideCondition (Pattern.fromTermLike termLike)
         case OrPattern.toPatterns orPattern of
             [] -> do
                 addCondition Condition.bottom

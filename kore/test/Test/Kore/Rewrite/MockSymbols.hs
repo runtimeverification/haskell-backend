@@ -105,7 +105,7 @@ import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     ConditionSimplifier,
     Env (..),
-    MonadSimplify,
+    Simplifier,
  )
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
 import Kore.Simplify.TermLike qualified as TermLike
@@ -2286,8 +2286,7 @@ metadataTools =
 axiomEquations :: Map AxiomIdentifier [Equation RewritingVariableName]
 axiomEquations = Map.empty
 
-predicateSimplifier ::
-    MonadSimplify simplifier => ConditionSimplifier simplifier
+predicateSimplifier :: ConditionSimplifier Simplifier
 predicateSimplifier =
     Simplifier.Condition.create SubstitutionSimplifier.substitutionSimplifier
 

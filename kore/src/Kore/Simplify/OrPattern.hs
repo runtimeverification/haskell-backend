@@ -54,7 +54,7 @@ import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator (
     filterMultiOr,
  )
 import Kore.Simplify.Simplify (
-    MonadSimplify,
+    Simplifier,
     liftSimplifier,
     simplifyCondition,
  )
@@ -68,11 +68,9 @@ import Logic qualified
 import Prelude.Kore
 
 simplifyConditionsWithSmt ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     OrPattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 simplifyConditionsWithSmt sideCondition unsimplified =
     OrPattern.observeAllT $ do
         unsimplified1 <- Logic.scatter unsimplified
@@ -80,7 +78,7 @@ simplifyConditionsWithSmt sideCondition unsimplified =
   where
     simplifyAndPrune ::
         Pattern RewritingVariableName ->
-        LogicT simplifier (Pattern RewritingVariableName)
+        LogicT Simplifier (Pattern RewritingVariableName)
     simplifyAndPrune (Pattern.splitTerm -> (term, condition)) = do
         simplified <- simplifyCondition sideCondition condition
         filtered <-
@@ -91,9 +89,9 @@ simplifyConditionsWithSmt sideCondition unsimplified =
         return (term `Pattern.withCondition` filtered)
 
     resultWithFilter ::
-        (Condition RewritingVariableName -> simplifier (Maybe Bool)) ->
-        simplifier (Condition RewritingVariableName) ->
-        simplifier (Condition RewritingVariableName)
+        (Condition RewritingVariableName -> Simplifier (Maybe Bool)) ->
+        Simplifier (Condition RewritingVariableName) ->
+        Simplifier (Condition RewritingVariableName)
     resultWithFilter conditionFilter previousResult = do
         previous <- previousResult
         if isTop previous || isBottom previous
@@ -114,7 +112,7 @@ simplifyConditionsWithSmt sideCondition unsimplified =
                                 }
                     Just False -> return Condition.bottom
                     Nothing -> return previous
-    pruneCondition :: Condition RewritingVariableName -> simplifier (Maybe Bool)
+    pruneCondition :: Condition RewritingVariableName -> Simplifier (Maybe Bool)
     pruneCondition condition = do
         implicationNegation <-
             makeAndPredicate
@@ -133,7 +131,7 @@ simplifyConditionsWithSmt sideCondition unsimplified =
                     then return (Just True)
                     else return Nothing
 
-    rejectCondition :: Condition RewritingVariableName -> simplifier (Maybe Bool)
+    rejectCondition :: Condition RewritingVariableName -> Simplifier (Maybe Bool)
     rejectCondition condition = do
         simplifiedConditions <-
             simplifyCondition SideCondition.top (addPredicate condition)

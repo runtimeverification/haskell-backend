@@ -46,6 +46,7 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Simplify.Simplify (
     MonadSimplify,
     Simplifier,
+    liftSimplifier,
     simplifyCondition,
     simplifyTerm,
  )
@@ -139,7 +140,7 @@ makeEvaluate sideCondition =
                         simplifiedCondition
                         sideCondition
             simplifiedTerm <-
-                simplifyTerm termSideCondition term'
+                liftSimplifier (simplifyTerm termSideCondition term')
                     >>= Logic.scatter
             let simplifiedPattern =
                     Conditional.andCondition simplifiedTerm simplifiedCondition
