@@ -31,7 +31,7 @@ import Kore.Simplify.Simplify (
     MonadSimplify,
     liftSimplifier,
  )
-import Logic qualified as LogicT
+import Logic qualified as SeqT
 import Prelude.Kore
 
 simplifyEvaluatedMultiPredicate ::
@@ -42,7 +42,7 @@ simplifyEvaluatedMultiPredicate ::
     simplifier (OrCondition RewritingVariableName)
 simplifyEvaluatedMultiPredicate sideCondition predicates =
     liftSimplifier . MultiOr.observeAllT $ do
-        element <- MultiAnd.traverse LogicT.scatter predicates
+        element <- MultiAnd.traverse SeqT.scatter predicates
         andConditions element
   where
     andConditions predicates' =

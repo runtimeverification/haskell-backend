@@ -63,7 +63,7 @@ import Kore.Substitute (
     Substitute (..),
  )
 import Logic (
-    LogicT,
+    SeqT,
  )
 import Logic qualified
 import Prelude.Kore
@@ -141,7 +141,7 @@ simplifyClaimRule claimPattern = fmap MultiAnd.make $
   where
     filterWithSolver ::
         Pattern RewritingVariableName ->
-        LogicT Simplifier (Pattern RewritingVariableName)
+        SeqT Simplifier (Pattern RewritingVariableName)
     filterWithSolver conditional = do
         l <- lift $ SMT.Evaluator.evalConditional (ErrorDecidePredicateUnknown $srcLoc Nothing) conditional Nothing
         case l of

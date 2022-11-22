@@ -162,6 +162,7 @@ common library
   build-depends: json-rpc >=1.0
   build-depends: lens >=4.17
   build-depends: logict >=0.7
+  build-depends: logict-sequence >=0.2
   build-depends: matrix >=0.3.6.1
   build-depends: megaparsec >=7.0.4
   build-depends: mmorph >=1.1

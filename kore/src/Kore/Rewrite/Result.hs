@@ -128,13 +128,13 @@ gatherResults ::
 gatherResults = foldMap result . results
 
 -- | Distribute the 'Result' over a transition rule.
-transitionResult :: Result rule config -> TransitionT rule m config
+transitionResult :: Monad m => Result rule config -> TransitionT rule m config
 transitionResult Result{appliedRule, result} = do
     Transition.addRule appliedRule
     asum (return <$> toList result)
 
 -- | Distribute the 'Results' over a transition rule.
-transitionResults :: Results rule config -> TransitionT rule m config
+transitionResults :: Monad m => Results rule config -> TransitionT rule m config
 transitionResults Results{results, remainders} =
     transitionResultsResults <|> transitionResultsRemainders
   where

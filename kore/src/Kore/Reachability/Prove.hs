@@ -566,6 +566,7 @@ checkStuckConfiguration rule prim proofState = do
 -- | Modify a 'TransitionRule' to track the depth of a proof.
 trackProofDepth ::
     forall m rule goal.
+    Monad m =>
     TransitionRule m rule (ClaimState goal) ->
     TransitionRule m rule (ProofDepth, ClaimState goal)
 trackProofDepth rule prim (!proofDepth, proofState) = do

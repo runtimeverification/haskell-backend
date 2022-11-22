@@ -82,7 +82,7 @@ makeEvaluateIn ::
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
     Pattern RewritingVariableName ->
-    Logic.LogicT Simplifier (OrCondition RewritingVariableName)
+    Logic.SeqT Simplifier (OrCondition RewritingVariableName)
 makeEvaluateIn sideCondition first second
     | Pattern.isTop first =
         NormalForm.toOrCondition <$> Ceil.makeEvaluate sideCondition second

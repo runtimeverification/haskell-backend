@@ -219,8 +219,8 @@ instance MonadLog log => MonadLog (ExceptT error log)
 
 instance MonadLog log => MonadLog (IdentityT log)
 
-instance MonadLog log => MonadLog (LogicT log) where
-    logWhile entry = mapLogicT (logWhile entry)
+instance MonadLog log => MonadLog (SeqT log) where
+    logWhile entry = mapSeqT (logWhile entry)
     {-# INLINE logWhile #-}
 
 instance MonadLog log => MonadLog (MaybeT log)

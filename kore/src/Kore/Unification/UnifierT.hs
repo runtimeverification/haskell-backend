@@ -44,7 +44,7 @@ newtype UnifierT (m :: Type -> Type) a = UnifierT
     { getUnifierT ::
         ReaderT
             (ConditionSimplifier (UnifierT m))
-            (LogicT m)
+            (SeqT m)
             a
     }
     deriving newtype (Functor, Applicative, Monad, Alternative, MonadPlus)
@@ -56,10 +56,11 @@ instance MonadTrans UnifierT where
 
 deriving newtype instance MonadLog m => MonadLog (UnifierT m)
 
-deriving newtype instance Monad m => MonadLogic (UnifierT m)
+instance Monad m => MonadLogic (UnifierT m) where
+    msplit (UnifierT m) = UnifierT (fmap (fmap (fmap UnifierT)) (msplit m))
 
 deriving newtype instance
-    MonadReader (ConditionSimplifier (UnifierT m)) (UnifierT m)
+    Monad m => MonadReader (ConditionSimplifier (UnifierT m)) (UnifierT m)
 
 deriving newtype instance MonadSMT m => MonadSMT (UnifierT m)
 
@@ -67,7 +68,7 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
     localAxiomEquations locally (UnifierT readerT) =
         UnifierT $
             mapReaderT
-                ( mapLogicT
+                ( mapSeqT
                     (localAxiomEquations locally)
                 )
                 readerT
@@ -93,7 +94,7 @@ evalEnvUnifierT ::
     MonadSimplify m =>
     NotSimplifier (UnifierT m) ->
     UnifierT m a ->
-    LogicT m a
+    SeqT m a
 evalEnvUnifierT notSimplifier =
     flip runReaderT conditionSimplifier
         . getUnifierT

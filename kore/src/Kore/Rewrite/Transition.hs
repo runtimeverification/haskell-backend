@@ -30,6 +30,7 @@ import Control.Monad.Catch (
 import Control.Monad.Except (
     MonadError (..),
  )
+import Control.Monad.Morph qualified as Morph
 import Control.Monad.Reader
 import Control.Monad.Trans.Accum (
     AccumT (..),
@@ -37,6 +38,7 @@ import Control.Monad.Trans.Accum (
     runAccumT,
  )
 import Control.Monad.Trans.Accum qualified as Accum
+import Data.Coerce (coerce)
 import Data.Functor.Identity (
     Identity,
     runIdentity,
@@ -52,7 +54,7 @@ import Log (
     MonadLog (..),
  )
 import Logic (
-    LogicT,
+    SeqT,
  )
 import Logic qualified
 import Prelude.Kore
@@ -72,7 +74,7 @@ contain all the rules recorded before the branch, but each child keeps a
 separate record of applied rules after the branch.
 -}
 newtype TransitionT rule m a = TransitionT
-    { getTransitionT :: AccumT (Seq rule) (LogicT m) a
+    { getTransitionT :: AccumT (Seq rule) (SeqT m) a
     }
     deriving stock (Typeable)
     deriving newtype (Applicative, Functor, Monad)
@@ -108,7 +110,18 @@ instance MonadReader e m => MonadReader e (TransitionT rule m) where
 
 deriving newtype instance MonadSMT m => MonadSMT (TransitionT rule m)
 
-deriving newtype instance MonadSimplify m => MonadSimplify (TransitionT rule m)
+--deriving newtype instance MonadSimplify m => MonadSimplify (TransitionT rule m)
+instance MonadSimplify m => MonadSimplify (TransitionT rule m) where
+    liftSimplifier = coerce (liftSimplifier @(AccumT (Seq rule) (SeqT m)))
+    {-# INLINE liftSimplifier #-}
+
+    -- Should we just use unsafeCoerce here? hoist isn't free, but unsafeCoerce
+    -- is only okay if people don't use weird illegitimate monads.
+    simplifyCondition s c = Morph.hoist TransitionT (simplifyCondition @(AccumT (Seq rule) (SeqT m)) s c)
+    {-# INLINE simplifyCondition #-}
+
+    localAxiomEquations = coerce (localAxiomEquations @(AccumT (Seq rule) (SeqT m)))
+    {-# INLINE localAxiomEquations #-}
 
 instance MonadThrow m => MonadThrow (TransitionT rule m) where
     throwM = lift . throwM
@@ -138,9 +151,9 @@ mapTransitionT ::
     TransitionT rule m a ->
     TransitionT rule n a
 mapTransitionT mapping =
-    TransitionT . mapAccumT (Logic.mapLogicT mapping) . getTransitionT
+    TransitionT . mapAccumT (Logic.mapSeqT mapping) . getTransitionT
 
-scatter :: [(a, Seq rule)] -> TransitionT rule m a
+scatter :: Monad m => [(a, Seq rule)] -> TransitionT rule m a
 scatter edges = do
     (a, rules) <- TransitionT (lift (Logic.scatter edges))
     addRules rules
@@ -148,14 +161,14 @@ scatter edges = do
 
 -- | Record the application of a sequence of rules.
 addRules ::
-    Foldable f =>
+    (Foldable f, Monad m) =>
     -- | Sequence of applied rules
     f rule ->
     TransitionT rule m ()
 addRules = TransitionT . Accum.add . Seq.fromList . toList
 
 -- | Record the application of a single rule.
-addRule :: rule -> TransitionT rule m ()
+addRule :: Monad m => rule -> TransitionT rule m ()
 addRule = TransitionT . Accum.add . Seq.singleton
 
 mapRules ::
@@ -169,7 +182,7 @@ mapRules f trans = do
     scatter results'
 
 -- | Get the record of applied rules during an action.
-record :: TransitionT rule m a -> TransitionT rule m (a, Seq rule)
+record :: Monad m => TransitionT rule m a -> TransitionT rule m (a, Seq rule)
 record action = TransitionT $
     AccumT $ \w -> do
         (a, rules) <- runAccumT (getTransitionT action) mempty
@@ -215,11 +228,11 @@ ifte ::
 ifte p t e = TransitionT $
     AccumT $ \w0 ->
         Logic.ifte
-            (toLogicT w0 p)
+            (toSeqT w0 p)
             ( \(a, w1) -> do
-                (b, w2) <- toLogicT w1 (t a)
+                (b, w2) <- toSeqT w1 (t a)
                 pure (b, w1 <> w2)
             )
-            (toLogicT w0 e)
+            (toSeqT w0 e)
   where
-    toLogicT w = flip runAccumT w . getTransitionT
+    toSeqT w = flip runAccumT w . getTransitionT

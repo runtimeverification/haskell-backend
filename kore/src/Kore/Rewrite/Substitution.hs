@@ -49,7 +49,7 @@ normalize ::
     TopBottom term =>
     SideCondition RewritingVariableName ->
     Conditional RewritingVariableName term ->
-    LogicT Simplifier (Conditional RewritingVariableName term)
+    SeqT Simplifier (Conditional RewritingVariableName term)
 normalize sideCondition conditional@Conditional{substitution} = do
     results <- simplifySubstitution sideCondition substitution & lift
     scatter (MultiOr.map applyTermPredicate results)
@@ -70,7 +70,7 @@ mergePredicatesAndSubstitutions ::
     SideCondition RewritingVariableName ->
     [Predicate RewritingVariableName] ->
     [Substitution RewritingVariableName] ->
-    LogicT Simplifier (Condition RewritingVariableName)
+    SeqT Simplifier (Condition RewritingVariableName)
 mergePredicatesAndSubstitutions topCondition predicates substitutions =
     simplifyCondition
         topCondition

@@ -346,6 +346,7 @@ instance Claim MockClaim where
         derivePar (AppliedAxiom . Rule . unMockClaim) (concat axiomGroups)
 
 derivePar ::
+    Monad m =>
     (MockClaim -> MockAppliedRule) ->
     [MockRule] ->
     MockClaim ->

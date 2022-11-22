@@ -68,7 +68,7 @@ import Kore.Rewrite.Substitution (
 import Kore.Simplify.Simplify
 import Kore.TopBottom
 import Logic (
-    LogicT,
+    SeqT,
  )
 import Logic qualified
 import Numeric.Natural (
@@ -148,7 +148,7 @@ matchWith sideCondition e1 e2 = do
             return (MultiOr.make results)
         mergeAndEvaluateBranches ::
             MatchResult RewritingVariableName ->
-            LogicT Simplifier (Condition RewritingVariableName)
+            SeqT Simplifier (Condition RewritingVariableName)
         mergeAndEvaluateBranches (predicate, substitution) = do
             merged <-
                 mergePredicatesAndSubstitutions

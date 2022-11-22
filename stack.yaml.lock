@@ -132,6 +132,20 @@ packages:
       sha256: 462ec4fb4f1348f5365c93a83b4475d12a5db9997c838761989b587bcaef1ad2
   original:
     hackage: ghc-events-0.13.0
+- completed:
+    hackage: sequence-0.9.9.0@sha256:e48c5debef383f0979da793eb84d86c149988b204ab7242758bb5c054e3ae8e0,2015
+    pantry-tree:
+      size: 1348
+      sha256: 9bd799de883daff8b6267c959f95c300e486a10a6e36fb8be1f913c24841c6b5
+  original:
+    hackage: sequence-0.9.9.0
+- completed:
+    hackage: logict-sequence-0.2@sha256:f6c4ee083990af5b8c3925fda840b543ad98dad5e66785498b82273763776719,3653
+    pantry-tree:
+      size: 1105
+      sha256: 5090bf8de471055660a4b9b7820cbd9f5f0d116782a93b212c3ecd10fb6441c8
+  original:
+    hackage: logict-sequence-0.2
 snapshots:
 - completed:
     size: 586296

@@ -117,8 +117,8 @@ import Log (
  )
 import Log qualified
 import Logic (
-    LogicT,
-    mapLogicT,
+    SeqT,
+    mapSeqT,
  )
 import Prelude.Kore hiding (
     assert,
@@ -362,8 +362,8 @@ instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
 
 instance MonadSMT m => MonadSMT (IdentityT m)
 
-instance MonadSMT m => MonadSMT (LogicT m) where
-    withSolver = mapLogicT withSolver
+instance MonadSMT m => MonadSMT (SeqT m) where
+    withSolver = mapSeqT withSolver
     {-# INLINE withSolver #-}
 
 instance MonadSMT m => MonadSMT (Reader.ReaderT r m)

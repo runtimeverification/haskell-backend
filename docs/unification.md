@@ -24,7 +24,7 @@ queue and process them. Each pair can result in one of five actions:
 
 Obviously because of *bind* and *constraint* operations, we must maintain a map
 binding variable names to terms and a list of constraints. The unifier also
-operates within a LogicT monad transformer in order to handle the *fork* case.
+operates within a SeqT monad transformer in order to handle the *fork* case.
 
 After the priority queue is empty, we still need to solve the AC subproblems.
 This process is described in the Map section below. We solve each subproblem

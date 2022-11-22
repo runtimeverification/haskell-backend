@@ -226,6 +226,7 @@ transitionRule rewriteGroups = transitionRuleWorker
 
 deriveResults ::
     Comonad w =>
+    Monad m =>
     Result.Results (w (RulePattern variable)) a ->
     TransitionT (RewriteRule variable) m (ProgramState a)
 deriveResults Result.Results{results, remainders} =

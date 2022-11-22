@@ -69,7 +69,7 @@ import Kore.Simplify.Simplify
 import Kore.Syntax.Definition (
     SentenceSymbol (..),
  )
-import Kore.Unification.Unify as Unify
+import Kore.Unification.Unify as Unify hiding (ViewT (..))
 import Logic qualified
 import Prelude.Kore
 
@@ -286,10 +286,10 @@ unifyIfThenElse unifyChildren unifyData =
             let branchCondition = takeCondition True condition
             Pattern.andCondition solution branchCondition
                 & simplifyCondition SideCondition.top
-                & Logic.lowerLogicT
+                & Logic.lowerSeqT
         takeBranch2 IfThenElse{condition, branch2} = do
             solution <- unifyChildren branch2 second'
             let branchCondition = takeCondition False condition
             Pattern.andCondition solution branchCondition
                 & simplifyCondition SideCondition.top
-                & Logic.lowerLogicT
+                & Logic.lowerSeqT

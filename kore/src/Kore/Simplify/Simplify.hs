@@ -116,7 +116,7 @@ import Kore.Syntax (Id)
 import Kore.Syntax.Application
 import Kore.Unparser
 import Log
-import Logic
+import Logic hiding (ViewT (..))
 import Prelude.Kore
 import Pretty qualified
 import Prof (
@@ -175,7 +175,7 @@ runSimplifier env (Simplifier simplifier) =
 runSimplifierBranch ::
     Env ->
     -- | simplifier computation
-    LogicT Simplifier a ->
+    SeqT Simplifier a ->
     SMT [a]
 runSimplifierBranch env = runSimplifier env . observeAllT
 
@@ -194,7 +194,7 @@ class (MonadIO m, MonadLog m, MonadSMT m) => MonadSimplify m where
     simplifyCondition ::
         SideCondition RewritingVariableName ->
         Conditional RewritingVariableName term ->
-        LogicT m (Conditional RewritingVariableName term)
+        SeqT m (Conditional RewritingVariableName term)
     default simplifyCondition ::
         ( MonadTrans trans
         , MonadSimplify n
@@ -202,7 +202,7 @@ class (MonadIO m, MonadLog m, MonadSMT m) => MonadSimplify m where
         ) =>
         SideCondition RewritingVariableName ->
         Conditional RewritingVariableName term ->
-        LogicT m (Conditional RewritingVariableName term)
+        SeqT m (Conditional RewritingVariableName term)
     simplifyCondition sideCondition conditional = do
         results <-
             lift . lift $
@@ -321,9 +321,9 @@ instance MonadSimplify m => MonadSimplify (ExceptT e m)
 
 instance MonadSimplify m => MonadSimplify (IdentityT m)
 
-instance MonadSimplify m => MonadSimplify (LogicT m) where
+instance MonadSimplify m => MonadSimplify (SeqT m) where
     localAxiomEquations locally =
-        mapLogicT (localAxiomEquations locally)
+        mapSeqT (localAxiomEquations locally)
     {-# INLINE localAxiomEquations #-}
 
 instance MonadSimplify m => MonadSimplify (MaybeT m)
@@ -358,10 +358,10 @@ newtype ConditionSimplifier monad = ConditionSimplifier
         forall term.
         SideCondition RewritingVariableName ->
         Conditional RewritingVariableName term ->
-        LogicT monad (Conditional RewritingVariableName term)
+        SeqT monad (Conditional RewritingVariableName term)
     }
 
-emptyConditionSimplifier :: ConditionSimplifier monad
+emptyConditionSimplifier :: Monad monad => ConditionSimplifier monad
 emptyConditionSimplifier =
     ConditionSimplifier (\_ predicate -> return predicate)
 

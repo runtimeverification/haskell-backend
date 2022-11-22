@@ -120,7 +120,7 @@ makeEvaluate ::
     NotSimplifier (UnifierT simplifier) ->
     SideCondition RewritingVariableName ->
     MultiAnd (Pattern RewritingVariableName) ->
-    LogicT simplifier (Pattern RewritingVariableName)
+    SeqT simplifier (Pattern RewritingVariableName)
 makeEvaluate resultSort notSimplifier sideCondition patterns
     | isBottom patterns = empty
     | Pattern.isTop patterns = return (Pattern.topOf resultSort)
@@ -134,7 +134,7 @@ makeEvaluateNonBool ::
     NotSimplifier (UnifierT simplifier) ->
     SideCondition RewritingVariableName ->
     MultiAnd (Pattern RewritingVariableName) ->
-    LogicT simplifier (Pattern RewritingVariableName)
+    SeqT simplifier (Pattern RewritingVariableName)
 makeEvaluateNonBool resultSort notSimplifier sideCondition patterns = do
     let unify pattern1 term2 = do
             let (term1, condition1) = Pattern.splitTerm pattern1
@@ -151,7 +151,7 @@ makeEvaluateNonBool resultSort notSimplifier sideCondition patterns = do
     normalized <-
         from @_ @(Condition _) substitutions
             & Substitution.normalize sideCondition
-            & mapLogicT liftSimplifier
+            & mapSeqT liftSimplifier
     let substitution = Pattern.substitution normalized
         predicates :: MultiAnd (Predicate RewritingVariableName)
         predicates =
@@ -224,7 +224,7 @@ termAnd ::
     NotSimplifier (UnifierT simplifier) ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    LogicT simplifier (Pattern RewritingVariableName)
+    SeqT simplifier (Pattern RewritingVariableName)
 termAnd notSimplifier p1 p2 =
     Logic.scatter
         =<< (lift . runUnifierT notSimplifier) (termAndWorker p1 p2)

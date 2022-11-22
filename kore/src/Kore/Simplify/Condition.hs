@@ -63,7 +63,7 @@ import Kore.Substitute
 import Kore.Syntax.Exists qualified as Exists
 import Kore.Syntax.Variable (SomeVariableName)
 import Kore.TopBottom qualified as TopBottom
-import Logic
+import Logic hiding (ViewT (..))
 import Prelude.Kore
 
 -- | Create a 'ConditionSimplifier' using 'simplify'.
@@ -89,7 +89,7 @@ simplify ::
     SubstitutionSimplifier simplifier ->
     SideCondition RewritingVariableName ->
     Conditional RewritingVariableName any ->
-    LogicT simplifier (Conditional RewritingVariableName any)
+    SeqT simplifier (Conditional RewritingVariableName any)
 simplify SubstitutionSimplifier{simplifySubstitution} sideCondition original = do
     normOriginal <- normalize original
     (isFullySimplified, result) <- foldM simplifyingCondition (False, normOriginal) [1 .. limit]
@@ -102,7 +102,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition original = d
     simplifyingCondition ::
         (Bool, Conditional RewritingVariableName any) ->
         Int ->
-        LogicT simplifier (Bool, Conditional RewritingVariableName any)
+        SeqT simplifier (Bool, Conditional RewritingVariableName any)
     simplifyingCondition result@(True, _) _ = return result
     simplifyingCondition (_, input) _ = do
         output <- worker input
@@ -154,7 +154,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition original = d
     normalize ::
         forall any'.
         Conditional RewritingVariableName any' ->
-        LogicT simplifier (Conditional RewritingVariableName any')
+        SeqT simplifier (Conditional RewritingVariableName any')
     normalize conditional@Conditional{substitution} = do
         let conditional' = conditional{substitution = mempty}
         predicates' <-
@@ -172,7 +172,7 @@ simplifyPredicates ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     MultiAnd (Predicate RewritingVariableName) ->
-    LogicT simplifier (Condition RewritingVariableName)
+    SeqT simplifier (Condition RewritingVariableName)
 simplifyPredicates sideCondition original = do
     let predicates =
             SideCondition.simplifyConjunctionByAssumption original
@@ -219,7 +219,7 @@ simplifyPredicatesWithAssumptions ::
     MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     [Predicate RewritingVariableName] ->
-    LogicT
+    SeqT
         simplifier
         (MultiAnd (Predicate RewritingVariableName))
 simplifyPredicatesWithAssumptions _ [] = return MultiAnd.top
@@ -236,7 +236,7 @@ simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
         ) ->
         StateT
             (MultiAnd (Predicate RewritingVariableName))
-            (LogicT simplifier)
+            (SeqT simplifier)
             ()
     simplifyWithAssumptions (predicate, unsimplifiedSideCond) = do
         sideCondition' <- getSideCondition unsimplifiedSideCond

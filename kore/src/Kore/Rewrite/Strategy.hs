@@ -358,6 +358,7 @@ unfoldTransition transit (instrs, config) =
 
 -- | Transition rule for running a 'Strategy'.
 transitionRule ::
+    Monad m =>
     -- | Primitive strategy rule
     (prim -> config -> TransitionT rule m config) ->
     ([prim] -> config -> TransitionT rule m config)

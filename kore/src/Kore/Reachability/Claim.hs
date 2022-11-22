@@ -190,7 +190,7 @@ class Claim claim where
     checkImplication ::
         MonadSimplify m =>
         claim ->
-        LogicT m (CheckImplicationResult claim)
+        SeqT m (CheckImplicationResult claim)
 
     simplify ::
         MonadSimplify m =>
@@ -344,7 +344,7 @@ transitionRule stuckCheck claims axiomGroups = transitionRuleWorker
             pure claimState
     transitionRuleWorker CheckImplication claimState
         | Just claim <- retractRewritable claimState = do
-            result <- checkImplication claim & Logic.lowerLogicT
+            result <- checkImplication claim & Logic.lowerSeqT
             case result of
                 Implied _ -> pure Proven
                 NotImpliedStuck a ->
@@ -1003,6 +1003,7 @@ deriveSeq' lensRulePattern mkRule =
 
 deriveResults ::
     Step.UnifyingRuleVariable representation ~ RewritingVariableName =>
+    Monad simplifier =>
     Sort ->
     (Step.UnifiedRule representation -> AppliedRule claim) ->
     Step.Results representation ->

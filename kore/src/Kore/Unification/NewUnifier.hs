@@ -211,7 +211,7 @@ data Binding
     | Ac AcTerm
     deriving stock (Show, Eq)
 
-type NewUnifier a = LogicT (StateT (HashMap (TermLike RewritingVariableName) (OrPattern RewritingVariableName)) Simplifier) a
+type NewUnifier a = SeqT (StateT (HashMap (TermLike RewritingVariableName) (OrPattern RewritingVariableName)) Simplifier) a
 
 fromFree :: Binding -> Maybe (TermLike RewritingVariableName)
 fromFree (Free a) = Just a

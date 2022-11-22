@@ -186,12 +186,13 @@ distributeNot notOr@Not{notChild} =
   where
     worker child = notOr{notChild = child}
 
--- | Distribute 'MultiAnd' over 'MultiOr' and 'scatter' into 'LogicT'.
+-- | Distribute 'MultiAnd' over 'MultiOr' and 'scatter' into 'SeqT'.
 scatterAnd ::
     Ord child =>
     TopBottom child =>
+    Monad m =>
     MultiAnd (MultiOr child) ->
-    LogicT m (MultiAnd child)
+    SeqT m (MultiAnd child)
 scatterAnd = scatter . MultiAnd.distributeAnd
 
 -- | Conjoin and simplify a 'MultiAnd' of 'Pattern'.
@@ -200,13 +201,14 @@ mkMultiAndPattern ::
     Sort ->
     SideCondition RewritingVariableName ->
     MultiAnd (Pattern RewritingVariableName) ->
-    LogicT simplifier (Pattern RewritingVariableName)
+    SeqT simplifier (Pattern RewritingVariableName)
 mkMultiAndPattern resultSort = And.makeEvaluate resultSort notSimplifier
 
 -- | Conjoin and simplify a 'MultiAnd' of 'Condition'.
 mkMultiAndPredicate ::
+    Monad simplifier =>
     MultiAnd (Condition RewritingVariableName) ->
-    LogicT simplifier (Condition RewritingVariableName)
+    SeqT simplifier (Condition RewritingVariableName)
 mkMultiAndPredicate predicates =
     -- Using fold because the Monoid instance of Condition
     -- implements And semantics.

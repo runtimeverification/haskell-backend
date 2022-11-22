@@ -205,7 +205,7 @@ import Kore.Unparser (
  )
 import Log qualified
 import Logic (
-    LogicT,
+    SeqT,
     observeAllT,
  )
 import Logic qualified
@@ -478,6 +478,7 @@ rpcExec
         -- The rule label is carried around unmodified in the
         -- transition, and adjusted in `toTransitionResult`
         withRpcExecState ::
+            Monad m =>
             TransitionRule m r (ExecDepth, ProgramState (Pattern v)) ->
             TransitionRule m r (RpcExecState v)
         withRpcExecState transition =
@@ -533,6 +534,7 @@ rpcExec
 
 -- | Modify a 'TransitionRule' to track the depth of the execution graph.
 trackExecDepth ::
+    Monad monad =>
     TransitionRule monad rule (ProgramState p) ->
     TransitionRule monad rule (ExecDepth, ProgramState p)
 trackExecDepth transit prim (execDepth, execState) = do
@@ -951,7 +953,7 @@ initializeAndSimplify verifiedModule =
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize ::
-    (RewriteRule RewritingVariableName -> LogicT Simplifier (RewriteRule RewritingVariableName)) ->
+    (RewriteRule RewritingVariableName -> SeqT Simplifier (RewriteRule RewritingVariableName)) ->
     VerifiedModule StepperAttributes ->
     Simplifier Initialized
 initialize simplificationProcedure verifiedModule = do
@@ -963,7 +965,7 @@ initialize simplificationProcedure verifiedModule = do
   where
     initializeRule ::
         RewriteRule RewritingVariableName ->
-        LogicT Simplifier (RewriteRule RewritingVariableName)
+        SeqT Simplifier (RewriteRule RewritingVariableName)
     initializeRule rule = do
         simplRule <- simplificationProcedure rule
         when

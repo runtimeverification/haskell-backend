@@ -115,4 +115,4 @@ unificationMakeAnd notSimplifier =
     makeAnd termLike1 termLike2 sideCondition = do
         unified <- termUnification notSimplifier termLike1 termLike2
         Simplifier.simplifyCondition sideCondition unified
-            & Logic.lowerLogicT
+            & Logic.lowerSeqT

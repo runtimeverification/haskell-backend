@@ -419,7 +419,7 @@ merge
             Substitution.mapAssignedTerm Test.simplifiedTerm
 
         mergeSubstitutionsExcept =
-            Logic.lowerLogicT
+            Logic.lowerSeqT
                 . Simplifier.simplifyCondition SideCondition.top
                 . Condition.fromSubstitution
                 . mconcat
@@ -441,7 +441,7 @@ normalizeExcept predicated =
     fmap MultiOr.make $
         Test.testRunSimplifier mockEnv $
             Monad.Unify.runUnifierT Not.notSimplifier $
-                Logic.lowerLogicT $
+                Logic.lowerSeqT $
                     Simplifier.simplifyCondition SideCondition.top predicated
   where
     mockEnv = Mock.env{axiomEquations}

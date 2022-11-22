@@ -102,7 +102,7 @@ import Kore.Syntax (
  )
 import Kore.Syntax.Exists qualified as Exists
 import Kore.Syntax.Forall qualified as Forall
-import Logic
+import Logic hiding (ViewT (..))
 import Prelude.Kore
 
 simplify ::

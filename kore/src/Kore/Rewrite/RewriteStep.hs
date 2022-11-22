@@ -80,7 +80,7 @@ import Kore.Simplify.Simplify (
  )
 import Kore.Substitute
 import Logic (
-    LogicT,
+    SeqT,
  )
 import Logic qualified
 import Prelude.Kore
@@ -106,7 +106,7 @@ finalizeAppliedRule ::
     RulePattern RewritingVariableName ->
     -- | Conditions of applied rule
     OrCondition RewritingVariableName ->
-    LogicT Simplifier (OrPattern RewritingVariableName)
+    SeqT Simplifier (OrPattern RewritingVariableName)
 finalizeAppliedRule
     sideCondition
     renamedRule
@@ -144,7 +144,7 @@ constructConfiguration ::
     Condition RewritingVariableName ->
     -- | Final configuration
     Pattern RewritingVariableName ->
-    LogicT (LogicT Simplifier) (Pattern RewritingVariableName)
+    SeqT (SeqT Simplifier) (Pattern RewritingVariableName)
 constructConfiguration
     sideCondition
     appliedCondition
@@ -162,7 +162,7 @@ constructConfiguration
                 -- TODO (thomas.tuegel): It should not be necessary to simplify
                 -- after conjoining the conditions.
                 simplifyCondition sideCondition (appliedCondition <> partial)
-                & Logic.lowerLogicT
+                & Logic.lowerSeqT
         -- Apply the normalized substitution to the right-hand side of the
         -- axiom.
         let Conditional{substitution} = finalCondition
@@ -181,7 +181,7 @@ finalizeAppliedClaim ::
     ClaimPattern ->
     -- | Conditions of applied rule
     OrCondition RewritingVariableName ->
-    LogicT Simplifier (OrPattern RewritingVariableName)
+    SeqT Simplifier (OrPattern RewritingVariableName)
 finalizeAppliedClaim sideCondition renamedRule appliedConditions =
     MultiOr.observeAllT $
         finalizeAppliedRuleWorker =<< Logic.scatter appliedConditions
@@ -211,7 +211,7 @@ type UnifyingRuleWithRepresentation representation rule =
 type FinalizeApplied rule =
     rule ->
     OrCondition RewritingVariableName ->
-    LogicT Simplifier (OrPattern RewritingVariableName)
+    SeqT Simplifier (OrPattern RewritingVariableName)
 
 finalizeRule ::
     UnifyingRuleWithRepresentation representation rule =>

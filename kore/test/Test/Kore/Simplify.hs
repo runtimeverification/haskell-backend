@@ -67,7 +67,7 @@ import Kore.Simplify.Simplify (
  )
 import Kore.Simplify.Simplify qualified as Kore
 import Logic (
-    LogicT,
+    SeqT,
  )
 import Prelude.Kore
 import SMT (
@@ -86,7 +86,7 @@ testRunSimplifier env = Test.runNoSMT . Kore.runSimplifier env
 
 testRunSimplifierBranch ::
     Env ->
-    LogicT Simplifier a ->
+    SeqT Simplifier a ->
     IO [a]
 testRunSimplifierBranch env = Test.runNoSMT . Kore.runSimplifierBranch env
 

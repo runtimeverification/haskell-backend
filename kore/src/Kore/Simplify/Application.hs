@@ -40,8 +40,8 @@ import Kore.Rewrite.Substitution (
  )
 import Kore.Simplify.Simplify as Simplifier
 import Logic (
-    LogicT,
-    mapLogicT,
+    SeqT,
+    mapSeqT,
  )
 import Logic qualified
 import Prelude.Kore
@@ -133,10 +133,10 @@ makeExpandedApplication ::
     SideCondition RewritingVariableName ->
     Symbol ->
     [Pattern RewritingVariableName] ->
-    LogicT Simplifier (ExpandedApplication RewritingVariableName)
+    SeqT Simplifier (ExpandedApplication RewritingVariableName)
 makeExpandedApplication sideCondition symbol children = do
     merged <-
-        mapLogicT liftSimplifier $
+        mapSeqT liftSimplifier $
             mergePredicatesAndSubstitutions
                 sideCondition
                 (fmap Pattern.predicate children)

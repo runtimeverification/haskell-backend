@@ -35,7 +35,7 @@ import Kore.Simplify.Not qualified as Not (
  )
 import Kore.Simplify.Simplify
 import Logic (
-    LogicT,
+    SeqT,
  )
 import Logic qualified
 import Prelude.Kore
@@ -104,7 +104,7 @@ simplifyEvaluateHalfImplies ::
     SideCondition RewritingVariableName ->
     OrPattern RewritingVariableName ->
     Pattern RewritingVariableName ->
-    LogicT Simplifier (Pattern RewritingVariableName)
+    SeqT Simplifier (Pattern RewritingVariableName)
 simplifyEvaluateHalfImplies sort sideCondition first second
     | OrPattern.isTrue first = return second
     | OrPattern.isFalse first = return (Pattern.topOf sort)

@@ -106,7 +106,7 @@ import Kore.Unification.NewUnifier (
 import Kore.Unification.Procedure (
     runUnifier,
  )
-import Logic
+import Logic hiding (Seq)
 import Numeric.Natural
 import Prelude.Kore
 import System.Console.Haskeline (

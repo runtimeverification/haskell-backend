@@ -54,9 +54,9 @@ import Kore.Unparser (
     unparseAssoc',
  )
 import Logic (
-    Logic,
-    LogicT,
     MonadLogic,
+    Seq,
+    SeqT,
  )
 import Logic qualified
 import Prelude.Kore hiding (
@@ -250,11 +250,11 @@ gather :: (Ord a, TopBottom a, MonadLogic m) => m a -> m (MultiOr a)
 gather act = make <$> Logic.gather act
 {-# INLINE gather #-}
 
-observeAllT :: (Ord a, TopBottom a, Monad m) => LogicT m a -> m (MultiOr a)
+observeAllT :: (Ord a, TopBottom a, Monad m) => SeqT m a -> m (MultiOr a)
 observeAllT act = make <$> Logic.observeAllT act
 {-# INLINE observeAllT #-}
 
-observeAll :: (Ord a, TopBottom a) => Logic a -> MultiOr a
+observeAll :: (Ord a, TopBottom a) => Seq a -> MultiOr a
 observeAll = make . Logic.observeAll
 {-# INLINE observeAll #-}
 
@@ -267,7 +267,7 @@ map ::
 map f = make . fmap f . toList
 {-# INLINE map #-}
 
--- | Warning: 'traverse' should not be used with 'LogicT'.
+-- | Warning: 'traverse' should not be used with 'SeqT'.
 traverse ::
     Ord child2 =>
     TopBottom child2 =>

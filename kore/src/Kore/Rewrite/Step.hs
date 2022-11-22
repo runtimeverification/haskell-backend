@@ -93,7 +93,7 @@ import Kore.Variables.Target (
  )
 import Kore.Variables.Target qualified as Target
 import Logic (
-    LogicT,
+    SeqT,
  )
 import Logic qualified
 import Prelude.Kore
@@ -287,8 +287,8 @@ applyInitialConditions ::
     Condition RewritingVariableName ->
     -- | Unification conditions
     Condition RewritingVariableName ->
-    LogicT Simplifier (OrCondition RewritingVariableName)
--- TODO(virgil): This should take advantage of the LogicT and not return
+    SeqT Simplifier (OrCondition RewritingVariableName)
+-- TODO(virgil): This should take advantage of the SeqT and not return
 -- an OrCondition.
 applyInitialConditions sideCondition initial unification = do
     -- Combine the initial conditions and the unification conditions. The axiom
@@ -324,7 +324,7 @@ applyRemainder ::
     Pattern RewritingVariableName ->
     -- | Remainder
     Condition RewritingVariableName ->
-    LogicT Simplifier (Pattern RewritingVariableName)
+    SeqT Simplifier (Pattern RewritingVariableName)
 applyRemainder sideCondition initial remainder = do
     -- Simplify the remainder predicate under the initial conditions. We must
     -- ensure that functions in the remainder are evaluated using the top-level
