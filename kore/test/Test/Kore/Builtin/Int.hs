@@ -111,7 +111,7 @@ import Test.Tasty.HUnit.Ext
 genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)
 
-genIntegerPattern :: InternalVariable variable => Gen (TermLike variable)
+genIntegerPattern :: Gen (TermLike variable)
 genIntegerPattern = asInternal <$> genInteger
 
 genConcreteIntegerPattern :: Gen (TermLike Concrete)
@@ -432,7 +432,7 @@ intLiteral :: Integer -> TermLike RewritingVariableName
 intLiteral = asInternal
 
 -- | Specialize 'Int.asInternal' to the builtin sort 'intSort'.
-asInternal :: InternalVariable variable => Integer -> TermLike variable
+asInternal :: Integer -> TermLike variable
 asInternal = Int.asInternal intSort
 
 asKey :: Integer -> Key

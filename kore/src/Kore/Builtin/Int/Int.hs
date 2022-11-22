@@ -65,7 +65,6 @@ checked.
 See also: 'sort'
 -}
 asInternal ::
-    InternalVariable variable =>
     -- | resulting sort
     Sort ->
     -- | builtin value to render

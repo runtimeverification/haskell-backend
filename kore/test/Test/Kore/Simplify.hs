@@ -90,7 +90,7 @@ testRunSimplifierBranch ::
     IO [a]
 testRunSimplifierBranch env = Test.runNoSMT . Kore.runSimplifierBranch env
 
-simplifiedTerm :: TermLike variable -> TermLike variable
+simplifiedTerm :: Hashable variable => TermLike variable -> TermLike variable
 simplifiedTerm =
     Recursive.unfold (simplifiedWorker . Recursive.project)
   where
@@ -98,7 +98,7 @@ simplifiedTerm =
         TermLike.setAttributeSimplified Attribute.fullySimplified attrs
             :< patt
 
-simplifiedPredicate :: Predicate variable -> Predicate variable
+simplifiedPredicate :: Hashable variable => Predicate variable -> Predicate variable
 simplifiedPredicate =
     Recursive.unfold (simplifiedWorker . Recursive.project)
   where
