@@ -15,14 +15,15 @@ module Logic (
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Logic hiding (MonadLogic)
-import qualified Control.Monad.Logic as LC
+import Control.Monad.Logic qualified as LC
 import Control.Monad.Reader (ReaderT (..))
 import Control.Monad.Trans
 import Prelude
 
--- | A version of
--- @"Control.Monad.Logic".'Control.Monad.Logic.MonadLogic'@
--- augmented with an efficient 'gather' method.
+{- | A version of
+ @"Control.Monad.Logic".'Control.Monad.Logic.MonadLogic'@
+ augmented with an efficient 'gather' method.
+-}
 class LC.MonadLogic m => MonadLogic m where
     -- Gather all the results of a logic computation within
     -- a logic computation.
