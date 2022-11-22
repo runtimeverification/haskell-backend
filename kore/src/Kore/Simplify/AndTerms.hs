@@ -745,8 +745,9 @@ overloadedConstructorSortInjectionAndEquals termMerger unifyData =
                 ) -> do
                 boundPattern <- do
                     merged <- termMerger firstTerm' secondTerm'
-                    liftSimplifier $ Exists.makeEvaluate SideCondition.topTODO narrowingVars $
-                        merged `Pattern.andCondition` narrowingSubst
+                    liftSimplifier $
+                        Exists.makeEvaluate SideCondition.topTODO narrowingVars $
+                            merged `Pattern.andCondition` narrowingSubst
                 case OrPattern.toPatterns boundPattern of
                     [result] -> return result
                     [] ->
