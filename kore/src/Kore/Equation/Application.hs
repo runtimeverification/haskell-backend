@@ -297,7 +297,7 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
         Set.member someVariableName equationVariableNames
 
     equationVariableNames =
-        Set.map variableName (FreeVariables.toSet equationVariables)
+        Set.mapMonotonic variableName (FreeVariables.toSet equationVariables)
 
     errors =
         concatMap checkVariable (FreeVariables.toList equationVariables)

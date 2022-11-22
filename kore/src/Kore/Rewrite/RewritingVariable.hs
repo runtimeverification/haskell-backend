@@ -256,7 +256,7 @@ resetResultPattern initial config@Conditional{substitution} =
             . FreeVariables.toSet
             $ freeVariables filtered
     renaming =
-        Map.mapKeys (fmap RuleVariableName)
+        Map.mapKeysMonotonic (fmap RuleVariableName)
             . Map.map (TermLike.mkVar . mkUnifiedConfigVariable)
             $ refreshVariablesSet avoiding introduced
     renamed :: Pattern RewritingVariableName
