@@ -61,12 +61,12 @@
         ];
       };
 
-      defaultCompiler = "ghc924";
+      defaultCompiler = "ghc925";
 
       # Get flake outputs for different GHC versions
       flakesFor = pkgs: builtins.listToAttrs
         (
-          lib.lists.forEach [ defaultCompiler "ghc925" "ghc8107" ]
+          lib.lists.forEach [ defaultCompiler "ghc924" "ghc8107" ]
             (compiler: lib.attrsets.nameValuePair
               compiler
               ((boosterBackendFor compiler pkgs).flake { })
@@ -114,6 +114,7 @@
         {
           hs-backend-booster = packages."hs-backend-booster:exe:hs-backend-booster";
           rpc-client = packages."hs-backend-booster:exe:rpc-client";
+          parsetest = packages."hs-backend-booster:exe:parsetest";
         } // packages // collectOutputs "packages" flakes
       );
 
@@ -126,6 +127,7 @@
         {
           hs-backend-booster = apps."hs-backend-booster:exe:hs-backend-booster";
           rpc-client = apps."hs-backend-booster:exe:rpc-client";
+          parsetest = apps."hs-backend-booster:exe:parsetest";
         } // apps // collectOutputs "apps" flakes
       );
 

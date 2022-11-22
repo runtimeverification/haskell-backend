@@ -28,10 +28,10 @@ import Kore.Syntax.ParsedKore.Base
 {- | A class describing all attributes we want to extract from parsed
  entities
 -}
-class HasAttributes tipe where
-    type Attributes tipe :: Type
+class HasAttributes ty where
+    type Attributes ty :: Type
 
-    extract :: tipe -> Attributes tipe
+    extract :: ty -> Attributes ty
 
 instance HasAttributes ParsedDefinition where
     type Attributes ParsedDefinition = DefinitionAttributes
@@ -62,11 +62,29 @@ locationName = "org'Stop'kframework'Stop'attributes'Stop'Location"
 instance HasAttributes ParsedSymbol where
     type Attributes ParsedSymbol = SymbolAttributes
 
-    extract ParsedSymbol{attributes} =
+    extract ParsedSymbol{name, attributes} =
         SymbolAttributes
-            { isFunction = attributes .! "function" || (attributes .! "functional")
-            , isTotal = (attributes .! "functional") || (attributes .! "total")
-            , isConstructor = attributes .! "constructor"
+            { symbolType =
+                if attributes .! "constructor"
+                    then Constructor
+                    else
+                        if attributes .! "sortInjection"
+                            then SortInjection
+                            else
+                                if attributes .! "functional" || attributes .! "total"
+                                    then TotalFunction
+                                    else
+                                        if attributes .! "function"
+                                            then PartialFunction
+                                            else error $ "Invalid symbol '" <> show name <> "' attributes: " <> show attributes
+            , isIdem =
+                if attributes .! "sortInjection" && attributes .! "idem"
+                    then error "Sort injection cannot be an AC constructor"
+                    else attributes .! "idem"
+            , isAssoc =
+                if attributes .! "sortInjection" && attributes .! "assoc"
+                    then error "Sort injection cannot be an AC constructor"
+                    else attributes .! "assoc"
             }
 
 instance HasAttributes ParsedSort where

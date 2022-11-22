@@ -33,6 +33,7 @@ default-extensions:
   LambdaCase
   MultiParamTypeClasses
   NamedFieldPuns
+  OverloadedRecordDot
   OverloadedStrings
   ScopedTypeVariables
   StandaloneDeriving

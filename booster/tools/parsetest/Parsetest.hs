@@ -22,6 +22,7 @@ import System.Directory
 import System.Environment
 import System.FilePath
 
+import Kore.Definition.Attributes.Base
 import Kore.Definition.Base
 import Kore.Syntax.ParsedKore as ParsedKore
 
@@ -68,24 +69,94 @@ mkReport file KoreDefinition{modules, sorts, symbols, rewriteTheory} =
         , sortNames = Map.keys sorts
         , symbolNames = Map.keys symbols
         , axiomCount = length $ concat $ concatMap Map.elems (Map.elems rewriteTheory)
+        , preserveDefinednessCount =
+            length $
+                filter (\rule -> rule.computedAttributes.preservesDefinedness) $
+                    concat $
+                        concatMap Map.elems (Map.elems rewriteTheory)
+        , containAcSymbolsCount =
+            length $
+                filter (\rule -> rule.computedAttributes.containsAcSymbols) $
+                    concat $
+                        concatMap Map.elems (Map.elems rewriteTheory)
         }
 
 prettify :: Report -> String
-prettify Report{modNames, sortNames, symbolNames, axiomCount} =
+prettify Report{modNames, sortNames, symbolNames, axiomCount, preserveDefinednessCount, containAcSymbolsCount} =
     Text.unpack $
         Text.unlines
             [ list "Modules" modNames
             , list "Sorts" sortNames
             , list "Symbols" symbolNames
             , "Axioms: " <> Text.pack (show axiomCount)
+            , "Axioms preserving definedness: " <> Text.pack (show preserveDefinednessCount)
+            , "Axioms containing AC symbols: " <> Text.pack (show containAcSymbolsCount)
             ]
   where
-    list header = ((header <> ": ") <>) . Text.intercalate ", "
+    list header = ((header <> ": ") <>) . Text.intercalate "\n - " . map prettifyKore
+
+    prettifyKore :: Text -> Text
+    prettifyKore str
+        | Text.null str = str
+        | "'" `Text.isPrefixOf` str =
+            let (encoded, rest) = Text.span (/= '\'') (Text.tail str)
+             in decode encoded <> prettifyKore (Text.drop 1 rest)
+        | otherwise =
+            let (notEncoded, rest) = Text.span (/= '\'') str
+             in notEncoded <> prettifyKore rest
+      where
+        decode :: Text -> Text
+        decode s
+            | Text.null s = s
+            | Text.length code < 4 = error $ "Bad character code  " <> show code
+            | Nothing <- mbChar = error $ "Unknown character code  " <> show code
+            | Just c <- mbChar = c <> decode rest
+          where
+            (code, rest) = Text.splitAt 4 s
+            mbChar = Map.lookup code decodeMap
+
+decodeMap :: Map.Map Text Text
+decodeMap =
+    Map.fromList
+        [ ("Spce", " ")
+        , ("Bang", "!")
+        , ("Quot", "\"")
+        , ("Hash", "#")
+        , ("Dolr", "$")
+        , ("Perc", "%")
+        , ("And-", "&")
+        , ("Apos", "'")
+        , ("LPar", "(")
+        , ("RPar", ")")
+        , ("Star", "*")
+        , ("Plus", "+")
+        , ("Comm", ",")
+        , ("Hyph", "-")
+        , ("Stop", ".")
+        , ("Slsh", "/")
+        , ("Coln", ":")
+        , ("SCln", ";")
+        , ("-LT-", "<")
+        , ("Eqls", "=")
+        , ("-GT-", ">")
+        , ("Ques", "?")
+        , ("-AT-", "@")
+        , ("LSqB", "[")
+        , ("RSqB", "]")
+        , ("Bash", "\\")
+        , ("Xor-", "^")
+        , ("Unds", "_")
+        , ("BQuo", "`")
+        , ("LBra", "{")
+        , ("Pipe", "|")
+        , ("RBra", "}")
+        , ("Tild", "~")
+        ]
 
 data Report = Report
     { file :: FilePath
     , modNames, sortNames, symbolNames :: [Text]
-    , axiomCount :: Int
+    , axiomCount, preserveDefinednessCount, containAcSymbolsCount :: Int
     }
     deriving stock (Eq, Show, Generic)
     deriving anyclass (NFData)
