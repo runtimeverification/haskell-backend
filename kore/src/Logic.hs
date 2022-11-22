@@ -6,7 +6,7 @@ module Logic (
     module Control.Monad.Logic,
     module Control.Monad.Trans,
     module Control.Monad,
-    gather,
+    MonadLogic (..),
     scatter,
     mapLogicT,
     lowerLogicT,
@@ -14,16 +14,34 @@ module Logic (
 
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Logic
+import Control.Monad.Logic hiding (MonadLogic)
+import qualified Control.Monad.Logic as LC
+import Control.Monad.Reader (ReaderT (..))
 import Control.Monad.Trans
 import Prelude
 
-gather :: MonadLogic m => m a -> m [a]
-gather acts =
-    msplit acts >>= \case
-        Nothing -> return []
-        Just (a, acts') -> (:) a <$> gather acts'
-{-# INLINE gather #-}
+-- | A version of
+-- @"Control.Monad.Logic".'Control.Monad.Logic.MonadLogic'@
+-- augmented with an efficient 'gather' method.
+class LC.MonadLogic m => MonadLogic m where
+    -- Gather all the results of a logic computation within
+    -- a logic computation.
+    --
+    -- @
+    -- gather acts =
+    --   'msplit' acts >>= \case
+    --     Nothing -> pure []
+    --     Just (a, acts') -> (a :) <$> gather acts'
+    -- @
+    gather :: m a -> m [a]
+
+instance Monad m => MonadLogic (LogicT m) where
+    gather m = lift (observeAllT m)
+    {-# INLINE gather #-}
+
+instance MonadLogic m => MonadLogic (ReaderT e m) where
+    gather m = ReaderT $ gather . runReaderT m
+    {-# INLINE gather #-}
 
 scatter :: (Foldable f, Alternative m) => f a -> m a
 scatter = foldr ((<|>) . pure) empty

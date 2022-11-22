@@ -12,6 +12,7 @@ module Kore.Unification.UnifierT (
     module Kore.Unification.Unify,
 ) where
 
+import Control.Monad.Logic.Class qualified as LC
 import Control.Monad.Reader (
     MonadReader (..),
  )
@@ -56,6 +57,7 @@ instance MonadTrans UnifierT where
 
 deriving newtype instance MonadLog m => MonadLog (UnifierT m)
 
+deriving newtype instance Monad m => LC.MonadLogic (UnifierT m)
 deriving newtype instance Monad m => MonadLogic (UnifierT m)
 
 deriving newtype instance
