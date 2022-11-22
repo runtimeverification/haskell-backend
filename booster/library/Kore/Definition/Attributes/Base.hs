@@ -9,6 +9,8 @@ module Kore.Definition.Attributes.Base (
     DefinitionAttributes (..),
     ModuleAttributes (..),
     AxiomAttributes (..),
+    ComputedAxiomAttributes (..),
+    SymbolType (..),
     SymbolAttributes (..),
     SortAttributes (..),
     Label,
@@ -47,6 +49,11 @@ data AxiomAttributes = AxiomAttributes
     }
     deriving stock (Eq, Ord, Show)
 
+data ComputedAxiomAttributes = ComputedAxiomAttributes
+    { containsAcSymbols, preservesDefinedness :: Bool
+    }
+    deriving stock (Eq, Ord, Show)
+
 type Label = Text
 type Priority = Word8
 
@@ -70,10 +77,12 @@ data Position = Position
 Any non-free constructors will be known by name (they are built-in) so
 this information is not stored in an attribute.
 -}
+data SymbolType = PartialFunction | TotalFunction | Constructor | SortInjection
+    deriving stock (Eq, Show)
+
 data SymbolAttributes = SymbolAttributes
-    { isFunction :: Bool
-    , isTotal :: Bool
-    , isConstructor :: Bool
+    { symbolType :: SymbolType
+    , isIdem, isAssoc :: Bool
     }
     deriving stock (Eq, Show)
 
