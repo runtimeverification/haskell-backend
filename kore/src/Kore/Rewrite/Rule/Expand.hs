@@ -131,7 +131,7 @@ instance ExpandSingleConstructors ClaimPattern where
                                 Substitution.toPredicate
                                     . from @(Map _ _) @(Substitution _)
                                     $ expansion
-                            subst = Map.mapKeys variableName expansion
+                            subst = Map.mapKeysMonotonic variableName expansion
                          in rule
                                 { left =
                                     Pattern.andCondition

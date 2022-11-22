@@ -99,12 +99,11 @@ Also, we have
     the same for two string literals and two chars
 -}
 simplify ::
-    MonadSimplify simplifier =>
     Sort ->
-    NotSimplifier (UnifierT simplifier) ->
+    NotSimplifier (UnifierT Simplifier) ->
     SideCondition RewritingVariableName ->
     MultiAnd (OrPattern RewritingVariableName) ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 simplify resultSort notSimplifier sideCondition orPatterns =
     OrPattern.observeAllT $ do
         patterns <- MultiAnd.traverse scatter orPatterns

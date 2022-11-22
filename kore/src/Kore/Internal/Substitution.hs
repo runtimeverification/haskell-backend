@@ -393,13 +393,12 @@ See also: 'fromMap'
 -}
 toMap ::
     HasCallStack =>
-    Ord variable =>
     Substitution variable ->
     Map (SomeVariableName variable) (TermLike variable)
 toMap (Substitution _) =
     error "Cannot convert a denormalized substitution to a map!"
 toMap (NormalizedSubstitution norm) =
-    Map.mapKeys variableName norm
+    Map.mapKeysMonotonic variableName norm
 
 toMultiMap ::
     InternalVariable variable =>

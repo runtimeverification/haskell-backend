@@ -52,22 +52,19 @@ Right now this uses the following simplifications:
 TODO(virgil): It does not have yet a special case for children with top terms.
 -}
 simplify ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     In sort (OrPattern RewritingVariableName) ->
-    simplifier (OrCondition RewritingVariableName)
+    Simplifier (OrCondition RewritingVariableName)
 simplify
     sideCondition
     In{inContainedChild = first, inContainingChild = second} =
         simplifyEvaluatedIn sideCondition first second
 
 simplifyEvaluatedIn ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName ->
-    simplifier (OrCondition RewritingVariableName)
+    Simplifier (OrCondition RewritingVariableName)
 simplifyEvaluatedIn sideCondition first second
     | OrPattern.isFalse first = return OrCondition.bottom
     | OrPattern.isFalse second = return OrCondition.bottom
@@ -82,11 +79,10 @@ simplifyEvaluatedIn sideCondition first second
             makeEvaluateIn sideCondition pattFirst pattSecond >>= Logic.scatter
 
 makeEvaluateIn ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
     Pattern RewritingVariableName ->
-    simplifier (OrCondition RewritingVariableName)
+    Logic.LogicT Simplifier (OrCondition RewritingVariableName)
 makeEvaluateIn sideCondition first second
     | Pattern.isTop first =
         NormalForm.toOrCondition <$> Ceil.makeEvaluate sideCondition second

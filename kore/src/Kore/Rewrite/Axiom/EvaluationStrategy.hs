@@ -162,7 +162,7 @@ simplifierWithFallback ::
     BuiltinAndAxiomSimplifier
 simplifierWithFallback first second =
     BuiltinAndAxiomSimplifier
-        (applyFirstSimplifierThatWorks [first, second] WithMultipleResults)
+        (applyFirstSimplifierThatWorks [first, second])
 
 {- | Wraps an evaluator for builtins. Will fail with error if there is no result
 on concrete patterns.

@@ -33,9 +33,8 @@ import Prelude.Kore
 
 -- |'simplify' simplifies an 'Inj' of 'OrPattern'.
 simplify ::
-    MonadSimplify simplifier =>
     Inj (OrPattern RewritingVariableName) ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 simplify injOrPattern = do
     let composed = MultiOr.map liftConditional $ distributeOr injOrPattern
     InjSimplifier{evaluateInj} <- askInjSimplifier
