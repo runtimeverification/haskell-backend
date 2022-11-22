@@ -69,6 +69,7 @@ data RewriteRule = RewriteRule
     { lhs :: Pattern
     , rhs :: Pattern
     , attributes :: AxiomAttributes
+    , computedAttributes :: ComputedAxiomAttributes
     }
     deriving stock (Eq, Ord, Show)
 

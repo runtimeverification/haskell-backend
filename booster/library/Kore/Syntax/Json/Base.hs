@@ -234,7 +234,7 @@ codecOptions =
 -- Identifiers and lexical checks
 
 newtype Id = Id {getId :: Text}
-    deriving stock (Eq, Show)
+    deriving stock (Eq, Show, Ord)
     deriving newtype (ToJSON, FromJSON)
 
 {- | Performs a (shallow, top-level, no recursion) lexical check of
