@@ -221,7 +221,7 @@ newBuiltinCeilSimplifier ceilSort = CeilSimplifier $ \input ->
     case ceilChild input of
         InternalList_ internal -> do
             sideCondition <- Reader.ask
-            makeEvaluateInternalList ceilSort sideCondition internal
+            liftSimplifier $ makeEvaluateInternalList ceilSort sideCondition internal
         InternalMap_ internalMap -> do
             sideCondition <- Reader.ask
             makeEvaluateInternalMap ceilSort sideCondition internalMap
@@ -303,12 +303,10 @@ makeEvaluateInternalSet resultSort sideCondition internalSet =
     InternalAc{builtinAcSort} = internalSet
 
 makeEvaluateInternalList ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     Sort ->
     SideCondition RewritingVariableName ->
     InternalList (TermLike RewritingVariableName) ->
-    simplifier NormalForm
+    Simplifier NormalForm
 makeEvaluateInternalList _ _ internal =
     return . NormalForm.fromPredicates $
         fromCeil_ <$> toList internal

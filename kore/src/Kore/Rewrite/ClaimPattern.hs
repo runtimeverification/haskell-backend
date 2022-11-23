@@ -382,7 +382,7 @@ instance UnifyingRule ClaimPattern where
         refreshVariables' variables = do
             staleNames <- State.get
             let renaming = refreshVariablesSet staleNames variables
-                staleNames' = Set.map variableName variables
+                staleNames' = Set.mapMonotonic variableName variables
                 staleNames'' =
                     Map.elems renaming
                         & foldMap FreeVariables.freeVariable

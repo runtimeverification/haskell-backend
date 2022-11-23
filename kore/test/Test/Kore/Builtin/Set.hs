@@ -147,7 +147,7 @@ genSetConcreteIntegerPattern =
 genConcreteSet :: Gen (HashSet (TermLike Concrete))
 genConcreteSet = genSetConcreteIntegerPattern
 
-genSetPattern :: InternalVariable variable => Gen (TermLike variable)
+genSetPattern :: Gen (TermLike variable)
 genSetPattern = fromConcrete . mkSet_ <$> genSetConcreteIntegerPattern
 
 intSetToSetPattern ::

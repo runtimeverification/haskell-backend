@@ -105,7 +105,7 @@ import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     ConditionSimplifier,
     Env (..),
-    MonadSimplify,
+    Simplifier,
  )
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
 import Kore.Simplify.TermLike qualified as TermLike
@@ -2250,7 +2250,6 @@ framedInternalSet elements opaque =
             & partitionEithers
 
 builtinInt ::
-    InternalVariable variable =>
     Integer ->
     TermLike variable
 builtinInt = Builtin.Int.asInternal intSort
@@ -2262,7 +2261,6 @@ builtinBool ::
 builtinBool = Builtin.Bool.asInternal boolSort
 
 builtinString ::
-    InternalVariable variable =>
     Text ->
     TermLike variable
 builtinString = Builtin.String.asInternal stringSort
@@ -2288,8 +2286,7 @@ metadataTools =
 axiomEquations :: Map AxiomIdentifier [Equation RewritingVariableName]
 axiomEquations = Map.empty
 
-predicateSimplifier ::
-    MonadSimplify simplifier => ConditionSimplifier simplifier
+predicateSimplifier :: ConditionSimplifier Simplifier
 predicateSimplifier =
     Simplifier.Condition.create SubstitutionSimplifier.substitutionSimplifier
 

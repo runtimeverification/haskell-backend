@@ -132,7 +132,7 @@ instance (Ord variable, Unparse variable) => Pretty (Assignment variable) where
  left of the substitution.
 -}
 assign ::
-    (Ord variable, SubstitutionOrd variable) =>
+    (Hashable variable, Ord variable, SubstitutionOrd variable) =>
     SomeVariable variable ->
     TermLike variable ->
     Assignment variable
@@ -162,7 +162,7 @@ mapAssignedTerm f (Assignment variable term) =
     assign variable (f term)
 
 mkUnwrappedSubstitution ::
-    (Ord variable, SubstitutionOrd variable) =>
+    (Hashable variable, Ord variable, SubstitutionOrd variable) =>
     [(SomeVariable variable, TermLike variable)] ->
     [Assignment variable]
 mkUnwrappedSubstitution = fmap (uncurry assign)
@@ -253,15 +253,21 @@ data Substitution variable
     deriving anyclass (Debug)
 
 -- | 'Eq' does not differentiate normalized and denormalized 'Substitution's.
-instance (Ord variable, SubstitutionOrd variable) => Eq (Substitution variable) where
+instance
+    (Hashable variable, Ord variable, SubstitutionOrd variable) =>
+    Eq (Substitution variable)
+    where
     (==) = on (==) unwrap
 
 -- | 'Ord' does not differentiate normalized and denormalized 'Substitution's.
-instance (Ord variable, SubstitutionOrd variable) => Ord (Substitution variable) where
+instance
+    (Hashable variable, Ord variable, SubstitutionOrd variable) =>
+    Ord (Substitution variable)
+    where
     compare = on compare unwrap
 
 instance
-    (Debug variable, Diff variable, Ord variable, SubstitutionOrd variable) =>
+    (Debug variable, Diff variable, Hashable variable, Ord variable, SubstitutionOrd variable) =>
     Diff (Substitution variable)
     where
     diffPrec a b =
@@ -370,7 +376,7 @@ type UnwrappedSubstitution variable = [Assignment variable]
 
 -- | Unwrap the 'Substitution' to its inner list of substitutions.
 unwrap ::
-    (Ord variable, SubstitutionOrd variable) =>
+    (Hashable variable, Ord variable, SubstitutionOrd variable) =>
     Substitution variable ->
     [Assignment variable]
 unwrap (Substitution xs) =
@@ -387,13 +393,12 @@ See also: 'fromMap'
 -}
 toMap ::
     HasCallStack =>
-    Ord variable =>
     Substitution variable ->
     Map (SomeVariableName variable) (TermLike variable)
 toMap (Substitution _) =
     error "Cannot convert a denormalized substitution to a map!"
 toMap (NormalizedSubstitution norm) =
-    Map.mapKeys variableName norm
+    Map.mapKeysMonotonic variableName norm
 
 toMultiMap ::
     InternalVariable variable =>
@@ -438,7 +443,7 @@ cycles.
 -}
 normalOrder ::
     forall variable.
-    (Ord variable, SubstitutionOrd variable) =>
+    (Hashable variable, Ord variable, SubstitutionOrd variable) =>
     (SomeVariable variable, TermLike variable) ->
     (SomeVariable variable, TermLike variable)
 normalOrder (uVar1, Var_ uVar2)
