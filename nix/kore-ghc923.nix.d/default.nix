@@ -18,6 +18,7 @@
         (((hackage.tasty-test-reporter)."0.1.1.4").revisions).default;
       "junit-xml" = (((hackage.junit-xml)."0.1.0.0").revisions).default;
       "compact" = (((hackage.compact)."0.2.0.0").revisions).default;
+      "sequence" = (((hackage.sequence)."0.9.9.0").revisions).default;
       "json-rpc" =
         (((hackage.json-rpc)."1.0.4").revisions)."e6805381c86fdfc782102b1aa7e3708e89492f986c8e553d953b0fa21f790a0c";
       kore = ./kore.nix;
@@ -36,6 +37,7 @@
       pipes-ghc-events = ./.stack-to-nix.cache.12;
       pipes-sqlite-simple = ./.stack-to-nix.cache.13;
       graphviz = ./.stack-to-nix.cache.14;
+      logict-sequence = ./.stack-to-nix.cache.15;
     };
   };
   resolver = "nightly-2022-06-10";

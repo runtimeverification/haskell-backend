@@ -13,3 +13,4 @@ https://github.com/goodlyrottenapple/pipes-ghc-events.git c227d88b88ca74eb56da36
 https://github.com/goodlyrottenapple/pipes-ghc-events.git c227d88b88ca74eb56da36668cab8ba2af7b32ee pipes-ghc-events 1pzmqmp86am8riwlj3ibbx5yk84qs9qjyqfbrf141vwrd3fj64vs pipes-ghc-events .stack-to-nix.cache.12
 https://github.com/goodlyrottenapple/pipes-ghc-events.git c227d88b88ca74eb56da36668cab8ba2af7b32ee pipes-sqlite-simple 1pzmqmp86am8riwlj3ibbx5yk84qs9qjyqfbrf141vwrd3fj64vs pipes-sqlite-simple .stack-to-nix.cache.13
 https://github.com/byorgey/graphviz.git ad580585c5cf698c5ee4d4cbedfb2da21b7b4026 . 1bdl9zdlgmnfs9461fgjvcibnkrnh588h977849k0af0yscwa3rz graphviz .stack-to-nix.cache.14
+https://github.com/dagit/logict-sequence f5ad4a65eaf00c46ec66413a855ad8c29c0cc10a . 1b6q0784n6bxiq079b87q79gq0bfgk7z5nk2ba6mpd4pfxaaxmm0 logict-sequence .stack-to-nix.cache.15
