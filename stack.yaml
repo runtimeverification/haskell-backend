@@ -82,7 +82,8 @@ extra-deps:
     # nix-sha256: 13iag206szfmc8ng77j6qjb6r91ysy9qkvijmf9n9dclvmb1g8an
   - ghc-events-0.13.0
   - sequence-0.9.9.0
-  - logict-sequence-0.2
+  - git: https://github.com/dagit/logict-sequence
+    commit: 8a146299ff339733501950600fae1018a7acfe78
 
 # TODO (thomas.tuegel): Remove this when stylish-haskell is updated upstream.
 allow-newer: true

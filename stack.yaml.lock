@@ -140,12 +140,16 @@ packages:
   original:
     hackage: sequence-0.9.9.0
 - completed:
-    hackage: logict-sequence-0.2@sha256:f6c4ee083990af5b8c3925fda840b543ad98dad5e66785498b82273763776719,3653
+    name: logict-sequence
+    version: '0.2'
+    git: https://github.com/dagit/logict-sequence
     pantry-tree:
-      size: 1105
-      sha256: 5090bf8de471055660a4b9b7820cbd9f5f0d116782a93b212c3ecd10fb6441c8
+      size: 1229
+      sha256: 8d610202fc1976f43b2dc7e1c3e78c5fd5694bb4ddde14131024df5f2237d0d6
+    commit: 8a146299ff339733501950600fae1018a7acfe78
   original:
-    hackage: logict-sequence-0.2
+    git: https://github.com/dagit/logict-sequence
+    commit: 8a146299ff339733501950600fae1018a7acfe78
 snapshots:
 - completed:
     size: 586296
