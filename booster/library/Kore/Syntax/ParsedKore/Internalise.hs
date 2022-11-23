@@ -377,50 +377,14 @@ expandAlias alias@Alias{name, args, rhs} currentArgs
     substitute substitution termOrPredicate =
         case termOrPredicate of
             Def.APredicate predicate ->
-                Def.APredicate $ substituteInPredicate substitution predicate
+                Def.APredicate $ Util.substituteInPredicate substitution predicate
             Def.TermAndPredicate Def.Pattern{term, constraints} ->
                 Def.TermAndPredicate
                     Def.Pattern
-                        { term = substituteInTerm substitution term
+                        { term = Util.substituteInTerm substitution term
                         , constraints =
-                            substituteInPredicate substitution <$> constraints
+                            Util.substituteInPredicate substitution <$> constraints
                         }
-
-    substituteInTerm substitution term =
-        case term of
-            Def.AndTerm sort t1 t2 ->
-                Def.AndTerm sort (substituteInTerm substitution t1) (substituteInTerm substitution t2)
-            Def.SymbolApplication sort sorts symname sargs ->
-                Def.SymbolApplication sort sorts symname (substituteInTerm substitution <$> sargs)
-            dv@(Def.DomainValue _ _) -> dv
-            v@(Def.Var var) ->
-                fromMaybe v (Map.lookup var substitution)
-
-    substituteInPredicate substitution predicate =
-        case predicate of
-            Def.AndPredicate p1 p2 ->
-                Def.AndPredicate (substituteInPredicate substitution p1) (substituteInPredicate substitution p2)
-            Def.Bottom -> Def.Bottom
-            Def.Ceil t -> Def.Ceil (substituteInTerm substitution t)
-            Def.EqualsTerm sort t1 t2 ->
-                Def.EqualsTerm sort (substituteInTerm substitution t1) (substituteInTerm substitution t2)
-            Def.EqualsPredicate p1 p2 ->
-                Def.EqualsPredicate (substituteInPredicate substitution p1) (substituteInPredicate substitution p2)
-            Def.Exists v p ->
-                Def.Exists v (substituteInPredicate substitution p)
-            Def.Forall v p ->
-                Def.Forall v (substituteInPredicate substitution p)
-            Def.Iff p1 p2 ->
-                Def.Iff (substituteInPredicate substitution p1) (substituteInPredicate substitution p2)
-            Def.Implies p1 p2 ->
-                Def.Implies (substituteInPredicate substitution p1) (substituteInPredicate substitution p2)
-            Def.In sort t1 t2 ->
-                Def.In sort (substituteInTerm substitution t1) (substituteInTerm substitution t2)
-            Def.Not p ->
-                Def.Not (substituteInPredicate substitution p)
-            Def.Or p1 p2 ->
-                Def.Or (substituteInPredicate substitution p1) (substituteInPredicate substitution p2)
-            Def.Top -> Def.Top
 
 processRewriteRulesTODO :: [RewriteRule] -> [RewriteRule]
 processRewriteRulesTODO = id
