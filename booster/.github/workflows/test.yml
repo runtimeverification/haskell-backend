@@ -1,4 +1,4 @@
-name: "Build + Test"
+name: 'Build + Test'
 on:
   pull_request:
   push:
@@ -11,139 +11,146 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  ghc_version: "9.2.5"
-  hlint_version: "3.4.1"
-  fourmolu_version: "0.8.2.0"
-  hpack_version: "0.34.2"
+  ghc_version: '9.2.5'
+  hlint_version: '3.4.1'
+  fourmolu_version: '0.8.2.0'
+  hpack_version: '0.34.2'
 
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    # Set job outputs to values from filter step
-    outputs:
-      code: ${{ steps.filter.outputs.code }}
-      stack: ${{ steps.filter.outputs.stack }}
-      nix: ${{ steps.filter.outputs.nix }}
-    steps:
-    # For pull requests it's not necessary to checkout the code
-    - name: Check out code
-      uses: actions/checkout@v3
-      if: ${{ github.event_name == 'push' }}
-    - uses: dorny/paths-filter@v2
-      id: filter
-      with:
-        filters: |
-          code:
-            - 'library/**'
-            - 'executable/**'
-            - 'tools/**'
-            - 'test/**'
-            - 'test-suite/**'
-            - 'package.yaml'
-          stack:
-            - 'stack.*'
-          nix:
-            - 'flake.*'
 
   stack:
     name: 'Stack / Unit Tests'
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' || needs.changes.outputs.stack == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, normal]
     steps:
-      - name: Install prerequisites
-        run: |
-          sudo apt install --yes z3
 
-      - uses: actions/checkout@v3
+      - name: 'Checkout Code'
+        uses: actions/checkout@v3
         with:
           # Check out pull request HEAD instead of merge commit.
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Cache Stack root
-        uses: actions/cache@v2
+      - name: 'Cache Stack root'
+        uses: actions/cache@v3
         with:
-          path: ~/.stack
-          key: stack-1-${{ runner.os }}-${{ hashFiles('stack.yaml.lock') }}
+          path: stack-cache
+          key: stack-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
           restore-keys: |
-            stack-1-${{ runner.os }}-
+            stack-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
+            stack-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}
+            stack-2-${{ runner.os }}
 
-      - uses: haskell/actions/setup@v2
-        id: setup-haskell-stack
+      - name: 'Set up Docker'
+        uses: ./.github/actions/with-docker
         with:
-          ghc-version: ${{ env.ghc_version }}
-          enable-stack: true
+          tag: hs-booster-ci-stack-unit-buster-${{ github.run_id }}
+          os: ubuntu
+          distro: jammy
+          fourmolu: ${{ env.fourmolu_version }}
+          hlint: ${{ env.hlint_version }}
+          hpack: ${{ env.hpack_version }}
+          ghc: ${{ env.ghc_version }}
 
-      - name: Build dependencies
+      - name: 'Run unit tests'
+        run: docker exec -t hs-booster-ci-stack-unit-buster-${{ github.run_id }} /bin/bash -c 'stack --system-ghc --stack-root $(pwd)/stack-cache test --pedantic'
+
+      - name: 'Tear down Docker'
+        if: always()
         run: |
-          stack build --test --only-dependencies
-          if [ -n "$(git status --porcelain)" ]; then
-            git diff
-            exit 1
-          fi
-
-      - name: Run unit tests
-        run: stack test --pedantic
+          docker stop --time=0 hs-booster-ci-stack-unit-buster-${{ github.run_id }}
 
   cabal:
     name: 'Cabal / Unit Tests'
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, normal]
     steps:
-      - uses: actions/checkout@v3
+
+      - name: 'Checkout Code'
+        uses: actions/checkout@v3
         with:
           # Check out pull request HEAD instead of merge commit.
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Install prerequisites
-        run: |
-          sudo apt install --yes z3
-          curl -sSL https://github.com/sol/hpack/releases/download/${{ env.hpack_version }}/hpack_linux.gz | gunzip -c > hpack && chmod +x hpack
-
-      - name: Run Hpack
-        run: ./hpack
-
-      - name: Cache Cabal package database and store
+      - name: 'Cache Cabal package database and store'
         uses: actions/cache@v3
         with:
           path: |
-            ~/.cabal/packages
-            ~/.cabal/store
-          key: cabal-1-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('hs-backend-booster.cabal') }}
+            cabal-cache/packages
+            cabal-cache/store
+          key: cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('package.yaml') }}
           restore-keys: |
-            cabal-1-${{ runner.os }}-ghc-${{ env.ghc_version }}-
-            cabal-1-${{ runner.os }}-ghc-
-            cabal-1-
+            cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-
 
-      - uses: haskell/actions/setup@v2
-        id: setup-haskell-cabal
+      - name: 'Set up Docker'
+        uses: ./.github/actions/with-docker
         with:
-          ghc-version: ${{ env.ghc_version }}
-          cabal-version: "3.6"
+          tag: hs-booster-ci-cabal-unit-buster-${{ github.run_id }}
+          os: ubuntu
+          distro: jammy
+          fourmolu: ${{ env.fourmolu_version }}
+          hlint: ${{ env.hlint_version }}
+          hpack: ${{ env.hpack_version }}
+          ghc: ${{ env.ghc_version }}
 
-      - name: Install tools
+      - name: 'Run hpack'
         run: |
-          cabal install happy
-          cabal install alex
+          docker exec -t hs-booster-ci-cabal-unit-buster-${{ github.run_id }} /bin/bash -c 'hpack'
 
-      - name: Run unit tests
-        run: cabal v2-test --enable-tests --test-show-details=direct
+      - name: 'Build and run unit tests'
+        run: |
+          docker exec -t hs-booster-ci-cabal-unit-buster-${{ github.run_id }} \
+            /bin/bash -c 'cabal --store-dir /opt/workspace/cabal-cache/store v2-test --enable-tests --test-show-details=direct'
 
-      - name: Configure with profiling
-        run: cabal v2-configure --enable-profiling -f-threaded
+      - name: 'Configure with profiling'
+        run: |
+          docker exec -t hs-booster-ci-cabal-unit-buster-${{ github.run_id }} \
+            /bin/bash -c 'cabal --store-dir /opt/workspace/cabal-cache/store v2-configure --enable-profiling -f-threaded'
+
+      - name: 'Tear down Docker'
+        if: always()
+        run: |
+          docker stop --time=0 hs-booster-ci-cabal-unit-buster-${{ github.run_id }}
+
+  style:
+    name: 'Formatting and Style'
+    runs-on: [self-hosted, linux, normal]
+    steps:
+
+      - name: 'Checkout Code'
+        uses: actions/checkout@v3
+        with:
+          # Check out pull request HEAD instead of merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: 'Set up Docker'
+        uses: ./.github/actions/with-docker
+        with:
+          tag: hs-booster-ci-formatting-style-buster-${{ github.run_id }}
+          os: ubuntu
+          distro: jammy
+          fourmolu: ${{ env.fourmolu_version }}
+          hlint: ${{ env.hlint_version }}
+          hpack: ${{ env.hpack_version }}
+          ghc: ${{ env.ghc_version }}
+
+      - name: 'Check formatting'
+        run: docker exec -t hs-booster-ci-formatting-style-buster-${{ github.run_id }} /bin/bash -c './scripts/fourmolu.sh && git diff'
+
+      - name: 'Run hlint'
+        run: docker exec -t hs-booster-ci-formatting-style-buster-${{ github.run_id }} /bin/bash -c 'hlint -g -j'
+
+      - name: 'Tear down Docker'
+        if: always()
+        run: |
+          docker stop --time=0 hs-booster-ci-formatting-style-buster-${{ github.run_id }}
 
   # nix-build:
   #   name: 'Nix / Unit Tests'
-  #   needs: changes
-  #   if: ${{ needs.changes.outputs.code == 'true' || needs.changes.outputs.nix == 'true' }}
   #   strategy:
   #     fail-fast: false
   #     matrix:
   #       include:
-  #         - runner: ubuntu-latest
+  #         - runner: ubuntu-latest FIXME need to run on self-hosted runners
   #           os: ubuntu-latest
-  #         - runner: macos-12
+  #         - runner: macos-12 FIXME need to run on self-hosted runners
   #           os: macos-12
   #         - runner: MacM1
   #           os: self-macos-12
@@ -185,29 +192,3 @@ jobs:
 
   #     - name: Run unit tests
   #       run: GC_DONT_GC=1 nix build .#hs-backend-booster:test:test-suite
-
-  style:
-    name: 'Formatting and Style'
-    needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          # Check out pull request HEAD instead of merge commit.
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Download prerequisites
-        # this could be cached but is probably fast anyway
-        run: |
-          curl -sSL https://github.com/fourmolu/fourmolu/releases/download/v${{ env.fourmolu_version }}/fourmolu-${{ env.fourmolu_version }}-linux-x86_64 -o fourmolu && chmod +x fourmolu && ./fourmolu --version
-          curl -sSL https://github.com/ndmitchell/hlint/releases/download/v${{ env.hlint_version }}/hlint-${{ env.hlint_version }}-x86_64-linux.tar.gz | tar xvz hlint-${{ env.hlint_version }}/hlint
-
-      - name: Check formatting
-        run: |
-          PATH=$PWD:$PATH scripts/fourmolu.sh
-          echo "Checking diff"
-          git diff --exit-code
-
-      - name: Run hlint
-        run: hlint-${{ env.hlint_version }}/hlint -g -j
