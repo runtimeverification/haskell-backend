@@ -132,7 +132,7 @@ refresh ::
 refresh extraAvoiding multiExists@MultiExists{existsVariables, existsChild} =
     MultiExists
         { existsVariables = expectElementVariable <$> someVariables'
-        , existsChild = rename (Map.mapKeys variableName refreshing) existsChild
+        , existsChild = rename (Map.mapKeysMonotonic variableName refreshing) existsChild
         }
   where
     avoiding = freeVariableNames multiExists <> extraAvoiding

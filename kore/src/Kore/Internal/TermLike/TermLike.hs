@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
@@ -21,6 +22,7 @@ module Kore.Internal.TermLike.TermLike (
     isAttributeSimplifiedAnyCondition,
     isAttributeSimplifiedSomeCondition,
     attributeSimplifiedAttribute,
+    termLikeAttributes,
     setAttributeSimplified,
     mapAttributeVariables,
     deleteFreeVariable,
@@ -53,6 +55,7 @@ import Data.Functor.Identity (
 import Data.Generics.Product
 import Data.Generics.Product qualified as Lens.Product
 import Data.HashMap.Strict qualified as HashMap
+import Data.Kind (Constraint)
 import Data.Map.Strict (
     Map,
  )
@@ -62,6 +65,7 @@ import Data.Set (
  )
 import Data.Set qualified as Set
 import Data.Text qualified as Text
+import Data.Void (absurd)
 import GHC.Generics qualified as GHC
 import GHC.Stack qualified as GHC
 import Generics.SOP qualified as SOP
@@ -647,34 +651,36 @@ instance HasFreeVariables (TermAttributes variable) variable where
 
 @TermLike@ is the common internal representation of patterns, especially terms.
 
-@TermLike@ is essentially 'Control.Comonad.Cofree.Cofree', but rather than
-define a @newtype@ over @Cofree@, it is defined inline for performance. The
-performance advantage owes to the fact that the instances of 'Recursive.project'
-and 'Recursive.embed' correspond to unwrapping and wrapping the @newtype@,
-respectively, which is free at runtime.
+@TermLike@ is essentially 'Control.Comonad.Cofree.Cofree', but it caches hashes.
 -}
-newtype TermLike variable = TermLike
-    { getTermLike ::
-        CofreeF
-            (TermLikeF variable)
-            (TermAttributes variable)
-            (TermLike variable)
+data TermLike variable = TermLike__
+    -- Some fields below are lazy to better match Cofree. Which do we actually
+    -- want to be lazy, if any?
+    { _tlAttributes :: ~(TermAttributes variable)
+    , -- | A hash of @_tlTermLikeF@
+      _tlHash :: ~Int
+    , _tlTermLikeF :: ~(TermLikeF variable (TermLike variable))
     }
     deriving stock (Show)
+    -- Deriving the stock Generic risks breaking the hash cache invariant
+    -- if we're not careful about how we use it. Should we write a custom
+    -- instance that maintains the invariant automagically? Unfortunately,
+    -- this will impose Hashable constraints on `from`, not just `to`; how
+    -- bad might that be? Custom Generic instances are always a pain due
+    -- to the need to patch metadata, and keeping them up to date can be
+    -- a bit of a challenge.
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
 
 instance (Debug variable, Diff variable) => Diff (TermLike variable) where
-    diffPrec
-        termLike1@(Recursive.project -> attrs1 :< termLikeF1)
-        termLike2@(Recursive.project -> _ :< termLikeF2) =
-            -- If the patterns differ, do not display the difference in the
-            -- attributes, which would overload the user with redundant information.
-            diffPrecGeneric
-                (Recursive.embed (attrs1 :< termLikeF1))
-                (Recursive.embed (attrs1 :< termLikeF2))
-                <|> diffPrecGeneric termLike1 termLike2
+    diffPrec termLike1 termLike2 =
+        -- If the patterns differ, do not display the difference in the
+        -- attributes, which would overload the user with redundant information.
+        diffPrecGeneric
+            termLike1
+            (termLike2 & termLikeAttributes Lens..~ extractAttributes termLike1)
+            <|> diffPrecGeneric termLike1 termLike2
 
 instance
     (Eq variable, Eq (TermLikeF variable (TermLike variable))) =>
@@ -694,8 +700,15 @@ instance
         (Recursive.project -> _ :< pat2) =
             compare pat1 pat2
 
-instance Hashable variable => Hashable (TermLike variable) where
-    hashWithSalt salt (Recursive.project -> _ :< pat) = hashWithSalt salt pat
+#if MIN_VERSION_hashable(1,4,0)
+type HashableConstraint variable = Eq variable
+#else
+type HashableConstraint variable = () :: Constraint
+#endif
+
+instance HashableConstraint variable => Hashable (TermLike variable) where
+    hashWithSalt salt (TermLike__ _ hsh _) =
+        salt `hashWithSalt` hsh -- HACK
     {-# INLINE hashWithSalt #-}
 
 instance NFData variable => NFData (TermLike variable) where
@@ -771,13 +784,13 @@ type instance
 -- This instance implements all class functions for the TermLike newtype
 -- because the their implementations for the inner type may be specialized.
 instance Recursive (TermLike variable) where
-    project = getTermLike
+    project (TermLike__ attr _hash pat) = attr :< pat
     {-# INLINE project #-}
 
 -- This instance implements all class functions for the TermLike newtype
 -- because the their implementations for the inner type may be specialized.
-instance Corecursive (TermLike variable) where
-    embed = TermLike
+instance Hashable variable => Corecursive (TermLike variable) where
+    embed (attr :< pat) = TermLike__ attr (hash pat) pat
     {-# INLINE embed #-}
 
 instance TopBottom (TermLike variable) where
@@ -823,16 +836,24 @@ instance Unparse (TermLike variable) => SQL.Column (TermLike variable) where
     defineColumn = SQL.defineTextColumn
     toColumn = SQL.toColumn . Pretty.renderText . Pretty.layoutOneLine . unparse
 
-instance
-    (FreshPartialOrd variable) =>
-    From (TermLike Concrete) (TermLike variable)
-    where
-    from = mapVariables (pure $ from @Concrete)
+instance From (TermLike Concrete) (TermLike variable) where
+    from = vacuousVariables
     {-# INLINE from #-}
 
-instance Ord variable => From Key (TermLike variable) where
+vacuousVariables :: forall variable. TermLike Concrete -> TermLike variable
+vacuousVariables (TermLike__ attrs hsh termLikeF) = TermLike__ attrs' hsh (vacuousVariablesF termLikeF)
+  where
+    !attrs' = attrs{termFreeVariables = FreeVariables.emptyFreeVariables}
+
+vacuousVariablesF :: forall variable. TermLikeF Concrete (TermLike Concrete) -> TermLikeF variable (TermLike variable)
+vacuousVariablesF = runIdentity . traverseVariablesF adjuster . fmap vacuousVariables
+  where
+    adjuster = AdjSomeVariableName (ElementVariableName absurd) (SetVariableName absurd)
+
+instance (Hashable variable, Ord variable) => From Key (TermLike variable) where
     from = Recursive.unfold worker
       where
+        worker :: Key -> CofreeF (TermLikeF variable) (TermAttributes variable) Key
         worker key =
             attrs' :< from @(KeyF _) keyF
           where
@@ -1144,7 +1165,7 @@ traverseVariablesF adj =
         Nu <$> trSetVar nuVariable <*> pure nuChild
 
 extractAttributes :: TermLike variable -> TermAttributes variable
-extractAttributes (TermLike (attrs :< _)) = attrs
+extractAttributes (Recursive.project -> attrs :< _) = attrs
 
 instance HasFreeVariables (TermLike variable) variable where
     freeVariables = Attribute.freeVariables . extractAttributes
@@ -1161,6 +1182,7 @@ mapVariables ::
     forall variable1 variable2.
     Ord variable1 =>
     FreshPartialOrd variable2 =>
+    Hashable variable2 =>
     AdjSomeVariableName (variable1 -> variable2) ->
     TermLike variable1 ->
     TermLike variable2
@@ -1181,6 +1203,7 @@ traverseVariables ::
     forall variable1 variable2 m.
     Ord variable1 =>
     FreshPartialOrd variable2 =>
+    Hashable variable2 =>
     Monad m =>
     AdjSomeVariableName (variable1 -> m variable2) ->
     TermLike variable1 ->
@@ -1234,7 +1257,7 @@ updateCallStack ::
     TermLike variable
 updateCallStack = Lens.set created callstack
   where
-    created = _attributes . Lens.Product.field @"termCreated"
+    created = termLikeAttributes . Lens.Product.field @"termCreated"
     callstack =
         Attribute.Created
             . Just
@@ -1242,17 +1265,22 @@ updateCallStack = Lens.set created callstack
             . GHC.popCallStack
             $ GHC.callStack
 
-    _attributes :: Lens' (TermLike variable) (TermAttributes variable)
-    _attributes =
-        Lens.lens
-            (\(TermLike (attrs :< _)) -> attrs)
-            ( \(TermLike (_ :< termLikeF)) attrs ->
-                TermLike (attrs :< termLikeF)
-            )
+{- | A 'Lens'' for editing attributes of a 'TermLike'. This is more efficient
+ than using 'project' followed by 'embed', because it avoids recomputing
+ the hash on `embed`.
+-}
+termLikeAttributes :: Lens' (TermLike variable) (TermAttributes variable)
+termLikeAttributes =
+    Lens.lens
+        (\(TermLike__ attrs _ _) -> attrs)
+        ( \(TermLike__ _ hsh termLikeF) attrs ->
+            TermLike__ attrs hsh termLikeF
+        )
 
 -- | Construct a variable pattern.
 mkVar ::
     HasCallStack =>
+    Hashable variable =>
     Ord variable =>
     SomeVariable variable ->
     TermLike variable
@@ -1264,13 +1292,14 @@ depth = Recursive.fold levelDepth
     levelDepth (_ :< termF) = 1 + foldl' max 0 termF
 
 instance
-    Ord variable =>
+    (Hashable variable, Ord variable) =>
     From (TermLike variable) (Pattern.Pattern variable (TermAttributes variable))
     where
     from = uninternalize
 
 uninternalize ::
     forall variable.
+    Hashable variable =>
     Ord variable =>
     TermLike variable ->
     Pattern.Pattern variable (TermAttributes variable)

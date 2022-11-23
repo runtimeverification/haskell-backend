@@ -265,7 +265,7 @@ refreshVariables ::
     Map variable (Variable variable)
 refreshVariables avoid variables =
     let (_, refreshed) = refreshVariables' avoid variables
-     in Map.mapKeys variableName refreshed
+     in Map.mapKeysMonotonic variableName refreshed
 
 refreshVariablesSet ::
     FreshName variable =>

@@ -235,6 +235,7 @@ newline: native
 # Please keep this up-to-date with default-extensions in package.yaml
 language_extensions:
   - BangPatterns
+  - CPP
   - ConstraintKinds
   - DataKinds
   - DefaultSignatures

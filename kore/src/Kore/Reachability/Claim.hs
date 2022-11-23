@@ -631,7 +631,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
                 Pattern.andCondition unified rightCondition
                     & Pattern.simplify
                     & (>>= Logic.scatter)
-            Exists.makeEvaluate sideCondition existentials removed
+            liftSimplifier (Exists.makeEvaluate sideCondition existentials removed)
                 >>= Logic.scatter
             & OrPattern.observeAllT
             & (>>= mkNotSimplified)
@@ -867,7 +867,7 @@ checkSimpleImplication inLeft inRight existentials =
                                 (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
 
                     notChild <- -- ∃ Y. ⌈t(X) ∧ t'(X, Y)⌉ ∧ P'(X, Y) (Or pattern)
-                        Exists.makeEvaluate sideCondition existentials existsChild
+                        liftSimplifier $ Exists.makeEvaluate sideCondition existentials existsChild
 
                     notRhs <- -- not notChild (Or pattern)
                         Not.simplify sideCondition Not{notSort = sort, notChild}
@@ -900,7 +900,7 @@ simplify' lensClaimPattern claim = do
     claim' <- simplifyLeftHandSide claim
     let claim'' = Lens.over lensClaimPattern applySubstOnRightHandSide claim'
         sideCondition = extractSideCondition claim''
-    simplifyRightHandSide lensClaimPattern sideCondition claim''
+    liftSimplifier $ simplifyRightHandSide lensClaimPattern sideCondition claim''
   where
     applySubstOnRightHandSide :: ClaimPattern -> ClaimPattern
     applySubstOnRightHandSide claimPat@ClaimPattern{left, right} =
@@ -920,16 +920,15 @@ simplify' lensClaimPattern claim = do
             configs <-
                 simplifyTopConfigurationDefined
                     config
-                    >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
-                    & lift
+                    >>= SMT.Evaluator.filterMultiOr $srcLoc
+                    & liftSimplifier
             asum (pure <$> toList configs)
 
 simplifyRightHandSide ::
-    MonadSimplify m =>
     Lens' claim ClaimPattern ->
     SideCondition RewritingVariableName ->
     claim ->
-    m claim
+    Simplifier claim
 simplifyRightHandSide lensClaimPattern sideCondition =
     Lens.traverseOf (lensClaimPattern . field @"right") $ \dest ->
         OrPattern.observeAllT $

@@ -257,6 +257,9 @@ The @variable@ parameter is the type of variable names.
 Every occurrence of a variable carries the 'Sort' of the variable.
 -}
 data Variable variable = Variable
+    -- Note: we sometimes use mapKeysMonotonic with variableName, so
+    -- any changes to this representation may require modifications to
+    -- those use sites.
     { variableName :: !variable
     , variableSort :: !Sort
     }
