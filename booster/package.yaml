@@ -150,6 +150,7 @@ tests:
     - tasty
     - tasty-golden
     - tasty-hedgehog
+    - tasty-hunit
     - tasty-test-reporter
     - text
     - transformers

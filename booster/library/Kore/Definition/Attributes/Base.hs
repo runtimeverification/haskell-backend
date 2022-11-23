@@ -69,14 +69,6 @@ data Position = Position
     }
     deriving stock (Eq, Ord, Show)
 
-{- | Things needed for booster rewrite engine:
-  * function flag (won't evaluate)
-  * total-function flag (for preserve-definedness pass)
-  * constructor flag (constructors are indexed)
-
-Any non-free constructors will be known by name (they are built-in) so
-this information is not stored in an attribute.
--}
 data SymbolType = PartialFunction | TotalFunction | Constructor | SortInjection
     deriving stock (Eq, Show)
 
