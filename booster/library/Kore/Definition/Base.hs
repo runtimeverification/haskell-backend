@@ -39,7 +39,7 @@ data KoreDefinition = KoreDefinition
     , aliases :: Map AliasName Alias
     , rewriteTheory :: RewriteTheory
     }
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 -- | Optimized for lookup by term-index
 type RewriteTheory = Map TermIndex (Map Priority [RewriteRule])
@@ -72,9 +72,6 @@ data RewriteRule = RewriteRule
     , computedAttributes :: ComputedAxiomAttributes
     }
     deriving stock (Eq, Ord, Show)
-
-extractPriority :: RewriteRule -> Priority
-extractPriority RewriteRule{attributes} = priority attributes
 
 type AliasName = Text
 
