@@ -49,7 +49,7 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Simplify as Simplifier (
-    MonadSimplify (..),
+    Simplifier,
     askOverloadSimplifier,
  )
 import Pair
@@ -133,9 +133,8 @@ throwBottom :: String -> Maybe MatchResult
 throwBottom = Just . ClashResult
 
 matchOverloading ::
-    MonadSimplify unifier =>
     Pair (TermLike RewritingVariableName) ->
-    MatchOverloadingResult unifier RewritingVariableName
+    MatchOverloadingResult Simplifier RewritingVariableName
 matchOverloading termPair = do
     overloadSimplifier <- askOverloadSimplifier
     case unifyOverloading overloadSimplifier termPair of

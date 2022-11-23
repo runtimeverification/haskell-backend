@@ -54,10 +54,9 @@ Right now this uses the following simplifications:
 and it has a special case for children with top terms.
 -}
 simplify ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Implies Sort (OrPattern RewritingVariableName) ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 simplify
     sideCondition
     Implies{impliesFirst = first, impliesSecond = second, impliesSort = sort} =
@@ -83,12 +82,11 @@ carry around.
 
 -}
 simplifyEvaluated ::
-    MonadSimplify simplifier =>
     Sort ->
     SideCondition RewritingVariableName ->
     OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 simplifyEvaluated sort sideCondition first second
     | OrPattern.isTrue first = return second
     | OrPattern.isFalse first = return (OrPattern.topOf sort)

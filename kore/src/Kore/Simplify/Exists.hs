@@ -114,10 +114,9 @@ The simplification of exists x . (pat and pred and subst) is equivalent to:
     (pat' and (pred' and (exists x . predX and substX)) and subst')
 -}
 simplify ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Exists Sort RewritingVariableName (OrPattern RewritingVariableName) ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 simplify sideCondition Exists{existsVariable, existsChild} =
     simplifyEvaluated sideCondition existsVariable existsChild
 
@@ -135,11 +134,10 @@ even more useful to carry around.
 
 -}
 simplifyEvaluated ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     ElementVariable RewritingVariableName ->
     OrPattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 simplifyEvaluated sideCondition variable simplified
     | OrPattern.isTrue simplified = return simplified
     | OrPattern.isFalse simplified = return simplified
@@ -157,12 +155,10 @@ in the substitution are evaluated with the pattern first.
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     [ElementVariable RewritingVariableName] ->
     Pattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 makeEvaluate sideCondition variables original = do
     let sortedVariables = sortBy substVariablesFirst variables
     foldM (flip makeEvaluateWorker) original sortedVariables
@@ -171,7 +167,7 @@ makeEvaluate sideCondition variables original = do
     makeEvaluateWorker ::
         ElementVariable RewritingVariableName ->
         Pattern RewritingVariableName ->
-        LogicT simplifier (Pattern RewritingVariableName)
+        LogicT Simplifier (Pattern RewritingVariableName)
     makeEvaluateWorker variable original' = do
         normalized <- simplifyCondition sideCondition original'
         let Conditional{substitution = normalizedSubstitution} = normalized
@@ -227,11 +223,10 @@ makeEvaluate sideCondition variables original = do
 
 -- TODO (andrei.burdusa): this function must go away
 matchesToVariableSubstitution ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     ElementVariable RewritingVariableName ->
     Pattern RewritingVariableName ->
-    simplifier Bool
+    Simplifier Bool
 matchesToVariableSubstitution
     sideCondition
     variable
@@ -284,14 +279,13 @@ term will be substituted everywhere. The variable may occur anywhere in the
 See also: 'quantifyPattern'
 -}
 makeEvaluateBoundLeft ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     -- | quantified variable
     ElementVariable RewritingVariableName ->
     -- | substituted term
     TermLike RewritingVariableName ->
     Pattern RewritingVariableName ->
-    LogicT simplifier (Pattern RewritingVariableName)
+    LogicT Simplifier (Pattern RewritingVariableName)
 makeEvaluateBoundLeft sideCondition variable boundTerm normalized =
     withoutFreeVariable someVariableName boundTerm $ do
         let boundSubstitution = Map.singleton someVariableName boundTerm
@@ -304,7 +298,7 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized =
                         substitute boundSubstitution $
                             Conditional.predicate normalized
                     }
-        orPattern <- simplifyPattern sideCondition substituted
+        orPattern <- liftSimplifier $ simplifyPattern sideCondition substituted
         Logic.scatter (toList orPattern)
   where
     someVariableName = inject (variableName variable)
@@ -319,8 +313,6 @@ variable may occur anywhere in the 'term' or 'predicate' of the
 See also: 'quantifyPattern'
 -}
 makeEvaluateBoundRight ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     -- | variable to be quantified
     ElementVariable RewritingVariableName ->
@@ -328,7 +320,7 @@ makeEvaluateBoundRight ::
     Substitution RewritingVariableName ->
     -- | pattern to quantify
     Pattern RewritingVariableName ->
-    LogicT simplifier (Pattern RewritingVariableName)
+    LogicT Simplifier (Pattern RewritingVariableName)
 makeEvaluateBoundRight sideCondition variable freeSubstitution normalized = do
     orCondition <-
         lift $

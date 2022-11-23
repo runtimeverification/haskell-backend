@@ -52,10 +52,9 @@ Right now this has special cases only for top and bottom children
 and for children with top terms.
 -}
 simplify ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Iff Sort (OrPattern RewritingVariableName) ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 simplify sideCondition Iff{iffFirst = first, iffSecond = second, iffSort = sort} =
     simplifyEvaluated sort sideCondition first second
 
@@ -78,12 +77,11 @@ carry around.
 
 -}
 simplifyEvaluated ::
-    MonadSimplify simplifier =>
     Sort ->
     SideCondition RewritingVariableName ->
     OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 simplifyEvaluated sort sideCondition first second
     | OrPattern.isTrue first = return second
     | OrPattern.isFalse first =

@@ -379,7 +379,7 @@ maybeEvaluatePattern
             | toSimplify == unchangedPatt =
                 return (OrPattern.fromPattern unchangedPatt)
             | otherwise =
-                simplifyPattern sideCondition toSimplify
+                liftSimplifier $ simplifyPattern sideCondition toSimplify
 
 evaluateSortInjection ::
     InternalVariable variable =>
