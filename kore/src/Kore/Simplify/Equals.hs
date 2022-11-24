@@ -444,14 +444,12 @@ termEqualsAnd p1 p2 =
         unifier (Pattern RewritingVariableName)
     termEqualsAndWorker first second =
         scatterResults
-            =<< runUnification (maybeTermEqualsWorker first second)
+            =<< runMaybeT (maybeTermEqualsWorker first second)
       where
-        runUnification = runUnifierT Not.notSimplifier . runMaybeT
         scatterResults =
-            maybe
-                (return equalsPattern) -- default if no results
-                Logic.scatter
-                . sequence
+            pure . fromMaybe
+                equalsPattern -- default if no results
+                . Logic.scatter
         equalsPattern =
             makeEqualsPredicate first second
                 & Condition.fromPredicate
