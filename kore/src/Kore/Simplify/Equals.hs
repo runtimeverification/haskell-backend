@@ -447,8 +447,9 @@ termEqualsAnd p1 p2 =
             =<< runMaybeT (maybeTermEqualsWorker first second)
       where
         scatterResults =
-            pure . fromMaybe
-                equalsPattern -- default if no results
+            pure
+                . fromMaybe
+                    equalsPattern -- default if no results
                 . Logic.scatter
         equalsPattern =
             makeEqualsPredicate first second
