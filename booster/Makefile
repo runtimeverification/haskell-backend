@@ -1,5 +1,5 @@
 ghcid:
-	ghcid "--command=cabal repl"
+	ghcid "--command=stack repl"
 
 format:
 	scripts/fourmolu.sh

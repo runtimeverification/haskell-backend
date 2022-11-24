@@ -114,6 +114,3 @@ combine s@(Symbol s1) (Symbol s2)
     | s1 == s2 = s
 --     | otherwise = None -- redundant
 combine _ _ = None -- incompatible indexes
-
-computeTermIndex :: Term -> TermIndex
-computeTermIndex = const None -- FIXME

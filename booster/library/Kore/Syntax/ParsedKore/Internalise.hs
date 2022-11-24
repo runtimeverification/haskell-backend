@@ -12,6 +12,7 @@ module Kore.Syntax.ParsedKore.Internalise (
     DefinitionError (..),
 ) where
 
+import Control.Applicative (Alternative (..), asum)
 import Control.Monad
 import Control.Monad.Extra (mapMaybeM)
 import Control.Monad.Trans.Class
@@ -260,7 +261,7 @@ addModule
                 partitionAxioms
                     <$> mapMaybeM (internaliseAxiom partialDefinition) parsedAxioms
 
-            let rewriteTheory = addToTheory newRewriteRules currentRewriteTheory
+            let rewriteTheory = addToTheory partialDefinition newRewriteRules currentRewriteTheory
 
             -- add subsorts to the subsort map
             let newSubsorts =
@@ -432,20 +433,20 @@ expandAlias alias currentArgs
 processRewriteRulesTODO :: [RewriteRule] -> [RewriteRule]
 processRewriteRulesTODO = id
 
-addToTheory :: [RewriteRule] -> RewriteTheory -> RewriteTheory
-addToTheory axioms theory =
+addToTheory :: KoreDefinition -> [RewriteRule] -> RewriteTheory -> RewriteTheory
+addToTheory definition axioms theory =
     let processedRewriteRules = processRewriteRulesTODO axioms
         newTheory =
             Map.map groupByPriority
-                . groupByTermIndex
+                . groupByTermIndex definition
                 $ processedRewriteRules
      in Map.unionWith (Map.unionWith (<>)) theory newTheory
 
-groupByTermIndex :: [RewriteRule] -> Map Def.TermIndex [RewriteRule]
-groupByTermIndex axioms =
+groupByTermIndex :: KoreDefinition -> [RewriteRule] -> Map Def.TermIndex [RewriteRule]
+groupByTermIndex definition axioms =
     let withTermIndexes = do
             axiom <- axioms
-            let termIndex = Def.computeTermIndex axiom.lhs.term
+            let termIndex = computeTermIndex definition axiom.lhs.term
             return (termIndex, axiom)
      in Map.fromAscList . groupSort $ withTermIndexes
 
@@ -535,3 +536,64 @@ data TermOrPredicateError
     = PatternExpected Def.TermOrPredicate
     | TOPNotSupported Def.TermOrPredicate
     deriving stock (Eq, Show)
+
+computeTermIndex :: KoreDefinition -> Def.Term -> Def.TermIndex
+computeTermIndex definition config =
+    case lookForKCell config of
+        Just (Def.SymbolApplication _ _ _ children) ->
+            getTermIndex (lookForTopTerm (head children))
+        _ -> Def.Anything
+  where
+    getTermIndex :: Def.Term -> Def.TermIndex
+    getTermIndex term =
+        case term of
+            (Def.SymbolApplication _ _ symbolName _)
+                | (Just (attrs, _)) <- Map.lookup symbolName definition.symbols ->
+                    case attrs.symbolType of
+                        Constructor -> Def.Symbol symbolName
+                        _ -> Def.Anything
+                | otherwise -> error "TODO: Impossible, but we need to somehow encode that the symbol exists in the definition"
+            _ -> Def.Anything
+
+    -- it is assumed there is only one K cell
+    lookForKCell :: Def.Term -> Maybe Def.Term
+    lookForKCell =
+        \case
+            kCell@(Def.SymbolApplication _ _ symbolName children)
+                | symbolName == "Lbl'-LT-'k'-GT-'" ->
+                    Just kCell
+                | otherwise ->
+                    asum $ lookForKCell <$> children
+            Def.AndTerm _ t1 t2 ->
+                lookForKCell t1 <|> lookForKCell t2
+            Def.DomainValue _ _ -> Nothing
+            Def.Var _ -> Nothing
+
+    -- this assumes that the top kseq is already normalized into right-assoc form
+    lookForTopTerm :: Def.Term -> Def.Term
+    lookForTopTerm =
+        \case
+            Def.SymbolApplication _ _ symbolName children
+                | symbolName == "kseq" ->
+                    let firstChild = getKSeqFirst children
+                     in stripAwaySortInjections firstChild
+                | otherwise ->
+                    error ("lookForTopTerm: the first child of the K cell isn't a kseq" <> show symbolName)
+            term -> term
+
+    -- this assumes that sort injections are well-formed (have a single argument)
+    stripAwaySortInjections :: Def.Term -> Def.Term
+    stripAwaySortInjections =
+        \case
+            term@(Def.SymbolApplication _ _ symbolName children)
+                | symbolName == "inj" ->
+                    stripAwaySortInjections (getInjChild children)
+                | otherwise -> term
+            term -> term
+
+    getKSeqFirst [] = error "lookForTopTerm: empty KSeq"
+    getKSeqFirst (x : _) = x
+
+    getInjChild [] = error "stripAwaySortInjections: injection with 0 children"
+    getInjChild [x] = x
+    getInjChild _ = error "stripAwaySortInjections: injection with multiple children"
