@@ -72,6 +72,8 @@
         (hsPkgs."json-rpc" or (errorHandler.buildDepError "json-rpc"))
         (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
         (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
+        (hsPkgs."logict-sequence" or (errorHandler.buildDepError
+          "logict-sequence"))
         (hsPkgs."matrix" or (errorHandler.buildDepError "matrix"))
         (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
         (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
@@ -730,6 +732,8 @@
           (hsPkgs."json-rpc" or (errorHandler.buildDepError "json-rpc"))
           (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
           (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
+          (hsPkgs."logict-sequence" or (errorHandler.buildDepError
+            "logict-sequence"))
           (hsPkgs."matrix" or (errorHandler.buildDepError "matrix"))
           (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
           (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))

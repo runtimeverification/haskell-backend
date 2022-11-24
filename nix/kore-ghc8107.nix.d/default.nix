@@ -19,10 +19,12 @@
       "decision-diagrams" =
         (((hackage.decision-diagrams)."0.2.0.0").revisions).default;
       "ghc-events" = (((hackage.ghc-events)."0.13.0").revisions).default;
+      "sequence" = (((hackage.sequence)."0.9.9.0").revisions).default;
       kore = ./kore.nix;
       eventlog2speedscope = ./.stack-to-nix.cache.0;
       pipes-ghc-events = ./.stack-to-nix.cache.1;
       pipes-sqlite-simple = ./.stack-to-nix.cache.2;
+      logict-sequence = ./.stack-to-nix.cache.3;
     };
   };
   resolver = "lts-18.18";
