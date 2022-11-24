@@ -56,6 +56,7 @@ extra-deps:
   - sequence-0.9.9.0
   - git: https://github.com/dagit/logict-sequence
     commit: f5ad4a65eaf00c46ec66413a855ad8c29c0cc10a
+    # nix-sha256: oNauVHeXtFuNWmLa8s98bgH80sEHrXQAjn0ZS9AB2Kw=
 allow-newer: true
 ghc-options:
   "$everything": -haddock
