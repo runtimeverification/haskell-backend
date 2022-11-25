@@ -9,6 +9,10 @@ module Kore.Pattern.Util (
     substituteInTerm,
     substituteInPredicate,
     freeVariables,
+    isConstructorSymbol,
+    isSortInjectionSymbol,
+    isDefinedSymbol,
+    checkSymbolIsAc,
 ) where
 
 import Data.Map (Map)
@@ -16,13 +20,14 @@ import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
+import Kore.Definition.Attributes.Base (SymbolAttributes (..), SymbolType (..))
 
 import Kore.Pattern.Base
 
 -- | Returns the sort of a term
 sortOfTerm :: Term -> Sort
 sortOfTerm (AndTerm sort _ _) = sort
-sortOfTerm (SymbolApplication sort _ _ _) = sort
+sortOfTerm (SymbolApplication symbol _) = symbol.resultSort
 sortOfTerm (DomainValue sort _) = sort
 sortOfTerm (Var Variable{variableSort}) = variableSort
 
@@ -39,8 +44,8 @@ substituteInTerm substitution term =
     case term of
         AndTerm sort t1 t2 ->
             AndTerm sort (substituteInTerm substitution t1) (substituteInTerm substitution t2)
-        SymbolApplication sort sorts symname sargs ->
-            SymbolApplication sort sorts symname (substituteInTerm substitution <$> sargs)
+        SymbolApplication symbol sargs ->
+            SymbolApplication symbol (substituteInTerm substitution <$> sargs)
         dv@(DomainValue _ _) -> dv
         v@(Var var) ->
             fromMaybe v (Map.lookup var substitution)
@@ -76,7 +81,31 @@ freeVariables :: Term -> Set Variable
 freeVariables = \case
     AndTerm _ t1 t2 ->
         freeVariables t1 <> freeVariables t2
-    SymbolApplication _sort _sorts _symname sargs ->
+    SymbolApplication _ sargs ->
         Set.unions $ map freeVariables sargs
     DomainValue _ _ -> Set.empty
     Var var -> Set.singleton var
+
+isConstructorSymbol :: Symbol -> Bool
+isConstructorSymbol symbol =
+    case symbol.attributes.symbolType of
+        Constructor -> True
+        _ -> False
+
+isSortInjectionSymbol :: Symbol -> Bool
+isSortInjectionSymbol symbol =
+    case symbol.attributes.symbolType of
+        SortInjection -> True
+        _ -> False
+
+isDefinedSymbol :: Symbol -> Bool
+isDefinedSymbol symbol =
+    case symbol.attributes.symbolType of
+        Constructor -> True
+        TotalFunction -> True
+        SortInjection -> True
+        PartialFunction -> False
+
+checkSymbolIsAc :: Symbol -> Bool
+checkSymbolIsAc symbol =
+    symbol.attributes.isAssoc || symbol.attributes.isIdem
