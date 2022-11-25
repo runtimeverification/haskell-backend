@@ -69,14 +69,18 @@ data Position = Position
     }
     deriving stock (Eq, Ord, Show)
 
-data SymbolType = PartialFunction | TotalFunction | Constructor | SortInjection
-    deriving stock (Eq, Show)
+data SymbolType
+    = PartialFunction
+    | TotalFunction
+    | Constructor
+    | SortInjection
+    deriving stock (Eq, Ord, Show)
 
 data SymbolAttributes = SymbolAttributes
     { symbolType :: SymbolType
     , isIdem, isAssoc :: Bool
     }
-    deriving stock (Eq, Show)
+    deriving stock (Eq, Ord, Show)
 
 newtype SortAttributes = SortAttributes
     { argCount :: Int

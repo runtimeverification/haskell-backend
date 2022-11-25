@@ -217,15 +217,7 @@ addModule
             unless (null symCollisions) $
                 throwE $
                     DuplicateSymbols symCollisions
-            -- internalise (in a new pass over the list)
-            let internaliseSymbol ::
-                    ParsedSymbol ->
-                    Except DefinitionError (Def.SymbolName, (SymbolAttributes, SymbolSort))
-                internaliseSymbol s = do
-                    info <- mkSymbolSorts sorts s
-                    -- TODO(Ana): rename extract
-                    pure (s.name.getId, (extract s, info))
-            newSymbols' <- mapM internaliseSymbol parsedSymbols
+            newSymbols' <- traverse (internaliseSymbol sorts) parsedSymbols
             let symbols = Map.fromList newSymbols' <> currentSymbols
 
             let internaliseAlias ::
@@ -261,7 +253,7 @@ addModule
                 partitionAxioms
                     <$> mapMaybeM (internaliseAxiom partialDefinition) parsedAxioms
 
-            let rewriteTheory = addToTheory partialDefinition newRewriteRules currentRewriteTheory
+            let rewriteTheory = addToTheory newRewriteRules currentRewriteTheory
 
             -- add subsorts to the subsort map
             let newSubsorts =
@@ -393,22 +385,20 @@ internaliseRewriteRule partialDefinition aliasName aliasArgs right axAttributes 
     rhs <-
         withExcept DefinitionPatternError $
             internalisePattern (Just sortVars) partialDefinition right
-    let checkSymbolPreservesDefinedness _ SymbolAttributes{symbolType} _ = symbolType /= PartialFunction
-        checkSymbolIsAc _ SymbolAttributes{isAssoc, isIdem} _ = isAssoc || isIdem
-        preservesDefinedness = checkTermSymbols checkSymbolPreservesDefinedness partialDefinition rhs.term
-        containsAcSymbols = checkTermSymbols checkSymbolIsAc partialDefinition lhs.term
-    return RewriteRule{lhs, rhs, attributes = axAttributes, computedAttributes = ComputedAxiomAttributes{containsAcSymbols, preservesDefinedness}}
+    let preservesDefinedness =
+            checkTermSymbols Util.isDefinedSymbol partialDefinition rhs.term
+        containsAcSymbols =
+            checkTermSymbols Util.checkSymbolIsAc partialDefinition lhs.term
+        computedAttributes =
+            ComputedAxiomAttributes{preservesDefinedness, containsAcSymbols}
+    return RewriteRule{lhs, rhs, attributes = axAttributes, computedAttributes}
 
-checkTermSymbols :: (Def.SymbolName -> SymbolAttributes -> SymbolSort -> Bool) -> KoreDefinition -> Def.Term -> Bool
+checkTermSymbols :: (Def.Symbol -> Bool) -> KoreDefinition -> Def.Term -> Bool
 checkTermSymbols check def = \case
     Def.AndTerm _ t1 t2 -> checkTermSymbols check def t1 && checkTermSymbols check def t2
-    Def.SymbolApplication _ _ symbol ts ->
-        checkSymbol symbol && foldr ((&&) . checkTermSymbols check def) True ts
+    Def.SymbolApplication symbol ts ->
+        check symbol && foldr ((&&) . checkTermSymbols check def) True ts
     _ -> True
-  where
-    checkSymbol symbol = case Map.lookup symbol def.symbols of
-        Just (attr, symbSort) -> check symbol attr symbSort
-        Nothing -> error $ show symbol <> " symbol not found!"
 
 expandAlias :: Alias -> [Def.Term] -> Except DefinitionError Def.TermOrPredicate
 expandAlias alias currentArgs
@@ -433,20 +423,20 @@ expandAlias alias currentArgs
 processRewriteRulesTODO :: [RewriteRule] -> [RewriteRule]
 processRewriteRulesTODO = id
 
-addToTheory :: KoreDefinition -> [RewriteRule] -> RewriteTheory -> RewriteTheory
-addToTheory definition axioms theory =
+addToTheory :: [RewriteRule] -> RewriteTheory -> RewriteTheory
+addToTheory axioms theory =
     let processedRewriteRules = processRewriteRulesTODO axioms
         newTheory =
             Map.map groupByPriority
-                . groupByTermIndex definition
+                . groupByTermIndex
                 $ processedRewriteRules
      in Map.unionWith (Map.unionWith (<>)) theory newTheory
 
-groupByTermIndex :: KoreDefinition -> [RewriteRule] -> Map Def.TermIndex [RewriteRule]
-groupByTermIndex definition axioms =
+groupByTermIndex :: [RewriteRule] -> Map Def.TermIndex [RewriteRule]
+groupByTermIndex axioms =
     let withTermIndexes = do
             axiom <- axioms
-            let termIndex = computeTermIndex definition axiom.lhs.term
+            let termIndex = computeTermIndex axiom.lhs.term
             return (termIndex, axiom)
      in Map.fromAscList . groupSort $ withTermIndexes
 
@@ -454,30 +444,28 @@ groupByPriority :: [RewriteRule] -> Map Priority [RewriteRule]
 groupByPriority axioms =
     Map.fromAscList . groupSort $ [(ax.attributes.priority, ax) | ax <- axioms]
 
-{- | Checks if a given parsed symbol uses only sorts from the provided
-   sort map, and whether they are consistent (wrt. sort parameter
-   count), and returns a @SymbolSort@ (sort information record) for
-   the symbol.
--}
-mkSymbolSorts ::
+internaliseSymbol ::
     Map Def.SortName (SortAttributes, Set Def.SortName) ->
     ParsedSymbol ->
-    Except DefinitionError SymbolSort
-mkSymbolSorts sortMap sym =
-    do
-        unless (Set.size knownVars == length sym.sortVars) $
-            throwE $
-                DuplicateNames (map (.getId) sym.sortVars)
-        resultSort <- check sym.sort
-        argSorts <- mapM check sym.argSorts
-        pure $ SymbolSort{resultSort, argSorts}
+    Except DefinitionError (Def.SymbolName, Def.Symbol)
+internaliseSymbol sorts parsedSymbol = do
+    unless (Set.size knownVars == length parsedSymbol.sortVars) $
+        throwE $
+            DuplicateNames (map (.getId) parsedSymbol.sortVars)
+    resultSort <- check parsedSymbol.sort
+    argSorts <- mapM check parsedSymbol.argSorts
+    let name = parsedSymbol.name.getId
+        attributes = extract parsedSymbol
+        internalSymbol = Def.Symbol{name, resultSort, argSorts, attributes}
+    -- TODO(Ana): rename extract
+    pure (name, internalSymbol)
   where
-    knownVars = Set.fromList $ map (.getId) sym.sortVars
+    knownVars = Set.fromList $ map (.getId) parsedSymbol.sortVars
 
     check :: Json.Sort -> Except DefinitionError Def.Sort
     check =
         mapExcept (first DefinitionSortError)
-            . checkSort knownVars sortMap
+            . checkSort knownVars sorts
 
 {- | Computes all-pairs reachability in a directed graph given as an
    adjacency list mapping. Using a naive algorithm because the subsort
@@ -537,30 +525,28 @@ data TermOrPredicateError
     | TOPNotSupported Def.TermOrPredicate
     deriving stock (Eq, Show)
 
-computeTermIndex :: KoreDefinition -> Def.Term -> Def.TermIndex
-computeTermIndex definition config =
+computeTermIndex :: Def.Term -> Def.TermIndex
+computeTermIndex config =
     case lookForKCell config of
-        Just (Def.SymbolApplication _ _ _ children) ->
+        Just (Def.SymbolApplication _ children) ->
             getTermIndex (lookForTopTerm (head children))
         _ -> Def.Anything
   where
     getTermIndex :: Def.Term -> Def.TermIndex
     getTermIndex term =
         case term of
-            (Def.SymbolApplication _ _ symbolName _)
-                | (Just (attrs, _)) <- Map.lookup symbolName definition.symbols ->
-                    case attrs.symbolType of
-                        Constructor -> Def.Symbol symbolName
-                        _ -> Def.Anything
-                | otherwise -> error "TODO: Impossible, but we need to somehow encode that the symbol exists in the definition"
+            Def.SymbolApplication symbol _ ->
+                case symbol.attributes.symbolType of
+                    Constructor -> Def.TopSymbol symbol.name
+                    _ -> Def.Anything
             _ -> Def.Anything
 
     -- it is assumed there is only one K cell
     lookForKCell :: Def.Term -> Maybe Def.Term
     lookForKCell =
         \case
-            kCell@(Def.SymbolApplication _ _ symbolName children)
-                | symbolName == "Lbl'-LT-'k'-GT-'" ->
+            kCell@(Def.SymbolApplication symbol children)
+                | symbol.name == "Lbl'-LT-'k'-GT-'" ->
                     Just kCell
                 | otherwise ->
                     asum $ lookForKCell <$> children
@@ -573,22 +559,22 @@ computeTermIndex definition config =
     lookForTopTerm :: Def.Term -> Def.Term
     lookForTopTerm =
         \case
-            Def.SymbolApplication _ _ symbolName children
-                | symbolName == "kseq" ->
+            Def.SymbolApplication symbol children
+                | symbol.name == "kseq" ->
                     let firstChild = getKSeqFirst children
                      in stripAwaySortInjections firstChild
                 | otherwise ->
-                    error ("lookForTopTerm: the first child of the K cell isn't a kseq" <> show symbolName)
+                    error ("lookForTopTerm: the first child of the K cell isn't a kseq" <> show symbol.name)
             term -> term
 
     -- this assumes that sort injections are well-formed (have a single argument)
     stripAwaySortInjections :: Def.Term -> Def.Term
     stripAwaySortInjections =
         \case
-            term@(Def.SymbolApplication _ _ symbolName children)
-                | symbolName == "inj" ->
-                    stripAwaySortInjections (getInjChild children)
-                | otherwise -> term
+            term@(Def.SymbolApplication symbol children) ->
+                if Util.isSortInjectionSymbol symbol
+                    then stripAwaySortInjections (getInjChild children)
+                    else term
             term -> term
 
     getKSeqFirst [] = error "lookForTopTerm: empty KSeq"
