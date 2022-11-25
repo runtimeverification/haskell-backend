@@ -21,10 +21,9 @@ import Data.Sequence qualified as Seq
 import Data.Set (Set)
 import Data.Set qualified as Set
 
-import Kore.Definition.Attributes.Base
 import Kore.Definition.Base
 import Kore.Pattern.Base
-import Kore.Pattern.Util (freeVariables, sortOfTerm, substituteInTerm)
+import Kore.Pattern.Util (freeVariables, isConstructorSymbol, sortOfTerm, substituteInTerm)
 
 -- | Result of a unification (a substitution or an indication of what went wrong)
 data UnificationResult
@@ -59,7 +58,7 @@ type Substitution = Map Variable Term
    prefers to replace its variables if given a choice.
 -}
 unifyTerms :: KoreDefinition -> Term -> Term -> UnificationResult
-unifyTerms KoreDefinition{symbols, sorts} term1 term2 =
+unifyTerms KoreDefinition{sorts} term1 term2 =
     let runUnification :: UnificationState -> UnificationResult
         runUnification =
             fromEither
@@ -78,7 +77,6 @@ unifyTerms KoreDefinition{symbols, sorts} term1 term2 =
                         , uTargetVars = freeVars1
                         , uQueue = Seq.singleton (term1, term2)
                         , uSubsorts = Map.map snd sorts
-                        , uSymbols = Map.map fst symbols
                         }
 
 data UnificationState = State
@@ -86,7 +84,6 @@ data UnificationState = State
     , uTargetVars :: Set Variable
     , uQueue :: Seq (Term, Term) -- work queue (breadth-first term traversal)
     , uSubsorts :: SortTable
-    , uSymbols :: Map SymbolName SymbolAttributes
     }
 
 type SortTable = Map SortName (Set SortName)
@@ -117,20 +114,18 @@ unify1
 
 -- two symbol applications: fail if names differ, recurse
 unify1
-    t1@(SymbolApplication s1 _argSorts1 symName1 args1)
-    t2@(SymbolApplication s2 _argSorts2 symName2 args2) =
+    t1@(SymbolApplication symbol1 args1)
+    t2@(SymbolApplication symbol2 args2) =
         do
             subsorts <- gets uSubsorts
             -- argument sorts have been checked upon internalisation
-            unless (sortsAgree subsorts s1 s2) $
+            unless (sortsAgree subsorts symbol1.resultSort symbol2.resultSort) $
                 returnAsRemainder t1 t2
             -- If we have functions, pass - only constructors are matched.
-            symbols <- gets uSymbols
-            let isConstr sym = maybe False isConstructor $ Map.lookup sym symbols
-            unless (isConstr symName1 && isConstr symName2) $
+            unless (isConstructorSymbol symbol1 && isConstructorSymbol symbol2) $
                 returnAsRemainder t1 t2
             -- constructors must be the same
-            unless (symName1 == symName2) $
+            unless (symbol1.name == symbol2.name) $
                 failWith (DifferentSymbols t1 t2)
             unless (length args1 == length args2) $
                 lift $
@@ -138,9 +133,6 @@ unify1
                         InternalError $
                             "Argument counts differ for same constructor" <> show (t1, t2)
             zipWithM_ enqueueProblem args1 args2
-      where
-        isConstructor :: SymbolAttributes -> Bool
-        isConstructor = (== Constructor) . (.symbolType)
 
 -- and-term in pattern: must unify with both arguments
 unify1
