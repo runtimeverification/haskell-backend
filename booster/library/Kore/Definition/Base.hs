@@ -35,7 +35,7 @@ data KoreDefinition = KoreDefinition
     { attributes :: DefinitionAttributes
     , modules :: Map Text ModuleAttributes
     , sorts :: Map SortName (SortAttributes, Set SortName)
-    , symbols :: Map SymbolName (SymbolAttributes, SymbolSort) -- constructors and functions
+    , symbols :: Map SymbolName Symbol -- constructors and functions
     , aliases :: Map AliasName Alias
     , rewriteTheory :: RewriteTheory
     }
@@ -43,13 +43,6 @@ data KoreDefinition = KoreDefinition
 
 -- | Optimized for lookup by term-index
 type RewriteTheory = Map TermIndex (Map Priority [RewriteRule])
-
--- | Sort information related to a symbol: result and argument sorts
-data SymbolSort = SymbolSort
-    { resultSort :: Sort
-    , argSorts :: [Sort]
-    }
-    deriving stock (Eq, Show)
 
 {- | The starting point for building up the definition. Could be
  'Monoid' instance if the attributes had a Default.

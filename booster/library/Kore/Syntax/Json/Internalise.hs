@@ -30,7 +30,7 @@ import Data.Set qualified as Set
 import Data.Text (Text, intercalate, pack)
 
 import Kore.Definition.Attributes.Base
-import Kore.Definition.Base (KoreDefinition (..), SymbolSort (..))
+import Kore.Definition.Base (KoreDefinition (..))
 import Kore.Pattern.Base qualified as Internal
 import Kore.Pattern.Util (sortOfTerm)
 import Kore.Syntax.Json.Base qualified as Syntax
@@ -76,13 +76,13 @@ internaliseTermOrPredicate sortVars definition syntaxPatt =
         <|> Internal.TermAndPredicate
             <$> (withExcept (: []) $ internalisePattern sortVars definition syntaxPatt)
 
-internaliseSort ::
+lookupInternalSort ::
     Maybe [Syntax.Id] ->
     Map Internal.SortName (SortAttributes, Set Internal.SortName) ->
     Syntax.KorePattern ->
     Syntax.Sort ->
     Except PatternError Internal.Sort
-internaliseSort sortVars sorts pat =
+lookupInternalSort sortVars sorts pat =
     let knownVarSet = maybe Set.empty (Set.fromList . map Syntax.getId) sortVars
      in mapExcept (first $ PatternSortError pat) . checkSort knownVarSet sorts
 
@@ -96,29 +96,30 @@ internaliseTerm ::
 internaliseTerm sortVars definition@KoreDefinition{sorts, symbols} pat =
     case pat of
         Syntax.KJEVar{name, sort} -> do
-            variableSort <- internaliseSort' sort
+            variableSort <- lookupInternalSort' sort
             let variableName = Syntax.getId name
             pure $ Internal.Var Internal.Variable{variableSort, variableName}
         Syntax.KJSVar{name, sort} -> do
-            variableSort <- internaliseSort' sort
+            variableSort <- lookupInternalSort' sort
             let variableName = Syntax.getId name
             pure $ Internal.Var Internal.Variable{variableSort, variableName}
         symPatt@Syntax.KJApp{name, sorts = appSorts, args} -> do
-            (_, SymbolSort{resultSort, argSorts}) <-
+            symbol <-
                 maybe (throwE $ UnknownSymbol name symPatt) pure $
-                    Map.lookup (Syntax.getId name) symbols
-            internalAppSorts <- mapM internaliseSort' appSorts
+                    Map.lookup name.getId symbols
+            internalAppSorts <- traverse lookupInternalSort' appSorts
             -- check that all argument sorts "agree". Variables
             -- can stand for anything but need to be consistent (a
             -- matching problem returning a substitution)
             sortSubst <-
                 mapExcept (first $ PatternSortError pat) $
                     foldM (uncurry . matchSorts') Map.empty $
-                        zip argSorts internalAppSorts
+                        zip symbol.argSorts internalAppSorts
             -- finalSort is the symbol result sort with
             -- variables substituted using the arg.sort match
-            let finalSort = applySubst sortSubst resultSort
-            Internal.SymbolApplication finalSort internalAppSorts (Syntax.getId name)
+            let finalSort = applySubst sortSubst symbol.resultSort
+                internalisedSymbol = symbol{Internal.resultSort = finalSort}
+            Internal.SymbolApplication internalisedSymbol
                 <$> mapM recursion args
         Syntax.KJString{value} ->
             pure $ Internal.DomainValue (Internal.SortApp "SortString" []) value
@@ -129,7 +130,7 @@ internaliseTerm sortVars definition@KoreDefinition{sorts, symbols} pat =
             -- analysed beforehand, expecting this to operate on terms
             a <- recursion arg1
             b <- recursion arg2
-            resultSort <- internaliseSort' sort
+            resultSort <- lookupInternalSort' sort
             -- TODO check that both a and b are of sort "resultSort"
             -- Which is a unification problem if this involves variables.
             pure $ Internal.AndTerm resultSort a b
@@ -148,7 +149,7 @@ internaliseTerm sortVars definition@KoreDefinition{sorts, symbols} pat =
         Syntax.KJRewrites{} -> predicate
         Syntax.KJDV{sort, value} ->
             Internal.DomainValue
-                <$> internaliseSort' sort
+                <$> lookupInternalSort' sort
                 <*> pure value
         Syntax.KJMultiOr{} -> predicate
         Syntax.KJMultiApp{assoc, symbol, sorts = argSorts, argss} ->
@@ -156,7 +157,7 @@ internaliseTerm sortVars definition@KoreDefinition{sorts, symbols} pat =
   where
     predicate = throwE $ TermExpected pat
 
-    internaliseSort' = internaliseSort sortVars sorts pat
+    lookupInternalSort' = lookupInternalSort sortVars sorts pat
 
     recursion = internaliseTerm sortVars definition
 
@@ -213,8 +214,8 @@ internalisePredicate sortVars definition@KoreDefinition{sorts} pat = case pat of
             (True, True) -> do
                 a <- internaliseTerm sortVars definition arg1
                 b <- internaliseTerm sortVars definition arg2
-                s <- internaliseSort' sort
-                argS <- internaliseSort' argSort
+                s <- lookupInternalSort' sort
+                argS <- lookupInternalSort' argSort
                 -- check that argS and sorts of a and b "agree"
                 mapM_ sortCheck [(sortOfTerm a, argS), (sortOfTerm b, argS)]
                 pure $ Internal.EqualsTerm s a b
@@ -227,7 +228,7 @@ internalisePredicate sortVars definition@KoreDefinition{sorts} pat = case pat of
     Syntax.KJIn{sort, first = arg1, second = arg2} -> do
         a <- internaliseTerm sortVars definition arg1
         b <- internaliseTerm sortVars definition arg2
-        s <- internaliseSort' sort
+        s <- lookupInternalSort' sort
         -- TODO check that s and sorts of a and b agree
         pure $ Internal.In s a b
     Syntax.KJNext{} -> notSupported
@@ -242,7 +243,7 @@ internalisePredicate sortVars definition@KoreDefinition{sorts} pat = case pat of
 
     recursion = internalisePredicate sortVars definition
 
-    internaliseSort' = internaliseSort sortVars sorts pat
+    lookupInternalSort' = lookupInternalSort sortVars sorts pat
 
     -- check that two sorts "agree". Incomplete, see comment on ensureSortsAgree.
     sortCheck :: (Internal.Sort, Internal.Sort) -> Except PatternError ()

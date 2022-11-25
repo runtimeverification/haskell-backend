@@ -34,35 +34,35 @@ constructors =
         "Unifying constructors"
         [ test
             "same constructors, one variable argument"
-            (app someSort [someSort] "con1" [var "X" someSort])
-            (app someSort [someSort] "con1" [var "Y" someSort])
+            (app con1 [var "X" someSort])
+            (app con1 [var "Y" someSort])
             (success [("X", someSort, var "Y" someSort)])
-        , let cX = app someSort [someSort] "con1" [var "X" someSort]
+        , let cX = app con1 [var "X" someSort]
            in test "same constructors, same variable (shared var)" cX cX $
                 remainder [(cX, cX)]
         , let x = var "X" someSort
               y = var "Y" someSort
-              cxx = app someSort [someSort] "con3" [x, x]
-              cxy = app someSort [someSort] "con3" [x, y]
+              cxx = app con3 [x, x]
+              cxy = app con3 [x, y]
            in test "same constructors, one shared variable" cxx cxy $
                 remainder [(cxx, cxy)]
         , let v = var "X" someSort
               d = dv differentSort ""
            in test
                 "same constructors, arguments differ in sorts"
-                (app someSort [someSort] "con1" [v])
-                (app someSort [someSort] "con1" [d])
+                (app con1 [v])
+                (app con1 [d])
                 (remainder [(v, d)])
         , test
             "same constructor, var./term argument"
-            (app someSort [someSort] "con1" [var "X" someSort])
-            (app someSort [someSort] "con1" [app someSort [someSort] "f1" [var "Y" someSort]])
-            (success [("X", someSort, app someSort [someSort] "f1" [var "Y" someSort])])
-        , let t1 = app someSort [someSort] "con1" [var "X" someSort]
-              t2 = app someSort [someSort] "con2" [var "Y" someSort]
+            (app con1 [var "X" someSort])
+            (app con1 [app f1 [var "Y" someSort]])
+            (success [("X", someSort, app f1 [var "Y" someSort])])
+        , let t1 = app con1 [var "X" someSort]
+              t2 = app con2 [var "Y" someSort]
            in test "different constructors" t1 t2 $ failed (DifferentSymbols t1 t2)
-        , let t1 = app someSort [someSort] "con1" [var "X" someSort]
-              t2 = app someSort [someSort] "f1" [var "Y" someSort]
+        , let t1 = app con1 [var "X" someSort]
+              t2 = app f1 [var "Y" someSort]
            in test "Constructor and function" t1 t2 $ remainder [(t1, t2)]
         ]
 
@@ -70,11 +70,11 @@ functions :: TestTree
 functions =
     testGroup
         "Functions (should not unify)"
-        [ let f = app someSort [someSort] "f1" [dv someSort ""]
+        [ let f = app f1 [dv someSort ""]
            in test "exact same function (but not unifying)" f f $ remainder [(f, f)]
-        , let f1 = app someSort [someSort] "f1" [dv someSort ""]
-              f2 = app someSort [someSort] "f2" [dv someSort ""]
-           in test "different functions" f1 f2 $ remainder [(f1, f2)]
+        , let f1T = app f1 [dv someSort ""]
+              f2T = app f2 [dv someSort ""]
+           in test "different functions" f1T f2T $ remainder [(f1T, f2T)]
         ]
 
 varsAndValues :: TestTree
@@ -131,16 +131,16 @@ andTerms =
     testGroup
         "And-terms on either side"
         [ let d = dv someSort "a"
-              fa = app someSort [someSort] "f1" [d]
-              fb = app someSort [someSort] "f1" [dv someSort "b"]
+              fa = app f1 [d]
+              fb = app f1 [dv someSort "b"]
            in test
                 "And-term on the left, remainder returns both pairs"
                 (AndTerm someSort fa fb)
                 d
                 (remainder [(fa, d), (fb, d)])
         , let d = dv someSort "a"
-              fa = app someSort [someSort] "f1" [d]
-              fb = app someSort [someSort] "f1" [dv someSort "b"]
+              fa = app f1 [d]
+              fb = app f1 [dv someSort "b"]
            in test
                 "And-term on the right, remainder returns both pairs"
                 d
@@ -148,8 +148,8 @@ andTerms =
                 (remainder [(d, fa), (d, fb)])
         , let da = dv someSort "a"
               db = dv someSort "b"
-              ca = app someSort [someSort] "con1" [da]
-              cb = app someSort [someSort] "con1" [db]
+              ca = app con1 [da]
+              cb = app con1 [db]
            in test
                 "And-term on the left, one pair resolves"
                 (AndTerm someSort ca da)
@@ -157,8 +157,8 @@ andTerms =
                 (remainder [(da, cb), (da, db)])
         , let da = dv someSort "a"
               db = dv someSort "b"
-              ca = app someSort [someSort] "con1" [da]
-              cb = app someSort [someSort] "con1" [db]
+              ca = app con1 [da]
+              cb = app con1 [db]
            in test
                 "And-term on the right, one pair resolves"
                 ca
@@ -167,8 +167,6 @@ andTerms =
         ]
 
 ----------------------------------------
-app :: Sort -> [Sort] -> SymbolName -> [Term] -> Term
-app = SymbolApplication
 
 var :: VarName -> Sort -> Term
 var variableName variableSort = Var $ Variable{variableSort, variableName}
@@ -214,12 +212,12 @@ testDefinition =
                 ]
         , symbols =
             Map.fromList
-                [ constructor "con1" someSort [someSort]
-                , constructor "con2" someSort [someSort]
-                , constructor "con3" someSort [someSort, someSort]
-                , constructor "con4" aSubsort [someSort, aSubsort]
-                , function "f1" someSort [someSort]
-                , partialFunction "f2" someSort [someSort]
+                [ ("con1", con1)
+                , ("con2", con2)
+                , ("con3", con3)
+                , ("con4", con4)
+                , ("f1", f1)
+                , ("f2", f2)
                 ]
         , aliases = Map.empty
         , rewriteTheory = Map.empty
@@ -233,9 +231,54 @@ testDefinition =
     other1 `subsortOf` other2 =
         error $ "subSortOf: " <> show (other1, other2) <> " not supported"
 
-    constructor n sort argSorts =
-        (n, (SymbolAttributes Constructor False False, SymbolSort sort argSorts))
-    function n sort argSorts =
-        (n, (SymbolAttributes TotalFunction False False, SymbolSort sort argSorts))
-    partialFunction n sort argSorts =
-        (n, (SymbolAttributes PartialFunction False False, SymbolSort sort argSorts))
+app :: Symbol -> [Term] -> Term
+app = SymbolApplication
+
+asTotalFunction, asPartialFunction, asConstructor :: SymbolAttributes
+asTotalFunction = SymbolAttributes TotalFunction False False
+asPartialFunction = SymbolAttributes PartialFunction False False
+asConstructor = SymbolAttributes Constructor False False
+
+con1, con2, con3, con4, f1, f2 :: Symbol
+con1 =
+    Symbol
+        { name = "con1"
+        , resultSort = someSort
+        , argSorts = [someSort]
+        , attributes = asConstructor
+        }
+con2 =
+    Symbol
+        { name = "con2"
+        , resultSort = someSort
+        , argSorts = [someSort]
+        , attributes = asConstructor
+        }
+con3 =
+    Symbol
+        { name = "con3"
+        , resultSort = someSort
+        , argSorts = [someSort, someSort]
+        , attributes = asConstructor
+        }
+con4 =
+    Symbol
+        { name = "con4"
+        , resultSort = aSubsort
+        , argSorts = [someSort, someSort]
+        , attributes = asConstructor
+        }
+f1 =
+    Symbol
+        { name = "f1"
+        , resultSort = someSort
+        , argSorts = [someSort]
+        , attributes = asTotalFunction
+        }
+f2 =
+    Symbol
+        { name = "f2"
+        , resultSort = someSort
+        , argSorts = [someSort]
+        , attributes = asPartialFunction
+        }
