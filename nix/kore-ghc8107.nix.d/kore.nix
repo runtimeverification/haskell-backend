@@ -121,6 +121,7 @@
       modules = [
         "Changed"
         "Control/Monad/Counter"
+        "Control/Monad/Trans/Accum/Stricter"
         "Data/Graph/TopologicalSort"
         "Data/InternedText"
         "Data/Limit"
