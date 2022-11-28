@@ -135,7 +135,7 @@ andTerms =
               fb = app f1 [dv someSort "b"]
            in test
                 "And-term on the left, remainder returns both pairs"
-                (AndTerm someSort fa fb)
+                (AndTerm fa fb)
                 d
                 (remainder [(fa, d), (fb, d)])
         , let d = dv someSort "a"
@@ -144,7 +144,7 @@ andTerms =
            in test
                 "And-term on the right, remainder returns both pairs"
                 d
-                (AndTerm someSort fa fb)
+                (AndTerm fa fb)
                 (remainder [(d, fa), (d, fb)])
         , let da = dv someSort "a"
               db = dv someSort "b"
@@ -152,7 +152,7 @@ andTerms =
               cb = app con1 [db]
            in test
                 "And-term on the left, one pair resolves"
-                (AndTerm someSort ca da)
+                (AndTerm ca da)
                 cb
                 (remainder [(da, cb), (da, db)])
         , let da = dv someSort "a"
@@ -162,7 +162,7 @@ andTerms =
            in test
                 "And-term on the right, one pair resolves"
                 ca
-                (AndTerm someSort cb da)
+                (AndTerm cb da)
                 (remainder [(ca, da), (da, db)])
         ]
 

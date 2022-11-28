@@ -136,7 +136,7 @@ unify1
 
 -- and-term in pattern: must unify with both arguments
 unify1
-    (AndTerm _ t1a t1b)
+    (AndTerm t1a t1b)
     term2 =
         do
             enqueueProblem t1a term2
@@ -144,7 +144,7 @@ unify1
 -- and-term in subject: must unify with both arguments
 unify1
     term1
-    (AndTerm _ t2a t2b) =
+    (AndTerm t2a t2b) =
         do
             enqueueProblem term1 t2a
             enqueueProblem term1 t2b

@@ -132,7 +132,7 @@ jobs:
           ghc: ${{ env.ghc_version }}
 
       - name: 'Check formatting'
-        run: docker exec -t hs-booster-ci-formatting-style-buster-${{ github.run_id }} /bin/bash -c './scripts/fourmolu.sh && git diff'
+        run: docker exec -t hs-booster-ci-formatting-style-buster-${{ github.run_id }} /bin/bash -c './scripts/fourmolu.sh && git diff --exit-code'
 
       - name: 'Run hlint'
         run: docker exec -t hs-booster-ci-formatting-style-buster-${{ github.run_id }} /bin/bash -c 'hlint -g -j'
