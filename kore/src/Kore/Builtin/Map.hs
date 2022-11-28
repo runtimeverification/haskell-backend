@@ -712,7 +712,8 @@ matchUnifyNotInKeys first second
 
 unifyNotInKeys ::
     forall unifier.
-    MonadUnify unifier =>
+    Unify.MonadGather unifier =>
+    Unify.MonadUnify unifier =>
     Sort ->
     TermSimplifier RewritingVariableName unifier ->
     NotSimplifier unifier ->

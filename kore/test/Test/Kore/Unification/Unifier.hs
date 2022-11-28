@@ -168,6 +168,7 @@ data UnificationResult = UnificationResult
     }
 
 simplifyAnds ::
+    Monad.Unify.MonadGather unifier =>
     Monad.Unify.MonadUnify unifier =>
     NonEmpty (TermLike RewritingVariableName) ->
     unifier (Pattern RewritingVariableName)

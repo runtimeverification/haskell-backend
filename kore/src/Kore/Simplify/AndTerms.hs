@@ -102,6 +102,7 @@ the special cases handled by this.
 -}
 termUnification ::
     forall unifier.
+    MonadGather unifier =>
     MonadUnify unifier =>
     HasCallStack =>
     NotSimplifier unifier ->
@@ -135,6 +136,7 @@ termUnification notSimplifier = \term1 term2 ->
             & return
 
 maybeTermEquals ::
+    MonadGather unifier =>
     MonadUnify unifier =>
     HasCallStack =>
     NotSimplifier unifier ->
@@ -220,6 +222,7 @@ maybeTermEquals notSimplifier childTransformers first second = do
         | otherwise = empty
 
 maybeTermAnd ::
+    MonadGather unifier =>
     MonadUnify unifier =>
     HasCallStack =>
     NotSimplifier unifier ->

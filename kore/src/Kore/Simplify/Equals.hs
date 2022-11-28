@@ -70,10 +70,8 @@ import Kore.Simplify.Or qualified as Or (
 import Kore.Simplify.Simplify
 import Kore.Sort (sameSort)
 import Kore.Unification.UnifierT (
+    UnifierT,
     runUnifierT,
- )
-import Kore.Unification.Unify (
-    MonadUnify,
  )
 import Logic (
     LogicT,
@@ -428,20 +426,18 @@ termEqualsAnd p1 p2 =
             >>= Logic.scatter
 
     maybeTermEqualsWorker ::
-        forall unifier.
-        MonadUnify unifier =>
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
-        MaybeT unifier (Pattern RewritingVariableName)
+        MaybeT (UnifierT (LogicT Simplifier))
+               (Pattern RewritingVariableName)
+
     maybeTermEqualsWorker =
         maybeTermEquals Not.notSimplifier termEqualsAndWorker
 
     termEqualsAndWorker ::
-        forall unifier.
-        MonadUnify unifier =>
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
-        unifier (Pattern RewritingVariableName)
+        UnifierT (LogicT Simplifier) (Pattern RewritingVariableName)
     termEqualsAndWorker first second =
         scatterResults
             =<< runMaybeT (maybeTermEqualsWorker first second)

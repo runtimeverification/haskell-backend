@@ -65,6 +65,7 @@ uses 'Unifier.throwUnificationError'.
 -}
 substitutionSimplifier ::
     forall unifier.
+    MonadGather unifier =>
     MonadUnify unifier =>
     NotSimplifier unifier ->
     SubstitutionSimplifier unifier
@@ -101,6 +102,7 @@ substitutionSimplifier notSimplifier =
 
 unificationMakeAnd ::
     forall unifier.
+    MonadGather unifier =>
     MonadUnify unifier =>
     NotSimplifier unifier ->
     MakeAnd unifier

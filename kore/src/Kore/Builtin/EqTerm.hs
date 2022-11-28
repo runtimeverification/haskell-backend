@@ -52,7 +52,7 @@ This function is suitable only for equality simplification.
 -}
 unifyEqTerm ::
     forall unifier.
-    MonadUnify unifier =>
+    MonadGather unifier =>
     TermSimplifier RewritingVariableName unifier ->
     NotSimplifier unifier ->
     EqTerm (TermLike RewritingVariableName) ->

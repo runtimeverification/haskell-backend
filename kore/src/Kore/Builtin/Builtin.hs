@@ -118,9 +118,6 @@ import Kore.Simplify.Simplify (
     TermSimplifier,
     applicationAxiomSimplifier,
  )
-import Kore.Unification.Unify (
-    MonadUnify,
- )
 import Kore.Unification.Unify qualified as Unify
 import Kore.Unparser
 import Prelude.Kore
@@ -517,7 +514,7 @@ data UnifyEq = UnifyEq
 -- | Unification of @eq@ symbols
 unifyEq ::
     forall unifier.
-    MonadUnify unifier =>
+    Unify.MonadGather unifier =>
     TermSimplifier RewritingVariableName unifier ->
     NotSimplifier unifier ->
     UnifyEq ->

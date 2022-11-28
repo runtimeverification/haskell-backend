@@ -56,7 +56,7 @@ import Kore.Unparser (
 import Logic (
     Logic,
     LogicT,
-    MonadLogic,
+    MonadGather,
  )
 import Logic qualified
 import Prelude.Kore hiding (
@@ -246,7 +246,7 @@ mergeAll ::
     MultiOr term
 mergeAll = foldl' (<>) mempty
 
-gather :: (Ord a, TopBottom a, MonadLogic m) => m a -> m (MultiOr a)
+gather :: (Ord a, TopBottom a, MonadGather m) => m a -> m (MultiOr a)
 gather act = make <$> Logic.gather act
 {-# INLINE gather #-}
 
