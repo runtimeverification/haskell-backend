@@ -20,6 +20,7 @@ import Control.Monad.Trans.Except
 import Control.Monad.Trans.State
 import Data.Bifunctor (first)
 import Data.Function (on)
+import Data.Functor.Foldable (embed, para)
 import Data.List (foldl', groupBy, partition, sortOn)
 import Data.List.Extra (groupSort)
 import Data.Map.Strict (Map)
@@ -386,19 +387,12 @@ internaliseRewriteRule partialDefinition aliasName aliasArgs right axAttributes 
         withExcept DefinitionPatternError $
             internalisePattern (Just sortVars) partialDefinition right
     let preservesDefinedness =
-            checkTermSymbols Util.isDefinedSymbol partialDefinition rhs.term
+            Util.checkTermSymbols Util.isDefinedSymbol rhs.term
         containsAcSymbols =
-            checkTermSymbols Util.checkSymbolIsAc partialDefinition lhs.term
+            Util.checkTermSymbols Util.checkSymbolIsAc lhs.term
         computedAttributes =
             ComputedAxiomAttributes{preservesDefinedness, containsAcSymbols}
     return RewriteRule{lhs, rhs, attributes = axAttributes, computedAttributes}
-
-checkTermSymbols :: (Def.Symbol -> Bool) -> KoreDefinition -> Def.Term -> Bool
-checkTermSymbols check def = \case
-    Def.AndTerm _ t1 t2 -> checkTermSymbols check def t1 && checkTermSymbols check def t2
-    Def.SymbolApplication symbol ts ->
-        check symbol && foldr ((&&) . checkTermSymbols check def) True ts
-    _ -> True
 
 expandAlias :: Alias -> [Def.Term] -> Except DefinitionError Def.TermOrPredicate
 expandAlias alias currentArgs
@@ -542,18 +536,14 @@ computeTermIndex config =
             _ -> Def.Anything
 
     -- it is assumed there is only one K cell
+    -- Note: para is variant of cata in which recursive positions also include the original sub-tree,
+    -- in addition to the result of folding that sub-tree.
     lookForKCell :: Def.Term -> Maybe Def.Term
-    lookForKCell =
-        \case
-            kCell@(Def.SymbolApplication symbol children)
-                | symbol.name == "Lbl'-LT-'k'-GT-'" ->
-                    Just kCell
-                | otherwise ->
-                    asum $ lookForKCell <$> children
-            Def.AndTerm _ t1 t2 ->
-                lookForKCell t1 <|> lookForKCell t2
-            Def.DomainValue _ _ -> Nothing
-            Def.Var _ -> Nothing
+    lookForKCell = para $ \case
+        kCell@(Def.SymbolApplicationF symbol (children :: [(Def.Term, Maybe Def.Term)]))
+            | symbol.name == "Lbl'-LT-'k'-GT-'" -> Just $ embed $ fmap fst kCell
+            | otherwise -> asum $ map snd children
+        other -> foldr ((<|>) . snd) Nothing other
 
     -- this assumes that the top kseq is already normalized into right-assoc form
     lookForTopTerm :: Def.Term -> Def.Term

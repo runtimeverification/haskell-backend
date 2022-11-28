@@ -56,8 +56,7 @@ internalisePattern sortVars definition p = do
     andTerm _ [] = error "BUG: andTerm called with empty term list"
     andTerm pat ts = do
         let sortList = nub $ map sortOfTerm ts
-            andSort = head sortList
-            resultTerm = foldl1' (Internal.AndTerm andSort) ts
+            resultTerm = foldl1' Internal.AndTerm ts
         -- check resulting terms for consistency and sorts
         -- TODO needs to consider sub-sorts instead (set must be
         -- consistent) if this code becomes order-sorted
@@ -126,14 +125,13 @@ internaliseTerm sortVars definition@KoreDefinition{sorts, symbols} pat =
         Syntax.KJTop{} -> predicate
         Syntax.KJBottom{} -> predicate
         Syntax.KJNot{} -> predicate
-        Syntax.KJAnd{sort, first = arg1, second = arg2} -> do
+        Syntax.KJAnd{first = arg1, second = arg2} -> do
             -- analysed beforehand, expecting this to operate on terms
             a <- recursion arg1
             b <- recursion arg2
-            resultSort <- lookupInternalSort' sort
             -- TODO check that both a and b are of sort "resultSort"
             -- Which is a unification problem if this involves variables.
-            pure $ Internal.AndTerm resultSort a b
+            pure $ Internal.AndTerm a b
         Syntax.KJOr{} -> predicate
         Syntax.KJImplies{} -> predicate
         Syntax.KJIff{} -> predicate
@@ -206,7 +204,7 @@ internalisePredicate sortVars definition@KoreDefinition{sorts} pat = case pat of
     Syntax.KJCeil{arg} ->
         Internal.Ceil <$> internaliseTerm sortVars definition arg
     Syntax.KJFloor{} -> notSupported
-    Syntax.KJEquals{sort, argSort, first = arg1, second = arg2} -> do
+    Syntax.KJEquals{argSort, first = arg1, second = arg2} -> do
         -- distinguish term and predicate equality
         is1Term <- isTermM arg1
         is2Term <- isTermM arg2
@@ -214,11 +212,10 @@ internalisePredicate sortVars definition@KoreDefinition{sorts} pat = case pat of
             (True, True) -> do
                 a <- internaliseTerm sortVars definition arg1
                 b <- internaliseTerm sortVars definition arg2
-                s <- lookupInternalSort' sort
                 argS <- lookupInternalSort' argSort
                 -- check that argS and sorts of a and b "agree"
                 mapM_ sortCheck [(sortOfTerm a, argS), (sortOfTerm b, argS)]
-                pure $ Internal.EqualsTerm s a b
+                pure $ Internal.EqualsTerm a b
             (False, False) ->
                 Internal.EqualsPredicate
                     <$> recursion arg1
@@ -229,8 +226,9 @@ internalisePredicate sortVars definition@KoreDefinition{sorts} pat = case pat of
         a <- internaliseTerm sortVars definition arg1
         b <- internaliseTerm sortVars definition arg2
         s <- lookupInternalSort' sort
-        -- TODO check that s and sorts of a and b agree
-        pure $ Internal.In s a b
+        -- check that `sort` and sorts of a and b agree
+        mapM_ sortCheck [(sortOfTerm a, s), (sortOfTerm b, s)]
+        pure $ Internal.In a b
     Syntax.KJNext{} -> notSupported
     Syntax.KJRewrites{} -> notSupported -- should only occur in claims!
     Syntax.KJDV{} -> term
