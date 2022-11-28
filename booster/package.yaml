@@ -73,6 +73,7 @@ library:
   - monad-logger
   - optparse-applicative
   - prettyprinter
+  - recursion-schemes
   - regex-base
   - regex-pcre-builtin
   - stm

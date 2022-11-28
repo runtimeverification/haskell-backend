@@ -13,20 +13,22 @@ module Kore.Pattern.Util (
     isSortInjectionSymbol,
     isDefinedSymbol,
     checkSymbolIsAc,
+    checkTermSymbols,
 ) where
 
+import Data.Foldable (fold)
+import Data.Functor.Foldable (Corecursive (embed), cata)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Kore.Definition.Attributes.Base (SymbolAttributes (..), SymbolType (..))
-
 import Kore.Pattern.Base
 
 -- | Returns the sort of a term
 sortOfTerm :: Term -> Sort
-sortOfTerm (AndTerm sort _ _) = sort
+sortOfTerm (AndTerm _ child) = sortOfTerm child
 sortOfTerm (SymbolApplication symbol _) = symbol.resultSort
 sortOfTerm (DomainValue sort _) = sort
 sortOfTerm (Var Variable{variableSort}) = variableSort
@@ -40,51 +42,20 @@ retractPattern (TermAndPredicate patt) = Just patt
 retractPattern _ = Nothing
 
 substituteInTerm :: Map Variable Term -> Term -> Term
-substituteInTerm substitution term =
-    case term of
-        AndTerm sort t1 t2 ->
-            AndTerm sort (substituteInTerm substitution t1) (substituteInTerm substitution t2)
-        SymbolApplication symbol sargs ->
-            SymbolApplication symbol (substituteInTerm substitution <$> sargs)
-        dv@(DomainValue _ _) -> dv
-        v@(Var var) ->
-            fromMaybe v (Map.lookup var substitution)
+substituteInTerm substitution = cata $ \case
+    VarF v -> fromMaybe (Var v) (Map.lookup v substitution)
+    other -> embed other
 
 substituteInPredicate :: Map Variable Term -> Predicate -> Predicate
-substituteInPredicate substitution predicate =
-    case predicate of
-        AndPredicate p1 p2 ->
-            AndPredicate (substituteInPredicate substitution p1) (substituteInPredicate substitution p2)
-        Bottom -> Bottom
-        Ceil t -> Ceil (substituteInTerm substitution t)
-        EqualsTerm sort t1 t2 ->
-            EqualsTerm sort (substituteInTerm substitution t1) (substituteInTerm substitution t2)
-        EqualsPredicate p1 p2 ->
-            EqualsPredicate (substituteInPredicate substitution p1) (substituteInPredicate substitution p2)
-        Exists v p ->
-            Exists v (substituteInPredicate substitution p)
-        Forall v p ->
-            Forall v (substituteInPredicate substitution p)
-        Iff p1 p2 ->
-            Iff (substituteInPredicate substitution p1) (substituteInPredicate substitution p2)
-        Implies p1 p2 ->
-            Implies (substituteInPredicate substitution p1) (substituteInPredicate substitution p2)
-        In sort t1 t2 ->
-            In sort (substituteInTerm substitution t1) (substituteInTerm substitution t2)
-        Not p ->
-            Not (substituteInPredicate substitution p)
-        Or p1 p2 ->
-            Or (substituteInPredicate substitution p1) (substituteInPredicate substitution p2)
-        Top -> Top
+substituteInPredicate substitution = cata $ \case
+    EqualsTermF t1 t2 ->
+        EqualsTerm (substituteInTerm substitution t1) (substituteInTerm substitution t2)
+    other -> embed other
 
 freeVariables :: Term -> Set Variable
-freeVariables = \case
-    AndTerm _ t1 t2 ->
-        freeVariables t1 <> freeVariables t2
-    SymbolApplication _ sargs ->
-        Set.unions $ map freeVariables sargs
-    DomainValue _ _ -> Set.empty
-    Var var -> Set.singleton var
+freeVariables = cata $ \case
+    VarF var -> Set.singleton var
+    other -> fold other
 
 isConstructorSymbol :: Symbol -> Bool
 isConstructorSymbol symbol =
@@ -109,3 +80,8 @@ isDefinedSymbol symbol =
 checkSymbolIsAc :: Symbol -> Bool
 checkSymbolIsAc symbol =
     symbol.attributes.isAssoc || symbol.attributes.isIdem
+
+checkTermSymbols :: (Symbol -> Bool) -> Term -> Bool
+checkTermSymbols check = cata $ \case
+    SymbolApplicationF symbol ts -> check symbol && and ts
+    other -> and other
