@@ -59,7 +59,7 @@ import Control.Monad.Morph qualified as Monad.Morph
 import Control.Monad.RWS.Strict (
     RWST,
  )
-import Control.Monad.Trans.Accum (
+import Control.Monad.Trans.Accum.Stricter (
     AccumT,
     mapAccumT,
  )

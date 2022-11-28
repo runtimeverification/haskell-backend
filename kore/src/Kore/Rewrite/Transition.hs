@@ -31,12 +31,12 @@ import Control.Monad.Except (
     MonadError (..),
  )
 import Control.Monad.Reader
-import Control.Monad.Trans.Accum (
+import Control.Monad.Trans.Accum.Stricter (
     AccumT (..),
     mapAccumT,
     runAccumT,
  )
-import Control.Monad.Trans.Accum qualified as Accum
+import Control.Monad.Trans.Accum.Stricter qualified as Accum
 import Data.Functor.Identity (
     Identity,
     runIdentity,

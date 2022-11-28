@@ -16,11 +16,11 @@ module SQL.Query (
     withParens,
 ) where
 
-import Control.Monad.Trans.Accum (
+import Control.Monad.Trans.Accum.Stricter (
     AccumT,
     execAccumT,
  )
-import Control.Monad.Trans.Accum qualified as Accum
+import Control.Monad.Trans.Accum.Stricter qualified as Accum
 import Data.String (
     fromString,
  )

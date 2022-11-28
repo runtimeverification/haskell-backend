@@ -66,7 +66,7 @@ import Control.Monad.Morph qualified as Monad.Morph
 import Control.Monad.RWS.Strict (RWST)
 import Control.Monad.Reader
 import Control.Monad.State.Strict
-import Control.Monad.Trans.Accum
+import Control.Monad.Trans.Accum.Stricter
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe

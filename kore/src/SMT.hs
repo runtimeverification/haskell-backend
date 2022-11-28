@@ -98,7 +98,7 @@ import Control.Monad.State.Strict (
  )
 import Control.Monad.State.Strict qualified as State.Strict
 import Control.Monad.Trans qualified as Trans
-import Control.Monad.Trans.Accum
+import Control.Monad.Trans.Accum.Stricter
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe qualified as Maybe
