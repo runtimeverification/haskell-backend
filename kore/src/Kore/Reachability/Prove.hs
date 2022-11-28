@@ -85,13 +85,8 @@ import Kore.Log.DebugTransition (
     debugFinalTransition,
  )
 import Kore.Log.InfoProofDepth
-import Kore.Log.WarnBottom (prettySourceLocation)
 import Kore.Log.WarnStuckClaimState
 import Kore.Log.WarnTrivialClaim
-import Kore.Reachability.AllPathClaim (
-    AllPathClaim (getAllPathClaim),
-    allPathRuleToTerm,
- )
 import Kore.Reachability.Claim
 import Kore.Reachability.ClaimState (
     ClaimState,
@@ -100,10 +95,6 @@ import Kore.Reachability.ClaimState (
     extractUnproven,
  )
 import Kore.Reachability.ClaimState qualified as ClaimState
-import Kore.Reachability.OnePathClaim (
-    OnePathClaim (getOnePathClaim),
-    onePathRuleToTerm,
- )
 import Kore.Reachability.Prim as Prim (
     Prim (..),
  )

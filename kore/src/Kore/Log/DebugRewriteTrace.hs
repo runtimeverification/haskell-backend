@@ -35,7 +35,6 @@ import Data.Yaml (
     toJSON,
     (.=),
  )
-import Kore.Attribute.Source (unSource)
 import Kore.Attribute.SourceLocation (SourceLocation (..))
 import Kore.Attribute.UniqueId (
     UniqueId (..),
@@ -133,7 +132,7 @@ instance ToJSON DebugInitialClaim where
     toJSON (DebugInitialClaim uniqueId claim) =
         object
             [ "task" .= ("reachability" :: Text)
-            , "claim" .= (unSource . source) claim
+            , "claim" .= show (pretty claim)
             , "claim-id" .= maybe Null toJSON (getUniqueId uniqueId)
             ]
 
