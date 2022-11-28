@@ -35,6 +35,8 @@ import Data.Yaml (
     toJSON,
     (.=),
  )
+import Kore.Attribute.Source (unSource)
+import Kore.Attribute.SourceLocation (SourceLocation (..))
 import Kore.Attribute.UniqueId (
     UniqueId (..),
  )
@@ -83,7 +85,7 @@ import Pretty (
     renderText,
  )
 
-data DebugInitialClaim = DebugInitialClaim UniqueId (TermLike VariableName)
+data DebugInitialClaim = DebugInitialClaim UniqueId SourceLocation
     deriving stock (Show)
 
 newtype DebugInitialPattern = DebugInitialPattern (TermLike VariableName)
@@ -131,7 +133,7 @@ instance ToJSON DebugInitialClaim where
     toJSON (DebugInitialClaim uniqueId claim) =
         object
             [ "task" .= ("reachability" :: Text)
-            , "claim" .= unparseOneLine claim
+            , "claim" .= (unSource . source) claim
             , "claim-id" .= maybe Null toJSON (getUniqueId uniqueId)
             ]
 
@@ -202,7 +204,7 @@ unparseOneLine = renderText . layoutOneLine . unparse
 debugInitialClaim ::
     MonadLog log =>
     UniqueId ->
-    TermLike VariableName ->
+    SourceLocation ->
     log ()
 debugInitialClaim uniqueId claimPattern = logEntry $ DebugInitialClaim uniqueId claimPattern
 

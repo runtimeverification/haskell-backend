@@ -85,9 +85,11 @@ import Kore.Log.DebugTransition (
     debugFinalTransition,
  )
 import Kore.Log.InfoProofDepth
+import Kore.Log.WarnBottom (prettySourceLocation)
 import Kore.Log.WarnStuckClaimState
 import Kore.Log.WarnTrivialClaim
 import Kore.Reachability.AllPathClaim (
+    AllPathClaim (getAllPathClaim),
     allPathRuleToTerm,
  )
 import Kore.Reachability.Claim
@@ -99,6 +101,7 @@ import Kore.Reachability.ClaimState (
  )
 import Kore.Reachability.ClaimState qualified as ClaimState
 import Kore.Reachability.OnePathClaim (
+    OnePathClaim (getOnePathClaim),
     onePathRuleToTerm,
  )
 import Kore.Reachability.Prim as Prim (
@@ -291,8 +294,8 @@ proveClaimsWorker
             traceExceptT D_OnePath_verifyClaim [debugArg "rule" claim] $ do
                 debugBeginClaim claim
                 debugInitialClaim (from claim) $ case claim of
-                    OnePath term -> onePathRuleToTerm term
-                    AllPath term -> allPathRuleToTerm term
+                    OnePath onePathClaim -> from $ getOnePathClaim onePathClaim
+                    AllPath allPathClaim -> from $ getAllPathClaim allPathClaim
                 result <-
                     lift . lift $
                         proveClaim
