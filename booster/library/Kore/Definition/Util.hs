@@ -19,12 +19,14 @@ import GHC.Generics (Generic)
 
 import Kore.Definition.Attributes.Base
 import Kore.Definition.Base
+import Kore.Pattern.Base (TermIndex (..))
 
 data Summary = Summary
     { file :: FilePath
     , modNames, sortNames, symbolNames :: [Text]
     , subSorts :: Map.Map Text [Text]
     , axiomCount, preserveDefinednessCount, containAcSymbolsCount :: Int
+    , termIndexes :: Map.Map TermIndex [Location]
     }
     deriving stock (Eq, Show, Generic)
     deriving anyclass (NFData)
@@ -48,30 +50,55 @@ mkSummary file KoreDefinition{modules, sorts, symbols, rewriteTheory} =
                 filter (\rule -> rule.computedAttributes.containsAcSymbols) $
                     concat $
                         concatMap Map.elems (Map.elems rewriteTheory)
+        , termIndexes =
+            Map.map (fmap (.attributes.location) . concat . Map.elems) rewriteTheory
         }
 
 prettySummary :: Summary -> String
-prettySummary Summary{modNames, sortNames, symbolNames, subSorts, axiomCount, preserveDefinednessCount, containAcSymbolsCount} =
-    Text.unpack $
-        Text.unlines $
-            [ list "Modules" modNames
-            , list "Sorts" sortNames
-            , list "Symbols" symbolNames
-            , "Axioms: " <> Text.pack (show axiomCount)
-            , "Axioms preserving definedness: " <> Text.pack (show preserveDefinednessCount)
-            , "Axioms containing AC symbols: " <> Text.pack (show containAcSymbolsCount)
-            ]
-                <> ("Subsorts:" : map (("- " <>) . uncurry list) (Map.assocs subSorts))
-  where
-    list header [] = header <> ": -"
-    list header [x] = header <> ": " <> decodeLabel' x
-    list header xs =
-        header
-            <> ": "
-            <> Text.pack (show $ length xs)
-            <> Text.concat (map (("\n  - " <>) . decodeLabel') xs)
+prettySummary
+    Summary
+        { modNames
+        , sortNames
+        , symbolNames
+        , subSorts
+        , axiomCount
+        , preserveDefinednessCount
+        , containAcSymbolsCount
+        , termIndexes
+        } =
+        Text.unpack $
+            Text.unlines $
+                [ list decodeLabel' "Modules" modNames
+                , list decodeLabel' "Sorts" sortNames
+                , list decodeLabel' "Symbols" symbolNames
+                , "Axioms: " <> Text.pack (show axiomCount)
+                , "Axioms preserving definedness: " <> Text.pack (show preserveDefinednessCount)
+                , "Axioms containing AC symbols: " <> Text.pack (show containAcSymbolsCount)
+                ]
+                    <> ("Subsorts:" : tableView decodeLabel' subSorts)
+                    <> ("Axioms grouped by term index:" : tableView justShow termIndexes')
+      where
+        tableView elemShower table =
+            map (("- " <>) . uncurry (list elemShower)) (Map.assocs table)
 
-    decodeLabel' = either error id . decodeLabel
+        list _ header [] = header <> ": -"
+        list f header [x] = header <> ": " <> f x
+        list f header xs =
+            header
+                <> ": "
+                <> Text.pack (show $ length xs)
+                <> Text.concat (map (("\n  - " <>) . f) xs)
+
+        decodeLabel' = either error id . decodeLabel
+
+        termIndexes' =
+            Map.mapKeys prettyTermIndex termIndexes
+
+        prettyTermIndex Anything = "Anything"
+        prettyTermIndex (TopSymbol sym) = decodeLabel' sym
+        prettyTermIndex None = "None"
+
+        justShow = Text.pack . show
 
 decodeLabel :: Text -> Either String Text
 decodeLabel str
