@@ -1,10 +1,10 @@
-Proving Total Corectness All-Path Reachability Claims
+Proving Total Correctness All-Path Reachability Claims
 =====================================================
 
-This document details Total Corectness All-Path Reachability.
+This document details Total Correctness All-Path Reachability.
 
-_Prepared by Traian Șerbănuță, based on [proving All-Path Reachability
-claims](2019-03-28-All-Path-Reachability-Proofs.md)_
+_Prepared by Traian Șerbănuță and Virgil Șerbănuță,
+based on [proving All-Path Reachability claims](2019-03-28-All-Path-Reachability-Proofs.md)_
 
 Definitions
 -----------
@@ -188,7 +188,7 @@ Nevertheless, before continuing, let
 us give an example of a system and property for which the above construction is
 not a fixpoint.
 
-#### Counterexample for `⟦AF ϕ⟧ = ⋁ₙGⁿ(∅)`
+### Counterexample for `⟦AF ϕ⟧ = ⋁ₙGⁿ(∅)`
 
 Consider the following K theory
 
@@ -205,10 +205,10 @@ It is easy to see that any trace originating in `x` will reach `0` in a finite
 number of steps. However, there is no bound on the number of steps needed for `x`
 to reach `0`.
 
-### Total corectness all-path reachability claims
+### Total correctness all-path reachability claims
 
-Given this definition of all-path finally, a total correctness all-path
-reachability claim is of the form
+Given the definition of all-path finally discussed in the section above,
+a total correctness all-path reachability claim is of the form
 ```
 ∀x.φ(x) → AF ∃z.ψ(x,z)
 ```
@@ -230,9 +230,9 @@ Given a set of reachability claims, of the form `∀x.φ(x) → AF ∃z.ψ(x,z)`
 we are trying to prove all of them together, by well-founded induction on a
 given `measure` defined on the quantified variables `x`.
 
-The well-founded induction argument requiring the `measure` to decrease before
-applying a claim as an induction hypothesis replaces the coinductive argument
-requiring that progress is made before applying a circularity.
+The well-founded induction argument, which requires the `measure` to decrease before
+applying a claim as an induction hypothesis, will replace the coinductive argument,
+which requires that progress is made before applying a circularity.
 
 ## Proposal of syntax changes
 
@@ -240,9 +240,9 @@ requiring that progress is made before applying a circularity.
   needed to complete their proof; this induces a dependency relation
 - claims which are part of a dependency cycle (including self-dependencies)
   would need to be specified together as a "claim group"
-- a claim group would need to provide a metric on their input variables, which
-  would be used as part of the decreasingness guard whenever one tries to apply
-  a claim from the group during the proof of one the claims in the group
+- a claim group would need to provide a metric on their input variables;
+  this metric must decrease whenever one tries to apply a claim from the group
+  while proving a claim from the same group
 
 A claim group would be something like 
 ```
@@ -267,12 +267,13 @@ variables would need to be implemented.
 
 ## Approach
 
-For the algorithms derived by the present approach, please see next section.
+For the algorithms derived from the present approach, please check the next section.
 
 Assume we want to prove a group of claims defined over the same set of variables
-`x`. Further assume that all claims not in group on which these claims depend
-have already been proven.  Assume also a given integer pattern `measure(x)`,
-over the same variables as the claims in the group.
+`x`. Further assume that all other claims (which are not in the current group)
+ on which these claims depend have already been proven.
+ Assume also a given integer pattern `measure(x)`, over the same variables as
+ the claims in the group.
 
 Since we're proving all claims together, we can gather them in a single goal,
 `P(x) ::= (φ₁(x) → AF ∃z.ψ₁(x,z)) ∧ ... ∧ (φₙ(x) → AF ∃z.ψₙ(x,z))`.
@@ -322,7 +323,8 @@ allows their term part `t` to be undefined.
 
 _Extended constructor patterns_ will be those extended function-like patterns
 for which `t` is a functional term, composed out of constructor-like symbols
-and variables.
+and variables. This definition can be extended to include AC constructors, e.g.
+map concatenation
 
 
 __Note:__
