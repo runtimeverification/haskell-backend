@@ -116,8 +116,8 @@ becomes
 
 The result sort is fixed to a made-up sort variable.
 -}
-fromSubstitution :: Substitution VariableName -> Maybe KoreJson
-fromSubstitution subst
+fromSubstitution :: Kore.Sort -> Substitution VariableName -> Maybe KoreJson
+fromSubstitution sort subst
     | Substitution.null subst = Nothing
     | otherwise =
         Just
@@ -127,16 +127,11 @@ fromSubstitution subst
             . Substitution.unwrap
             $ subst
   where
-    freshSort =
-        Kore.SortVariableSort
-            . Kore.SortVariable
-            $ Kore.noLocationId "JSONSortVariable"
-
     equals ::
         Kore.SomeVariable VariableName ->
         TermLike VariableName ->
         TermLike VariableName
-    v `equals` t = TermLike.mkEquals freshSort (TermLike.mkVar v) t
+    v `equals` t = TermLike.mkEquals sort (TermLike.mkVar v) t
 
     asPair :: Assignment v -> (Kore.SomeVariable v, TermLike v)
     asPair (Substitution.Assignment v t) = (v, t)
