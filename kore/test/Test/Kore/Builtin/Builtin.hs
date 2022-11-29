@@ -214,8 +214,7 @@ verifyPattern expectedSort termLike =
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build verifiedModule
 
-testConditionSimplifier ::
-    MonadSimplify simplifier => ConditionSimplifier simplifier
+testConditionSimplifier :: ConditionSimplifier Simplifier
 testConditionSimplifier =
     Simplifier.Condition.create SubstitutionSimplifier.substitutionSimplifier
 
@@ -255,7 +254,7 @@ simplify =
         . runNoSMT
         . runSimplifier testEnv
         . Logic.observeAllT
-        . (simplifyTerm SideCondition.top >=> Logic.scatter)
+        . (liftSimplifier . simplifyTerm SideCondition.top >=> Logic.scatter)
 
 evaluateTerm ::
     TermLike RewritingVariableName ->

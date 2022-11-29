@@ -682,19 +682,13 @@ instance (Debug variable, Diff variable) => Diff (TermLike variable) where
             (termLike2 & termLikeAttributes Lens..~ extractAttributes termLike1)
             <|> diffPrecGeneric termLike1 termLike2
 
-instance
-    (Eq variable, Eq (TermLikeF variable (TermLike variable))) =>
-    Eq (TermLike variable)
-    where
+instance Eq variable => Eq (TermLike variable) where
     (==)
         (Recursive.project -> _ :< pat1)
         (Recursive.project -> _ :< pat2) =
             pat1 == pat2
 
-instance
-    (Ord variable, Ord (TermLikeF variable (TermLike variable))) =>
-    Ord (TermLike variable)
-    where
+instance Ord variable => Ord (TermLike variable) where
     compare
         (Recursive.project -> _ :< pat1)
         (Recursive.project -> _ :< pat2) =

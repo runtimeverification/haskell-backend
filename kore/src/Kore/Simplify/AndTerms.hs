@@ -451,7 +451,7 @@ bottomTermEquals
     unifyData =
         do
             -- MonadUnify
-            secondCeil <- makeEvaluateTermCeil sideCondition term
+            secondCeil <- liftSimplifier $ makeEvaluateTermCeil sideCondition term
             case toList secondCeil of
                 [] -> return (Pattern.topOf resultSort)
                 [Conditional{predicate = PredicateTrue, substitution}]
@@ -562,7 +562,7 @@ variableFunctionEquals
         do
             -- MonadUnify
             predicate <- do
-                resultOr <- makeEvaluateTermCeil SideCondition.topTODO term2
+                resultOr <- liftSimplifier $ makeEvaluateTermCeil SideCondition.topTODO term2
                 case toList resultOr of
                     [] ->
                         debugUnifyBottomAndReturnBottom
@@ -745,8 +745,9 @@ overloadedConstructorSortInjectionAndEquals termMerger unifyData =
                 ) -> do
                 boundPattern <- do
                     merged <- termMerger firstTerm' secondTerm'
-                    Exists.makeEvaluate SideCondition.topTODO narrowingVars $
-                        merged `Pattern.andCondition` narrowingSubst
+                    liftSimplifier $
+                        Exists.makeEvaluate SideCondition.topTODO narrowingVars $
+                            merged `Pattern.andCondition` narrowingSubst
                 case OrPattern.toPatterns boundPattern of
                     [result] -> return result
                     [] ->

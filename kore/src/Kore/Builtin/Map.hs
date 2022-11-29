@@ -753,7 +753,7 @@ unifyNotInKeys resultSort unifyChildren (NotSimplifier notSimplifier) unifyData 
         TermLike RewritingVariableName ->
         unifier (Condition RewritingVariableName)
     defineTerm term =
-        makeEvaluateTermCeil SideCondition.topTODO term
+        liftSimplifier (makeEvaluateTermCeil SideCondition.topTODO term)
             >>= Unify.scatter
 
     eraseTerm =

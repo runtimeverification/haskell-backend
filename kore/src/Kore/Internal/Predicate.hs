@@ -282,19 +282,13 @@ instance (Debug variable, Diff variable) => Diff (Predicate variable) where
                 (Recursive.embed (attrs1 :< predF2))
                 <|> diffPrecGeneric pred1 pred2
 
-instance
-    (Eq variable, Eq (PredicateF variable (Predicate variable))) =>
-    Eq (Predicate variable)
-    where
+instance Eq variable => Eq (Predicate variable) where
     (==)
         (Recursive.project -> _ :< pat1)
         (Recursive.project -> _ :< pat2) =
             pat1 == pat2
 
-instance
-    (Ord variable, Ord (PredicateF variable (Predicate variable))) =>
-    Ord (Predicate variable)
-    where
+instance Ord variable => Ord (Predicate variable) where
     compare
         (Recursive.project -> _ :< pat1)
         (Recursive.project -> _ :< pat2) =

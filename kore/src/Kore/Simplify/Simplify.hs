@@ -235,20 +235,18 @@ askMetadataTools :: MonadSimplify m => m (SmtMetadataTools Attribute.Symbol)
 askMetadataTools = liftSimplifier $ asks metadataTools
 
 simplifyPattern ::
-    MonadSimplify m =>
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
-    m (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 simplifyPattern sideCondition patt =
     liftSimplifier $ do
         simplifier <- asks simplifierPattern
         simplifier sideCondition patt
 
 simplifyTerm ::
-    MonadSimplify m =>
     SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
-    m (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 simplifyTerm sideCondition termLike =
     liftSimplifier $ do
         simplifier <- asks simplifierTerm
@@ -348,7 +346,7 @@ simplifyPatternScatter ::
     simplifier (Pattern RewritingVariableName)
 simplifyPatternScatter sideCondition patt =
     Logic.scatter
-        =<< simplifyPattern sideCondition patt
+        =<< liftSimplifier (simplifyPattern sideCondition patt)
 -- * Predicate simplifiers
 
 {- | 'ConditionSimplifier' wraps a function that simplifies
@@ -703,19 +701,17 @@ applicationAxiomSimplifier applicationSimplifier =
 
 -- | Checks whether a symbol is a constructor or is overloaded.
 isConstructorOrOverloaded ::
-    MonadSimplify unifier =>
     Symbol ->
-    unifier Bool
+    Simplifier Bool
 isConstructorOrOverloaded s =
     do
         OverloadSimplifier{isOverloaded} <- askOverloadSimplifier
         return (isConstructor s || isOverloaded s)
 
 makeEvaluateTermCeil ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
-    simplifier (OrCondition RewritingVariableName)
+    Simplifier (OrCondition RewritingVariableName)
 makeEvaluateTermCeil sideCondition child =
     Predicate.makeCeilPredicate child
         & Condition.fromPredicate
@@ -723,11 +719,10 @@ makeEvaluateTermCeil sideCondition child =
         & OrCondition.observeAllT
 
 makeEvaluateCeil ::
-    MonadSimplify simplifier =>
     Sort ->
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 makeEvaluateCeil sort sideCondition child =
     do
         let (childTerm, childCondition) = Pattern.splitTerm child

@@ -45,6 +45,8 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Simplify.Simplify (
     MonadSimplify,
+    Simplifier,
+    liftSimplifier,
     simplifyCondition,
     simplifyTerm,
  )
@@ -65,9 +67,8 @@ simplifyTopConfiguration =
 and removes the exists quantifiers at the top.
 -}
 simplifyTopConfigurationDefined ::
-    MonadSimplify simplifier =>
     Pattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 simplifyTopConfigurationDefined configuration =
     maybe
         (return OrPattern.bottom)
@@ -139,7 +140,7 @@ makeEvaluate sideCondition =
                         simplifiedCondition
                         sideCondition
             simplifiedTerm <-
-                simplifyTerm termSideCondition term'
+                liftSimplifier (simplifyTerm termSideCondition term')
                     >>= Logic.scatter
             let simplifiedPattern =
                     Conditional.andCondition simplifiedTerm simplifiedCondition
