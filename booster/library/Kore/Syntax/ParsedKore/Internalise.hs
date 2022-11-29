@@ -274,7 +274,8 @@ addModule
                     }
                 )
       where
-        -- returns the
+        -- Uses 'getKey' to construct a finite mapping from the list,
+        -- returning elements that yield the same key separately.
         mappedBy ::
             forall a k.
             (Ord k) =>
@@ -414,16 +415,12 @@ expandAlias alias currentArgs
                             Util.substituteInPredicate substitution <$> constraints
                         }
 
-processRewriteRulesTODO :: [RewriteRule] -> [RewriteRule]
-processRewriteRulesTODO = id
-
 addToTheory :: [RewriteRule] -> RewriteTheory -> RewriteTheory
 addToTheory axioms theory =
-    let processedRewriteRules = processRewriteRulesTODO axioms
-        newTheory =
+    let newTheory =
             Map.map groupByPriority
                 . groupByTermIndex
-                $ processedRewriteRules
+                $ axioms
      in Map.unionWith (Map.unionWith (<>)) theory newTheory
 
 groupByTermIndex :: [RewriteRule] -> Map Def.TermIndex [RewriteRule]
@@ -523,7 +520,7 @@ computeTermIndex :: Def.Term -> Def.TermIndex
 computeTermIndex config =
     case lookForKCell config of
         Just (Def.SymbolApplication _ children) ->
-            getTermIndex (lookForTopTerm (head children))
+            getTermIndex (lookForTopTerm (getFirstKCellElem children))
         _ -> Def.Anything
   where
     getTermIndex :: Def.Term -> Def.TermIndex
@@ -573,3 +570,6 @@ computeTermIndex config =
     getInjChild [] = error "stripAwaySortInjections: injection with 0 children"
     getInjChild [x] = x
     getInjChild _ = error "stripAwaySortInjections: injection with multiple children"
+
+    getFirstKCellElem [] = error "computeTermIndex: empty K cell"
+    getFirstKCellElem (x : _) = x
