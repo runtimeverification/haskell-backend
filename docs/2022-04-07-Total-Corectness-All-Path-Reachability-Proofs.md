@@ -15,10 +15,8 @@ Given a formula `φ`, let `AFφ` denote the formula “all-path finally” `φ`,
 intended semantics is: "the set of configurations for which on all paths,
 in a finite number of steps, `φ` holds".
 
-Let us will first show that `AFφ` can be described by the formula
-```
-AFφ := μX.φ ∨ (○X ∧ •⊤)
-```
+In this section we will show that `AFφ` can be captured by the interpretation of
+the fixed-point `μX.φ ∨ (○X ∧ •⊤)`
 
 Let `Top` be the set of all configurations, and let `Prev` be the point-wise
 extension of the function mapping a configuration to the set of all
@@ -31,7 +29,7 @@ G(X) := ⟦φ⟧ ∪ ( ∁(Prev(∁(X))) ∩ Prev(Top) )
 ```
 Note that, since `X` is positively occurring in the scope of `μ`, `G` is
 monotone, so the `LFP(G)` exists and can be defined according to the 
-Knaster-Tarski formula, as the intersection of all pre-fixpoints of `G`,
+Knaster-Tarski formula, as the intersection of all pre-fixed-points of `G`,
 that is, all `A` such that `G(A) ⊆ A`.
 
 Let us also note that  `x ∈ G(A)` iff `φ` holds for `x` or `∅ ⊂ Prev⁻¹({x}) ⊆ A`.
@@ -52,158 +50,66 @@ Let `stuck x` be defined as `Prev⁻¹(x) = ∅` and let `x τ y` be defined
 as `y ∈ Prev⁻¹({x})`.
 We can also express `∅ ⊂ Prev⁻¹({x}) ⊆ A` in terms
 of `stuck` and transitions, as `¬ stuck x ∧ ∀y x τ y → y ∈ A`.
-Hence, `x ∈ G(A)` if either `x` matches `ϕ`, or `x` is not stuck and all
+Hence, `x ∈ G(A)` if either `x` matches `φ`, or `x` is not stuck and all
 its transitions go into `A`.
 
 We can coinductively define (the possibly infinite) complete traces of the
 transition system determined by `Prev⁻¹` starting in an element `a` as being:
 either just `a`, if `stuck a`, or `a` followed by a trace starting in `b` for
 some `b` such that `a τ b`.
-Given this definition, the trace semantics for `AF ϕ` is
+Given this definition, the trace semantics for `AF φ` is
 ```
-⟦AF ϕ⟧ ::= { a | forall tr trace starting in a, exists b in tr such that b ∈ ⟦ϕ⟧ }
+⟦AF φ⟧ ::= { a | forall tr trace starting in a, exists b in tr such that b ∈ ⟦φ⟧ }
 ```
 
-Let us first argue that `⟦AF ϕ⟧` is a pre-fixpoint of `G`, i.e., that
-`G(⟦AF ϕ⟧) ⊆ ⟦AF ϕ⟧`.
-Take `a ∈ G(⟦AF ϕ⟧)`. Then either `a ∈ ⟦ϕ⟧` or `¬ stuck a` and for all `b`
-such that `a τ b`, `b ∈ ⟦AF ϕ⟧`.
+Let us first argue that `⟦AF φ⟧` is a pre-fixed-point of `G`, i.e., that
+`G(⟦AF φ⟧) ⊆ ⟦AF φ⟧`.
+Take `a ∈ G(⟦AF φ⟧)`. Then either `a ∈ ⟦φ⟧` or `¬ stuck a` and for all `b`
+such that `a τ b`, `b ∈ ⟦AF φ⟧`.
 Let `tr` be a complete trace starting in `a`.
-If `a ∈ ⟦ϕ⟧`, then we can choose precisely `a` as the witness on that trace 
-for which `ϕ` holds.
-Otherwise, `¬ stuck a` and for all `b` such that `a τ b`, `b ∈ ⟦AF ϕ⟧`.
+If `a ∈ ⟦φ⟧`, then we can choose precisely `a` as the witness on that trace 
+for which `φ` holds.
+Otherwise, `¬ stuck a` and for all `b` such that `a τ b`, `b ∈ ⟦AF φ⟧`.
 Since `¬ stuck a` it must be that `tr` cannot be just `a` (it's complete), so
 there must exist a `b` such that `a τ b` and `b` is the start of a trace `tr'`
-such that `tr = a ⋅ tr'`. However, since `a τ b`, it follows that`b ∈ ⟦AF ϕ⟧`,
-so `tr'` must contain a witness for which `ϕ` holds; that witness is also a
+such that `tr = a ⋅ tr'`. However, since `a τ b`, it follows that`b ∈ ⟦AF φ⟧`,
+so `tr'` must contain a witness for which `φ` holds; that witness is also a
 witness for `tr`.
 
-Let us now argue that `⟦AF ϕ⟧` is a post-fixpoint of `G`, i.e., that
-`⟦AF ϕ⟧ ⊆ G(⟦AF ϕ⟧)`.
-Take `a ∈ ⟦AF ϕ⟧`. We need to prove that either `a ∈ ⟦ϕ⟧` or `¬ stuck a` and
-for all `b` such that `a τ b`, `b ∈ ⟦AF ϕ⟧`,
-If `ϕ` holds for `a` then we're done. Assume `a ∉ ⟦ϕ⟧`.
+Let us now argue that `⟦AF φ⟧` is a post-fixed-point of `G`, i.e., that
+`⟦AF φ⟧ ⊆ G(⟦AF φ⟧)`.
+Take `a ∈ ⟦AF φ⟧`. We need to prove that either `a ∈ ⟦φ⟧` or `¬ stuck a` and
+for all `b` such that `a τ b`, `b ∈ ⟦AF φ⟧`,
+If `φ` holds for `a` then we're done. Assume `a ∉ ⟦φ⟧`.
 Then it must be that `¬ stuck a`, since otherwise `a` would be a complete trace
-starting in `a` with no witness for which `ϕ` holds.
-Let now `b` be such `a τ b`. We need to show that `b ∈ ⟦AF ϕ⟧`. Let `tr` be a
+starting in `a` with no witness for which `φ` holds.
+Let now `b` be such `a τ b`. We need to show that `b ∈ ⟦AF φ⟧`. Let `tr` be a
 complete trace starting in `b`. Then `a ⋅ tr` is a complete trace starting in `a`.
-Since `a ∈ ⟦AF ϕ⟧`, there must be a witness in `a ⋅ tr` for which `ϕ` holds.
-However, since `ϕ` doesn't hold for `a`, the witness must be part of `tr`
-Since `tr` was chosen arbitrarily, it must be that `a ∈ ⟦AF ϕ⟧`.
+Since `a ∈ ⟦AF φ⟧`, there must be a witness in `a ⋅ tr` for which `φ` holds.
+However, since `φ` doesn't hold for `a`, the witness must be part of `tr`
+Since `tr` was chosen arbitrarily, it must be that `a ∈ ⟦AF φ⟧`.
 
-Therefore, `⟦AF ϕ⟧` is a fixpoint for `G`. To show that it is the LFP of `G` it
-suffices to prove that it is included in any pre-fixpoint of `G`.
-Let `A` be a pre-fixpoint of `G`, i.e., `G(A) ⊆ A`. That means that
-(1) `A` contains all configurations matching `ϕ`; and
+Therefore, `⟦AF φ⟧` is a fixed-point for `G`. To show that it is the LFP of `G` it
+suffices to prove that it is included in any pre-fixed-point of `G`.
+Let `A` be a pre-fixed-point of `G`, i.e., `G(A) ⊆ A`. That means that
+(1) `A` contains all configurations matching `φ`; and
 (2) `A` contains all configurations which are not stuck and transition on all
     paths into `A`
-Assume by contradiction that there exists `a ∈ ⟦AF ϕ⟧` such that `a ∉ A`.
+Assume by contradiction that there exists `a ∈ ⟦AF φ⟧` such that `a ∉ A`.
 We will coinductively construct a complete trace starting in `a` with no
-witness in `A`. Since `A` contains all configurations for which `ϕ` holds,
-this would contradict the fact that  `a ∈ ⟦AF ϕ⟧`.
+witness in `A`. Since `A` contains all configurations for which `φ` holds,
+this would contradict the fact that  `a ∈ ⟦AF φ⟧`.
 - if `stuck a` is stuck, then take the complete trace `a`
 - if `¬ stuck a`, since `a ∉ A`, it means that (2) is false; hence it exists
   a transition `a τ b` such that `b ∉ A`. Then take the complete trace
   `a ⋅ tr` where `tr` is obtained by applying the above process for `b ∉ A`.
 
-Hence, `⟦AF ϕ⟧` is the LFP of `G`.  Let us now study when this LFP can be
-expressed according to Kleene's formula, i.e., when `LFP(G) = ⋃ₙGⁿ(∅)`.
+Hence, `⟦AF φ⟧ = ⟦μX.φ ∨ (○X ∧ •⊤)⟧`.
 
-Given a complete trace `tr`, let `trₙ` be the `n`th element of the trace, if
-it exists. 
+Justified by the above, in the sequel we will use `AF φ` to denote `μX.φ ∨ (○X ∧ •⊤)`.
 
-Let us now argue that, for any natural `n`, `Gⁿ⁺¹(∅)` denotes the set of
-configurations for which, in at most `n` steps, on all paths, `φ` holds, i.e.,
-```
-Gⁿ⁺¹(∅) = { a | forall tr trace starting in a, exists k ≤ n such that trₖ ∈ ⟦ϕ⟧ }
-```
-We do that by induction on `n`:
-- Base case:
-    ```
-    G(∅) = ⟦φ⟧ ∪ ( ∁(Prev(∁(∅))) ∩ Prev(Top) )
-         = ⟦φ⟧ ∪ ( ∁(Prev(Top)) ∩ Prev(Top) )
-         = ⟦φ⟧ ∪ ∅
-         = ⟦φ⟧
-         = {a | a ∈ ⟦ϕ⟧}
-         = { a | forall tr trace starting in a, exists k ≤ 0 such that trₖ ∈ ⟦ϕ⟧}
-    ```
-- Induction case.
-  `a ∈ Gⁿ⁺²(∅) = G(Gⁿ⁺¹(∅))` iff `φ` holds for `a` or `¬ stuck a` and forall b
-  such that `a τ b`, `b ∈ Gⁿ⁺¹(∅)`.
-  Let `tr` be a complete trace starting in `a`. If the trace is just `a`,
-  then it must be that `a` is stuck, therefore `\phi` holds for `a` and since
-  `0 ≤ n+1` we are done. Otherwise assume `tr = a ⋅ tr'` such that `tr'` is a
-  complete trace starting in a configuration `b`. Then `a τ b`, hence `b ∈  Gⁿ⁺¹(∅)`.
-  By the induction hypothesis, there exists  `k ≤ n` such that `tr'ₖ ∈ ⟦ϕ⟧`, hence
-  `trₖ₊₁ ∈ ⟦ϕ⟧`.
-  Conversely, let `a` be such that forall `tr` trace starting in a, there exists
-  `k ≤ 0` such that `trₖ ∈ ⟦ϕ⟧`. If `a ∈ ⟦ϕ⟧`, then `a ∈ G(Gⁿ⁺¹(∅))`. Suppose
-  `a ∉ ⟦ϕ⟧`. Then `¬ stuck a` (otherwise `a` would be a trace starting in `a`
-  for which the hypothesis would not hold). Let `b` be such `a τ b`.
-
-Since `G` is monotone, we can deduce that `Gⁿ(∅) ⊆ Gⁿ⁺¹(∅)`
-(obviously `∅ ⊆ G(∅)` and then by applying monotone G `n` times).
-Therefore, the limit `⋁ₙGⁿ(∅)` exists.
-
-By the characterization of `Gⁿ(∅)` presented above, it follows that `⋁ₙGⁿ(∅)`
-denotes the set of configurations for which there exists `n` such that in at
-most `n` steps, on all paths, `φ` holds, i.e.,
-```
-⋁ₙGⁿ(∅) = { a | ∃ n, a ∈ Gⁿ⁺¹(∅)}
-        = { a | ∃n ∀tr tr₀ = a → ∃k k ≤ n ∧ trₖ ∈ ⟦ϕ⟧ }
-```
-Note that there is a slight difference from the semantics intended for `AF ϕ`:
-`⟦AF ϕ⟧ = { a | ∀tr tr₀ = a → ∃k trₖ ∈ ⟦ϕ⟧`
-
-Nevertheless, it is relatively easy to see that `⋁ₙGⁿ(∅)` is a subset of `⟦AF ϕ⟧`,
-hence, if we show that it is a fixpoint, then they would be equal.
-Also, it's easy to see that `⋁ₙGⁿ(∅)` is a post-fixpoint.
-We have that for all `n`, `Gⁿ(∅) ⊆ ⋁ₙGⁿ(∅)` and since `G` is monotone,
-`Gⁿ⁺¹(∅) ⊆ G(⋁ₙGⁿ(∅))`. Also, obviously `G⁰(∅) = ∅ ⊆ G(⋁ₙGⁿ(∅))`.
-Therefore, `⋁ₙGⁿ(∅) ⊆ G(⋁ₙGⁿ(∅))`.
-
-It remains to show that `⋁ₙGⁿ(∅)` is a pre-fixpoint, i.e., that
-`G(⋁ₙGⁿ(∅)) ⊆ ⋁ₙGⁿ(∅)`, or `G(⋁ₙGⁿ(∅)) ∖ ⋁ₙGⁿ(∅) = ∅`.
-We have that:
-```
-x ∈ G(⋁ₙGⁿ(∅)) ∖ ⋁ₙGⁿ(∅)
-⟺ x ∈ G(⋁ₙGⁿ(∅)) and x ∉ ⋁ₙGⁿ(∅)
-⟺ (x ∈ ⟦φ⟧ or ¬ stuck x and ∀y x τ y → y ∈ ⋁ₙGⁿ(∅)) and x ∉ ⋁ₙGⁿ(∅)
-⟺ ¬ stuck x and (∀y x τ y → y ∈ ⋁ₙGⁿ(∅)) and x ∉ ⋁ₙGⁿ(∅) (since ⟦φ⟧ ⊆ ⋁ₙGⁿ(∅))
-```
-
-Given the above relation, we deduce that a sufficient condition ensuring that
-`G(⋁ₙGⁿ(∅)) ∖ ⋁ₙGⁿ(∅) = ∅` is that the transition system is finitely branching,
-i.e., that `Prev⁻¹({x})` is finite for any `x`. Indeed, suppose 
-there exists `x ∈ G(⋁ₙGⁿ(∅)) ∖ ⋁ₙGⁿ(∅)`. Then, it must hold that
-`¬ stuck x` and `(∀y x τ y → y ∈ ⋁ₙGⁿ(∅))` and `x ∉ ⋁ₙGⁿ(∅)` 
-Let `k`, `y₁`, ..., `yₖ` be such that `Prev⁻¹({x}) = {y₁, ..., yₖ}`.
-For any `i`, `yᵢ ∈ Prev⁻¹({x})`, hence `x τ yᵢ`, therefore `∃nᵢ yᵢ ∈ Gⁿⁱ(∅)`.
-Let `n₁`, ..., `nₖ` be such that `yᵢ ∈ Gⁿⁱ(∅)` for any `1≤i≤k`.
-Let `m = 𝐦𝐚𝐱 {n₁, ... , nₖ}`. Since `(Gⁿ(∅))ₙ` is an ascending chain,
-it follows that `yᵢ ∈ Gᵐ(∅)` for any `1≤i≤k`, 
-whence `x ∈ Gᵐ⁺¹(∅)`, contradiction with the fact that `x ∉ ⋁ₙGⁿ(∅)`.
-
-Nevertheless, before continuing, let
-us give an example of a system and property for which the above construction is
-not a fixpoint.
-
-### Counterexample for `⟦AF ϕ⟧ = ⋁ₙGⁿ(∅)`
-
-Consider the following K theory
-
-```
-syntax KItem ::= "x"
-
-rule Y:Int => Y -Int 1 requires Y>0
-rule x => ?Y:Int ensures Y >= 0
-```
-
-and the claim `x → AF 0`
-
-It is easy to see that any trace originating in `x` will reach `0` in a finite
-number of steps. However, there is no bound on the number of steps needed for `x`
-to reach `0`.
+A consequence of the above is that, by the deduction rules associated with `μ`,
+`AF φ` can always be "unrolled" to `φ ∨ (○ AF φ ∧ •⊤)`.
 
 ### Total correctness all-path reachability claims
 
@@ -595,3 +501,109 @@ the goal `∀x∪zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φᵢʳᵉᵐ∧φᵢ⌉) → AF∃z
 `∀x.⊥ → AF∃z.ψ` which can be discharged immediately. Also, in the
 remainder `¬∃x₁.⌈φ∧φ₁⌉ = ⊤` so the conjunct can be removed.
 
+  
+## Appendix: Always finally as a Kleene fixed-point
+
+Note that this appendix bears no relevance for the rest of the document; it is
+kept here only for being related to an initial approach to this document.
+
+Let us study when ⟦AF φ⟧ can be expressed according to Kleene's
+least-fixed-point formula, i.e., when `LFP(G) = ⋃ₙGⁿ(∅)`.
+
+Given a complete trace `tr`, let `trₙ` be the `n`th element of the trace, if
+it exists. 
+
+Let us now argue that, for any natural `n`, `Gⁿ⁺¹(∅)` denotes the set of
+configurations for which, in at most `n` steps, on all paths, `φ` holds, i.e.,
+```
+Gⁿ⁺¹(∅) = { a | forall tr trace starting in a, exists k ≤ n such that trₖ ∈ ⟦φ⟧ }
+```
+We do that by induction on `n`:
+- Base case:
+    ```
+    G(∅) = ⟦φ⟧ ∪ ( ∁(Prev(∁(∅))) ∩ Prev(Top) )
+         = ⟦φ⟧ ∪ ( ∁(Prev(Top)) ∩ Prev(Top) )
+         = ⟦φ⟧ ∪ ∅
+         = ⟦φ⟧
+         = {a | a ∈ ⟦φ⟧}
+         = { a | forall tr trace starting in a, exists k ≤ 0 such that trₖ ∈ ⟦φ⟧}
+    ```
+- Induction case.
+  `a ∈ Gⁿ⁺²(∅) = G(Gⁿ⁺¹(∅))` iff `φ` holds for `a` or `¬ stuck a` and forall b
+  such that `a τ b`, `b ∈ Gⁿ⁺¹(∅)`.
+  Let `tr` be a complete trace starting in `a`. If the trace is just `a`,
+  then it must be that `a` is stuck, therefore `\phi` holds for `a` and since
+  `0 ≤ n+1` we are done. Otherwise assume `tr = a ⋅ tr'` such that `tr'` is a
+  complete trace starting in a configuration `b`. Then `a τ b`, hence `b ∈  Gⁿ⁺¹(∅)`.
+  By the induction hypothesis, there exists  `k ≤ n` such that `tr'ₖ ∈ ⟦φ⟧`, hence
+  `trₖ₊₁ ∈ ⟦φ⟧`.
+  Conversely, let `a` be such that forall `tr` trace starting in a, there exists
+  `k ≤ 0` such that `trₖ ∈ ⟦φ⟧`. If `a ∈ ⟦φ⟧`, then `a ∈ G(Gⁿ⁺¹(∅))`. Suppose
+  `a ∉ ⟦φ⟧`. Then `¬ stuck a` (otherwise `a` would be a trace starting in `a`
+  for which the hypothesis would not hold). Let `b` be such `a τ b`.
+
+Since `G` is monotone, we can deduce that `Gⁿ(∅) ⊆ Gⁿ⁺¹(∅)`
+(obviously `∅ ⊆ G(∅)` and then by applying monotone G `n` times).
+Therefore, the limit `⋁ₙGⁿ(∅)` exists.
+
+By the characterization of `Gⁿ(∅)` presented above, it follows that `⋁ₙGⁿ(∅)`
+denotes the set of configurations for which there exists `n` such that in at
+most `n` steps, on all paths, `φ` holds, i.e.,
+```
+⋁ₙGⁿ(∅) = { a | ∃ n, a ∈ Gⁿ⁺¹(∅)}
+        = { a | ∃n ∀tr tr₀ = a → ∃k k ≤ n ∧ trₖ ∈ ⟦φ⟧ }
+```
+Note that there is a slight difference from the semantics intended for `AF φ`:
+`⟦AF φ⟧ = { a | ∀tr tr₀ = a → ∃k trₖ ∈ ⟦φ⟧`
+
+Nevertheless, it is relatively easy to see that `⋁ₙGⁿ(∅)` is a subset of `⟦AF φ⟧`,
+hence, if we show that it is a fixed-point, then they would be equal.
+Also, it's easy to see that `⋁ₙGⁿ(∅)` is a post-fixed-point.
+We have that for all `n`, `Gⁿ(∅) ⊆ ⋁ₙGⁿ(∅)` and since `G` is monotone,
+`Gⁿ⁺¹(∅) ⊆ G(⋁ₙGⁿ(∅))`. Also, obviously `G⁰(∅) = ∅ ⊆ G(⋁ₙGⁿ(∅))`.
+Therefore, `⋁ₙGⁿ(∅) ⊆ G(⋁ₙGⁿ(∅))`.
+
+It remains to show that `⋁ₙGⁿ(∅)` is a pre-fixed-point, i.e., that
+`G(⋁ₙGⁿ(∅)) ⊆ ⋁ₙGⁿ(∅)`, or `G(⋁ₙGⁿ(∅)) ∖ ⋁ₙGⁿ(∅) = ∅`.
+We have that:
+```
+x ∈ G(⋁ₙGⁿ(∅)) ∖ ⋁ₙGⁿ(∅)
+⟺ x ∈ G(⋁ₙGⁿ(∅)) and x ∉ ⋁ₙGⁿ(∅)
+⟺ (x ∈ ⟦φ⟧ or ¬ stuck x and ∀y x τ y → y ∈ ⋁ₙGⁿ(∅)) and x ∉ ⋁ₙGⁿ(∅)
+⟺ ¬ stuck x and (∀y x τ y → y ∈ ⋁ₙGⁿ(∅)) and x ∉ ⋁ₙGⁿ(∅) (since ⟦φ⟧ ⊆ ⋁ₙGⁿ(∅))
+```
+
+Given the above relation, we deduce that a sufficient condition ensuring that
+`G(⋁ₙGⁿ(∅)) ∖ ⋁ₙGⁿ(∅) = ∅` is that the transition system is finitely branching,
+i.e., that `Prev⁻¹({x})` is finite for any `x`. Indeed, suppose 
+there exists `x ∈ G(⋁ₙGⁿ(∅)) ∖ ⋁ₙGⁿ(∅)`. Then, it must hold that
+`¬ stuck x` and `(∀y x τ y → y ∈ ⋁ₙGⁿ(∅))` and `x ∉ ⋁ₙGⁿ(∅)` 
+Let `k`, `y₁`, ..., `yₖ` be such that `Prev⁻¹({x}) = {y₁, ..., yₖ}`.
+For any `i`, `yᵢ ∈ Prev⁻¹({x})`, hence `x τ yᵢ`, therefore `∃nᵢ yᵢ ∈ Gⁿⁱ(∅)`.
+Let `n₁`, ..., `nₖ` be such that `yᵢ ∈ Gⁿⁱ(∅)` for any `1≤i≤k`.
+Let `m = 𝐦𝐚𝐱 {n₁, ... , nₖ}`. Since `(Gⁿ(∅))ₙ` is an ascending chain,
+it follows that `yᵢ ∈ Gᵐ(∅)` for any `1≤i≤k`, 
+whence `x ∈ Gᵐ⁺¹(∅)`, contradiction with the fact that `x ∉ ⋁ₙGⁿ(∅)`.
+
+Nevertheless, before continuing, let
+us give an example of a system and property for which the above construction is
+not a fixed-point.
+
+#### Counterexample for `⟦AF φ⟧ = ⋁ₙGⁿ(∅)`
+
+Consider the following K theory
+
+```
+syntax KItem ::= "x"
+
+rule Y:Int => Y -Int 1 requires Y>0
+rule x => Y:Int ensures Y >= 0
+```
+(note that Y is free on the right-hand-side in the second rule, meaning that X
+can transition into any positive integer).
+
+and the claim `x → AF 0`
+
+It is easy to see that any trace originating in `x` will reach `0` in a finite
+number of steps. However, there is no bound on the number of steps needed for `x`
+to reach `0`.
