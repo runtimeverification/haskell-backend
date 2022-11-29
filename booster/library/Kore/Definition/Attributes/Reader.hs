@@ -106,7 +106,7 @@ extractAttribute name =
 
 extractAttributeOrDefault :: ReadT a => a -> Text -> ParsedAttributes -> a
 extractAttributeOrDefault def name attribs =
-    maybe def (either error id . readT) $ getAttribute name attribs
+    maybe def (either (error . (<> " " <> show attribs)) id . readT) $ getAttribute name attribs
 
 (.:?) :: ReadT a => ParsedAttributes -> Text -> Maybe a
 attribs .:? name = either error id . readT <$> getAttribute name attribs

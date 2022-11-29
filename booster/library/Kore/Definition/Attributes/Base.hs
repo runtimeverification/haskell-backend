@@ -19,8 +19,10 @@ module Kore.Definition.Attributes.Base (
     Priority,
 ) where
 
+import Control.DeepSeq (NFData (..))
 import Data.Text (Text)
 import Data.Word (Word8)
+import GHC.Generics (Generic)
 
 data DefinitionAttributes = DefinitionAttributes
     {
@@ -58,16 +60,18 @@ type Label = Text
 type Priority = Word8
 
 data Location = Location
-    { file :: FilePath
+    { file :: Text
     , position :: Position
     }
-    deriving stock (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData)
 
 data Position = Position
     { line :: Int
     , column :: Int
     }
-    deriving stock (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData)
 
 data SymbolType
     = PartialFunction
