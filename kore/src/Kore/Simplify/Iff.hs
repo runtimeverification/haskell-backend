@@ -39,7 +39,6 @@ import Kore.Simplify.Implies qualified as Implies (
  )
 import Kore.Simplify.Not qualified as Not (
     makeEvaluate,
-    notSimplifier,
     simplify,
  )
 import Kore.Simplify.Simplify
@@ -94,7 +93,7 @@ simplifyEvaluated sort sideCondition first second
         _ -> do
             fwd <- Implies.simplifyEvaluated sort sideCondition first second
             bwd <- Implies.simplifyEvaluated sort sideCondition second first
-            And.simplify sort Not.notSimplifier sideCondition $
+            And.simplify sort sideCondition $
                 MultiAnd.make [fwd, bwd]
   where
     firstPatterns = toList first

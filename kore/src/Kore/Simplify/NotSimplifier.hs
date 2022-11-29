@@ -20,9 +20,15 @@ import Kore.Syntax (
     Sort,
  )
 
-newtype NotSimplifier simplifier = NotSimplifier
-    { runNotSimplifier ::
-        SideCondition RewritingVariableName ->
-        Not Sort (OrPattern RewritingVariableName) ->
-        simplifier (OrPattern RewritingVariableName)
-    }
+-- | We use this class to break a module import loop. Its sole instance
+-- is in "Kore.Simplify.Not":
+--
+-- @
+-- instance simplifier ~ 'Kore.Simplify.Simplify.Simplifier' => NotSimplifier simplifier where
+--   notSimplifier = "Kore.Simplify.Not".'Kore.Simplify.Not.simplify'
+-- @
+class NotSimplifier simplifier | -> simplifier where
+  notSimplifier ::
+    SideCondition RewritingVariableName ->
+    Not Sort (OrPattern RewritingVariableName) ->
+    simplifier (OrPattern RewritingVariableName)

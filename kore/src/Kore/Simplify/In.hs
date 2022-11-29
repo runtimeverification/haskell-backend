@@ -34,7 +34,7 @@ import Kore.Simplify.Ceil qualified as Ceil (
     makeEvaluate,
     simplifyEvaluated,
  )
-import Kore.Simplify.Not qualified as Not
+import Kore.Simplify.Not () -- For the (orphan) NotSimplifier instance
 import Kore.Simplify.Simplify
 import Logic qualified
 import Prelude.Kore
@@ -91,7 +91,7 @@ makeEvaluateIn sideCondition first second
     | Pattern.isBottom first || Pattern.isBottom second = return OrCondition.bottom
     | otherwise =
         liftSimplifier $
-            (And.makeEvaluate pattSort Not.notSimplifier sideCondition)
+            (And.makeEvaluate pattSort sideCondition)
                 (MultiAnd.make [first, second])
                 & OrPattern.observeAllT
                 >>= Ceil.simplifyEvaluated sideCondition

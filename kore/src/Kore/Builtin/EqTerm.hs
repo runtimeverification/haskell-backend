@@ -55,12 +55,12 @@ This function is suitable only for equality simplification.
 unifyEqTerm ::
     forall unifier.
     MonadUnify unifier =>
+    NotSimplifier Simplifier =>
     TermSimplifier RewritingVariableName unifier ->
-    NotSimplifier Simplifier ->
     EqTerm (TermLike RewritingVariableName) ->
     Bool ->
     unifier (Pattern RewritingVariableName)
-unifyEqTerm unifyChildren (NotSimplifier notSimplifier) eqTerm value =
+unifyEqTerm unifyChildren eqTerm value =
     do
         solution <- unifyChildren operand1 operand2 & OrPattern.gather
         let solution' = MultiOr.map eraseTerm solution
