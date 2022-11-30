@@ -8,15 +8,12 @@ module Test.Kore.Pattern.Unify (
 
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
-import Data.Set qualified as Set
-import Data.Text (Text)
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Kore.Definition.Attributes.Base
-import Kore.Definition.Base
 import Kore.Pattern.Base
 import Kore.Pattern.Unify
+import Test.Kore.Fixture
 
 test_unification :: TestTree
 test_unification =
@@ -26,7 +23,35 @@ test_unification =
         , functions
         , varsAndValues
         , andTerms
+        , sorts
         ]
+
+sorts :: TestTree
+sorts =
+    testGroup
+        "sort variables"
+        [ test "one sort variable in argument" (app con1 [varX]) (app con1 [dSome]) $
+            success [("X", sVar, dSome)]
+        , test "sort inconsistency in arguments" (app con3 [varX, varY]) (app con3 [dSome, dSub]) $
+            sortErr $
+                InconsistentSortVariable "sort me!" [someSort, aSubsort]
+        , test "sort variable used twice" (app con3 [varX, varY]) (app con3 [dSome, dSome]) $
+            success [("X", sVar, dSome), ("Y", sVar, dSome)]
+        , test "several sort variables" (app con3 [varX, varZ]) (app con3 [dSome, dSub]) $
+            success [("X", sVar, dSome), ("Z", sVar2, dSub)]
+        , test "sort variable in subject" (app con3 [varX, dSub]) (app con3 [dSome, varZ]) $
+            success [("X", sVar, dSome), ("Z", sVar2, dSub)]
+        , test "same sort variable in both" (app con1 [varX]) (app con1 [varY]) $
+            success [("X", sVar, varY)]
+        ]
+  where
+    sVar = SortVar "sort me!"
+    sVar2 = SortVar "me, too!"
+    varX = var "X" sVar
+    varY = var "Y" sVar
+    varZ = var "Z" sVar2
+    dSome = dv someSort "some sort"
+    dSub = dv aSubsort "a subsort"
 
 constructors :: TestTree
 constructors =
@@ -37,22 +62,23 @@ constructors =
             (app con1 [var "X" someSort])
             (app con1 [var "Y" someSort])
             (success [("X", someSort, var "Y" someSort)])
-        , let cX = app con1 [var "X" someSort]
+        , let x = var "X" someSort
+              cX = app con1 [x]
            in test "same constructors, same variable (shared var)" cX cX $
-                remainder [(cX, cX)]
+                remainder [(x, x)]
         , let x = var "X" someSort
               y = var "Y" someSort
               cxx = app con3 [x, x]
               cxy = app con3 [x, y]
            in test "same constructors, one shared variable" cxx cxy $
-                remainder [(cxx, cxy)]
+                remainder [(x, x)]
         , let v = var "X" someSort
               d = dv differentSort ""
            in test
                 "same constructors, arguments differ in sorts"
                 (app con1 [v])
                 (app con1 [d])
-                (remainder [(v, d)])
+                (sortErr $ IncompatibleSorts [someSort, differentSort])
         , test
             "same constructor, var./term argument"
             (app con1 [var "X" someSort])
@@ -91,11 +117,13 @@ varsAndValues =
               v2 = var "Y" aSubsort
            in test "two variables (v2 subsort v1)" v1 v2 $
                 -- TODO could be allowed once subsorts are considered while checking
-                remainder [(v1, v2)]
+                sortErr $
+                    IncompatibleSorts [someSort, aSubsort]
         , let v1 = var "X" aSubsort
               v2 = var "Y" someSort
            in test "two variables (v1 subsort v2)" v1 v2 $
-                remainder [(v1, v2)]
+                sortErr $
+                    IncompatibleSorts [aSubsort, someSort]
         , let v1 = var "X" someSort
               v2 = var "X" differentSort
            in test "same variable name, different sort" v1 v2 $
@@ -123,7 +151,8 @@ varsAndValues =
         , let v = var "X" someSort
               d = dv differentSort ""
            in test "var and domain value (different sort)" v d $
-                remainder [(v, d)]
+                sortErr $
+                    IncompatibleSorts [someSort, differentSort]
         ]
 
 andTerms :: TestTree
@@ -168,12 +197,6 @@ andTerms =
 
 ----------------------------------------
 
-var :: VarName -> Sort -> Term
-var variableName variableSort = Var $ Variable{variableSort, variableName}
-
-dv :: Sort -> Text -> Term
-dv = DomainValue
-
 success :: [(VarName, Sort, Term)] -> UnificationResult
 success assocs =
     UnificationSuccess $
@@ -188,97 +211,9 @@ failed = UnificationFailed
 remainder :: [(Term, Term)] -> UnificationResult
 remainder = UnificationRemainder . NE.fromList
 
-----------------------------------------
--- Test fixture
+sortErr :: SortError -> UnificationResult
+sortErr = UnificationSortError
+
 test :: String -> Term -> Term -> UnificationResult -> TestTree
 test name term1 term2 expected =
     testCase name $ unifyTerms testDefinition term1 term2 @?= expected
-
-someSort, aSubsort, differentSort :: Sort
-someSort = SortApp "SomeSort" []
-aSubsort = SortApp "AnotherSort" []
-differentSort = SortApp "DifferentSort" []
-
-testDefinition :: KoreDefinition
-testDefinition =
-    KoreDefinition
-        { attributes = DefinitionAttributes
-        , modules = Map.singleton "AMODULE" ModuleAttributes
-        , sorts =
-            Map.fromList
-                [ simpleSortInfo someSort
-                , aSubsort `subsortOf` someSort
-                , simpleSortInfo differentSort
-                ]
-        , symbols =
-            Map.fromList
-                [ ("con1", con1)
-                , ("con2", con2)
-                , ("con3", con3)
-                , ("con4", con4)
-                , ("f1", f1)
-                , ("f2", f2)
-                ]
-        , aliases = Map.empty
-        , rewriteTheory = Map.empty
-        }
-  where
-    simpleSortInfo (SortApp n []) = (n, (SortAttributes{argCount = 0}, Set.singleton n))
-    simpleSortInfo other = error $ "Sort info: " <> show other <> " not supported"
-
-    (SortApp sub []) `subsortOf` (SortApp super []) =
-        (sub, (SortAttributes{argCount = 0}, Set.fromList [sub, super]))
-    other1 `subsortOf` other2 =
-        error $ "subSortOf: " <> show (other1, other2) <> " not supported"
-
-app :: Symbol -> [Term] -> Term
-app = SymbolApplication
-
-asTotalFunction, asPartialFunction, asConstructor :: SymbolAttributes
-asTotalFunction = SymbolAttributes TotalFunction False False
-asPartialFunction = SymbolAttributes PartialFunction False False
-asConstructor = SymbolAttributes Constructor False False
-
-con1, con2, con3, con4, f1, f2 :: Symbol
-con1 =
-    Symbol
-        { name = "con1"
-        , resultSort = someSort
-        , argSorts = [someSort]
-        , attributes = asConstructor
-        }
-con2 =
-    Symbol
-        { name = "con2"
-        , resultSort = someSort
-        , argSorts = [someSort]
-        , attributes = asConstructor
-        }
-con3 =
-    Symbol
-        { name = "con3"
-        , resultSort = someSort
-        , argSorts = [someSort, someSort]
-        , attributes = asConstructor
-        }
-con4 =
-    Symbol
-        { name = "con4"
-        , resultSort = aSubsort
-        , argSorts = [someSort, someSort]
-        , attributes = asConstructor
-        }
-f1 =
-    Symbol
-        { name = "f1"
-        , resultSort = someSort
-        , argSorts = [someSort]
-        , attributes = asTotalFunction
-        }
-f2 =
-    Symbol
-        { name = "f2"
-        , resultSort = someSort
-        , argSorts = [someSort]
-        , attributes = asPartialFunction
-        }

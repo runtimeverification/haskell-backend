@@ -13,9 +13,10 @@ import Control.Monad.Trans.Except
 import Control.Monad.Trans.State
 import Data.Either.Extra
 import Data.Foldable (toList)
-import Data.List.NonEmpty as NE (NonEmpty ((:|)), singleton)
+import Data.List.NonEmpty as NE (NonEmpty ((:|)), fromList)
 import Data.Map (Map)
 import Data.Map qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq (..))
 import Data.Sequence qualified as Seq
 import Data.Set (Set)
@@ -23,7 +24,7 @@ import Data.Set qualified as Set
 
 import Kore.Definition.Base
 import Kore.Pattern.Base
-import Kore.Pattern.Util (freeVariables, isConstructorSymbol, sortOfTerm, substituteInTerm)
+import Kore.Pattern.Util (freeVariables, isFunctionSymbol, sortOfTerm, substituteInTerm)
 
 -- | Result of a unification (a substitution or an indication of what went wrong)
 data UnificationResult
@@ -33,7 +34,8 @@ data UnificationResult
       UnificationFailed FailReason
     | -- | (other) cases that are unresolved (offending case in head position).
       UnificationRemainder (NonEmpty (Term, Term))
-    | InternalError String
+    | -- | sort error (inconsistent variable use)
+      UnificationSortError SortError
     deriving stock (Eq, Show)
 
 -- | Additional information to explain why a unification has failed
@@ -47,6 +49,7 @@ data FailReason
       VariableRecursion Variable Term
     | -- | Variable reassigned
       VariableConflict Variable Term Term
+    | InternalError String
     deriving stock (Eq, Show)
 
 type Substitution = Map Variable Term
@@ -69,7 +72,10 @@ unifyTerms KoreDefinition{sorts} term1 term2 =
         freeVars2 = freeVariables term2
         sharedVars = freeVars1 `Set.intersection` freeVars2
      in if not $ Set.null sharedVars
-            then UnificationRemainder $ NE.singleton (term1, term2)
+            then
+                UnificationRemainder $
+                    NE.fromList
+                        [(Var v, Var v) | v <- Set.toList sharedVars]
             else
                 runUnification
                     State
@@ -77,6 +83,7 @@ unifyTerms KoreDefinition{sorts} term1 term2 =
                         , uTargetVars = freeVars1
                         , uQueue = Seq.singleton (term1, term2)
                         , uSubsorts = Map.map snd sorts
+                        , uSortSubst = Map.empty
                         }
 
 data UnificationState = State
@@ -84,6 +91,7 @@ data UnificationState = State
     , uTargetVars :: Set Variable
     , uQueue :: Seq (Term, Term) -- work queue (breadth-first term traversal)
     , uSubsorts :: SortTable
+    , uSortSubst :: Map VarName Sort -- sort variable substitution
     }
 
 type SortTable = Map SortName (Set SortName)
@@ -117,21 +125,17 @@ unify1
     t1@(SymbolApplication symbol1 args1)
     t2@(SymbolApplication symbol2 args2) =
         do
-            subsorts <- gets uSubsorts
-            -- argument sorts have been checked upon internalisation
-            unless (sortsAgree subsorts symbol1.resultSort symbol2.resultSort) $
+            -- If we have functions, pass - only constructors and sort
+            -- injections are matched.
+            when (isFunctionSymbol symbol1 || isFunctionSymbol symbol2) $
                 returnAsRemainder t1 t2
-            -- If we have functions, pass - only constructors are matched.
-            unless (isConstructorSymbol symbol1 && isConstructorSymbol symbol2) $
-                returnAsRemainder t1 t2
-            -- constructors must be the same
+            -- constructors must be the same, or both must be injections
             unless (symbol1.name == symbol2.name) $
                 failWith (DifferentSymbols t1 t2)
             unless (length args1 == length args2) $
-                lift $
-                    throwE $
-                        InternalError $
-                            "Argument counts differ for same constructor" <> show (t1, t2)
+                lift . throwE . UnificationFailed $
+                    InternalError $
+                        "Argument counts differ for same constructor" <> show (t1, t2)
             zipWithM_ enqueueProblem args1 args2
 
 -- and-term in pattern: must unify with both arguments
@@ -155,7 +159,7 @@ unify1
     (Var var2@(Variable varSort2 varName2))
         -- same variable: forbidden!
         | var1 == var2 =
-            lift $ throwE $ InternalError $ "Shared variable: " <> show var1
+            lift . throwE . UnificationFailed $ InternalError $ "Shared variable: " <> show var1
         | varName1 == varName2 && varSort1 /= varSort2 =
             -- sorts differ, names equal: error!
             failWith $ VariableConflict var1 (Var var1) (Var var2)
@@ -164,12 +168,9 @@ unify1
     (Var var@Variable{variableSort})
     term2 =
         do
-            subsorts <- gets uSubsorts
             let termSort = sortOfTerm term2
-            unless (sortsAgree subsorts variableSort termSort) $
-                returnAsRemainder (Var var) term2
+            matchSorts variableSort termSort
             bindVariable var term2
-
 -- term2 variable (not target), term1 not a variable: swap arguments (won't recurse)
 unify1
     term1
@@ -230,19 +231,61 @@ returnAsRemainder t1 t2 = do
     remainder <- gets uQueue
     lift $ throwE $ UnificationRemainder $ (t1, t2) :| toList remainder
 
-{- | Checks that 's2' can be used for 's1', i.e., is a subsort.
+{- | Matches a subject sort to a pattern sort, ensuring that the subject
+   sort can be used in place of the pattern sort, i.e., is a subsort.
 
- Current implementation only checks sort equality, and does not
- handle sort variables. Result 'False' must mean _indeterminate
- unification_, not failing unification!
+The current implementation only checks sort equality, failure must be
+interpreted as _indeterminate unification_, not failing unification!
+
+Sort variables will be substituted, adding to the sort substitution in
+the unification state. If a variable use is inconsistent, the sorts
+disagree, caller must stop unification with an _indeterminate_ result.
+Variables may occur on either side of the match (pattern or subject).
 -}
-sortsAgree :: SortTable -> Sort -> Sort -> Bool
--- do not consider variables (we would need to carry a sort
--- variable substitution in the state to check consistency)
-sortsAgree _ SortVar{} _ = False
-sortsAgree _ _ SortVar{} = False
--- only accept syntactically equal sorts
-sortsAgree st (SortApp sort1 args1) (SortApp sort2 args2) =
-    sort1 == sort2
-        && length args1 == length args2
-        && and (zipWith (sortsAgree st) args1 args2)
+matchSorts :: Sort -> Sort -> StateT UnificationState (Except UnificationResult) ()
+matchSorts patSort subjSort = do
+    sortSubst <- gets uSortSubst
+    let subjSort' = substituteWith sortSubst subjSort
+    case (patSort, subjSort') of
+        (SortApp sort1 args1, SortApp sort2 args2) -> do
+            unless (sort1 == sort2 && length args1 == length args2) $
+                sortError $
+                    IncompatibleSorts [patSort, subjSort']
+            zipWithM_ matchSorts args1 args2
+        (SortVar v, SortApp _ _)
+            | Just s <- Map.lookup v sortSubst -> do
+                unless (s == subjSort') $ -- ensure no conflict
+                    sortError $
+                        InconsistentSortVariable v [s, subjSort']
+            | otherwise ->
+                if v `Set.member` sortVarsIn subjSort'
+                    then -- ensure subjSort does not contain v
+                        sortError $ SortVariableRecursion v subjSort'
+                    else addBinding v subjSort
+        (SortVar v1, SortVar v2)
+            | v1 == v2 -> pure ()
+            | otherwise -> addBinding v1 subjSort'
+        (app@SortApp{}, var@SortVar{}) ->
+            matchSorts var app
+  where
+    sortError = lift . throwE . UnificationSortError
+
+    addBinding :: VarName -> Sort -> StateT UnificationState (Except e) ()
+    addBinding v target =
+        modify $ \s@State{uSortSubst} -> s{uSortSubst = Map.insert v target uSortSubst}
+
+    substituteWith :: Map VarName Sort -> Sort -> Sort
+    substituteWith subst (SortApp n args) =
+        SortApp n $ map (substituteWith subst) args
+    substituteWith subst v@(SortVar n) =
+        fromMaybe v $ Map.lookup n subst
+
+    sortVarsIn :: Sort -> Set VarName
+    sortVarsIn (SortVar n) = Set.singleton n
+    sortVarsIn (SortApp _ args) = Set.unions $ map sortVarsIn args
+
+data SortError
+    = IncompatibleSorts [Sort]
+    | InconsistentSortVariable VarName [Sort]
+    | SortVariableRecursion VarName Sort
+    deriving (Eq, Show)
