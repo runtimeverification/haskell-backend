@@ -8,12 +8,15 @@ module Kore.Pattern.Util (
     retractPattern,
     substituteInTerm,
     substituteInPredicate,
+    modifyVariables,
     freeVariables,
     isConstructorSymbol,
     isSortInjectionSymbol,
+    isFunctionSymbol,
     isDefinedSymbol,
     checkSymbolIsAc,
     checkTermSymbols,
+    isBottom,
 ) where
 
 import Data.Foldable (fold)
@@ -52,6 +55,24 @@ substituteInPredicate substitution = cata $ \case
         EqualsTerm (substituteInTerm substitution t1) (substituteInTerm substitution t2)
     other -> embed other
 
+modifyVariables :: (VarName -> VarName) -> Pattern -> Pattern
+modifyVariables f p =
+    Pattern
+        { term = modifyT p.term
+        , constraints = map modifyP p.constraints
+        }
+  where
+    modifyT :: Term -> Term
+    modifyT = cata $ \case
+        VarF v@Variable{variableName} ->
+            Var v{variableName = f variableName}
+        other -> embed other
+    modifyP :: Predicate -> Predicate
+    modifyP = cata $ \case
+        EqualsTermF t1 t2 ->
+            EqualsTerm (modifyT t1) (modifyT t2)
+        other -> embed other
+
 freeVariables :: Term -> Set Variable
 freeVariables = cata $ \case
     VarF var -> Set.singleton var
@@ -67,6 +88,13 @@ isSortInjectionSymbol :: Symbol -> Bool
 isSortInjectionSymbol symbol =
     case symbol.attributes.symbolType of
         SortInjection -> True
+        _ -> False
+
+isFunctionSymbol :: Symbol -> Bool
+isFunctionSymbol symbol =
+    case symbol.attributes.symbolType of
+        TotalFunction -> True
+        PartialFunction -> True
         _ -> False
 
 isDefinedSymbol :: Symbol -> Bool
@@ -85,3 +113,6 @@ checkTermSymbols :: (Symbol -> Bool) -> Term -> Bool
 checkTermSymbols check = cata $ \case
     SymbolApplicationF symbol ts -> check symbol && and ts
     other -> and other
+
+isBottom :: Pattern -> Bool
+isBottom = (Bottom `elem`) . constraints
