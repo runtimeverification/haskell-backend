@@ -347,7 +347,7 @@ respond runSMT serializedModule =
                     { term =
                         PatternJson.fromTermLike $ Pattern.term p
                     , substitution =
-                        PatternJson.fromSubstitution $ Pattern.substitution p
+                        PatternJson.fromSubstitution sort $ Pattern.substitution p
                     , predicate =
                         case Pattern.predicate p of
                             PredicateTrue -> Nothing
@@ -395,7 +395,7 @@ respond runSMT serializedModule =
                     predicate =
                         PatternJson.fromPredicate sort $ Condition.predicate pat
                     mbSubstitution =
-                        PatternJson.fromSubstitution $ Condition.substitution pat
+                        PatternJson.fromSubstitution sort $ Condition.substitution pat
                     noSubstitution = PatternJson.fromTermLike $ TermLike.mkTop sort
                  in Condition
                         { predicate
