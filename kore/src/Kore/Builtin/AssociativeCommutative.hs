@@ -447,7 +447,7 @@ updateAbstractElements elements =
 Return 'Nothing' if there are any duplicate (concrete or abstract) keys.
 -}
 normalizeAbstractElements ::
-    (TermWrapper normalized, Ord variable) =>
+    (TermWrapper normalized, Ord variable, Hashable variable) =>
     normalized Key (TermLike variable) ->
     Maybe (normalized Key (TermLike variable))
 normalizeAbstractElements (unwrapAc -> normalized) = do
