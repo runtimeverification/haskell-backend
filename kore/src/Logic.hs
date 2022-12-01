@@ -32,11 +32,12 @@ scatter :: (Foldable f, Alternative m) => f a -> m a
 scatter = foldr ((<|>) . pure) empty
 {-# INLINE scatter #-}
 
--- | The first argument must be a monad morphism to get consistent results. For
--- other functions, 'Control.Monad.Logic.Sequence.Morph.hoistPreUnexposed' may
--- be used instead; the results of that won't depend on the internal structure
--- of the logic computation, but they likely won't behave very intuitively
--- regardless.
+{- | The first argument must be a monad morphism to get consistent results. For
+ other functions, 'Control.Monad.Logic.Sequence.Morph.hoistPreUnexposed' may
+ be used instead; the results of that won't depend on the internal structure
+ of the logic computation, but they likely won't behave very intuitively
+ regardless.
+-}
 mapSeqT ::
     Monad m =>
     (forall x. m x -> n x) ->
