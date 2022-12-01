@@ -702,7 +702,7 @@ type HashableConstraint variable = () :: Constraint
 
 instance (HashableConstraint variable, Hashable variable) => Hashable (TermLike variable) where
     hashWithSalt salt (TermLike__ _ _ pat) =
-        salt `hashWithSalt` pat
+        salt `hashWithSalt` 42
     {-# INLINE hashWithSalt #-}
 
     -- use stored hash when no salt is required
