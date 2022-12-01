@@ -139,7 +139,7 @@ transitionResults Results{results, remainders} =
     transitionResultsResults <|> transitionResultsRemainders
   where
     transitionResultsResults = asum (transitionResult <$> results)
-    transitionResultsRemainders =
+    ~transitionResultsRemainders =
         asum (return <$> toList remainders)
 
 {- | Apply a function to the rules of the 'results'.

@@ -1016,7 +1016,7 @@ deriveResults sort fromAppliedRule Results{results, remainders} =
     addResults <|> addRemainders
   where
     addResults = asum (addResult <$> results)
-    addRemainders = asum (addRemainder <$> toList remainders)
+    ~addRemainders = asum (addRemainder <$> toList remainders)
 
     addResult Result{appliedRule, result} = do
         addRule appliedRule

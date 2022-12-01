@@ -1677,7 +1677,7 @@ kPermutationsBacktracking transform firstList secondList =
         addToFirst :: x -> ([x], y) -> ([x], y)
         addToFirst x (xs, y) = (x : xs, y)
 
-        skipElement =
+        ~skipElement =
             generateKPermutationsWorker
                 firsts
                 (first : skipped)

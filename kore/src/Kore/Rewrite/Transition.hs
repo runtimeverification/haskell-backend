@@ -117,7 +117,7 @@ instance MonadSimplify m => MonadSimplify (TransitionT rule m) where
 
     -- Should we just use unsafeCoerce here? hoist isn't free, but unsafeCoerce
     -- is only okay if people don't use weird illegitimate monads.
-    simplifyCondition s c = Morph.hoist TransitionT (simplifyCondition @(AccumT (Seq rule) (SeqT m)) s c)
+    simplifyCondition ~s ~c = Morph.hoist TransitionT (simplifyCondition @(AccumT (Seq rule) (SeqT m)) s c)
     {-# INLINE simplifyCondition #-}
 
     localAxiomEquations = coerce (localAxiomEquations @(AccumT (Seq rule) (SeqT m)))
@@ -146,7 +146,7 @@ tryTransitionT ::
 tryTransitionT = lift . runTransitionT
 
 mapTransitionT ::
-    (Monad m, Monad n) =>
+    Monad m =>
     (forall x. m x -> n x) ->
     TransitionT rule m a ->
     TransitionT rule n a
@@ -225,7 +225,7 @@ ifte ::
     (a -> TransitionT rule m b) ->
     TransitionT rule m b ->
     TransitionT rule m b
-ifte p t e = TransitionT $
+ifte p t ~e = TransitionT $
     AccumT $ \w0 ->
         Logic.ifte
             (toSeqT w0 p)
