@@ -214,16 +214,16 @@ make ::
     (Ord term, TopBottom term, Foldable f) =>
     f term ->
     MultiOr term
-make ~patts = foldr go mempty patts
+make ~patts = foldr go stop patts Set.empty
   where
-    go element ~mor =
+    go element ~r !es =
         case patternToMaybeBool element of
             Just True -> MultiOrTop element
-            Just False -> mor
-            Nothing -> case mor of
-                MultiOr es -> MultiOr $ Set.insert element es
-                MultiOrBottom -> MultiOr $ Set.singleton element
-                top -> top
+            Just False -> r es
+            Nothing -> r (Set.insert element es)
+    stop es
+      | null es = MultiOrBottom
+      | otherwise = MultiOr es
 
 {- | Merge two disjunctions of items.
 
