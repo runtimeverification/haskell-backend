@@ -700,7 +700,8 @@ type HashableConstraint variable = Eq variable
 type HashableConstraint variable = () :: Constraint
 #endif
 
-instance (HashableConstraint variable, Hashable variable) => Hashable (TermLike variable) where
+-- instance (HashableConstraint variable, Hashable variable) => Hashable (TermLike variable) where
+instance (HashableConstraint variable) => Hashable (TermLike variable) where
     hashWithSalt salt (TermLike__ _ _ _) =
         salt
     {-# INLINE hashWithSalt #-}
