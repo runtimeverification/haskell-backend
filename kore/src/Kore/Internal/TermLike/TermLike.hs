@@ -704,6 +704,8 @@ instance (HashableConstraint variable, Hashable variable) => Hashable (TermLike 
     hashWithSalt salt (TermLike__ _ _ pat) =
         salt `hashWithSalt` pat
     {-# INLINE hashWithSalt #-}
+    -- use stored hash when no salt is required
+    hash (TermLike__ _ hash _) = hash
 
 instance NFData variable => NFData (TermLike variable) where
     rnf (Recursive.project -> annotation :< pat) =
