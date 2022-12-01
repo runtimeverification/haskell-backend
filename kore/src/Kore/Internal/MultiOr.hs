@@ -222,8 +222,8 @@ make ~patts = foldr go stop patts Set.empty
             Just False -> r es
             Nothing -> r (Set.insert element es)
     stop es
-      | null es = MultiOrBottom
-      | otherwise = MultiOr es
+        | null es = MultiOrBottom
+        | otherwise = MultiOr es
 
 {- | Merge two disjunctions of items.
 
