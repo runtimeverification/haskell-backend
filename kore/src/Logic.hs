@@ -1,8 +1,9 @@
+{-# LANGUAGE CPP #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
 -}
-{-# LANGUAGE CPP #-}
 module Logic (
     module Control.Monad.Logic,
     module Control.Monad.Trans,
