@@ -46,7 +46,7 @@ data ModuleAttributes = ModuleAttributes
 data AxiomAttributes = AxiomAttributes
     { location :: Location
     , priority :: Priority -- priorities are <= 200
-    , label :: Maybe Label
+    , ruleLabel :: Maybe Label
     , simplification :: Bool
     }
     deriving stock (Eq, Ord, Show)

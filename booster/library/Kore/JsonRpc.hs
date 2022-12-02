@@ -9,20 +9,21 @@ module Kore.JsonRpc (
 
 import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
-import Control.Exception (mask)
+import Control.Exception (ErrorCall (..), mask)
 import Control.Monad (forever)
-import Control.Monad.Catch (catch)
+import Control.Monad.Catch (MonadCatch, catch, handle)
 import Control.Monad.IO.Class
-import Control.Monad.Logger.CallStack (LogLevel, MonadLoggerIO)
+import Control.Monad.Logger.CallStack (LogLevel (LevelError), MonadLoggerIO)
 import Control.Monad.Logger.CallStack qualified as Log
 import Control.Monad.STM (atomically)
 import Control.Monad.Trans.Except (runExcept)
 import Control.Monad.Trans.Reader (ask, runReaderT)
-import Data.Aeson (toJSON)
+import Data.Aeson (object, toJSON, (.=))
 import Data.Aeson.Encode.Pretty as Json
 import Data.Aeson.Types (Value (..))
 import Data.Conduit.Network (serverSettings)
-import Data.Maybe (catMaybes)
+import Data.Foldable
+import Data.Maybe (catMaybes, fromMaybe)
 import Data.Text qualified as Text
 import Network.JSONRPC (
     BatchRequest (BatchRequest, SingleRequest),
@@ -38,36 +39,39 @@ import Network.JSONRPC (
     receiveBatchRequest,
     sendBatchResponse,
  )
+import Numeric.Natural
 
 import Kore.Definition.Base (KoreDefinition (..))
 import Kore.JsonRpc.Base
 import Kore.Network.JsonRpc (jsonrpcTCPServer)
 import Kore.Pattern.Base (Pattern)
-import Kore.Syntax.Json (KoreJson (..), KorePattern, addHeader)
+import Kore.Pattern.Rewrite (RewriteResult (..), performRewrite)
+import Kore.Syntax.Json (KoreJson (..), addHeader)
 import Kore.Syntax.Json.Externalise (externalisePattern)
 import Kore.Syntax.Json.Internalise (PatternError, internalisePattern)
 
 respond ::
     forall m.
+    MonadCatch m =>
     MonadLoggerIO m =>
     KoreDefinition ->
     Respond (API 'Req) m (API 'Res)
 respond def@KoreDefinition{} =
-    \case
-        Execute ExecuteRequest{state = startState} -> do
+    catchingServerErrors . \case
+        Execute req -> do
             Log.logDebug "Testing JSON-RPC server."
             -- internalise given constrained term
-            let cterm :: KorePattern
-                KoreJson{term = cterm} = startState
-                internalised = runExcept $ internalisePattern Nothing def cterm
+            let internalised = runExcept $ internalisePattern Nothing def req.state.term
 
             case internalised of
                 Left patternError -> do
                     Log.logDebug $ "Error internalising cterm" <> Text.pack (show patternError)
                     pure $ Left $ reportPatternError patternError
                 Right pat -> do
-                    -- processing goes here
-                    pure $ Right $ dummyExecuteResult pat
+                    let cutPoints = fromMaybe [] req.cutPointRules
+                        terminals = fromMaybe [] req.terminalRules
+                        mbDepth = fmap getNat req.maxDepth
+                    execResponse <$> performRewrite def mbDepth cutPoints terminals pat
 
         -- this case is only reachable if the cancel appeared as part of a batch request
         Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
@@ -75,16 +79,69 @@ respond def@KoreDefinition{} =
 
         _ -> pure $ Left $ ErrorObj "Not implemented" (-32601) Null
   where
-    dummyExecuteResult :: Pattern -> API 'Res
-    dummyExecuteResult pat =
-        Execute
-            ExecuteResult
-                { reason = Stuck
-                , depth = Depth 0
-                , state = toExecState pat
-                , nextStates = Nothing
-                , rule = Nothing
-                }
+    execResponse :: (Natural, RewriteResult) -> Either ErrorObj (API 'Res)
+    execResponse (_, RewriteSingle{}) =
+        error "Single rewrite result"
+    execResponse (d, RewriteBranch p nexts) =
+        Right $
+            Execute
+                ExecuteResult
+                    { reason = Branching
+                    , depth = Depth d
+                    , state = toExecState p
+                    , nextStates = Just $ map toExecState $ toList nexts
+                    , rule = Nothing
+                    }
+    execResponse (d, RewriteStuck p) =
+        Right $
+            Execute
+                ExecuteResult
+                    { reason = Stuck
+                    , depth = Depth d
+                    , state = toExecState p
+                    , nextStates = Nothing
+                    , rule = Nothing
+                    }
+    execResponse (d, RewriteCutPoint lbl p next) =
+        Right $
+            Execute
+                ExecuteResult
+                    { reason = CutPointRule
+                    , depth = Depth d
+                    , state = toExecState p
+                    , nextStates = Just [toExecState next]
+                    , rule = Just lbl
+                    }
+    execResponse (d, RewriteTerminal lbl p) =
+        Right $
+            Execute
+                ExecuteResult
+                    { reason = TerminalRule
+                    , depth = Depth d
+                    , state = toExecState p
+                    , nextStates = Nothing
+                    , rule = Just lbl
+                    }
+    execResponse (d, RewriteStopped p) =
+        Right $
+            Execute
+                ExecuteResult
+                    { reason = DepthBound
+                    , depth = Depth d
+                    , state = toExecState p
+                    , nextStates = Nothing
+                    , rule = Nothing
+                    }
+    execResponse (d, RewriteAborted p) =
+        Right $
+            Execute
+                ExecuteResult
+                    { reason = Aborted
+                    , depth = Depth d
+                    , state = toExecState p
+                    , nextStates = Nothing
+                    , rule = Nothing
+                    }
 
     toExecState :: Pattern -> ExecuteState
     toExecState pat =
@@ -96,10 +153,25 @@ respond def@KoreDefinition{} =
     reportPatternError pErr =
         ErrorObj "Could not verify KORE pattern" (-32002) $ toJSON pErr
 
-runServer :: Int -> KoreDefinition -> LogLevel -> IO ()
-runServer port internalizedModule logLevel =
+{- | Catches all calls to `error` from the guts of the engine, and
+     returns json with the message and location as context.
+-}
+catchingServerErrors ::
+    MonadCatch m =>
+    MonadLoggerIO m =>
+    m (Either ErrorObj res) ->
+    m (Either ErrorObj res)
+catchingServerErrors =
+    let mkError (ErrorCallWithLocation msg loc) =
+            object ["error" .= msg, "context" .= loc]
+     in handle $ \err -> do
+            Log.logError $ "Server error: " <> Text.pack (show err)
+            pure $ Left (ErrorObj "Server error" (-32032) $ mkError err)
+
+runServer :: Int -> KoreDefinition -> (LogLevel, [LogLevel]) -> IO ()
+runServer port internalizedModule (logLevel, customLevels) =
     do
-        Log.runStderrLoggingT . logFilter
+        Log.runStderrLoggingT . Log.filterLogger levelFilter
         $ jsonrpcTCPServer
             Json.defConfig{confCompare}
             V2
@@ -107,7 +179,9 @@ runServer port internalizedModule logLevel =
             srvSettings
             (srv internalizedModule)
   where
-    logFilter = Log.filterLogger $ \_source lvl -> lvl >= logLevel
+    levelFilter _source lvl =
+        lvl `elem` customLevels || lvl >= logLevel && lvl <= LevelError
+
     srvSettings = serverSettings port "*"
     confCompare =
         Json.keyOrder
@@ -179,7 +253,7 @@ srv internalizedModule = do
 
             sendResponses :: BatchResponse -> Log.LoggingT IO ()
             sendResponses r = flip Log.runLoggingT logger $ flip runReaderT rpcSession $ sendBatchResponse r
-            respondTo :: MonadLoggerIO m => Request -> m (Maybe Response)
+            respondTo :: Request -> Log.LoggingT IO (Maybe Response)
             respondTo = buildResponse (respond internalizedModule)
 
             cancelReq :: BatchRequest -> Log.LoggingT IO ()

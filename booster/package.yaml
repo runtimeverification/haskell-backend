@@ -149,6 +149,7 @@ tests:
     - filepath
     - hedgehog
     - hs-backend-booster
+    - monad-logger
     - tasty
     - tasty-golden
     - tasty-hedgehog
