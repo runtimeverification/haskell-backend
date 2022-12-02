@@ -49,7 +49,6 @@ data FailReason
       VariableRecursion Variable Term
     | -- | Variable reassigned
       VariableConflict Variable Term Term
-    | InternalError String
     deriving stock (Eq, Show)
 
 type Substitution = Map Variable Term
@@ -59,6 +58,10 @@ type Substitution = Map Variable Term
 
    The returned substitution is oriented towards 'term1', i.e.,
    prefers to replace its variables if given a choice.
+
+   This code calls `error` for internal errors (e.g., function
+   arguments that should not be possible), assuming the caller will
+   catch and handle those errors.
 -}
 unifyTerms :: KoreDefinition -> Term -> Term -> UnificationResult
 unifyTerms KoreDefinition{sorts} term1 term2 =
@@ -133,9 +136,8 @@ unify1
             unless (symbol1.name == symbol2.name) $
                 failWith (DifferentSymbols t1 t2)
             unless (length args1 == length args2) $
-                lift . throwE . UnificationFailed $
-                    InternalError $
-                        "Argument counts differ for same constructor" <> show (t1, t2)
+                internalError $
+                    "Argument counts differ for same constructor" <> show (t1, t2)
             zipWithM_ enqueueProblem args1 args2
 
 -- and-term in pattern: must unify with both arguments
@@ -159,7 +161,7 @@ unify1
     (Var var2@(Variable varSort2 varName2))
         -- same variable: forbidden!
         | var1 == var2 =
-            lift . throwE . UnificationFailed $ InternalError $ "Shared variable: " <> show var1
+            internalError $ "Shared variable: " <> show var1
         | varName1 == varName2 && varSort1 /= varSort2 =
             -- sorts differ, names equal: error!
             failWith $ VariableConflict var1 (Var var1) (Var var2)
@@ -189,6 +191,9 @@ unify1
 
 failWith :: FailReason -> StateT s (Except UnificationResult) ()
 failWith = lift . throwE . UnificationFailed
+
+internalError :: String -> a
+internalError = error
 
 enqueueProblem :: Monad m => Term -> Term -> StateT UnificationState m ()
 enqueueProblem term1 term2 =

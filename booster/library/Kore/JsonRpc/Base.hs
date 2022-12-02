@@ -24,7 +24,7 @@ import Network.JSONRPC (
 import Numeric.Natural
 import Prettyprinter qualified as Pretty
 
-newtype Depth = Depth Natural
+newtype Depth = Depth {getNat :: Natural}
     deriving stock (Show, Eq)
     deriving newtype (FromJSON, ToJSON)
 
@@ -109,6 +109,7 @@ data HaltReason
     | DepthBound
     | CutPointRule
     | TerminalRule
+    | Aborted
     deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)

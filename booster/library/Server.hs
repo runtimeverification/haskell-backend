@@ -7,8 +7,9 @@ License     : BSD-3-Clause
 module Server (main) where
 
 import Control.Monad.Logger (LogLevel (..))
+import Data.List (partition)
 import Data.Maybe (fromMaybe)
-import Data.Text (Text)
+import Data.Text (Text, pack)
 import Options.Applicative
 
 import Kore.JsonRpc (runServer)
@@ -18,7 +19,7 @@ import Kore.VersionInfo (VersionInfo (..), versionInfo)
 main :: IO ()
 main = do
     options <- execParser clParser
-    let CLOptions{definitionFile, mainModuleName, port, logLevel} = options
+    let CLOptions{definitionFile, mainModuleName, port, logLevels} = options
     putStrLn $
         "Loading definition from "
             <> definitionFile
@@ -28,7 +29,7 @@ main = do
         either (error . show) id
             <$> loadDefinition mainModuleName definitionFile
     putStrLn "Starting RPC server"
-    runServer port internalModule logLevel
+    runServer port internalModule (adjustLogLevels logLevels)
   where
     clParser =
         info
@@ -39,8 +40,9 @@ data CLOptions = CLOptions
     { definitionFile :: FilePath
     , mainModuleName :: Text
     , port :: Int
-    , logLevel :: LogLevel
+    , logLevels :: [LogLevel]
     }
+    deriving (Show)
 
 parserInfoModifiers :: InfoMod options
 parserInfoModifiers =
@@ -78,13 +80,18 @@ clOptionsParser =
                 <> help "Port for the RPC server to bind to"
                 <> showDefault
             )
-        <*> option
-            (eitherReader readLogLevel)
-            ( metavar "LEVEL"
-                <> long "log-level"
-                <> short 'l'
-                <> value LevelInfo
-                <> help "Log level: debug, info (default), warn, error"
+        <*> many
+            ( option
+                (eitherReader readLogLevel)
+                ( metavar "LEVEL"
+                    <> long "log-level"
+                    <> short 'l'
+                    <> help
+                        ( "Log level: debug, info (default), warn, error, \
+                          \or a custom level from "
+                            <> show allowedLogLevels
+                        )
+                )
             )
   where
     readLogLevel :: String -> Either String LogLevel
@@ -93,7 +100,22 @@ clOptionsParser =
         "info" -> Right LevelInfo
         "warn" -> Right LevelWarn
         "error" -> Right LevelError
-        other -> Left $ other <> ": Unsupported log level"
+        other
+            | other `elem` allowedLogLevels -> Right (LevelOther $ pack other)
+            | otherwise -> Left $ other <> ": Unsupported log level"
+
+-- custom log levels that can be selected
+allowedLogLevels :: [String]
+allowedLogLevels = ["Rewrite"]
+
+-- Partition provided log levels into standard and custom ones, and
+-- select the lowest standard level. Default to 'LevelInfo' if no
+-- standard log level was given.
+adjustLogLevels :: [LogLevel] -> (LogLevel, [LogLevel])
+adjustLogLevels ls = (standardLevel, customLevels)
+  where
+    (stds, customLevels) = partition (<= LevelError) ls
+    standardLevel = minimum (LevelInfo : stds)
 
 versionInfoStr :: String
 versionInfoStr =
