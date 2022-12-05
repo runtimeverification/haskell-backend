@@ -71,6 +71,7 @@ library:
   - extra
   - filepath
   - gitrev
+  - hpp
   - json-rpc
   - language-c
   - monad-logger
@@ -90,8 +91,6 @@ library:
   build-tools:
     - happy
     - alex
-  system-build-tools:
-    - gcc
 
 executables:
   hs-backend-booster:
