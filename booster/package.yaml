@@ -14,6 +14,7 @@ extra-source-files:
 - README.md
 - stack.yaml
 - test/parser/*
+- cbits/*
 
 default-extensions:
   BangPatterns
@@ -60,6 +61,7 @@ library:
   - array
   - base
   - bytestring
+  - casing
   - conduit
   - conduit-extra
   - containers
@@ -70,6 +72,7 @@ library:
   - filepath
   - gitrev
   - json-rpc
+  - language-c
   - monad-logger
   - optparse-applicative
   - prettyprinter
@@ -81,11 +84,14 @@ library:
   - template-haskell
   - text
   - transformers
+  - unix
   - unliftio
   source-dirs: library
   build-tools:
     - happy
     - alex
+  system-build-tools:
+    - gcc
 
 executables:
   hs-backend-booster:
@@ -130,6 +136,16 @@ executables:
       - hs-backend-booster
       - text
       - transformers
+    ghc-options:
+    - -rtsopts
+  dltest:
+    source-dirs: tools/dltest
+    main: Dltest.hs
+    dependencies:
+      - base
+      - directory
+      - hs-backend-booster
+      - unix
     ghc-options:
     - -rtsopts
 
