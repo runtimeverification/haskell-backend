@@ -4,16 +4,22 @@
 module Kore.LLVM.TH (dynamicBindings) where
 
 import Control.Monad.Trans.Reader (ReaderT (..))
+import Data.ByteString qualified as BS
 import Data.List (isPrefixOf)
 import Data.Map qualified as Map
+import Data.Maybe (fromMaybe)
 import Foreign (FunPtr, Ptr)
 import Foreign.C.Types qualified as Foreign.C
+import Hpp qualified
+import Hpp.Config qualified as Hpp
+import Hpp.Env qualified as Hpp
+import Hpp.RunHpp qualified as Hpp
+import Hpp.StringSig qualified as Hpp
 import Language.C qualified as C
 import Language.C.Analysis.AstAnalysis qualified as C
 import Language.C.Analysis.SemRep qualified as C
 import Language.C.Analysis.TravMonad qualified as C
 import Language.C.Data.Ident qualified as C
-import Language.C.System.GCC qualified as C
 import Language.Haskell.TH qualified as TH
 import Language.Haskell.TH.Syntax qualified as TH
 import System.Posix.DynamicLinker qualified as Linker
@@ -38,12 +44,36 @@ dynamicBindings headerFile =
 parseCHeader :: FilePath -> IO [(C.Ident, C.IdentDecl)]
 parseCHeader input_file =
     do
-        parse_result <- C.parseCFile (C.newGCC "gcc") Nothing [] input_file
-        case parse_result of
-            Left parse_err -> error (show parse_err)
-            Right ast -> case C.runTrav_ $ C.gObjs <$> C.analyseAST ast of
-                Left err -> error (show err)
-                Right (m, _) -> pure $ Map.toList m
+        cfg' <- Hpp.defaultConfigFNow
+        let cfg =
+                cfg'
+                    { Hpp.curFileNameF = Just input_file
+                    , Hpp.spliceLongLinesF = Just True
+                    , Hpp.eraseCCommentsF = Just True
+                    , Hpp.inhibitLinemarkersF = Just True
+                    , Hpp.replaceTrigraphsF = Just True
+                    }
+
+        let cppEnv =
+                foldr
+                    ( \(name, body) env ->
+                        case Hpp.parseDefinition name body of
+                            Nothing -> error "Bad definition"
+                            Just def -> Hpp.insertPair def env
+                    )
+                    mempty
+                    [("__STDC__", "1"), ("__STDC_VERSION__", "199409L")]
+        -- run the hpp preprocessor on the input_file first to get rid of all macros
+        Hpp.readLines input_file
+            >>= Hpp.hppIO (fromMaybe (error "could not create an HPP config") $ Hpp.realizeConfig cfg) cppEnv input_file
+            >>= \case
+                Left cpp_err -> error (show cpp_err)
+                Right (_, preprocessed) ->
+                    case C.parseC (BS.concat preprocessed) (C.initPos input_file) of
+                        Left parse_err -> error (show parse_err)
+                        Right ast -> case C.runTrav_ $ C.gObjs <$> C.analyseAST ast of
+                            Left err -> error (show err)
+                            Right (m, _) -> pure $ Map.toList m
 
 foreignImport :: String -> C.Type -> TH.Q [TH.Dec]
 foreignImport name' ty' = do
