@@ -49,6 +49,7 @@ import Data.HashSet qualified as HashSet
 import Data.Kind (
     Type,
  )
+import Data.List qualified as List
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.ConstructorLike
@@ -529,8 +530,10 @@ normalizedAcConstructorLike ac@(NormalizedAc _ _ _) =
 {- | A representation for associative-commutative collections
 with just two elements of the same type.
 
-The smart constructor 'mkAcPair' ensures the properties of
-the collection are satisfied.
+Invariant: Given @AcPair_ x y@, @x < y == True@
+
+We guarantee this invariant by keeping @AcPair@ abstract and only
+exposing accessors @pattern AcPair@ and @acPairToPair@.
 -}
 data AcPair a = AcPair_ a a
     deriving stock (Eq)
@@ -540,12 +543,6 @@ data AcPair a = AcPair_ a a
 pattern AcPair :: a -> a -> AcPair a
 pattern AcPair a1 a2 <- AcPair_ a1 a2
 {-# COMPLETE AcPair #-}
-
-mkAcPair :: Ord a => a -> a -> Maybe (AcPair a)
-mkAcPair a1 a2
-    | a1 < a2 = Just $ AcPair_ a1 a2
-    | a1 > a2 = Just $ AcPair_ a2 a1
-    | otherwise = Nothing
 
 acPairToPair :: AcPair a -> (a, a)
 acPairToPair (AcPair a1 a2) = (a1, a2)
@@ -586,7 +583,12 @@ generatePairWiseElements ::
 generatePairWiseElements (unwrapAc -> normalized) =
     PairWiseElements
         { symbolicPairs = pairWiseElemsOfSameType symbolicElems
-        , concretePairs = pairWiseElemsOfSameType concreteElems
+        , -- Note: We know the elements are concreteElems are distinct,
+          -- so we use a special version of pairWiseElemsOfSameType
+          -- to handle them more efficiently. If that changes, this will need to be
+          -- adjusted. We make no such assumption for symboliccElems or
+          -- opaqueElems; do they offer a similar guarantee?
+          concretePairs = pairWiseElemsOfSameTypeDistinct concreteElems
         , opaquePairs = pairWiseElemsOfSameType opaqueElems
         , symbolicConcretePairs =
             pairWiseElemsOfDifferentTypes symbolicElems concreteElems
@@ -599,10 +601,17 @@ generatePairWiseElements (unwrapAc -> normalized) =
     symbolicElems = elementsWithVariables normalized
     concreteElems = HashMap.toList . concreteElements $ normalized
     opaqueElems = opaque normalized
-    pairWiseElemsOfSameType elems =
-        [mkAcPair x y | x <- elems, y <- elems]
-        & catMaybes
-            & HashSet.fromList
+    -- Pre-sorting the elements cuts comparisons from quadratic to
+    -- linearithmic, and reduces allocations by about half.
+    pairWiseElemsOfSameTypeDistinct (List.sort -> elems) =
+        [AcPair_ x y | x : ys <- List.tails elems, y <- ys]
+          & HashSet.fromList
+    -- Without assuming unique elements, we additionally pay to drop any
+    -- duplicates. If there are many of these, then we can `groupBy` after
+    -- sorting, or build a `Set`, to bring this down to linearithmic.
+    pairWiseElemsOfSameType (List.sort -> elems) =
+        [AcPair_ x y | x : ys <- List.tails elems, y <- dropWhile (== x) ys]
+          & HashSet.fromList
     pairWiseElemsOfDifferentTypes elems1 elems2 =
         (,) <$> elems1 <*> elems2
             & HashSet.fromList
