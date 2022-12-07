@@ -77,7 +77,7 @@ jobs:
           submodules: recursive
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v14.1
+        uses: cachix/install-nix-action@v15
         with:
           extra_nix_config: |
             substituters = http://cache.nixos.org https://hydra.iohk.io
@@ -219,6 +219,10 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           submodules: recursive
 
+      - name: Install HLINT Dependencies
+        run: |
+          sudo apt-get update && DEBIAN_FRONTEND=noninteractive sudo apt-get install --yes libtinfo5
+
       - name: Download hlint
         run: curl -sSL https://github.com/ndmitchell/hlint/releases/download/v${{ env.hlint_version }}/hlint-${{ env.hlint_version }}-x86_64-linux.tar.gz | tar xvz
 
@@ -238,7 +242,7 @@ jobs:
           submodules: recursive
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v14.1
+        uses: cachix/install-nix-action@v15
         with:
           extra_nix_config: |
             substituters = http://cache.nixos.org https://hydra.iohk.io
