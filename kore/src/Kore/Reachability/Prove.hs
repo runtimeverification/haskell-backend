@@ -198,7 +198,7 @@ proveClaims ::
     GraphSearchOrder ->
     Natural ->
     FinalNodeType ->
-    AllClaims SomeClaim ->
+    [SomeClaim] ->
     Axioms SomeClaim ->
     AlreadyProven ->
     -- | List of claims, together with a maximum number of verification steps
@@ -212,7 +212,7 @@ proveClaims
     searchOrder
     maxCounterexamples
     finalNodeType
-    claims
+    specClaims
     axioms
     (AlreadyProven alreadyProven)
     (ToProve toProve) =
@@ -225,7 +225,7 @@ proveClaims
                     searchOrder
                     maxCounterexamples
                     finalNodeType
-                    claims
+                    specClaims
                     axioms
                     unproven
                     & runExceptT
@@ -260,7 +260,7 @@ proveClaimsWorker ::
     GraphSearchOrder ->
     Natural ->
     FinalNodeType ->
-    AllClaims SomeClaim ->
+    [SomeClaim] ->
     Axioms SomeClaim ->
     -- | List of claims, together with a maximum number of verification steps
     -- for each.
@@ -273,7 +273,7 @@ proveClaimsWorker
     searchOrder
     maxCounterexamples
     finalNodeType
-    claims
+    specClaims
     axioms
     (ToProve toProve) =
         traverse_ verifyWorker toProve
@@ -296,7 +296,7 @@ proveClaimsWorker
                             searchOrder
                             maxCounterexamples
                             finalNodeType
-                            claims
+                            specClaims
                             axioms
                             unprovenClaim
                 either
@@ -315,7 +315,7 @@ proveClaim ::
     GraphSearchOrder ->
     Natural ->
     FinalNodeType ->
-    AllClaims SomeClaim ->
+    [SomeClaim] ->
     Axioms SomeClaim ->
     (SomeClaim, Limit Natural) ->
     Simplifier (Either (StuckClaims, Natural) ())
@@ -326,7 +326,7 @@ proveClaim
     searchOrder
     maxCounterexamples
     finalNodeType
-    (AllClaims claims)
+    specClaims
     (Axioms axioms)
     (goal, depthLimit) = do
         let startGoal = ClaimState.Claimed (Lens.over lensClaimPattern mkGoal goal)
@@ -399,7 +399,7 @@ proveClaim
                 )
         transition =
             GraphTraversal.simpleTransition
-                (trackProofDepth $ transitionRule' stuckCheck claims axioms)
+                (trackProofDepth $ transitionRule' stuckCheck specClaims axioms)
                 toTransitionResultWithDepth
 
         -- result interpretation for GraphTraversal.simpleTransition
