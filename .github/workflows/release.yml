@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -79,7 +79,7 @@ jobs:
           sudo apt install --yes z3
 
       - name: Check out code
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -112,7 +112,7 @@ jobs:
           sudo apt install --yes z3
 
       - name: Check out code
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -145,7 +145,7 @@ jobs:
           sudo apt install --yes z3
 
       - name: Check out code
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
