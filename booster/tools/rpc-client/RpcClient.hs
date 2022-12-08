@@ -16,6 +16,7 @@ module RpcClient (
 
 import Control.Monad
 import Data.Aeson qualified as Json
+import Data.Aeson.Encode.Pretty qualified as Json
 import Data.Aeson.Key qualified as JsonKey
 import Data.Aeson.KeyMap qualified as JsonKeyMap
 import Data.Bifunctor
@@ -32,15 +33,16 @@ import Options.Applicative
 import System.Exit
 import System.IO
 
+import Kore.JsonRpc.Base (rpcJsonConfig)
 import Kore.Syntax.Json qualified as Syntax
 
 import Debug.Trace
 
 main :: IO ()
 main = do
-    Options{host, port, mode, optionFile, options, expectFile} <-
+    Options{host, port, mode, optionFile, options, postProcessing} <-
         execParser parseOptions
-    runTCPClient host (show port) $ \s -> do
+    withTCPServer host port $ \s -> do
         request <-
             trace "[Info] Preparing request data" $
                 prepareRequestData mode optionFile options
@@ -48,8 +50,11 @@ main = do
             sendAll s request
         response <- recv s 8192
         trace "[Info] Response received." $
-            maybe BS.putStrLn compareToExpectation expectFile response
-        shutdown s ShutdownBoth
+            maybe BS.putStrLn postProcess postProcessing response
+  where
+    withTCPServer :: String -> Int -> (Socket -> IO ()) -> IO ()
+    withTCPServer host port =
+        runTCPClient host (show port)
 
 data Options = Options
     { host :: String
@@ -57,7 +62,7 @@ data Options = Options
     , mode :: Mode -- what to do
     , optionFile :: Maybe FilePath -- file with options (different for each endpoint
     , options :: [(String, String)] -- verbatim options (name, value) to add to json
-    , expectFile :: Maybe FilePath -- whether to diff to an expectation file or output
+    , postProcessing :: Maybe PostProcessing
     }
     deriving stock (Show)
 
@@ -69,6 +74,17 @@ data Mode
     | Simpl FilePath
     | Check FilePath FilePath
     | SendRaw FilePath
+    deriving stock (Show)
+
+{- | Optional output post-processing:
+  * 'Output' writes formatted output to a file
+  * 'Expect' checks formatted output against a given golden file
+  * 'Prettify' formats output before printing it to stdout
+-}
+data PostProcessing
+    = Output FilePath
+    | Expect FilePath
+    | Prettify
     deriving stock (Show)
 
 parseOptions :: ParserInfo Options
@@ -86,7 +102,7 @@ parseOptions =
             <*> parseMode
             <*> paramFileOpt
             <*> many paramOpt
-            <*> expectFileOpt
+            <*> optional parsePostProcessing
     hostOpt =
         strOption $
             long "host"
@@ -114,15 +130,30 @@ parseOptions =
             short 'o'
                 <> metavar "NAME=VALUE"
                 <> help "parameters to use (name=value)"
-    expectFileOpt =
-        optional $
-            strOption $
-                long "expect"
-                    <> metavar "EXPECTATIONFILE"
-                    <> help "file with expected output (json), optional"
-
     readPair =
         maybeReader $ \s -> case split (== '=') s of [k, v] -> Just (k, v); _ -> Nothing
+
+parsePostProcessing :: Parser PostProcessing
+parsePostProcessing =
+    ( Expect
+        <$> strOption
+            ( long "expect"
+                <> metavar "EXPECTATIONFILE"
+                <> help "compare JSON output against file contents"
+            )
+    )
+        <|> ( Output
+                <$> ( strOption $
+                        long "output"
+                            <> short 'o'
+                            <> metavar "OUTPUTFILE"
+                            <> help "write JSON output to a file"
+                    )
+            )
+        <|> ( flag' Prettify $
+                long "prettify"
+                    <> help "format JSON before printing"
+            )
 
 parseMode :: Parser Mode
 parseMode =
@@ -136,7 +167,7 @@ parseMode =
         strOption $
             long "execute"
                 <> metavar "TERMFILE"
-                <> help "execute (rewrite) the term in the file"
+                <> help "execute (rewrite) the state in the file"
     parseRaw =
         strOption $
             long "send"
@@ -153,9 +184,9 @@ prepareRequestData (SendRaw file) mbFile opts = do
     BS.readFile file
 prepareRequestData (Exec file) mbOptFile opts = do
     term :: Json.Value <-
-        Json.toJSON . Syntax.addHeader
+        Json.toJSON
             <$> ( BS.readFile file -- decode given term to test whether it is valid
-                    >>= either error pure . Json.eitherDecode @Syntax.KorePattern
+                    >>= either error pure . Json.eitherDecode @Syntax.KoreJson
                 )
     paramsFromFile <-
         maybe
@@ -219,14 +250,26 @@ mkRequest method =
         , "method" ~> method
         ]
 
-compareToExpectation :: FilePath -> BS.ByteString -> IO ()
-compareToExpectation expectFile output = do
-    expected <- BS.readFile expectFile
-    -- TODO https://hackage.haskell.org/package/Diff (needs json reformatting)
-    -- or  https://hackage.haskell.org/package/aeson-diff (needs diff pretty-printer)
-    when (output /= expected) $ do
-        BS.putStrLn $ "[Error] Expected:\n" <> expected
-        BS.putStrLn $ "[Error] but got:\n" <> output
-        BS.putStrLn "[Error] Not the same, sorry."
-        exitWith $ ExitFailure 1
-    hPutStrLn stderr $ "[Info] Output matches " <> expectFile
+postProcess :: PostProcessing -> BS.ByteString -> IO ()
+postProcess postProcessing output =
+    case postProcessing of
+        Prettify ->
+            BS.putStrLn prettyOutput
+        Output file ->
+            BS.writeFile file prettyOutput
+        Expect expectFile -> do
+            expected <- BS.readFile expectFile
+
+            -- TODO https://hackage.haskell.org/package/Diff (needs json reformatting)
+            -- or  https://hackage.haskell.org/package/aeson-diff (needs diff pretty-printer)
+            when (prettyOutput /= expected) $ do
+                BS.putStrLn $ "[Error] Expected:\n" <> expected
+                BS.putStrLn $ "[Error] but got:\n" <> prettyOutput
+                BS.putStrLn "[Error] Not the same, sorry."
+                exitWith $ ExitFailure 1
+            hPutStrLn stderr $ "[Info] Output matches " <> expectFile
+  where
+    prettyOutput =
+        Json.encodePretty' rpcJsonConfig $
+            either error (id @Json.Value) $
+                Json.eitherDecode output
