@@ -7,7 +7,7 @@ on:
 jobs:
   nix:
     name: 'Nix'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - id: config
         run: |
@@ -76,7 +76,7 @@ jobs:
 
   fourmolu:
     name: 'Style'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - id: config
         run: |
