@@ -7,6 +7,7 @@ module Kore.JsonRpc.Base (
 ) where
 
 import Control.Exception (Exception)
+import Data.Aeson.Encode.Pretty qualified as PrettyJson
 import Data.Aeson.Types (FromJSON (..), ToJSON (..))
 import Data.Text (Text)
 import Deriving.Aeson (
@@ -177,3 +178,41 @@ instance Pretty.Pretty (API 'Req) where
         Implies _ -> "implies"
         Simplify _ -> "simplify"
         Cancel -> "cancel"
+
+rpcJsonConfig :: PrettyJson.Config
+rpcJsonConfig =
+    PrettyJson.defConfig
+        { PrettyJson.confCompare =
+            PrettyJson.keyOrder
+                [ "format"
+                , "version"
+                , "term"
+                , "tag"
+                , "assoc"
+                , "name"
+                , "symbol"
+                , "argSort"
+                , "sort"
+                , "sorts"
+                , "var"
+                , "varSort"
+                , "arg"
+                , "args"
+                , "argss"
+                , "source"
+                , "dest"
+                , "value"
+                , "jsonrpc"
+                , "id"
+                , "reason"
+                , "depth"
+                , "rule"
+                , "state"
+                , "next-states"
+                , "substitution"
+                , "predicate"
+                , "satisfiable"
+                , "implication"
+                , "condition"
+                ]
+        }

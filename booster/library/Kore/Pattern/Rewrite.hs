@@ -44,7 +44,11 @@ rewriteStep def cutLabels terminalLabels pat = do
 
     let idxRules = fromMaybe Map.empty $ Map.lookup termIdx def.rewriteTheory
         anyRules = fromMaybe Map.empty $ Map.lookup Anything def.rewriteTheory
-        rules = map snd . Map.toAscList $ Map.unionWith (<>) idxRules anyRules
+        rules =
+            map snd . Map.toAscList $
+                if termIdx == Anything
+                    then idxRules
+                    else Map.unionWith (<>) idxRules anyRules
 
     when (null rules) $ throwE NoRulesForTerm
 

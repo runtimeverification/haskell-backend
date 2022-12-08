@@ -19,7 +19,6 @@ import Control.Monad.STM (atomically)
 import Control.Monad.Trans.Except (runExcept)
 import Control.Monad.Trans.Reader (ask, runReaderT)
 import Data.Aeson (object, toJSON, (.=))
-import Data.Aeson.Encode.Pretty as Json
 import Data.Aeson.Types (Value (..))
 import Data.Conduit.Network (serverSettings)
 import Data.Foldable
@@ -173,7 +172,7 @@ runServer port internalizedModule (logLevel, customLevels) =
     do
         Log.runStderrLoggingT . Log.filterLogger levelFilter
         $ jsonrpcTCPServer
-            Json.defConfig{confCompare}
+            rpcJsonConfig
             V2
             False
             srvSettings
@@ -183,39 +182,6 @@ runServer port internalizedModule (logLevel, customLevels) =
         lvl `elem` customLevels || lvl >= logLevel && lvl <= LevelError
 
     srvSettings = serverSettings port "*"
-    confCompare =
-        Json.keyOrder
-            [ "format"
-            , "version"
-            , "term"
-            , "tag"
-            , "assoc"
-            , "name"
-            , "symbol"
-            , "argSort"
-            , "sort"
-            , "sorts"
-            , "var"
-            , "varSort"
-            , "arg"
-            , "args"
-            , "argss"
-            , "source"
-            , "dest"
-            , "value"
-            , "jsonrpc"
-            , "id"
-            , "reason"
-            , "depth"
-            , "rule"
-            , "state"
-            , "next-states"
-            , "substitution"
-            , "predicate"
-            , "satisfiable"
-            , "implication"
-            , "condition"
-            ]
 
 srv :: MonadLoggerIO m => KoreDefinition -> JSONRPCT m ()
 srv internalizedModule = do
