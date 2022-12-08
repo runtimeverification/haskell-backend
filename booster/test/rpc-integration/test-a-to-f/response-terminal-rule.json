@@ -1,0 +1,173 @@
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+        "reason": "terminal-rule",
+        "depth": 2,
+        "rule": "TEST.DE",
+        "state": {
+            "term": {
+                "format": "KORE",
+                "version": 1,
+                "term": {
+                    "tag": "App",
+                    "name": "Lbl'-LT-'generatedTop'-GT-'",
+                    "sorts": [
+                        {
+                            "tag": "SortApp",
+                            "name": "SortKCell",
+                            "args": []
+                        },
+                        {
+                            "tag": "SortApp",
+                            "name": "SortGeneratedCounterCell",
+                            "args": []
+                        }
+                    ],
+                    "args": [
+                        {
+                            "tag": "App",
+                            "name": "Lbl'-LT-'k'-GT-'",
+                            "sorts": [
+                                {
+                                    "tag": "SortApp",
+                                    "name": "SortK",
+                                    "args": []
+                                }
+                            ],
+                            "args": [
+                                {
+                                    "tag": "App",
+                                    "name": "kseq",
+                                    "sorts": [
+                                        {
+                                            "tag": "SortApp",
+                                            "name": "SortKItem",
+                                            "args": []
+                                        },
+                                        {
+                                            "tag": "SortApp",
+                                            "name": "SortK",
+                                            "args": []
+                                        }
+                                    ],
+                                    "args": [
+                                        {
+                                            "tag": "App",
+                                            "name": "inj",
+                                            "sorts": [
+                                                {
+                                                    "tag": "SortVar",
+                                                    "name": "From"
+                                                }
+                                            ],
+                                            "args": [
+                                                {
+                                                    "tag": "DV",
+                                                    "sort": {
+                                                        "tag": "SortApp",
+                                                        "name": "SortState",
+                                                        "args": []
+                                                    },
+                                                    "value": "e"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "tag": "App",
+                                            "name": "dotk",
+                                            "sorts": [],
+                                            "args": []
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "App",
+                            "name": "Lbl'-LT-'generatedCounter'-GT-'",
+                            "sorts": [
+                                {
+                                    "tag": "SortApp",
+                                    "name": "SortInt",
+                                    "args": []
+                                }
+                            ],
+                            "args": [
+                                {
+                                    "tag": "DV",
+                                    "sort": {
+                                        "tag": "SortApp",
+                                        "name": "SortInt",
+                                        "args": []
+                                    },
+                                    "value": "0"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            "predicate": {
+                "format": "KORE",
+                "version": 1,
+                "term": {
+                    "tag": "And",
+                    "sort": {
+                        "tag": "SortApp",
+                        "name": "SortGeneratedTopCell",
+                        "args": []
+                    },
+                    "first": {
+                        "tag": "And",
+                        "sort": {
+                            "tag": "SortApp",
+                            "name": "SortGeneratedTopCell",
+                            "args": []
+                        },
+                        "first": {
+                            "tag": "And",
+                            "sort": {
+                                "tag": "SortApp",
+                                "name": "SortGeneratedTopCell",
+                                "args": []
+                            },
+                            "first": {
+                                "tag": "Top",
+                                "sort": {
+                                    "tag": "SortApp",
+                                    "name": "SortGeneratedTopCell",
+                                    "args": []
+                                }
+                            },
+                            "second": {
+                                "tag": "Top",
+                                "sort": {
+                                    "tag": "SortApp",
+                                    "name": "SortGeneratedTopCell",
+                                    "args": []
+                                }
+                            }
+                        },
+                        "second": {
+                            "tag": "Top",
+                            "sort": {
+                                "tag": "SortApp",
+                                "name": "SortGeneratedTopCell",
+                                "args": []
+                            }
+                        }
+                    },
+                    "second": {
+                        "tag": "Top",
+                        "sort": {
+                            "tag": "SortApp",
+                            "name": "SortGeneratedTopCell",
+                            "args": []
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
