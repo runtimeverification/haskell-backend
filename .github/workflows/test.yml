@@ -12,8 +12,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu-21.10
-            os: ubuntu-21.10
+          - runner: ubuntu-20.04
+            os: ubuntu-20.04
           - runner: macos-12
             os: macos-12
           - runner: MacM1
@@ -66,7 +66,7 @@ jobs:
 
   nix-integration:
     name: 'Nix / Integration'
-    runs-on: ubuntu-21.10
+    runs-on: ubuntu-20.04
     needs: nix-build
     steps:
       - name: Check out code
@@ -95,7 +95,7 @@ jobs:
 
   cabal:
     name: 'Cabal / Unit Tests'
-    runs-on: ubuntu-21.10
+    runs-on: ubuntu-20.04
     env:
       ghc_version: "8.10.7"
     steps:
@@ -135,7 +135,7 @@ jobs:
 
   stack:
     name: 'Stack / Unit Tests'
-    runs-on: ubuntu-21.10
+    runs-on: ubuntu-20.04
     steps:
       - name: Install prerequisites
         run: |
@@ -176,7 +176,7 @@ jobs:
 
   stack-haddock:
     name: 'Stack / Haddock check'
-    runs-on: ubuntu-21.10
+    runs-on: ubuntu-20.04
     steps:
       - name: Install prerequisites
         run: |
@@ -209,7 +209,7 @@ jobs:
           stack haddock --fast
   hlint:
     name: 'HLint'
-    runs-on: ubuntu-21.10
+    runs-on: ubuntu-20.04
     env:
       hlint_version: "3.4.1"
     steps:
@@ -228,7 +228,7 @@ jobs:
   performance:
     needs: [nix-build]
     name: 'Performance'
-    runs-on: ubuntu-21.10
+    runs-on: ubuntu-20.04
     steps:
       - name: Check out code
         uses: actions/checkout@v2.3.4
