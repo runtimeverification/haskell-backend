@@ -605,13 +605,13 @@ generatePairWiseElements (unwrapAc -> normalized) =
     -- linearithmic, and reduces allocations by about half.
     pairWiseElemsOfSameTypeDistinct (List.sort -> elems) =
         [AcPair_ x y | x : ys <- List.tails elems, y <- ys]
-          & HashSet.fromList
+        & HashSet.fromList
     -- Without assuming unique elements, we additionally pay to drop any
     -- duplicates. If there are many of these, then we can `groupBy` after
     -- sorting, or build a `Set`, to bring this down to linearithmic.
     pairWiseElemsOfSameType (List.sort -> elems) =
         [AcPair_ x y | x : ys <- List.tails elems, y <- dropWhile (== x) ys]
-          & HashSet.fromList
+        & HashSet.fromList
     pairWiseElemsOfDifferentTypes elems1 elems2 =
         (,) <$> elems1 <*> elems2
             & HashSet.fromList
