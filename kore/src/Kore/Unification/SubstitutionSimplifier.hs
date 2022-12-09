@@ -46,6 +46,7 @@ import Kore.Simplify.AndTerms (
     termUnification,
  )
 import Kore.Simplify.NotSimplifier
+import Kore.Simplify.Simplify (MonadSimplify)
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Simplify.SubstitutionSimplifier (
     MakeAnd (..),
@@ -57,7 +58,6 @@ import Kore.TopBottom qualified as TopBottom
 import Kore.Unification.Unify
 import Logic qualified
 import Prelude.Kore
-import Kore.Simplify.Simplify (MonadSimplify)
 
 {- | A 'SubstitutionSimplifier' to use during unification.
 

@@ -768,11 +768,12 @@ unifyNotInKeys resultSort unifyChildren (NotSimplifier notSimplifier) unifyData 
             -- the terms are all wrapped in \ceil below.
             unificationSolutions <-
                 fmap eraseTerm <$> Unify.gather (unifyChildren t1 t2)
-            lift $ (notSimplifier SideCondition.top)
-                Not
-                    { notSort = resultSort
-                    , notChild = OrPattern.fromPatterns unificationSolutions
-                    }
+            lift $
+                (notSimplifier SideCondition.top)
+                    Not
+                        { notSort = resultSort
+                        , notChild = OrPattern.fromPatterns unificationSolutions
+                        }
             >>= Unify.scatter
 
     collectConditions terms = fold terms & Pattern.fromCondition resultSort
