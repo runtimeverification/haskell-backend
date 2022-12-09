@@ -74,6 +74,7 @@
         (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
         (hsPkgs."matrix" or (errorHandler.buildDepError "matrix"))
         (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
+        (hsPkgs."memory" or (errorHandler.buildDepError "memory"))
         (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
         (hsPkgs."monad-logger" or (errorHandler.buildDepError "monad-logger"))
         (hsPkgs."mono-traversable" or (errorHandler.buildDepError
@@ -732,6 +733,7 @@
           (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
           (hsPkgs."matrix" or (errorHandler.buildDepError "matrix"))
           (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
+          (hsPkgs."memory" or (errorHandler.buildDepError "memory"))
           (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
           (hsPkgs."monad-logger" or (errorHandler.buildDepError "monad-logger"))
           (hsPkgs."mono-traversable" or (errorHandler.buildDepError

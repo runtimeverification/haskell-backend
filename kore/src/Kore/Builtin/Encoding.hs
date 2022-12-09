@@ -11,6 +11,8 @@ module Kore.Builtin.Encoding (
 ) where
 
 import Data.Bits qualified as Bits
+import Data.ByteArray(ByteArrayAccess)
+import Data.ByteArray qualified as ByteArray
 import Data.ByteString (
     ByteString,
  )
@@ -77,9 +79,9 @@ parse8Bit =
     is8Bit :: Char -> Bool
     is8Bit c = c < '\x100'
 
-decode8Bit :: ByteString -> Text
+decode8Bit :: ByteArrayAccess a => a -> Text
 decode8Bit =
-    ByteString.unpack
+    ByteArray.unpack
         >>> map (Char.chr . fromIntegral)
         >>> Text.pack
 

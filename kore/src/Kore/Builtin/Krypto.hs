@@ -37,6 +37,7 @@ import Crypto.Hash (
     Keccak_256 (..),
     RIPEMD160 (..),
     SHA256 (..),
+    SHA512t_256(..),
     SHA3_256 (..),
     hashWith,
  )
@@ -62,6 +63,7 @@ import Data.Word (
  )
 import Kore.Builtin.Builtin qualified as Builtin
 import Kore.Builtin.Encoding (
+    decode8Bit,
     encode8Bit,
  )
 import Kore.Builtin.Int qualified as Int
@@ -74,12 +76,14 @@ import Prelude.Kore
 keccak256Key
     , ecdsaRecoverKey
     , sha256Key
+    , sha512_256RawKey
     , sha3256Key
     , ripemd160Key ::
         IsString s => s
 keccak256Key = "KRYPTO.keccak256"
 ecdsaRecoverKey = "KRYPTO.ecdsaRecover"
 sha256Key = "KRYPTO.sha256"
+sha512_256RawKey = "KRYPTO.sha512_256raw"
 sha3256Key = "KRYPTO.sha3256"
 ripemd160Key = "KRYPTO.ripemd160"
 
@@ -117,6 +121,7 @@ symbolVerifiers =
         , (hashSha256Key, verifyHashFunction)
         , (sha3256Key, verifyHashFunction)
         , (hashSha3_256Key, verifyHashFunction)
+        , (sha512_256RawKey, verifyHashFunction)
         , (ripemd160Key, verifyHashFunction)
         , (hashRipemd160Key, verifyHashFunction)
         ,
@@ -149,6 +154,7 @@ builtinFunctions key
     | key == sha256Key = Just evalSha256
     | key == hashSha256Key = Just evalSha256
     | key == sha3256Key = Just evalSha3256
+    | key == sha512_256RawKey = Just evalSha512_256Raw
     | key == hashSha3_256Key = Just evalSha3256
     | key == ripemd160Key = Just evalRipemd160
     | key == hashRipemd160Key = Just evalRipemd160
@@ -184,11 +190,39 @@ evalHashFunction context algorithm =
         return (String.asPattern resultSort result)
     evalHashFunctionWorker _ _ _ = Builtin.wrongArity context
 
+
+{- | A function evaluator for builtin hash function hooks.
+
+The symbol's argument must be a string which will be interpreted as a sequence
+of 8-bit bytes. The result is the hash as raw string.
+-}
+evalHashFunctionRaw ::
+    HashAlgorithm algorithm =>
+    -- | hook name for error messages
+    String ->
+    -- | hash function
+    algorithm ->
+    BuiltinAndAxiomSimplifier
+evalHashFunctionRaw context algorithm =
+    Builtin.functionEvaluator evalHashFunctionWorker
+  where
+    evalHashFunctionWorker :: Builtin.Function
+    evalHashFunctionWorker _ resultSort [input] = do
+        str <- String.expectBuiltinString context input
+        let bytes = encode8Bit str
+            digest = hashWith algorithm bytes
+            result = decode8Bit digest
+        return (String.asPattern resultSort result)
+    evalHashFunctionWorker _ _ _ = Builtin.wrongArity context
+
 evalKeccak :: BuiltinAndAxiomSimplifier
 evalKeccak = evalHashFunction keccak256Key Keccak_256
 
 evalSha256 :: BuiltinAndAxiomSimplifier
 evalSha256 = evalHashFunction sha256Key SHA256
+
+evalSha512_256Raw :: BuiltinAndAxiomSimplifier
+evalSha512_256Raw = evalHashFunctionRaw sha512_256RawKey SHA512t_256
 
 evalSha3256 :: BuiltinAndAxiomSimplifier
 evalSha3256 = evalHashFunction sha3256Key SHA3_256
