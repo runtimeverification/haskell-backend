@@ -37,8 +37,8 @@ import Crypto.Hash (
     Keccak_256 (..),
     RIPEMD160 (..),
     SHA256 (..),
-    SHA512t_256(..),
     SHA3_256 (..),
+    SHA512t_256 (..),
     hashWith,
  )
 import Crypto.PubKey.ECC.Prim
@@ -189,7 +189,6 @@ evalHashFunction context algorithm =
             result = fromString (show digest)
         return (String.asPattern resultSort result)
     evalHashFunctionWorker _ _ _ = Builtin.wrongArity context
-
 
 {- | A function evaluator for builtin hash function hooks.
 

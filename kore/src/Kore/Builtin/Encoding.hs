@@ -11,7 +11,7 @@ module Kore.Builtin.Encoding (
 ) where
 
 import Data.Bits qualified as Bits
-import Data.ByteArray(ByteArrayAccess)
+import Data.ByteArray (ByteArrayAccess)
 import Data.ByteArray qualified as ByteArray
 import Data.ByteString (
     ByteString,
