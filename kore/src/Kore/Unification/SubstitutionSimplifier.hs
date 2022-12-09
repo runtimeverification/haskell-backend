@@ -57,6 +57,7 @@ import Kore.TopBottom qualified as TopBottom
 import Kore.Unification.Unify
 import Logic qualified
 import Prelude.Kore
+import Kore.Simplify.Simplify (MonadSimplify)
 
 {- | A 'SubstitutionSimplifier' to use during unification.
 
@@ -64,9 +65,12 @@ If multiple assignments to a single variable cannot be unified, this simplifier
 uses 'Unifier.throwUnificationError'.
 -}
 substitutionSimplifier ::
-    forall unifier.
+    forall unifier simplifier t.
+    MonadSimplify simplifier =>
     MonadUnify unifier =>
-    NotSimplifier unifier ->
+    MonadTrans t =>
+    t simplifier ~ unifier =>
+    NotSimplifier simplifier ->
     SubstitutionSimplifier unifier
 substitutionSimplifier notSimplifier =
     SubstitutionSimplifier wrapper
@@ -100,9 +104,12 @@ substitutionSimplifier notSimplifier =
                 (unificationMakeAnd notSimplifier)
 
 unificationMakeAnd ::
-    forall unifier.
+    forall unifier simplifier t.
+    MonadSimplify simplifier =>
     MonadUnify unifier =>
-    NotSimplifier unifier ->
+    MonadTrans t =>
+    t simplifier ~ unifier =>
+    NotSimplifier simplifier ->
     MakeAnd unifier
 unificationMakeAnd notSimplifier =
     MakeAnd{makeAnd}

@@ -711,11 +711,14 @@ matchUnifyNotInKeys first second
 {-# INLINE matchUnifyNotInKeys #-}
 
 unifyNotInKeys ::
-    forall unifier.
+    forall unifier simplifier t.
+    MonadSimplify simplifier =>
     MonadUnify unifier =>
+    MonadTrans t =>
+    t simplifier ~ unifier =>
     Sort ->
     TermSimplifier RewritingVariableName unifier ->
-    NotSimplifier unifier ->
+    NotSimplifier simplifier ->
     UnifyNotInKeysResult ->
     unifier (Pattern RewritingVariableName)
 unifyNotInKeys resultSort unifyChildren (NotSimplifier notSimplifier) unifyData =
@@ -765,7 +768,7 @@ unifyNotInKeys resultSort unifyChildren (NotSimplifier notSimplifier) unifyData 
             -- the terms are all wrapped in \ceil below.
             unificationSolutions <-
                 fmap eraseTerm <$> Unify.gather (unifyChildren t1 t2)
-            (notSimplifier SideCondition.top)
+            lift $ (notSimplifier SideCondition.top)
                 Not
                     { notSort = resultSort
                     , notChild = OrPattern.fromPatterns unificationSolutions

@@ -114,6 +114,7 @@ import Kore.Simplify.Simplify (
     AttemptedAxiom (..),
     AttemptedAxiomResults (..),
     BuiltinAndAxiomSimplifier (..),
+    MonadSimplify,
     Simplifier,
     TermSimplifier,
     applicationAxiomSimplifier,
@@ -516,10 +517,13 @@ data UnifyEq = UnifyEq
 
 -- | Unification of @eq@ symbols
 unifyEq ::
-    forall unifier.
+    forall unifier simplifier t.
+    MonadSimplify simplifier =>
     MonadUnify unifier =>
+    MonadTrans t =>
+    t simplifier ~ unifier =>
     TermSimplifier RewritingVariableName unifier ->
-    NotSimplifier unifier ->
+    NotSimplifier simplifier ->
     UnifyEq ->
     unifier (Pattern RewritingVariableName)
 unifyEq
@@ -532,7 +536,7 @@ unifyEq
                 MultiOr.map eraseTerm solution
                     & if internalBoolValue internalBool
                         then pure
-                        else mkNotSimplified
+                        else lift . mkNotSimplified
             scattered <- Unify.scatter solution'
             return scattered{term = mkInternalBool internalBool}
       where
