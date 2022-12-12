@@ -557,8 +557,8 @@ runStepper ::
     Monad.Trans.MonadTrans t =>
     t Simplifier StepResult
 runStepper = do
-    ReplState{claims, axioms, node} <- get
-    (graph', res) <- runStepper' claims axioms node
+    ReplState{axioms, node} <- get
+    (graph', res) <- runStepper' axioms node
     updateExecutionGraph graph'
     case res of
         SingleResult nextNode -> do
@@ -573,12 +573,11 @@ runStepper' ::
     MonadState ReplState (t Simplifier) =>
     MonadReader Config (t Simplifier) =>
     Monad.Trans.MonadTrans t =>
-    [SomeClaim] ->
     [Axiom] ->
     ReplNode ->
     t Simplifier (ExecutionGraph, StepResult)
-runStepper' claims axioms node =
-    runStepperWorker claims axioms node
+runStepper' axioms node =
+    runStepperWorker axioms node
         & (fmap . fmap) processResult
   where
     processResult [] = NoResult
@@ -599,7 +598,6 @@ tryApplyAxiomOrClaim ::
     t Simplifier (ExecutionGraph, TryApplyRuleResult)
 tryApplyAxiomOrClaim axiomOrClaim node =
     runStepperWorker
-        (either mempty pure axiomOrClaim)
         (either pure mempty axiomOrClaim)
         node
         & (fmap . fmap) processResult
@@ -619,16 +617,15 @@ runStepperWorker ::
     MonadState ReplState (t Simplifier) =>
     MonadReader Config (t Simplifier) =>
     Monad.Trans.MonadTrans t =>
-    [SomeClaim] ->
     [Axiom] ->
     ReplNode ->
     t Simplifier (ExecutionGraph, SuccessorNodes)
-runStepperWorker claims axioms node = do
+runStepperWorker axioms node = do
     stepper <- asks stepper
     mvar <- asks logger
     gph <- getExecutionGraph
     gr@Strategy.ExecutionGraph{graph = innerGraph} <-
-        liftSimplifierWithLogger mvar $ stepper claims axioms gph node
+        liftSimplifierWithLogger mvar $ stepper axioms gph node
     let succesorNodes =
             getClaimState innerGraph
                 <$> Graph.suc innerGraph (unReplNode node)

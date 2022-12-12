@@ -133,7 +133,6 @@ import Kore.Log.WarnDepthLimitExceeded (
 import Kore.Log.WarnTrivialClaim
 import Kore.ModelChecker.Bounded qualified as Bounded
 import Kore.Reachability (
-    AllClaims (AllClaims),
     AlreadyProven (AlreadyProven),
     Axioms (Axioms),
     MinDepth,
@@ -703,12 +702,11 @@ prove
     specModule
     trustedModule =
         evalSimplifierProofs definitionModule $ do
-            initialized <-
+            InitializedProver{axioms, specClaims, claims, alreadyProven} <-
                 initializeProver
                     definitionModule
                     specModule
                     trustedModule
-            let InitializedProver{axioms, claims, alreadyProven} = initialized
             proveClaims
                 maybeMinDepth
                 stuckCheck
@@ -716,7 +714,7 @@ prove
                 searchOrder
                 maxCounterexamples
                 finalNodeType
-                (AllClaims claims)
+                specClaims
                 (Axioms axioms)
                 (AlreadyProven (map unparseToText2 alreadyProven))
                 ( ToProve
@@ -769,16 +767,16 @@ proveWithRepl
     logOptions
     kFileLocations =
         evalSimplifierProofs definitionModule $ do
-            initialized <-
+            InitializedProver{axioms, specClaims, claims} <-
                 initializeProver
                     definitionModule
                     specModule
                     trustedModule
-            let InitializedProver{axioms, claims} = initialized
             Repl.runRepl
                 minDepth
                 stuckCheck
                 axioms
+                specClaims
                 claims
                 mvar
                 replScript
@@ -973,6 +971,7 @@ initialize simplificationProcedure verifiedModule = do
 
 data InitializedProver = InitializedProver
     { axioms :: ![Rule SomeClaim]
+    , specClaims :: ![SomeClaim]
     , claims :: ![SomeClaim]
     , alreadyProven :: ![SomeClaim]
     }
@@ -1016,7 +1015,7 @@ initializeProver definitionModule specModule maybeTrustedModule = do
     claims <- traverse simplifySomeClaim (concat simplifiedSpecClaims)
     let axioms = coerce <$> rewriteRules
         alreadyProven = trustedClaims
-    pure InitializedProver{axioms, claims, alreadyProven}
+    pure InitializedProver{axioms, specClaims, claims, alreadyProven}
   where
     expandClaim ::
         SmtMetadataTools attributes ->
