@@ -951,7 +951,7 @@ proveClaims
             BreadthFirst
             maxCounterexamples
             finalNodeType
-            (AllClaims claims)
+            claims
             (Axioms axioms)
             (AlreadyProven (map unparseToText2 alreadyProven))
             (ToProve (map applyDepthLimit . selectUntrusted $ claims))
