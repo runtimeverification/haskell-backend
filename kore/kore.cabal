@@ -164,6 +164,7 @@ common library
   build-depends: logict >=0.7
   build-depends: matrix >=0.3.6.1
   build-depends: megaparsec >=7.0.4
+  build-depends: memory >=0.15
   build-depends: mmorph >=1.1
   build-depends: monad-logger >=0.3.36
   build-depends: mono-traversable >=1.0

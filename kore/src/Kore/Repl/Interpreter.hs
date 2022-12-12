@@ -1307,8 +1307,8 @@ recursiveForcedStep ::
 recursiveForcedStep n node
     | n == 0 = pure ()
     | otherwise = do
-        ReplState{claims, axioms} <- get
-        (graph, result) <- runStepper' claims axioms node
+        ReplState{axioms} <- get
+        (graph, result) <- runStepper' axioms node
         updateExecutionGraph graph
         case result of
             NoResult -> pure ()

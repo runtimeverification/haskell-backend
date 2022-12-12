@@ -28,6 +28,7 @@ import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     Env (..),
+    MonadSimplify,
     runSimplifier,
  )
 import Kore.Simplify.SubstitutionSimplifier qualified as SubstitutionSimplifier
@@ -169,6 +170,9 @@ data UnificationResult = UnificationResult
 
 simplifyAnds ::
     Monad.Unify.MonadUnify unifier =>
+    MonadSimplify simplifier =>
+    MonadTrans t =>
+    t simplifier ~ unifier =>
     NonEmpty (TermLike RewritingVariableName) ->
     unifier (Pattern RewritingVariableName)
 simplifyAnds =

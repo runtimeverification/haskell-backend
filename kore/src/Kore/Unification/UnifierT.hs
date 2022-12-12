@@ -82,7 +82,7 @@ instance MonadSimplify m => MonadUnify (UnifierT m)
 
 runUnifierT ::
     MonadSimplify m =>
-    NotSimplifier (UnifierT m) ->
+    NotSimplifier m ->
     UnifierT m a ->
     m [a]
 runUnifierT notSimplifier =
@@ -91,7 +91,7 @@ runUnifierT notSimplifier =
 
 evalEnvUnifierT ::
     MonadSimplify m =>
-    NotSimplifier (UnifierT m) ->
+    NotSimplifier m ->
     UnifierT m a ->
     LogicT m a
 evalEnvUnifierT notSimplifier =

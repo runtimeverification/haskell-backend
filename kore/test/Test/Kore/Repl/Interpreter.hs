@@ -738,7 +738,7 @@ runWithState command axioms claims claim stateTransformer = do
     output <- newIORef (mempty :: ReplOutput)
     mvar <- newMVar logger
     let state = stateTransformer $ mkState startTime axioms claims claim
-    let config = mkConfig mvar
+    let config = mkConfig mvar claims
         runLogger =
             runTestLoggerT . liftSimplifier
                 . flip runStateT state
@@ -832,8 +832,9 @@ mkState startTime axioms claims claim =
 
 mkConfig ::
     MVar (Log.LogAction IO Log.SomeEntry) ->
+    [SomeClaim] ->
     Config
-mkConfig logger =
+mkConfig logger claims' =
     Config
         { stepper = stepper0
         , unifier = unificationProcedure
@@ -844,12 +845,11 @@ mkConfig logger =
         }
   where
     stepper0 ::
-        [SomeClaim] ->
         [Axiom] ->
         ExecutionGraph ->
         ReplNode ->
         Simplifier ExecutionGraph
-    stepper0 claims' axioms' graph (ReplNode node) =
+    stepper0 axioms' graph (ReplNode node) =
         proveClaimStep Nothing EnabledStuckCheck claims' axioms' graph node
 
 formatUnifiers ::
