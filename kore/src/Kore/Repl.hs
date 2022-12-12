@@ -108,6 +108,7 @@ runRepl ::
     StuckCheck ->
     -- | list of axioms to used in the proof
     [Axiom] ->
+    [SomeClaim] ->
     -- | list of claims to be proven
     [SomeClaim] ->
     MVar (Log.LogAction IO Log.SomeEntry) ->
@@ -123,7 +124,7 @@ runRepl ::
     Log.KoreLogOptions ->
     KFileLocations ->
     Simplifier ()
-runRepl _ _ _ [] _ _ _ _ outputFile _ _ _ =
+runRepl _ _ _ _ [] _ _ _ _ outputFile _ _ _ =
     let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
      in liftIO . printTerm . unparseToString $ topTerm
   where
@@ -133,6 +134,7 @@ runRepl
     minDepth
     stuckCheck
     axioms'
+    origClaims
     claims'
     logger
     replScript
@@ -256,16 +258,15 @@ runRepl
         firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
         stepper0 ::
-            [SomeClaim] ->
             [Axiom] ->
             ExecutionGraph ->
             ReplNode ->
             Simplifier ExecutionGraph
-        stepper0 claims axioms graph rnode = do
+        stepper0 axioms graph rnode = do
             let node = unReplNode rnode
             if Graph.outdeg (Strategy.graph graph) node == 0
                 then
-                    proveClaimStep minDepth stuckCheck claims axioms graph node
+                    proveClaimStep minDepth stuckCheck origClaims axioms graph node
                         & Exception.handle (withConfigurationHandler graph)
                         & Exception.handle (someExceptionHandler graph)
                 else pure graph
