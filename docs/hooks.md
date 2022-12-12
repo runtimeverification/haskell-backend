@@ -887,6 +887,15 @@ Compute the SHA256 hash of the input string.
         [hook{}("KRYPTO.sha256")]
 ~~~
 
+### KRYPTO.sha512_256raw
+
+Compute the SHA512/256 hash of the input string, returning raw bytes.
+
+~~~
+    hooked-symbol sha512_256raw{}(String{}) : String{}
+        [hook{}("KRYPTO.sha512_256raw")]
+~~~
+
 ### KRYPTO.sha3256
 
 Compute the SHA3-256 hash of the input string.
