@@ -67,8 +67,8 @@ import Data.MultiSet (
     MultiSet,
  )
 import Data.MultiSet qualified as MultiSet
-import Data.Sequence qualified as Seq
 import Data.Semigroup (Endo (..))
+import Data.Sequence qualified as Seq
 import Data.Set (
     Set,
  )
@@ -261,9 +261,10 @@ substituteInKeys x s solution =
     substitute' subst ~(eqs, solution') =
         -- We seem to need an explicit inline to achieve specialization of alterF.
         -- That sounds like a containers problem.
-        case inline Map.alterF (\case {Nothing -> NotFound; Just t -> Found t Nothing}) x subst of
-          NotFound -> (eqs, subst : solution')
-          Found t !subst' -> ((s, t) : eqs, subst' : solution')
+        case inline Map.alterF (\case Nothing -> NotFound; Just t -> Found t Nothing) x subst of
+            NotFound -> (eqs, subst : solution')
+            Found t !subst' -> ((s, t) : eqs, subst' : solution')
+
 {-
 -- The above just does the following, but without needing to compare variable
 -- names in the second (deletion) pass.
@@ -275,7 +276,7 @@ substituteInKeys x s solution =
               in ((s, t) : eqs, subst' : solution')
               -}
 data CheckRes a m = NotFound | Found !a ~m
-  deriving stock Functor
+    deriving stock (Functor)
 
 getImproperBinding ::
     [Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)] ->
@@ -289,8 +290,8 @@ getImproperBinding solution = go solution []
             Just (x, y, rest) -> Just (x, y, tl ++ (rest : hd))
     getImproperBinding' m =
         let improper = filter (isVar . snd) (Map.toList m)
-         in listToMaybe improper >>=
-              \(k, v) -> Just (k, v, Map.delete k m)
+         in listToMaybe improper
+                >>= \(k, v) -> Just (k, v, Map.delete k m)
 
 combineTheories ::
     [[Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)]] ->
