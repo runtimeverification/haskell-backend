@@ -428,8 +428,9 @@ termEqualsAnd p1 p2 =
     maybeTermEqualsWorker ::
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
-        MaybeT (UnifierT (LogicT Simplifier))
-               (Pattern RewritingVariableName)
+        MaybeT
+            (UnifierT (LogicT Simplifier))
+            (Pattern RewritingVariableName)
 
     maybeTermEqualsWorker =
         maybeTermEquals Not.notSimplifier termEqualsAndWorker
