@@ -61,12 +61,14 @@ import Data.Matrix (
 import Data.Matrix qualified as Matrix
 import Data.Maybe (
     fromJust,
+    listToMaybe,
  )
 import Data.MultiSet (
     MultiSet,
  )
 import Data.MultiSet qualified as MultiSet
 import Data.Sequence qualified as Seq
+import Data.Semigroup (Endo (..))
 import Data.Set (
     Set,
  )
@@ -80,6 +82,7 @@ import Data.Vector (
     (!),
  )
 import Data.Vector qualified as Vector
+import GHC.Exts (inline)
 import Kore.Attribute.Hook (
     Hook (..),
  )
@@ -236,16 +239,16 @@ varRep ::
     HasCallStack =>
     [Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)] ->
     Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName) ->
-    [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
+    Endo ([(TermLike RewritingVariableName, TermLike RewritingVariableName)]) ->
     Set (SomeVariableName RewritingVariableName) ->
     ([(TermLike RewritingVariableName, TermLike RewritingVariableName)], Map (SomeVariable RewritingVariableName) Binding)
 varRep solution improper eqs origVars =
     case getImproperBinding solution of
-        Nothing -> (eqs, Map.map Free $ foldr union improper solution)
+        Nothing -> (appEndo eqs [], Map.map Free $ Map.unions solution `union` improper)
         Just (x, t, solution') ->
             let replacedValues = map (Map.map (substitute (Map.singleton (variableName x) t))) solution'
                 (newEqs, replacedKeys) = substituteInKeys x t replacedValues
-             in varRep replacedKeys (Map.insert x t improper) (eqs ++ newEqs) origVars
+             in varRep replacedKeys (Map.insert x t improper) (eqs <> Endo (newEqs ++)) origVars
 
 substituteInKeys ::
     SomeVariable RewritingVariableName ->
@@ -255,10 +258,24 @@ substituteInKeys ::
 substituteInKeys x s solution =
     foldr substitute' ([], []) solution
   where
-    substitute' subst (eqs, solution') =
+    substitute' subst ~(eqs, solution') =
+        -- We seem to need an explicit inline to achieve specialization of alterF.
+        -- That sounds like a containers problem.
+        case inline Map.alterF (\case {Nothing -> NotFound; Just t -> Found t Nothing}) x subst of
+          NotFound -> (eqs, subst : solution')
+          Found t !subst' -> ((s, t) : eqs, subst' : solution')
+{-
+-- The above just does the following, but without needing to compare variable
+-- names in the second (deletion) pass.
+
         case Map.lookup x subst of
             Nothing -> (eqs, subst : solution')
-            Just t -> ((s, t) : eqs, Map.delete x subst : solution')
+            Just t ->
+              let !subst' = Map.delete x subst
+              in ((s, t) : eqs, subst' : solution')
+              -}
+data CheckRes a m = NotFound | Found !a ~m
+  deriving stock Functor
 
 getImproperBinding ::
     [Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)] ->
@@ -271,12 +288,9 @@ getImproperBinding solution = go solution []
             Nothing -> go hd (m : tl)
             Just (x, y, rest) -> Just (x, y, tl ++ (rest : hd))
     getImproperBinding' m =
-        let improper = Map.filter isVar m
-         in if Map.null improper
-                then Nothing
-                else
-                    let (k, v) = Map.findMin improper
-                     in Just (k, v, Map.delete k m)
+        let improper = filter (isVar . snd) (Map.toList m)
+         in listToMaybe improper >>=
+              \(k, v) -> Just (k, v, Map.delete k m)
 
 combineTheories ::
     [[Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)]] ->
@@ -287,7 +301,7 @@ combineTheories acBindings freeBindings origVars = do
     let withoutPureImproperBindings = map (map preprocessTheory) acBindings
         combinations = sequence withoutPureImproperBindings
     solution <- Logic.scatter combinations
-    return $ varRep (freeBindings : solution) Map.empty [] origVars
+    return $ varRep (freeBindings : solution) Map.empty mempty origVars
   where
     preprocessTheory ::
         Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName) ->
@@ -410,7 +424,8 @@ unifyTerms' rootSort sideCondition origVars vars [] bindings constraints acEquat
         (Map Sort [Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)], Set (SomeVariableName RewritingVariableName))
     solveAcEquations' tools sort eqs (accum, vars') =
         let (solutions, newVars) = solveAcEquations tools bindings vars' sort eqs
-         in (Map.insert sort solutions accum, newVars)
+            !accum' = Map.insert sort solutions accum
+         in (accum', newVars)
 unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindings constraints acEquations =
     whileDebugUnification first second $ do
         tools <- askMetadataTools
