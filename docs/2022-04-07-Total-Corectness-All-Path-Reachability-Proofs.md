@@ -9,26 +9,70 @@ based on [proving All-Path Reachability claims](2019-03-28-All-Path-Reachability
 Definitions
 -----------
 
-### All-path finally
+Let us fix a ML model and an interpretation into that model. For any pattern
+`φ`, let `⟦φ⟧` denote the interpretation of `φ` in the model.
+For any pattern `φ`, set variable `X`, and subset `S` of the model (of the right sort),
+let `⟦φ⟧ₓ₌ₛ` denote the interpretation of `φ` in the model using the fixed
+interpretation with the exception that set variable `X` is interpreted as `S`.
+
+### Reducibility, Transitions, Traces
+
+Assume that an ML signature contains a _next_ operator `•` (on the sort of configurations).
+
+The intuition for `∙ φ` is that it comprises all configurations which can
+transition to `φ` in a single step.
+
+Let `Cfg` be the interpretation of the configurations sort in the model.
+Let `Prev : Cfg -> Cfg` be defined as the interpretation of `∙`, that is,
+`Prev(S) := ⟦∙ X⟧ₓ₌ₛ`
+
+We define the relation `τ` on `Cfg` by `a τ b := a ∈ Prev({b})`.
+We define the unary predicates `reducible` and `stuck` on `Cfg` by
+`reducible a := exists b, a τ b` and `stuck a := ¬ reducible a`.
+Note that `stuck a ⟺ Prev⁻¹({a}) = ∅`.
+
+We can define the set of complete, possibly infinite, traces of the transition
+system determined by `Prev⁻¹` starting in an element `a`, called `Traces(a)`,
+coinductively, by:
+- `a ∈ Traces(a)`, if `stuck a`
+  (the singleton trace containing just `a`);
+- `a ⋅ tr ∈ Traces(a)` for any `b` such that `a τ b` and any `tr ∈ Traces(b)`
+  (the trace starting with `a` and continuing with trace `tr`).
 
 Given a formula `φ`, let `AFφ` denote the formula “all-path finally” `φ`, whose
 intended semantics is: "the set of configurations for which on all paths,
 in a finite number of steps, `φ` holds".
 
-In this section we will show that `AFφ` can be captured by the interpretation of
-the fixed-point `μX.φ ∨ (○X ∧ •⊤)`
+Given a trace `tr` and a natural number `n`, let `trₙ` be the `n`'th element on
+trace `tr`, a partial function inductively defined by
+```
+a₀ = a
+a⋅tr₀ = a
+a⋅trₙ₊₁ = trₙ
+aₙ₊₁ = ⊥
+```
+Note that for any `tr ∈ Traces(a)`, `tr₀ = a`.
 
-Let `Top` be the set of all configurations, and let `Prev` be the point-wise
-extension of the function mapping a configuration to the set of all
-configurations which can reach the given configuration in one step.
-and `∁` be the complement operator on sets.
+Given this definition, the trace semantics for `AF φ` is
+```
+⟦AF φ⟧ ::= { a | forall tr ∈ Traces(a), exists n, such that trₙ ∈ ⟦φ⟧ }
+```
+
+Note that in the definitions above we have abused the notation for `⟦AF φ⟧`,
+as `AF φ` is not (yet) a ML formula.
+
+### All-path finally as a ML formula
+
+In this section we will show that `AFφ` can actually be captured by ML formula,
+namely the fixed-point `μX.φ ∨ (○X ∧ •⊤)`, where `○` is defined as the dual
+of `∙`, i.e., `○φ := ¬∙¬φ`
 
 The semantics of `μX.φ ∨ (○X ∧ •⊤)` is `LFP(G)` where
 ```
-G(X) := ⟦φ⟧ ∪ ( ∁(Prev(∁(X))) ∩ Prev(Top) )
+G(X) := ⟦φ⟧ ∪ ( ∁(Prev(∁(X))) ∩ Prev(Cfg) )
 ```
 Note that, since `X` is positively occurring in the scope of `μ`, `G` is
-monotone, so the `LFP(G)` exists and can be defined according to the 
+monotone, so the `LFP(G)` exists and can be defined according to the
 Knaster-Tarski formula, as the intersection of all pre-fixed-points of `G`,
 that is, all `A` such that `G(A) ⊆ A`.
 
@@ -46,48 +90,37 @@ x ∈ G(A) ⟺ × ∈ ⟦φ⟧ ∪ ( ∁(Prev(∁(A))) ∩ Prev(Top)
 ⟺ × ∈ ⟦φ⟧ or (∅ ⊂ Prev⁻¹({x}) ⊆ A)
 ```
 
-Let `stuck x` be defined as `Prev⁻¹(x) = ∅` and let `x τ y` be defined
-as `y ∈ Prev⁻¹({x})`.
 We can also express `∅ ⊂ Prev⁻¹({x}) ⊆ A` in terms
-of `stuck` and transitions, as `¬ stuck x ∧ ∀y x τ y → y ∈ A`.
+of `reducible` and `τ`, as `reducible x ∧ ∀y x τ y → y ∈ A`.
 Hence, `x ∈ G(A)` if either `x` matches `φ`, or `x` is not stuck and all
 its transitions go into `A`.
 
-We can coinductively define (the possibly infinite) complete traces of the
-transition system determined by `Prev⁻¹` starting in an element `a` as being:
-either just `a`, if `stuck a`, or `a` followed by a trace starting in `b` for
-some `b` such that `a τ b`.
-Given this definition, the trace semantics for `AF φ` is
-```
-⟦AF φ⟧ ::= { a | forall tr trace starting in a, exists b in tr such that b ∈ ⟦φ⟧ }
-```
-
 Let us first argue that `⟦AF φ⟧` is a pre-fixed-point of `G`, i.e., that
 `G(⟦AF φ⟧) ⊆ ⟦AF φ⟧`.
-Take `a ∈ G(⟦AF φ⟧)`. Then either `a ∈ ⟦φ⟧` or `¬ stuck a` and for all `b`
+Take `a ∈ G(⟦AF φ⟧)`. Then either `a ∈ ⟦φ⟧` or `reducible a` and for all `b`
 such that `a τ b`, `b ∈ ⟦AF φ⟧`.
-Let `tr` be a complete trace starting in `a`.
-If `a ∈ ⟦φ⟧`, then we can choose precisely `a` as the witness on that trace 
-for which `φ` holds.
-Otherwise, `¬ stuck a` and for all `b` such that `a τ b`, `b ∈ ⟦AF φ⟧`.
-Since `¬ stuck a` it must be that `tr` cannot be just `a` (it's complete), so
-there must exist a `b` such that `a τ b` and `b` is the start of a trace `tr'`
-such that `tr = a ⋅ tr'`. However, since `a τ b`, it follows that`b ∈ ⟦AF φ⟧`,
-so `tr'` must contain a witness for which `φ` holds; that witness is also a
-witness for `tr`.
+If `a ∈ ⟦φ⟧`, then for any trace `tr ∈ Traces(a)`, `tr₀ ∈ ⟦φ⟧`, hence `a ∈ ⟦AF φ⟧`.
+Otherwise, `reducible a` and for all `b` such that `a τ b`, `b ∈ ⟦AF φ⟧`.
+Take `tr ∈ Traces(a)`. Since `reducible a` it must be that `tr` cannot be just `a`
+(by definition), so there must exist a `b` such that `a τ b` and `tr' ∈ Traces(b)`
+such that `tr = a ⋅ tr'`.
+However, since `a τ b`, it follows that `b ∈ ⟦AF φ⟧`, so there exists `n` such that
+`tr'ₙ ∈ ⟦φ⟧`, hence `trₙ₊₁ ∈ ⟦φ⟧`.
+Since `tr` was arbitrarily chosen, it follows that `a ∈ ⟦AF φ⟧`.
 
 Let us now argue that `⟦AF φ⟧` is a post-fixed-point of `G`, i.e., that
 `⟦AF φ⟧ ⊆ G(⟦AF φ⟧)`.
-Take `a ∈ ⟦AF φ⟧`. We need to prove that either `a ∈ ⟦φ⟧` or `¬ stuck a` and
+Take `a ∈ ⟦AF φ⟧`. We need to prove that either `a ∈ ⟦φ⟧` or `reducible a` and
 for all `b` such that `a τ b`, `b ∈ ⟦AF φ⟧`,
-If `φ` holds for `a` then we're done. Assume `a ∉ ⟦φ⟧`.
-Then it must be that `¬ stuck a`, since otherwise `a` would be a complete trace
-starting in `a` with no witness for which `φ` holds.
-Let now `b` be such `a τ b`. We need to show that `b ∈ ⟦AF φ⟧`. Let `tr` be a
-complete trace starting in `b`. Then `a ⋅ tr` is a complete trace starting in `a`.
-Since `a ∈ ⟦AF φ⟧`, there must be a witness in `a ⋅ tr` for which `φ` holds.
-However, since `φ` doesn't hold for `a`, the witness must be part of `tr`
-Since `tr` was chosen arbitrarily, it must be that `a ∈ ⟦AF φ⟧`.
+If `a ∈ ⟦φ⟧` then we're done. Assume next that `a ∉ ⟦φ⟧`.
+Then it must be that `reducible a`, since otherwise `a ∈ Traces(a)` and there
+exists no `n` such that `aₙ ∈ ⟦φ⟧`.
+Let now `b` be such `a τ b`. We need to show that `b ∈ ⟦AF φ⟧`.
+Take `tr ∈ Traces(b)`. Then `a ⋅ tr ∈ Traces(a)`.
+Since `a ∈ ⟦AF φ⟧`, there exists n such that `(a ⋅ tr)ₙ ∈ ⟦φ⟧`.
+However, since `tr₀ = a ∉ ⟦φ⟧`, it means there exists `m` such that
+`n = m + 1`, hence, `trₘ = (a ⋅ tr)ₙ ∈ ⟦φ⟧`.
+Since `tr` was chosen arbitrarily, it follows that `a ∈ ⟦AF φ⟧`.
 
 Therefore, `⟦AF φ⟧` is a fixed-point for `G`. To show that it is the LFP of `G` it
 suffices to prove that it is included in any pre-fixed-point of `G`.
@@ -96,13 +129,15 @@ Let `A` be a pre-fixed-point of `G`, i.e., `G(A) ⊆ A`. That means that
 (2) `A` contains all configurations which are not stuck and transition on all
     paths into `A`
 Assume by contradiction that there exists `a ∈ ⟦AF φ⟧` such that `a ∉ A`.
-We will coinductively construct a complete trace starting in `a` with no
-witness in `A`. Since `A` contains all configurations for which `φ` holds,
-this would contradict the fact that  `a ∈ ⟦AF φ⟧`.
+We will coinductively construct a complete trace `tr ∈ Traces(a)` such that
+for any natural number `n` for which `trₙ` is defined, `trₙ ∉ A`.
+Since `A` contains all configurations for which `φ` holds,
+this would contradict the fact that `a ∈ ⟦AF φ⟧`.
 - if `stuck a` is stuck, then take the complete trace `a`
-- if `¬ stuck a`, since `a ∉ A`, it means that (2) is false; hence it exists
-  a transition `a τ b` such that `b ∉ A`. Then take the complete trace
-  `a ⋅ tr` where `tr` is obtained by applying the above process for `b ∉ A`.
+- if `reducible a`, since `a ∉ A`, it means there exists
+  a transition `a τ b` such that `b ∉ A` (otherwise it would contradict (2)).
+  Then take the complete trace `a ⋅ tr` where `tr` is obtained by applying the
+  above process for `b ∉ A`.
 
 Hence, `⟦AF φ⟧ = ⟦μX.φ ∨ (○X ∧ •⊤)⟧`.
 
@@ -111,75 +146,35 @@ Justified by the above, in the sequel we will use `AF φ` to denote `μX.φ ∨ 
 A consequence of the above is that, by the deduction rules associated with `μ`,
 `AF φ` can always be "unrolled" to `φ ∨ (○ AF φ ∧ •⊤)`.
 
-### Total correctness all-path reachability claims
+### All-path finally reachability claims
 
 Given the definition of all-path finally discussed in the section above,
-a total correctness all-path reachability claim is of the form
+an all-path finally reachability claim is of the form
 ```
-∀x.φ(x) → AF ∃z.ψ(x,z)
+φ(x) → AF ∃z.ψ(x,z)
 ```
 and basically states that from any configuration `γ` satisfying `φ(x)`
 for some `x`, a configuration satisfying `ψ(x,z)` for some `z` will be reached
 in a finite number of steps on any path.
 
-If the system is finitely branching, the claim becomes stronger:
-for any configuration `γ` satisfying `φ(x)` for some `x`, there exists a bound
-on the number of steps required to reach a configuration satisfying `ψ(x,z)`
-for some `z` on any path.
-Since the configuration is reached after a finite number of steps,
-such reachability claims guarantee termination, thus total correctness.
+Since the desired configuration is reached after a finite number of steps,
+such reachability claims guarantee total correctness.
 
 Problem Description
 -------------------
 
-Given a set of reachability claims, of the form `∀x.φ(x) → AF ∃z.ψ(x,z)`,
+Given a set of reachability claims, of the form `φᵢ(xᵢ) → AF ∃z.ψᵢ(xᵢ,z)`,
 we are trying to prove all of them together, by well-founded induction on a
-given `measure` defined on the quantified variables `x`.
+relation `≺` given `measure(x)` defined on some variables `x` such that `x ⊆ xᵢ`.
 
 The well-founded induction argument, which requires the `measure` to decrease before
 applying a claim as an induction hypothesis, will replace the coinductive argument,
 which requires that progress is made before applying a circularity.
 
-## Proposal of syntax changes
-
-- claims need to mention the other claims (including themselves) which are
-  needed to complete their proof; this induces a dependency relation
-- claims which are part of a dependency cycle (including self-dependencies)
-  would need to be specified together as a "claim group"
-- a claim group would need to provide a metric on their input variables;
-  this metric must decrease whenever one tries to apply a claim from the group
-  while proving a claim from the same group
-
-A claim group would be something like 
-```
-claim group
-  decreasing measure(x)
-
-  . . .
-
-  claim φᵢ(x) → AF ∃zᵢ.ψᵢ(x,zᵢ) [using(claimᵢ₁, ..., claimᵢₖ)]
-
-  . . .
-
-end claim group
-```
-where the claims referred to by the `using` attribute mention dependencies which
-are not part of the cycle.
-
-TODO(virgil): wouldn't it work to use the existing module syntax?
-if so, `import` statements could replace `using` attributed.
-Still, syntax for `decreasing` statements, and accounting for sharing the
-variables would need to be implemented.
-
 ## Approach
 
-For the algorithms derived from the present approach, please check the next section.
-
-Assume we want to prove a group of claims defined over the same set of variables
-`x`. Further assume that all other claims (which are not in the current group)
- on which these claims depend have already been proven.
- Assume also a given integer pattern `measure(x)`, over the same variables as
- the claims in the group.
+Without reducing generality, we can assume that the patterns `φᵢ` (for all `i`)
+and `measure` share the same set of variables `x`.
 
 Since we're proving all claims together, we can gather them in a single goal,
 `P(x) ::= (φ₁(x) → AF ∃z.ψ₁(x,z)) ∧ ... ∧ (φₙ(x) → AF ∃z.ψₙ(x,z))`.
@@ -188,22 +183,22 @@ A well-founded induction principle allowing to prove `P` using `measure` would
 be of the form
 
 ```
-  forall x0, (forall x, 0 <= measure(x) < measure(x0) -> P(x)) -> P(x0)
+  forall x0, (forall x, measure(x) ≺ measure(x0) -> P(x)) -> P(x0)
   ---------------------------------------------------------------------
                           forall x, P(x)
 ```
 
 By the above induction principle, to prove `forall x, P(x)` it suffices to prove
-`forall x0, (forall x, 0 <= measure(x) < measure(x0) -> P(x)) -> P(x0)`
+`forall x0, (forall x, measure(x) ≺ measure(x0) -> P(x)) -> P(x0)`
 
-Fixing an arbitrary instance `x₀` of the variables and assuming the induction
-hypothesis `forall x, 0 <= measure(x) < measure(x0) -> P(x)`, we need to prove
+Hence, fixing an arbitrary instance `x₀` of the variables and assuming the induction
+hypothesis `forall x, measure(x) ≺ measure(x0) -> P(x)`, we need to prove
 `P(x₀)`.
 
 By first-order manipulation we can transform the induction hypothesis for `P`
 into a set of induction hypotheses, one for each claim:
 ```
-∀x. φᵢ(x) ∧ 0 ≤ measure(x) < measure(x₀) → AF ∃z.ψᵢ(x,z)
+∀x. φᵢ(x) ∧ measure(x) ≺ measure(x₀) → AF ∃z.ψᵢ(x,z)
 ```
 
 Similarly we can split the goal into a separate goal `φᵢ(x₀) → AF ∃z.ψᵢ(x₀,z)`
@@ -216,7 +211,7 @@ change from one step to the next.
 
 Moreover, we will consider the induction hypotheses to be derived claims to
 be applied as circularities, and denote them as `∀x. φᵢ(x) → AF ∃z.ψᵢ(x,z)`,
-where `φᵢ(x)` also contains the guard `0 ≤ measure(x) < measure(x₀)`.
+where `φᵢ(x)` also contains the guard `measure(x) ≺ measure(x₀)`.
 
 ### Background on unification and remainders of unification
 
@@ -255,7 +250,7 @@ Note that `p` can be `⟂` to signify that unification failed.
 Hence, whenever `φ` is an extended function-like pattern and `ψ(z)` is an
 extended constructor-like pattern, we have the following equivalent patterns:
 ```
-φ ≡ φ ∧ ⊤ ≡ φ ∧ (∃z.ψ(z) ∨ ¬∃z.ψ(z)) ≡ (φ ∧ ∃z.ψ(z)) ∨ (φ ∧ ¬∃z.ψ(z)) ≡ 
+φ ≡ φ ∧ ⊤ ≡ φ ∧ (∃z.ψ(z) ∨ ¬∃z.ψ(z)) ≡ (φ ∧ ∃z.ψ(z)) ∨ (φ ∧ ¬∃z.ψ(z)) ≡
 (∃z.φ ∧ ψ(z)) ∨ (φ ∧ ¬∃z.⌈φ ∧ ψ(z)⌉) ≡
 (∃z.ψ(z) ∧ ⌈φ ∧ ψ(z)⌉) ∨ (φ ∧ ¬∃z.⌈φ ∧ ψ(z)⌉) ≡
 (∃z.ψ(z) ∧ (z = t) ∧ p(z)) ∨ (φ ∧ ¬∃z.(z = t) ∧ p(z)) ≡
@@ -327,11 +322,11 @@ and one for the remainder
 
 Note that, in particular, part of the predicate of the remainder will include
 the negation of the measure check for each induction hypothesis, of the form
-`¬measure(tᵢ(x₀)) < measure(x₀)`.
+`¬measure(tᵢ(x₀)) ≺ measure(x₀)`.
 
 #### Using a claim to advance the corresponding goal
 
-Assume `φᵢ(tᵢ(x₀)) ∧ pᵢ(x₀, tᵢ(x₀)) → AF ∃z.ψ(x₀,z)` goal to be proven 
+Assume `φᵢ(tᵢ(x₀)) ∧ pᵢ(x₀, tᵢ(x₀)) → AF ∃z.ψ(x₀,z)` goal to be proven
 and let `∀x. φᵢ(x) → AF ∃z.ψᵢ(x,z)` be the corresponding extended claim.
 By instatiating the claim with `x := tᵢ(x₀)`, we obtain
 `φᵢ(tᵢ(x₀)) → AF ∃z.ψᵢ(tᵢ(x₀),z)`; then, by framing, we obtain
@@ -387,7 +382,7 @@ Since all but the last conjunct are guaranteed to hold
 (because of the rewrite axioms), `φ` is stuck if the remainder after attempting
 to apply all axioms (i.e., the lhs of the last conjunct) is not equivalent to `⊥`.
 
-We want to prove that from the STEP rule and 
+We want to prove that from the STEP rule and
 ```
 (∀z₁.∃x₁.ψ₁(x₁,z₁) ∧ ⌈φ(x₀) ∧ φ₁(x₁)⌉ → AF∃z.ψ(x₀,z)) ∧ … ∧ (∀zₙ.∃xₙ.ψₙ(xₙ,zₙ) ∧ ⌈φ(x₀) ∧ φₙ(xₙ)⌉ → AF∃z.ψ(x₀,z))
 ```
@@ -408,7 +403,7 @@ Apply `(STEP)` on `φ(x₀)`, and we obtain that
 
 We can replace our goal succesively with:
 ```
-o ⋁ᵢ ∃xᵢ.⌈φ(x₀) ∧ φᵢ(xᵢ)⌉ ∧ ∃zᵢ.ψᵢ(xᵢ,zᵢ) → ○AF∃z.ψ(x₀, z)  // transitivity of → 
+o ⋁ᵢ ∃xᵢ.⌈φ(x₀) ∧ φᵢ(xᵢ)⌉ ∧ ∃zᵢ.ψᵢ(xᵢ,zᵢ) → ○AF∃z.ψ(x₀, z)  // transitivity of →
 ⋁ᵢ ∃xᵢ.⌈φ(x₀) ∧ φᵢ(xᵢ)⌉ ∧ ∃zᵢ.ψᵢ(xᵢ,zᵢ) → AF∃z.ψ(x₀, z)  // framing on ○
 ∃xᵢ.⌈φ(x₀) ∧ φᵢ(xᵢ)⌉ ∧ ∃zᵢ.ψᵢ(xᵢ,zᵢ) → AF∃z.ψ(x₀, z) for all i
 ```
@@ -441,14 +436,13 @@ __Input:__
 
 - set of variables `x`
 - claim group `(φ₁(x) → AF∃z.ψ₁(x,z)) ∧ ... ∧ (φₙ(x) → AF∃z.ψₙ(x,z))`
-- decreasing `measure(x)`
+- decreasing `measure(x)` using `R`
 
 __Output:__ Proved or Unproved
 
 * Fix an instance `x₀` for the variables `x`
-* Let `claims ::= { ∀ x . φᵢ(x) ∧ measure(x) <Int measure(x₀) → AF∃z.ψᵢ(x,z) }`
+* Let `claims ::= { ∀ x . φᵢ(x) ∧ measure(x) ≺ measure(x₀) → AF∃z.ψᵢ(x,z) }`
 * For each claim `φᵢ(x₀) → AF∃z.ψᵢ(x₀,z)`
-    * check that `φᵢ(x₀) → measure(x₀) >=Int 0`
     * Let `claimsᵢ ::= claims ∪ { claimᵢ₁, ..., claimᵢₖ }`
     * Let `Goals := { φᵢ(x₀) }`
     * While `Goals` is not empty:
@@ -501,7 +495,36 @@ the goal `∀x∪zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φᵢʳᵉᵐ∧φᵢ⌉) → AF∃z
 `∀x.⊥ → AF∃z.ψ` which can be discharged immediately. Also, in the
 remainder `¬∃x₁.⌈φ∧φ₁⌉ = ⊤` so the conjunct can be removed.
 
-  
+## Proposal of syntax changes to the K Frontend
+
+- claims need to mention the other claims (including themselves) which are
+  needed to complete their proof; this induces a dependency relation
+- claims which are part of a dependency cycle (including self-dependencies)
+  would need to be specified together as a "claim group"
+- a claim group would need to provide a metric on their input variables;
+  this metric must decrease whenever one tries to apply a claim from the group
+  while proving a claim from the same group
+
+A claim group would be something like
+```
+claim group Grp
+  imports claims from Grp₁, .. Grpₙ
+  decreasing measure(x) using R
+
+  . . .
+
+  claim φᵢ(xᵢ) → AF ∃zᵢ.ψᵢ(xᵢ,zᵢ)
+
+  . . .
+
+end claim group
+```
+where we require that:
+- the claim import dependency graph contains no cycles;
+- the variables in `x` are part of the variables `xᵢ` for each claim in the group;
+- `measure(x)` is a (provably) functional pattern
+- `R` is a (provably) well-founded relation on the sort of `measure(x)`
+
 ## Appendix: Always finally as a Kleene fixed-point
 
 Note that this appendix bears no relevance for the rest of the document; it is
@@ -511,7 +534,7 @@ Let us study when ⟦AF φ⟧ can be expressed according to Kleene's
 least-fixed-point formula, i.e., when `LFP(G) = ⋃ₙGⁿ(∅)`.
 
 Given a complete trace `tr`, let `trₙ` be the `n`th element of the trace, if
-it exists. 
+it exists.
 
 Let us now argue that, for any natural `n`, `Gⁿ⁺¹(∅)` denotes the set of
 configurations for which, in at most `n` steps, on all paths, `φ` holds, i.e.,
@@ -575,15 +598,21 @@ x ∈ G(⋁ₙGⁿ(∅)) ∖ ⋁ₙGⁿ(∅)
 
 Given the above relation, we deduce that a sufficient condition ensuring that
 `G(⋁ₙGⁿ(∅)) ∖ ⋁ₙGⁿ(∅) = ∅` is that the transition system is finitely branching,
-i.e., that `Prev⁻¹({x})` is finite for any `x`. Indeed, suppose 
+i.e., that `Prev⁻¹({x})` is finite for any `x`. Indeed, suppose
 there exists `x ∈ G(⋁ₙGⁿ(∅)) ∖ ⋁ₙGⁿ(∅)`. Then, it must hold that
-`¬ stuck x` and `(∀y x τ y → y ∈ ⋁ₙGⁿ(∅))` and `x ∉ ⋁ₙGⁿ(∅)` 
+`¬ stuck x` and `(∀y x τ y → y ∈ ⋁ₙGⁿ(∅))` and `x ∉ ⋁ₙGⁿ(∅)`
 Let `k`, `y₁`, ..., `yₖ` be such that `Prev⁻¹({x}) = {y₁, ..., yₖ}`.
 For any `i`, `yᵢ ∈ Prev⁻¹({x})`, hence `x τ yᵢ`, therefore `∃nᵢ yᵢ ∈ Gⁿⁱ(∅)`.
 Let `n₁`, ..., `nₖ` be such that `yᵢ ∈ Gⁿⁱ(∅)` for any `1≤i≤k`.
 Let `m = 𝐦𝐚𝐱 {n₁, ... , nₖ}`. Since `(Gⁿ(∅))ₙ` is an ascending chain,
-it follows that `yᵢ ∈ Gᵐ(∅)` for any `1≤i≤k`, 
+it follows that `yᵢ ∈ Gᵐ(∅)` for any `1≤i≤k`,
 whence `x ∈ Gᵐ⁺¹(∅)`, contradiction with the fact that `x ∉ ⋁ₙGⁿ(∅)`.
+
+Hence, if the transition system is finitely branching, we have a stronger
+interpretation for an always-finally reachability claim `∀x.φ(x) → AF ∃z.ψ(x,z)`:
+for any configuration `γ` satisfying `φ(x)` for some `x`, there exists a bound
+on the number of steps required to reach a configuration satisfying `ψ(x,z)`
+for some `z` on any path.
 
 Nevertheless, before continuing, let
 us give an example of a system and property for which the above construction is
@@ -594,16 +623,16 @@ not a fixed-point.
 Consider the following K theory
 
 ```
-syntax KItem ::= "x"
+syntax KItem ::= "start"
 
 rule Y:Int => Y -Int 1 requires Y>0
-rule x => Y:Int ensures Y >= 0
+rule start => Y:Int ensures Y >= 0
 ```
-(note that Y is free on the right-hand-side in the second rule, meaning that X
-can transition into any positive integer).
+(note that Y is free on the right-hand-side in the second rule, meaning that
+`start` can transition into any positive integer).
 
-and the claim `x → AF 0`
+and the claim `start → AF 0`
 
-It is easy to see that any trace originating in `x` will reach `0` in a finite
-number of steps. However, there is no bound on the number of steps needed for `x`
-to reach `0`.
+It is easy to see that any trace originating in `start` will reach `0` in a finite
+number of steps. However, there is no bound on the number of steps needed for
+`start` to reach `0`.
