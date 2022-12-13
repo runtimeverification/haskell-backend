@@ -348,10 +348,11 @@ maybeEvaluatePattern
                                             }
                                     )
                         _ -> return result
-                    liftSimplifier $ mergeWithConditionAndSubstitution
-                        sideCondition
-                        childrenCondition
-                        flattened
+                    liftSimplifier $
+                        mergeWithConditionAndSubstitution
+                            sideCondition
+                            childrenCondition
+                            flattened
                 case merged of
                     AttemptedAxiom.NotApplicable ->
                         defaultValue Nothing

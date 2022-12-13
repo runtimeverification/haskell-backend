@@ -236,15 +236,15 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
     secondNotCeils <- traverse mkNotSimplified secondCeils
     let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
     allAreBottom <-
-            (And.simplify sort Not.notSimplifier sideCondition)
-                (MultiAnd.make (firstNotCeil : secondNotCeils))
+        (And.simplify sort Not.notSimplifier sideCondition)
+            (MultiAnd.make (firstNotCeil : secondNotCeils))
     firstEqualsSeconds <-
         mapM
             (makeEvaluateEqualsIfSecondNotBottom sort first)
             (zip seconds secondCeils)
     oneIsNotBottomEquals <-
-            (And.simplify sort Not.notSimplifier sideCondition)
-                (MultiAnd.make (firstCeil : oneNotBottom : firstEqualsSeconds))
+        (And.simplify sort Not.notSimplifier sideCondition)
+            (MultiAnd.make (firstCeil : oneNotBottom : firstEqualsSeconds))
     MultiOr.merge allAreBottom oneIsNotBottomEquals
         & MultiOr.map Pattern.withoutTerm
         & return
@@ -303,11 +303,11 @@ makeEvaluate
             secondCeilNegation <- mkNotSimplified secondCeil
             termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
             negationAnd <-
-                    (And.simplify sort Not.notSimplifier sideCondition)
-                        (MultiAnd.make [firstCeilNegation, secondCeilNegation])
+                (And.simplify sort Not.notSimplifier sideCondition)
+                    (MultiAnd.make [firstCeilNegation, secondCeilNegation])
             equalityAnd <-
-                    (And.simplify sort Not.notSimplifier sideCondition)
-                        (MultiAnd.make [termEquality, firstCeil, secondCeil])
+                (And.simplify sort Not.notSimplifier sideCondition)
+                    (MultiAnd.make [termEquality, firstCeil, secondCeil])
             Or.simplifyEvaluated equalityAnd negationAnd
                 & MultiOr.map Pattern.withoutTerm
                 & return
