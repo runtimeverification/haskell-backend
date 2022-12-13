@@ -339,11 +339,9 @@ instance MonadSimplify m => MonadSimplify (RWST r () s m)
 -- TODO (thomas.tuegel): Factor out these types.
 
 simplifyPatternScatter ::
-    forall simplifier.
-    (MonadLogic simplifier, MonadSimplify simplifier) =>
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
-    simplifier (Pattern RewritingVariableName)
+    LogicT Simplifier (Pattern RewritingVariableName)
 simplifyPatternScatter sideCondition patt =
     Logic.scatter
         =<< liftSimplifier (simplifyPattern sideCondition patt)

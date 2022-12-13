@@ -28,20 +28,17 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Rewrite.Substitution qualified as Substitution
 import Kore.Simplify.Simplify (
-    MonadSimplify,
-    liftSimplifier,
+    Simplifier,
  )
 import Logic qualified as LogicT
 import Prelude.Kore
 
 simplifyEvaluatedMultiPredicate ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     MultiAnd (OrCondition RewritingVariableName) ->
-    simplifier (OrCondition RewritingVariableName)
+    Simplifier (OrCondition RewritingVariableName)
 simplifyEvaluatedMultiPredicate sideCondition predicates =
-    liftSimplifier . MultiOr.observeAllT $ do
+    MultiOr.observeAllT $ do
         element <- MultiAnd.traverse LogicT.scatter predicates
         andConditions element
   where
