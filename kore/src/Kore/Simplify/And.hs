@@ -100,7 +100,7 @@ Also, we have
 -}
 simplify ::
     Sort ->
-    NotSimplifier (UnifierT Simplifier) ->
+    NotSimplifier Simplifier ->
     SideCondition RewritingVariableName ->
     MultiAnd (OrPattern RewritingVariableName) ->
     Simplifier (OrPattern RewritingVariableName)
@@ -117,7 +117,7 @@ makeEvaluate ::
     HasCallStack =>
     MonadSimplify simplifier =>
     Sort ->
-    NotSimplifier (UnifierT simplifier) ->
+    NotSimplifier simplifier ->
     SideCondition RewritingVariableName ->
     MultiAnd (Pattern RewritingVariableName) ->
     LogicT simplifier (Pattern RewritingVariableName)
@@ -131,7 +131,7 @@ makeEvaluateNonBool ::
     HasCallStack =>
     MonadSimplify simplifier =>
     Sort ->
-    NotSimplifier (UnifierT simplifier) ->
+    NotSimplifier simplifier ->
     SideCondition RewritingVariableName ->
     MultiAnd (Pattern RewritingVariableName) ->
     LogicT simplifier (Pattern RewritingVariableName)
@@ -221,7 +221,7 @@ termAnd ::
     forall simplifier.
     MonadSimplify simplifier =>
     HasCallStack =>
-    NotSimplifier (UnifierT simplifier) ->
+    NotSimplifier simplifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     LogicT simplifier (Pattern RewritingVariableName)

@@ -46,6 +46,7 @@ import Kore.Simplify.AndTerms (
     termUnification,
  )
 import Kore.Simplify.NotSimplifier
+import Kore.Simplify.Simplify (MonadSimplify)
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Simplify.SubstitutionSimplifier (
     MakeAnd (..),
@@ -64,9 +65,12 @@ If multiple assignments to a single variable cannot be unified, this simplifier
 uses 'Unifier.throwUnificationError'.
 -}
 substitutionSimplifier ::
-    forall unifier.
+    forall unifier simplifier t.
+    MonadSimplify simplifier =>
     MonadUnify unifier =>
-    NotSimplifier unifier ->
+    MonadTrans t =>
+    t simplifier ~ unifier =>
+    NotSimplifier simplifier ->
     SubstitutionSimplifier unifier
 substitutionSimplifier notSimplifier =
     SubstitutionSimplifier wrapper
@@ -100,9 +104,12 @@ substitutionSimplifier notSimplifier =
                 (unificationMakeAnd notSimplifier)
 
 unificationMakeAnd ::
-    forall unifier.
+    forall unifier simplifier t.
+    MonadSimplify simplifier =>
     MonadUnify unifier =>
-    NotSimplifier unifier ->
+    MonadTrans t =>
+    t simplifier ~ unifier =>
+    NotSimplifier simplifier ->
     MakeAnd unifier
 unificationMakeAnd notSimplifier =
     MakeAnd{makeAnd}

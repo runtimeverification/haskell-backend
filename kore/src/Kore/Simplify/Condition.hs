@@ -115,7 +115,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition original = d
         simplified <-
             simplifyPredicate predicate'
                 >>= Logic.scatter
-                >>= simplifyPredicates sideCondition . prepareForResimplification
+                >>= mapLogicT liftSimplifier . simplifyPredicates sideCondition . prepareForResimplification
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
@@ -169,10 +169,9 @@ others are true.
 This procedure is applied until the conjunction stabilizes.
 -}
 simplifyPredicates ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     MultiAnd (Predicate RewritingVariableName) ->
-    LogicT simplifier (Condition RewritingVariableName)
+    LogicT Simplifier (Condition RewritingVariableName)
 simplifyPredicates sideCondition original = do
     let predicates =
             SideCondition.simplifyConjunctionByAssumption original
@@ -215,12 +214,10 @@ simplifyPredicateExistElim avoid predicate = case predicateF of
 under the assumption that the others are true.
 -}
 simplifyPredicatesWithAssumptions ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     [Predicate RewritingVariableName] ->
     LogicT
-        simplifier
+        Simplifier
         (MultiAnd (Predicate RewritingVariableName))
 simplifyPredicatesWithAssumptions _ [] = return MultiAnd.top
 simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
@@ -236,7 +233,7 @@ simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
         ) ->
         StateT
             (MultiAnd (Predicate RewritingVariableName))
-            (LogicT simplifier)
+            (LogicT Simplifier)
             ()
     simplifyWithAssumptions (predicate, unsimplifiedSideCond) = do
         sideCondition' <- getSideCondition unsimplifiedSideCond
