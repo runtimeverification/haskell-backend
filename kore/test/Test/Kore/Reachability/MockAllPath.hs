@@ -27,6 +27,7 @@ import Kore.Reachability.Claim (
 import Kore.Reachability.Claim qualified as Claim
 import Kore.Reachability.ClaimState qualified as ClaimState
 import Kore.Reachability.Prim qualified as Prim
+import Kore.Rewrite.ClaimPattern (ClaimPattern)
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Transition (
     runTransitionT,
@@ -344,6 +345,9 @@ instance Claim MockClaim where
 
     applyAxioms axiomGroups =
         derivePar (AppliedAxiom . Rule . unMockClaim) (concat axiomGroups)
+
+instance From MockClaim ClaimPattern where
+    from = undefined
 
 derivePar ::
     (MockClaim -> MockAppliedRule) ->

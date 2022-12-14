@@ -175,6 +175,9 @@ instance Claim OnePathClaim where
 instance From (Rule OnePathClaim) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unRuleOnePath
 
+instance From OnePathClaim ClaimPattern where
+    from = getOnePathClaim
+
 instance From OnePathClaim (AxiomPattern VariableName) where
     from = AxiomPattern . onePathRuleToTerm
 

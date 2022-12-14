@@ -81,6 +81,10 @@ data SomeClaim
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
+instance From SomeClaim ClaimPattern where
+    from (OnePath oc) = from oc
+    from (AllPath ac) = from ac
+
 mkSomeClaimAllPath ::
     Pattern RewritingVariableName ->
     OrPattern RewritingVariableName ->

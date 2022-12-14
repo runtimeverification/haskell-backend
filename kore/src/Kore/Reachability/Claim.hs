@@ -172,9 +172,7 @@ import Kore.TopBottom (
  )
 import Kore.Unification.Procedure
 import Kore.Unification.UnifierT as UnifierT
-import Kore.Unparser (
-    Unparse (..),
- )
+import Kore.Unparser (Unparse (..))
 import Kore.Verified qualified as Verified
 import Logic qualified
 import Prelude.Kore
@@ -183,7 +181,7 @@ import Pretty (
  )
 import Pretty qualified
 
-class Claim claim where
+class (From claim ClaimPattern) => Claim claim where
     -- | @Rule claim@ is the type of rule to take a single step toward @claim@.
     data Rule claim
 
@@ -339,7 +337,10 @@ transitionRule stuckCheck claims axiomGroups = transitionRuleWorker
     transitionRuleWorker Begin claimState = pure claimState
     transitionRuleWorker Simplify claimState
         | Just claim <- retractSimplifiable claimState =
-            Transition.ifte (simplify claim) (pure . ($>) claimState) (pure Proven)
+            Transition.ifte
+                (simplify claim)
+                (pure . ($>) claimState)
+                (trace ("\nDebug: LHS simplified to Bottom:\n") $ pure Proven) -- <> (show . pretty) (from @_ @ClaimPattern claim)) $ pure Proven)
         | otherwise =
             pure claimState
     transitionRuleWorker CheckImplication claimState

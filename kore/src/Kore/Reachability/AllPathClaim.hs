@@ -164,6 +164,9 @@ instance Claim AllPathClaim where
 instance From (Rule AllPathClaim) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unRuleAllPath
 
+instance From AllPathClaim ClaimPattern where
+    from = getAllPathClaim
+
 instance ClaimExtractor AllPathClaim where
     extractClaim (attributes, sentence) =
         case termLike of
