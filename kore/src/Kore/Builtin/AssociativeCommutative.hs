@@ -1057,7 +1057,7 @@ unifyEqualsNormalizedAc
             TermLike RewritingVariableName ->
             unifier (Pattern RewritingVariableName)
         simplify term =
-            simplifyPatternScatter SideCondition.topTODO (Pattern.fromTermLike term)
+            mapLogicT liftSimplifier (simplifyPatternScatter SideCondition.topTODO (Pattern.fromTermLike term))
                 & lowerLogicT
 
         simplifyPair ::
@@ -1106,7 +1106,7 @@ unifyEqualsNormalizedAc
                 TermLike RewritingVariableName ->
                 unifier (Pattern RewritingVariableName)
             simplifyTermLike' term =
-                simplifyPatternScatter SideCondition.topTODO (Pattern.fromTermLike term)
+                mapLogicT liftSimplifier (simplifyPatternScatter SideCondition.topTODO (Pattern.fromTermLike term))
                     & lowerLogicT
 
 buildResultFromUnifiers ::

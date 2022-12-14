@@ -236,17 +236,15 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
     secondNotCeils <- traverse mkNotSimplified secondCeils
     let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
     allAreBottom <-
-        liftSimplifier $
-            (And.simplify sort Not.notSimplifier sideCondition)
-                (MultiAnd.make (firstNotCeil : secondNotCeils))
+        (And.simplify sort Not.notSimplifier sideCondition)
+            (MultiAnd.make (firstNotCeil : secondNotCeils))
     firstEqualsSeconds <-
         mapM
-            (liftSimplifier . makeEvaluateEqualsIfSecondNotBottom sort first)
+            (makeEvaluateEqualsIfSecondNotBottom sort first)
             (zip seconds secondCeils)
     oneIsNotBottomEquals <-
-        liftSimplifier $
-            (And.simplify sort Not.notSimplifier sideCondition)
-                (MultiAnd.make (firstCeil : oneNotBottom : firstEqualsSeconds))
+        (And.simplify sort Not.notSimplifier sideCondition)
+            (MultiAnd.make (firstCeil : oneNotBottom : firstEqualsSeconds))
     MultiOr.merge allAreBottom oneIsNotBottomEquals
         & MultiOr.map Pattern.withoutTerm
         & return
@@ -305,13 +303,11 @@ makeEvaluate
             secondCeilNegation <- mkNotSimplified secondCeil
             termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
             negationAnd <-
-                liftSimplifier $
-                    (And.simplify sort Not.notSimplifier sideCondition)
-                        (MultiAnd.make [firstCeilNegation, secondCeilNegation])
+                (And.simplify sort Not.notSimplifier sideCondition)
+                    (MultiAnd.make [firstCeilNegation, secondCeilNegation])
             equalityAnd <-
-                liftSimplifier $
-                    (And.simplify sort Not.notSimplifier sideCondition)
-                        (MultiAnd.make [termEquality, firstCeil, secondCeil])
+                (And.simplify sort Not.notSimplifier sideCondition)
+                    (MultiAnd.make [termEquality, firstCeil, secondCeil])
             Or.simplifyEvaluated equalityAnd negationAnd
                 & MultiOr.map Pattern.withoutTerm
                 & return
@@ -364,15 +360,14 @@ because it returns an 'or').
 See 'simplify' for detailed documentation.
 -}
 makeEvaluateTermsToPredicate ::
-    MonadSimplify simplifier =>
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     SideCondition RewritingVariableName ->
-    simplifier (OrCondition RewritingVariableName)
+    Simplifier (OrCondition RewritingVariableName)
 makeEvaluateTermsToPredicate first second sideCondition
     | first == second = return OrCondition.top
     | otherwise = do
-        result <- liftSimplifier . runMaybeT $ termEquals first second
+        result <- runMaybeT $ termEquals first second
         case result of
             Nothing ->
                 return $
@@ -380,8 +375,8 @@ makeEvaluateTermsToPredicate first second sideCondition
                         Predicate.markSimplified $
                             makeEqualsPredicate first second
             Just predicatedOr -> do
-                firstCeilOr <- liftSimplifier $ makeEvaluateTermCeil sideCondition first
-                secondCeilOr <- liftSimplifier $ makeEvaluateTermCeil sideCondition second
+                firstCeilOr <- makeEvaluateTermCeil sideCondition first
+                secondCeilOr <- makeEvaluateTermCeil sideCondition second
                 firstCeilNegation <- Not.simplifyEvaluatedPredicate firstCeilOr
                 secondCeilNegation <- Not.simplifyEvaluatedPredicate secondCeilOr
                 ceilNegationAnd <-

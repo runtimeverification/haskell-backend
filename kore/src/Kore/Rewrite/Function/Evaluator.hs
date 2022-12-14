@@ -348,10 +348,11 @@ maybeEvaluatePattern
                                             }
                                     )
                         _ -> return result
-                    mergeWithConditionAndSubstitution
-                        sideCondition
-                        childrenCondition
-                        flattened
+                    liftSimplifier $
+                        mergeWithConditionAndSubstitution
+                            sideCondition
+                            childrenCondition
+                            flattened
                 case merged of
                     AttemptedAxiom.NotApplicable ->
                         defaultValue Nothing
@@ -433,14 +434,13 @@ sortInjectionSorts symbol =
 
 -- | Ands the given condition-substitution to the given function evaluation.
 mergeWithConditionAndSubstitution ::
-    MonadSimplify simplifier =>
     -- | Top level condition.
     SideCondition RewritingVariableName ->
     -- | Condition and substitution to add.
     Condition RewritingVariableName ->
     -- | AttemptedAxiom to which the condition should be added.
     AttemptedAxiom RewritingVariableName ->
-    simplifier (AttemptedAxiom RewritingVariableName)
+    Simplifier (AttemptedAxiom RewritingVariableName)
 mergeWithConditionAndSubstitution _ _ AttemptedAxiom.NotApplicable =
     return AttemptedAxiom.NotApplicable
 mergeWithConditionAndSubstitution

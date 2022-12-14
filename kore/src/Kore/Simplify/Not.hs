@@ -88,9 +88,8 @@ simplify sideCondition not'@Not{notSort} =
         mkMultiAndPattern notSort sideCondition andPattern
 
 simplifyEvaluatedPredicate ::
-    MonadSimplify simplifier =>
     OrCondition RewritingVariableName ->
-    simplifier (OrCondition RewritingVariableName)
+    Simplifier (OrCondition RewritingVariableName)
 simplifyEvaluatedPredicate notChild =
     OrCondition.observeAllT $ do
         let not' = Not{notChild = notChild, notSort = ()}
