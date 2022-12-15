@@ -22,6 +22,7 @@ import Kore.Definition.Attributes.Base
 import Kore.Definition.Base
 import Kore.Pattern.Base
 import Kore.Pattern.Rewrite
+import Kore.Pattern.Util (sortOfTerm)
 import Test.Kore.Fixture
 
 test_rewriteStep :: TestTree
@@ -115,6 +116,7 @@ kCell, kseq :: Symbol
 kCell =
     Symbol
         { name = "Lbl'-LT-'k'-GT-'"
+        , sortVars = []
         , resultSort = kSort -- bogus
         , argSorts = [kSort]
         , attributes = asConstructor
@@ -122,18 +124,20 @@ kCell =
 kseq =
     Symbol
         { name = "kseq"
+        , sortVars = []
         , resultSort = kSort
         , argSorts = [kItemSort, kSort]
         , attributes = asConstructor
         }
 
 injKItem :: Term -> Term
-injKItem = app inj . (: [])
+injKItem t = SymbolApplication inj [sortOfTerm t, kItemSort] [t]
 
 inj :: Symbol
 inj =
     Symbol
         { name = "inj"
+        , sortVars = ["Source", "Target"]
         , resultSort = SortVar "Target"
         , argSorts = [SortVar "Source"]
         , attributes = SymbolAttributes SortInjection False False

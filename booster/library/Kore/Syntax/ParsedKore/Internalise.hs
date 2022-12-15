@@ -453,11 +453,12 @@ internaliseSymbol sorts parsedSymbol = do
     argSorts <- mapM check parsedSymbol.argSorts
     let name = parsedSymbol.name.getId
         attributes = extract parsedSymbol
-        internalSymbol = Def.Symbol{name, resultSort, argSorts, attributes}
+        internalSymbol = Def.Symbol{name, sortVars, resultSort, argSorts, attributes}
     -- TODO(Ana): rename extract
     pure (name, internalSymbol)
   where
-    knownVars = Set.fromList $ map (.getId) parsedSymbol.sortVars
+    knownVars = Set.fromList sortVars
+    sortVars = map (.getId) parsedSymbol.sortVars
 
     check :: Json.Sort -> Except DefinitionError Def.Sort
     check =
@@ -525,14 +526,14 @@ data TermOrPredicateError
 computeTermIndex :: Def.Term -> Def.TermIndex
 computeTermIndex config =
     case lookForKCell config of
-        Just (Def.SymbolApplication _ children) ->
+        Just (Def.SymbolApplication _ _ children) ->
             getTermIndex (lookForTopTerm (getFirstKCellElem children))
         _ -> Def.Anything
   where
     getTermIndex :: Def.Term -> Def.TermIndex
     getTermIndex term =
         case term of
-            Def.SymbolApplication symbol _ ->
+            Def.SymbolApplication symbol _ _ ->
                 case symbol.attributes.symbolType of
                     Constructor -> Def.TopSymbol symbol.name
                     _ -> Def.Anything
@@ -543,7 +544,7 @@ computeTermIndex config =
     -- in addition to the result of folding that sub-tree.
     lookForKCell :: Def.Term -> Maybe Def.Term
     lookForKCell = para $ \case
-        kCell@(Def.SymbolApplicationF symbol (children :: [(Def.Term, Maybe Def.Term)]))
+        kCell@(Def.SymbolApplicationF symbol _ (children :: [(Def.Term, Maybe Def.Term)]))
             | symbol.name == "Lbl'-LT-'k'-GT-'" -> Just $ embed $ fmap fst kCell
             | otherwise -> asum $ map snd children
         other -> foldr ((<|>) . snd) Nothing other
@@ -552,7 +553,7 @@ computeTermIndex config =
     lookForTopTerm :: Def.Term -> Def.Term
     lookForTopTerm =
         \case
-            Def.SymbolApplication symbol children
+            Def.SymbolApplication symbol _ children
                 | symbol.name == "kseq" ->
                     let firstChild = getKSeqFirst children
                      in stripAwaySortInjections firstChild
@@ -564,7 +565,7 @@ computeTermIndex config =
     stripAwaySortInjections :: Def.Term -> Def.Term
     stripAwaySortInjections =
         \case
-            term@(Def.SymbolApplication symbol children) ->
+            term@(Def.SymbolApplication symbol _ children) ->
                 if Util.isSortInjectionSymbol symbol
                     then stripAwaySortInjections (getInjChild children)
                     else term
