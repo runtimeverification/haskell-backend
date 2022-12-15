@@ -87,7 +87,7 @@ ask = LLVM Reader.ask
 
 marshallTerm :: Term -> LLVM KorePatternPtr
 marshallTerm = \case
-    SymbolApplication symbol trms -> do
+    SymbolApplication symbol _ trms -> do
         api <- ask
         app <- api.korePattern.composite.new symbol.name
         foldM (\app' t -> api.korePattern.composite.addArgument app' =<< marshallTerm t) app trms

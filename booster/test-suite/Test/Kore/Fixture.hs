@@ -60,7 +60,7 @@ dv :: Sort -> Text -> Term
 dv = DomainValue
 
 app :: Symbol -> [Term] -> Term
-app = SymbolApplication
+app s = SymbolApplication s []
 
 asTotalFunction, asPartialFunction, asConstructor :: SymbolAttributes
 asTotalFunction = SymbolAttributes TotalFunction False False
@@ -71,6 +71,7 @@ con1, con2, con3, con4, f1, f2 :: Symbol
 con1 =
     Symbol
         { name = "con1"
+        , sortVars = []
         , resultSort = someSort
         , argSorts = [someSort]
         , attributes = asConstructor
@@ -78,6 +79,7 @@ con1 =
 con2 =
     Symbol
         { name = "con2"
+        , sortVars = []
         , resultSort = someSort
         , argSorts = [someSort]
         , attributes = asConstructor
@@ -85,6 +87,7 @@ con2 =
 con3 =
     Symbol
         { name = "con3"
+        , sortVars = []
         , resultSort = someSort
         , argSorts = [someSort, someSort]
         , attributes = asConstructor
@@ -92,6 +95,7 @@ con3 =
 con4 =
     Symbol
         { name = "con4"
+        , sortVars = []
         , resultSort = aSubsort
         , argSorts = [someSort, someSort]
         , attributes = asConstructor
@@ -99,6 +103,7 @@ con4 =
 f1 =
     Symbol
         { name = "f1"
+        , sortVars = []
         , resultSort = someSort
         , argSorts = [someSort]
         , attributes = asTotalFunction
@@ -106,6 +111,7 @@ f1 =
 f2 =
     Symbol
         { name = "f2"
+        , sortVars = []
         , resultSort = someSort
         , argSorts = [someSort]
         , attributes = asPartialFunction

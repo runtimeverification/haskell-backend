@@ -44,7 +44,7 @@ var :: VarName -> Sort -> Term
 var variableName variableSort = Var $ Variable{variableSort, variableName}
 
 app :: Symbol -> [Term] -> Term
-app = SymbolApplication
+app s = SymbolApplication s []
 
 asConstructor :: SymbolAttributes
 asConstructor = SymbolAttributes Constructor False False
@@ -53,6 +53,7 @@ con1 :: Symbol
 con1 =
     Symbol
         { name = "con1"
+        , sortVars = []
         , resultSort = someSort
         , argSorts = [someSort]
         , attributes = asConstructor

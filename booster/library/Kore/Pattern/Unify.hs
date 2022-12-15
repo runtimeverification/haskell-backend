@@ -125,8 +125,8 @@ unify1
 
 -- two symbol applications: fail if names differ, recurse
 unify1
-    t1@(SymbolApplication symbol1 args1)
-    t2@(SymbolApplication symbol2 args2) =
+    t1@(SymbolApplication symbol1 sorts1 args1)
+    t2@(SymbolApplication symbol2 sorts2 args2) =
         do
             -- If we have functions, pass - only constructors and sort
             -- injections are matched.
@@ -138,6 +138,8 @@ unify1
             unless (length args1 == length args2) $
                 internalError $
                     "Argument counts differ for same constructor" <> show (t1, t2)
+            unless (sorts1 == sorts2) $
+                failWith (DifferentSymbols t1 t2) -- TODO actually DifferentSorts
             zipWithM_ enqueueProblem args1 args2
 
 -- and-term in pattern: must unify with both arguments

@@ -39,6 +39,7 @@ data Variable = Variable
 
 data Symbol = Symbol
     { name :: SymbolName
+    , sortVars :: [VarName]
     , argSorts :: [Sort]
     , resultSort :: Sort
     , attributes :: SymbolAttributes
@@ -55,7 +56,7 @@ data Symbol = Symbol
 -}
 data Term
     = AndTerm Term Term -- used in #as patterns
-    | SymbolApplication Symbol [Term]
+    | SymbolApplication Symbol [Sort] [Term]
     | DomainValue Sort Text
     | Var Variable
     deriving stock (Eq, Ord, Show)
