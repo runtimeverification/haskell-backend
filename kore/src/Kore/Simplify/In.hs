@@ -85,12 +85,12 @@ makeEvaluateIn ::
     Logic.LogicT Simplifier (OrCondition RewritingVariableName)
 makeEvaluateIn sideCondition first second
     | Pattern.isTop first =
-        NormalForm.toOrCondition <$> Ceil.makeEvaluate sideCondition second
+        NormalForm.toOrCondition <$> liftSimplifier (Ceil.makeEvaluate sideCondition second)
     | Pattern.isTop second =
-        NormalForm.toOrCondition <$> Ceil.makeEvaluate sideCondition first
+        NormalForm.toOrCondition <$> liftSimplifier (Ceil.makeEvaluate sideCondition first)
     | Pattern.isBottom first || Pattern.isBottom second = return OrCondition.bottom
     | otherwise =
-        (And.makeEvaluate pattSort Not.notSimplifier sideCondition)
+        liftSimplifier $ (And.makeEvaluate pattSort Not.notSimplifier sideCondition)
             (MultiAnd.make [first, second])
             & OrPattern.observeAllT
             >>= Ceil.simplifyEvaluated sideCondition

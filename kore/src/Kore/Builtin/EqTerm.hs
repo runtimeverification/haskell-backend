@@ -24,7 +24,7 @@ import Kore.Simplify.NotSimplifier (
     NotSimplifier (..),
  )
 import Kore.Simplify.Simplify (
-    TermSimplifier,
+    TermSimplifier, Simplifier, liftSimplifier
  )
 import Kore.Unification.Unify as Unify
 import Prelude.Kore
@@ -54,7 +54,7 @@ unifyEqTerm ::
     forall unifier.
     MonadUnify unifier =>
     TermSimplifier RewritingVariableName unifier ->
-    NotSimplifier unifier ->
+    NotSimplifier Simplifier ->
     EqTerm (TermLike RewritingVariableName) ->
     Bool ->
     unifier (Pattern RewritingVariableName)
@@ -62,7 +62,7 @@ unifyEqTerm unifyChildren (NotSimplifier notSimplifier) eqTerm value =
     do
         solution <- unifyChildren operand1 operand2 & OrPattern.gather
         let solution' = MultiOr.map eraseTerm solution
-        (if value then pure else mkNotSimplified) solution'
+        (if value then pure else liftSimplifier . mkNotSimplified) solution'
             >>= Unify.scatter
   where
     EqTerm{symbol, operand1, operand2} = eqTerm

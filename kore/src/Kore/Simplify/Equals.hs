@@ -156,10 +156,9 @@ Equals(a and b, b and a) will not be evaluated to Top.
 -}
 {- ORMOLU_ENABLE -}
 simplify ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Equals Sort (OrPattern RewritingVariableName) ->
-    simplifier (OrCondition RewritingVariableName)
+    Simplifier (OrCondition RewritingVariableName)
 simplify
     sideCondition
     Equals
@@ -185,12 +184,11 @@ carry around.
 
 -}
 simplifyEvaluated ::
-    MonadSimplify simplifier =>
     Sort ->
     SideCondition RewritingVariableName ->
     OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName ->
-    simplifier (OrCondition RewritingVariableName)
+    Simplifier (OrCondition RewritingVariableName)
 simplifyEvaluated sort sideCondition first second
     | first == second = return OrCondition.top
     -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
@@ -198,20 +196,18 @@ simplifyEvaluated sort sideCondition first second
         let isFunctionConditional Conditional{term} = isFunctionPattern term
         case (firstPatterns, secondPatterns) of
             ([firstP], [secondP]) ->
-                liftSimplifier $ makeEvaluate firstP secondP sideCondition
+                makeEvaluate firstP secondP sideCondition
             ([firstP], _)
                 | isFunctionConditional firstP ->
-                    liftSimplifier $ makeEvaluateFunctionalOr sideCondition firstP secondPatterns
+                    makeEvaluateFunctionalOr sideCondition firstP secondPatterns
             (_, [secondP])
                 | isFunctionConditional secondP ->
-                    liftSimplifier $ makeEvaluateFunctionalOr sideCondition secondP firstPatterns
+                    makeEvaluateFunctionalOr sideCondition secondP firstPatterns
             _
                 | OrPattern.isPredicate first && OrPattern.isPredicate second ->
-                    liftSimplifier $
                         Iff.simplifyEvaluated sort sideCondition first second
                             & fmap (MultiOr.map Pattern.withoutTerm)
                 | otherwise ->
-                    liftSimplifier $
                         makeEvaluate
                             (OrPattern.toPattern sort first)
                             (OrPattern.toPattern sort second)

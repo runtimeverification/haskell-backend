@@ -397,6 +397,15 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
         return substitution'
 
     sideConditionRepresentation = SideCondition.toRepresentation sideCondition
+
+{-# SPECIALIZE simplifySubstitutionWorker ::
+    SideCondition RewritingVariableName ->
+    MakeAnd (LogicT Simplifier) ->
+    Substitution RewritingVariableName ->
+    MaybeT
+        (LogicT Simplifier)
+        (Predicate RewritingVariableName, Normalization RewritingVariableName) #-}
+
 data Private variable = Private
     { -- | The current condition, accumulated during simplification.
       accum :: !(Condition variable)

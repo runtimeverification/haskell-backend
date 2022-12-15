@@ -71,6 +71,8 @@ import Logic qualified
 import Prelude.Kore
 import Pretty ((<+>))
 import Pretty qualified
+import Logic (LogicT)
+import Control.Monad.Trans.Reader (ReaderT)
 
 -- | Evaluates functions on an application pattern.
 
@@ -202,6 +204,42 @@ evaluatePattern
             sideCondition
             & maybeT (defaultValue Nothing) return
 
+{-# SPECIALIZE evaluatePattern ::
+    SideCondition RewritingVariableName ->
+    Condition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    ( Maybe SideCondition.Representation ->
+      MaybeT Simplifier (OrPattern RewritingVariableName)
+    ) ->
+    MaybeT Simplifier (OrPattern RewritingVariableName) #-}
+
+{-# SPECIALIZE evaluatePattern ::
+    SideCondition RewritingVariableName ->
+    Condition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    ( Maybe SideCondition.Representation ->
+      MaybeT (LogicT Simplifier) (OrPattern RewritingVariableName)
+    ) ->
+    MaybeT (LogicT Simplifier) (OrPattern RewritingVariableName) #-}
+
+{-# SPECIALIZE evaluatePattern ::
+    SideCondition RewritingVariableName ->
+    Condition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    ( Maybe SideCondition.Representation ->
+      MaybeT (ReaderT (SideCondition RewritingVariableName) (LogicT Simplifier)) (OrPattern RewritingVariableName)
+    ) ->
+    MaybeT (ReaderT (SideCondition RewritingVariableName) (LogicT Simplifier)) (OrPattern RewritingVariableName) #-}
+
+{-# SPECIALIZE evaluatePattern ::
+    SideCondition RewritingVariableName ->
+    Condition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    ( Maybe SideCondition.Representation ->
+      MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) (OrPattern RewritingVariableName)
+    ) ->
+    MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) (OrPattern RewritingVariableName) #-}
+
 lookupAxiomSimplifier ::
     MonadSimplify simplifier =>
     TermLike RewritingVariableName ->
@@ -287,6 +325,26 @@ lookupAxiomSimplifier termLike = do
         (Nothing, eval2) -> eval2
         (eval1, Nothing) -> eval1
         (Just eval1, Just eval2) -> Just $ simplifierWithFallback eval1 eval2
+
+{-# SPECIALIZE lookupAxiomSimplifier ::
+    TermLike RewritingVariableName ->
+    MaybeT Simplifier BuiltinAndAxiomSimplifier #-}
+
+{-# SPECIALIZE lookupAxiomSimplifier ::
+    TermLike RewritingVariableName ->
+    MaybeT (MaybeT Simplifier) BuiltinAndAxiomSimplifier #-}
+
+{-# SPECIALIZE lookupAxiomSimplifier ::
+    TermLike RewritingVariableName ->
+    MaybeT (MaybeT (LogicT Simplifier)) BuiltinAndAxiomSimplifier #-}
+
+{-# SPECIALIZE lookupAxiomSimplifier ::
+    TermLike RewritingVariableName ->
+    MaybeT (MaybeT (ReaderT (SideCondition RewritingVariableName) (LogicT Simplifier))) BuiltinAndAxiomSimplifier #-}
+
+{-# SPECIALIZE lookupAxiomSimplifier ::
+    TermLike RewritingVariableName ->
+    MaybeT (MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier)) BuiltinAndAxiomSimplifier #-}
 
 criticalMissingHook :: Symbol -> Text -> a
 criticalMissingHook symbol hookName =
@@ -381,6 +439,51 @@ maybeEvaluatePattern
                 return (OrPattern.fromPattern unchangedPatt)
             | otherwise =
                 liftSimplifier $ simplifyPattern sideCondition toSimplify
+
+{-# SPECIALIZE maybeEvaluatePattern ::
+    Condition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    ( Maybe SideCondition.Representation ->
+      Simplifier (OrPattern RewritingVariableName)
+    ) ->
+    SideCondition RewritingVariableName ->
+    MaybeT Simplifier (OrPattern RewritingVariableName) #-}
+
+{-# SPECIALIZE maybeEvaluatePattern ::
+    Condition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    ( Maybe SideCondition.Representation ->
+      MaybeT Simplifier (OrPattern RewritingVariableName)
+    ) ->
+    SideCondition RewritingVariableName ->
+    MaybeT (MaybeT Simplifier) (OrPattern RewritingVariableName) #-}
+
+{-# SPECIALIZE maybeEvaluatePattern ::
+    Condition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    ( Maybe SideCondition.Representation ->
+      MaybeT (LogicT Simplifier) (OrPattern RewritingVariableName)
+    ) ->
+    SideCondition RewritingVariableName ->
+    MaybeT (MaybeT (LogicT Simplifier)) (OrPattern RewritingVariableName) #-}
+
+{-# SPECIALIZE maybeEvaluatePattern ::
+    Condition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    ( Maybe SideCondition.Representation ->
+      MaybeT (ReaderT (SideCondition RewritingVariableName) (LogicT Simplifier)) (OrPattern RewritingVariableName)
+    ) ->
+    SideCondition RewritingVariableName ->
+    MaybeT (MaybeT (ReaderT (SideCondition RewritingVariableName) (LogicT Simplifier))) (OrPattern RewritingVariableName) #-}
+
+{-# SPECIALIZE maybeEvaluatePattern ::
+    Condition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    ( Maybe SideCondition.Representation ->
+      MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) (OrPattern RewritingVariableName)
+    ) ->
+    SideCondition RewritingVariableName ->
+    MaybeT (MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier)) (OrPattern RewritingVariableName) #-}
 
 evaluateSortInjection ::
     InternalVariable variable =>

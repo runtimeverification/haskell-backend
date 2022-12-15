@@ -105,20 +105,19 @@ import Kore.Syntax.Forall qualified as Forall
 import Logic
 import Prelude.Kore
 
+
 simplify ::
-    forall simplifier.
     HasCallStack =>
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Predicate RewritingVariableName ->
-    simplifier NormalForm
+    Simplifier NormalForm
 simplify sideCondition original =
     loop 0 (mkSingleton original)
   where
     limit :: Int
     limit = 20
 
-    loop :: Int -> NormalForm -> simplifier NormalForm
+    loop :: Int -> NormalForm -> Simplifier NormalForm
     loop count input
         | count >= limit = do
             warnUnsimplifiedPredicate limit original input
@@ -140,7 +139,7 @@ simplify sideCondition original =
         | Right predicate <- Predicate.makePredicate term =
             NormalForm.toOrPattern (termLikeSort term) <$> worker predicate
         | otherwise =
-            liftSimplifier $ simplifyTerm sideCondition term
+            simplifyTerm sideCondition term
 
     repr = SideCondition.toRepresentation sideCondition
 
@@ -151,7 +150,7 @@ simplify sideCondition original =
     -- this function.
     worker ::
         Predicate RewritingVariableName ->
-        simplifier NormalForm
+        Simplifier NormalForm
     worker predicate
         | Just predicate' <- replacePredicate predicate =
             worker predicate'
@@ -165,16 +164,16 @@ simplify sideCondition original =
                 TopF topF -> normalizeTop =<< traverse worker topF
                 NotF notF -> simplifyNot sideCondition =<< traverse worker notF
                 ImpliesF impliesF ->
-                    liftSimplifier . simplifyImplies sideCondition
+                    simplifyImplies sideCondition
                         =<< traverse worker impliesF
                 IffF iffF ->
-                    liftSimplifier . simplifyIff sideCondition
+                    simplifyIff sideCondition
                         =<< traverse worker iffF
                 CeilF ceilF ->
                     -- TODO(Ana): don't simplify children first
                     simplifyCeil sideCondition =<< traverse simplifyTerm' ceilF
                 FloorF floorF@(Floor _ _ child) ->
-                    liftSimplifier . simplifyFloor (termLikeSort child) sideCondition
+                    simplifyFloor (termLikeSort child) sideCondition
                         =<< traverse simplifyTerm' floorF
                 ExistsF existsF ->
                     traverse worker (Exists.refreshExists avoid existsF)
@@ -186,7 +185,7 @@ simplify sideCondition original =
                     simplifyEquals sideCondition (termLikeSort term)
                         =<< traverse simplifyTerm' equalsF
                 InF inF ->
-                    liftSimplifier . simplifyIn sideCondition =<< traverse simplifyTerm' inF
+                    simplifyIn sideCondition =<< traverse simplifyTerm' inF
       where
         _ :< predicateF = Recursive.project predicate
         ~avoid = freeVariableNames sideCondition
@@ -319,12 +318,9 @@ normalizeTop _ = pure (MultiOr.singleton MultiAnd.top)
  external solver or for the user, and the un-expanded form is more compact.
 -}
 simplifyNot ::
-    forall simplifier.
-    Monad simplifier =>
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Not () NormalForm ->
-    simplifier NormalForm
+    Simplifier NormalForm
 simplifyNot sideCondition Not{notChild = multiOr} = do
     disjunctiveNormalForms <- Logic.observeAllT $ do
         multiAnd <- Logic.scatter multiOr
@@ -352,7 +348,7 @@ simplifyNot sideCondition Not{notChild = multiOr} = do
   where
     applyUserDefined ::
         Predicate RewritingVariableName ->
-        MaybeT simplifier (MultiOr (Predicate RewritingVariableName))
+        MaybeT Simplifier (MultiOr (Predicate RewritingVariableName))
     applyUserDefined predicate = do
         -- produce a termlike that we can use for matching
         let -- HAAAACK: sort stripped in NormalForm of predicates
@@ -458,10 +454,9 @@ simplifyIff sideCondition Iff{iffFirst, iffSecond} = do
         normalizeOr Or{orSort = (), orFirst, orSecond}
 
 simplifyCeil ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Ceil () (OrPattern RewritingVariableName) ->
-    simplifier NormalForm
+    Simplifier NormalForm
 simplifyCeil sideCondition input =
     Ceil.simplify sideCondition input
 
@@ -539,11 +534,9 @@ simplifyExists _ = \exists@Exists{existsChild} ->
  @
 -}
 simplifyForall ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Forall () RewritingVariableName NormalForm ->
-    simplifier NormalForm
+    Simplifier NormalForm
 simplifyForall sideCondition forall' = do
     notChild <- mkNotSimplified forallChild
     existsNotChild <- mkExistsSimplified notChild
@@ -582,12 +575,10 @@ extractFirstAssignment someVariableName predicates =
         pure termLike
 
 simplifyEquals ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Sort ->
     Equals () (OrPattern RewritingVariableName) ->
-    simplifier NormalForm
+    Simplifier NormalForm
 simplifyEquals sideCondition sort equals = do
     result <- runMaybeT applyUserSimplification
     maybe (Equals.simplify sideCondition equals') return result
@@ -610,7 +601,7 @@ simplifyEquals sideCondition sort equals = do
     applyEquations ::
         Pattern RewritingVariableName ->
         Pattern RewritingVariableName ->
-        MaybeT simplifier (OrCondition RewritingVariableName)
+        MaybeT Simplifier (OrCondition RewritingVariableName)
     applyEquations
         (Pattern.splitTerm -> (leftTerm, leftCondition))
         (Pattern.splitTerm -> (rightTerm, rightCondition)) =
