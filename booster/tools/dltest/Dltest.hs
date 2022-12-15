@@ -26,7 +26,7 @@ main = do
         _ -> putStrLn "Too many arguments"
 
 app :: Symbol -> [Term] -> Term
-app = SymbolApplication
+app s = SymbolApplication s []
 
 asTotalFunction, asConstructor :: SymbolAttributes
 asTotalFunction = SymbolAttributes TotalFunction False False
@@ -39,6 +39,7 @@ con1, con2, f1, f2 :: Symbol
 con1 =
     Symbol
         { name = "con1"
+        , sortVars = []
         , resultSort = someSort
         , argSorts = [someSort]
         , attributes = asConstructor
@@ -46,6 +47,7 @@ con1 =
 con2 =
     Symbol
         { name = "con2"
+        , sortVars = []
         , resultSort = someSort
         , argSorts = [someSort]
         , attributes = asConstructor
@@ -53,6 +55,7 @@ con2 =
 f1 =
     Symbol
         { name = "f1"
+        , sortVars = []
         , resultSort = someSort
         , argSorts = [someSort]
         , attributes = asTotalFunction
@@ -60,6 +63,7 @@ f1 =
 f2 =
     Symbol
         { name = "f2"
+        , sortVars = []
         , resultSort = someSort
         , argSorts = [someSort]
         , attributes = asConstructor

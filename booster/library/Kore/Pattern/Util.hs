@@ -32,9 +32,16 @@ import Kore.Pattern.Base
 -- | Returns the sort of a term
 sortOfTerm :: Term -> Sort
 sortOfTerm (AndTerm _ child) = sortOfTerm child
-sortOfTerm (SymbolApplication symbol _) = symbol.resultSort
+sortOfTerm (SymbolApplication symbol sorts _) =
+    applySubst (Map.fromList $ zip symbol.sortVars sorts) symbol.resultSort
 sortOfTerm (DomainValue sort _) = sort
 sortOfTerm (Var Variable{variableSort}) = variableSort
+
+applySubst :: Map VarName Sort -> Sort -> Sort
+applySubst subst var@(SortVar n) =
+    fromMaybe var $ Map.lookup n subst
+applySubst subst (SortApp n args) =
+    SortApp n $ map (applySubst subst) args
 
 sortOfTermOrPredicate :: TermOrPredicate -> Maybe Sort
 sortOfTermOrPredicate (TermAndPredicate Pattern{term}) = Just (sortOfTerm term)
@@ -111,7 +118,7 @@ checkSymbolIsAc symbol =
 
 checkTermSymbols :: (Symbol -> Bool) -> Term -> Bool
 checkTermSymbols check = cata $ \case
-    SymbolApplicationF symbol ts -> check symbol && and ts
+    SymbolApplicationF symbol _ ts -> check symbol && and ts
     other -> and other
 
 isBottom :: Pattern -> Bool
