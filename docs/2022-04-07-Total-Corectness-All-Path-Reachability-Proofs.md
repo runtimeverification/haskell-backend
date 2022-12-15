@@ -61,6 +61,21 @@ Given this definition, the trace semantics for `AF φ` is
 Note that in the definitions above we have abused the notation for `⟦AF φ⟧`,
 as `AF φ` is not (yet) a ML formula.
 
+### Rewriting rules
+
+Within this setting, rewrite rules can be encoded as axioms of the form
+```
+φ(x) → ∙ ψ(x)
+```
+
+Note that in any model containing such an axiom, for any valuation,
+`⟦φ(x)⟧ ⊆ Prev(⟦ψ(x)⟧)`, i.e., for any `a ∈ ⟦φ(x)⟧` there exists `b ∈ ⟦ψ(x)⟧`
+such that `a τ b`.
+That is, any configurations described by `φ(x)` can transition in one step
+to a configuration described by `ψ(x)`.
+
+We would like to assume that interpretation `Prev`
+
 ### All-path finally as a ML formula
 
 In this section we will show that `AFφ` can actually be captured by ML formula,
@@ -164,41 +179,45 @@ Problem Description
 -------------------
 
 Given a set of reachability claims, of the form `φᵢ(xᵢ) → AF ∃z.ψᵢ(xᵢ,z)`,
-we are trying to prove all of them together, by well-founded induction on a
-relation `≺` given `measure(x)` defined on some variables `x` such that `x ⊆ xᵢ`.
+we are trying to prove all of them together, by induction on a well-founded
+relation `≺` on tupples of sorts corresponding to a set of variables `x`
+such that `x ⊆ xᵢ` (in a fixed order). For example, such a relation can be
+provided by means of a `measure` function having as domain the above mentioned
+tupples and as codomain a sort equipped with a well-founded ordering.
 
-The well-founded induction argument, which requires the `measure` to decrease before
-applying a claim as an induction hypothesis, will replace the coinductive argument,
-which requires that progress is made before applying a circularity.
+The well-founded induction argument, which requires the instance of variables
+to decrease before applying a claim as an induction hypothesis, will replace
+the coinductive argument, which requires that progress is made before applying
+a circularity.
 
 ## Approach
 
-Without reducing generality, we can assume that the patterns `φᵢ` (for all `i`)
-and `measure` share the same set of variables `x`.
+Without loss of generality, we can assume that the patterns `φᵢ` (for all `i`)
+share the same set of variables `x`.
 
 Since we're proving all claims together, we can gather them in a single goal,
 `P(x) ::= (φ₁(x) → AF ∃z.ψ₁(x,z)) ∧ ... ∧ (φₙ(x) → AF ∃z.ψₙ(x,z))`.
 
-A well-founded induction principle allowing to prove `P` using `measure` would
+A well-founded induction principle allowing to prove `P` using `≺` would
 be of the form
 
 ```
-  forall x0, (forall x, measure(x) ≺ measure(x0) -> P(x)) -> P(x0)
-  ---------------------------------------------------------------------
-                          forall x, P(x)
+  forall x0, (forall x, x ≺ x0 -> P(x)) -> P(x0)
+  ----------------------------------------------
+                  forall x, P(x)
 ```
 
 By the above induction principle, to prove `forall x, P(x)` it suffices to prove
-`forall x0, (forall x, measure(x) ≺ measure(x0) -> P(x)) -> P(x0)`
+`forall x0, (forall x, x ≺ x0 -> P(x)) -> P(x0)`
 
 Hence, fixing an arbitrary instance `x₀` of the variables and assuming the induction
-hypothesis `forall x, measure(x) ≺ measure(x0) -> P(x)`, we need to prove
+hypothesis `forall x, x ≺ x₀ -> P(x)`, we need to prove
 `P(x₀)`.
 
 By first-order manipulation we can transform the induction hypothesis for `P`
 into a set of induction hypotheses, one for each claim:
 ```
-∀x. φᵢ(x) ∧ measure(x) ≺ measure(x₀) → AF ∃z.ψᵢ(x,z)
+∀x. φᵢ(x) ∧ x ≺ x₀ → AF ∃z.ψᵢ(x,z)
 ```
 
 Similarly we can split the goal into a separate goal `φᵢ(x₀) → AF ∃z.ψᵢ(x₀,z)`
@@ -212,6 +231,21 @@ change from one step to the next.
 Moreover, we will consider the induction hypotheses to be derived claims to
 be applied as circularities, and denote them as `∀x. φᵢ(x) → AF ∃z.ψᵢ(x,z)`,
 where `φᵢ(x)` also contains the guard `measure(x) ≺ measure(x₀)`.
+
+Given
+
+
+Hence, instead of the circularity rule of Reachability logic we will add
+the following rule:
+
+
+```
+for all j, Γₓ₀ ∪ {φₖ(x) ∧ x ≺ x₀ → AF ∃zₖ ψₖ(x,zₖ)}ₖ ⊢ φⱼ(x₀) → AF ∃zⱼ ψⱼ(x₀,zⱼ)
+------------------------------------------------------------------------------------------------,
+      Γ ⊢ φᵢ(x) → AF ∃zᵢ ψᵢ(x,zᵢ)
+```
+where,
+
 
 ### Background on unification and remainders of unification
 
