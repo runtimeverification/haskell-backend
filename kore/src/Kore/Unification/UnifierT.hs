@@ -26,7 +26,8 @@ import Kore.Simplify.Condition qualified as ConditionSimplifier
 import Kore.Simplify.NotSimplifier
 import Kore.Simplify.Simplify (
     ConditionSimplifier (..),
-    MonadSimplify (..), Simplifier,
+    MonadSimplify (..),
+    Simplifier,
  )
 import Kore.Unification.SubstitutionSimplifier (
     substitutionSimplifier,

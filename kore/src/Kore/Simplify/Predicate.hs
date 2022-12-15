@@ -105,7 +105,6 @@ import Kore.Syntax.Forall qualified as Forall
 import Logic
 import Prelude.Kore
 
-
 simplify ::
     HasCallStack =>
     SideCondition RewritingVariableName ->

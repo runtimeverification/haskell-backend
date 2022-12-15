@@ -56,7 +56,8 @@ import Kore.Rewrite.RulePattern qualified as RulePattern (
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
-    Simplifier, MonadSimplify (liftSimplifier)
+    MonadSimplify (liftSimplifier),
+    Simplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute (

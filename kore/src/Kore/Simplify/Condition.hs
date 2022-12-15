@@ -73,10 +73,10 @@ create ::
     ConditionSimplifier simplifier
 create substitutionSimplifier =
     ConditionSimplifier $ simplify substitutionSimplifier
-
 {-# SPECIALIZE create ::
     SubstitutionSimplifier Simplifier ->
-    ConditionSimplifier Simplifier #-}
+    ConditionSimplifier Simplifier
+    #-}
 
 {- | Simplify a 'Condition'.
 
@@ -166,14 +166,14 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition original = d
                 & lift
         predicate' <- scatter predicates'
         return $ Conditional.andCondition conditional' predicate'
-
 {-# SPECIALIZE simplify ::
     forall any.
     HasCallStack =>
     SubstitutionSimplifier Simplifier ->
     SideCondition RewritingVariableName ->
     Conditional RewritingVariableName any ->
-    LogicT Simplifier (Conditional RewritingVariableName any) #-}
+    LogicT Simplifier (Conditional RewritingVariableName any)
+    #-}
 
 {- | Simplify a conjunction of predicates by applying predicate and term
 replacements and by simplifying each predicate with the assumption that the

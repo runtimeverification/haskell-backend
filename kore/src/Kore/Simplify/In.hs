@@ -90,10 +90,11 @@ makeEvaluateIn sideCondition first second
         NormalForm.toOrCondition <$> liftSimplifier (Ceil.makeEvaluate sideCondition first)
     | Pattern.isBottom first || Pattern.isBottom second = return OrCondition.bottom
     | otherwise =
-        liftSimplifier $ (And.makeEvaluate pattSort Not.notSimplifier sideCondition)
-            (MultiAnd.make [first, second])
-            & OrPattern.observeAllT
-            >>= Ceil.simplifyEvaluated sideCondition
-            <&> NormalForm.toOrCondition
+        liftSimplifier $
+            (And.makeEvaluate pattSort Not.notSimplifier sideCondition)
+                (MultiAnd.make [first, second])
+                & OrPattern.observeAllT
+                >>= Ceil.simplifyEvaluated sideCondition
+                <&> NormalForm.toOrCondition
   where
     pattSort = patternSort first

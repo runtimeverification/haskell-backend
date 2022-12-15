@@ -210,4 +210,4 @@ mkMultiAndPredicate predicates =
     return $ fold predicates
 
 notSimplifier :: NotSimplifier Simplifier
-notSimplifier = NotSimplifier simplify 
+notSimplifier = NotSimplifier simplify

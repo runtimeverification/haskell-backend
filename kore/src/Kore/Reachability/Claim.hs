@@ -880,10 +880,11 @@ checkSimpleImplication inLeft inRight existentials =
                     -- which we achieve by simplifying it
 
                     toRefute <-
-                        liftSimplifier $ Pattern.simplify
-                            . OrPattern.toPattern sort
-                            . MultiOr.map combineWithAntecedent
-                            $ notRhs
+                        liftSimplifier $
+                            Pattern.simplify
+                                . OrPattern.toPattern sort
+                                . MultiOr.map combineWithAntecedent
+                                $ notRhs
 
                     liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc toRefute
 

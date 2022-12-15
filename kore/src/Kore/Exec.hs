@@ -189,8 +189,9 @@ import Kore.Simplify.API (
  )
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
+    MonadSimplify (liftSimplifier),
     Simplifier,
-    askMetadataTools, MonadSimplify (liftSimplifier)
+    askMetadataTools,
  )
 import Kore.Syntax.Module (
     ModuleName,

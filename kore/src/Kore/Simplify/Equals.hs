@@ -205,13 +205,13 @@ simplifyEvaluated sort sideCondition first second
                     makeEvaluateFunctionalOr sideCondition secondP firstPatterns
             _
                 | OrPattern.isPredicate first && OrPattern.isPredicate second ->
-                        Iff.simplifyEvaluated sort sideCondition first second
-                            & fmap (MultiOr.map Pattern.withoutTerm)
+                    Iff.simplifyEvaluated sort sideCondition first second
+                        & fmap (MultiOr.map Pattern.withoutTerm)
                 | otherwise ->
-                        makeEvaluate
-                            (OrPattern.toPattern sort first)
-                            (OrPattern.toPattern sort second)
-                            sideCondition
+                    makeEvaluate
+                        (OrPattern.toPattern sort first)
+                        (OrPattern.toPattern sort second)
+                        sideCondition
   where
     firstPatterns = toList first
     secondPatterns = toList second

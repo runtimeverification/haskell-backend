@@ -24,7 +24,9 @@ import Kore.Simplify.NotSimplifier (
     NotSimplifier (..),
  )
 import Kore.Simplify.Simplify (
-    TermSimplifier, Simplifier, liftSimplifier
+    Simplifier,
+    TermSimplifier,
+    liftSimplifier,
  )
 import Kore.Unification.Unify as Unify
 import Prelude.Kore

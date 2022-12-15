@@ -135,10 +135,10 @@ makeExpandedApplication ::
     LogicT Simplifier (ExpandedApplication RewritingVariableName)
 makeExpandedApplication sideCondition symbol children = do
     merged <-
-            mergePredicatesAndSubstitutions
-                sideCondition
-                (fmap Pattern.predicate children)
-                (fmap Pattern.substitution children)
+        mergePredicatesAndSubstitutions
+            sideCondition
+            (fmap Pattern.predicate children)
+            (fmap Pattern.substitution children)
     let term =
             symbolApplication
                 symbol

@@ -116,7 +116,8 @@ import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier (..),
     Simplifier,
     TermSimplifier,
-    applicationAxiomSimplifier, liftSimplifier,
+    applicationAxiomSimplifier,
+    liftSimplifier,
  )
 import Kore.Unification.Unify (
     MonadUnify,
