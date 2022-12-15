@@ -9,7 +9,6 @@ module Kore.Syntax.Json.Internalise (
     internalisePredicate,
     PatternError (..),
     checkSort,
-    matchSorts,
     SortError (..),
 ) where
 
@@ -24,7 +23,6 @@ import Data.List (foldl1', nub)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Map (Map)
 import Data.Map qualified as Map
-import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text, intercalate, pack)
@@ -106,20 +104,16 @@ internaliseTerm sortVars definition@KoreDefinition{sorts, symbols} pat =
             symbol <-
                 maybe (throwE $ UnknownSymbol name symPatt) pure $
                     Map.lookup name.getId symbols
-            internalAppSorts <- traverse lookupInternalSort' appSorts
-            -- check that all argument sorts "agree". Variables
-            -- can stand for anything but need to be consistent (a
-            -- matching problem returning a substitution)
-            sortSubst <-
-                mapExcept (first $ PatternSortError pat) $
-                    foldM (uncurry . matchSorts') Map.empty $
-                        zip symbol.argSorts internalAppSorts
-            -- finalSort is the symbol result sort with
-            -- variables substituted using the arg.sort match
-            let finalSort = applySubst sortSubst symbol.resultSort
-                internalisedSymbol = symbol{Internal.resultSort = finalSort}
-            Internal.SymbolApplication internalisedSymbol
-                <$> mapM recursion args
+            -- Internalise sort variable instantiation (appSorts)
+            -- Length must match sort variables in symbol declaration.
+            unless (length appSorts == length symbol.sortVars) $
+                throwE $
+                    PatternSortError pat $
+                        GeneralError
+                            "wrong sort argument count for symbol"
+            Internal.SymbolApplication symbol
+                <$> mapM lookupInternalSort' appSorts
+                <*> mapM recursion args
         Syntax.KJString{value} ->
             pure $ Internal.DomainValue (Internal.SortApp "SortString" []) value
         Syntax.KJTop{} -> predicate
@@ -333,53 +327,13 @@ explodeAnd Syntax.KJAnd{first = arg1, second = arg2} =
 explodeAnd other = [other]
 
 ----------------------------------------
---- TODO find a better home for these ones. All relating to sort
---- checks, which we might not want to do too much of OTOH.
-
-{- | Tries to find a substitution of sort variables in the given sort
- pattern (with variables) to match the given subject
--}
-matchSorts ::
-    -- | Pattern (contains variables to substitute)
-    Internal.Sort ->
-    -- | Subject (variables here are treated as constants)
-    Internal.Sort ->
-    Except SortError (Map Internal.VarName Internal.Sort)
-matchSorts = matchSorts' Map.empty
-
-{- | Internal matching function starting with a given substitution.
- Tries to find a substitution of sort variables in the given sort
- pattern (with variables) to match the given subject
--}
-matchSorts' ::
-    -- | starting substitution (accumulated)
-    Map Internal.VarName Internal.Sort ->
-    -- | Pattern (contains variables to substitute)
-    Internal.Sort ->
-    -- | Subject (variables here are treated as constants)
-    Internal.Sort ->
-    Except SortError (Map Internal.VarName Internal.Sort)
-matchSorts' subst _pat _subj = do
-    pure subst -- FIXME! traverse pattern and subject, consider given starting substitution
-
-{- | Replace occurrences of the map key variable names in the given
- sort by their mapped sorts. There are no local binders so the
- replacement is a straightforward traversal.
--}
-applySubst :: Map Internal.VarName Internal.Sort -> Internal.Sort -> Internal.Sort
-applySubst subst var@(Internal.SortVar n) =
-    fromMaybe var $ Map.lookup n subst
-applySubst subst (Internal.SortApp n args) =
-    Internal.SortApp n $ map (applySubst subst) args
 
 {- | check that two (internal) sorts are compatible.
 
  For a sort application, ensure the sort constructor is the same,
  then check recursively that the arguments are compatible, too.
 
- Shows that the whole approach taken in this module is horribly
- incomplete wrt. sort variables (we need to propagate assumed sort
- variable bindings from the bottom up the AST to decide this.
+ Sort variables must be eliminated (instantiated) before checking.
 -}
 ensureSortsAgree ::
     Internal.Sort ->
