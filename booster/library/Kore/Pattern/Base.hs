@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 {- |
@@ -30,6 +31,9 @@ data Sort
       SortVar VarName
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData)
+
+pattern SortBool :: Sort
+pattern SortBool = SortApp "SortBool" []
 
 -- | A variable for symbolic execution or for terms in a rule.
 data Variable = Variable
@@ -66,6 +70,9 @@ data Term
     deriving anyclass (NFData)
 
 makeBaseFunctor ''Term
+
+pattern AndBool :: [Term] -> Term
+pattern AndBool ts <- SymbolApplication (Symbol "Lbl'Unds'andBool'Unds'" _ _ _ _) _ ts
 
 {- | A predicate describes constraints on terms. It will always evaluate
    to 'Top' or 'Bottom'. Notice that 'Predicate's don't have a sort.

@@ -48,14 +48,16 @@ import Kore.Pattern.Rewrite (RewriteResult (..), performRewrite)
 import Kore.Syntax.Json (KoreJson (..), addHeader)
 import Kore.Syntax.Json.Externalise (externalisePattern)
 import Kore.Syntax.Json.Internalise (PatternError, internalisePattern)
+import System.Posix.DynamicLinker qualified as Linker
 
 respond ::
     forall m.
     MonadCatch m =>
     MonadLoggerIO m =>
     KoreDefinition ->
+    Maybe Linker.DL ->
     Respond (API 'Req) m (API 'Res)
-respond def@KoreDefinition{} =
+respond def@KoreDefinition{} mLlvmLibrary =
     catchingServerErrors . \case
         Execute req -> do
             Log.logDebug "Testing JSON-RPC server."
@@ -70,7 +72,7 @@ respond def@KoreDefinition{} =
                     let cutPoints = fromMaybe [] req.cutPointRules
                         terminals = fromMaybe [] req.terminalRules
                         mbDepth = fmap getNat req.maxDepth
-                    execResponse <$> performRewrite def mbDepth cutPoints terminals pat
+                    execResponse <$> performRewrite def mLlvmLibrary mbDepth cutPoints terminals pat
 
         -- this case is only reachable if the cancel appeared as part of a batch request
         Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
@@ -167,8 +169,8 @@ catchingServerErrors =
             Log.logError $ "Server error: " <> Text.pack (show err)
             pure $ Left (ErrorObj "Server error" (-32032) $ mkError err)
 
-runServer :: Int -> KoreDefinition -> (LogLevel, [LogLevel]) -> IO ()
-runServer port internalizedModule (logLevel, customLevels) =
+runServer :: Int -> KoreDefinition -> Maybe Linker.DL -> (LogLevel, [LogLevel]) -> IO ()
+runServer port internalizedModule mLlvmLibrary (logLevel, customLevels) =
     do
         Log.runStderrLoggingT . Log.filterLogger levelFilter
         $ jsonrpcTCPServer
@@ -176,15 +178,15 @@ runServer port internalizedModule (logLevel, customLevels) =
             V2
             False
             srvSettings
-            (srv internalizedModule)
+            (srv internalizedModule mLlvmLibrary)
   where
     levelFilter _source lvl =
         lvl `elem` customLevels || lvl >= logLevel && lvl <= LevelError
 
     srvSettings = serverSettings port "*"
 
-srv :: MonadLoggerIO m => KoreDefinition -> JSONRPCT m ()
-srv internalizedModule = do
+srv :: MonadLoggerIO m => KoreDefinition -> Maybe Linker.DL -> JSONRPCT m ()
+srv internalizedModule mLlvmLibrary = do
     reqQueue <- liftIO $ atomically newTChan
     let mainLoop tid =
             receiveBatchRequest >>= \case
@@ -220,7 +222,7 @@ srv internalizedModule = do
             sendResponses :: BatchResponse -> Log.LoggingT IO ()
             sendResponses r = flip Log.runLoggingT logger $ flip runReaderT rpcSession $ sendBatchResponse r
             respondTo :: Request -> Log.LoggingT IO (Maybe Response)
-            respondTo = buildResponse (respond internalizedModule)
+            respondTo = buildResponse (respond internalizedModule mLlvmLibrary)
 
             cancelReq :: BatchRequest -> Log.LoggingT IO ()
             cancelReq = \case

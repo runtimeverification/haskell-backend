@@ -3,6 +3,7 @@ Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
 -}
 module Kore.Pattern.Util (
+    applySubst,
     sortOfTerm,
     sortOfTermOrPredicate,
     retractPattern,
@@ -17,6 +18,7 @@ module Kore.Pattern.Util (
     checkSymbolIsAc,
     checkTermSymbols,
     isBottom,
+    isConcrete,
 ) where
 
 import Data.Foldable (fold)
@@ -84,6 +86,10 @@ freeVariables :: Term -> Set Variable
 freeVariables = cata $ \case
     VarF var -> Set.singleton var
     other -> fold other
+
+-- | Don't use unless therm size is small
+isConcrete :: Term -> Bool
+isConcrete = Set.null . freeVariables
 
 isConstructorSymbol :: Symbol -> Bool
 isConstructorSymbol symbol =
