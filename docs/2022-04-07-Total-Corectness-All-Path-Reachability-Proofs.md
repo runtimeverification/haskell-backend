@@ -15,12 +15,12 @@ For any pattern `φ`, set variable `X`, and subset `S` of the model (of the righ
 let `⟦φ⟧ₓ₌ₛ` denote the interpretation of `φ` in the model using the fixed
 interpretation with the exception that set variable `X` is interpreted as `S`.
 
-### Reducibility, Transitions, Traces
+### Accessibility in one step. Transitions
 
 Assume that an ML signature contains a _next_ operator `•` (on the sort of configurations).
 
-The intuition for `∙ φ` is that it comprises all configurations which can
-transition to `φ` in a single step.
+The intuition for `∙ φ` is that it comprises all configurations which can,
+in one step, transition to a configuration satisfying `φ`.
 
 Let `Cfg` be the interpretation of the configurations sort in the model.
 Let `Prev : Cfg -> Cfg` be defined as the interpretation of `∙`, that is,
@@ -30,6 +30,22 @@ We define the relation `τ` on `Cfg` by `a τ b := a ∈ Prev({b})`.
 We define the unary predicates `reducible` and `stuck` on `Cfg` by
 `reducible a := exists b, a τ b` and `stuck a := ¬ reducible a`.
 Note that `stuck a ⟺ Prev⁻¹({a}) = ∅`.
+
+The set of `reducible` configurations, `Prev(Cfg)`, can be expressed as the
+interpretation of pattern `∙ ⊤`.
+
+### Rewriting axioms
+
+Within this setting, rewrite rules can be encoded as axioms of the form
+`φ(x) → ∙ ψ(x)`, which constrain the interpretation of `Prev` in models.
+
+Note that in any model satisfying such an axiom, for any valuation, it must be that
+`⟦φ(x)⟧ ⊆ Prev(⟦ψ(x)⟧)`, i.e., for any `a ∈ ⟦φ(x)⟧` there exists `b ∈ ⟦ψ(x)⟧`
+such that `a τ b`.
+That is, any configuration described by `φ(x)` can transition in one step
+to a configuration described by `ψ(x)`.
+
+### Traces
 
 We can define the set of complete, possibly infinite, traces of the transition
 system determined by `Prev⁻¹` starting in an element `a`, called `Traces(a)`,
@@ -59,22 +75,212 @@ Given this definition, the trace semantics for `AF φ` is
 ```
 
 Note that in the definitions above we have abused the notation for `⟦AF φ⟧`,
-as `AF φ` is not (yet) a ML formula.
+as `AF φ` is not (yet) a ML formula; we will continue to do so in the following
+sections, while mentioning that a proper expression of `AF φ` as a ML formula
+will be presented later in the document.
 
-### Rewriting rules
+### All-path finally reachability claims
 
-Within this setting, rewrite rules can be encoded as axioms of the form
+Given the definition of all-path finally discussed in the section above,
+an all-path finally reachability claim is of the form `φ → AF ψ` (where `φ` and
+`ψ` may contain free variables) and basically states that from any configuration
+`γ` satisfying `φ`, a configuration satisfying `ψ` will be reached
+in a finite number of steps on any path.
+
+Since the desired configuration is reached after a finite number of steps,
+such reachability claims guarantee total correctness.
+
+Problem Description
+-------------------
+
+Given an axiomatization of a transition system as a set of rewrite axioms of the
+form presented above, we want to devise a set of rules to allow us to prove
+reachability claims, with the following observations:
+- the proof of a claim can be reduced to proving other claims
+- we might need to use a claim to prove itself (loops, recursive functions)
+- there might be mutually-dependent claims (mutually-recursive functions)
+
+To be more specific, we want a set of rules to derive judgements of the form
+`Γ ⊢ᴬ φ → AF ψ`; here `Γ` is the rewrite system context, of the form
+`Γ := (Σ, Γₛ, Γᵣ, Γₕ)`, where
+- `Σ` is the signature containing constructors, functions and predicates used to
+  decribe and (statically) manipulate configurations and datatypes.
+- `Γₛ` are "structural" axioms, used to describe the static semantics of
+  configurations and datatypes
+- `Γᵣ` contains the rewrite axioms
+- `Γₕ` contains trusted reachability claims
+
+
+Approach
+--------
+
+We will first present the rules, then argue about their soundness w.r.t. the
+model interpretations.
+
+
+### Proper Rules
+
+#### Rule of Consequence
+
 ```
-φ(x) → ∙ ψ(x)
+Γₛ ⊢ᴹᴸ φ → φ'   Γ ⊢ᴬ φ' → AF ψ'   Γₛ ⊢ᴹᴸ ψ' → ψ
+------------------------------------------------
+                Γ ⊢ᴬ φ → AF ψ
 ```
 
-Note that in any model containing such an axiom, for any valuation,
-`⟦φ(x)⟧ ⊆ Prev(⟦ψ(x)⟧)`, i.e., for any `a ∈ ⟦φ(x)⟧` there exists `b ∈ ⟦ψ(x)⟧`
-such that `a τ b`.
-That is, any configurations described by `φ(x)` can transition in one step
-to a configuration described by `ψ(x)`.
+#### Rule of Reflexivity
 
-We would like to assume that interpretation `Prev`
+
+```
+      ✓
+--------------
+ Γ ⊢ᴬ φ → AF φ
+```
+
+#### Rule of Transitivity
+
+
+```
+ Γ ⊢ᴬ φ → AF χ   Γ ⊢ᴬ χ → AF ψ
+------------------------------
+        Γ ⊢ᴬ φ → AF ψ
+```
+
+#### Rule of Disjunction
+
+Disjunction on the hypothesis generates a claim for each disjunct:
+```
+Γ ⊢ᴬ φ₁ → AF ψ   Γ ⊢ᴬ φ₂ → AF ψ
+-------------------------------
+      Γ ⊢ᴬ φ₁ ∨ φ₂ → AF ψ
+```
+
+#### Rule of Generalization
+
+Existential quantification of the hypothesis can be removed
+```
+  Γ ⊢ᴬ φ(y) → AF ψ
+-------------------
+Γ ⊢ᴬ ∃y.φ(y) → AF ψ
+```
+
+#### Rule of Trusted Claim
+
+```
+      ✓
+--------------- where φ → AF ψ ∈ Γₜ
+ Γ ⊢ᴬ φ → AF ψ
+```
+
+#### Rule of STEP
+Assuming that the transition system only admits transitions which are specified
+by the rules in `Γᵣ`, we can state the following one-step rule:
+```
+       Γₛ ⊢ᴹᴸ φ ∧ ⋀ᵢ¬∃xᵢ.φᵢ(xᵢ) → ⊥
+------------------------------------------ if Γᵣ=⋃ᵢ{φᵢ(xᵢ) → ∙ ψᵢ(xᵢ)}
+Γ ⊢ᴬ φ → AF ⋁ᵢ(∃xᵢ. ⌈φ ∧ φᵢ(xᵢ)⌉ ∧ ψᵢ(xᵢ))
+```
+
+#### Rule of Induction
+Let Γₕ = ⋃ᵢ{φᵢ(x) → AF ψᵢ(x)} be a set of claims indexed by the same variables `x`.
+Assume a fixed order among the variables of `x`, and let `≺` be a well-founded
+order on tupples of the sorts of the variables in `x` (in the assumed fixed order).
+For a given context `Γ`, let `Γ'=(Σ', Γ'ₛ, Γᵣ, Γ'ₜ)` be defined by:
+- `Σ' = Σ ∪ Σ≺ ∪ c₀`, where `c₀` is a fresh set of constants corresponding to the
+  variables in `x`, of the appropriate sorts (and in the same fixed order) and
+  `Σ≺` may contain additional symbols needed to axiomatize `≺`
+- `Γ'ₛ = Γₛ ∪ Γ≺ ∪ Γₓ`, where `Γ≺` contains axioms for defining `≺` and
+  `Γₓ` contains an axiom of the form `∃z.z = c` for any constant `c` in `c₀`
+- `Γ'ₜ = Γₜ ∪ ⋃ᵢ{φᵢ(x) ∧ x ≺ c₀ → AF ψᵢ(x)}`
+
+Given the above, the rule of induction for (Γₕ, x, ≺) is
+```
+for all j,    Γ' ⊢ᴬ φⱼ(c₀) → AF ψⱼ(c₀)
+---------------------------------------, where Γₕ = ⋃ⱼ{φⱼ(x) → AF ψⱼ(x)}
+        Γ ⊢ φᵢ(x) → AF ψᵢ(x)
+```
+
+
+### Derived rules
+
+#### Rule of Eliminating the Conclusion
+
+We can always filter out the portion of the hypothesis for which the conclusion
+already holds
+```
+Γ ⊢ᴬ φ(x)∧¬∃z.ψ(x,z) → AF ∃z.ψ(x,z)
+-----------------------------------
+     Γ ⊢ᴬ φ(x) → AF ∃z.ψ(x,z)
+```
+
+ like  a set of already proven/ trusted reachability claims, we
+want to prove a set of reachability claims, of the form `φᵢ(x) → AF ∃zᵢ.ψᵢ(x,zᵢ)`,
+sharing the same set of free variables, we are trying to prove all of them together,
+by induction on a well-founded relation `≺` on tupples of sorts corresponding to
+the set of variables `x` (in a fixed order). For example, such a relation can be
+provided by means of a `measure` function having as domain the above mentioned
+tupples and as codomain a sort equipped with a well-founded ordering.
+
+The well-founded induction argument, which requires the instance of variables
+to decrease before applying a claim as an induction hypothesis, will replace
+the coinductive argument, which requires that progress is made before applying
+a circularity.
+
+## Approach
+
+Without loss of generality, we can assume that the patterns `φᵢ` (for all `i`)
+share the same set of variables `x`.
+
+Since we're proving all claims together, we can gather them in a single goal,
+`P(x) ::= (φ₁(x) → AF ∃z.ψ₁(x,z)) ∧ ... ∧ (φₙ(x) → AF ∃z.ψₙ(x,z))`.
+
+A well-founded induction principle allowing to prove `P` using `≺` would
+be of the form
+
+```
+  forall x0, (forall x, x ≺ x0 -> P(x)) -> P(x0)
+  ----------------------------------------------
+                  forall x, P(x)
+```
+
+By the above induction principle, to prove `forall x, P(x)` it suffices to prove
+`forall x0, (forall x, x ≺ x0 -> P(x)) -> P(x0)`
+
+Hence, fixing an arbitrary instance `x₀` of the variables and assuming the induction
+hypothesis `forall x, x ≺ x₀ -> P(x)`, we need to prove
+`P(x₀)`.
+
+By first-order manipulation we can transform the induction hypothesis for `P`
+into a set of induction hypotheses, one for each claim:
+```
+∀x. φᵢ(x) ∧ x ≺ x₀ → AF ∃z.ψᵢ(x,z)
+```
+
+Similarly we can split the goal into a separate goal `φᵢ(x₀) → AF ∃z.ψᵢ(x₀,z)`
+for each claim.
+
+Since we might be using the claims to advance the proof of the claim, to avoid
+confusion (and to reduce caring about indices) we will denote a goal with
+`φ(x₀) → AF ∃z.ψ(x₀,z)` in all subsequent steps, although the exact goal might
+change from one step to the next.
+
+Moreover, we will consider the induction hypotheses to be derived claims to
+be applied as circularities, and denote them as `∀x. φᵢ(x) → AF ∃z.ψᵢ(x,z)`,
+where `φᵢ(x)` also contains the guard `measure(x) ≺ measure(x₀)`.
+
+Given
+
+
+Hence, instead of the circularity rule of Reachability logic we will add
+the following rule:
+
+
+```
+for all j, Γₓ₀ ∪ {φₖ(x) ∧ x ≺ x₀ → AF ∃zₖ ψₖ(x,zₖ)}ₖ ⊢ φⱼ(x₀) → AF ∃zⱼ ψⱼ(x₀,zⱼ)
+------------------------------------------------------------------------------------------------,
+      Γ ⊢ φᵢ(x) → AF ∃zᵢ ψᵢ(x,zᵢ)
+```
+where,
 
 ### All-path finally as a ML formula
 
@@ -160,91 +366,6 @@ Justified by the above, in the sequel we will use `AF φ` to denote `μX.φ ∨ 
 
 A consequence of the above is that, by the deduction rules associated with `μ`,
 `AF φ` can always be "unrolled" to `φ ∨ (○ AF φ ∧ •⊤)`.
-
-### All-path finally reachability claims
-
-Given the definition of all-path finally discussed in the section above,
-an all-path finally reachability claim is of the form
-```
-φ(x) → AF ∃z.ψ(x,z)
-```
-and basically states that from any configuration `γ` satisfying `φ(x)`
-for some `x`, a configuration satisfying `ψ(x,z)` for some `z` will be reached
-in a finite number of steps on any path.
-
-Since the desired configuration is reached after a finite number of steps,
-such reachability claims guarantee total correctness.
-
-Problem Description
--------------------
-
-Given a set of reachability claims, of the form `φᵢ(xᵢ) → AF ∃z.ψᵢ(xᵢ,z)`,
-we are trying to prove all of them together, by induction on a well-founded
-relation `≺` on tupples of sorts corresponding to a set of variables `x`
-such that `x ⊆ xᵢ` (in a fixed order). For example, such a relation can be
-provided by means of a `measure` function having as domain the above mentioned
-tupples and as codomain a sort equipped with a well-founded ordering.
-
-The well-founded induction argument, which requires the instance of variables
-to decrease before applying a claim as an induction hypothesis, will replace
-the coinductive argument, which requires that progress is made before applying
-a circularity.
-
-## Approach
-
-Without loss of generality, we can assume that the patterns `φᵢ` (for all `i`)
-share the same set of variables `x`.
-
-Since we're proving all claims together, we can gather them in a single goal,
-`P(x) ::= (φ₁(x) → AF ∃z.ψ₁(x,z)) ∧ ... ∧ (φₙ(x) → AF ∃z.ψₙ(x,z))`.
-
-A well-founded induction principle allowing to prove `P` using `≺` would
-be of the form
-
-```
-  forall x0, (forall x, x ≺ x0 -> P(x)) -> P(x0)
-  ----------------------------------------------
-                  forall x, P(x)
-```
-
-By the above induction principle, to prove `forall x, P(x)` it suffices to prove
-`forall x0, (forall x, x ≺ x0 -> P(x)) -> P(x0)`
-
-Hence, fixing an arbitrary instance `x₀` of the variables and assuming the induction
-hypothesis `forall x, x ≺ x₀ -> P(x)`, we need to prove
-`P(x₀)`.
-
-By first-order manipulation we can transform the induction hypothesis for `P`
-into a set of induction hypotheses, one for each claim:
-```
-∀x. φᵢ(x) ∧ x ≺ x₀ → AF ∃z.ψᵢ(x,z)
-```
-
-Similarly we can split the goal into a separate goal `φᵢ(x₀) → AF ∃z.ψᵢ(x₀,z)`
-for each claim.
-
-Since we might be using the claims to advance the proof of the claim, to avoid
-confusion (and to reduce caring about indices) we will denote a goal with
-`φ(x₀) → AF ∃z.ψ(x₀,z)` in all subsequent steps, although the exact goal might
-change from one step to the next.
-
-Moreover, we will consider the induction hypotheses to be derived claims to
-be applied as circularities, and denote them as `∀x. φᵢ(x) → AF ∃z.ψᵢ(x,z)`,
-where `φᵢ(x)` also contains the guard `measure(x) ≺ measure(x₀)`.
-
-Given
-
-
-Hence, instead of the circularity rule of Reachability logic we will add
-the following rule:
-
-
-```
-for all j, Γₓ₀ ∪ {φₖ(x) ∧ x ≺ x₀ → AF ∃zₖ ψₖ(x,zₖ)}ₖ ⊢ φⱼ(x₀) → AF ∃zⱼ ψⱼ(x₀,zⱼ)
-------------------------------------------------------------------------------------------------,
-      Γ ⊢ φᵢ(x) → AF ∃zᵢ ψᵢ(x,zᵢ)
-```
-where,
 
 
 ### Background on unification and remainders of unification
