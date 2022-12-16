@@ -22,6 +22,7 @@ import Language.C.Analysis.TravMonad qualified as C
 import Language.C.Data.Ident qualified as C
 import Language.Haskell.TH qualified as TH
 import Language.Haskell.TH.Syntax qualified as TH
+import System.FilePath (takeDirectory)
 import System.Posix.DynamicLinker qualified as Linker
 import Text.Casing (Identifier (..), fromAny, toCamel, toPascal)
 
@@ -48,6 +49,7 @@ parseCHeader input_file =
         let cfg =
                 cfg'
                     { Hpp.curFileNameF = Just input_file
+                    , Hpp.includePathsF = Just [takeDirectory input_file]
                     , Hpp.spliceLongLinesF = Just True
                     , Hpp.eraseCCommentsF = Just True
                     , Hpp.inhibitLinemarkersF = Just True
