@@ -199,7 +199,7 @@ evaluatePattern
     childrenCondition
     termLike
     defaultValue =
-      do
+        do
             BuiltinAndAxiomSimplifier evaluator <- lookupAxiomSimplifier termLike
             do
                 merged <- do
@@ -260,7 +260,8 @@ evaluatePattern
     ( Maybe SideCondition.Representation ->
       MaybeT Simplifier (OrPattern RewritingVariableName)
     ) ->
-    MaybeT Simplifier (OrPattern RewritingVariableName) #-}
+    MaybeT Simplifier (OrPattern RewritingVariableName)
+    #-}
 {-# SPECIALIZE evaluatePattern ::
     SideCondition RewritingVariableName ->
     Condition RewritingVariableName ->
@@ -268,7 +269,8 @@ evaluatePattern
     ( Maybe SideCondition.Representation ->
       MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) (OrPattern RewritingVariableName)
     ) ->
-    MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) (OrPattern RewritingVariableName) #-}
+    MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) (OrPattern RewritingVariableName)
+    #-}
 
 lookupAxiomSimplifier ::
     MonadSimplify simplifier =>
@@ -357,10 +359,12 @@ lookupAxiomSimplifier termLike = do
         (Just eval1, Just eval2) -> Just $ simplifierWithFallback eval1 eval2
 {-# SPECIALIZE lookupAxiomSimplifier ::
     TermLike RewritingVariableName ->
-    MaybeT Simplifier BuiltinAndAxiomSimplifier #-}
+    MaybeT Simplifier BuiltinAndAxiomSimplifier
+    #-}
 {-# SPECIALIZE lookupAxiomSimplifier ::
     TermLike RewritingVariableName ->
-    MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) BuiltinAndAxiomSimplifier #-}
+    MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) BuiltinAndAxiomSimplifier
+    #-}
 
 criticalMissingHook :: Symbol -> Text -> a
 criticalMissingHook symbol hookName =
