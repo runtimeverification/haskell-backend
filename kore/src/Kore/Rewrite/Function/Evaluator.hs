@@ -68,7 +68,6 @@ import Kore.Simplify.Simplify as AttemptedAxiom (
 import Kore.Simplify.Simplify as Simplifier
 import Kore.TopBottom
 import Kore.Unparser
-import Logic (LogicT)
 import Logic qualified
 import Prelude.Kore
 import Pretty ((<+>))
@@ -96,11 +95,11 @@ evaluateApplication
         finishT $ do
             for_ canMemoize recallOrPattern
             results <-
-                maybeEvaluatePattern
+                evaluatePattern
+                    sideCondition
                     childrenCondition
                     termLike
                     unevaluated
-                    sideCondition
                     & maybeT (unevaluated Nothing) return
                     & lift
             for_ canMemoize (recordOrPattern results)
@@ -177,7 +176,10 @@ evaluateApplication
             | otherwise =
                 return ()
 
--- | Evaluates axioms on patterns.
+{- | Evaluates axioms on patterns.
+
+Returns Nothing if there is no axiom for the pattern's identifier.
+-}
 evaluatePattern ::
     forall simplifier.
     MonadSimplify simplifier =>
@@ -189,20 +191,68 @@ evaluatePattern ::
     TermLike RewritingVariableName ->
     -- | The default value
     ( Maybe SideCondition.Representation ->
-      simplifier (OrPattern RewritingVariableName)
+      MaybeT simplifier (OrPattern RewritingVariableName)
     ) ->
-    simplifier (OrPattern RewritingVariableName)
+    MaybeT simplifier (OrPattern RewritingVariableName)
 evaluatePattern
     sideCondition
     childrenCondition
-    patt
+    termLike
     defaultValue =
-        maybeEvaluatePattern
-            childrenCondition
-            patt
-            defaultValue
-            sideCondition
-            & maybeT (defaultValue Nothing) return
+      do
+            BuiltinAndAxiomSimplifier evaluator <- lookupAxiomSimplifier termLike
+            do
+                merged <- do
+                    result <- liftSimplifier $ evaluator termLike sideCondition
+                    flattened <- case result of
+                        AttemptedAxiom.Applied
+                            AttemptedAxiomResults
+                                { results = orResults
+                                , remainders = orRemainders
+                                } -> do
+                                simplified <- lift $ OrPattern.traverse simplifyIfNeeded orResults
+                                let simplifiedResult = MultiOr.flatten simplified
+                                return
+                                    ( AttemptedAxiom.Applied
+                                        AttemptedAxiomResults
+                                            { results = simplifiedResult
+                                            , remainders = orRemainders
+                                            }
+                                    )
+                        _ -> return result
+                    liftSimplifier $
+                        mergeWithConditionAndSubstitution
+                            sideCondition
+                            childrenCondition
+                            flattened
+                case merged of
+                    AttemptedAxiom.NotApplicable ->
+                        defaultValue Nothing
+                    AttemptedAxiom.NotApplicableUntilConditionChanges c ->
+                        defaultValue (Just c)
+                    AttemptedAxiom.Applied attemptResults ->
+                        return $ MultiOr.merge results remainders
+                      where
+                        AttemptedAxiomResults{results, remainders} =
+                            attemptResults
+      where
+        unchangedPatt =
+            Conditional
+                { term = termLike
+                , predicate = predicate
+                , substitution = substitution
+                }
+          where
+            Conditional{term = (), predicate, substitution} = childrenCondition
+
+        simplifyIfNeeded ::
+            Pattern RewritingVariableName ->
+            simplifier (OrPattern RewritingVariableName)
+        simplifyIfNeeded toSimplify
+            | toSimplify == unchangedPatt =
+                return (OrPattern.fromPattern unchangedPatt)
+            | otherwise =
+                liftSimplifier $ simplifyPattern sideCondition toSimplify
 {-# SPECIALIZE evaluatePattern ::
     SideCondition RewritingVariableName ->
     Condition RewritingVariableName ->
@@ -210,26 +260,7 @@ evaluatePattern
     ( Maybe SideCondition.Representation ->
       MaybeT Simplifier (OrPattern RewritingVariableName)
     ) ->
-    MaybeT Simplifier (OrPattern RewritingVariableName)
-    #-}
-{-# SPECIALIZE evaluatePattern ::
-    SideCondition RewritingVariableName ->
-    Condition RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    ( Maybe SideCondition.Representation ->
-      MaybeT (LogicT Simplifier) (OrPattern RewritingVariableName)
-    ) ->
-    MaybeT (LogicT Simplifier) (OrPattern RewritingVariableName)
-    #-}
-{-# SPECIALIZE evaluatePattern ::
-    SideCondition RewritingVariableName ->
-    Condition RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    ( Maybe SideCondition.Representation ->
-      MaybeT (ReaderT (SideCondition RewritingVariableName) (LogicT Simplifier)) (OrPattern RewritingVariableName)
-    ) ->
-    MaybeT (ReaderT (SideCondition RewritingVariableName) (LogicT Simplifier)) (OrPattern RewritingVariableName)
-    #-}
+    MaybeT Simplifier (OrPattern RewritingVariableName) #-}
 {-# SPECIALIZE evaluatePattern ::
     SideCondition RewritingVariableName ->
     Condition RewritingVariableName ->
@@ -237,8 +268,7 @@ evaluatePattern
     ( Maybe SideCondition.Representation ->
       MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) (OrPattern RewritingVariableName)
     ) ->
-    MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) (OrPattern RewritingVariableName)
-    #-}
+    MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) (OrPattern RewritingVariableName) #-}
 
 lookupAxiomSimplifier ::
     MonadSimplify simplifier =>
@@ -327,24 +357,10 @@ lookupAxiomSimplifier termLike = do
         (Just eval1, Just eval2) -> Just $ simplifierWithFallback eval1 eval2
 {-# SPECIALIZE lookupAxiomSimplifier ::
     TermLike RewritingVariableName ->
-    MaybeT Simplifier BuiltinAndAxiomSimplifier
-    #-}
+    MaybeT Simplifier BuiltinAndAxiomSimplifier #-}
 {-# SPECIALIZE lookupAxiomSimplifier ::
     TermLike RewritingVariableName ->
-    MaybeT (MaybeT Simplifier) BuiltinAndAxiomSimplifier
-    #-}
-{-# SPECIALIZE lookupAxiomSimplifier ::
-    TermLike RewritingVariableName ->
-    MaybeT (MaybeT (LogicT Simplifier)) BuiltinAndAxiomSimplifier
-    #-}
-{-# SPECIALIZE lookupAxiomSimplifier ::
-    TermLike RewritingVariableName ->
-    MaybeT (MaybeT (ReaderT (SideCondition RewritingVariableName) (LogicT Simplifier))) BuiltinAndAxiomSimplifier
-    #-}
-{-# SPECIALIZE lookupAxiomSimplifier ::
-    TermLike RewritingVariableName ->
-    MaybeT (MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier)) BuiltinAndAxiomSimplifier
-    #-}
+    MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) BuiltinAndAxiomSimplifier #-}
 
 criticalMissingHook :: Symbol -> Text -> a
 criticalMissingHook symbol hookName =
@@ -362,128 +378,6 @@ criticalMissingHook symbol hookName =
         ]
   where
     attribute = Attribute.hookAttribute hookName
-
-{- | Evaluates axioms on patterns.
-
-Returns Nothing if there is no axiom for the pattern's identifier.
--}
-maybeEvaluatePattern ::
-    forall simplifier.
-    MonadSimplify simplifier =>
-    -- | Aggregated children predicate and substitution.
-    Condition RewritingVariableName ->
-    -- | The pattern to be evaluated
-    TermLike RewritingVariableName ->
-    -- | The default value
-    ( Maybe SideCondition.Representation ->
-      simplifier (OrPattern RewritingVariableName)
-    ) ->
-    SideCondition RewritingVariableName ->
-    MaybeT simplifier (OrPattern RewritingVariableName)
-maybeEvaluatePattern
-    childrenCondition
-    termLike
-    defaultValue
-    sideCondition =
-        do
-            BuiltinAndAxiomSimplifier evaluator <- lookupAxiomSimplifier termLike
-            lift $ do
-                merged <- do
-                    result <- liftSimplifier $ evaluator termLike sideCondition
-                    flattened <- case result of
-                        AttemptedAxiom.Applied
-                            AttemptedAxiomResults
-                                { results = orResults
-                                , remainders = orRemainders
-                                } -> do
-                                simplified <- OrPattern.traverse simplifyIfNeeded orResults
-                                let simplifiedResult = MultiOr.flatten simplified
-                                return
-                                    ( AttemptedAxiom.Applied
-                                        AttemptedAxiomResults
-                                            { results = simplifiedResult
-                                            , remainders = orRemainders
-                                            }
-                                    )
-                        _ -> return result
-                    liftSimplifier $
-                        mergeWithConditionAndSubstitution
-                            sideCondition
-                            childrenCondition
-                            flattened
-                case merged of
-                    AttemptedAxiom.NotApplicable ->
-                        defaultValue Nothing
-                    AttemptedAxiom.NotApplicableUntilConditionChanges c ->
-                        defaultValue (Just c)
-                    AttemptedAxiom.Applied attemptResults ->
-                        return $ MultiOr.merge results remainders
-                      where
-                        AttemptedAxiomResults{results, remainders} =
-                            attemptResults
-      where
-        unchangedPatt =
-            Conditional
-                { term = termLike
-                , predicate = predicate
-                , substitution = substitution
-                }
-          where
-            Conditional{term = (), predicate, substitution} = childrenCondition
-
-        simplifyIfNeeded ::
-            Pattern RewritingVariableName ->
-            simplifier (OrPattern RewritingVariableName)
-        simplifyIfNeeded toSimplify
-            | toSimplify == unchangedPatt =
-                return (OrPattern.fromPattern unchangedPatt)
-            | otherwise =
-                liftSimplifier $ simplifyPattern sideCondition toSimplify
-{-# SPECIALIZE maybeEvaluatePattern ::
-    Condition RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    ( Maybe SideCondition.Representation ->
-      Simplifier (OrPattern RewritingVariableName)
-    ) ->
-    SideCondition RewritingVariableName ->
-    MaybeT Simplifier (OrPattern RewritingVariableName)
-    #-}
-{-# SPECIALIZE maybeEvaluatePattern ::
-    Condition RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    ( Maybe SideCondition.Representation ->
-      MaybeT Simplifier (OrPattern RewritingVariableName)
-    ) ->
-    SideCondition RewritingVariableName ->
-    MaybeT (MaybeT Simplifier) (OrPattern RewritingVariableName)
-    #-}
-{-# SPECIALIZE maybeEvaluatePattern ::
-    Condition RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    ( Maybe SideCondition.Representation ->
-      MaybeT (LogicT Simplifier) (OrPattern RewritingVariableName)
-    ) ->
-    SideCondition RewritingVariableName ->
-    MaybeT (MaybeT (LogicT Simplifier)) (OrPattern RewritingVariableName)
-    #-}
-{-# SPECIALIZE maybeEvaluatePattern ::
-    Condition RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    ( Maybe SideCondition.Representation ->
-      MaybeT (ReaderT (SideCondition RewritingVariableName) (LogicT Simplifier)) (OrPattern RewritingVariableName)
-    ) ->
-    SideCondition RewritingVariableName ->
-    MaybeT (MaybeT (ReaderT (SideCondition RewritingVariableName) (LogicT Simplifier))) (OrPattern RewritingVariableName)
-    #-}
-{-# SPECIALIZE maybeEvaluatePattern ::
-    Condition RewritingVariableName ->
-    TermLike RewritingVariableName ->
-    ( Maybe SideCondition.Representation ->
-      MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) (OrPattern RewritingVariableName)
-    ) ->
-    SideCondition RewritingVariableName ->
-    MaybeT (MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier)) (OrPattern RewritingVariableName)
-    #-}
 
 evaluateSortInjection ::
     InternalVariable variable =>
