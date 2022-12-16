@@ -28,14 +28,16 @@ data Sort
       SortApp SortName [Sort]
     | -- | sort variable (symbolic)
       SortVar VarName
-    deriving stock (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData)
 
 -- | A variable for symbolic execution or for terms in a rule.
 data Variable = Variable
     { variableSort :: Sort
     , variableName :: VarName
     }
-    deriving (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData)
 
 data Symbol = Symbol
     { name :: SymbolName
@@ -44,7 +46,8 @@ data Symbol = Symbol
     , resultSort :: Sort
     , attributes :: SymbolAttributes
     }
-    deriving stock (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData)
 
 {- | A term consists of an AST of constructors and function calls, as
    well as domain values (tokens and built-in types) and (element)
@@ -59,7 +62,8 @@ data Term
     | SymbolApplication Symbol [Sort] [Term]
     | DomainValue Sort Text
     | Var Variable
-    deriving stock (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData)
 
 makeBaseFunctor ''Term
 
@@ -80,7 +84,8 @@ data Predicate
     | Not Predicate
     | Or Predicate Predicate
     | Top
-    deriving stock (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData)
 
 makeBaseFunctor ''Predicate
 
@@ -89,12 +94,14 @@ data Pattern = Pattern
     { term :: Term
     , constraints :: [Predicate]
     }
-    deriving stock (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData)
 
 data TermOrPredicate -- = Either Predicate Pattern
     = APredicate Predicate
     | TermAndPredicate Pattern
-    deriving stock (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData)
 
 {- | Index data allowing for a quick lookup of potential axioms.
 

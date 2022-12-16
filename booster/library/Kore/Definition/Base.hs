@@ -15,9 +15,11 @@ module Kore.Definition.Base (
     module Kore.Definition.Base,
 ) where
 
+import Control.DeepSeq (NFData)
 import Data.Map.Strict as Map (Map, empty)
 import Data.Set (Set)
 import Data.Text (Text)
+import GHC.Generics qualified as GHC
 
 import Kore.Definition.Attributes.Base
 import Kore.Pattern.Base
@@ -39,7 +41,8 @@ data KoreDefinition = KoreDefinition
     , aliases :: Map AliasName Alias
     , rewriteTheory :: RewriteTheory
     }
-    deriving stock (Eq, Show)
+    deriving stock (Eq, Show, GHC.Generic)
+    deriving anyclass (NFData)
 
 -- | Optimized for lookup by term-index
 type RewriteTheory = Map TermIndex (Map Priority [RewriteRule])
@@ -64,7 +67,8 @@ data RewriteRule = RewriteRule
     , attributes :: AxiomAttributes
     , computedAttributes :: ComputedAxiomAttributes
     }
-    deriving stock (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show, GHC.Generic)
+    deriving anyclass (NFData)
 
 type AliasName = Text
 
@@ -74,4 +78,5 @@ data Alias = Alias
     , args :: [Variable]
     , rhs :: TermOrPredicate
     }
-    deriving stock (Eq, Show)
+    deriving stock (Eq, Ord, Show, GHC.Generic)
+    deriving anyclass (NFData)
