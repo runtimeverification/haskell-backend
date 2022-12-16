@@ -6,6 +6,8 @@ License     : BSD-3-Clause
 -}
 module Server (main) where
 
+import Control.DeepSeq (force)
+import Control.Exception (evaluate)
 import Control.Monad.Logger (LogLevel (..))
 import Data.List (partition)
 import Data.Maybe (fromMaybe)
@@ -26,8 +28,8 @@ main = do
             <> ", main module "
             <> show mainModuleName
     internalModule <-
-        either (error . show) id
-            <$> loadDefinition mainModuleName definitionFile
+        loadDefinition mainModuleName definitionFile
+            >>= evaluate . force . either (error . show) id
     putStrLn "Starting RPC server"
     runServer port internalModule (adjustLogLevels logLevels)
   where
