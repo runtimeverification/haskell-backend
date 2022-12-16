@@ -27,6 +27,7 @@ import Kore.Simplify.NotSimplifier
 import Kore.Simplify.Simplify (
     ConditionSimplifier (..),
     MonadSimplify (..),
+    Simplifier,
  )
 import Kore.Unification.SubstitutionSimplifier (
     substitutionSimplifier,
@@ -81,19 +82,17 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
 instance MonadSimplify m => MonadUnify (UnifierT m)
 
 runUnifierT ::
-    MonadSimplify m =>
-    NotSimplifier m ->
-    UnifierT m a ->
-    m [a]
+    NotSimplifier Simplifier ->
+    UnifierT Simplifier a ->
+    Simplifier [a]
 runUnifierT notSimplifier =
     observeAllT
         . evalEnvUnifierT notSimplifier
 
 evalEnvUnifierT ::
-    MonadSimplify m =>
-    NotSimplifier m ->
-    UnifierT m a ->
-    LogicT m a
+    NotSimplifier Simplifier ->
+    UnifierT Simplifier a ->
+    LogicT Simplifier a
 evalEnvUnifierT notSimplifier =
     flip runReaderT conditionSimplifier
         . getUnifierT

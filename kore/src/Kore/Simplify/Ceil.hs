@@ -15,7 +15,7 @@ import Control.Error (
     maybeT,
  )
 import Control.Monad.Reader (
-    MonadReader,
+    ReaderT,
  )
 import Control.Monad.Reader qualified as Reader
 import Data.Functor.Foldable qualified as Recursive
@@ -79,10 +79,9 @@ A ceil(or) is equal to or(ceil). We also take into account that
 * ceil transforms terms into predicates
 -}
 simplify ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Ceil sort (OrPattern RewritingVariableName) ->
-    simplifier NormalForm
+    Simplifier NormalForm
 simplify
     sideCondition
     Ceil{ceilChild = child} =
@@ -92,10 +91,9 @@ simplify
 for details.
 -}
 simplifyEvaluated ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     OrPattern RewritingVariableName ->
-    simplifier NormalForm
+    Simplifier NormalForm
 simplifyEvaluated sideCondition child =
     OrPattern.traverseOr (makeEvaluate sideCondition) child
 
@@ -103,10 +101,9 @@ simplifyEvaluated sideCondition child =
 for details.
 -}
 makeEvaluate ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
-    simplifier NormalForm
+    Simplifier NormalForm
 makeEvaluate sideCondition child
     | Pattern.isTop child = return (MultiOr.singleton MultiAnd.top)
     | Pattern.isBottom child = return MultiOr.bottom
@@ -124,12 +121,10 @@ makeEvaluate sideCondition child
 
 -- | Evaluates the ceil of a TermLike, see 'simplify' for details.
 makeEvaluateTerm ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     Sort ->
     SideCondition RewritingVariableName ->
     TermLike RewritingVariableName ->
-    simplifier NormalForm
+    Simplifier NormalForm
 makeEvaluateTerm resultSort sideCondition ceilChild =
     runCeilSimplifierWith
         ceilSimplifier
@@ -178,9 +173,8 @@ newDefinedCeilSimplifier sideCondition = CeilSimplifier $ \input ->
         else empty
 
 newApplicationCeilSimplifier ::
-    MonadSimplify simplifier =>
     CeilSimplifier
-        simplifier
+        (ReaderT (SideCondition RewritingVariableName) Simplifier)
         (TermLike RewritingVariableName)
         NormalForm
 newApplicationCeilSimplifier = CeilSimplifier $ \input ->
@@ -192,9 +186,8 @@ newApplicationCeilSimplifier = CeilSimplifier $ \input ->
         _ -> empty
 
 newInjCeilSimplifier ::
-    MonadSimplify simplifier =>
     CeilSimplifier
-        simplifier
+        (ReaderT (SideCondition RewritingVariableName) Simplifier)
         (TermLike RewritingVariableName)
         NormalForm
 newInjCeilSimplifier = CeilSimplifier $ \input ->
@@ -210,11 +203,9 @@ newInjCeilSimplifier = CeilSimplifier $ \input ->
         _ -> empty
 
 newBuiltinCeilSimplifier ::
-    MonadReader (SideCondition RewritingVariableName) simplifier =>
-    MonadSimplify simplifier =>
     Sort ->
     CeilSimplifier
-        simplifier
+        (ReaderT (SideCondition RewritingVariableName) Simplifier)
         (TermLike RewritingVariableName)
         NormalForm
 newBuiltinCeilSimplifier ceilSort = CeilSimplifier $ \input ->
@@ -231,10 +222,8 @@ newBuiltinCeilSimplifier ceilSort = CeilSimplifier $ \input ->
         _ -> empty
 
 newAxiomCeilSimplifier ::
-    MonadReader (SideCondition RewritingVariableName) simplifier =>
-    MonadSimplify simplifier =>
     CeilSimplifier
-        simplifier
+        (ReaderT (SideCondition RewritingVariableName) Simplifier)
         (TermLike RewritingVariableName)
         NormalForm
 newAxiomCeilSimplifier = CeilSimplifier $ \input -> do
@@ -264,12 +253,10 @@ newAxiomCeilSimplifier = CeilSimplifier $ \input -> do
             )
 
 makeEvaluateInternalMap ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     Sort ->
     SideCondition RewritingVariableName ->
     InternalMap Key (TermLike RewritingVariableName) ->
-    MaybeT simplifier NormalForm
+    MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) NormalForm
 makeEvaluateInternalMap resultSort sideCondition internalMap =
     runCeilSimplifierWith
         AssocComm.newMapCeilSimplifier
@@ -284,12 +271,10 @@ makeEvaluateInternalMap resultSort sideCondition internalMap =
 
 -- | Evaluates the ceil of a domain value.
 makeEvaluateInternalSet ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     Sort ->
     SideCondition RewritingVariableName ->
     InternalSet Key (TermLike RewritingVariableName) ->
-    MaybeT simplifier NormalForm
+    MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) NormalForm
 makeEvaluateInternalSet resultSort sideCondition internalSet =
     runCeilSimplifierWith
         AssocComm.newSetCeilSimplifier
@@ -325,11 +310,10 @@ know how to simplify @ceil(g(x))@, the return value will be
 @and(ceil(f(g(x))), ceil(g(x)))@.
 -}
 makeSimplifiedCeil ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Maybe SideCondition.Representation ->
     TermLike RewritingVariableName ->
-    simplifier NormalForm
+    Simplifier NormalForm
 makeSimplifiedCeil
     _
     maybeCurrentCondition

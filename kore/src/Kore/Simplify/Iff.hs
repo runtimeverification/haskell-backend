@@ -94,9 +94,8 @@ simplifyEvaluated sort sideCondition first second
         _ -> do
             fwd <- Implies.simplifyEvaluated sort sideCondition first second
             bwd <- Implies.simplifyEvaluated sort sideCondition second first
-            liftSimplifier $
-                (And.simplify sort Not.notSimplifier sideCondition)
-                    (MultiAnd.make [fwd, bwd])
+            And.simplify sort Not.notSimplifier sideCondition $
+                MultiAnd.make [fwd, bwd]
   where
     firstPatterns = toList first
     secondPatterns = toList second
