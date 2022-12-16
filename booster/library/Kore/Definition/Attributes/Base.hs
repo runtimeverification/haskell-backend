@@ -29,14 +29,16 @@ data DefinitionAttributes = DefinitionAttributes
     }
     -- none needed
 
-    deriving (Eq, Show)
+    deriving stock (Eq, Show, Generic)
+    deriving anyclass (NFData)
 
 data ModuleAttributes = ModuleAttributes
     {
     }
     -- none needed
 
-    deriving (Eq, Show)
+    deriving stock (Eq, Show, Generic)
+    deriving anyclass (NFData)
 
 {- | Things needed for booster rewrite engine:
   * axiom location (for debug logging and error messages)
@@ -49,12 +51,14 @@ data AxiomAttributes = AxiomAttributes
     , ruleLabel :: Maybe Label
     , simplification :: Bool
     }
-    deriving stock (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData)
 
 data ComputedAxiomAttributes = ComputedAxiomAttributes
     { containsAcSymbols, preservesDefinedness :: Bool
     }
-    deriving stock (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData)
 
 type Label = Text
 type Priority = Word8
@@ -78,17 +82,20 @@ data SymbolType
     | TotalFunction
     | Constructor
     | SortInjection
-    deriving stock (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData)
 
 data SymbolAttributes = SymbolAttributes
     { symbolType :: SymbolType
     , isIdem, isAssoc :: Bool
     }
-    deriving stock (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData)
 
 newtype SortAttributes = SortAttributes
     { argCount :: Int
     }
     -- none needed
 
-    deriving stock (Eq, Show)
+    deriving stock (Eq, Show, Generic)
+    deriving anyclass (NFData)
