@@ -199,9 +199,10 @@
 
 
   nixConfig = {
-    extra-substituters = [ "https://cache.iog.io" ];
+    extra-substituters = [ "https://cache.iog.io" "https://runtimeverification.cachix.org" ];
     extra-trusted-public-keys = [
       "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ="
+      "runtimeverification.cachix.org-1:wSde8xKWzRNC2buFu4vRRwI+FiZtkI57wS1EDIhMRc4="
     ];
   };
 }
