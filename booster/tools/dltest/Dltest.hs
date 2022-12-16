@@ -20,9 +20,9 @@ main = do
     case args of
         [] -> putStrLn "Provide a path to the shared library"
         [lib] -> LLVM.runLLVM lib $ do
-            api <- LLVM.ask
+            kore <- LLVM.ask
             test <- LLVM.marshallTerm $ app f1 [app con1 [app f1 []], app con2 [], app f2 []]
-            api.korePattern.dump test >>= liftIO . putStrLn
+            kore.patt.dump test >>= liftIO . putStrLn
         _ -> putStrLn "Too many arguments"
 
 app :: Symbol -> [Term] -> Term

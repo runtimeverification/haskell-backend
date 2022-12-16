@@ -15,13 +15,14 @@ import Data.Text (Text, pack)
 import Options.Applicative
 
 import Kore.JsonRpc (runServer)
+import Kore.LLVM.Internal (withDLib)
 import Kore.Syntax.ParsedKore (loadDefinition)
 import Kore.VersionInfo (VersionInfo (..), versionInfo)
 
 main :: IO ()
 main = do
     options <- execParser clParser
-    let CLOptions{definitionFile, mainModuleName, port, logLevels} = options
+    let CLOptions{definitionFile, mainModuleName, port, logLevels, llvmLibraryFile} = options
     putStrLn $
         "Loading definition from "
             <> definitionFile
@@ -31,7 +32,9 @@ main = do
         loadDefinition mainModuleName definitionFile
             >>= evaluate . force . either (error . show) id
     putStrLn "Starting RPC server"
-    runServer port internalModule (adjustLogLevels logLevels)
+    case llvmLibraryFile of
+        Nothing -> runServer port internalModule Nothing (adjustLogLevels logLevels)
+        Just fp -> withDLib fp $ \dl -> runServer port internalModule (Just dl) (adjustLogLevels logLevels)
   where
     clParser =
         info
@@ -41,6 +44,7 @@ main = do
 data CLOptions = CLOptions
     { definitionFile :: FilePath
     , mainModuleName :: Text
+    , llvmLibraryFile :: Maybe FilePath
     , port :: Int
     , logLevels :: [LogLevel]
     }
@@ -63,16 +67,21 @@ versionInfoParser =
 clOptionsParser :: Parser CLOptions
 clOptionsParser =
     CLOptions
-        <$> argument
-            str
+        <$> strArgument
             ( metavar "DEFINITION_FILE"
                 <> help "Kore definition file to verify and use for execution"
             )
-        <*> option
-            str
+        <*> strOption
             ( metavar "MODULE"
                 <> long "module"
                 <> help "The name of the main module in the Kore definition."
+            )
+        <*> optional
+            ( strOption
+                ( metavar "LLVM_BACKEND_LIBRARY"
+                    <> long "llvm-backend-library"
+                    <> help "Path to the .so/.dylib shared LLVM backend library"
+                )
             )
         <*> option
             auto
