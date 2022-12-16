@@ -101,13 +101,10 @@ The comment for 'Kore.Simplify.And.simplify' describes all
 the special cases handled by this.
 -}
 termUnification ::
-    forall unifier simplifier t.
-    MonadSimplify simplifier =>
+    forall unifier.
     MonadUnify unifier =>
-    MonadTrans t =>
-    t simplifier ~ unifier =>
     HasCallStack =>
-    NotSimplifier simplifier ->
+    NotSimplifier Simplifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     unifier (Pattern RewritingVariableName)
@@ -138,12 +135,9 @@ termUnification notSimplifier = \term1 term2 ->
             & return
 
 maybeTermEquals ::
-    MonadSimplify simplifier =>
     MonadUnify unifier =>
-    MonadTrans t =>
-    t simplifier ~ unifier =>
     HasCallStack =>
-    NotSimplifier simplifier ->
+    NotSimplifier Simplifier ->
     -- | Used to simplify subterm "and".
     TermSimplifier RewritingVariableName unifier ->
     TermLike RewritingVariableName ->
@@ -226,12 +220,9 @@ maybeTermEquals notSimplifier childTransformers first second = do
         | otherwise = empty
 
 maybeTermAnd ::
-    MonadSimplify simplifier =>
     MonadUnify unifier =>
-    MonadTrans t =>
-    t simplifier ~ unifier =>
     HasCallStack =>
-    NotSimplifier simplifier ->
+    NotSimplifier Simplifier ->
     -- | Used to simplify subterm "and".
     TermSimplifier RewritingVariableName unifier ->
     TermLike RewritingVariableName ->

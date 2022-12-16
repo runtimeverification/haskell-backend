@@ -189,6 +189,7 @@ import Kore.Simplify.API (
  )
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
+    MonadSimplify (liftSimplifier),
     Simplifier,
     askMetadataTools,
  )
@@ -577,7 +578,7 @@ getExitCode
             exitCodePatterns <-
                 do
                     config <- Logic.scatter configs
-                    Pattern.simplifyTopConfiguration (mkGetExitCode <$> config)
+                    liftSimplifier (Pattern.simplifyTopConfiguration (mkGetExitCode <$> config))
                         >>= Logic.scatter
                     & MultiOr.observeAllT
             let exitCode =

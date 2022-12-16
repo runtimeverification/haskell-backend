@@ -94,10 +94,9 @@ simplifyEvaluated sort sideCondition first second
     | OrPattern.isFalse second =
         Not.simplify sideCondition Not{notSort = sort, notChild = first}
     | otherwise =
-        liftSimplifier $
-            OrPattern.observeAllT $
-                Logic.scatter second
-                    >>= simplifyEvaluateHalfImplies sort sideCondition first
+        OrPattern.observeAllT $
+            Logic.scatter second
+                >>= simplifyEvaluateHalfImplies sort sideCondition first
 
 simplifyEvaluateHalfImplies ::
     Sort ->
@@ -110,7 +109,7 @@ simplifyEvaluateHalfImplies sort sideCondition first second
     | OrPattern.isFalse first = return (Pattern.topOf sort)
     | Pattern.isTop second = return (Pattern.topOf sort)
     | Pattern.isBottom second =
-        Not.simplify sideCondition Not{notSort = sort, notChild = first}
+        liftSimplifier (Not.simplify sideCondition Not{notSort = sort, notChild = first})
             >>= Logic.scatter
     | otherwise =
         case toList first of

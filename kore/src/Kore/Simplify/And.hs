@@ -113,28 +113,22 @@ simplify resultSort notSimplifier sideCondition orPatterns =
 See the comment for 'simplify' to find more details.
 -}
 makeEvaluate ::
-    forall simplifier.
-    HasCallStack =>
-    MonadSimplify simplifier =>
     Sort ->
-    NotSimplifier simplifier ->
+    NotSimplifier Simplifier ->
     SideCondition RewritingVariableName ->
     MultiAnd (Pattern RewritingVariableName) ->
-    LogicT simplifier (Pattern RewritingVariableName)
+    LogicT Simplifier (Pattern RewritingVariableName)
 makeEvaluate resultSort notSimplifier sideCondition patterns
     | isBottom patterns = empty
     | Pattern.isTop patterns = return (Pattern.topOf resultSort)
     | otherwise = makeEvaluateNonBool resultSort notSimplifier sideCondition patterns
 
 makeEvaluateNonBool ::
-    forall simplifier.
-    HasCallStack =>
-    MonadSimplify simplifier =>
     Sort ->
-    NotSimplifier simplifier ->
+    NotSimplifier Simplifier ->
     SideCondition RewritingVariableName ->
     MultiAnd (Pattern RewritingVariableName) ->
-    LogicT simplifier (Pattern RewritingVariableName)
+    LogicT Simplifier (Pattern RewritingVariableName)
 makeEvaluateNonBool resultSort notSimplifier sideCondition patterns = do
     let unify pattern1 term2 = do
             let (term1, condition1) = Pattern.splitTerm pattern1
@@ -151,7 +145,6 @@ makeEvaluateNonBool resultSort notSimplifier sideCondition patterns = do
     normalized <-
         from @_ @(Condition _) substitutions
             & Substitution.normalize sideCondition
-            & mapLogicT liftSimplifier
     let substitution = Pattern.substitution normalized
         predicates :: MultiAnd (Predicate RewritingVariableName)
         predicates =
@@ -218,13 +211,11 @@ partitionWith f = partitionEithers . fmap f
 The comment for 'simplify' describes all the special cases handled by this.
 -}
 termAnd ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     HasCallStack =>
-    NotSimplifier simplifier ->
+    NotSimplifier Simplifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
-    LogicT simplifier (Pattern RewritingVariableName)
+    LogicT Simplifier (Pattern RewritingVariableName)
 termAnd notSimplifier p1 p2 =
     Logic.scatter
         =<< (lift . runUnifierT notSimplifier) (termAndWorker p1 p2)
@@ -232,7 +223,7 @@ termAnd notSimplifier p1 p2 =
     termAndWorker ::
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
-        UnifierT simplifier (Pattern RewritingVariableName)
+        UnifierT Simplifier (Pattern RewritingVariableName)
     termAndWorker first second =
         maybeTermAnd notSimplifier termAndWorker first second
             & runMaybeT
