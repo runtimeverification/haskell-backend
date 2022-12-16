@@ -127,9 +127,9 @@ finalizeAppliedRule
                 finalPattern =
                     Rule.topExistsToImplicitForall avoidVars ruleRHS
             constructConfiguration
-                    sideCondition
-                    appliedCondition
-                    finalPattern
+                sideCondition
+                appliedCondition
+                finalPattern
 
 {- | Combine all the conditions to apply rule and construct the result.
 
@@ -202,9 +202,9 @@ finalizeAppliedClaim sideCondition renamedRule appliedConditions =
             -- the axiom ensures clause. The axiom requires clause is included
             -- by unifyRule.
             constructConfiguration
-                    sideCondition
-                    appliedCondition
-                    finalPattern
+                sideCondition
+                appliedCondition
+                finalPattern
 
 type UnifyingRuleWithRepresentation representation rule =
     ( Rule.UnifyingRule representation
