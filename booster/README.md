@@ -6,6 +6,21 @@ A simpler and faster version of [K-Framework's haskell-backend](../haskell-backe
 * Aims to solve _easy and common_ rewrites quickly, rather than _all_ rewrites completely
 * Reverts to the standard backend for complex unification and term simplification
 
+## Kompiling a K definition and running the RPC server
+
+The `hs-backend-booster` binary takes a `kore` file definition, parses and internalises it and then launches an RPC server, which executes requests agains this definition. It additionally accepts a path to a dynamic library compiled by the LLVM backend, which is used for simplification of bool sorted terms. In order to build the kore definition and the shared library out of a K definition, first call
+
+```
+kompile --llvm-kompile-type c my_defintion.k
+```
+
+and then launch the server via
+
+```
+hs-backend-booster ./my_defintion-kompiled/definition.kore --module MY-DEFINITION --llvm-backend-library ./my_defintion-kompiled/interpreter
+```
+
+
 ## Development
 
 ### Package structure

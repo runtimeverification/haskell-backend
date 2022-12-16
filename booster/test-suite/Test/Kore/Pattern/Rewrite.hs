@@ -9,7 +9,6 @@ module Test.Kore.Pattern.Rewrite (
 
 import Control.Exception (ErrorCall, catch)
 import Control.Monad.Logger.CallStack
-import Control.Monad.Trans.Except
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -204,7 +203,7 @@ definednessUnclear =
 rewriteStuck =
     testCase "con3 app is stuck (no rules apply)" $ do
         let con3App = termInKCell "ConfigVar" $ app con3 [d, d]
-        runExcept (rewriteStep def [] [] con3App) @?= Right (RewriteStuck con3App)
+        runRewriteM def Nothing (rewriteStep [] [] con3App) @?= Right (RewriteStuck con3App)
 rulePriority =
     testCase "con1 rewrites to a branch when higher priority does not apply" $ do
         let d2 = dv someSort "otherThing"
@@ -215,21 +214,21 @@ rulePriority =
 
 rewritesTo :: Pattern -> Pattern -> IO ()
 p1 `rewritesTo` p2 =
-    runExcept (rewriteStep def [] [] p1) @?= Right (RewriteSingle p2)
+    runRewriteM def Nothing (rewriteStep [] [] p1) @?= Right (RewriteSingle p2)
 
 branchesTo :: Pattern -> [Pattern] -> IO ()
 p `branchesTo` ps =
-    runExcept (rewriteStep def [] [] p) @?= Right (RewriteBranch p $ NE.fromList ps)
+    runRewriteM def Nothing (rewriteStep [] [] p) @?= Right (RewriteBranch p $ NE.fromList ps)
 
 failsWith :: Pattern -> RewriteFailed -> IO ()
 failsWith p err =
-    runExcept (rewriteStep def [] [] p) @?= Left err
+    runRewriteM def Nothing (rewriteStep [] [] p) @?= Left err
 
 ----------------------------------------
 -- tests for performRewrite (iterated rewrite in IO with logging)
 
 runRewrite :: Pattern -> IO (Natural, RewriteResult)
-runRewrite = runNoLoggingT . performRewrite def Nothing [] []
+runRewrite = runNoLoggingT . performRewrite def Nothing Nothing [] []
 
 aborts :: Term -> IO ()
 aborts t = runRewrite (termInKCell "C" t) >>= (@?= (0, RewriteAborted (termInKCell "C" t)))
@@ -307,7 +306,7 @@ supportsDepthControl =
     f1Term = termInKCell "C" $ app f1 [d]
     runRewriteDepth :: Natural -> Pattern -> IO (Natural, RewriteResult)
     runRewriteDepth depth =
-        runNoLoggingT . performRewrite def (Just depth) [] []
+        runNoLoggingT . performRewrite def Nothing (Just depth) [] []
 
 supportsCutPoints :: TestTree
 supportsCutPoints =
@@ -334,7 +333,7 @@ supportsCutPoints =
     f1Term = termInKCell "C" $ app f1 [d]
     runRewriteCutPoint :: Text -> Pattern -> IO (Natural, RewriteResult)
     runRewriteCutPoint lbl =
-        runNoLoggingT . performRewrite def Nothing [lbl] []
+        runNoLoggingT . performRewrite def Nothing Nothing [lbl] []
 
 supportsTerminalRules :: TestTree
 supportsTerminalRules =
@@ -352,4 +351,4 @@ supportsTerminalRules =
     f1Term = termInKCell "C" $ app f1 [d]
     runRewriteTerminal :: Text -> Pattern -> IO (Natural, RewriteResult)
     runRewriteTerminal lbl =
-        runNoLoggingT . performRewrite def Nothing [] [lbl]
+        runNoLoggingT . performRewrite def Nothing Nothing [] [lbl]
