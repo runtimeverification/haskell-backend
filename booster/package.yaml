@@ -60,6 +60,7 @@ library:
   - aeson-pretty
   - array
   - base
+  - binary
   - bytestring
   - casing
   - conduit
