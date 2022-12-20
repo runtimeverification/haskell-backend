@@ -103,7 +103,7 @@ import Kore.Rewrite.RewritingVariable (
     getRewritingVariable,
     mkRuleVariable,
  )
-import Kore.Rewrite.Step (
+import Kore.Rewrite.UnifyingRule (
     UnifyingRule (..),
  )
 import Kore.Sort (
