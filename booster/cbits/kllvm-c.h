@@ -3,6 +3,9 @@
 
 #ifndef __cplusplus
 #include <stdbool.h>
+#include <stddef.h>
+#else
+#include <cstddef>
 #endif
 
 #ifdef __cplusplus
@@ -68,6 +71,13 @@ char *kore_block_dump(block *);
 bool kore_block_get_bool(block *);
 
 bool kore_simplify_bool(kore_pattern *);
+
+/*
+ * The two final parameters here are outputs: the serialized binary data and the
+ * number of serialized bytes, respectively. The binary data should be freed
+ * with `free()`.
+ */
+void kore_simplify(kore_pattern *pattern, kore_sort *sort, char **, size_t *);
 
 /* KORESort */
 

@@ -74,6 +74,9 @@ makeBaseFunctor ''Term
 pattern AndBool :: [Term] -> Term
 pattern AndBool ts <- SymbolApplication (Symbol "Lbl'Unds'andBool'Unds'" _ _ _ _) _ ts
 
+pattern DV :: Sort -> Symbol
+pattern DV sort <- Symbol "\\dv" _ _ sort _
+
 {- | A predicate describes constraints on terms. It will always evaluate
    to 'Top' or 'Bottom'. Notice that 'Predicate's don't have a sort.
 -}
