@@ -24,7 +24,13 @@ import Data.Set qualified as Set
 
 import Kore.Definition.Base
 import Kore.Pattern.Base
-import Kore.Pattern.Util (freeVariables, isFunctionSymbol, sortOfTerm, substituteInTerm)
+import Kore.Pattern.Util (
+    freeVariables,
+    isFunctionSymbol,
+    isSortInjectionSymbol,
+    sortOfTerm,
+    substituteInTerm,
+ )
 
 -- | Result of a unification (a substitution or an indication of what went wrong)
 data UnificationResult
@@ -122,6 +128,33 @@ unify1
                 failWith (DifferentValues d1 d2)
             unless (s1 == s2) $ -- sorts must be exactly the same for DVs
                 returnAsRemainder d1 d2
+
+-- two sort injections, the pattern one containing just a variable:
+-- accept (adding another injection) if subject's source sort is
+-- subsort of pattern source sort.
+--
+-- NB This _assumes the order source-target on injection symbol sort variables!
+-- Having a separate injection node in the AST would be much safer.
+unify1
+    pat@(SymbolApplication injP [srcP@(SortApp srcPName []), targetP] [Var v@Variable{variableSort}])
+    subj@(SymbolApplication injS [srcS@(SortApp srcSName []), targetS] [argS])
+        | isSortInjectionSymbol injP && injP == injS -- is sort injection
+        , targetP == targetS -- same target sort!
+        , variableSort == srcP -- correct variable sort
+        , srcP /= srcS -- different source sort (same sort handled by next case)
+            =
+            do
+                -- check if subject source sorts subsort of pattern source sort
+                mbSubsorts <- gets (Map.lookup srcPName . uSubsorts)
+                isSubsort <-
+                    case mbSubsorts of
+                        Nothing ->
+                            internalError $ "Sort " <> show srcPName <> " not found in sort table"
+                        Just subsorts ->
+                            pure $ srcSName `Set.member` subsorts
+                if isSubsort
+                    then bindVariable v (SymbolApplication injS [srcS, srcP] [argS])
+                    else failWith (DifferentSymbols pat subj)
 
 -- two symbol applications: fail if names differ, recurse
 unify1
