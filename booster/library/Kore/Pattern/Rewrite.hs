@@ -176,9 +176,10 @@ applyRule pat rule = do
     checkConstraint :: Predicate -> RewriteM RuleFailed ()
     checkConstraint p = do
         dl <- getDL
-        when (simplifyPredicate dl p == Bottom) $
-            throw $
-                ConstraintIsBottom p
+        case simplifyPredicate dl p of
+            Bottom -> throw $ ConstraintIsBottom p
+            Top -> pure ()
+            other -> throw $ ConstraintIsIndeterminate other
 
 {- | Reason why a rewrite did not produce a result. Contains additional
    information for logging what happened during the rewrite.
@@ -207,6 +208,8 @@ data RuleFailed
       UnificationIsNotMatch RewriteRule Substitution
     | -- | A constraint of the rule simplifies to Bottom (when substituted)
       ConstraintIsBottom Predicate
+    | -- | A constraint of the rule is indeterminate (when substituted)
+      ConstraintIsIndeterminate Predicate
     deriving stock (Eq, Show)
 
 isUncertain :: RuleFailed -> Bool
@@ -215,6 +218,7 @@ isUncertain RewriteUnificationUnclear{} = True
 isUncertain RewriteSortError{} = True
 isUncertain UnificationIsNotMatch{} = True
 isUncertain ConstraintIsBottom{} = False
+isUncertain ConstraintIsIndeterminate{} = True
 
 -- | Different rewrite results (returned from RPC execute endpoint)
 data RewriteResult

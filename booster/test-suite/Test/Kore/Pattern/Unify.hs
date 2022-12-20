@@ -11,6 +11,7 @@ import Data.Map qualified as Map
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Kore.Definition.Attributes.Base
 import Kore.Pattern.Base
 import Kore.Pattern.Unify
 import Test.Kore.Fixture
@@ -24,7 +25,46 @@ test_unification =
         , varsAndValues
         , andTerms
         , sorts
+        , injections
         ]
+
+injections :: TestTree
+injections =
+    testGroup
+        "sort injections"
+        [ test
+            "same sort injection"
+            (inject aSubsort someSort varSub)
+            (inject aSubsort someSort dSub)
+            $ success [("X", aSubsort, dSub)]
+        , test
+            "subsort injection"
+            (inject someSort kItemSort varSome)
+            (inject aSubsort kItemSort dSub)
+            $ success [("Y", someSort, inject aSubsort someSort dSub)]
+        , let t1 = inject someSort kItemSort varSome
+              t2 = inject differentSort kItemSort dOther
+           in test "sort injection mismatch" t1 t2 $ failed (DifferentSymbols t1 t2)
+        ]
+  where
+    varSub = var "X" aSubsort
+    varSome = var "Y" someSort
+    dSub = dv aSubsort "a subsort"
+    dOther = dv differentSort "different sort"
+
+inject :: Sort -> Sort -> Term -> Term
+inject from to t = SymbolApplication inj [from, to] [t]
+
+-- TODO move to Fixture!
+inj :: Symbol
+inj =
+    Symbol
+        { name = "inj"
+        , sortVars = ["Source", "Target"]
+        , resultSort = SortVar "Target"
+        , argSorts = [SortVar "Source"]
+        , attributes = SymbolAttributes SortInjection False False
+        }
 
 sorts :: TestTree
 sorts =
