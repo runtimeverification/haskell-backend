@@ -578,7 +578,6 @@ data ReplState = ReplState
 data Config = Config
     { -- | Stepper function
       stepper ::
-        [SomeClaim] ->
         [Axiom] ->
         ExecutionGraph ->
         ReplNode ->

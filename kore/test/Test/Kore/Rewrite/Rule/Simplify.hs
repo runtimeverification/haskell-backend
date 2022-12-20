@@ -234,7 +234,7 @@ test_simplifyRule_OnePathClaim =
         OnePathClaim ->
         simplifier [OnePathClaim]
     simplClaim claim =
-        runTransitionT (simplify claim)
+        liftSimplifier (runTransitionT (simplify claim))
             & (fmap . fmap) fst
 
     runSimplSMT :: OnePathClaim -> IO [OnePathClaim]

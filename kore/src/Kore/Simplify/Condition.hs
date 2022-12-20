@@ -73,6 +73,10 @@ create ::
     ConditionSimplifier simplifier
 create substitutionSimplifier =
     ConditionSimplifier $ simplify substitutionSimplifier
+{-# SPECIALIZE create ::
+    SubstitutionSimplifier Simplifier ->
+    ConditionSimplifier Simplifier
+    #-}
 
 {- | Simplify a 'Condition'.
 
@@ -115,7 +119,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition original = d
         simplified <-
             simplifyPredicate predicate'
                 >>= Logic.scatter
-                >>= simplifyPredicates sideCondition . prepareForResimplification
+                >>= mapLogicT liftSimplifier . simplifyPredicates sideCondition . prepareForResimplification
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
@@ -130,7 +134,7 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition original = d
         return simplifiedPattern
 
     simplifyPredicate predicate =
-        Predicate.simplify sideCondition predicate & lift
+        Predicate.simplify sideCondition predicate & liftSimplifier
 
     prepareForResimplification predicates
         -- If the 'MultiAnd' is singular, we should avoid resimplification.
@@ -162,6 +166,14 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition original = d
                 & lift
         predicate' <- scatter predicates'
         return $ Conditional.andCondition conditional' predicate'
+{-# SPECIALIZE simplify ::
+    forall any.
+    HasCallStack =>
+    SubstitutionSimplifier Simplifier ->
+    SideCondition RewritingVariableName ->
+    Conditional RewritingVariableName any ->
+    LogicT Simplifier (Conditional RewritingVariableName any)
+    #-}
 
 {- | Simplify a conjunction of predicates by applying predicate and term
 replacements and by simplifying each predicate with the assumption that the
@@ -169,10 +181,9 @@ others are true.
 This procedure is applied until the conjunction stabilizes.
 -}
 simplifyPredicates ::
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     MultiAnd (Predicate RewritingVariableName) ->
-    LogicT simplifier (Condition RewritingVariableName)
+    LogicT Simplifier (Condition RewritingVariableName)
 simplifyPredicates sideCondition original = do
     let predicates =
             SideCondition.simplifyConjunctionByAssumption original
@@ -215,12 +226,10 @@ simplifyPredicateExistElim avoid predicate = case predicateF of
 under the assumption that the others are true.
 -}
 simplifyPredicatesWithAssumptions ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     [Predicate RewritingVariableName] ->
     LogicT
-        simplifier
+        Simplifier
         (MultiAnd (Predicate RewritingVariableName))
 simplifyPredicatesWithAssumptions _ [] = return MultiAnd.top
 simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
@@ -236,7 +245,7 @@ simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
         ) ->
         StateT
             (MultiAnd (Predicate RewritingVariableName))
-            (LogicT simplifier)
+            (LogicT Simplifier)
             ()
     simplifyWithAssumptions (predicate, unsimplifiedSideCond) = do
         sideCondition' <- getSideCondition unsimplifiedSideCond
@@ -253,7 +262,7 @@ simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
     putSimplifiedResult result = State.modify' (<> result)
 
     simplifyPredicate sideCondition' predicate =
-        Predicate.simplify sideCondition' predicate >>= Logic.scatter & lift
+        liftSimplifier (Predicate.simplify sideCondition' predicate) >>= Logic.scatter & lift
 
 mkCondition ::
     InternalVariable variable =>

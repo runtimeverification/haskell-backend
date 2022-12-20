@@ -30,9 +30,7 @@ import Prelude.Kore
 type NormalForm = MultiOr (MultiAnd (Predicate RewritingVariableName))
 
 simplify ::
-    forall simplifier.
     HasCallStack =>
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Predicate RewritingVariableName ->
-    simplifier NormalForm
+    Simplifier NormalForm

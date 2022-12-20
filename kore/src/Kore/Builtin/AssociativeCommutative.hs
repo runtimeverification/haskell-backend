@@ -876,9 +876,7 @@ matchUnifyEqualsNormalizedAc
             HashMap k v ->
             HashSet k ->
             HashMap k v
-        withoutKeys hmap (HashSet.toList -> hset) =
-            let keys = zip hset (repeat ()) & HashMap.fromList
-             in hmap `HashMap.difference` keys
+        withoutKeys hmap hset = hmap `HashMap.difference` (HashSet.toMap hset)
 
         allElements1 =
             map WithVariablePat elementVariableDifference1
@@ -1059,7 +1057,7 @@ unifyEqualsNormalizedAc
             TermLike RewritingVariableName ->
             unifier (Pattern RewritingVariableName)
         simplify term =
-            simplifyPatternScatter SideCondition.topTODO (Pattern.fromTermLike term)
+            mapLogicT liftSimplifier (simplifyPatternScatter SideCondition.topTODO (Pattern.fromTermLike term))
                 & lowerLogicT
 
         simplifyPair ::
@@ -1108,7 +1106,7 @@ unifyEqualsNormalizedAc
                 TermLike RewritingVariableName ->
                 unifier (Pattern RewritingVariableName)
             simplifyTermLike' term =
-                simplifyPatternScatter SideCondition.topTODO (Pattern.fromTermLike term)
+                mapLogicT liftSimplifier (simplifyPatternScatter SideCondition.topTODO (Pattern.fromTermLike term))
                     & lowerLogicT
 
 buildResultFromUnifiers ::

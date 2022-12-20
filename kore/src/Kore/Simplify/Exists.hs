@@ -235,8 +235,8 @@ matchesToVariableSubstitution
           , Substitution.null boundSubstitution
           , not (TermLike.hasFreeVariable (inject $ variableName variable) term) =
             do
-                matchResultFS <- liftSimplifier $ patternMatch sideCondition first second
-                matchResultSF <- liftSimplifier $ patternMatch sideCondition second first
+                matchResultFS <- patternMatch sideCondition first second
+                matchResultSF <- patternMatch sideCondition second first
                 case either (const Nothing) Just matchResultFS <|> either (const Nothing) Just matchResultSF of
                     Just (Predicate.PredicateTrue, results) ->
                         return (singleVariableSubstitution variable results)
