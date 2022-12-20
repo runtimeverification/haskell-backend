@@ -2,18 +2,23 @@
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 {-# OPTIONS_GHC -ddump-splices #-}
 
-module Kore.LLVM.Internal (API (..), KorePatternAPI (..), runLLVM, runLLVMwithDL, withDLib, ask, marshallTerm) where
+module Kore.LLVM.Internal (API (..), KorePatternAPI (..), runLLVM, runLLVMwithDL, withDLib, ask, marshallTerm, marshallSort) where
 
 import Control.Monad (forM_, void, (>=>))
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Control.Monad.Trans.Reader qualified as Reader
+import Data.ByteString (ByteString)
+import Data.ByteString.Char8 (packCStringLen)
 import Data.Map qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Foreign (ForeignPtr, finalizeForeignPtr, newForeignPtr, withForeignPtr)
 import Foreign qualified
 import Foreign.C qualified as C
+import Foreign.C.Types (CSize (..))
+import Foreign.Marshal (alloca)
+import Foreign.Storable (peek)
 import Kore.LLVM.TH (dynamicBindings)
 import Kore.Pattern.Base
 import Kore.Pattern.Util (applySubst, sortOfTerm)
@@ -23,6 +28,7 @@ data KorePattern
 data KoreSort
 data KoreSymbol
 data Block
+type SizeT = CSize
 
 type KorePatternPtr = ForeignPtr KorePattern
 type KoreSymbolPtr = ForeignPtr KoreSymbol
@@ -63,6 +69,7 @@ data API = API
     , symbol :: KoreSymbolAPI
     , sort :: KoreSortAPI
     , simplifyBool :: KorePatternPtr -> LLVM Bool
+    , simplify :: KorePatternPtr -> KoreSortPtr -> LLVM ByteString
     }
 
 newtype LLVM a = LLVM (ReaderT API IO a)
@@ -161,7 +168,19 @@ runLLVMwithDL dlib (LLVM m) = flip runReaderT dlib $ do
         simplify <- koreSimplifyBool
         pure $ \p -> liftIO $ withForeignPtr p $ fmap (== 1) <$> simplify
 
-    liftIO $ runReaderT m $ API{patt, symbol, sort, simplifyBool}
+    simplify <- do
+        simplify' <- koreSimplify
+        pure $ \pat srt -> liftIO $
+            withForeignPtr pat $ \patPtr ->
+                withForeignPtr srt $ \sortPtr ->
+                    alloca $ \lenPtr ->
+                        alloca $ \strPtr -> do
+                            simplify' patPtr sortPtr strPtr lenPtr
+                            len <- fromIntegral <$> peek lenPtr
+                            cstr <- peek strPtr
+                            packCStringLen (cstr, len)
+
+    liftIO $ runReaderT m $ API{patt, symbol, sort, simplifyBool, simplify}
 
 ask :: LLVM API
 ask = LLVM Reader.ask
