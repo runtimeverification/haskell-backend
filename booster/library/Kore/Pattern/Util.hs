@@ -19,6 +19,7 @@ module Kore.Pattern.Util (
     checkTermSymbols,
     isBottom,
     isConcrete,
+    decodeLabel,
 ) where
 
 import Data.Foldable (fold)

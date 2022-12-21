@@ -33,6 +33,7 @@ externalisePattern Internal.Pattern{term = term, constraints} =
     multiAnd _ [] = error "multiAnd: empty"
     multiAnd sort ps = foldl1 (Syntax.KJAnd sort) ps
 
+-- TODO: should KorePattern be the only type with an actual Unparse instance?
 externaliseTerm :: Internal.Term -> Syntax.KorePattern
 externaliseTerm = \case
     Internal.AndTerm first' second' ->
