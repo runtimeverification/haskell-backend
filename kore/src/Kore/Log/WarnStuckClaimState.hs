@@ -9,6 +9,7 @@ module Kore.Log.WarnStuckClaimState (
     WarnStuckClaimState (..),
     warnStuckClaimStateTermsUnifiable,
     warnStuckClaimStateTermsNotUnifiable,
+    warnStuckClaimStateBottomLHS
 ) where
 
 import Kore.Attribute.SourceLocation
@@ -31,6 +32,8 @@ data WarnStuckClaimState
     | -- | The left- and right-hand side terms are unifiable, but the left-hand side
       -- condition does not imply the right-hand side condition.
       TermsNotUnifiableStuck SomeClaim
+    | -- | The left-hand side of the claim has been simplified to bottom.
+      BottomLHS SomeClaim
     deriving stock (Show)
 
 instance Pretty WarnStuckClaimState where
@@ -44,6 +47,11 @@ instance Pretty WarnStuckClaimState where
         Pretty.hsep
             [ "The configuration's term doesn't unify with the destination's term\
               \ and the configuration cannot be rewritten further. Location:"
+            , Pretty.pretty (from claim :: SourceLocation)
+            ]
+    pretty (BottomLHS claim) =
+        Pretty.hsep
+            [ "The left-hand side of the claim has been simplified to bottom. Location:"
             , Pretty.pretty (from claim :: SourceLocation)
             ]
 
@@ -61,6 +69,12 @@ instance Entry WarnStuckClaimState where
             , Pretty.colon
             , Pretty.pretty @SourceLocation $ from claim
             ]
+    oneLineDoc (BottomLHS claim) =
+        Pretty.hsep
+            [ "BottomLHS:"
+            , Pretty.colon
+            , Pretty.pretty @SourceLocation $ from claim
+            ]
 
     helpDoc _ = "distinguish the ways a proof can become stuck"
 
@@ -69,3 +83,6 @@ warnStuckClaimStateTermsUnifiable = logEntry . TermsUnifiableStuck
 
 warnStuckClaimStateTermsNotUnifiable :: MonadLog log => SomeClaim -> log ()
 warnStuckClaimStateTermsNotUnifiable = logEntry . TermsNotUnifiableStuck
+
+warnStuckClaimStateBottomLHS :: MonadLog log => SomeClaim -> log ()
+warnStuckClaimStateBottomLHS = logEntry . BottomLHS

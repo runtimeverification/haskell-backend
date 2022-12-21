@@ -107,6 +107,7 @@ runRepl ::
     Maybe MinDepth ->
     Maybe StepTimeout ->
     StuckCheck ->
+    AllowVacuous ->
     -- | list of axioms to used in the proof
     [Axiom] ->
     [SomeClaim] ->
@@ -127,7 +128,7 @@ runRepl ::
     KompiledDir ->
     KorePrintCommand ->
     Simplifier ()
-runRepl _ _ _ _ _ [] _ _ _ _ outputFile _ _ _ _ _ =
+runRepl _ _ _ _ _ _ [] _ _ _ _ outputFile _ _ _ _ _ =
     let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
      in liftIO . printTerm . unparseToString $ topTerm
   where
@@ -137,6 +138,7 @@ runRepl
     minDepth
     stepTimeout
     stuckCheck
+    allowVacuous
     axioms'
     origClaims
     claims'
@@ -276,7 +278,7 @@ runRepl
             let node = unReplNode rnode
             if Graph.outdeg (Strategy.graph graph) node == 0
                 then
-                    proveClaimStep minDepth timeout stuckCheck origClaims axioms graph node
+                    proveClaimStep minDepth timeout stuckCheck allowVacuous origClaims axioms graph node
                         & Exception.handle (withConfigurationHandler (Just graph))
                         & Exception.handle (someExceptionHandler (Just graph))
                 else pure $ Just graph

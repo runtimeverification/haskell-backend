@@ -140,6 +140,7 @@ import Kore.Reachability (
     Rule (ReachabilityRewriteRule),
     SomeClaim (..),
     StuckCheck (..),
+    AllowVacuous,
     ToProve (ToProve),
     extractClaims,
     isTrusted,
@@ -679,6 +680,7 @@ search
 prove ::
     Maybe MinDepth ->
     StuckCheck ->
+    AllowVacuous ->
     Strategy.GraphSearchOrder ->
     Limit Natural ->
     Limit Natural ->
@@ -694,6 +696,7 @@ prove ::
 prove
     maybeMinDepth
     stuckCheck
+    allowVacuous
     searchOrder
     breadthLimit
     depthLimit
@@ -711,6 +714,7 @@ prove
             proveClaims
                 maybeMinDepth
                 stuckCheck
+                allowVacuous
                 breadthLimit
                 searchOrder
                 maxCounterexamples
@@ -735,6 +739,7 @@ proveWithRepl ::
     Maybe MinDepth ->
     Maybe Repl.Data.StepTimeout ->
     StuckCheck ->
+    AllowVacuous ->
     -- | The main module
     VerifiedModule StepperAttributes ->
     -- | The spec module
@@ -760,6 +765,7 @@ proveWithRepl
     minDepth
     stepTimeout
     stuckCheck
+    allowVacuous
     definitionModule
     specModule
     trustedModule
@@ -783,6 +789,7 @@ proveWithRepl
                 minDepth
                 stepTimeout
                 stuckCheck
+                allowVacuous
                 axioms
                 specClaims
                 claims

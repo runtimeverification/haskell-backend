@@ -283,6 +283,7 @@ mainWithOptions LocalOptions{execOptions} = do
                                 replMinDepth
                                 stepTimeout
                                 replStuckCheck
+                                replAllowVacuous
                                 validatedDefinition
                                 specDefIndexedModule
                                 Nothing
@@ -373,3 +374,6 @@ mainWithOptions LocalOptions{execOptions} = do
 
     replMinDepth :: Maybe Claim.MinDepth
     replMinDepth = minDepth proveOptions
+
+    replAllowVacuous :: Claim.AllowVacuous
+    replAllowVacuous = allowVacuous proveOptions
