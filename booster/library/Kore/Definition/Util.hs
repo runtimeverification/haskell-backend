@@ -19,7 +19,7 @@ import GHC.Generics (Generic)
 
 import Kore.Definition.Attributes.Base
 import Kore.Definition.Base
-import Kore.Pattern.Base (TermIndex (..))
+import Kore.Pattern.Base (TermIndex (..), decodeLabel)
 
 data Summary = Summary
     { file :: FilePath
@@ -99,63 +99,3 @@ prettySummary
         prettyTermIndex None = "None"
 
         justShow = Text.pack . show
-
-decodeLabel :: Text -> Either String Text
-decodeLabel str
-    | Text.null str = Right str
-    | "'" `Text.isPrefixOf` str =
-        let (encoded, rest) = Text.span (/= '\'') (Text.tail str)
-         in (<>) <$> decode encoded <*> decodeLabel (Text.drop 1 rest)
-    | otherwise =
-        let (notEncoded, rest) = Text.span (/= '\'') str
-         in (notEncoded <>) <$> decodeLabel rest
-  where
-    decode :: Text -> Either String Text
-    decode s
-        | Text.null s = Right s
-        | Text.length code < 4 = Left $ "Bad character code  " <> show code
-        | otherwise =
-            maybe
-                (Left $ "Unknown character code  " <> show code)
-                (\c -> (c <>) <$> decode rest)
-                (Map.lookup code decodeMap)
-      where
-        (code, rest) = Text.splitAt 4 s
-
-decodeMap :: Map.Map Text Text
-decodeMap =
-    Map.fromList
-        [ ("Spce", " ")
-        , ("Bang", "!")
-        , ("Quot", "\"")
-        , ("Hash", "#")
-        , ("Dolr", "$")
-        , ("Perc", "%")
-        , ("And-", "&")
-        , ("Apos", "'")
-        , ("LPar", "(")
-        , ("RPar", ")")
-        , ("Star", "*")
-        , ("Plus", "+")
-        , ("Comm", ",")
-        , ("Hyph", "-")
-        , ("Stop", ".")
-        , ("Slsh", "/")
-        , ("Coln", ":")
-        , ("SCln", ";")
-        , ("-LT-", "<")
-        , ("Eqls", "=")
-        , ("-GT-", ">")
-        , ("Ques", "?")
-        , ("-AT-", "@")
-        , ("LSqB", "[")
-        , ("RSqB", "]")
-        , ("Bash", "\\")
-        , ("Xor-", "^")
-        , ("Unds", "_")
-        , ("BQuo", "`")
-        , ("LBra", "{")
-        , ("Pipe", "|")
-        , ("RBra", "}")
-        , ("Tild", "~")
-        ]

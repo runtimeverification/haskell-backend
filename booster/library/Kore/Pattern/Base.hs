@@ -12,10 +12,16 @@ module Kore.Pattern.Base (
 ) where
 
 import Control.DeepSeq (NFData (..))
+import Data.Either (fromRight)
 import Data.Functor.Foldable.TH (makeBaseFunctor)
+import Data.Map qualified as Map
 import Data.Text (Text)
+import Data.Text qualified as Text
 import GHC.Generics (Generic)
 import Kore.Definition.Attributes.Base (SymbolAttributes)
+import Kore.Prettyprinter qualified as KPretty
+import Prettyprinter (Pretty (..))
+import Prettyprinter qualified as Pretty
 
 type VarName = Text
 type SymbolName = Text
@@ -72,7 +78,8 @@ data Term
 makeBaseFunctor ''Term
 
 pattern AndBool :: [Term] -> Term
-pattern AndBool ts <- SymbolApplication (Symbol "Lbl'Unds'andBool'Unds'" _ _ _ _) _ ts
+pattern AndBool ts <-
+    SymbolApplication (Symbol "Lbl'Unds'andBool'Unds'" _ _ _ _) _ ts
 
 pattern DV :: Sort -> Symbol
 pattern DV sort <- Symbol "\\dv" _ _ sort _
@@ -152,3 +159,161 @@ combine s@(TopSymbol s1) (TopSymbol s2)
     | s1 == s2 = s
 --     | otherwise = None -- redundant
 combine _ _ = None -- incompatible indexes
+
+decodeLabel :: Text -> Either String Text
+decodeLabel str
+    | Text.null str = Right str
+    | "'" `Text.isPrefixOf` str =
+        let (encoded, rest) = Text.span (/= '\'') (Text.tail str)
+         in (<>) <$> decode encoded <*> decodeLabel (Text.drop 1 rest)
+    | otherwise =
+        let (notEncoded, rest) = Text.span (/= '\'') str
+         in (notEncoded <>) <$> decodeLabel rest
+  where
+    decode :: Text -> Either String Text
+    decode s
+        | Text.null s = Right s
+        | Text.length code < 4 = Left $ "Bad character code  " <> show code
+        | otherwise =
+            maybe
+                (Left $ "Unknown character code  " <> show code)
+                (\c -> (c <>) <$> decode rest)
+                (Map.lookup code decodeMap)
+      where
+        (code, rest) = Text.splitAt 4 s
+
+decodeMap :: Map.Map Text Text
+decodeMap =
+    Map.fromList
+        [ ("Spce", " ")
+        , ("Bang", "!")
+        , ("Quot", "\"")
+        , ("Hash", "#")
+        , ("Dolr", "$")
+        , ("Perc", "%")
+        , ("And-", "&")
+        , ("Apos", "'")
+        , ("LPar", "(")
+        , ("RPar", ")")
+        , ("Star", "*")
+        , ("Plus", "+")
+        , ("Comm", ",")
+        , ("Hyph", "-")
+        , ("Stop", ".")
+        , ("Slsh", "/")
+        , ("Coln", ":")
+        , ("SCln", ";")
+        , ("-LT-", "<")
+        , ("Eqls", "=")
+        , ("-GT-", ">")
+        , ("Ques", "?")
+        , ("-AT-", "@")
+        , ("LSqB", "[")
+        , ("RSqB", "]")
+        , ("Bash", "\\")
+        , ("Xor-", "^")
+        , ("Unds", "_")
+        , ("BQuo", "`")
+        , ("LBra", "{")
+        , ("Pipe", "|")
+        , ("RBra", "}")
+        , ("Tild", "~")
+        ]
+
+decodeLabel' :: Text -> Text
+decodeLabel' orig =
+    fromRight orig (decodeLabel orig)
+
+instance Pretty Term where
+    pretty =
+        \case
+            AndTerm t1 t2 ->
+                "\\andTerm"
+                    <> KPretty.noParameters
+                    <> KPretty.argumentsP [t1, t2]
+            SymbolApplication symbol sortParams args ->
+                pretty (decodeLabel' symbol.name)
+                    <> KPretty.parametersP sortParams
+                    <> KPretty.argumentsP args
+            DomainValue sort text ->
+                "\\dv"
+                    <> KPretty.parametersP [sort]
+                    <> KPretty.argumentsP [text]
+            Var var -> pretty var
+
+instance Pretty Sort where
+    pretty (SortApp name params) =
+        Pretty.pretty name <> KPretty.parametersP params
+    pretty (SortVar name) =
+        Pretty.pretty name
+
+instance Pretty Variable where
+    pretty var =
+        Pretty.pretty (decodeLabel' var.variableName)
+            <> Pretty.colon
+            <> pretty var.variableSort
+
+instance Pretty Predicate where
+    pretty =
+        \case
+            AndPredicate p1 p2 ->
+                "\\andPredicate"
+                    <> KPretty.noParameters
+                    <> KPretty.argumentsP [p1, p2]
+            Bottom ->
+                "\\bottom"
+                    <> KPretty.noParameters
+                    <> KPretty.noArguments
+            Ceil t ->
+                "\\ceil"
+                    <> KPretty.noParameters
+                    <> KPretty.argumentsP [t]
+            EqualsTerm t1 t2 ->
+                "\\equalsTerm"
+                    <> KPretty.noParameters
+                    <> KPretty.argumentsP [t1, t2]
+            EqualsPredicate p1 p2 ->
+                "\\equalsPredicate"
+                    <> KPretty.noParameters
+                    <> KPretty.argumentsP [p1, p2]
+            Exists vn p ->
+                "\\exists"
+                    <> KPretty.noParameters
+                    <> KPretty.arguments' [pretty vn, pretty p]
+            Forall vn p ->
+                "\\forall"
+                    <> KPretty.noParameters
+                    <> KPretty.arguments' [pretty vn, pretty p]
+            Iff p1 p2 ->
+                "\\iff"
+                    <> KPretty.noParameters
+                    <> KPretty.argumentsP [p1, p2]
+            Implies p1 p2 ->
+                "\\implies"
+                    <> KPretty.noParameters
+                    <> KPretty.argumentsP [p1, p2]
+            In t1 t2 ->
+                "\\in"
+                    <> KPretty.noParameters
+                    <> KPretty.argumentsP [t1, t2]
+            Not p ->
+                "\\not"
+                    <> KPretty.noParameters
+                    <> KPretty.argumentsP [p]
+            Or p1 p2 ->
+                "\\or"
+                    <> KPretty.noParameters
+                    <> KPretty.argumentsP [p1, p2]
+            Top ->
+                "\\top"
+                    <> KPretty.noParameters
+                    <> KPretty.noArguments
+
+instance Pretty Pattern where
+    pretty patt =
+        Pretty.vsep $
+            [ "Term:"
+            , Pretty.indent 4 $ pretty patt.term
+            , "Conditions:"
+            ]
+                <> fmap (Pretty.indent 4 . pretty) patt.constraints
