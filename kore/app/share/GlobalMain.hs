@@ -131,7 +131,7 @@ import Kore.Parser (
 import Kore.Parser.ParserUtils (
     readPositiveIntegral,
  )
-import Kore.Reachability.Claim (MinDepth (..), StuckCheck (..))
+import Kore.Reachability.Claim (MinDepth (..), StuckCheck (..), AllowVacuous (..))
 import Kore.Rewrite.SMT.Lemma
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
@@ -219,6 +219,8 @@ data KoreProveOptions = KoreProveOptions
       stuckCheck :: !StuckCheck
     , -- | Forces the prover to run at least n steps
       minDepth :: !(Maybe MinDepth)
+    , -- | Enables discharging #Bottom paths as #Top at implication checking time.
+      allowVacuous :: AllowVacuous
     }
 
 parseModuleName :: String -> String -> String -> Parser ModuleName
@@ -275,6 +277,13 @@ parseKoreProveOptions =
                     <> long "min-depth"
                     <> help "Force the prover to execute at least n steps."
                 )
+            )
+        <*> Options.flag
+            DisallowedVacuous
+            AllowedVacuous
+            ( long "allow-vacuous"
+                <> help "Enables discharging #Bottom paths as #Top at \
+                        \implication checking time."
             )
   where
     parseMinDepth =

@@ -106,6 +106,7 @@ import Text.Megaparsec (
 runRepl ::
     Maybe MinDepth ->
     StuckCheck ->
+    AllowVacuous ->
     -- | list of axioms to used in the proof
     [Axiom] ->
     [SomeClaim] ->
@@ -124,7 +125,7 @@ runRepl ::
     Log.KoreLogOptions ->
     KFileLocations ->
     Simplifier ()
-runRepl _ _ _ _ [] _ _ _ _ outputFile _ _ _ =
+runRepl _ _ _ _ _ [] _ _ _ _ outputFile _ _ _ =
     let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
      in liftIO . printTerm . unparseToString $ topTerm
   where
@@ -133,6 +134,7 @@ runRepl _ _ _ _ [] _ _ _ _ outputFile _ _ _ =
 runRepl
     minDepth
     stuckCheck
+    allowVacuous
     axioms'
     origClaims
     claims'
@@ -266,7 +268,7 @@ runRepl
             let node = unReplNode rnode
             if Graph.outdeg (Strategy.graph graph) node == 0
                 then
-                    proveClaimStep minDepth stuckCheck origClaims axioms graph node
+                    proveClaimStep minDepth stuckCheck allowVacuous origClaims axioms graph node
                         & Exception.handle (withConfigurationHandler graph)
                         & Exception.handle (someExceptionHandler graph)
                 else pure graph
