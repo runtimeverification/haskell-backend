@@ -17,7 +17,6 @@ module Kore.Rewrite.Step (
     unifyRule,
     applyInitialConditions,
     applyRemainder,
-    toConfigurationVariablesCondition,
     assertFunctionLikeResults,
     checkFunctionLike,
     wouldNarrowWith,
@@ -88,10 +87,6 @@ import Kore.Unification.NewUnifier (
  )
 import Kore.Unification.Procedure
 import Kore.Unparser
-import Kore.Variables.Target (
-    Target,
- )
-import Kore.Variables.Target qualified as Target
 import Logic (
     LogicT,
  )
@@ -307,14 +302,6 @@ applyInitialConditions sideCondition initial unification = do
     -- then the rule is considered to apply with a \bottom result.
     TopBottom.guardAgainstBottom evaluated
     return evaluated
-
--- |Renames configuration variables to distinguish them from those in the rule.
-toConfigurationVariablesCondition ::
-    InternalVariable variable =>
-    SideCondition variable ->
-    SideCondition (Target variable)
-toConfigurationVariablesCondition =
-    SideCondition.mapVariables Target.mkUnifiedNonTarget
 
 -- | Apply the remainder predicate to the given initial configuration.
 applyRemainder ::
