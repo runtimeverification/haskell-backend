@@ -72,6 +72,9 @@ test_replParser =
     , debugAttemptEquationTests `tests` "debug-attempt-equation"
     , debugApplyEquationTests `tests` "debug-apply-equation"
     , debugEquationTests `tests` "debug-equation"
+    , debugAttemptRewriteTests `tests` "debug-attempt-rewrite"
+    , debugApplyRewriteTests `tests` "debug-apply-rewrite"
+    , debugRewriteTests `tests` "debug-rewrite"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -722,6 +725,123 @@ debugEquationTests =
     , "debug-equation MODULE.label1 MODULE.label2"
         `parsesTo_` DebugEquation
             Log.DebugEquationOptions
+                { Log.selected =
+                    fromList
+                        ["MODULE.label1", "MODULE.label2"]
+                }
+    ]
+
+debugAttemptRewriteTests :: [ParserTest ReplCommand]
+debugAttemptRewriteTests =
+    [ "debug-attempt-rewrite"
+        `parsesTo_` DebugAttemptRewrite
+            Log.DebugAttemptRewriteOptions
+                { Log.selected =
+                    fromList
+                        []
+                }
+    , Text.pack ("debug-attempt-rewrite " <> totalBalanceSymbolId)
+        `parsesTo_` DebugAttemptRewrite
+            Log.DebugAttemptRewriteOptions
+                { Log.selected =
+                    fromList
+                        [totalBalanceSymbolId]
+                }
+    , Text.pack ("debug-attempt-rewrite " <> totalBalanceSymbolId <> " " <> plusSymbolId)
+        `parsesTo_` DebugAttemptRewrite
+            Log.DebugAttemptRewriteOptions
+                { Log.selected =
+                    fromList
+                        [totalBalanceSymbolId, plusSymbolId]
+                }
+    , "debug-attempt-rewrite label1 label2"
+        `parsesTo_` DebugAttemptRewrite
+            Log.DebugAttemptRewriteOptions
+                { Log.selected =
+                    fromList
+                        ["label1", "label2"]
+                }
+    , "debug-attempt-rewrite MODULE.label1 MODULE.label2"
+        `parsesTo_` DebugAttemptRewrite
+            Log.DebugAttemptRewriteOptions
+                { Log.selected =
+                    fromList
+                        ["MODULE.label1", "MODULE.label2"]
+                }
+    ]
+
+debugApplyRewriteTests :: [ParserTest ReplCommand]
+debugApplyRewriteTests =
+    [ "debug-apply-rewrite"
+        `parsesTo_` DebugApplyRewrite
+            Log.DebugApplyRewriteOptions
+                { Log.selected =
+                    fromList
+                        []
+                }
+    , Text.pack ("debug-apply-rewrite " <> totalBalanceSymbolId)
+        `parsesTo_` DebugApplyRewrite
+            Log.DebugApplyRewriteOptions
+                { Log.selected =
+                    fromList
+                        [totalBalanceSymbolId]
+                }
+    , Text.pack ("debug-apply-rewrite " <> totalBalanceSymbolId <> " " <> plusSymbolId)
+        `parsesTo_` DebugApplyRewrite
+            Log.DebugApplyRewriteOptions
+                { Log.selected =
+                    fromList
+                        [totalBalanceSymbolId, plusSymbolId]
+                }
+    , "debug-apply-rewrite label1 label2"
+        `parsesTo_` DebugApplyRewrite
+            Log.DebugApplyRewriteOptions
+                { Log.selected =
+                    fromList
+                        ["label1", "label2"]
+                }
+    , "debug-apply-rewrite MODULE.label1 MODULE.label2"
+        `parsesTo_` DebugApplyRewrite
+            Log.DebugApplyRewriteOptions
+                { Log.selected =
+                    fromList
+                        ["MODULE.label1", "MODULE.label2"]
+                }
+    ]
+
+debugRewriteTests :: [ParserTest ReplCommand]
+debugRewriteTests =
+    [ "debug-rewrite"
+        `parsesTo_` DebugRewrite
+            Log.DebugRewriteOptions
+                { Log.selected =
+                    fromList
+                        []
+                }
+    , Text.pack ("debug-rewrite" <> totalBalanceSymbolId)
+        `parsesTo_` DebugRewrite
+            Log.DebugRewriteOptions
+                { Log.selected =
+                    fromList
+                        [totalBalanceSymbolId]
+                }
+    , Text.pack ("debug-rewrite" <> totalBalanceSymbolId <> " " <> plusSymbolId)
+        `parsesTo_` DebugRewrite
+            Log.DebugRewriteOptions
+                { Log.selected =
+                    fromList
+                        [totalBalanceSymbolId, plusSymbolId]
+                }
+    , "debug-rewrite label1 label2"
+        `parsesTo_` DebugRewrite
+            Log.DebugRewriteOptions
+                { Log.selected =
+                    fromList
+                        ["label1", "label2"]
+                }
+    , "debug-rewrite MODULE.label1 MODULE.label2"
+        `parsesTo_` DebugRewrite
+            Log.DebugRewriteOptions
                 { Log.selected =
                     fromList
                         ["MODULE.label1", "MODULE.label2"]

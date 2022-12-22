@@ -314,6 +314,9 @@ replInterpreter0 printAux printKore replCmd = do
             DebugAttemptEquation op -> debugAttemptEquation op $> Continue
             DebugApplyEquation op -> debugApplyEquation op $> Continue
             DebugEquation op -> debugEquation op $> Continue
+            DebugAttemptRewrite op -> debugAttemptRewrite op $> Continue
+            DebugApplyRewrite op -> debugApplyRewrite op $> Continue
+            DebugRewrite op -> debugRewrite op $> Continue
             Exit -> exit
     (ReplOutput output, shouldContinue) <- lift $ evaluateCommand command
     traverse_
@@ -580,6 +583,37 @@ debugEquation ::
 debugEquation debugEquationOptions =
     field @"koreLogOptions"
         %= debugEquationTransformer debugEquationOptions
+
+{- | Log debugging information about attempting to apply
+ specific equations.
+-}
+debugAttemptRewrite ::
+    MonadState ReplState m =>
+    Log.DebugAttemptRewriteOptions ->
+    m ()
+debugAttemptRewrite debugAttemptRewriteOptions =
+    field @"koreLogOptions"
+        %= debugAttemptRewriteTransformer debugAttemptRewriteOptions
+
+-- | Log when specific equations apply.
+debugApplyRewrite ::
+    MonadState ReplState m =>
+    Log.DebugApplyRewriteOptions ->
+    m ()
+debugApplyRewrite debugApplyRewriteOptions =
+    field @"koreLogOptions"
+        %= debugApplyRewriteTransformer debugApplyRewriteOptions
+
+{- | Log the attempts and the applications of specific
+ equations.
+-}
+debugRewrite ::
+    MonadState ReplState m =>
+    Log.DebugRewriteOptions ->
+    m ()
+debugRewrite debugRewriteOptions =
+    field @"koreLogOptions"
+        %= debugRewriteTransformer debugRewriteOptions
 
 -- | Focuses the node with id equals to 'n'.
 selectNode ::
