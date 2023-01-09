@@ -57,7 +57,9 @@ jobs:
           extra_nix_config: |
             substituters = http://cache.nixos.org https://hydra.iohk.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
-          install_url: "https://releases.nixos.org/nix/nix-2.3.16/install"
+          # Keep nix at <=2.7 https://github.com/NixOS/nix/issues/6572
+          # but >= 2.4 due to ZSTD compression done by cachix >=1.1 https://blog.cachix.org/posts/2022-12-19-zstd-compression/
+          install_url: https://releases.nixos.org/nix/nix-2.7.0/install
 
       - name: Install Cachix
         uses: cachix/cachix-action@v10

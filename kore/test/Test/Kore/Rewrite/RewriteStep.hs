@@ -16,6 +16,9 @@ import Data.Maybe (
     fromJust,
  )
 import Data.Set qualified as Set
+import Kore.Attribute.Label (
+    Label,
+ )
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
@@ -143,6 +146,7 @@ unifyRule ::
     Step.UnifyingRule rule =>
     Step.UnifyingRuleVariable rule ~ RewritingVariableName =>
     From rule SourceLocation =>
+    From rule Label =>
     Pattern RewritingVariableName ->
     rule ->
     IO [Step.UnifiedRule rule]

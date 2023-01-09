@@ -15,6 +15,9 @@ module Kore.Rewrite.RewriteStep (
 import Control.Monad.State.Strict qualified as State
 import Control.Monad.Trans.Class qualified as Monad.Trans
 import Data.Sequence qualified as Seq
+import Kore.Attribute.Label (
+    Label (..),
+ )
 import Kore.Attribute.Pattern.FreeVariables (
     FreeVariables,
  )
@@ -355,6 +358,7 @@ applyWithFinalizer ::
     Rule.UnifyingRuleVariable rule ~ RewritingVariableName =>
     From rule SourceLocation =>
     From rule UniqueId =>
+    From rule Label =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Finalizing function
@@ -366,7 +370,7 @@ applyWithFinalizer ::
     Simplifier (Results rule)
 applyWithFinalizer sideCondition finalize rules initial = do
     results <- unifyRules sideCondition initial rules
-    debugAppliedRewriteRules initial (locations <$> results)
+    debugAppliedRewriteRules initial (mapMaybe (unLabel . from) rules) (locations <$> results)
     let initialVariables = freeVariables initial
     finalizedResults <- finalize initialVariables initial results
     debugRewriteTrace initial finalizedResults
