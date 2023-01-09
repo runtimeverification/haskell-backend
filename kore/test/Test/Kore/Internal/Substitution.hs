@@ -20,10 +20,6 @@ import Kore.TopBottom (
     isBottom,
     isTop,
  )
-import Kore.Variables.Target (
-    mkElementNonTarget,
-    mkElementTarget,
- )
 import Prelude.Kore hiding (
     null,
  )
@@ -300,29 +296,29 @@ orderRenameAndRenormalizeTODOTests =
         , testCase "unnormalized reverses RHS" $ do
             let expectedSubst =
                     wrap . mkUnwrappedSubstitution $
-                        [(targetVarX, nonTargetPattY)]
+                        [(varX, pattY)]
                 originalSubst =
                     wrap . mkUnwrappedSubstitution $
-                        [(nonTargetVarY, targetPattX)]
+                        [(varY, pattX)]
             assertEqual
                 ""
                 expectedSubst
                 ( orderRenameAndRenormalizeTODO
-                    targetVarX
+                    varX
                     originalSubst
                 )
         , testCase "unnormalized does not reverse RHS" $ do
             let expectedSubst =
                     wrap . mkUnwrappedSubstitution $
-                        [(targetVarX, nonTargetPattY)]
+                        [(varX, pattY)]
                 originalSubst =
                     wrap . mkUnwrappedSubstitution $
-                        [(targetVarX, nonTargetPattY)]
+                        [(varX, pattY)]
             assertEqual
                 ""
                 expectedSubst
                 ( orderRenameAndRenormalizeTODO
-                    targetVarX
+                    varX
                     originalSubst
                 )
         , testCase "normalized reverses RHS" $ do
@@ -335,14 +331,14 @@ orderRenameAndRenormalizeTODOTests =
         , testCase "unnormalized reverses multiple RHS" $ do
             let expectedSubst =
                     wrap . mkUnwrappedSubstitution $
-                        [(targetVarX, nonTargetPattY), (targetVarX, nonTargetPattZ)]
+                        [(varX, pattY), (varX, pattZ)]
                 originalSubst =
                     wrap . mkUnwrappedSubstitution $
-                        [(nonTargetVarY, targetPattX), (nonTargetVarZ, targetPattX)]
+                        [(varY, pattX), (varZ, pattX)]
             assertEqual
                 ""
                 expectedSubst
-                (orderRenameAndRenormalizeTODO targetVarX originalSubst)
+                (orderRenameAndRenormalizeTODO varX originalSubst)
         , testCase "normalized reverses multiple RHS" $ do
             let expectedSubst =
                     unsafeWrap
@@ -388,12 +384,12 @@ orderRenameAndRenormalizeTODOTests =
                 (orderRenameAndRenormalizeTODO (inject Mock.x) originalSubst)
         ]
   where
-    targetVarX = inject . mkElementTarget $ Mock.x
-    targetPattX = mkElemVar . mkElementTarget $ Mock.x
-    nonTargetVarY = inject . mkElementNonTarget $ Mock.y
-    nonTargetPattY = mkElemVar . mkElementNonTarget $ Mock.y
-    nonTargetVarZ = inject . mkElementNonTarget $ Mock.z
-    nonTargetPattZ = mkElemVar . mkElementNonTarget $ Mock.z
+    varX = inject Mock.x
+    pattX = mkElemVar Mock.x
+    varY = inject Mock.y
+    pattY = mkElemVar Mock.y
+    varZ = inject Mock.z
+    pattZ = mkElemVar Mock.z
 
 emptyRawSubst :: [TestAssignment]
 emptyRawSubst = mempty
