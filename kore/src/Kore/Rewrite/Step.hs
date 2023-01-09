@@ -31,10 +31,14 @@ module Kore.Rewrite.Step (
 ) where
 
 import Data.Map.Strict qualified as Map
+import Data.Maybe (maybeToList)
 import Data.Set (
     Set,
  )
 import Data.Set qualified as Set
+import Kore.Attribute.Label (
+    Label (..),
+ )
 import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Attribute.SourceLocation (
     SourceLocation,
@@ -111,6 +115,7 @@ unifyRules ::
     UnifyingRule rule =>
     UnifyingRuleVariable rule ~ RewritingVariableName =>
     From rule SourceLocation =>
+    From rule Label =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Initial configuration
@@ -144,6 +149,7 @@ unifyRule ::
     RewritingVariableName ~ UnifyingRuleVariable rule =>
     UnifyingRule rule =>
     From rule SourceLocation =>
+    From rule Label =>
     -- | SideCondition containing metadata
     SideCondition RewritingVariableName ->
     -- | Initial configuration
@@ -152,7 +158,8 @@ unifyRule ::
     rule ->
     NewUnifier (UnifiedRule rule)
 unifyRule sideCondition initial rule = do
-    debugAttemptedRewriteRule initial (location rule)
+    let maybeLabel = unLabel . from $ rule
+    debugAttemptedRewriteRule initial (maybeToList maybeLabel) (location rule)
     ruleMarker "Init"
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         sideCondition' =

@@ -10,6 +10,7 @@ module Kore.Log.DebugAppliedRewriteRules (
     debugAppliedRewriteRules,
 ) where
 
+import Data.Text (Text)
 import Kore.Attribute.Axiom (
     SourceLocation,
  )
@@ -32,8 +33,9 @@ import Pretty (
 import Pretty qualified
 
 data DebugAppliedRewriteRules = DebugAppliedRewriteRules
-    { configuration :: Pattern VariableName
-    , appliedRewriteRules :: [SourceLocation]
+    { configuration :: !(Pattern VariableName)
+    , ruleLabels :: ![Text]
+    , appliedRewriteRules :: ![SourceLocation]
     }
     deriving stock (Show)
 
@@ -62,12 +64,14 @@ instance Entry DebugAppliedRewriteRules where
 debugAppliedRewriteRules ::
     MonadLog log =>
     Pattern RewritingVariableName ->
+    [Text] ->
     [SourceLocation] ->
     log ()
-debugAppliedRewriteRules initial appliedRewriteRules =
+debugAppliedRewriteRules initial ruleLabels appliedRewriteRules =
     logEntry
         DebugAppliedRewriteRules
             { configuration
+            , ruleLabels
             , appliedRewriteRules
             }
   where

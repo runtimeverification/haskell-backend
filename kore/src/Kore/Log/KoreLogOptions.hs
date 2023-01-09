@@ -18,6 +18,12 @@ module Kore.Log.KoreLogOptions (
     selectDebugAttemptEquation,
     DebugEquationOptions (..),
     selectDebugEquation,
+    DebugAttemptRewriteOptions (..),
+    selectDebugAttemptRewrite,
+    DebugApplyRewriteOptions (..),
+    selectDebugApplyRewrite,
+    DebugRewriteOptions (..),
+    selectDebugRewrite,
     unparseKoreLogOptions,
     defaultSeverity,
 ) where
@@ -45,6 +51,8 @@ import Kore.Equation.DebugEquation (
     DebugApplyEquation (..),
     DebugAttemptEquation (..),
  )
+import Kore.Log.DebugAppliedRewriteRules (DebugAppliedRewriteRules (DebugAppliedRewriteRules))
+import Kore.Log.DebugAttemptedRewriteRules (DebugAttemptedRewriteRules (DebugAttemptedRewriteRules))
 import Kore.Log.DebugSolver (
     DebugSolverOptions (..),
     parseDebugSolverOptions,
@@ -97,6 +105,9 @@ data KoreLogOptions = KoreLogOptions
     , debugApplyEquationOptions :: !DebugApplyEquationOptions
     , debugAttemptEquationOptions :: !DebugAttemptEquationOptions
     , debugEquationOptions :: !DebugEquationOptions
+    , debugAttemptRewriteOptions :: !DebugAttemptRewriteOptions
+    , debugApplyRewriteOptions :: !DebugApplyRewriteOptions
+    , debugRewriteOptions :: !DebugRewriteOptions
     , rewriteTraceFileName :: !(Maybe FilePath)
     }
     deriving stock (Eq, Show, GHC.Generic)
@@ -121,6 +132,9 @@ defaultKoreLogOptions exeName startTime =
         , debugApplyEquationOptions = def @DebugApplyEquationOptions
         , debugAttemptEquationOptions = def @DebugAttemptEquationOptions
         , debugEquationOptions = def @DebugEquationOptions
+        , debugAttemptRewriteOptions = def @DebugAttemptRewriteOptions
+        , debugApplyRewriteOptions = def @DebugApplyRewriteOptions
+        , debugRewriteOptions = def @DebugRewriteOptions
         , rewriteTraceFileName = Nothing
         }
 
@@ -211,6 +225,9 @@ parseKoreLogOptions exeName startTime =
         <*> parseDebugApplyEquationOptions
         <*> parseDebugAttemptEquationOptions
         <*> parseDebugEquationOptions
+        <*> parseDebugAttemptRewriteOptions
+        <*> parseDebugApplyRewriteOptions
+        <*> parseDebugRewriteOptions
         <*> parseTraceRewrites
 
 parseEntryTypes :: Parser EntryTypes
@@ -430,6 +447,129 @@ selectDebugEquation DebugEquationOptions{selected} =
         , selectDebugAttemptEquation DebugAttemptEquationOptions{selected}
         ]
 
+newtype DebugAttemptRewriteOptions = DebugAttemptRewriteOptions {selected :: HashSet Text}
+    deriving stock (Eq, Show)
+    deriving newtype (Semigroup, Monoid)
+
+instance Default DebugAttemptRewriteOptions where
+    def = DebugAttemptRewriteOptions HashSet.empty
+
+parseDebugAttemptRewriteOptions :: Parser DebugAttemptRewriteOptions
+parseDebugAttemptRewriteOptions =
+    mconcat <$> many parse
+  where
+    parse =
+        fmap (DebugAttemptRewriteOptions . HashSet.singleton . Text.pack) $
+            Options.strOption $
+                mconcat
+                    [ Options.metavar "REWRITE_RULE_IDENTIFIER"
+                    , Options.long "debug-attempt-rewrite"
+                    , Options.help
+                        "Log every attempt to apply an rewrite rule \
+                        \that matches REWRITE_RULE_IDENTIFIER, \
+                        \which may be the name of a symbol or a rule. \
+                        \It will not be mentioned whether the application succeeds or not. \
+                        \The name of a symbol may be a Kore identifier or a K label, \
+                        \which will match any equation where the named symbol \
+                        \occurs on the left-hand side. \
+                        \The name of a rule is given with the K module name \
+                        \as a dot-separated prefix: 'MODULE-NAME.rule-name'. \
+                        \This option may be specified multiple times to log multiple equations."
+                    ]
+
+selectDebugAttemptRewrite ::
+    DebugAttemptRewriteOptions ->
+    SomeEntry ->
+    Bool
+selectDebugAttemptRewrite options entry
+    | Just labels <- getLabel = any (flip HashSet.member selected) labels
+    | otherwise = False
+  where
+    getLabel = do
+        DebugAttemptedRewriteRules _ ruleLabels _ <- fromEntry entry
+        return ruleLabels
+    DebugAttemptRewriteOptions{selected} = options
+
+newtype DebugApplyRewriteOptions = DebugApplyRewriteOptions {selected :: HashSet Text}
+    deriving stock (Eq, Show)
+    deriving newtype (Semigroup, Monoid)
+
+instance Default DebugApplyRewriteOptions where
+    def = DebugApplyRewriteOptions HashSet.empty
+
+parseDebugApplyRewriteOptions :: Parser DebugApplyRewriteOptions
+parseDebugApplyRewriteOptions =
+    mconcat <$> many parse
+  where
+    parse =
+        fmap (DebugApplyRewriteOptions . HashSet.singleton . Text.pack) $
+            Options.strOption $
+                mconcat
+                    [ Options.metavar "REWRITE_RULE_IDENTIFIER"
+                    , Options.long "debug-apply-rewrite"
+                    , Options.help
+                        "Log every succesfully applied rewrite rule that matches REWRITE_RULE_IDENTIFIER, \
+                        \which may be the name of a symbol or a rule. \
+                        \The name of a symbol may be a Kore identifier or a K label, \
+                        \which will match any equation where the named symbol \
+                        \occurs on the left-hand side. \
+                        \The name of a rule is given with the K module name \
+                        \as a dot-separated prefix: 'MODULE-NAME.rule-name'. \
+                        \This option may be specified multiple times to log multiple equations."
+                    ]
+
+selectDebugApplyRewrite ::
+    DebugApplyRewriteOptions ->
+    SomeEntry ->
+    Bool
+selectDebugApplyRewrite options entry
+    | Just labels <- getLabel = any (flip HashSet.member selected) labels
+    | otherwise = False
+  where
+    getLabel = do
+        DebugAppliedRewriteRules _ ruleLabels _ <- fromEntry entry
+        return ruleLabels
+    DebugApplyRewriteOptions{selected} = options
+
+newtype DebugRewriteOptions = DebugRewriteOptions {selected :: HashSet Text}
+    deriving stock (Eq, Show)
+    deriving newtype (Semigroup, Monoid)
+
+instance Default DebugRewriteOptions where
+    def = DebugRewriteOptions HashSet.empty
+
+parseDebugRewriteOptions :: Parser DebugRewriteOptions
+parseDebugRewriteOptions =
+    mconcat <$> many parse
+  where
+    parse =
+        fmap (DebugRewriteOptions . HashSet.singleton . Text.pack) $
+            Options.strOption $
+                mconcat
+                    [ Options.metavar "REWRITE_RULE_IDENTIFIER"
+                    , Options.long "debug-rewrite"
+                    , Options.help
+                        "Log every attempt to apply or successful application of \
+                        \an rewrite rule that matches REWRITE_RULE_IDENTIFIER, \
+                        \which may be the name of a symbol or a rule. \
+                        \The name of a symbol may be a Kore identifier or a K label, \
+                        \which will match any equation where the named symbol \
+                        \occurs on the left-hand side. \
+                        \The name of a rule is given with the K module name \
+                        \as a dot-separated prefix: 'MODULE-NAME.rule-name'. \
+                        \This option may be specified multiple times to log multiple equations."
+                    ]
+
+selectDebugRewrite ::
+    DebugRewriteOptions ->
+    SomeEntry ->
+    Bool
+selectDebugRewrite DebugRewriteOptions{selected} =
+    (fmap or . sequence)
+        [ selectDebugApplyRewrite DebugApplyRewriteOptions{selected}
+        , selectDebugAttemptRewrite DebugAttemptRewriteOptions{selected}
+        ]
+
 parseTraceRewrites :: Parser (Maybe FilePath)
 parseTraceRewrites =
     Options.optional
@@ -457,6 +597,9 @@ unparseKoreLogOptions
             debugApplyEquationOptions
             debugAttemptEquationOptions
             debugEquationOptions
+            debugAttemptRewriteOptions
+            debugApplyRewriteOptions
+            debugRewriteOptions
             _
         ) =
         concat
@@ -472,6 +615,9 @@ unparseKoreLogOptions
             , debugApplyEquationOptionsFlag debugApplyEquationOptions
             , debugAttemptEquationOptionsFlag debugAttemptEquationOptions
             , debugEquationOptionsFlag debugEquationOptions
+            , debugAttemptRewriteOptionsFlag debugAttemptRewriteOptions
+            , debugApplyRewriteOptionsFlag debugApplyRewriteOptions
+            , debugRewriteOptionsFlag debugRewriteOptions
             ]
       where
         koreLogTypeFlag LogStdErr = []
@@ -506,3 +652,12 @@ unparseKoreLogOptions
 
         debugEquationOptionsFlag (DebugEquationOptions set) =
             concatMap (("--debug-equation" :) . (: []) . Text.unpack) (toList set)
+
+        debugAttemptRewriteOptionsFlag (DebugAttemptRewriteOptions set) =
+            concatMap (("--debug-attempt-rewrite" :) . (: []) . Text.unpack) (toList set)
+
+        debugApplyRewriteOptionsFlag (DebugApplyRewriteOptions set) =
+            concatMap (("--debug-apply-rewrite" :) . (: []) . Text.unpack) (toList set)
+
+        debugRewriteOptionsFlag (DebugRewriteOptions set) =
+            concatMap (("--debug-rewrite" :) . (: []) . Text.unpack) (toList set)
