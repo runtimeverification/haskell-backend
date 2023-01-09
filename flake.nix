@@ -69,7 +69,7 @@
           add-z3 = exe: {
             build-tools = with pkgs'; lib.mkForce [ makeWrapper ];
             postInstall = ''
-              wrapProgram $out/bin/${exe} --set PATH ${
+              wrapProgram $out/bin/${exe} --prefix PATH ${
                 with pkgs';
                 lib.makeBinPath [ z3 ]
               }
