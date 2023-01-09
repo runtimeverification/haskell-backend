@@ -56,6 +56,7 @@ import Kore.Rewrite.RulePattern qualified as RulePattern (
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
+    MonadSimplify (liftSimplifier),
     Simplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
@@ -130,7 +131,7 @@ simplifyClaimRule claimPattern = fmap MultiAnd.make $
     Logic.observeAllT $ do
         let lhs = Pattern.requireDefined $ ClaimPattern.left claimPattern
         simplified <-
-            Pattern.simplifyTopConfiguration lhs
+            liftSimplifier (Pattern.simplifyTopConfiguration lhs)
                 >>= Logic.scatter
                 >>= filterWithSolver
         let substitution = Pattern.substitution simplified

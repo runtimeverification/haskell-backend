@@ -1885,9 +1885,8 @@ asInternal ::
 asInternal =
     Ac.asInternalConcrete testMetadataTools setSort
         . HashMap.fromList
-        . flip zip (repeat SetValue)
+        . map (retractKey >>> Maybe.fromJust >>> flip (,) SetValue)
         . HashSet.toList
-        . HashSet.map (retractKey >>> Maybe.fromJust)
 
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternalNormalized ::

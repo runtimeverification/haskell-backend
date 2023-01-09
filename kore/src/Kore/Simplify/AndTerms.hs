@@ -104,7 +104,7 @@ termUnification ::
     forall unifier.
     MonadUnify unifier =>
     HasCallStack =>
-    NotSimplifier unifier ->
+    NotSimplifier Simplifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     unifier (Pattern RewritingVariableName)
@@ -137,7 +137,7 @@ termUnification notSimplifier = \term1 term2 ->
 maybeTermEquals ::
     MonadUnify unifier =>
     HasCallStack =>
-    NotSimplifier unifier ->
+    NotSimplifier Simplifier ->
     -- | Used to simplify subterm "and".
     TermSimplifier RewritingVariableName unifier ->
     TermLike RewritingVariableName ->
@@ -222,7 +222,7 @@ maybeTermEquals notSimplifier childTransformers first second = do
 maybeTermAnd ::
     MonadUnify unifier =>
     HasCallStack =>
-    NotSimplifier unifier ->
+    NotSimplifier Simplifier ->
     -- | Used to simplify subterm "and".
     TermSimplifier RewritingVariableName unifier ->
     TermLike RewritingVariableName ->

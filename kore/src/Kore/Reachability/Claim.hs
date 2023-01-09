@@ -193,9 +193,8 @@ class Claim claim where
         LogicT m (CheckImplicationResult claim)
 
     simplify ::
-        MonadSimplify m =>
         claim ->
-        Strategy.TransitionT (AppliedRule claim) m claim
+        Strategy.TransitionT (AppliedRule claim) Simplifier claim
 
     applyClaims ::
         [claim] ->
@@ -591,7 +590,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
         let configs' = MultiOr.map (definedConfig <*) removal
         stuck <-
             Logic.scatter configs'
-                >>= Pattern.simplify
+                >>= liftSimplifier . Pattern.simplify
                 >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
                 >>= Logic.scatter
         examine anyUnified stuck
@@ -624,12 +623,12 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
             unified <-
                 makeInPredicate leftTerm rightTerm
                     & Pattern.fromPredicateSorted sort
-                    & Pattern.simplify
+                    & liftSimplifier . Pattern.simplify
                     & (>>= Logic.scatter)
             didUnify
             removed <-
                 Pattern.andCondition unified rightCondition
-                    & Pattern.simplify
+                    & liftSimplifier . Pattern.simplify
                     & (>>= Logic.scatter)
             liftSimplifier (Exists.makeEvaluate sideCondition existentials removed)
                 >>= Logic.scatter
@@ -638,7 +637,7 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
             & wereAnyUnified
       where
         mkNotSimplified notChild =
-            Not.simplify sideCondition Not{notSort = sort, notChild}
+            liftSimplifier $ Not.simplify sideCondition Not{notSort = sort, notChild}
 
     wereAnyUnified :: StateT AnyUnified m a -> m (AnyUnified, a)
     wereAnyUnified act = swap <$> runStateT act mempty
@@ -751,8 +750,8 @@ checkSimpleImplication inLeft inRight existentials =
                 Pattern.andCondition left $
                     from $ makeCeilPredicate leftTerm
         trivial <-
-            fmap isBottom $
-                (liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc)
+            fmap isBottom . liftSimplifier $
+                SMT.Evaluator.filterMultiOr $srcLoc
                     =<< Pattern.simplify definedConfig
 
         if trivial
@@ -870,7 +869,7 @@ checkSimpleImplication inLeft inRight existentials =
                         liftSimplifier $ Exists.makeEvaluate sideCondition existentials existsChild
 
                     notRhs <- -- not notChild (Or pattern)
-                        Not.simplify sideCondition Not{notSort = sort, notChild}
+                        liftSimplifier $ Not.simplify sideCondition Not{notSort = sort, notChild}
 
                     let combineWithAntecedent :: Pattern v -> Pattern v
                         combineWithAntecedent = (definedConfig <*)
@@ -881,10 +880,11 @@ checkSimpleImplication inLeft inRight existentials =
                     -- which we achieve by simplifying it
 
                     toRefute <-
-                        Pattern.simplify
-                            . OrPattern.toPattern sort
-                            . MultiOr.map combineWithAntecedent
-                            $ notRhs
+                        liftSimplifier $
+                            Pattern.simplify
+                                . OrPattern.toPattern sort
+                                . MultiOr.map combineWithAntecedent
+                                $ notRhs
 
                     liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc toRefute
 
@@ -892,10 +892,9 @@ checkSimpleImplication inLeft inRight existentials =
 data ImplicationError
 
 simplify' ::
-    MonadSimplify m =>
     Lens' claim ClaimPattern ->
     claim ->
-    Strategy.TransitionT (AppliedRule claim) m claim
+    Strategy.TransitionT (AppliedRule claim) Simplifier claim
 simplify' lensClaimPattern claim = do
     claim' <- simplifyLeftHandSide claim
     let claim'' = Lens.over lensClaimPattern applySubstOnRightHandSide claim'
@@ -933,7 +932,7 @@ simplifyRightHandSide lensClaimPattern sideCondition =
     Lens.traverseOf (lensClaimPattern . field @"right") $ \dest ->
         OrPattern.observeAllT $
             Logic.scatter dest
-                >>= Pattern.makeEvaluate sideCondition . Pattern.requireDefined
+                >>= liftSimplifier . Pattern.makeEvaluate sideCondition . Pattern.requireDefined
                 >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
                 >>= Logic.scatter
 

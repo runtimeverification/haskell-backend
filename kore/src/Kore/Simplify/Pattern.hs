@@ -44,7 +44,6 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Simplify.Simplify (
-    MonadSimplify,
     Simplifier,
     liftSimplifier,
     simplifyCondition,
@@ -56,10 +55,8 @@ import Prelude.Kore
 
 -- | Simplifies the 'Pattern' and removes the exists quantifiers at the top.
 simplifyTopConfiguration ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     Pattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 simplifyTopConfiguration =
     simplify >=> return . removeTopExists
 
@@ -101,9 +98,8 @@ removeTopExists = OrPattern.map removeTopExistsWorker
 
 -- | Simplifies an 'Pattern', returning an 'OrPattern'.
 simplify ::
-    MonadSimplify simplifier =>
     Pattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 simplify = makeEvaluate SideCondition.top
 
 {- | Simplifies a 'Pattern' with a custom 'SideCondition'.
@@ -112,11 +108,9 @@ This should only be used when it's certain that the
 the 'Pattern'.
 -}
 makeEvaluate ::
-    forall simplifier.
-    MonadSimplify simplifier =>
     SideCondition RewritingVariableName ->
     Pattern RewritingVariableName ->
-    simplifier (OrPattern RewritingVariableName)
+    Simplifier (OrPattern RewritingVariableName)
 makeEvaluate sideCondition =
     loop . OrPattern.fromPattern
   where
