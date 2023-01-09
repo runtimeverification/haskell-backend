@@ -214,11 +214,9 @@ newBuiltinCeilSimplifier ceilSort = CeilSimplifier $ \input ->
             sideCondition <- Reader.ask
             liftSimplifier $ makeEvaluateInternalList ceilSort sideCondition internal
         InternalMap_ internalMap -> do
-            sideCondition <- Reader.ask
-            makeEvaluateInternalMap ceilSort sideCondition internalMap
+            makeEvaluateInternalMap ceilSort internalMap
         InternalSet_ internalSet -> do
-            sideCondition <- Reader.ask
-            makeEvaluateInternalSet ceilSort sideCondition internalSet
+            makeEvaluateInternalSet ceilSort internalSet
         _ -> empty
 
 newAxiomCeilSimplifier ::
@@ -254,13 +252,11 @@ newAxiomCeilSimplifier = CeilSimplifier $ \input -> do
 
 makeEvaluateInternalMap ::
     Sort ->
-    SideCondition RewritingVariableName ->
     InternalMap Key (TermLike RewritingVariableName) ->
     MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) NormalForm
-makeEvaluateInternalMap resultSort sideCondition internalMap =
-    runCeilSimplifierWith
+makeEvaluateInternalMap resultSort internalMap =
+    runCeilSimplifier
         AssocComm.newMapCeilSimplifier
-        sideCondition
         Ceil
             { ceilResultSort = resultSort
             , ceilOperandSort = builtinAcSort
@@ -272,13 +268,11 @@ makeEvaluateInternalMap resultSort sideCondition internalMap =
 -- | Evaluates the ceil of a domain value.
 makeEvaluateInternalSet ::
     Sort ->
-    SideCondition RewritingVariableName ->
     InternalSet Key (TermLike RewritingVariableName) ->
     MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) NormalForm
-makeEvaluateInternalSet resultSort sideCondition internalSet =
-    runCeilSimplifierWith
+makeEvaluateInternalSet resultSort internalSet =
+    runCeilSimplifier
         AssocComm.newSetCeilSimplifier
-        sideCondition
         Ceil
             { ceilResultSort = resultSort
             , ceilOperandSort = builtinAcSort

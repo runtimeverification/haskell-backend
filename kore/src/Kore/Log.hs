@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
@@ -195,20 +197,19 @@ koreLogFilters ::
     LogAction m SomeEntry ->
     LogAction m SomeEntry
 koreLogFilters koreLogOptions baseLogger =
-    Colog.cfilter
-        ( \entry ->
-            filterEntry logEntries entry
-                || filterSeverity logLevel entry
-                || selectDebugApplyEquation debugApplyEquationOptions entry
-                || selectDebugAttemptEquation debugAttemptEquationOptions entry
-                || selectDebugEquation debugEquationOptions entry
-        )
-        baseLogger
-  where
-    KoreLogOptions{logLevel, logEntries} = koreLogOptions
-    KoreLogOptions{debugApplyEquationOptions} = koreLogOptions
-    KoreLogOptions{debugAttemptEquationOptions} = koreLogOptions
-    KoreLogOptions{debugEquationOptions} = koreLogOptions
+    let KoreLogOptions{..} = koreLogOptions
+     in Colog.cfilter
+            ( \entry ->
+                filterEntry logEntries entry
+                    || filterSeverity logLevel entry
+                    || selectDebugApplyEquation debugApplyEquationOptions entry
+                    || selectDebugAttemptEquation debugAttemptEquationOptions entry
+                    || selectDebugEquation debugEquationOptions entry
+                    || selectDebugAttemptRewrite debugAttemptRewriteOptions entry
+                    || selectDebugApplyRewrite debugApplyRewriteOptions entry
+                    || selectDebugRewrite debugRewriteOptions entry
+            )
+            baseLogger
 
 -- | Select the log entry types present in the active set.
 filterEntry ::

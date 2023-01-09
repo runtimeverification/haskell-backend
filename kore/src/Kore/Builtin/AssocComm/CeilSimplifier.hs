@@ -76,7 +76,7 @@ type MkNotMember normalized variable =
 
 newSetCeilSimplifier ::
     CeilSimplifier
-        (ReaderT (SideCondition RewritingVariableName) (ReaderT (SideCondition RewritingVariableName) Simplifier))
+        (ReaderT (SideCondition RewritingVariableName) Simplifier)
         (BuiltinAssocComm NormalizedSet RewritingVariableName)
         NormalForm
 newSetCeilSimplifier =
@@ -100,7 +100,7 @@ newSetCeilSimplifier =
 
 newMapCeilSimplifier ::
     CeilSimplifier
-        (ReaderT (SideCondition RewritingVariableName) (ReaderT (SideCondition RewritingVariableName) Simplifier))
+        (ReaderT (SideCondition RewritingVariableName) Simplifier)
         (BuiltinAssocComm NormalizedMap RewritingVariableName)
         NormalForm
 newMapCeilSimplifier =
@@ -164,7 +164,7 @@ newBuiltinAssocCommCeilSimplifier ::
     MkBuiltinAssocComm normalized RewritingVariableName ->
     MkNotMember normalized RewritingVariableName ->
     CeilSimplifier
-        (ReaderT (SideCondition RewritingVariableName) (ReaderT (SideCondition RewritingVariableName) Simplifier))
+        (ReaderT (SideCondition RewritingVariableName) Simplifier)
         (BuiltinAssocComm normalized RewritingVariableName)
         NormalForm
 newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
@@ -202,7 +202,7 @@ definePairWiseElements ::
     MkNotMember normalized RewritingVariableName ->
     InternalAc Key normalized (TermLike RewritingVariableName) ->
     PairWiseElements normalized Key (TermLike RewritingVariableName) ->
-    MaybeT (ReaderT (SideCondition RewritingVariableName) (ReaderT (SideCondition RewritingVariableName) Simplifier)) (MultiAnd (Predicate RewritingVariableName))
+    MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) (MultiAnd (Predicate RewritingVariableName))
 definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
     definedKeyPairs <-
         traverse
@@ -256,7 +256,7 @@ definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
         ( TermLike RewritingVariableName
         , TermLike RewritingVariableName
         ) ->
-        MaybeT (ReaderT (SideCondition RewritingVariableName) (ReaderT (SideCondition RewritingVariableName) Simplifier)) (Predicate RewritingVariableName)
+        MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) (Predicate RewritingVariableName)
     distinctKey (t1, t2) = do
         return (fromNot (fromEquals_ tMin tMax))
       where
