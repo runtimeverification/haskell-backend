@@ -114,10 +114,14 @@ finalizeAppliedRule
     sideCondition
     renamedRule
     appliedConditions =
-        MultiOr.observeAllT $
+        MultiOr.gather $
             finalizeAppliedRuleWorker =<< Logic.scatter appliedConditions
       where
         ruleRHS = Rule.rhs renamedRule
+
+        finalizeAppliedRuleWorker ::
+            Condition RewritingVariableName ->
+            LogicT Simplifier (Pattern RewritingVariableName)
         finalizeAppliedRuleWorker appliedCondition = do
             -- Combine the initial conditions, the unification conditions, and the
             -- axiom ensures clause. The axiom requires clause is included by
@@ -147,7 +151,7 @@ constructConfiguration ::
     Condition RewritingVariableName ->
     -- | Final configuration
     Pattern RewritingVariableName ->
-    LogicT (LogicT Simplifier) (Pattern RewritingVariableName)
+    LogicT Simplifier (Pattern RewritingVariableName)
 constructConfiguration
     sideCondition
     appliedCondition
@@ -186,10 +190,14 @@ finalizeAppliedClaim ::
     OrCondition RewritingVariableName ->
     LogicT Simplifier (OrPattern RewritingVariableName)
 finalizeAppliedClaim sideCondition renamedRule appliedConditions =
-    MultiOr.observeAllT $
+    MultiOr.gather $
         finalizeAppliedRuleWorker =<< Logic.scatter appliedConditions
   where
     ClaimPattern{right} = renamedRule
+
+    finalizeAppliedRuleWorker ::
+        Condition RewritingVariableName ->
+        LogicT Simplifier (Pattern RewritingVariableName)
     finalizeAppliedRuleWorker appliedCondition =
         Claim.assertRefreshed renamedRule $ do
             finalPattern <- Logic.scatter right

@@ -21,9 +21,6 @@ module Test.Kore (
     elementVariableGen,
     configElementVariableGen,
     setVariableGen,
-    elementTargetVariableGen,
-    setTargetVariableGen,
-    unifiedTargetVariableGen,
     unifiedVariableGen,
     genInternalInt,
     genInternalBool,
@@ -91,13 +88,6 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Syntax.Definition
 import Kore.Syntax.PatternF qualified as Syntax
-import Kore.Variables.Target (
-    Target,
-    mkElementNonTarget,
-    mkElementTarget,
-    mkSetNonTarget,
-    mkSetTarget,
- )
 import Log (LogAction (..), LoggerT, SomeEntry (..))
 import Prelude.Kore
 
@@ -279,27 +269,6 @@ unifiedVariableGen sort =
     Gen.choice
         [ fmap inject <$> elementVariableGen sort
         , fmap inject <$> setVariableGen sort
-        ]
-
-elementTargetVariableGen :: Sort -> Gen (ElementVariable (Target VariableName))
-elementTargetVariableGen sort =
-    Gen.choice
-        [ mkElementTarget <$> elementVariableGen sort
-        , mkElementNonTarget <$> elementVariableGen sort
-        ]
-
-setTargetVariableGen :: Sort -> Gen (SetVariable (Target VariableName))
-setTargetVariableGen sort =
-    Gen.choice
-        [ mkSetTarget <$> setVariableGen sort
-        , mkSetNonTarget <$> setVariableGen sort
-        ]
-
-unifiedTargetVariableGen :: Sort -> Gen (SomeVariable (Target VariableName))
-unifiedTargetVariableGen sort =
-    Gen.choice
-        [ fmap inject <$> elementTargetVariableGen sort
-        , fmap inject <$> setTargetVariableGen sort
         ]
 
 unaryOperatorGen ::

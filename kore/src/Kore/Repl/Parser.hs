@@ -302,6 +302,9 @@ logCommand =
         <|> try debugAttemptEquation
         <|> try debugApplyEquation
         <|> debugEquation
+        <|> try debugAttemptRewrite
+        <|> try debugApplyRewrite
+        <|> debugRewrite
 
 log :: Parser ReplCommand
 log = do
@@ -354,6 +357,33 @@ debugEquation =
         . HashSet.fromList
         . fmap Text.pack
         <$$> literal "debug-equation"
+        *> many (quotedOrWordWithout "")
+
+debugAttemptRewrite :: Parser ReplCommand
+debugAttemptRewrite =
+    DebugAttemptRewrite
+        . Log.DebugAttemptRewriteOptions
+        . HashSet.fromList
+        . fmap Text.pack
+        <$$> literal "debug-attempt-rewrite"
+        *> many (quotedOrWordWithout "")
+
+debugApplyRewrite :: Parser ReplCommand
+debugApplyRewrite =
+    DebugApplyRewrite
+        . Log.DebugApplyRewriteOptions
+        . HashSet.fromList
+        . fmap Text.pack
+        <$$> literal "debug-apply-rewrite"
+        *> many (quotedOrWordWithout "")
+
+debugRewrite :: Parser ReplCommand
+debugRewrite =
+    DebugRewrite
+        . Log.DebugRewriteOptions
+        . HashSet.fromList
+        . fmap Text.pack
+        <$$> literal "debug-rewrite"
         *> many (quotedOrWordWithout "")
 
 severity :: Parser Log.Severity
