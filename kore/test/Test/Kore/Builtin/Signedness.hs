@@ -19,7 +19,6 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Simplify.AndTerms (
     termUnification,
  )
-import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify (
     runSimplifier,
  )
@@ -118,5 +117,5 @@ unify ::
 unify term1 term2 =
     runNoSMT $
         runSimplifier testEnv $
-            runUnifierT Not.notSimplifier $
-                termUnification Not.notSimplifier term1 term2
+            runUnifierT $
+                termUnification term1 term2

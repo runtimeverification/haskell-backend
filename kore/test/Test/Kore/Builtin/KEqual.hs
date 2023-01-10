@@ -28,7 +28,6 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Simplify.AndTerms (
     termUnification,
  )
-import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify (
     runSimplifierBranch,
  )
@@ -233,7 +232,7 @@ runKEqualSimplification ::
 runKEqualSimplification term1 term2 =
     unify matched
         & runMaybeT
-        & evalEnvUnifierT Not.notSimplifier
+        & evalEnvUnifierT
         & runSimplifierBranch testEnv
   where
     matched =
@@ -241,8 +240,7 @@ runKEqualSimplification term1 term2 =
             <|> KEqual.matchUnifyKequalsEq term2 term1
     unify (Just unifyData) =
         Builtin.unifyEq
-            (termUnification Not.notSimplifier)
-            Not.notSimplifier
+            termUnification
             unifyData
             & lift
     unify Nothing = empty

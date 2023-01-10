@@ -39,7 +39,6 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
  )
-import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify (
     Simplifier,
     runSimplifier,
@@ -239,7 +238,7 @@ run :: MaybeT (UnifierT Simplifier) a -> IO [Maybe a]
 run =
     runNoSMT
         . runSimplifier testEnv
-        . runUnifierT Not.notSimplifier
+        . runUnifierT
         . runMaybeT
 
 termSimplifier ::

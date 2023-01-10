@@ -100,7 +100,6 @@ import Kore.Rewrite.RulePattern as RulePattern (
 import Kore.Simplify.AndTerms (
     termUnification,
  )
-import Kore.Simplify.Not qualified as Not
 import Kore.Unification.UnifierT (
     runUnifierT,
  )
@@ -1870,8 +1869,8 @@ unifiedBy (termLike1, termLike2) (Substitution.unsafeWrap -> expect) testName =
     testCase testName $ do
         actuals <-
             testRunSimplifier testEnv $
-                runUnifierT Not.notSimplifier $
-                    termUnification Not.notSimplifier termLike1 termLike2
+                runUnifierT $
+                    termUnification termLike1 termLike2
         liftIO $ do
             actual <- expectOne actuals
             assertBool "expected \\top predicate" (isTop $ predicate actual)

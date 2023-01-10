@@ -82,20 +82,18 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
 instance MonadSimplify m => MonadUnify (UnifierT m)
 
 runUnifierT ::
-    NotSimplifier Simplifier ->
+    NotSimplifier Simplifier =>
     UnifierT Simplifier a ->
     Simplifier [a]
-runUnifierT notSimplifier =
-    observeAllT
-        . evalEnvUnifierT notSimplifier
+runUnifierT = observeAllT . evalEnvUnifierT
 
 evalEnvUnifierT ::
-    NotSimplifier Simplifier ->
+    NotSimplifier Simplifier =>
     UnifierT Simplifier a ->
     LogicT Simplifier a
-evalEnvUnifierT notSimplifier =
+evalEnvUnifierT =
     flip runReaderT conditionSimplifier
         . getUnifierT
   where
     conditionSimplifier =
-        ConditionSimplifier.create (substitutionSimplifier notSimplifier)
+        ConditionSimplifier.create substitutionSimplifier

@@ -66,7 +66,6 @@ import Kore.Simplify.AndTerms (
 import Kore.Simplify.Equals (
     termEquals,
  )
-import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify
 import Kore.Syntax.Sentence (
     SentenceAlias,
@@ -1562,9 +1561,8 @@ unify first second =
   where
     mockEnv = Mock.env
     unification =
-        Monad.Unify.runUnifierT Not.notSimplifier $
+        Monad.Unify.runUnifierT $
             termUnification
-                Not.notSimplifier
                 (simplifiedTerm first)
                 (simplifiedTerm second)
 
@@ -1574,7 +1572,7 @@ simplify ::
     IO [Pattern RewritingVariableName]
 simplify first second =
     testRunSimplifierBranch mockEnv $
-        termAnd Not.notSimplifier (simplifiedTerm first) (simplifiedTerm second)
+        termAnd (simplifiedTerm first) (simplifiedTerm second)
   where
     mockEnv = Mock.env
 

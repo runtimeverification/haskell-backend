@@ -87,7 +87,6 @@ import Kore.Rewrite.Step qualified as Step
 import Kore.Simplify.AndTerms (termUnification)
 import Kore.Simplify.Condition qualified as Simplifier.Condition
 import Kore.Simplify.InjSimplifier
-import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.OverloadSimplifier
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify hiding (simplifyPattern)
@@ -343,15 +342,14 @@ unifyEq ::
 unifyEq eqKey term1 term2 =
     unify matched
         & runMaybeT
-        & evalEnvUnifierT Not.notSimplifier
+        & evalEnvUnifierT
         & runSimplifierBranch testEnv
         & runNoSMT
   where
     unify Nothing = empty
     unify (Just unifyData) =
         Builtin.unifyEq
-            (termUnification Not.notSimplifier)
-            Not.notSimplifier
+            termUnification
             unifyData
             & lift
 

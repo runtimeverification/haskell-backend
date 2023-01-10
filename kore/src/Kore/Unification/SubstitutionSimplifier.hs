@@ -67,9 +67,9 @@ uses 'Unifier.throwUnificationError'.
 substitutionSimplifier ::
     forall unifier.
     MonadUnify unifier =>
-    NotSimplifier Simplifier ->
+    NotSimplifier Simplifier =>
     SubstitutionSimplifier unifier
-substitutionSimplifier notSimplifier =
+substitutionSimplifier =
     SubstitutionSimplifier wrapper
   where
     wrapper ::
@@ -98,14 +98,14 @@ substitutionSimplifier notSimplifier =
         worker =
             simplifySubstitutionWorker
                 sideCondition
-                (unificationMakeAnd notSimplifier)
+                unificationMakeAnd
 
 unificationMakeAnd ::
     forall unifier.
     MonadUnify unifier =>
-    NotSimplifier Simplifier ->
+    NotSimplifier Simplifier =>
     MakeAnd unifier
-unificationMakeAnd notSimplifier =
+unificationMakeAnd =
     MakeAnd{makeAnd}
   where
     makeAnd ::
@@ -114,6 +114,6 @@ unificationMakeAnd notSimplifier =
         SideCondition RewritingVariableName ->
         unifier (Pattern RewritingVariableName)
     makeAnd termLike1 termLike2 sideCondition = do
-        unified <- termUnification notSimplifier termLike1 termLike2
+        unified <- termUnification termLike1 termLike2
         Simplifier.simplifyCondition sideCondition unified
             & Logic.lowerLogicT

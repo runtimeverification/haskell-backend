@@ -1,3 +1,7 @@
+-- We define the 'NotSimplifier' instance here to avoid an import
+-- loop. Unfortunately, that means it needs to be an orphan.
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 {- |
 Module      : Kore.Simplify.Not
 Description : Tools for Not pattern simplification.
@@ -198,7 +202,7 @@ mkMultiAndPattern ::
     SideCondition RewritingVariableName ->
     MultiAnd (Pattern RewritingVariableName) ->
     LogicT Simplifier (Pattern RewritingVariableName)
-mkMultiAndPattern resultSort = And.makeEvaluate resultSort notSimplifier
+mkMultiAndPattern resultSort = And.makeEvaluate resultSort
 
 -- | Conjoin and simplify a 'MultiAnd' of 'Condition'.
 mkMultiAndPredicate ::
@@ -209,5 +213,5 @@ mkMultiAndPredicate predicates =
     -- implements And semantics.
     return $ fold predicates
 
-notSimplifier :: NotSimplifier Simplifier
-notSimplifier = NotSimplifier simplify
+instance simplifier ~ Simplifier => NotSimplifier simplifier where
+    notSimplifier = simplify

@@ -103,12 +103,12 @@ the special cases handled by this.
 termUnification ::
     forall unifier.
     MonadUnify unifier =>
+    NotSimplifier Simplifier =>
     HasCallStack =>
-    NotSimplifier Simplifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     unifier (Pattern RewritingVariableName)
-termUnification notSimplifier = \term1 term2 ->
+termUnification = \term1 term2 ->
     whileDebugUnification term1 term2 $ do
         result <- termUnificationWorker term1 term2
         debugUnificationSolved result
@@ -122,7 +122,7 @@ termUnification notSimplifier = \term1 term2 ->
         let maybeTermUnification ::
                 MaybeT unifier (Pattern RewritingVariableName)
             maybeTermUnification =
-                maybeTermAnd notSimplifier termUnificationWorker term1 term2
+                maybeTermAnd termUnificationWorker term1 term2
         Error.maybeT
             (incompleteUnificationPattern term1 term2)
             pure
@@ -136,14 +136,14 @@ termUnification notSimplifier = \term1 term2 ->
 
 maybeTermEquals ::
     MonadUnify unifier =>
+    NotSimplifier Simplifier =>
     HasCallStack =>
-    NotSimplifier Simplifier ->
     -- | Used to simplify subterm "and".
     TermSimplifier RewritingVariableName unifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     MaybeT unifier (Pattern RewritingVariableName)
-maybeTermEquals notSimplifier childTransformers first second = do
+maybeTermEquals childTransformers first second = do
     injSimplifier <- Simplifier.askInjSimplifier
     overloadSimplifier <- Simplifier.askOverloadSimplifier
     tools <- Simplifier.askMetadataTools
@@ -189,11 +189,11 @@ maybeTermEquals notSimplifier childTransformers first second = do
         | Just boolNotData <- Builtin.Bool.matchUnifyBoolNot first second =
             lift $ Builtin.Bool.unifyBoolNot childTransformers boolNotData
         | Just unifyData <- Builtin.Int.matchUnifyIntEq first second =
-            lift $ Builtin.unifyEq childTransformers notSimplifier unifyData
+            lift $ Builtin.unifyEq childTransformers unifyData
         | Just unifyData <- Builtin.String.matchUnifyStringEq first second =
-            lift $ Builtin.unifyEq childTransformers notSimplifier unifyData
+            lift $ Builtin.unifyEq childTransformers unifyData
         | Just unifyData <- Builtin.KEqual.matchUnifyKequalsEq first second =
-            lift $ Builtin.unifyEq childTransformers notSimplifier unifyData
+            lift $ Builtin.unifyEq childTransformers unifyData
         | Just unifyData <- Builtin.Endianness.matchUnifyEqualsEndianness first second =
             lift $ Builtin.Endianness.unifyEquals unifyData
         | Just unifyData <- Builtin.Signedness.matchUnifyEqualsSignedness first second =
@@ -205,7 +205,6 @@ maybeTermEquals notSimplifier childTransformers first second = do
                 Builtin.Map.unifyNotInKeys
                     (sameSort (termLikeSort first) (termLikeSort second))
                     childTransformers
-                    notSimplifier
                     unifyData
         | Just unifyData <- Builtin.Set.matchUnifyEquals tools first second =
             lift $ Builtin.Set.unifyEquals childTransformers tools unifyData
@@ -221,14 +220,14 @@ maybeTermEquals notSimplifier childTransformers first second = do
 
 maybeTermAnd ::
     MonadUnify unifier =>
+    NotSimplifier Simplifier =>
     HasCallStack =>
-    NotSimplifier Simplifier ->
     -- | Used to simplify subterm "and".
     TermSimplifier RewritingVariableName unifier ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     MaybeT unifier (Pattern RewritingVariableName)
-maybeTermAnd notSimplifier childTransformers first second = do
+maybeTermAnd childTransformers first second = do
     injSimplifier <- Simplifier.askInjSimplifier
     overloadSimplifier <- Simplifier.askOverloadSimplifier
     tools <- Simplifier.askMetadataTools
@@ -238,7 +237,6 @@ maybeTermAnd notSimplifier childTransformers first second = do
         | Just unifyData <- matchExpandAlias first second =
             let UnifyExpandAlias{term1, term2} = unifyData
              in maybeTermAnd
-                    notSimplifier
                     childTransformers
                     term1
                     term2
@@ -279,11 +277,11 @@ maybeTermAnd notSimplifier childTransformers first second = do
         | Just boolNotData <- Builtin.Bool.matchUnifyBoolNot first second =
             lift $ Builtin.Bool.unifyBoolNot childTransformers boolNotData
         | Just unifyData <- Builtin.KEqual.matchUnifyKequalsEq first second =
-            lift $ Builtin.unifyEq childTransformers notSimplifier unifyData
+            lift $ Builtin.unifyEq childTransformers unifyData
         | Just unifyData <- Builtin.Int.matchUnifyIntEq first second =
-            lift $ Builtin.unifyEq childTransformers notSimplifier unifyData
+            lift $ Builtin.unifyEq childTransformers unifyData
         | Just unifyData <- Builtin.String.matchUnifyStringEq first second =
-            lift $ Builtin.unifyEq childTransformers notSimplifier unifyData
+            lift $ Builtin.unifyEq childTransformers unifyData
         | Just unifyData <- Builtin.KEqual.matchIfThenElse first second =
             lift $ Builtin.KEqual.unifyIfThenElse childTransformers unifyData
         | Just unifyData <- Builtin.Endianness.matchUnifyEqualsEndianness first second =
