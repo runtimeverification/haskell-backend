@@ -343,9 +343,9 @@ transitionRule stuckCheck allowVacuous claims axiomGroups = transitionRuleWorker
     transitionRuleWorker Simplify claimState
         | Just claim <- retractSimplifiable claimState =
             Transition.ifte (simplify claim) (pure . ($>) claimState) $
-              case allowVacuous of
-                AllowedVacuous -> pure Proven
-                DisallowedVacuous -> pure $ Stuck claim
+                case allowVacuous of
+                    AllowedVacuous -> pure Proven
+                    DisallowedVacuous -> pure $ Stuck claim
         | otherwise =
             pure claimState
     transitionRuleWorker CheckImplication claimState

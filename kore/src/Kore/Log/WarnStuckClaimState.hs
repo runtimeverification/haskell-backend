@@ -9,7 +9,7 @@ module Kore.Log.WarnStuckClaimState (
     WarnStuckClaimState (..),
     warnStuckClaimStateTermsUnifiable,
     warnStuckClaimStateTermsNotUnifiable,
-    warnStuckClaimStateBottomLHS
+    warnStuckClaimStateBottomLHS,
 ) where
 
 import Kore.Attribute.SourceLocation

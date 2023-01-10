@@ -133,6 +133,7 @@ import Kore.Log.WarnDepthLimitExceeded (
 import Kore.Log.WarnTrivialClaim
 import Kore.ModelChecker.Bounded qualified as Bounded
 import Kore.Reachability (
+    AllowVacuous,
     AlreadyProven (AlreadyProven),
     Axioms (Axioms),
     MinDepth,
@@ -140,7 +141,6 @@ import Kore.Reachability (
     Rule (ReachabilityRewriteRule),
     SomeClaim (..),
     StuckCheck (..),
-    AllowVacuous,
     ToProve (ToProve),
     extractClaims,
     isTrusted,
