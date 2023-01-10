@@ -34,7 +34,9 @@ import Kore.Simplify.Ceil qualified as Ceil (
     makeEvaluate,
     simplifyEvaluated,
  )
-import Kore.Simplify.Not () -- For the (orphan) NotSimplifier instance
+import Kore.Simplify.Not ()
+
+-- For the (orphan) NotSimplifier instance
 import Kore.Simplify.Simplify
 import Logic qualified
 import Prelude.Kore

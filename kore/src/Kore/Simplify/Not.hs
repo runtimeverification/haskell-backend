@@ -1,3 +1,7 @@
+-- We define the 'NotSimplifier' instance here to avoid an import
+-- loop. Unfortunately, that means it needs to be an orphan.
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 {- |
 Module      : Kore.Simplify.Not
 Description : Tools for Not pattern simplification.
@@ -7,11 +11,6 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-
--- We define the 'NotSimplifier' instance here to avoid an import
--- loop. Unfortunately, that means it needs to be an orphan.
-{-# OPTIONS_GHC -Wno-orphans #-}
-
 module Kore.Simplify.Not (
     makeEvaluate,
     makeEvaluatePredicate,
@@ -215,4 +214,4 @@ mkMultiAndPredicate predicates =
     return $ fold predicates
 
 instance simplifier ~ Simplifier => NotSimplifier simplifier where
-  notSimplifier = simplify
+    notSimplifier = simplify

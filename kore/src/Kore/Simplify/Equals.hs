@@ -231,14 +231,14 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
     secondNotCeils <- traverse mkNotSimplified secondCeils
     let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
     allAreBottom <-
-            (And.simplify sort sideCondition)
+        (And.simplify sort sideCondition)
             (MultiAnd.make (firstNotCeil : secondNotCeils))
     firstEqualsSeconds <-
         mapM
             (makeEvaluateEqualsIfSecondNotBottom sort first)
             (zip seconds secondCeils)
     oneIsNotBottomEquals <-
-            (And.simplify sort sideCondition)
+        (And.simplify sort sideCondition)
             (MultiAnd.make (firstCeil : oneNotBottom : firstEqualsSeconds))
     MultiOr.merge allAreBottom oneIsNotBottomEquals
         & MultiOr.map Pattern.withoutTerm
@@ -298,10 +298,10 @@ makeEvaluate
             secondCeilNegation <- mkNotSimplified secondCeil
             termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
             negationAnd <-
-                    (And.simplify sort sideCondition)
+                (And.simplify sort sideCondition)
                     (MultiAnd.make [firstCeilNegation, secondCeilNegation])
             equalityAnd <-
-                    (And.simplify sort sideCondition)
+                (And.simplify sort sideCondition)
                     (MultiAnd.make [termEquality, firstCeil, secondCeil])
             Or.simplifyEvaluated equalityAnd negationAnd
                 & MultiOr.map Pattern.withoutTerm
