@@ -713,12 +713,12 @@ matchUnifyNotInKeys first second
 unifyNotInKeys ::
     forall unifier.
     MonadUnify unifier =>
+    NotSimplifier Simplifier =>
     Sort ->
     TermSimplifier RewritingVariableName unifier ->
-    NotSimplifier Simplifier ->
     UnifyNotInKeysResult ->
     unifier (Pattern RewritingVariableName)
-unifyNotInKeys resultSort unifyChildren (NotSimplifier notSimplifier) unifyData =
+unifyNotInKeys resultSort unifyChildren unifyData =
     case unifyData of
         NullKeysNullOpaques -> return (Pattern.topOf resultSort)
         NonNullKeysOrMultipleOpaques unifyData' ->

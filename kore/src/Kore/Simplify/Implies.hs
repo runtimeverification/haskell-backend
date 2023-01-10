@@ -30,7 +30,6 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Simplify.And qualified as And
 import Kore.Simplify.Not qualified as Not (
     makeEvaluate,
-    notSimplifier,
     simplify,
  )
 import Kore.Simplify.Simplify
@@ -124,7 +123,7 @@ distributeEvaluateImplies ::
     Pattern RewritingVariableName ->
     Simplifier (OrPattern RewritingVariableName)
 distributeEvaluateImplies sideCondition firsts second =
-    (And.simplify sort Not.notSimplifier sideCondition)
+    (And.simplify sort sideCondition)
         (MultiAnd.make implications)
   where
     sort = Pattern.patternSort second

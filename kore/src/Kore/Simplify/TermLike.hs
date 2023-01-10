@@ -90,7 +90,6 @@ import Kore.Simplify.Next qualified as Next (
     simplify,
  )
 import Kore.Simplify.Not qualified as Not (
-    notSimplifier,
     simplify,
  )
 import Kore.Simplify.Nu qualified as Nu (
@@ -198,7 +197,7 @@ simplify sideCondition =
                 AndF andF -> do
                     let conjuncts = foldMap MultiAnd.fromTermLike andF
                     -- MultiAnd doesn't preserve the sort so we need to send it as an external argument
-                    And.simplify sort Not.notSimplifier sideCondition
+                    And.simplify sort sideCondition
                         =<< MultiAnd.traverse worker conjuncts
                 OrF orF ->
                     Or.simplify <$> traverse worker orF

@@ -24,7 +24,6 @@ import Kore.Internal.SideCondition qualified as SideCondition (
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
-import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     Env (..),
@@ -173,7 +172,7 @@ simplifyAnds ::
     unifier (Pattern RewritingVariableName)
 simplifyAnds =
     SubstitutionSimplifier.simplifyAnds
-        (Unification.unificationMakeAnd Not.notSimplifier)
+        Unification.unificationMakeAnd
         SideCondition.top
 
 andSimplify ::
@@ -186,7 +185,7 @@ andSimplify term1 term2 results = do
     let expect = OrPattern.fromPatterns $ map unificationResult results
     subst' <-
         simplifyAnds (unificationProblem term1 term2 :| [])
-            & Monad.Unify.runUnifierT Not.notSimplifier
+            & Monad.Unify.runUnifierT
             & runSimplifier testEnv
             & runNoSMT
             & fmap OrPattern.fromPatterns
@@ -219,7 +218,7 @@ andSimplifyException message term1 term2 exceptionMessage =
         assignment <-
             runNoSMT $
                 runSimplifier testEnv $
-                    Monad.Unify.runUnifierT Not.notSimplifier $
+                    Monad.Unify.runUnifierT $
                         simplifyAnds (unificationProblem term1 term2 :| [])
         _ <- evaluate assignment
         assertFailure "This evaluation should fail"

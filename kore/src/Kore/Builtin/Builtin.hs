@@ -519,13 +519,12 @@ data UnifyEq = UnifyEq
 unifyEq ::
     forall unifier.
     MonadUnify unifier =>
+    NotSimplifier Simplifier =>
     TermSimplifier RewritingVariableName unifier ->
-    NotSimplifier Simplifier ->
     UnifyEq ->
     unifier (Pattern RewritingVariableName)
 unifyEq
     unifyChildren
-    (NotSimplifier notSimplifier)
     unifyData =
         do
             solution <- OrPattern.gather $ unifyChildren operand1 operand2
