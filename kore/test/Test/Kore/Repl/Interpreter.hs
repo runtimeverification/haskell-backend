@@ -850,7 +850,7 @@ mkConfig logger claims' =
         ReplNode ->
         Simplifier ExecutionGraph
     stepper0 axioms' graph (ReplNode node) =
-        proveClaimStep Nothing EnabledStuckCheck claims' axioms' graph node
+        proveClaimStep Nothing EnabledStuckCheck DisallowedVacuous claims' axioms' graph node
 
 formatUnifiers ::
     NonEmpty (Condition RewritingVariableName) ->
