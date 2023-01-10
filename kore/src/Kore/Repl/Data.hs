@@ -46,6 +46,9 @@ module Kore.Repl.Data (
     debugAttemptEquationTransformer,
     debugApplyEquationTransformer,
     debugEquationTransformer,
+    debugAttemptRewriteTransformer,
+    debugApplyRewriteTransformer,
+    debugRewriteTransformer,
     entriesForHelp,
     TryApplyRuleResult (..),
 ) where
@@ -279,6 +282,39 @@ debugEquationTransformer
             { Log.debugEquationOptions = debugEquationOptions
             }
 
+debugAttemptRewriteTransformer ::
+    Log.DebugAttemptRewriteOptions ->
+    Log.KoreLogOptions ->
+    Log.KoreLogOptions
+debugAttemptRewriteTransformer
+    debugAttemptRewriteOptions
+    koreLogOptions =
+        koreLogOptions
+            { Log.debugAttemptRewriteOptions = debugAttemptRewriteOptions
+            }
+
+debugApplyRewriteTransformer ::
+    Log.DebugApplyRewriteOptions ->
+    Log.KoreLogOptions ->
+    Log.KoreLogOptions
+debugApplyRewriteTransformer
+    debugApplyRewriteOptions
+    koreLogOptions =
+        koreLogOptions
+            { Log.debugApplyRewriteOptions = debugApplyRewriteOptions
+            }
+
+debugRewriteTransformer ::
+    Log.DebugRewriteOptions ->
+    Log.KoreLogOptions ->
+    Log.KoreLogOptions
+debugRewriteTransformer
+    debugRewriteOptions
+    koreLogOptions =
+        koreLogOptions
+            { Log.debugRewriteOptions = debugRewriteOptions
+            }
+
 {- | List of available commands for the Repl. Note that we are always in a proof
  state. We pick the first available Claim when we initialize the state.
 -}
@@ -364,6 +400,14 @@ data ReplCommand
     | -- | Log the attempts and the applications of specific
       -- equations.
       DebugEquation Log.DebugEquationOptions
+    | -- | Log debugging information about attempting to
+      -- apply specific rewrite rules.
+      DebugAttemptRewrite Log.DebugAttemptRewriteOptions
+    | -- | Log when specific rewrite rules apply.
+      DebugApplyRewrite Log.DebugApplyRewriteOptions
+    | -- | Log the attempts and the applications of specific
+      -- rewrite rules.
+      DebugRewrite Log.DebugRewriteOptions
     | -- | Exit the repl.
       Exit
     deriving stock (Eq, Show)
