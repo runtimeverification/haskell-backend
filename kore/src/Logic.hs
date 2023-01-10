@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
@@ -34,8 +36,18 @@ mapLogicT ::
     (forall x. m x -> n x) ->
     LogicT m a ->
     LogicT n a
-mapLogicT nat acts = (lift . nat) (observeAllT acts) >>= scatter
+mapLogicT nat acts = hoistLogicT nat acts
 {-# INLINE mapLogicT #-}
+#if !MIN_VERSION_logict(0,8,0)
+-- Copied from logict
+fromLogicTWith :: (Applicative m, Monad n, Alternative n)
+  => (forall x. m x -> n x) -> LogicT m a -> n a
+fromLogicTWith p (LogicT f) = join . p $
+  f (\a v -> pure (pure a <|> join (p v))) (pure empty)
+
+hoistLogicT :: (Applicative m, Monad n) => (forall x. m x -> n x) -> LogicT m a -> LogicT n a
+hoistLogicT f = fromLogicTWith (lift . f)
+#endif
 
 lowerLogicT :: Alternative m => LogicT m a -> m a
 lowerLogicT acts = unLogicT acts (\a mr -> pure a <|> mr) empty

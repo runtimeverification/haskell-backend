@@ -23,7 +23,6 @@ module Kore.Internal.OrPattern (
     isTrue,
     toPattern,
     toTermLike,
-    targetBinder,
     mapVariables,
     MultiOr.flatten,
     MultiOr.gather,
@@ -66,14 +65,6 @@ import Kore.Internal.TermLike (
 import Kore.Syntax.Variable
 import Kore.TopBottom (
     TopBottom (..),
- )
-import Kore.Variables.Binding (
-    Binder (..),
- )
-import Kore.Variables.Target (
-    Target (..),
-    mkElementTarget,
-    targetIfEqual,
  )
 import Logic qualified
 import Prelude.Kore
@@ -244,31 +235,6 @@ coerceSort sort =
     fromPatterns
         . map (Pattern.coerceSort sort)
         . toPatterns
-
-targetBinder ::
-    forall variable.
-    InternalVariable variable =>
-    Binder (ElementVariable variable) (OrPattern variable) ->
-    Binder (ElementVariable (Target variable)) (OrPattern (Target variable))
-targetBinder Binder{binderVariable, binderChild} =
-    let newVar = mkElementTarget binderVariable
-        targetBoundVariables =
-            targetIfEqual $
-                unElementVariableName . variableName $ binderVariable
-        newChild =
-            MultiOr.map
-                ( Pattern.mapVariables
-                    AdjSomeVariableName
-                        { adjSomeVariableNameElement =
-                            ElementVariableName targetBoundVariables
-                        , adjSomeVariableNameSet = SetVariableName NonTarget
-                        }
-                )
-                binderChild
-     in Binder
-            { binderVariable = newVar
-            , binderChild = newChild
-            }
 
 mapVariables ::
     (InternalVariable variable1, InternalVariable variable2) =>

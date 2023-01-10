@@ -574,7 +574,6 @@ library
     Kore.Variables.Binding
     Kore.Variables.Free
     Kore.Variables.Fresh
-    Kore.Variables.Target
     Kore.Verified
     Kore.VersionInfo
     Log
@@ -905,7 +904,6 @@ test-suite kore-test
     Test.Kore.Validate.DefinitionVerifier.UniqueNames
     Test.Kore.Validate.DefinitionVerifier.UniqueSortVariables
     Test.Kore.Variables.Fresh
-    Test.Kore.Variables.Target
     Test.Kore.Variables.V
     Test.Kore.Variables.W
     Test.Kore.With
