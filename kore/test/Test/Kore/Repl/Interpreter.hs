@@ -842,6 +842,8 @@ mkConfig logger claims' =
         , outputFile = OutputFile Nothing
         , mainModuleName = ModuleName "TEST"
         , kFileLocations = KFileLocations []
+        , kompiledDir = KompiledDir ""
+        , korePrintCommand = KorePrintCommand "kore-print"
         }
   where
     stepper0 ::

@@ -107,13 +107,16 @@ nonRecursiveCommand =
         [ help
         , showClaim
         , showAxiom
+        , showKAxiom
         , prove
         , showGraph
         , try proveStepsF
         , proveSteps
         , selectNode
         , showConfig
+        , showKonfig
         , showDest
+        , showKDest
         , omitCell
         , showLeafs
         , ruleCommandsParser
@@ -123,7 +126,9 @@ nonRecursiveCommand =
         , try labelDel
         , label
         , tryForceAxiomClaim
+        , tryForceKAxiomClaim
         , tryAxiomClaim
+        , tryKAxiomClaim
         , clear
         , saveSession
         , savePartialProof
@@ -166,6 +171,14 @@ showAxiom =
                 <|> Right <$> ruleNameParser
            )
 
+showKAxiom :: Parser ReplCommand
+showKAxiom =
+    ShowKAxiom
+        <$$> literal "kaxiom"
+        *> ( Left <$> parseAxiomDecimal
+                <|> Right <$> ruleNameParser
+           )
+
 prove :: Parser ReplCommand
 prove =
     Prove
@@ -198,10 +211,20 @@ showConfig = do
     dec <- literal "config" *> maybeDecimal
     return $ ShowConfig (fmap ReplNode dec)
 
+showKonfig :: Parser ReplCommand
+showKonfig = do
+    dec <- literal "konfig" *> maybeDecimal
+    return $ ShowKonfig (fmap ReplNode dec)
+
 showDest :: Parser ReplCommand
 showDest = do
     dec <- literal "dest" *> maybeDecimal
     return $ ShowDest (fmap ReplNode dec)
+
+showKDest :: Parser ReplCommand
+showKDest = do
+    dec <- literal "kdest" *> maybeDecimal
+    return $ ShowKDest (fmap ReplNode dec)
 
 omitCell :: Parser ReplCommand
 omitCell = OmitCell <$$> literal "omit" *> maybeWord
@@ -211,12 +234,17 @@ showLeafs = const ShowLeafs <$$> literal "leafs"
 
 ruleCommandsParser :: Parser ReplCommand
 ruleCommandsParser =
-    try showRules <|> showRule
+    try showRules <|> showRule <|> showKRule
 
 showRule :: Parser ReplCommand
 showRule = do
     dec <- literal "rule" *> maybeDecimal
     return $ ShowRule (fmap ReplNode dec)
+
+showKRule :: Parser ReplCommand
+showKRule = do
+    dec <- literal "krule" *> maybeDecimal
+    return $ ShowKRule (fmap ReplNode dec)
 
 showRules :: Parser ReplCommand
 showRules = do
@@ -259,10 +287,26 @@ tryAxiomClaim =
                 <|> ByName <$> ruleNameParser
            )
 
+tryKAxiomClaim :: Parser ReplCommand
+tryKAxiomClaim =
+    KTry
+        <$$> literal "ktry"
+        *> ( try (ByIndex <$> ruleIndexParser)
+                <|> ByName <$> ruleNameParser
+           )
+
 tryForceAxiomClaim :: Parser ReplCommand
 tryForceAxiomClaim =
     TryF
         <$$> literal "tryf"
+        *> ( try (ByIndex <$> ruleIndexParser)
+                <|> ByName <$> ruleNameParser
+           )
+
+tryForceKAxiomClaim :: Parser ReplCommand
+tryForceKAxiomClaim =
+    KTryF
+        <$$> literal "ktryf"
         *> ( try (ByIndex <$> ruleIndexParser)
                 <|> ByName <$> ruleNameParser
            )
