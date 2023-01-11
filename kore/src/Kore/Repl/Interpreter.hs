@@ -51,7 +51,8 @@ import Control.Monad.RWS.Strict (
  )
 import Control.Monad.Reader (
     MonadReader,
-    ReaderT (..), asks,
+    ReaderT (..),
+    asks,
  )
 import Control.Monad.Reader qualified as Reader (
     ask,
@@ -638,10 +639,10 @@ selectNode rnode = do
 -- | Pipe result of `ReplCommand` to kore-print.
 showUnparsed :: ReplCommand -> ReplM ()
 showUnparsed cmd = do
-  dir <- asks (unKompiledDir . kompiledDir)
-  exec <- asks (unKorePrintCommand . korePrintCommand)
-  let args = ["--definition", dir, "/dev/stdin"]
-  pipe cmd exec args
+    dir <- asks (unKompiledDir . kompiledDir)
+    exec <- asks (unKorePrintCommand . korePrintCommand)
+    let args = ["--definition", dir, "/dev/stdin"]
+    pipe cmd exec args
 
 -- | Shows configuration at node 'n', or current node if 'Nothing' is passed.
 showConfig ::

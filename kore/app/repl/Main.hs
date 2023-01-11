@@ -58,10 +58,10 @@ import Options.Applicative (
     metavar,
     progDesc,
     short,
+    showDefault,
     str,
     strOption,
     value,
-    showDefault,
  )
 import Options.SMT (
     KoreSolverOptions (..),
@@ -178,8 +178,7 @@ parseKoreReplOptions startTime =
     parseKorePrintCommand :: Parser KorePrintCommand
     parseKorePrintCommand =
         KorePrintCommand
-            <$>
-                ( strOption
+            <$> ( strOption
                     ( metavar "EXEC_FILE"
                         <> long "kore-print-command"
                         <> help "Command to run the kore-print pretty printer."
