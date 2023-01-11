@@ -124,8 +124,10 @@ runRepl ::
     ModuleName ->
     Log.KoreLogOptions ->
     KFileLocations ->
+    KompiledDir ->
+    KorePrintCommand ->
     Simplifier ()
-runRepl _ _ _ _ _ [] _ _ _ _ outputFile _ _ _ =
+runRepl _ _ _ _ _ [] _ _ _ _ outputFile _ _ _ _ _ =
     let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
      in liftIO . printTerm . unparseToString $ topTerm
   where
@@ -145,7 +147,9 @@ runRepl
     outputFile
     mainModuleName
     logOptions
-    kFileLocations =
+    kFileLocations
+    kompiledDir
+    korePrintCommand =
         do
             startTime <- liftIO $ getTime Monotonic
             (newState, _) <-
@@ -220,6 +224,8 @@ runRepl
                 , outputFile
                 , mainModuleName
                 , kFileLocations
+                , kompiledDir
+                , korePrintCommand
                 }
 
         firstClaimIndex :: ClaimIndex

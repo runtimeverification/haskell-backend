@@ -60,6 +60,8 @@ import Options.Applicative (
     short,
     str,
     strOption,
+    value,
+    showDefault,
  )
 import Options.SMT (
     KoreSolverOptions (..),
@@ -75,6 +77,9 @@ import System.Clock (
 import System.Exit (
     exitFailure,
     exitWith,
+ )
+import System.FilePath (
+    takeDirectory,
  )
 import System.IO (
     hPutStrLn,
@@ -92,6 +97,7 @@ data KoreReplOptions = KoreReplOptions
     { definitionModule :: !KoreModule
     , proveOptions :: !KoreProveOptions
     , smtOptions :: !KoreSolverOptions
+    , korePrintCommand :: !KorePrintCommand
     , replMode :: !ReplMode
     , scriptModeOutput :: !ScriptModeOutput
     , replScript :: !ReplScript
@@ -107,6 +113,7 @@ parseKoreReplOptions startTime =
         <$> parseMainModule
         <*> parseKoreProveOptions
         <*> parseKoreSolverOptions
+        <*> parseKorePrintCommand
         <*> parseReplMode
         <*> parseScriptModeOutput
         <*> parseReplScript
@@ -165,6 +172,19 @@ parseKoreReplOptions startTime =
                     ( metavar "PATTERN_OUTPUT_FILE"
                         <> long "output"
                         <> help "Output file to contain final Kore pattern."
+                    )
+                )
+
+    parseKorePrintCommand :: Parser KorePrintCommand
+    parseKorePrintCommand =
+        KorePrintCommand
+            <$>
+                ( strOption
+                    ( metavar "EXEC_FILE"
+                        <> long "kore-print-command"
+                        <> help "Command to run the kore-print pretty printer."
+                        <> value "kore-print"
+                        <> showDefault
                     )
                 )
 
@@ -259,6 +279,8 @@ mainWithOptions LocalOptions{execOptions} = do
                                 mainModuleName
                                 koreLogOptions
                                 (GlobalMain.kFileLocations definition)
+                                kompiledDir
+                                korePrintCommand
 
                         warnIfLowProductivity
                             (GlobalMain.kFileLocations definition)
@@ -275,6 +297,7 @@ mainWithOptions LocalOptions{execOptions} = do
         , outputFile
         , koreLogOptions
         , bugReportOption
+        , korePrintCommand
         } = execOptions
     runExceptionHandlers action =
         action
@@ -313,6 +336,9 @@ mainWithOptions LocalOptions{execOptions} = do
 
     specFile :: FilePath
     specFile = specFileName proveOptions
+
+    kompiledDir :: KompiledDir
+    kompiledDir = KompiledDir . takeDirectory $ fileName definitionModule
 
     smtTimeOut :: SMT.TimeOut
     smtTimeOut = timeOut smtOptions
