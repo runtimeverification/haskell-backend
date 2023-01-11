@@ -52,6 +52,7 @@ import Control.Monad.RWS.Strict (
 import Control.Monad.Reader (
     MonadReader,
     ReaderT (..),
+    asks,
  )
 import Control.Monad.Reader qualified as Reader (
     ask,
@@ -273,16 +274,20 @@ replInterpreter0 printAux printKore replCmd = do
             Help -> help $> Continue
             ShowClaim mc -> showClaim mc $> Continue
             ShowAxiom ea -> showAxiom ea $> Continue
+            ShowKAxiom ea -> showUnparsed (ShowAxiom ea) $> Continue
             Prove i -> prove i $> Continue
             ShowGraph v mfile out -> showGraph v mfile out $> Continue
             ProveSteps n -> proveSteps n $> Continue
             ProveStepsF n -> proveStepsF n $> Continue
             SelectNode i -> selectNode i $> Continue
             ShowConfig mc -> showConfig mc $> Continue
+            ShowKonfig mc -> showUnparsed (ShowConfig mc) $> Continue
             ShowDest mc -> showDest mc $> Continue
+            ShowKDest mc -> showUnparsed (ShowDest mc) $> Continue
             OmitCell c -> omitCell c $> Continue
             ShowLeafs -> showLeafs $> Continue
             ShowRule mc -> showRule mc $> Continue
+            ShowKRule mc -> showUnparsed (ShowRule mc) $> Continue
             ShowRules ns -> showRules ns $> Continue
             ShowPrecBranch mn -> showPrecBranch mn $> Continue
             ShowChildren mn -> showChildren mn $> Continue
@@ -293,7 +298,9 @@ replInterpreter0 printAux printKore replCmd = do
                 redirect inn file
                     $> Continue
             Try ref -> tryAxiomClaim ref $> Continue
+            KTry ref -> showUnparsed (Try ref) $> Continue
             TryF ac -> tryFAxiomClaim ac $> Continue
+            KTryF ac -> showUnparsed (TryF ac) $> Continue
             Clear n -> clear n $> Continue
             SaveSession file -> saveSession file $> Continue
             SavePartialProof mn f -> savePartialProof mn f $> Continue
@@ -628,6 +635,14 @@ selectNode rnode = do
     if i `elem` Graph.nodes graph
         then field @"node" .= rnode
         else putStrLn' "Invalid node!"
+
+-- | Pipe result of `ReplCommand` to kore-print.
+showUnparsed :: ReplCommand -> ReplM ()
+showUnparsed cmd = do
+    dir <- asks (unKompiledDir . kompiledDir)
+    exec <- asks (unKorePrintCommand . korePrintCommand)
+    let args = ["--definition", dir, "/dev/stdin"]
+    pipe cmd exec args
 
 -- | Shows configuration at node 'n', or current node if 'Nothing' is passed.
 showConfig ::
@@ -1215,7 +1230,7 @@ pipe ::
 pipe cmd file args = do
     exists <- liftIO $ findExecutable file
     case exists of
-        Nothing -> putStrLn' "Cannot find executable."
+        Nothing -> putStrLn' $ "Cannot find " <> file <> " executable."
         Just exec -> do
             config <- ask
             pipeOutRef <- liftIO $ newIORef (mempty :: ReplOutput)

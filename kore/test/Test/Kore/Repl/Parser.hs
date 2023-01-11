@@ -37,12 +37,15 @@ test_replParser =
     [ helpTests `tests` "help"
     , claimTests `tests` "claim"
     , axiomTests `tests` "axiom"
+    , kaxiomTests `tests` "kaxiom"
     , proveTests `tests` "prove"
     , graphTests `tests` "graph"
     , stepTests `tests` "step"
     , selectTests `tests` "select"
     , configTests `tests` "config"
+    , konfigTests `tests` "konfig"
     , destTests `tests` "dest"
+    , kdestTests `tests` "kdest"
     , leafsTests `tests` "leafs"
     , precBranchTests `tests` "prec-branch"
     , childrenTests `tests` "children"
@@ -50,9 +53,12 @@ test_replParser =
     , omitTests `tests` "omit"
     , labelTests `tests` "label"
     , tryTests `tests` "try"
+    , ktryTests `tests` "ktry"
     , tryFTests `tests` "tryF"
+    , ktryFTests `tests` "ktryF"
     , redirectTests `tests` "redirect"
     , ruleTests `tests` "rule"
+    , kruleTests `tests` "krule"
     , rulesTests `tests` "rules"
     , stepfTests `tests` "stepf"
     , clearTests `tests` "clear"
@@ -123,6 +129,16 @@ axiomTests =
     , "axiom" `fails` ()
     ]
 
+kaxiomTests :: [ParserTest ReplCommand]
+kaxiomTests =
+    [ "kaxiom 0" `parsesTo_` ShowKAxiom (Left . AxiomIndex $ 0)
+    , "kaxiom 0 " `parsesTo_` ShowKAxiom (Left . AxiomIndex $ 0)
+    , "kaxiom 5" `parsesTo_` ShowKAxiom (Left . AxiomIndex $ 5)
+    , "kaxiom lbl" `parsesTo_` ShowKAxiom (Right . RuleName $ "lbl")
+    , "kaxiom \"my lbl\" " `parsesTo_` ShowKAxiom (Right . RuleName $ "my lbl")
+    , "kaxiom" `fails` ()
+    ]
+
 proveTests :: [ParserTest ReplCommand]
 proveTests =
     [ "prove 0" `parsesTo_` Prove (Left . ClaimIndex $ 0)
@@ -187,6 +203,16 @@ configTests =
     , "config | s >> " `fails` ()
     ]
 
+konfigTests :: [ParserTest ReplCommand]
+konfigTests =
+    [ "konfig" `parsesTo_` ShowKonfig Nothing
+    , "konfig " `parsesTo_` ShowKonfig Nothing
+    , "konfig 5" `parsesTo_` ShowKonfig (Just (ReplNode 5))
+    , "konfig -5" `fails` ()
+    , "konfig | > >> file" `fails` ()
+    , "konfig | s >> " `fails` ()
+    ]
+
 destTests :: [ParserTest ReplCommand]
 destTests =
     [ "dest" `parsesTo_` ShowDest Nothing
@@ -195,6 +221,16 @@ destTests =
     , "dest -5" `fails` ()
     , "dest | > >> file" `fails` ()
     , "dest | s >> " `fails` ()
+    ]
+
+kdestTests :: [ParserTest ReplCommand]
+kdestTests =
+    [ "kdest" `parsesTo_` ShowKDest Nothing
+    , "kdest " `parsesTo_` ShowKDest Nothing
+    , "kdest 5" `parsesTo_` ShowKDest (Just (ReplNode 5))
+    , "kdest -5" `fails` ()
+    , "kdest | > >> file" `fails` ()
+    , "kdest | s >> " `fails` ()
     ]
 
 omitTests :: [ParserTest ReplCommand]
@@ -256,6 +292,17 @@ tryTests =
     , "try" `fails` ()
     ]
 
+ktryTests :: [ParserTest ReplCommand]
+ktryTests =
+    [ "ktry a5" `parsesTo_` tryKAxiomIndex 5
+    , "ktry c5" `parsesTo_` tryKClaimIndex 5
+    , "ktry lbl" `parsesTo_` tryKRuleName "lbl"
+    , "ktry \"my lbl\" " `parsesTo_` tryKRuleName "my lbl"
+    , "ktry albl" `parsesTo_` tryKRuleName "albl"
+    , "ktry clbl" `parsesTo_` tryKRuleName "clbl"
+    , "ktry" `fails` ()
+    ]
+
 tryFTests :: [ParserTest ReplCommand]
 tryFTests =
     [ "tryf a5" `parsesTo_` tryFAxiomIndex 5
@@ -267,23 +314,52 @@ tryFTests =
     , "tryf" `fails` ()
     ]
 
+ktryFTests :: [ParserTest ReplCommand]
+ktryFTests =
+    [ "ktryf a5" `parsesTo_` tryFKAxiomIndex 5
+    , "ktryf c5" `parsesTo_` tryFKClaimIndex 5
+    , "ktryf lbl" `parsesTo_` tryFKRuleName "lbl"
+    , "ktryf \"my lbl\" " `parsesTo_` tryFKRuleName "my lbl"
+    , "ktryf albl" `parsesTo_` tryFKRuleName "albl"
+    , "ktryf clbl" `parsesTo_` tryFKRuleName "clbl"
+    , "ktryf" `fails` ()
+    ]
+
 tryAxiomIndex :: Int -> ReplCommand
 tryAxiomIndex = Try . ByIndex . Left . AxiomIndex
+
+tryKAxiomIndex :: Int -> ReplCommand
+tryKAxiomIndex = KTry . ByIndex . Left . AxiomIndex
 
 tryClaimIndex :: Int -> ReplCommand
 tryClaimIndex = Try . ByIndex . Right . ClaimIndex
 
+tryKClaimIndex :: Int -> ReplCommand
+tryKClaimIndex = KTry . ByIndex . Right . ClaimIndex
+
 tryRuleName :: String -> ReplCommand
 tryRuleName = Try . ByName . RuleName
+
+tryKRuleName :: String -> ReplCommand
+tryKRuleName = KTry . ByName . RuleName
 
 tryFAxiomIndex :: Int -> ReplCommand
 tryFAxiomIndex = TryF . ByIndex . Left . AxiomIndex
 
+tryFKAxiomIndex :: Int -> ReplCommand
+tryFKAxiomIndex = KTryF . ByIndex . Left . AxiomIndex
+
 tryFClaimIndex :: Int -> ReplCommand
 tryFClaimIndex = TryF . ByIndex . Right . ClaimIndex
 
+tryFKClaimIndex :: Int -> ReplCommand
+tryFKClaimIndex = KTryF . ByIndex . Right . ClaimIndex
+
 tryFRuleName :: String -> ReplCommand
 tryFRuleName = TryF . ByName . RuleName
+
+tryFKRuleName :: String -> ReplCommand
+tryFKRuleName = KTryF . ByName . RuleName
 
 exitTests :: [ParserTest ReplCommand]
 exitTests =
@@ -390,6 +466,15 @@ ruleTests =
     , "rule 5" `parsesTo_` ShowRule (Just (ReplNode 5))
     , "rule 5 " `parsesTo_` ShowRule (Just (ReplNode 5))
     , "rule -5" `fails` ()
+    ]
+
+kruleTests :: [ParserTest ReplCommand]
+kruleTests =
+    [ "krule" `parsesTo_` ShowKRule Nothing
+    , "krule " `parsesTo_` ShowKRule Nothing
+    , "krule 5" `parsesTo_` ShowKRule (Just (ReplNode 5))
+    , "krule 5 " `parsesTo_` ShowKRule (Just (ReplNode 5))
+    , "krule -5" `fails` ()
     ]
 
 rulesTests :: [ParserTest ReplCommand]

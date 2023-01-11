@@ -757,6 +757,8 @@ proveWithRepl ::
     ModuleName ->
     KoreLogOptions ->
     KFileLocations ->
+    Repl.Data.KompiledDir ->
+    Repl.Data.KorePrintCommand ->
     SMT ()
 proveWithRepl
     minDepth
@@ -772,7 +774,9 @@ proveWithRepl
     outputFile
     mainModuleName
     logOptions
-    kFileLocations =
+    kFileLocations
+    kompiledDir
+    korePrintCommand =
         evalSimplifierProofs definitionModule $ do
             InitializedProver{axioms, specClaims, claims} <-
                 initializeProver
@@ -794,6 +798,8 @@ proveWithRepl
                 mainModuleName
                 logOptions
                 kFileLocations
+                kompiledDir
+                korePrintCommand
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck ::

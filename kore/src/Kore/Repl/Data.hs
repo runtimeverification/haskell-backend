@@ -51,6 +51,8 @@ module Kore.Repl.Data (
     debugRewriteTransformer,
     entriesForHelp,
     TryApplyRuleResult (..),
+    KorePrintCommand (..),
+    KompiledDir (..),
 ) where
 
 import Control.Concurrent.MVar
@@ -132,6 +134,16 @@ data ScriptModeOutput = EnableOutput | DisableOutput
 
 newtype OutputFile = OutputFile
     { unOutputFile :: Maybe FilePath
+    }
+    deriving stock (Eq, Show)
+
+newtype KompiledDir = KompiledDir
+    { unKompiledDir :: FilePath
+    }
+    deriving stock (Eq, Show)
+
+newtype KorePrintCommand = KorePrintCommand
+    { unKorePrintCommand :: FilePath
     }
     deriving stock (Eq, Show)
 
@@ -327,6 +339,8 @@ data ReplCommand
       ShowClaim !(Maybe (Either ClaimIndex RuleName))
     | -- | Show the nth axiom.
       ShowAxiom !(Either AxiomIndex RuleName)
+    | -- | Show the unparsed nth axiom.
+      ShowKAxiom !(Either AxiomIndex RuleName)
     | -- | Drop the current proof state and re-initialize for the nth claim.
       Prove !(Either ClaimIndex RuleName)
     | -- | Show the current execution graph.
@@ -342,14 +356,20 @@ data ReplCommand
       SelectNode !ReplNode
     | -- | Show the configuration from the current node.
       ShowConfig !(Maybe ReplNode)
+    | -- | Show the unparsed configuration from the current node.
+      ShowKonfig !(Maybe ReplNode)
     | -- | Show the destination from the current node.
       ShowDest !(Maybe ReplNode)
+    | -- | Show the unparsed destination from the current node.
+      ShowKDest !(Maybe ReplNode)
     | -- | Adds or removes cell to omit list, or shows current omit list.
       OmitCell !(Maybe String)
     | -- | Show leafs which can continue evaluation and leafs which are stuck
       ShowLeafs
     | -- | Show the rule(s) that got us to this configuration.
       ShowRule !(Maybe ReplNode)
+    | -- | Show the unparsed rule(s) that got us to this configuration.
+      ShowKRule !(Maybe ReplNode)
     | -- | Show the rules which were applied from the first node
       -- to reach the second.
       ShowRules !(ReplNode, ReplNode)
@@ -367,8 +387,12 @@ data ReplCommand
       Redirect ReplCommand FilePath
     | -- | Attempt to apply axiom or claim to current node.
       Try !RuleReference
+    | -- | Attempt to apply axiom or claim to current node, result is unparsed.
+      KTry !RuleReference
     | -- | Force application of an axiom or claim to current node.
       TryF !RuleReference
+    | -- | Force application of an axiom or claim to current node, result is unparsed.
+      KTryF !RuleReference
     | -- | Remove child nodes from graph.
       Clear !(Maybe ReplNode)
     | -- | Pipes a repl command into an external script.
@@ -451,6 +475,7 @@ helpText =
     \ focused claim\n\
     \axiom <n|name>                           shows the nth axiom or the axiom\
     \ with <name>\n\
+    \kaxiom <n|name>                          like axiom, but unparses result\n\
     \prove <n|name>                           initializes proof mode for the nth\
     \ claim or for the claim with <name>\n\
     \graph [view] [file] [format]             shows the current proof graph (*),\
@@ -464,14 +489,17 @@ helpText =
     \select <n>                               select node id 'n' from the graph\n\
     \config [n]                               shows the config for node 'n'\
     \ (defaults to current node)\n\
+    \konfig [n]                               like config, but unparses result\n\
     \dest [n]                                 shows the destination for node 'n'\
     \ (defaults to current node)\n\
+    \kdest [n]                                like dest, but unparses result\n\
     \omit [cell]                              adds or removes cell to omit list\
     \ (defaults to showing the omit\
     \ list)\n\
     \leafs                                    shows unevaluated or stuck leafs\n\
     \rule [n]                                 shows the rule for node 'n'\
     \ (defaults to current node)\n\
+    \krule [n]                                like rule, but unparses result\n\
     \rules <n1> <n2>                          shows the rules applied on the path\
     \ between nodes n1 and n2\n\
     \prec-branch [n]                          shows first preceding branch\
@@ -485,7 +513,9 @@ helpText =
     \label <-l>                               remove a label\n\
     \try (<a|c><num>)|<name>                  attempts <a>xiom or <c>laim at\
     \ index <num> or rule with <name>\n\
+    \ktry (<a|c><num>)|<name>                 like try, but unparses result\n\
     \tryf (<a|c><num>)|<name>                 like try, but if successful, it will apply the axiom or claim.\n\
+    \kryf (<a|c><num>)|<name>                 like ktry, but if successful, it will apply the axiom or claim.\n\
     \clear [n]                                removes all the node's children from the\
     \ proof graph (***)\
     \ (defaults to current node)\n\
@@ -570,15 +600,19 @@ shouldStore =
         Help -> False
         ShowClaim _ -> False
         ShowAxiom _ -> False
+        ShowKAxiom _ -> False
         ShowGraph _ _ _ -> False
         ShowConfig _ -> False
+        ShowKonfig _ -> False
         ShowLeafs -> False
         ShowRule _ -> False
+        ShowKRule _ -> False
         ShowPrecBranch _ -> False
         ShowChildren _ -> False
         SaveSession _ -> False
         ProofStatus -> False
         Try _ -> False
+        KTry _ -> False
         Exit -> False
         _ -> True
 
@@ -640,6 +674,8 @@ data Config = Config
       outputFile :: OutputFile
     , mainModuleName :: ModuleName
     , kFileLocations :: KFileLocations
+    , kompiledDir :: KompiledDir
+    , korePrintCommand :: KorePrintCommand
     }
     deriving stock (GHC.Generic)
 
