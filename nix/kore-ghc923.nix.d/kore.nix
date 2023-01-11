@@ -623,6 +623,7 @@
           (hsPkgs."clock" or (errorHandler.buildDepError "clock"))
           (hsPkgs."exceptions" or (errorHandler.buildDepError "exceptions"))
           (hsPkgs."extra" or (errorHandler.buildDepError "extra"))
+          (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
           (hsPkgs."optparse-applicative" or (errorHandler.buildDepError
             "optparse-applicative"))
         ];
