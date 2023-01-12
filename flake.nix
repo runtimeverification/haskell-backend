@@ -69,7 +69,7 @@
           add-z3 = exe: {
             build-tools = with pkgs'; lib.mkForce [ makeWrapper ];
             postInstall = ''
-              wrapProgram $out/bin/${exe} --prefix PATH ${
+              wrapProgram $out/bin/${exe} --prefix PATH : ${
                 with pkgs';
                 lib.makeBinPath [ z3 ]
               }
@@ -172,6 +172,7 @@
       };
 
       flake = perSystem (system: self.project.${system}.flake { });
+      
       flakeGhc9 = perSystem (system: self.projectGhc9.${system}.flake { });
 
       packages = perSystem (system:
