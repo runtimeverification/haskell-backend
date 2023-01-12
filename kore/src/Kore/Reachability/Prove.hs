@@ -194,7 +194,6 @@ data ProveClaimsResult = ProveClaimsResult
 proveClaims ::
     Maybe MinDepth ->
     StuckCheck ->
-    AllowVacuous ->
     Limit Natural ->
     GraphSearchOrder ->
     Natural ->
@@ -209,7 +208,6 @@ proveClaims ::
 proveClaims
     maybeMinDepth
     stuckCheck
-    allowVacuous
     breadthLimit
     searchOrder
     maxCounterexamples
@@ -223,7 +221,6 @@ proveClaims
                 proveClaimsWorker
                     maybeMinDepth
                     stuckCheck
-                    allowVacuous
                     breadthLimit
                     searchOrder
                     maxCounterexamples
@@ -259,7 +256,6 @@ proveClaims
 proveClaimsWorker ::
     Maybe MinDepth ->
     StuckCheck ->
-    AllowVacuous ->
     Limit Natural ->
     GraphSearchOrder ->
     Natural ->
@@ -273,7 +269,6 @@ proveClaimsWorker ::
 proveClaimsWorker
     maybeMinDepth
     stuckCheck
-    allowVacuous
     breadthLimit
     searchOrder
     maxCounterexamples
@@ -297,7 +292,6 @@ proveClaimsWorker
                         proveClaim
                             maybeMinDepth
                             stuckCheck
-                            allowVacuous
                             breadthLimit
                             searchOrder
                             maxCounterexamples
@@ -317,7 +311,6 @@ proveClaimsWorker
 proveClaim ::
     Maybe MinDepth ->
     StuckCheck ->
-    AllowVacuous ->
     Limit Natural ->
     GraphSearchOrder ->
     Natural ->
@@ -329,7 +322,6 @@ proveClaim ::
 proveClaim
     maybeMinDepth
     stuckCheck
-    allowVacuous
     breadthLimit
     searchOrder
     maxCounterexamples
@@ -407,7 +399,7 @@ proveClaim
                 )
         transition =
             GraphTraversal.simpleTransition
-                (trackProofDepth $ transitionRule' stuckCheck allowVacuous specClaims axioms)
+                (trackProofDepth $ transitionRule' stuckCheck specClaims axioms)
                 toTransitionResultWithDepth
 
         -- result interpretation for GraphTraversal.simpleTransition
@@ -444,7 +436,6 @@ proveClaim
 proveClaimStep ::
     Maybe MinDepth ->
     StuckCheck ->
-    AllowVacuous ->
     -- | list of claims in the spec module
     [SomeClaim] ->
     -- | list of axioms in the main module
@@ -454,7 +445,7 @@ proveClaimStep ::
     -- | selected node in the graph
     Graph.Node ->
     Simplifier (ExecutionGraph CommonClaimState (AppliedRule SomeClaim))
-proveClaimStep _ stuckCheck allowVacuous claims axioms executionGraph node =
+proveClaimStep _ stuckCheck claims axioms executionGraph node =
     executionHistoryStep
         transitionRule''
         strategy'
@@ -481,24 +472,22 @@ proveClaimStep _ stuckCheck allowVacuous claims axioms executionGraph node =
         | isRoot =
             transitionRule'
                 stuckCheck
-                allowVacuous
                 claims
                 axioms
                 prim
                 (Lens.over lensClaimPattern mkGoal <$> state)
         | otherwise =
-            transitionRule' stuckCheck allowVacuous claims axioms prim state
+            transitionRule' stuckCheck claims axioms prim state
 
 transitionRule' ::
     StuckCheck ->
-    AllowVacuous ->
     [SomeClaim] ->
     [Rule SomeClaim] ->
     CommonTransitionRule Simplifier
-transitionRule' stuckCheck allowVacuous claims axioms = \prim proofState ->
+transitionRule' stuckCheck claims axioms = \prim proofState ->
     deepseq
         proofState
-        ( transitionRule stuckCheck allowVacuous claims axiomGroups
+        ( transitionRule stuckCheck claims axiomGroups
             & withWarnings
             & profTransitionRule
             & withConfiguration
@@ -523,13 +512,6 @@ withWarnings rule prim claimState = do
                 ClaimState.Remaining claim -> warnStuckClaimStateTermsNotUnifiable claim
                 ClaimState.Claimed claim -> warnStuckClaimStateTermsUnifiable claim
                 _ -> return ()
-        Prim.Simplify | ClaimState.Stuck _ <- claimState' ->
-            case claimState of
-                ClaimState.Rewritten claim -> warnStuckClaimStateBottomLHS claim
-                ClaimState.Remaining claim -> warnStuckClaimStateBottomLHS claim
-                ClaimState.Claimed claim -> warnStuckClaimStateBottomLHS claim
-                ClaimState.Stuck claim -> warnStuckClaimStateBottomLHS claim
-                _ -> pure ()
         _ -> return ()
     return claimState'
 

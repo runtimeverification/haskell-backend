@@ -437,7 +437,6 @@ unparseKoreProveOptions
             saveProofs
             stuckCheck
             minDepth
-            allowVacuous
         ) =
         [ "--prove spec.kore"
         , unwords ["--spec-module", unpack moduleName]
@@ -451,9 +450,6 @@ unparseKoreProveOptions
             Claim.DisabledStuckCheck -> "--disable-stuck-check"
             _ -> ""
         , maybe "" unparseMinDepth minDepth
-        , case allowVacuous of
-            Claim.AllowedVacuous -> "--allow-vacuous"
-            _ -> ""
         ]
       where
         unparseMinDepth md =
@@ -778,11 +774,10 @@ koreProve LocalOptions{execOptions} proveOptions = do
     let KoreExecOptions{koreSolverOptions} = execOptions
     proveResult <- execute koreSolverOptions (MetadataTools.build mainModule) (getSMTLemmas mainModule) $ do
         let KoreExecOptions{breadthLimit, depthLimit, finalNodeType} = execOptions
-            KoreProveOptions{graphSearch, stuckCheck, minDepth, allowVacuous} = proveOptions
+            KoreProveOptions{graphSearch, stuckCheck, minDepth} = proveOptions
         prove
             minDepth
             stuckCheck
-            allowVacuous
             graphSearch
             breadthLimit
             depthLimit

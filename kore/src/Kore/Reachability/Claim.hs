@@ -24,7 +24,6 @@ module Kore.Reachability.Claim (
     transitionRule,
     isTrusted,
     StuckCheck (..),
-    AllowVacuous (..),
 
     -- * Re-exports
     RewriteRule (..),
@@ -319,17 +318,14 @@ data StuckCheck
     | DisabledStuckCheck
     deriving stock (Eq)
 
-data AllowVacuous = DisallowedVacuous | AllowedVacuous
-
 transitionRule ::
     forall claim.
     Claim claim =>
     StuckCheck ->
-    AllowVacuous ->
     [claim] ->
     [[Rule claim]] ->
     TransitionRule Simplifier (AppliedRule claim) (ClaimState claim)
-transitionRule stuckCheck allowVacuous claims axiomGroups = transitionRuleWorker
+transitionRule stuckCheck claims axiomGroups = transitionRuleWorker
   where
     transitionRuleWorker ::
         Prim ->
@@ -342,10 +338,7 @@ transitionRule stuckCheck allowVacuous claims axiomGroups = transitionRuleWorker
     transitionRuleWorker Begin claimState = pure claimState
     transitionRuleWorker Simplify claimState
         | Just claim <- retractSimplifiable claimState =
-            Transition.ifte (simplify claim) (pure . ($>) claimState) $
-                case allowVacuous of
-                    AllowedVacuous -> pure Proven
-                    DisallowedVacuous -> pure $ Stuck claim
+            Transition.ifte (simplify claim) (pure . ($>) claimState) (pure Proven)
         | otherwise =
             pure claimState
     transitionRuleWorker CheckImplication claimState
