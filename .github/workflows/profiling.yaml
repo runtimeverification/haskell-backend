@@ -67,7 +67,6 @@ jobs:
           echo "Download Test File from ${DOWNLOAD_URL}"
           curl -LOsS ${DOWNLOAD_URL}
 
-          . /home/github-runner/.nix-profile/etc/profile.d/nix.sh
           echo "Starting Test Execution"
           mkdir -p profile/tests/$(echo ${FILE_NAME} | cut -d '.' -f 1)
           echo "RUNNING PROFILE: ${FILE_NAME}"
