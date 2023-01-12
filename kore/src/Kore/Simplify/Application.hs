@@ -119,7 +119,6 @@ evaluateApplicationFunction
             let applicationPattern =
                     synthesize . ApplySymbolF <$> expandedApp
              in applicationPattern
-                    & Pattern.markSimplified
                     & OrPattern.fromPattern
                     & return
         | otherwise =
