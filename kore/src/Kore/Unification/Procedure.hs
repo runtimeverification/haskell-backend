@@ -45,6 +45,9 @@ import Logic (
     observeAllT,
  )
 import Prelude.Kore
+import qualified Pretty
+import Pretty (pretty)
+import Data.Text (unpack)
 
 runUnifier ::
     NewUnifier a ->
@@ -71,8 +74,13 @@ unificationProcedure sideCondition p1 p2
         orCeil <- liftSimplifier $ makeEvaluateTermCeil sideCondition term
         marker "unify" "CombineCeil"
         ceil' <- Monad.Unify.scatter orCeil
-        lowerLogicT . simplifyCondition sideCondition $
+        condition' <- lowerLogicT . simplifyCondition sideCondition $
             Conditional.andCondition ceil' condition
+        when (condition /= condition') $ liftIO . traceIO . unpack $ Pretty.renderText $ Pretty.layoutPretty Pretty.defaultLayoutOptions $
+          "Simplification did something." <> Pretty.line <> "New unifier produced:" <>
+          pretty condition <> Pretty.line <>
+          "Then simplificaton produced:" <> Pretty.line <> pretty condition'
+        pure condition'
   where
     p1Sort = termLikeSort p1
     p2Sort = termLikeSort p2
