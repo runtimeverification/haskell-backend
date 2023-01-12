@@ -19,7 +19,6 @@ import Data.HashMap.Strict qualified as HashMap
 import Kore.Internal.Condition (
     Condition,
  )
-import Kore.Internal.Pattern qualified as Conditional
 import Kore.Internal.SideCondition (
     SideCondition,
  )
@@ -33,15 +32,9 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Simplify.Simplify (
     Simplifier,
-    liftSimplifier,
-    makeEvaluateTermCeil,
-    simplifyCondition,
  )
-import Kore.TopBottom qualified as TopBottom
 import Kore.Unification.NewUnifier
-import Kore.Unification.Unify qualified as Monad.Unify
 import Logic (
-    lowerLogicT,
     observeAllT,
  )
 import Prelude.Kore
@@ -63,18 +56,8 @@ unificationProcedure ::
 unificationProcedure sideCondition p1 p2
     | p1Sort /= p2Sort =
         debugUnifyBottomAndReturnBottom "Cannot unify different sorts." p1 p2
-    | otherwise = infoAttemptUnification p1 p2 $ do
-        condition <- unifyTerms p1 p2 sideCondition
-        TopBottom.guardAgainstBottom condition
-        marker "unify" "MakeCeil"
-        let term = unifiedTermAnd p1 p2 condition
-        orCeil <- liftSimplifier $ makeEvaluateTermCeil sideCondition term
-        marker "unify" "CombineCeil"
-        ceil' <- Monad.Unify.scatter orCeil
-        lowerLogicT . simplifyCondition sideCondition $
-            Conditional.andCondition ceil' condition
+    | otherwise = infoAttemptUnification p1 p2 $
+        unifyTerms p1 p2 sideCondition
   where
     p1Sort = termLikeSort p1
     p2Sort = termLikeSort p2
-
-    marker c t = liftIO . traceMarkerIO $ concat [c, ":", t, ":"]
