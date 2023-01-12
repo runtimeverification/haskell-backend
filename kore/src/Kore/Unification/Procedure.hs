@@ -56,8 +56,9 @@ unificationProcedure ::
 unificationProcedure sideCondition p1 p2
     | p1Sort /= p2Sort =
         debugUnifyBottomAndReturnBottom "Cannot unify different sorts." p1 p2
-    | otherwise = infoAttemptUnification p1 p2 $
-        unifyTerms p1 p2 sideCondition
+    | otherwise =
+        infoAttemptUnification p1 p2 $
+            unifyTerms p1 p2 sideCondition
   where
     p1Sort = termLikeSort p1
     p2Sort = termLikeSort p2
