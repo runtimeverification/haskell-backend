@@ -133,6 +133,7 @@
           hs-backend-booster = apps."hs-backend-booster:exe:hs-backend-booster";
           rpc-client = apps."hs-backend-booster:exe:rpc-client";
           parsetest = apps."hs-backend-booster:exe:parsetest";
+          parsetest-binary = apps."hs-backend-booster:exe:parsetest-binary";
           dltest = apps."hs-backend-booster:exe:dltest";
         } // apps // collectOutputs "apps" flakes
       );
