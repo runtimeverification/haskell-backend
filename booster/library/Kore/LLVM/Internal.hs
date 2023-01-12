@@ -4,13 +4,12 @@
 
 module Kore.LLVM.Internal (API (..), KorePatternAPI (..), runLLVM, runLLVMwithDL, withDLib, ask, marshallTerm, marshallSort) where
 
-import Control.Monad (forM_, void, (>=>))
+import Control.Monad (foldM, forM_, void, (>=>))
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Control.Monad.Trans.Reader qualified as Reader
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 (packCStringLen)
-import Data.Map qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Foreign (ForeignPtr, finalizeForeignPtr, newForeignPtr, withForeignPtr)
@@ -21,7 +20,7 @@ import Foreign.Marshal (alloca)
 import Foreign.Storable (peek)
 import Kore.LLVM.TH (dynamicBindings)
 import Kore.Pattern.Base
-import Kore.Pattern.Util (applySubst, sortOfTerm)
+import Kore.Pattern.Util (sortOfTerm)
 import System.Posix.DynamicLinker qualified as Linker
 
 data KorePattern
@@ -189,10 +188,7 @@ marshallSymbol :: Symbol -> [Sort] -> LLVM KoreSymbolPtr
 marshallSymbol sym sorts = do
     kore <- ask
     sym' <- kore.symbol.new sym.name
-    forM_ sym.argSorts $ marshallSort . applySorts >=> kore.symbol.addArgument sym'
-    kore.symbol.addArgument sym' =<< marshallSort sym.resultSort
-  where
-    applySorts = applySubst (Map.fromList $ zip sym.sortVars sorts)
+    foldM (\symbol sort -> marshallSort sort >>= kore.symbol.addArgument symbol) sym' sorts
 
 marshallSort :: Sort -> LLVM KoreSortPtr
 marshallSort = \case
@@ -201,7 +197,7 @@ marshallSort = \case
         sort <- kore.sort.new name
         forM_ args $ marshallSort >=> kore.sort.addArgument sort
         pure sort
-    SortVar _ -> error "marshalling SortVar unsupported"
+    SortVar varName -> error $ "marshalling SortVar " <> show varName <> " unsupported"
 
 marshallTerm :: Term -> LLVM KorePatternPtr
 marshallTerm t = do
@@ -219,4 +215,4 @@ marshallTerm t = do
             kore.patt.addArgument trm =<< marshallTerm r
         DomainValue sort val ->
             marshallSort sort >>= kore.patt.token.new val
-        Var _ -> error "marshalling Var unsupported"
+        Var varName -> error $ "marshalling Var " <> show varName <> " unsupported"

@@ -139,6 +139,14 @@ executables:
       - transformers
     ghc-options:
     - -rtsopts
+  parsetest-binary:
+    source-dirs: tools/parsetest-binary
+    main: ParsetestBinary.hs
+    dependencies:
+      - base
+      - hs-backend-booster
+    ghc-options:
+    - -rtsopts
   dltest:
     source-dirs: tools/dltest
     main: Dltest.hs
