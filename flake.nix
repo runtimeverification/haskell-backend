@@ -172,6 +172,7 @@
       };
 
       flake = perSystem (system: self.project.${system}.flake { });
+      
       flakeGhc9 = perSystem (system: self.projectGhc9.${system}.flake { });
 
       packages = perSystem (system:
