@@ -64,7 +64,6 @@ jobs:
           # FIXME can we use a reaction emoji instead?
           gh issue comment ${ISSUE_NUMBER} --body "Running KEVM test with ${PR_HEAD:-master} and K version ${K_TAG} as ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-          . /home/github-runner/.nix-profile/etc/profile.d/nix.sh
           echo "Starting Test Execution"
           echo "RUNNING TEST"
           nix build github:runtimeverification/evm-semantics#profile \
