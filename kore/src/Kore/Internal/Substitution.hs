@@ -34,6 +34,7 @@ module Kore.Internal.Substitution (
     isSimplifiedSomeCondition,
     forgetSimplified,
     markSimplified,
+    markSimplifiedConditional,
     simplifiedAttribute,
     null,
     variables,
@@ -54,6 +55,7 @@ module Kore.Internal.Substitution (
     pattern UnorderedAssignment,
 ) where
 
+import Control.Monad.Representable.Reader qualified as SideCondition
 import Data.List qualified as List
 import Data.Map.Strict (
     Map,
@@ -613,6 +615,16 @@ markSimplified ::
 markSimplified =
     wrap
         . fmap (mapAssignedTerm TermLike.markSimplified)
+        . unwrap
+
+markSimplifiedConditional ::
+    InternalVariable variable =>
+    SideCondition.Representation ->
+    Substitution variable ->
+    Substitution variable
+markSimplifiedConditional sideCond =
+    wrap
+        . fmap (mapAssignedTerm (TermLike.markSimplifiedConditional sideCond))
         . unwrap
 
 simplifiedAttribute ::

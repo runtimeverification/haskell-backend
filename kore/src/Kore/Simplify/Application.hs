@@ -13,6 +13,7 @@ module Kore.Simplify.Application (
 ) where
 
 import Kore.Attribute.Synthetic (synthesize)
+import Kore.Equation.DebugEquation (CheckRequiresError (sideCondition))
 import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.MultiOr qualified as MultiOr
 import Kore.Internal.OrPattern (
@@ -29,6 +30,7 @@ import Kore.Internal.SideCondition (
  )
 import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Rewrite.Function.Evaluator (
     evaluateApplication,
  )
@@ -119,6 +121,7 @@ evaluateApplicationFunction
             let applicationPattern =
                     synthesize . ApplySymbolF <$> expandedApp
              in applicationPattern
+                    & Pattern.markSimplifiedConditional (SideCondition.toRepresentation sideCondition)
                     & OrPattern.fromPattern
                     & return
         | otherwise =

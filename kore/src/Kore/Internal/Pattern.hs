@@ -27,6 +27,7 @@ module Kore.Internal.Pattern (
     hasSimplifiedChildrenIgnoreConditions,
     forgetSimplified,
     markSimplified,
+    markSimplifiedConditional,
     simplifiedAttribute,
     assign,
     requireDefined,
@@ -181,6 +182,17 @@ freeElementVariables ::
     [ElementVariable variable]
 freeElementVariables =
     getFreeElementVariables . freeVariables
+
+markSimplifiedConditional ::
+    InternalVariable variable =>
+    SideCondition.Representation ->
+    Pattern variable ->
+    Pattern variable
+markSimplifiedConditional sideCond patt =
+    TermLike.markSimplifiedConditional sideCond term
+        `withCondition` Condition.markSimplifiedConditional sideCond condition
+  where
+    (term, condition) = Conditional.splitTerm patt
 
 {- |'mapVariables' transforms all variables, including the quantified ones,
 in an Pattern.
