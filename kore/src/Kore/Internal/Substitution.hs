@@ -55,7 +55,6 @@ module Kore.Internal.Substitution (
     pattern UnorderedAssignment,
 ) where
 
-import Control.Monad.Representable.Reader qualified as SideCondition
 import Data.List qualified as List
 import Data.Map.Strict (
     Map,
