@@ -826,6 +826,7 @@ mkState startTime axioms claims claim =
         , aliases = Map.empty
         , koreLogOptions =
             Log.defaultKoreLogOptions (Log.ExeName "kore-repl") startTime
+        , stepTimeout = Nothing
         }
   where
     graph' = emptyExecutionGraph claim
@@ -847,12 +848,13 @@ mkConfig logger claims' =
         }
   where
     stepper0 ::
+        Maybe StepTimeout ->
         [Axiom] ->
         ExecutionGraph ->
         ReplNode ->
-        Simplifier ExecutionGraph
-    stepper0 axioms' graph (ReplNode node) =
-        proveClaimStep Nothing EnabledStuckCheck claims' axioms' graph node
+        Simplifier (Maybe ExecutionGraph)
+    stepper0 _ axioms' graph (ReplNode node) =
+        proveClaimStep Nothing Nothing EnabledStuckCheck claims' axioms' graph node
 
 formatUnifiers ::
     NonEmpty (Condition RewritingVariableName) ->

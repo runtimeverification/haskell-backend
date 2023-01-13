@@ -59,6 +59,7 @@ module Kore.Simplify.Simplify (
     MonadLog,
 ) where
 
+import Control.Monad.Base (MonadBase)
 import Control.Monad.Catch
 import Control.Monad.Counter
 import Control.Monad.Morph (MFunctor)
@@ -67,6 +68,7 @@ import Control.Monad.RWS.Strict (RWST)
 import Control.Monad.Reader
 import Control.Monad.State.Strict
 import Control.Monad.Trans.Accum
+import Control.Monad.Trans.Control (MonadBaseControl)
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe
@@ -160,6 +162,7 @@ newtype Simplifier a
     deriving newtype (MonadIO, MonadCatch, MonadThrow, MonadMask)
     deriving newtype (MonadReader Env)
     deriving newtype (MonadState SimplifierCache)
+    deriving newtype (MonadBase IO, MonadBaseControl IO)
 
 {- | Run a simplification, returning the result of only one branch.
 

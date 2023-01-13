@@ -65,7 +65,7 @@ import Control.Monad.State.Strict (
     MonadState,
     get,
     modify,
-    put,
+    put, gets,
  )
 import Control.Monad.Trans.Class qualified as Monad.Trans
 import Data.Bitraversable (
@@ -578,7 +578,7 @@ runStepper' ::
     t Simplifier (ExecutionGraph, StepResult)
 runStepper' axioms node =
     runStepperWorker axioms node
-        & (fmap . fmap) processResult
+        & (fmap . fmap) (maybe Timeout processResult)
   where
     processResult [] = NoResult
     processResult [(claimState', nextNode)] =
@@ -600,7 +600,7 @@ tryApplyAxiomOrClaim axiomOrClaim node =
     runStepperWorker
         (either pure mempty axiomOrClaim)
         node
-        & (fmap . fmap) processResult
+        & (fmap . fmap) (maybe DoesNotApply processResult)
   where
     processResult [] = DoesNotApply
     processResult [(claimState', nextNode)] =
@@ -619,17 +619,18 @@ runStepperWorker ::
     Monad.Trans.MonadTrans t =>
     [Axiom] ->
     ReplNode ->
-    t Simplifier (ExecutionGraph, SuccessorNodes)
+    t Simplifier (ExecutionGraph, Maybe SuccessorNodes)
 runStepperWorker axioms node = do
     stepper <- asks stepper
     mvar <- asks logger
     gph <- getExecutionGraph
-    gr@Strategy.ExecutionGraph{graph = innerGraph} <-
-        liftSimplifierWithLogger mvar $ stepper axioms gph node
-    let succesorNodes =
+    st <- gets stepTimeout
+    stepResult <- liftSimplifierWithLogger mvar $ stepper st axioms gph node
+    return (fromMaybe gph stepResult, getSuccesorNodes <$> stepResult)
+  where
+    getSuccesorNodes Strategy.ExecutionGraph{graph = innerGraph} =
             getClaimState innerGraph
                 <$> Graph.suc innerGraph (unReplNode node)
-    return (gr, succesorNodes)
 
 runUnifier ::
     MonadState ReplState (t Simplifier) =>

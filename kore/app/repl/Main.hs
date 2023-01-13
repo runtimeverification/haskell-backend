@@ -62,6 +62,8 @@ import Options.Applicative (
     str,
     strOption,
     value,
+    option,
+    auto,
  )
 import Options.SMT (
     KoreSolverOptions (..),
@@ -99,6 +101,7 @@ data KoreReplOptions = KoreReplOptions
     , smtOptions :: !KoreSolverOptions
     , korePrintCommand :: !KorePrintCommand
     , replMode :: !ReplMode
+    , stepTimeout :: !(Maybe StepTimeout)
     , scriptModeOutput :: !ScriptModeOutput
     , replScript :: !ReplScript
     , outputFile :: !OutputFile
@@ -115,6 +118,7 @@ parseKoreReplOptions startTime =
         <*> parseKoreSolverOptions
         <*> parseKorePrintCommand
         <*> parseReplMode
+        <*> parseStepTimeout
         <*> parseScriptModeOutput
         <*> parseReplScript
         <*> parseOutputFile
@@ -184,6 +188,16 @@ parseKoreReplOptions startTime =
                         <> help "Command to run the kore-print pretty printer."
                         <> value "kore-print"
                         <> showDefault
+                    )
+                )
+
+    parseStepTimeout :: Parser (Maybe StepTimeout)
+    parseStepTimeout =
+        fmap StepTimeout
+            <$> optional ( option auto
+                    ( metavar "INT"
+                        <> long "set-step-timeout"
+                        <> help "Set a timeout for one step in seconds."
                     )
                 )
 
@@ -265,6 +279,7 @@ mainWithOptions LocalOptions{execOptions} = do
                             )
                             $ proveWithRepl
                                 replMinDepth
+                                stepTimeout
                                 replStuckCheck
                                 validatedDefinition
                                 specDefIndexedModule
@@ -296,6 +311,7 @@ mainWithOptions LocalOptions{execOptions} = do
         , koreLogOptions
         , bugReportOption
         , korePrintCommand
+        , stepTimeout
         } = execOptions
     runExceptionHandlers action =
         action

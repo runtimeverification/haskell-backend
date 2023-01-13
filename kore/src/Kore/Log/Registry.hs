@@ -155,6 +155,9 @@ import Kore.Log.WarnIfLowProductivity (
 import Kore.Log.WarnRestartSolver (
     WarnRestartSolver,
  )
+import Kore.Log.WarnStepTimeout (
+  WarnStepTimeout,
+  )
 import Kore.Log.WarnStuckClaimState (
     WarnStuckClaimState,
  )
@@ -229,6 +232,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @DebugSubstitutionSimplifier
             , mk $ Proxy @WarnFunctionWithoutEvaluators
             , mk $ Proxy @WarnSymbolSMTRepresentation
+            , mk $ Proxy @WarnStepTimeout
             , mk $ Proxy @WarnStuckClaimState
             , mk $ Proxy @WarnDepthLimitExceeded
             , mk $ Proxy @WarnBoundedModelChecker

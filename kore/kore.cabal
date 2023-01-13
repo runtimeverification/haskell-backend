@@ -161,11 +161,13 @@ common library
   build-depends: integer-gmp >=1.0
   build-depends: json-rpc >=1.0
   build-depends: lens >=4.17
+  build-depends: lifted-async
   build-depends: logict >=0.7
   build-depends: matrix >=0.3.6.1
   build-depends: megaparsec >=7.0.4
   build-depends: memory >=0.15
   build-depends: mmorph >=1.1
+  build-depends: monad-control
   build-depends: monad-logger >=0.3.36
   build-depends: mono-traversable >=1.0
   build-depends: mtl >=2.2
@@ -189,6 +191,7 @@ common library
   build-depends: these >=1.0
   build-depends: time >=1.9.3
   build-depends: transformers >=0.4
+  build-depends: transformers-base
   build-depends: unliftio >= 0.2
   build-depends: unordered-containers >=0.2
   build-depends: vector >=0.12
@@ -406,6 +409,7 @@ library
     Kore.Log.WarnNotAPredicate
     Kore.Log.WarnNotImplemented
     Kore.Log.WarnRestartSolver
+    Kore.Log.WarnStepTimeout
     Kore.Log.WarnStuckClaimState
     Kore.Log.WarnSymbolSMTRepresentation
     Kore.Log.WarnTrivialClaim

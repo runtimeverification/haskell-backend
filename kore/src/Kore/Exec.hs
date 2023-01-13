@@ -733,6 +733,7 @@ prove
 -}
 proveWithRepl ::
     Maybe MinDepth ->
+    Maybe Repl.Data.StepTimeout ->
     StuckCheck ->
     -- | The main module
     VerifiedModule StepperAttributes ->
@@ -757,6 +758,7 @@ proveWithRepl ::
     SMT ()
 proveWithRepl
     minDepth
+    stepTimeout
     stuckCheck
     definitionModule
     specModule
@@ -779,6 +781,7 @@ proveWithRepl
                     trustedModule
             Repl.runRepl
                 minDepth
+                stepTimeout
                 stuckCheck
                 axioms
                 specClaims

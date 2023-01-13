@@ -81,6 +81,7 @@ test_replParser =
     , debugAttemptRewriteTests `tests` "debug-attempt-rewrite"
     , debugApplyRewriteTests `tests` "debug-apply-rewrite"
     , debugRewriteTests `tests` "debug-rewrite"
+    , stepTimeoutTests `tests` "set-step-timeout"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -191,6 +192,14 @@ selectTests =
     [ "select 5" `parsesTo_` SelectNode (ReplNode 5)
     , "select 5 " `parsesTo_` SelectNode (ReplNode 5)
     , "select -5" `fails` ()
+    ]
+
+stepTimeoutTests :: [ParserTest ReplCommand]
+stepTimeoutTests =
+    [ "set-step-timeout 5" `parsesTo_` SetStepTimeout (Just (StepTimeout 5))
+    , "set-step-timeout 5 " `parsesTo_` SetStepTimeout (Just (StepTimeout 5))
+    , "set-step-timeout" `parsesTo_` SetStepTimeout Nothing
+    , "set-step-timeout -5" `fails` ()
     ]
 
 configTests :: [ParserTest ReplCommand]

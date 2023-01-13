@@ -134,6 +134,7 @@ nonRecursiveCommand =
         , savePartialProof
         , loadScript
         , proofStatus
+        , setStepTimeout
         , exit
         , tryAlias
         ]
@@ -328,6 +329,11 @@ clear :: Parser ReplCommand
 clear = do
     dec <- literal "clear" *> maybeDecimal
     return $ Clear (fmap ReplNode dec)
+
+setStepTimeout :: Parser ReplCommand
+setStepTimeout = do
+    dec <- literal "set-step-timeout" *> maybeDecimal
+    return $ SetStepTimeout (fmap StepTimeout dec)
 
 saveSession :: Parser ReplCommand
 saveSession =
