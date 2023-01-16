@@ -16,6 +16,7 @@ import Control.Monad.State.Strict (
     evalStateT,
  )
 import Data.HashMap.Strict qualified as HashMap
+import Data.Text (unpack)
 import Kore.Internal.Condition (
     Condition,
     substitution,
@@ -46,9 +47,8 @@ import Logic (
     observeAllT,
  )
 import Prelude.Kore
-import qualified Pretty
 import Pretty (pretty)
-import Data.Text (unpack)
+import Pretty qualified
 
 runUnifier ::
     NewUnifier a ->
@@ -75,13 +75,19 @@ unificationProcedure sideCondition p1 p2
         orCeil <- liftSimplifier $ makeEvaluateTermCeil sideCondition term
         marker "unify" "CombineCeil"
         ceil' <- Monad.Unify.scatter orCeil
-        condition' <- lowerLogicT . simplifyCondition sideCondition $
-            Conditional.andCondition ceil' condition
+        condition' <-
+            lowerLogicT . simplifyCondition sideCondition $
+                Conditional.andCondition ceil' condition
         when (substitution condition /= substitution condition') $
-          error . unpack $ Pretty.renderText $ Pretty.layoutPretty Pretty.defaultLayoutOptions $
-          "Simplification produced a different substitution." <> Pretty.line <> "New unifier produced:" <>
-          pretty condition <> Pretty.line <>
-          "Then simplificaton produced:" <> Pretty.line <> pretty condition'
+            error . unpack $
+                Pretty.renderText $
+                    Pretty.layoutPretty Pretty.defaultLayoutOptions $
+                        "Simplification produced a different substitution." <> Pretty.line <> "New unifier produced:"
+                            <> pretty condition
+                            <> Pretty.line
+                            <> "Then simplificaton produced:"
+                            <> Pretty.line
+                            <> pretty condition'
         pure condition'
   where
     p1Sort = termLikeSort p1
