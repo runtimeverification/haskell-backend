@@ -18,6 +18,7 @@ import Control.Monad.State.Strict (
 import Data.HashMap.Strict qualified as HashMap
 import Kore.Internal.Condition (
     Condition,
+    substitution,
  )
 import Kore.Internal.Pattern qualified as Conditional
 import Kore.Internal.SideCondition (
@@ -76,8 +77,9 @@ unificationProcedure sideCondition p1 p2
         ceil' <- Monad.Unify.scatter orCeil
         condition' <- lowerLogicT . simplifyCondition sideCondition $
             Conditional.andCondition ceil' condition
-        when (condition /= condition') $ liftIO . traceIO . unpack $ Pretty.renderText $ Pretty.layoutPretty Pretty.defaultLayoutOptions $
-          "Simplification did something." <> Pretty.line <> "New unifier produced:" <>
+        when (substitution condition /= substitution condition') $
+          error . unpack $ Pretty.renderText $ Pretty.layoutPretty Pretty.defaultLayoutOptions $
+          "Simplification produced a different substitution." <> Pretty.line <> "New unifier produced:" <>
           pretty condition <> Pretty.line <>
           "Then simplificaton produced:" <> Pretty.line <> pretty condition'
         pure condition'
