@@ -64,8 +64,9 @@ import Control.Monad.Reader (
 import Control.Monad.State.Strict (
     MonadState,
     get,
+    gets,
     modify,
-    put, gets,
+    put,
  )
 import Control.Monad.Trans.Class qualified as Monad.Trans
 import Data.Bitraversable (
@@ -629,8 +630,8 @@ runStepperWorker axioms node = do
     return (fromMaybe gph stepResult, getSuccesorNodes <$> stepResult)
   where
     getSuccesorNodes Strategy.ExecutionGraph{graph = innerGraph} =
-            getClaimState innerGraph
-                <$> Graph.suc innerGraph (unReplNode node)
+        getClaimState innerGraph
+            <$> Graph.suc innerGraph (unReplNode node)
 
 runUnifier ::
     MonadState ReplState (t Simplifier) =>

@@ -654,8 +654,8 @@ data ReplState = ReplState
     , -- | The log level, log scopes and log type decide what gets logged and
       -- where.
       koreLogOptions :: !Log.KoreLogOptions
-      -- | Timeout for one step.
-    , stepTimeout :: Maybe StepTimeout
+    , -- | Timeout for one step.
+      stepTimeout :: Maybe StepTimeout
     }
     deriving stock (GHC.Generic)
 

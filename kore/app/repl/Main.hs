@@ -50,20 +50,20 @@ import Options.Applicative (
     InfoMod,
     Parser,
     argument,
+    auto,
     flag,
     fullDesc,
     header,
     help,
     long,
     metavar,
+    option,
     progDesc,
     short,
     showDefault,
     str,
     strOption,
     value,
-    option,
-    auto,
  )
 import Options.SMT (
     KoreSolverOptions (..),
@@ -194,7 +194,9 @@ parseKoreReplOptions startTime =
     parseStepTimeout :: Parser (Maybe StepTimeout)
     parseStepTimeout =
         fmap StepTimeout
-            <$> optional ( option auto
+            <$> optional
+                ( option
+                    auto
                     ( metavar "INT"
                         <> long "set-step-timeout"
                         <> help "Set a timeout for one step in seconds."

@@ -30,8 +30,9 @@ import Control.Exception (
  )
 import Control.Exception qualified as X
 import Control.Lens (
+    assign,
     (%=),
-    (.=), assign,
+    (.=),
  )
 import Control.Lens qualified as Lens
 import Control.Monad (

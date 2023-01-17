@@ -20,8 +20,8 @@ module Kore.Reachability.Prove (
     lhsClaimStateTransformer,
 ) where
 
-import Control.Concurrent.Async.Lifted (race)
 import Control.Concurrent (threadDelay)
+import Control.Concurrent.Async.Lifted (race)
 import Control.DeepSeq (
     deepseq,
  )
@@ -456,7 +456,8 @@ proveClaimStep ::
     Graph.Node ->
     Simplifier (Maybe (ExecutionGraph CommonClaimState (AppliedRule SomeClaim)))
 proveClaimStep _ timeout stuckCheck claims axioms executionGraph node =
-    withTimeout $ executionHistoryStep
+    withTimeout $
+        executionHistoryStep
             transitionRule''
             strategy'
             executionGraph
@@ -490,14 +491,14 @@ proveClaimStep _ timeout stuckCheck claims axioms executionGraph node =
             transitionRule' stuckCheck claims axioms prim state
 
     withTimeout execStep = case timeout of
-      Nothing -> Just <$> execStep
-      Just (StepTimeout st) -> do
-        let warnThread = liftIO . threadDelay $ st * 1000000
-        race warnThread execStep >>= \case
-          Right newExecGraph -> pure $ Just newExecGraph
-          _ -> do
-            warnStepTimeout st
-            pure Nothing
+        Nothing -> Just <$> execStep
+        Just (StepTimeout st) -> do
+            let warnThread = liftIO . threadDelay $ st * 1000000
+            race warnThread execStep >>= \case
+                Right newExecGraph -> pure $ Just newExecGraph
+                _ -> do
+                    warnStepTimeout st
+                    pure Nothing
 
 transitionRule' ::
     StuckCheck ->

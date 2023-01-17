@@ -156,8 +156,8 @@ import Kore.Log.WarnRestartSolver (
     WarnRestartSolver,
  )
 import Kore.Log.WarnStepTimeout (
-  WarnStepTimeout,
-  )
+    WarnStepTimeout,
+ )
 import Kore.Log.WarnStuckClaimState (
     WarnStuckClaimState,
  )
