@@ -76,6 +76,7 @@ import Control.Exception (
  )
 import Control.Lens qualified as Lens
 import Control.Monad qualified as Monad
+import Control.Monad.Base (MonadBase)
 import Control.Monad.Catch (
     MonadCatch,
     MonadMask,
@@ -99,6 +100,7 @@ import Control.Monad.State.Strict (
 import Control.Monad.State.Strict qualified as State.Strict
 import Control.Monad.Trans qualified as Trans
 import Control.Monad.Trans.Accum
+import Control.Monad.Trans.Control (MonadBaseControl (..))
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe qualified as Maybe
@@ -509,7 +511,7 @@ access to the solver for a sequence of commands.
 -}
 newtype SMT a = SMT (Maybe SolverSetup -> LoggerT IO a)
     deriving
-        (Applicative, Functor, Monad, MonadIO, MonadLog, MonadProf, MonadCatch, MonadThrow, MonadMask)
+        (Applicative, Functor, Monad, MonadIO, MonadLog, MonadProf, MonadCatch, MonadThrow, MonadMask, MonadBase IO, MonadBaseControl IO)
         via ReaderT (Maybe SolverSetup) (LoggerT IO)
 
 runWithSolver :: SMT a -> SolverSetup -> LoggerT IO a

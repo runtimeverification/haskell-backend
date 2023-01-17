@@ -30,6 +30,7 @@ import Control.Exception (
  )
 import Control.Exception qualified as X
 import Control.Lens (
+    assign,
     (%=),
     (.=),
  )
@@ -324,6 +325,7 @@ replInterpreter0 printAux printKore replCmd = do
             DebugAttemptRewrite op -> debugAttemptRewrite op $> Continue
             DebugApplyRewrite op -> debugApplyRewrite op $> Continue
             DebugRewrite op -> debugRewrite op $> Continue
+            SetStepTimeout st -> setStepTimeout st $> Continue
             Exit -> exit
     (ReplOutput output, shouldContinue) <- lift $ evaluateCommand command
     traverse_
@@ -361,6 +363,9 @@ replInterpreter0 printAux printKore replCmd = do
         put st'
         pure (w, ext)
 
+setStepTimeout :: Maybe StepTimeout -> ReplM ()
+setStepTimeout = assign (field @"stepTimeout")
+
 showUsageMessage :: String
 showUsageMessage = "Could not parse command, try using 'help'."
 
@@ -372,6 +377,7 @@ showStepStoppedMessage n sr =
         <> case sr of
             NoResult ->
                 "reaching end of proof on current branch."
+            Timeout -> "timeout."
             SingleResult _ -> ""
             BranchResult xs ->
                 "branching on "
@@ -1360,6 +1366,7 @@ recursiveForcedStep n node
         (graph, result) <- runStepper' axioms node
         updateExecutionGraph graph
         case result of
+            Timeout -> pure ()
             NoResult -> pure ()
             SingleResult sr -> (recursiveForcedStep $ n - 1) sr
             BranchResult xs -> traverse_ (recursiveForcedStep (n - 1)) xs

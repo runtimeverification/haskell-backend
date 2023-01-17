@@ -53,6 +53,7 @@ module Kore.Repl.Data (
     TryApplyRuleResult (..),
     KorePrintCommand (..),
     KompiledDir (..),
+    StepTimeout (..),
 ) where
 
 import Control.Concurrent.MVar
@@ -432,6 +433,8 @@ data ReplCommand
     | -- | Log the attempts and the applications of specific
       -- rewrite rules.
       DebugRewrite Log.DebugRewriteOptions
+    | -- | Set a timeout for one step.
+      SetStepTimeout !(Maybe StepTimeout)
     | -- | Exit the repl.
       Exit
     deriving stock (Eq, Show)
@@ -516,6 +519,7 @@ helpText =
     \ktry (<a|c><num>)|<name>                 like try, but unparses result\n\
     \tryf (<a|c><num>)|<name>                 like try, but if successful, it will apply the axiom or claim.\n\
     \kryf (<a|c><num>)|<name>                 like ktry, but if successful, it will apply the axiom or claim.\n\
+    \set-step-timeout [n]                     Set a timeout for one step in seconds. Omit the argument to remove the timeout.\n\
     \clear [n]                                removes all the node's children from the\
     \ proof graph (***)\
     \ (defaults to current node)\n\
@@ -613,6 +617,7 @@ shouldStore =
         ProofStatus -> False
         Try _ -> False
         KTry _ -> False
+        SetStepTimeout _ -> False
         Exit -> False
         _ -> True
 
@@ -649,6 +654,8 @@ data ReplState = ReplState
     , -- | The log level, log scopes and log type decide what gets logged and
       -- where.
       koreLogOptions :: !Log.KoreLogOptions
+    , -- | Timeout for one step.
+      stepTimeout :: Maybe StepTimeout
     }
     deriving stock (GHC.Generic)
 
@@ -656,10 +663,11 @@ data ReplState = ReplState
 data Config = Config
     { -- | Stepper function
       stepper ::
+        Maybe StepTimeout ->
         [Axiom] ->
         ExecutionGraph ->
         ReplNode ->
-        Simplifier ExecutionGraph
+        Simplifier (Maybe ExecutionGraph)
     , -- | Unifier function, it is a partially applied 'unificationProcedure'
       --   where we discard the result since we are looking for unification
       --   failures
@@ -683,6 +691,8 @@ data Config = Config
 data StepResult
     = -- | reached end of proof on current branch
       NoResult
+    | -- | step timed out
+      Timeout
     | -- | single follow-up configuration
       SingleResult ReplNode
     | -- | configuration branched

@@ -105,6 +105,7 @@ import Text.Megaparsec (
 -}
 runRepl ::
     Maybe MinDepth ->
+    Maybe StepTimeout ->
     StuckCheck ->
     -- | list of axioms to used in the proof
     [Axiom] ->
@@ -126,7 +127,7 @@ runRepl ::
     KompiledDir ->
     KorePrintCommand ->
     Simplifier ()
-runRepl _ _ _ _ [] _ _ _ _ outputFile _ _ _ _ _ =
+runRepl _ _ _ _ _ [] _ _ _ _ outputFile _ _ _ _ _ =
     let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
      in liftIO . printTerm . unparseToString $ topTerm
   where
@@ -134,6 +135,7 @@ runRepl _ _ _ _ [] _ _ _ _ outputFile _ _ _ _ _ =
     topTerm = mkTop $ mkSortVariable "R"
 runRepl
     minDepth
+    stepTimeout
     stuckCheck
     axioms'
     origClaims
@@ -211,6 +213,7 @@ runRepl
                         { Log.exeName = Log.ExeName "kore-repl"
                         , Log.startTime = startTime
                         }
+                , stepTimeout = stepTimeout
                 }
 
         config :: Config
@@ -264,18 +267,19 @@ runRepl
         firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
         stepper0 ::
+            Maybe StepTimeout ->
             [Axiom] ->
             ExecutionGraph ->
             ReplNode ->
-            Simplifier ExecutionGraph
-        stepper0 axioms graph rnode = do
+            Simplifier (Maybe ExecutionGraph)
+        stepper0 timeout axioms graph rnode = do
             let node = unReplNode rnode
             if Graph.outdeg (Strategy.graph graph) node == 0
                 then
-                    proveClaimStep minDepth stuckCheck origClaims axioms graph node
-                        & Exception.handle (withConfigurationHandler graph)
-                        & Exception.handle (someExceptionHandler graph)
-                else pure graph
+                    proveClaimStep minDepth timeout stuckCheck origClaims axioms graph node
+                        & Exception.handle (withConfigurationHandler (Just graph))
+                        & Exception.handle (someExceptionHandler (Just graph))
+                else pure $ Just graph
 
         withConfigurationHandler :: a -> Claim.WithConfiguration -> Simplifier a
         withConfigurationHandler

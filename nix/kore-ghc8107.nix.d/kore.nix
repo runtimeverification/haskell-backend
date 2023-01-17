@@ -71,11 +71,13 @@
         (hsPkgs."integer-gmp" or (errorHandler.buildDepError "integer-gmp"))
         (hsPkgs."json-rpc" or (errorHandler.buildDepError "json-rpc"))
         (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
+        (hsPkgs."lifted-async" or (errorHandler.buildDepError "lifted-async"))
         (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
         (hsPkgs."matrix" or (errorHandler.buildDepError "matrix"))
         (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
         (hsPkgs."memory" or (errorHandler.buildDepError "memory"))
         (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
+        (hsPkgs."monad-control" or (errorHandler.buildDepError "monad-control"))
         (hsPkgs."monad-logger" or (errorHandler.buildDepError "monad-logger"))
         (hsPkgs."mono-traversable" or (errorHandler.buildDepError
           "mono-traversable"))
@@ -104,6 +106,8 @@
         (hsPkgs."these" or (errorHandler.buildDepError "these"))
         (hsPkgs."time" or (errorHandler.buildDepError "time"))
         (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
+        (hsPkgs."transformers-base" or (errorHandler.buildDepError
+          "transformers-base"))
         (hsPkgs."unliftio" or (errorHandler.buildDepError "unliftio"))
         (hsPkgs."unordered-containers" or (errorHandler.buildDepError
           "unordered-containers"))
@@ -324,6 +328,7 @@
         "Kore/Log/WarnNotAPredicate"
         "Kore/Log/WarnNotImplemented"
         "Kore/Log/WarnRestartSolver"
+        "Kore/Log/WarnStepTimeout"
         "Kore/Log/WarnStuckClaimState"
         "Kore/Log/WarnSymbolSMTRepresentation"
         "Kore/Log/WarnTrivialClaim"
@@ -730,11 +735,14 @@
           (hsPkgs."integer-gmp" or (errorHandler.buildDepError "integer-gmp"))
           (hsPkgs."json-rpc" or (errorHandler.buildDepError "json-rpc"))
           (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
+          (hsPkgs."lifted-async" or (errorHandler.buildDepError "lifted-async"))
           (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
           (hsPkgs."matrix" or (errorHandler.buildDepError "matrix"))
           (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
           (hsPkgs."memory" or (errorHandler.buildDepError "memory"))
           (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
+          (hsPkgs."monad-control" or (errorHandler.buildDepError
+            "monad-control"))
           (hsPkgs."monad-logger" or (errorHandler.buildDepError "monad-logger"))
           (hsPkgs."mono-traversable" or (errorHandler.buildDepError
             "mono-traversable"))
@@ -765,6 +773,8 @@
           (hsPkgs."these" or (errorHandler.buildDepError "these"))
           (hsPkgs."time" or (errorHandler.buildDepError "time"))
           (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
+          (hsPkgs."transformers-base" or (errorHandler.buildDepError
+            "transformers-base"))
           (hsPkgs."unliftio" or (errorHandler.buildDepError "unliftio"))
           (hsPkgs."unordered-containers" or (errorHandler.buildDepError
             "unordered-containers"))

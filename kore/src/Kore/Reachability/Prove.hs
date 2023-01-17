@@ -14,11 +14,14 @@ module Kore.Reachability.Prove (
     Axioms (..),
     ToProve (..),
     AlreadyProven (..),
+    StepTimeout (..),
     proveClaims,
     proveClaimStep,
     lhsClaimStateTransformer,
 ) where
 
+import Control.Concurrent (threadDelay)
+import Control.Concurrent.Async.Lifted (race)
 import Control.DeepSeq (
     deepseq,
  )
@@ -85,6 +88,7 @@ import Kore.Log.DebugTransition (
     debugFinalTransition,
  )
 import Kore.Log.InfoProofDepth
+import Kore.Log.WarnStepTimeout
 import Kore.Log.WarnStuckClaimState
 import Kore.Log.WarnTrivialClaim
 import Kore.Reachability.Claim
@@ -190,6 +194,11 @@ data ProveClaimsResult = ProveClaimsResult
     , -- | A count of non-final states that were not explored further
       unexplored :: Natural
     }
+
+newtype StepTimeout = StepTimeout
+    { unStepTimeout :: Int
+    }
+    deriving stock (Eq, Ord, Show)
 
 proveClaims ::
     Maybe MinDepth ->
@@ -435,6 +444,7 @@ proveClaim
 -}
 proveClaimStep ::
     Maybe MinDepth ->
+    Maybe StepTimeout ->
     StuckCheck ->
     -- | list of claims in the spec module
     [SomeClaim] ->
@@ -444,13 +454,14 @@ proveClaimStep ::
     ExecutionGraph CommonClaimState (AppliedRule SomeClaim) ->
     -- | selected node in the graph
     Graph.Node ->
-    Simplifier (ExecutionGraph CommonClaimState (AppliedRule SomeClaim))
-proveClaimStep _ stuckCheck claims axioms executionGraph node =
-    executionHistoryStep
-        transitionRule''
-        strategy'
-        executionGraph
-        node
+    Simplifier (Maybe (ExecutionGraph CommonClaimState (AppliedRule SomeClaim)))
+proveClaimStep _ timeout stuckCheck claims axioms executionGraph node =
+    withTimeout $
+        executionHistoryStep
+            transitionRule''
+            strategy'
+            executionGraph
+            node
   where
     -- TODO(Ana): The kore-repl doesn't support --min-depth <n> yet.
     -- If requested, add a state layer which keeps track of
@@ -478,6 +489,16 @@ proveClaimStep _ stuckCheck claims axioms executionGraph node =
                 (Lens.over lensClaimPattern mkGoal <$> state)
         | otherwise =
             transitionRule' stuckCheck claims axioms prim state
+
+    withTimeout execStep = case timeout of
+        Nothing -> Just <$> execStep
+        Just (StepTimeout st) -> do
+            let warnThread = liftIO . threadDelay $ st * 1000000
+            race warnThread execStep >>= \case
+                Right newExecGraph -> pure $ Just newExecGraph
+                _ -> do
+                    warnStepTimeout st
+                    pure Nothing
 
 transitionRule' ::
     StuckCheck ->

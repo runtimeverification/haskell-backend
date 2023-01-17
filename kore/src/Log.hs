@@ -41,6 +41,7 @@ import Colog (
     cmap,
     (<&),
  )
+import Control.Monad.Base (MonadBase (..))
 import Control.Monad.Catch (
     MonadCatch (catch),
     MonadMask,
@@ -63,6 +64,7 @@ import Control.Monad.Trans.Accum (
     AccumT,
     mapAccumT,
  )
+import Control.Monad.Trans.Control (MonadBaseControl (..))
 import Control.Monad.Trans.Identity (
     IdentityT,
  )
@@ -238,6 +240,10 @@ instance MonadLog log => MonadLog (RWST a () state log)
 newtype LoggerT m a = LoggerT {getLoggerT :: ReaderT (LoggerEnv m) m a}
     deriving newtype (Functor, Applicative, Monad)
     deriving newtype (MonadIO, MonadThrow, MonadCatch, MonadMask)
+
+deriving newtype instance MonadBaseControl m m => MonadBaseControl m (LoggerT m)
+
+deriving newtype instance MonadBase m m => MonadBase m (LoggerT m)
 
 newtype LoggerEnv monad = LoggerEnv
     { logAction :: LogAction monad SomeEntry
