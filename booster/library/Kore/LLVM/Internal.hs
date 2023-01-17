@@ -101,14 +101,15 @@ runLLVMwithDL dlib (LLVM m) = flip runReaderT dlib $ do
                 pure parent
 
         string <- do
-            newString <- koreStringPatternNew
-            pure $ KoreStringPatternAPI $ \name -> liftIO $ C.withCString (Text.unpack name) $ newString >=> newForeignPtr freePattern
+            newString <- koreStringPatternNewWithLen
+            pure $ KoreStringPatternAPI $ \name -> liftIO $ C.withCStringLen (Text.unpack name) $ \(rawStr, len) ->
+                newString rawStr (fromIntegral len) >>= newForeignPtr freePattern
 
         token <- do
-            newToken <- korePatternNewToken
-            pure $ KoreTokenPatternAPI $ \name sort -> liftIO $ C.withCString (Text.unpack name) $ \rawName ->
+            newToken <- korePatternNewTokenWithLen
+            pure $ KoreTokenPatternAPI $ \name sort -> liftIO $ C.withCStringLen (Text.unpack name) $ \(rawName, len) ->
                 withForeignPtr sort $
-                    newToken rawName >=> newForeignPtr freePattern
+                    newToken rawName (fromIntegral len) >=> newForeignPtr freePattern
 
         fromSymbol <- do
             compositePatternFromSymbol <- koreCompositePatternFromSymbol
