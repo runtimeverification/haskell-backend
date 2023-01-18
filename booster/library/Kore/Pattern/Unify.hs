@@ -21,6 +21,7 @@ import Data.Sequence (Seq (..))
 import Data.Sequence qualified as Seq
 import Data.Set (Set)
 import Data.Set qualified as Set
+import Prettyprinter
 
 import Kore.Definition.Base
 import Kore.Pattern.Base
@@ -57,6 +58,20 @@ data FailReason
       VariableConflict Variable Term Term
     deriving stock (Eq, Show)
 
+instance Pretty FailReason where
+    pretty (DifferentValues t1 t2) =
+        "Values differ:" <> align (sep [pretty t1, pretty t2])
+    pretty (DifferentSymbols t1 t2) =
+        vsep ["Symbols differ:", pretty t1, pretty t2] -- shorten?
+    pretty (VariableRecursion v t) =
+        "Variable recursion found: " <> pretty v <> " in " <> pretty t
+    pretty (VariableConflict v t1 t2) =
+        vsep
+            [ "Variable conflict for " <> pretty v
+            , pretty t1
+            , pretty t2
+            ]
+
 type Substitution = Map Variable Term
 
 {- | Attempts to find a simple unifying substitution for the given
@@ -91,6 +106,7 @@ unifyTerms KoreDefinition{sorts} term1 term2 =
                         { uSubstitution = Map.empty
                         , uTargetVars = freeVars1
                         , uQueue = Seq.singleton (term1, term2)
+                        , uIndeterminate = []
                         , uSubsorts = Map.map snd sorts
                         , uSortSubst = Map.empty
                         }
@@ -99,6 +115,7 @@ data UnificationState = State
     { uSubstitution :: Substitution
     , uTargetVars :: Set Variable
     , uQueue :: Seq (Term, Term) -- work queue (breadth-first term traversal)
+    , uIndeterminate :: [(Term, Term)] -- list of postponed indeterminate terms (function results)
     , uSubsorts :: SortTable
     , uSortSubst :: Map VarName Sort -- sort variable substitution
     }
@@ -109,11 +126,17 @@ unification :: StateT UnificationState (Except UnificationResult) ()
 unification = do
     queue <- gets uQueue
     case queue of
-        Empty -> pure () -- done
+        Empty -> checkIndeterminate -- done
         (term1, term2) :<| rest -> do
             modify $ \s -> s{uQueue = rest}
             unify1 term1 term2
             unification
+
+checkIndeterminate :: StateT UnificationState (Except UnificationResult) ()
+checkIndeterminate = do
+    indeterminate <- gets uIndeterminate
+    unless (null indeterminate) . lift $
+        throwE (UnificationRemainder $ NE.fromList indeterminate)
 
 unify1 ::
     Term ->
@@ -159,21 +182,23 @@ unify1
 -- two symbol applications: fail if names differ, recurse
 unify1
     t1@(SymbolApplication symbol1 sorts1 args1)
-    t2@(SymbolApplication symbol2 sorts2 args2) =
-        do
+    t2@(SymbolApplication symbol2 sorts2 args2)
+        | isFunctionSymbol symbol1 || isFunctionSymbol symbol2 =
             -- If we have functions, pass - only constructors and sort
-            -- injections are matched.
-            when (isFunctionSymbol symbol1 || isFunctionSymbol symbol2) $
-                returnAsRemainder t1 t2
-            -- constructors must be the same, or both must be injections
-            unless (symbol1.name == symbol2.name) $
-                failWith (DifferentSymbols t1 t2)
-            unless (length args1 == length args2) $
-                internalError $
-                    "Argument counts differ for same constructor" <> show (t1, t2)
-            unless (sorts1 == sorts2) $
-                failWith (DifferentSymbols t1 t2) -- TODO actually DifferentSorts
-            zipWithM_ enqueueProblem args1 args2
+            -- injections are matched. NB this result is suspended in order to
+            -- get more true failures.
+            addIndeterminate t1 t2
+        | otherwise =
+            do
+                -- constructors must be the same, or both must be injections
+                unless (symbol1.name == symbol2.name) $
+                    failWith (DifferentSymbols t1 t2)
+                unless (length args1 == length args2) $
+                    internalError $
+                        "Argument counts differ for same constructor" <> show (t1, t2)
+                unless (sorts1 == sorts2) $
+                    failWith (DifferentSymbols t1 t2) -- TODO actually DifferentSorts
+                zipWithM_ enqueueProblem args1 args2
 
 -- and-term in pattern: must unify with both arguments
 unify1
@@ -270,6 +295,10 @@ returnAsRemainder :: Term -> Term -> StateT UnificationState (Except Unification
 returnAsRemainder t1 t2 = do
     remainder <- gets uQueue
     lift $ throwE $ UnificationRemainder $ (t1, t2) :| toList remainder
+
+addIndeterminate :: Term -> Term -> StateT UnificationState (Except UnificationResult) ()
+addIndeterminate pat subj =
+    modify $ \s -> s{uIndeterminate = (pat, subj) : s.uIndeterminate}
 
 {- | Matches a subject sort to a pattern sort, ensuring that the subject
    sort can be used in place of the pattern sort, i.e., is a subsort.

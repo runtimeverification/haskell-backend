@@ -141,6 +141,20 @@ functions =
         , let f1T = app f1 [dv someSort ""]
               f2T = app f2 [dv someSort ""]
            in test "different functions" f1T f2T $ remainder [(f1T, f2T)]
+        , let someDv = dv someSort ""
+              f1T = app f1 [someDv]
+              f2T = app f2 [someDv]
+              con3f1 = app con3 [f1T, app con1 [someDv]]
+              con3f2 = app con3 [f2T, app con1 [someDv]]
+           in test "postponed: different functions" con3f1 con3f2 $ remainder [(f1T, f2T)]
+        , let someDv = dv someSort ""
+              f1T = app f1 [someDv]
+              f2T = app f2 [someDv]
+              c1T = app con1 [someDv]
+              c2T = app con2 [someDv]
+              con3f1c1 = app con3 [f1T, c1T]
+              con3f2c2 = app con3 [f2T, c2T]
+           in test "different constrs after different functions" con3f1c1 con3f2c2 $ failed (DifferentSymbols c1T c2T)
         ]
 
 varsAndValues :: TestTree
