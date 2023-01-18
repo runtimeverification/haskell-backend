@@ -228,7 +228,7 @@ test_runStrategy =
         testRunSimplifier Mock.env $
             Strategy.runStrategy
                 Unlimited
-                (Claim.transitionRule Claim.EnabledStuckCheck [MockClaim (unRule goal)] [axioms])
+                (Claim.transitionRule Claim.EnabledStuckCheck Claim.AllowedVacuous [MockClaim (unRule goal)] [axioms])
                 (toList Claim.strategy)
                 (ClaimState.Claimed . MockClaim . unRule $ goal)
     disproves ::
@@ -373,7 +373,7 @@ runTransitionRule ::
     IO [(MockClaimState, Seq MockAppliedRule)]
 runTransitionRule claims axiomGroups prim state =
     (testRunSimplifier Mock.env . runTransitionT)
-        (Claim.transitionRule Claim.EnabledStuckCheck claims axiomGroups prim state)
+        (Claim.transitionRule Claim.EnabledStuckCheck Claim.DisallowedVacuous claims axiomGroups prim state)
 
 differentLengthPaths :: [MockRule]
 differentLengthPaths =
