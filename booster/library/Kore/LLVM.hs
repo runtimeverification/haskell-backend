@@ -7,6 +7,7 @@ import Data.Binary.Get
 import Data.ByteString (fromStrict)
 import Kore.Definition.Base
 import Kore.Pattern.Binary
+import Kore.Pattern.Util
 import System.IO.Unsafe (unsafePerformIO)
 import System.Posix.DynamicLinker qualified as Linker
 
@@ -21,4 +22,13 @@ simplifyTerm dl def trm sort = unsafePerformIO $ Internal.runLLVMwithDL dl $ do
     trmPtr <- Internal.marshallTerm trm
     sortPtr <- Internal.marshallSort sort
     binary <- kore.simplify trmPtr sortPtr
-    pure $ runGet (decodeKorePattern def) $ fromStrict binary
+    -- strip away the custom injection added by the LLVM backend
+    case runGet (decodeKorePattern def) (fromStrict binary) of
+        Injection origSort (SortApp "SortKItem" _) result
+            | origSort == sort ->
+                pure result
+        someTerm
+            | sortOfTerm someTerm == sort ->
+                pure someTerm
+        other ->
+            error $ "Unexpected sort after LLVM simplification: " <> show other

@@ -2718,7 +2718,7 @@ Subsorts:
   - SortWordStackCell
   - SortWordStackCellOpt
 Axioms grouped by term index:
-- Anything: 20
+- Anything: 15
   - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 745, column = 10}}
   - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 1869, column = 10}}
   - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 2190, column = 10}}
@@ -2734,11 +2734,6 @@ Axioms grouped by term index:
   - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 2207, column = 20}}
   - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 2206, column = 20}}
   - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 1447, column = 27}}
-  - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 271, column = 10}}
-  - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 270, column = 10}}
-  - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 284, column = 18}}
-  - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 291, column = 10}}
-  - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 285, column = 18}}
 - Lbl#accessAccounts__EVM_KItem_Account: Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 1386, column = 10}}
 - Lbl#accessAccounts__EVM_KItem_Set: Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 1389, column = 10}}
 - Lbl#accessAccounts___EVM_KItem_Account_Account: Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 1384, column = 10}}
@@ -2792,6 +2787,9 @@ Axioms grouped by term index:
   - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 472, column = 10}}
   - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 473, column = 10}}
   - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 453, column = 10}}
+- Lbl#execute_EVM_KItem: 2
+  - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 291, column = 10}}
+  - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 285, column = 18}}
 - Lbl#finalizeBlock_EVM_EthereumCommand: Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 663, column = 10}}
 - Lbl#finalizeStorage(_)_EVM_InternalOp_List: 2
   - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 546, column = 10}}
@@ -2908,7 +2906,7 @@ Axioms grouped by term index:
   - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 2106, column = 10}}
 - Lbl#gas[_,_]_EVM_InternalOp_OpCode_OpCode: Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 1852, column = 10}}
 - Lbl#gas[_]_EVM_InternalOp_OpCode: Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 1860, column = 10}}
-- Lbl#halt_EVM_KItem: 8
+- Lbl#halt_EVM_KItem: 11
   - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 1422, column = 10}}
   - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 1438, column = 10}}
   - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 1429, column = 10}}
@@ -2917,6 +2915,9 @@ Axioms grouped by term index:
   - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 1565, column = 10}}
   - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 1567, column = 10}}
   - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 1571, column = 10}}
+  - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 271, column = 10}}
+  - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 270, column = 10}}
+  - Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 284, column = 18}}
 - Lbl#incrementNonce__EVM_InternalOp_Int: Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 1549, column = 10}}
 - Lbl#initVM_EVM_KItem: Location {file = "Source(evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md)", position = Position {line = 1349, column = 10}}
 - Lbl#loadAccount__FOUNDRY-CHEAT-CODES_KItem_Int: 2

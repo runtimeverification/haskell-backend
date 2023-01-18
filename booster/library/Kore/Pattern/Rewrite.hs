@@ -13,27 +13,27 @@ module Kore.Pattern.Rewrite (
 
 import Control.Monad
 import Control.Monad.Logger.CallStack
+import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
+import Control.Monad.Trans.Reader (ReaderT (..), ask)
 import Data.Either
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
-import Data.Text (Text, pack)
+import Data.Text (Text, pack, split, unpack)
 import Numeric.Natural
+import Prettyprinter
+import System.Posix.DynamicLinker qualified as Linker
 
 import Kore.Definition.Attributes.Base
 import Kore.Definition.Base
 import Kore.Pattern.Base
+import Kore.Pattern.Index (TermIndex (..), computeTermIndex)
 import Kore.Pattern.Simplify
 import Kore.Pattern.Unify
 import Kore.Pattern.Util
-
-import Kore.Syntax.ParsedKore.Internalise (computeTermIndex) -- FIXME move this function!
-
-import Control.Monad.Trans.Class
-import Control.Monad.Trans.Reader (ReaderT (..), ask)
-import System.Posix.DynamicLinker qualified as Linker
+import Kore.Prettyprinter
 
 newtype RewriteM err a = RewriteM {unRewriteM :: ReaderT (KoreDefinition, Maybe Linker.DL) (Except err) a}
     deriving newtype (Functor, Applicative, Monad)
@@ -170,7 +170,7 @@ applyRule pat rule = do
     let rewritten =
             Pattern
                 (substituteInTerm subst rule.rhs.term)
-                (map (substituteInPredicate subst) $ pat.constraints <> newConstraints)
+                (map (substituteInPredicate subst) $ pat.constraints)
     return (rule, rewritten)
   where
     checkConstraint :: Predicate -> RewriteM RuleFailed ()
@@ -197,6 +197,28 @@ data RewriteFailed
       TermIndexIsNone
     deriving stock (Eq, Show)
 
+instance Pretty RewriteFailed where
+    pretty NoRulesForTerm =
+        "No rules for term"
+    pretty NoApplicableRules =
+        "No rules applicable for the term"
+    pretty (RuleApplicationUncertain failures) =
+        "Uncertain: " <> align (vsep $ map pretty failures)
+    pretty (DefinednessUnclear unclears) =
+        "Uncertain about definedness of rules: " <> pretty (map (ruleId . fst) unclears)
+    pretty TermIndexIsNone =
+        "Term index is None"
+
+ruleId :: RewriteRule -> String
+ruleId rule = (<> ": ") $ maybe ruleLoc show rule.attributes.ruleLabel
+  where
+    ruleLoc =
+        unpack (last (split (== '/') rule.attributes.location.file))
+            <> show
+                ( rule.attributes.location.position.line
+                , rule.attributes.location.position.column
+                )
+
 data RuleFailed
     = -- | The rule's LHS term and the pattern term do not unify at all
       RewriteUnificationFailed FailReason
@@ -211,6 +233,40 @@ data RuleFailed
     | -- | A constraint of the rule is indeterminate (when substituted)
       ConstraintIsIndeterminate Predicate
     deriving stock (Eq, Show)
+
+instance Pretty RuleFailed where
+    pretty (RewriteUnificationFailed reason) =
+        hang 4 $
+            vsep
+                [ "Unification failed:"
+                , pretty reason
+                ]
+    pretty (RewriteUnificationUnclear rule remainders) =
+        hsep
+            [ "Unification uncertain for rule"
+            , pretty (ruleId rule)
+            , parens (pretty (length remainders) <> " remainders")
+            ]
+    pretty (RewriteSortError err) =
+        hang 4 $
+            vsep
+                [ "Sort error:"
+                , pretty (show err)
+                ]
+    pretty (UnificationIsNotMatch rule _subst) =
+        "Unification produced a non-matching substitution for rule " <> pretty (ruleId rule)
+    pretty (ConstraintIsBottom pre) =
+        hang 4 $
+            vsep
+                [ "Constraint is bottom: "
+                , pretty pre
+                ]
+    pretty (ConstraintIsIndeterminate pre) =
+        hang 4 $
+            vsep
+                [ "Constraint is indeterminate: "
+                , pretty pre
+                ]
 
 isUncertain :: RuleFailed -> Bool
 isUncertain RewriteUnificationFailed{} = False
@@ -239,6 +295,36 @@ data RewriteResult
       RewriteAborted Pattern
     deriving stock (Eq, Show)
 
+instance Pretty RewriteResult where
+    pretty (RewriteSingle pat) =
+        showPattern "Rewritten to" pat
+    pretty (RewriteBranch pat nexts) =
+        hang 4 . vsep $
+            [ "Branch reached at:"
+            , pretty pat
+            , "Next states:"
+            ]
+                <> map pretty (NE.toList nexts)
+    pretty (RewriteStuck pat) =
+        showPattern "Stuck at" pat
+    pretty (RewriteCutPoint lbl pat next) =
+        hang 4 $
+            vsep
+                [ "Cut point reached " <> parens (pretty lbl)
+                , pretty pat
+                , "Next state"
+                , pretty next
+                ]
+    pretty (RewriteTerminal lbl pat) =
+        showPattern ("Terminal rule reached " <> parens (pretty lbl)) pat
+    pretty (RewriteStopped pat) =
+        showPattern "Stopped (max depth reached) at" pat
+    pretty (RewriteAborted pat) =
+        showPattern "Rewrite aborted" pat
+
+showPattern :: Doc a -> Pattern -> Doc a
+showPattern title pat = hang 4 $ vsep [title, pretty pat]
+
 {- | Interface for RPC execute: Rewrite given term as long as there is
    exactly one result in each step.
 
@@ -265,7 +351,7 @@ performRewrite ::
     Pattern ->
     io (Natural, RewriteResult)
 performRewrite def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pat = do
-    logRewrite $ "Rewriting pattern " <> pack (show pat)
+    logRewrite $ "Rewriting pattern " <> pack (renderDefault $ pretty pat)
     doSteps 0 pat
   where
     logRewrite = logOther (LevelOther "Rewrite")
@@ -280,7 +366,11 @@ performRewrite def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pat = do
             logRewrite $ "Reached maximum depth of " <> maybe "?" showCounter mbMaxDepth
             pure (counter, RewriteStopped pat')
         | otherwise = do
-            let res = runRewriteM def mLlvmLibrary $ rewriteStep cutLabels terminalLabels pat'
+            let simplifiedPat =
+                    pat'{term = simplifyConcrete mLlvmLibrary def pat'.term}
+                res =
+                    runRewriteM def mLlvmLibrary $
+                        rewriteStep cutLabels terminalLabels simplifiedPat
             case res of
                 Right (RewriteSingle single) ->
                     doSteps (counter + 1) single
@@ -289,9 +379,9 @@ performRewrite def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pat = do
                     pure (counter + 1, terminal)
                 Right other -> do
                     logRewrite $ "Stopped after " <> showCounter counter
-                    logRewrite $ pack (show other)
+                    logRewrite $ pack (renderDefault $ pretty other)
                     pure (counter, other)
                 Left failure -> do
                     logRewrite $ "Aborted after " <> showCounter counter
-                    logRewrite $ pack (show failure)
+                    logRewrite $ pack (renderDefault $ pretty failure)
                     pure (counter, RewriteAborted pat')

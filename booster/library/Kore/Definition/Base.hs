@@ -23,6 +23,7 @@ import GHC.Generics qualified as GHC
 
 import Kore.Definition.Attributes.Base
 import Kore.Pattern.Base
+import Kore.Pattern.Index (TermIndex)
 
 {- | A Kore definition is constructed from a main module with its
    transitive imports.
