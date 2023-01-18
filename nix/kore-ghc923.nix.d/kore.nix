@@ -105,6 +105,7 @@
         (hsPkgs."text" or (errorHandler.buildDepError "text"))
         (hsPkgs."these" or (errorHandler.buildDepError "these"))
         (hsPkgs."time" or (errorHandler.buildDepError "time"))
+        (hsPkgs."timeit" or (errorHandler.buildDepError "timeit"))
         (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
         (hsPkgs."transformers-base" or (errorHandler.buildDepError
           "transformers-base"))
@@ -772,6 +773,7 @@
           (hsPkgs."text" or (errorHandler.buildDepError "text"))
           (hsPkgs."these" or (errorHandler.buildDepError "these"))
           (hsPkgs."time" or (errorHandler.buildDepError "time"))
+          (hsPkgs."timeit" or (errorHandler.buildDepError "timeit"))
           (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
           (hsPkgs."transformers-base" or (errorHandler.buildDepError
             "transformers-base"))
