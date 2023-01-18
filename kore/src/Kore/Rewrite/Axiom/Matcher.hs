@@ -458,14 +458,16 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
         SomeVariable RewritingVariableName ->
         TermLike RewritingVariableName ->
         Simplifier (Either Text (MatchResult RewritingVariableName))
-    bind var term =
-        let varName = variableName var
-            freeVars = FreeVariables.toNames (freeVariables term)
-         in if not $ Set.disjoint freeVars boundSet
-                then failMatch "bound variable would escape binder"
-                else case Map.lookup varName subst of
-                    Nothing -> patternMatch' sideCondition rest deferred (isTermDefined var term) (Map.insert (variableName var) term subst)
-                    Just binding -> if binding == term then patternMatch' sideCondition rest deferred predicate subst else failMatch "nonlinear matching fails equality test"
+    bind var term
+        | variableSort var == termLikeSort term =
+            let varName = variableName var
+                freeVars = FreeVariables.toNames (freeVariables term)
+             in if not $ Set.disjoint freeVars boundSet
+                    then failMatch "bound variable would escape binder"
+                    else case Map.lookup varName subst of
+                        Nothing -> patternMatch' sideCondition rest deferred (isTermDefined var term) (Map.insert (variableName var) term subst)
+                        Just binding -> if binding == term then patternMatch' sideCondition rest deferred predicate subst else failMatch "nonlinear matching fails equality test"
+        | otherwise = failMatch "sorts don't match"
 
     -- compute the new predicate of a `bind` operation
     isTermDefined ::
