@@ -14,7 +14,7 @@ module Test.Kore.Internal.Substitution (
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Kore.Internal.From
-import Kore.Internal.Substitution as Substitution
+import Kore.Internal.Substitution as Substitution hiding (markSimplifiedConditional)
 import Kore.Substitute
 import Kore.TopBottom (
     isBottom,

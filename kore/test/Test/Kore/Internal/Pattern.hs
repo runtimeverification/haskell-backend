@@ -33,7 +33,7 @@ import Kore.Internal.MultiAnd (
     MultiAnd,
  )
 import Kore.Internal.MultiOr
-import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern as Pattern hiding (markSimplifiedConditional)
 import Kore.Internal.Predicate (
     Predicate,
     makeAndPredicate,
