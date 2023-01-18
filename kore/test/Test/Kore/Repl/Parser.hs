@@ -82,6 +82,7 @@ test_replParser =
     , debugApplyRewriteTests `tests` "debug-apply-rewrite"
     , debugRewriteTests `tests` "debug-rewrite"
     , stepTimeoutTests `tests` "set-step-timeout"
+    , showStepTimeTests `tests` "show-step-time"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -201,6 +202,10 @@ stepTimeoutTests =
     , "set-step-timeout" `parsesTo_` SetStepTimeout Nothing
     , "set-step-timeout -5" `fails` ()
     ]
+
+showStepTimeTests :: [ParserTest ReplCommand]
+showStepTimeTests =
+    ["show-step-time" `parsesTo_` ShowStepTime]
 
 configTests :: [ParserTest ReplCommand]
 configTests =

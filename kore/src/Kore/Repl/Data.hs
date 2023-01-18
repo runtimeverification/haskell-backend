@@ -54,6 +54,7 @@ module Kore.Repl.Data (
     KorePrintCommand (..),
     KompiledDir (..),
     StepTimeout (..),
+    StepTime (..),
 ) where
 
 import Control.Concurrent.MVar
@@ -435,6 +436,8 @@ data ReplCommand
       DebugRewrite Log.DebugRewriteOptions
     | -- | Set a timeout for one step.
       SetStepTimeout !(Maybe StepTimeout)
+    | -- | Toggle the printing of time spent on steps.
+      ShowStepTime
     | -- | Exit the repl.
       Exit
     deriving stock (Eq, Show)
@@ -520,6 +523,7 @@ helpText =
     \tryf (<a|c><num>)|<name>                 like try, but if successful, it will apply the axiom or claim.\n\
     \kryf (<a|c><num>)|<name>                 like ktry, but if successful, it will apply the axiom or claim.\n\
     \set-step-timeout [n]                     Set a timeout for one step in seconds. Omit the argument to remove the timeout.\n\
+    \show-step-time                           Toggle the printing of time spent on steps.\n\
     \clear [n]                                removes all the node's children from the\
     \ proof graph (***)\
     \ (defaults to current node)\n\
@@ -618,6 +622,7 @@ shouldStore =
         Try _ -> False
         KTry _ -> False
         SetStepTimeout _ -> False
+        ShowStepTime -> False
         Exit -> False
         _ -> True
 
@@ -656,6 +661,8 @@ data ReplState = ReplState
       koreLogOptions :: !Log.KoreLogOptions
     , -- | Timeout for one step.
       stepTimeout :: Maybe StepTimeout
+    , -- | Whether to show the time taken by steps
+      stepTime :: StepTime
     }
     deriving stock (GHC.Generic)
 
@@ -713,6 +720,9 @@ data GraphProofStatus
     | StuckProof [Graph.Node]
     | TrustedClaim
     deriving stock (Eq, Show)
+
+data StepTime = DisableStepTime | EnableStepTime
+    deriving stock (Eq, Ord, Show)
 
 makeAuxReplOutput :: String -> ReplOutput
 makeAuxReplOutput str =

@@ -190,6 +190,7 @@ common library
   build-depends: text >=1.2
   build-depends: these >=1.0
   build-depends: time >=1.9.3
+  build-depends: timeit
   build-depends: transformers >=0.4
   build-depends: transformers-base
   build-depends: unliftio >= 0.2
