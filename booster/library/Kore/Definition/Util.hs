@@ -19,7 +19,8 @@ import GHC.Generics (Generic)
 
 import Kore.Definition.Attributes.Base
 import Kore.Definition.Base
-import Kore.Pattern.Base (TermIndex (..), decodeLabel)
+import Kore.Pattern.Base (decodeLabel)
+import Kore.Pattern.Index (TermIndex (..))
 
 data Summary = Summary
     { file :: FilePath

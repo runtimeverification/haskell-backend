@@ -14,6 +14,7 @@ module RpcClient (
     main,
 ) where
 
+import Control.Exception
 import Control.Monad
 import Data.Aeson qualified as Json
 import Data.Aeson.Encode.Pretty qualified as Json
@@ -48,13 +49,23 @@ main = do
                 prepareRequestData mode optionFile options
         trace "[Info] Sending request..." $
             sendAll s request
-        response <- recv s 8192
+        response <- readResponse s 8192
         trace "[Info] Response received." $
             maybe BS.putStrLn postProcess postProcessing response
   where
     withTCPServer :: String -> Int -> (Socket -> IO ()) -> IO ()
-    withTCPServer host port =
-        runTCPClient host (show port)
+    withTCPServer host port client =
+        runTCPClient host (show port) $ \s ->
+            bracket (pure s) (`shutdown` ShutdownBoth) client
+
+    -- readResponse :: Socket -> Int64 -> IO BS.ByteString
+    readResponse s bufSize = do
+        part <- recv s bufSize
+        if BS.length part < bufSize
+            then pure part
+            else do
+                more <- readResponse s bufSize
+                pure $ part <> more
 
 data Options = Options
     { host :: String
@@ -127,7 +138,7 @@ parseOptions =
                     <> help "file with parameters (json object), optional"
     paramOpt =
         option readPair $
-            short 'o'
+            short 'O'
                 <> metavar "NAME=VALUE"
                 <> help "parameters to use (name=value)"
     readPair =

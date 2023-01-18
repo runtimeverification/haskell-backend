@@ -84,6 +84,12 @@ pattern AndBool ts <-
 pattern DV :: Sort -> Symbol
 pattern DV sort <- Symbol "\\dv" _ _ sort _
 
+-- NB assumes a particular shape and order of sort variables of the
+-- particular symbol "inj". A custom representation would be safer.
+pattern Injection :: Sort -> Sort -> Term -> Term
+pattern Injection fromSort toSort term <-
+    SymbolApplication (Symbol "inj" _ _ _ _) [fromSort, toSort] [term]
+
 {- | A predicate describes constraints on terms. It will always evaluate
    to 'Top' or 'Bottom'. Notice that 'Predicate's don't have a sort.
 -}
@@ -120,46 +126,7 @@ data TermOrPredicate -- = Either Predicate Pattern
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData)
 
-{- | Index data allowing for a quick lookup of potential axioms.
-
-A @Term@ is indexed by inspecting the top term component of the
-head of the K cell. Only constructor and (other) symbol
-applications are indexed, all other terms have index @Anything@.
-
-In particular, function applications are treated as opaque, like
-variables.
-
-Also, non-free constructors won't get any index, any rules headed by
-those can be ignored.
-
-Rather than making the term indexing function partial, we introduce a
-unique bottom element @None@ to the index type (to make it a lattice).
-This can then handle @AndTerm@ by indexing both arguments and
-combining them.
-
-NB we should not derive an 'Ord' instance since it would not reflect
-the fact that different symbols (and likewise different constructors)
-are incompatible.
--}
-data TermIndex
-    = None -- bottom element
-    | TopSymbol SymbolName
-    | Anything -- top element
-    -- should we have  | Value Sort ?? (see Term type)
-    deriving stock (Eq, Ord, Show, Generic)
-    deriving anyclass (NFData)
-
--- | Combines two indexes (an "infimum" function on the index lattice)
-combine :: TermIndex -> TermIndex -> TermIndex
-combine None _ = None
-combine _ None = None
-combine x Anything = x
-combine Anything x = x
-combine s@(TopSymbol s1) (TopSymbol s2)
-    | s1 == s2 = s
---     | otherwise = None -- redundant
-combine _ _ = None -- incompatible indexes
-
+-- | Un-escapes special characters in symbol names
 decodeLabel :: Text -> Either String Text
 decodeLabel str
     | Text.null str = Right str
