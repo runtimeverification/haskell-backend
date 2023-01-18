@@ -722,7 +722,7 @@ data GraphProofStatus
     deriving stock (Eq, Show)
 
 data StepTime = DisableStepTime | EnableStepTime
-  deriving stock (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show)
 
 makeAuxReplOutput :: String -> ReplOutput
 makeAuxReplOutput str =

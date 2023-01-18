@@ -205,7 +205,7 @@ stepTimeoutTests =
 
 showStepTimeTests :: [ParserTest ReplCommand]
 showStepTimeTests =
-    [ "show-step-time" `parsesTo_` ShowStepTime ]
+    ["show-step-time" `parsesTo_` ShowStepTime]
 
 configTests :: [ParserTest ReplCommand]
 configTests =

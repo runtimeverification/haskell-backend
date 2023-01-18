@@ -31,8 +31,9 @@ import Control.Exception (
 import Control.Exception qualified as X
 import Control.Lens (
     assign,
+    modifying,
     (%=),
-    (.=), modifying,
+    (.=),
  )
 import Control.Lens qualified as Lens
 import Control.Monad (
@@ -371,9 +372,10 @@ setStepTimeout = assign (field @"stepTimeout")
 
 showStepTime :: ReplM ()
 showStepTime = modifying (field @"stepTime") toggle
-  where toggle = \case
-          EnableStepTime -> DisableStepTime
-          DisableStepTime -> EnableStepTime
+  where
+    toggle = \case
+        EnableStepTime -> DisableStepTime
+        DisableStepTime -> EnableStepTime
 
 showUsageMessage :: String
 showUsageMessage = "Could not parse command, try using 'help'."
@@ -563,14 +565,14 @@ proveStepsF n = withTime $ do
 -- | Print step time.
 withTime :: ReplM a -> ReplM a
 withTime act =
-  Lens.use (field @"stepTime") >>= \case
-      DisableStepTime -> act
-      EnableStepTime -> do
-          (time,result) <- timeItT act
-          putStrLn'
-            $ "Step(s) took "
-            <> showFFloat (Just 4) time " seconds"
-          pure result
+    Lens.use (field @"stepTime") >>= \case
+        DisableStepTime -> act
+        EnableStepTime -> do
+            (time, result) <- timeItT act
+            putStrLn' $
+                "Step(s) took "
+                    <> showFFloat (Just 4) time " seconds"
+            pure result
 
 -- | Loads a script from a file.
 loadScript ::

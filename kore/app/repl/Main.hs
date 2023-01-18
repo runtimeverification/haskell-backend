@@ -213,7 +213,6 @@ parseKoreReplOptions startTime =
                 <> help "Print the time taken by steps."
             )
 
-
 parserInfoModifiers :: InfoMod options
 parserInfoModifiers =
     fullDesc
