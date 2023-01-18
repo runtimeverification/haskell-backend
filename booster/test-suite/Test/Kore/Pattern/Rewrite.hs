@@ -20,6 +20,7 @@ import Test.Tasty.HUnit
 import Kore.Definition.Attributes.Base
 import Kore.Definition.Base
 import Kore.Pattern.Base
+import Kore.Pattern.Index (TermIndex (..))
 import Kore.Pattern.Rewrite
 import Kore.Pattern.Util (sortOfTerm)
 import Test.Kore.Fixture
