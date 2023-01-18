@@ -738,6 +738,7 @@ prove
 proveWithRepl ::
     Maybe MinDepth ->
     Maybe Repl.Data.StepTimeout ->
+    Repl.Data.StepTime ->
     StuckCheck ->
     AllowVacuous ->
     -- | The main module
@@ -764,6 +765,7 @@ proveWithRepl ::
 proveWithRepl
     minDepth
     stepTimeout
+    stepTime
     stuckCheck
     allowVacuous
     definitionModule
@@ -788,6 +790,7 @@ proveWithRepl
             Repl.runRepl
                 minDepth
                 stepTimeout
+                stepTime
                 stuckCheck
                 allowVacuous
                 axioms

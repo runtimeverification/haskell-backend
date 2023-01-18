@@ -102,6 +102,7 @@ data KoreReplOptions = KoreReplOptions
     , korePrintCommand :: !KorePrintCommand
     , replMode :: !ReplMode
     , stepTimeout :: !(Maybe StepTimeout)
+    , stepTime :: StepTime
     , scriptModeOutput :: !ScriptModeOutput
     , replScript :: !ReplScript
     , outputFile :: !OutputFile
@@ -119,6 +120,7 @@ parseKoreReplOptions startTime =
         <*> parseKorePrintCommand
         <*> parseReplMode
         <*> parseStepTimeout
+        <*> parseShowStepTime
         <*> parseScriptModeOutput
         <*> parseReplScript
         <*> parseOutputFile
@@ -202,6 +204,15 @@ parseKoreReplOptions startTime =
                         <> help "Set a timeout for one step in seconds."
                     )
                 )
+    parseShowStepTime :: Parser StepTime
+    parseShowStepTime =
+        flag
+            DisableStepTime
+            EnableStepTime
+            ( long "show-step-time"
+                <> help "Print the time taken by steps."
+            )
+
 
 parserInfoModifiers :: InfoMod options
 parserInfoModifiers =
@@ -282,6 +293,7 @@ mainWithOptions LocalOptions{execOptions} = do
                             $ proveWithRepl
                                 replMinDepth
                                 stepTimeout
+                                stepTime
                                 replStuckCheck
                                 replAllowVacuous
                                 validatedDefinition
@@ -315,6 +327,7 @@ mainWithOptions LocalOptions{execOptions} = do
         , bugReportOption
         , korePrintCommand
         , stepTimeout
+        , stepTime
         } = execOptions
     runExceptionHandlers action =
         action
