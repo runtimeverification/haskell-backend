@@ -131,7 +131,7 @@ import Kore.Parser (
 import Kore.Parser.ParserUtils (
     readPositiveIntegral,
  )
-import Kore.Reachability.Claim (MinDepth (..), StuckCheck (..), AllowVacuous (..))
+import Kore.Reachability.Claim (AllowVacuous (..), MinDepth (..), StuckCheck (..))
 import Kore.Rewrite.SMT.Lemma
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
@@ -282,8 +282,9 @@ parseKoreProveOptions =
             DisallowedVacuous
             AllowedVacuous
             ( long "allow-vacuous"
-                <> help "Enables discharging #Bottom paths as #Top at \
-                        \implication checking time."
+                <> help
+                    "Enables discharging #Bottom paths as #Top at \
+                    \implication checking time."
             )
   where
     parseMinDepth =

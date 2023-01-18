@@ -546,10 +546,10 @@ withWarnings rule prim claimState = do
                 _ -> return ()
         Prim.Simplify | ClaimState.Stuck _ <- claimState' ->
             case claimState of
-                  ClaimState.Rewritten claim -> warnStuckClaimStateBottomLHS claim
-                  ClaimState.Remaining claim -> warnStuckClaimStateBottomLHS claim
-                  ClaimState.Claimed claim -> warnStuckClaimStateBottomLHS claim
-                  _ -> pure ()
+                ClaimState.Rewritten claim -> warnStuckClaimStateBottomLHS claim
+                ClaimState.Remaining claim -> warnStuckClaimStateBottomLHS claim
+                ClaimState.Claimed claim -> warnStuckClaimStateBottomLHS claim
+                _ -> pure ()
         _ -> return ()
     return claimState'
 
