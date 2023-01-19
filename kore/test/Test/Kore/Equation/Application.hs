@@ -325,7 +325,7 @@ test_attemptEquation =
         (Pattern.fromTermLike a)
     , testCase "X => X does not apply to X / X" $ do
         let initial = tdivInt xInt xInt
-        attemptEquation SideCondition.top initial equationId
+        attemptEquation SideCondition.top initial equationIdInt
             >>= expectLeft
             >>= assertRequiresNotMet
     , testCase "X => X does apply to X / X if \\ceil(X / X)" $ do
@@ -334,7 +334,7 @@ test_attemptEquation =
                 makeCeilPredicate initial
                     & SideCondition.fromPredicateWithReplacements
             expect = Pattern.fromTermLike initial
-        attemptEquation sideCondition initial equationId
+        attemptEquation sideCondition initial equationIdInt
             >>= expectRight
             >>= assertEqual "" expect
     , notInstantiated
@@ -394,6 +394,9 @@ test_applySubstitutionAndSimplify =
 
 equationId :: Equation'
 equationId = mkEquation (mkElemVar Mock.xConfig) (mkElemVar Mock.xConfig)
+
+equationIdInt :: Equation'
+equationIdInt = mkEquation (mkElemVar Mock.xEquationInt) (mkElemVar Mock.xEquationInt)
 
 equationRequiresBottom :: Equation'
 equationRequiresBottom =

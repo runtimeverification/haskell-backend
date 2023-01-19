@@ -503,6 +503,12 @@ test_matcherVariableFunction =
                         )
             actual <- match ruleLHS config
             assertEqual "" expected actual
+        , testCase "Different sorts don't match" $ do
+            let config = Mock.a
+                ruleLHS = mkElemVar Mock.xEquationInt
+                expected = Left "sorts don't match"
+            actual <- match ruleLHS config
+            assertEqual "" expected actual
         ]
     ]
   where
