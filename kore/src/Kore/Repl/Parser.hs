@@ -135,6 +135,7 @@ nonRecursiveCommand =
         , loadScript
         , proofStatus
         , setStepTimeout
+        , showStepTime
         , exit
         , tryAlias
         ]
@@ -334,6 +335,9 @@ setStepTimeout :: Parser ReplCommand
 setStepTimeout = do
     dec <- literal "set-step-timeout" *> maybeDecimal
     return $ SetStepTimeout (fmap StepTimeout dec)
+
+showStepTime :: Parser ReplCommand
+showStepTime = literal "show-step-time" $> ShowStepTime
 
 saveSession :: Parser ReplCommand
 saveSession =

@@ -31,6 +31,7 @@ import Control.Exception (
 import Control.Exception qualified as X
 import Control.Lens (
     assign,
+    modifying,
     (%=),
     (.=),
  )
@@ -196,6 +197,7 @@ import Kore.Unparser (
     unparse,
     unparseToString,
  )
+import Numeric (showFFloat)
 import Numeric.Natural
 import Prelude.Kore hiding (
     toList,
@@ -234,6 +236,7 @@ import System.Process (
     std_in,
     std_out,
  )
+import System.TimeIt (timeItT)
 import Text.Megaparsec (
     ParseErrorBundle (..),
     ShowErrorComponent (..),
@@ -326,6 +329,7 @@ replInterpreter0 printAux printKore replCmd = do
             DebugApplyRewrite op -> debugApplyRewrite op $> Continue
             DebugRewrite op -> debugRewrite op $> Continue
             SetStepTimeout st -> setStepTimeout st $> Continue
+            ShowStepTime -> showStepTime $> Continue
             Exit -> exit
     (ReplOutput output, shouldContinue) <- lift $ evaluateCommand command
     traverse_
@@ -365,6 +369,13 @@ replInterpreter0 printAux printKore replCmd = do
 
 setStepTimeout :: Maybe StepTimeout -> ReplM ()
 setStepTimeout = assign (field @"stepTimeout")
+
+showStepTime :: ReplM ()
+showStepTime = modifying (field @"stepTime") toggle
+  where
+    toggle = \case
+        EnableStepTime -> DisableStepTime
+        DisableStepTime -> EnableStepTime
 
 showUsageMessage :: String
 showUsageMessage = "Could not parse command, try using 'help'."
@@ -527,7 +538,7 @@ proveSteps ::
     -- | maximum number of steps to perform
     Natural ->
     ReplM ()
-proveSteps n = do
+proveSteps n = withTime $ do
     let node = ReplNode . fromEnum $ n
     result <- loopM performStepNoBranching (n, SingleResult node)
     case result of
@@ -542,7 +553,7 @@ proveStepsF ::
     -- | maximum number of steps to perform
     Natural ->
     ReplM ()
-proveStepsF n = do
+proveStepsF n = withTime $ do
     node <- Lens.use (field @"node")
     recursiveForcedStep n node
     graph <- getInnerGraph
@@ -550,6 +561,18 @@ proveStepsF n = do
     case targetNode of
         Nothing -> putStrLn' "Proof completed on all branches."
         Just someNode -> selectNode someNode
+
+-- | Print step time.
+withTime :: ReplM a -> ReplM a
+withTime act =
+    Lens.use (field @"stepTime") >>= \case
+        DisableStepTime -> act
+        EnableStepTime -> do
+            (time, result) <- timeItT act
+            putStrLn' $
+                "Step(s) took "
+                    <> showFFloat (Just 4) time " seconds"
+            pure result
 
 -- | Loads a script from a file.
 loadScript ::

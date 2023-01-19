@@ -913,7 +913,7 @@ runSteps
                 fromMaybe (error "Unexpected missing tree") . graphFilter
                     <$> runStrategy
                         breadthLimit
-                        (transitionRule EnabledStuckCheck claims axiomGroups)
+                        (transitionRule EnabledStuckCheck AllowedVacuous claims axiomGroups)
                         strategy'
                         (Claimed configuration)
       where
