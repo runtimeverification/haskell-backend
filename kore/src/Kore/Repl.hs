@@ -106,6 +106,7 @@ import Text.Megaparsec (
 runRepl ::
     Maybe MinDepth ->
     Maybe StepTimeout ->
+    StepTime ->
     StuckCheck ->
     AllowVacuous ->
     -- | list of axioms to used in the proof
@@ -128,7 +129,7 @@ runRepl ::
     KompiledDir ->
     KorePrintCommand ->
     Simplifier ()
-runRepl _ _ _ _ _ _ [] _ _ _ _ outputFile _ _ _ _ _ =
+runRepl _ _ _ _ _ _ _ [] _ _ _ _ outputFile _ _ _ _ _ =
     let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
      in liftIO . printTerm . unparseToString $ topTerm
   where
@@ -137,6 +138,7 @@ runRepl _ _ _ _ _ _ [] _ _ _ _ outputFile _ _ _ _ _ =
 runRepl
     minDepth
     stepTimeout
+    stepTime
     stuckCheck
     allowVacuous
     axioms'
@@ -216,6 +218,7 @@ runRepl
                         , Log.startTime = startTime
                         }
                 , stepTimeout = stepTimeout
+                , stepTime = stepTime
                 }
 
         config :: Config

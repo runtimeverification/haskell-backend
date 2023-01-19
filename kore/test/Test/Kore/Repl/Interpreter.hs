@@ -827,6 +827,7 @@ mkState startTime axioms claims claim =
         , koreLogOptions =
             Log.defaultKoreLogOptions (Log.ExeName "kore-repl") startTime
         , stepTimeout = Nothing
+        , stepTime = DisableStepTime
         }
   where
     graph' = emptyExecutionGraph claim
