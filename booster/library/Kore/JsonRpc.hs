@@ -80,7 +80,7 @@ respond def@KoreDefinition{} mLlvmLibrary =
 
         _ -> pure $ Left $ ErrorObj "Not implemented" (-32601) Null
   where
-    execResponse :: (Natural, RewriteResult) -> Either ErrorObj (API 'Res)
+    execResponse :: (Natural, RewriteResult Pattern) -> Either ErrorObj (API 'Res)
     execResponse (_, RewriteSingle{}) =
         error "Single rewrite result"
     execResponse (d, RewriteBranch p nexts) =

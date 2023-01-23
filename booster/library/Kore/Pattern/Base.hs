@@ -13,12 +13,18 @@ module Kore.Pattern.Base (
 
 import Control.DeepSeq (NFData (..))
 import Data.Either (fromRight)
+import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 import Data.Map qualified as Map
+import Data.Set (Set)
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import GHC.Generics (Generic)
-import Kore.Definition.Attributes.Base (SymbolAttributes)
+import Kore.Definition.Attributes.Base (
+    SymbolAttributes (..),
+    SymbolType (..),
+ )
 import Kore.Prettyprinter qualified as KPretty
 import Prettyprinter (Pretty (..))
 import Prettyprinter qualified as Pretty
@@ -67,16 +73,90 @@ data Symbol = Symbol
    Deliberately kept simple in this codebase (leaving out built-in
    types and containers).
 -}
-data Term
-    = AndTerm Term Term -- used in #as patterns
-    | SymbolApplication Symbol [Sort] [Term]
-    | DomainValue Sort Text
-    | Var Variable
+data TermF t
+    = AndTermF t t
+    | SymbolApplicationF Symbol [Sort] [t]
+    | DomainValueF Sort Text
+    | VarF Variable
+    deriving stock (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+    deriving anyclass (NFData)
+
+{- | Term attributes are synthetic (bottom-up) attributes that cache
+   information about a term to avoid unnecessary AST
+   traversals. Attributes are computed when terms are constructed (see
+   patterns below).
+-}
+data TermAttributes = TermAttributes
+    { variables :: Set Variable
+    , isEvaluated :: Bool
+    }
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData)
 
-makeBaseFunctor ''Term
+instance Semigroup TermAttributes where
+    a1 <> a2 =
+        TermAttributes
+            { variables = a1.variables <> a2.variables
+            , isEvaluated = a1.isEvaluated && a2.isEvaluated
+            }
 
+instance Monoid TermAttributes where
+    mempty = TermAttributes Set.empty True
+
+-- | A term together with its attributes.
+data Term = Term TermAttributes (TermF Term)
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData)
+
+type instance Base Term = TermF
+
+instance Recursive Term where
+    project (Term _ t) = t
+
+getAttributes :: Term -> TermAttributes
+getAttributes (Term a _) = a
+
+instance Corecursive Term where
+    embed (AndTermF t1 t2) = AndTerm t1 t2
+    embed (SymbolApplicationF s ss ts) = SymbolApplication s ss ts
+    embed (DomainValueF s t) = DomainValue s t
+    embed (VarF v) = Var v
+
+-- smart term constructors, as bidirectional patterns
+pattern AndTerm :: Term -> Term -> Term
+pattern AndTerm t1 t2 <- Term _ (AndTermF t1 t2)
+    where
+        AndTerm t1@(Term a1 _) t2@(Term a2 _) = Term (a1 <> a2) $ AndTermF t1 t2
+
+pattern SymbolApplication :: Symbol -> [Sort] -> [Term] -> Term
+pattern SymbolApplication sym sorts args <- Term _ (SymbolApplicationF sym sorts args)
+    where
+        SymbolApplication sym sorts args =
+            let argAttributes = mconcat $ map getAttributes args
+                newEvaluatedFlag =
+                    case sym.attributes.symbolType of
+                        -- constructors and injections are evaluated if their arguments are
+                        Constructor -> argAttributes.isEvaluated
+                        SortInjection -> argAttributes.isEvaluated
+                        -- function calls are not evaluated
+                        PartialFunction -> False
+                        TotalFunction -> False
+             in Term argAttributes{isEvaluated = newEvaluatedFlag} $
+                    SymbolApplicationF sym sorts args
+
+pattern DomainValue :: Sort -> Text -> Term
+pattern DomainValue sort value <- Term _ (DomainValueF sort value)
+    where
+        DomainValue sort value = Term mempty $ DomainValueF sort value
+
+pattern Var :: Variable -> Term
+pattern Var v <- Term _ (VarF v)
+    where
+        Var v = Term mempty{variables = Set.singleton v} (VarF v)
+
+{-# COMPLETE AndTerm, SymbolApplication, DomainValue, Var #-}
+
+-- convenience patterns
 pattern AndBool :: [Term] -> Term
 pattern AndBool ts <-
     SymbolApplication (Symbol "Lbl'Unds'andBool'Unds'" _ _ _ _) _ ts
@@ -98,9 +178,9 @@ data Predicate
     | Bottom
     | Ceil Term
     | EqualsTerm Term Term
-    | EqualsPredicate Predicate Predicate -- I remember running into this one a few times, but I'm not sure if it was an integration test or a unit test
+    | EqualsPredicate Predicate Predicate
     | Exists VarName Predicate
-    | Forall VarName Predicate -- do we need forall?
+    | Forall VarName Predicate
     | Iff Predicate Predicate
     | Implies Predicate Predicate
     | In Term Term
@@ -111,6 +191,8 @@ data Predicate
     deriving anyclass (NFData)
 
 makeBaseFunctor ''Predicate
+
+--------------------
 
 -- | A term (configuration) constrained by a number of predicates.
 data Pattern = Pattern
