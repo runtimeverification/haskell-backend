@@ -27,6 +27,7 @@ import Data.Limit
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
+import Kore.Attribute.Pattern.FreeVariables (freeVariableNames)
 import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
@@ -163,7 +164,7 @@ decidePredicate ::
 decidePredicate onUnknown sideCondition predicates =
     whileDebugEvaluateCondition predicates $
         do
-            result <- query >>= whenUnknown retry
+            result <- query predicates >>= whenUnknown retry
             debugEvaluateConditionResult result
             case result of
                 Unsat -> return False
@@ -184,17 +185,27 @@ decidePredicate onUnknown sideCondition predicates =
     whenUnknown f Unknown = f
     whenUnknown _ result = return result
 
-    query :: MaybeT Simplifier Result
-    query =
+    query :: NonEmpty (Predicate variable) -> MaybeT Simplifier Result
+    query preds =
         SMT.withSolver . evalTranslator $ do
             tools <- Simplifier.askMetadataTools
             Morph.hoist SMT.liftSMT $ do
                 predicates' <-
                     traverse
                         (translatePredicate sideCondition tools)
-                        predicates
+                        preds
                 traverse_ SMT.assert predicates'
                 SMT.check
+
+    applyHeuristic :: Predicate variable -> [Predicate variable]
+    applyHeuristic p@(Predicate.PredicateNot (Predicate.PredicateExists var child)) = do
+        -- freeVar <- getFreeVariables child
+        -- return (substitute freeVar var child)
+        return p
+    applyHeuristic pred' = return pred'
+
+    generateAllPossibilities :: NonEmpty (Predicate variable) -> [NonEmpty (Predicate variable)]
+    generateAllPossibilities = traverse applyHeuristic
 
     retry :: MaybeT Simplifier Result
     retry = do
@@ -215,7 +226,7 @@ decidePredicate onUnknown sideCondition predicates =
     retryOnceWithScaledTimeout scale =
         -- scale the timeout _inside_ 'retryOnce' so that we override the
         -- call to 'SMT.reinit'.
-        retryOnce $ SMT.localTimeOut (scaleTimeOut scale) query
+        retryOnce $ SMT.localTimeOut (scaleTimeOut scale) (query predicates)
 
     scaleTimeOut _ (SMT.TimeOut Unlimited) = SMT.TimeOut Unlimited
     scaleTimeOut n (SMT.TimeOut (Limit r)) = SMT.TimeOut (Limit (n * r))
