@@ -11,53 +11,31 @@
                 "term": {
                     "tag": "App",
                     "name": "Lbl'-LT-'generatedTop'-GT-'",
-                    "sorts": [
-                        {
-                            "tag": "SortApp",
-                            "name": "SortKCell",
-                            "args": []
-                        },
-                        {
-                            "tag": "SortApp",
-                            "name": "SortGeneratedCounterCell",
-                            "args": []
-                        }
-                    ],
+                    "sorts": [],
                     "args": [
                         {
                             "tag": "App",
                             "name": "Lbl'-LT-'k'-GT-'",
-                            "sorts": [
-                                {
-                                    "tag": "SortApp",
-                                    "name": "SortK",
-                                    "args": []
-                                }
-                            ],
+                            "sorts": [],
                             "args": [
                                 {
                                     "tag": "App",
                                     "name": "kseq",
-                                    "sorts": [
-                                        {
-                                            "tag": "SortApp",
-                                            "name": "SortKItem",
-                                            "args": []
-                                        },
-                                        {
-                                            "tag": "SortApp",
-                                            "name": "SortK",
-                                            "args": []
-                                        }
-                                    ],
+                                    "sorts": [],
                                     "args": [
                                         {
                                             "tag": "App",
                                             "name": "inj",
                                             "sorts": [
                                                 {
-                                                    "tag": "SortVar",
-                                                    "name": "From"
+                                                    "tag": "SortApp",
+                                                    "name": "SortState",
+                                                    "args": []
+                                                },
+                                                {
+                                                    "tag": "SortApp",
+                                                    "name": "SortKItem",
+                                                    "args": []
                                                 }
                                             ],
                                             "args": [
@@ -85,13 +63,7 @@
                         {
                             "tag": "App",
                             "name": "Lbl'-LT-'generatedCounter'-GT-'",
-                            "sorts": [
-                                {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                }
-                            ],
+                            "sorts": [],
                             "args": [
                                 {
                                     "tag": "DV",
@@ -105,66 +77,6 @@
                             ]
                         }
                     ]
-                }
-            },
-            "predicate": {
-                "format": "KORE",
-                "version": 1,
-                "term": {
-                    "tag": "And",
-                    "sort": {
-                        "tag": "SortApp",
-                        "name": "SortGeneratedTopCell",
-                        "args": []
-                    },
-                    "first": {
-                        "tag": "And",
-                        "sort": {
-                            "tag": "SortApp",
-                            "name": "SortGeneratedTopCell",
-                            "args": []
-                        },
-                        "first": {
-                            "tag": "And",
-                            "sort": {
-                                "tag": "SortApp",
-                                "name": "SortGeneratedTopCell",
-                                "args": []
-                            },
-                            "first": {
-                                "tag": "Top",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortGeneratedTopCell",
-                                    "args": []
-                                }
-                            },
-                            "second": {
-                                "tag": "Top",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortGeneratedTopCell",
-                                    "args": []
-                                }
-                            }
-                        },
-                        "second": {
-                            "tag": "Top",
-                            "sort": {
-                                "tag": "SortApp",
-                                "name": "SortGeneratedTopCell",
-                                "args": []
-                            }
-                        }
-                    },
-                    "second": {
-                        "tag": "Top",
-                        "sort": {
-                            "tag": "SortApp",
-                            "name": "SortGeneratedTopCell",
-                            "args": []
-                        }
-                    }
                 }
             }
         }

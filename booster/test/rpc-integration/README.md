@@ -37,8 +37,8 @@ rpc-client \
 
 ## How to add tests or update expected output
 
-Step 2 above can be run using `--output` instead of `--expect` to (over-)write the output file and check manually that it has the expected contents.
+Step 2 above can be run using `--expect response-foo.json --regenerate` to (over-)write the output file.
 
 ## Automation
 
-The shell script `runDirectoryTest.sh` runs the tests in a directory `test-NAME` given as its first argument. It will fail on the first error and automatically shut down the server.
+The shell script `runDirectoryTest.sh` runs the tests in a directory `test-NAME` given as its first argument. It will fail on the first error and automatically shut down the server. If you want to re-generate all the responses, just call `runDirectoryTest.sh` with `--regenerate`.
