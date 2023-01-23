@@ -116,11 +116,14 @@ executables:
       - aeson-pretty
       - base
       - bytestring
+      - clock
+      - directory
       - extra
       - hs-backend-booster
       - network
       - network-run
       - optparse-applicative
+      - process
       - text
       - vector
     ghc-options:

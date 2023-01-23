@@ -1,10 +1,10 @@
-#!/bin/env bash
 
 directory=${1?"Please provide a test directory in a single argument"}
 
 set -eu
 
 pushd $(dirname $0)
+shift
 
 dir=$(basename $directory)
 bindir=../../.build/kore/bin
@@ -13,19 +13,33 @@ server=${SERVER:-$bindir/hs-backend-booster}
 client=${CLIENT:-$bindir/rpc-client}
 
 kore=resources/${dir#test-}.kore
+kompile=resources/${dir#test-}.kompile
+dylib=resources/${dir#test-}.dylib
 
 echo "Running tests from $dir with definition $kore"
 
 # make sure directory and kore file exist
 [ ! -d "./$dir" ] && exit 1
-[ ! -f "./$kore" ] && exit 2
+if [ ! -f "./$kore" ]; then
+  [ ! -f "./$kompile" ] && exit 2
+  cd resources
+  ./${dir#test-}.kompile
+  cd ..
+  [ ! -f "./$kore" ] && exit 3
+fi 
+
+if [ -f "./$dylib" ]; then
+    server_params="--llvm-backend-library ./$dylib ${SERVER_OPTS:-""}"
+else
+    server_params=${SERVER_OPTS:-""}
+fi
 
 echo "Starting server"
-$server $kore --module TEST &
+$server $kore --module ${MODULE:-TEST} $server_params &
 server_pid=$!
 
 trap 'kill -9 ${server_pid}; popd' ERR EXIT
-echo "Server ${server_pid}"
+echo "Server PID ${server_pid}"
 
 sleep 2
 
@@ -36,5 +50,6 @@ for test in $(ls $dir/state-*.json); do
     else
         params=""
     fi
-    echo "$client --execute $test $params --expect $dir/response-${testname}"
+    echo "$client --execute $test $params --expect $dir/response-${testname} $*"
+    $client --execute $test $params --expect $dir/response-${testname} $*
 done
