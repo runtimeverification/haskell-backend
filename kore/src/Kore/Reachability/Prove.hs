@@ -421,7 +421,7 @@ proveClaim
 
         -- result interpretation for GraphTraversal.simpleTransition
         toTransitionResultWithDepth ::
-            Show c =>
+            Unparse c =>
             (ProofDepth, ClaimState c) ->
             [(ProofDepth, ClaimState c)] ->
             GraphTraversal.TransitionResult (ProofDepth, ClaimState c)
@@ -438,10 +438,14 @@ proveClaim
             cs@(c : cs')
                 | noneStuck (map snd cs) -> GraphTraversal.Branch prior (c :| cs')
                 | otherwise ->
-                    -- NB we cannot get stuck and unstuck states from
-                    -- the same step: CheckImplication yields `Stuck`
-                    -- before branching can happen (ApplyAxioms)
-                    error $ "toTransitionResult: " <> show (prior, cs)
+                    error . show $
+                        Pretty.vsep $
+                            [ "The backend cannot return both stuck and unstuck states from the same step."
+                            , "Prior state of toTransitionResult:"
+                            , Pretty.indent 4 $ Pretty.pretty prior
+                            , "Next states of toTransitionResult:"
+                            ]
+                                <> map Pretty.pretty cs
               where
                 noneStuck :: [ClaimState c] -> Bool
                 noneStuck = null . mapMaybe ClaimState.extractStuck
