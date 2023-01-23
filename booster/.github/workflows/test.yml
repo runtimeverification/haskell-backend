@@ -151,8 +151,10 @@ jobs:
         include:
           - runner: [self-hosted, linux, normal]
             os: Ubuntu-22.04
+            nix: x86_64-linux
           - runner: MacM1
             os: self-macos-12
+            nix: aarch64-darwin
     runs-on: ${{ matrix.runner }}
     steps:
       - name: 'Check out code'
@@ -167,13 +169,26 @@ jobs:
           GC_DONT_GC: '1'
         run: |
           export JQ=$(nix-build '<nixpkgs>' -A jq --no-link)/bin/jq
-          booster=$(nix build .#hs-backend-booster:exe:hs-backend-booster --extra-experimental-features 'nix-command flakes' --json | $JQ -r '.[].outputs | to_entries[].value')
+          booster=$(nix build .#hs-backend-booster:exe:hs-backend-booster --extra-experimental-features 'nix-command flakes' --print-build-logs --json | $JQ -r '.[].outputs | to_entries[].value')
           drv=$(nix-store --query --deriver ${booster})
           nix-store --query --requisites --include-outputs ${drv} | cachix push runtimeverification
-          nix build .#hs-backend-booster:exe:parsetest --extra-experimental-features 'nix-command flakes'
-          nix build .#hs-backend-booster:exe:rpc-client --extra-experimental-features 'nix-command flakes'
+          nix build .#hs-backend-booster:exe:parsetest --extra-experimental-features 'nix-command flakes' --print-build-logs
+          nix build .#hs-backend-booster:exe:rpc-client --extra-experimental-features 'nix-command flakes' --print-build-logs
 
       - name: Run unit tests
         env:
           GC_DONT_GC: '1'
-        run: nix build .#hs-backend-booster:test:test-suite --extra-experimental-features 'nix-command flakes'
+        run: nix build .#hs-backend-booster:test:test-suite --extra-experimental-features 'nix-command flakes' --print-build-logs
+
+
+      - name: Run integration tests
+        env:
+          GC_DONT_GC: '1'
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          export JQ=$(nix-build '<nixpkgs>' -A jq --no-link)/bin/jq
+          nix build .#checks.${{ matrix.nix }}.integration.a-to-f --extra-experimental-features 'nix-command flakes' --print-build-logs
+          nix build .#checks.${{ matrix.nix }}.integration.imp --extra-experimental-features 'nix-command flakes' --print-build-logs -o imp.md
+          echo "${{ matrix.nix }}" > out.md
+          cat imp.md >> out.md
+          gh pr comment ${{ github.event.pull_request.number }} -F out.md

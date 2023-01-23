@@ -14,7 +14,6 @@ module RpcClient (
     main,
 ) where
 
-import Control.Exception
 import Control.Monad
 import Data.Aeson qualified as Json
 import Data.Aeson.Encode.Pretty qualified as Json
@@ -28,11 +27,13 @@ import Data.Maybe (isNothing)
 import Data.Text qualified as Text
 import Data.Vector as Array (fromList)
 import Network.Run.TCP
-import Network.Socket
 import Network.Socket.ByteString.Lazy
 import Options.Applicative
+import System.Clock
+import System.Directory
 import System.Exit
 import System.IO
+import System.Process
 
 import Kore.JsonRpc.Base (rpcJsonConfig)
 import Kore.Syntax.Json qualified as Syntax
@@ -41,24 +42,27 @@ import Debug.Trace
 
 main :: IO ()
 main = do
-    Options{host, port, mode, optionFile, options, postProcessing} <-
+    Options{host, port, mode, optionFile, options, postProcessing, prettify, time} <-
         execParser parseOptions
-    withTCPServer host port $ \s -> do
+    runTCPClient host (show port) $ \s -> do
         request <-
             trace "[Info] Preparing request data" $
                 prepareRequestData mode optionFile options
+        start <- getTime Monotonic
         trace "[Info] Sending request..." $
             sendAll s request
         response <- readResponse s 8192
-        trace "[Info] Response received." $
-            maybe BS.putStrLn postProcess postProcessing response
-  where
-    withTCPServer :: String -> Int -> (Socket -> IO ()) -> IO ()
-    withTCPServer host port client =
-        runTCPClient host (show port) $ \s ->
-            bracket (pure s) (`shutdown` ShutdownBoth) client
+        end <- getTime Monotonic
+        let modeFile = getModeFile mode
+            timeStr = timeSpecs start end
+        hPutStrLn stderr $ "[info] Round trip time for request '" <> modeFile <> "' was " <> timeStr
+        when time $ do
+            hPutStrLn stderr $ "[info] Saving timing for " <> modeFile
+            writeFile (modeFile <> ".time") timeStr
 
-    -- readResponse :: Socket -> Int64 -> IO BS.ByteString
+        trace "[Info] Response received." $
+            postProcess prettify postProcessing response
+  where
     readResponse s bufSize = do
         part <- recv s bufSize
         if BS.length part < bufSize
@@ -74,6 +78,8 @@ data Options = Options
     , optionFile :: Maybe FilePath -- file with options (different for each endpoint
     , options :: [(String, String)] -- verbatim options (name, value) to add to json
     , postProcessing :: Maybe PostProcessing
+    , prettify :: Bool
+    , time :: Bool
     }
     deriving stock (Show)
 
@@ -87,15 +93,21 @@ data Mode
     | SendRaw FilePath
     deriving stock (Show)
 
+getModeFile :: Mode -> FilePath
+getModeFile = \case
+    Exec f -> f
+    Simpl f -> f
+    Check f1 _ -> f1
+    SendRaw f -> f
+
 {- | Optional output post-processing:
-  * 'Output' writes formatted output to a file
-  * 'Expect' checks formatted output against a given golden file
-  * 'Prettify' formats output before printing it to stdout
+  * 'Expect' checks formatted output against a given golden file.
+  * If `regenerate` is set to true, will create/overrie the expected file with received output
 -}
-data PostProcessing
-    = Output FilePath
-    | Expect FilePath
-    | Prettify
+data PostProcessing = Expect
+    { regenerate :: Bool
+    , expectFile :: FilePath
+    }
     deriving stock (Show)
 
 parseOptions :: ParserInfo Options
@@ -114,6 +126,8 @@ parseOptions =
             <*> paramFileOpt
             <*> many paramOpt
             <*> optional parsePostProcessing
+            <*> prettifyOpt
+            <*> timeOpt
     hostOpt =
         strOption $
             long "host"
@@ -144,26 +158,30 @@ parseOptions =
     readPair =
         maybeReader $ \s -> case split (== '=') s of [k, v] -> Just (k, v); _ -> Nothing
 
+    flagOpt name desc = flag False True $ long name <> help desc
+    prettifyOpt = flagOpt "prettify" "format JSON before printing"
+    timeOpt = flagOpt "time" "record the timing information between sending a request and receiving a response"
+
 parsePostProcessing :: Parser PostProcessing
 parsePostProcessing =
     ( Expect
-        <$> strOption
+        <$> ( flag False True $
+                long "regenerate"
+                    <> help "regenerate the expected file"
+            )
+        <*> strOption
             ( long "expect"
                 <> metavar "EXPECTATIONFILE"
                 <> help "compare JSON output against file contents"
             )
     )
-        <|> ( Output
+        <|> ( Expect True
                 <$> ( strOption $
                         long "output"
                             <> short 'o'
                             <> metavar "OUTPUTFILE"
                             <> help "write JSON output to a file"
                     )
-            )
-        <|> ( flag' Prettify $
-                long "prettify"
-                    <> help "format JSON before printing"
             )
 
 parseMode :: Parser Mode
@@ -261,26 +279,61 @@ mkRequest method =
         , "method" ~> method
         ]
 
-postProcess :: PostProcessing -> BS.ByteString -> IO ()
-postProcess postProcessing output =
+postProcess :: Bool -> Maybe PostProcessing -> BS.ByteString -> IO ()
+postProcess prettify postProcessing output =
     case postProcessing of
-        Prettify ->
-            BS.putStrLn prettyOutput
-        Output file ->
-            BS.writeFile file prettyOutput
-        Expect expectFile -> do
-            expected <- BS.readFile expectFile
+        Nothing ->
+            BS.putStrLn $ if prettify then prettyOutput else output
+        Just Expect{expectFile, regenerate} -> do
+            doesFileExist expectFile >>= \case
+                False ->
+                    if regenerate
+                        then do
+                            hPutStrLn stderr "[Info] Generating expected file for the first time."
+                            BS.writeFile expectFile prettyOutput
+                        else do
+                            BS.putStrLn "[Error] The expected file does not exist. Use `--regenerate` if you wish to create it."
+                            exitWith $ ExitFailure 1
+                True -> do
+                    expected <- BS.readFile expectFile
+                    when (prettyOutput /= expected) $ do
+                        BS.writeFile "response" prettyOutput
+                        (_, result, _) <- readProcessWithExitCode "git" ["diff", "--no-index", "--color-words=.", expectFile, "response"] ""
+                        putStrLn result
 
-            -- TODO https://hackage.haskell.org/package/Diff (needs json reformatting)
-            -- or  https://hackage.haskell.org/package/aeson-diff (needs diff pretty-printer)
-            when (prettyOutput /= expected) $ do
-                BS.putStrLn $ "[Error] Expected:\n" <> expected
-                BS.putStrLn $ "[Error] but got:\n" <> prettyOutput
-                BS.putStrLn "[Error] Not the same, sorry."
-                exitWith $ ExitFailure 1
-            hPutStrLn stderr $ "[Info] Output matches " <> expectFile
+                        if regenerate
+                            then do
+                                hPutStrLn stderr "[Info] Re-generating expected file."
+                                renameFile "response" expectFile
+                            else do
+                                removeFile "response"
+                                BS.putStrLn "[Error] Not the same, sorry."
+                                exitWith $ ExitFailure 1
+                    hPutStrLn stderr $ "[Info] Output matches " <> expectFile
   where
     prettyOutput =
         Json.encodePretty' rpcJsonConfig $
             either error (id @Json.Value) $
                 Json.eitherDecode output
+
+timeSpecs :: TimeSpec -> TimeSpec -> String
+timeSpecs = fmt0
+  where
+    fmt diff
+        | Just i <- scale (10 ^ (9 :: Int)) = show i <> " s"
+        | Just i <- scale (10 ^ (6 :: Int)) = show i <> " ms"
+        | Just i <- scale (10 ^ (3 :: Int)) = show i <> " us"
+        | otherwise = show diff <> " ns"
+      where
+        scale :: Integer -> Maybe Double
+        scale i =
+            if diff >= i
+                then Just (fromIntegral diff / fromIntegral i)
+                else Nothing
+
+    fmt0 (TimeSpec s1 n1) (TimeSpec s2 n2) = fmt diff
+      where
+        diff :: Integer
+        diff = a2 - a1
+        a1 = (fromIntegral s1 * 10 ^ (9 :: Int)) + fromIntegral n1
+        a2 = (fromIntegral s2 * 10 ^ (9 :: Int)) + fromIntegral n2
