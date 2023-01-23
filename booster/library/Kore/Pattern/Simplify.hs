@@ -66,20 +66,22 @@ simplifyConcrete (Just dl) def trm = recurse trm
     -- recursion scheme for this?
     --     cata $ \case does not work here, would need helpers for TermF not Term
     --         t | isConcreteF t -> simplifyTerm dl def t (sortOfTerm t)
-    --         other -> embed other
-    recurse = \case
-        var@Var{} ->
-            var -- nothing to do
-        dv@DomainValue{} ->
-            dv -- nothing to do
-        t
-            | isConcrete t ->
-                -- FIXME repeats bottom-up traversal in isConcrete (needs cache)
-                simplifyTerm dl def t (sortOfTerm t)
-        AndTerm t1 t2 ->
-            AndTerm (recurse t1) (recurse t2)
-        SymbolApplication sym sorts args ->
-            SymbolApplication sym sorts (map recurse args)
+    --         other -> embed other\
+    recurse t@(Term attributes _)
+        | attributes.isEvaluated =
+            t
+        | isConcrete t =
+            simplifyTerm dl def t (sortOfTerm t)
+        | otherwise =
+            case t of
+                var@Var{} ->
+                    var -- nothing to do. Should have isEvaluated set
+                dv@DomainValue{} ->
+                    dv -- nothing to do. Should have isEvaluated set
+                AndTerm t1 t2 ->
+                    AndTerm (recurse t1) (recurse t2)
+                SymbolApplication sym sorts args ->
+                    SymbolApplication sym sorts (map recurse args)
 
 -- FIXME recursions repeat runLLVMwithDL (no sharing). This is
 --  a more general problem with runLLVMwithDL, the library

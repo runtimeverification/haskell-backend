@@ -22,7 +22,6 @@ module Kore.Pattern.Util (
     decodeLabel,
 ) where
 
-import Data.Foldable (fold)
 import Data.Functor.Foldable (Corecursive (embed), cata)
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -55,9 +54,16 @@ retractPattern (TermAndPredicate patt) = Just patt
 retractPattern _ = Nothing
 
 substituteInTerm :: Map Variable Term -> Term -> Term
-substituteInTerm substitution = cata $ \case
-    VarF v -> fromMaybe (Var v) (Map.lookup v substitution)
-    other -> embed other
+substituteInTerm substitution = goSubst
+  where
+    goSubst t
+        | Set.null (getAttributes t).variables = t
+        | otherwise = case t of
+            Var v -> fromMaybe t (Map.lookup v substitution)
+            DomainValue{} -> t
+            SymbolApplication sym sorts args ->
+                SymbolApplication sym sorts $ map goSubst args
+            AndTerm t1 t2 -> AndTerm (goSubst t1) (goSubst t2)
 
 substituteInPredicate :: Map Variable Term -> Predicate -> Predicate
 substituteInPredicate substitution = cata $ \case
@@ -84,11 +90,8 @@ modifyVariables f p =
         other -> embed other
 
 freeVariables :: Term -> Set Variable
-freeVariables = cata $ \case
-    VarF var -> Set.singleton var
-    other -> fold other
+freeVariables (Term attributes _) = attributes.variables
 
--- | Don't use unless therm size is small
 isConcrete :: Term -> Bool
 isConcrete = Set.null . freeVariables
 
