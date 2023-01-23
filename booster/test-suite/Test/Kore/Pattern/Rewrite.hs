@@ -204,7 +204,7 @@ definednessUnclear =
 rewriteStuck =
     testCase "con3 app is stuck (no rules apply)" $ do
         let con3App = termInKCell "ConfigVar" $ app con3 [d, d]
-        runRewriteM def Nothing (rewriteStep [] [] con3App) @?= Right (RewriteStuck con3App)
+        runRewriteM def Nothing (rewriteStep [] [] con3App) @?= Left NoApplicableRules
 rulePriority =
     testCase "con1 rewrites to a branch when higher priority does not apply" $ do
         let d2 = dv someSort "otherThing"
@@ -228,7 +228,7 @@ failsWith p err =
 ----------------------------------------
 -- tests for performRewrite (iterated rewrite in IO with logging)
 
-runRewrite :: Pattern -> IO (Natural, RewriteResult)
+runRewrite :: Pattern -> IO (Natural, RewriteResult Pattern)
 runRewrite = runNoLoggingT . performRewrite def Nothing Nothing [] []
 
 aborts :: Term -> IO ()
@@ -261,8 +261,8 @@ abortsOnErrors =
     testGroup
         "Aborts rewrite when there is an error"
         [ testCase "when there are no rules at all" $ aborts (app con2 [d])
-        --        , testCase "when the term index is None" $
-        --              aborts (AndTerm (app con1 [d]) (app con2 [d]))
+        , testCase "when the term index is None" $
+            aborts (AndTerm (app con1 [d]) (app con2 [d]))
         ]
 
 callsError :: TestTree
@@ -305,7 +305,7 @@ supportsDepthControl =
   where
     con1Term = termInKCell "C" $ app con1 [d]
     f1Term = termInKCell "C" $ app f1 [d]
-    runRewriteDepth :: Natural -> Pattern -> IO (Natural, RewriteResult)
+    runRewriteDepth :: Natural -> Pattern -> IO (Natural, RewriteResult Pattern)
     runRewriteDepth depth =
         runNoLoggingT . performRewrite def Nothing (Just depth) [] []
 
@@ -332,7 +332,7 @@ supportsCutPoints =
   where
     con1Term = termInKCell "C" $ app con1 [d]
     f1Term = termInKCell "C" $ app f1 [d]
-    runRewriteCutPoint :: Text -> Pattern -> IO (Natural, RewriteResult)
+    runRewriteCutPoint :: Text -> Pattern -> IO (Natural, RewriteResult Pattern)
     runRewriteCutPoint lbl =
         runNoLoggingT . performRewrite def Nothing Nothing [lbl] []
 
@@ -350,6 +350,6 @@ supportsTerminalRules =
   where
     con1Term = termInKCell "C" $ app con1 [d]
     f1Term = termInKCell "C" $ app f1 [d]
-    runRewriteTerminal :: Text -> Pattern -> IO (Natural, RewriteResult)
+    runRewriteTerminal :: Text -> Pattern -> IO (Natural, RewriteResult Pattern)
     runRewriteTerminal lbl =
         runNoLoggingT . performRewrite def Nothing Nothing [] [lbl]
