@@ -9,6 +9,7 @@ module Kore.Reachability.OnePathClaim (
     Rule (..),
 ) where
 
+import Control.Monad ((>=>))
 import Data.Generics.Wrapped (
     _Unwrapped,
  )
@@ -228,5 +229,10 @@ deriveSeqAxiomOnePath ::
         (ApplyResult OnePathClaim)
 deriveSeqAxiomOnePath rules =
     deriveSeq' _Unwrapped OnePathRewriteRule rewrites
+        >=> simplifyRemainder
   where
     rewrites = unRuleOnePath <$> rules
+    simplifyRemainder applied =
+        case applied of
+            ApplyRemainder claim -> ApplyRemainder <$> simplify claim
+            _ -> return applied
