@@ -10,9 +10,9 @@ module Kore.Pattern.Simplify (
 
 import Kore.Definition.Base
 import Kore.LLVM (simplifyBool, simplifyTerm)
+import Kore.LLVM.Internal qualified as LLVM
 import Kore.Pattern.Base
 import Kore.Pattern.Util (isConcrete, sortOfTerm)
-import System.Posix.DynamicLinker qualified as Linker
 
 {- | We want to break apart predicates of type `X #Equals Y1 andBool ... Yn` into
 `X #Equals Y1, ..., X #Equals  Yn` in the case when some of the `Y`s are abstract
@@ -25,9 +25,9 @@ splitBoolPredicates = \case
     EqualsTerm l (AndBool rs) -> concatMap (splitBoolPredicates . EqualsTerm l) rs
     other -> [other]
 
-simplifyPredicate :: Maybe Linker.DL -> Predicate -> Predicate
-simplifyPredicate dl = \case
-    AndPredicate l r -> case (simplifyPredicate dl l, simplifyPredicate dl r) of
+simplifyPredicate :: Maybe LLVM.API -> Predicate -> Predicate
+simplifyPredicate mApi = \case
+    AndPredicate l r -> case (simplifyPredicate mApi l, simplifyPredicate mApi r) of
         (Bottom, _) -> Bottom
         (_, Bottom) -> Bottom
         (Top, r') -> r'
@@ -36,31 +36,31 @@ simplifyPredicate dl = \case
     Bottom -> Bottom
     p@(Ceil _) -> p
     p@(EqualsTerm l r) ->
-        case (dl, sortOfTerm l == SortBool && isConcrete l && isConcrete r) of
-            (Just dlib, True) ->
-                if simplifyBool dlib l == simplifyBool dlib r
+        case (mApi, sortOfTerm l == SortBool && isConcrete l && isConcrete r) of
+            (Just api, True) ->
+                if simplifyBool api l == simplifyBool api r
                     then Top
                     else Bottom
             _ -> p
-    EqualsPredicate l r -> EqualsPredicate (simplifyPredicate dl l) (simplifyPredicate dl r)
+    EqualsPredicate l r -> EqualsPredicate (simplifyPredicate mApi l) (simplifyPredicate mApi r)
     p@(Exists _ _) -> p
     p@(Forall _ _) -> p
-    Iff l r -> Iff (simplifyPredicate dl l) (simplifyPredicate dl r)
-    Implies l r -> Implies (simplifyPredicate dl l) (simplifyPredicate dl r)
+    Iff l r -> Iff (simplifyPredicate mApi l) (simplifyPredicate mApi r)
+    Implies l r -> Implies (simplifyPredicate mApi l) (simplifyPredicate mApi r)
     p@(In _ _) -> p
-    Not p -> case simplifyPredicate dl p of
+    Not p -> case simplifyPredicate mApi p of
         Top -> Bottom
         Bottom -> Top
         p' -> p'
-    Or l r -> Or (simplifyPredicate dl l) (simplifyPredicate dl r)
+    Or l r -> Or (simplifyPredicate mApi l) (simplifyPredicate mApi r)
     Top -> Top
 
 {- | traverses a term top-down, using a given LLVM dy.lib to simplify
  the concrete parts (leaving variables alone)
 -}
-simplifyConcrete :: Maybe Linker.DL -> KoreDefinition -> Term -> Term
+simplifyConcrete :: Maybe LLVM.API -> KoreDefinition -> Term -> Term
 simplifyConcrete Nothing _ trm = trm
-simplifyConcrete (Just dl) def trm = recurse trm
+simplifyConcrete (Just mApi) def trm = recurse trm
   where
     recurse :: Term -> Term
     -- recursion scheme for this?
@@ -71,7 +71,7 @@ simplifyConcrete (Just dl) def trm = recurse trm
         | attributes.isEvaluated =
             t
         | isConcrete t =
-            simplifyTerm dl def t (sortOfTerm t)
+            simplifyTerm mApi def t (sortOfTerm t)
         | otherwise =
             case t of
                 var@Var{} ->

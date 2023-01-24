@@ -19,10 +19,12 @@ main = do
     (_opts, args) <- partition ("-" `isPrefixOf`) <$> getArgs
     case args of
         [] -> putStrLn "Provide a path to the shared library"
-        [lib] -> LLVM.runLLVM lib $ do
-            kore <- LLVM.ask
-            test <- LLVM.marshallTerm $ app f1 [app con1 [app f1 []], app con2 [], app f2 []]
-            kore.patt.dump test >>= liftIO . putStrLn
+        [lib] -> LLVM.withDLib lib $ \dl -> do
+            api <- LLVM.mkAPI dl
+            LLVM.runLLVM api $ do
+                kore <- LLVM.ask
+                test <- LLVM.marshallTerm $ app f1 [app con1 [app f1 []], app con2 [], app f2 []]
+                liftIO $ kore.patt.dump test >>= putStrLn
         _ -> putStrLn "Too many arguments"
 
 app :: Symbol -> [Term] -> Term

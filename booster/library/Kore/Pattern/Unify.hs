@@ -17,7 +17,7 @@ import Data.List.NonEmpty as NE (NonEmpty ((:|)), fromList)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
-import Data.Sequence (Seq (..))
+import Data.Sequence (Seq (..), (><))
 import Data.Sequence qualified as Seq
 import Data.Set (Set)
 import Data.Set qualified as Set
@@ -188,18 +188,13 @@ unify1
             -- injections are matched. NB this result is suspended in order to
             -- get more true failures.
             addIndeterminate t1 t2
+        | symbol1.name /= symbol2.name = failWith (DifferentSymbols t1 t2)
+        | length args1 /= length args2 =
+            internalError $
+                "Argument counts differ for same constructor" <> show (t1, t2)
+        | sorts1 /= sorts2 = failWith (DifferentSymbols t1 t2) -- TODO actually DifferentSorts
         | otherwise =
-            do
-                -- constructors must be the same, or both must be injections
-                unless (symbol1.name == symbol2.name) $
-                    failWith (DifferentSymbols t1 t2)
-                unless (length args1 == length args2) $
-                    internalError $
-                        "Argument counts differ for same constructor" <> show (t1, t2)
-                unless (sorts1 == sorts2) $
-                    failWith (DifferentSymbols t1 t2) -- TODO actually DifferentSorts
-                zipWithM_ enqueueProblem args1 args2
-
+            enqueueProblems $ Seq.fromList $ zip args1 args2
 -- and-term in pattern: must unify with both arguments
 unify1
     (AndTerm t1a t1b)
@@ -258,6 +253,10 @@ internalError = error
 enqueueProblem :: Monad m => Term -> Term -> StateT UnificationState m ()
 enqueueProblem term1 term2 =
     modify $ \s@State{uQueue} -> s{uQueue = uQueue :|> (term1, term2)}
+
+enqueueProblems :: Monad m => Seq (Term, Term) -> StateT UnificationState m ()
+enqueueProblems ts =
+    modify $ \s@State{uQueue} -> s{uQueue = uQueue >< ts}
 
 {- | Binds a variable to a term to add to the resulting unifier.
 
