@@ -15,7 +15,7 @@ import Data.Text (Text, pack)
 import Options.Applicative
 
 import Kore.JsonRpc (runServer)
-import Kore.LLVM.Internal (withDLib)
+import Kore.LLVM.Internal (mkAPI, withDLib)
 import Kore.Syntax.ParsedKore (loadDefinition)
 import Kore.VersionInfo (VersionInfo (..), versionInfo)
 
@@ -34,7 +34,9 @@ main = do
     putStrLn "Starting RPC server"
     case llvmLibraryFile of
         Nothing -> runServer port internalModule Nothing (adjustLogLevels logLevels)
-        Just fp -> withDLib fp $ \dl -> runServer port internalModule (Just dl) (adjustLogLevels logLevels)
+        Just fp -> withDLib fp $ \dl -> do
+            api <- mkAPI dl
+            runServer port internalModule (Just api) (adjustLogLevels logLevels)
   where
     clParser =
         info

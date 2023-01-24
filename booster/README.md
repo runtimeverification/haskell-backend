@@ -49,15 +49,21 @@ There are several things you can do, to make the development via nix as seamless
 
 To open the nix shell you will need nix version 2.4 or newer. Then use either `nix develop` (if you have flakes enabled) or use the old style `nix-shell` command.
 
-If you want to open a shell for a different version of ghc (currently supporting `ghc924` and `ghc8107`), use
+If you want to open a shell for a different version of ghc (currently supporting `ghc925` and `ghc8107`), use
 
 ```bash
-nix develop .#ghc924
+nix develop .#ghc925
 ```
 or
 
 ```bash
-nix-shell --argstr ghc ghc924
+nix-shell --argstr ghc ghc925
+```
+
+You can open a dev shell which contains cabal with all the required libraries compiled with profiling via:
+
+```
+nix develop .#ghc925-prof
 ```
 
 #### Nix-direnv
@@ -68,10 +74,10 @@ Using a version of direnv that works with nix (https://github.com/nix-community/
 echo "use nix" > .envrc
 ```
 
-If you want to use a different version of GHC for your shell, e.g. `ghc924`, use
+If you want to use a different version of GHC for your shell, e.g. `ghc925`, use
 
 ```bash
-echo "use flake .#ghc924" > .envrc
+echo "use flake .#ghc925" > .envrc
 ```
 
 Finally, run `direnv allow` inside the repo folder to load up the nix shell.
