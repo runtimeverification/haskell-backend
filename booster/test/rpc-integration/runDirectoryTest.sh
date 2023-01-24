@@ -26,7 +26,7 @@ if [ ! -f "./$kore" ]; then
   ./${dir#test-}.kompile
   cd ..
   [ ! -f "./$kore" ] && exit 3
-fi 
+fi
 
 if [ -f "./$dylib" ]; then
     server_params="--llvm-backend-library ./$dylib ${SERVER_OPTS:-""}"
@@ -34,8 +34,10 @@ else
     server_params=${SERVER_OPTS:-""}
 fi
 
+MODULE=$(grep -o -e "^module [A-Z0-9-]*" ./$kore | tail -1 | sed -e "s/module //")
+
 echo "Starting server"
-$server $kore --module ${MODULE:-TEST} $server_params &
+$server $kore --module ${MODULE?"Unable to find main module"} $server_params &
 server_pid=$!
 
 trap 'kill -9 ${server_pid}; popd' ERR EXIT
