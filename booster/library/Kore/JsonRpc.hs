@@ -42,20 +42,20 @@ import Numeric.Natural
 
 import Kore.Definition.Base (KoreDefinition (..))
 import Kore.JsonRpc.Base
+import Kore.LLVM.Internal qualified as LLVM
 import Kore.Network.JsonRpc (jsonrpcTCPServer)
 import Kore.Pattern.Base (Pattern)
 import Kore.Pattern.Rewrite (RewriteResult (..), performRewrite)
 import Kore.Syntax.Json (KoreJson (..), addHeader)
 import Kore.Syntax.Json.Externalise (externalisePattern)
 import Kore.Syntax.Json.Internalise (PatternError, internalisePattern)
-import System.Posix.DynamicLinker qualified as Linker
 
 respond ::
     forall m.
     MonadCatch m =>
     MonadLoggerIO m =>
     KoreDefinition ->
-    Maybe Linker.DL ->
+    Maybe LLVM.API ->
     Respond (API 'Req) m (API 'Res)
 respond def@KoreDefinition{} mLlvmLibrary =
     catchingServerErrors . \case
@@ -169,7 +169,7 @@ catchingServerErrors =
             Log.logError $ "Server error: " <> Text.pack (show err)
             pure $ Left (ErrorObj "Server error" (-32032) $ mkError err)
 
-runServer :: Int -> KoreDefinition -> Maybe Linker.DL -> (LogLevel, [LogLevel]) -> IO ()
+runServer :: Int -> KoreDefinition -> Maybe LLVM.API -> (LogLevel, [LogLevel]) -> IO ()
 runServer port internalizedModule mLlvmLibrary (logLevel, customLevels) =
     do
         Log.runStderrLoggingT . Log.filterLogger levelFilter
@@ -185,7 +185,7 @@ runServer port internalizedModule mLlvmLibrary (logLevel, customLevels) =
 
     srvSettings = serverSettings port "*"
 
-srv :: MonadLoggerIO m => KoreDefinition -> Maybe Linker.DL -> JSONRPCT m ()
+srv :: MonadLoggerIO m => KoreDefinition -> Maybe LLVM.API -> JSONRPCT m ()
 srv internalizedModule mLlvmLibrary = do
     reqQueue <- liftIO $ atomically newTChan
     let mainLoop tid =
