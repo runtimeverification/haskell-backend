@@ -39,6 +39,7 @@ import Kore.Equation.DebugEquation (
     DebugAttemptEquation,
  )
 import Kore.Log.DebugAppliedRewriteRules (
+    DebugAppliedLabeledRewriteRule,
     DebugAppliedRewriteRules,
  )
 import Kore.Log.DebugAttemptedRewriteRules (
@@ -228,6 +229,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @DebugSolverRecv
             , mk $ Proxy @DebugTransition
             , mk $ Proxy @DebugAppliedRewriteRules
+            , mk $ Proxy @DebugAppliedLabeledRewriteRule
             , mk $ Proxy @DebugAttemptedRewriteRules
             , mk $ Proxy @DebugSubstitutionSimplifier
             , mk $ Proxy @WarnFunctionWithoutEvaluators
