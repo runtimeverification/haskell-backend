@@ -40,7 +40,5 @@ in {
   imp = mkIntegrationTest {
     name = "imp";
     nativeBuildInputs = [ k ];
-    buildFlags = [ "MODULE=IMP" "SERVER_OPTS='-l Rewrite'" ];
-    clientArgs = [ "-O 'terminal-rules=[IMP.stop]'" ];
   };
 }
