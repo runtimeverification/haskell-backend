@@ -904,7 +904,7 @@ generateNormalizedAcs internalAc =
         , builtinAcConcat
         , builtinAcElement
         } = internalAc
-    PairWiseElements
+    ~PairWiseElements
         { symbolicPairs
         , concretePairs
         , opaquePairs
