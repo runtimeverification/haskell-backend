@@ -73,6 +73,7 @@ library:
   - extra
   - filepath
   - gitrev
+  - hashable
   - hpp
   - json-rpc
   - language-c
@@ -89,6 +90,7 @@ library:
   - transformers
   - unix
   - unliftio
+  - unordered-containers
   source-dirs: library
   build-tools:
     - happy
