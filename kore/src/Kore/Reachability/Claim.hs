@@ -604,7 +604,6 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern)
         case result of
             -- Try to simplify the remaining configuration one more time
             NotImpliedStuck _ -> do
-                -- TODO: log debug
                 let unmarkedSimplified = MultiOr.map Pattern.forgetSimplified configs'
                 stuck' <- simplifyRemainder unmarkedSimplified
                 return (examine anyUnified stuck')
