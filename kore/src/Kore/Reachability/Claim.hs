@@ -589,7 +589,8 @@ checkImplicationWorker ::
     ClaimPattern ->
     m (CheckImplicationResult ClaimPattern)
 checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern)
-    | isBottom right =
+    | isBottom right
+      , not (isBottom left) =
         warnClaimRHSIsBottom claimPattern
             >> return (NotImpliedStuck claimPattern)
     | otherwise = elseImplied $ do
