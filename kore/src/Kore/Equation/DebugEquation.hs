@@ -239,6 +239,7 @@ instance Pretty DebugAttemptEquation where
         Pretty.vsep
             [ (Pretty.hsep . catMaybes)
                 [ Just "applying equation"
+                , (\label -> Pretty.hsep ["(label: ", pretty label, ")"]) <$> ruleLabel equation
                 , (\loc -> Pretty.hsep ["at", pretty loc]) <$> srcLoc equation
                 , Just "to term:"
                 ]
@@ -257,6 +258,7 @@ instance Entry DebugAttemptEquation where
     contextDoc (DebugAttemptEquation equation _) =
         (Just . Pretty.hsep . catMaybes)
             [ Just "while applying equation"
+            , (\label -> Pretty.hsep ["(label: ", pretty label, ")"]) <$> ruleLabel equation
             , (\loc -> Pretty.hsep ["at", pretty loc]) <$> srcLoc equation
             ]
     contextDoc _ = Nothing
@@ -301,6 +303,7 @@ instance Pretty DebugApplyEquation where
         Pretty.vsep
             [ (Pretty.hsep . catMaybes)
                 [ Just "applied equation"
+                , (\label -> Pretty.hsep ["(label: ", pretty label, ")"]) <$> ruleLabel equation
                 , (\loc -> Pretty.hsep ["at", pretty loc]) <$> srcLoc equation
                 , Just "with result:"
                 ]
@@ -319,6 +322,9 @@ srcLoc equation
 isLocEmpty :: Attribute.SourceLocation -> Bool
 isLocEmpty Attribute.SourceLocation{source = Attribute.Source file} =
     isNothing file
+
+ruleLabel :: Equation RewritingVariableName -> Maybe Text
+ruleLabel = Attribute.unLabel . Attribute.label . attributes
 
 instance Entry DebugApplyEquation where
     entrySeverity _ = Debug
