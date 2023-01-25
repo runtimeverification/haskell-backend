@@ -588,25 +588,37 @@ checkImplicationWorker ::
     (MonadLogic m, MonadSimplify m) =>
     ClaimPattern ->
     m (CheckImplicationResult ClaimPattern)
-checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
-    do
+checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern)
+    | isBottom right =
+        warnClaimRHSIsBottom claimPattern
+            >> return (NotImpliedStuck claimPattern)
+    | otherwise = elseImplied $ do
         (anyUnified, removal) <- getNegativeConjuncts
         let definedConfig =
                 Pattern.andCondition left $
                     from $ makeCeilPredicate leftTerm
         let configs' = MultiOr.map (definedConfig <*) removal
-        stuck <-
-            Logic.scatter configs'
-                >>= liftSimplifier . Pattern.simplify
-                >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
-                >>= Logic.scatter
-        examine anyUnified stuck
-        & elseImplied
+        stuck <- simplifyRemainder configs'
+        let result = examine anyUnified stuck
+        case result of
+            -- Try to simplify the remaining configuration one more time
+            NotImpliedStuck _ -> do
+                -- TODO: log debug
+                let unmarkedSimplified = MultiOr.map Pattern.forgetSimplified configs'
+                stuck' <- simplifyRemainder unmarkedSimplified
+                return (examine anyUnified stuck')
+            implResult -> return implResult
   where
     ClaimPattern{right, left, existentials} = claimPattern
     leftTerm = Pattern.term left
     sort = termLikeSort leftTerm
     leftCondition = Pattern.withoutTerm left
+
+    simplifyRemainder remainder =
+        Logic.scatter remainder
+            >>= liftSimplifier . Pattern.simplify
+            >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
+            >>= Logic.scatter
 
     -- TODO (#1278): Do not combine the predicate and the substitution.
     -- This is held over from the old representation of claims, which did not
@@ -657,20 +669,17 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
     examine ::
         AnyUnified ->
         Pattern RewritingVariableName ->
-        m (CheckImplicationResult ClaimPattern)
+        CheckImplicationResult ClaimPattern
     examine AnyUnified{didAnyUnify} stuck
         | didAnyUnify
           , isBottom condition =
-            pure $ Implied claimPattern
+            Implied claimPattern
         | not didAnyUnify
           , not (isBottom right) =
-            pure $ NotImplied claimPattern
+            NotImplied claimPattern
         | otherwise = do
-            when (isBottom right) $
-                warnClaimRHSIsBottom claimPattern
-            pure $
-                Lens.set (field @"left") stuck claimPattern
-                    & NotImpliedStuck
+            Lens.set (field @"left") stuck claimPattern
+                & NotImpliedStuck
       where
         (_, condition) = Pattern.splitTerm stuck
 
