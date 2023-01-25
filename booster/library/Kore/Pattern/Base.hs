@@ -15,6 +15,7 @@ import Control.DeepSeq (NFData (..))
 import Data.Either (fromRight)
 import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
+import Data.Hashable (Hashable)
 import Data.Map qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
@@ -42,7 +43,7 @@ data Sort
     | -- | sort variable (symbolic)
       SortVar VarName
     deriving stock (Eq, Ord, Show, Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Hashable)
 
 pattern SortBool :: Sort
 pattern SortBool = SortApp "SortBool" []
