@@ -10,6 +10,9 @@ import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Control.Monad.Trans.Reader qualified as Reader
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 (packCStringLen)
+import Data.HashMap.Strict (HashMap)
+import Data.HashMap.Strict qualified as HM
+import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Foreign (ForeignPtr, finalizeForeignPtr, newForeignPtr, withForeignPtr)
@@ -52,6 +55,7 @@ data KoreSortAPI = KoreSortAPI
     { new :: Text -> IO KoreSortPtr
     , addArgument :: KoreSortPtr -> KoreSortPtr -> IO KoreSortPtr
     , dump :: KoreSortPtr -> IO String
+    , cache :: IORef (HashMap Sort KoreSortPtr)
     }
 
 data KorePatternAPI = KorePatternAPI
@@ -174,7 +178,9 @@ mkAPI dlib = flip runReaderT dlib $ do
                 Foreign.free strPtr
                 pure str
 
-    let sort = KoreSortAPI{new = newSort, addArgument = addArgumentSort, dump = dumpSort}
+    sortCache <- liftIO $ newIORef mempty
+
+    let sort = KoreSortAPI{new = newSort, addArgument = addArgumentSort, dump = dumpSort, cache = sortCache}
 
     simplifyBool' <- koreSimplifyBool
     let simplifyBool p = {-# SCC "LLVM.simplifyBool" #-} liftIO $ withForeignPtr p $ fmap (== 1) <$> simplifyBool'
@@ -205,11 +211,16 @@ marshallSymbol sym sorts = do
 
 marshallSort :: Sort -> LLVM KoreSortPtr
 marshallSort = \case
-    SortApp name args -> do
+    s@(SortApp name args) -> do
         kore <- ask
-        sort <- liftIO $ kore.sort.new name
-        forM_ args $ marshallSort >=> liftIO . kore.sort.addArgument sort
-        pure sort
+        cache <- liftIO $ readIORef kore.sort.cache
+        case HM.lookup s cache of
+            Just ptr -> pure ptr
+            Nothing -> do
+                sort <- liftIO $ kore.sort.new name
+                forM_ args $ marshallSort >=> liftIO . kore.sort.addArgument sort
+                liftIO $ modifyIORef' kore.sort.cache $ HM.insert s sort
+                pure sort
     SortVar varName -> error $ "marshalling SortVar " <> show varName <> " unsupported"
 
 marshallTerm :: Term -> LLVM KorePatternPtr
