@@ -31,7 +31,6 @@ module Kore.Rewrite.Step (
 ) where
 
 import Data.Map.Strict qualified as Map
-import Data.Maybe (maybeToList)
 import Data.Set (
     Set,
  )
@@ -70,6 +69,9 @@ import Kore.Internal.TermLike (
     TermLike,
  )
 import Kore.Internal.TermLike qualified as TermLike
+import Kore.Log.DebugAppliedRewriteRules (
+    debugAppliedLabeledRewriteRule,
+ )
 import Kore.Log.DebugAttemptedRewriteRules (
     debugAttemptedRewriteRule,
  )
@@ -159,7 +161,7 @@ unifyRule ::
     NewUnifier (UnifiedRule rule)
 unifyRule sideCondition initial rule = do
     let maybeLabel = unLabel . from $ rule
-    debugAttemptedRewriteRule initial (maybeToList maybeLabel) (location rule)
+    debugAttemptedRewriteRule initial maybeLabel location
     ruleMarker "Init"
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         sideCondition' =
@@ -179,16 +181,17 @@ unifyRule sideCondition initial rule = do
         Simplifier.simplifyCondition
             sideCondition'
             (unification <> requires')
+    debugAppliedLabeledRewriteRule initial maybeLabel location
     ruleMarker "Success"
     return (rule `Conditional.withCondition` unification')
   where
-    location = from @_ @SourceLocation
+    location = from @_ @SourceLocation rule
 
     locString =
         Pretty.renderString
             . Pretty.layoutCompact
             . Pretty.pretty
-            $ location rule
+            $ location
 
     ruleMarker tag = marker tag locString
 
