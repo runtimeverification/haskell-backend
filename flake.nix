@@ -104,7 +104,7 @@
             '';
         };
 
-      projectForGhc = { ghc, stack-yaml ? null, profiling ? false
+      projectForGhc = { ghc, profiling ? false
         , profilingDetail ? "toplevel-functions", ghcOptions ? [ ] }:
         perSystem (system:
           let
@@ -117,10 +117,6 @@
             src = haskell-backend-src {
               inherit ghc;
               pkgs = pkgs';
-              postPatch = if stack-yaml != null then
-                "cp ${stack-yaml} stack.yaml"
-              else
-                "";
             };
 
             shell = {
@@ -144,29 +140,17 @@
     in {
       prelude-kore = ./src/main/kore/prelude.kore;
 
-      project = projectForGhc { ghc = "ghc8107"; };
+      project = projectForGhc { ghc = "ghc925"; };
 
       projectProfilingEventlog = projectForGhc {
-        ghc = "ghc8107";
+        ghc = "ghc925";
         profiling = true;
         ghcOptions = [ "-eventlog" ];
       };
 
-      projectGhc9 = projectForGhc {
-        ghc = "ghc923";
-        stack-yaml = "stack-nix-ghc9.yaml";
-      };
 
-      projectGhc9ProfilingEventlog = projectForGhc {
-        ghc = "ghc923";
-        stack-yaml = "stack-nix-ghc9.yaml";
-        profiling = true;
-        ghcOptions = [ "-eventlog" ];
-      };
-
-      projectGhc9EventlogInfoTable = projectForGhc {
-        ghc = "ghc923";
-        stack-yaml = "stack-nix-ghc9.yaml";
+      projectEventlogInfoTable = projectForGhc {
+        ghc = "ghc925";
         ghcOptions =
           [ "-finfo-table-map" "-fdistinct-constructor-tables" "-eventlog" ];
       };
@@ -179,14 +163,12 @@
         self.flake.${system}.packages // {
           update-cabal = self.project.${system}.rematerialize-kore;
           update-cabal-ghc9 = self.projectGhc9.${system}.rematerialize-kore;
-          kore-exec-ghc9 =
-            self.projectGhc9.${system}.hsPkgs.kore.components.exes.kore-exec;
+          kore-exec =
+            self.project.${system}.hsPkgs.kore.components.exes.kore-exec;
           kore-exec-prof =
             self.projectProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
-          kore-exec-prof-ghc9 =
-            self.projectGhc9ProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
           kore-exec-infotable =
-            self.projectGhc9EventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
+            self.projectEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
         });
 
       apps = perSystem (system:
@@ -231,7 +213,6 @@
 
       devShells = perSystem (system: {
         default = self.flake.${system}.devShell;
-        ghc9 = self.flakeGhc9.${system}.devShell;
       });
       devShell = perSystem (system: self.devShells.${system}.default);
 
@@ -244,7 +225,7 @@
             pkgs' = final;
             src = haskell-backend-src {
               pkgs = prev;
-              ghc = "ghc8107";
+              ghc = "ghc925";
             };
           };
         })

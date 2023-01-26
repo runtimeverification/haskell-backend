@@ -36,7 +36,7 @@ in let
       ignore = [ "/*" "!/stack.yaml" "!/kore" ];
     };
     inherit checkMaterialization;
-    materialized = ./nix/kore-ghc8107.nix.d;
+    materialized = ./nix/kore-ghc925.nix.d;
     modules = [{
       # package *
       enableLibraryProfiling = true;
@@ -81,9 +81,9 @@ in let
     };
 
     # Change the compiler when updating our own resolver.
-    compiler-nix-name = "ghc8107";
+    compiler-nix-name = "ghc925";
     ghcVersion = "8.10.7";
-    index-state = "2021-12-03T00:00:00Z";
+    index-state = "2023-01-25T00:00:00Z";
   };
 
 in default
