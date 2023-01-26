@@ -31,9 +31,6 @@ jobs:
       - name: Materialize
         run: nix run .#update-cabal
 
-      - name: Materialize GHC 9
-        run: nix run .#update-cabal-ghc9
-
       - name: Check materialization
         run: |
           if [ -n "$(git status --porcelain 'nix/')" ]; then
