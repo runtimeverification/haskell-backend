@@ -805,8 +805,8 @@ matchUnifyEqualsNormalizedAc
         matchUnifyOpaqueVariable' =
             matchUnifyOpaqueVariable tools
 
-        listToMap :: Hashable a => Ord a => [a] -> HashMap a Int
-        listToMap = List.foldl' (\m k -> HashMap.insertWith (+) k 1 m) HashMap.empty
+        listToMap :: Hashable a => [a] -> HashMap a Int
+        listToMap keys = HashMap.fromListWith (+) [(k, 1) | k <- keys]
         mapToList :: HashMap a Int -> [a]
         mapToList =
             HashMap.foldrWithKey
@@ -872,7 +872,6 @@ matchUnifyEqualsNormalizedAc
 
         withoutKeys ::
             Hashable k =>
-            Eq k =>
             HashMap k v ->
             HashSet k ->
             HashMap k v
@@ -969,8 +968,8 @@ unifyEqualsNormalizedAc
                     , commonVariablesCondition
                     ]
       where
-        listToMap :: Hashable a => Ord a => [a] -> HashMap a Int
-        listToMap = List.foldl' (\m k -> HashMap.insertWith (+) k 1 m) HashMap.empty
+        listToMap :: Hashable a => [a] -> HashMap a Int
+        listToMap keys = HashMap.fromListWith (+) [(k, 1) | k <- keys]
         mapToList :: HashMap a Int -> [a]
         mapToList =
             HashMap.foldrWithKey

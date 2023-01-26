@@ -16,7 +16,7 @@ import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Predicate (Predicate)
 import Kore.Rewrite.RewritingVariable
-import Log
+import Log hiding (severity)
 import Prelude.Kore
 import Pretty (Pretty)
 import Pretty qualified

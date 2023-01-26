@@ -1917,7 +1917,7 @@ normalizedSet elements opaque =
 mkIntVar :: Id -> TermLike VariableName
 mkIntVar variableName = mkElemVar $ mkElementVariable variableName intSort
 
-setIntersectionsAreEmpty :: Hashable a => Eq a => [HashSet a] -> Bool
+setIntersectionsAreEmpty :: Hashable a => [HashSet a] -> Bool
 setIntersectionsAreEmpty [] = True
 setIntersectionsAreEmpty (set : sets) =
     setIntersectionsAreEmpty sets

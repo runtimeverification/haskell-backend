@@ -15,7 +15,7 @@ import Control.Monad.Catch (
     MonadThrow,
     throwM,
  )
-import Log
+import Log hiding (message)
 import Prelude.Kore
 import Pretty
 
