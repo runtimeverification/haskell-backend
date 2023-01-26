@@ -45,7 +45,7 @@ in let
       packages.kore = {
         flags = { inherit release threaded; };
         enableLibraryProfiling = profiling;
-        enableExecutableProfiling = profiling;
+        enableProfiling = profiling;
         profilingDetail = "toplevel-functions";
 
         components.tests.kore-test.preCheck = ''
