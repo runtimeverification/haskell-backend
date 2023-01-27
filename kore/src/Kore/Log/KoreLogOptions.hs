@@ -51,7 +51,7 @@ import Kore.Equation.DebugEquation (
     DebugApplyEquation (..),
     DebugAttemptEquation (..),
  )
-import Kore.Log.DebugAppliedRewriteRules (DebugAppliedRewriteRules (DebugAppliedRewriteRules))
+import Kore.Log.DebugAppliedRewriteRules (DebugAppliedLabeledRewriteRule (..))
 import Kore.Log.DebugAttemptedRewriteRules (DebugAttemptedRewriteRules (DebugAttemptedRewriteRules))
 import Kore.Log.DebugSolver (
     DebugSolverOptions (..),
@@ -482,12 +482,12 @@ selectDebugAttemptRewrite ::
     SomeEntry ->
     Bool
 selectDebugAttemptRewrite options entry
-    | Just labels <- getLabel = any (flip HashSet.member selected) labels
+    | Just label <- getLabel = HashSet.member label selected
     | otherwise = False
   where
     getLabel = do
-        DebugAttemptedRewriteRules _ ruleLabels _ <- fromEntry entry
-        return ruleLabels
+        DebugAttemptedRewriteRules _ ruleLabel _ <- fromEntry entry
+        ruleLabel
     DebugAttemptRewriteOptions{selected} = options
 
 newtype DebugApplyRewriteOptions = DebugApplyRewriteOptions {selected :: HashSet Text}
@@ -523,12 +523,12 @@ selectDebugApplyRewrite ::
     SomeEntry ->
     Bool
 selectDebugApplyRewrite options entry
-    | Just labels <- getLabel = any (flip HashSet.member selected) labels
+    | Just label <- getLabel = HashSet.member label selected
     | otherwise = False
   where
     getLabel = do
-        DebugAppliedRewriteRules _ ruleLabels _ <- fromEntry entry
-        return ruleLabels
+        DebugAppliedLabeledRewriteRule _ mLabel _ <- fromEntry entry
+        mLabel
     DebugApplyRewriteOptions{selected} = options
 
 newtype DebugRewriteOptions = DebugRewriteOptions {selected :: HashSet Text}
@@ -566,8 +566,8 @@ selectDebugRewrite ::
     Bool
 selectDebugRewrite DebugRewriteOptions{selected} =
     (fmap or . sequence)
-        [ selectDebugApplyRewrite DebugApplyRewriteOptions{selected}
-        , selectDebugAttemptRewrite DebugAttemptRewriteOptions{selected}
+        [ selectDebugAttemptRewrite DebugAttemptRewriteOptions{selected}
+        , selectDebugApplyRewrite DebugApplyRewriteOptions{selected}
         ]
 
 parseTraceRewrites :: Parser (Maybe FilePath)
