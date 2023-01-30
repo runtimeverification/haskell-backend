@@ -51,8 +51,8 @@ import Kore.Rewrite.Strategy (
  )
 
 import Kore.Rewrite.Timeout (
-  EnableMovingAverage (..),
-  )
+    EnableMovingAverage (..),
+ )
 import Kore.Rewrite.Transition (runTransitionT)
 import Kore.Unparser (
     unparseToText2,

@@ -41,9 +41,9 @@ import Kore.Reachability.Claim qualified as Claim
 import Kore.Repl.Data
 import Kore.Rewrite.SMT.Lemma
 import Kore.Rewrite.Timeout (
-  StepTimeout,
-  EnableMovingAverage,
-  )
+    EnableMovingAverage,
+    StepTimeout,
+ )
 import Kore.Syntax.Module (
     ModuleName (..),
  )

@@ -113,9 +113,9 @@ import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
 import Kore.Rewrite.Timeout (
-  StepTimeout(..),
-  EnableMovingAverage(..)
-  )
+    EnableMovingAverage (..),
+    StepTimeout (..),
+ )
 import Kore.Syntax.Definition (
     Definition (Definition),
     Module (Module),

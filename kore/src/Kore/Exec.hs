@@ -181,9 +181,9 @@ import Kore.Rewrite.Search (
 import Kore.Rewrite.Search qualified as Search
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Timeout (
-  StepTimeout,
-  EnableMovingAverage (..),
-  )
+    EnableMovingAverage (..),
+    StepTimeout,
+ )
 import Kore.Rewrite.Transition (
     runTransitionT,
     scatter,

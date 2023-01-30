@@ -6,10 +6,10 @@ Copyright   : (c) Runtime Verification, 2023
 License     : BSD-3-Clause
 -}
 module Kore.Log.WarnStepTimeout (
-  WarnStepTimeout (..)
-  , warnStepManualTimeout
-  , warnStepMATimeout
-  ) where
+    WarnStepTimeout (..),
+    warnStepManualTimeout,
+    warnStepMATimeout,
+) where
 
 import Log
 import Prelude.Kore
@@ -18,8 +18,8 @@ import Pretty qualified
 
 -- | @WarnStepTimeout@ is emitted when a step timed out.
 data WarnStepTimeout
-  = WarnStepManualTimeout Int
-  | WarnStepMATimeout Int
+    = WarnStepManualTimeout Int
+    | WarnStepMATimeout Int
     deriving stock (Show)
 
 instance Pretty WarnStepTimeout where

@@ -137,9 +137,9 @@ import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
 import Kore.Rewrite.Timeout (
-  StepTimeout (..),
-  EnableMovingAverage (..),
-  )
+    EnableMovingAverage (..),
+    StepTimeout (..),
+ )
 import Kore.Syntax hiding (Pattern)
 import Kore.Syntax.Definition (
     ModuleName (..),
@@ -292,23 +292,22 @@ parseKoreProveOptions =
                     "Enables discharging #Bottom paths as #Top at \
                     \implication checking time."
             )
-        <*> (fmap StepTimeout
-            <$> Options.optional
-                ( option
-                    Options.auto
-                    ( metavar "INT"
-                        <> long "set-step-timeout"
-                        <> help "Set a timeout for one step in seconds."
+        <*> ( fmap StepTimeout
+                <$> Options.optional
+                    ( option
+                        Options.auto
+                        ( metavar "INT"
+                            <> long "set-step-timeout"
+                            <> help "Set a timeout for one step in seconds."
+                        )
                     )
-                ))
-
+            )
         <*> Options.flag
             DisableMovingAverage
             EnableMovingAverage
             ( long "moving-average"
                 <> help "Enable timeout based on moving average."
             )
-
   where
     parseMinDepth =
         let minDepth = readPositiveIntegral MinDepth "min-depth"

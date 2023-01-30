@@ -19,7 +19,7 @@ module Kore.Reachability.Prove (
     lhsClaimStateTransformer,
 ) where
 
-import Control.Concurrent (threadDelay, MVar)
+import Control.Concurrent (MVar, threadDelay)
 import Control.Concurrent.Async.Lifted (race)
 import Control.DeepSeq (
     deepseq,
@@ -117,15 +117,15 @@ import Kore.Rewrite.Strategy (
     executionHistoryStep,
  )
 import Kore.Rewrite.Timeout (
-  StepTimeout,
-  StepMovingAverage,
-  TimeoutMode (..),
-  updateStepMovingAverage,
-  getTimeout,
-  getTimeoutMode,
-  timeAction,
-  EnableMovingAverage,
-  )
+    EnableMovingAverage,
+    StepMovingAverage,
+    StepTimeout,
+    TimeoutMode (..),
+    getTimeout,
+    getTimeoutMode,
+    timeAction,
+    updateStepMovingAverage,
+ )
 import Kore.Rewrite.Transition (
     runTransitionT,
  )
@@ -476,9 +476,10 @@ proveClaim
                 noneStuck :: [ClaimState c] -> Bool
                 noneStuck = null . mapMaybe ClaimState.extractStuck
 
-        unparseConfig = fmap (unparseToString . getConfiguration)
-          . extractUnproven
-          . snd
+        unparseConfig =
+            fmap (unparseToString . getConfiguration)
+                . extractUnproven
+                . snd
 
 {- | Attempts to perform a single proof step, starting at the configuration
  in the execution graph designated by the provided node. Re-constructs the
@@ -501,67 +502,68 @@ proveClaimStep ::
     Graph.Node ->
     Simplifier (Maybe (ExecutionGraph CommonClaimState (AppliedRule SomeClaim)))
 proveClaimStep
-  _
-  stepTimeout
-  ma
-  enableMA
-  stuckCheck
-  allowVacuous
-  claims
-  axioms
-  executionGraph
-  node =
-    withTimeout $
-        executionHistoryStep
-            transitionRule''
-            strategy'
-            executionGraph
-            node
-  where
-    -- TODO(Ana): The kore-repl doesn't support --min-depth <n> yet.
-    -- If requested, add a state layer which keeps track of
-    -- the depth, which should compare it to the minDepth and
-    -- decide the appropriate strategy for the next step.
-    -- We should also add a command for toggling this feature on and
-    -- off.
-    strategy' :: Step Prim
-    strategy'
-        | isRoot = reachabilityFirstStep
-        | otherwise = reachabilityNextStep
+    _
+    stepTimeout
+    ma
+    enableMA
+    stuckCheck
+    allowVacuous
+    claims
+    axioms
+    executionGraph
+    node =
+        withTimeout $
+            executionHistoryStep
+                transitionRule''
+                strategy'
+                executionGraph
+                node
+      where
+        -- TODO(Ana): The kore-repl doesn't support --min-depth <n> yet.
+        -- If requested, add a state layer which keeps track of
+        -- the depth, which should compare it to the minDepth and
+        -- decide the appropriate strategy for the next step.
+        -- We should also add a command for toggling this feature on and
+        -- off.
+        strategy' :: Step Prim
+        strategy'
+            | isRoot = reachabilityFirstStep
+            | otherwise = reachabilityNextStep
 
-    ExecutionGraph{root} = executionGraph
+        ExecutionGraph{root} = executionGraph
 
-    isRoot :: Bool
-    isRoot = node == root
+        isRoot :: Bool
+        isRoot = node == root
 
-    transitionRule'' prim state
-        | isRoot =
-            transitionRule'
-                stuckCheck
-                allowVacuous
-                claims
-                axioms
-                prim
-                (Lens.over lensClaimPattern mkGoal <$> state)
-        | otherwise =
-            transitionRule' stuckCheck allowVacuous claims axioms prim state
+        transitionRule'' prim state
+            | isRoot =
+                transitionRule'
+                    stuckCheck
+                    allowVacuous
+                    claims
+                    axioms
+                    prim
+                    (Lens.over lensClaimPattern mkGoal <$> state)
+            | otherwise =
+                transitionRule' stuckCheck allowVacuous claims axioms prim state
 
-    withTimeout execStep =
-        getTimeoutMode stepTimeout enableMA ma >>= \case
-            Nothing -> do
-              (time, newExecGraph) <- timeAction execStep
-              updateStepMovingAverage ma time
-              pure $ Just newExecGraph
-            Just timeoutMode -> do
-              let warnThread = liftIO
-                    $ threadDelay (getTimeout timeoutMode)
-                    $> timeoutMode
-              race warnThread (timeAction execStep) >>= \case
-                  Right (time, newExecGraph) -> do
+        withTimeout execStep =
+            getTimeoutMode stepTimeout enableMA ma >>= \case
+                Nothing -> do
+                    (time, newExecGraph) <- timeAction execStep
                     updateStepMovingAverage ma time
                     pure $ Just newExecGraph
-                  Left (ManualTimeout t) -> warnStepManualTimeout t $> Nothing
-                  Left (MovingAverage t) -> warnStepMATimeout t $> Nothing
+                Just timeoutMode -> do
+                    let warnThread =
+                            liftIO $
+                                threadDelay (getTimeout timeoutMode)
+                                    $> timeoutMode
+                    race warnThread (timeAction execStep) >>= \case
+                        Right (time, newExecGraph) -> do
+                            updateStepMovingAverage ma time
+                            pure $ Just newExecGraph
+                        Left (ManualTimeout t) -> warnStepManualTimeout t $> Nothing
+                        Left (MovingAverage t) -> warnStepMATimeout t $> Nothing
 
 transitionRule' ::
     StuckCheck ->

@@ -21,8 +21,8 @@ import Kore.Log qualified as Log
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Rewrite.Timeout (
-  StepTimeout (..),
-  )
+    StepTimeout (..),
+ )
 import Numeric.Natural
 import Prelude.Kore
 import Test.Kore.Repl.ParserTest

@@ -66,10 +66,10 @@ import Kore.Repl.Parser
 import Kore.Repl.State
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Timeout (
-  StepMovingAverage,
-  StepTimeout,
-  EnableMovingAverage,
-  )
+    EnableMovingAverage,
+    StepMovingAverage,
+    StepTimeout,
+ )
 import Kore.Simplify.Simplify (
     Simplifier,
  )

@@ -12,18 +12,19 @@ module Kore.Exec.GraphTraversal (
     TransitionResult (..),
     TraversalResult (..),
     transitionWithRule,
-    GraphTraversalTimeoutMode(..),
+    GraphTraversalTimeoutMode (..),
 ) where
 
 import Control.Concurrent (
-  threadDelay,
-  MVar,
-  newEmptyMVar
-  )
+    MVar,
+    newEmptyMVar,
+    threadDelay,
+ )
 import Control.Concurrent.Async.Lifted (
-  race,
-  withAsync,
-  )
+    race,
+    withAsync,
+ )
+import Control.Exception.Lifted (uninterruptibleMask_)
 import Control.Monad (foldM)
 import Control.Monad.Extra (whenJust)
 import Control.Monad.Trans.State
@@ -37,9 +38,9 @@ import GHC.Generics qualified
 import GHC.Natural
 import Generics.SOP qualified as SOP
 import Kore.Log.WarnStepTimeout (
-  warnStepManualTimeout,
-  warnStepMATimeout
-  )
+    warnStepMATimeout,
+    warnStepManualTimeout,
+ )
 import Kore.Rewrite.Strategy (
     FinalNodeType (..),
     GraphSearchOrder (..),
@@ -48,27 +49,26 @@ import Kore.Rewrite.Strategy (
     unfoldSearchOrder,
  )
 import Kore.Rewrite.Timeout (
-  StepMovingAverage,
-  TimeoutMode (..),
-  StepTimeout,
-  getTimeout,
-  getTimeoutMode,
-  updateStepMovingAverage,
-  timeAction,
-  EnableMovingAverage,
+    EnableMovingAverage,
+    StepMovingAverage,
+    StepTimeout,
+    TimeoutMode (..),
+    getTimeout,
+    getTimeoutMode,
+    timeAction,
+    updateStepMovingAverage,
  )
 import Kore.Rewrite.Transition (
     TransitionT (..),
     runTransitionT,
  )
 import Kore.Simplify.Simplify (Simplifier)
-import System.IO (
-  hPutStrLn
-  ,stderr
-  )
 import Prelude.Kore
 import Pretty
-import Control.Exception.Lifted (uninterruptibleMask_)
+import System.IO (
+    hPutStrLn,
+    stderr,
+ )
 
 data TransitionResult a
     = -- | straight-line execution
@@ -302,31 +302,33 @@ graphTraversal
 
         withTimeout ma stepState stepQueue execStep =
             getTimeoutMode timeout enableMA ma >>= \case
-              Nothing -> execStep
-              Just timeoutMode ->
-                  case graphTraversalTimeoutMode of
-                      GraphTraversalWarn -> do
-                          let warnThread = do
-                               liftIO . threadDelay $ getTimeout timeoutMode
-                               uninterruptibleMask_ $ do
-                                 case timeoutMode of
-                                   ManualTimeout t -> warnStepManualTimeout t
-                                   MovingAverage t -> warnStepMATimeout t
-                                 whenJust (unparseConfig $ currentState stepState) $
-                                    \config -> liftIO . hPutStrLn stderr $
-                                       "// Last configuration:\n" <> config
-                          withAsync warnThread (const $ timeAction execStep)
-                                           >>= \(time, stepResult) -> do
-                                                   updateStepMovingAverage ma time
-                                                   pure stepResult
-                      GraphTraversalCancel -> do
-                          let warnThread = liftIO
-                                          $ threadDelay $ getTimeout timeoutMode
-                          race warnThread (timeAction execStep) >>= \case
-                               Right (time, stepResult) -> do
-                                   updateStepMovingAverage ma time
-                                   pure stepResult
-                               Left _ -> pure $ Timeout stepState stepQueue
+                Nothing -> execStep
+                Just timeoutMode ->
+                    case graphTraversalTimeoutMode of
+                        GraphTraversalWarn -> do
+                            let warnThread = do
+                                    liftIO . threadDelay $ getTimeout timeoutMode
+                                    uninterruptibleMask_ $ do
+                                        case timeoutMode of
+                                            ManualTimeout t -> warnStepManualTimeout t
+                                            MovingAverage t -> warnStepMATimeout t
+                                        whenJust (unparseConfig $ currentState stepState) $
+                                            \config ->
+                                                liftIO . hPutStrLn stderr $
+                                                    "// Last configuration:\n" <> config
+                            withAsync warnThread (const $ timeAction execStep)
+                                >>= \(time, stepResult) -> do
+                                    updateStepMovingAverage ma time
+                                    pure stepResult
+                        GraphTraversalCancel -> do
+                            let warnThread =
+                                    liftIO $
+                                        threadDelay $ getTimeout timeoutMode
+                            race warnThread (timeAction execStep) >>= \case
+                                Right (time, stepResult) -> do
+                                    updateStepMovingAverage ma time
+                                    pure stepResult
+                                Left _ -> pure $ Timeout stepState stepQueue
 
         step ::
             (TState instr config) ->
@@ -371,10 +373,10 @@ graphTraversal
  when the timeout is reached or not.
 -}
 data GraphTraversalTimeoutMode
-  -- | Cancel step on timeout, used in `kore-rpc`
-  = GraphTraversalCancel
-  -- | Warn on timeout, used in `kore-exec`
-  | GraphTraversalWarn
+    = -- | Cancel step on timeout, used in `kore-rpc`
+      GraphTraversalCancel
+    | -- | Warn on timeout, used in `kore-exec`
+      GraphTraversalWarn
 
 data StepResult a
     = -- | Traversal continues with given queue.
@@ -431,8 +433,8 @@ instance Pretty a => Pretty (TraversalResult a) where
                     <> ("Queue" : map Pretty.pretty qu)
         TimedOut as qu ->
             Pretty.hang 4 . Pretty.vsep $
-                ("Timed out" <> Pretty.pretty as)
-                    : ("Queue" : map Pretty.pretty qu)
+                ("Timed out" <> Pretty.pretty as) :
+                ("Queue" : map Pretty.pretty qu)
 instance Functor TraversalResult where
     fmap f = \case
         GotStuck n rs -> GotStuck n (map f rs)

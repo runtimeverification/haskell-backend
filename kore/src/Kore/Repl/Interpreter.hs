@@ -185,10 +185,10 @@ import Kore.Rewrite.RewritingVariable (
 import Kore.Rewrite.RulePattern qualified as RulePattern
 import Kore.Rewrite.Strategy qualified as Strategy
 import Kore.Rewrite.Timeout (
-  StepTimeout,
-  timeAction,
-  EnableMovingAverage (..),
-  )
+    EnableMovingAverage (..),
+    StepTimeout,
+    timeAction,
+ )
 import Kore.Simplify.Simplify (
     Simplifier,
  )

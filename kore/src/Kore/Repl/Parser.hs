@@ -34,8 +34,8 @@ import Kore.Log qualified as Log
 import Kore.Log.Registry qualified as Log
 import Kore.Repl.Data
 import Kore.Rewrite.Timeout (
-  StepTimeout(..),
-  )
+    StepTimeout (..),
+ )
 import Prelude.Kore hiding (
     many,
  )

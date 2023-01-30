@@ -54,9 +54,9 @@ import Kore.Rewrite.RewritingVariable (
     mkRewritingTerm,
  )
 import Kore.Rewrite.Timeout (
-  EnableMovingAverage(..),
-  StepTimeout (..)
-  )
+    EnableMovingAverage (..),
+    StepTimeout (..),
+ )
 import Kore.Simplify.API (evalSimplifier)
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (Simplifier)
@@ -262,9 +262,10 @@ respond runSMT serializedModule =
                                 Exec.rpcExec
                                     (maybe Unlimited (\(Depth n) -> Limit n) maxDepth)
                                     stepTimeout
-                                    (if fromMaybe False movingAverageStepTimeout
-                                     then EnableMovingAverage
-                                     else DisableMovingAverage)
+                                    ( if fromMaybe False movingAverageStepTimeout
+                                        then EnableMovingAverage
+                                        else DisableMovingAverage
+                                    )
                                     serializedModule
                                     (toStopLabels cutPointRules terminalRules)
                                     verifiedPattern
@@ -345,15 +346,16 @@ respond runSMT serializedModule =
                                         }
                 GraphTraversal.TimedOut
                     Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRule}
-                    nexts -> Right $
-                                Execute $
-                                    ExecuteResult
-                                        { state = patternToExecState sort rpcProgState
-                                        , depth = Depth depth
-                                        , reason = Timeout
-                                        , rule = rpcRule
-                                        , nextStates = Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
-                                        }
+                    nexts ->
+                        Right $
+                            Execute $
+                                ExecuteResult
+                                    { state = patternToExecState sort rpcProgState
+                                    , depth = Depth depth
+                                    , reason = Timeout
+                                    , rule = rpcRule
+                                    , nextStates = Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
+                                    }
                 -- these are programmer errors
                 result@GraphTraversal.Aborted{} ->
                     Left $ serverError "aborted" $ asText (show result)

@@ -63,10 +63,10 @@ import Kore.Rewrite.RulePattern (
     rulePattern,
  )
 import Kore.Rewrite.Timeout (
-  StepTimeout (..),
-  EnableMovingAverage (..),
-  StepMovingAverage,
-  )
+    EnableMovingAverage (..),
+    StepMovingAverage,
+    StepTimeout (..),
+ )
 import Kore.Simplify.Simplify qualified as Kore
 import Kore.Syntax.Module (
     ModuleName (..),
