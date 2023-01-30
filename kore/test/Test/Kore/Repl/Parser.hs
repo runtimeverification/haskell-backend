@@ -20,6 +20,9 @@ import Kore.Equation.DebugEquation (
 import Kore.Log qualified as Log
 import Kore.Repl.Data
 import Kore.Repl.Parser
+import Kore.Rewrite.Timeout (
+  StepTimeout (..),
+  )
 import Numeric.Natural
 import Prelude.Kore
 import Test.Kore.Repl.ParserTest
@@ -83,6 +86,7 @@ test_replParser =
     , debugRewriteTests `tests` "debug-rewrite"
     , stepTimeoutTests `tests` "set-step-timeout"
     , showStepTimeTests `tests` "show-step-time"
+    , movingAverageTests `tests` "moving-average"
     ]
 
 tests :: [ParserTest ReplCommand] -> String -> TestTree
@@ -206,6 +210,10 @@ stepTimeoutTests =
 showStepTimeTests :: [ParserTest ReplCommand]
 showStepTimeTests =
     ["show-step-time" `parsesTo_` ShowStepTime]
+
+movingAverageTests :: [ParserTest ReplCommand]
+movingAverageTests =
+    ["moving-average" `parsesTo_` MovingAverage]
 
 configTests :: [ParserTest ReplCommand]
 configTests =

@@ -12,9 +12,20 @@ module Kore.Exec.GraphTraversal (
     TransitionResult (..),
     TraversalResult (..),
     transitionWithRule,
+    GraphTraversalTimeoutMode(..),
 ) where
 
+import Control.Concurrent (
+  threadDelay,
+  MVar,
+  newEmptyMVar
+  )
+import Control.Concurrent.Async.Lifted (
+  race,
+  withAsync,
+  )
 import Control.Monad (foldM)
+import Control.Monad.Extra (whenJust)
 import Control.Monad.Trans.State
 import Data.Limit
 import Data.List.NonEmpty qualified as NE
@@ -25,6 +36,10 @@ import Debug (Debug, Diff)
 import GHC.Generics qualified
 import GHC.Natural
 import Generics.SOP qualified as SOP
+import Kore.Log.WarnStepTimeout (
+  warnStepManualTimeout,
+  warnStepMATimeout
+  )
 import Kore.Rewrite.Strategy (
     FinalNodeType (..),
     GraphSearchOrder (..),
@@ -32,13 +47,28 @@ import Kore.Rewrite.Strategy (
     Step,
     unfoldSearchOrder,
  )
+import Kore.Rewrite.Timeout (
+  StepMovingAverage,
+  TimeoutMode (..),
+  StepTimeout,
+  getTimeout,
+  getTimeoutMode,
+  updateStepMovingAverage,
+  timeAction,
+  EnableMovingAverage,
+ )
 import Kore.Rewrite.Transition (
     TransitionT (..),
     runTransitionT,
  )
 import Kore.Simplify.Simplify (Simplifier)
+import System.IO (
+  hPutStrLn
+  ,stderr
+  )
 import Prelude.Kore
 import Pretty
+import Control.Exception.Lifted (uninterruptibleMask_)
 
 data TransitionResult a
     = -- | straight-line execution
@@ -166,6 +196,9 @@ data TState instr config = TState
 -}
 graphTraversal ::
     forall config instr.
+    GraphTraversalTimeoutMode ->
+    Maybe StepTimeout ->
+    EnableMovingAverage ->
     -- | Whether to stop on branches or not. This could be handled in
     -- the transition function, too, since the algorithm will _always_
     -- stop on 'Stuck', 'Final', and `Stopped`. It is clearer to add
@@ -182,6 +215,8 @@ graphTraversal ::
     ( TState instr config ->
       Simplifier (TransitionResult (TState instr config))
     ) ->
+    -- | config unparsing function
+    (config -> Maybe String) ->
     -- | max-counterexamples, included in the internal logic
     Limit Natural ->
     -- | steps to execute
@@ -190,17 +225,22 @@ graphTraversal ::
     config ->
     Simplifier (TraversalResult config)
 graphTraversal
+    graphTraversalTimeoutMode
+    timeout
+    enableMA
     stopOn
     direction
     breadthLimit
     transit
+    unparseConfig
     maxCounterExamples
     steps
-    start =
+    start = do
+        ma <- liftIO newEmptyMVar
         enqueue [TState steps start] Seq.empty
             >>= either
                 (pure . const (GotStuck 0 [start]))
-                (\q -> evalStateT (worker q >>= checkLeftUnproven) [])
+                (\q -> evalStateT (worker ma q >>= checkLeftUnproven) [])
       where
         enqueue' = unfoldSearchOrder direction
 
@@ -234,29 +274,59 @@ graphTraversal
             | otherwise = result
 
         worker ::
+            MVar StepMovingAverage ->
             Seq (TState instr config) ->
             StateT
                 [TransitionResult (TState instr config)]
                 Simplifier
                 (TraversalResult (TState instr config))
-        worker Seq.Empty = Ended . reverse <$> gets (mapMaybe extractState)
-        worker (a :<| as) = do
-            result <- lift $ step a as
+        worker _ Seq.Empty = Ended . reverse <$> gets (mapMaybe extractState)
+        worker ma (a :<| as) = do
+            result <- lift $ withTimeout ma a as $ step a as
             case result of
-                Continue nextQ -> worker nextQ
+                Continue nextQ -> worker ma nextQ
                 Output oneResult nextQ -> do
                     modify (oneResult :)
                     if not (isStuck oneResult)
-                        then worker nextQ
+                        then worker ma nextQ
                         else do
                             stuck <- gets (filter isStuck)
                             if maxCounterExamples <= Limit (fromIntegral (length stuck))
                                 then
                                     pure $
                                         GotStuck (Seq.length nextQ) (mapMaybe extractState stuck)
-                                else worker nextQ
+                                else worker ma nextQ
                 Abort _lastState queue -> do
                     pure $ Aborted $ toList queue
+                Timeout lastState queue -> pure $ TimedOut lastState $ toList queue
+
+        withTimeout ma stepState stepQueue execStep =
+            getTimeoutMode timeout enableMA ma >>= \case
+              Nothing -> execStep
+              Just timeoutMode ->
+                  case graphTraversalTimeoutMode of
+                      GraphTraversalWarn -> do
+                          let warnThread = do
+                               liftIO . threadDelay $ getTimeout timeoutMode
+                               uninterruptibleMask_ $ do
+                                 case timeoutMode of
+                                   ManualTimeout t -> warnStepManualTimeout t
+                                   MovingAverage t -> warnStepMATimeout t
+                                 whenJust (unparseConfig $ currentState stepState) $
+                                    \config -> liftIO . hPutStrLn stderr $
+                                       "// Last configuration:\n" <> config
+                          withAsync warnThread (const $ timeAction execStep)
+                                           >>= \(time, stepResult) -> do
+                                                   updateStepMovingAverage ma time
+                                                   pure stepResult
+                      GraphTraversalCancel -> do
+                          let warnThread = liftIO
+                                          $ threadDelay $ getTimeout timeoutMode
+                          race warnThread (timeAction execStep) >>= \case
+                               Right (time, stepResult) -> do
+                                   updateStepMovingAverage ma time
+                                   pure stepResult
+                               Left _ -> pure $ Timeout stepState stepQueue
 
         step ::
             (TState instr config) ->
@@ -297,6 +367,15 @@ graphTraversal
                             | otherwise -> fmap currentState result
             other -> pure $ fmap currentState other
 
+{- | Used to select whether the step should be canceled
+ when the timeout is reached or not.
+-}
+data GraphTraversalTimeoutMode
+  -- | Cancel step on timeout, used in `kore-rpc`
+  = GraphTraversalCancel
+  -- | Warn on timeout, used in `kore-exec`
+  | GraphTraversalWarn
+
 data StepResult a
     = -- | Traversal continues with given queue.
       Continue (Seq a)
@@ -308,6 +387,8 @@ data StepResult a
       -- continue. The last state and the current queue are provided
       -- for analysis.
       Abort (TransitionResult a) (Seq a)
+    | -- | Traversal step exceeded timeout limit.
+      Timeout a (Seq a)
     deriving stock (Eq, Show)
 
 data TraversalResult a
@@ -322,6 +403,8 @@ data TraversalResult a
     | -- | stop was signalled by the transition, return stopped
       -- (unproven) states and next states (from queue)
       Stopped [a] [a]
+    | -- | timed out, return current state and next states
+      TimedOut a [a]
     deriving stock (Eq, Show)
     deriving stock (GHC.Generics.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
@@ -346,13 +429,17 @@ instance Pretty a => Pretty (TraversalResult a) where
             Pretty.hang 4 . Pretty.vsep $
                 ("Stopped" : map Pretty.pretty as)
                     <> ("Queue" : map Pretty.pretty qu)
-
+        TimedOut as qu ->
+            Pretty.hang 4 . Pretty.vsep $
+                ("Timed out" <> Pretty.pretty as)
+                    : ("Queue" : map Pretty.pretty qu)
 instance Functor TraversalResult where
     fmap f = \case
         GotStuck n rs -> GotStuck n (map f rs)
         Aborted rs -> Aborted (map f rs)
         Ended rs -> Ended (map f rs)
         Stopped rs qu -> Stopped (map f rs) (map f qu)
+        TimedOut rs qu -> TimedOut (f rs) (map f qu)
 
 ----------------------------------------
 -- constructing transition functions (for caller)

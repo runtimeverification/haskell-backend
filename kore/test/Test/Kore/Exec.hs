@@ -91,6 +91,9 @@ import Kore.Rewrite.Strategy (
     FinalNodeType (..),
     LimitExceeded (..),
  )
+import Kore.Rewrite.Timeout (
+    EnableMovingAverage (..),
+ )
 import Kore.Syntax.Definition hiding (
     Alias,
     Symbol,
@@ -1210,7 +1213,7 @@ rpcExecTest ::
     SMT (TraversalResult (RpcExecState VariableName))
 rpcExecTest cutPointLs terminalLs depthLimit verifiedModule initial =
     makeSerializedModule verifiedModule >>= \serializedModule ->
-        rpcExec depthLimit serializedModule (StopLabels cutPointLs terminalLs) initial
+        rpcExec depthLimit Nothing DisableMovingAverage serializedModule (StopLabels cutPointLs terminalLs) initial
 
 -- TODO(Ana): these functions should run the procedures twice,
 -- once with the experimental simplifier enabled and once with it
@@ -1226,6 +1229,8 @@ execTest ::
 execTest depthLimit breadthLimit verifiedModule strategy initial = do
     serializedModule <- makeSerializedModule verifiedModule
     exec
+        Nothing
+        DisableMovingAverage
         depthLimit
         breadthLimit
         Leaf

@@ -112,6 +112,10 @@ import Kore.Rewrite.Strategy (
     FinalNodeType (..),
     GraphSearchOrder (..),
  )
+import Kore.Rewrite.Timeout (
+  StepTimeout(..),
+  EnableMovingAverage(..)
+  )
 import Kore.Syntax.Definition (
     Definition (Definition),
     Module (Module),
@@ -438,6 +442,8 @@ unparseKoreProveOptions
             stuckCheck
             minDepth
             allowVacuous
+            stepTimeout
+            enableMA
         ) =
         [ "--prove spec.kore"
         , unwords ["--spec-module", unpack moduleName]
@@ -453,6 +459,12 @@ unparseKoreProveOptions
         , maybe "" unparseMinDepth minDepth
         , case allowVacuous of
             Claim.AllowedVacuous -> "--allow-vacuous"
+            _ -> ""
+        , case stepTimeout of
+            Just (StepTimeout st) -> "--set-step-timeout " <> show st
+            _ -> ""
+        , case enableMA of
+            EnableMovingAverage -> "--moving-average"
             _ -> ""
         ]
       where
@@ -717,6 +729,8 @@ koreRun LocalOptions{execOptions} = do
     (exitCode, final) <-
         execute koreSolverOptions metadataTools lemmas $
             exec
+                Nothing
+                DisableMovingAverage
                 depthLimit
                 breadthLimit
                 finalNodeType
@@ -778,9 +792,11 @@ koreProve LocalOptions{execOptions} proveOptions = do
     let KoreExecOptions{koreSolverOptions} = execOptions
     proveResult <- execute koreSolverOptions (MetadataTools.build mainModule) (getSMTLemmas mainModule) $ do
         let KoreExecOptions{breadthLimit, depthLimit, finalNodeType} = execOptions
-            KoreProveOptions{graphSearch, stuckCheck, minDepth, allowVacuous} = proveOptions
+            KoreProveOptions{graphSearch, stuckCheck, minDepth, allowVacuous, stepTimeout, enableMovingAverage} = proveOptions
         prove
             minDepth
+            stepTimeout
+            enableMovingAverage
             stuckCheck
             allowVacuous
             graphSearch

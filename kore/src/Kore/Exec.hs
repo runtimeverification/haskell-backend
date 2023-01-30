@@ -180,6 +180,10 @@ import Kore.Rewrite.Search (
  )
 import Kore.Rewrite.Search qualified as Search
 import Kore.Rewrite.Strategy qualified as Strategy
+import Kore.Rewrite.Timeout (
+  StepTimeout,
+  EnableMovingAverage (..),
+  )
 import Kore.Rewrite.Transition (
     runTransitionT,
     scatter,
@@ -269,6 +273,8 @@ makeSerializedModule verifiedModule =
 
 -- | Symbolic execution
 exec ::
+    Maybe StepTimeout ->
+    EnableMovingAverage ->
     Limit Natural ->
     Limit Natural ->
     Strategy.FinalNodeType ->
@@ -279,6 +285,8 @@ exec ::
     TermLike VariableName ->
     SMT (ExitCode, TermLike VariableName)
 exec
+    stepTimeout
+    enableMA
     depthLimit
     breadthLimit
     finalNodeType
@@ -296,10 +304,14 @@ exec
         evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations $ do
             finals <-
                 GraphTraversal.graphTraversal
+                    GraphTraversal.GraphTraversalCancel
+                    stepTimeout
+                    enableMA
                     finalNodeType
                     Strategy.DepthFirst
                     breadthLimit
                     transit
+                    (const Nothing)
                     Limit.Unlimited
                     execStrategy
                     (ExecDepth 0, Start $ Pattern.fromTermLike initialTerm)
@@ -313,6 +325,8 @@ exec
                                 forM_ depthLimit warnDepthLimitExceeded
                             pure results
                         GraphTraversal.Aborted results -> do
+                            pure results
+                        GraphTraversal.TimedOut _ results -> do
                             pure results
 
             let (depths, finalConfigs) = unzip finals
@@ -422,6 +436,8 @@ stateGetRewritingPattern state@RpcExecState{rpcProgState} =
 -}
 rpcExec ::
     Limit Natural ->
+    Maybe StepTimeout ->
+    EnableMovingAverage ->
     -- | The main module
     SerializedModule ->
     -- | additional labels/rule names for stopping
@@ -431,6 +447,8 @@ rpcExec ::
     SMT (GraphTraversal.TraversalResult (RpcExecState VariableName))
 rpcExec
     depthLimit
+    stepTimeout
+    enableMA
     SerializedModule
         { sortGraph
         , overloadGraph
@@ -444,10 +462,14 @@ rpcExec
         evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations $
             fmap stateGetRewritingPattern
                 <$> GraphTraversal.graphTraversal
+                    GraphTraversal.GraphTraversalCancel
+                    stepTimeout
+                    enableMA
                     Strategy.LeafOrBranching
                     Strategy.DepthFirst
                     (Limit 2) -- breadth limit 2 because we never go beyond a branch
                     transit
+                    (const Nothing)
                     Limit.Unlimited
                     execStrategy
                     (startState initialTerm)
@@ -679,6 +701,8 @@ search
 -- | Proving a spec given as a module containing rules to be proven
 prove ::
     Maybe MinDepth ->
+    Maybe StepTimeout ->
+    EnableMovingAverage ->
     StuckCheck ->
     AllowVacuous ->
     Strategy.GraphSearchOrder ->
@@ -695,6 +719,8 @@ prove ::
     SMT ProveClaimsResult
 prove
     maybeMinDepth
+    stepTimeout
+    enableMA
     stuckCheck
     allowVacuous
     searchOrder
@@ -713,6 +739,8 @@ prove
                     trustedModule
             proveClaims
                 maybeMinDepth
+                stepTimeout
+                enableMA
                 stuckCheck
                 allowVacuous
                 breadthLimit
@@ -737,7 +765,8 @@ prove
 -}
 proveWithRepl ::
     Maybe MinDepth ->
-    Maybe Repl.Data.StepTimeout ->
+    Maybe StepTimeout ->
+    EnableMovingAverage ->
     Repl.Data.StepTime ->
     StuckCheck ->
     AllowVacuous ->
@@ -765,6 +794,7 @@ proveWithRepl ::
 proveWithRepl
     minDepth
     stepTimeout
+    enableMA
     stepTime
     stuckCheck
     allowVacuous
@@ -780,7 +810,8 @@ proveWithRepl
     logOptions
     kFileLocations
     kompiledDir
-    korePrintCommand =
+    korePrintCommand = do
+        stepMovingAverage <- liftIO newEmptyMVar
         evalSimplifierProofs definitionModule $ do
             InitializedProver{axioms, specClaims, claims} <-
                 initializeProver
@@ -790,7 +821,9 @@ proveWithRepl
             Repl.runRepl
                 minDepth
                 stepTimeout
+                enableMA
                 stepTime
+                stepMovingAverage
                 stuckCheck
                 allowVacuous
                 axioms

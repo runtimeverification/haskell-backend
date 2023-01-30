@@ -40,6 +40,10 @@ import Kore.Log.WarnIfLowProductivity (
 import Kore.Reachability.Claim qualified as Claim
 import Kore.Repl.Data
 import Kore.Rewrite.SMT.Lemma
+import Kore.Rewrite.Timeout (
+  StepTimeout,
+  EnableMovingAverage,
+  )
 import Kore.Syntax.Module (
     ModuleName (..),
  )
@@ -50,14 +54,12 @@ import Options.Applicative (
     InfoMod,
     Parser,
     argument,
-    auto,
     flag,
     fullDesc,
     header,
     help,
     long,
     metavar,
-    option,
     progDesc,
     short,
     showDefault,
@@ -101,7 +103,6 @@ data KoreReplOptions = KoreReplOptions
     , smtOptions :: !KoreSolverOptions
     , korePrintCommand :: !KorePrintCommand
     , replMode :: !ReplMode
-    , stepTimeout :: !(Maybe StepTimeout)
     , stepTime :: StepTime
     , scriptModeOutput :: !ScriptModeOutput
     , replScript :: !ReplScript
@@ -119,7 +120,6 @@ parseKoreReplOptions startTime =
         <*> parseKoreSolverOptions
         <*> parseKorePrintCommand
         <*> parseReplMode
-        <*> parseStepTimeout
         <*> parseShowStepTime
         <*> parseScriptModeOutput
         <*> parseReplScript
@@ -193,17 +193,6 @@ parseKoreReplOptions startTime =
                     )
                 )
 
-    parseStepTimeout :: Parser (Maybe StepTimeout)
-    parseStepTimeout =
-        fmap StepTimeout
-            <$> optional
-                ( option
-                    auto
-                    ( metavar "INT"
-                        <> long "set-step-timeout"
-                        <> help "Set a timeout for one step in seconds."
-                    )
-                )
     parseShowStepTime :: Parser StepTime
     parseShowStepTime =
         flag
@@ -291,7 +280,8 @@ mainWithOptions LocalOptions{execOptions} = do
                             )
                             $ proveWithRepl
                                 replMinDepth
-                                stepTimeout
+                                replStepTimeout
+                                replEnableMovingAverage
                                 stepTime
                                 replStuckCheck
                                 replAllowVacuous
@@ -325,7 +315,6 @@ mainWithOptions LocalOptions{execOptions} = do
         , koreLogOptions
         , bugReportOption
         , korePrintCommand
-        , stepTimeout
         , stepTime
         } = execOptions
     runExceptionHandlers action =
@@ -389,3 +378,9 @@ mainWithOptions LocalOptions{execOptions} = do
 
     replAllowVacuous :: Claim.AllowVacuous
     replAllowVacuous = allowVacuous proveOptions
+
+    replStepTimeout :: Maybe StepTimeout
+    replStepTimeout = GlobalMain.stepTimeout proveOptions
+
+    replEnableMovingAverage :: EnableMovingAverage
+    replEnableMovingAverage = GlobalMain.enableMovingAverage proveOptions

@@ -53,6 +53,10 @@ import Kore.Rewrite.RewritingVariable (
     mkRewritingPattern,
     mkRewritingTerm,
  )
+import Kore.Rewrite.Timeout (
+  EnableMovingAverage(..),
+  StepTimeout (..)
+  )
 import Kore.Simplify.API (evalSimplifier)
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (Simplifier)
@@ -88,6 +92,8 @@ data ExecuteRequest = ExecuteRequest
     , maxDepth :: !(Maybe Depth)
     , cutPointRules :: !(Maybe [Text])
     , terminalRules :: !(Maybe [Text])
+    , movingAverageStepTimeout :: !(Maybe Bool)
+    , stepTimeout :: !(Maybe StepTimeout)
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -147,6 +153,7 @@ data HaltReason
     | DepthBound
     | CutPointRule
     | TerminalRule
+    | Timeout
     deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
@@ -243,7 +250,7 @@ respond ::
     Respond (API 'Req) m (API 'Res)
 respond runSMT serializedModule =
     withErrHandler . \case
-        Execute ExecuteRequest{state, maxDepth, cutPointRules, terminalRules} ->
+        Execute ExecuteRequest{state, maxDepth, cutPointRules, terminalRules, movingAverageStepTimeout, stepTimeout} ->
             case PatternVerifier.runPatternVerifier verifierContext $
                 PatternVerifier.verifyStandalonePattern Nothing $
                     PatternJson.toParsedPattern $ PatternJson.term state of
@@ -254,6 +261,10 @@ respond runSMT serializedModule =
                             ( runSMT $
                                 Exec.rpcExec
                                     (maybe Unlimited (\(Depth n) -> Limit n) maxDepth)
+                                    stepTimeout
+                                    (if fromMaybe False movingAverageStepTimeout
+                                     then EnableMovingAverage
+                                     else DisableMovingAverage)
                                     serializedModule
                                     (toStopLabels cutPointRules terminalRules)
                                     verifiedPattern
@@ -331,6 +342,17 @@ respond runSMT serializedModule =
                                         , reason = TerminalRule
                                         , rule = Just lbl
                                         , nextStates = Nothing
+                                        }
+                GraphTraversal.TimedOut
+                    Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRule}
+                    nexts -> Right $
+                                Execute $
+                                    ExecuteResult
+                                        { state = patternToExecState sort rpcProgState
+                                        , depth = Depth depth
+                                        , reason = Timeout
+                                        , rule = rpcRule
+                                        , nextStates = Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
                                         }
                 -- these are programmer errors
                 result@GraphTraversal.Aborted{} ->
