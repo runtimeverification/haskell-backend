@@ -62,6 +62,11 @@ import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     rulePattern,
  )
+import Kore.Rewrite.Timeout (
+    EnableMovingAverage (..),
+    StepMovingAverage,
+    StepTimeout (..),
+ )
 import Kore.Simplify.Simplify qualified as Kore
 import Kore.Syntax.Module (
     ModuleName (..),
@@ -737,8 +742,9 @@ runWithState command axioms claims claim stateTransformer = do
     let logger = mempty
     output <- newIORef (mempty :: ReplOutput)
     mvar <- newMVar logger
+    ma <- newEmptyMVar
     let state = stateTransformer $ mkState startTime axioms claims claim
-    let config = mkConfig mvar claims
+    let config = mkConfig mvar claims ma
         runLogger =
             runTestLoggerT . liftSimplifier
                 . flip runStateT state
@@ -828,6 +834,7 @@ mkState startTime axioms claims claim =
             Log.defaultKoreLogOptions (Log.ExeName "kore-repl") startTime
         , stepTimeout = Nothing
         , stepTime = DisableStepTime
+        , enableMovingAverage = DisableMovingAverage
         }
   where
     graph' = emptyExecutionGraph claim
@@ -835,8 +842,9 @@ mkState startTime axioms claims claim =
 mkConfig ::
     MVar (Log.LogAction IO Log.SomeEntry) ->
     [SomeClaim] ->
+    MVar (StepMovingAverage) ->
     Config
-mkConfig logger claims' =
+mkConfig logger claims' ma =
     Config
         { stepper = stepper0
         , unifier = unificationProcedure
@@ -850,12 +858,13 @@ mkConfig logger claims' =
   where
     stepper0 ::
         Maybe StepTimeout ->
+        EnableMovingAverage ->
         [Axiom] ->
         ExecutionGraph ->
         ReplNode ->
         Simplifier (Maybe ExecutionGraph)
-    stepper0 _ axioms' graph (ReplNode node) =
-        proveClaimStep Nothing Nothing EnabledStuckCheck DisallowedVacuous claims' axioms' graph node
+    stepper0 _ enableMA axioms' graph (ReplNode node) =
+        proveClaimStep Nothing Nothing ma enableMA EnabledStuckCheck DisallowedVacuous claims' axioms' graph node
 
 formatUnifiers ::
     NonEmpty (Condition RewritingVariableName) ->
