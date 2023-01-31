@@ -33,6 +33,9 @@ import Kore.Log (
 import Kore.Log qualified as Log
 import Kore.Log.Registry qualified as Log
 import Kore.Repl.Data
+import Kore.Rewrite.Timeout (
+    StepTimeout (..),
+ )
 import Prelude.Kore hiding (
     many,
  )
@@ -136,6 +139,7 @@ nonRecursiveCommand =
         , proofStatus
         , setStepTimeout
         , showStepTime
+        , movingAverage
         , exit
         , tryAlias
         ]
@@ -338,6 +342,9 @@ setStepTimeout = do
 
 showStepTime :: Parser ReplCommand
 showStepTime = literal "show-step-time" $> ShowStepTime
+
+movingAverage :: Parser ReplCommand
+movingAverage = literal "moving-average" $> MovingAverage
 
 saveSession :: Parser ReplCommand
 saveSession =

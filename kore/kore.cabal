@@ -162,6 +162,7 @@ common library
   build-depends: json-rpc >=1.0
   build-depends: lens >=4.17
   build-depends: lifted-async
+  build-depends: lifted-base
   build-depends: logict >=0.7
   build-depends: matrix >=0.3.6.1
   build-depends: megaparsec >=7.0.4
@@ -190,7 +191,6 @@ common library
   build-depends: text >=1.2
   build-depends: these >=1.0
   build-depends: time >=1.9.3
-  build-depends: timeit
   build-depends: transformers >=0.4
   build-depends: transformers-base
   build-depends: unliftio >= 0.2
@@ -473,6 +473,7 @@ library
     Kore.Rewrite.Step
     Kore.Rewrite.Strategy
     Kore.Rewrite.Substitution
+    Kore.Rewrite.Timeout
     Kore.Rewrite.Transition
     Kore.Rewrite.RewritingVariable
     Kore.Rewrite.UnifyingRule

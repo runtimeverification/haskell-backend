@@ -626,7 +626,8 @@ runStepperWorker axioms node = do
     mvar <- asks logger
     gph <- getExecutionGraph
     st <- gets stepTimeout
-    stepResult <- liftSimplifierWithLogger mvar $ stepper st axioms gph node
+    enableMA <- gets enableMovingAverage
+    stepResult <- liftSimplifierWithLogger mvar $ stepper st enableMA axioms gph node
     return (fromMaybe gph stepResult, getSuccesorNodes <$> stepResult)
   where
     getSuccesorNodes Strategy.ExecutionGraph{graph = innerGraph} =

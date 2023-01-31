@@ -136,6 +136,10 @@ import Kore.Rewrite.SMT.Lemma
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
+import Kore.Rewrite.Timeout (
+    EnableMovingAverage (..),
+    StepTimeout (..),
+ )
 import Kore.Syntax hiding (Pattern)
 import Kore.Syntax.Definition (
     ModuleName (..),
@@ -221,6 +225,8 @@ data KoreProveOptions = KoreProveOptions
       minDepth :: !(Maybe MinDepth)
     , -- | Enables discharging #Bottom paths as #Top at implication checking time.
       allowVacuous :: AllowVacuous
+    , stepTimeout :: !(Maybe StepTimeout)
+    , enableMovingAverage :: !EnableMovingAverage
     }
 
 parseModuleName :: String -> String -> String -> Parser ModuleName
@@ -285,6 +291,22 @@ parseKoreProveOptions =
                 <> help
                     "Enables discharging #Bottom paths as #Top at \
                     \implication checking time."
+            )
+        <*> ( fmap StepTimeout
+                <$> Options.optional
+                    ( option
+                        Options.auto
+                        ( metavar "INT"
+                            <> long "set-step-timeout"
+                            <> help "Set a timeout for one step in seconds."
+                        )
+                    )
+            )
+        <*> Options.flag
+            DisableMovingAverage
+            EnableMovingAverage
+            ( long "moving-average"
+                <> help "Enable timeout based on moving average."
             )
   where
     parseMinDepth =
