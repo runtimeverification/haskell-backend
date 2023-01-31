@@ -154,10 +154,10 @@ process. First, install cachix
 nix-env -iA cachix -f https://cachix.org/api/v1/install
 ```
 
-and then add the `kore` cachix cache
+and then add the `k-framework` cachix cache
 
 ```
-cachix use kore
+cachix use k-framework
 ```
 
 Next, we need to set up the cache for our haskell infrastructure, by adding the following sections to `/etc/nix/nix.conf` or, if you are a trusted user, `~/.config/nix/nix.conf` (if you don't know what a "trusted user" is, you probably want to do the former):
