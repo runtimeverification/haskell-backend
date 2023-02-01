@@ -12,10 +12,12 @@ module Kore.Pattern.Base (
 ) where
 
 import Control.DeepSeq (NFData (..))
+import Data.ByteString (ByteString)
 import Data.Either (fromRight)
 import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 import Data.Hashable (Hashable)
+import Data.Hashable qualified as Hashable
 import Data.Map qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
@@ -54,7 +56,7 @@ data Variable = Variable
     , variableName :: VarName
     }
     deriving stock (Eq, Ord, Show, Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Hashable)
 
 data Symbol = Symbol
     { name :: SymbolName
@@ -64,7 +66,7 @@ data Symbol = Symbol
     , attributes :: SymbolAttributes
     }
     deriving stock (Eq, Ord, Show, Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Hashable)
 
 {- | A term consists of an AST of constructors and function calls, as
    well as domain values (tokens and built-in types) and (element)
@@ -80,7 +82,7 @@ data TermF t
     | DomainValueF Sort Text
     | VarF Variable
     deriving stock (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Hashable)
 
 {- | Term attributes are synthetic (bottom-up) attributes that cache
    information about a term to avoid unnecessary AST
@@ -90,24 +92,29 @@ data TermF t
 data TermAttributes = TermAttributes
     { variables :: !(Set Variable)
     , isEvaluated :: !Bool
+    , hash :: !Int
     }
     deriving stock (Eq, Ord, Show, Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Hashable)
 
 instance Semigroup TermAttributes where
     a1 <> a2 =
         TermAttributes
             { variables = a1.variables <> a2.variables
             , isEvaluated = a1.isEvaluated && a2.isEvaluated
+            , hash = 0
             }
 
 instance Monoid TermAttributes where
-    mempty = TermAttributes Set.empty True
+    mempty = TermAttributes Set.empty True 0
 
 -- | A term together with its attributes.
 data Term = Term TermAttributes (TermF Term)
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData)
+
+instance Hashable Term where
+    hash (Term TermAttributes{hash} _) = hash
 
 type instance Base Term = TermF
 
@@ -127,7 +134,12 @@ instance Corecursive Term where
 pattern AndTerm :: Term -> Term -> Term
 pattern AndTerm t1 t2 <- Term _ (AndTermF t1 t2)
     where
-        AndTerm t1@(Term a1 _) t2@(Term a2 _) = Term (a1 <> a2) $ AndTermF t1 t2
+        AndTerm t1@(Term a1 _) t2@(Term a2 _) =
+            Term
+                (a1 <> a2)
+                    { hash = Hashable.hash ("AndTerm" :: ByteString, hash a1, hash a2)
+                    }
+                $ AndTermF t1 t2
 
 pattern SymbolApplication :: Symbol -> [Sort] -> [Term] -> Term
 pattern SymbolApplication sym sorts args <- Term _ (SymbolApplicationF sym sorts args)
@@ -142,18 +154,33 @@ pattern SymbolApplication sym sorts args <- Term _ (SymbolApplicationF sym sorts
                         -- function calls are not evaluated
                         PartialFunction -> False
                         TotalFunction -> False
-             in Term argAttributes{isEvaluated = newEvaluatedFlag} $
-                    SymbolApplicationF sym sorts args
+             in Term
+                    argAttributes
+                        { isEvaluated = newEvaluatedFlag
+                        , hash = Hashable.hash ("SymbolApplication" :: ByteString, sym, sorts, map (hash . getAttributes) args)
+                        }
+                    $ SymbolApplicationF sym sorts args
 
 pattern DomainValue :: Sort -> Text -> Term
 pattern DomainValue sort value <- Term _ (DomainValueF sort value)
     where
-        DomainValue sort value = Term mempty $ DomainValueF sort value
+        DomainValue sort value =
+            Term
+                mempty
+                    { hash = Hashable.hash ("DomainValue" :: ByteString, sort, value)
+                    }
+                $ DomainValueF sort value
 
 pattern Var :: Variable -> Term
 pattern Var v <- Term _ (VarF v)
     where
-        Var v = Term mempty{variables = Set.singleton v} (VarF v)
+        Var v =
+            Term
+                mempty
+                    { variables = Set.singleton v
+                    , hash = Hashable.hash ("Var" :: ByteString, v)
+                    }
+                $ VarF v
 
 {-# COMPLETE AndTerm, SymbolApplication, DomainValue, Var #-}
 

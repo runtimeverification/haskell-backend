@@ -20,6 +20,7 @@ module Kore.Definition.Attributes.Base (
 ) where
 
 import Control.DeepSeq (NFData (..))
+import Data.Hashable (Hashable)
 import Data.Text (Text)
 import Data.Word (Word8)
 import GHC.Generics (Generic)
@@ -83,14 +84,14 @@ data SymbolType
     | Constructor
     | SortInjection
     deriving stock (Eq, Ord, Show, Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Hashable)
 
 data SymbolAttributes = SymbolAttributes
     { symbolType :: SymbolType
     , isIdem, isAssoc :: Bool
     }
     deriving stock (Eq, Ord, Show, Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (NFData, Hashable)
 
 newtype SortAttributes = SortAttributes
     { argCount :: Int
