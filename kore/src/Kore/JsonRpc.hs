@@ -345,16 +345,16 @@ respond runSMT serializedModule =
                                         , nextStates = Nothing
                                         }
                 GraphTraversal.TimedOut
-                    Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRule}
-                    nexts ->
+                    Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState}
+                    _ ->
                         Right $
                             Execute $
                                 ExecuteResult
                                     { state = patternToExecState sort rpcProgState
                                     , depth = Depth depth
                                     , reason = Timeout
-                                    , rule = rpcRule
-                                    , nextStates = Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
+                                    , rule = Nothing
+                                    , nextStates = Nothing
                                     }
                 -- these are programmer errors
                 result@GraphTraversal.Aborted{} ->
