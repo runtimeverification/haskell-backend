@@ -182,7 +182,7 @@
             kore-exec-prof =
               self.projectProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
             kore-exec-infotable =
-              self.projectGhc9EventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
+              self.projectEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
           };
           scripts = pkgs.symlinkJoin {
             name = "fourmolu-format";
