@@ -49,6 +49,7 @@ newtype KoreTokenPatternAPI = KoreTokenPatternAPI
 data KoreSymbolAPI = KoreSymbolAPI
     { new :: Text -> IO KoreSymbolPtr
     , addArgument :: KoreSymbolPtr -> KoreSortPtr -> IO KoreSymbolPtr
+    , cache :: IORef (HashMap (Symbol, [Sort]) KoreSymbolPtr)
     }
 
 data KoreSortAPI = KoreSortAPI
@@ -131,6 +132,7 @@ mkAPI dlib = flip runReaderT dlib $ do
                 str <- C.peekCString strPtr
                 Foreign.free strPtr
                 pure str
+
     let patt = KorePatternAPI{new = newPattern, addArgument = addArgumentPattern, string, token, fromSymbol, dump = dumpPattern}
 
     freeSymbol <- {-# SCC "LLVM.symbol.free" #-} koreSymbolFreeFunPtr
@@ -150,7 +152,9 @@ mkAPI dlib = flip runReaderT dlib $ do
                     withForeignPtr sym $ \rawSym -> withForeignPtr sort $ addArgumentSymbol' rawSym
                     pure sym
 
-    let symbol = KoreSymbolAPI{new = newSymbol, addArgument = addArgumentSymbol}
+    symbolCache <- liftIO $ newIORef mempty
+
+    let symbol = KoreSymbolAPI{new = newSymbol, addArgument = addArgumentSymbol, cache = symbolCache}
 
     freeSort <- {-# SCC "LLVM.sort.free" #-} koreSortFreeFunPtr
 
@@ -206,8 +210,13 @@ ask = LLVM Reader.ask
 marshallSymbol :: Symbol -> [Sort] -> LLVM KoreSymbolPtr
 marshallSymbol sym sorts = do
     kore <- ask
-    sym' <- liftIO $ kore.symbol.new sym.name
-    foldM (\symbol sort -> marshallSort sort >>= liftIO . kore.symbol.addArgument symbol) sym' sorts
+    cache <- liftIO $ readIORef kore.symbol.cache
+    case HM.lookup (sym, sorts) cache of
+        Just ptr -> pure ptr
+        Nothing -> do
+            sym' <- liftIO $ kore.symbol.new sym.name
+            liftIO $ modifyIORef' kore.symbol.cache $ HM.insert (sym, sorts) sym'
+            foldM (\symbol sort -> marshallSort sort >>= liftIO . kore.symbol.addArgument symbol) sym' sorts
 
 marshallSort :: Sort -> LLVM KoreSortPtr
 marshallSort = \case
