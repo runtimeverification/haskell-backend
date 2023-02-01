@@ -65,6 +65,11 @@ import Kore.Repl.Interpreter
 import Kore.Repl.Parser
 import Kore.Repl.State
 import Kore.Rewrite.Strategy qualified as Strategy
+import Kore.Rewrite.Timeout (
+    EnableMovingAverage,
+    StepMovingAverage,
+    StepTimeout,
+ )
 import Kore.Simplify.Simplify (
     Simplifier,
  )
@@ -106,7 +111,9 @@ import Text.Megaparsec (
 runRepl ::
     Maybe MinDepth ->
     Maybe StepTimeout ->
+    EnableMovingAverage ->
     StepTime ->
+    MVar StepMovingAverage ->
     StuckCheck ->
     AllowVacuous ->
     -- | list of axioms to used in the proof
@@ -129,7 +136,7 @@ runRepl ::
     KompiledDir ->
     KorePrintCommand ->
     Simplifier ()
-runRepl _ _ _ _ _ _ _ [] _ _ _ _ outputFile _ _ _ _ _ =
+runRepl _ _ _ _ _ _ _ _ _ [] _ _ _ _ outputFile _ _ _ _ _ =
     let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
      in liftIO . printTerm . unparseToString $ topTerm
   where
@@ -138,7 +145,9 @@ runRepl _ _ _ _ _ _ _ [] _ _ _ _ outputFile _ _ _ _ _ =
 runRepl
     minDepth
     stepTimeout
+    enableMA
     stepTime
+    ma
     stuckCheck
     allowVacuous
     axioms'
@@ -219,6 +228,7 @@ runRepl
                         }
                 , stepTimeout = stepTimeout
                 , stepTime = stepTime
+                , enableMovingAverage = enableMA
                 }
 
         config :: Config
@@ -273,15 +283,26 @@ runRepl
 
         stepper0 ::
             Maybe StepTimeout ->
+            EnableMovingAverage ->
             [Axiom] ->
             ExecutionGraph ->
             ReplNode ->
             Simplifier (Maybe ExecutionGraph)
-        stepper0 timeout axioms graph rnode = do
+        stepper0 timeout enableMA' axioms graph rnode = do
             let node = unReplNode rnode
             if Graph.outdeg (Strategy.graph graph) node == 0
                 then
-                    proveClaimStep minDepth timeout stuckCheck allowVacuous origClaims axioms graph node
+                    proveClaimStep
+                        minDepth
+                        timeout
+                        ma
+                        enableMA'
+                        stuckCheck
+                        allowVacuous
+                        origClaims
+                        axioms
+                        graph
+                        node
                         & Exception.handle (withConfigurationHandler (Just graph))
                         & Exception.handle (someExceptionHandler (Just graph))
                 else pure $ Just graph
