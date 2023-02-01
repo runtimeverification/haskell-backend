@@ -345,7 +345,8 @@ respond runSMT serializedModule =
                                         , nextStates = Nothing
                                         }
                 GraphTraversal.TimedOut
-                    Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState} _ ->
+                    Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState}
+                    _ ->
                         Right $
                             Execute $
                                 ExecuteResult
