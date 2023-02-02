@@ -2,7 +2,20 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
-module Kore.LLVM.Internal (API (..), KorePatternAPI (..), runLLVM, withDLib, mkAPI, ask, marshallTerm, marshallSort) where
+module Kore.LLVM.Internal (
+    API (..),
+    KorePatternAPI (..),
+    runLLVM,
+    withDLib,
+    mkAPI,
+    ask,
+    marshallTerm,
+    marshallSort,
+    -- testing only
+    KoreStringPatternAPI (..),
+    KoreSymbolAPI (..),
+    KoreSortAPI (..),
+) where
 
 import Control.Monad (foldM, forM_, void, (>=>))
 import Control.Monad.IO.Class (MonadIO (..))

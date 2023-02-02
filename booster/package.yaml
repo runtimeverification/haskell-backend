@@ -100,9 +100,6 @@ executables:
   hs-backend-booster:
     source-dirs: executable
     main: Main.hs
-    build-tools:
-      - happy
-      - alex
     dependencies:
     - base
     - hs-backend-booster
@@ -164,13 +161,11 @@ executables:
     - -rtsopts
 
 tests:
-  test-suite:
-    source-dirs: test-suite
+  unit-tests:
+    source-dirs: unit-tests
     main: Driver.hs
     build-tools:
       - tasty-discover:tasty-discover
-      - happy
-      - alex
     dependencies:
     - base
     - bytestring
@@ -180,6 +175,7 @@ tests:
     - hedgehog
     - hs-backend-booster
     - monad-logger
+    - process
     - tasty
     - tasty-golden
     - tasty-hedgehog
@@ -191,3 +187,18 @@ tests:
     - -rtsopts
     - -threaded
     - -with-rtsopts=-N
+
+  llvm-integration:
+    source-dirs: test/llvm-integration
+    main: LLVM.hs
+    dependencies:
+      - base
+      - bytestring
+      - containers
+      - filepath
+      - hedgehog
+      - hspec
+      - hspec-hedgehog
+      - hs-backend-booster
+      - process
+      - text
