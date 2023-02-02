@@ -588,25 +588,21 @@ checkImplicationWorker ::
     (MonadLogic m, MonadSimplify m) =>
     ClaimPattern ->
     m (CheckImplicationResult ClaimPattern)
-checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern)
-    | isBottom right
-      , not (isBottom left) =
-        warnClaimRHSIsBottom claimPattern
-            >> return (NotImpliedStuck claimPattern)
-    | otherwise = elseImplied $ do
+checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
+    elseImplied $ do
         (anyUnified, removal) <- getNegativeConjuncts
         let definedConfig =
                 Pattern.andCondition left $
                     from $ makeCeilPredicate leftTerm
         let configs' = MultiOr.map (definedConfig <*) removal
         stuck <- simplifyRemainder configs'
-        let result = examine anyUnified stuck
+        result <- examine anyUnified stuck
         case result of
             -- Try to simplify the remaining configuration one more time
             NotImpliedStuck _ -> do
                 let unmarkedSimplified = MultiOr.map Pattern.forgetSimplified configs'
                 stuck' <- simplifyRemainder unmarkedSimplified
-                return (examine anyUnified stuck')
+                examine anyUnified stuck'
             implResult -> return implResult
   where
     ClaimPattern{right, left, existentials} = claimPattern
@@ -669,17 +665,19 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern)
     examine ::
         AnyUnified ->
         Pattern RewritingVariableName ->
-        CheckImplicationResult ClaimPattern
+        m (CheckImplicationResult ClaimPattern)
     examine AnyUnified{didAnyUnify} stuck
         | didAnyUnify
           , isBottom condition =
-            Implied claimPattern
+            pure $ Implied claimPattern
         | not didAnyUnify
           , not (isBottom right) =
-            NotImplied claimPattern
+            pure $ NotImplied claimPattern
         | otherwise = do
+            warnClaimRHSIsBottom claimPattern
             Lens.set (field @"left") stuck claimPattern
                 & NotImpliedStuck
+                & pure
       where
         (_, condition) = Pattern.splitTerm stuck
 
