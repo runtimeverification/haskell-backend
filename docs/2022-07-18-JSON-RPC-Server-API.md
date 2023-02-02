@@ -117,7 +117,7 @@ A field `state` contains the state reached (including optional `predicate` and `
 
 The above will be also be the same for:
   * `"reason": "depth-bound"`
-
+  * `"reason": "timeout"`
 
 If `"reason":  "terminal-rule"`, an additional `rule` field indicates which of the `terminal-rule` labels or IDs led to terminating the execution:
 
@@ -193,37 +193,6 @@ If `"reason": "cut-point-rule"`, the `next-states` field contains the next state
   }
 }
 ```
-If `"reason": "timeout"`, an additional `next-states` field contains all following states.
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "result": {
-    "state": {
-      "term": {"format":"KORE", "version":1, "term":{}},
-      "predicate": {"format":"KORE", "version":1, "term":{}},
-      "substitution": {"format":"KORE", "version":1, "term":{}},
-    },
-    "depth": 2,
-    "reason": "timeout",
-    "rule": "rule1",
-    "next-states": [
-      {
-        "term": {"format": "KORE", "version": 1, "term": {}},
-        "predicate": {"format":"KORE", "version":1, "term":{}},
-        "substitution": {"format":"KORE", "version":1, "term":{}},
-      },
-      {
-        "term": {"format": "KORE", "version": 1, "term": {}},
-        "predicate": {"format":"KORE", "version":1, "term":{}},
-        "substitution": {"format":"KORE", "version":1, "term":{}},
-      }
-    ]
-  }
-}
-```
-
 ## Implies
 
 ### Request:
