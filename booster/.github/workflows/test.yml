@@ -52,7 +52,7 @@ jobs:
           ghc: ${{ env.ghc_version }}
 
       - name: 'Run unit tests'
-        run: docker exec -t hs-booster-ci-stack-unit-buster-${{ github.run_id }} /bin/bash -c 'stack --system-ghc --stack-root $(pwd)/stack-cache test --pedantic'
+        run: docker exec -t hs-booster-ci-stack-unit-buster-${{ github.run_id }} /bin/bash -c 'stack --system-ghc --stack-root $(pwd)/stack-cache test :unit-tests --pedantic'
 
       - name: 'Tear down Docker'
         if: always()
@@ -98,7 +98,7 @@ jobs:
       - name: 'Build and run unit tests'
         run: |
           docker exec -t hs-booster-ci-cabal-unit-buster-${{ github.run_id }} \
-            /bin/bash -c 'cabal --store-dir /opt/workspace/cabal-cache/store v2-test --enable-tests --test-show-details=direct'
+            /bin/bash -c 'cabal --store-dir /opt/workspace/cabal-cache/store v2-test unit-tests --enable-tests --test-show-details=direct'
 
       - name: 'Configure with profiling'
         run: |
@@ -144,7 +144,7 @@ jobs:
           docker stop --time=0 hs-booster-ci-formatting-style-buster-${{ github.run_id }}
 
   nix-build:
-    name: 'Nix / Unit Tests'
+    name: 'Nix / All Tests'
     strategy:
       fail-fast: false
       matrix:
@@ -178,7 +178,7 @@ jobs:
       - name: Run unit tests
         env:
           GC_DONT_GC: '1'
-        run: nix build .#hs-backend-booster:test:test-suite --extra-experimental-features 'nix-command flakes' --print-build-logs
+        run: nix build .#hs-backend-booster:test:unit-tests --extra-experimental-features 'nix-command flakes' --print-build-logs
 
 
       - name: Run integration tests
@@ -186,9 +186,12 @@ jobs:
           GC_DONT_GC: '1'
           GH_TOKEN: ${{ github.token }}
         run: |
+          nix run .#hs-backend-booster:test:llvm-integration --extra-experimental-features 'nix-command flakes' --print-build-logs
           export JQ=$(nix-build '<nixpkgs>' -A jq --no-link)/bin/jq
           nix build .#checks.${{ matrix.nix }}.integration.a-to-f --extra-experimental-features 'nix-command flakes' --print-build-logs
           nix build .#checks.${{ matrix.nix }}.integration.imp --extra-experimental-features 'nix-command flakes' --print-build-logs -o imp.md
           echo "${{ matrix.nix }}" > out.md
           cat imp.md >> out.md
-          gh pr comment ${{ github.event.pull_request.number }} -F out.md
+          cat out.md >> $GITHUB_STEP_SUMMARY
+          [[ ! -z "${{ github.event.pull_request.head.sha }}" ]] && \
+            gh pr comment ${{ github.event.pull_request.number }} -F out.md

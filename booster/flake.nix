@@ -24,14 +24,16 @@
       allNixpkgsFor = perSystem nixpkgsForSystem;
       nixpkgsFor = system: allNixpkgsFor.${system};
       index-state = "2023-01-19T00:00:00Z";
-      
-      boosterBackendFor = { compiler, pkgs, profiling ? false }:
+
+      boosterBackendFor = { compiler, pkgs, profiling ? false, k }:
         pkgs.haskell-nix.cabalProject {
           name = "hs-backend-booster";
           compiler-nix-name = compiler;
           src = pkgs.nix-gitignore.gitignoreSourcePure [
             ''
-              /test
+              /test/parser
+              /test/internalisation
+              /test/rpc-integration
               /scripts
               /.github
             ''
@@ -60,6 +62,12 @@
           modules = [{
             enableProfiling = profiling;
             enableLibraryProfiling = profiling;
+            packages.hs-backend-booster.components.tests.llvm-integration = {
+              build-tools = with pkgs; lib.mkForce [ makeWrapper ];
+              postInstall = ''
+                wrapProgram $out/bin/llvm-integration --prefix PATH : ${lib.makeBinPath [ k ]}
+              '';
+            };
 
             packages = { ghc.components.library.doHaddock = false; };
           }];
@@ -68,16 +76,16 @@
       defaultCompiler = "ghc925";
 
       # Get flake outputs for different GHC versions
-      flakesFor = pkgs:
+      flakesFor = pkgs: k:
         let compilers = [ defaultCompiler "ghc924" ];
 
         in builtins.listToAttrs (lib.lists.forEach compilers (compiler:
           lib.attrsets.nameValuePair compiler
-          ((boosterBackendFor { inherit compiler pkgs; }).flake { }))
+          ((boosterBackendFor { inherit compiler pkgs k; }).flake { }))
           ++ lib.lists.forEach compilers (compiler:
             lib.attrsets.nameValuePair (compiler + "-prof")
             ((boosterBackendFor {
-              inherit compiler pkgs;
+              inherit compiler pkgs k;
               profiling = true;
             }).flake { })));
 
@@ -112,7 +120,7 @@
         let
           inherit (flakes.${defaultCompiler}) packages;
           pkgs = nixpkgsFor system;
-          flakes = flakesFor pkgs;
+          flakes = flakesFor pkgs k-framework.packages.${system}.k;
         in {
           hs-backend-booster =
             packages."hs-backend-booster:exe:hs-backend-booster";
@@ -124,7 +132,7 @@
       apps = perSystem (system:
         let
           inherit (flakes.${defaultCompiler}) apps;
-          flakes = flakesFor (nixpkgsFor system);
+          flakes = flakesFor (nixpkgsFor system) k-framework.packages.${system}.k;
           pkgs = nixpkgsFor system;
         in {
           hs-backend-booster = apps."hs-backend-booster:exe:hs-backend-booster";
@@ -137,20 +145,20 @@
       # To enter a development environment for a particular GHC version, use
       # the compiler name, e.g. `nix develop .#ghc8107`
       devShells = perSystem (system:
-        let flakes = flakesFor (nixpkgsFor system);
+        let flakes = flakesFor (nixpkgsFor system) k-framework.packages.${system}.k;
         in {
           default = flakes.${defaultCompiler}.devShell;
         } // lib.attrsets.mapAttrs'
         (compiler: v: lib.attrsets.nameValuePair compiler v.devShell) flakes);
 
-      # `nix build .#hs-backend-booster:test:test-suite`
+      # `nix build .#hs-backend-booster:test:unit-tests`
       #
       # To run a check for a particular compiler version, prefix the derivation
       # name with the GHC version, e.g.
       #
-      # `nix build .#ghc8107:hs-backend-booster:test:test-suite`
+      # `nix build .#ghc8107:hs-backend-booster:test:unit-tests`
       checks = perSystem (system:
-        let flakes = flakesFor (nixpkgsFor system);
+        let flakes = flakesFor (nixpkgsFor system) k-framework.packages.${system}.k;
         in flakes.${defaultCompiler}.checks // collectOutputs "checks" flakes
         // {
           integration = with nixpkgsFor system;
@@ -169,7 +177,7 @@
           lib.optionalAttrs (!(prev ? haskell-nix))
           (inputs.haskell-nix.overlays.combined final prev))
         (_: prev:
-          let inherit ((flakesFor prev).${defaultCompiler}) packages;
+          let inherit ((flakesFor prev k-framework.packages.${prev.system}.k).${defaultCompiler}) packages;
           in {
             hs-backend-booster =
               packages."hs-backend-booster:exe:hs-backend-booster";
