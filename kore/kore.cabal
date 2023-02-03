@@ -156,12 +156,13 @@ common library
   build-depends: gitrev >=1.3
   build-depends: graphviz >=2999.20
   -- Pin hashable to make sure cabal build uses the one Nix & Stack builds do
-  build-depends: hashable ==1.3.0.0
+  build-depends: hashable ==1.4.2.0
   build-depends: haskeline ==0.8.*
-  build-depends: integer-gmp >=1.0
+  build-depends: ghc-bignum >=1.2
   build-depends: json-rpc >=1.0
   build-depends: lens >=4.17
   build-depends: lifted-async
+  build-depends: lifted-base
   build-depends: logict >=0.7
   build-depends: matrix >=0.3.6.1
   build-depends: megaparsec >=7.0.4
@@ -190,13 +191,12 @@ common library
   build-depends: text >=1.2
   build-depends: these >=1.0
   build-depends: time >=1.9.3
-  build-depends: timeit
   build-depends: transformers >=0.4
   build-depends: transformers-base
   build-depends: unliftio >= 0.2
   build-depends: unordered-containers >=0.2
   build-depends: vector >=0.12
-  build-depends: witherable ==0.3.*
+  build-depends: witherable ==0.4.*
   build-depends: yaml >=0.11.5.0
   build-depends: zlib >=0.6
   build-tool-depends: happy:happy
@@ -473,6 +473,7 @@ library
     Kore.Rewrite.Step
     Kore.Rewrite.Strategy
     Kore.Rewrite.Substitution
+    Kore.Rewrite.Timeout
     Kore.Rewrite.Transition
     Kore.Rewrite.RewritingVariable
     Kore.Rewrite.UnifyingRule

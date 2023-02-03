@@ -49,6 +49,10 @@ import Kore.Rewrite.Strategy (
     FinalNodeType (..),
     GraphSearchOrder (..),
  )
+
+import Kore.Rewrite.Timeout (
+    EnableMovingAverage (..),
+ )
 import Kore.Rewrite.Transition (runTransitionT)
 import Kore.Unparser (
     unparseToText2,
@@ -946,6 +950,8 @@ proveClaims
     alreadyProven =
         Kore.Reachability.proveClaims
             Nothing
+            Nothing
+            DisableMovingAverage
             EnabledStuckCheck
             AllowedVacuous
             breadthLimit

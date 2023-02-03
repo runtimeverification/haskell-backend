@@ -1,4 +1,5 @@
 {-# LANGUAGE MagicHash #-}
+{-# LANGUAGE UnboxedSums #-}
 
 {- |
 Module      : Kore.Builtin.Int
@@ -89,12 +90,14 @@ import Data.Text (
 import GHC.Integer (
     smallInteger,
  )
-import GHC.Integer.GMP.Internals (
-    powModInteger,
-    recipModInteger,
- )
 import GHC.Integer.Logarithms (
     integerLog2#,
+ )
+import GHC.Num.Integer (
+    integerFromNatural,
+    integerPowMod#,
+    integerRecipMod#,
+    integerToNatural,
  )
 import Kore.Builtin.Bool qualified as Bool
 import Kore.Builtin.Builtin (
@@ -364,6 +367,18 @@ powmod b e m
     | m == 0 = Nothing
     | e < 0 && recipModInteger b m == 0 = Nothing
     | otherwise = Just (powModInteger b e m)
+  where
+    -- These functions are deprecated in integer-gmp. I'm not sure how to
+    -- adapt best to the new ghc-bignum regime.
+    recipModInteger :: Integer -> Integer -> Integer
+    recipModInteger x m' = case integerRecipMod# x (integerToNatural m') of
+        (# y | #) -> integerFromNatural y
+        (# | () #) -> 0
+
+    powModInteger :: Integer -> Integer -> Integer -> Integer
+    powModInteger b' e' m' = case integerPowMod# b' e' (integerToNatural m') of
+        (# r | #) -> integerFromNatural r
+        (# | () #) -> 0
 
 evalEq :: Builtin.Function
 evalEq sideCondition resultSort arguments@[_intLeft, _intRight] =

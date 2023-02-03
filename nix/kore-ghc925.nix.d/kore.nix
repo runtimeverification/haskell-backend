@@ -68,10 +68,11 @@
         (hsPkgs."graphviz" or (errorHandler.buildDepError "graphviz"))
         (hsPkgs."hashable" or (errorHandler.buildDepError "hashable"))
         (hsPkgs."haskeline" or (errorHandler.buildDepError "haskeline"))
-        (hsPkgs."integer-gmp" or (errorHandler.buildDepError "integer-gmp"))
+        (hsPkgs."ghc-bignum" or (errorHandler.buildDepError "ghc-bignum"))
         (hsPkgs."json-rpc" or (errorHandler.buildDepError "json-rpc"))
         (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
         (hsPkgs."lifted-async" or (errorHandler.buildDepError "lifted-async"))
+        (hsPkgs."lifted-base" or (errorHandler.buildDepError "lifted-base"))
         (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
         (hsPkgs."matrix" or (errorHandler.buildDepError "matrix"))
         (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
@@ -105,7 +106,6 @@
         (hsPkgs."text" or (errorHandler.buildDepError "text"))
         (hsPkgs."these" or (errorHandler.buildDepError "these"))
         (hsPkgs."time" or (errorHandler.buildDepError "time"))
-        (hsPkgs."timeit" or (errorHandler.buildDepError "timeit"))
         (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
         (hsPkgs."transformers-base" or (errorHandler.buildDepError
           "transformers-base"))
@@ -392,6 +392,7 @@
         "Kore/Rewrite/Step"
         "Kore/Rewrite/Strategy"
         "Kore/Rewrite/Substitution"
+        "Kore/Rewrite/Timeout"
         "Kore/Rewrite/Transition"
         "Kore/Rewrite/RewritingVariable"
         "Kore/Rewrite/UnifyingRule"
@@ -733,10 +734,11 @@
           (hsPkgs."graphviz" or (errorHandler.buildDepError "graphviz"))
           (hsPkgs."hashable" or (errorHandler.buildDepError "hashable"))
           (hsPkgs."haskeline" or (errorHandler.buildDepError "haskeline"))
-          (hsPkgs."integer-gmp" or (errorHandler.buildDepError "integer-gmp"))
+          (hsPkgs."ghc-bignum" or (errorHandler.buildDepError "ghc-bignum"))
           (hsPkgs."json-rpc" or (errorHandler.buildDepError "json-rpc"))
           (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
           (hsPkgs."lifted-async" or (errorHandler.buildDepError "lifted-async"))
+          (hsPkgs."lifted-base" or (errorHandler.buildDepError "lifted-base"))
           (hsPkgs."logict" or (errorHandler.buildDepError "logict"))
           (hsPkgs."matrix" or (errorHandler.buildDepError "matrix"))
           (hsPkgs."megaparsec" or (errorHandler.buildDepError "megaparsec"))
@@ -773,7 +775,6 @@
           (hsPkgs."text" or (errorHandler.buildDepError "text"))
           (hsPkgs."these" or (errorHandler.buildDepError "these"))
           (hsPkgs."time" or (errorHandler.buildDepError "time"))
-          (hsPkgs."timeit" or (errorHandler.buildDepError "timeit"))
           (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
           (hsPkgs."transformers-base" or (errorHandler.buildDepError
             "transformers-base"))

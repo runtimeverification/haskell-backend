@@ -184,6 +184,11 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Kore.Rewrite.RulePattern qualified as RulePattern
 import Kore.Rewrite.Strategy qualified as Strategy
+import Kore.Rewrite.Timeout (
+    EnableMovingAverage (..),
+    StepTimeout,
+    timeAction,
+ )
 import Kore.Simplify.Simplify (
     Simplifier,
  )
@@ -197,7 +202,6 @@ import Kore.Unparser (
     unparse,
     unparseToString,
  )
-import Numeric (showFFloat)
 import Numeric.Natural
 import Prelude.Kore hiding (
     toList,
@@ -236,7 +240,6 @@ import System.Process (
     std_in,
     std_out,
  )
-import System.TimeIt (timeItT)
 import Text.Megaparsec (
     ParseErrorBundle (..),
     ShowErrorComponent (..),
@@ -330,6 +333,7 @@ replInterpreter0 printAux printKore replCmd = do
             DebugRewrite op -> debugRewrite op $> Continue
             SetStepTimeout st -> setStepTimeout st $> Continue
             ShowStepTime -> showStepTime $> Continue
+            MovingAverage -> toggleMovingAverage $> Continue
             Exit -> exit
     (ReplOutput output, shouldContinue) <- lift $ evaluateCommand command
     traverse_
@@ -376,6 +380,13 @@ showStepTime = modifying (field @"stepTime") toggle
     toggle = \case
         EnableStepTime -> DisableStepTime
         DisableStepTime -> EnableStepTime
+
+toggleMovingAverage :: ReplM ()
+toggleMovingAverage = modifying (field @"enableMovingAverage") toggle
+  where
+    toggle = \case
+        EnableMovingAverage -> DisableMovingAverage
+        DisableMovingAverage -> EnableMovingAverage
 
 showUsageMessage :: String
 showUsageMessage = "Could not parse command, try using 'help'."
@@ -568,10 +579,11 @@ withTime act =
     Lens.use (field @"stepTime") >>= \case
         DisableStepTime -> act
         EnableStepTime -> do
-            (time, result) <- timeItT act
+            (time, result) <- timeAction act
             putStrLn' $
                 "Step(s) took "
-                    <> showFFloat (Just 4) time " seconds"
+                    <> show (time `div` 1000)
+                    <> " milliseconds"
             pure result
 
 -- | Loads a script from a file.

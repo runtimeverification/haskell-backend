@@ -53,7 +53,6 @@ module Kore.Repl.Data (
     TryApplyRuleResult (..),
     KorePrintCommand (..),
     KompiledDir (..),
-    StepTimeout (..),
     StepTime (..),
 ) where
 
@@ -101,6 +100,10 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
  )
 import Kore.Rewrite.Strategy qualified as Strategy
+import Kore.Rewrite.Timeout (
+    EnableMovingAverage,
+    StepTimeout,
+ )
 import Kore.Simplify.Simplify (
     Simplifier,
  )
@@ -436,6 +439,8 @@ data ReplCommand
       DebugRewrite Log.DebugRewriteOptions
     | -- | Set a timeout for one step.
       SetStepTimeout !(Maybe StepTimeout)
+    | -- | Toggle the timeout based on moving average.
+      MovingAverage
     | -- | Toggle the printing of time spent on steps.
       ShowStepTime
     | -- | Exit the repl.
@@ -522,7 +527,8 @@ helpText =
     \ktry (<a|c><num>)|<name>                 like try, but unparses result\n\
     \tryf (<a|c><num>)|<name>                 like try, but if successful, it will apply the axiom or claim.\n\
     \kryf (<a|c><num>)|<name>                 like ktry, but if successful, it will apply the axiom or claim.\n\
-    \set-step-timeout [n]                     Set a timeout for one step in seconds. Omit the argument to remove the timeout.\n\
+    \set-step-timeout [n]                     Set a timeout for one step in milliseconds. Omit the argument to remove the timeout.\n\
+    \moving-average                           Toggle the timeout based on moving average.\n\
     \show-step-time                           Toggle the printing of time spent on steps.\n\
     \clear [n]                                removes all the node's children from the\
     \ proof graph (***)\
@@ -622,6 +628,7 @@ shouldStore =
         Try _ -> False
         KTry _ -> False
         SetStepTimeout _ -> False
+        MovingAverage -> False
         ShowStepTime -> False
         Exit -> False
         _ -> True
@@ -663,6 +670,7 @@ data ReplState = ReplState
       stepTimeout :: Maybe StepTimeout
     , -- | Whether to show the time taken by steps
       stepTime :: StepTime
+    , enableMovingAverage :: EnableMovingAverage
     }
     deriving stock (GHC.Generic)
 
@@ -671,6 +679,7 @@ data Config = Config
     { -- | Stepper function
       stepper ::
         Maybe StepTimeout ->
+        EnableMovingAverage ->
         [Axiom] ->
         ExecutionGraph ->
         ReplNode ->

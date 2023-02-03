@@ -14,13 +14,12 @@ module Kore.Reachability.Prove (
     Axioms (..),
     ToProve (..),
     AlreadyProven (..),
-    StepTimeout (..),
     proveClaims,
     proveClaimStep,
     lhsClaimStateTransformer,
 ) where
 
-import Control.Concurrent (threadDelay)
+import Control.Concurrent (MVar, threadDelay)
 import Control.Concurrent.Async.Lifted (race)
 import Control.DeepSeq (
     deepseq,
@@ -117,6 +116,16 @@ import Kore.Rewrite.Strategy (
     Step,
     executionHistoryStep,
  )
+import Kore.Rewrite.Timeout (
+    EnableMovingAverage,
+    StepMovingAverage,
+    StepTimeout,
+    TimeoutMode (..),
+    getTimeout,
+    getTimeoutMode,
+    timeAction,
+    updateStepMovingAverage,
+ )
 import Kore.Rewrite.Transition (
     runTransitionT,
  )
@@ -195,13 +204,10 @@ data ProveClaimsResult = ProveClaimsResult
       unexplored :: Natural
     }
 
-newtype StepTimeout = StepTimeout
-    { unStepTimeout :: Int
-    }
-    deriving stock (Eq, Ord, Show)
-
 proveClaims ::
     Maybe MinDepth ->
+    Maybe StepTimeout ->
+    EnableMovingAverage ->
     StuckCheck ->
     AllowVacuous ->
     Limit Natural ->
@@ -217,6 +223,8 @@ proveClaims ::
     Simplifier ProveClaimsResult
 proveClaims
     maybeMinDepth
+    stepTimeout
+    enableMA
     stuckCheck
     allowVacuous
     breadthLimit
@@ -231,6 +239,8 @@ proveClaims
             (result, provenClaims) <-
                 proveClaimsWorker
                     maybeMinDepth
+                    stepTimeout
+                    enableMA
                     stuckCheck
                     allowVacuous
                     breadthLimit
@@ -267,6 +277,8 @@ proveClaims
 
 proveClaimsWorker ::
     Maybe MinDepth ->
+    Maybe StepTimeout ->
+    EnableMovingAverage ->
     StuckCheck ->
     AllowVacuous ->
     Limit Natural ->
@@ -281,6 +293,8 @@ proveClaimsWorker ::
     VerifierT (StateT ProvenClaims Simplifier) ()
 proveClaimsWorker
     maybeMinDepth
+    stepTimeout
+    enableMA
     stuckCheck
     allowVacuous
     breadthLimit
@@ -305,6 +319,8 @@ proveClaimsWorker
                     lift . lift $
                         proveClaim
                             maybeMinDepth
+                            stepTimeout
+                            enableMA
                             stuckCheck
                             allowVacuous
                             breadthLimit
@@ -325,6 +341,8 @@ proveClaimsWorker
 
 proveClaim ::
     Maybe MinDepth ->
+    Maybe StepTimeout ->
+    EnableMovingAverage ->
     StuckCheck ->
     AllowVacuous ->
     Limit Natural ->
@@ -337,6 +355,8 @@ proveClaim ::
     Simplifier (Either (StuckClaims, Natural) ())
 proveClaim
     maybeMinDepth
+    stepTimeout
+    enableMA
     stuckCheck
     allowVacuous
     breadthLimit
@@ -355,10 +375,14 @@ proveClaim
                     `snoc` [Begin, CheckImplication] -- last step of limited ste
         traversalResult <-
             GraphTraversal.graphTraversal
+                GraphTraversal.GraphTraversalWarn
+                stepTimeout
+                enableMA
                 finalNodeType
                 searchOrder
                 breadthLimit
                 transition
+                unparseConfig
                 (Limit.Limit maxCounterexamples)
                 limitedStrategyList
                 (ProofDepth 0, startGoal)
@@ -386,6 +410,8 @@ proveClaim
                 infoProvenDepth maxProofDepth
                 warnProvenClaimZeroDepth maxProofDepth goal
                 pure $ Right ()
+            GraphTraversal.TimedOut _ rs ->
+                returnUnprovenClaims (length rs) rs
       where
         -------------------------------
         -- brought in from Claim.hs to remove Strategy type
@@ -450,6 +476,11 @@ proveClaim
                 noneStuck :: [ClaimState c] -> Bool
                 noneStuck = null . mapMaybe ClaimState.extractStuck
 
+        unparseConfig =
+            fmap (unparseToString . getConfiguration)
+                . extractUnproven
+                . snd
+
 {- | Attempts to perform a single proof step, starting at the configuration
  in the execution graph designated by the provided node. Re-constructs the
  execution graph by inserting this step.
@@ -457,6 +488,8 @@ proveClaim
 proveClaimStep ::
     Maybe MinDepth ->
     Maybe StepTimeout ->
+    MVar StepMovingAverage ->
+    EnableMovingAverage ->
     StuckCheck ->
     AllowVacuous ->
     -- | list of claims in the spec module
@@ -468,51 +501,69 @@ proveClaimStep ::
     -- | selected node in the graph
     Graph.Node ->
     Simplifier (Maybe (ExecutionGraph CommonClaimState (AppliedRule SomeClaim)))
-proveClaimStep _ timeout stuckCheck allowVacuous claims axioms executionGraph node =
-    withTimeout $
-        executionHistoryStep
-            transitionRule''
-            strategy'
-            executionGraph
-            node
-  where
-    -- TODO(Ana): The kore-repl doesn't support --min-depth <n> yet.
-    -- If requested, add a state layer which keeps track of
-    -- the depth, which should compare it to the minDepth and
-    -- decide the appropriate strategy for the next step.
-    -- We should also add a command for toggling this feature on and
-    -- off.
-    strategy' :: Step Prim
-    strategy'
-        | isRoot = reachabilityFirstStep
-        | otherwise = reachabilityNextStep
+proveClaimStep
+    _
+    stepTimeout
+    ma
+    enableMA
+    stuckCheck
+    allowVacuous
+    claims
+    axioms
+    executionGraph
+    node =
+        withTimeout $
+            executionHistoryStep
+                transitionRule''
+                strategy'
+                executionGraph
+                node
+      where
+        -- TODO(Ana): The kore-repl doesn't support --min-depth <n> yet.
+        -- If requested, add a state layer which keeps track of
+        -- the depth, which should compare it to the minDepth and
+        -- decide the appropriate strategy for the next step.
+        -- We should also add a command for toggling this feature on and
+        -- off.
+        strategy' :: Step Prim
+        strategy'
+            | isRoot = reachabilityFirstStep
+            | otherwise = reachabilityNextStep
 
-    ExecutionGraph{root} = executionGraph
+        ExecutionGraph{root} = executionGraph
 
-    isRoot :: Bool
-    isRoot = node == root
+        isRoot :: Bool
+        isRoot = node == root
 
-    transitionRule'' prim state
-        | isRoot =
-            transitionRule'
-                stuckCheck
-                allowVacuous
-                claims
-                axioms
-                prim
-                (Lens.over lensClaimPattern mkGoal <$> state)
-        | otherwise =
-            transitionRule' stuckCheck allowVacuous claims axioms prim state
+        transitionRule'' prim state
+            | isRoot =
+                transitionRule'
+                    stuckCheck
+                    allowVacuous
+                    claims
+                    axioms
+                    prim
+                    (Lens.over lensClaimPattern mkGoal <$> state)
+            | otherwise =
+                transitionRule' stuckCheck allowVacuous claims axioms prim state
 
-    withTimeout execStep = case timeout of
-        Nothing -> Just <$> execStep
-        Just (StepTimeout st) -> do
-            let warnThread = liftIO . threadDelay $ st * 1000000
-            race warnThread execStep >>= \case
-                Right newExecGraph -> pure $ Just newExecGraph
-                _ -> do
-                    warnStepTimeout st
-                    pure Nothing
+        withTimeout execStep =
+            getTimeoutMode stepTimeout enableMA ma >>= \case
+                Nothing -> do
+                    (time, newExecGraph) <- timeAction execStep
+                    updateStepMovingAverage ma time
+                    pure $ Just newExecGraph
+                Just timeoutMode -> do
+                    let warnThread =
+                            liftIO $
+                                threadDelay (getTimeout timeoutMode)
+                                    $> timeoutMode
+                    race warnThread (timeAction execStep) >>= \case
+                        Right (time, newExecGraph) -> do
+                            updateStepMovingAverage ma time
+                            pure $ Just newExecGraph
+                        Left (ManualTimeout t) -> warnStepManualTimeout t $> Nothing
+                        Left (MovingAverage t) -> warnStepMATimeout t $> Nothing
 
 transitionRule' ::
     StuckCheck ->
