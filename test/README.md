@@ -73,16 +73,6 @@ so one may write program tests which encounter errors.
 - `make ⟨name⟩-spec.k.out.golden`:
   Run the test to construct `⟨name⟩-spec.k.out.golden`.
 
-### KBMC
-
-To run a specification test with `kbmc` instead of `kprove`,
-it should be named like `⟨name⟩-bmc-spec.k`.
-In the `Makefile`, the depth should be set by a target-specific variable:
-
-```
-⟨name⟩-bmc-spec.k: KBMC_DEPTH = 20
-```
-
 ### REPL
 
 To run a specification test with `kore-repl` instead of `kore-exec`,

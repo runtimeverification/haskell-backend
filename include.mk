@@ -17,7 +17,6 @@ KOMPILE = kompile
 KRUN = krun
 export KRUN
 KPROVE = kprove
-KBMC = kbmc
 
 KOMPILE_OPTS = --backend haskell --haskell-backend-command $(KORE_EXEC)
 KRUN_OPTS = --haskell-backend-command $(KORE_EXEC)
