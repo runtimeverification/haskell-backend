@@ -71,17 +71,11 @@ import Kore.Log.ErrorException (
     handleSomeException,
  )
 import Kore.Log.InfoProofDepth
-import Kore.Log.WarnBoundedModelChecker (
-    warnBoundedModelChecker,
- )
 import Kore.Log.WarnIfLowProductivity (
     warnIfLowProductivity,
  )
 import Kore.Log.WarnUnexploredBranches (
     warnUnexploredBranches,
- )
-import Kore.ModelChecker.Bounded qualified as Bounded (
-    CheckResult (..),
  )
 import Kore.Options (
     enableDisableFlag,
@@ -437,7 +431,6 @@ unparseKoreProveOptions
             _
             (ModuleName moduleName)
             graphSearch
-            bmc
             saveProofs
             stuckCheck
             minDepth
@@ -451,7 +444,6 @@ unparseKoreProveOptions
             [ "--graph-search"
             , if graphSearch == DepthFirst then "depth-first" else "breadth-first"
             ]
-        , if bmc then "--bmc" else ""
         , maybe "" ("--save-proofs " <>) saveProofs
         , case stuckCheck of
             Claim.DisabledStuckCheck -> "--disable-stuck-check"
@@ -665,10 +657,7 @@ mainDispatch = warnProductivity . mainDispatchWorker
         LocalOptions KoreExecOptions ->
         Main (KFileLocations, ExitCode)
     mainDispatchWorker localOptions@LocalOptions{execOptions}
-        | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
-            if bmc
-                then koreBmc localOptions proveOptions
-                else koreProve localOptions proveOptions
+        | Just proveOptions <- koreProveOptions = koreProve localOptions proveOptions
         | Just searchOptions <- koreSearchOptions =
             koreSearch localOptions searchOptions
         | True <- serialize =
@@ -887,41 +876,6 @@ koreProve LocalOptions{execOptions} proveOptions = do
                 { definitionAttributes = def
                 , definitionModules = [provenModule]
                 }
-
-koreBmc ::
-    LocalOptions KoreExecOptions ->
-    KoreProveOptions ->
-    Main (KFileLocations, ExitCode)
-koreBmc LocalOptions{execOptions} proveOptions = do
-    let KoreExecOptions{definitionFileName} = execOptions
-        KoreProveOptions{specFileName} = proveOptions
-    definition <- loadDefinitions [definitionFileName, specFileName]
-    let KoreExecOptions{mainModuleName} = execOptions
-    mainModule <- loadModule mainModuleName definition
-    let KoreProveOptions{specMainModule} = proveOptions
-    let KoreExecOptions{koreSolverOptions} = execOptions
-    specModule <- loadModule specMainModule definition
-    (exitCode, final) <- execute koreSolverOptions (MetadataTools.build mainModule) (getSMTLemmas mainModule) $ do
-        let KoreExecOptions{breadthLimit, depthLimit} = execOptions
-            KoreProveOptions{graphSearch} = proveOptions
-        checkResult <-
-            boundedModelCheck
-                breadthLimit
-                depthLimit
-                mainModule
-                specModule
-                graphSearch
-        case checkResult of
-            Bounded.Proved -> return success
-            Bounded.Unknown claim -> do
-                warnBoundedModelChecker claim
-                return success
-            Bounded.Failed final -> return (failure final)
-    lift $ renderResult execOptions (unparse final)
-    return (kFileLocations definition, exitCode)
-  where
-    failure pat = (ExitFailure 1, pat)
-    success = (ExitSuccess, mkTop $ mkSortVariable "R")
 
 loadPattern :: LoadedModuleSyntax -> Maybe FilePath -> Main (TermLike VariableName)
 loadPattern mainModule (Just fileName) =

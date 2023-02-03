@@ -13,9 +13,9 @@ import Data.Sup
 import Debug
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
-import Kore.Internal.TermLike
+import Kore.Internal.TermLike hiding (counter)
 import Kore.Unparser
-import Kore.Variables.Fresh
+import Kore.Variables.Fresh hiding (counter)
 import Numeric.Natural
 import Prelude.Kore
 import Pretty

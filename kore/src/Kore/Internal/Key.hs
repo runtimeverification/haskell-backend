@@ -1,3 +1,6 @@
+-- The Synthetic KeyAttributes base instance needs this.
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2018-2021
 License     : BSD-3-Clause
@@ -63,6 +66,8 @@ newtype KeyAttributes = KeyAttributes
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
+-- GHC claims the Functor constraint is redundant, but it gives an error
+-- without it. See https://gitlab.haskell.org/ghc/ghc/-/issues/22838
 instance (Synthetic Sort base, Functor base) => Synthetic KeyAttributes base where
     synthetic base =
         KeyAttributes

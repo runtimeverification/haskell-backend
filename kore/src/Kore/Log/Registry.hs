@@ -141,9 +141,6 @@ import Kore.Log.WarnBottom (
     WarnClaimRHSIsBottom,
     WarnConfigIsBottom,
  )
-import Kore.Log.WarnBoundedModelChecker (
-    WarnBoundedModelChecker,
- )
 import Kore.Log.WarnDepthLimitExceeded (
     WarnDepthLimitExceeded,
  )
@@ -237,7 +234,6 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnStepTimeout
             , mk $ Proxy @WarnStuckClaimState
             , mk $ Proxy @WarnDepthLimitExceeded
-            , mk $ Proxy @WarnBoundedModelChecker
             , mk $ Proxy @WarnClaimRHSIsBottom
             , mk $ Proxy @WarnConfigIsBottom
             , mk $ Proxy @WarnIfLowProductivity

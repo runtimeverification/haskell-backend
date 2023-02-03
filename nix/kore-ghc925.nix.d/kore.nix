@@ -68,7 +68,7 @@
         (hsPkgs."graphviz" or (errorHandler.buildDepError "graphviz"))
         (hsPkgs."hashable" or (errorHandler.buildDepError "hashable"))
         (hsPkgs."haskeline" or (errorHandler.buildDepError "haskeline"))
-        (hsPkgs."integer-gmp" or (errorHandler.buildDepError "integer-gmp"))
+        (hsPkgs."ghc-bignum" or (errorHandler.buildDepError "ghc-bignum"))
         (hsPkgs."json-rpc" or (errorHandler.buildDepError "json-rpc"))
         (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
         (hsPkgs."lifted-async" or (errorHandler.buildDepError "lifted-async"))
@@ -322,7 +322,6 @@
         "Kore/Log/Registry"
         "Kore/Log/SQLite"
         "Kore/Log/WarnBottom"
-        "Kore/Log/WarnBoundedModelChecker"
         "Kore/Log/WarnDepthLimitExceeded"
         "Kore/Log/WarnFunctionWithoutEvaluators"
         "Kore/Log/WarnIfLowProductivity"
@@ -335,7 +334,6 @@
         "Kore/Log/WarnTrivialClaim"
         "Kore/Log/WarnUnexploredBranches"
         "Kore/Log/WarnUnsimplified"
-        "Kore/ModelChecker/Bounded"
         "Kore/ModelChecker/Simplification"
         "Kore/ModelChecker/Step"
         "Kore/Network/JSONRPC"
@@ -734,7 +732,7 @@
           (hsPkgs."graphviz" or (errorHandler.buildDepError "graphviz"))
           (hsPkgs."hashable" or (errorHandler.buildDepError "hashable"))
           (hsPkgs."haskeline" or (errorHandler.buildDepError "haskeline"))
-          (hsPkgs."integer-gmp" or (errorHandler.buildDepError "integer-gmp"))
+          (hsPkgs."ghc-bignum" or (errorHandler.buildDepError "ghc-bignum"))
           (hsPkgs."json-rpc" or (errorHandler.buildDepError "json-rpc"))
           (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
           (hsPkgs."lifted-async" or (errorHandler.buildDepError "lifted-async"))

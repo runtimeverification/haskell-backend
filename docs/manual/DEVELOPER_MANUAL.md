@@ -842,10 +842,6 @@ A valid Kkore pattern conforms to the grammar of `<pattern>` described above and
 
 ## Glossary {#glossary}
 
-[*BMC*]{#glossary-bmc}
-
-  1. (noun, acronym) Bounded model checking. Execute the program on all paths for a given number of steps (a.k.a. bound), attempting to identify given properties (bugs, unexpected behaviours, etc.) in the execution graph.
-
 [*constructor-like*]{#glossary-constructor-like}
 
   1. (adjective) A pattern is *constructor-like* if logical equality is syntactic equality. A [pattern](#glossary-pattern) is constructor-like if it is logically equal (in the `\equals` sense) to another constructor-like pattern if and only if the patterns are syntactically equal. The constructor-like patterns of a sort comprise a normal form of elements in that sort.

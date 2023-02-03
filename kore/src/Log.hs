@@ -264,7 +264,7 @@ runLoggerT LoggerT{getLoggerT} logAction =
     runReaderT getLoggerT LoggerEnv{logAction}
 {-# INLINE runLoggerT #-}
 
-instance (MonadCatch m, MonadThrow m) => MonadLog (LoggerT m) where
+instance MonadCatch m => MonadLog (LoggerT m) where
     logEntry entry = do
         someLogAction <- askLogAction
         lift $ someLogAction <& toEntry entry
