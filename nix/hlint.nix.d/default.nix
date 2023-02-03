@@ -133,7 +133,7 @@
         "cmdargs".flags.quotation = true;
         "cmdargs".flags.testprog = false;
         "integer-gmp".revision = (((hackage."integer-gmp")."1.0.3.0").revisions).default;
-        "hashable".revision = (((hackage."hashable")."1.4.0.1").revisions).default;
+        "hashable".revision = (((hackage."hashable")."1.4.2.0").revisions).default;
         "hashable".flags.integer-gmp = true;
         "hashable".flags.containers = true;
         "hashable".flags.random-initial-seed = false;

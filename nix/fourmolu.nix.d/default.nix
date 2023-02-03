@@ -103,7 +103,7 @@
         "HsYAML".revision = (((hackage."HsYAML")."0.2.1.0").revisions).default;
         "HsYAML".flags.exe = false;
         "integer-gmp".revision = (((hackage."integer-gmp")."1.0.3.0").revisions).default;
-        "hashable".revision = (((hackage."hashable")."1.3.5.0").revisions).default;
+        "hashable".revision = (((hackage."hashable")."1.4.2.0").revisions).default;
         "hashable".flags.integer-gmp = true;
         "hashable".flags.random-initial-seed = false;
         "transformers-compat".revision = (((hackage."transformers-compat")."0.7.1").revisions).default;

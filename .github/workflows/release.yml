@@ -31,9 +31,6 @@ jobs:
       - name: Materialize
         run: nix run .#update-cabal
 
-      - name: Materialize GHC 9
-        run: nix run .#update-cabal-ghc9
-
       - name: Check materialization
         run: |
           if [ -n "$(git status --porcelain 'nix/')" ]; then
@@ -74,7 +71,7 @@ jobs:
     name: 'Cache Cabal'
     runs-on: ubuntu-20.04
     env:
-      ghc_version: "8.10.7"
+      ghc_version: "9.2.5"
     steps:
       - name: Install prerequisites
         run: |
@@ -100,7 +97,7 @@ jobs:
         id: setup-haskell-cabal
         with:
           ghc-version: ${{ env.ghc_version }}
-          cabal-version: "3.2"
+          cabal-version: "3.6"
 
       - name: Build
         run: cabal v2-build --enable-tests --enable-benchmarks all

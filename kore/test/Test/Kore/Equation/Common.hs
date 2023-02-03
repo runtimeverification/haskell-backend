@@ -20,7 +20,7 @@ import Data.Sup (
     Sup (..),
  )
 import GHC.Natural (
-    intToNatural,
+    wordToNatural,
  )
 import Kore.Attribute.Axiom (Simplification (..))
 import Kore.Attribute.Axiom.Concrete (
@@ -84,7 +84,7 @@ functionAxiomUnification symbol args right requires =
   where
     ~left = mkApplySymbol symbol variables
     sorts = fmap termLikeSort args
-    ~variables = generateVariables (intToNatural (length args)) sorts
+    ~variables = generateVariables (wordToNatural (fromIntegral (length args))) sorts
     generateVariables ~n sorts' =
         -- lazy argument to prevent arithmetic underflow
         fmap makeElementVariable (zip [0 .. n - 1] sorts')

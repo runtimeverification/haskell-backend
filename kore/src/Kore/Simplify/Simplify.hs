@@ -311,7 +311,7 @@ instance MonadSimplify Simplifier where
     {-# INLINE askMemo #-}
 
 instance
-    (WithLog LogMessage m, MonadSimplify m, Monoid w) =>
+    (MonadSimplify m, Monoid w) =>
     MonadSimplify (AccumT w m)
     where
     localAxiomEquations locally =
