@@ -1582,7 +1582,6 @@ distinctVariables variables =
 -- | Utility function for mapping over the keys of a 'HashMap'.
 mapKeys ::
     Hashable k2 =>
-    Eq k2 =>
     (k1 -> k2) ->
     HashMap k1 v ->
     HashMap k2 v

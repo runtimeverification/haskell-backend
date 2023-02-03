@@ -1917,13 +1917,14 @@ normalizedSet elements opaque =
 mkIntVar :: Id -> TermLike VariableName
 mkIntVar variableName = mkElemVar $ mkElementVariable variableName intSort
 
-setIntersectionsAreEmpty :: Hashable a => Eq a => [HashSet a] -> Bool
-setIntersectionsAreEmpty [] = True
-setIntersectionsAreEmpty (set : sets) =
-    setIntersectionsAreEmpty sets
-        && setIntersectionsHelper sets
-  where
-    setIntersectionsHelper =
-        List.foldl'
-            (\result s -> result && HashSet.null (HashSet.intersection set s))
-            True
+-- | Checks whether the 'HashSet's are pairwise disjoint.
+setIntersectionsAreEmpty :: Hashable a => [HashSet a] -> Bool
+-- If performance matters here, we can add a 'disjoint' operation to
+-- unordered-containers. That will be faster than building intersections
+-- and then throwing them away.
+setIntersectionsAreEmpty all_sets =
+    List.and
+        [ HashSet.null (HashSet.intersection set s)
+        | set : sets <- List.tails all_sets
+        , s <- sets
+        ]

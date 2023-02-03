@@ -69,8 +69,7 @@ instance Debug variable => Debug (PredicatePattern variable) where
 instance (Debug variable, Diff variable) => Diff (PredicatePattern variable)
 
 instance
-    ( Functor base
-    , Synthetic (FreeVariables variable) base
+    ( Synthetic (FreeVariables variable) base
     , Synthetic Simplified base
     ) =>
     Synthetic (PredicatePattern variable) base

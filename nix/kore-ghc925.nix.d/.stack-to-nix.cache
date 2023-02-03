@@ -1,0 +1,4 @@
+https://github.com/goodlyrottenapple/pipes-ghc-events.git c227d88b88ca74eb56da36668cab8ba2af7b32ee eventlog2speedscope 1pzmqmp86am8riwlj3ibbx5yk84qs9qjyqfbrf141vwrd3fj64vs eventlog2speedscope .stack-to-nix.cache.0
+https://github.com/goodlyrottenapple/pipes-ghc-events.git c227d88b88ca74eb56da36668cab8ba2af7b32ee pipes-aeson 1pzmqmp86am8riwlj3ibbx5yk84qs9qjyqfbrf141vwrd3fj64vs pipes-aeson .stack-to-nix.cache.1
+https://github.com/goodlyrottenapple/pipes-ghc-events.git c227d88b88ca74eb56da36668cab8ba2af7b32ee pipes-ghc-events 1pzmqmp86am8riwlj3ibbx5yk84qs9qjyqfbrf141vwrd3fj64vs pipes-ghc-events .stack-to-nix.cache.2
+https://github.com/goodlyrottenapple/pipes-ghc-events.git c227d88b88ca74eb56da36668cab8ba2af7b32ee pipes-sqlite-simple 1pzmqmp86am8riwlj3ibbx5yk84qs9qjyqfbrf141vwrd3fj64vs pipes-sqlite-simple .stack-to-nix.cache.3
