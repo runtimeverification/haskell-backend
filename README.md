@@ -220,18 +220,18 @@ or
 
 This script is also run by an automatic workflow.
 
-### New GHC 9.2.3 dev shell
+### New GHC 9.2.5 dev shell
 
-In order to make use of the new profiling options in GHC 9.2, we've added a nix dev shell which builds kore with GHC 9.2.3. To open the shell, run
+In order to make use of the new profiling options in GHC 9.2, we've added a nix dev shell which builds kore with GHC 9.2.5. To open the shell, run
 
 ```
 nix develop .#ghc9
 ```
 
-Then, use stack to build against `stack-nix-ghc9.yaml`:
+Then, use stack to build:
 
 ```
-stack --stack-yaml stack-nix-ghc9.yaml build
+stack build
 ```
 
 If you modified the `kore.cabal` file and want to build with GHC 9, you will have to run

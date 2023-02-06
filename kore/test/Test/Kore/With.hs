@@ -354,7 +354,7 @@ instance
 newtype VariableElement child = VariableElement {getVariableElement :: child}
 
 instance
-    (Hashable child, Ord child) =>
+    Hashable child =>
     With
         (NormalizedAc NormalizedSet Key child)
         (VariableElement child)
@@ -379,7 +379,7 @@ instance
                 internalSet
 
 instance
-    (Hashable child, Ord child) =>
+    Hashable child =>
     With
         (NormalizedAc NormalizedSet Key child)
         [VariableElement child]
@@ -387,7 +387,7 @@ instance
     with = foldl' with
 
 instance
-    (Hashable child, Ord child) =>
+    Hashable child =>
     With
         (NormalizedSet Key child)
         (VariableElement child)
@@ -398,7 +398,7 @@ instance
             NormalizedSet (ac `with` value)
 
 instance
-    (Hashable child, Ord child) =>
+    Hashable child =>
     With
         (NormalizedSet Key child)
         [VariableElement child]

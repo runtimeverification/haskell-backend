@@ -725,234 +725,114 @@ debugAttemptEquationTests :: [ParserTest ReplCommand]
 debugAttemptEquationTests =
     [ "debug-attempt-equation"
         `parsesTo_` DebugAttemptEquation
-            Log.DebugAttemptEquationOptions
-                { Log.selected =
-                    fromList
-                        []
-                }
+            (Log.DebugAttemptEquationOptions $ fromList [])
     , Text.pack ("debug-attempt-equation " <> totalBalanceSymbolId)
         `parsesTo_` DebugAttemptEquation
-            Log.DebugAttemptEquationOptions
-                { Log.selected =
-                    fromList
-                        [totalBalanceSymbolId]
-                }
+            (Log.DebugAttemptEquationOptions $ fromList [totalBalanceSymbolId])
     , Text.pack ("debug-attempt-equation " <> totalBalanceSymbolId <> " " <> plusSymbolId)
         `parsesTo_` DebugAttemptEquation
-            Log.DebugAttemptEquationOptions
-                { Log.selected =
-                    fromList
-                        [totalBalanceSymbolId, plusSymbolId]
-                }
+            (Log.DebugAttemptEquationOptions $ fromList [totalBalanceSymbolId, plusSymbolId])
     , "debug-attempt-equation label1 label2"
         `parsesTo_` DebugAttemptEquation
-            Log.DebugAttemptEquationOptions
-                { Log.selected =
-                    fromList
-                        ["label1", "label2"]
-                }
+            (Log.DebugAttemptEquationOptions $ fromList ["label1", "label2"])
     , "debug-attempt-equation MODULE.label1 MODULE.label2"
         `parsesTo_` DebugAttemptEquation
-            Log.DebugAttemptEquationOptions
-                { Log.selected =
-                    fromList
-                        ["MODULE.label1", "MODULE.label2"]
-                }
+            (Log.DebugAttemptEquationOptions $ fromList ["MODULE.label1", "MODULE.label2"])
     ]
 
 debugApplyEquationTests :: [ParserTest ReplCommand]
 debugApplyEquationTests =
     [ "debug-apply-equation"
         `parsesTo_` DebugApplyEquation
-            Log.DebugApplyEquationOptions
-                { Log.selected =
-                    fromList
-                        []
-                }
+            (Log.DebugApplyEquationOptions $ fromList [])
     , Text.pack ("debug-apply-equation " <> totalBalanceSymbolId)
         `parsesTo_` DebugApplyEquation
-            Log.DebugApplyEquationOptions
-                { Log.selected =
-                    fromList
-                        [totalBalanceSymbolId]
-                }
+            (Log.DebugApplyEquationOptions $ fromList [totalBalanceSymbolId])
     , Text.pack ("debug-apply-equation " <> totalBalanceSymbolId <> " " <> plusSymbolId)
         `parsesTo_` DebugApplyEquation
-            Log.DebugApplyEquationOptions
-                { Log.selected =
-                    fromList
-                        [totalBalanceSymbolId, plusSymbolId]
-                }
+            (Log.DebugApplyEquationOptions $ fromList [totalBalanceSymbolId, plusSymbolId])
     , "debug-apply-equation label1 label2"
         `parsesTo_` DebugApplyEquation
-            Log.DebugApplyEquationOptions
-                { Log.selected =
-                    fromList
-                        ["label1", "label2"]
-                }
+            (Log.DebugApplyEquationOptions $ fromList ["label1", "label2"])
     , "debug-apply-equation MODULE.label1 MODULE.label2"
         `parsesTo_` DebugApplyEquation
-            Log.DebugApplyEquationOptions
-                { Log.selected =
-                    fromList
-                        ["MODULE.label1", "MODULE.label2"]
-                }
+            (Log.DebugApplyEquationOptions $ fromList ["MODULE.label1", "MODULE.label2"])
     ]
 
 debugEquationTests :: [ParserTest ReplCommand]
 debugEquationTests =
     [ "debug-equation"
         `parsesTo_` DebugEquation
-            Log.DebugEquationOptions
-                { Log.selected =
-                    fromList
-                        []
-                }
+            (Log.DebugEquationOptions $ fromList [])
     , Text.pack ("debug-equation " <> totalBalanceSymbolId)
         `parsesTo_` DebugEquation
-            Log.DebugEquationOptions
-                { Log.selected =
-                    fromList
-                        [totalBalanceSymbolId]
-                }
+            (Log.DebugEquationOptions $ fromList [totalBalanceSymbolId])
     , Text.pack ("debug-equation " <> totalBalanceSymbolId <> " " <> plusSymbolId)
         `parsesTo_` DebugEquation
-            Log.DebugEquationOptions
-                { Log.selected =
-                    fromList
-                        [totalBalanceSymbolId, plusSymbolId]
-                }
+            (Log.DebugEquationOptions $ fromList [totalBalanceSymbolId, plusSymbolId])
     , "debug-equation label1 label2"
         `parsesTo_` DebugEquation
-            Log.DebugEquationOptions
-                { Log.selected =
-                    fromList
-                        ["label1", "label2"]
-                }
+            (Log.DebugEquationOptions $ fromList ["label1", "label2"])
     , "debug-equation MODULE.label1 MODULE.label2"
         `parsesTo_` DebugEquation
-            Log.DebugEquationOptions
-                { Log.selected =
-                    fromList
-                        ["MODULE.label1", "MODULE.label2"]
-                }
+            (Log.DebugEquationOptions $ fromList ["MODULE.label1", "MODULE.label2"])
     ]
 
 debugAttemptRewriteTests :: [ParserTest ReplCommand]
 debugAttemptRewriteTests =
     [ "debug-attempt-rewrite"
         `parsesTo_` DebugAttemptRewrite
-            Log.DebugAttemptRewriteOptions
-                { Log.selected =
-                    fromList
-                        []
-                }
+            (Log.DebugAttemptRewriteOptions $ fromList [])
     , Text.pack ("debug-attempt-rewrite " <> totalBalanceSymbolId)
         `parsesTo_` DebugAttemptRewrite
-            Log.DebugAttemptRewriteOptions
-                { Log.selected =
-                    fromList
-                        [totalBalanceSymbolId]
-                }
+            (Log.DebugAttemptRewriteOptions $ fromList [totalBalanceSymbolId])
     , Text.pack ("debug-attempt-rewrite " <> totalBalanceSymbolId <> " " <> plusSymbolId)
         `parsesTo_` DebugAttemptRewrite
-            Log.DebugAttemptRewriteOptions
-                { Log.selected =
-                    fromList
-                        [totalBalanceSymbolId, plusSymbolId]
-                }
+            (Log.DebugAttemptRewriteOptions $ fromList [totalBalanceSymbolId, plusSymbolId])
     , "debug-attempt-rewrite label1 label2"
         `parsesTo_` DebugAttemptRewrite
-            Log.DebugAttemptRewriteOptions
-                { Log.selected =
-                    fromList
-                        ["label1", "label2"]
-                }
+            (Log.DebugAttemptRewriteOptions $ fromList ["label1", "label2"])
     , "debug-attempt-rewrite MODULE.label1 MODULE.label2"
         `parsesTo_` DebugAttemptRewrite
-            Log.DebugAttemptRewriteOptions
-                { Log.selected =
-                    fromList
-                        ["MODULE.label1", "MODULE.label2"]
-                }
+            (Log.DebugAttemptRewriteOptions $ fromList ["MODULE.label1", "MODULE.label2"])
     ]
 
 debugApplyRewriteTests :: [ParserTest ReplCommand]
 debugApplyRewriteTests =
     [ "debug-apply-rewrite"
         `parsesTo_` DebugApplyRewrite
-            Log.DebugApplyRewriteOptions
-                { Log.selected =
-                    fromList
-                        []
-                }
+            (Log.DebugApplyRewriteOptions $ fromList [])
     , Text.pack ("debug-apply-rewrite " <> totalBalanceSymbolId)
         `parsesTo_` DebugApplyRewrite
-            Log.DebugApplyRewriteOptions
-                { Log.selected =
-                    fromList
-                        [totalBalanceSymbolId]
-                }
+            (Log.DebugApplyRewriteOptions $ fromList [totalBalanceSymbolId])
     , Text.pack ("debug-apply-rewrite " <> totalBalanceSymbolId <> " " <> plusSymbolId)
         `parsesTo_` DebugApplyRewrite
-            Log.DebugApplyRewriteOptions
-                { Log.selected =
-                    fromList
-                        [totalBalanceSymbolId, plusSymbolId]
-                }
+            (Log.DebugApplyRewriteOptions $ fromList [totalBalanceSymbolId, plusSymbolId])
     , "debug-apply-rewrite label1 label2"
         `parsesTo_` DebugApplyRewrite
-            Log.DebugApplyRewriteOptions
-                { Log.selected =
-                    fromList
-                        ["label1", "label2"]
-                }
+            (Log.DebugApplyRewriteOptions $ fromList ["label1", "label2"])
     , "debug-apply-rewrite MODULE.label1 MODULE.label2"
         `parsesTo_` DebugApplyRewrite
-            Log.DebugApplyRewriteOptions
-                { Log.selected =
-                    fromList
-                        ["MODULE.label1", "MODULE.label2"]
-                }
+            (Log.DebugApplyRewriteOptions $ fromList ["MODULE.label1", "MODULE.label2"])
     ]
 
 debugRewriteTests :: [ParserTest ReplCommand]
 debugRewriteTests =
     [ "debug-rewrite"
         `parsesTo_` DebugRewrite
-            Log.DebugRewriteOptions
-                { Log.selected =
-                    fromList
-                        []
-                }
+            (Log.DebugRewriteOptions $ fromList [])
     , Text.pack ("debug-rewrite" <> totalBalanceSymbolId)
         `parsesTo_` DebugRewrite
-            Log.DebugRewriteOptions
-                { Log.selected =
-                    fromList
-                        [totalBalanceSymbolId]
-                }
+            (Log.DebugRewriteOptions $ fromList [totalBalanceSymbolId])
     , Text.pack ("debug-rewrite" <> totalBalanceSymbolId <> " " <> plusSymbolId)
         `parsesTo_` DebugRewrite
-            Log.DebugRewriteOptions
-                { Log.selected =
-                    fromList
-                        [totalBalanceSymbolId, plusSymbolId]
-                }
+            (Log.DebugRewriteOptions $ fromList [totalBalanceSymbolId, plusSymbolId])
     , "debug-rewrite label1 label2"
         `parsesTo_` DebugRewrite
-            Log.DebugRewriteOptions
-                { Log.selected =
-                    fromList
-                        ["label1", "label2"]
-                }
+            (Log.DebugRewriteOptions $ fromList ["label1", "label2"])
     , "debug-rewrite MODULE.label1 MODULE.label2"
         `parsesTo_` DebugRewrite
-            Log.DebugRewriteOptions
-                { Log.selected =
-                    fromList
-                        ["MODULE.label1", "MODULE.label2"]
-                }
+            (Log.DebugRewriteOptions $ fromList ["MODULE.label1", "MODULE.label2"])
     ]
 
 fromList :: [String] -> HashSet Text

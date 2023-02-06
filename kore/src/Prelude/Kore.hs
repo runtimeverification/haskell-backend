@@ -171,10 +171,6 @@ import Data.Tuple
 import Data.Typeable (
     Typeable,
  )
-import Data.Witherable (
-    Filterable (..),
-    Witherable (..),
- )
 import Debug.Trace hiding (
     traceEvent,
     traceEventIO,
@@ -184,6 +180,10 @@ import GHC.Stack (
     HasCallStack,
  )
 import Injection
+import Witherable (
+    Filterable (..),
+    Witherable (..),
+ )
 import Prelude hiding (
     Applicative (..),
     Monad (..),

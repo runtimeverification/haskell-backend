@@ -15,7 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-resolver: lts-18.18
+resolver: lts-20.8
 
 nix:
   packages:
@@ -47,42 +47,23 @@ packages:
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps:
-  - ghc-trace-events-0.1.2.1
-
-  - monoidal-containers-0.6.0.1
-  - newtype-0.2.2.0
-
-  - sqlite-simple-0.4.18.0
-  - direct-sqlite-2.3.26
-
-  - witherable-0.3.5
-  - witherable-class-0
-
-  - co-log-0.4.0.1
-
-  - tasty-test-reporter-0.1.1.4
-  - junit-xml-0.1.0.0
-
+  - chronos-1.1.5
+  - co-log-0.5.0.0
   - compact-0.2.0.0
-
   - decision-diagrams-0.2.0.0
+  - typerep-map-0.6.0.0
 
-  - git: https://github.com/ttuegel/pipes-ghc-events.git
-    commit: 4ab25e717658fa833aaf5efd76db38ccb1178f96
+  - git: https://github.com/goodlyrottenapple/pipes-ghc-events.git
+    commit: c227d88b88ca74eb56da36668cab8ba2af7b32ee
     subdirs:
       - eventlog2speedscope
-    # nix-sha256: 05mpk1r04zsaiwzksbn0yd3s6fyah739rp6s4ir5nbb17b7j59pi
-  - git: https://github.com/ttuegel/pipes-ghc-events.git
-    commit: 4ab25e717658fa833aaf5efd76db38ccb1178f96
-    subdirs:
+      - pipes-aeson
       - pipes-ghc-events
-    # nix-sha256: 05mpk1r04zsaiwzksbn0yd3s6fyah739rp6s4ir5nbb17b7j59pi
-  - git: https://github.com/ttuegel/pipes-sqlite-simple.git
-    commit: a3920f053f92e76f2a7ff7c68e34f9e926817702
-    # nix-sha256: 13iag206szfmc8ng77j6qjb6r91ysy9qkvijmf9n9dclvmb1g8an
-  - ghc-events-0.13.0
+      - pipes-sqlite-simple
+    # nix-sha256: 1pzmqmp86am8riwlj3ibbx5yk84qs9qjyqfbrf141vwrd3fj64vs
 
-# TODO (thomas.tuegel): Remove this when stylish-haskell is updated upstream.
+# TODO (treeowl): Remove this when compact and the pipes-ghc-events suite are
+# updated upstream.
 allow-newer: true
 
 ghc-options:

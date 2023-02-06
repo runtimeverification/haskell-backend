@@ -16,7 +16,6 @@ module Kore.Exec (
     search,
     prove,
     proveWithRepl,
-    boundedModelCheck,
     matchDisjunction,
     checkFunctions,
     simplify,
@@ -131,7 +130,6 @@ import Kore.Log.WarnDepthLimitExceeded (
     warnDepthLimitExceeded,
  )
 import Kore.Log.WarnTrivialClaim
-import Kore.ModelChecker.Bounded qualified as Bounded
 import Kore.Reachability (
     AllowVacuous,
     AlreadyProven (AlreadyProven),
@@ -155,7 +153,6 @@ import Kore.Rewrite.Axiom.Identifier (
  )
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.Rule (
-    extractImplicationClaims,
     extractRewriteAxioms,
  )
 import Kore.Rewrite.Rule.Expand (
@@ -166,7 +163,6 @@ import Kore.Rewrite.Rule.Simplify (
  )
 import Kore.Rewrite.Rule.Simplify qualified as Rule
 import Kore.Rewrite.RulePattern (
-    ImplicationRule (..),
     RewriteRule (..),
     getRewriteRule,
     lhsEqualsRhs,
@@ -840,43 +836,6 @@ proveWithRepl
                 kompiledDir
                 korePrintCommand
 
--- | Bounded model check a spec given as a module containing rules to be checked
-boundedModelCheck ::
-    Limit Natural ->
-    Limit Natural ->
-    -- | The main module
-    VerifiedModule StepperAttributes ->
-    -- | The spec module
-    VerifiedModule StepperAttributes ->
-    Strategy.GraphSearchOrder ->
-    SMT
-        ( Bounded.CheckResult
-            (TermLike VariableName)
-            (ImplicationRule VariableName)
-        )
-boundedModelCheck
-    breadthLimit
-    depthLimit
-    definitionModule
-    specModule
-    searchOrder =
-        evalSimplifierProofs definitionModule $ do
-            initialized <- initializeAndSimplify definitionModule
-            let Initialized{rewriteRules} = initialized
-                specClaims = extractImplicationClaims specModule
-            assertSomeClaims specClaims
-            assertSingleClaim specClaims
-            let axioms = fmap Bounded.Axiom rewriteRules
-                claims =
-                    mapRuleVariables (pure mkRuleVariable) . makeImplicationRule
-                        <$> specClaims
-
-            Bounded.checkClaim
-                breadthLimit
-                (Bounded.bmcStrategy axioms)
-                searchOrder
-                (head claims, depthLimit)
-
 matchDisjunction ::
     VerifiedModule Attribute.Symbol ->
     Pattern RewritingVariableName ->
@@ -968,23 +927,12 @@ simplify ::
     m (Pattern RewritingVariableName)
 simplify = return
 
-assertSingleClaim :: Monad m => [claim] -> m ()
-assertSingleClaim claims =
-    when (length claims > 1) . error $
-        "More than one claim is found in the module."
-
 assertSomeClaims :: Monad m => [claim] -> m ()
 assertSomeClaims claims =
     when (null claims) . error $
         "Unexpected empty set of claims.\n"
             ++ "Possible explanation: the frontend and the backend don't agree "
             ++ "on the representation of claims."
-
-makeImplicationRule ::
-    (Attribute.Axiom Symbol VariableName, ImplicationRule VariableName) ->
-    ImplicationRule VariableName
-makeImplicationRule (attributes, ImplicationRule rulePattern) =
-    ImplicationRule rulePattern{attributes}
 
 simplifySomeClaim ::
     SomeClaim ->
