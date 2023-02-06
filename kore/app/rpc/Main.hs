@@ -9,19 +9,24 @@ import Control.Monad.Catch (
 import Control.Monad.Reader (
     ReaderT (..),
  )
+import Data.Map.Strict as Map
+import Control.Concurrent.MVar as MVar
 import Data.IORef (writeIORef)
 import Data.InternedText (globalInternedTextCache)
 import GlobalMain qualified
+import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.BugReport (
     BugReportOption,
     ExitCode,
     parseBugReportOption,
     withBugReport,
  )
-import Kore.Exec (
-    SerializedModule (..),
+import Kore.JsonRpc (
+  runServer,
+  ServerState (..),
  )
-import Kore.JsonRpc (runServer)
+import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
+import Kore.Internal.TermLike (TermLike)
 import Kore.Log (
     KoreLogOptions (..),
     parseKoreLogOptions,
@@ -31,9 +36,11 @@ import Kore.Log.ErrorException (
     handleSomeException,
  )
 import Kore.Rewrite.SMT.Lemma (declareSMTLemmas)
+import Kore.Syntax (VariableName)
 import Kore.Syntax.Definition (
     ModuleName (..),
  )
+import Kore.Syntax.Sentence (SentenceAxiom)
 import Log qualified
 import Options.Applicative (
     InfoMod,
@@ -143,30 +150,21 @@ koreRpcServerRun ::
     GlobalMain.LocalOptions KoreRpcServerOptions ->
     GlobalMain.Main ExitCode
 koreRpcServerRun GlobalMain.LocalOptions{execOptions} = do
-    GlobalMain.SerializedDefinition{serializedModule, lemmas, internedTextCache} <-
+    sd@GlobalMain.SerializedDefinition{internedTextCache} <-
         GlobalMain.deserializeDefinition
             koreSolverOptions
             definitionFileName
             mainModuleName
     lift $ writeIORef globalInternedTextCache internedTextCache
 
-    let SerializedModule{metadataTools} = serializedModule
-
-    -- initialize an SMT solver with user declared lemmas
-    let setupSolver smtSolverRef = do
-            let userInit = SMT.runWithSolver $ declareSMTLemmas metadataTools lemmas
-            let solverSetup = SMT.SolverSetup{userInit, refSolverHandle = smtSolverRef, config = smtConfig}
-            SMT.initSolver solverSetup
-            return solverSetup
-
-    -- launch the SMT solver, initialize it and then pass the SolverSetup object to the RPC server
+    loadedDefinition <- GlobalMain.loadDefinitions [definitionFileName]
+    serverState <- lift $ MVar.newMVar ServerState
+        { serializedModules = Map.singleton mainModuleName sd
+        , loadedDefinition
+        }
     GlobalMain.clockSomethingIO "Executing" $
-        bracket
-            (SMT.newSolver smtConfig >>= setupSolver)
-            (SMT.stopSolver . SMT.refSolverHandle)
-            $ \solverSetup -> do
-                -- wrap the call to runServer in the logger monad
-                Log.LoggerT $ ReaderT $ \loggerEnv -> runServer port solverSetup loggerEnv serializedModule
+        -- wrap the call to runServer in the logger monad
+        Log.LoggerT $ ReaderT $ \loggerEnv -> runServer port serverState mainModuleName (runSMT loggerEnv) loggerEnv
 
     pure ExitSuccess
   where
@@ -179,3 +177,22 @@ koreRpcServerRun GlobalMain.LocalOptions{execOptions} = do
             , SMT.resetInterval = resetInterval
             , SMT.prelude = prelude
             }
+    -- SMT solver with user declared lemmas
+    runSMT :: forall a.
+      Log.LoggerEnv IO ->
+      SmtMetadataTools StepperAttributes ->
+      [SentenceAxiom (TermLike VariableName)] ->
+      SMT.SMT a ->
+      IO a
+    runSMT Log.LoggerEnv{logAction} metadataTools lemmas m =
+      flip Log.runLoggerT logAction $
+          bracket (SMT.newSolver smtConfig) SMT.stopSolver $ \refSolverHandle -> do
+              let userInit = SMT.runWithSolver $ declareSMTLemmas metadataTools lemmas
+                  solverSetup =
+                    SMT.SolverSetup
+                      { userInit
+                      , refSolverHandle
+                      , config=smtConfig
+                      }
+              SMT.initSolver solverSetup
+              SMT.runWithSolver m solverSetup

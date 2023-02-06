@@ -8,6 +8,10 @@ module Kore.Syntax.Module (
     Module (..),
 ) where
 
+import Data.Aeson (
+  FromJSON,
+  ToJSON,
+  )
 import Data.Kind (
     Type,
  )
@@ -30,7 +34,7 @@ import Pretty qualified
 newtype ModuleName = ModuleName {getModuleName :: Text}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
-    deriving newtype (IsString)
+    deriving newtype (IsString, FromJSON, ToJSON)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
