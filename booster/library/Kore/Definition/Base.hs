@@ -16,9 +16,9 @@ module Kore.Definition.Base (
 ) where
 
 import Control.DeepSeq (NFData)
+import Data.ByteString.Char8 (ByteString)
 import Data.Map.Strict as Map (Map, empty)
 import Data.Set (Set)
-import Data.Text (Text)
 import GHC.Generics qualified as GHC
 
 import Kore.Definition.Attributes.Base
@@ -36,7 +36,7 @@ data type, but rather by its construction from a @ParsedDefinition@.
 -}
 data KoreDefinition = KoreDefinition
     { attributes :: DefinitionAttributes
-    , modules :: Map Text ModuleAttributes
+    , modules :: Map ByteString ModuleAttributes
     , sorts :: Map SortName (SortAttributes, Set SortName)
     , symbols :: Map SymbolName Symbol -- constructors and functions
     , aliases :: Map AliasName Alias
@@ -71,7 +71,7 @@ data RewriteRule = RewriteRule
     deriving stock (Eq, Ord, Show, GHC.Generic)
     deriving anyclass (NFData)
 
-type AliasName = Text
+type AliasName = ByteString
 
 data Alias = Alias
     { name :: AliasName

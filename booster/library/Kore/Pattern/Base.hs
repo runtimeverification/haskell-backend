@@ -12,7 +12,8 @@ module Kore.Pattern.Base (
 ) where
 
 import Control.DeepSeq (NFData (..))
-import Data.ByteString (ByteString)
+import Data.ByteString.Char8 (ByteString)
+import Data.ByteString.Char8 qualified as BS
 import Data.Either (fromRight)
 import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
@@ -21,8 +22,7 @@ import Data.Hashable qualified as Hashable
 import Data.Map qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
-import Data.Text (Text)
-import Data.Text qualified as Text
+import Data.Text.Encoding qualified as Text
 import GHC.Generics (Generic)
 import Kore.Definition.Attributes.Base (
     SymbolAttributes (..),
@@ -32,9 +32,9 @@ import Kore.Prettyprinter qualified as KPretty
 import Prettyprinter (Pretty (..))
 import Prettyprinter qualified as Pretty
 
-type VarName = Text
-type SymbolName = Text
-type SortName = Text
+type VarName = ByteString
+type SymbolName = ByteString
+type SortName = ByteString
 
 {- | A term has a particular 'Sort', which is part of a definition.
   Sorts can be subsorts of others (not represented in the definition).
@@ -79,7 +79,7 @@ data Symbol = Symbol
 data TermF t
     = AndTermF t t
     | SymbolApplicationF Symbol [Sort] [t]
-    | DomainValueF Sort Text
+    | DomainValueF Sort ByteString
     | VarF Variable
     deriving stock (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
     deriving anyclass (NFData, Hashable)
@@ -161,7 +161,7 @@ pattern SymbolApplication sym sorts args <- Term _ (SymbolApplicationF sym sorts
                         }
                     $ SymbolApplicationF sym sorts args
 
-pattern DomainValue :: Sort -> Text -> Term
+pattern DomainValue :: Sort -> ByteString -> Term
 pattern DomainValue sort value <- Term _ (DomainValueF sort value)
     where
         DomainValue sort value =
@@ -237,29 +237,29 @@ data TermOrPredicate -- = Either Predicate Pattern
     deriving anyclass (NFData)
 
 -- | Un-escapes special characters in symbol names
-decodeLabel :: Text -> Either String Text
+decodeLabel :: ByteString -> Either String ByteString
 decodeLabel str
-    | Text.null str = Right str
-    | "'" `Text.isPrefixOf` str =
-        let (encoded, rest) = Text.span (/= '\'') (Text.tail str)
-         in (<>) <$> decode encoded <*> decodeLabel (Text.drop 1 rest)
+    | BS.null str = Right str
+    | "'" `BS.isPrefixOf` str =
+        let (encoded, rest) = BS.span (/= '\'') (BS.tail str)
+         in (<>) <$> decode encoded <*> decodeLabel (BS.drop 1 rest)
     | otherwise =
-        let (notEncoded, rest) = Text.span (/= '\'') str
+        let (notEncoded, rest) = BS.span (/= '\'') str
          in (notEncoded <>) <$> decodeLabel rest
   where
-    decode :: Text -> Either String Text
+    decode :: ByteString -> Either String ByteString
     decode s
-        | Text.null s = Right s
-        | Text.length code < 4 = Left $ "Bad character code  " <> show code
+        | BS.null s = Right s
+        | BS.length code < 4 = Left $ "Bad character code  " <> show code
         | otherwise =
             maybe
                 (Left $ "Unknown character code  " <> show code)
                 (\c -> (c <>) <$> decode rest)
                 (Map.lookup code decodeMap)
       where
-        (code, rest) = Text.splitAt 4 s
+        (code, rest) = BS.splitAt 4 s
 
-decodeMap :: Map.Map Text Text
+decodeMap :: Map.Map ByteString ByteString
 decodeMap =
     Map.fromList
         [ ("Spce", " ")
@@ -297,9 +297,13 @@ decodeMap =
         , ("Tild", "~")
         ]
 
-decodeLabel' :: Text -> Text
+decodeLabel' :: ByteString -> ByteString
 decodeLabel' orig =
     fromRight orig (decodeLabel orig)
+
+-- used for printing the string as it appears (with codepoints)
+prettyBS :: ByteString -> Pretty.Doc a
+prettyBS = Pretty.pretty . Text.decodeUtf8
 
 instance Pretty Term where
     pretty =
@@ -309,24 +313,25 @@ instance Pretty Term where
                     <> KPretty.noParameters
                     <> KPretty.argumentsP [t1, t2]
             SymbolApplication symbol sortParams args ->
-                pretty (decodeLabel' symbol.name)
+                prettyBS (decodeLabel' symbol.name)
                     <> KPretty.parametersP sortParams
                     <> KPretty.argumentsP args
-            DomainValue sort text ->
+            DomainValue sort bs ->
                 "\\dv"
                     <> KPretty.parametersP [sort]
-                    <> KPretty.argumentsP [text]
+                    -- prints the bytes of the string as data
+                    <> KPretty.argumentsP [show $ Text.decodeLatin1 bs]
             Var var -> pretty var
 
 instance Pretty Sort where
     pretty (SortApp name params) =
-        Pretty.pretty name <> KPretty.parametersP params
+        prettyBS name <> KPretty.parametersP params
     pretty (SortVar name) =
-        Pretty.pretty name
+        prettyBS name
 
 instance Pretty Variable where
     pretty var =
-        Pretty.pretty (decodeLabel' var.variableName)
+        prettyBS (decodeLabel' var.variableName)
             <> Pretty.colon
             <> pretty var.variableSort
 
@@ -356,11 +361,11 @@ instance Pretty Predicate where
             Exists vn p ->
                 "\\exists"
                     <> KPretty.noParameters
-                    <> KPretty.arguments' [pretty vn, pretty p]
+                    <> KPretty.arguments' [prettyBS vn, pretty p]
             Forall vn p ->
                 "\\forall"
                     <> KPretty.noParameters
-                    <> KPretty.arguments' [pretty vn, pretty p]
+                    <> KPretty.arguments' [prettyBS vn, pretty p]
             Iff p1 p2 ->
                 "\\iff"
                     <> KPretty.noParameters

@@ -5,9 +5,11 @@ License     : BSD-3-Clause
 module Kore.Syntax.Json.Externalise (
     externalisePattern,
     externaliseSort,
+    externaliseTerm,
 ) where
 
 import Data.Foldable ()
+import Data.Text.Encoding qualified as Text
 
 import Kore.Pattern.Base qualified as Internal
 import Kore.Pattern.Util (sortOfTerm)
@@ -46,8 +48,8 @@ externaliseTerm = \case
             (symbolNameToId symbol.name)
             (map externaliseSort sorts)
             (map externaliseTerm args)
-    Internal.DomainValue sort txt ->
-        Syntax.KJDV (externaliseSort sort) txt
+    Internal.DomainValue sort bs ->
+        Syntax.KJDV (externaliseSort sort) $ Text.decodeLatin1 bs
     Internal.Var Internal.Variable{variableSort = iSort, variableName = iName} ->
         Syntax.KJEVar (varNameToId iName) (externaliseSort iSort)
 
@@ -75,10 +77,10 @@ externalisePredicate sort =
             Internal.EqualsPredicate p1 p2 ->
                 Syntax.KJEquals{argSort = sort, sort, first = recursion p1, second = recursion p2}
             Internal.Exists varName p1 ->
-                let varSort = Syntax.SortVar . Syntax.Id $ "Sort" <> varName
+                let varSort = Syntax.SortVar . varNameToId $ "Sort" <> varName
                  in Syntax.KJExists{sort, var = varNameToId varName, varSort, arg = recursion p1}
             Internal.Forall varName p1 ->
-                let varSort = Syntax.SortVar . sortNameToId $ "Sort" <> varName
+                let varSort = Syntax.SortVar . varNameToId $ "Sort" <> varName
                  in Syntax.KJForall{sort, var = varNameToId varName, varSort, arg = recursion p1}
             Internal.Iff p1 p2 ->
                 Syntax.KJIff{sort, first = recursion p1, second = recursion p2}
@@ -99,13 +101,13 @@ externalisePredicate sort =
                 Syntax.KJTop{sort}
 
 varNameToId :: Internal.VarName -> Syntax.Id
-varNameToId = Syntax.Id
+varNameToId = Syntax.Id . Text.decodeLatin1
 
 sortNameToId :: Internal.SortName -> Syntax.Id
-sortNameToId = Syntax.Id
+sortNameToId = Syntax.Id . Text.decodeLatin1
 
 symbolNameToId :: Internal.SymbolName -> Syntax.Id
-symbolNameToId = Syntax.Id
+symbolNameToId = Syntax.Id . Text.decodeLatin1
 
 -- | converts an internal sort to an external one
 externaliseSort :: Internal.Sort -> Syntax.Sort

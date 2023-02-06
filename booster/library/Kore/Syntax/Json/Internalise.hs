@@ -10,6 +10,8 @@ module Kore.Syntax.Json.Internalise (
     PatternError (..),
     checkSort,
     SortError (..),
+    ----------------
+    textToBS,
 ) where
 
 import Control.Applicative ((<|>))
@@ -18,6 +20,8 @@ import Control.Monad.Extra
 import Control.Monad.Trans.Except
 import Data.Aeson (ToJSON (..), Value, object, (.=))
 import Data.Bifunctor
+import Data.ByteString.Char8 (ByteString)
+import Data.ByteString.Char8 qualified as BS
 import Data.Foldable ()
 import Data.List (foldl1', nub)
 import Data.List.NonEmpty (NonEmpty)
@@ -25,7 +29,8 @@ import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
-import Data.Text (Text, intercalate, pack)
+import Data.Text as Text (Text, intercalate, pack, unpack)
+import Data.Text.Encoding (decodeLatin1)
 
 import Kore.Definition.Attributes.Base
 import Kore.Definition.Base (KoreDefinition (..))
@@ -94,16 +99,16 @@ internaliseTerm sortVars definition@KoreDefinition{sorts, symbols} pat =
     case pat of
         Syntax.KJEVar{name, sort} -> do
             variableSort <- lookupInternalSort' sort
-            let variableName = Syntax.getId name
+            let variableName = textToBS name.getId
             pure $ Internal.Var Internal.Variable{variableSort, variableName}
         Syntax.KJSVar{name, sort} -> do
             variableSort <- lookupInternalSort' sort
-            let variableName = Syntax.getId name
+            let variableName = textToBS name.getId
             pure $ Internal.Var Internal.Variable{variableSort, variableName}
         symPatt@Syntax.KJApp{name, sorts = appSorts, args} -> do
             symbol <-
                 maybe (throwE $ UnknownSymbol name symPatt) pure $
-                    Map.lookup name.getId symbols
+                    Map.lookup (textToBS name.getId) symbols
             -- Internalise sort variable instantiation (appSorts)
             -- Length must match sort variables in symbol declaration.
             unless (length appSorts == length symbol.sortVars) $
@@ -115,7 +120,7 @@ internaliseTerm sortVars definition@KoreDefinition{sorts, symbols} pat =
                 <$> mapM lookupInternalSort' appSorts
                 <*> mapM recursion args
         Syntax.KJString{value} ->
-            pure $ Internal.DomainValue (Internal.SortApp "SortString" []) value
+            pure $ Internal.DomainValue (Internal.SortApp "SortString" []) $ textToBS value
         Syntax.KJTop{} -> predicate
         Syntax.KJBottom{} -> predicate
         Syntax.KJNot{} -> predicate
@@ -142,7 +147,7 @@ internaliseTerm sortVars definition@KoreDefinition{sorts, symbols} pat =
         Syntax.KJDV{sort, value} ->
             Internal.DomainValue
                 <$> lookupInternalSort' sort
-                <*> pure value
+                <*> pure (textToBS value)
         Syntax.KJMultiOr{} -> predicate
         Syntax.KJMultiApp{assoc, symbol, sorts = argSorts, argss} ->
             recursion $ withAssoc assoc (mkF symbol argSorts) argss
@@ -190,9 +195,9 @@ internalisePredicate sortVars definition@KoreDefinition{sorts} pat = case pat of
             <$> recursion arg1
             <*> recursion arg2
     Syntax.KJForall{var, arg} ->
-        Internal.Forall (Syntax.getId var) <$> recursion arg
+        Internal.Forall (textToBS var.getId) <$> recursion arg
     Syntax.KJExists{var, arg} ->
-        Internal.Exists (Syntax.getId var) <$> recursion arg
+        Internal.Exists (textToBS var.getId) <$> recursion arg
     Syntax.KJMu{} -> notSupported
     Syntax.KJNu{} -> notSupported
     Syntax.KJCeil{arg} ->
@@ -255,6 +260,10 @@ mkF ::
     Syntax.KorePattern
 mkF symbol argSorts a b = Syntax.KJApp symbol argSorts [a, b]
 
+-- primitive solution ignoring text encoding
+textToBS :: Text -> ByteString
+textToBS = BS.pack . Text.unpack
+
 ----------------------------------------
 
 {- | Given a set of sort variable names and a sort attribute map, checks
@@ -271,18 +280,19 @@ checkSort knownVars sortMap = check'
     check' var@Syntax.SortVar{name = Syntax.Id n} = do
         unless (n `Set.member` knownVars) $
             throwE (UnknownSort var)
-        pure $ Internal.SortVar n
+        pure $ Internal.SortVar $ textToBS n
     check' app@Syntax.SortApp{name = Syntax.Id n, args} =
         do
+            let name = textToBS n
             maybe
                 (throwE $ UnknownSort app)
                 ( \(SortAttributes{argCount}, _) ->
                     unless (length args == argCount) $
                         throwE (WrongSortArgCount app argCount)
                 )
-                (Map.lookup n sortMap)
+                (Map.lookup name sortMap)
             internalArgs <- mapM check' args
-            pure $ Internal.SortApp n internalArgs
+            pure $ Internal.SortApp name internalArgs
 
 isTermM :: Syntax.KorePattern -> Except PatternError Bool
 isTermM pat = case pat of
@@ -340,9 +350,9 @@ ensureSortsAgree ::
     Internal.Sort ->
     Except SortError ()
 ensureSortsAgree (Internal.SortVar n) _ =
-    throwE $ GeneralError ("ensureSortsAgree found variable " <> n)
+    throwE $ GeneralError ("ensureSortsAgree found variable " <> decodeLatin1 n)
 ensureSortsAgree _ (Internal.SortVar n) =
-    throwE $ GeneralError ("ensureSortsAgree found variable " <> n)
+    throwE $ GeneralError ("ensureSortsAgree found variable " <> decodeLatin1 n)
 ensureSortsAgree
     s1@(Internal.SortApp name1 args1)
     s2@(Internal.SortApp name2 args2) = do
