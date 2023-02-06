@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
 
 ### Removed
 
+- `kore-prof`
+
 ### Fixed
 
 ## [0.60.0.0] - 2021-12-17
