@@ -750,9 +750,9 @@ checkSimpleImplication ::
         (TermLike v, CheckImplicationResult (Maybe (Pattern.Condition v)))
 checkSimpleImplication inLeft inRight existentials =
     do
+        checkAssumptions inLeft inRight
         left <- simplifyToSingle "LHS: " inLeft
         right <- simplifyToSingle "RHS: " inRight
-        checkAssumptions left right
         let (rightTerm, rightCondition) = Pattern.splitTerm right
             (leftTerm, leftCondition) = Pattern.splitTerm left
             claimToCheck =
