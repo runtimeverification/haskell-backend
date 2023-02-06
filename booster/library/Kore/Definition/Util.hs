@@ -11,10 +11,10 @@ module Kore.Definition.Util (
 ) where
 
 import Control.DeepSeq (NFData (..))
+import Data.ByteString.Char8 (ByteString)
+import Data.ByteString.Char8 qualified as BS
 import Data.Map qualified as Map
 import Data.Set qualified as Set
-import Data.Text (Text)
-import Data.Text qualified as Text
 import GHC.Generics (Generic)
 
 import Kore.Definition.Attributes.Base
@@ -24,8 +24,8 @@ import Kore.Pattern.Index (TermIndex (..))
 
 data Summary = Summary
     { file :: FilePath
-    , modNames, sortNames, symbolNames :: [Text]
-    , subSorts :: Map.Map Text [Text]
+    , modNames, sortNames, symbolNames :: [ByteString]
+    , subSorts :: Map.Map ByteString [ByteString]
     , axiomCount, preserveDefinednessCount, containAcSymbolsCount :: Int
     , termIndexes :: Map.Map TermIndex [Location]
     }
@@ -67,14 +67,14 @@ prettySummary
         , containAcSymbolsCount
         , termIndexes
         } =
-        Text.unpack $
-            Text.unlines $
+        BS.unpack $
+            BS.unlines $
                 [ list decodeLabel' "Modules" modNames
                 , list decodeLabel' "Sorts" sortNames
                 , list decodeLabel' "Symbols" symbolNames
-                , "Axioms: " <> Text.pack (show axiomCount)
-                , "Axioms preserving definedness: " <> Text.pack (show preserveDefinednessCount)
-                , "Axioms containing AC symbols: " <> Text.pack (show containAcSymbolsCount)
+                , "Axioms: " <> BS.pack (show axiomCount)
+                , "Axioms preserving definedness: " <> BS.pack (show preserveDefinednessCount)
+                , "Axioms containing AC symbols: " <> BS.pack (show containAcSymbolsCount)
                 ]
                     <> ("Subsorts:" : tableView decodeLabel' subSorts)
                     <> ("Axioms grouped by term index:" : tableView justShow termIndexes')
@@ -87,8 +87,8 @@ prettySummary
         list f header xs =
             header
                 <> ": "
-                <> Text.pack (show $ length xs)
-                <> Text.concat (map (("\n  - " <>) . f) xs)
+                <> BS.pack (show $ length xs)
+                <> BS.concat (map (("\n  - " <>) . f) xs)
 
         decodeLabel' = either error id . decodeLabel
 
@@ -99,4 +99,4 @@ prettySummary
         prettyTermIndex (TopSymbol sym) = decodeLabel' sym
         prettyTermIndex None = "None"
 
-        justShow = Text.pack . show
+        justShow = BS.pack . show

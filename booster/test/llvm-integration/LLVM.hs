@@ -6,8 +6,10 @@ module Main (
     main,
 ) where
 
-import Data.ByteString (ByteString)
-import Data.ByteString qualified as BS
+import Control.Monad.Trans.Except (runExcept)
+import Data.ByteString.Char8 (ByteString)
+import Data.ByteString.Char8 qualified as BS
+import Data.Char (toLower)
 import Data.Int (Int64)
 import Data.List (isInfixOf)
 import Data.Map (Map)
@@ -15,7 +17,7 @@ import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
-import Data.Text (pack, toLower)
+import Data.Text (Text)
 import GHC.IO.Exception
 import Hedgehog
 import Hedgehog.Gen qualified as Gen
@@ -31,6 +33,9 @@ import Kore.Definition.Base
 import Kore.LLVM as LLVM
 import Kore.LLVM.Internal as Internal
 import Kore.Pattern.Base
+import Kore.Syntax.Json.Base qualified as Syntax
+import Kore.Syntax.Json.Externalise (externaliseTerm)
+import Kore.Syntax.Json.Internalise qualified as Syntax
 
 -- A prerequisite for all tests in this suite is that a fixed K
 -- definition was compiled in LLVM 'c' mode to produce a dynamic
@@ -56,7 +61,7 @@ llvmSpec =
                 withDLib dlPath $ \dl -> do
                     api <- mkAPI dl
                     let testString = "testing, one, two, three"
-                    s <- api.patt.string.new $ pack testString
+                    s <- api.patt.string.new testString
                     api.patt.dump s `shouldReturn` show testString
 
         beforeAll loadAPI . modifyMaxSuccess (* 20) $ do
@@ -73,8 +78,8 @@ llvmSpec =
                     hedgehog . propertyTest . byteArrayProp
 
             describe "LLVM String handling" $
-                it "should work with strings" $
-                    hedgehog . propertyTest . textProp
+                it "should work with latin-1strings" $
+                    hedgehog . propertyTest . latin1Prop
 
 --------------------------------------------------
 -- individual hedgehog property tests and helpers
@@ -101,15 +106,37 @@ anInt64 = forAll $ Gen.integral (Range.constantBounded :: Range Int64)
 byteArrayProp :: Internal.API -> Property
 byteArrayProp api = property $ do
     i <- forAll $ Gen.int (Range.linear 0 1024)
-    let ba = BS.pack $ take i $ cycle [255, 254 .. 0]
+    let ba = BS.pack $ take i $ cycle ['\255', '\254' .. '\0']
     LLVM.simplifyTerm api testDef (bytesTerm ba) bytesSort === bytesTerm ba
     ba' <- forAll $ Gen.bytes $ Range.linear 0 1024
     LLVM.simplifyTerm api testDef (bytesTerm ba') bytesSort === bytesTerm ba'
 
-textProp :: Internal.API -> Property
-textProp api = property $ do
-    txt <- forAll $ Gen.text (Range.linear 0 123) Gen.unicode
-    LLVM.simplifyTerm api testDef (DomainValue stringSort txt) stringSort === DomainValue stringSort txt
+-- Round-trip test passing syntactic strings through the simplifier
+-- and back. latin-1 characters should be left as they are (treated as
+-- bytes internally). UTF-8 code points beyond latin-1 are forbidden.
+latin1Prop :: Internal.API -> Property
+latin1Prop api = property $ do
+    txt <- forAll $ Gen.text (Range.linear 0 123) Gen.latin1
+    let stringDV = fromSyntacticString txt
+        simplified = LLVM.simplifyTerm api testDef stringDV stringSort
+    stringDV === simplified
+    txt === toSyntacticString simplified
+  where
+    fromSyntacticString :: Text -> Term
+    fromSyntacticString =
+        either (error . show) id
+            . runExcept
+            . Syntax.internaliseTerm Nothing testDef
+            . Syntax.KJDV syntaxStringSort
+    syntaxStringSort :: Syntax.Sort
+    syntaxStringSort = Syntax.SortApp (Syntax.Id "SortString") []
+    toSyntacticString :: Term -> Text
+    toSyntacticString t =
+        case externaliseTerm t of
+            Syntax.KJDV s txt
+                | s == syntaxStringSort -> txt
+                | otherwise -> error $ "Unexpected sort " <> show s
+            otherTerm -> error $ "Unexpected term " <> show otherTerm
 
 ------------------------------------------------------------
 
@@ -140,13 +167,13 @@ bytesSort = SortApp "SortBytes" []
 stringSort = SortApp "SortString" []
 
 boolTerm :: Bool -> Term
-boolTerm = DomainValue boolSort . toLower . pack . show
+boolTerm = DomainValue boolSort . BS.pack . map toLower . show
 
 intTerm :: (Integral a, Show a) => a -> Term
-intTerm = DomainValue intSort . pack . show . (+ 0)
+intTerm = DomainValue intSort . BS.pack . show . (+ 0)
 
 bytesTerm :: ByteString -> Term
-bytesTerm = DomainValue bytesSort . pack . show
+bytesTerm = DomainValue bytesSort
 
 equal :: (Integral a, Show a) => a -> a -> Term
 a `equal` b = SymbolApplication eqInt [] [intTerm a, intTerm b]

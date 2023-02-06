@@ -21,13 +21,11 @@ import Control.Monad (foldM, forM_, void, (>=>))
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Control.Monad.Trans.Reader qualified as Reader
-import Data.ByteString (ByteString)
-import Data.ByteString.Char8 (packCStringLen)
+import Data.ByteString.Char8 (ByteString)
+import Data.ByteString.Char8 qualified as BS
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HM
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
-import Data.Text (Text)
-import Data.Text qualified as Text
 import Foreign (ForeignPtr, finalizeForeignPtr, newForeignPtr, withForeignPtr)
 import Foreign qualified
 import Foreign.C qualified as C
@@ -52,28 +50,28 @@ type KoreSortPtr = ForeignPtr KoreSort
 $(dynamicBindings "./cbits/kllvm-c.h")
 
 newtype KoreStringPatternAPI = KoreStringPatternAPI
-    { new :: Text -> IO KorePatternPtr
+    { new :: ByteString -> IO KorePatternPtr
     }
 
 newtype KoreTokenPatternAPI = KoreTokenPatternAPI
-    { new :: Text -> KoreSortPtr -> IO KorePatternPtr
+    { new :: ByteString -> KoreSortPtr -> IO KorePatternPtr
     }
 
 data KoreSymbolAPI = KoreSymbolAPI
-    { new :: Text -> IO KoreSymbolPtr
+    { new :: ByteString -> IO KoreSymbolPtr
     , addArgument :: KoreSymbolPtr -> KoreSortPtr -> IO KoreSymbolPtr
     , cache :: IORef (HashMap (Symbol, [Sort]) KoreSymbolPtr)
     }
 
 data KoreSortAPI = KoreSortAPI
-    { new :: Text -> IO KoreSortPtr
+    { new :: ByteString -> IO KoreSortPtr
     , addArgument :: KoreSortPtr -> KoreSortPtr -> IO KoreSortPtr
     , dump :: KoreSortPtr -> IO String
     , cache :: IORef (HashMap Sort KoreSortPtr)
     }
 
 data KorePatternAPI = KorePatternAPI
-    { new :: Text -> IO KorePatternPtr
+    { new :: ByteString -> IO KorePatternPtr
     , addArgument :: KorePatternPtr -> KorePatternPtr -> IO KorePatternPtr
     , fromSymbol :: KoreSymbolPtr -> IO KorePatternPtr
     , string :: KoreStringPatternAPI
@@ -109,7 +107,7 @@ mkAPI dlib = flip runReaderT dlib $ do
     let newPattern name =
             {-# SCC "LLVM.pattern.new" #-}
             liftIO $
-                C.withCString (Text.unpack name) $
+                BS.useAsCString name $
                     newCompositePattern >=> newForeignPtr freePattern
 
     addArgumentCompositePattern <- koreCompositePatternAddArgument
@@ -124,13 +122,13 @@ mkAPI dlib = flip runReaderT dlib $ do
     newString <- koreStringPatternNewWithLen
     let string = KoreStringPatternAPI $ \name ->
             {-# SCC "LLVM.pattern.string" #-}
-            liftIO $ C.withCStringLen (Text.unpack name) $ \(rawStr, len) ->
+            liftIO $ BS.useAsCStringLen name $ \(rawStr, len) ->
                 newString rawStr (fromIntegral len) >>= newForeignPtr freePattern
 
     newToken <- korePatternNewTokenWithLen
     let token = KoreTokenPatternAPI $ \name sort ->
             {-# SCC "LLVM.pattern.token" #-}
-            liftIO $ C.withCStringLen (Text.unpack name) $ \(rawName, len) ->
+            liftIO $ BS.useAsCStringLen name $ \(rawName, len) ->
                 withForeignPtr sort $
                     newToken rawName (fromIntegral len) >=> newForeignPtr freePattern
 
@@ -154,7 +152,7 @@ mkAPI dlib = flip runReaderT dlib $ do
     let newSymbol name =
             {-# SCC "LLVM.symbol.new" #-}
             liftIO $
-                C.withCString (Text.unpack name) $
+                BS.useAsCString name $
                     newSymbol' >=> newForeignPtr freeSymbol
 
     addArgumentSymbol' <- koreSymbolAddFormalArgument
@@ -175,7 +173,7 @@ mkAPI dlib = flip runReaderT dlib $ do
     let newSort name =
             {-# SCC "LLVM.sort.new" #-}
             liftIO $
-                C.withCString (Text.unpack name) $
+                BS.useAsCString name $
                     newSort' >=> newForeignPtr freeSort
 
     addArgumentSort' <- koreCompositeSortAddArgument
@@ -213,7 +211,7 @@ mkAPI dlib = flip runReaderT dlib $ do
                                 simplify' patPtr sortPtr strPtr lenPtr
                                 len <- fromIntegral <$> peek lenPtr
                                 cstr <- peek strPtr
-                                packCStringLen (cstr, len)
+                                BS.packCStringLen (cstr, len)
 
     pure API{patt, symbol, sort, simplifyBool, simplify}
 
