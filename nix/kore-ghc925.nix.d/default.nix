@@ -8,10 +8,6 @@
         (((hackage.decision-diagrams)."0.2.0.0").revisions).default;
       "typerep-map" = (((hackage.typerep-map)."0.6.0.0").revisions).default;
       kore = ./kore.nix;
-      eventlog2speedscope = ./.stack-to-nix.cache.0;
-      pipes-aeson = ./.stack-to-nix.cache.1;
-      pipes-ghc-events = ./.stack-to-nix.cache.2;
-      pipes-sqlite-simple = ./.stack-to-nix.cache.3;
     };
   };
   resolver = "lts-20.8";
