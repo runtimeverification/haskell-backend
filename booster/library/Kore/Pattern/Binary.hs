@@ -22,7 +22,6 @@ import Data.ByteString.Lazy qualified as BL
 import Data.Int (Int16)
 import Data.Map qualified as Map
 import Data.Text qualified as Text
-import Data.Text.Encoding qualified as Text
 import Data.Word (Word64)
 import GHC.Word (Word8)
 import Kore.Definition.Attributes.Base
@@ -51,7 +50,7 @@ data DecoderState = DecoderState
     { internedStrings :: Map.Map Int BS.ByteString
     , currentSymbolWithSorts :: Maybe (Symbol, [Sort])
     , sortStack :: [Sort]
-    , termOrTextStack :: [Either Text.Text Term]
+    , termOrTextStack :: [Either BS.ByteString Term]
     }
     deriving (Show)
 
@@ -153,14 +152,14 @@ decodeString = do
                     fail $ "Incorrect offset for interned string at " <> show (position, backref) <> " with table\n " <> unwords offsets
         _ -> fail "Incorrect String encoding"
 
-popTermOrTextStack :: Int -> DecodeM [Either Text.Text Term]
+popTermOrTextStack :: Int -> DecodeM [Either BS.ByteString Term]
 popTermOrTextStack n = DecodeM $ lift $ do
     stack <- gets termOrTextStack
     unless (length stack >= n) $ fail "Trying to pop more items off the stack than available"
     modify (\s -> s{termOrTextStack = drop n stack})
     pure $ reverse $ take n stack
 
-pushTermOrTextStack :: Either Text.Text Term -> DecodeM ()
+pushTermOrTextStack :: Either BS.ByteString Term -> DecodeM ()
 pushTermOrTextStack t = DecodeM $ lift $ do
     modify (\s@DecoderState{termOrTextStack} -> s{termOrTextStack = t : termOrTextStack})
 
@@ -215,20 +214,20 @@ decodeBlock = do
             KOREStringPattern -> do
                 -- either literal string (length,data) or back-reference (rel.offset)
                 str <- decodeString
-                pushTermOrTextStack $ Left $ Text.decodeUtf8 str
+                pushTermOrTextStack $ Left str
             KORECompositeSort -> do
                 -- sort constructor (arity, name)
                 arity <- decodeLength 2
                 sortName <- decodeString
                 args <- popSortStack arity
-                pushSortStack $ SortApp (Text.decodeUtf8 sortName) args
+                pushSortStack $ SortApp sortName args
             KORESortVariable -> fail "KORESortVariable decoding undefined"
             KORESymbol -> do
                 -- symbol applied to (sort) arguments (arity, name)
                 arity <- decodeLength 2
                 symbolName <- decodeString
                 args <- popSortStack arity
-                mkSymbolWithSorts (Text.decodeUtf8 symbolName) args >>= setCurrentSymbolWithSorts
+                mkSymbolWithSorts symbolName args >>= setCurrentSymbolWithSorts
             KOREVariablePattern -> fail "KOREVariablePattern decoding undefined"
             KOREVariable -> fail "KOREVariable decoding undefined"
             _ -> fail "Invalid header"

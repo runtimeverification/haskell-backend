@@ -9,6 +9,7 @@ module Test.Kore.Pattern.Rewrite (
 
 import Control.Exception (ErrorCall, catch)
 import Control.Monad.Logger.CallStack
+import Data.ByteString.Char8 (ByteString)
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -103,12 +104,12 @@ rule4 =
         { computedAttributes = ComputedAxiomAttributes False False
         }
 
-termInKCell :: Text -> Term -> Pattern
+termInKCell :: ByteString -> Term -> Pattern
 termInKCell varName = flip Pattern [] . withinKCell varName
 
 -- indexing only works with a K cell. For realistic test, we also use
 -- an injection into 'KItem'.
-withinKCell :: Text -> Term -> Term
+withinKCell :: ByteString -> Term -> Term
 withinKCell restVar term =
     app kCell [app kseq [injKItem term, var restVar kItemSort]]
 

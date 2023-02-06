@@ -19,6 +19,7 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.State
 import Data.Bifunctor (first)
+import Data.ByteString.Char8 (ByteString)
 import Data.Function (on)
 import Data.List (foldl', groupBy, partition, sortOn)
 import Data.List.Extra (groupSort)
@@ -29,6 +30,7 @@ import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Text.Encoding qualified as Text
 
 import Kore.Definition.Attributes.Base
 import Kore.Definition.Attributes.Reader
@@ -147,13 +149,13 @@ mergeDefs k1 k2
         Map.unionWith (Map.unionWith (<>)) (rewriteTheory m1) (rewriteTheory m2)
 
     mergeDisjoint ::
-        (KoreDefinition -> Map Text a) ->
+        (KoreDefinition -> Map ByteString a) ->
         KoreDefinition ->
         KoreDefinition ->
-        Except DefinitionError (Map Text a)
+        Except DefinitionError (Map ByteString a)
     mergeDisjoint selector m1 m2
         | not (null duplicates) =
-            throwE $ DuplicateNames $ Set.toList duplicates
+            throwE $ DuplicateNames $ map Text.decodeLatin1 $ Set.toList duplicates
         | otherwise =
             pure $ Map.union (selector m1) (selector m2)
       where
@@ -186,14 +188,15 @@ addModule
         } =
         do
             --
-            when (n `Map.member` currentModules) $
+            let modName = textToBS n
+            when (modName `Map.member` currentModules) $
                 error "internal error while loading: traversing module twice"
-            let modules = Map.insert n (extract m) currentModules
+            let modules = Map.insert modName (extract m) currentModules
 
             -- ensure sorts are unique and only refer to known other sorts
             -- TODO, will need sort attributes to determine sub-sorts
 
-            let (newSorts, sortDups) = parsedSorts `mappedBy` (.name.getId)
+            let (newSorts, sortDups) = parsedSorts `mappedBy` (textToBS . (.name.getId))
             unless (null sortDups) $
                 throwE $
                     DuplicateSorts (concatMap snd sortDups)
@@ -204,12 +207,12 @@ addModule
                 throwE $
                     DuplicateSorts sortCollisions
             let sorts =
-                    Map.map (\s -> (extract s, Set.singleton (s.name.getId))) newSorts
+                    Map.map (\s -> (extract s, Set.singleton (textToBS s.name.getId))) newSorts
                         <> currentSorts
 
             -- ensure parsed symbols are not duplicates and only refer
             -- to known sorts
-            let (newSymbols, symDups) = parsedSymbols `mappedBy` (.name.getId)
+            let (newSymbols, symDups) = parsedSymbols `mappedBy` (textToBS . (.name.getId))
                 symCollisions =
                     Map.elems $ Map.intersection newSymbols currentSymbols
             unless (null symDups) $
@@ -228,9 +231,9 @@ addModule
                 internaliseAlias palias@ParsedAlias{name, sortVars, argSorts, sort, args, rhs} = do
                     unless (length argSorts == length args) (throwE (DefinitionAliasError (Json.getId name) . WrongAliasSortCount $ palias))
                     let paramNames = Json.getId <$> sortVars
-                        params = Def.SortVar <$> paramNames
-                        argNames = Json.getId <$> args
-                        internalName = Json.getId name
+                        params = Def.SortVar . textToBS <$> paramNames
+                        argNames = textToBS . Json.getId <$> args
+                        internalName = textToBS $ Json.getId name
                     internalArgSorts <- traverse (withExcept DefinitionSortError . checkSort (Set.fromList paramNames) sorts) argSorts
                     internalResSort <- withExcept DefinitionSortError $ checkSort (Set.fromList paramNames) sorts sort
                     let internalArgs = uncurry Def.Variable <$> zip internalArgSorts argNames
@@ -307,7 +310,7 @@ data AxiomResult
 -- helper type to carry relevant extracted data from a pattern (what
 -- is passed to the internalising function later)
 data AxiomData
-    = RewriteRuleAxiom' AliasName [Json.KorePattern] Json.KorePattern AxiomAttributes [Json.Id]
+    = RewriteRuleAxiom' Text [Json.KorePattern] Json.KorePattern AxiomAttributes [Json.Id]
     | SubsortAxiom' Json.Sort Json.Sort
 
 classifyAxiom :: ParsedAxiom -> Except DefinitionError (Maybe AxiomData)
@@ -350,7 +353,7 @@ internaliseAxiom partialDefinition parsedAxiom =
                 throwE $
                     DefinitionSortError $
                         GeneralError ("Bad subsort rule " <> sub <> " < " <> super)
-            pure $ Just $ SubsortAxiom (sub, super)
+            pure $ Just $ SubsortAxiom (textToBS sub, textToBS super)
         SubsortAxiom' Json.SortVar{name = Json.Id sub} _ ->
             throwE $
                 DefinitionSortError $
@@ -361,7 +364,7 @@ internaliseAxiom partialDefinition parsedAxiom =
                     GeneralError ("Sort variable " <> super <> " in subsort axiom")
         RewriteRuleAxiom' alias args rhs attribs sortVars ->
             Just . RewriteRuleAxiom
-                <$> internaliseRewriteRule partialDefinition alias args rhs attribs sortVars
+                <$> internaliseRewriteRule partialDefinition (textToBS alias) args rhs attribs sortVars
 
 orFailWith :: Maybe a -> e -> Except e a
 mbX `orFailWith` err = maybe (throwE err) pure mbX
@@ -376,7 +379,7 @@ internaliseRewriteRule ::
     Except DefinitionError RewriteRule
 internaliseRewriteRule partialDefinition aliasName aliasArgs right axAttributes sortVars = do
     alias <-
-        withExcept (DefinitionAliasError aliasName) $
+        withExcept (DefinitionAliasError $ Text.decodeLatin1 aliasName) $
             Map.lookup aliasName partialDefinition.aliases
                 `orFailWith` UnknownAlias aliasName
     args <- traverse (withExcept DefinitionPatternError . internaliseTerm (Just sortVars) partialDefinition) aliasArgs
@@ -407,7 +410,7 @@ internaliseRewriteRule partialDefinition aliasName aliasArgs right axAttributes 
 expandAlias :: Alias -> [Def.Term] -> Except DefinitionError Def.TermOrPredicate
 expandAlias alias currentArgs
     | length alias.args /= length currentArgs =
-        throwE (DefinitionAliasError alias.name $ WrongAliasArgCount alias currentArgs)
+        throwE (DefinitionAliasError (Text.decodeLatin1 alias.name) $ WrongAliasArgCount alias currentArgs)
     | otherwise =
         let substitution = Map.fromList (zip alias.args currentArgs)
          in return $ substitute substitution alias.rhs
@@ -454,14 +457,15 @@ internaliseSymbol sorts parsedSymbol = do
             DuplicateNames (map (.getId) parsedSymbol.sortVars)
     resultSort <- check parsedSymbol.sort
     argSorts <- mapM check parsedSymbol.argSorts
-    let name = parsedSymbol.name.getId
+    let name = textToBS parsedSymbol.name.getId
         attributes = extract parsedSymbol
         internalSymbol = Def.Symbol{name, sortVars, resultSort, argSorts, attributes}
     -- TODO(Ana): rename extract
     pure (name, internalSymbol)
   where
-    knownVars = Set.fromList sortVars
-    sortVars = map (.getId) parsedSymbol.sortVars
+    knownVars = Set.fromList sortVarsT
+    sortVarsT = map (.getId) parsedSymbol.sortVars
+    sortVars = map textToBS sortVarsT
 
     check :: Json.Sort -> Except DefinitionError Def.Sort
     check =
