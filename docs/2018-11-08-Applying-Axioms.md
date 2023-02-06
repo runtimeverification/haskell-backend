@@ -37,7 +37,7 @@ Note: • is "strong next" in this document
    Then, `α(Y) ∧ φ(X) = tα(Y) ∧ subst(X,Y) ∧ p(X,Y) ∧ pα(Y) ∧ pφ(X)`
 
    Note: `\ceil(α(Y) ∧ φ(X)) = subst(X,Y) ∧ p(X,Y) ∧ pα(Y) ∧ pφ(X)`
-   (by Prop 5.12 and \ceil(t) = \top)
+   (by ML paper Prop 5.12 and \ceil(t) = \top)
 
    Note: if the unification fails, then `p(X,Y)` will be `⊥`
 
@@ -53,20 +53,20 @@ Note: • is "strong next" in this document
 1.  `α(Y) -> •β(Y)` // by axiom
 2.  `α(Y) ∧ \ceil(α(Y) ∧ φ(X)) -> (•β(Y)) ∧ \ceil(α(Y) ∧ φ(X))`
     // by (1) and propositional reasoning
-3.  `α(Y) ∧ \ceil(α(Y) ∧ φ(X)) = α(Y) ∧ φ(X)` // by ML paper Prop. 5.24
+3.  `α(Y) ∧ \ceil(α(Y) ∧ φ(X)) = α(Y) ∧ φ(X)` // by ML paper Prop 5.24
 4.  `α(Y) ∧ φ(X) -> (•β(Y)) ∧ \ceil(α(Y) ∧ φ(X))` // by (2) and (3)
 5.  `α(Y) ∧ φ(X) =  tα(Y) ∧ subst(X,Y) ∧ p(X,Y) ∧ pα(Y) ∧ pφ(X)`
     // by Unification Procedure
-6.  `α(Y) ∧ φ(X) -> subst(X,Y) ∧ p(X,Y) ∧ pα(Y) ∧ pφ(X) ∧ •β(Y)` // by (4) (5)
+6.  `α(Y) ∧ φ(X) -> subst(X,Y) ∧ p(X,Y) ∧ pα(Y) ∧ pφ(X) ∧ •β(Y)` // by (4) and (5)
 7.  `α(Y) ∧ φ(X) -> ∃ Y . (subst(X,Y) ∧ p(X,Y) ∧ pα(Y) ∧ pφ(X) ∧ •β(Y))`
-    // by (7) FOL reasoning
+    // by (6) and FOL reasoning
 8.  `α(Y) ∧ φ(X) -> •(∃ Y . (subst(X,Y) ∧ p(X,Y) ∧ pα(Y) ∧ pφ(X) ∧ •β(Y)))`
-    // by (8) Propagation
+    // by (7) and Propagation
 9.  `∃ Y . (subst(X,Y) ∧ p(X,Y) ∧ pα(Y) ∧ pφ(X) ∧ •β(Y)) = φ'(X)`
     // by (recursively calling) *Basic Simplification*
-10. `α(Y) ∧ φ(X) -> •φ'(X)` // by (9) and (10)
-11. `∀ Y . α(Y) ∧ φ(X) -> •φ'(X)` // by (11)
-12. `(∃ Y . α(Y)) ∧ φ(X) -> •φ'(X)` // by (12), FOL reasoning, and Prop 5.12
+10. `α(Y) ∧ φ(X) -> •φ'(X)` // by (8) and (9)
+11. `∀ Y . α(Y) ∧ φ(X) -> •φ'(X)` // by (10)
+12. `(∃ Y . α(Y)) ∧ φ(X) -> •φ'(X)` // by (11), FOL reasoning and ML paper Prop 5.12
 
 **Note:** `φ'(X)` will be `⊥` if the unification fails.
 
