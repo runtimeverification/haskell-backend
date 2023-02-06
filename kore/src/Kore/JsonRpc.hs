@@ -212,8 +212,8 @@ data APIMethods
 type family APIPayload (api :: APIMethods) (r :: ReqOrRes) where
     APIPayload 'ExecuteM 'Req = ExecuteRequest
     APIPayload 'ExecuteM 'Res = ExecuteResult
-    -- APIPayload 'StepM 'Req = StepRequest
-    -- APIPayload 'StepM 'Res = StepResult
+-- APIPayload 'StepM 'Req = StepRequest
+-- APIPayload 'StepM 'Res = StepResult
     APIPayload 'ImpliesM 'Req = ImpliesRequest
     APIPayload 'ImpliesM 'Res = ImpliesResult
     APIPayload 'SimplifyM 'Req = SimplifyRequest
@@ -525,13 +525,13 @@ respond runSMT serializedModule =
 
 runServer :: Int -> SMT.SolverSetup -> Log.LoggerEnv IO -> Exec.SerializedModule -> IO ()
 runServer port solverSetup loggerEnv@Log.LoggerEnv{logAction} serializedModule = do
-    flip runLoggingT logFun
-        $ jsonrpcTCPServer
+    flip runLoggingT logFun $
+        jsonrpcTCPServer
             Json.defConfig{confCompare}
             V2
             False
             srvSettings
-        $ srv loggerEnv runSMT serializedModule
+            $ srv loggerEnv runSMT serializedModule
   where
     srvSettings = serverSettings port "*"
     confCompare =

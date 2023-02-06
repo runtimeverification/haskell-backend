@@ -453,8 +453,8 @@ strategyWithMinDepth (MinDepth minDepth) =
         reachabilitySteps
   where
     noCheckReachabilitySteps =
-        reachabilityFirstStepNoCheck
-            : replicate (minDepth - 1) reachabilityNextStepNoCheck
+        reachabilityFirstStepNoCheck :
+        replicate (minDepth - 1) reachabilityNextStepNoCheck
     reachabilitySteps =
         Stream.iterate id reachabilityNextStep
 
@@ -661,10 +661,10 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
         m (CheckImplicationResult ClaimPattern)
     examine AnyUnified{didAnyUnify} stuck
         | didAnyUnify
-        , isBottom condition =
+          , isBottom condition =
             pure $ Implied claimPattern
         | not didAnyUnify
-        , not (isBottom right) =
+          , not (isBottom right) =
             pure $ NotImplied claimPattern
         | otherwise = do
             when (isBottom right) $
@@ -829,22 +829,22 @@ checkSimpleImplication inLeft inRight existentials =
         withContext ("LHS: " <> showPretty leftTerm)
             . withContext ("RHS: " <> showPretty rightTerm)
             . withContext ("existentials: " <> show (map unparse2 existentials))
-            $ koreFailWhen (not $ null nameCollisions)
-            $ unwords
-                ( "Existentials capture free variables of the antecedent:"
-                    : map (show . unparse2) nameCollisions
-                )
+            $ koreFailWhen (not $ null nameCollisions) $
+                unwords
+                    ( "Existentials capture free variables of the antecedent:" :
+                      map (show . unparse2) nameCollisions
+                    )
         -- RHS must not have free variables that aren't free in the LHS
         let rhsFreeElemVars = getFreeElementVariables $ freeVariables right
             offending = rhsFreeElemVars \\ (lhsFreeElemVars <> existentials)
         withContext ("LHS: " <> showPretty leftTerm)
             . withContext ("RHS: " <> showPretty rightTerm)
             . withContext ("existentials: " <> show (map unparse2 existentials))
-            $ koreFailWhen (not $ null offending)
-            $ unwords
-                ( "The RHS must not have free variables not present in the LHS:"
-                    : map (show . unparse2) offending
-                )
+            $ koreFailWhen (not $ null offending) $
+                unwords
+                    ( "The RHS must not have free variables not present in the LHS:" :
+                      map (show . unparse2) offending
+                    )
         -- sorts of LHS and RHS have to agree
         let lSort = termLikeSort leftTerm
             rSort = termLikeSort rightTerm
@@ -894,11 +894,11 @@ checkSimpleImplication inLeft inRight existentials =
                     -- which we achieve by simplifying it
 
                     toRefute <-
-                        liftSimplifier
-                            $ Pattern.simplify
+                        liftSimplifier $
+                            Pattern.simplify
                                 . OrPattern.toPattern sort
                                 . MultiOr.map combineWithAntecedent
-                            $ notRhs
+                                $ notRhs
 
                     liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc toRefute
 
