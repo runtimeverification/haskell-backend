@@ -6,9 +6,9 @@ module Test.Kore.Fixture (
     module Test.Kore.Fixture,
 ) where
 
+import Data.ByteString.Char8 (ByteString)
 import Data.Map qualified as Map
 import Data.Set qualified as Set
-import Data.Text (Text)
 
 import Kore.Definition.Attributes.Base
 import Kore.Definition.Base
@@ -56,7 +56,7 @@ testDefinition =
 var :: VarName -> Sort -> Term
 var variableName variableSort = Var $ Variable{variableSort, variableName}
 
-dv :: Sort -> Text -> Term
+dv :: Sort -> ByteString -> Term
 dv = DomainValue
 
 app :: Symbol -> [Term] -> Term
