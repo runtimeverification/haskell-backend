@@ -80,6 +80,8 @@
         (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
         (hsPkgs."monad-control" or (errorHandler.buildDepError "monad-control"))
         (hsPkgs."monad-logger" or (errorHandler.buildDepError "monad-logger"))
+        (hsPkgs."monad-validate" or (errorHandler.buildDepError
+          "monad-validate"))
         (hsPkgs."mono-traversable" or (errorHandler.buildDepError
           "mono-traversable"))
         (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
@@ -539,6 +541,8 @@
           (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
           (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
           (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
+          (hsPkgs."monad-validate" or (errorHandler.buildDepError
+            "monad-validate"))
           (hsPkgs."optparse-applicative" or (errorHandler.buildDepError
             "optparse-applicative"))
           (hsPkgs."text" or (errorHandler.buildDepError "text"))
@@ -745,6 +749,8 @@
           (hsPkgs."monad-control" or (errorHandler.buildDepError
             "monad-control"))
           (hsPkgs."monad-logger" or (errorHandler.buildDepError "monad-logger"))
+          (hsPkgs."monad-validate" or (errorHandler.buildDepError
+            "monad-validate"))
           (hsPkgs."mono-traversable" or (errorHandler.buildDepError
             "mono-traversable"))
           (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
