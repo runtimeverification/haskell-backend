@@ -9,9 +9,9 @@ module Kore.Syntax.Module (
 ) where
 
 import Data.Aeson (
-  FromJSON,
-  ToJSON,
-  )
+    FromJSON,
+    ToJSON,
+ )
 import Data.Kind (
     Type,
  )

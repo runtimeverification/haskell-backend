@@ -5,13 +5,13 @@ Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
 -}
 module Kore.JsonRpc (
-  runServer,
-  ServerState(..),
-  ) where
+    runServer,
+    ServerState (..),
+) where
 
 import Control.Concurrent (forkIO, throwTo)
-import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Concurrent.MVar qualified as MVar
+import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Exception (ErrorCall (..), Exception, mask)
 import Control.Monad (forever)
 import Control.Monad.Catch (MonadCatch, catch, handle)
@@ -22,37 +22,38 @@ import Control.Monad.STM (atomically)
 import Data.Aeson.Encode.Pretty as Json
 import Data.Aeson.Types (FromJSON (..), ToJSON (..), Value (..))
 import Data.Conduit.Network (serverSettings)
-import Data.InternedText (globalInternedTextCache)
 import Data.IORef (readIORef)
+import Data.InternedText (globalInternedTextCache)
 import Data.Limit (Limit (..))
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Deriving.Aeson (
     CamelToKebab,
     ConstructorTagModifier,
     CustomJSON (..),
     FieldLabelModifier,
-    OmitNothingFields, StripPrefix,
+    OmitNothingFields,
+    StripPrefix,
  )
 import GHC.Generics (Generic)
 import GlobalMain (
-  LoadedDefinition (..),
-  SerializedDefinition (..),
+    LoadedDefinition (..),
+    SerializedDefinition (..),
  )
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.Builtin qualified as Builtin
 import Kore.Error (Error (..))
 import Kore.Exec qualified as Exec
 import Kore.Exec.GraphTraversal qualified as GraphTraversal
-import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools
 import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
+import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (pattern PredicateTrue)
-import Kore.Internal.TermLike qualified as TermLike
 import Kore.Internal.TermLike (TermLike)
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcCancelRequest (InfoJsonRpcCancelRequest (..))
@@ -73,11 +74,11 @@ import Kore.Rewrite.RewritingVariable (
     mkRewritingTerm,
  )
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
+import Kore.Rewrite.SMT.Lemma (getSMTLemmas)
 import Kore.Rewrite.Timeout (
     EnableMovingAverage (..),
     StepTimeout (..),
  )
-import Kore.Rewrite.SMT.Lemma (getSMTLemmas)
 import Kore.Simplify.API (evalSimplifier)
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (Simplifier)
@@ -85,8 +86,8 @@ import Kore.Syntax (VariableName)
 import Kore.Syntax.Json (KoreJson)
 import Kore.Syntax.Json qualified as PatternJson
 import Kore.Syntax.Sentence (
-  ModuleName,
-  SentenceAxiom,
+    ModuleName,
+    SentenceAxiom,
  )
 import Kore.Validate.DefinitionVerifier (verifyAndIndexDefinitionWithBase)
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
@@ -293,10 +294,12 @@ respond ::
     MonadCatch m =>
     MVar.MVar ServerState ->
     ModuleName ->
-    (forall a. SmtMetadataTools StepperAttributes ->
-     [SentenceAxiom (TermLike VariableName)] ->
-     SMT.SMT a ->
-     IO a) ->
+    ( forall a.
+      SmtMetadataTools StepperAttributes ->
+      [SentenceAxiom (TermLike VariableName)] ->
+      SMT.SMT a ->
+      IO a
+    ) ->
     Respond (API 'Req) m (API 'Res)
 respond serverState moduleName runSMT =
     withErrHandler . \case
@@ -525,65 +528,67 @@ respond serverState moduleName runSMT =
                 PatternVerifier.verifyStandalonePattern Nothing $
                     PatternJson.toParsedPattern $
                         PatternJson.term state
+        AddModule AddModuleRequest{name, _module} ->
+            case parseKoreDefinition "" _module of
+                Left err -> pure . Left . couldNotParse $ toJSON err
+                Right parsedModule -> do
+                    LoadedDefinition{indexedModules, definedNames, kFileLocations} <-
+                        liftIO $ loadedDefinition <$> MVar.readMVar serverState
+                    let verified =
+                            verifyAndIndexDefinitionWithBase
+                                (indexedModules, definedNames)
+                                Builtin.koreVerifiers
+                                parsedModule
+                    case verified of
+                        Left err -> pure . Left . couldNotVerify $ toJSON err
+                        Right (indexedModules', definedNames') ->
+                            case Map.lookup name indexedModules' of
+                                Nothing -> pure . Left . couldNotFindModule $ toJSON name
+                                Just mainModule -> do
+                                    let metadataTools = MetadataTools.build mainModule
+                                        lemmas = getSMTLemmas mainModule
 
-        AddModule AddModuleRequest {name, _module} ->
-          case parseKoreDefinition "" _module of
-              Left err -> pure . Left . couldNotParse $ toJSON err
-              Right parsedModule -> do
-                LoadedDefinition {indexedModules, definedNames, kFileLocations} <-
-                  liftIO $ loadedDefinition <$> MVar.readMVar serverState
-                let verified = verifyAndIndexDefinitionWithBase
-                                 (indexedModules, definedNames)
-                                 Builtin.koreVerifiers
-                                 parsedModule
-                case verified of
-                  Left err -> pure . Left . couldNotVerify $ toJSON err
-                  Right (indexedModules', definedNames') ->
-                    case Map.lookup name indexedModules' of
-                      Nothing -> pure . Left . couldNotFindModule $ toJSON name
-                      Just mainModule -> do
-                        let metadataTools = MetadataTools.build mainModule
-                            lemmas  = getSMTLemmas mainModule
+                                    serializedModule' <-
+                                        liftIO
+                                            . runSMT metadataTools lemmas
+                                            $ Exec.makeSerializedModule mainModule
 
-                        serializedModule' <- liftIO
-                          . runSMT metadataTools lemmas
-                          $ Exec.makeSerializedModule mainModule
+                                    internedTextCache <- liftIO $ readIORef globalInternedTextCache
 
-                        internedTextCache <- liftIO $ readIORef globalInternedTextCache
+                                    liftIO . MVar.modifyMVar_ serverState $
+                                        \ServerState{serializedModules} -> do
+                                            let serializedDefinition =
+                                                    SerializedDefinition
+                                                        { serializedModule = serializedModule'
+                                                        , locations = kFileLocations
+                                                        , internedTextCache
+                                                        , lemmas
+                                                        }
+                                                loadedDefinition =
+                                                    LoadedDefinition
+                                                        { indexedModules = indexedModules'
+                                                        , definedNames = definedNames'
+                                                        , kFileLocations
+                                                        }
+                                            pure
+                                                ServerState
+                                                    { serializedModules =
+                                                        Map.insert name serializedDefinition serializedModules
+                                                    , loadedDefinition
+                                                    }
 
-                        liftIO . MVar.modifyMVar_ serverState
-                          $ \ServerState {serializedModules} -> do
-                            let serializedDefinition = SerializedDefinition
-                                    { serializedModule = serializedModule'
-                                    , locations = kFileLocations
-                                    , internedTextCache
-                                    , lemmas
-                                    }
-                                loadedDefinition = LoadedDefinition
-                                   { indexedModules = indexedModules'
-                                   , definedNames = definedNames'
-                                   , kFileLocations
-                                   }
-                            pure ServerState
-                                 { serializedModules =
-                                      Map.insert name serializedDefinition serializedModules
-                                 , loadedDefinition
-
-                                 }
-
-                        pure . Right $ AddModule ()
+                                    pure . Right $ AddModule ()
 
         -- this case is only reachable if the cancel appeared as part of a batch request
         Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
   where
-
     withMainModule module' act = do
-      let mainModule = fromMaybe moduleName module'
-      ServerState {serializedModules} <- liftIO $ MVar.readMVar serverState
-      case Map.lookup mainModule serializedModules of
-        Nothing -> pure . Left . couldNotFindModule $ toJSON mainModule
-        Just (SerializedDefinition {serializedModule, lemmas}) ->
-          act serializedModule lemmas
+        let mainModule = fromMaybe moduleName module'
+        ServerState{serializedModules} <- liftIO $ MVar.readMVar serverState
+        case Map.lookup mainModule serializedModules of
+            Nothing -> pure . Left . couldNotFindModule $ toJSON mainModule
+            Just (SerializedDefinition{serializedModule, lemmas}) ->
+                act serializedModule lemmas
 
     couldNotVerify err = ErrorObj "Could not verify KORE pattern" (-32002) err
 
@@ -613,36 +618,39 @@ respond serverState moduleName runSMT =
             & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
 
     evalInSimplifierContext :: Exec.SerializedModule -> Simplifier a -> SMT.SMT a
-    evalInSimplifierContext Exec.SerializedModule
-        { sortGraph
-        , overloadGraph
-        , metadataTools
-        , verifiedModule
-        , equations
-        } =
-        evalSimplifier
-            verifiedModule
-            sortGraph
-            overloadGraph
-            metadataTools
-            equations
+    evalInSimplifierContext
+        Exec.SerializedModule
+            { sortGraph
+            , overloadGraph
+            , metadataTools
+            , verifiedModule
+            , equations
+            } =
+            evalSimplifier
+                verifiedModule
+                sortGraph
+                overloadGraph
+                metadataTools
+                equations
 
 data ServerState = ServerState
-  { serializedModules :: Map.Map ModuleName SerializedDefinition
-  , loadedDefinition :: LoadedDefinition
-  }
+    { serializedModules :: Map.Map ModuleName SerializedDefinition
+    , loadedDefinition :: LoadedDefinition
+    }
 
 runServer ::
-  Int ->
-  MVar.MVar ServerState ->
-  ModuleName ->
-  (forall a. SmtMetadataTools StepperAttributes ->
-   [SentenceAxiom (TermLike VariableName)] ->
-   SMT.SMT a ->
-   IO a) ->
-  Log.LoggerEnv IO ->
-  IO ()
-runServer port serverState mainModule runSMT loggerEnv@Log.LoggerEnv{logAction}  = do
+    Int ->
+    MVar.MVar ServerState ->
+    ModuleName ->
+    ( forall a.
+      SmtMetadataTools StepperAttributes ->
+      [SentenceAxiom (TermLike VariableName)] ->
+      SMT.SMT a ->
+      IO a
+    ) ->
+    Log.LoggerEnv IO ->
+    IO ()
+runServer port serverState mainModule runSMT loggerEnv@Log.LoggerEnv{logAction} = do
     flip runLoggingT logFun $
         jsonrpcTCPServer
             Json.defConfig{confCompare}
@@ -690,14 +698,17 @@ runServer port serverState mainModule runSMT loggerEnv@Log.LoggerEnv{logAction} 
         Log.logWith logAction $ LogJsonRpcServer{loc, src, level, msg}
 
 srv ::
-  MonadLoggerIO m =>
-  MVar.MVar ServerState ->
-  ModuleName ->
-  Log.LoggerEnv IO ->
-  (forall a. SmtMetadataTools StepperAttributes ->
-   [SentenceAxiom (TermLike VariableName)] ->
-   SMT.SMT a -> IO a)
-  -> JSONRPCT m ()
+    MonadLoggerIO m =>
+    MVar.MVar ServerState ->
+    ModuleName ->
+    Log.LoggerEnv IO ->
+    ( forall a.
+      SmtMetadataTools StepperAttributes ->
+      [SentenceAxiom (TermLike VariableName)] ->
+      SMT.SMT a ->
+      IO a
+    ) ->
+    JSONRPCT m ()
 srv serverState moduleName Log.LoggerEnv{logAction} runSMT = do
     reqQueue <- liftIO $ atomically newTChan
     let mainLoop tid =

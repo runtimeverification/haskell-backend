@@ -2,6 +2,7 @@
 
 module Main (main) where
 
+import Control.Concurrent.MVar as MVar
 import Control.Monad.Catch (
     bracket,
     handle,
@@ -9,10 +10,9 @@ import Control.Monad.Catch (
 import Control.Monad.Reader (
     ReaderT (..),
  )
-import Data.Map.Strict as Map
-import Control.Concurrent.MVar as MVar
 import Data.IORef (writeIORef)
 import Data.InternedText (globalInternedTextCache)
+import Data.Map.Strict as Map
 import GlobalMain qualified
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.BugReport (
@@ -21,12 +21,12 @@ import Kore.BugReport (
     parseBugReportOption,
     withBugReport,
  )
-import Kore.JsonRpc (
-  runServer,
-  ServerState (..),
- )
 import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
 import Kore.Internal.TermLike (TermLike)
+import Kore.JsonRpc (
+    ServerState (..),
+    runServer,
+ )
 import Kore.Log (
     KoreLogOptions (..),
     parseKoreLogOptions,
@@ -158,10 +158,13 @@ koreRpcServerRun GlobalMain.LocalOptions{execOptions} = do
     lift $ writeIORef globalInternedTextCache internedTextCache
 
     loadedDefinition <- GlobalMain.loadDefinitions [definitionFileName]
-    serverState <- lift $ MVar.newMVar ServerState
-        { serializedModules = Map.singleton mainModuleName sd
-        , loadedDefinition
-        }
+    serverState <-
+        lift $
+            MVar.newMVar
+                ServerState
+                    { serializedModules = Map.singleton mainModuleName sd
+                    , loadedDefinition
+                    }
     GlobalMain.clockSomethingIO "Executing" $
         -- wrap the call to runServer in the logger monad
         Log.LoggerT $ ReaderT $ \loggerEnv -> runServer port serverState mainModuleName (runSMT loggerEnv) loggerEnv
@@ -178,21 +181,22 @@ koreRpcServerRun GlobalMain.LocalOptions{execOptions} = do
             , SMT.prelude = prelude
             }
     -- SMT solver with user declared lemmas
-    runSMT :: forall a.
-      Log.LoggerEnv IO ->
-      SmtMetadataTools StepperAttributes ->
-      [SentenceAxiom (TermLike VariableName)] ->
-      SMT.SMT a ->
-      IO a
+    runSMT ::
+        forall a.
+        Log.LoggerEnv IO ->
+        SmtMetadataTools StepperAttributes ->
+        [SentenceAxiom (TermLike VariableName)] ->
+        SMT.SMT a ->
+        IO a
     runSMT Log.LoggerEnv{logAction} metadataTools lemmas m =
-      flip Log.runLoggerT logAction $
-          bracket (SMT.newSolver smtConfig) SMT.stopSolver $ \refSolverHandle -> do
-              let userInit = SMT.runWithSolver $ declareSMTLemmas metadataTools lemmas
-                  solverSetup =
-                    SMT.SolverSetup
-                      { userInit
-                      , refSolverHandle
-                      , config=smtConfig
-                      }
-              SMT.initSolver solverSetup
-              SMT.runWithSolver m solverSetup
+        flip Log.runLoggerT logAction $
+            bracket (SMT.newSolver smtConfig) SMT.stopSolver $ \refSolverHandle -> do
+                let userInit = SMT.runWithSolver $ declareSMTLemmas metadataTools lemmas
+                    solverSetup =
+                        SMT.SolverSetup
+                            { userInit
+                            , refSolverHandle
+                            , config = smtConfig
+                            }
+                SMT.initSolver solverSetup
+                SMT.runWithSolver m solverSetup
