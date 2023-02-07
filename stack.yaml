@@ -52,6 +52,7 @@ extra-deps:
   - compact-0.2.0.0
   - decision-diagrams-0.2.0.0
   - typerep-map-0.6.0.0
+  - monad-validate-1.2.0.0@sha256:9850f408431098b28806dd464b6825a88a0b56c84f380d7fe0454c1df9d6f881,3505
 
   - git: https://github.com/goodlyrottenapple/pipes-ghc-events.git
     commit: c227d88b88ca74eb56da36668cab8ba2af7b32ee
