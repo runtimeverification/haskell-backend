@@ -148,7 +148,8 @@ test_checkImplication =
         -- FIXME test is actually wrong (the implication holds)... #3218
         let config = Mock.f (mkElemVar Mock.x) & Pattern.fromTermLike
             dest =
-                Mock.f (mkElemVar Mock.y) & Pattern.fromTermLike
+                Mock.f (mkElemVar Mock.y)
+                    & Pattern.fromTermLike
                     & OrPattern.fromPattern
             existentials = [Mock.y]
             goal = mkGoal config dest existentials
@@ -345,8 +346,8 @@ test_checkSimpleImplication =
             implication =
                 mkImplication Mock.a (TermLike.mkBottom Mock.testSort) []
         actual <- checkSimple config dest []
-        assertEqual "" (implication, NotImplied Nothing) actual
-    , testCase "Implied if both sides are \\bottom" $ do
+        assertEqual "" (implication, NotImpliedStuck Nothing) actual
+    , testCase "Stuck if both sides are \\bottom" $ do
         let config = Pattern.bottomOf Mock.testSort
             dest = Pattern.bottomOf Mock.testSort
             implication =
@@ -355,7 +356,7 @@ test_checkSimpleImplication =
                     (TermLike.mkBottom Mock.testSort)
                     []
         actual <- checkSimple config dest []
-        assertEqual "" (implication, Implied (Just (Condition.top))) actual
+        assertEqual "" (implication, NotImpliedStuck Nothing) actual
     ]
 
 test_simplifyRightHandSide :: [TestTree]
