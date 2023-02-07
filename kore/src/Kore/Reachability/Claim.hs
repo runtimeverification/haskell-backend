@@ -593,7 +593,8 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
         (anyUnified, removal) <- getNegativeConjuncts
         let definedConfig =
                 Pattern.andCondition left $
-                    from $ makeCeilPredicate leftTerm
+                    from $
+                        makeCeilPredicate leftTerm
         let configs' = MultiOr.map (definedConfig <*) removal
         stuck <- simplifyRemainder configs'
         result <- examine anyUnified stuck
@@ -763,14 +764,19 @@ checkSimpleImplication inLeft inRight existentials =
 
         let definedConfig =
                 Pattern.andCondition left $
-                    from $ makeCeilPredicate leftTerm
+                    from $
+                        makeCeilPredicate leftTerm
         trivial <-
             fmap isBottom . liftSimplifier $
                 SMT.Evaluator.filterMultiOr $srcLoc
                     =<< Pattern.simplify definedConfig
+        rhsBottom <-
+            fmap isBottom . liftSimplifier $
+                SMT.Evaluator.filterMultiOr $srcLoc
+                    =<< Pattern.simplify right
 
-        if trivial
-            then pure (claimToCheck, Implied . Just $ Condition.top) -- trivial unifier
+        if trivial || rhsBottom
+            then pure (claimToCheck, NotImpliedStuck Nothing)
             else do
                 -- attempt term unification (to remember the substitution
                 unified <-
@@ -811,7 +817,8 @@ checkSimpleImplication inLeft inRight existentials =
                 (length simplified > 1)
                 "Term does not simplify to a singleton pattern"
         pure $
-            fromMaybe (Pattern.bottomOf patSort) $ headMay simplified
+            fromMaybe (Pattern.bottomOf patSort) $
+                headMay simplified
 
     showPretty :: Pretty a => a -> String
     showPretty = Pretty.renderString . Pretty.layoutOneLine . Pretty.pretty
