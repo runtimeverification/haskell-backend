@@ -7,41 +7,48 @@ packages:
 - completed:
     hackage: chronos-1.1.5@sha256:116b63db6e79574e7ac50bf12a6303af5dae4048b222c0f78380d24f481abb5a,3696
     pantry-tree:
-      size: 581
       sha256: 0eb2e0874c845e299c2e174144fd37da1a7957fd0055b2b99b33d23a06c7720e
+      size: 581
   original:
     hackage: chronos-1.1.5
 - completed:
     hackage: co-log-0.5.0.0@sha256:a7e84650eaef7eba2d59ee7664309e79317a7ca67011abedf971f0e6bd6475bb,5448
     pantry-tree:
-      size: 1043
       sha256: 33b838c07c8b7e70b2e82bddc889bb1e6386d7e12a9d1593c0b4b263b1fcb925
+      size: 1043
   original:
     hackage: co-log-0.5.0.0
 - completed:
     hackage: compact-0.2.0.0@sha256:75ef98cb51201b4a0d6de95cbbb62be6237c092a3d594737346c70c5d56c2380,2413
     pantry-tree:
-      size: 546
       sha256: 9514e48c9141b29a5f58b27c2950f17cc1c53eea3d393a6a1ed46ca16e876754
+      size: 546
   original:
     hackage: compact-0.2.0.0
 - completed:
     hackage: decision-diagrams-0.2.0.0@sha256:94058731961a98c53cd233bdb911f9ec4f1781de3f0d80a0133ebb3f4789938b,3415
     pantry-tree:
-      size: 866
       sha256: 340509eeb518acd55bb125d8eeb29aa5247b9600096472db134c739b1924b828
+      size: 866
   original:
     hackage: decision-diagrams-0.2.0.0
 - completed:
     hackage: typerep-map-0.6.0.0@sha256:e54a4e99614ad890a10200da687efa189860c13207a97063db1b6881032ebecc,4890
     pantry-tree:
-      size: 1487
       sha256: f970c9dc26194bf708a5c18cf4daac5a1518afa1d8b92e8f1c170959587ee7a6
+      size: 1487
   original:
     hackage: typerep-map-0.6.0.0
+- completed:
+    hackage: monad-validate-1.2.0.0@sha256:9850f408431098b28806dd464b6825a88a0b56c84f380d7fe0454c1df9d6f881,3505
+    pantry-tree:
+      sha256: 8e049bd12ce2bd470909578f2ee8eb80b89d5ff88860afa30e29dd4eafecfa3e
+      size: 713
+  original:
+    hackage: monad-validate-1.2.0.0@sha256:9850f408431098b28806dd464b6825a88a0b56c84f380d7fe0454c1df9d6f881,3505
 snapshots:
 - completed:
+    sha256: bfafe5735ccb74527d754b1f9999ded72d7c3a6c3a88529449661431ccfbd6cc
     size: 649327
     url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/8.yaml
-    sha256: bfafe5735ccb74527d754b1f9999ded72d7c3a6c3a88529449661431ccfbd6cc
   original: lts-20.8

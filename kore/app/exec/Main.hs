@@ -6,6 +6,7 @@ import Control.Monad.Catch (
     throwM,
  )
 import Control.Monad.Extra as Monad
+import Control.Monad.Validate
 import Data.Binary qualified as Binary
 import Data.ByteString.Lazy (hPut)
 import Data.Compact (
@@ -62,10 +63,12 @@ import Kore.Internal.TermLike (
     mkTop,
  )
 import Kore.Log (
+    DebugOptionsValidationError (..),
     KoreLogOptions (..),
     parseKoreLogOptions,
     runKoreLog,
     unparseKoreLogOptions,
+    validateDebugOptions,
  )
 import Kore.Log.ErrorException (
     handleSomeException,
@@ -677,14 +680,22 @@ koreSearch execOptions = do
             , definitionFileName
             , mainModuleName
             , koreSolverOptions
+            , koreLogOptions
             , patternFileName
             , breadthLimit
             , depthLimit
             } = execOptions
     SerializedDefinition{serializedModule, lemmas, locations, internedTextCache} <-
         deserializeDefinition koreSolverOptions definitionFileName mainModuleName
+    let SerializedModule
+            { verifiedModule
+            , metadataTools
+            , equations
+            , rewrites
+            } = serializedModule
+        undefinedLabels = runValidate $ validateDebugOptions equations (rewriteRules rewrites) koreLogOptions
+    when (isLeft undefinedLabels) $ throwM . DebugOptionsValidationError $ fromLeft mempty undefinedLabels
     lift $ writeIORef globalInternedTextCache internedTextCache
-    let SerializedModule{verifiedModule, metadataTools} = serializedModule
     let KoreSearchOptions
             { searchFileName
             , bound
@@ -711,18 +722,27 @@ koreRun execOptions = do
             { definitionFileName
             , mainModuleName
             , koreSolverOptions
+            , koreLogOptions
             , breadthLimit
             , depthLimit
             , strategy
+            , patternFileName
+            , finalNodeType
             } = execOptions
     SerializedDefinition{serializedModule, lemmas, locations, internedTextCache} <-
         deserializeDefinition
             koreSolverOptions
             definitionFileName
             mainModuleName
+    let SerializedModule
+            { verifiedModule
+            , metadataTools
+            , equations
+            , rewrites
+            } = serializedModule
+        undefinedLabels = runValidate $ validateDebugOptions equations (rewriteRules rewrites) koreLogOptions
+    when (isLeft undefinedLabels) $ throwM . DebugOptionsValidationError $ fromLeft mempty undefinedLabels
     lift $ writeIORef globalInternedTextCache internedTextCache
-    let SerializedModule{verifiedModule, metadataTools} = serializedModule
-    let KoreExecOptions{patternFileName, finalNodeType} = execOptions
     initial <- loadPattern verifiedModule patternFileName
     (exitCode, final) <-
         execute koreSolverOptions metadataTools lemmas $
@@ -775,6 +795,7 @@ koreProve execOptions = do
     let KoreExecOptions
             { definitionFileName
             , koreProveOptions
+            , koreLogOptions
             , mainModuleName
             , maxCounterexamples
             , koreSolverOptions
@@ -800,6 +821,7 @@ koreProve execOptions = do
     maybeAlreadyProvenModule <- loadProven definitionFileName saveProofs
     proveResult <- execute koreSolverOptions (MetadataTools.build mainModule) (getSMTLemmas mainModule) $ do
         prove
+            koreLogOptions
             minDepth
             stepTimeout
             enableMovingAverage
