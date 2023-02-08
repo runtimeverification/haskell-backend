@@ -53,17 +53,7 @@ extra-deps:
   - decision-diagrams-0.2.0.0
   - typerep-map-0.6.0.0
 
-  - git: https://github.com/goodlyrottenapple/pipes-ghc-events.git
-    commit: c227d88b88ca74eb56da36668cab8ba2af7b32ee
-    subdirs:
-      - eventlog2speedscope
-      - pipes-aeson
-      - pipes-ghc-events
-      - pipes-sqlite-simple
-    # nix-sha256: 1pzmqmp86am8riwlj3ibbx5yk84qs9qjyqfbrf141vwrd3fj64vs
-
-# TODO (treeowl): Remove this when compact and the pipes-ghc-events suite are
-# updated upstream.
+# TODO (treeowl): Remove this when compact is updated upstream.
 allow-newer: true
 
 ghc-options:
