@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
@@ -27,8 +29,13 @@ module Kore.Log.KoreLogOptions (
     selectDebugRewrite,
     unparseKoreLogOptions,
     defaultSeverity,
+    DebugOptionsValidationError (..),
+    validateDebugOptions,
+    UndefinedLabels (..),
 ) where
 
+import Control.Exception
+import Control.Monad.Validate
 import Data.Char qualified as Char
 import Data.Default
 import Data.HashSet (
@@ -38,6 +45,8 @@ import Data.HashSet qualified as HashSet
 import Data.List (
     intercalate,
  )
+import Data.Map.Strict (Map)
+import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
@@ -47,13 +56,15 @@ import Data.Text (
  )
 import Data.Text qualified as Text
 import GHC.Generics qualified as GHC
+import Kore.Attribute.Axiom qualified as Attribute
+import Kore.Equation (Equation)
 import Kore.Equation qualified as Equation
 import Kore.Equation.DebugEquation (
     DebugApplyEquation (..),
     DebugAttemptEquation (..),
  )
 import Kore.Log.DebugAppliedRewriteRules (DebugAppliedLabeledRewriteRule (..))
-import Kore.Log.DebugAttemptedRewriteRules (DebugAttemptedRewriteRules (DebugAttemptedRewriteRules))
+import Kore.Log.DebugAttemptedRewriteRules (DebugAttemptedRewriteRules (..))
 import Kore.Log.DebugSolver (
     DebugSolverOptions (..),
     parseDebugSolverOptions,
@@ -67,6 +78,12 @@ import Kore.Log.SQLite (
     LogSQLiteOptions (..),
     parseLogSQLiteOptions,
  )
+import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier)
+import Kore.Rewrite.RewritingVariable (RewritingVariableName)
+import Kore.Rewrite.RulePattern (
+    RewriteRule (..),
+ )
+import Kore.Syntax.Variable (VariableName)
 import Log
 import Options.Applicative (
     Parser,
@@ -75,6 +92,7 @@ import Options.Applicative (
 import Options.Applicative qualified as Options
 import Options.Applicative.Help.Pretty qualified as OptPretty
 import Prelude.Kore
+import Pretty (Pretty (..))
 import Pretty qualified
 import System.Clock (
     TimeSpec,
@@ -678,3 +696,55 @@ unparseKoreLogOptions
 
         debugRewriteOptionsFlag (DebugRewriteOptions set) =
             concatMap (("--debug-rewrite" :) . (: []) . Text.unpack) (toList set)
+
+newtype UndefinedLabels = UndefinedLabels {unUndefinedLabels :: Map Text [Text]}
+    deriving stock (Eq, Show)
+    deriving newtype (Semigroup, Monoid)
+
+newtype DebugOptionsValidationError = DebugOptionsValidationError UndefinedLabels
+    deriving newtype (Eq)
+
+instance Exception DebugOptionsValidationError
+
+instance Pretty DebugOptionsValidationError => Show DebugOptionsValidationError where
+    show = show . pretty
+
+instance Pretty DebugOptionsValidationError where
+    pretty (DebugOptionsValidationError labels) =
+        Pretty.vsep $
+            ["Rule labels for the following debug options are not defined:"]
+                <> Map.foldMapWithKey
+                    (\k v -> [Pretty.hsep [pretty (k <> ":"), pretty . Text.intercalate ", " $ v]])
+                    (unUndefinedLabels labels)
+
+validateDebugOptions ::
+    Map
+        AxiomIdentifier
+        [Equation VariableName] ->
+    [RewriteRule RewritingVariableName] ->
+    KoreLogOptions ->
+    Validate UndefinedLabels ()
+validateDebugOptions equations rewrites KoreLogOptions{..} = do
+    let eqDefinedLabels =
+            HashSet.fromList $
+                mapMaybe
+                    (Attribute.unLabel . Attribute.label . Equation.attributes)
+                    (concat (Map.elems equations))
+        rwDefinedLabels = HashSet.fromList $ mapMaybe (Attribute.unLabel . from . getRewriteRule) rewrites
+        equationLabels =
+            [ ("--debug-equation", selected debugEquationOptions)
+            , ("--debug-attempt-equation", selected debugAttemptEquationOptions)
+            , ("--debug-apply-equation", selected debugApplyEquationOptions)
+            ]
+        rewriteRuleLabels =
+            [ ("--debug-rewrite", selected debugRewriteOptions)
+            , ("--debug-attempt-rewrite", selected debugAttemptRewriteOptions)
+            , ("--debug-apply-rewrite", selected debugApplyRewriteOptions)
+            ]
+    for_ equationLabels $ validateOption eqDefinedLabels
+    for_ rewriteRuleLabels $ validateOption rwDefinedLabels
+  where
+    validateOption definedLabels (opt, value) = do
+        let undefinedLabels = HashSet.difference value definedLabels
+        unless (HashSet.null undefinedLabels) $
+            dispute (UndefinedLabels $ Map.singleton opt (HashSet.toList undefinedLabels))

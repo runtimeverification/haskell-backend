@@ -34,6 +34,7 @@ import GHC.IO.Exception (
  )
 import Generics.SOP qualified as SOP
 import Kore.Log.KoreLogOptions (
+    DebugOptionsValidationError (..),
     ExeName (..),
  )
 import Options.Applicative
@@ -151,6 +152,8 @@ withBugReport exeName bugReportOption act =
                     {- User exits the repl after the proof was finished -}
                     optionalWriteBugReport tmpDir
                 | Just UserInterrupt == fromException someException ->
+                    optionalWriteBugReport tmpDir
+                | Just (DebugOptionsValidationError _) <- fromException someException ->
                     optionalWriteBugReport tmpDir
                 | Just (ioe :: IOException) <- fromException someException
                   , NoSuchThing <- ioe_type ioe -> do

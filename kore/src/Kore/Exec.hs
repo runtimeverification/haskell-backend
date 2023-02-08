@@ -21,7 +21,7 @@ module Kore.Exec (
     simplify,
     Rewrite,
     Equality,
-    Initialized,
+    Initialized (..),
     makeSerializedModule,
     SerializedModule (..),
 ) where
@@ -38,7 +38,9 @@ import Control.Monad (
     filterM,
     (>=>),
  )
+import Control.Monad.Catch (throwM)
 import Control.Monad.Trans.Maybe (runMaybeT)
+import Control.Monad.Validate
 import Data.Coerce (
     coerce,
  )
@@ -64,7 +66,7 @@ import Kore.Attribute.Symbol (
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Builtin qualified as Builtin
 import Kore.Equation (
-    Equation,
+    Equation (..),
     extractEquations,
     isSimplificationRule,
     right,
@@ -124,7 +126,9 @@ import Kore.Log.ErrorRewriteLoop (
  )
 import Kore.Log.InfoExecDepth
 import Kore.Log.KoreLogOptions (
+    DebugOptionsValidationError (..),
     KoreLogOptions (..),
+    validateDebugOptions,
  )
 import Kore.Log.WarnDepthLimitExceeded (
     warnDepthLimitExceeded,
@@ -164,7 +168,6 @@ import Kore.Rewrite.Rule.Simplify (
 import Kore.Rewrite.Rule.Simplify qualified as Rule
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
-    getRewriteRule,
     lhsEqualsRhs,
     mapRuleVariables,
  )
@@ -696,6 +699,7 @@ search
 
 -- | Proving a spec given as a module containing rules to be proven
 prove ::
+    KoreLogOptions ->
     Maybe MinDepth ->
     Maybe StepTimeout ->
     EnableMovingAverage ->
@@ -714,6 +718,7 @@ prove ::
     Maybe (VerifiedModule StepperAttributes) ->
     SMT ProveClaimsResult
 prove
+    koreLogOptions
     maybeMinDepth
     stepTimeout
     enableMA
@@ -730,6 +735,7 @@ prove
         evalSimplifierProofs definitionModule $ do
             InitializedProver{axioms, specClaims, claims, alreadyProven} <-
                 initializeProver
+                    koreLogOptions
                     definitionModule
                     specModule
                     trustedModule
@@ -811,6 +817,7 @@ proveWithRepl
         evalSimplifierProofs definitionModule $ do
             InitializedProver{axioms, specClaims, claims} <-
                 initializeProver
+                    logOptions
                     definitionModule
                     specModule
                     trustedModule
@@ -985,15 +992,19 @@ fromMaybeChanged (Unchanged a) = a
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initializeProver ::
+    KoreLogOptions ->
     VerifiedModule StepperAttributes ->
     VerifiedModule StepperAttributes ->
     Maybe (VerifiedModule StepperAttributes) ->
     Simplifier InitializedProver
-initializeProver definitionModule specModule maybeTrustedModule = do
+initializeProver koreLogOptions definitionModule specModule maybeTrustedModule = do
     initialized <- initializeAndSimplify definitionModule
-    tools <- askMetadataTools
     let Initialized{rewriteRules} = initialized
-        changedSpecClaims :: [MaybeChanged SomeClaim]
+        equations = extractEquations definitionModule
+        undefinedLabels = runValidate $ validateDebugOptions equations rewriteRules koreLogOptions
+    when (isLeft undefinedLabels) $ throwM . DebugOptionsValidationError $ fromLeft mempty undefinedLabels
+    tools <- askMetadataTools
+    let changedSpecClaims :: [MaybeChanged SomeClaim]
         changedSpecClaims = expandClaim tools <$> extractClaims specModule
         simplifyToList :: SomeClaim -> Simplifier [SomeClaim]
         simplifyToList rule = do
