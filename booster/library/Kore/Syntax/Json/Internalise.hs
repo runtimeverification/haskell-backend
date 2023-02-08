@@ -24,7 +24,7 @@ import Data.ByteString.Char8 (ByteString)
 import Data.ByteString.Char8 qualified as BS
 import Data.Foldable ()
 import Data.List (foldl1', nub)
-import Data.List.NonEmpty (NonEmpty)
+import Data.List.NonEmpty as NE (NonEmpty)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Set (Set)
@@ -105,6 +105,12 @@ internaliseTerm sortVars definition@KoreDefinition{sorts, symbols} pat =
             variableSort <- lookupInternalSort' sort
             let variableName = textToBS name.getId
             pure $ Internal.Var Internal.Variable{variableSort, variableName}
+        Syntax.KJApp{name, sorts = [from, to], args = [arg]}
+            | Just Internal.injectionSymbol == Map.lookup (textToBS name.getId) symbols -> do
+                from' <- lookupInternalSort' from
+                to' <- lookupInternalSort' to
+                arg' <- recursion arg
+                pure $ Internal.Injection from' to' arg'
         symPatt@Syntax.KJApp{name, sorts = appSorts, args} -> do
             symbol <-
                 maybe (throwE $ UnknownSymbol name symPatt) pure $

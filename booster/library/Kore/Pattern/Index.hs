@@ -15,7 +15,6 @@ import GHC.Generics (Generic)
 
 import Kore.Definition.Attributes.Base (SymbolAttributes (..), SymbolType (..))
 import Kore.Pattern.Base
-import Kore.Pattern.Util qualified as Util
 
 {- | Index data allowing for a quick lookup of potential axioms.
 
@@ -103,22 +102,15 @@ computeTermIndex config =
                     Nothing -- error ("lookForTopTerm: the first child of the K cell isn't a kseq" <> show symbol.name)
             _other -> Nothing
 
-    -- this assumes that sort injections are well-formed (have a single argument)
     stripAwaySortInjections :: Term -> Term
     stripAwaySortInjections =
         \case
-            term@(SymbolApplication symbol _ children) ->
-                if Util.isSortInjectionSymbol symbol
-                    then stripAwaySortInjections (getInjChild children)
-                    else term
+            Injection _ _ child ->
+                stripAwaySortInjections child --
             term -> term
 
     getKSeqFirst [] = error "lookForTopTerm: empty KSeq"
     getKSeqFirst (x : _) = x
-
-    getInjChild [] = error "stripAwaySortInjections: injection with 0 children"
-    getInjChild [x] = x
-    getInjChild _ = error "stripAwaySortInjections: injection with multiple children"
 
     getFirstKCellElem [] = error "computeTermIndex: empty K cell"
     getFirstKCellElem (x : _) = x
