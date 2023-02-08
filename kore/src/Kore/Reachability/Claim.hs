@@ -777,7 +777,7 @@ checkSimpleImplication inLeft inRight existentials =
 
         case (trivial, rhsBottom) of
             (True, _) -> pure (claimToCheck, Implied Nothing)
-            (_, False) -> pure (claimToCheck, NotImpliedStuck Nothing)
+            (_, True) -> pure (claimToCheck, NotImpliedStuck Nothing)
             _ -> do
                 -- attempt term unification (to remember the substitution
                 unified <-
