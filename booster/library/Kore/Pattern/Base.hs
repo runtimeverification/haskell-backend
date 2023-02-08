@@ -81,6 +81,9 @@ data TermF t
     | SymbolApplicationF Symbol [Sort] [t]
     | DomainValueF Sort ByteString
     | VarF Variable
+    | -- | injection node with source and target sort: "intermediate"
+      -- sorts between source and target are shortened out.
+      InjectionF Sort Sort t
     deriving stock (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
     deriving anyclass (NFData, Hashable)
 
@@ -129,6 +132,7 @@ instance Corecursive Term where
     embed (SymbolApplicationF s ss ts) = SymbolApplication s ss ts
     embed (DomainValueF s t) = DomainValue s t
     embed (VarF v) = Var v
+    embed (InjectionF source target t) = Injection source target t
 
 -- smart term constructors, as bidirectional patterns
 pattern AndTerm :: Term -> Term -> Term
@@ -144,6 +148,8 @@ pattern AndTerm t1 t2 <- Term _ (AndTermF t1 t2)
 pattern SymbolApplication :: Symbol -> [Sort] -> [Term] -> Term
 pattern SymbolApplication sym sorts args <- Term _ (SymbolApplicationF sym sorts args)
     where
+        SymbolApplication sym [source, target] [arg]
+            | sym == injectionSymbol = Injection source target arg
         SymbolApplication sym sorts args =
             let argAttributes = mconcat $ map getAttributes args
                 newEvaluatedFlag =
@@ -182,7 +188,41 @@ pattern Var v <- Term _ (VarF v)
                     }
                 $ VarF v
 
-{-# COMPLETE AndTerm, SymbolApplication, DomainValue, Var #-}
+pattern Injection :: Sort -> Sort -> Term -> Term
+pattern Injection source target t <- Term _ (InjectionF source target t)
+    where
+        Injection source target t =
+            case t of
+                Injection source' target' sub'
+                    | source == target' ->
+                        Injection source' target sub'
+                    | otherwise ->
+                        error $ "Unexpected sort injection:" <> show t -- ???
+                _other ->
+                    let argAttribs = getAttributes t
+                        attribs =
+                            argAttribs
+                                { hash = Hashable.hash ("Injection" :: ByteString, source, target, hash argAttribs)
+                                }
+                     in Term attribs $ InjectionF source target t
+
+{-# COMPLETE AndTerm, SymbolApplication, DomainValue, Var, Injection #-}
+
+-- hard-wired injection symbol
+injectionSymbol :: Symbol
+injectionSymbol =
+    Symbol
+        { name = "inj"
+        , sortVars = ["From", "To"]
+        , argSorts = [SortVar "From"]
+        , resultSort = SortVar "To"
+        , attributes =
+            SymbolAttributes
+                { symbolType = SortInjection
+                , isIdem = False
+                , isAssoc = False
+                }
+        }
 
 -- convenience patterns
 pattern AndBool :: [Term] -> Term
@@ -191,12 +231,6 @@ pattern AndBool ts <-
 
 pattern DV :: Sort -> Symbol
 pattern DV sort <- Symbol "\\dv" _ _ sort _
-
--- NB assumes a particular shape and order of sort variables of the
--- particular symbol "inj". A custom representation would be safer.
-pattern Injection :: Sort -> Sort -> Term -> Term
-pattern Injection fromSort toSort term <-
-    SymbolApplication (Symbol "inj" _ _ _ _) [fromSort, toSort] [term]
 
 {- | A predicate describes constraints on terms. It will always evaluate
    to 'Top' or 'Bottom'. Notice that 'Predicate's don't have a sort.
@@ -322,6 +356,10 @@ instance Pretty Term where
                     -- prints the bytes of the string as data
                     <> KPretty.argumentsP [show $ Text.decodeLatin1 bs]
             Var var -> pretty var
+            Injection source target t ->
+                "\\inj"
+                    <> KPretty.parametersP [source, target]
+                    <> KPretty.argumentsP [t]
 
 instance Pretty Sort where
     pretty (SortApp name params) =

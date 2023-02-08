@@ -13,10 +13,11 @@ import Data.Text (Text)
 import Data.Text.IO qualified as Text
 import System.FilePath
 import Test.Tasty
-import Test.Tasty.Golden
+import Test.Tasty.Golden (findByExtension)
 
 import Kore.Definition.Util
 import Kore.Syntax.ParsedKore
+import Test.Kore.Util (testGoldenVsString)
 
 -- Assumption: contains textual kore (<name>.kore) and expected
 -- output, either a report <name>.report similar to the one produced
@@ -33,7 +34,8 @@ test_internaliseKore = do
             [testWith f | f <- testFiles]
   where
     testWith :: FilePath -> TestTree
-    testWith resultFile = goldenVsString file resultFile (try <$> Text.readFile kore)
+    testWith resultFile =
+        testGoldenVsString file resultFile (try <$> Text.readFile kore)
       where
         file = takeFileName $ dropExtension resultFile
         kore = dropExtension resultFile
