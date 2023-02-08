@@ -11,9 +11,10 @@ import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Text.IO qualified as Text
 import System.FilePath
 import Test.Tasty
-import Test.Tasty.Golden
+import Test.Tasty.Golden (findByExtension)
 
 import Kore.Syntax.ParsedKore
+import Test.Kore.Util (testGoldenVsString)
 
 -- Assumption: directory contains textual kore named <name>.kore and
 -- text files with potential parse errors <name>.kore.errors, empty if
@@ -30,7 +31,7 @@ test_parseFiles = do
             [checkParse f | f <- testFiles]
   where
     checkParse :: FilePath -> TestTree
-    checkParse resultFile = goldenVsString name resultFile parse
+    checkParse resultFile = testGoldenVsString name resultFile parse
       where
         name = "Checking " <> file
         file = takeFileName $ dropExtension resultFile

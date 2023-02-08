@@ -132,17 +132,7 @@ kseq =
         }
 
 injKItem :: Term -> Term
-injKItem t = SymbolApplication inj [sortOfTerm t, kItemSort] [t]
-
-inj :: Symbol
-inj =
-    Symbol
-        { name = "inj"
-        , sortVars = ["Source", "Target"]
-        , resultSort = SortVar "Target"
-        , argSorts = [SortVar "Source"]
-        , attributes = SymbolAttributes SortInjection False False
-        }
+injKItem t = Injection (sortOfTerm t) kItemSort t
 
 rule :: Maybe Text -> Pattern -> Pattern -> Priority -> RewriteRule
 rule ruleLabel lhs rhs priority =

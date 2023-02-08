@@ -52,6 +52,11 @@ externaliseTerm = \case
         Syntax.KJDV (externaliseSort sort) $ Text.decodeLatin1 bs
     Internal.Var Internal.Variable{variableSort = iSort, variableName = iName} ->
         Syntax.KJEVar (varNameToId iName) (externaliseSort iSort)
+    Internal.Injection source target trm ->
+        Syntax.KJApp
+            (symbolNameToId Internal.injectionSymbol.name)
+            (map externaliseSort [source, target])
+            [externaliseTerm trm]
 
 externalisePredicate :: Syntax.Sort -> Internal.Predicate -> Syntax.KorePattern
 externalisePredicate sort =

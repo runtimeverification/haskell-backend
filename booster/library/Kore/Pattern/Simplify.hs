@@ -82,8 +82,5 @@ simplifyConcrete (Just mApi) def trm = recurse trm
                     AndTerm (recurse t1) (recurse t2)
                 SymbolApplication sym sorts args ->
                     SymbolApplication sym sorts (map recurse args)
-
--- FIXME recursions repeat runLLVMwithDL (no sharing). This is
---  a more general problem with runLLVMwithDL, the library
---  should be fixed for the entire run but its functions are
---  reconstructed on every call
+                Injection sources target sub ->
+                    Injection sources target $ recurse sub

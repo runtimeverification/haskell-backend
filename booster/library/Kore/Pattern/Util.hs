@@ -38,6 +38,7 @@ sortOfTerm (SymbolApplication symbol sorts _) =
     applySubst (Map.fromList $ zip symbol.sortVars sorts) symbol.resultSort
 sortOfTerm (DomainValue sort _) = sort
 sortOfTerm (Var Variable{variableSort}) = variableSort
+sortOfTerm (Injection _ sort _) = sort
 
 applySubst :: Map VarName Sort -> Sort -> Sort
 applySubst subst var@(SortVar n) =
@@ -64,6 +65,7 @@ substituteInTerm substitution = goSubst
             SymbolApplication sym sorts args ->
                 SymbolApplication sym sorts $ map goSubst args
             AndTerm t1 t2 -> AndTerm (goSubst t1) (goSubst t2)
+            Injection ss s sub -> Injection ss s (goSubst sub)
 
 substituteInPredicate :: Map Variable Term -> Predicate -> Predicate
 substituteInPredicate substitution = cata $ \case
