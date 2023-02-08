@@ -46,58 +46,6 @@ packages:
       size: 713
   original:
     hackage: monad-validate-1.2.0.0@sha256:9850f408431098b28806dd464b6825a88a0b56c84f380d7fe0454c1df9d6f881,3505
-- completed:
-    commit: c227d88b88ca74eb56da36668cab8ba2af7b32ee
-    git: https://github.com/goodlyrottenapple/pipes-ghc-events.git
-    name: eventlog2speedscope
-    pantry-tree:
-      sha256: 5c8e4a1e411927009f73f439bc81a4c4cdd31db5a600f82f5304228d0008afe0
-      size: 363
-    subdir: eventlog2speedscope
-    version: 0.1.1
-  original:
-    commit: c227d88b88ca74eb56da36668cab8ba2af7b32ee
-    git: https://github.com/goodlyrottenapple/pipes-ghc-events.git
-    subdir: eventlog2speedscope
-- completed:
-    commit: c227d88b88ca74eb56da36668cab8ba2af7b32ee
-    git: https://github.com/goodlyrottenapple/pipes-ghc-events.git
-    name: pipes-aeson
-    pantry-tree:
-      sha256: ca2885de6e0e32293ff25b2e4ef2ed38b46df3308be004b88c73e7f8b4ed92ff
-      size: 841
-    subdir: pipes-aeson
-    version: 0.4.2
-  original:
-    commit: c227d88b88ca74eb56da36668cab8ba2af7b32ee
-    git: https://github.com/goodlyrottenapple/pipes-ghc-events.git
-    subdir: pipes-aeson
-- completed:
-    commit: c227d88b88ca74eb56da36668cab8ba2af7b32ee
-    git: https://github.com/goodlyrottenapple/pipes-ghc-events.git
-    name: pipes-ghc-events
-    pantry-tree:
-      sha256: 442cb60eae9a3f52d872d5fbae872a5b2bf8fe144940cb2b10f75f6a0caf3182
-      size: 234
-    subdir: pipes-ghc-events
-    version: 0.1.0.0
-  original:
-    commit: c227d88b88ca74eb56da36668cab8ba2af7b32ee
-    git: https://github.com/goodlyrottenapple/pipes-ghc-events.git
-    subdir: pipes-ghc-events
-- completed:
-    commit: c227d88b88ca74eb56da36668cab8ba2af7b32ee
-    git: https://github.com/goodlyrottenapple/pipes-ghc-events.git
-    name: pipes-sqlite-simple
-    pantry-tree:
-      sha256: 7e6a1c449ab2b3bb7b987f4819578b82ce905e7cc877ea10c5ed740c21b29e41
-      size: 631
-    subdir: pipes-sqlite-simple
-    version: '0.2'
-  original:
-    commit: c227d88b88ca74eb56da36668cab8ba2af7b32ee
-    git: https://github.com/goodlyrottenapple/pipes-ghc-events.git
-    subdir: pipes-sqlite-simple
 snapshots:
 - completed:
     sha256: bfafe5735ccb74527d754b1f9999ded72d7c3a6c3a88529449661431ccfbd6cc

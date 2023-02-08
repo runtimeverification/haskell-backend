@@ -484,8 +484,6 @@
         "Kore/Unification/Unify"
         "Kore/Unification/NewUnifier"
         "Kore/Unparser"
-        "Kore/Util/TSM"
-        "Kore/Util/TSM/UnifyTag"
         "Kore/Validate/AliasVerifier"
         "Kore/Validate/AttributesVerifier"
         "Kore/Validate/DefinitionVerifier"
@@ -602,23 +600,6 @@
         ];
         buildable = true;
         hsSourceDirs = [ "app/parser" ];
-        mainPath = (([ "Main.hs" ]
-          ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4")
-          "")
-          ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8")
-          "") ++ [ "" ];
-      };
-      "kore-prof" = {
-        depends = [
-          (hsPkgs."base" or (errorHandler.buildDepError "base"))
-          (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
-          (hsPkgs."eventlog2speedscope" or (errorHandler.buildDepError
-            "eventlog2speedscope"))
-          (hsPkgs."optparse-applicative" or (errorHandler.buildDepError
-            "optparse-applicative"))
-        ];
-        buildable = true;
-        hsSourceDirs = [ "app/prof" ];
         mainPath = (([ "Main.hs" ]
           ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4")
           "")

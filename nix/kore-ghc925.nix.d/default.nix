@@ -10,10 +10,6 @@
       "monad-validate" =
         (((hackage.monad-validate)."1.2.0.0").revisions)."9850f408431098b28806dd464b6825a88a0b56c84f380d7fe0454c1df9d6f881";
       kore = ./kore.nix;
-      eventlog2speedscope = ./.stack-to-nix.cache.0;
-      pipes-aeson = ./.stack-to-nix.cache.1;
-      pipes-ghc-events = ./.stack-to-nix.cache.2;
-      pipes-sqlite-simple = ./.stack-to-nix.cache.3;
     };
   };
   resolver = "lts-20.8";
