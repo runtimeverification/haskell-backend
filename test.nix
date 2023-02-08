@@ -68,7 +68,6 @@ in stdenv.mkDerivation {
   buildFlags = [
     "KORE_PARSER=kore-parser"
     "KORE_EXEC=kore-exec"
-    "KORE_PROF=kore-prof"
     "KORE_REPL=kore-repl"
     "--output-sync"
     "test"
