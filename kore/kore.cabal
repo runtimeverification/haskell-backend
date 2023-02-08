@@ -170,6 +170,7 @@ common library
   build-depends: mmorph >=1.1
   build-depends: monad-control
   build-depends: monad-logger >=0.3.36
+  build-depends: monad-validate
   build-depends: mono-traversable >=1.0
   build-depends: mtl >=2.2
   build-depends: multiset >=0.3.4.3
@@ -620,6 +621,7 @@ executable kore-exec
   build-depends: filepath >=1.4
   build-depends: generic-lens >=1.1
   build-depends: lens >=4.17
+  build-depends: monad-validate
   build-depends: optparse-applicative >=0.14
   build-depends: text >=1.2
   build-depends: time >=1.9.3

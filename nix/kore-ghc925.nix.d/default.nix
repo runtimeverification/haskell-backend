@@ -7,6 +7,8 @@
       "decision-diagrams" =
         (((hackage.decision-diagrams)."0.2.0.0").revisions).default;
       "typerep-map" = (((hackage.typerep-map)."0.6.0.0").revisions).default;
+      "monad-validate" =
+        (((hackage.monad-validate)."1.2.0.0").revisions)."9850f408431098b28806dd464b6825a88a0b56c84f380d7fe0454c1df9d6f881";
       kore = ./kore.nix;
     };
   };
