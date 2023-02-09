@@ -80,6 +80,8 @@
         (hsPkgs."mmorph" or (errorHandler.buildDepError "mmorph"))
         (hsPkgs."monad-control" or (errorHandler.buildDepError "monad-control"))
         (hsPkgs."monad-logger" or (errorHandler.buildDepError "monad-logger"))
+        (hsPkgs."monad-validate" or (errorHandler.buildDepError
+          "monad-validate"))
         (hsPkgs."mono-traversable" or (errorHandler.buildDepError
           "mono-traversable"))
         (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
@@ -482,8 +484,6 @@
         "Kore/Unification/Unify"
         "Kore/Unification/NewUnifier"
         "Kore/Unparser"
-        "Kore/Util/TSM"
-        "Kore/Util/TSM/UnifyTag"
         "Kore/Validate/AliasVerifier"
         "Kore/Validate/AttributesVerifier"
         "Kore/Validate/DefinitionVerifier"
@@ -539,6 +539,8 @@
           (hsPkgs."filepath" or (errorHandler.buildDepError "filepath"))
           (hsPkgs."generic-lens" or (errorHandler.buildDepError "generic-lens"))
           (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
+          (hsPkgs."monad-validate" or (errorHandler.buildDepError
+            "monad-validate"))
           (hsPkgs."optparse-applicative" or (errorHandler.buildDepError
             "optparse-applicative"))
           (hsPkgs."text" or (errorHandler.buildDepError "text"))
@@ -599,23 +601,6 @@
         ];
         buildable = true;
         hsSourceDirs = [ "app/parser" ];
-        mainPath = (([ "Main.hs" ]
-          ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4")
-          "")
-          ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.8")
-          "") ++ [ "" ];
-      };
-      "kore-prof" = {
-        depends = [
-          (hsPkgs."base" or (errorHandler.buildDepError "base"))
-          (hsPkgs."kore" or (errorHandler.buildDepError "kore"))
-          (hsPkgs."eventlog2speedscope" or (errorHandler.buildDepError
-            "eventlog2speedscope"))
-          (hsPkgs."optparse-applicative" or (errorHandler.buildDepError
-            "optparse-applicative"))
-        ];
-        buildable = true;
-        hsSourceDirs = [ "app/prof" ];
         mainPath = (([ "Main.hs" ]
           ++ (pkgs.lib).optional (compiler.isGhc && (compiler.version).ge "8.4")
           "")
@@ -746,6 +731,8 @@
           (hsPkgs."monad-control" or (errorHandler.buildDepError
             "monad-control"))
           (hsPkgs."monad-logger" or (errorHandler.buildDepError "monad-logger"))
+          (hsPkgs."monad-validate" or (errorHandler.buildDepError
+            "monad-validate"))
           (hsPkgs."mono-traversable" or (errorHandler.buildDepError
             "mono-traversable"))
           (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
