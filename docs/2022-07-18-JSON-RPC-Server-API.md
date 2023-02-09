@@ -28,6 +28,7 @@ The server runs over sockets and can be interacted with by sending JSON RPC mess
     "terminal-rules": ["ruleFoo"],
     "moving-average-step-timeout": true,
     "step-timeout": 1234,
+    "module": "MODULE-NAME",
     "state": {
       "format": "KORE",
       "version": 1,
@@ -37,7 +38,7 @@ The server runs over sockets and can be interacted with by sending JSON RPC mess
 }
 ```
 
-Optional parameters: `max-depth`, `cut-point-rules`, `terminal-rules`, `moving-average-step-timeout`, `step-timeout` (timeout is in milliseconds)
+Optional parameters: `max-depth`, `cut-point-rules`, `terminal-rules`, `moving-average-step-timeout`, `step-timeout` (timeout is in milliseconds), `module` (main module name)
 
 _Note: `id` can be an int or a string and each message must have a new `id`. The response objects have the same id as the message._
 
@@ -204,10 +205,13 @@ If `"reason": "cut-point-rule"`, the `next-states` field contains the next state
   "method": "implies",
   "params": {
     "antecedent": {"format": "KORE", "version": 1, "term": {}},
-    "consequent": {"format": "KORE", "version": 1, "term": {}}
+    "consequent": {"format": "KORE", "version": 1, "term": {}},
+    "module": "MODULE-NAME"
   }
 }
 ```
+
+Optional parameters: `module` (main module name)
 
 ### Error Response:
 
@@ -285,10 +289,13 @@ In some cases, a unifier `condition` for the implication can still be provided, 
   "id": 1,
   "method": "simplify",
   "params": {
-    "state": {"format": "KORE", "version": 1, "term": {}}
+    "state": {"format": "KORE", "version": 1, "term": {}},
+    "module": "MODULE-NAME"
   }
 }
 ```
+
+Optional parameters: `module` (main module name)
 
 ### Error Response:
 
@@ -303,6 +310,37 @@ Same as for execute
   "result": {
     "state": {"format": "KORE", "version": 1, "term": {}}
   }
+}
+```
+
+## Add-module
+
+### Request
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "add-module",
+  "params": {
+    "name": "MODULE-NAME",
+    "module": "<plain text>"
+  }
+}
+```
+
+* `name` is the name of the main module.
+* `module` is module represented in KORE.
+
+### Correct Response:
+
+Responds with an empty array if successful.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": []
 }
 ```
 
@@ -390,6 +428,37 @@ This error wraps an error message from the internal implication check routine, i
       ],
       "error": "The check implication step expects the antecedent term to be function-like."
     }
+  }
+}
+```
+
+## -32004 Could not parse KORE pattern
+
+This error wraps the internal error thrown when parsing the received plain text module.
+
+```json
+{
+  "jsonrpc":"2.0",
+  "id":1,
+  "error":  {
+    "data":":21:286: unexpected token TokenIdent \\"hasDomainValues\\"\\n",
+    "code":-32004,
+    "message":"Could not parse KORE pattern"
+  }
+}
+```
+## -32005 Could not find module
+
+This error wraps the internal error thrown when a module with the given name can not be found.
+
+```json
+{
+  "jsonrpc":"2.0",
+  "id":1,
+  "error":  {
+    "data":"MODULE-NAME",
+    "code":-32005,
+    "message":"Could not find module"
   }
 }
 ```

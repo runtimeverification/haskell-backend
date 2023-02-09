@@ -4,9 +4,13 @@
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
 -}
-module Kore.JsonRpc (runServer) where
+module Kore.JsonRpc (
+    runServer,
+    ServerState (..),
+) where
 
 import Control.Concurrent (forkIO, throwTo)
+import Control.Concurrent.MVar qualified as MVar
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Exception (ErrorCall (..), Exception, mask)
 import Control.Monad (forever)
@@ -18,7 +22,10 @@ import Control.Monad.STM (atomically)
 import Data.Aeson.Encode.Pretty as Json
 import Data.Aeson.Types (FromJSON (..), ToJSON (..), Value (..))
 import Data.Conduit.Network (serverSettings)
+import Data.IORef (readIORef)
+import Data.InternedText (globalInternedTextCache)
 import Data.Limit (Limit (..))
+import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Deriving.Aeson (
     CamelToKebab,
@@ -26,17 +33,26 @@ import Deriving.Aeson (
     CustomJSON (..),
     FieldLabelModifier,
     OmitNothingFields,
+    StripPrefix,
  )
 import GHC.Generics (Generic)
+import GlobalMain (
+    LoadedDefinition (..),
+    SerializedDefinition (..),
+ )
+import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.Builtin qualified as Builtin
 import Kore.Error (Error (..))
 import Kore.Exec qualified as Exec
 import Kore.Exec.GraphTraversal qualified as GraphTraversal
+import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
+import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (pattern PredicateTrue)
+import Kore.Internal.TermLike (TermLike)
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Log.InfoExecDepth (ExecDepth (..))
@@ -44,6 +60,7 @@ import Kore.Log.InfoJsonRpcCancelRequest (InfoJsonRpcCancelRequest (..))
 import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
 import Kore.Network.JSONRPC (jsonrpcTCPServer)
+import Kore.Parser (parseKoreDefinition)
 import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite (
     Natural,
@@ -57,6 +74,7 @@ import Kore.Rewrite.RewritingVariable (
     mkRewritingTerm,
  )
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
+import Kore.Rewrite.SMT.Lemma (getSMTLemmas)
 import Kore.Rewrite.Timeout (
     EnableMovingAverage (..),
     StepTimeout (..),
@@ -64,8 +82,14 @@ import Kore.Rewrite.Timeout (
 import Kore.Simplify.API (evalSimplifier)
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (Simplifier)
+import Kore.Syntax (VariableName)
 import Kore.Syntax.Json (KoreJson)
 import Kore.Syntax.Json qualified as PatternJson
+import Kore.Syntax.Sentence (
+    ModuleName,
+    SentenceAxiom,
+ )
+import Kore.Validate.DefinitionVerifier (verifyAndIndexDefinitionWithBase)
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Log qualified
 import Network.JSONRPC (
@@ -94,6 +118,7 @@ newtype Depth = Depth Natural
 data ExecuteRequest = ExecuteRequest
     { state :: !KoreJson
     , maxDepth :: !(Maybe Depth)
+    , _module :: !(Maybe ModuleName)
     , cutPointRules :: !(Maybe [Text])
     , terminalRules :: !(Maybe [Text])
     , movingAverageStepTimeout :: !(Maybe Bool)
@@ -102,7 +127,7 @@ data ExecuteRequest = ExecuteRequest
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ExecuteRequest
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab, StripPrefix "_"]] ExecuteRequest
 
 -- newtype StepRequest = StepRequest
 --     { state :: KoreJson
@@ -115,19 +140,30 @@ data ExecuteRequest = ExecuteRequest
 data ImpliesRequest = ImpliesRequest
     { antecedent :: !KoreJson
     , consequent :: !KoreJson
+    , _module :: !(Maybe ModuleName)
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ImpliesRequest
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab, StripPrefix "_"]] ImpliesRequest
 
-newtype SimplifyRequest = SimplifyRequest
+data SimplifyRequest = SimplifyRequest
     { state :: KoreJson
+    , _module :: !(Maybe ModuleName)
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] SimplifyRequest
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab, StripPrefix "_"]] SimplifyRequest
+
+data AddModuleRequest = AddModuleRequest
+    { name :: ModuleName
+    , _module :: Text
+    }
+    deriving stock (Generic, Show, Eq)
+    deriving
+        (FromJSON)
+        via CustomJSON '[FieldLabelModifier '[StripPrefix "_"]] AddModuleRequest
 
 data ReqException = CancelRequest deriving stock (Show)
 
@@ -138,6 +174,7 @@ instance FromRequest (API 'Req) where
     -- parseParams "step" = Just $ fmap (Step <$>) parseJSON
     parseParams "implies" = Just $ fmap (Implies <$>) parseJSON
     parseParams "simplify" = Just $ fmap (Simplify <$>) parseJSON
+    parseParams "add-module" = Just $ fmap (AddModule <$>) parseJSON
     parseParams "cancel" = Just $ const $ return Cancel
     parseParams _ = Nothing
 
@@ -208,6 +245,7 @@ data APIMethods
     = ExecuteM
     | ImpliesM
     | SimplifyM
+    | AddModuleM
 
 type family APIPayload (api :: APIMethods) (r :: ReqOrRes) where
     APIPayload 'ExecuteM 'Req = ExecuteRequest
@@ -218,12 +256,15 @@ type family APIPayload (api :: APIMethods) (r :: ReqOrRes) where
     APIPayload 'ImpliesM 'Res = ImpliesResult
     APIPayload 'SimplifyM 'Req = SimplifyRequest
     APIPayload 'SimplifyM 'Res = SimplifyResult
+    APIPayload 'AddModuleM 'Req = AddModuleRequest
+    APIPayload 'AddModuleM 'Res = ()
 
 data API (r :: ReqOrRes) where
     Execute :: APIPayload 'ExecuteM r -> API r
     -- Step :: APIPayload 'StepM r -> API r
     Implies :: APIPayload 'ImpliesM r -> API r
     Simplify :: APIPayload 'SimplifyM r -> API r
+    AddModule :: APIPayload 'AddModuleM r -> API r
     Cancel :: API 'Req
 
 deriving stock instance Show (API 'Req)
@@ -237,25 +278,33 @@ instance ToJSON (API 'Res) where
         -- Step payload -> toJSON payload
         Implies payload -> toJSON payload
         Simplify payload -> toJSON payload
+        AddModule payload -> toJSON payload
 
 instance Pretty.Pretty (API 'Req) where
     pretty = \case
         Execute _ -> "execute"
         Implies _ -> "implies"
         Simplify _ -> "simplify"
+        AddModule _ -> "add-module"
         Cancel -> "cancel"
 
 respond ::
     forall m.
     MonadIO m =>
     MonadCatch m =>
-    (forall a. SMT.SMT a -> IO a) ->
-    Exec.SerializedModule ->
+    MVar.MVar ServerState ->
+    ModuleName ->
+    ( forall a.
+      SmtMetadataTools StepperAttributes ->
+      [SentenceAxiom (TermLike VariableName)] ->
+      SMT.SMT a ->
+      IO a
+    ) ->
     Respond (API 'Req) m (API 'Res)
-respond runSMT serializedModule =
+respond serverState moduleName runSMT =
     withErrHandler . \case
-        Execute ExecuteRequest{state, maxDepth, cutPointRules, terminalRules, movingAverageStepTimeout, stepTimeout} ->
-            case PatternVerifier.runPatternVerifier verifierContext $
+        Execute ExecuteRequest{state, maxDepth, _module, cutPointRules, terminalRules, movingAverageStepTimeout, stepTimeout} -> withMainModule _module $ \serializedModule lemmas ->
+            case PatternVerifier.runPatternVerifier (verifierContext serializedModule) $
                 PatternVerifier.verifyStandalonePattern Nothing $
                     PatternJson.toParsedPattern $
                         PatternJson.term state of
@@ -263,7 +312,7 @@ respond runSMT serializedModule =
                 Right verifiedPattern -> do
                     traversalResult <-
                         liftIO
-                            ( runSMT $
+                            ( runSMT (Exec.metadataTools serializedModule) lemmas $
                                 Exec.rpcExec
                                     (maybe Unlimited (\(Depth n) -> Limit n) maxDepth)
                                     stepTimeout
@@ -386,8 +435,8 @@ respond runSMT serializedModule =
                 p = fromMaybe (Pattern.bottomOf sort) $ extractProgramState s
 
         -- Step StepRequest{} -> pure $ Right $ Step $ StepResult []
-        Implies ImpliesRequest{antecedent, consequent} ->
-            case PatternVerifier.runPatternVerifier verifierContext verify of
+        Implies ImpliesRequest{antecedent, consequent, _module} -> withMainModule _module $ \serializedModule lemmas ->
+            case PatternVerifier.runPatternVerifier (verifierContext serializedModule) verify of
                 Left err ->
                     pure $ Left $ couldNotVerify $ toJSON err
                 Right (antVerified, consVerified) -> do
@@ -401,8 +450,8 @@ respond runSMT serializedModule =
 
                     result <-
                         liftIO
-                            . runSMT
-                            . evalInSimplifierContext
+                            . runSMT (Exec.metadataTools serializedModule) lemmas
+                            . (evalInSimplifierContext serializedModule)
                             . runExceptT
                             $ Claim.checkSimpleImplication
                                 leftPatt
@@ -450,8 +499,8 @@ respond runSMT serializedModule =
                             Claim.NotImpliedStuck Nothing ->
                                 -- should not happen
                                 ImpliesResult jsonTerm False Nothing
-        Simplify SimplifyRequest{state} ->
-            case PatternVerifier.runPatternVerifier verifierContext verifyState of
+        Simplify SimplifyRequest{state, _module} -> withMainModule _module $ \serializedModule lemmas ->
+            case PatternVerifier.runPatternVerifier (verifierContext serializedModule) verifyState of
                 Left err ->
                     pure $ Left $ couldNotVerify $ toJSON err
                 Right stateVerified -> do
@@ -461,8 +510,8 @@ respond runSMT serializedModule =
 
                     result <-
                         liftIO
-                            . runSMT
-                            . evalInSimplifierContext
+                            . runSMT (Exec.metadataTools serializedModule) lemmas
+                            . (evalInSimplifierContext serializedModule)
                             $ SMT.Evaluator.filterMultiOr $srcLoc =<< Pattern.simplify patt
 
                     pure $
@@ -479,19 +528,73 @@ respond runSMT serializedModule =
                 PatternVerifier.verifyStandalonePattern Nothing $
                     PatternJson.toParsedPattern $
                         PatternJson.term state
+        AddModule AddModuleRequest{name, _module} ->
+            case parseKoreDefinition "" _module of
+                Left err -> pure . Left . couldNotParse $ toJSON err
+                Right parsedModule -> do
+                    LoadedDefinition{indexedModules, definedNames, kFileLocations} <-
+                        liftIO $ loadedDefinition <$> MVar.readMVar serverState
+                    let verified =
+                            verifyAndIndexDefinitionWithBase
+                                (indexedModules, definedNames)
+                                Builtin.koreVerifiers
+                                parsedModule
+                    case verified of
+                        Left err -> pure . Left . couldNotVerify $ toJSON err
+                        Right (indexedModules', definedNames') ->
+                            case Map.lookup name indexedModules' of
+                                Nothing -> pure . Left . couldNotFindModule $ toJSON name
+                                Just mainModule -> do
+                                    let metadataTools = MetadataTools.build mainModule
+                                        lemmas = getSMTLemmas mainModule
+
+                                    serializedModule' <-
+                                        liftIO
+                                            . runSMT metadataTools lemmas
+                                            $ Exec.makeSerializedModule mainModule
+
+                                    internedTextCache <- liftIO $ readIORef globalInternedTextCache
+
+                                    liftIO . MVar.modifyMVar_ serverState $
+                                        \ServerState{serializedModules} -> do
+                                            let serializedDefinition =
+                                                    SerializedDefinition
+                                                        { serializedModule = serializedModule'
+                                                        , locations = kFileLocations
+                                                        , internedTextCache
+                                                        , lemmas
+                                                        }
+                                                loadedDefinition =
+                                                    LoadedDefinition
+                                                        { indexedModules = indexedModules'
+                                                        , definedNames = definedNames'
+                                                        , kFileLocations
+                                                        }
+                                            pure
+                                                ServerState
+                                                    { serializedModules =
+                                                        Map.insert name serializedDefinition serializedModules
+                                                    , loadedDefinition
+                                                    }
+
+                                    pure . Right $ AddModule ()
 
         -- this case is only reachable if the cancel appeared as part of a batch request
         Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
   where
-    Exec.SerializedModule
-        { sortGraph
-        , overloadGraph
-        , metadataTools
-        , verifiedModule
-        , equations
-        } = serializedModule
+    withMainModule module' act = do
+        let mainModule = fromMaybe moduleName module'
+        ServerState{serializedModules} <- liftIO $ MVar.readMVar serverState
+        case Map.lookup mainModule serializedModules of
+            Nothing -> pure . Left . couldNotFindModule $ toJSON mainModule
+            Just (SerializedDefinition{serializedModule, lemmas}) ->
+                act serializedModule lemmas
 
     couldNotVerify err = ErrorObj "Could not verify KORE pattern" (-32002) err
+
+    couldNotParse err = ErrorObj "Could not parse KORE pattern" (-32004) err
+
+    couldNotFindModule err = ErrorObj "Could not find module" (-32005) err
 
     serverError detail payload =
         ErrorObj ("Server error: " <> detail) (-32032) payload
@@ -510,28 +613,51 @@ respond runSMT serializedModule =
                 Error{errorContext = [loc], errorError = msg}
          in handle (pure . Left . serverError "crashed" . toJSON . mkError)
 
-    verifierContext =
+    verifierContext Exec.SerializedModule{verifiedModule} =
         PatternVerifier.verifiedModuleContext verifiedModule
             & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
 
-    evalInSimplifierContext :: Simplifier a -> SMT.SMT a
-    evalInSimplifierContext =
-        evalSimplifier
-            verifiedModule
-            sortGraph
-            overloadGraph
-            metadataTools
-            equations
+    evalInSimplifierContext :: Exec.SerializedModule -> Simplifier a -> SMT.SMT a
+    evalInSimplifierContext
+        Exec.SerializedModule
+            { sortGraph
+            , overloadGraph
+            , metadataTools
+            , verifiedModule
+            , equations
+            } =
+            evalSimplifier
+                verifiedModule
+                sortGraph
+                overloadGraph
+                metadataTools
+                equations
 
-runServer :: Int -> SMT.SolverSetup -> Log.LoggerEnv IO -> Exec.SerializedModule -> IO ()
-runServer port solverSetup loggerEnv@Log.LoggerEnv{logAction} serializedModule = do
+data ServerState = ServerState
+    { serializedModules :: Map.Map ModuleName SerializedDefinition
+    , loadedDefinition :: LoadedDefinition
+    }
+
+runServer ::
+    Int ->
+    MVar.MVar ServerState ->
+    ModuleName ->
+    ( forall a.
+      SmtMetadataTools StepperAttributes ->
+      [SentenceAxiom (TermLike VariableName)] ->
+      SMT.SMT a ->
+      IO a
+    ) ->
+    Log.LoggerEnv IO ->
+    IO ()
+runServer port serverState mainModule runSMT loggerEnv@Log.LoggerEnv{logAction} = do
     flip runLoggingT logFun $
         jsonrpcTCPServer
             Json.defConfig{confCompare}
             V2
             False
             srvSettings
-            $ srv loggerEnv runSMT serializedModule
+            $ srv serverState mainModule loggerEnv runSMT
   where
     srvSettings = serverSettings port "*"
     confCompare =
@@ -571,11 +697,19 @@ runServer port solverSetup loggerEnv@Log.LoggerEnv{logAction} serializedModule =
     logFun loc src level msg =
         Log.logWith logAction $ LogJsonRpcServer{loc, src, level, msg}
 
-    runSMT :: forall a. SMT.SMT a -> IO a
-    runSMT m = flip Log.runLoggerT logAction $ SMT.runWithSolver m solverSetup
-
-srv :: MonadLoggerIO m => Log.LoggerEnv IO -> (forall a. SMT.SMT a -> IO a) -> Exec.SerializedModule -> JSONRPCT m ()
-srv Log.LoggerEnv{logAction} runSMT serializedModule = do
+srv ::
+    MonadLoggerIO m =>
+    MVar.MVar ServerState ->
+    ModuleName ->
+    Log.LoggerEnv IO ->
+    ( forall a.
+      SmtMetadataTools StepperAttributes ->
+      [SentenceAxiom (TermLike VariableName)] ->
+      SMT.SMT a ->
+      IO a
+    ) ->
+    JSONRPCT m ()
+srv serverState moduleName Log.LoggerEnv{logAction} runSMT = do
     reqQueue <- liftIO $ atomically newTChan
     let mainLoop tid =
             receiveBatchRequest >>= \case
@@ -608,7 +742,7 @@ srv Log.LoggerEnv{logAction} runSMT serializedModule = do
         logger <- askLoggerIO
         let sendResponses r = flip runLoggingT logger $ flip runReaderT rpcSession $ sendBatchResponse r
             respondTo :: MonadIO m => MonadCatch m => Request -> m (Maybe Response)
-            respondTo req = buildResponse (\req' -> log (InfoJsonRpcProcessRequest (getReqId req) req') >> respond runSMT serializedModule req') req
+            respondTo req = buildResponse (\req' -> log (InfoJsonRpcProcessRequest (getReqId req) req') >> respond serverState moduleName runSMT req') req
 
             cancelReq = \case
                 SingleRequest req@Request{} -> do
