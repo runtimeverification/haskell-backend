@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
@@ -55,7 +54,6 @@ import Data.Functor.Identity (
 import Data.Generics.Product
 import Data.Generics.Product qualified as Lens.Product
 import Data.HashMap.Strict qualified as HashMap
-import Data.Kind (Constraint)
 import Data.Map.Strict (
     Map,
  )
@@ -694,13 +692,7 @@ instance Ord variable => Ord (TermLike variable) where
         (Recursive.project -> _ :< pat2) =
             compare pat1 pat2
 
-#if MIN_VERSION_hashable(1,4,0)
-type HashableConstraint variable = Eq variable
-#else
-type HashableConstraint variable = () :: Constraint
-#endif
-
-instance HashableConstraint variable => Hashable (TermLike variable) where
+instance Eq variable => Hashable (TermLike variable) where
     hashWithSalt salt (TermLike__ _ hsh _) =
         salt `hashWithSalt` hsh -- HACK
     {-# INLINE hashWithSalt #-}

@@ -1,8 +1,3 @@
-<a name="BMC"></a>*BMC*
-
-1. (noun, acronym)
-   Bounded model checking. Execute the program on all paths for a given number of steps (a.k.a. bound), attempting to identify given properties (bugs, unexpected behaviours, and so on) in the execution graph.
-
 <a name="constructor-like"></a>*constructor-like*
 
 1. (adjective)

@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
@@ -36,6 +38,7 @@ import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (pattern PredicateTrue)
 import Kore.Internal.TermLike qualified as TermLike
+import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcCancelRequest (InfoJsonRpcCancelRequest (..))
 import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
@@ -52,6 +55,11 @@ import Kore.Rewrite.RewritingVariable (
     getRewritingVariable,
     mkRewritingPattern,
     mkRewritingTerm,
+ )
+import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
+import Kore.Rewrite.Timeout (
+    EnableMovingAverage (..),
+    StepTimeout (..),
  )
 import Kore.Simplify.API (evalSimplifier)
 import Kore.Simplify.Pattern qualified as Pattern
@@ -88,6 +96,8 @@ data ExecuteRequest = ExecuteRequest
     , maxDepth :: !(Maybe Depth)
     , cutPointRules :: !(Maybe [Text])
     , terminalRules :: !(Maybe [Text])
+    , movingAverageStepTimeout :: !(Maybe Bool)
+    , stepTimeout :: !(Maybe StepTimeout)
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -147,6 +157,7 @@ data HaltReason
     | DepthBound
     | CutPointRule
     | TerminalRule
+    | Timeout
     deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
@@ -243,10 +254,11 @@ respond ::
     Respond (API 'Req) m (API 'Res)
 respond runSMT serializedModule =
     withErrHandler . \case
-        Execute ExecuteRequest{state, maxDepth, cutPointRules, terminalRules} ->
+        Execute ExecuteRequest{state, maxDepth, cutPointRules, terminalRules, movingAverageStepTimeout, stepTimeout} ->
             case PatternVerifier.runPatternVerifier verifierContext $
                 PatternVerifier.verifyStandalonePattern Nothing $
-                    PatternJson.toParsedPattern $ PatternJson.term state of
+                    PatternJson.toParsedPattern $
+                        PatternJson.term state of
                 Left err -> pure $ Left $ couldNotVerify $ toJSON err
                 Right verifiedPattern -> do
                     traversalResult <-
@@ -254,6 +266,11 @@ respond runSMT serializedModule =
                             ( runSMT $
                                 Exec.rpcExec
                                     (maybe Unlimited (\(Depth n) -> Limit n) maxDepth)
+                                    stepTimeout
+                                    ( if fromMaybe False movingAverageStepTimeout
+                                        then EnableMovingAverage
+                                        else DisableMovingAverage
+                                    )
                                     serializedModule
                                     (toStopLabels cutPointRules terminalRules)
                                     verifiedPattern
@@ -332,6 +349,18 @@ respond runSMT serializedModule =
                                         , rule = Just lbl
                                         , nextStates = Nothing
                                         }
+                GraphTraversal.TimedOut
+                    Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState}
+                    _ ->
+                        Right $
+                            Execute $
+                                ExecuteResult
+                                    { state = patternToExecState sort rpcProgState
+                                    , depth = Depth depth
+                                    , reason = Timeout
+                                    , rule = Nothing
+                                    , nextStates = Nothing
+                                    }
                 -- these are programmer errors
                 result@GraphTraversal.Aborted{} ->
                     Left $ serverError "aborted" $ asText (show result)
@@ -384,10 +413,12 @@ respond runSMT serializedModule =
             verify = do
                 antVerified <-
                     PatternVerifier.verifyStandalonePattern Nothing $
-                        PatternJson.toParsedPattern $ PatternJson.term antecedent
+                        PatternJson.toParsedPattern $
+                            PatternJson.term antecedent
                 consVerified <-
                     PatternVerifier.verifyStandalonePattern Nothing $
-                        PatternJson.toParsedPattern $ PatternJson.term consequent
+                        PatternJson.toParsedPattern $
+                            PatternJson.term consequent
                 pure (antVerified, consVerified)
 
             renderCond sort cond =
@@ -432,7 +463,7 @@ respond runSMT serializedModule =
                         liftIO
                             . runSMT
                             . evalInSimplifierContext
-                            $ Pattern.simplify patt
+                            $ SMT.Evaluator.filterMultiOr $srcLoc =<< Pattern.simplify patt
 
                     pure $
                         Right $
@@ -446,7 +477,8 @@ respond runSMT serializedModule =
           where
             verifyState =
                 PatternVerifier.verifyStandalonePattern Nothing $
-                    PatternJson.toParsedPattern $ PatternJson.term state
+                    PatternJson.toParsedPattern $
+                        PatternJson.term state
 
         -- this case is only reachable if the cancel appeared as part of a batch request
         Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null

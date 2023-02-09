@@ -46,6 +46,7 @@ import Kore.Attribute.Pattern.ConstructorLike (
     isConstructorLike,
  )
 import Kore.Attribute.Sort qualified as Attribute
+import Kore.Attribute.Sort qualified as AttributeSort
 import Kore.Attribute.Sort.Concat qualified as Attribute
 import Kore.Attribute.Sort.Constructors qualified as Attribute (
     Constructors,
@@ -1793,7 +1794,7 @@ sortAttributesMapping =
     ,
         ( mapSort
         , Default.def
-            { Attribute.hook = Hook (Just "MAP.Map")
+            { AttributeSort.hook = Hook (Just "MAP.Map")
             , Attribute.unit =
                 Attribute.Unit (Just $ toSymbolOrAlias unitMapSymbol)
             , Attribute.element =
@@ -1805,7 +1806,7 @@ sortAttributesMapping =
     ,
         ( listSort
         , Default.def
-            { Attribute.hook = Hook (Just "LIST.List")
+            { AttributeSort.hook = Hook (Just "LIST.List")
             , Attribute.unit =
                 Attribute.Unit (Just $ toSymbolOrAlias unitListSymbol)
             , Attribute.element =
@@ -1817,7 +1818,7 @@ sortAttributesMapping =
     ,
         ( setSort
         , Default.def
-            { Attribute.hook = Hook (Just "SET.Set")
+            { AttributeSort.hook = Hook (Just "SET.Set")
             , Attribute.unit =
                 Attribute.Unit (Just $ toSymbolOrAlias unitSetSymbol)
             , Attribute.element =
@@ -1828,20 +1829,20 @@ sortAttributesMapping =
         )
     ,
         ( intSort
-        , Default.def{Attribute.hook = Hook (Just "INT.Int")}
+        , Default.def{AttributeSort.hook = Hook (Just "INT.Int")}
         )
     ,
         ( boolSort
-        , Default.def{Attribute.hook = Hook (Just "BOOL.Bool")}
+        , Default.def{AttributeSort.hook = Hook (Just "BOOL.Bool")}
         )
     ,
         ( stringSort
-        , Default.def{Attribute.hook = Hook (Just "STRING.String")}
+        , Default.def{AttributeSort.hook = Hook (Just "STRING.String")}
         )
     , -- Also add attributes for the implicitly defined sorts.
 
         ( stringMetaSort
-        , Default.def{Attribute.hook = Hook (Just "STRING.String")}
+        , Default.def{AttributeSort.hook = Hook (Just "STRING.String")}
         )
     ]
 

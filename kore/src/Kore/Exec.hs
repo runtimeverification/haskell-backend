@@ -16,13 +16,12 @@ module Kore.Exec (
     search,
     prove,
     proveWithRepl,
-    boundedModelCheck,
     matchDisjunction,
     checkFunctions,
     simplify,
     Rewrite,
     Equality,
-    Initialized,
+    Initialized (..),
     makeSerializedModule,
     SerializedModule (..),
 ) where
@@ -39,7 +38,9 @@ import Control.Monad (
     filterM,
     (>=>),
  )
+import Control.Monad.Catch (throwM)
 import Control.Monad.Trans.Maybe (runMaybeT)
+import Control.Monad.Validate
 import Data.Coerce (
     coerce,
  )
@@ -65,7 +66,7 @@ import Kore.Attribute.Symbol (
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Builtin qualified as Builtin
 import Kore.Equation (
-    Equation,
+    Equation (..),
     extractEquations,
     isSimplificationRule,
     right,
@@ -125,13 +126,14 @@ import Kore.Log.ErrorRewriteLoop (
  )
 import Kore.Log.InfoExecDepth
 import Kore.Log.KoreLogOptions (
+    DebugOptionsValidationError (..),
     KoreLogOptions (..),
+    validateDebugOptions,
  )
 import Kore.Log.WarnDepthLimitExceeded (
     warnDepthLimitExceeded,
  )
 import Kore.Log.WarnTrivialClaim
-import Kore.ModelChecker.Bounded qualified as Bounded
 import Kore.Reachability (
     AllowVacuous,
     AlreadyProven (AlreadyProven),
@@ -155,7 +157,6 @@ import Kore.Rewrite.Axiom.Identifier (
  )
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.Rule (
-    extractImplicationClaims,
     extractRewriteAxioms,
  )
 import Kore.Rewrite.Rule.Expand (
@@ -166,9 +167,7 @@ import Kore.Rewrite.Rule.Simplify (
  )
 import Kore.Rewrite.Rule.Simplify qualified as Rule
 import Kore.Rewrite.RulePattern (
-    ImplicationRule (..),
     RewriteRule (..),
-    getRewriteRule,
     lhsEqualsRhs,
     mapRuleVariables,
  )
@@ -180,6 +179,10 @@ import Kore.Rewrite.Search (
  )
 import Kore.Rewrite.Search qualified as Search
 import Kore.Rewrite.Strategy qualified as Strategy
+import Kore.Rewrite.Timeout (
+    EnableMovingAverage (..),
+    StepTimeout,
+ )
 import Kore.Rewrite.Transition (
     runTransitionT,
     scatter,
@@ -269,6 +272,8 @@ makeSerializedModule verifiedModule =
 
 -- | Symbolic execution
 exec ::
+    Maybe StepTimeout ->
+    EnableMovingAverage ->
     Limit Natural ->
     Limit Natural ->
     Strategy.FinalNodeType ->
@@ -279,6 +284,8 @@ exec ::
     TermLike VariableName ->
     SMT (ExitCode, TermLike VariableName)
 exec
+    stepTimeout
+    enableMA
     depthLimit
     breadthLimit
     finalNodeType
@@ -296,10 +303,14 @@ exec
         evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations $ do
             finals <-
                 GraphTraversal.graphTraversal
+                    GraphTraversal.GraphTraversalCancel
+                    stepTimeout
+                    enableMA
                     finalNodeType
                     Strategy.DepthFirst
                     breadthLimit
                     transit
+                    (const Nothing)
                     Limit.Unlimited
                     execStrategy
                     (ExecDepth 0, Start $ Pattern.fromTermLike initialTerm)
@@ -313,6 +324,8 @@ exec
                                 forM_ depthLimit warnDepthLimitExceeded
                             pure results
                         GraphTraversal.Aborted results -> do
+                            pure results
+                        GraphTraversal.TimedOut _ results -> do
                             pure results
 
             let (depths, finalConfigs) = unzip finals
@@ -422,6 +435,8 @@ stateGetRewritingPattern state@RpcExecState{rpcProgState} =
 -}
 rpcExec ::
     Limit Natural ->
+    Maybe StepTimeout ->
+    EnableMovingAverage ->
     -- | The main module
     SerializedModule ->
     -- | additional labels/rule names for stopping
@@ -431,6 +446,8 @@ rpcExec ::
     SMT (GraphTraversal.TraversalResult (RpcExecState VariableName))
 rpcExec
     depthLimit
+    stepTimeout
+    enableMA
     SerializedModule
         { sortGraph
         , overloadGraph
@@ -444,10 +461,14 @@ rpcExec
         evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations $
             fmap stateGetRewritingPattern
                 <$> GraphTraversal.graphTraversal
+                    GraphTraversal.GraphTraversalCancel
+                    stepTimeout
+                    enableMA
                     Strategy.LeafOrBranching
                     Strategy.DepthFirst
                     (Limit 2) -- breadth limit 2 because we never go beyond a branch
                     transit
+                    (const Nothing)
                     Limit.Unlimited
                     execStrategy
                     (startState initialTerm)
@@ -678,7 +699,10 @@ search
 
 -- | Proving a spec given as a module containing rules to be proven
 prove ::
+    KoreLogOptions ->
     Maybe MinDepth ->
+    Maybe StepTimeout ->
+    EnableMovingAverage ->
     StuckCheck ->
     AllowVacuous ->
     Strategy.GraphSearchOrder ->
@@ -694,7 +718,10 @@ prove ::
     Maybe (VerifiedModule StepperAttributes) ->
     SMT ProveClaimsResult
 prove
+    koreLogOptions
     maybeMinDepth
+    stepTimeout
+    enableMA
     stuckCheck
     allowVacuous
     searchOrder
@@ -708,11 +735,14 @@ prove
         evalSimplifierProofs definitionModule $ do
             InitializedProver{axioms, specClaims, claims, alreadyProven} <-
                 initializeProver
+                    koreLogOptions
                     definitionModule
                     specModule
                     trustedModule
             proveClaims
                 maybeMinDepth
+                stepTimeout
+                enableMA
                 stuckCheck
                 allowVacuous
                 breadthLimit
@@ -737,7 +767,8 @@ prove
 -}
 proveWithRepl ::
     Maybe MinDepth ->
-    Maybe Repl.Data.StepTimeout ->
+    Maybe StepTimeout ->
+    EnableMovingAverage ->
     Repl.Data.StepTime ->
     StuckCheck ->
     AllowVacuous ->
@@ -765,6 +796,7 @@ proveWithRepl ::
 proveWithRepl
     minDepth
     stepTimeout
+    enableMA
     stepTime
     stuckCheck
     allowVacuous
@@ -780,17 +812,21 @@ proveWithRepl
     logOptions
     kFileLocations
     kompiledDir
-    korePrintCommand =
+    korePrintCommand = do
+        stepMovingAverage <- liftIO newEmptyMVar
         evalSimplifierProofs definitionModule $ do
             InitializedProver{axioms, specClaims, claims} <-
                 initializeProver
+                    logOptions
                     definitionModule
                     specModule
                     trustedModule
             Repl.runRepl
                 minDepth
                 stepTimeout
+                enableMA
                 stepTime
+                stepMovingAverage
                 stuckCheck
                 allowVacuous
                 axioms
@@ -806,43 +842,6 @@ proveWithRepl
                 kFileLocations
                 kompiledDir
                 korePrintCommand
-
--- | Bounded model check a spec given as a module containing rules to be checked
-boundedModelCheck ::
-    Limit Natural ->
-    Limit Natural ->
-    -- | The main module
-    VerifiedModule StepperAttributes ->
-    -- | The spec module
-    VerifiedModule StepperAttributes ->
-    Strategy.GraphSearchOrder ->
-    SMT
-        ( Bounded.CheckResult
-            (TermLike VariableName)
-            (ImplicationRule VariableName)
-        )
-boundedModelCheck
-    breadthLimit
-    depthLimit
-    definitionModule
-    specModule
-    searchOrder =
-        evalSimplifierProofs definitionModule $ do
-            initialized <- initializeAndSimplify definitionModule
-            let Initialized{rewriteRules} = initialized
-                specClaims = extractImplicationClaims specModule
-            assertSomeClaims specClaims
-            assertSingleClaim specClaims
-            let axioms = fmap Bounded.Axiom rewriteRules
-                claims =
-                    mapRuleVariables (pure mkRuleVariable) . makeImplicationRule
-                        <$> specClaims
-
-            Bounded.checkClaim
-                breadthLimit
-                (Bounded.bmcStrategy axioms)
-                searchOrder
-                (head claims, depthLimit)
 
 matchDisjunction ::
     VerifiedModule Attribute.Symbol ->
@@ -935,23 +934,12 @@ simplify ::
     m (Pattern RewritingVariableName)
 simplify = return
 
-assertSingleClaim :: Monad m => [claim] -> m ()
-assertSingleClaim claims =
-    when (length claims > 1) . error $
-        "More than one claim is found in the module."
-
 assertSomeClaims :: Monad m => [claim] -> m ()
 assertSomeClaims claims =
     when (null claims) . error $
         "Unexpected empty set of claims.\n"
             ++ "Possible explanation: the frontend and the backend don't agree "
             ++ "on the representation of claims."
-
-makeImplicationRule ::
-    (Attribute.Axiom Symbol VariableName, ImplicationRule VariableName) ->
-    ImplicationRule VariableName
-makeImplicationRule (attributes, ImplicationRule rulePattern) =
-    ImplicationRule rulePattern{attributes}
 
 simplifySomeClaim ::
     SomeClaim ->
@@ -1004,15 +992,19 @@ fromMaybeChanged (Unchanged a) = a
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initializeProver ::
+    KoreLogOptions ->
     VerifiedModule StepperAttributes ->
     VerifiedModule StepperAttributes ->
     Maybe (VerifiedModule StepperAttributes) ->
     Simplifier InitializedProver
-initializeProver definitionModule specModule maybeTrustedModule = do
+initializeProver koreLogOptions definitionModule specModule maybeTrustedModule = do
     initialized <- initializeAndSimplify definitionModule
-    tools <- askMetadataTools
     let Initialized{rewriteRules} = initialized
-        changedSpecClaims :: [MaybeChanged SomeClaim]
+        equations = extractEquations definitionModule
+        undefinedLabels = runValidate $ validateDebugOptions equations rewriteRules koreLogOptions
+    when (isLeft undefinedLabels) $ throwM . DebugOptionsValidationError $ fromLeft mempty undefinedLabels
+    tools <- askMetadataTools
+    let changedSpecClaims :: [MaybeChanged SomeClaim]
         changedSpecClaims = expandClaim tools <$> extractClaims specModule
         simplifyToList :: SomeClaim -> Simplifier [SomeClaim]
         simplifyToList rule = do

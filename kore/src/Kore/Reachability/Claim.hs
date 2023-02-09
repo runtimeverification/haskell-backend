@@ -589,24 +589,33 @@ checkImplicationWorker ::
     ClaimPattern ->
     m (CheckImplicationResult ClaimPattern)
 checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
-    do
+    elseImplied $ do
         (anyUnified, removal) <- getNegativeConjuncts
         let definedConfig =
                 Pattern.andCondition left $
-                    from $ makeCeilPredicate leftTerm
+                    from $
+                        makeCeilPredicate leftTerm
         let configs' = MultiOr.map (definedConfig <*) removal
-        stuck <-
-            Logic.scatter configs'
-                >>= liftSimplifier . Pattern.simplify
-                >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
-                >>= Logic.scatter
-        examine anyUnified stuck
-        & elseImplied
+        stuck <- simplifyRemainder configs'
+        result <- examine anyUnified stuck
+        case result of
+            -- Try to simplify the remaining configuration one more time
+            NotImpliedStuck _ -> do
+                let unmarkedSimplified = MultiOr.map Pattern.forgetSimplified configs'
+                stuck' <- simplifyRemainder unmarkedSimplified
+                examine anyUnified stuck'
+            implResult -> return implResult
   where
     ClaimPattern{right, left, existentials} = claimPattern
     leftTerm = Pattern.term left
     sort = termLikeSort leftTerm
     leftCondition = Pattern.withoutTerm left
+
+    simplifyRemainder remainder =
+        Logic.scatter remainder
+            >>= liftSimplifier . Pattern.simplify
+            >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
+            >>= Logic.scatter
 
     -- TODO (#1278): Do not combine the predicate and the substitution.
     -- This is held over from the old representation of claims, which did not
@@ -668,9 +677,9 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
         | otherwise = do
             when (isBottom right) $
                 warnClaimRHSIsBottom claimPattern
-            pure $
-                Lens.set (field @"left") stuck claimPattern
-                    & NotImpliedStuck
+            Lens.set (field @"left") stuck claimPattern
+                & NotImpliedStuck
+                & pure
       where
         (_, condition) = Pattern.splitTerm stuck
 
@@ -742,9 +751,9 @@ checkSimpleImplication ::
         (TermLike v, CheckImplicationResult (Maybe (Pattern.Condition v)))
 checkSimpleImplication inLeft inRight existentials =
     do
+        checkAssumptions inLeft inRight
         left <- simplifyToSingle "LHS: " inLeft
         right <- simplifyToSingle "RHS: " inRight
-        checkAssumptions left right
         let (rightTerm, rightCondition) = Pattern.splitTerm right
             (leftTerm, leftCondition) = Pattern.splitTerm left
             claimToCheck =
@@ -755,15 +764,21 @@ checkSimpleImplication inLeft inRight existentials =
 
         let definedConfig =
                 Pattern.andCondition left $
-                    from $ makeCeilPredicate leftTerm
+                    from $
+                        makeCeilPredicate leftTerm
         trivial <-
             fmap isBottom . liftSimplifier $
                 SMT.Evaluator.filterMultiOr $srcLoc
                     =<< Pattern.simplify definedConfig
+        rhsBottom <-
+            fmap isBottom . liftSimplifier $
+                SMT.Evaluator.filterMultiOr $srcLoc
+                    =<< Pattern.simplify right
 
-        if trivial
-            then pure (claimToCheck, Implied . Just $ Condition.top) -- trivial unifier
-            else do
+        case (trivial, rhsBottom) of
+            (True, _) -> pure (claimToCheck, Implied Nothing)
+            (_, True) -> pure (claimToCheck, NotImpliedStuck Nothing)
+            _ -> do
                 -- attempt term unification (to remember the substitution
                 unified <-
                     lift $
@@ -803,7 +818,8 @@ checkSimpleImplication inLeft inRight existentials =
                 (length simplified > 1)
                 "Term does not simplify to a singleton pattern"
         pure $
-            fromMaybe (Pattern.bottomOf patSort) $ headMay simplified
+            fromMaybe (Pattern.bottomOf patSort) $
+                headMay simplified
 
     showPretty :: Pretty a => a -> String
     showPretty = Pretty.renderString . Pretty.layoutOneLine . Pretty.pretty

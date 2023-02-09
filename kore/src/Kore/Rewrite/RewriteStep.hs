@@ -370,7 +370,7 @@ applyWithFinalizer ::
     Simplifier (Results rule)
 applyWithFinalizer sideCondition finalize rules initial = do
     results <- unifyRules sideCondition initial rules
-    debugAppliedRewriteRules initial (mapMaybe (unLabel . from) rules) (locations <$> results)
+    debugAppliedRewriteRules initial (locations <$> results)
     let initialVariables = freeVariables initial
     finalizedResults <- finalize initialVariables initial results
     debugRewriteTrace initial finalizedResults

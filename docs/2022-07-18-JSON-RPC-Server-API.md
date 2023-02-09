@@ -26,6 +26,8 @@ The server runs over sockets and can be interacted with by sending JSON RPC mess
     "max-depth": 4,
     "cut-point-rules": ["rule1"],
     "terminal-rules": ["ruleFoo"],
+    "moving-average-step-timeout": true,
+    "step-timeout": 1234,
     "state": {
       "format": "KORE",
       "version": 1,
@@ -35,7 +37,7 @@ The server runs over sockets and can be interacted with by sending JSON RPC mess
 }
 ```
 
-Optional parameters: `max-depth`, `cut-point-rules`, `terminal-rules`
+Optional parameters: `max-depth`, `cut-point-rules`, `terminal-rules`, `moving-average-step-timeout`, `step-timeout` (timeout is in milliseconds)
 
 _Note: `id` can be an int or a string and each message must have a new `id`. The response objects have the same id as the message._
 
@@ -93,6 +95,7 @@ All correct responses have a result containing a `reason`, with one of the follo
 * `"reason: "depth-bound"`
 * `"reason: "cut-point-rule"`
 * `"reason: "terminal-rule"`
+* `"reason: "timeout"`
 
 A field `state` contains the state reached (including optional `predicate` and `substitution`), a field `depth` indicates the execution depth.
 
@@ -114,7 +117,7 @@ A field `state` contains the state reached (including optional `predicate` and `
 
 The above will be also be the same for:
   * `"reason": "depth-bound"`
-
+  * `"reason": "timeout"`
 
 If `"reason":  "terminal-rule"`, an additional `rule` field indicates which of the `terminal-rule` labels or IDs led to terminating the execution:
 
@@ -190,7 +193,6 @@ If `"reason": "cut-point-rule"`, the `next-states` field contains the next state
   }
 }
 ```
-
 ## Implies
 
 ### Request:

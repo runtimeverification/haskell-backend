@@ -48,9 +48,6 @@ jobs:
       - name: Materialize
         run: nix run .#update-cabal
 
-      - name: Materialize GHC 9
-        run: nix run .#update-cabal-ghc9
-
       - name: Update branch
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}

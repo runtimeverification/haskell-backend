@@ -39,6 +39,7 @@ import Kore.Equation.DebugEquation (
     DebugAttemptEquation,
  )
 import Kore.Log.DebugAppliedRewriteRules (
+    DebugAppliedLabeledRewriteRule,
     DebugAppliedRewriteRules,
  )
 import Kore.Log.DebugAttemptedRewriteRules (
@@ -140,9 +141,6 @@ import Kore.Log.WarnBottom (
     WarnClaimRHSIsBottom,
     WarnConfigIsBottom,
  )
-import Kore.Log.WarnBoundedModelChecker (
-    WarnBoundedModelChecker,
- )
 import Kore.Log.WarnDepthLimitExceeded (
     WarnDepthLimitExceeded,
  )
@@ -228,6 +226,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @DebugSolverRecv
             , mk $ Proxy @DebugTransition
             , mk $ Proxy @DebugAppliedRewriteRules
+            , mk $ Proxy @DebugAppliedLabeledRewriteRule
             , mk $ Proxy @DebugAttemptedRewriteRules
             , mk $ Proxy @DebugSubstitutionSimplifier
             , mk $ Proxy @WarnFunctionWithoutEvaluators
@@ -235,7 +234,6 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @WarnStepTimeout
             , mk $ Proxy @WarnStuckClaimState
             , mk $ Proxy @WarnDepthLimitExceeded
-            , mk $ Proxy @WarnBoundedModelChecker
             , mk $ Proxy @WarnClaimRHSIsBottom
             , mk $ Proxy @WarnConfigIsBottom
             , mk $ Proxy @WarnIfLowProductivity

@@ -84,8 +84,15 @@ For integration testing, we require:
 - GNU [make]
 - The [K Framework] frontend.
 
-Instead of installing the frontend, you can use our `Dockerfile`
-to run the integration tests inside a container.
+You can install/have access to K by either:
+  * using [kup]
+  * using a pre-built binary (see the releases page in the K repository)
+  * if you use Nix, see the section below
+  * using the `Dockerfile` to run the integration tests inside a container
+  * or by just building K from source
+
+### Running integration tests with Docker
+
 Use `docker.sh` to run commands inside the container:
 
 ``` sh
@@ -100,9 +107,7 @@ Use `docker.sh` to run commands inside the container:
 For setting up a development environment, we recommend:
 
 - [direnv] to make the project's tools available in shells and editors.
-- [haskell-language-server], a [language server] for Haskell that is compatible
-  with most editors. See instructions [below](#running-a-language-server) to run
-  a language server.
+- [ghcup] or [Nix] for managing required Haskell tooling
 - [hlint] for compliance with project guidelines.
 - [entr] and [fd] for running `./entr.sh` to keep important files up-to-date.
 
@@ -110,27 +115,20 @@ We recommend to keep `./entr.sh` running in the background
 to keep important files (such as package descriptions) up-to-date,
 especially if the developer is using Cabal.
 
-### Running a language server
+### Running Haskell Language Server
 
-To run a language server, developers will need to activate the appropriate
-`hie.yaml` file:
+[ghcup] provides a straight-forward way of installing the language server,
+if you prefer to use [Nix] please refer to the relevant resources on how to
+set up your [Nix] environment to build the server.
+**Note**: HLS has to be built with the project's GHC version.
 
-```sh
-ln -s hie-stack.yaml hie.yaml  # for Stack
-# or
-ln -s hie-cabal.yaml hie.yaml  # for Cabal
-# or
-ln -s hie-bios.yaml hie.yaml  # if all else fails
-```
+Prequisite: build the project with either Stack or Cabal.
 
-The project's dependencies must be installed before starting the language
-server:
-
-```sh
-stack build --test --bench --only-dependencies
-# or
-cabal build --enable-tests --enable-benchmarks --only-dependencies kore
-```
+Instructions on integrating with VSCode:
+1. Install the [Haskell extension] 
+2. Go to `Extension Settings` and pick `GHCup` in the `Manage HLS` dropdown
+3. (Optional) Manually set the GHCup executable path
+4. (Extra) Set `Formatting Provider` to `fourmolu` for correct formatting
 
 ### Developing with Nix
 
@@ -145,19 +143,21 @@ and then enable flakes by editing either `~/.config/nix/nix.conf` or `/etc/nix/n
 experimental-features = nix-command flakes
 ```
 
+Note that if this is your first time using [Nix] you will have to manually create one of the `.conf` files.
+
 This is needed to expose the Nix 2.0 CLI and flakes support that are hidden behind feature-flags. (If you are on a different system like nixOS, see instructions for enabling flakes here: https://nixos.wiki/wiki/Flakes)
 
 By default, Nix will build any project and its transitive dependencies from source, which can take a very long time. We therefore need to set up some binary caches to speed up the build
 process. First, install cachix
 
 ```
-nix-env -iA cachix -f https://cachix.org/api/v1/install
+nix profile install github:cachix/cachix/v1.1
 ```
 
-and then add the `kore` cachix cache
+and then add the `k-framework` cachix cache
 
 ```
-cachix use kore
+cachix use k-framework
 ```
 
 Next, we need to set up the cache for our haskell infrastructure, by adding the following sections to `/etc/nix/nix.conf` or, if you are a trusted user, `~/.config/nix/nix.conf` (if you don't know what a "trusted user" is, you probably want to do the former):
@@ -181,8 +181,12 @@ substituters = https://cache.nixos.org https://cache.iog.io
 trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
 ```
 
+Make sure that the file wasn't overwritten, if it was add the `experimental-features` again.
+
 ### Formatting
-The CI requires all Haskell files to be formatted via [fourmolu](https://hackage.haskell.org/package/fourmolu). The easiest way to do this locally is to run
+The CI requires all Haskell files to be formatted via [fourmolu](https://hackage.haskell.org/package/fourmolu).
+
+If using VSCode, please refer to the language server section above. If not, the easiest way to do this locally is to run
 
 ```
 nix run .#format
@@ -216,18 +220,18 @@ or
 
 This script is also run by an automatic workflow.
 
-### New GHC 9.2.3 dev shell
+### New GHC 9.2.5 dev shell
 
-In order to make use of the new profiling options in GHC 9.2, we've added a nix dev shell which builds kore with GHC 9.2.3. To open the shell, run
+In order to make use of the new profiling options in GHC 9.2, we've added a nix dev shell which builds kore with GHC 9.2.5. To open the shell, run
 
 ```
 nix develop .#ghc9
 ```
 
-Then, use stack to build against `stack-nix-ghc9.yaml`:
+Then, use stack to build:
 
 ```
-stack --stack-yaml stack-nix-ghc9.yaml build
+stack build
 ```
 
 If you modified the `kore.cabal` file and want to build with GHC 9, you will have to run
@@ -271,3 +275,6 @@ where `<commit>` can be empty or point to a specific version of the K framework 
 [Nix]: https://nixos.org
 [entr]: https://github.com/eradman/entr
 [fd]: https://github.com/sharkdp/fd
+[kup]: https://github.com/runtimeverification/k/releases/latest 
+[ghcup]: https://www.haskell.org/ghcup/
+[Haskell extension]: https://marketplace.visualstudio.com/items?itemName=haskell.haskell

@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NoStrict #-}
 {-# LANGUAGE NoStrictData #-}
 
@@ -8,6 +9,8 @@ License     : BSD-3-Clause
 module Kore.Log.DebugAppliedRewriteRules (
     DebugAppliedRewriteRules (..),
     debugAppliedRewriteRules,
+    DebugAppliedLabeledRewriteRule (..),
+    debugAppliedLabeledRewriteRule,
 ) where
 
 import Data.Text (Text)
@@ -34,7 +37,6 @@ import Pretty qualified
 
 data DebugAppliedRewriteRules = DebugAppliedRewriteRules
     { configuration :: !(Pattern VariableName)
-    , ruleLabels :: ![Text]
     , appliedRewriteRules :: ![SourceLocation]
     }
     deriving stock (Show)
@@ -64,16 +66,55 @@ instance Entry DebugAppliedRewriteRules where
 debugAppliedRewriteRules ::
     MonadLog log =>
     Pattern RewritingVariableName ->
-    [Text] ->
     [SourceLocation] ->
     log ()
-debugAppliedRewriteRules initial ruleLabels appliedRewriteRules =
+debugAppliedRewriteRules initial appliedRewriteRules =
     logEntry
         DebugAppliedRewriteRules
             { configuration
-            , ruleLabels
             , appliedRewriteRules
             }
+  where
+    configuration = mapConditionalVariables TermLike.mapVariables initial
+    mapConditionalVariables mapTermVariables =
+        Conditional.mapVariables mapTermVariables (pure toVariableName)
+
+data DebugAppliedLabeledRewriteRule = DebugAppliedLabeledRewriteRule
+    { configuration :: !(Pattern VariableName)
+    , label :: !(Maybe Text)
+    , sourceLocation :: !SourceLocation
+    }
+    deriving stock (Show)
+
+instance Pretty DebugAppliedLabeledRewriteRule where
+    pretty DebugAppliedLabeledRewriteRule{..} =
+        Pretty.vsep
+            [ Pretty.hsep
+                [ "The rule with label"
+                , "["
+                , pretty $ fromMaybe "" label
+                , "]"
+                , "at location:"
+                , pretty sourceLocation
+                , "was applied"
+                ]
+            , "on configuration:"
+            , Pretty.indent 2 . unparse $ configuration
+            ]
+
+instance Entry DebugAppliedLabeledRewriteRule where
+    entrySeverity _ = Debug
+    helpDoc _ = "log applied rewrite rule with label"
+    oneLineDoc DebugAppliedLabeledRewriteRule{sourceLocation} = pretty sourceLocation
+
+debugAppliedLabeledRewriteRule ::
+    MonadLog log =>
+    Pattern RewritingVariableName ->
+    Maybe Text ->
+    SourceLocation ->
+    log ()
+debugAppliedLabeledRewriteRule initial label sourceLocation =
+    logEntry DebugAppliedLabeledRewriteRule{..}
   where
     configuration = mapConditionalVariables TermLike.mapVariables initial
     mapConditionalVariables mapTermVariables =

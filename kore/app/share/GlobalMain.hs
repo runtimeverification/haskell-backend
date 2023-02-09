@@ -136,6 +136,10 @@ import Kore.Rewrite.SMT.Lemma
 import Kore.Rewrite.Strategy (
     GraphSearchOrder (..),
  )
+import Kore.Rewrite.Timeout (
+    EnableMovingAverage (..),
+    StepTimeout (..),
+ )
 import Kore.Syntax hiding (Pattern)
 import Kore.Syntax.Definition (
     ModuleName (..),
@@ -169,7 +173,6 @@ import Options.Applicative (
     readerError,
     str,
     strOption,
-    switch,
     value,
     (<**>),
  )
@@ -210,8 +213,6 @@ data KoreProveOptions = KoreProveOptions
       specMainModule :: !ModuleName
     , -- | Search order of the execution graph
       graphSearch :: GraphSearchOrder
-    , -- | Whether to use bounded model checker
-      bmc :: !Bool
     , -- | The file in which to save the proven claims in case the prover
       -- fails.
       saveProofs :: !(Maybe FilePath)
@@ -221,6 +222,8 @@ data KoreProveOptions = KoreProveOptions
       minDepth :: !(Maybe MinDepth)
     , -- | Enables discharging #Bottom paths as #Top at implication checking time.
       allowVacuous :: AllowVacuous
+    , stepTimeout :: !(Maybe StepTimeout)
+    , enableMovingAverage :: !EnableMovingAverage
     }
 
 parseModuleName :: String -> String -> String -> Parser ModuleName
@@ -252,10 +255,6 @@ parseKoreProveOptions =
             "spec-module"
             "The name of the main module in the spec to be proven."
         <*> parseGraphSearch
-        <*> switch
-            ( long "bmc"
-                <> help "Whether to use the bounded model checker."
-            )
         <*> optional
             ( strOption
                 ( long "save-proofs"
@@ -285,6 +284,22 @@ parseKoreProveOptions =
                 <> help
                     "Enables discharging #Bottom paths as #Top at \
                     \implication checking time."
+            )
+        <*> ( fmap StepTimeout
+                <$> Options.optional
+                    ( option
+                        Options.auto
+                        ( metavar "INT"
+                            <> long "set-step-timeout"
+                            <> help "Set a timeout for one step in seconds."
+                        )
+                    )
+            )
+        <*> Options.flag
+            DisableMovingAverage
+            EnableMovingAverage
+            ( long "moving-average"
+                <> help "Enable timeout based on moving average."
             )
   where
     parseMinDepth =

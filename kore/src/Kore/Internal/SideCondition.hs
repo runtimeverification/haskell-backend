@@ -443,7 +443,6 @@ mapVariables adj condition@(SideCondition _ _ _ _ _) =
 
 -- | Utility function for mapping on the keys and values of a 'HashMap'.
 mapKeysAndValues ::
-    Eq b =>
     Hashable b =>
     (a -> b) ->
     HashMap a a ->
@@ -904,7 +903,7 @@ generateNormalizedAcs internalAc =
         , builtinAcConcat
         , builtinAcElement
         } = internalAc
-    PairWiseElements
+    ~PairWiseElements
         { symbolicPairs
         , concretePairs
         , opaquePairs

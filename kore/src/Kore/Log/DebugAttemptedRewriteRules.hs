@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NoStrict #-}
 {-# LANGUAGE NoStrictData #-}
 
@@ -34,23 +35,23 @@ import Pretty qualified
 
 data DebugAttemptedRewriteRules = DebugAttemptedRewriteRules
     { configuration :: !(Pattern VariableName)
-    , ruleLabels :: ![Text]
+    , label :: !(Maybe Text)
     , attemptedRewriteRule :: !SourceLocation
     }
     deriving stock (Show)
 
 instance Pretty DebugAttemptedRewriteRules where
-    pretty DebugAttemptedRewriteRules{configuration, attemptedRewriteRule} =
-        Pretty.vsep $
-            (<>)
-                prettyUnifiedRules
-                [ "On configuration:"
-                , Pretty.indent 2 . unparse $ configuration
+    pretty DebugAttemptedRewriteRules{..} =
+        Pretty.vsep
+            [ (Pretty.hsep . catMaybes)
+                [ Just "The rule"
+                , (\l -> Pretty.hsep ["with label:", "[", pretty l, "]"]) <$> label
+                , Just "at the following location was attempted:"
+                , Just . pretty $ attemptedRewriteRule
                 ]
-      where
-        prettyUnifiedRules =
-            ["The rule at following location was attempted:"]
-                <> [pretty attemptedRewriteRule]
+            , "On configuration:"
+            , Pretty.indent 2 . unparse $ configuration
+            ]
 
 instance Entry DebugAttemptedRewriteRules where
     entrySeverity _ = Debug
@@ -61,16 +62,11 @@ instance Entry DebugAttemptedRewriteRules where
 debugAttemptedRewriteRule ::
     MonadLog log =>
     Pattern RewritingVariableName ->
-    [Text] ->
+    Maybe Text ->
     SourceLocation ->
     log ()
-debugAttemptedRewriteRule initial ruleLabels attemptedRewriteRule =
-    logEntry
-        DebugAttemptedRewriteRules
-            { configuration
-            , ruleLabels
-            , attemptedRewriteRule
-            }
+debugAttemptedRewriteRule initial label attemptedRewriteRule =
+    logEntry DebugAttemptedRewriteRules{..}
   where
     configuration = mapConditionalVariables TermLike.mapVariables initial
     mapConditionalVariables mapTermVariables =
