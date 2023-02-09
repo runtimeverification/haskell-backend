@@ -290,7 +290,7 @@ In some cases, a unifier `condition` for the implication can still be provided, 
   "method": "simplify",
   "params": {
     "state": {"format": "KORE", "version": 1, "term": {}},
-    "name": "MODULE-NAME"
+    "module": "MODULE-NAME"
   }
 }
 ```
