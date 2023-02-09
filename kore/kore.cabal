@@ -156,9 +156,9 @@ common library
   build-depends: gitrev >=1.3
   build-depends: graphviz >=2999.20
   -- Pin hashable to make sure cabal build uses the one Nix & Stack builds do
-  build-depends: hashable ==1.3.0.0
+  build-depends: hashable ==1.4.2.0
   build-depends: haskeline ==0.8.*
-  build-depends: integer-gmp >=1.0
+  build-depends: ghc-bignum >=1.2
   build-depends: json-rpc >=1.0
   build-depends: lens >=4.17
   build-depends: lifted-async
@@ -170,6 +170,7 @@ common library
   build-depends: mmorph >=1.1
   build-depends: monad-control
   build-depends: monad-logger >=0.3.36
+  build-depends: monad-validate
   build-depends: mono-traversable >=1.0
   build-depends: mtl >=2.2
   build-depends: multiset >=0.3.4.3
@@ -196,7 +197,7 @@ common library
   build-depends: unliftio >= 0.2
   build-depends: unordered-containers >=0.2
   build-depends: vector >=0.12
-  build-depends: witherable ==0.3.*
+  build-depends: witherable ==0.4.*
   build-depends: yaml >=0.11.5.0
   build-depends: zlib >=0.6
   build-tool-depends: happy:happy
@@ -403,7 +404,6 @@ library
     Kore.Log.Registry
     Kore.Log.SQLite
     Kore.Log.WarnBottom
-    Kore.Log.WarnBoundedModelChecker
     Kore.Log.WarnDepthLimitExceeded
     Kore.Log.WarnFunctionWithoutEvaluators
     Kore.Log.WarnIfLowProductivity
@@ -416,7 +416,6 @@ library
     Kore.Log.WarnTrivialClaim
     Kore.Log.WarnUnexploredBranches
     Kore.Log.WarnUnsimplified
-    Kore.ModelChecker.Bounded
     Kore.ModelChecker.Simplification
     Kore.ModelChecker.Step
     Kore.Network.JSONRPC
@@ -565,8 +564,6 @@ library
     Kore.Unification.Unify
     Kore.Unification.NewUnifier
     Kore.Unparser
-    Kore.Util.TSM
-    Kore.Util.TSM.UnifyTag
     Kore.Validate.AliasVerifier
     Kore.Validate.AttributesVerifier
     Kore.Validate.DefinitionVerifier
@@ -624,6 +621,7 @@ executable kore-exec
   build-depends: filepath >=1.4
   build-depends: generic-lens >=1.1
   build-depends: lens >=4.17
+  build-depends: monad-validate
   build-depends: optparse-applicative >=0.14
   build-depends: text >=1.2
   build-depends: time >=1.9.3
@@ -660,15 +658,6 @@ executable kore-parser
   build-depends: bytestring >=0.10
   build-depends: containers >=0.5
   build-depends: exceptions >=0.10
-
-executable kore-prof
-  import: haskell
-  import: exe
-  main-is: Main.hs
-  hs-source-dirs: app/prof
-  build-depends: kore
-  build-depends: eventlog2speedscope
-  build-depends: optparse-applicative >=0.14
 
 executable kore-repl
   import: haskell

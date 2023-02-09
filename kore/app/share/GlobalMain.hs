@@ -173,7 +173,6 @@ import Options.Applicative (
     readerError,
     str,
     strOption,
-    switch,
     value,
     (<**>),
  )
@@ -214,8 +213,6 @@ data KoreProveOptions = KoreProveOptions
       specMainModule :: !ModuleName
     , -- | Search order of the execution graph
       graphSearch :: GraphSearchOrder
-    , -- | Whether to use bounded model checker
-      bmc :: !Bool
     , -- | The file in which to save the proven claims in case the prover
       -- fails.
       saveProofs :: !(Maybe FilePath)
@@ -258,10 +255,6 @@ parseKoreProveOptions =
             "spec-module"
             "The name of the main module in the spec to be proven."
         <*> parseGraphSearch
-        <*> switch
-            ( long "bmc"
-                <> help "Whether to use the bounded model checker."
-            )
         <*> optional
             ( strOption
                 ( long "save-proofs"

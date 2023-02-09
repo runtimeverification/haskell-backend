@@ -576,11 +576,7 @@ debugAttemptEquationUpdatesState = do
     let axioms = []
         claim = emptyClaim
         options =
-            Log.DebugAttemptEquationOptions
-                { Log.selected =
-                    HashSet.fromList
-                        ["symbol"]
-                }
+            Log.DebugAttemptEquationOptions $ HashSet.fromList ["symbol"]
         command = DebugAttemptEquation options
     Result{output, continue, state} <-
         run command axioms [claim] claim
@@ -593,11 +589,7 @@ debugApplyEquationUpdatesState = do
     let axioms = []
         claim = emptyClaim
         options =
-            Log.DebugApplyEquationOptions
-                { Log.selected =
-                    HashSet.fromList
-                        ["symbol"]
-                }
+            Log.DebugApplyEquationOptions $ HashSet.fromList ["symbol"]
         command = DebugApplyEquation options
     Result{output, continue, state} <-
         run command axioms [claim] claim
@@ -610,11 +602,7 @@ debugEquationUpdatesState = do
     let axioms = []
         claim = emptyClaim
         options =
-            Log.DebugEquationOptions
-                { Log.selected =
-                    HashSet.fromList
-                        ["symbol"]
-                }
+            Log.DebugEquationOptions $ HashSet.fromList ["symbol"]
         command = DebugEquation options
     Result{output, continue, state} <-
         run command axioms [claim] claim

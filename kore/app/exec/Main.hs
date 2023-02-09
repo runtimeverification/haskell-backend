@@ -6,6 +6,7 @@ import Control.Monad.Catch (
     throwM,
  )
 import Control.Monad.Extra as Monad
+import Control.Monad.Validate
 import Data.Binary qualified as Binary
 import Data.ByteString.Lazy (hPut)
 import Data.Compact (
@@ -62,26 +63,22 @@ import Kore.Internal.TermLike (
     mkTop,
  )
 import Kore.Log (
+    DebugOptionsValidationError (..),
     KoreLogOptions (..),
     parseKoreLogOptions,
     runKoreLog,
     unparseKoreLogOptions,
+    validateDebugOptions,
  )
 import Kore.Log.ErrorException (
     handleSomeException,
  )
 import Kore.Log.InfoProofDepth
-import Kore.Log.WarnBoundedModelChecker (
-    warnBoundedModelChecker,
- )
 import Kore.Log.WarnIfLowProductivity (
     warnIfLowProductivity,
  )
 import Kore.Log.WarnUnexploredBranches (
     warnUnexploredBranches,
- )
-import Kore.ModelChecker.Bounded qualified as Bounded (
-    CheckResult (..),
  )
 import Kore.Options (
     enableDisableFlag,
@@ -437,7 +434,6 @@ unparseKoreProveOptions
             _
             (ModuleName moduleName)
             graphSearch
-            bmc
             saveProofs
             stuckCheck
             minDepth
@@ -451,7 +447,6 @@ unparseKoreProveOptions
             [ "--graph-search"
             , if graphSearch == DepthFirst then "depth-first" else "breadth-first"
             ]
-        , if bmc then "--bmc" else ""
         , maybe "" ("--save-proofs " <>) saveProofs
         , case stuckCheck of
             Claim.DisabledStuckCheck -> "--disable-stuck-check"
@@ -614,7 +609,7 @@ mainWithOptions LocalOptions{execOptions} = do
                         }
             writeOptionsAndKoreFiles tmpDir execOptions'
             e <-
-                mainDispatch LocalOptions{execOptions = execOptions'}
+                mainDispatch execOptions'
                     & handle handleWithConfiguration
                     & handle handleSomeException
                     & runKoreLog
@@ -653,7 +648,7 @@ mainWithOptions LocalOptions{execOptions} = do
                 throwM someException
 
 -- | Dispatch the requested command, for example 'koreProve' or 'koreRun'.
-mainDispatch :: LocalOptions KoreExecOptions -> Main ExitCode
+mainDispatch :: KoreExecOptions -> Main ExitCode
 mainDispatch = warnProductivity . mainDispatchWorker
   where
     warnProductivity :: Main (KFileLocations, ExitCode) -> Main ExitCode
@@ -662,40 +657,53 @@ mainDispatch = warnProductivity . mainDispatchWorker
         warnIfLowProductivity kFileLocations
         return exitCode
     mainDispatchWorker ::
-        LocalOptions KoreExecOptions ->
+        KoreExecOptions ->
         Main (KFileLocations, ExitCode)
-    mainDispatchWorker localOptions@LocalOptions{execOptions}
-        | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
-            if bmc
-                then koreBmc localOptions proveOptions
-                else koreProve localOptions proveOptions
-        | Just searchOptions <- koreSearchOptions =
-            koreSearch localOptions searchOptions
-        | True <- serialize =
-            koreSerialize localOptions
-        | otherwise =
-            koreRun localOptions
+    mainDispatchWorker execOptions
+        | isJust koreProveOptions = koreProve execOptions
+        | isJust koreSearchOptions = koreSearch execOptions
+        | serialize = koreSerialize execOptions
+        | otherwise = koreRun execOptions
       where
-        KoreExecOptions{koreProveOptions} = execOptions
-        KoreExecOptions{koreSearchOptions} = execOptions
-        KoreExecOptions{serialize} = execOptions
+        KoreExecOptions
+            { koreProveOptions
+            , koreSearchOptions
+            , serialize
+            } = execOptions
 
 koreSearch ::
-    LocalOptions KoreExecOptions ->
-    KoreSearchOptions ->
+    KoreExecOptions ->
     Main (KFileLocations, ExitCode)
-koreSearch LocalOptions{execOptions} searchOptions = do
-    let KoreExecOptions{definitionFileName} = execOptions
-    let KoreExecOptions{mainModuleName} = execOptions
-    let KoreExecOptions{koreSolverOptions} = execOptions
+koreSearch execOptions = do
+    let KoreExecOptions
+            { koreSearchOptions
+            , definitionFileName
+            , mainModuleName
+            , koreSolverOptions
+            , koreLogOptions
+            , patternFileName
+            , breadthLimit
+            , depthLimit
+            } = execOptions
     SerializedDefinition{serializedModule, lemmas, locations, internedTextCache} <-
         deserializeDefinition koreSolverOptions definitionFileName mainModuleName
+    let SerializedModule
+            { verifiedModule
+            , metadataTools
+            , equations
+            , rewrites
+            } = serializedModule
+        undefinedLabels = runValidate $ validateDebugOptions equations (rewriteRules rewrites) koreLogOptions
+    when (isLeft undefinedLabels) $ throwM . DebugOptionsValidationError $ fromLeft mempty undefinedLabels
     lift $ writeIORef globalInternedTextCache internedTextCache
-    let SerializedModule{verifiedModule, metadataTools} = serializedModule
-    let KoreSearchOptions{searchFileName} = searchOptions
+    let KoreSearchOptions
+            { searchFileName
+            , bound
+            , searchType
+            } = fromMaybe (error "This never should happen") koreSearchOptions
     target <- mainParseSearchPattern verifiedModule searchFileName
-    let KoreExecOptions{patternFileName} = execOptions
     initial <- loadPattern verifiedModule patternFileName
+    let config = Search.Config{bound, searchType}
     final <-
         execute koreSolverOptions metadataTools lemmas $
             search
@@ -707,24 +715,34 @@ koreSearch LocalOptions{execOptions} searchOptions = do
                 config
     lift $ renderResult execOptions (unparse final)
     return (locations, ExitSuccess)
-  where
-    KoreSearchOptions{bound, searchType} = searchOptions
-    config = Search.Config{bound, searchType}
-    KoreExecOptions{breadthLimit, depthLimit} = execOptions
 
-koreRun :: LocalOptions KoreExecOptions -> Main (KFileLocations, ExitCode)
-koreRun LocalOptions{execOptions} = do
-    let KoreExecOptions{definitionFileName} = execOptions
-    let KoreExecOptions{mainModuleName} = execOptions
-    let KoreExecOptions{koreSolverOptions} = execOptions
+koreRun :: KoreExecOptions -> Main (KFileLocations, ExitCode)
+koreRun execOptions = do
+    let KoreExecOptions
+            { definitionFileName
+            , mainModuleName
+            , koreSolverOptions
+            , koreLogOptions
+            , breadthLimit
+            , depthLimit
+            , strategy
+            , patternFileName
+            , finalNodeType
+            } = execOptions
     SerializedDefinition{serializedModule, lemmas, locations, internedTextCache} <-
         deserializeDefinition
             koreSolverOptions
             definitionFileName
             mainModuleName
+    let SerializedModule
+            { verifiedModule
+            , metadataTools
+            , equations
+            , rewrites
+            } = serializedModule
+        undefinedLabels = runValidate $ validateDebugOptions equations (rewriteRules rewrites) koreLogOptions
+    when (isLeft undefinedLabels) $ throwM . DebugOptionsValidationError $ fromLeft mempty undefinedLabels
     lift $ writeIORef globalInternedTextCache internedTextCache
-    let SerializedModule{verifiedModule, metadataTools} = serializedModule
-    let KoreExecOptions{patternFileName, finalNodeType} = execOptions
     initial <- loadPattern verifiedModule patternFileName
     (exitCode, final) <-
         execute koreSolverOptions metadataTools lemmas $
@@ -739,8 +757,6 @@ koreRun LocalOptions{execOptions} = do
                 initial
     lift $ renderResult execOptions (unparse final)
     return (locations, exitCode)
-  where
-    KoreExecOptions{breadthLimit, depthLimit, strategy} = execOptions
 
 -- kore-exec --serialize calls this function in order to construct the definition to serialize
 -- and write it to the output file specified by the user. It is an error to not specify an output
@@ -748,9 +764,15 @@ koreRun LocalOptions{execOptions} = do
 -- kore-exec binary because that's where most of the logic it needed in order to function already
 -- lived.
 koreSerialize ::
-    LocalOptions KoreExecOptions ->
+    KoreExecOptions ->
     Main (KFileLocations, ExitCode)
-koreSerialize LocalOptions{execOptions} = do
+koreSerialize execOptions = do
+    let KoreExecOptions
+            { definitionFileName
+            , mainModuleName
+            , outputFileName
+            , koreSolverOptions
+            } = execOptions
     serializedDefinition@SerializedDefinition{locations} <-
         makeSerializedDefinition
             koreSolverOptions
@@ -765,35 +787,41 @@ koreSerialize LocalOptions{execOptions} = do
                 hPut outputHandle (Binary.encode execHash)
                 hPutCompact outputHandle compact
             return (locations, ExitSuccess)
-  where
-    KoreExecOptions
-        { definitionFileName
-        , mainModuleName
-        , outputFileName
-        , koreSolverOptions
-        } = execOptions
 
 koreProve ::
-    LocalOptions KoreExecOptions ->
-    KoreProveOptions ->
+    KoreExecOptions ->
     Main (KFileLocations, ExitCode)
-koreProve LocalOptions{execOptions} proveOptions = do
-    let KoreExecOptions{definitionFileName} = execOptions
-        KoreProveOptions{specFileName} = proveOptions
+koreProve execOptions = do
+    let KoreExecOptions
+            { definitionFileName
+            , koreProveOptions
+            , koreLogOptions
+            , mainModuleName
+            , maxCounterexamples
+            , koreSolverOptions
+            , breadthLimit
+            , depthLimit
+            , finalNodeType
+            } = execOptions
+        KoreProveOptions
+            { specFileName
+            , specMainModule
+            , saveProofs
+            , graphSearch
+            , stuckCheck
+            , minDepth
+            , allowVacuous
+            , stepTimeout
+            , enableMovingAverage
+            } = fromMaybe (error "This never should happen") koreProveOptions
     definition <- loadDefinitions [definitionFileName, specFileName]
-    let KoreExecOptions{mainModuleName} = execOptions
     mainModule <- loadModule mainModuleName definition
-    let KoreProveOptions{specMainModule} = proveOptions
     specModule <- loadModule specMainModule definition
     let mainModule' = addExtraAxioms mainModule specModule
-    let KoreProveOptions{saveProofs} = proveOptions
     maybeAlreadyProvenModule <- loadProven definitionFileName saveProofs
-    let KoreExecOptions{maxCounterexamples} = execOptions
-    let KoreExecOptions{koreSolverOptions} = execOptions
     proveResult <- execute koreSolverOptions (MetadataTools.build mainModule) (getSMTLemmas mainModule) $ do
-        let KoreExecOptions{breadthLimit, depthLimit, finalNodeType} = execOptions
-            KoreProveOptions{graphSearch, stuckCheck, minDepth, allowVacuous, stepTimeout, enableMovingAverage} = proveOptions
         prove
+            koreLogOptions
             minDepth
             stepTimeout
             enableMovingAverage
@@ -887,41 +915,6 @@ koreProve LocalOptions{execOptions} proveOptions = do
                 { definitionAttributes = def
                 , definitionModules = [provenModule]
                 }
-
-koreBmc ::
-    LocalOptions KoreExecOptions ->
-    KoreProveOptions ->
-    Main (KFileLocations, ExitCode)
-koreBmc LocalOptions{execOptions} proveOptions = do
-    let KoreExecOptions{definitionFileName} = execOptions
-        KoreProveOptions{specFileName} = proveOptions
-    definition <- loadDefinitions [definitionFileName, specFileName]
-    let KoreExecOptions{mainModuleName} = execOptions
-    mainModule <- loadModule mainModuleName definition
-    let KoreProveOptions{specMainModule} = proveOptions
-    let KoreExecOptions{koreSolverOptions} = execOptions
-    specModule <- loadModule specMainModule definition
-    (exitCode, final) <- execute koreSolverOptions (MetadataTools.build mainModule) (getSMTLemmas mainModule) $ do
-        let KoreExecOptions{breadthLimit, depthLimit} = execOptions
-            KoreProveOptions{graphSearch} = proveOptions
-        checkResult <-
-            boundedModelCheck
-                breadthLimit
-                depthLimit
-                mainModule
-                specModule
-                graphSearch
-        case checkResult of
-            Bounded.Proved -> return success
-            Bounded.Unknown claim -> do
-                warnBoundedModelChecker claim
-                return success
-            Bounded.Failed final -> return (failure final)
-    lift $ renderResult execOptions (unparse final)
-    return (kFileLocations definition, exitCode)
-  where
-    failure pat = (ExitFailure 1, pat)
-    success = (ExitSuccess, mkTop $ mkSortVariable "R")
 
 loadPattern :: LoadedModuleSyntax -> Maybe FilePath -> Main (TermLike VariableName)
 loadPattern mainModule (Just fileName) =

@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
@@ -12,6 +14,7 @@ module Kore.Log.KoreLogOptions (
     WarningSwitch (..),
     defaultKoreLogOptions,
     parseKoreLogOptions,
+    HasSelected (..),
     DebugApplyEquationOptions (..),
     selectDebugApplyEquation,
     DebugAttemptEquationOptions (..),
@@ -26,8 +29,13 @@ module Kore.Log.KoreLogOptions (
     selectDebugRewrite,
     unparseKoreLogOptions,
     defaultSeverity,
+    DebugOptionsValidationError (..),
+    validateDebugOptions,
+    UndefinedLabels (..),
 ) where
 
+import Control.Exception
+import Control.Monad.Validate
 import Data.Char qualified as Char
 import Data.Default
 import Data.HashSet (
@@ -37,6 +45,8 @@ import Data.HashSet qualified as HashSet
 import Data.List (
     intercalate,
  )
+import Data.Map.Strict (Map)
+import Data.Map.Strict qualified as Map
 import Data.Set (
     Set,
  )
@@ -46,13 +56,15 @@ import Data.Text (
  )
 import Data.Text qualified as Text
 import GHC.Generics qualified as GHC
+import Kore.Attribute.Axiom qualified as Attribute
+import Kore.Equation (Equation)
 import Kore.Equation qualified as Equation
 import Kore.Equation.DebugEquation (
     DebugApplyEquation (..),
     DebugAttemptEquation (..),
  )
 import Kore.Log.DebugAppliedRewriteRules (DebugAppliedLabeledRewriteRule (..))
-import Kore.Log.DebugAttemptedRewriteRules (DebugAttemptedRewriteRules (DebugAttemptedRewriteRules))
+import Kore.Log.DebugAttemptedRewriteRules (DebugAttemptedRewriteRules (..))
 import Kore.Log.DebugSolver (
     DebugSolverOptions (..),
     parseDebugSolverOptions,
@@ -66,6 +78,12 @@ import Kore.Log.SQLite (
     LogSQLiteOptions (..),
     parseLogSQLiteOptions,
  )
+import Kore.Rewrite.Axiom.Identifier (AxiomIdentifier)
+import Kore.Rewrite.RewritingVariable (RewritingVariableName)
+import Kore.Rewrite.RulePattern (
+    RewriteRule (..),
+ )
+import Kore.Syntax.Variable (VariableName)
 import Log
 import Options.Applicative (
     Parser,
@@ -74,6 +92,7 @@ import Options.Applicative (
 import Options.Applicative qualified as Options
 import Options.Applicative.Help.Pretty qualified as OptPretty
 import Prelude.Kore
+import Pretty (Pretty (..))
 import Pretty qualified
 import System.Clock (
     TimeSpec,
@@ -323,19 +342,25 @@ data WarningSwitch = AsWarning | AsError
 instance Default WarningSwitch where
     def = AsWarning
 
-newtype DebugApplyEquationOptions = DebugApplyEquationOptions {selected :: HashSet Text}
+class HasSelected a where
+    selected :: a -> HashSet Text
+
+newtype DebugApplyEquationOptions = DebugApplyEquationOptions (HashSet Text)
     deriving stock (Eq, Show)
     deriving newtype (Semigroup, Monoid)
 
 instance Default DebugApplyEquationOptions where
     def = DebugApplyEquationOptions HashSet.empty
 
+instance HasSelected DebugApplyEquationOptions where
+    selected (DebugApplyEquationOptions s) = s
+
 parseDebugApplyEquationOptions :: Parser DebugApplyEquationOptions
 parseDebugApplyEquationOptions =
     mconcat <$> many parse
   where
     parse =
-        fmap (DebugApplyEquationOptions . HashSet.singleton . Text.pack) $
+        fmap (DebugApplyEquationOptions . HashSet.singleton) $
             Options.strOption $
                 mconcat
                     [ Options.metavar "EQUATION_IDENTIFIER"
@@ -357,24 +382,25 @@ selectDebugApplyEquation ::
     Bool
 selectDebugApplyEquation options entry
     | Just (DebugApplyEquation equation _) <- fromEntry entry =
-        any (flip HashSet.member selected) (Equation.identifiers equation)
+        any (flip HashSet.member $ selected options) (Equation.identifiers equation)
     | otherwise = False
-  where
-    DebugApplyEquationOptions{selected} = options
 
-newtype DebugAttemptEquationOptions = DebugAttemptEquationOptions {selected :: HashSet Text}
+newtype DebugAttemptEquationOptions = DebugAttemptEquationOptions (HashSet Text)
     deriving stock (Eq, Show)
     deriving newtype (Semigroup, Monoid)
 
 instance Default DebugAttemptEquationOptions where
     def = DebugAttemptEquationOptions HashSet.empty
 
+instance HasSelected DebugAttemptEquationOptions where
+    selected (DebugAttemptEquationOptions s) = s
+
 parseDebugAttemptEquationOptions :: Parser DebugAttemptEquationOptions
 parseDebugAttemptEquationOptions =
     mconcat <$> many parse
   where
     parse =
-        fmap (DebugAttemptEquationOptions . HashSet.singleton . Text.pack) $
+        fmap (DebugAttemptEquationOptions . HashSet.singleton) $
             Options.strOption $
                 mconcat
                     [ Options.metavar "EQUATION_IDENTIFIER"
@@ -398,7 +424,7 @@ selectDebugAttemptEquation ::
     Bool
 selectDebugAttemptEquation options entry
     | Just equation <- getEquation =
-        any (flip HashSet.member selected) (Equation.identifiers equation)
+        any (flip HashSet.member $ selected options) (Equation.identifiers equation)
     | otherwise = False
   where
     getEquation = do
@@ -406,21 +432,23 @@ selectDebugAttemptEquation options entry
         case debugAttemptEquation of
             DebugAttemptEquation equation _ -> pure equation
             DebugAttemptEquationResult equation _ -> pure equation
-    DebugAttemptEquationOptions{selected} = options
 
-newtype DebugEquationOptions = DebugEquationOptions {selected :: HashSet Text}
+newtype DebugEquationOptions = DebugEquationOptions (HashSet Text)
     deriving stock (Eq, Show)
     deriving newtype (Semigroup, Monoid)
 
 instance Default DebugEquationOptions where
     def = DebugEquationOptions HashSet.empty
 
+instance HasSelected DebugEquationOptions where
+    selected (DebugEquationOptions s) = s
+
 parseDebugEquationOptions :: Parser DebugEquationOptions
 parseDebugEquationOptions =
     mconcat <$> many parse
   where
     parse =
-        fmap (DebugEquationOptions . HashSet.singleton . Text.pack) $
+        fmap (DebugEquationOptions . HashSet.singleton) $
             Options.strOption $
                 mconcat
                     [ Options.metavar "EQUATION_IDENTIFIER"
@@ -441,25 +469,28 @@ selectDebugEquation ::
     DebugEquationOptions ->
     SomeEntry ->
     Bool
-selectDebugEquation DebugEquationOptions{selected} =
+selectDebugEquation options =
     (fmap or . sequence)
-        [ selectDebugApplyEquation DebugApplyEquationOptions{selected}
-        , selectDebugAttemptEquation DebugAttemptEquationOptions{selected}
+        [ selectDebugApplyEquation $ DebugApplyEquationOptions (selected options)
+        , selectDebugAttemptEquation $ DebugAttemptEquationOptions (selected options)
         ]
 
-newtype DebugAttemptRewriteOptions = DebugAttemptRewriteOptions {selected :: HashSet Text}
+newtype DebugAttemptRewriteOptions = DebugAttemptRewriteOptions (HashSet Text)
     deriving stock (Eq, Show)
     deriving newtype (Semigroup, Monoid)
 
 instance Default DebugAttemptRewriteOptions where
     def = DebugAttemptRewriteOptions HashSet.empty
 
+instance HasSelected DebugAttemptRewriteOptions where
+    selected (DebugAttemptRewriteOptions s) = s
+
 parseDebugAttemptRewriteOptions :: Parser DebugAttemptRewriteOptions
 parseDebugAttemptRewriteOptions =
     mconcat <$> many parse
   where
     parse =
-        fmap (DebugAttemptRewriteOptions . HashSet.singleton . Text.pack) $
+        fmap (DebugAttemptRewriteOptions . HashSet.singleton) $
             Options.strOption $
                 mconcat
                     [ Options.metavar "REWRITE_RULE_IDENTIFIER"
@@ -482,27 +513,29 @@ selectDebugAttemptRewrite ::
     SomeEntry ->
     Bool
 selectDebugAttemptRewrite options entry
-    | Just label <- getLabel = HashSet.member label selected
+    | Just label <- getLabel = HashSet.member label (selected options)
     | otherwise = False
   where
     getLabel = do
         DebugAttemptedRewriteRules _ ruleLabel _ <- fromEntry entry
         ruleLabel
-    DebugAttemptRewriteOptions{selected} = options
 
-newtype DebugApplyRewriteOptions = DebugApplyRewriteOptions {selected :: HashSet Text}
+newtype DebugApplyRewriteOptions = DebugApplyRewriteOptions (HashSet Text)
     deriving stock (Eq, Show)
     deriving newtype (Semigroup, Monoid)
 
 instance Default DebugApplyRewriteOptions where
     def = DebugApplyRewriteOptions HashSet.empty
 
+instance HasSelected DebugApplyRewriteOptions where
+    selected (DebugApplyRewriteOptions s) = s
+
 parseDebugApplyRewriteOptions :: Parser DebugApplyRewriteOptions
 parseDebugApplyRewriteOptions =
     mconcat <$> many parse
   where
     parse =
-        fmap (DebugApplyRewriteOptions . HashSet.singleton . Text.pack) $
+        fmap (DebugApplyRewriteOptions . HashSet.singleton) $
             Options.strOption $
                 mconcat
                     [ Options.metavar "REWRITE_RULE_IDENTIFIER"
@@ -523,27 +556,29 @@ selectDebugApplyRewrite ::
     SomeEntry ->
     Bool
 selectDebugApplyRewrite options entry
-    | Just label <- getLabel = HashSet.member label selected
+    | Just label <- getLabel = HashSet.member label (selected options)
     | otherwise = False
   where
     getLabel = do
         DebugAppliedLabeledRewriteRule _ mLabel _ <- fromEntry entry
         mLabel
-    DebugApplyRewriteOptions{selected} = options
 
-newtype DebugRewriteOptions = DebugRewriteOptions {selected :: HashSet Text}
+newtype DebugRewriteOptions = DebugRewriteOptions (HashSet Text)
     deriving stock (Eq, Show)
     deriving newtype (Semigroup, Monoid)
 
 instance Default DebugRewriteOptions where
     def = DebugRewriteOptions HashSet.empty
 
+instance HasSelected DebugRewriteOptions where
+    selected (DebugRewriteOptions s) = s
+
 parseDebugRewriteOptions :: Parser DebugRewriteOptions
 parseDebugRewriteOptions =
     mconcat <$> many parse
   where
     parse =
-        fmap (DebugRewriteOptions . HashSet.singleton . Text.pack) $
+        fmap (DebugRewriteOptions . HashSet.singleton) $
             Options.strOption $
                 mconcat
                     [ Options.metavar "REWRITE_RULE_IDENTIFIER"
@@ -564,10 +599,10 @@ selectDebugRewrite ::
     DebugRewriteOptions ->
     SomeEntry ->
     Bool
-selectDebugRewrite DebugRewriteOptions{selected} =
+selectDebugRewrite options =
     (fmap or . sequence)
-        [ selectDebugAttemptRewrite DebugAttemptRewriteOptions{selected}
-        , selectDebugApplyRewrite DebugApplyRewriteOptions{selected}
+        [ selectDebugAttemptRewrite $ DebugAttemptRewriteOptions (selected options)
+        , selectDebugApplyRewrite $ DebugApplyRewriteOptions (selected options)
         ]
 
 parseTraceRewrites :: Parser (Maybe FilePath)
@@ -661,3 +696,55 @@ unparseKoreLogOptions
 
         debugRewriteOptionsFlag (DebugRewriteOptions set) =
             concatMap (("--debug-rewrite" :) . (: []) . Text.unpack) (toList set)
+
+newtype UndefinedLabels = UndefinedLabels {unUndefinedLabels :: Map Text [Text]}
+    deriving stock (Eq, Show)
+    deriving newtype (Semigroup, Monoid)
+
+newtype DebugOptionsValidationError = DebugOptionsValidationError UndefinedLabels
+    deriving newtype (Eq)
+
+instance Exception DebugOptionsValidationError
+
+instance Pretty DebugOptionsValidationError => Show DebugOptionsValidationError where
+    show = show . pretty
+
+instance Pretty DebugOptionsValidationError where
+    pretty (DebugOptionsValidationError labels) =
+        Pretty.vsep $
+            ["Rule labels for the following debug options are not defined:"]
+                <> Map.foldMapWithKey
+                    (\k v -> [Pretty.hsep [pretty (k <> ":"), pretty . Text.intercalate ", " $ v]])
+                    (unUndefinedLabels labels)
+
+validateDebugOptions ::
+    Map
+        AxiomIdentifier
+        [Equation VariableName] ->
+    [RewriteRule RewritingVariableName] ->
+    KoreLogOptions ->
+    Validate UndefinedLabels ()
+validateDebugOptions equations rewrites KoreLogOptions{..} = do
+    let eqDefinedLabels =
+            HashSet.fromList $
+                mapMaybe
+                    (Attribute.unLabel . Attribute.label . Equation.attributes)
+                    (concat (Map.elems equations))
+        rwDefinedLabels = HashSet.fromList $ mapMaybe (Attribute.unLabel . from . getRewriteRule) rewrites
+        equationLabels =
+            [ ("--debug-equation", selected debugEquationOptions)
+            , ("--debug-attempt-equation", selected debugAttemptEquationOptions)
+            , ("--debug-apply-equation", selected debugApplyEquationOptions)
+            ]
+        rewriteRuleLabels =
+            [ ("--debug-rewrite", selected debugRewriteOptions)
+            , ("--debug-attempt-rewrite", selected debugAttemptRewriteOptions)
+            , ("--debug-apply-rewrite", selected debugApplyRewriteOptions)
+            ]
+    for_ equationLabels $ validateOption eqDefinedLabels
+    for_ rewriteRuleLabels $ validateOption rwDefinedLabels
+  where
+    validateOption definedLabels (opt, value) = do
+        let undefinedLabels = HashSet.difference value definedLabels
+        unless (HashSet.null undefinedLabels) $
+            dispute (UndefinedLabels $ Map.singleton opt (HashSet.toList undefinedLabels))

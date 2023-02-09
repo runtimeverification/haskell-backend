@@ -17,7 +17,6 @@ KOMPILE = kompile
 KRUN = krun
 export KRUN
 KPROVE = kprove
-KBMC = kbmc
 
 KOMPILE_OPTS = --backend haskell --haskell-backend-command $(KORE_EXEC)
 KRUN_OPTS = --haskell-backend-command $(KORE_EXEC)
@@ -63,11 +62,6 @@ KORE_MATCH_DISJUNCTION_OPTS = --no-bug-report
 export KORE_MATCH_DISJUNCTION
 export KORE_MATCH_DISJUNCTION_OPTS
 
-KORE_PROF = $(BUILD_DIR)/kore/bin/kore-prof
-KORE_PROF_OPTS = --no-bug-report
-export KORE_PROF
-export KORE_PROF_OPTS
-
 $(BUILD_DIR)/kore/bin/kore-exec:
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-exec
 
@@ -85,6 +79,3 @@ $(BUILD_DIR)/kore/bin/kore-format:
 
 $(BUILD_DIR)/kore/bin/kore-match-disjunction:
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-match-disjunction
-
-$(BUILD_DIR)/kore/bin/kore-prof:
-	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-prof
