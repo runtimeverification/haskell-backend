@@ -356,7 +356,7 @@ test_checkSimpleImplication =
                     (TermLike.mkBottom Mock.testSort)
                     []
         actual <- checkSimple config dest []
-        assertEqual "" (implication, NotImpliedStuck Nothing) actual
+        assertEqual "" (implication, Implied Nothing) actual
     ]
 
 test_simplifyRightHandSide :: [TestTree]
