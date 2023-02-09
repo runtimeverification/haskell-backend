@@ -357,6 +357,18 @@ test_checkSimpleImplication =
                     []
         actual <- checkSimple config dest []
         assertEqual "" (implication, Implied Nothing) actual
+    , testCase "TESTING" $ do
+        let config = Pattern.fromTermLike Mock.a
+            dest = Pattern.fromTermAndPredicate (mkElemVar Mock.x) (makeNotPredicate (makeEqualsPredicate (mkElemVar Mock.x) Mock.a))
+            subst = Condition.fromSubstitution $ Substitution.wrap [Substitution.assign (inject Mock.xConfig) Mock.a]
+            implication =
+                mkImplication
+                    Mock.a
+                    (TermLike.mkBottom Mock.testSort)
+                    []
+        actual <- checkSimple config dest [Mock.x]
+        -- assertEqual "" (implication, NotImpliedStuck (Just subst)) actual
+        assertEqual "" (NotImpliedStuck (Just subst)) (snd actual)
     ]
 
 test_simplifyRightHandSide :: [TestTree]
