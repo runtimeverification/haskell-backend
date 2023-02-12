@@ -128,7 +128,7 @@ adjustLogLevels :: [LogLevel] -> (LogLevel, [LogLevel])
 adjustLogLevels ls = (standardLevel, customLevels)
   where
     (stds, customLevels) = partition (<= LevelError) ls
-    standardLevel = minimum (LevelInfo : stds)
+    standardLevel = if null stds then LevelInfo else minimum stds
 
 versionInfoStr :: String
 versionInfoStr =
