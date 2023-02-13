@@ -775,9 +775,10 @@ checkSimpleImplication inLeft inRight existentials =
                 SMT.Evaluator.filterMultiOr $srcLoc
                     =<< Pattern.simplify right
 
-        if trivial || rhsBottom
-            then pure (claimToCheck, NotImpliedStuck Nothing)
-            else do
+        case (trivial, rhsBottom) of
+            (True, _) -> pure (claimToCheck, Implied Nothing)
+            (_, True) -> pure (claimToCheck, NotImpliedStuck Nothing)
+            _ -> do
                 -- attempt term unification (to remember the substitution
                 unified <-
                     lift $
