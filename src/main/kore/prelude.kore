@@ -5,8 +5,8 @@ endmodule
 []
 module KSEQ
     import BASIC-K []
-    symbol kseq{}(SortKItem{}, SortK{}) : SortK{} [constructor{}(), functional{}()]
-    symbol dotk{}() : SortK{} [constructor{}(), functional{}()]
+    symbol kseq{}(SortKItem{}, SortK{}) : SortK{} [constructor{}(), functional{}(), injective{}()]
+    symbol dotk{}() : SortK{} [constructor{}(), functional{}(), injective{}()]
     symbol append{}(SortK{}, SortK{}) : SortK{} [function{}(), functional{}()]
     axiom {R} \implies{R}(
         \and{R}(
