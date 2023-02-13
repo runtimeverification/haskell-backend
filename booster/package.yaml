@@ -168,6 +168,7 @@ tests:
       - tasty-discover:tasty-discover
     dependencies:
     - base
+    - binary
     - bytestring
     - containers
     - directory
