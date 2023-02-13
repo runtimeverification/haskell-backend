@@ -11,6 +11,8 @@ module Test.Kore.Syntax.Json (
     genKorePattern,
     genMultiKorePattern,
     genAllKorePatterns,
+    between,
+    upTo,
 ) where
 
 import Control.Monad (forever, void)
