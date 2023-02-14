@@ -261,14 +261,14 @@ decodeBlock = do
     mkSymbolApplication "\\implies" _ bs = argError "Implies" [BPredicate undefined, BPredicate undefined] bs
     mkSymbolApplication "\\in" _ [BTerm t1, BTerm t2] = pure $ BPredicate $ In t1 t2
     mkSymbolApplication "\\in" _ bs = argError "In" [BTerm undefined, BTerm undefined] bs
-    mkSymbolApplication "\\inj" [source, target] [BTerm t] = pure $ BTerm $ Injection source target t
-    mkSymbolApplication "\\inj" _ bs = argError "Injection" [BTerm undefined] bs
     mkSymbolApplication "\\not" _ [BPredicate p] = pure $ BPredicate $ Not p
     mkSymbolApplication "\\not" _ bs = argError "Not" [BPredicate undefined] bs
     mkSymbolApplication "\\or" _ [BPredicate p1, BPredicate p2] = pure $ BPredicate $ Or p1 p2
     mkSymbolApplication "\\or" _ bs = argError "Or" [BPredicate undefined, BPredicate undefined] bs
     mkSymbolApplication "\\top" _ [] = pure $ BPredicate Top
     mkSymbolApplication "\\top" _ bs = argError "Top" [] bs
+    mkSymbolApplication "inj" [source, target] [BTerm t] = pure $ BTerm $ Injection source target t
+    mkSymbolApplication "inj" _ bs = argError "Injection" [BTerm undefined] bs
     mkSymbolApplication name sorts bs =
         lookupKoreDefinitionSymbol name >>= \case
             Just symbol@Symbol{sortVars} -> do
@@ -385,7 +385,7 @@ encodeTerm = \case
         putWord8 KORECompositePattern
         encodeLength 1
     AndTerm t1 t2 -> encodeSymbolApplication "\\and" [sortOfTerm t1] [Left t1, Left t2]
-    Injection source target t -> encodeSymbolApplication "\\inj" [source, target] [Left t]
+    Injection source target t -> encodeSymbolApplication "inj" [source, target] [Left t]
 
 encodeSymbol :: ByteString -> [Sort] -> Put
 encodeSymbol name sorts = do
