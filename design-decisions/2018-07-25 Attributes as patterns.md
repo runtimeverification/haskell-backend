@@ -95,6 +95,7 @@ of a symbol to a list of parameters,
 the (name of the) symbol identifying the
 attribute and the list of parameters being the arguments of the attribute.
 Numbers will be encoded as string literals.
+Variables will appear as patterns with sort annotations.
 Therefore the following may be valid attributes:
 ```
 constructor{}()
@@ -102,6 +103,7 @@ strict{}("1", "2")
 unit{}(epsilon{}())
 unit{}(epsilon{}(), zero{}())
 refersTo{}(plus{}())
+concrete{}(VarI1:SortInt{},VarI2:SortInt{})
 ```
 We will *not* check that this attributes are well-formed in the usual sense,
 e.g. we will not check whether the `plus` symbol in the example above has
