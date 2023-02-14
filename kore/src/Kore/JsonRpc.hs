@@ -250,8 +250,8 @@ data APIMethods
 type family APIPayload (api :: APIMethods) (r :: ReqOrRes) where
     APIPayload 'ExecuteM 'Req = ExecuteRequest
     APIPayload 'ExecuteM 'Res = ExecuteResult
--- APIPayload 'StepM 'Req = StepRequest
--- APIPayload 'StepM 'Res = StepResult
+    -- APIPayload 'StepM 'Req = StepRequest
+    -- APIPayload 'StepM 'Res = StepResult
     APIPayload 'ImpliesM 'Req = ImpliesRequest
     APIPayload 'ImpliesM 'Res = ImpliesResult
     APIPayload 'SimplifyM 'Req = SimplifyRequest
@@ -489,16 +489,17 @@ respond serverState moduleName runSMT =
                             TermLike.mapVariables getRewritingVariable term
                  in Right . Implies $
                         case r of
-                            Claim.Implied mbCond ->
-                                ImpliesResult jsonTerm True (fmap (renderCond sort) mbCond)
+                            Claim.Implied Nothing ->
+                                ImpliesResult jsonTerm True (Just . renderCond sort $ Condition.bottom)
+                            Claim.Implied (Just cond) ->
+                                ImpliesResult jsonTerm True (Just . renderCond sort $ cond)
                             Claim.NotImplied _ ->
                                 ImpliesResult jsonTerm False Nothing
                             Claim.NotImpliedStuck (Just cond) ->
                                 let jsonCond = renderCond sort cond
                                  in ImpliesResult jsonTerm False (Just jsonCond)
                             Claim.NotImpliedStuck Nothing ->
-                                -- should not happen
-                                ImpliesResult jsonTerm False Nothing
+                                ImpliesResult jsonTerm False (Just . renderCond sort $ Condition.bottom)
         Simplify SimplifyRequest{state, _module} -> withMainModule _module $ \serializedModule lemmas ->
             case PatternVerifier.runPatternVerifier (verifierContext serializedModule) verifyState of
                 Left err ->
@@ -651,13 +652,13 @@ runServer ::
     Log.LoggerEnv IO ->
     IO ()
 runServer port serverState mainModule runSMT loggerEnv@Log.LoggerEnv{logAction} = do
-    flip runLoggingT logFun $
-        jsonrpcTCPServer
+    flip runLoggingT logFun
+        $ jsonrpcTCPServer
             Json.defConfig{confCompare}
             V2
             False
             srvSettings
-            $ srv serverState mainModule loggerEnv runSMT
+        $ srv serverState mainModule loggerEnv runSMT
   where
     srvSettings = serverSettings port "*"
     confCompare =
