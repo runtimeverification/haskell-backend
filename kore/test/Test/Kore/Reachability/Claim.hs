@@ -347,7 +347,7 @@ test_checkSimpleImplication =
                 mkImplication Mock.a (TermLike.mkBottom Mock.testSort) []
         actual <- checkSimple config dest []
         assertEqual "" (implication, NotImpliedStuck Nothing) actual
-    , testCase "Stuck if both sides are \\bottom" $ do
+    , testCase "Implied if LHS is \\bottom" $ do
         let config = Pattern.bottomOf Mock.testSort
             dest = Pattern.bottomOf Mock.testSort
             implication =
