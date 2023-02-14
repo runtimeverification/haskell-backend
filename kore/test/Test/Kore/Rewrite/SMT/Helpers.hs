@@ -84,7 +84,7 @@ newtype SmtPrelude = SmtPrelude {getSmtPrelude :: SMT ()}
 
 ofType :: SMT.MonadSMT m => Text -> Text -> m ()
 name `ofType` constType = do
-    _ <- SMT.declare name (atom constType)
+    _ <- SMT.declare name "" (atom constType)
     return ()
 
 atom :: Text -> SMT.SExpr
