@@ -165,6 +165,7 @@ import Control.Exception (
 import Control.Exception qualified as X
 import Control.Monad qualified as Monad
 import Control.Monad.Catch qualified as Exception
+import Control.Monad.Extra (whenJust)
 import Data.Bits (
     testBit,
  )
@@ -375,9 +376,10 @@ debug = logMessageWith Log.Debug
 warn :: HasCallStack => Solver -> Text -> IO ()
 warn = logMessageWith Log.Warning
 
-send :: Solver -> SExpr -> IO ()
-send Solver{solverHandle = SolverHandle{hIn, hProc}, logger} command' =
+send :: Solver -> SExpr -> Maybe SExpr -> IO ()
+send Solver{solverHandle = SolverHandle{hIn, hProc}, logger} command' comment =
     trySolver hProc $ do
+        whenJust comment $ logDebugSolverSendWith logger
         logDebugSolverSendWith logger command'
         sendSExpr hIn command'
         hPutChar hIn '\n'
@@ -403,16 +405,16 @@ recv Solver{solverHandle = SolverHandle{hOut, hProc}, logger} =
     deltaOpen :: Text -> Int
     deltaOpen line = Text.count "(" line - Text.count ")" line
 
-command :: Solver -> SExpr -> IO SExpr
-command solver c =
-    traceNonErrorMonad D_SMT_command [debugArg "c" (showSExpr c)] $ do
-        send solver c
+command :: Solver -> Maybe SExpr -> SExpr -> IO SExpr
+command solver comment cmd =
+    traceNonErrorMonad D_SMT_command [debugArg "c" (showSExpr cmd)] $ do
+        send solver cmd comment
         recv solver
 
 stop :: Solver -> IO ExitCode
 stop solver@Solver{solverHandle = SolverHandle{hIn, hOut, hErr, hProc}} =
     trySolver hProc $ do
-        send solver (List [Atom "exit"])
+        send solver (List [Atom "exit"]) Nothing
         ec <- waitForProcess hProc
         cleanupProcess (Just hIn, Just hOut, Just hErr, hProc)
             & X.handle handler
@@ -428,31 +430,31 @@ loadFile s file = do
     case Parser.runParser parseSExprFile file txt of
         Left err -> fail (show err)
         Right exprs ->
-            mapM_ (command s) exprs
+            mapM_ (command s Nothing) exprs
 
 -- | A command with no interesting result.
-ackCommand :: Solver -> SExpr -> IO ()
-ackCommand solver c =
+ackCommand :: Solver -> Maybe SExpr -> SExpr -> IO ()
+ackCommand solver comment cmd =
     do
-        res <- command solver c
+        res <- command solver comment cmd
         case res of
             Atom "success" -> return ()
             _ ->
                 fail $
                     unlines
                         [ "Unexpected result from the SMT solver:"
-                        , "  Command: " ++ showSExpr c
+                        , "  Command: " ++ showSExpr cmd
                         , "  Expected: success"
                         , "  Result: " ++ showSExpr res
                         ]
 
 -- | A command with no interesting result.
 ackCommandIgnoreErr :: Solver -> SExpr -> IO ()
-ackCommandIgnoreErr solver = void . command solver
+ackCommandIgnoreErr solver = void . command solver Nothing
 
 -- | A command entirely made out of atoms, with no interesting result.
 simpleCommand :: Solver -> [Text] -> IO ()
-simpleCommand solver = ackCommand solver . List . map Atom
+simpleCommand solver = ackCommand solver Nothing . List . map Atom
 
 {- | Run a command and return True if successful, and False if unsupported.
  This is useful for setting options that unsupported by some solvers, but used
@@ -462,7 +464,7 @@ simpleCommandMaybe :: Solver -> [Text] -> IO Bool
 simpleCommandMaybe solver c =
     do
         let cmd = List (map Atom c)
-        res <- command solver cmd
+        res <- command solver Nothing cmd
         case res of
             Atom "success" -> return True
             Atom "unsupported" -> return False
@@ -520,16 +522,15 @@ inNewScope s m = do
 {- | Declare a constant.  A common abbreviation for 'declareFun'.
  For convenience, returns an the declared name as a constant expression.
 -}
-declare :: Solver -> SExpr -> SExpr -> IO SExpr
-declare solver f t = declareFun solver (FunctionDeclaration f [] t)
+declare :: Solver -> SExpr -> Maybe SExpr -> SExpr -> IO SExpr
+declare solver f c t = declareFun solver (FunctionDeclaration f [] t) c
 
 {- | Declare a function or a constant.
  For convenience, returns an the declared name as a constant expression.
 -}
-declareFun :: Solver -> SmtFunctionDeclaration -> IO SExpr
-declareFun solver FunctionDeclaration{name, inputSorts, resultSort} = do
-    ackCommand solver $
-        fun "declare-fun" [name, List inputSorts, resultSort]
+declareFun :: Solver -> SmtFunctionDeclaration -> Maybe SExpr -> IO SExpr
+declareFun solver FunctionDeclaration{name, inputSorts, resultSort} c = do
+    ackCommand solver c $ fun "declare-fun" [name, List inputSorts, resultSort]
     pure name
 
 declareSort :: Solver -> SmtSortDeclaration -> IO SExpr
@@ -537,7 +538,7 @@ declareSort
     solver
     SortDeclaration{name, arity} =
         do
-            ackCommand solver $
+            ackCommand solver Nothing $
                 fun "declare-sort" [name, (Atom . Text.pack . show) arity]
             pure name
 
@@ -585,6 +586,7 @@ declareDatatypes solver datatypes = do
                 , inputSorts = map argType arguments
                 , resultSort = sort
                 }
+            Nothing
 
     noJunkAxiom :: SmtDataTypeDeclaration -> [SmtConstructor] -> SExpr
     noJunkAxiom
@@ -698,7 +700,7 @@ defineFun ::
     SExpr ->
     IO SExpr
 defineFun solver f as t e = do
-    ackCommand solver $
+    ackCommand solver Nothing $
         fun
             "define-fun"
             [Atom f, List [List [const x, a] | (x, a) <- as], t, e]
@@ -706,19 +708,19 @@ defineFun solver f as t e = do
 
 -- | Assume a fact.
 assert :: Solver -> SExpr -> IO ()
-assert solver e = ackCommand solver $ fun "assert" [e]
+assert solver e = ackCommand solver Nothing $ fun "assert" [e]
 
 -- | Check if the current set of assertion is consistent.
 check :: Solver -> IO Result
 check solver = do
-    res <- command solver (List [Atom "check-sat"])
+    res <- command solver Nothing (List [Atom "check-sat"])
     case res of
         Atom "unsat" -> return Unsat
         Atom "unknown" -> do
             Monad.when featureProduceAssertions $ do
-                asserts <- command solver (List [Atom "get-assertions"])
+                asserts <- command solver Nothing (List [Atom "get-assertions"])
                 warn solver (buildText asserts)
-            _ <- command solver (List [Atom "get-info", Atom ":reason-unknown"])
+            _ <- command solver Nothing (List [Atom "get-info", Atom ":reason-unknown"])
             return Unknown
         Atom "sat" -> return Sat
         _ ->
@@ -764,7 +766,7 @@ getExprs :: Solver -> [SExpr] -> IO [(SExpr, Value)]
 getExprs solver vals =
     do
         let cmd = List [Atom "get-value", List vals]
-        res <- command solver cmd
+        res <- command solver Nothing cmd
         case res of
             List xs -> mapM getAns xs
             _ ->
@@ -812,7 +814,7 @@ getConst solver x = getExpr solver (Atom x)
 getUnsatCore :: Solver -> IO [Text]
 getUnsatCore s =
     do
-        res <- command s $ List [Atom "get-unsat-core"]
+        res <- command s Nothing $ List [Atom "get-unsat-core"]
         case res of
             List xs -> mapM fromAtom xs
             _ -> unexpected "a list of atoms" res
