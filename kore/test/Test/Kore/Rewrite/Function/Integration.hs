@@ -509,8 +509,8 @@ varMConfig = mkElemVar natMConfig
 varNConfig = mkElemVar natNConfig
 
 zeroSymbol, succSymbol :: Symbol
-zeroSymbol = Mock.symbol "Zero" [] natSort & constructor & functional
-succSymbol = Mock.symbol "Succ" [natSort] natSort & constructor & functional
+zeroSymbol = Mock.symbol "Zero" [] natSort & constructor & total
+succSymbol = Mock.symbol "Succ" [natSort] natSort & constructor & total
 
 plusSymbol, timesSymbol :: Symbol
 plusSymbol = Mock.symbol "plus" [natSort, natSort] natSort & function

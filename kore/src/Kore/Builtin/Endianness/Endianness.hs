@@ -19,8 +19,8 @@ import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Pattern.Function
-import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Pattern.Simplified
+import Kore.Attribute.Pattern.Total
 import Kore.Attribute.Synthetic
 import Kore.Internal.Symbol
 import Kore.Sort
@@ -60,8 +60,8 @@ instance Synthetic Sort (Const Endianness) where
     synthetic = synthetic . toApplication . getConst
     {-# INLINE synthetic #-}
 
-instance Synthetic Functional (Const Endianness) where
-    synthetic = const (Functional True)
+instance Synthetic Total (Const Endianness) where
+    synthetic = const (Total True)
     {-# INLINE synthetic #-}
 
 instance Synthetic Function (Const Endianness) where

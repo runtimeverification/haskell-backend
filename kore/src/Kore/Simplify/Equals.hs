@@ -85,7 +85,7 @@ This uses the following simplifications
 (t = term, s = substitution, p = predicate):
 
 * Equals(a, a) = true
-* Equals(phi, psi1 or psi2 or ... or psin), when phi is functional
+* Equals(phi, psi1 or psi2 or ... or psin), when phi is total
     = or
         ( not ceil (phi) and not ceil(psi1) and ... and not ceil (psin)
         , and
@@ -133,7 +133,7 @@ This uses the following simplifications
       Note that when expanding Equals(t1, t1') recursively we don't need to
       put the ceil conditions again, since we already asserted that.
       Also note that ceil(constr(...)) is simplifiable.
-    + If the first term is a variable and the second is functional,
+    + If the first term is a variable and the second is total,
       then we get a substitution:
         Or(
             And(

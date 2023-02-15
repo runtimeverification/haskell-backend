@@ -9,15 +9,15 @@ module Test.Kore.Rewrite.MockSymbols where
    * Use things like a, b, c, x, y, z for testing.
    RULES:
    * Everything that does not obey the default rules must be clearly
-     specified in the name, e.g. 'constantNotFunctional'.
-   * constant symbols are, by default, functional.
+     specified in the name, e.g. 'constantNotTotal'.
+   * constant symbols are, by default, total.
    * constant functions are called cf, cg, ch.
    * constant constructors are called a, b, c, ...
    * one-element functions are called f, g, h.
    * constructors are called "constr<n><k>" where n is the arity and k is used
      to differentiate between them (both are one-digit).
-   * functional constructors are called "functionalConstr<n><k>"
-   * functional symbols are called "functional<n><k>"
+   * total constructors are called "totalConstr<n><k>"
+   * total symbols are called "total<n><k>"
    * symbols without any special attribute are called "plain<n><k>"
    * variables are called x, y, z...
 -}
@@ -321,45 +321,45 @@ symbol name operands result =
         }
 
 aSymbol :: Symbol
-aSymbol = symbol aId [] testSort & functional & constructor
+aSymbol = symbol aId [] testSort & total & constructor
 
 aSort0Symbol :: Symbol
-aSort0Symbol = symbol aSort0Id [] testSort0 & functional & constructor
+aSort0Symbol = symbol aSort0Id [] testSort0 & total & constructor
 
 aSort1Symbol :: Symbol
-aSort1Symbol = symbol aSort1Id [] testSort1 & functional & constructor
+aSort1Symbol = symbol aSort1Id [] testSort1 & total & constructor
 
 aSubsortSymbol :: Symbol
-aSubsortSymbol = symbol aSubsortId [] subSort & functional & constructor
+aSubsortSymbol = symbol aSubsortId [] subSort & total & constructor
 
 aSubOthersortSymbol :: Symbol
 aSubOthersortSymbol =
-    symbol aSubOthersortId [] subOthersort & functional & constructor
+    symbol aSubOthersortId [] subOthersort & total & constructor
 
 aSubSubsortSymbol :: Symbol
 aSubSubsortSymbol =
-    symbol aSubSubsortId [] subSubsort & functional & constructor
+    symbol aSubSubsortId [] subSubsort & total & constructor
 
 aTopSortSymbol :: Symbol
-aTopSortSymbol = symbol aTopSortId [] topSort & functional & constructor
+aTopSortSymbol = symbol aTopSortId [] topSort & total & constructor
 
 aOtherSortSymbol :: Symbol
-aOtherSortSymbol = symbol aOtherSortId [] otherSort & functional & constructor
+aOtherSortSymbol = symbol aOtherSortId [] otherSort & total & constructor
 
 bSymbol :: Symbol
-bSymbol = symbol bId [] testSort & functional & constructor
+bSymbol = symbol bId [] testSort & total & constructor
 
 bSort0Symbol :: Symbol
-bSort0Symbol = symbol bSort0Id [] testSort0 & functional & constructor
+bSort0Symbol = symbol bSort0Id [] testSort0 & total & constructor
 
 cSymbol :: Symbol
-cSymbol = symbol cId [] testSort & functional & constructor
+cSymbol = symbol cId [] testSort & total & constructor
 
 dSymbol :: Symbol
-dSymbol = symbol dId [] testSort & functional & constructor
+dSymbol = symbol dId [] testSort & total & constructor
 
 eSymbol :: Symbol
-eSymbol = symbol eId [] testSort & functional & constructor
+eSymbol = symbol eId [] testSort & total & constructor
 
 fSymbol :: Symbol
 fSymbol = symbol fId [testSort] testSort & function
@@ -414,7 +414,7 @@ fTestIntSymbol = symbol fTestIntId [testSort] intSort & function
 
 fTestFunctionalIntSymbol :: Symbol
 fTestFunctionalIntSymbol =
-    symbol fTestFunctionalIntId [testSort] intSort & function & functional
+    symbol fTestFunctionalIntId [testSort] intSort & function & total
 
 plain00Symbol :: Symbol
 plain00Symbol = symbol plain00Id [] testSort
@@ -466,69 +466,69 @@ function20MapTestSymbol =
     symbol function20MapTestId [mapSort, testSort] testSort & function
 
 functional00Symbol :: Symbol
-functional00Symbol = symbol functional00Id [] testSort & functional
+functional00Symbol = symbol functional00Id [] testSort & total
 
 functional01Symbol :: Symbol
-functional01Symbol = symbol functional01Id [] testSort & functional
+functional01Symbol = symbol functional01Id [] testSort & total
 
 functional10Symbol :: Symbol
-functional10Symbol = symbol functional10Id [testSort] testSort & functional
+functional10Symbol = symbol functional10Id [testSort] testSort & total
 
 functional11Symbol :: Symbol
-functional11Symbol = symbol functional11Id [testSort] testSort & functional
+functional11Symbol = symbol functional11Id [testSort] testSort & total
 
 functional20Symbol :: Symbol
 functional20Symbol =
-    symbol functional20Id [testSort, testSort] testSort & functional
+    symbol functional20Id [testSort, testSort] testSort & total
 
 functional00SubSubSortSymbol :: Symbol
 functional00SubSubSortSymbol =
-    symbol functional00SubSubSortId [] subSubsort & functional
+    symbol functional00SubSubSortId [] subSubsort & total
 
 functionalInjective00Symbol :: Symbol
 functionalInjective00Symbol =
-    symbol functionalInjective00Id [] testSort & functional & injective
+    symbol functionalInjective00Id [] testSort & total & injective
 
 functionalConstr10Symbol :: Symbol
 functionalConstr10Symbol =
-    symbol functionalConstr10Id [testSort] testSort & functional & constructor
+    symbol functionalConstr10Id [testSort] testSort & total & constructor
 
 functionalConstr11Symbol :: Symbol
 functionalConstr11Symbol =
-    symbol functionalConstr11Id [testSort] testSort & functional & constructor
+    symbol functionalConstr11Id [testSort] testSort & total & constructor
 
 functionalConstr12Symbol :: Symbol
 functionalConstr12Symbol =
-    symbol functionalConstr12Id [testSort] testSort & functional & constructor
+    symbol functionalConstr12Id [testSort] testSort & total & constructor
 
 functionalConstr20Symbol :: Symbol
 functionalConstr20Symbol =
     symbol functionalConstr20Id [testSort, testSort] testSort
-        & functional
+        & total
         & constructor
 
 functionalConstr21Symbol :: Symbol
 functionalConstr21Symbol =
     symbol functionalConstr21Id [testSort, testSort] testSort
-        & functional
+        & total
         & constructor
 
 functionalConstr30Symbol :: Symbol
 functionalConstr30Symbol =
     symbol functionalConstr30Id [testSort, testSort, testSort] testSort
-        & functional
+        & total
         & constructor
 
 functionalTopConstr20Symbol :: Symbol
 functionalTopConstr20Symbol =
     symbol functionalTopConstr20Id [topSort, testSort] testSort
-        & functional
+        & total
         & constructor
 
 functionalTopConstr21Symbol :: Symbol
 functionalTopConstr21Symbol =
     symbol functionalTopConstr21Id [testSort, topSort] testSort
-        & functional
+        & total
         & constructor
 
 fMapSymbol :: Symbol
@@ -604,30 +604,30 @@ sortInjectionSubToOtherTopSymbol = sortInjectionSymbol subSort otherTopSort
 
 subsubOverloadSymbol :: Symbol
 subsubOverloadSymbol =
-    symbol subsubOverloadId [subSubsort] subSubsort & functional & injective
+    symbol subsubOverloadId [subSubsort] subSubsort & total & injective
 
 subOverloadSymbol :: Symbol
 subOverloadSymbol =
-    symbol subOverloadId [subSort] subSort & functional & injective
+    symbol subOverloadId [subSort] subSort & total & injective
 
 otherOverloadSymbol :: Symbol
 otherOverloadSymbol =
-    symbol otherOverloadId [otherSort] otherSort & functional & injective
+    symbol otherOverloadId [otherSort] otherSort & total & injective
 
 topOverloadSymbol :: Symbol
 topOverloadSymbol =
-    symbol topOverloadId [topSort] topSort & functional & injective
+    symbol topOverloadId [topSort] topSort & total & injective
 
 unitMapSymbol :: Symbol
 unitMapSymbol =
     symbol unitMapId [] mapSort
-        & functional
+        & total
         & hook "MAP.unit"
 
 elementMapSymbol :: Symbol
 elementMapSymbol =
     symbol elementMapId [testSort, testSort] mapSort
-        & functional
+        & total
         & hook "MAP.element"
 
 concatMapSymbol :: Symbol
@@ -649,14 +649,14 @@ inKeysMapSymbol =
 lessIntSymbol :: Symbol
 lessIntSymbol =
     symbol lessIntId [intSort, intSort] boolSort
-        & functional
+        & total
         & hook "INT.lt"
         & smthook "<"
 
 greaterEqIntSymbol :: Symbol
 greaterEqIntSymbol =
     symbol greaterEqIntId [intSort, intSort] boolSort
-        & functional
+        & total
         & hook "INT.ge"
         & smthook ">="
 
@@ -670,17 +670,17 @@ tdivIntSymbol =
 concatListSymbol :: Symbol
 concatListSymbol =
     symbol concatListId [listSort, listSort] listSort
-        & functional
+        & total
         & hook "LIST.concat"
 
 elementListSymbol :: Symbol
 elementListSymbol =
     symbol elementListId [testSort] listSort
-        & functional
+        & total
         & hook "LIST.element"
 
 unitListSymbol :: Symbol
-unitListSymbol = symbol unitListId [] listSort & functional & hook "LIST.unit"
+unitListSymbol = symbol unitListId [] listSort & total & hook "LIST.unit"
 
 concatSetSymbol :: Symbol
 concatSetSymbol =
@@ -690,17 +690,17 @@ concatSetSymbol =
 
 elementSetSymbol :: Symbol
 elementSetSymbol =
-    symbol elementSetId [testSort] setSort & functional & hook "SET.element"
+    symbol elementSetId [testSort] setSort & total & hook "SET.element"
 
 unitSetSymbol :: Symbol
 unitSetSymbol =
-    symbol unitSetId [] setSort & functional & hook "SET.unit"
+    symbol unitSetId [] setSort & total & hook "SET.unit"
 
 keqBoolSymbol :: Symbol
 keqBoolSymbol =
     symbol keqBoolId [testSort, testSort] boolSort
         & function
-        & functional
+        & total
         & hook "KEQUAL.eq"
 
 opaqueSetSymbol :: Symbol
@@ -711,13 +711,13 @@ opaqueSetSymbol =
 sigmaSymbol :: Symbol
 sigmaSymbol =
     symbol sigmaId [testSort, testSort] testSort
-        & functional
+        & total
         & constructor
 
 anywhereSymbol :: Symbol
 anywhereSymbol =
     symbol anywhereId [] testSort
-        & functional
+        & total
         & Lens.set
             (typed @Attribute.Symbol . typed @Attribute.Anywhere)
             (Attribute.Anywhere True)
@@ -728,7 +728,7 @@ functionSMTSymbol =
 
 functionalSMTSymbol :: Symbol
 functionalSMTSymbol =
-    symbol functionalSMTId [testSort] testSort & function & functional
+    symbol functionalSMTId [testSort] testSort & function & total
 
 type MockElementVariable = ElementVariable VariableName
 

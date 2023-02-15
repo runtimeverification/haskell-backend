@@ -8,17 +8,17 @@ module Kore.Internal.Symbol (
     isConstructorLike,
     isConstructor,
     isSortInjection,
-    isFunctional,
+    isTotal,
     isFunction,
     isDeclaredFunction,
-    isTotal,
+    isNotBottom,
     isInjective,
     isMemo,
     isAnywhere,
     noEvaluators,
     symbolHook,
     constructor,
-    functional,
+    total,
     function,
     injective,
     sortInjection,
@@ -155,8 +155,8 @@ isSortInjection =
 isInjective :: Symbol -> Bool
 isInjective = Attribute.isInjective . symbolAttributes
 
-isFunctional :: Symbol -> Bool
-isFunctional = Attribute.isFunctional . symbolAttributes
+isTotal :: Symbol -> Bool
+isTotal = Attribute.isTotal . symbolAttributes
 
 isFunction :: Symbol -> Bool
 isFunction = Attribute.isFunction . symbolAttributes
@@ -165,8 +165,8 @@ isDeclaredFunction :: Symbol -> Bool
 isDeclaredFunction =
     Attribute.isDeclaredFunction . Attribute.function . symbolAttributes
 
-isTotal :: Symbol -> Bool
-isTotal = Attribute.isTotal . symbolAttributes
+isNotBottom :: Symbol -> Bool
+isNotBottom = Attribute.isNotBottom . symbolAttributes
 
 isMemo :: Symbol -> Bool
 isMemo = Attribute.isMemo . Attribute.memo . symbolAttributes
@@ -187,11 +187,11 @@ constructor =
         (typed @Attribute.Symbol . typed @Attribute.Constructor)
         Attribute.Constructor{isConstructor = True}
 
-functional :: Symbol -> Symbol
-functional =
+total :: Symbol -> Symbol
+total =
     Lens.set
-        (typed @Attribute.Symbol . typed @Attribute.Functional)
-        Attribute.Functional{isDeclaredFunctional = True}
+        (typed @Attribute.Symbol . typed @Attribute.Total)
+        Attribute.Total{isDeclaredTotal = True}
 
 function :: Symbol -> Symbol
 function =

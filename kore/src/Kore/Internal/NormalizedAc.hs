@@ -25,7 +25,7 @@ module Kore.Internal.NormalizedAc (
     InternalAc (..),
     normalizedAcDefined,
     normalizedAcConstructorLike,
-    normalizedAcFunctional,
+    normalizedAcTotal,
     unparseInternalAc,
     AcPair,
     pattern AcPair,
@@ -54,7 +54,7 @@ import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
-import Kore.Attribute.Pattern.Functional
+import Kore.Attribute.Pattern.Total
 import Kore.Debug
 import Kore.Internal.Symbol hiding (
     isConstructorLike,
@@ -480,11 +480,11 @@ normalizedAcDefined ac@(NormalizedAc _ _ _) =
   where
     sameAsChildren = fold ac
 
-normalizedAcFunctional ::
+normalizedAcTotal ::
     (Foldable (Element collection), Foldable (Value collection)) =>
-    NormalizedAc collection key Functional ->
-    Functional
-normalizedAcFunctional ac@(NormalizedAc _ _ _) =
+    NormalizedAc collection key Total ->
+    Total
+normalizedAcTotal ac@(NormalizedAc _ _ _) =
     case ac of
         NormalizedAc
             { elementsWithVariables = []
@@ -502,7 +502,7 @@ normalizedAcFunctional ac@(NormalizedAc _ _ _) =
             , opaque = [_]
             }
                 | HashMap.null concreteElements -> sameAsChildren
-        _ -> Functional False
+        _ -> Total False
   where
     sameAsChildren = fold ac
 

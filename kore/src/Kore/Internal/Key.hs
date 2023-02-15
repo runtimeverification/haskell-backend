@@ -54,7 +54,7 @@ import Prelude.Kore
 
 {- | A type for 'Key' attributes. We only need to keep track of the sort.
  Keys are constructor-like, and therefore they are always
- fully simplified, defined, and functional ML patterns,
+ fully simplified, defined, and total function-like ML patterns,
  which do not contain variables.
 -}
 newtype KeyAttributes = KeyAttributes

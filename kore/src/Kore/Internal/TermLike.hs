@@ -24,7 +24,7 @@ module Kore.Internal.TermLike (
     simplifiedAttribute,
     attributeSimplifiedAttribute,
     isFunctionPattern,
-    isFunctionalPattern,
+    isTotalPattern,
     hasConstructorLikeTop,
     refreshVariables,
     termLikeSort,
@@ -222,8 +222,8 @@ import Kore.Attribute.Pattern.FreeVariables qualified as Attribute.FreeVariables
     toSet,
  )
 import Kore.Attribute.Pattern.Function qualified as Attribute
-import Kore.Attribute.Pattern.Functional qualified as Attribute
 import Kore.Attribute.Pattern.Simplified qualified as Attribute
+import Kore.Attribute.Pattern.Total qualified as Attribute
 import Kore.Attribute.Synthetic
 import Kore.Builtin.Endianness.Endianness (
     Endianness,
@@ -344,10 +344,10 @@ hasConstructorLikeTop = \case
     StringLiteral_ _ -> True
     _ -> False
 
--- | Is the 'TermLike' functional?
-isFunctionalPattern :: TermLike variable -> Bool
-isFunctionalPattern =
-    Attribute.isFunctional . termFunctional . extractAttributes
+-- | Is the 'TermLike' total?
+isTotalPattern :: TermLike variable -> Bool
+isTotalPattern =
+    Attribute.isTotal . termTotal . extractAttributes
 
 {- | Throw an error if the variable occurs free in the pattern.
 

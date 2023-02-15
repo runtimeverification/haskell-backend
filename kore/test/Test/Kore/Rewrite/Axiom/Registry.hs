@@ -126,12 +126,12 @@ testDef =
         [ simpleSortSentence (SortName "S")
         , simpleSymbolSentence (SymbolName "s") (SortName "S")
             & (updateAttributes . Attributes)
-                [ Attribute.functionalAttribute
+                [ Attribute.totalAttribute
                 , Attribute.constructorAttribute
                 ]
         , simpleSymbolSentence (SymbolName "t") (SortName "S")
             & (updateAttributes . Attributes)
-                [ Attribute.functionalAttribute
+                [ Attribute.totalAttribute
                 , Attribute.constructorAttribute
                 ]
         , symbolSentenceWithParametersAndArguments
