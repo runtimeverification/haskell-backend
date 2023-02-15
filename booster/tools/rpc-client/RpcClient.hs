@@ -27,6 +27,7 @@ import Data.Maybe (isNothing)
 import Data.Text qualified as Text
 import Data.Vector as Array (fromList)
 import Network.Run.TCP
+import Network.Socket
 import Network.Socket.ByteString.Lazy
 import Options.Applicative
 import System.Clock
@@ -62,6 +63,7 @@ main = do
 
         trace "[Info] Response received." $
             postProcess prettify postProcessing response
+        shutdown s ShutdownReceive
   where
     readResponse s bufSize = do
         part <- recv s bufSize

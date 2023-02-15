@@ -168,34 +168,35 @@ errorCases
 errorCases =
     testGroup
         "Simple error cases"
-        [ testCase "No rules" $
-            (termInKCell "Thing" $ app con2 [d]) `failsWith` NoRulesForTerm
-            -- , testCase "Index is None" $
-            --       (termInKCell "Thing" $ AndTerm (app con1 [d]) (app con2 [d])) `failsWith` TermIndexIsNone
+        [ testCase "No rules" $ do
+            let pat = termInKCell "Thing" $ app con2 [d]
+            pat `failsWith` NoRulesForTerm pat.term
+        , testCase "Index is None" $ do
+            let pat = termInKCell "Thing" $ AndTerm (app con1 [d]) (app con2 [d])
+            pat `failsWith` TermIndexIsNone pat.term
         ]
 rewriteSuccess =
     testCase "con1 app rewrites to f1 app" $
         (termInKCell "ConfigVar" $ app con1 [d]) `rewritesTo` (termInKCell "ConfigVar" $ app f1 [d])
 unifyNotMatch =
     testCase "Indeterminate case when subject has variables" $ do
-        let subst =
+        let pat = termInKCell "ConfigVar" $ app con3 [var "X" someSort, d]
+            -- "non-match" substitution:
+            subst =
                 Map.fromList
                     [ (Variable someSort "X", dv someSort "otherThing")
                     , (Variable someSort "Y", d)
                     , (Variable kItemSort "RuleVar", var "ConfigVar" kItemSort)
                     ]
-        (termInKCell "ConfigVar" $ app con3 [var "X" someSort, d])
-            `failsWith` RuleApplicationUncertain
-                [UnificationIsNotMatch rule3 subst]
+        pat `failsWith` UnificationIsNotMatch rule3 pat.term subst
 definednessUnclear =
     testCase "con4 rewrite to f2 might become undefined" $ do
         let pcon4 = termInKCell "ConfigVar" $ app con4 [d, d]
-            withf = termInKCell "ConfigVar" $ app f2 [d]
-        pcon4 `failsWith` DefinednessUnclear [(rule4, withf)]
+        pcon4 `failsWith` DefinednessUnclear rule4 pcon4
 rewriteStuck =
     testCase "con3 app is stuck (no rules apply)" $ do
         let con3App = termInKCell "ConfigVar" $ app con3 [d, d]
-        runRewriteM def Nothing (rewriteStep [] [] con3App) @?= Left NoApplicableRules
+        runRewriteM def Nothing (rewriteStep [] [] con3App) @?= Left (NoApplicableRules con3App)
 rulePriority =
     testCase "con1 rewrites to a branch when higher priority does not apply" $ do
         let d2 = dv someSort "otherThing"
