@@ -489,16 +489,17 @@ respond serverState moduleName runSMT =
                             TermLike.mapVariables getRewritingVariable term
                  in Right . Implies $
                         case r of
-                            Claim.Implied mbCond ->
-                                ImpliesResult jsonTerm True (fmap (renderCond sort) mbCond)
+                            Claim.Implied Nothing ->
+                                ImpliesResult jsonTerm True (Just . renderCond sort $ Condition.bottom)
+                            Claim.Implied (Just cond) ->
+                                ImpliesResult jsonTerm True (Just . renderCond sort $ cond)
                             Claim.NotImplied _ ->
                                 ImpliesResult jsonTerm False Nothing
                             Claim.NotImpliedStuck (Just cond) ->
                                 let jsonCond = renderCond sort cond
                                  in ImpliesResult jsonTerm False (Just jsonCond)
                             Claim.NotImpliedStuck Nothing ->
-                                -- should not happen
-                                ImpliesResult jsonTerm False Nothing
+                                ImpliesResult jsonTerm False (Just . renderCond sort $ Condition.bottom)
         Simplify SimplifyRequest{state, _module} -> withMainModule _module $ \serializedModule lemmas ->
             case PatternVerifier.runPatternVerifier (verifierContext serializedModule) verifyState of
                 Left err ->

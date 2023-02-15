@@ -279,6 +279,14 @@ If the implication cannot be shown to hold, `satisfiable` is false.
 
 In some cases, a unifier `condition` for the implication can still be provided, although the implication cannot be shown to be true.
 
+The endpoint implements the following specification:
+- `antecedent` is `\\bottom` (implication holds trivially) => `satisfiable = True` and `condition = \\bottom`
+- `consequent` is `\\bottom` and `antecedent` is not `\\bottom` => `satisfiable = False` and `condition = \\bottom`
+- implication holds (not trivial) => `satisfiable = True` and `condition /= \\bottom`
+- implication doesn't hold and the two terms do not unify,
+indicating that the program configuration can be rewritten further => `satisfiable = False` and `condition` is omitted
+- implication doesn't hold and the two terms unify, indicating that the configuration is stuck => `satisfiable = False` and `condition /= \\bottom`
+
 ## Simplify
 
 ### Request:
