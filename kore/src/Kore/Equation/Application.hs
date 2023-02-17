@@ -314,14 +314,14 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
 
     checkConcreteVariable variable termLike
         | Set.member variable concretes
-        , (not . TermLike.isConstructorLike) termLike =
+          , (not . TermLike.isConstructorLike) termLike =
             [NotConcrete variable termLike]
         | otherwise =
             empty
 
     checkSymbolicVariable variable termLike
         | Set.member variable symbolics
-        , TermLike.isConstructorLike termLike =
+          , TermLike.isConstructorLike termLike =
             [NotSymbolic variable termLike]
         | otherwise =
             empty
