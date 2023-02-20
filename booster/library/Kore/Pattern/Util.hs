@@ -1,3 +1,5 @@
+{-# OPTIONS -fno-warn-unrecognised-pragmas #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
@@ -54,11 +56,13 @@ retractPattern :: TermOrPredicate -> Maybe Pattern
 retractPattern (TermAndPredicate patt) = Just patt
 retractPattern _ = Nothing
 
+{-# HLINT ignore substituteInTerm "Redundant bracket" #-}
 substituteInTerm :: Map Variable Term -> Term -> Term
 substituteInTerm substitution = goSubst
   where
+    targetSet = Map.keysSet substitution
     goSubst t
-        | Set.null (getAttributes t).variables = t
+        | Set.null (targetSet `Set.intersection` (getAttributes t).variables) = t
         | otherwise = case t of
             Var v -> fromMaybe t (Map.lookup v substitution)
             DomainValue{} -> t
