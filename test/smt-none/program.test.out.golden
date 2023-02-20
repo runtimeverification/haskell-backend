@@ -1,0 +1,19 @@
+    <k>
+      .
+    </k>
+  #And
+    {
+      ?T1:Type
+    #Equals
+      ?T2:Type
+    }
+#Or
+    #Not ( {
+      ?T1:Type
+    #Equals
+      ?T2:Type
+    } )
+  #And
+    <k>
+      ?T1:Type = ?T2:Type ~> .
+    </k>
