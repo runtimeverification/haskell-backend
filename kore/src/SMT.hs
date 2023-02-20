@@ -204,7 +204,7 @@ assert = liftSMT . assertSMT
 {-# INLINE assert #-}
 
 -- | Check if the current set of assertions is satisfiable.
-check :: MonadSMT m => m Result
+check :: MonadSMT m => m (Maybe Result)
 check = liftSMT checkSMT
 {-# INLINE check #-}
 
@@ -405,22 +405,22 @@ newtype Prelude = Prelude {getPrelude :: Maybe FilePath}
 
 -- | Solver configuration
 data Config = Config
-    { -- | solver executable file name
-      executable :: !FilePath
-    , -- | default command-line arguments to solver
-      arguments :: ![String]
-    , -- | prelude of definitions to initialize solver
-      prelude :: !Prelude
-    , -- | optional log file name
-      logFile :: !(Maybe FilePath)
-    , -- | query time limit
-      timeOut :: !TimeOut
-    , -- | query retry limit
-      retryLimit :: !RetryLimit
-    , -- | query resource limit
-      rLimit :: !RLimit
-    , -- | reset solver after this number of queries
-      resetInterval :: !ResetInterval
+    { executable :: !FilePath
+    -- ^ solver executable file name
+    , arguments :: ![String]
+    -- ^ default command-line arguments to solver
+    , prelude :: !Prelude
+    -- ^ prelude of definitions to initialize solver
+    , logFile :: !(Maybe FilePath)
+    -- ^ optional log file name
+    , timeOut :: !TimeOut
+    -- ^ query time limit
+    , retryLimit :: !RetryLimit
+    -- ^ query retry limit
+    , rLimit :: !RLimit
+    -- ^ query resource limit
+    , resetInterval :: !ResetInterval
+    -- ^ reset solver after this number of queries
     }
 
 -- | Default configuration using the Z3 solver.
@@ -608,13 +608,15 @@ assertSMT fact =
                 withSolver' solverSetup $ \solver ->
                     SimpleSMT.assert solver fact
 
-checkSMT :: SMT Result
+checkSMT :: SMT (Maybe Result)
 checkSMT =
     SMT $ \case
-        Nothing -> return Unknown
-        Just solverSetup ->
-            traceProf ":solver:check" $
-                withSolver' solverSetup SimpleSMT.check
+        Nothing -> return Nothing
+        Just solverSetup -> do
+            result <-
+                traceProf ":solver:check" $
+                    withSolver' solverSetup SimpleSMT.check
+            return (Just result)
 
 ackCommandSMT :: SExpr -> SMT ()
 ackCommandSMT command =
