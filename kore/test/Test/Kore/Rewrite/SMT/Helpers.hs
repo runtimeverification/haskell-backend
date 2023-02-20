@@ -108,7 +108,7 @@ isSatisfiable ::
     SmtMetadataTools Attribute.Symbol ->
     SmtPrelude ->
     TestTree
-isSatisfiable tests _ = assertSmtTestCase "isSatisfiable" SMT.Sat tests
+isSatisfiable tests _ = assertSmtTestCase "isSatisfiable" (Just SMT.Sat) tests
 
 isSatisfiableWithTools ::
     HasCallStack =>
@@ -119,7 +119,7 @@ isSatisfiableWithTools ::
 isSatisfiableWithTools tests tools prelude =
     assertSmtTestCase
         "isSatisfiable"
-        SMT.Sat
+        (Just SMT.Sat)
         (fmap (\t -> t tools) tests)
         prelude
 
@@ -129,7 +129,7 @@ isNotSatisfiable ::
     SmtMetadataTools Attribute.Symbol ->
     SmtPrelude ->
     TestTree
-isNotSatisfiable tests _ = assertSmtTestCase "isNotSatisfiable" SMT.Unsat tests
+isNotSatisfiable tests _ = assertSmtTestCase "isNotSatisfiable" (Just SMT.Unsat) tests
 
 isNotSatisfiableWithTools ::
     HasCallStack =>
@@ -140,7 +140,7 @@ isNotSatisfiableWithTools ::
 isNotSatisfiableWithTools tests tools prelude =
     assertSmtTestCase
         "isNotSatisfiable"
-        SMT.Unsat
+        (Just SMT.Unsat)
         (fmap (\t -> t tools) tests)
         prelude
 
@@ -169,12 +169,12 @@ isError actions _ prelude =
 getSmtResult ::
     [SMT ()] ->
     SmtPrelude ->
-    IO SMT.Result
+    IO (Maybe SMT.Result)
 getSmtResult
     actions
     SmtPrelude{getSmtPrelude = preludeAction} =
         do
-            let smtResult :: SMT SMT.Result
+            let smtResult :: SMT (Maybe SMT.Result)
                 smtResult = do
                     sequence_ actions
                     SMT.check
@@ -185,7 +185,7 @@ getSmtResult
 
 assertSmtResult ::
     HasCallStack =>
-    SMT.Result ->
+    Maybe (SMT.Result) ->
     [SMT ()] ->
     SmtPrelude ->
     Assertion
@@ -196,7 +196,7 @@ assertSmtResult expected actions prelude = do
 assertSmtTestCase ::
     HasCallStack =>
     String ->
-    SMT.Result ->
+    Maybe SMT.Result ->
     [SMT ()] ->
     SmtPrelude ->
     TestTree
