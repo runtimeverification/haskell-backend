@@ -22,7 +22,7 @@ import Data.Aeson (object, toJSON, (.=))
 import Data.Aeson.Types (Value (..))
 import Data.Conduit.Network (serverSettings)
 import Data.Foldable
-import Data.Maybe (catMaybes, fromMaybe)
+import Data.Maybe (catMaybes, fromMaybe, isJust)
 import Data.Text qualified as Text
 import Network.JSONRPC (
     BatchRequest (BatchRequest, SingleRequest),
@@ -59,8 +59,11 @@ respond ::
     Respond (API 'Req) m (API 'Res)
 respond def@KoreDefinition{} mLlvmLibrary =
     catchingServerErrors . \case
+        Execute req
+            | isJust req._module -> unsupportedField "module"
+            | isJust req.stepTimeout -> unsupportedField "step-timeout"
+            | isJust req.movingAverageStepTimeout -> unsupportedField "moving-average-step-timeout"
         Execute req -> do
-            Log.logDebug "Testing JSON-RPC server."
             -- internalise given constrained term
             let internalised = runExcept $ internalisePattern Nothing def req.state.term
 
@@ -153,6 +156,8 @@ respond def@KoreDefinition{} mLlvmLibrary =
     reportPatternError :: PatternError -> ErrorObj
     reportPatternError pErr =
         ErrorObj "Could not verify KORE pattern" (-32002) $ toJSON pErr
+
+    unsupportedField name = pure $ Left $ ErrorObj ("Unsupported option: " <> name) (-32100) Null
 
 {- | Catches all calls to `error` from the guts of the engine, and
      returns json with the message and location as context.
