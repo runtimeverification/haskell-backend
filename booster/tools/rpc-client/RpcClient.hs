@@ -36,8 +36,8 @@ import System.Exit
 import System.IO
 import System.Process
 
-import Kore.JsonRpc.Base (rpcJsonConfig)
-import Kore.Syntax.Json qualified as Syntax
+import Booster.JsonRpc.Base (rpcJsonConfig)
+import Booster.Syntax.Json qualified as Syntax
 
 import Debug.Trace
 
