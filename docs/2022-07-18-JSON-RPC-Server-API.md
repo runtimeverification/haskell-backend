@@ -91,12 +91,13 @@ If the verification of the `state` pattern fails, the following error is returne
 ### Correct Response:
 
 All correct responses have a result containing a `reason`, with one of the following values:
-* `"reason: "branching"`
-* `"reason: "stuck"`
-* `"reason: "depth-bound"`
-* `"reason: "cut-point-rule"`
-* `"reason: "terminal-rule"`
-* `"reason: "timeout"`
+* `"reason": "branching"`
+* `"reason": "stuck"`
+* `"reason": "depth-bound"`
+* `"reason": "cut-point-rule"`
+* `"reason": "terminal-rule"`
+* `"reason": "timeout"`
+* `"reason": "aborted"`
 
 A field `state` contains the state reached (including optional `predicate` and `substitution`), a field `depth` indicates the execution depth.
 
@@ -119,6 +120,7 @@ A field `state` contains the state reached (including optional `predicate` and `
 The above will be also be the same for:
   * `"reason": "depth-bound"`
   * `"reason": "timeout"`
+  * `"reason": "aborted"`
 
 If `"reason":  "terminal-rule"`, an additional `rule` field indicates which of the `terminal-rule` labels or IDs led to terminating the execution:
 

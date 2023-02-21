@@ -287,6 +287,7 @@
         "Kore/Internal/TermLike/TermLike"
         "Kore/Internal/Variable"
         "Kore/JsonRpc"
+        "Kore/JsonRpc/Base"
         "Kore/Log"
         "Kore/Log/DebugAppliedRewriteRules"
         "Kore/Log/DebugAttemptedRewriteRules"

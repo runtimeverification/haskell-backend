@@ -12,7 +12,7 @@ module Kore.JsonRpc (
 import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.MVar qualified as MVar
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
-import Control.Exception (ErrorCall (..), Exception, mask)
+import Control.Exception (ErrorCall (..), mask)
 import Control.Monad (forever)
 import Control.Monad.Catch (MonadCatch, catch, handle)
 import Control.Monad.Except (runExceptT)
@@ -20,22 +20,13 @@ import Control.Monad.Logger (MonadLoggerIO, askLoggerIO, runLoggingT)
 import Control.Monad.Reader (ask, runReaderT)
 import Control.Monad.STM (atomically)
 import Data.Aeson.Encode.Pretty as Json
-import Data.Aeson.Types (FromJSON (..), ToJSON (..), Value (..))
+import Data.Aeson.Types (ToJSON (..), Value (..))
 import Data.Conduit.Network (serverSettings)
 import Data.IORef (readIORef)
 import Data.InternedText (globalInternedTextCache)
 import Data.Limit (Limit (..))
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
-import Deriving.Aeson (
-    CamelToKebab,
-    ConstructorTagModifier,
-    CustomJSON (..),
-    FieldLabelModifier,
-    OmitNothingFields,
-    StripPrefix,
- )
-import GHC.Generics (Generic)
 import GlobalMain (
     LoadedDefinition (..),
     SerializedDefinition (..),
@@ -54,6 +45,7 @@ import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (pattern PredicateTrue)
 import Kore.Internal.TermLike (TermLike)
 import Kore.Internal.TermLike qualified as TermLike
+import Kore.JsonRpc.Base
 import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcCancelRequest (InfoJsonRpcCancelRequest (..))
@@ -63,7 +55,6 @@ import Kore.Network.JSONRPC (jsonrpcTCPServer)
 import Kore.Parser (parseKoreDefinition)
 import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite (
-    Natural,
     ProgramState,
     extractProgramState,
  )
@@ -77,13 +68,11 @@ import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Rewrite.SMT.Lemma (getSMTLemmas)
 import Kore.Rewrite.Timeout (
     EnableMovingAverage (..),
-    StepTimeout (..),
  )
 import Kore.Simplify.API (evalSimplifier)
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (Simplifier)
 import Kore.Syntax (VariableName)
-import Kore.Syntax.Json (KoreJson)
 import Kore.Syntax.Json qualified as PatternJson
 import Kore.Syntax.Sentence (
     ModuleName,
@@ -96,7 +85,6 @@ import Network.JSONRPC (
     BatchRequest (BatchRequest, SingleRequest),
     BatchResponse (BatchResponse, SingleResponse),
     ErrorObj (..),
-    FromRequest (..),
     JSONRPCT,
     Request (..),
     Respond,
@@ -110,183 +98,6 @@ import Network.JSONRPC (
 import Prelude.Kore
 import Pretty qualified
 import SMT qualified
-
-newtype Depth = Depth Natural
-    deriving stock (Show, Eq)
-    deriving newtype (FromJSON, ToJSON)
-
-data ExecuteRequest = ExecuteRequest
-    { state :: !KoreJson
-    , maxDepth :: !(Maybe Depth)
-    , _module :: !(Maybe ModuleName)
-    , cutPointRules :: !(Maybe [Text])
-    , terminalRules :: !(Maybe [Text])
-    , movingAverageStepTimeout :: !(Maybe Bool)
-    , stepTimeout :: !(Maybe StepTimeout)
-    }
-    deriving stock (Generic, Show, Eq)
-    deriving
-        (FromJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab, StripPrefix "_"]] ExecuteRequest
-
--- newtype StepRequest = StepRequest
---     { state :: KoreJson
---     }
---     deriving stock (Generic, Show, Eq)
---     deriving
---         (FromJSON)
---         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] StepRequest
-
-data ImpliesRequest = ImpliesRequest
-    { antecedent :: !KoreJson
-    , consequent :: !KoreJson
-    , _module :: !(Maybe ModuleName)
-    }
-    deriving stock (Generic, Show, Eq)
-    deriving
-        (FromJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab, StripPrefix "_"]] ImpliesRequest
-
-data SimplifyRequest = SimplifyRequest
-    { state :: KoreJson
-    , _module :: !(Maybe ModuleName)
-    }
-    deriving stock (Generic, Show, Eq)
-    deriving
-        (FromJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab, StripPrefix "_"]] SimplifyRequest
-
-data AddModuleRequest = AddModuleRequest
-    { name :: ModuleName
-    , _module :: Text
-    }
-    deriving stock (Generic, Show, Eq)
-    deriving
-        (FromJSON)
-        via CustomJSON '[FieldLabelModifier '[StripPrefix "_"]] AddModuleRequest
-
-data ReqException = CancelRequest deriving stock (Show)
-
-instance Exception ReqException
-
-instance FromRequest (API 'Req) where
-    parseParams "execute" = Just $ fmap (Execute <$>) parseJSON
-    -- parseParams "step" = Just $ fmap (Step <$>) parseJSON
-    parseParams "implies" = Just $ fmap (Implies <$>) parseJSON
-    parseParams "simplify" = Just $ fmap (Simplify <$>) parseJSON
-    parseParams "add-module" = Just $ fmap (AddModule <$>) parseJSON
-    parseParams "cancel" = Just $ const $ return Cancel
-    parseParams _ = Nothing
-
-data ExecuteState = ExecuteState
-    { term :: KoreJson
-    , substitution :: Maybe KoreJson
-    , predicate :: Maybe KoreJson
-    }
-    deriving stock (Generic, Show, Eq)
-    deriving
-        (ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ExecuteState
-
-data HaltReason
-    = Branching
-    | Stuck
-    | DepthBound
-    | CutPointRule
-    | TerminalRule
-    | Timeout
-    deriving stock (Generic, Show, Eq)
-    deriving
-        (ToJSON)
-        via CustomJSON '[OmitNothingFields, ConstructorTagModifier '[CamelToKebab]] HaltReason
-
-data ExecuteResult = ExecuteResult
-    { reason :: HaltReason
-    , depth :: Depth
-    , state :: ExecuteState
-    , nextStates :: Maybe [ExecuteState]
-    , rule :: Maybe Text
-    }
-    deriving stock (Generic, Show, Eq)
-    deriving
-        (ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ExecuteResult
-
-data Condition = Condition
-    { substitution :: KoreJson
-    , predicate :: KoreJson
-    }
-    deriving stock (Generic, Show, Eq)
-    deriving
-        (ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] Condition
-
-data ImpliesResult = ImpliesResult
-    { implication :: KoreJson
-    , satisfiable :: Bool
-    , condition :: Maybe Condition
-    }
-    deriving stock (Generic, Show, Eq)
-    deriving
-        (ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ImpliesResult
-
-newtype SimplifyResult = SimplifyResult
-    { state :: KoreJson
-    }
-    deriving stock (Generic, Show, Eq)
-    deriving
-        (ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] SimplifyResult
-
-data ReqOrRes = Req | Res
-
-data APIMethods
-    = ExecuteM
-    | ImpliesM
-    | SimplifyM
-    | AddModuleM
-
-type family APIPayload (api :: APIMethods) (r :: ReqOrRes) where
-    APIPayload 'ExecuteM 'Req = ExecuteRequest
-    APIPayload 'ExecuteM 'Res = ExecuteResult
--- APIPayload 'StepM 'Req = StepRequest
--- APIPayload 'StepM 'Res = StepResult
-    APIPayload 'ImpliesM 'Req = ImpliesRequest
-    APIPayload 'ImpliesM 'Res = ImpliesResult
-    APIPayload 'SimplifyM 'Req = SimplifyRequest
-    APIPayload 'SimplifyM 'Res = SimplifyResult
-    APIPayload 'AddModuleM 'Req = AddModuleRequest
-    APIPayload 'AddModuleM 'Res = ()
-
-data API (r :: ReqOrRes) where
-    Execute :: APIPayload 'ExecuteM r -> API r
-    -- Step :: APIPayload 'StepM r -> API r
-    Implies :: APIPayload 'ImpliesM r -> API r
-    Simplify :: APIPayload 'SimplifyM r -> API r
-    AddModule :: APIPayload 'AddModuleM r -> API r
-    Cancel :: API 'Req
-
-deriving stock instance Show (API 'Req)
-deriving stock instance Show (API 'Res)
-deriving stock instance Eq (API 'Req)
-deriving stock instance Eq (API 'Res)
-
-instance ToJSON (API 'Res) where
-    toJSON = \case
-        Execute payload -> toJSON payload
-        -- Step payload -> toJSON payload
-        Implies payload -> toJSON payload
-        Simplify payload -> toJSON payload
-        AddModule payload -> toJSON payload
-
-instance Pretty.Pretty (API 'Req) where
-    pretty = \case
-        Execute _ -> "execute"
-        Implies _ -> "implies"
-        Simplify _ -> "simplify"
-        AddModule _ -> "add-module"
-        Cancel -> "cancel"
 
 respond ::
     forall m.
