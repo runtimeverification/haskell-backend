@@ -24,6 +24,7 @@ import Control.Concurrent (
  )
 import Data.Aeson (
     FromJSON,
+    ToJSON,
  )
 import Prelude.Kore
 import System.Clock (
@@ -44,7 +45,7 @@ newtype StepTimeout = StepTimeout
     { unStepTimeout :: Int
     }
     deriving stock (Eq, Ord, Show)
-    deriving newtype (FromJSON)
+    deriving newtype (FromJSON, ToJSON)
 
 data EnableMovingAverage
     = DisableMovingAverage
