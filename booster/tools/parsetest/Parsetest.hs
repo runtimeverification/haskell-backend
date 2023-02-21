@@ -18,8 +18,8 @@ import System.Directory
 import System.Environment
 import System.FilePath
 
-import Kore.Definition.Util
-import Kore.Syntax.ParsedKore as ParsedKore
+import Booster.Definition.Util
+import Booster.Syntax.ParsedKore as ParsedKore
 
 {- | Tests textual kore parser with given arguments and reports
    internalisation results.

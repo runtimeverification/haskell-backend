@@ -4,6 +4,9 @@
 
 module Main (main) where
 
+import Booster.LLVM.Internal (LlvmCall (..), SomePtr (..))
+import Booster.Trace hiding (eventType)
+import Booster.Trace.TH
 import Control.Exception (catch, throwIO)
 import Control.Monad (forM_, unless, when)
 import Control.Monad.Trans.Class (lift)
@@ -30,9 +33,6 @@ import GHC.IO.Handle.FD (withBinaryFile)
 import GHC.IO.IOMode (IOMode (AppendMode))
 import GHC.RTS.Events qualified as Events
 import GHC.Stack (HasCallStack)
-import Kore.LLVM.Internal (LlvmCall (..), SomePtr (..))
-import Kore.Trace hiding (eventType)
-import Kore.Trace.TH
 import Options.Applicative qualified as Options
 import System.Directory (removeFile)
 import System.FilePath ((<.>))
