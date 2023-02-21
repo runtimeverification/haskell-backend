@@ -752,7 +752,7 @@ sexprToVal expr =
             | Int a <- sexprToVal x -> Int (negate a)
         List [Atom "/", x, y]
             | Int a <- sexprToVal x
-            , Int b <- sexprToVal y ->
+              , Int b <- sexprToVal y ->
                 Real (a % b)
         _ -> Other expr
   where
