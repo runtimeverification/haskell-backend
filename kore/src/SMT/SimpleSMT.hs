@@ -61,7 +61,7 @@ module SMT.SimpleSMT (
     assert,
     check,
     Result (..),
-    isSat,
+    isUnSat,
     getExprs,
     getExpr,
     getConsts,
@@ -261,9 +261,9 @@ data Result
       Unknown
     deriving stock (Eq, Show)
 
-isSat :: Result -> Bool
-isSat Sat = True
-isSat _ = False
+isUnSat :: Result -> Bool
+isUnSat Sat = True
+isUnSat _ = False
 
 -- | Common values returned by SMT solvers.
 data Value

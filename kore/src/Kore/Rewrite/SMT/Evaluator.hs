@@ -171,6 +171,8 @@ decidePredicate onUnknown sideCondition predicates =
             debugEvaluateConditionResult result
             case result of
                 Unsat -> do
+                    return False
+                Sat -> do
                     heuristicResult <- queryWithHeuristic predicates
                     case heuristicResult of
                         Unsat -> return False
@@ -186,7 +188,6 @@ decidePredicate onUnknown sideCondition predicates =
                                     SMT.reinit
                                 _ -> pure ()
                             empty
-                Sat -> empty
                 Unknown -> do
                     limit <- SMT.withSolver SMT.askRetryLimit
                     -- depending on the value of `onUnknown`, this call will either log a warning
@@ -228,7 +229,7 @@ decidePredicate onUnknown sideCondition predicates =
                             preds'
                     traverse_ SMT.assert predicates'
                     SMT.check
-        hoistMaybe (find SimpleSMT.isSat results)
+        hoistMaybe (find SimpleSMT.isUnSat results)
 
     applyHeuristic :: Predicate variable -> LogicT m (Predicate variable)
     applyHeuristic (Predicate.PredicateNot (Predicate.PredicateExists var child)) = do
