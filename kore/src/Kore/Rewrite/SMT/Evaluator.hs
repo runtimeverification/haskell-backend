@@ -16,6 +16,7 @@ module Kore.Rewrite.SMT.Evaluator (
 
 import Control.Error (
     MaybeT,
+    hoistMaybe,
     runMaybeT,
  )
 import Control.Lens qualified as Lens
@@ -27,7 +28,6 @@ import Data.Limit
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
-import Kore.Attribute.Pattern.FreeVariables (freeVariableNames)
 import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
@@ -73,10 +73,13 @@ import Kore.Log.DecidePredicateUnknown (
  )
 import Kore.Rewrite.SMT.Translate
 import Kore.Simplify.Simplify as Simplifier
+import Kore.Substitute (substitute)
 import Kore.TopBottom (
     TopBottom,
  )
 import Log
+import Logic (LogicT)
+import Logic qualified
 import Prelude.Kore
 import Pretty (
     Pretty,
@@ -167,7 +170,22 @@ decidePredicate onUnknown sideCondition predicates =
             result <- query predicates >>= whenUnknown retry
             debugEvaluateConditionResult result
             case result of
-                Unsat -> return False
+                Unsat -> do
+                    heuristicResult <- queryWithHeuristic predicates
+                    case heuristicResult of
+                        Unsat -> return False
+                        Sat -> empty
+                        Unknown -> do
+                            limit <- SMT.withSolver SMT.askRetryLimit
+                            -- depending on the value of `onUnknown`, this call will either log a warning
+                            -- or throw an error
+                            throwDecidePredicateUnknown onUnknown limit predicates
+                            case onUnknown of
+                                WarnDecidePredicateUnknown _ _ ->
+                                    -- the solver may be in an inconsistent state, so we re-initialize
+                                    SMT.reinit
+                                _ -> pure ()
+                            empty
                 Sat -> empty
                 Unknown -> do
                     limit <- SMT.withSolver SMT.askRetryLimit
@@ -197,15 +215,27 @@ decidePredicate onUnknown sideCondition predicates =
                 traverse_ SMT.assert predicates'
                 SMT.check
 
-    applyHeuristic :: Predicate variable -> [Predicate variable]
-    applyHeuristic p@(Predicate.PredicateNot (Predicate.PredicateExists var child)) = do
-        -- freeVar <- getFreeVariables child
-        -- return (substitute freeVar var child)
-        return p
-    applyHeuristic pred' = return pred'
+    queryWithHeuristic :: NonEmpty (Predicate variable) -> MaybeT Simplifier Result
+    queryWithHeuristic preds = do
+        results <-
+            SMT.withSolver . evalTranslator $ do
+                tools <- Simplifier.askMetadataTools
+                Morph.hoist SMT.liftSMT . Logic.observeAllT $ do
+                    preds' <- traverse applyHeuristic preds
+                    predicates' <-
+                        traverse
+                            (lift . translatePredicate sideCondition tools)
+                            preds'
+                    traverse_ SMT.assert predicates'
+                    SMT.check
+        hoistMaybe (find SimpleSMT.isSat results)
 
-    generateAllPossibilities :: NonEmpty (Predicate variable) -> [NonEmpty (Predicate variable)]
-    generateAllPossibilities = traverse applyHeuristic
+    applyHeuristic :: Predicate variable -> LogicT m (Predicate variable)
+    applyHeuristic (Predicate.PredicateNot (Predicate.PredicateExists var child)) = do
+        freeVar <- Logic.scatter $ Predicate.freeElementVariables child
+        let subst = Map.singleton (inject $ variableName freeVar) (TermLike.mkElemVar var)
+        return (substitute subst child)
+    applyHeuristic _ = empty
 
     retry :: MaybeT Simplifier Result
     retry = do

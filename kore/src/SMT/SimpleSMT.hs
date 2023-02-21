@@ -61,6 +61,7 @@ module SMT.SimpleSMT (
     assert,
     check,
     Result (..),
+    isSat,
     getExprs,
     getExpr,
     getConsts,
@@ -259,6 +260,10 @@ data Result
     | -- | The result is inconclusive
       Unknown
     deriving stock (Eq, Show)
+
+isSat :: Result -> Bool
+isSat Sat = True
+isSat _ = False
 
 -- | Common values returned by SMT solvers.
 data Value
@@ -747,7 +752,7 @@ sexprToVal expr =
             | Int a <- sexprToVal x -> Int (negate a)
         List [Atom "/", x, y]
             | Int a <- sexprToVal x
-              , Int b <- sexprToVal y ->
+            , Int b <- sexprToVal y ->
                 Real (a % b)
         _ -> Other expr
   where
