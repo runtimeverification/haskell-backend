@@ -28,14 +28,14 @@ import System.Process
 import Test.Hspec
 import Test.Hspec.Hedgehog
 
-import Kore.Definition.Attributes.Base
-import Kore.Definition.Base
-import Kore.LLVM as LLVM
-import Kore.LLVM.Internal as Internal
-import Kore.Pattern.Base
-import Kore.Syntax.Json.Base qualified as Syntax
-import Kore.Syntax.Json.Externalise (externaliseTerm)
-import Kore.Syntax.Json.Internalise qualified as Syntax
+import Booster.Definition.Attributes.Base
+import Booster.Definition.Base
+import Booster.LLVM as LLVM
+import Booster.LLVM.Internal as Internal
+import Booster.Pattern.Base
+import Booster.Syntax.Json.Base qualified as Syntax
+import Booster.Syntax.Json.Externalise (externaliseTerm)
+import Booster.Syntax.Json.Internalise qualified as Syntax
 
 -- A prerequisite for all tests in this suite is that a fixed K
 -- definition was compiled in LLVM 'c' mode to produce a dynamic

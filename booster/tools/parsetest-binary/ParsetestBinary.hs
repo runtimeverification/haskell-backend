@@ -9,7 +9,7 @@ module Main (
 
 import System.Environment (getArgs)
 
-import Kore.Pattern.Binary
+import Booster.Pattern.Binary
 
 {- | Tests textual kore parser with given arguments and reports
    internalisation results.
