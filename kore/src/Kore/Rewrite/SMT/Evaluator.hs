@@ -309,6 +309,7 @@ declareUninterpreted
             n <- Counter.increment
             logVariableAssignment n boundPat
             let smtName = "<" <> Text.pack (show n) <> ">"
+                origName = Text.pack . show . Pretty.pretty $ boundPat
                 (boundVars, bindings) = unzip $ Map.assocs boundVarsMap
                 cached = SMTDependentAtom{smtName, smtType = sExpr, boundVars}
             _ <-
@@ -318,6 +319,7 @@ declareUninterpreted
                         , inputSorts = smtType <$> bindings
                         , resultSort = sExpr
                         }
+                    origName
             stateSetter Lens.%= Map.insert boundPat cached
             translateSMTDependentAtom boundVarsMap cached
 
@@ -370,9 +372,11 @@ declareVariable ::
 declareVariable t variable = do
     n <- Counter.increment
     let varName = "<" <> Text.pack (show n) <> ">"
-    var <- SMT.declare varName t
+        pat = TermLike.mkElemVar variable
+        origName = Text.pack . show . Pretty.pretty $ pat
+    var <- SMT.declare varName origName t
     field @"freeVars" Lens.%= Map.insert variable var
-    logVariableAssignment n (TermLike.mkElemVar variable)
+    logVariableAssignment n pat
     return var
 
 logVariableAssignment ::

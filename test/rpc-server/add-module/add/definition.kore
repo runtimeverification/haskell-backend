@@ -1,3 +1,5 @@
+[topCellInitializer{}(LblinitGeneratedTopCell{}()), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/jost/work/RV/code/haskell-backend/test/rpc-server/resources/a-to-f/test.k)")]
+
 module BASIC-K
     sort SortK{} []
     sort SortKItem{} []
@@ -5,9 +7,9 @@ endmodule
 []
 module KSEQ
     import BASIC-K []
-    symbol kseq{}(SortKItem{}, SortK{}) : SortK{} [constructor{}(), functional{}(), injective{}()]
-    symbol dotk{}() : SortK{} [constructor{}(), functional{}(), injective{}()]
-    symbol append{}(SortK{}, SortK{}) : SortK{} [function{}(), functional{}()]
+    symbol kseq{}(SortKItem{}, SortK{}) : SortK{} [constructor{}(), functional{}()]
+    symbol dotk{}() : SortK{} [constructor{}(), functional{}()]
+    symbol append{}(SortK{}, SortK{}) : SortK{} [function{}()]
     axiom {R} \implies{R}(
         \and{R}(
             \top{R}(),
@@ -58,4 +60,4 @@ module K
     alias weakAlwaysFinally{A}(A) : A where weakAlwaysFinally{A}(@X:A) := @X:A []
     alias allPathGlobally{A}(A) : A where allPathGlobally{A}(@X:A) := @X:A []
 endmodule
-[]
+[org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(1,1,21,10)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/jost/work/RV/code/haskell-backend/test/rpc-server/resources/a-to-f/test.k)")]

@@ -111,6 +111,7 @@ import Data.Limit
 import Data.Text (
     Text,
  )
+import Data.Text qualified as Text
 import GHC.Generics qualified as GHC
 import Kore.Log.WarnRestartSolver (warnRestartSolver)
 import Log (
@@ -142,6 +143,7 @@ import SMT.SimpleSMT (
     SortDeclaration (..),
     pop,
     push,
+    showSExpr,
  )
 import SMT.SimpleSMT qualified as SimpleSMT
 
@@ -172,13 +174,13 @@ class Monad m => MonadSMT m where
     liftSMT = Trans.lift . liftSMT
 
 -- | Declares a general SExpr to SMT.
-declare :: MonadSMT m => Text -> SExpr -> m SExpr
-declare text = liftSMT . declareSMT text
+declare :: MonadSMT m => Text -> Text -> SExpr -> m SExpr
+declare name origName = liftSMT . declareSMT name origName
 {-# INLINE declare #-}
 
 -- | Declares a function symbol to SMT.
-declareFun :: MonadSMT m => SmtFunctionDeclaration -> m SExpr
-declareFun = liftSMT . declareFunSMT
+declareFun :: MonadSMT m => SmtFunctionDeclaration -> Text -> m SExpr
+declareFun smtFD = liftSMT . declareFunSMT smtFD
 {-# INLINE declareFun #-}
 
 -- | Declares a sort to SMT.
@@ -490,7 +492,7 @@ escapeId name = "|" <> name <> "|"
 -- | Declares a function symbol to SMT, returning ().
 declareFun_ :: MonadSMT m => SmtFunctionDeclaration -> m ()
 declareFun_ declaration =
-    Monad.void $ declareFun declaration
+    Monad.void $ declareFun declaration ""
 
 -- | SMT-LIB @set-info@ command.
 setInfo :: MonadSMT m => Text -> SExpr -> m ()
@@ -543,21 +545,35 @@ instance MonadSMT SMT where
                         when needReset (reinitSMT' solverSetup)
     liftSMT = id
 
-declareSMT :: Text -> SExpr -> SMT SExpr
-declareSMT name typ =
+declareSMT :: Text -> Text -> SExpr -> SMT SExpr
+declareSMT name origName typ =
     SMT $ \case
         Nothing -> return (Atom name)
         Just solverSetup ->
             withSolver' solverSetup $ \solver ->
-                SimpleSMT.declare solver (Atom name) typ
+                SimpleSMT.declare solver (Atom name) comment typ
+  where
+    comment = mkComment origName name
 
-declareFunSMT :: FunctionDeclaration SExpr SExpr -> SMT SExpr
-declareFunSMT declaration@FunctionDeclaration{name} =
+declareFunSMT :: FunctionDeclaration SExpr SExpr -> Text -> SMT SExpr
+declareFunSMT declaration@FunctionDeclaration{name} origName =
     SMT $ \case
         Nothing -> return name
         Just solverSetup ->
             withSolver' solverSetup $ \solver ->
-                SimpleSMT.declareFun solver declaration
+                SimpleSMT.declareFun solver declaration comment
+  where
+    comment = mkComment origName (Text.pack . showSExpr $ name)
+
+mkComment :: Text -> Text -> Maybe SExpr
+mkComment origName name =
+    Atom
+        <$> if Text.null origName
+            then Nothing
+            else
+                Just $
+                    (Text.init . Text.unlines . map (Text.append "; ") . Text.lines) $
+                        origName <> " -> " <> name
 
 declareSortSMT :: SortDeclaration SExpr -> SMT SExpr
 declareSortSMT declaration@SortDeclaration{name} =
@@ -606,7 +622,7 @@ ackCommandSMT command =
         Nothing -> return ()
         Just solverSetup ->
             withSolver' solverSetup $ \solver ->
-                SimpleSMT.ackCommand solver command
+                SimpleSMT.ackCommand solver Nothing command
 
 loadFileSMT :: FilePath -> SMT ()
 loadFileSMT path =
