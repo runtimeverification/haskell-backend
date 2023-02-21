@@ -4,7 +4,7 @@
     haskell-nix.url = "github:input-output-hk/haskell.nix";
     nixpkgs.follows = "haskell-nix/nixpkgs-unstable";
     z3-src = {
-      url = "github:Z3Prover/z3/z3-4.8.15";
+      url = "github:Z3Prover/z3/z3-4.12.1";
       flake = false;
     };
     nixpkgs22_05.url = "nixpkgs/nixos-22.05";
