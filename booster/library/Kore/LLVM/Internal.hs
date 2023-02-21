@@ -15,13 +15,19 @@ module Kore.LLVM.Internal (
     KoreStringPatternAPI (..),
     KoreSymbolAPI (..),
     KoreSortAPI (..),
+    SomePtr (..),
+    somePtr,
+    LlvmCall (..),
+    LlvmVar (..),
 ) where
 
 import Control.Monad (foldM, forM_, void, (>=>))
+import Control.Monad.Catch (MonadCatch, MonadMask, MonadThrow)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Control.Monad.Trans.Reader qualified as Reader
-import Data.ByteString.Char8 (ByteString)
+import Data.Binary (Binary, get, put)
+import Data.ByteString.Char8 (ByteString, pack)
 import Data.ByteString.Char8 qualified as BS
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HM
@@ -34,7 +40,10 @@ import Foreign.Marshal (alloca)
 import Foreign.Storable (peek)
 import Kore.LLVM.TH (dynamicBindings)
 import Kore.Pattern.Base
+import Kore.Pattern.Binary hiding (Block)
 import Kore.Pattern.Util (sortOfTerm)
+import Kore.Trace
+import Kore.Trace qualified as Trace
 import System.Posix.DynamicLinker qualified as Linker
 
 data KorePattern
@@ -88,7 +97,32 @@ data API = API
     }
 
 newtype LLVM a = LLVM (ReaderT API IO a)
-    deriving newtype (Functor, Applicative, Monad, MonadIO)
+    deriving newtype (Functor, Applicative, Monad, MonadIO, MonadThrow, MonadCatch, MonadMask)
+
+newtype SomePtr = SomePtr ByteString
+    deriving newtype (Binary)
+
+somePtr :: Show a => a -> SomePtr
+somePtr ptr = SomePtr $ pack $ show ptr
+
+data LlvmCall = LlvmCall
+    { ret :: Maybe (ByteString, SomePtr)
+    , call :: ByteString
+    , args :: [Either ByteString SomePtr]
+    }
+instance CustomUserEvent LlvmCall where
+    encodeUserEvent (LlvmCall{ret, call, args}) = put ret <> put call <> put args
+    decodeUserEvent = LlvmCall <$> get <*> get <*> get
+    userEventTag _ = "LLVM "
+    eventType _ = LlvmCalls
+
+data LlvmVar = LlvmVar SomePtr Term
+
+instance CustomUserEvent LlvmVar where
+    encodeUserEvent (LlvmVar ptr trm) = put ptr <> encodeMagicHeaderAndVersion (Version 1 1 0) <> encodeTerm trm
+    decodeUserEvent = LlvmVar <$> get <*> decodeTerm' Nothing
+    userEventTag _ = "LLVMV"
+    eventType _ = LlvmCalls
 
 {- | Uses dlopen to load a .so/.dylib C library at runtime. For doucmentation of flags such as `RTL_LAZY`, consult e.g.
      https://man7.org/linux/man-pages/man3/dlopen.3.html
@@ -106,39 +140,55 @@ mkAPI dlib = flip runReaderT dlib $ do
     newCompositePattern <- koreCompositePatternNew
     let newPattern name =
             {-# SCC "LLVM.pattern.new" #-}
-            liftIO $
-                BS.useAsCString name $
-                    newCompositePattern >=> newForeignPtr freePattern
+            BS.useAsCString name $
+                newCompositePattern
+                    >=> newForeignPtr freePattern
+                    >=> traceCall "kore_composite_pattern_new" [Left name] "kore_pattern*"
 
     addArgumentCompositePattern <- koreCompositePatternAddArgument
     let addArgumentPattern parent child =
-            liftIO $
-                {-# SCC "LLVM.pattern.addArgument" #-}
-                do
-                    withForeignPtr parent $ \rawParent -> withForeignPtr child $ addArgumentCompositePattern rawParent
-                    finalizeForeignPtr child
-                    pure parent
+            {-# SCC "LLVM.pattern.addArgument" #-}
+            do
+                withForeignPtr parent $ \rawParent -> withForeignPtr child $ addArgumentCompositePattern rawParent
+                finalizeForeignPtr child
+                Trace.traceIO $
+                    LlvmCall
+                        { call = "kore_composite_pattern_add_argument"
+                        , args = [Right $ somePtr parent, Right $ somePtr child]
+                        , ret = Nothing
+                        }
+                pure parent
 
     newString <- koreStringPatternNewWithLen
     let string = KoreStringPatternAPI $ \name ->
             {-# SCC "LLVM.pattern.string" #-}
-            liftIO $ BS.useAsCStringLen name $ \(rawStr, len) ->
-                newString rawStr (fromIntegral len) >>= newForeignPtr freePattern
+            BS.useAsCStringLen name $ \(rawStr, len) ->
+                newString rawStr (fromIntegral len)
+                    >>= ( newForeignPtr freePattern
+                            >=> traceCall "kore_string_pattern_new_with_len" [Left name] "kore_pattern*"
+                        )
 
     newToken <- korePatternNewTokenWithLen
     let token = KoreTokenPatternAPI $ \name sort ->
             {-# SCC "LLVM.pattern.token" #-}
-            liftIO $ BS.useAsCStringLen name $ \(rawName, len) ->
+            BS.useAsCStringLen name $ \(rawName, len) ->
                 withForeignPtr sort $
-                    newToken rawName (fromIntegral len) >=> newForeignPtr freePattern
+                    newToken rawName (fromIntegral len)
+                        >=> newForeignPtr freePattern
+                        >=> traceCall "kore_pattern_new_token_with_len" [Left name] "kore_pattern*"
 
     compositePatternFromSymbol <- koreCompositePatternFromSymbol
-    let fromSymbol sym = {-# SCC "LLVM.pattern.fromSymbol" #-} liftIO $ withForeignPtr sym $ compositePatternFromSymbol >=> newForeignPtr freePattern
+    let fromSymbol sym =
+            {-# SCC "LLVM.pattern.fromSymbol" #-}
+            withForeignPtr sym $
+                compositePatternFromSymbol
+                    >=> newForeignPtr freePattern
+                    >=> traceCall "kore_composite_pattern_from_symbol" [Right $ somePtr sym] "kore_pattern*"
 
     dumpPattern' <- korePatternDump
     let dumpPattern ptr =
             {-# SCC "LLVM.pattern.dump" #-}
-            liftIO $ withForeignPtr ptr $ \rawPtr -> do
+            withForeignPtr ptr $ \rawPtr -> do
                 strPtr <- dumpPattern' rawPtr
                 str <- C.peekCString strPtr
                 Foreign.free strPtr
@@ -153,15 +203,22 @@ mkAPI dlib = flip runReaderT dlib $ do
             {-# SCC "LLVM.symbol.new" #-}
             liftIO $
                 BS.useAsCString name $
-                    newSymbol' >=> newForeignPtr freeSymbol
+                    newSymbol'
+                        >=> newForeignPtr freeSymbol
+                        >=> traceCall "kore_symbol_new" [Left name] "kore_symbol*"
 
     addArgumentSymbol' <- koreSymbolAddFormalArgument
     let addArgumentSymbol sym sort =
-            liftIO $
-                {-# SCC "LLVM.symbol.addArgument" #-}
-                do
-                    withForeignPtr sym $ \rawSym -> withForeignPtr sort $ addArgumentSymbol' rawSym
-                    pure sym
+            {-# SCC "LLVM.symbol.addArgument" #-}
+            do
+                withForeignPtr sym $ \rawSym -> withForeignPtr sort $ addArgumentSymbol' rawSym
+                Trace.traceIO $
+                    LlvmCall
+                        { call = "kore_symbol_add_formal_argument"
+                        , args = [Right $ somePtr sym, Right $ somePtr sort]
+                        , ret = Nothing
+                        }
+                pure sym
 
     symbolCache <- liftIO $ newIORef mempty
 
@@ -172,17 +229,23 @@ mkAPI dlib = flip runReaderT dlib $ do
     newSort' <- koreCompositeSortNew
     let newSort name =
             {-# SCC "LLVM.sort.new" #-}
-            liftIO $
-                BS.useAsCString name $
-                    newSort' >=> newForeignPtr freeSort
+            BS.useAsCString name $
+                newSort'
+                    >=> newForeignPtr freeSort
+                    >=> traceCall "kore_composite_sort_new" [Left name] "kore_sort*"
 
     addArgumentSort' <- koreCompositeSortAddArgument
     let addArgumentSort parent child =
-            liftIO $
-                {-# SCC "LLVM.sort.addArgument" #-}
-                do
-                    withForeignPtr parent $ \rawParent -> withForeignPtr child $ addArgumentSort' rawParent
-                    pure parent
+            {-# SCC "LLVM.sort.addArgument" #-}
+            do
+                withForeignPtr parent $ \rawParent -> withForeignPtr child $ addArgumentSort' rawParent
+                Trace.traceIO $
+                    LlvmCall
+                        { call = "kore_composite_sort_add_formal_argument"
+                        , args = [Right $ somePtr parent, Right $ somePtr child]
+                        , ret = Nothing
+                        }
+                pure parent
 
     dumpSort' <- koreSortDump
     let dumpSort ptr =
@@ -198,7 +261,16 @@ mkAPI dlib = flip runReaderT dlib $ do
     let sort = KoreSortAPI{new = newSort, addArgument = addArgumentSort, dump = dumpSort, cache = sortCache}
 
     simplifyBool' <- koreSimplifyBool
-    let simplifyBool p = {-# SCC "LLVM.simplifyBool" #-} liftIO $ withForeignPtr p $ fmap (== 1) <$> simplifyBool'
+    let simplifyBool p =
+            {-# SCC "LLVM.simplifyBool" #-}
+            do
+                Trace.traceIO $
+                    LlvmCall
+                        { call = "kore_simplify_bool"
+                        , args = [Right $ somePtr p]
+                        , ret = Nothing
+                        }
+                withForeignPtr p $ fmap (== 1) <$> simplifyBool'
 
     simplify' <- koreSimplify
     let simplify pat srt =
@@ -209,11 +281,21 @@ mkAPI dlib = flip runReaderT dlib $ do
                         alloca $ \lenPtr ->
                             alloca $ \strPtr -> do
                                 simplify' patPtr sortPtr strPtr lenPtr
+                                Trace.traceIO $
+                                    LlvmCall
+                                        { call = "kore_simplify"
+                                        , args = [Right $ somePtr patPtr, Right $ somePtr sortPtr, Right $ somePtr strPtr, Right $ somePtr lenPtr]
+                                        , ret = Nothing
+                                        }
                                 len <- fromIntegral <$> peek lenPtr
                                 cstr <- peek strPtr
                                 BS.packCStringLen (cstr, len)
 
     pure API{patt, symbol, sort, simplifyBool, simplify}
+  where
+    traceCall call args retTy retPtr = do
+        Trace.traceIO $ LlvmCall{ret = Just (retTy, somePtr retPtr), call, args}
+        pure retPtr
 
 ask :: LLVM API
 ask = LLVM Reader.ask

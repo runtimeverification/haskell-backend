@@ -11,7 +11,7 @@ import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Exception (ErrorCall (..), mask)
 import Control.Monad (forever)
-import Control.Monad.Catch (MonadCatch, catch, handle)
+import Control.Monad.Catch (MonadCatch, MonadMask, catch, handle)
 import Control.Monad.IO.Class
 import Control.Monad.Logger.CallStack (LogLevel (LevelError), MonadLoggerIO)
 import Control.Monad.Logger.CallStack qualified as Log
@@ -52,7 +52,7 @@ import Kore.Syntax.Json.Internalise (PatternError, internalisePattern)
 
 respond ::
     forall m.
-    MonadCatch m =>
+    MonadMask m =>
     MonadLoggerIO m =>
     KoreDefinition ->
     Maybe LLVM.API ->

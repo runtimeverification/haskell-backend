@@ -9,20 +9,29 @@ module Server (main) where
 import Control.DeepSeq (force)
 import Control.Exception (evaluate)
 import Control.Monad.Logger (LogLevel (..))
-import Data.List (partition)
+import Data.List (intercalate, partition)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import Options.Applicative
 
+import Control.Monad (forM_)
 import Kore.JsonRpc (runServer)
 import Kore.LLVM.Internal (mkAPI, withDLib)
 import Kore.Syntax.ParsedKore (loadDefinition)
+import Kore.Trace
 import Kore.VersionInfo (VersionInfo (..), versionInfo)
+
+import Text.Casing
+import Text.Read
 
 main :: IO ()
 main = do
     options <- execParser clParser
-    let CLOptions{definitionFile, mainModuleName, port, logLevels, llvmLibraryFile} = options
+    let CLOptions{definitionFile, mainModuleName, port, logLevels, llvmLibraryFile, eventlogEnabledUserEvents} = options
+
+    forM_ eventlogEnabledUserEvents $ \t -> do
+        putStrLn $ "Tracing " <> show t
+        enableCustomUserEvent t
     putStrLn $
         "Loading definition from "
             <> definitionFile
@@ -49,6 +58,7 @@ data CLOptions = CLOptions
     , llvmLibraryFile :: Maybe FilePath
     , port :: Int
     , logLevels :: [LogLevel]
+    , eventlogEnabledUserEvents :: [CustomUserEventType]
     }
     deriving (Show)
 
@@ -106,6 +116,18 @@ clOptionsParser =
                         )
                 )
             )
+        <*> many
+            ( option
+                (eitherReader readEventLogTracing)
+                ( metavar "TRACE"
+                    <> long "trace"
+                    <> short 't'
+                    <> help
+                        ( "Eventlog tracing options: "
+                            <> intercalate ", " [toKebab $ fromHumps $ show t | t <- [minBound .. maxBound] :: [CustomUserEventType]]
+                        )
+                )
+            )
   where
     readLogLevel :: String -> Either String LogLevel
     readLogLevel = \case
@@ -116,6 +138,10 @@ clOptionsParser =
         other
             | other `elem` allowedLogLevels -> Right (LevelOther $ pack other)
             | otherwise -> Left $ other <> ": Unsupported log level"
+
+    readEventLogTracing :: String -> Either String CustomUserEventType
+    readEventLogTracing =
+        (\s -> maybe (Left $ s <> " not supported in eventlog tracing") Right $ readMaybe s) . toPascal . fromKebab
 
 -- custom log levels that can be selected
 allowedLogLevels :: [String]
