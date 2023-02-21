@@ -1,6 +1,6 @@
 {-# LANGUAGE PatternSynonyms #-}
 
-module Kore.Pattern.Binary (Version (..), decodeTerm, decodeTerm', decodePattern, encodeMagicHeaderAndVersion, encodePattern, encodeTerm, test) where
+module Kore.Pattern.Binary (Version (..), Block (..), decodeTerm, decodeTerm', decodePattern, encodeMagicHeaderAndVersion, encodePattern, encodeTerm, test, encodeSingleBlock, decodeSingleBlock) where
 
 import Control.Monad (forM_, unless)
 import Control.Monad.Extra (forM)
@@ -327,6 +327,13 @@ decodePattern mDef = do
             pure $ Pattern trm preds
         _ -> fail "Expecting a term on the top of the stack"
 
+decodeSingleBlock :: Get Block
+decodeSingleBlock = do
+    version <- decodeMagicHeaderAndVersion
+    runDecodeM version Nothing decodeBlock >>= \case
+        [b] -> pure b
+        _ -> fail "Expecting a single block on the top of the stack"
+
 test :: Maybe (FilePath, Text.Text) -> FilePath -> IO Term
 test (Just (definitionFile, mainModuleName)) f = do
     internalModule <-
@@ -433,3 +440,11 @@ encodePattern :: Pattern -> Put
 encodePattern Pattern{term, constraints} = do
     encodeTerm term
     forM_ constraints encodePredicate
+
+encodeSingleBlock :: Block -> Put
+encodeSingleBlock = \case
+    BTerm t -> encodeTerm t
+    BPredicate p -> encodePredicate p
+    BString s -> encodeString s
+    BSort s -> encodeSort s
+    BSymbol name sorts -> encodeSymbol name sorts

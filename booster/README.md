@@ -96,3 +96,21 @@ The `nix-env-selector` extension may prompt for the workspace to be re-loaded. O
 ```json
   "nixEnvSelector.args": "--argstr ghc ghc924"
 ```
+
+## Eventlog tracing
+
+Besides compiling the backend with profiling mode, we can also enable a targeted profiling mode by emitting useful debug events into the eventlog. So far we can emit/trace the following:
+
+* LLVM backend API calls - using `--trace llvm-calls +RTS -l-au` we can collect all the LLVM backend API calls the server performs during execution. Running the obtained eventlog through `eventlog-parser` will produce an `llvm_calls.c` file of the form:
+
+  ```c
+  kore_symbol* sym_m5952705877914568462 = kore_symbol_new("LblnotBool'Unds'");
+  kore_pattern* pat_m7294887483024610198 = kore_composite_pattern_from_symbol(sym_m5952705877914568462);
+  kore_symbol* sym_2859997003983430356 = kore_symbol_new("LblSet'Coln'in");
+  kore_pattern* pat_7796859658648783000 = kore_composite_pattern_from_symbol(sym_2859997003983430356);
+  kore_symbol* sym_m6495506210664726973 = kore_symbol_new("inj");
+  kore_sort* sort_m1174205405547972024 = kore_composite_sort_new("SortId");
+  ...
+  ```
+
+* Timing information in IO - using `--trace timing +RTS -lsu` we can instrument code with `Trace.timeIO "foo" ...` calls which will measure time spent in `...` and attach the label `foo` to this region in the speedscope profile. `eventlog-parser` will produce a JSON file of these calls viewable in the speedscope app.
