@@ -38,6 +38,7 @@
       - Prettyprinter.String
     within:
       - Pretty
+      - Kore.JsonRpc.Base
 
 
 # Add custom hints for this project

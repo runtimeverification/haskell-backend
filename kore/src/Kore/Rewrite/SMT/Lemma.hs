@@ -80,8 +80,8 @@ declareSMTLemmas ::
 declareSMTLemmas tools lemmas = do
     declareSortsSymbols $ smtData tools
     mapM_ declareRule lemmas
-    isUnsatisfiable <- (Unsat ==) <$> SMT.check
-    when isUnsatisfiable errorInconsistentDefinitions
+    isUnsatisfiable <- fmap (Unsat ==) <$> SMT.check
+    when (fromMaybe False isUnsatisfiable) errorInconsistentDefinitions
   where
     declareRule ::
         SentenceAxiom (TermLike VariableName) ->

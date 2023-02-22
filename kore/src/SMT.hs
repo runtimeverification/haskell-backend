@@ -204,7 +204,7 @@ assert = liftSMT . assertSMT
 {-# INLINE assert #-}
 
 -- | Check if the current set of assertions is satisfiable.
-check :: MonadSMT m => m Result
+check :: MonadSMT m => m (Maybe Result)
 check = liftSMT checkSMT
 {-# INLINE check #-}
 
@@ -608,13 +608,15 @@ assertSMT fact =
                 withSolver' solverSetup $ \solver ->
                     SimpleSMT.assert solver fact
 
-checkSMT :: SMT Result
+checkSMT :: SMT (Maybe Result)
 checkSMT =
     SMT $ \case
-        Nothing -> return Unknown
-        Just solverSetup ->
-            traceProf ":solver:check" $
-                withSolver' solverSetup SimpleSMT.check
+        Nothing -> return Nothing
+        Just solverSetup -> do
+            result <-
+                traceProf ":solver:check" $
+                    withSolver' solverSetup SimpleSMT.check
+            return (Just result)
 
 ackCommandSMT :: SExpr -> SMT ()
 ackCommandSMT command =

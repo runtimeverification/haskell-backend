@@ -185,16 +185,15 @@ decidePredicate onUnknown sideCondition predicates =
     whenUnknown _ result = return result
 
     query :: MaybeT Simplifier Result
-    query =
-        SMT.withSolver . evalTranslator $ do
-            tools <- Simplifier.askMetadataTools
-            Morph.hoist SMT.liftSMT $ do
-                predicates' <-
-                    traverse
-                        (translatePredicate sideCondition tools)
-                        predicates
-                traverse_ SMT.assert predicates'
-                SMT.check
+    query = SMT.withSolver . evalTranslator $ do
+        tools <- Simplifier.askMetadataTools
+        Morph.hoist SMT.liftSMT $ do
+            predicates' <-
+                traverse
+                    (translatePredicate sideCondition tools)
+                    predicates
+            traverse_ SMT.assert predicates'
+            SMT.check >>= maybe empty return
 
     retry :: MaybeT Simplifier Result
     retry = do
