@@ -5,8 +5,7 @@ Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
 -}
 module Kore.JsonRpc (
-    runServer,
-    ServerState (..),
+    module Kore.JsonRpc,
 ) where
 
 import Control.Concurrent (forkIO, throwTo)
