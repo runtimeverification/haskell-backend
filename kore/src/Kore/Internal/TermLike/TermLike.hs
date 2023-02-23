@@ -730,7 +730,7 @@ instance (Unparse variable, Ord variable) => Unparse (TermLike variable) where
                                     addSimplifiedRepresentation $
                                         addConstructorLikeRepresentation []
                 addTotalRepresentation
-                    | Attribute.isTotal $ termTotal attrs = ("Fl" :)
+                    | Attribute.isTotal $ termTotal attrs = ("T" :)
                     | otherwise = id
                 addFunctionRepresentation
                     | Attribute.isFunction $ termFunction attrs = ("Fn" :)
