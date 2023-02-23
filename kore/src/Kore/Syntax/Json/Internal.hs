@@ -10,7 +10,7 @@ License     : BSD-3-Clause
 module Kore.Syntax.Json.Internal (
     -- export everything for debugging and testing only
     module Kore.Syntax.Json.Internal,
-    module Kore.Syntax.Json.Types
+    module Kore.Syntax.Json.Types,
 ) where
 
 import Data.Char (isDigit)
@@ -23,6 +23,7 @@ import Data.Text qualified as T
 import Kore.Attribute.Attributes (ParsedPattern)
 import Kore.Parser (embedParsedPattern)
 import Kore.Syntax qualified as Kore
+import Kore.Syntax.Json.Types
 import Kore.Syntax.PatternF (PatternF (..))
 import Kore.Syntax.Variable (
     ElementVariableName (..),
@@ -31,7 +32,6 @@ import Kore.Syntax.Variable (
     Variable (..),
     VariableName (..),
  )
-import Kore.Syntax.Json.Types
 import Prelude.Kore hiding (Left, Right)
 
 ------------------------------------------------------------

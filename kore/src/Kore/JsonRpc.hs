@@ -68,14 +68,14 @@ import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Rewrite.SMT.Lemma (getSMTLemmas)
 import Kore.Rewrite.Timeout (
     EnableMovingAverage (..),
-    StepTimeout(..),
+    StepTimeout (..),
  )
 import Kore.Simplify.API (evalSimplifier)
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (Simplifier)
 import Kore.Syntax (VariableName)
 import Kore.Syntax.Json qualified as PatternJson
-import Kore.Syntax.Module (ModuleName(..))
+import Kore.Syntax.Module (ModuleName (..))
 import Kore.Syntax.Sentence (
     SentenceAxiom,
  )
