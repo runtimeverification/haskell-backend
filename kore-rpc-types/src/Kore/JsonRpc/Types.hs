@@ -28,7 +28,7 @@ import Prettyprinter qualified as Pretty
 
 newtype Depth = Depth {getNat :: Natural}
     deriving stock (Show, Eq)
-    deriving newtype (FromJSON, ToJSON)
+    deriving newtype (FromJSON, ToJSON, Num)
 
 data ExecuteRequest = ExecuteRequest
     { state :: !KoreJson
