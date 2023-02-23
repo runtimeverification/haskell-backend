@@ -2,8 +2,8 @@
 Copyright   : (c) Runtime Verification, 2023
 License     : BSD-3-Clause
 -}
-module Kore.JsonRpc.Base (
-    module Kore.JsonRpc.Base,
+module Kore.JsonRpc.Types (
+    module Kore.JsonRpc.Types,
 ) where
 
 import Control.Exception (Exception)
@@ -19,16 +19,12 @@ import Deriving.Aeson (
     StripPrefix,
  )
 import GHC.Generics (Generic)
-import Kore.Syntax.Json (KoreJson)
+import Kore.Syntax.Json.Types (KoreJson)
 import Network.JSONRPC (
     FromRequest (..),
  )
 import Numeric.Natural
 import Prettyprinter qualified as Pretty
-
-import Kore.Rewrite.Timeout (StepTimeout)
-import Kore.Syntax.Sentence (ModuleName)
-import Prelude.Kore
 
 newtype Depth = Depth {getNat :: Natural}
     deriving stock (Show, Eq)
@@ -37,11 +33,11 @@ newtype Depth = Depth {getNat :: Natural}
 data ExecuteRequest = ExecuteRequest
     { state :: !KoreJson
     , maxDepth :: !(Maybe Depth)
-    , _module :: !(Maybe ModuleName)
+    , _module :: !(Maybe Text)
     , cutPointRules :: !(Maybe [Text])
     , terminalRules :: !(Maybe [Text])
     , movingAverageStepTimeout :: !(Maybe Bool)
-    , stepTimeout :: !(Maybe StepTimeout)
+    , stepTimeout :: !(Maybe Int)
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -51,7 +47,7 @@ data ExecuteRequest = ExecuteRequest
 data ImpliesRequest = ImpliesRequest
     { antecedent :: !KoreJson
     , consequent :: !KoreJson
-    , _module :: !(Maybe ModuleName)
+    , _module :: !(Maybe Text)
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -60,7 +56,7 @@ data ImpliesRequest = ImpliesRequest
 
 data SimplifyRequest = SimplifyRequest
     { state :: KoreJson
-    , _module :: !(Maybe ModuleName)
+    , _module :: !(Maybe Text)
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -68,7 +64,7 @@ data SimplifyRequest = SimplifyRequest
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab, StripPrefix "_"]] SimplifyRequest
 
 data AddModuleRequest = AddModuleRequest
-    { name :: ModuleName
+    { name :: Text
     , _module :: Text
     }
     deriving stock (Generic, Show, Eq)

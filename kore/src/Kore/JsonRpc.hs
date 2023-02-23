@@ -20,6 +20,7 @@ import Control.Monad.Reader (ask, runReaderT)
 import Control.Monad.STM (atomically)
 import Data.Aeson.Encode.Pretty as Json
 import Data.Aeson.Types (ToJSON (..), Value (..))
+import Data.Coerce (coerce)
 import Data.Conduit.Network (serverSettings)
 import Data.IORef (readIORef)
 import Data.InternedText (globalInternedTextCache)
@@ -44,7 +45,7 @@ import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (pattern PredicateTrue)
 import Kore.Internal.TermLike (TermLike)
 import Kore.Internal.TermLike qualified as TermLike
-import Kore.JsonRpc.Base
+import Kore.JsonRpc.Types
 import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcCancelRequest (InfoJsonRpcCancelRequest (..))
@@ -67,14 +68,15 @@ import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Rewrite.SMT.Lemma (getSMTLemmas)
 import Kore.Rewrite.Timeout (
     EnableMovingAverage (..),
+    StepTimeout(..),
  )
 import Kore.Simplify.API (evalSimplifier)
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (Simplifier)
 import Kore.Syntax (VariableName)
 import Kore.Syntax.Json qualified as PatternJson
+import Kore.Syntax.Module (ModuleName(..))
 import Kore.Syntax.Sentence (
-    ModuleName,
     SentenceAxiom,
  )
 import Kore.Validate.DefinitionVerifier (verifyAndIndexDefinitionWithBase)
@@ -113,7 +115,7 @@ respond ::
     Respond (API 'Req) m (API 'Res)
 respond serverState moduleName runSMT =
     withErrHandler . \case
-        Execute ExecuteRequest{state, maxDepth, _module, cutPointRules, terminalRules, movingAverageStepTimeout, stepTimeout} -> withMainModule _module $ \serializedModule lemmas ->
+        Execute ExecuteRequest{state, maxDepth, _module, cutPointRules, terminalRules, movingAverageStepTimeout, stepTimeout} -> withMainModule (coerce _module) $ \serializedModule lemmas ->
             case PatternVerifier.runPatternVerifier (verifierContext serializedModule) $
                 PatternVerifier.verifyStandalonePattern Nothing $
                     PatternJson.toParsedPattern $
@@ -125,7 +127,7 @@ respond serverState moduleName runSMT =
                             ( runSMT (Exec.metadataTools serializedModule) lemmas $
                                 Exec.rpcExec
                                     (maybe Unlimited (\(Depth n) -> Limit n) maxDepth)
-                                    stepTimeout
+                                    (coerce stepTimeout)
                                     ( if fromMaybe False movingAverageStepTimeout
                                         then EnableMovingAverage
                                         else DisableMovingAverage
@@ -245,7 +247,7 @@ respond serverState moduleName runSMT =
                 p = fromMaybe (Pattern.bottomOf sort) $ extractProgramState s
 
         -- Step StepRequest{} -> pure $ Right $ Step $ StepResult []
-        Implies ImpliesRequest{antecedent, consequent, _module} -> withMainModule _module $ \serializedModule lemmas ->
+        Implies ImpliesRequest{antecedent, consequent, _module} -> withMainModule (coerce _module) $ \serializedModule lemmas ->
             case PatternVerifier.runPatternVerifier (verifierContext serializedModule) verify of
                 Left err ->
                     pure $ Left $ couldNotVerify $ toJSON err
@@ -310,7 +312,7 @@ respond serverState moduleName runSMT =
                                  in ImpliesResult jsonTerm False (Just jsonCond)
                             Claim.NotImpliedStuck Nothing ->
                                 ImpliesResult jsonTerm False (Just . renderCond sort $ Condition.bottom)
-        Simplify SimplifyRequest{state, _module} -> withMainModule _module $ \serializedModule lemmas ->
+        Simplify SimplifyRequest{state, _module} -> withMainModule (coerce _module) $ \serializedModule lemmas ->
             case PatternVerifier.runPatternVerifier (verifierContext serializedModule) verifyState of
                 Left err ->
                     pure $ Left $ couldNotVerify $ toJSON err
@@ -353,7 +355,7 @@ respond serverState moduleName runSMT =
                     case verified of
                         Left err -> pure . Left . couldNotVerify $ toJSON err
                         Right (indexedModules', definedNames') ->
-                            case Map.lookup name indexedModules' of
+                            case Map.lookup (coerce name) indexedModules' of
                                 Nothing -> pure . Left . couldNotFindModule $ toJSON name
                                 Just mainModule -> do
                                     let metadataTools = MetadataTools.build mainModule
@@ -384,7 +386,7 @@ respond serverState moduleName runSMT =
                                             pure
                                                 ServerState
                                                     { serializedModules =
-                                                        Map.insert name serializedDefinition serializedModules
+                                                        Map.insert (coerce name) serializedDefinition serializedModules
                                                     , loadedDefinition
                                                     }
 

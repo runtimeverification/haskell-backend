@@ -70,6 +70,8 @@
         (hsPkgs."haskeline" or (errorHandler.buildDepError "haskeline"))
         (hsPkgs."ghc-bignum" or (errorHandler.buildDepError "ghc-bignum"))
         (hsPkgs."json-rpc" or (errorHandler.buildDepError "json-rpc"))
+        (hsPkgs."kore-rpc-types" or (errorHandler.buildDepError
+          "kore-rpc-types"))
         (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
         (hsPkgs."lifted-async" or (errorHandler.buildDepError "lifted-async"))
         (hsPkgs."lifted-base" or (errorHandler.buildDepError "lifted-base"))
@@ -287,7 +289,6 @@
         "Kore/Internal/TermLike/TermLike"
         "Kore/Internal/Variable"
         "Kore/JsonRpc"
-        "Kore/JsonRpc/Base"
         "Kore/Log"
         "Kore/Log/DebugAppliedRewriteRules"
         "Kore/Log/DebugAttemptedRewriteRules"
@@ -721,6 +722,8 @@
           (hsPkgs."haskeline" or (errorHandler.buildDepError "haskeline"))
           (hsPkgs."ghc-bignum" or (errorHandler.buildDepError "ghc-bignum"))
           (hsPkgs."json-rpc" or (errorHandler.buildDepError "json-rpc"))
+          (hsPkgs."kore-rpc-types" or (errorHandler.buildDepError
+            "kore-rpc-types"))
           (hsPkgs."lens" or (errorHandler.buildDepError "lens"))
           (hsPkgs."lifted-async" or (errorHandler.buildDepError "lifted-async"))
           (hsPkgs."lifted-base" or (errorHandler.buildDepError "lifted-base"))
