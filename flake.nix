@@ -232,5 +232,6 @@
 
         z3-overlay
       ];
+      overlayz.z3 = z3-overlay;
     };
 }
