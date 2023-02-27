@@ -11,7 +11,7 @@ module Kore.JsonRpc (
 import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.MVar qualified as MVar
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
-import Control.Exception (SomeException, ErrorCall (..), mask)
+import Control.Exception (ErrorCall (..), SomeException, mask)
 import Control.Monad (forever)
 import Control.Monad.Catch (MonadCatch, catch, handle)
 import Control.Monad.Except (runExceptT)
@@ -407,7 +407,6 @@ respond serverState moduleName runSMT =
 
     couldNotFindModule err = ErrorObj "Could not find module" (-32005) err
 
-
     asText :: Pretty.Pretty a => a -> Value
     asText = String . Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty
 
@@ -441,7 +440,6 @@ respond serverState moduleName runSMT =
                 overloadGraph
                 metadataTools
                 equations
-
 
 serverError :: String -> Value -> ErrorObj
 serverError detail payload =
