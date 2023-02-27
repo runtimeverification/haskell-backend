@@ -16,9 +16,9 @@ import Kore.Equation.Registry (extractEquations)
 import Kore.Error
 import Kore.Internal.Symbol (
     applicationSorts,
-    functional,
     injective,
     toSymbolOrAlias,
+    total,
  )
 import Kore.Internal.TermLike
 import Kore.Rewrite.Axiom.EvaluationStrategy (mkEvaluator)
@@ -57,7 +57,7 @@ superSymbol =
         , symbolAttributes = Default.def
         , symbolSorts = applicationSorts [] Mock.testSort
         }
-        & functional
+        & total
         & injective
 
 superSymbolOrAlias :: SymbolOrAlias

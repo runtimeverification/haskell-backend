@@ -78,9 +78,9 @@ import Kore.Attribute.Pattern.FreeVariables qualified as Attribute
 import Kore.Attribute.Pattern.FreeVariables qualified as Attribute.FreeVariables
 import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Attribute.Pattern.Function qualified as Attribute
-import Kore.Attribute.Pattern.Functional qualified as Attribute
 import Kore.Attribute.Pattern.Simplified qualified as Attribute
 import Kore.Attribute.Pattern.Simplified qualified as Attribute.Simplified
+import Kore.Attribute.Pattern.Total qualified as Attribute
 import Kore.Attribute.Synthetic
 import Kore.Builtin.Encoding qualified as Encoding
 import Kore.Builtin.Endianness.Endianness (
@@ -282,7 +282,7 @@ instance Synthetic Sort (TermLikeF variable) where
             SignednessF signedness -> synthetic signedness
             InjF inj -> synthetic inj
 
-instance Synthetic Attribute.Functional (TermLikeF variable) where
+instance Synthetic Attribute.Total (TermLikeF variable) where
     synthetic =
         \case
             AndF and' -> synthetic and'
@@ -485,7 +485,7 @@ instance From (KeyF child) (TermLikeF variable child) where
 data TermAttributes variable = TermAttributes
     { termSort :: !Sort
     , termFreeVariables :: !(Attribute.FreeVariables variable)
-    , termFunctional :: !Attribute.Functional
+    , termTotal :: !Attribute.Total
     , termFunction :: !Attribute.Function
     , termDefined :: !Attribute.Defined
     , termCreated :: !Attribute.Created
@@ -505,7 +505,7 @@ instance (Debug variable, Diff variable) => Diff (TermAttributes variable)
 instance
     ( Synthetic Sort base
     , Synthetic (Attribute.FreeVariables variable) base
-    , Synthetic Attribute.Functional base
+    , Synthetic Attribute.Total base
     , Synthetic Attribute.Function base
     , Synthetic Attribute.Defined base
     , Synthetic Attribute.Simplified base
@@ -517,7 +517,7 @@ instance
         TermAttributes
             { termSort = synthetic (termSort <$> base)
             , termFreeVariables = synthetic (termFreeVariables <$> base)
-            , termFunctional = synthetic (termFunctional <$> base)
+            , termTotal = synthetic (termTotal <$> base)
             , termFunction = synthetic (termFunction <$> base)
             , termDefined = synthetic (termDefined <$> base)
             , termCreated = synthetic (termCreated <$> base)
@@ -724,13 +724,13 @@ instance (Unparse variable, Ord variable) => Unparse (TermLike variable) where
                             " */"
                   where
                     representation =
-                        addFunctionalRepresentation $
+                        addTotalRepresentation $
                             addFunctionRepresentation $
                                 addDefinedRepresentation $
                                     addSimplifiedRepresentation $
                                         addConstructorLikeRepresentation []
-                addFunctionalRepresentation
-                    | Attribute.isFunctional $ termFunctional attrs = ("Fl" :)
+                addTotalRepresentation
+                    | Attribute.isTotal $ termTotal attrs = ("Fl" :)
                     | otherwise = id
                 addFunctionRepresentation
                     | Attribute.isFunction $ termFunction attrs = ("Fn" :)
@@ -962,7 +962,7 @@ fromKeyAttributes attrs =
     TermAttributes
         { termSort = Attribute.keySort attrs
         , termFreeVariables = mempty
-        , termFunctional = Attribute.Functional True
+        , termTotal = Attribute.Total True
         , termFunction = Attribute.Function True
         , termDefined = Attribute.Defined True
         , termSimplified = Attribute.fullySimplified
@@ -974,7 +974,7 @@ fromKeyAttributes attrs =
 toKeyAttributes :: TermAttributes variable -> Maybe KeyAttributes
 toKeyAttributes attrs@(TermAttributes _ _ _ _ _ _ _ _)
     | Attribute.nullFreeVariables termFreeVariables
-      , Attribute.isFunctional termFunctional
+      , Attribute.isTotal termTotal
       , Attribute.isFunction termFunction
       , Attribute.isDefined termDefined
       , Attribute.isSimplifiedAnyCondition termSimplified
@@ -985,7 +985,7 @@ toKeyAttributes attrs@(TermAttributes _ _ _ _ _ _ _ _)
     TermAttributes
         { termSort
         , termFreeVariables
-        , termFunctional
+        , termTotal
         , termFunction
         , termDefined
         , termConstructorLike

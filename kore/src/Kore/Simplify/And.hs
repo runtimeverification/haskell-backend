@@ -77,7 +77,7 @@ This means that a bottom component anywhere makes the result bottom, while
 top can always be ignored.
 When we 'and' two terms:
 by Proposition 5.24 from (1),
-    x and functional-pattern = functional-pattern and [x=phi]
+    x and total-pattern = total-pattern and [x=phi]
 We can generalize that to:
     x and function-pattern
         = function-pattern and ceil(function-pattern) and [x=phi]

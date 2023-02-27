@@ -299,8 +299,8 @@ translatePattern tools sideCondition translateTerm sort pat =
             TermLike.InternalBoolF (Const InternalBool{internalBoolValue}) ->
                 return $ SMT.bool internalBoolValue
             TermLike.NotF Not{notChild} ->
-                -- \not is equivalent to BOOL.not for functional patterns.
-                -- The following is safe because non-functional patterns
+                -- \not is equivalent to BOOL.not for total patterns.
+                -- The following is safe because non-total patterns
                 -- will fail to translate.
                 SMT.not <$> translateBool notChild
             TermLike.ApplySymbolF app ->
@@ -325,8 +325,8 @@ translatePattern tools sideCondition translateTerm sort pat =
             translateInterpretedApplication
                 <|> translateUninterpreted'
           where
-            guardLocalFunctionalPattern
-                | isFunctionalPattern original = return ()
+            guardLocalTotalPattern
+                | isTotalPattern original = return ()
                 | otherwise = do
                     TranslatorEnv{assumeDefined} <- ask
                     Monad.guard (assumeDefined && isFunctionPattern original)
@@ -344,7 +344,7 @@ translatePattern tools sideCondition translateTerm sort pat =
                 warnSymbolSMTRepresentation applicationSymbolOrAlias
                     >> empty
             translateUninterpreted' = do
-                guardLocalFunctionalPattern
+                guardLocalTotalPattern
                 sort' <- maybeToTranslator maybeSort
                 translateUninterpreted translateTerm sort' original
 

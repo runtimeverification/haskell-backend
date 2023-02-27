@@ -35,7 +35,7 @@ symbolAttributeGen :: Gen Attribute.Symbol
 symbolAttributeGen =
     Attribute.Symbol
         <$> functionAttributeGen
-        <*> functionalAttributeGen
+        <*> totalAttributeGen
         <*> constructorAttributeGen
         <*> injectiveAttributeGen
         <*> sortInjectionAttributeGen
@@ -52,8 +52,8 @@ symbolAttributeGen =
 functionAttributeGen :: Gen Attribute.Function
 functionAttributeGen = Attribute.Function <$> Gen.bool
 
-functionalAttributeGen :: Gen Attribute.Functional
-functionalAttributeGen = Attribute.Functional <$> Gen.bool
+totalAttributeGen :: Gen Attribute.Total
+totalAttributeGen = Attribute.Total <$> Gen.bool
 
 constructorAttributeGen :: Gen Attribute.Constructor
 constructorAttributeGen = Attribute.Constructor <$> Gen.bool

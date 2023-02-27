@@ -16,8 +16,8 @@ import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Pattern.Function
-import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Pattern.Simplified
+import Kore.Attribute.Pattern.Total
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
@@ -68,8 +68,8 @@ instance Synthetic Function (Const InternalString) where
     synthetic = alwaysFunction
     {-# INLINE synthetic #-}
 
-instance Synthetic Functional (Const InternalString) where
-    synthetic = alwaysFunctional
+instance Synthetic Total (Const InternalString) where
+    synthetic = alwaysTotal
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified (Const InternalString) where

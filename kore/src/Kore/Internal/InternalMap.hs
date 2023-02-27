@@ -23,8 +23,8 @@ import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Pattern.Function
-import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Pattern.Simplified
+import Kore.Attribute.Pattern.Total
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Internal.NormalizedAc
@@ -118,9 +118,9 @@ instance Synthetic Function (InternalMap key) where
     synthetic = fold
     {-# INLINE synthetic #-}
 
-instance Synthetic Functional (InternalMap key) where
+instance Synthetic Total (InternalMap key) where
     synthetic InternalAc{builtinAcChild = NormalizedMap builtinMapChild} =
-        normalizedAcFunctional builtinMapChild
+        normalizedAcTotal builtinMapChild
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (InternalMap key) where

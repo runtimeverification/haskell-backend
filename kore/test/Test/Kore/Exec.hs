@@ -33,11 +33,11 @@ import Data.Text (
  )
 import Kore.Attribute.Constructor
 import Kore.Attribute.Function
-import Kore.Attribute.Functional
 import Kore.Attribute.Hook
 import Kore.Attribute.Priority qualified as Attribute.Axiom
 import Kore.Attribute.Simplification
 import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Attribute.Total
 import Kore.Builtin qualified as Builtin
 import Kore.Builtin.Int qualified as Int
 import Kore.Equation.Equation (
@@ -611,14 +611,14 @@ test_checkFunctions =
             , symbolParams = []
             }
     -- Note: symbol attributes should only be
-    -- function or functional, it should not be a constructor.
+    -- function or total, it should not be a constructor.
     mySymbDecl :: Verified.SentenceSymbol
     mySymbDecl =
         SentenceSymbol
             { sentenceSymbolSymbol = mySymbol
             , sentenceSymbolSorts = []
             , sentenceSymbolResultSort = mySort
-            , sentenceSymbolAttributes = Attributes [functionalAttribute]
+            , sentenceSymbolAttributes = Attributes [totalAttribute]
             }
     -- Note: myF is functional but takes no arguments
     myF ::
@@ -631,7 +631,7 @@ test_checkFunctions =
                 { symbolConstructor = mySymbolName
                 , symbolParams = []
                 , symbolSorts = applicationSorts [] mySort
-                , symbolAttributes = Mock.functionalAttributes
+                , symbolAttributes = Mock.totalAttributes
                 }
             []
     mySentenceAxiom name pr =
@@ -948,13 +948,13 @@ mySortDecl =
         , sentenceSortAttributes = Attributes []
         }
 
--- | symbol name{}() : MySort{} [functional{}(), constructor{}()]
+-- | symbol name{}() : MySort{} [total{}(), constructor{}()]
 constructorDecl :: Text -> Verified.SentenceSymbol
 constructorDecl name =
     (mkSymbol_ (testId name) [] mySort)
         { sentenceSymbolAttributes =
             Attributes
-                [ functionalAttribute
+                [ totalAttribute
                 , constructorAttribute
                 ]
         }
@@ -971,7 +971,7 @@ aliasDecl name term =
           \equals{MySort{}, R}(
               V:MySort{},
               a{}()))
-  [functional{}()]
+  [total{}()]
 -}
 functionalAxiom :: Text -> Verified.Sentence
 functionalAxiom name =
@@ -987,7 +987,7 @@ functionalAxiom name =
                 )
             )
         )
-            { sentenceAxiomAttributes = Attributes [functionalAttribute]
+            { sentenceAxiomAttributes = Attributes [totalAttribute]
             }
   where
     v = mkElementVariable (testId "V") mySort
@@ -1084,7 +1084,7 @@ applyToNoArgs sort name =
         Symbol
             { symbolConstructor = testId name
             , symbolParams = []
-            , symbolAttributes = Mock.constructorFunctionalAttributes
+            , symbolAttributes = Mock.constructorTotalAttributes
             , symbolSorts = applicationSorts [] sort
             }
         []
@@ -1182,7 +1182,7 @@ test_execGetExitCode =
     getExitCodeDecl =
         (mkSymbol_ getExitCodeId [myIntSort] myIntSort)
             { sentenceSymbolAttributes =
-                Attributes [functionAttribute, functionalAttribute]
+                Attributes [functionAttribute, totalAttribute]
             }
 
     mockGetExitCodeAxiom =
@@ -1198,7 +1198,7 @@ test_execGetExitCode =
                 , symbolParams = []
                 , symbolAttributes =
                     Attribute.defaultSymbolAttributes
-                        { Attribute.functional = Functional True
+                        { Attribute.total = Total True
                         , Attribute.function = Function True
                         }
                 , symbolSorts = applicationSorts [myIntSort] myIntSort

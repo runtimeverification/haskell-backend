@@ -1,10 +1,10 @@
 module Test.Kore.IndexedModule.MockMetadataTools (
     makeMetadataTools,
-    constructorFunctionalAttributes,
+    constructorTotalAttributes,
     constructorAttributes,
     defaultAttributes,
     functionAttributes,
-    functionalAttributes,
+    totalAttributes,
     injectiveAttributes,
     sortInjectionAttributes,
 ) where
@@ -13,7 +13,6 @@ import Data.Map.Strict qualified as Map
 import GHC.Generics qualified as GHC
 import Kore.Attribute.Constructor
 import Kore.Attribute.Function
-import Kore.Attribute.Functional
 import Kore.Attribute.Injective
 import Kore.Attribute.Sort qualified as Attribute
 import Kore.Attribute.Sort.Constructors qualified as Attribute (
@@ -103,8 +102,8 @@ caseBasedFunction cases arg =
 functionAttributes :: StepperAttributes
 functionAttributes = defaultAttributes{function = Function True}
 
-functionalAttributes :: StepperAttributes
-functionalAttributes = defaultAttributes{functional = Functional True}
+totalAttributes :: StepperAttributes
+totalAttributes = defaultAttributes{total = Total True}
 
 constructorAttributes :: StepperAttributes
 constructorAttributes =
@@ -112,9 +111,9 @@ constructorAttributes =
         { constructor = Constructor True
         }
 
-constructorFunctionalAttributes :: StepperAttributes
-constructorFunctionalAttributes =
-    constructorAttributes{functional = Functional True}
+constructorTotalAttributes :: StepperAttributes
+constructorTotalAttributes =
+    constructorAttributes{total = Total True}
 
 injectiveAttributes :: StepperAttributes
 injectiveAttributes = defaultAttributes{injective = Injective True}
