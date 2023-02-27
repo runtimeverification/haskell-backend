@@ -248,7 +248,7 @@ constructorAxiom sortName constructors =
             Symbol
                 { symbolConstructor = testId constructorName
                 , symbolParams = []
-                , symbolAttributes = Mock.constructorFunctionalAttributes
+                , symbolAttributes = Mock.constructorTotalAttributes
                 , symbolSorts =
                     applicationSorts (map makeSort argumentSorts) sort
                 }

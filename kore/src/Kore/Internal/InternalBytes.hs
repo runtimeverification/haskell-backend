@@ -15,7 +15,7 @@ import Generics.SOP qualified as SOP
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Pattern.Function
-import Kore.Attribute.Pattern.Functional
+import Kore.Attribute.Pattern.Total
 import Kore.Attribute.Synthetic
 import Kore.Builtin.Encoding qualified as Encoding
 import Kore.Debug
@@ -64,6 +64,6 @@ instance Synthetic Function (Const InternalBytes) where
     synthetic = alwaysFunction
     {-# INLINE synthetic #-}
 
-instance Synthetic Functional (Const InternalBytes) where
-    synthetic = alwaysFunctional
+instance Synthetic Total (Const InternalBytes) where
+    synthetic = alwaysTotal
     {-# INLINE synthetic #-}

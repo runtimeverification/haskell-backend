@@ -24,8 +24,8 @@ import Kore.Attribute.Pattern.FreeVariables hiding (
     toList,
  )
 import Kore.Attribute.Pattern.Function
-import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Pattern.Simplified
+import Kore.Attribute.Pattern.Total
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Internal.NormalizedAc
@@ -130,10 +130,10 @@ instance Synthetic Function (InternalAc key NormalizedSet) where
     synthetic = fold
     {-# INLINE synthetic #-}
 
--- | A 'Builtin' pattern is 'Functional' if its subterms are 'Functional'.
-instance Synthetic Functional (InternalAc key NormalizedSet) where
+-- | A 'Builtin' pattern is 'Total' if its subterms are 'Total'.
+instance Synthetic Total (InternalAc key NormalizedSet) where
     synthetic InternalAc{builtinAcChild = NormalizedSet builtinSetChild} =
-        normalizedAcFunctional builtinSetChild
+        normalizedAcTotal builtinSetChild
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified (InternalAc key NormalizedSet) where

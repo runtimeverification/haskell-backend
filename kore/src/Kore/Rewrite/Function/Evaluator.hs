@@ -103,7 +103,7 @@ evaluateApplication
                     & maybeT (unevaluated Nothing) return
                     & lift
             for_ canMemoize (recordOrPattern results)
-            let unexpectedBottomResult = Symbol.isFunctional symbol && isBottom results
+            let unexpectedBottomResult = Symbol.isTotal symbol && isBottom results
             when unexpectedBottomResult $
                 lift $ errorBottomTotalFunction termLike
             return results

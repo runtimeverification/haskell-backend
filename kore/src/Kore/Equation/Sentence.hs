@@ -16,11 +16,11 @@ import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Axiom.Constructor (
     Constructor (..),
  )
-import Kore.Attribute.Functional (
-    Functional (..),
- )
 import Kore.Attribute.Subsort (
     Subsorts (..),
+ )
+import Kore.Attribute.Total (
+    Total (..),
  )
 import Kore.Equation.Equation
 import Kore.Internal.Predicate (
@@ -57,7 +57,7 @@ data MatchEquationError variable
     | ArgumentError !(NotPredicate variable)
     | AntiLeftError !(NotPredicate variable)
     | EnsuresError !(NotPredicate variable)
-    | FunctionalAxiom
+    | TotalAxiom
     | ConstructorAxiom
     | SubsortAxiom
     deriving stock (GHC.Generic)
@@ -94,7 +94,7 @@ instance InternalVariable variable => Pretty (MatchEquationError variable) where
             , pretty notPred
             , "This is a frontend bug. Please report this error at https://github.com/runtimeverification/k/issues."
             ]
-    pretty FunctionalAxiom = "The term is a functional axiom."
+    pretty TotalAxiom = "The term is a total axiom."
     pretty ConstructorAxiom = "The term is a constructor axiom."
     pretty SubsortAxiom = "The term is a subsort axiom."
 
@@ -105,13 +105,13 @@ matchEquation ::
     TermLike variable ->
     Either (MatchEquationError variable) (Equation variable)
 matchEquation attributes termLike
-    | isFunctionalAxiom = Left FunctionalAxiom
+    | isTotalAxiom = Left TotalAxiom
     | isConstructorAxiom = Left ConstructorAxiom
     | isSubsortAxiom = Left SubsortAxiom
     | TermLike.Forall_ _ _ child <- termLike = matchEquation attributes child
     | otherwise = match termLike >>= removeRedundantEnsures
   where
-    isFunctionalAxiom = (isDeclaredFunctional . Attribute.functional) attributes
+    isTotalAxiom = (isDeclaredTotal . Attribute.total) attributes
     isConstructorAxiom = (isConstructor . Attribute.constructor) attributes
     isSubsortAxiom = (not . null . getSubsorts . Attribute.subsorts) attributes
 

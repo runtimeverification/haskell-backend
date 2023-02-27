@@ -103,7 +103,7 @@ import Kore.Internal.Symbol (
     Symbol,
     isConstructor,
     isFunction,
-    isFunctional,
+    isTotal,
  )
 import Kore.Internal.TermLike (
     Application,
@@ -737,7 +737,7 @@ assumeDefined =
                     result2 = assumeDefinedWorker child2
                  in asSet term' <> result1 <> result2
             TermLike.App_ symbol children ->
-                checkFunctional symbol term'
+                checkTotal symbol term'
                     <> foldMap assumeDefinedWorker children
             TermLike.Ceil_ _ _ child ->
                 asSet term' <> assumeDefinedWorker child
@@ -773,8 +773,8 @@ assumeDefined =
     asSet newTerm
         | isDefinedInternal newTerm = Defined HashSet.empty
         | otherwise = Defined $ HashSet.singleton newTerm
-    checkFunctional symbol newTerm
-        | isFunctional symbol = Defined HashSet.empty
+    checkTotal symbol newTerm
+        | isTotal symbol = Defined HashSet.empty
         | otherwise = asSet newTerm
 
     getDefinedElementsOfAc ::
@@ -806,7 +806,7 @@ isDefined ::
     Bool
 isDefined sideCondition@SideCondition{definedTerms} term =
     isDefinedInternal term
-        || isFunctionalSymbol term
+        || isTotalSymbol term
         || HashSet.member term definedTerms
         || isDefinedAc
   where
@@ -830,10 +830,10 @@ isDefined sideCondition@SideCondition{definedTerms} term =
         | null subset = False
         | otherwise = all (`HashSet.member` set) subset
 
-    isFunctionalSymbol (App_ symbol children)
-        | isFunctional symbol =
+    isTotalSymbol (App_ symbol children)
+        | isTotal symbol =
             all (isDefined sideCondition) children
-    isFunctionalSymbol _ = False
+    isTotalSymbol _ = False
 
     isSymbolicSingleton ::
         AcWrapper normalized =>

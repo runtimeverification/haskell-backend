@@ -16,9 +16,9 @@ module Kore.Attribute.Symbol (
     Function (..),
     functionAttribute,
 
-    -- * Functional symbols
-    Functional (..),
-    functionalAttribute,
+    -- * Total symbols
+    Total (..),
+    totalAttribute,
 
     -- * Constructor symbols
     Constructor (..),
@@ -64,9 +64,9 @@ module Kore.Attribute.Symbol (
 
     -- * Derived attributes
     isConstructorLike,
-    isFunctional,
-    isFunction,
     isTotal,
+    isFunction,
+    isNotBottom,
     isInjective,
 ) where
 
@@ -80,7 +80,6 @@ import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Constructor
 import Kore.Attribute.Function
-import Kore.Attribute.Functional
 import Kore.Attribute.Hook
 import Kore.Attribute.Injective
 import Kore.Attribute.Parser (
@@ -96,6 +95,7 @@ import Kore.Attribute.Symbol.Klabel
 import Kore.Attribute.Symbol.Memo
 import Kore.Attribute.Symbol.NoEvaluators
 import Kore.Attribute.Symbol.SymbolKywd
+import Kore.Attribute.Total
 import Kore.Debug
 import Prelude.Kore
 
@@ -109,8 +109,8 @@ view the effective attributes, use the functions defined in this module.
 data Symbol = Symbol
     { -- | Whether a symbol represents a function
       function :: !Function
-    , -- | Whether a symbol is functional
-      functional :: !Functional
+    , -- | Whether a symbol is total
+      total :: !Total
     , -- | Whether a symbol represents a constructor
       constructor :: !Constructor
     , -- | Whether a symbol represents an injective function
@@ -142,7 +142,7 @@ instance Diff Symbol
 instance ParseAttributes Symbol where
     parseAttribute attr =
         typed @Function (parseAttribute attr)
-            >=> typed @Functional (parseAttribute attr)
+            >=> typed @Total (parseAttribute attr)
             >=> typed @Constructor (parseAttribute attr)
             >=> typed @SortInjection (parseAttribute attr)
             >=> typed @Injective (parseAttribute attr)
@@ -161,7 +161,7 @@ instance From Symbol Attributes where
         mconcat
             . sequence
                 [ from . function
-                , from . functional
+                , from . total
                 , from . constructor
                 , from . injective
                 , from . sortInjection
@@ -182,7 +182,7 @@ defaultSymbolAttributes :: Symbol
 defaultSymbolAttributes =
     Symbol
         { function = def
-        , functional = def
+        , total = def
         , constructor = def
         , injective = def
         , sortInjection = def
@@ -211,36 +211,36 @@ isConstructorLike = do
 {- | Is the symbol a function?
 
 A symbol is a function if it is given the @function@ attribute or if it is
-functional.
+total.
 
-See also: 'functionAttribute', 'isFunctional'
+See also: 'functionAttribute', 'isTotal'
 -}
 isFunction :: StepperAttributes -> Bool
 isFunction = do
     Function isFunction' <- Lens.view typed
-    isFunctional' <- isFunctional
-    return (isFunction' || isFunctional')
+    isTotal' <- isTotal
+    return (isFunction' || isTotal')
 
-{- | Is the symbol functional?
+{- | Is the symbol total?
 
-A symbol is functional if it is given the @functional@ attribute or the
+A symbol is total if it is given the @total@ attribute or the
 @sortInjection@ attribute.
 
-See also: 'functionalAttribute', 'sortInjectionAttribute'
+See also: 'totalAttribute', 'sortInjectionAttribute'
 -}
-isFunctional :: StepperAttributes -> Bool
-isFunctional = do
-    Functional isFunctional' <- functional
-    SortInjection isSortInjection' <- sortInjection
-    return (isFunctional' || isSortInjection')
-
--- | Is a symbol total (non-@\\bottom@)?
 isTotal :: StepperAttributes -> Bool
 isTotal = do
-    isFunctional' <- isFunctional
+    Total total' <- total
+    SortInjection isSortInjection' <- sortInjection
+    return (total' || isSortInjection')
+
+-- | Is a symbol not bottom (non-@\\bottom@)?
+isNotBottom :: StepperAttributes -> Bool
+isNotBottom = do
+    isTotal' <- isTotal
     -- TODO (thomas.tuegel): Constructors are not total.
     Constructor isConstructor' <- Lens.view typed
-    return (isFunctional' || isConstructor')
+    return (isTotal' || isConstructor')
 
 {- | Is the symbol injective?
 

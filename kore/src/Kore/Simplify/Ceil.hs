@@ -20,7 +20,7 @@ import Control.Monad.Reader (
 import Control.Monad.Reader qualified as Reader
 import Data.Functor.Foldable qualified as Recursive
 import Kore.Attribute.Symbol qualified as Attribute.Symbol (
-    isTotal,
+    isNotBottom,
  )
 import Kore.Attribute.Synthetic (
     synthesize,
@@ -181,7 +181,7 @@ newApplicationCeilSimplifier = CeilSimplifier $ \input ->
     case ceilChild input of
         App_ patternHead children
             | let headAttributes = symbolAttributes patternHead
-              , Attribute.Symbol.isTotal headAttributes -> do
+              , Attribute.Symbol.isNotBottom headAttributes -> do
                 return (NormalForm.fromPredicates $ fromCeil_ <$> children)
         _ -> empty
 
