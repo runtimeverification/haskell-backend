@@ -548,7 +548,7 @@ srv serverState moduleName Log.LoggerEnv{logAction} runSMT = do
         mask $ \restore -> do
             a <- before
             (restore (thing a) `catch` \(_ :: ReqException) -> onError cancelError a)
-                `catch` \(err :: SomeException) -> print err >> onError (serverError "crashed" $ toJSON $ Map.singleton ("message" :: Text) $ show err) a
+                `catch` \(err :: SomeException) -> print err >> onError (serverError "crashed" $ toJSON $ show err) a
 
     spawnWorker reqQueue = do
         rpcSession <- ask
