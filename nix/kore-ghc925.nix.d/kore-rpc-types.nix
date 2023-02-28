@@ -1,7 +1,7 @@
 { system, compiler, flags, pkgs, hsPkgs, pkgconfPkgs, errorHandler, config, ...
 }:
 {
-  flags = { threaded = true; };
+  flags = { };
   package = {
     specVersion = "2.2";
     identifier = {
