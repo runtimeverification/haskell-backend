@@ -313,7 +313,7 @@
         "Kore/Log/ErrorRewriteLoop"
         "Kore/Log/ErrorRewritesInstantiation"
         "Kore/Log/ErrorVerify"
-        "Kore/Log/InfoAttemptUnification"
+        "Kore/Log/DebugAttemptUnification"
         "Kore/Log/JsonRpc"
         "Kore/Log/InfoExecBreadth"
         "Kore/Log/InfoExecDepth"
