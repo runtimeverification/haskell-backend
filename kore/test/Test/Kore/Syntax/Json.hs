@@ -119,7 +119,6 @@ genIdChar =
         , (1, Gen.element "-'")
         ]
 
-
 genStringLiteral :: Gen Text
 genStringLiteral =
     fmap T.concat $
