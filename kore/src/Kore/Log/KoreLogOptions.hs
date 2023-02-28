@@ -165,7 +165,7 @@ data KoreLogType
       LogStdErr
     | -- | Log to specified file when '--log <filename>' is passed.
       LogFileText FilePath
-    | LogSomeAction (forall m. LogAction m Text)
+    | LogSomeAction (forall m. MonadIO m => LogAction m Text)
     
 instance Eq KoreLogType where
     LogStdErr == LogStdErr = True
