@@ -110,8 +110,8 @@ import Kore.Log.ErrorRewritesInstantiation (
 import Kore.Log.ErrorVerify (
     ErrorVerify,
  )
-import Kore.Log.InfoAttemptUnification (
-    InfoAttemptUnification,
+import Kore.Log.DebugAttemptUnification (
+    DebugAttemptUnification,
  )
 import Kore.Log.InfoExecBreadth (
     InfoExecBreadth,
@@ -243,7 +243,7 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @DebugUnifyBottom
             , mk $ Proxy @DebugEvaluateCondition
             , mk $ Proxy @LogMessage
-            , mk $ Proxy @InfoAttemptUnification
+            , mk $ Proxy @DebugAttemptUnification
             , mk $ Proxy @InfoReachability
             , mk $ Proxy @InfoExecBreadth
             , mk $ Proxy @InfoUserLog

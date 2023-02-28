@@ -25,8 +25,8 @@ import Kore.Internal.SideCondition (
  )
 import Kore.Internal.TermLike
 import Kore.Log.DebugUnifyBottom (debugUnifyBottomAndReturnBottom)
-import Kore.Log.InfoAttemptUnification (
-    infoAttemptUnification,
+import Kore.Log.DebugAttemptUnification (
+    debugAttemptUnification,
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
@@ -63,7 +63,7 @@ unificationProcedure ::
 unificationProcedure sideCondition p1 p2
     | p1Sort /= p2Sort =
         debugUnifyBottomAndReturnBottom "Cannot unify different sorts." p1 p2
-    | otherwise = infoAttemptUnification p1 p2 $ do
+    | otherwise = debugAttemptUnification p1 p2 $ do
         condition <- unifyTerms p1 p2 sideCondition
         TopBottom.guardAgainstBottom condition
         marker "unify" "MakeCeil"

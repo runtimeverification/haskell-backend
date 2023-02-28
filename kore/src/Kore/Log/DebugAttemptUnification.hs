@@ -5,9 +5,9 @@
 Copyright   : (c) Runtime Verification, 2020-2021
 License     : BSD-3-Clause
 -}
-module Kore.Log.InfoAttemptUnification (
-    InfoAttemptUnification (..),
-    infoAttemptUnification,
+module Kore.Log.DebugAttemptUnification (
+    DebugAttemptUnification (..),
+    debugAttemptUnification,
 ) where
 
 import GHC.Generics qualified as GHC
@@ -29,19 +29,19 @@ import Pretty (
  )
 import Pretty qualified
 
-data InfoAttemptUnification = InfoAttemptUnification {term1, term2 :: TermLike VariableName}
+data DebugAttemptUnification = DebugAttemptUnification {term1, term2 :: TermLike VariableName}
     deriving stock (Show)
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
-instance Entry InfoAttemptUnification where
+instance Entry DebugAttemptUnification where
     entrySeverity _ = Info
     contextDoc _ = Just "while attempting unification"
-    oneLineDoc _ = "InfoAttemptUnification"
+    oneLineDoc _ = "DebugAttemptUnification"
     helpDoc _ = "log unification attempts"
 
-instance Pretty InfoAttemptUnification where
-    pretty InfoAttemptUnification{term1, term2} =
+instance Pretty DebugAttemptUnification where
+    pretty DebugAttemptUnification{term1, term2} =
         Pretty.vsep
             [ "Attempting to unify"
             , Pretty.indent 4 $ unparse term1
@@ -49,15 +49,15 @@ instance Pretty InfoAttemptUnification where
             , Pretty.indent 4 $ unparse term2
             ]
 
-infoAttemptUnification ::
+debugAttemptUnification ::
     MonadLog log =>
     InternalVariable variable =>
     TermLike variable ->
     TermLike variable ->
     log a ->
     log a
-infoAttemptUnification term1' term2' =
-    logWhile InfoAttemptUnification{term1, term2}
+debugAttemptUnification term1' term2' =
+    logWhile DebugAttemptUnification{term1, term2}
   where
     mapVariables = TermLike.mapVariables (pure toVariableName)
     term1 = mapVariables term1'
