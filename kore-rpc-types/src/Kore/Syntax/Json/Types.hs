@@ -257,10 +257,12 @@ lexicalCheck p =
             reportErrors name "fixpoint expression variable" checkSVarName
         KJNu{var = Id name} ->
             reportErrors name "fixpoint expression variable" checkSVarName
-        -- KJDV{value = txt} ->
-        --     reportErrors txt "domain value string" checkStringChars
-        -- KJString txt ->
-        --     reportErrors txt "string literal" checkStringChars
+        -- to properly support byte arrays (for simplification), we restrict
+        -- text values to latin-1
+        KJDV{value = txt} ->
+            reportErrors txt "domain value string" checkLatin1Range
+        KJString txt ->
+            reportErrors txt "string literal" checkLatin1Range
         -- Input supports std Unicode (as per json spec). toJSON could
         -- check that only allowed escape sequences will be generated.
         KJMultiApp{symbol = Id n} ->
@@ -282,6 +284,12 @@ lexicalCheck p =
                     <> map ("* " <>) errors
       where
         errors = check text
+    checkLatin1Range :: Text -> [String]
+    checkLatin1Range txt =
+        let illegal = T.filter (> '\255') txt
+         in [ "Found non-latin1 characters: " <> show illegal
+            | not (T.null illegal)
+            ]
 
 {- | Basic identifiers start with letters and may contain letters,
  digits, - or '. Set variables start with '@' followed by a basic
