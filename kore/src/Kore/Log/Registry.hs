@@ -42,6 +42,9 @@ import Kore.Log.DebugAppliedRewriteRules (
     DebugAppliedLabeledRewriteRule,
     DebugAppliedRewriteRules,
  )
+import Kore.Log.DebugAttemptUnification (
+    DebugAttemptUnification,
+ )
 import Kore.Log.DebugAttemptedRewriteRules (
     DebugAttemptedRewriteRules,
  )
@@ -109,9 +112,6 @@ import Kore.Log.ErrorRewritesInstantiation (
  )
 import Kore.Log.ErrorVerify (
     ErrorVerify,
- )
-import Kore.Log.DebugAttemptUnification (
-    DebugAttemptUnification,
  )
 import Kore.Log.InfoExecBreadth (
     InfoExecBreadth,
