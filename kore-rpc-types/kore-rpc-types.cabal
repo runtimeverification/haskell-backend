@@ -15,79 +15,28 @@ source-repository head
   type: git
   location: https://github.com/runtimeverification/haskell-backend
 
-flag threaded
-  description: Use the threaded runtime. Recommended to disable for profiling.
-  manual: True
-  default: True
-
 common haskell
-  -- Common Haskell dialect
   default-extensions:
-    BangPatterns
-    -- GHC2021 prep
-    BinaryLiterals
-    -- end
-    ConstraintKinds
     DataKinds
-    DefaultSignatures
     DeriveAnyClass
     DeriveDataTypeable
     DeriveFoldable
     DeriveFunctor
     DeriveGeneric
-    -- GHC2021 prep
-    DeriveLift
-    -- end
-    DeriveTraversable
     DerivingVia
     DuplicateRecordFields
-    EmptyCase
-    -- GHC2021 prep
-    EmptyDataDeriving
-    -- end
-    ExistentialQuantification
     FlexibleContexts
     FlexibleInstances
-    FunctionalDependencies
     GADTs
     GeneralizedNewtypeDeriving
-    -- GHC2021 prep
-    HexFloatLiterals
-    -- end
-    InstanceSigs
-    -- GHC2021 prep
     ImportQualifiedPost
-    -- end
     KindSignatures
     LambdaCase
     MultiParamTypeClasses
     NamedFieldPuns
-    -- GHC2021 prep
-    NamedWildCards
-    NumericUnderscores
-    -- end
     OverloadedStrings
-    PatternSynonyms
-    -- GHC2021 prep
-    PolyKinds
-    PostfixOperators
-    -- end
-    RankNTypes
-    ScopedTypeVariables
     StandaloneDeriving
-    -- GHC2021 prep
-    StandaloneKindSignatures
-    -- end
-    Strict
-    -- GHC2021 prep
-    TupleSections
-    -- end
-    TypeApplications
     TypeFamilies
-    TypeOperators
-    TypeSynonymInstances
-    UndecidableInstances
-    ViewPatterns
   default-language: Haskell2010
   build-depends: base >=4.7
   ghc-options:
