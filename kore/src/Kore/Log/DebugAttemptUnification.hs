@@ -35,7 +35,7 @@ data DebugAttemptUnification = DebugAttemptUnification {term1, term2 :: TermLike
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
 
 instance Entry DebugAttemptUnification where
-    entrySeverity _ = Info
+    entrySeverity _ = Debug
     contextDoc _ = Just "while attempting unification"
     oneLineDoc _ = "DebugAttemptUnification"
     helpDoc _ = "log unification attempts"
