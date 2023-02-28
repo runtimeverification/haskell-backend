@@ -11,7 +11,7 @@ module Kore.JsonRpc (
 import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.MVar qualified as MVar
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
-import Control.Exception (ErrorCall (..), mask)
+import Control.Exception (ErrorCall (..), SomeException, mask)
 import Control.Monad (forever)
 import Control.Monad.Catch (MonadCatch, catch, handle)
 import Control.Monad.Except (runExceptT)
@@ -407,9 +407,6 @@ respond serverState moduleName runSMT =
 
     couldNotFindModule err = ErrorObj "Could not find module" (-32005) err
 
-    serverError detail payload =
-        ErrorObj ("Server error: " <> detail) (-32032) payload
-
     asText :: Pretty.Pretty a => a -> Value
     asText = String . Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty
 
@@ -443,6 +440,10 @@ respond serverState moduleName runSMT =
                 overloadGraph
                 metadataTools
                 equations
+
+serverError :: String -> Value -> ErrorObj
+serverError detail payload =
+    ErrorObj ("Server error: " <> detail) (-32032) payload
 
 data ServerState = ServerState
     { serializedModules :: Map.Map ModuleName SerializedDefinition
@@ -543,10 +544,11 @@ srv serverState moduleName Log.LoggerEnv{logAction} runSMT = do
 
     cancelError = ErrorObj "Request cancelled" (-32000) Null
 
-    bracketOnReqException before onCancel thing =
+    bracketOnReqException before onError thing =
         mask $ \restore -> do
             a <- before
-            restore (thing a) `catch` \(_ :: ReqException) -> onCancel a
+            (restore (thing a) `catch` \(_ :: ReqException) -> onError cancelError a)
+                `catch` \(err :: SomeException) -> print err >> onError (serverError "crashed" $ toJSON $ show err) a
 
     spawnWorker reqQueue = do
         rpcSession <- ask
@@ -555,16 +557,16 @@ srv serverState moduleName Log.LoggerEnv{logAction} runSMT = do
             respondTo :: MonadIO m => MonadCatch m => Request -> m (Maybe Response)
             respondTo req = buildResponse (\req' -> log (InfoJsonRpcProcessRequest (getReqId req) req') >> respond serverState moduleName runSMT req') req
 
-            cancelReq = \case
+            onError err = \case
                 SingleRequest req@Request{} -> do
                     let reqVersion = getReqVer req
                         reqId = getReqId req
                     log $ InfoJsonRpcCancelRequest reqId
-                    sendResponses $ SingleResponse $ ResponseError reqVersion cancelError reqId
+                    sendResponses $ SingleResponse $ ResponseError reqVersion err reqId
                 SingleRequest Notif{} -> pure ()
                 BatchRequest reqs -> do
                     forM_ reqs $ \req -> log $ InfoJsonRpcCancelRequest $ getReqId req
-                    sendResponses $ BatchResponse $ [ResponseError (getReqVer req) cancelError (getReqId req) | req <- reqs, isRequest req]
+                    sendResponses $ BatchResponse $ [ResponseError (getReqVer req) err (getReqId req) | req <- reqs, isRequest req]
 
             processReq = \case
                 SingleRequest req -> do
@@ -579,5 +581,5 @@ srv serverState moduleName Log.LoggerEnv{logAction} runSMT = do
                 forever $
                     bracketOnReqException
                         (atomically $ readTChan reqQueue)
-                        cancelReq
+                        onError
                         processReq
