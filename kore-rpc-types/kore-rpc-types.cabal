@@ -1,0 +1,76 @@
+cabal-version: 2.2
+name:           kore-rpc-types
+version:        0.60.0.0
+description:    Please see the [README](README.md) file.
+category:       Language
+homepage:       https://github.com/runtimeverification/haskell-backend#readme
+bug-reports:    https://github.com/runtimeverification/haskell-backend/issues
+author:         Runtime Verification Inc
+maintainer:     ana.pantilie@runtimeverification.com
+copyright:      2018-2021 Runtime Verification Inc
+license:        BSD-3-Clause
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/runtimeverification/haskell-backend
+
+common haskell
+  default-extensions:
+    DataKinds
+    DeriveAnyClass
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DerivingVia
+    DuplicateRecordFields
+    FlexibleContexts
+    FlexibleInstances
+    GADTs
+    GeneralizedNewtypeDeriving
+    ImportQualifiedPost
+    KindSignatures
+    LambdaCase
+    MultiParamTypeClasses
+    NamedFieldPuns
+    OverloadedStrings
+    StandaloneDeriving
+    TypeFamilies
+  default-language: Haskell2010
+  build-depends: base >=4.7
+  ghc-options:
+    -fno-ignore-asserts
+    -Wall
+    -Wcompat
+    -Widentities
+    -Wincomplete-uni-patterns
+    -Wincomplete-record-updates
+    -Wredundant-constraints
+    -Wnoncanonical-monad-instances
+    -Wmissing-deriving-strategies
+  ghc-options:
+    -j6
+  ghc-options:
+  if impl(ghc >= 8.4)
+    ghc-options: -Wmissing-export-lists -Wpartial-fields
+  if impl(ghc >= 8.8)
+    ghc-options: -fwrite-ide-info -hiedir=.hie
+
+common library
+  -- Dependencies of the library, shared in common with the tests
+  build-depends: aeson >=1.4
+  build-depends: aeson-pretty == 0.8.9
+  build-depends: deriving-aeson >=0.2
+  build-depends: json-rpc >=1.0
+  build-depends: prettyprinter >=1.2
+  build-depends: text >=1.2
+
+library
+  import: haskell
+  import: library
+  exposed-modules:
+    Kore.JsonRpc.Types,
+    Kore.Syntax.Json.Types
+  hs-source-dirs:
+    src

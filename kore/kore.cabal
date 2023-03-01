@@ -123,7 +123,7 @@ common exe
 common library
   -- Dependencies of the library, shared in common with the tests
   build-depends: adjunctions >=4.4
-  build-depends: aeson >=1.4
+  build-depends: aeson >=1.4 && <2.1
   build-depends: aeson-pretty == 0.8.9
   build-depends: array
   build-depends: async >=2.2
@@ -160,6 +160,7 @@ common library
   build-depends: haskeline ==0.8.*
   build-depends: ghc-bignum >=1.2
   build-depends: json-rpc >=1.0
+  build-depends: kore-rpc-types
   build-depends: lens >=4.17
   build-depends: lifted-async
   build-depends: lifted-base
@@ -367,7 +368,6 @@ library
     Kore.Internal.TermLike.TermLike
     Kore.Internal.Variable
     Kore.JsonRpc
-    Kore.JsonRpc.Base
     Kore.Log
     Kore.Log.DebugAppliedRewriteRules
     Kore.Log.DebugAttemptedRewriteRules

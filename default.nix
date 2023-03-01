@@ -33,7 +33,7 @@ in let
     src = ttuegel.cleanSourceWith {
       name = "kore";
       src = ttuegel.orElse src (ttuegel.cleanGitSubtree { src = ./.; });
-      ignore = [ "/*" "!/stack.yaml" "!/kore" ];
+      ignore = [ "/*" "!/stack.yaml" "!/kore" "!/kore-rpc-types" ];
     };
     inherit checkMaterialization;
     materialized = ./nix/kore-ghc925.nix.d;
@@ -62,7 +62,6 @@ in let
   shell = import ./shell.nix { inherit default checkMaterialization; };
 
   version = project.kore.components.exes.kore-exec.version;
-  # version = "0.43.0.0";
 
   prelude-kore = ./src/main/kore/prelude.kore;
 
