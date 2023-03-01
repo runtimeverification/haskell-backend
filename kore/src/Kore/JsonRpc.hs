@@ -11,7 +11,7 @@ module Kore.JsonRpc (
 import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.MVar qualified as MVar
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
-import Control.Exception (ErrorCall (..), SomeException, mask)
+import Control.Exception (ErrorCall (..), Exception, Handler (..), SomeException, catches, mask)
 import Control.Monad (forever)
 import Control.Monad.Catch (MonadCatch, catch, handle)
 import Control.Monad.Except (runExceptT)
@@ -46,7 +46,7 @@ import Kore.Internal.Predicate (pattern PredicateTrue)
 import Kore.Internal.TermLike (TermLike)
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.JsonRpc.Types
-import Kore.Log.DecidePredicateUnknown (srcLoc)
+import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown (DecidePredicateUnknown), srcLoc)
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcCancelRequest (InfoJsonRpcCancelRequest (..))
 import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
@@ -97,6 +97,7 @@ import Network.JSONRPC (
     sendBatchResponse,
  )
 import Prelude.Kore
+import Pretty (Pretty)
 import Pretty qualified
 import SMT qualified
 
@@ -465,13 +466,13 @@ runServer ::
     Log.LoggerEnv IO ->
     IO ()
 runServer port serverState mainModule runSMT loggerEnv@Log.LoggerEnv{logAction} = do
-    flip runLoggingT logFun $
-        jsonrpcTCPServer
+    flip runLoggingT logFun
+        $ jsonrpcTCPServer
             Json.defConfig{confCompare}
             V2
             False
             srvSettings
-            $ srv serverState mainModule loggerEnv runSMT
+        $ srv serverState mainModule loggerEnv runSMT
   where
     srvSettings = serverSettings port "*"
     confCompare =
@@ -549,8 +550,13 @@ srv serverState moduleName Log.LoggerEnv{logAction} runSMT = do
     bracketOnReqException before onError thing =
         mask $ \restore -> do
             a <- before
-            (restore (thing a) `catch` \(_ :: ReqException) -> onError cancelError a)
-                `catch` \(err :: SomeException) -> print err >> onError (serverError "crashed" $ toJSON $ show err) a
+            restore (thing a)
+                `catches` [ Handler $ \(_ :: ReqException) -> onError cancelError a
+                          , Handler $ \(err :: DecidePredicateUnknown) ->
+                                let mkPretty = Pretty.renderString . Pretty.layoutPretty Pretty.defaultLayoutOptions . Pretty.pretty
+                                 in putStrLn (mkPretty err) >> onError (serverError "crashed" $ toJSON $ (mkPretty err)) a
+                          , Handler $ \(err :: SomeException) -> print err >> onError (serverError "crashed" $ toJSON $ show err) a
+                          ]
 
     spawnWorker reqQueue = do
         rpcSession <- ask
