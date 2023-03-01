@@ -10,6 +10,7 @@
       "monad-validate" =
         (((hackage.monad-validate)."1.2.0.0").revisions)."9850f408431098b28806dd464b6825a88a0b56c84f380d7fe0454c1df9d6f881";
       kore = ./kore.nix;
+      kore-rpc-types = ./kore-rpc-types.nix;
     };
   };
   resolver = "lts-20.8";
