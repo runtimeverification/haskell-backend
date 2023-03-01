@@ -13,9 +13,6 @@ import Data.Map.Strict qualified as Map
 import Kore.Attribute.Constructor qualified as Attribute (
     Constructor (Constructor, isConstructor),
  )
-import Kore.Attribute.Functional qualified as Attribute (
-    Functional (Functional, isDeclaredFunctional),
- )
 import Kore.Attribute.Smtlib.Smthook qualified as Attribute (
     Smthook (Smthook, getSmthook),
  )
@@ -27,6 +24,9 @@ import Kore.Attribute.Symbol qualified as Attribute (
  )
 import Kore.Attribute.Symbol qualified as Attribute.Symbol (
     Symbol (..),
+ )
+import Kore.Attribute.Total qualified as Attribute (
+    Total (..),
  )
 import Kore.IndexedModule.IndexedModule (
     IndexedModule,
@@ -168,7 +168,7 @@ constructorDeclaration
             , sentenceSymbolResultSort
             }
         ) =
-        if isConstructor && isDeclaredFunctional
+        if isConstructor && isDeclaredTotal
             then
                 return
                     ( symbolConstructor
@@ -189,6 +189,6 @@ constructorDeclaration
       where
         Attribute.Constructor{isConstructor} =
             Attribute.Symbol.constructor attributes
-        Attribute.Functional{isDeclaredFunctional} =
-            Attribute.Symbol.functional attributes
+        Attribute.Total{isDeclaredTotal} =
+            Attribute.Symbol.total attributes
         encodedName = AST.encodable symbolConstructor

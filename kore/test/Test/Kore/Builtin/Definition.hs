@@ -22,7 +22,6 @@ import Data.Word (
     Word8,
  )
 import Kore.Attribute.Constructor
-import Kore.Attribute.Functional
 import Kore.Attribute.Hook
 import Kore.Attribute.Injective
 import Kore.Attribute.Parser
@@ -39,6 +38,7 @@ import Kore.Attribute.Subsort (
 import Kore.Attribute.Synthetic (
     synthesize,
  )
+import Kore.Attribute.Total
 import Kore.Builtin.Endianness qualified as Endianness
 import Kore.Builtin.Signedness qualified as Signedness
 import Kore.Internal.ApplicationSorts
@@ -52,13 +52,13 @@ import Kore.Internal.InternalString
 import Kore.Internal.Symbol (
     constructor,
     function,
-    functional,
     hook,
     injective,
     klabel,
     smthook,
     sortInjection,
     symbolKywd,
+    total,
  )
 import Kore.Internal.Symbol qualified as Internal
 import Kore.Internal.TermLike hiding (
@@ -153,84 +153,84 @@ gtIntSymbol =
         & hook "INT.gt"
         & smthook ">"
         & function
-        & functional
+        & total
 geIntSymbol :: Internal.Symbol
 geIntSymbol =
     comparisonIntSymbol "geInt"
         & hook "INT.ge"
         & smthook ">="
         & function
-        & functional
+        & total
 eqIntSymbol :: Internal.Symbol
 eqIntSymbol =
     comparisonIntSymbol "eqInt"
         & hook "INT.eq"
         & smthook "="
         & function
-        & functional
+        & total
 leIntSymbol :: Internal.Symbol
 leIntSymbol =
     comparisonIntSymbol "leInt"
         & hook "INT.le"
         & smthook "<="
         & function
-        & functional
+        & total
 ltIntSymbol :: Internal.Symbol
 ltIntSymbol =
     comparisonIntSymbol "ltInt"
         & hook "INT.lt"
         & smthook "<"
         & function
-        & functional
+        & total
 neIntSymbol :: Internal.Symbol
 neIntSymbol =
     comparisonIntSymbol "neInt"
         & hook "INT.ne"
         & smthook "distinct"
         & function
-        & functional
+        & total
 minIntSymbol :: Internal.Symbol
 minIntSymbol =
     binaryIntSymbol "minInt"
         & hook "INT.min"
         & smthook "int_min"
         & function
-        & functional
+        & total
 maxIntSymbol :: Internal.Symbol
 maxIntSymbol =
     binaryIntSymbol "maxInt"
         & hook "INT.max"
         & smthook "int_max"
         & function
-        & functional
+        & total
 addIntSymbol :: Internal.Symbol
 addIntSymbol =
     binaryIntSymbol "addInt"
         & hook "INT.add"
         & smthook "+"
         & function
-        & functional
+        & total
 subIntSymbol :: Internal.Symbol
 subIntSymbol =
     binaryIntSymbol "subInt"
         & hook "INT.sub"
         & smthook "-"
         & function
-        & functional
+        & total
 mulIntSymbol :: Internal.Symbol
 mulIntSymbol =
     binaryIntSymbol "mulInt"
         & hook "INT.mul"
         & smthook "*"
         & function
-        & functional
+        & total
 absIntSymbol :: Internal.Symbol
 absIntSymbol =
     unaryIntSymbol "absInt"
         & hook "INT.abs"
         & smthook "int_abs"
         & function
-        & functional
+        & total
 tdivIntSymbol :: Internal.Symbol
 tdivIntSymbol =
     binaryIntSymbol "tdivInt"
@@ -244,17 +244,17 @@ tmodIntSymbol =
         & smthook "mod"
         & function
 andIntSymbol :: Internal.Symbol
-andIntSymbol = binaryIntSymbol "andInt" & hook "INT.and" & function & functional
+andIntSymbol = binaryIntSymbol "andInt" & hook "INT.and" & function & total
 orIntSymbol :: Internal.Symbol
-orIntSymbol = binaryIntSymbol "orInt" & hook "INT.or" & function & functional
+orIntSymbol = binaryIntSymbol "orInt" & hook "INT.or" & function & total
 xorIntSymbol :: Internal.Symbol
-xorIntSymbol = binaryIntSymbol "xorInt" & hook "INT.xor" & function & functional
+xorIntSymbol = binaryIntSymbol "xorInt" & hook "INT.xor" & function & total
 notIntSymbol :: Internal.Symbol
-notIntSymbol = unaryIntSymbol "notInt" & hook "INT.not" & function & functional
+notIntSymbol = unaryIntSymbol "notInt" & hook "INT.not" & function & total
 shlIntSymbol :: Internal.Symbol
-shlIntSymbol = binaryIntSymbol "shlInt" & hook "INT.shl" & function & functional
+shlIntSymbol = binaryIntSymbol "shlInt" & hook "INT.shl" & function & total
 shrIntSymbol :: Internal.Symbol
-shrIntSymbol = binaryIntSymbol "shrInt" & hook "INT.shr" & function & functional
+shrIntSymbol = binaryIntSymbol "shrInt" & hook "INT.shr" & function & total
 powIntSymbol :: Internal.Symbol
 powIntSymbol = binaryIntSymbol "powInt" & hook "INT.pow" & function
 powmodIntSymbol :: Internal.Symbol
@@ -285,7 +285,7 @@ dummyInt ::
     TermLike RewritingVariableName
 dummyInt x = mkApplySymbol dummyIntSymbol [x]
 dummyFunctionalIntSymbol :: Internal.Symbol
-dummyFunctionalIntSymbol = unaryIntSymbol "ff" & function & functional
+dummyFunctionalIntSymbol = unaryIntSymbol "ff" & function & total
 dummyFunctionalInt ::
     TermLike RewritingVariableName -> TermLike RewritingVariableName
 dummyFunctionalInt x = mkApplySymbol dummyFunctionalIntSymbol [x]
@@ -380,18 +380,18 @@ elementListSymbol :: Internal.Symbol
 elementListSymbol =
     builtinSymbol "elementList" listSort [intSort]
         & hook "LIST.element"
-        & functional
+        & total
 elementList2Symbol :: Internal.Symbol
 elementList2Symbol =
     builtinSymbol "elementList2" listSort2 [intSort]
         & hook "LIST.element"
-        & functional
+        & total
 concatListSymbol :: Internal.Symbol
 concatListSymbol =
-    binarySymbol "concatList" listSort & hook "LIST.concat" & functional
+    binarySymbol "concatList" listSort & hook "LIST.concat" & total
 concatList2Symbol :: Internal.Symbol
 concatList2Symbol =
-    binarySymbol "concatList2" listSort2 & hook "LIST.concat" & functional
+    binarySymbol "concatList2" listSort2 & hook "LIST.concat" & total
 getListSymbol :: Internal.Symbol
 getListSymbol =
     builtinSymbol "getList" intSort [listSort, intSort] & hook "LIST.get"
@@ -473,7 +473,7 @@ elementMapSymbol :: Internal.Symbol
 elementMapSymbol =
     builtinSymbol "elementMap" mapSort [intSort, intSort]
         & hook "MAP.element"
-        & functional
+        & total
 concatMapSymbol :: Internal.Symbol
 concatMapSymbol =
     binarySymbol "concatMap" mapSort & hook "MAP.concat" & function
@@ -579,7 +579,7 @@ pairSymbol lSort rSort =
         , symbolSorts = applicationSorts [lSort, rSort] (pairSort lSort rSort)
         }
         & constructor
-        & functional
+        & total
 pair ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
@@ -598,12 +598,12 @@ elementSetSymbol :: Internal.Symbol
 elementSetSymbol =
     builtinSymbol "elementSet" setSort [intSort]
         & hook "SET.element"
-        & functional
+        & total
 elementSetSymbolTestSort :: Internal.Symbol
 elementSetSymbolTestSort =
     builtinSymbol "elementSet" setSort [Mock.testSort]
         & hook "SET.element"
-        & functional
+        & total
 elementSet ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
@@ -1603,7 +1603,7 @@ pairSymbolDecl =
                 Attributes
                     [ constructorAttribute
                     , injectiveAttribute
-                    , functionalAttribute
+                    , totalAttribute
                     ]
             }
     leftSortVariable = SortVariable (testId "left")

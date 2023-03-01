@@ -49,7 +49,7 @@ instance Synthetic Defined (Application Internal.Symbol) where
     synthetic application =
         totalSymbol <> fold children
       where
-        totalSymbol = Defined (Internal.isTotal symbol)
+        totalSymbol = Defined (Internal.isNotBottom symbol)
         children = applicationChildren application
         symbol = applicationSymbolOrAlias application
 

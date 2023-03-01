@@ -1,11 +1,11 @@
-module Test.Kore.Attribute.Pattern.Functional (
+module Test.Kore.Attribute.Pattern.Total (
     test_instance_Synthetic,
 ) where
 
 import Data.Maybe (
     fromJust,
  )
-import Kore.Attribute.Pattern.Functional
+import Kore.Attribute.Pattern.Total
 import Kore.Attribute.Synthetic
 import Kore.Builtin.AssociativeCommutative qualified as Ac
 import Kore.Internal.InternalSet
@@ -31,13 +31,13 @@ test_instance_Synthetic =
     [ testGroup "AndF" $ map (isn't . AndF) (And sort <$> range <*> range)
     , testGroup
         "ApplySymbolF"
-        [ testGroup "functional" $ do
+        [ testGroup "total" $ do
             x <- range
             y <- range
             [expect (x <> y) $ ApplySymbolF $ Application sigma [x, y]]
-        , testGroup "non-functional" $ do
+        , testGroup "non-total" $ do
             x <- range
-            [expect nonFunctional $ ApplySymbolF $ Application plain [x]]
+            [expect nonTotal $ ApplySymbolF $ Application plain [x]]
         ]
     , testGroup "BottomF" [isn't $ BottomF (Bottom sort)]
     , testGroup "CeilF" $ map (isn't . CeilF) (Ceil sort sort <$> range)
@@ -77,27 +77,27 @@ test_instance_Synthetic =
             with emptyNormalizedSet $
                 map (retractKey >>> fromJust) [Mock.a @Concrete, Mock.b]
         , is . asSetBuiltin $
-            emptyNormalizedSet `with` VariableElement functional
+            emptyNormalizedSet `with` VariableElement total
         , isn't . asSetBuiltin $
-            emptyNormalizedSet `with` VariableElement nonFunctional
+            emptyNormalizedSet `with` VariableElement nonTotal
         , isn't . asSetBuiltin $
             emptyNormalizedSet
-                `with` [VariableElement functional, VariableElement functional]
+                `with` [VariableElement total, VariableElement total]
         , isn't . asSetBuiltin $
             emptyNormalizedSet
                 `with` [(retractKey >>> fromJust) (Mock.a @Concrete)]
-                `with` VariableElement functional
+                `with` VariableElement total
         , is . asSetBuiltin $
-            emptyNormalizedSet `with` OpaqueSet functional
+            emptyNormalizedSet `with` OpaqueSet total
         , isn't . asSetBuiltin $
-            emptyNormalizedSet `with` OpaqueSet nonFunctional
+            emptyNormalizedSet `with` OpaqueSet nonTotal
         , isn't . asSetBuiltin $
             emptyNormalizedSet
-                `with` [OpaqueSet functional, OpaqueSet nonFunctional]
+                `with` [OpaqueSet total, OpaqueSet nonTotal]
         , isn't . asSetBuiltin $
             emptyNormalizedSet
                 `with` [(retractKey >>> fromJust) (Mock.a @Concrete)]
-                `with` OpaqueSet functional
+                `with` OpaqueSet total
         ]
     ]
   where
@@ -105,15 +105,15 @@ test_instance_Synthetic =
     sigma = Mock.sigmaSymbol
     plain = Mock.plain10Symbol
 
-    functional = Functional True
-    nonFunctional = Functional False
-    range = [functional, nonFunctional]
+    total = Total True
+    nonTotal = Total False
+    range = [total, nonTotal]
 
     check ::
-        (HasCallStack, Synthetic Functional term) =>
+        (HasCallStack, Synthetic Total term) =>
         TestName ->
-        (Functional -> Bool) ->
-        term Functional ->
+        (Total -> Bool) ->
+        term Total ->
         TestTree
     check name checking term =
         testCase name $ do
@@ -121,27 +121,27 @@ test_instance_Synthetic =
             assertBool "" (checking actual)
 
     is ::
-        (HasCallStack, Synthetic Functional term) =>
-        term Functional ->
+        (HasCallStack, Synthetic Total term) =>
+        term Total ->
         TestTree
-    is = check "Functional pattern" isFunctional
+    is = check "Total pattern" isTotal
 
     isn't ::
-        (HasCallStack, Synthetic Functional term) =>
-        term Functional ->
+        (HasCallStack, Synthetic Total term) =>
+        term Total ->
         TestTree
-    isn't = check "Non-functional pattern" (not . isFunctional)
+    isn't = check "Non-total pattern" (not . isTotal)
 
     expect ::
         HasCallStack =>
-        Functional ->
-        TermLikeF VariableName Functional ->
+        Total ->
+        TermLikeF VariableName Total ->
         TestTree
     expect x
-        | isFunctional x = is
+        | isTotal x = is
         | otherwise = isn't
 
     asSetBuiltin ::
-        NormalizedAc NormalizedSet Key Functional ->
-        InternalAc Key NormalizedSet Functional
+        NormalizedAc NormalizedSet Key Total ->
+        InternalAc Key NormalizedSet Total
     asSetBuiltin = Ac.asInternalBuiltin Mock.metadataTools Mock.setSort . wrapAc

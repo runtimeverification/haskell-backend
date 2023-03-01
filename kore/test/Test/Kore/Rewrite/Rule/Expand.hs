@@ -34,7 +34,7 @@ import Kore.Internal.Symbol (
  )
 import Kore.Internal.Symbol qualified as Symbol (
     constructor,
-    functional,
+    total,
  )
 import Kore.Internal.TermLike (
     TermLike,
@@ -442,7 +442,7 @@ expandableConstructor1Id = testId "expandableConstructor1"
 expandableConstructor1Symbol :: Symbol
 expandableConstructor1Symbol =
     Mock.symbol expandableConstructor1Id [Mock.testSort] Mock.testSort0
-        & Symbol.functional
+        & Symbol.total
         & Symbol.constructor
 
 expandableConstructor1 ::
@@ -461,7 +461,7 @@ expandableConstructor2Symbol =
         expandableConstructor2Id
         [Mock.testSort, Mock.testSort]
         Mock.testSort0
-        & Symbol.functional
+        & Symbol.total
         & Symbol.constructor
 
 expandableConstructor2 ::
@@ -481,7 +481,7 @@ expandableConstructor2aSymbol =
         expandableConstructor2aId
         [Mock.testSort1, Mock.testSort]
         Mock.testSort0
-        & Symbol.functional
+        & Symbol.total
         & Symbol.constructor
 
 expandableConstructor2a ::

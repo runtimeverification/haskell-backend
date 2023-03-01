@@ -234,7 +234,7 @@ library
     Kore.Attribute.Constructor
     Kore.Attribute.Definition
     Kore.Attribute.Function
-    Kore.Attribute.Functional
+    Kore.Attribute.Total
     Kore.Attribute.Hook
     Kore.Attribute.Idem
     Kore.Attribute.Injective
@@ -249,7 +249,7 @@ library
     Kore.Attribute.Pattern.Defined
     Kore.Attribute.Pattern.FreeVariables
     Kore.Attribute.Pattern.Function
-    Kore.Attribute.Pattern.Functional
+    Kore.Attribute.Pattern.Total
     Kore.Attribute.Pattern.Simplified
     Kore.Attribute.PredicatePattern
     Kore.Attribute.Priority
@@ -726,7 +726,7 @@ test-suite kore-test
     Test.Kore.Attribute.Comm
     Test.Kore.Attribute.Constructor
     Test.Kore.Attribute.Function
-    Test.Kore.Attribute.Functional
+    Test.Kore.Attribute.Total
     Test.Kore.Attribute.Hook
     Test.Kore.Attribute.Idem
     Test.Kore.Attribute.Injective
@@ -739,7 +739,7 @@ test-suite kore-test
     Test.Kore.Attribute.Pattern.Defined
     Test.Kore.Attribute.Pattern.FreeVariables
     Test.Kore.Attribute.Pattern.Function
-    Test.Kore.Attribute.Pattern.Functional
+    Test.Kore.Attribute.Pattern.Total
     Test.Kore.Attribute.Pattern.Sort
     Test.Kore.Attribute.Priority
     Test.Kore.Attribute.ProductionID

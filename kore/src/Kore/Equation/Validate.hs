@@ -75,7 +75,7 @@ validateAxiom attrs verified =
         Left err@(AntiLeftError _) -> failWithBadEquation err
         Left err@(EnsuresError _) -> failWithBadEquation err
         Left (NotEquation _) -> return ()
-        Left FunctionalAxiom -> return ()
+        Left TotalAxiom -> return ()
         Left ConstructorAxiom -> return ()
         Left SubsortAxiom -> return ()
   where

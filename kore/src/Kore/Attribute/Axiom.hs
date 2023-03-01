@@ -52,7 +52,6 @@ import Kore.Attribute.Axiom.NonExecutable
 import Kore.Attribute.Axiom.Symbolic
 import Kore.Attribute.Axiom.Unit
 import Kore.Attribute.Comm
-import Kore.Attribute.Functional
 import Kore.Attribute.Idem
 import Kore.Attribute.Label
 import Kore.Attribute.Overload
@@ -70,6 +69,7 @@ import Kore.Attribute.Simplification
 import Kore.Attribute.SmtLemma
 import Kore.Attribute.SourceLocation
 import Kore.Attribute.Subsort
+import Kore.Attribute.Total
 import Kore.Attribute.Trusted
 import Kore.Attribute.UniqueId
 import Kore.Debug
@@ -117,7 +117,7 @@ data Axiom symbol variable = Axiom
       -- (e.g. no confusion, no junk)
       constructor :: !Constructor
     , -- | Shows that this is one of the functionality axioms
-      functional :: !Functional
+      total :: !Total
     , -- | Shows that this describes a subsorting axiom
       subsorts :: !Subsorts
     , -- | Used to identify an axiom in the repl.
@@ -154,7 +154,7 @@ instance Default (Axiom symbol variable) where
             , label = def
             , sourceLocation = def
             , constructor = def
-            , functional = def
+            , total = def
             , subsorts = def
             , identifier = def
             , uniqueId = def
@@ -184,7 +184,7 @@ instance
                 , from . label
                 , from . sourceLocation
                 , from . constructor
-                , from . functional
+                , from . total
                 , from . subsorts
                 , from . uniqueId
                 , from . nonExecutable
@@ -240,7 +240,7 @@ parseAxiomAttribute freeVariables attr =
         Monad.>=> typed @Label (parseAttribute attr)
         Monad.>=> typed @SourceLocation (parseAttribute attr)
         Monad.>=> typed @Constructor (parseAttribute attr)
-        Monad.>=> typed @Functional (parseAttribute attr)
+        Monad.>=> typed @Total (parseAttribute attr)
         Monad.>=> typed @Subsorts (parseAttribute attr)
         Monad.>=> typed @UniqueId (parseAttribute attr)
         Monad.>=> typed @NonExecutable (parseAttribute attr)

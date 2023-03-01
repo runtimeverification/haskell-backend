@@ -82,11 +82,11 @@ test_stepperAttributes =
             (function <$> parse [functionAttribute])
         )
     , testCase
-        "Parsing a functional attribute"
+        "Parsing a total attribute"
         ( assertEqual
-            "[functional{}()]"
-            (Right Functional{isDeclaredFunctional = True})
-            (functional <$> parse [functionalAttribute])
+            "[total{}()]"
+            (Right Total{isDeclaredTotal = True})
+            (total <$> parse [totalAttribute])
         )
     , testCase
         "Parsing a hook attribute"
@@ -117,16 +117,16 @@ test_stepperAttributes =
     , testCase
         "Testing parseAttributes"
         ( assertEqual
-            "[functional{}(),function{}(),hook{}(\"builtin\")]"
+            "[total{}(),function{}(),hook{}(\"builtin\")]"
             ( defaultSymbolAttributes
                 & setTyped (Function True)
-                & setTyped (Functional True)
+                & setTyped (Total True)
                 & setTyped (Hook $ Just "builtin")
                 & Right
             )
             ( parse
                 [ functionAttribute
-                , functionalAttribute
+                , totalAttribute
                 , testAttribute
                 , hookAttribute "builtin"
                 ]

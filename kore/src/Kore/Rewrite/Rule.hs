@@ -33,11 +33,11 @@ import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Axiom.Constructor (
     isConstructor,
  )
-import Kore.Attribute.Functional (
-    isDeclaredFunctional,
- )
 import Kore.Attribute.Subsort (
     getSubsorts,
+ )
+import Kore.Attribute.Total (
+    isDeclaredTotal,
  )
 import Kore.Debug
 import Kore.Error
@@ -349,7 +349,7 @@ termToAxiomPattern attributes pat =
         (TermLike.Rewrites_ _ _ _) ->
             koreFail "Rewrite patterns should not be parsed through this"
         _
-            | (isDeclaredFunctional . Attribute.functional $ attributes)
+            | (isDeclaredTotal . Attribute.total $ attributes)
                 || (isConstructor . Attribute.constructor $ attributes)
                 || (not . null . getSubsorts . Attribute.subsorts $ attributes) ->
                 koreFail "Patterns of this type do not represent rules"

@@ -21,13 +21,13 @@ import Data.Text (
     Text,
  )
 import Kore.Attribute.Constructor qualified as Constructor
-import Kore.Attribute.Functional qualified as Functional
 import Kore.Attribute.Hook qualified as Hook
 import Kore.Attribute.Smthook qualified as Smthook
 import Kore.Attribute.Smtlib qualified as Smtlib
 import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
+import Kore.Attribute.Total qualified as Total
 import Kore.Builtin qualified as Builtin
 import Kore.Error (
     Error,
@@ -103,7 +103,7 @@ constructor :: Attribute
 constructor = Attribute Constructor.constructorAttribute
 
 functional :: Attribute
-functional = Attribute Functional.functionalAttribute
+functional = Attribute Total.totalAttribute
 
 smtlib :: Text -> Attribute
 smtlib value = Attribute (Smtlib.smtlibAttribute value)
