@@ -554,7 +554,7 @@ srv serverState moduleName Log.LoggerEnv{logAction} runSMT = do
                 `catches` [ Handler $ \(_ :: ReqException) -> onError cancelError a
                           , Handler $ \(err :: DecidePredicateUnknown) ->
                                 let mkPretty = Pretty.renderString . Pretty.layoutPretty Pretty.defaultLayoutOptions . Pretty.pretty
-                                 in putStrLn (mkPretty err) >> onError (serverError "crashed" $ toJSON $ (mkPretty err)) a
+                                 in putStrLn (mkPretty err) >> onError (serverError "crashed" $ toJSON $ mkPretty err) a
                           , Handler $ \(err :: SomeException) -> print err >> onError (serverError "crashed" $ toJSON $ show err) a
                           ]
 
