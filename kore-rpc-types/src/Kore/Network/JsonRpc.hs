@@ -1,17 +1,22 @@
+{-# LANGUAGE TypeApplications #-}
+
 {- |
 Module      : Kore.Network.JSONRPC
 Description : JSON RPC server for kore-rpc
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
 -}
-{-# LANGUAGE TypeApplications #-}
-module Kore.Network.JsonRpc (jsonRpcServer, JsonRpcHandler(..)) where
+module Kore.Network.JsonRpc (jsonRpcServer, JsonRpcHandler (..)) where
 
+import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
-import Control.Exception (ErrorCall (..), SomeException, mask, Exception (fromException), throw, catch)
+import Control.Exception (ErrorCall (..), Exception (fromException), SomeException, catch, mask, throw)
+import Control.Monad (forever)
+import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Logger (MonadLoggerIO)
-import Control.Monad.Reader (runReaderT, MonadReader (ask), ReaderT)
-import Data.Aeson (ToJSON, Value(Null))
+import Control.Monad.Logger qualified as Log
+import Control.Monad.Reader (MonadReader (ask), ReaderT, runReaderT)
+import Data.Aeson (ToJSON, Value (Null))
 import Data.Aeson.Encode.Pretty as Json
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy.Char8 qualified as L8
@@ -19,15 +24,11 @@ import Data.Conduit (ConduitT, Void, runConduit, (.|))
 import Data.Conduit.List qualified as CL
 import Data.Conduit.Network (ServerSettings, appSink, appSource, runGeneralTCPServer)
 import Data.Conduit.TMChan (closeTBMChan, sinkTBMChan, sourceTBMChan)
-import Network.JSONRPC hiding (runJSONRPCT, encodeConduit)
-import UnliftIO (MonadUnliftIO, atomically, wait, withAsync)
-import Control.Monad.IO.Class (MonadIO(liftIO))
-import qualified Control.Monad.Logger as Log
-import qualified Data.Text as Text
 import Data.Maybe (catMaybes)
-import Control.Concurrent (forkIO, throwTo)
-import Control.Monad (forever)
-import Kore.JsonRpc.Types (ReqException(..), FromRequestCancellable (isCancel))
+import Data.Text qualified as Text
+import Kore.JsonRpc.Types (FromRequestCancellable (isCancel), ReqException (..))
+import Network.JSONRPC hiding (encodeConduit, runJSONRPCT)
+import UnliftIO (MonadUnliftIO, atomically, wait, withAsync)
 
 -- Conduit to encode JSON to ByteString.
 encodeConduit :: (ToJSON j, Monad m) => Json.Config -> ConduitT j ByteString m ()
@@ -94,9 +95,7 @@ jsonRpcServer encodeOpts ver ignore serverSettings respond handlers =
             (appSource cl)
             (srv respond handlers)
 
-
-data JsonRpcHandler a = forall e . Exception e => JsonRpcHandler (e -> Log.LoggingT IO ErrorObj)
-
+data JsonRpcHandler a = forall e. Exception e => JsonRpcHandler (e -> Log.LoggingT IO ErrorObj)
 
 srv :: forall m q r. (MonadLoggerIO m, FromRequestCancellable q, ToJSON r) => (Request -> Respond q (Log.LoggingT IO) r) -> [JsonRpcHandler ()] -> JSONRPCT m ()
 srv respond handlers = do
@@ -114,7 +113,7 @@ srv respond handlers = do
                             Log.logInfoN $ Text.pack (show req)
                             liftIO $ atomically $ writeTChan reqQueue req
                             loop
-            in loop
+             in loop
     spawnWorker reqQueue >>= mainLoop
   where
     isRequest = \case
@@ -153,15 +152,15 @@ srv respond handlers = do
                     rs <- catMaybes <$> mapM respondTo reqs
                     sendResponses $ BatchResponse rs
 
-
             catchesHandler a e = foldr tryHandler (throw e) $ JsonRpcHandler (\(_ :: ReqException) -> pure cancelError) : handlers
-                where tryHandler (JsonRpcHandler handler) res
-                        = case fromException e of
-                            Just e' -> 
-                                flip Log.runLoggingT logger $ do
-                                    err <- handler e'
-                                    cancelReq err a
-                            Nothing -> res
+              where
+                tryHandler (JsonRpcHandler handler) res =
+                    case fromException e of
+                        Just e' ->
+                            flip Log.runLoggingT logger $ do
+                                err <- handler e'
+                                cancelReq err a
+                        Nothing -> res
 
             bracketOnReqException before thing =
                 mask $ \restore -> do

@@ -12,7 +12,7 @@ import Control.Concurrent.MVar qualified as MVar
 import Control.Exception (ErrorCall (..), SomeException)
 import Control.Monad.Catch (MonadCatch, handle)
 import Control.Monad.Except (runExceptT)
-import Control.Monad.Logger (runLoggingT, logInfoN)
+import Control.Monad.Logger (logInfoN, runLoggingT)
 import Data.Aeson.Encode.Pretty as Json
 import Data.Aeson.Types (ToJSON (..), Value (..))
 import Data.Coerce (coerce)
@@ -22,6 +22,7 @@ import Data.InternedText (globalInternedTextCache)
 import Data.Limit (Limit (..))
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
+import Data.Text qualified as Text
 import GlobalMain (
     LoadedDefinition (..),
     SerializedDefinition (..),
@@ -45,7 +46,7 @@ import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown, srcLoc)
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
-import Kore.Network.JsonRpc (jsonRpcServer, JsonRpcHandler (JsonRpcHandler))
+import Kore.Network.JsonRpc (JsonRpcHandler (JsonRpcHandler), jsonRpcServer)
 import Kore.Parser (parseKoreDefinition)
 import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite (
@@ -86,7 +87,6 @@ import Prelude.Kore
 import Pretty (Pretty)
 import Pretty qualified
 import SMT qualified
-import qualified Data.Text as Text
 
 respond ::
     forall m.
@@ -461,8 +461,8 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
             srvSettings
             (\req parsed -> log (InfoJsonRpcProcessRequest (getReqId req) parsed) >> respond serverState mainModule runSMT parsed)
             [ JsonRpcHandler $ \(err :: DecidePredicateUnknown) ->
-                    let mkPretty = Pretty.renderText . Pretty.layoutPretty Pretty.defaultLayoutOptions . Pretty.pretty
-                    in logInfoN (mkPretty err) >> pure (serverError "crashed" $ toJSON $ mkPretty err)
+                let mkPretty = Pretty.renderText . Pretty.layoutPretty Pretty.defaultLayoutOptions . Pretty.pretty
+                 in logInfoN (mkPretty err) >> pure (serverError "crashed" $ toJSON $ mkPretty err)
             , JsonRpcHandler $ \(err :: SomeException) -> logInfoN (Text.pack $ show err) >> pure (serverError "crashed" $ toJSON $ show err)
             ]
   where
