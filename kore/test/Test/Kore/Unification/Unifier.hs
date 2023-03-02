@@ -405,15 +405,15 @@ test_unification =
         (UnificationTerm a)
         (UnificationTerm dv2)
         "Cannot handle Constructor and DomainValue:\n\
-        \/* Fl Fn D Sfa Cl */ a{}()\n\
-        \/* Fl Fn D Sfa Cl */ \\dv{testSort{}}(/* Fl Fn D Sfa Cl */ \"dv2\")\n"
+        \/* T Fn D Sfa Cl */ a{}()\n\
+        \/* T Fn D Sfa Cl */ \\dv{testSort{}}(/* T Fn D Sfa Cl */ \"dv2\")\n"
     , andSimplifyException
         "Unmatching domain value + constructor constant"
         (UnificationTerm dv1)
         (UnificationTerm a)
         "Cannot handle DomainValue and Constructor:\n\
-        \/* Fl Fn D Sfa Cl */ \\dv{testSort{}}(/* Fl Fn D Sfa Cl */ \"dv1\")\n\
-        \/* Fl Fn D Sfa Cl */ a{}()\n"
+        \/* T Fn D Sfa Cl */ \\dv{testSort{}}(/* T Fn D Sfa Cl */ \"dv1\")\n\
+        \/* T Fn D Sfa Cl */ a{}()\n"
     , testCase "Unmatching domain value + nonconstructor constant" $
         andSimplify
             (UnificationTerm dv1)

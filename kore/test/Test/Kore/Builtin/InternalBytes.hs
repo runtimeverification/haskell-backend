@@ -712,7 +712,7 @@ test_unparse =
     [ testCase "unparse using 8-bit encoding" $ do
         let input = asInternal "\x00" :: TermLike RewritingVariableName
             actual = (show . unparse) input
-            expect = "/* Fl Fn D Sfa Cl */ \\dv{Bytes{}}(\"\\x00\")"
+            expect = "/* T Fn D Sfa Cl */ \\dv{Bytes{}}(\"\\x00\")"
         assertEqual "" expect actual
     ]
 
