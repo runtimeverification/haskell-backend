@@ -231,3 +231,13 @@ rpcJsonConfig =
                 , "moving-average-step-timeout"
                 ]
         }
+
+
+
+class FromRequest q => FromRequestCancellable q where
+    isCancel :: q -> Bool
+
+
+instance FromRequestCancellable (API 'Req) where
+    isCancel Cancel = True
+    isCancel _ = False
