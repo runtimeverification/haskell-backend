@@ -11,9 +11,9 @@ module Kore.JsonRpc (
 import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.MVar qualified as MVar
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
-import Control.Exception (ErrorCall (..), Exception, Handler (..), SomeException, catches, mask)
+import Control.Exception (ErrorCall (..), Handler (..), SomeException, catches, mask)
 import Control.Monad (forever)
-import Control.Monad.Catch (MonadCatch, catch, handle)
+import Control.Monad.Catch (MonadCatch, handle)
 import Control.Monad.Except (runExceptT)
 import Control.Monad.Logger (MonadLoggerIO, askLoggerIO, runLoggingT)
 import Control.Monad.Reader (ask, runReaderT)
@@ -46,7 +46,7 @@ import Kore.Internal.Predicate (pattern PredicateTrue)
 import Kore.Internal.TermLike (TermLike)
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.JsonRpc.Types
-import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown (DecidePredicateUnknown), srcLoc)
+import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown, srcLoc)
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcCancelRequest (InfoJsonRpcCancelRequest (..))
 import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
