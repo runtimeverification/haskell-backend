@@ -178,6 +178,8 @@ import System.Exit (
     exitWith,
  )
 import System.FilePath (
+    takeDirectory,
+    takeExtension,
     (</>),
  )
 import System.IO (
@@ -559,8 +561,11 @@ writeOptionsAndKoreFiles
                         . setOwnerExecutable True
                         . setOwnerSearchable True
             setPermissions shellScript $ allPermissions emptyPermissions
+            let definitionKore = case takeExtension definitionFileName of
+                    ".bin" -> takeDirectory definitionFileName </> "definition.kore"
+                    _ -> definitionFileName
             copyFile
-                definitionFileName
+                definitionKore
                 (reportDirectory </> defaultDefinitionFilePath opts)
             for_ patternFileName $
                 flip copyFile (reportDirectory </> "pgm.kore")
