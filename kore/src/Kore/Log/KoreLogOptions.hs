@@ -165,7 +165,18 @@ data KoreLogType
       LogStdErr
     | -- | Log to specified file when '--log <filename>' is passed.
       LogFileText FilePath
-    deriving stock (Eq, Show)
+    | LogSomeAction (forall m. MonadIO m => LogAction m Text)
+
+instance Eq KoreLogType where
+    LogStdErr == LogStdErr = True
+    LogFileText t1 == LogFileText t2 = t1 == t2
+    _ == _ = False
+
+instance Show KoreLogType where
+    show = \case
+        LogStdErr -> "LogStdErr"
+        LogFileText fp -> "LogFileText " <> show fp
+        LogSomeAction _ -> "LogSomeAction _"
 
 data KoreLogFormat
     = Standard
@@ -657,6 +668,7 @@ unparseKoreLogOptions
       where
         koreLogTypeFlag LogStdErr = []
         koreLogTypeFlag (LogFileText file) = ["--log", file]
+        koreLogTypeFlag (LogSomeAction _) = []
 
         koreLogFormatFlag Standard = []
         koreLogFormatFlag OneLine = ["--log-format=oneline"]

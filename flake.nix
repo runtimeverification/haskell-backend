@@ -120,6 +120,7 @@
             };
 
             shell = {
+              tools.haskell-language-server = {};
               # We use the ones from Nixpkgs, since they are cached reliably.
               # Eventually we will probably want to build these with haskell.nix.
               nativeBuildInputs = [
