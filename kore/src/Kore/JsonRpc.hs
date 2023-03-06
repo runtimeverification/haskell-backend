@@ -41,12 +41,12 @@ import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (pattern PredicateTrue)
 import Kore.Internal.TermLike (TermLike)
 import Kore.Internal.TermLike qualified as TermLike
+import Kore.JsonRpc.Server (ErrorObj (..), JsonRpcHandler (JsonRpcHandler), Request (getReqId), Respond, jsonRpcServer)
 import Kore.JsonRpc.Types
 import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown, srcLoc)
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
-import Kore.JsonRpc.Server (JsonRpcHandler (JsonRpcHandler), jsonRpcServer, ErrorObj(..), Respond, Request (getReqId))
 import Kore.Parser (parseKoreDefinition)
 import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite (

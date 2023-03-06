@@ -13,11 +13,11 @@ module Kore.JsonRpc.Server (
     jsonRpcServer,
     JsonRpcHandler (..),
 ) where
-    
+
 import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Exception (ErrorCall (..), Exception (fromException), SomeException, catch, mask, throw)
-import Control.Monad (forever, forM_)
+import Control.Monad (forM_, forever)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Logger (MonadLoggerIO)
 import Control.Monad.Logger qualified as Log
@@ -78,7 +78,7 @@ runJSONRPCT encodeOpts ver ignore snk src f = do
 jsonRpcServer ::
     (MonadLoggerIO m, MonadUnliftIO m, FromRequestCancellable q, ToJSON r) =>
     -- | aeson-pretty Config
-    Json.Config ->    
+    Json.Config ->
     -- | Connection settings
     ServerSettings ->
     -- | Action to perform on connecting client thread
@@ -127,7 +127,7 @@ srv respond handlers = do
     getRequests = \case
         SingleRequest r -> [r]
         BatchRequest rs -> rs
-    
+
     mReqId = \case
         Request _ _ _ (IdTxt i) -> i
         Request _ _ _ (IdInt i) -> Text.pack $ show i
