@@ -47,11 +47,8 @@
         (hsPkgs."unliftio" or (errorHandler.buildDepError "unliftio"))
       ];
       buildable = true;
-      modules = [
-        "Kore/JsonRpc/Types"
-        "Kore/Network/JsonRpc"
-        "Kore/Syntax/Json/Types"
-      ];
+      modules =
+        [ "Kore/JsonRpc/Types" "Kore/JsonRpc/Server" "Kore/Syntax/Json/Types" ];
       hsSourceDirs = [ "src" ];
     };
   };
