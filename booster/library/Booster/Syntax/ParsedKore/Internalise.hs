@@ -397,7 +397,8 @@ internaliseRewriteRule partialDefinition aliasName aliasArgs right axAttributes 
             withExcept DefinitionPatternError $
                 internalisePattern (Just sortVars) partialDefinition right
     let preservesDefinedness =
-            Util.checkTermSymbols Util.isDefinedSymbol rhs.term
+            -- users can override the definedness computation by an explicit attribute
+            fromMaybe (Util.checkTermSymbols Util.isDefinedSymbol rhs.term) axAttributes.preserving
         containsAcSymbols =
             Util.checkTermSymbols Util.checkSymbolIsAc lhs.term
         computedAttributes =
