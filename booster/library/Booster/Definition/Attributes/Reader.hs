@@ -52,6 +52,7 @@ instance HasAttributes ParsedAxiom where
             (fromMaybe 50 $ attributes .:? "priority")
             (attributes .:? "label")
             (attributes .! "simplification")
+            (attributes .:? "preserves-definedness")
 
 sourceName
     , locationName ::

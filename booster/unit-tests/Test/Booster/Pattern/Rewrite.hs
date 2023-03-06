@@ -139,7 +139,7 @@ rule ruleLabel lhs rhs priority =
     RewriteRule
         { lhs
         , rhs
-        , attributes = AxiomAttributes{location, priority, ruleLabel, simplification = False}
+        , attributes = AxiomAttributes{location, priority, ruleLabel, simplification = False, preserving = Nothing}
         , computedAttributes = ComputedAxiomAttributes False True
         }
   where

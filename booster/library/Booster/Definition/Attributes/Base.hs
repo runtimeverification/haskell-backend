@@ -51,6 +51,7 @@ data AxiomAttributes = AxiomAttributes
     , priority :: Priority -- priorities are <= 200
     , ruleLabel :: Maybe Label
     , simplification :: Bool
+    , preserving :: Maybe Bool -- this will override the computed attribute
     }
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData)
