@@ -46,7 +46,7 @@ import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown, srcLoc)
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
-import Kore.Network.JsonRpc (JsonRpcHandler (JsonRpcHandler), jsonRpcServer)
+import Kore.JsonRpc.Server (JsonRpcHandler (JsonRpcHandler), jsonRpcServer, ErrorObj(..), Respond, Request (getReqId))
 import Kore.Parser (parseKoreDefinition)
 import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite (
@@ -77,12 +77,6 @@ import Kore.Syntax.Sentence (
 import Kore.Validate.DefinitionVerifier (verifyAndIndexDefinitionWithBase)
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Log qualified
-import Network.JSONRPC (
-    ErrorObj (..),
-    Request (..),
-    Respond,
-    Ver (V2),
- )
 import Prelude.Kore
 import Pretty (Pretty)
 import Pretty qualified
@@ -456,8 +450,6 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
     flip runLoggingT logFun $
         jsonRpcServer
             Json.defConfig{confCompare}
-            V2
-            False
             srvSettings
             (\req parsed -> log (InfoJsonRpcProcessRequest (getReqId req) parsed) >> respond serverState mainModule runSMT parsed)
             [ JsonRpcHandler $ \(err :: DecidePredicateUnknown) ->

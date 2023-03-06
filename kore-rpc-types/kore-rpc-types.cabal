@@ -80,7 +80,7 @@ library
   import: library
   exposed-modules:
     Kore.JsonRpc.Types,
-    Kore.Network.JsonRpc
+    Kore.JsonRpc.Server
     Kore.Syntax.Json.Types
   hs-source-dirs:
     src

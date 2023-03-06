@@ -6,12 +6,18 @@ Description : JSON RPC server for kore-rpc
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
 -}
-module Kore.Network.JsonRpc (jsonRpcServer, JsonRpcHandler (..)) where
-
+module Kore.JsonRpc.Server (
+    ErrorObj (..),
+    Request (..),
+    Respond,
+    jsonRpcServer,
+    JsonRpcHandler (..),
+) where
+    
 import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Exception (ErrorCall (..), Exception (fromException), SomeException, catch, mask, throw)
-import Control.Monad (forever)
+import Control.Monad (forever, forM_)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Logger (MonadLoggerIO)
 import Control.Monad.Logger qualified as Log
@@ -72,25 +78,21 @@ runJSONRPCT encodeOpts ver ignore snk src f = do
 jsonRpcServer ::
     (MonadLoggerIO m, MonadUnliftIO m, FromRequestCancellable q, ToJSON r) =>
     -- | aeson-pretty Config
-    Json.Config ->
-    -- | JSON-RPC version
-    Ver ->
-    -- | Ignore incoming requests or notifications
-    Bool ->
+    Json.Config ->    
     -- | Connection settings
     ServerSettings ->
     -- | Action to perform on connecting client thread
     (Request -> Respond q (Log.LoggingT IO) r) ->
     [JsonRpcHandler ()] ->
     m a
-jsonRpcServer encodeOpts ver ignore serverSettings respond handlers =
+jsonRpcServer encodeOpts serverSettings respond handlers =
     runGeneralTCPServer serverSettings $ \cl ->
         runJSONRPCT
             -- we have to ensure that the returned messages contain no newlines
             -- inside the message and have a trailing newline, which is used as the delimiter
             encodeOpts{Json.confIndent = Spaces 0, Json.confTrailingNewline = True}
-            ver
-            ignore
+            V2
+            False
             (appSink cl)
             (appSource cl)
             (srv respond handlers)
@@ -106,11 +108,13 @@ srv respond handlers = do
                         Nothing -> do
                             return ()
                         Just (SingleRequest req) | Right True <- isCancel @q <$> fromRequest req -> do
-                            Log.logInfoN "Cancel Request"
+                            Log.logInfoN "Cancel request"
                             liftIO $ throwTo tid CancelRequest
                             loop
                         Just req -> do
-                            Log.logInfoN $ Text.pack (show req)
+                            forM_ (getRequests req) $ \r -> do
+                                Log.logInfoN $ "Process request " <> mReqId r <> " " <> getReqMethod r
+                                Log.logDebugN $ Text.pack $ show r
                             liftIO $ atomically $ writeTChan reqQueue req
                             loop
              in loop
@@ -119,6 +123,15 @@ srv respond handlers = do
     isRequest = \case
         Request{} -> True
         _ -> False
+
+    getRequests = \case
+        SingleRequest r -> [r]
+        BatchRequest rs -> rs
+    
+    mReqId = \case
+        Request _ _ _ (IdTxt i) -> i
+        Request _ _ _ (IdInt i) -> Text.pack $ show i
+        Notif{} -> ""
 
     cancelError = ErrorObj "Request cancelled" (-32000) Null
 
@@ -129,7 +142,8 @@ srv respond handlers = do
             withLog = flip Log.runLoggingT logger
 
             sendResponses :: BatchResponse -> Log.LoggingT IO ()
-            sendResponses r = flip Log.runLoggingT logger $ flip runReaderT rpcSession $ sendBatchResponse r
+            sendResponses r = flip runReaderT rpcSession $ sendBatchResponse r
+
             respondTo :: Request -> Log.LoggingT IO (Maybe Response)
             respondTo req = buildResponse (respond req) req
 
@@ -157,7 +171,7 @@ srv respond handlers = do
                 tryHandler (JsonRpcHandler handler) res =
                     case fromException e of
                         Just e' ->
-                            flip Log.runLoggingT logger $ do
+                            withLog $ do
                                 err <- handler e'
                                 cancelReq err a
                         Nothing -> res
