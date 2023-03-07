@@ -263,7 +263,7 @@ Generally, we only check satisfiability of a predicate,
 using the solver to refute impossible execution paths.
 Predicate logic connectives are translated to their corresponding connectives in the solver.
 `\equals` can be translated if its arguments are in `Int` or `Bool`.
-It is essential that the arguments be functional (match exactly one value)
+It is essential that the arguments be total-function-like (match exactly one value)
 because of the solver's internal assumptions.
 Other predicates cannot be translated directly,
 but they are translated as unknown (uninterpreted) `Bool` variables.

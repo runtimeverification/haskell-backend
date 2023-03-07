@@ -6,7 +6,7 @@ Algorithm for applying one rule to a pattern
 We assume `α(Y) = tα(Y) ∧ pα(Y)` such that:
 
 - `tα(Y)` is a pattern formed only with constructors, subsort injections,
-  domain values, and variables, and therefore functional.
+  domain values, and variables, and therefore total-function-like.
 - `pα(Y)` is a predicate
 
 We also assume `φ(X) = tφ(X) ∧ pφ(X)` such that:

@@ -19,7 +19,7 @@ which can be written as `t ∧ p` where the interpretation of `t` contains at mo
 one element and `p` is a predicate.
 
 _Extended constructor patterns_ will be those extended function-like patterns
-for which `t` is a functional term, composed out of constructor-like symbols
+for which `t` is a total-function-like term, composed out of constructor-like symbols
 and variables.
 
 
@@ -40,7 +40,7 @@ Moreover, suppose all free variables in the above formulae are from `x`,
 we will assume that the unification condition `⌈φ ∧ ψ⌉` can always be
 computed to be of the form `z = t ∧  p`, where
 
-* `t`s are functional patterns with no free variables from `z`
+* `t`s are total-function-like patterns with no free variables from `z`
     * i.e., [t / z] is a substitution.
 * `p` is a predicate over `x ∪ z`
 
@@ -121,7 +121,7 @@ a bound on the total number of (levels of) expansions attempted before
 returning `Unprovable`.
 
 __Note__: If the unfication condition `⌈φ ∧ ψ⌉ = (z=t)∧ p`
-with `t` functional, `p` predicate, and `t` free of `z`.
+with `t` total-function-like, `p` predicate, and `t` free of `z`.
 Then `goalᵣₑₘ := ∀x. (φ ∧ ¬∃z.⌈φ ∧ ψ⌉) → <w>∃z.ψ`
 is equivalent to `∀x.φ ∧ ¬pᵢ[tᵢ/xᵢ] → <w>∃z.ψ`.
 
@@ -141,7 +141,7 @@ __Note__: `∀x∪zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φ∧φᵢ⌉) → <w>∃z.ψ` is o
 `∀x.(∃xᵢ.(∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉) → <w>∃z.ψ`
 
 __Note__: If the unfication condition `⌈φ ∧ φᵢ⌉ = (xᵢ=tᵢ)∧ pᵢ`
-with `tᵢ` functional, `pᵢ` predicate, and `tᵢ` free of `xi`.
+with `tᵢ` total-function-like, `pᵢ` predicate, and `tᵢ` free of `xi`.
 Then the goal `∀x∪zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φ∧φᵢ⌉) → <w>∃z.ψ`
 is equivalent to `∀x∪zᵢ.ψᵢ[tᵢ/xᵢ] ∧ pᵢ[tᵢ/xᵢ] → <w>∃z.ψ`.
 
@@ -164,7 +164,7 @@ where `φ₁ʳᵉᵐ := φ` and
 ```
 
 __Note__: If the unification condition `⌈φᵢʳᵉᵐ ∧ φᵢ⌉ = (xᵢ=tᵢ)∧ pᵢ`
-with `tᵢ` functional, `pᵢ` predicate, and `tᵢ` free of `xi`.
+with `tᵢ` total-function-like, `pᵢ` predicate, and `tᵢ` free of `xi`.
 Then the goal `∀x∪zᵢ.(∃xᵢ.ψᵢ ∧ ⌈φᵢʳᵉᵐ∧φᵢ⌉) → <w>∃z.ψ`
 is equivalent to `∀x∪zᵢ.ψᵢ[tᵢ/xᵢ] ∧ pᵢ[tᵢ/xᵢ] → <w>∃z.ψ`.
 
@@ -278,7 +278,7 @@ The main step of our proof is to prove
 `φ ∧ ∃xᵢ.φᵢ → <w>∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ ∧ φᵢ⌉)`
 from `∀xᵢ.φᵢ → <w>∃zᵢ.ψᵢ`.
 
-Assume `⌈φ ∧ φᵢ⌉ = (xᵢ=tᵢ)∧ pᵢ` with `tᵢ` functional, `pᵢ` predicate, and
+Assume `⌈φ ∧ φᵢ⌉ = (xᵢ=tᵢ)∧ pᵢ` with `tᵢ` total-function-like, `pᵢ` predicate, and
 `tᵢ` free of `xi`.
 
 Then,
@@ -289,10 +289,10 @@ Then,
 ∃xᵢ.φᵢ ∧ xᵢ=tᵢ ∧ p → <w>∃xᵢ.((∃zᵢ.ψᵢ) ∧ xᵢ=tᵢ ∧ p)        // substitution properties
 ∃xᵢ.φᵢ ∧ ⌈φ∧φᵢ⌉ → <w>∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)              // definition of ⌈φ∧φᵢ⌉
 φ ∧ ∃xᵢ.(φᵢ ∧ ⌈φ∧φᵢ⌉) → <w>∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)        // Strengthening
-φ ∧ ∃xᵢ.⌈φ ∧ φᵢ ∧ ⌈φ∧φᵢ⌉⌉) → <w>∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)   // φ is functional
+φ ∧ ∃xᵢ.⌈φ ∧ φᵢ ∧ ⌈φ∧φᵢ⌉⌉) → <w>∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)   // φ is total-function-like
 φ ∧ ∃xᵢ.(⌈φ∧φᵢ⌉ ∧ ⌈φ∧φᵢ⌉) → <w>∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)    // predicate properties
 φ ∧ ∃xᵢ.⌈φ∧φᵢ⌉ → <w>∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)               // idempotency
-φ ∧ ∃xᵢ.φᵢ → <w>∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)                   // φ is functional
+φ ∧ ∃xᵢ.φᵢ → <w>∃xᵢ.((∃zᵢ.ψᵢ) ∧ ⌈φ∧φᵢ⌉)                   // φ is total-function-like
 ```
 
 ### Applying axioms
