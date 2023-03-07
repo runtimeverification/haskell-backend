@@ -334,13 +334,13 @@ Same as for execute
   "method": "add-module",
   "params": {
     "name": "MODULE-NAME",
-    "module": "<plain text>"
+    "module": "[] module MODULE-NAME endmodule []"
   }
 }
 ```
 
-* `name` is the name of the main module.
-* `module` is module represented in KORE.
+* `name` is the name of the module to add.
+* `module` is a definition represented in textual KORE format. The definition should contain a module named `name`.
 
 ### Correct Response:
 
