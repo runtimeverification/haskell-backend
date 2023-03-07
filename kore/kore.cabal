@@ -133,7 +133,6 @@ common library
   build-depends: co-log >=0.4
   build-depends: comonad >=5.0
   build-depends: compact >= 0.2.0.0
-  build-depends: conduit >= 1.3
   build-depends: conduit-extra >=1.3
   build-depends: containers >=0.5.8
   build-depends: cryptonite >=0.25
@@ -195,7 +194,6 @@ common library
   build-depends: time >=1.9.3
   build-depends: transformers >=0.4
   build-depends: transformers-base
-  build-depends: unliftio >= 0.2
   build-depends: unordered-containers >=0.2
   build-depends: vector >=0.12
   build-depends: witherable ==0.4.*
@@ -419,7 +417,6 @@ library
     Kore.Log.WarnUnsimplified
     Kore.ModelChecker.Simplification
     Kore.ModelChecker.Step
-    Kore.Network.JSONRPC
     Kore.Options
     Kore.Parser
     Kore.Parser.CString

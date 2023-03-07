@@ -41,7 +41,6 @@
         (hsPkgs."co-log" or (errorHandler.buildDepError "co-log"))
         (hsPkgs."comonad" or (errorHandler.buildDepError "comonad"))
         (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
-        (hsPkgs."conduit" or (errorHandler.buildDepError "conduit"))
         (hsPkgs."conduit-extra" or (errorHandler.buildDepError "conduit-extra"))
         (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
         (hsPkgs."cryptonite" or (errorHandler.buildDepError "cryptonite"))
@@ -113,7 +112,6 @@
         (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
         (hsPkgs."transformers-base" or (errorHandler.buildDepError
           "transformers-base"))
-        (hsPkgs."unliftio" or (errorHandler.buildDepError "unliftio"))
         (hsPkgs."unordered-containers" or (errorHandler.buildDepError
           "unordered-containers"))
         (hsPkgs."vector" or (errorHandler.buildDepError "vector"))
@@ -340,7 +338,6 @@
         "Kore/Log/WarnUnsimplified"
         "Kore/ModelChecker/Simplification"
         "Kore/ModelChecker/Step"
-        "Kore/Network/JSONRPC"
         "Kore/Options"
         "Kore/Parser"
         "Kore/Parser/CString"
@@ -692,7 +689,6 @@
           (hsPkgs."co-log" or (errorHandler.buildDepError "co-log"))
           (hsPkgs."comonad" or (errorHandler.buildDepError "comonad"))
           (hsPkgs."compact" or (errorHandler.buildDepError "compact"))
-          (hsPkgs."conduit" or (errorHandler.buildDepError "conduit"))
           (hsPkgs."conduit-extra" or (errorHandler.buildDepError
             "conduit-extra"))
           (hsPkgs."containers" or (errorHandler.buildDepError "containers"))
@@ -768,7 +764,6 @@
           (hsPkgs."transformers" or (errorHandler.buildDepError "transformers"))
           (hsPkgs."transformers-base" or (errorHandler.buildDepError
             "transformers-base"))
-          (hsPkgs."unliftio" or (errorHandler.buildDepError "unliftio"))
           (hsPkgs."unordered-containers" or (errorHandler.buildDepError
             "unordered-containers"))
           (hsPkgs."vector" or (errorHandler.buildDepError "vector"))
