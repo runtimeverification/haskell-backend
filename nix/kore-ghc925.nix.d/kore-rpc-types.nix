@@ -32,14 +32,23 @@
         (hsPkgs."base" or (errorHandler.buildDepError "base"))
         (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
         (hsPkgs."aeson-pretty" or (errorHandler.buildDepError "aeson-pretty"))
+        (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
+        (hsPkgs."conduit" or (errorHandler.buildDepError "conduit"))
+        (hsPkgs."conduit-extra" or (errorHandler.buildDepError "conduit-extra"))
         (hsPkgs."deriving-aeson" or (errorHandler.buildDepError
           "deriving-aeson"))
         (hsPkgs."json-rpc" or (errorHandler.buildDepError "json-rpc"))
+        (hsPkgs."monad-logger" or (errorHandler.buildDepError "monad-logger"))
+        (hsPkgs."mtl" or (errorHandler.buildDepError "mtl"))
         (hsPkgs."prettyprinter" or (errorHandler.buildDepError "prettyprinter"))
+        (hsPkgs."stm" or (errorHandler.buildDepError "stm"))
+        (hsPkgs."stm-conduit" or (errorHandler.buildDepError "stm-conduit"))
         (hsPkgs."text" or (errorHandler.buildDepError "text"))
+        (hsPkgs."unliftio" or (errorHandler.buildDepError "unliftio"))
       ];
       buildable = true;
-      modules = [ "Kore/JsonRpc/Types" "Kore/Syntax/Json/Types" ];
+      modules =
+        [ "Kore/JsonRpc/Types" "Kore/JsonRpc/Server" "Kore/Syntax/Json/Types" ];
       hsSourceDirs = [ "src" ];
     };
   };

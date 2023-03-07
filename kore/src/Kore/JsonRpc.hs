@@ -8,17 +8,11 @@ module Kore.JsonRpc (
     module Kore.JsonRpc,
 ) where
 
-import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.MVar qualified as MVar
-import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
-import Control.Exception (ErrorCall (..), Handler (..), SomeException, catches, mask)
-import Control.Monad (forever)
+import Control.Exception (ErrorCall (..), SomeException)
 import Control.Monad.Catch (MonadCatch, handle)
 import Control.Monad.Except (runExceptT)
-import Control.Monad.Logger (MonadLoggerIO, askLoggerIO, runLoggingT)
-import Control.Monad.Reader (ask, runReaderT)
-import Control.Monad.STM (atomically)
-import Data.Aeson.Encode.Pretty as Json
+import Control.Monad.Logger (logInfoN, runLoggingT)
 import Data.Aeson.Types (ToJSON (..), Value (..))
 import Data.Coerce (coerce)
 import Data.Conduit.Network (serverSettings)
@@ -27,6 +21,7 @@ import Data.InternedText (globalInternedTextCache)
 import Data.Limit (Limit (..))
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
+import Data.Text qualified as Text
 import GlobalMain (
     LoadedDefinition (..),
     SerializedDefinition (..),
@@ -45,13 +40,12 @@ import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (pattern PredicateTrue)
 import Kore.Internal.TermLike (TermLike)
 import Kore.Internal.TermLike qualified as TermLike
+import Kore.JsonRpc.Server (ErrorObj (..), JsonRpcHandler (JsonRpcHandler), Request (getReqId), Respond, jsonRpcServer)
 import Kore.JsonRpc.Types
 import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown, srcLoc)
 import Kore.Log.InfoExecDepth (ExecDepth (..))
-import Kore.Log.InfoJsonRpcCancelRequest (InfoJsonRpcCancelRequest (..))
 import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
-import Kore.Network.JSONRPC (jsonrpcTCPServer)
 import Kore.Parser (parseKoreDefinition)
 import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite (
@@ -82,20 +76,6 @@ import Kore.Syntax.Sentence (
 import Kore.Validate.DefinitionVerifier (verifyAndIndexDefinitionWithBase)
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Log qualified
-import Network.JSONRPC (
-    BatchRequest (BatchRequest, SingleRequest),
-    BatchResponse (BatchResponse, SingleResponse),
-    ErrorObj (..),
-    JSONRPCT,
-    Request (..),
-    Respond,
-    Response (ResponseError),
-    Ver (V2),
-    buildResponse,
-    fromRequest,
-    receiveBatchRequest,
-    sendBatchResponse,
- )
 import Prelude.Kore
 import Pretty (Pretty)
 import Pretty qualified
@@ -465,129 +445,21 @@ runServer ::
     ) ->
     Log.LoggerEnv IO ->
     IO ()
-runServer port serverState mainModule runSMT loggerEnv@Log.LoggerEnv{logAction} = do
+runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
     flip runLoggingT logFun $
-        jsonrpcTCPServer
-            Json.defConfig{confCompare}
-            V2
-            False
+        jsonRpcServer
             srvSettings
-            $ srv serverState mainModule loggerEnv runSMT
+            (\req parsed -> log (InfoJsonRpcProcessRequest (getReqId req) parsed) >> respond serverState mainModule runSMT parsed)
+            [ JsonRpcHandler $ \(err :: DecidePredicateUnknown) ->
+                let mkPretty = Pretty.renderText . Pretty.layoutPretty Pretty.defaultLayoutOptions . Pretty.pretty
+                 in logInfoN (mkPretty err) >> pure (serverError "crashed" $ toJSON $ mkPretty err)
+            , JsonRpcHandler $ \(err :: SomeException) -> logInfoN (Text.pack $ show err) >> pure (serverError "crashed" $ toJSON $ show err)
+            ]
   where
     srvSettings = serverSettings port "*"
-    confCompare =
-        Json.keyOrder
-            [ "format"
-            , "version"
-            , "term"
-            , "tag"
-            , "assoc"
-            , "name"
-            , "symbol"
-            , "argSort"
-            , "sort"
-            , "sorts"
-            , "var"
-            , "varSort"
-            , "arg"
-            , "args"
-            , "argss"
-            , "source"
-            , "dest"
-            , "value"
-            , "jsonrpc"
-            , "id"
-            , "reason"
-            , "depth"
-            , "rule"
-            , "state"
-            , "next-states"
-            , "substitution"
-            , "predicate"
-            , "satisfiable"
-            , "implication"
-            , "condition"
-            ]
 
     logFun loc src level msg =
         Log.logWith logAction $ LogJsonRpcServer{loc, src, level, msg}
 
-srv ::
-    MonadLoggerIO m =>
-    MVar.MVar ServerState ->
-    ModuleName ->
-    Log.LoggerEnv IO ->
-    ( forall a.
-      SmtMetadataTools StepperAttributes ->
-      [SentenceAxiom (TermLike VariableName)] ->
-      SMT.SMT a ->
-      IO a
-    ) ->
-    JSONRPCT m ()
-srv serverState moduleName Log.LoggerEnv{logAction} runSMT = do
-    reqQueue <- liftIO $ atomically newTChan
-    let mainLoop tid =
-            receiveBatchRequest >>= \case
-                Nothing -> do
-                    return ()
-                Just (SingleRequest req) | Right (Cancel :: API 'Req) <- fromRequest req -> do
-                    liftIO $ throwTo tid CancelRequest
-                    spawnWorker reqQueue >>= mainLoop
-                Just req -> do
-                    liftIO $ atomically $ writeTChan reqQueue req
-                    mainLoop tid
-    spawnWorker reqQueue >>= mainLoop
-  where
     log :: MonadIO m => Log.Entry entry => entry -> m ()
     log = Log.logWith $ Log.hoistLogAction liftIO logAction
-
-    isRequest = \case
-        Request{} -> True
-        _ -> False
-
-    cancelError = ErrorObj "Request cancelled" (-32000) Null
-
-    bracketOnReqException before onError thing =
-        mask $ \restore -> do
-            a <- before
-            restore (thing a)
-                `catches` [ Handler $ \(_ :: ReqException) -> onError cancelError a
-                          , Handler $ \(err :: DecidePredicateUnknown) ->
-                                let mkPretty = Pretty.renderString . Pretty.layoutPretty Pretty.defaultLayoutOptions . Pretty.pretty
-                                 in putStrLn (mkPretty err) >> onError (serverError "crashed" $ toJSON $ mkPretty err) a
-                          , Handler $ \(err :: SomeException) -> print err >> onError (serverError "crashed" $ toJSON $ show err) a
-                          ]
-
-    spawnWorker reqQueue = do
-        rpcSession <- ask
-        logger <- askLoggerIO
-        let sendResponses r = flip runLoggingT logger $ flip runReaderT rpcSession $ sendBatchResponse r
-            respondTo :: MonadIO m => MonadCatch m => Request -> m (Maybe Response)
-            respondTo req = buildResponse (\req' -> log (InfoJsonRpcProcessRequest (getReqId req) req') >> respond serverState moduleName runSMT req') req
-
-            onError err = \case
-                SingleRequest req@Request{} -> do
-                    let reqVersion = getReqVer req
-                        reqId = getReqId req
-                    log $ InfoJsonRpcCancelRequest reqId
-                    sendResponses $ SingleResponse $ ResponseError reqVersion err reqId
-                SingleRequest Notif{} -> pure ()
-                BatchRequest reqs -> do
-                    forM_ reqs $ \req -> log $ InfoJsonRpcCancelRequest $ getReqId req
-                    sendResponses $ BatchResponse $ [ResponseError (getReqVer req) err (getReqId req) | req <- reqs, isRequest req]
-
-            processReq = \case
-                SingleRequest req -> do
-                    rM <- respondTo req
-                    mapM_ (sendResponses . SingleResponse) rM
-                BatchRequest reqs -> do
-                    rs <- catMaybes <$> mapM respondTo reqs
-                    sendResponses $ BatchResponse rs
-
-        liftIO $
-            forkIO $
-                forever $
-                    bracketOnReqException
-                        (atomically $ readTChan reqQueue)
-                        onError
-                        processReq
