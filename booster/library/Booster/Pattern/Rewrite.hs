@@ -158,7 +158,11 @@ applyRule pat rule = runMaybeT $ do
     let newConstraints =
             concatMap (splitBoolPredicates . substituteInPredicate subst) $
                 rule.lhs.constraints <> rule.rhs.constraints
-    mapM_ checkConstraint newConstraints
+    unclearConditions <- catMaybes <$> mapM checkConstraint newConstraints
+
+    unless (null unclearConditions) $
+        failRewrite $
+            head unclearConditions
 
     let rewritten =
             Pattern
@@ -169,13 +173,13 @@ applyRule pat rule = runMaybeT $ do
   where
     failRewrite = lift . throw
 
-    checkConstraint :: Predicate -> MaybeT (RewriteM RewriteFailed) ()
+    checkConstraint :: Predicate -> MaybeT (RewriteM RewriteFailed) (Maybe RewriteFailed)
     checkConstraint p = do
         mApi <- lift getLLVM
         case simplifyPredicate mApi p of
             Bottom -> fail "Rule condition was False"
-            Top -> pure ()
-            other -> failRewrite $ RuleConditionUnclear rule other
+            Top -> pure Nothing
+            other -> pure $ Just $ RuleConditionUnclear rule other
 
 {- | Reason why a rewrite did not produce a result. Contains additional
    information for logging what happened during the rewrite.
