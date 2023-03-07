@@ -13,7 +13,6 @@ import Control.Exception (ErrorCall (..), SomeException)
 import Control.Monad.Catch (MonadCatch, handle)
 import Control.Monad.Except (runExceptT)
 import Control.Monad.Logger (logInfoN, runLoggingT)
-import Data.Aeson.Encode.Pretty as Json
 import Data.Aeson.Types (ToJSON (..), Value (..))
 import Data.Coerce (coerce)
 import Data.Conduit.Network (serverSettings)
@@ -449,7 +448,6 @@ runServer ::
 runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
     flip runLoggingT logFun $
         jsonRpcServer
-            Json.defConfig{confCompare}
             srvSettings
             (\req parsed -> log (InfoJsonRpcProcessRequest (getReqId req) parsed) >> respond serverState mainModule runSMT parsed)
             [ JsonRpcHandler $ \(err :: DecidePredicateUnknown) ->
@@ -459,39 +457,6 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
             ]
   where
     srvSettings = serverSettings port "*"
-    confCompare =
-        Json.keyOrder
-            [ "format"
-            , "version"
-            , "term"
-            , "tag"
-            , "assoc"
-            , "name"
-            , "symbol"
-            , "argSort"
-            , "sort"
-            , "sorts"
-            , "var"
-            , "varSort"
-            , "arg"
-            , "args"
-            , "argss"
-            , "source"
-            , "dest"
-            , "value"
-            , "jsonrpc"
-            , "id"
-            , "reason"
-            , "depth"
-            , "rule"
-            , "state"
-            , "next-states"
-            , "substitution"
-            , "predicate"
-            , "satisfiable"
-            , "implication"
-            , "condition"
-            ]
 
     logFun loc src level msg =
         Log.logWith logAction $ LogJsonRpcServer{loc, src, level, msg}
