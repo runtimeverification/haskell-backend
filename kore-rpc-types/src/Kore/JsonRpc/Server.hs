@@ -81,7 +81,7 @@ jsonRpcServer ::
     ServerSettings ->
     -- | Action to perform on connecting client thread
     (Request -> Respond q (Log.LoggingT IO) r) ->
-    [JsonRpcHandler ()] ->
+    [JsonRpcHandler] ->
     m a
 jsonRpcServer serverSettings respond handlers =
     runGeneralTCPServer serverSettings $ \cl ->
@@ -95,9 +95,9 @@ jsonRpcServer serverSettings respond handlers =
             (appSource cl)
             (srv respond handlers)
 
-data JsonRpcHandler a = forall e. Exception e => JsonRpcHandler (e -> Log.LoggingT IO ErrorObj)
+data JsonRpcHandler = forall e. Exception e => JsonRpcHandler (e -> Log.LoggingT IO ErrorObj)
 
-srv :: forall m q r. (MonadLoggerIO m, FromRequestCancellable q, ToJSON r) => (Request -> Respond q (Log.LoggingT IO) r) -> [JsonRpcHandler ()] -> JSONRPCT m ()
+srv :: forall m q r. (MonadLoggerIO m, FromRequestCancellable q, ToJSON r) => (Request -> Respond q (Log.LoggingT IO) r) -> [JsonRpcHandler] -> JSONRPCT m ()
 srv respond handlers = do
     reqQueue <- liftIO $ atomically newTChan
     let mainLoop tid =
