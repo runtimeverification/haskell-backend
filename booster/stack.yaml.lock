@@ -3,7 +3,75 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: chronos-1.1.5@sha256:ca35be5fdbbb384414226b4467c6d1c8b44defe59a9c8a3af32c1c5fb250c781,3830
+    pantry-tree:
+      sha256: 329bf39a05362a9c1f507a4a529725c757208843b562c55e0b7c88538dc3160f
+      size: 581
+  original:
+    hackage: chronos-1.1.5
+- completed:
+    hackage: co-log-0.5.0.0@sha256:a7e84650eaef7eba2d59ee7664309e79317a7ca67011abedf971f0e6bd6475bb,5448
+    pantry-tree:
+      sha256: 33b838c07c8b7e70b2e82bddc889bb1e6386d7e12a9d1593c0b4b263b1fcb925
+      size: 1043
+  original:
+    hackage: co-log-0.5.0.0
+- completed:
+    hackage: compact-0.2.0.0@sha256:75ef98cb51201b4a0d6de95cbbb62be6237c092a3d594737346c70c5d56c2380,2413
+    pantry-tree:
+      sha256: 9514e48c9141b29a5f58b27c2950f17cc1c53eea3d393a6a1ed46ca16e876754
+      size: 546
+  original:
+    hackage: compact-0.2.0.0
+- completed:
+    hackage: decision-diagrams-0.2.0.0@sha256:d0d596a85e75252626ade6443473037d34329ccde88d3d947b96965bd098e342,3415
+    pantry-tree:
+      sha256: 8bbf52f818afc03b08d0805867559f32474c971b6451eef1cd67e346f92824ef
+      size: 866
+  original:
+    hackage: decision-diagrams-0.2.0.0
+- completed:
+    hackage: typerep-map-0.6.0.0@sha256:e54a4e99614ad890a10200da687efa189860c13207a97063db1b6881032ebecc,4890
+    pantry-tree:
+      sha256: f970c9dc26194bf708a5c18cf4daac5a1518afa1d8b92e8f1c170959587ee7a6
+      size: 1487
+  original:
+    hackage: typerep-map-0.6.0.0
+- completed:
+    hackage: monad-validate-1.2.0.0@sha256:9850f408431098b28806dd464b6825a88a0b56c84f380d7fe0454c1df9d6f881,3505
+    pantry-tree:
+      sha256: 8e049bd12ce2bd470909578f2ee8eb80b89d5ff88860afa30e29dd4eafecfa3e
+      size: 713
+  original:
+    hackage: monad-validate-1.2.0.0@sha256:9850f408431098b28806dd464b6825a88a0b56c84f380d7fe0454c1df9d6f881,3505
+- completed:
+    commit: f4a105acf3293db845ea3f1f66c6207d4afa457f
+    git: https://github.com/runtimeverification/haskell-backend.git
+    name: kore
+    pantry-tree:
+      sha256: aa6500a5cfd587a84b255fa4889bce02ef94c3e9cf2228902cc2cf5cad433d61
+      size: 44324
+    subdir: kore
+    version: 0.60.0.0
+  original:
+    commit: f4a105acf3293db845ea3f1f66c6207d4afa457f
+    git: https://github.com/runtimeverification/haskell-backend.git
+    subdir: kore
+- completed:
+    commit: f4a105acf3293db845ea3f1f66c6207d4afa457f
+    git: https://github.com/runtimeverification/haskell-backend.git
+    name: kore-rpc-types
+    pantry-tree:
+      sha256: 7f87179897491d9543823d69c46011889a701f6b02f007f37cee520b50134092
+      size: 268
+    subdir: kore-rpc-types
+    version: 0.60.0.0
+  original:
+    commit: f4a105acf3293db845ea3f1f66c6207d4afa457f
+    git: https://github.com/runtimeverification/haskell-backend.git
+    subdir: kore-rpc-types
 snapshots:
 - completed:
     sha256: bfafe5735ccb74527d754b1f9999ded72d7c3a6c3a88529449661431ccfbd6cc
