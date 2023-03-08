@@ -5,13 +5,14 @@
     k-framework.url = "github:runtimeverification/k";
     nixpkgs.follows = "haskell-nix/nixpkgs-unstable";
     haskell-nix.url = "github:input-output-hk/haskell.nix";
+    haskell-backend.url = "github:runtimeverification/haskell-backend";
     flake-compat = {
       url = "github:edolstra/flake-compat";
       flake = false;
     };
   };
 
-  outputs = { self, nixpkgs, haskell-nix, k-framework, ... }@inputs:
+  outputs = { self, nixpkgs, haskell-nix, k-framework, haskell-backend, ... }@inputs:
     let
       inherit (nixpkgs) lib;
       perSystem = lib.genAttrs nixpkgs.lib.systems.flakeExposed;
@@ -19,13 +20,24 @@
         import nixpkgs {
           inherit (haskell-nix) config;
           inherit system;
-          overlays = [ haskell-nix.overlays.combined ];
+          overlays = [ haskell-nix.overlays.combined haskell-backend.overlays.z3 ];
         };
       allNixpkgsFor = perSystem nixpkgsForSystem;
       nixpkgsFor = system: allNixpkgsFor.${system};
       index-state = "2023-01-19T00:00:00Z";
 
       boosterBackendFor = { compiler, pkgs, profiling ? false, k }:
+        let
+          add-z3 = exe: {
+            build-tools = with pkgs; lib.mkForce [ makeWrapper ];
+            postInstall = ''
+              wrapProgram $out/bin/${exe} --prefix PATH : ${
+                with pkgs;
+                lib.makeBinPath [ z3 ]
+              }
+            '';
+          };
+        in
         pkgs.haskell-nix.cabalProject {
           name = "hs-backend-booster";
           compiler-nix-name = compiler;
@@ -62,6 +74,7 @@
           modules = [{
             enableProfiling = profiling;
             enableLibraryProfiling = profiling;
+            packages.hs-backend-booster.components.exes.hs-booster-proxy = add-z3 "hs-booster-proxy";
             packages.hs-backend-booster.components.tests.llvm-integration = {
               build-tools = with pkgs; lib.mkForce [ makeWrapper ];
               postInstall = ''
@@ -127,6 +140,7 @@
           rpc-client = packages."hs-backend-booster:exe:rpc-client";
           parsetest = packages."hs-backend-booster:exe:parsetest";
           dltest = packages."hs-backend-booster:exe:dltest";
+          hs-booster-proxy = packages."hs-backend-booster:exe:hs-booster-proxy";
         } // packages // collectOutputs "packages" flakes);
 
       apps = perSystem (system:
@@ -134,12 +148,30 @@
           inherit (flakes.${defaultCompiler}) apps;
           flakes = flakesFor (nixpkgsFor system) k-framework.packages.${system}.k;
           pkgs = nixpkgsFor system;
+          scripts = pkgs.symlinkJoin {
+            name = "scripts";
+            paths = [ ./scripts ];
+            buildInputs = [ pkgs.makeWrapper ];
+            postBuild = ''
+              wrapProgram $out/update-haskell-backend.sh \
+                --prefix PATH : ${
+                  with pkgs;
+                  lib.makeBinPath [ nix gnused gnugrep jq ]
+                }
+            '';
+          };
+
         in {
           hs-backend-booster = apps."hs-backend-booster:exe:hs-backend-booster";
           rpc-client = apps."hs-backend-booster:exe:rpc-client";
           parsetest = apps."hs-backend-booster:exe:parsetest";
           parsetest-binary = apps."hs-backend-booster:exe:parsetest-binary";
           dltest = apps."hs-backend-booster:exe:dltest";
+          hs-booster-proxy = apps."hs-backend-booster:exe:hs-booster-proxy";
+          update-haskell-backend = {
+            type = "app";
+            program = "${scripts}/update-haskell-backend.sh";
+          };
         } // apps // collectOutputs "apps" flakes);
 
       # To enter a development environment for a particular GHC version, use
@@ -173,7 +205,6 @@
 
       overlays.default = lib.composeManyExtensions [
         (final: prev:
-          # Needed to build Inferno itself
           lib.optionalAttrs (!(prev ? haskell-nix))
           (inputs.haskell-nix.overlays.combined final prev))
         (_: prev:

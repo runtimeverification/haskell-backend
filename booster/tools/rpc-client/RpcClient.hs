@@ -36,7 +36,7 @@ import System.Exit
 import System.IO
 import System.Process
 
-import Booster.JsonRpc.Base (rpcJsonConfig)
+import Booster.JsonRpc (rpcJsonConfig)
 import Booster.Syntax.Json qualified as Syntax
 
 import Debug.Trace
