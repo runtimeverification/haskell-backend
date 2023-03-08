@@ -16,7 +16,7 @@ can be written as `t ∧ p` where the interpretation of `t` contains at most one
 element and `p` is a predicate.
 
 _Extended constructor patterns_ will be those extended function-like patterns
-for which `t` is a functional term, composed out of constructor-like symbols
+for which `t` is a total-function-like term, composed out of constructor-like symbols
 and variables.
 
 ### And-Not-Exists Simplification

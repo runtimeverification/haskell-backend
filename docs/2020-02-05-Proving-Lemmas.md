@@ -52,7 +52,7 @@ syntax Bytes ::= "nilBytes"
                | Int ":" Bytes
 
 syntax Int ::= lengthBytes(Bytes)
-               [function, functional, smtlib(lengthBytes)]
+               [function, total, smtlib(lengthBytes)]
 syntax Int ::= lengthBytes(Bytes, Int)
                [function, klabel(lengthBytesAux), smtlib(lengthBytesAux)]
 rule lengthBytes(BS) => lengthBytes(BS, 0)
@@ -234,19 +234,19 @@ And the following definition:
 syntax Int ::= #asWord ( ByteArray ) [function, smtlib(asWord)]
 rule #asWord(WS) => chop(Bytes2Int(WS, BE, Unsigned))
 
-syntax Int ::= chop ( Int ) [function, functional, smtlib(chop)]
+syntax Int ::= chop ( Int ) [function, total, smtlib(chop)]
 rule chop ( I:Int ) => I modInt pow256 [concrete, smt-lemma]
 
 syntax Int ::= Int "modInt" Int
     [function, klabel(modInt), symbol, left, smt-hook(mod), hook(INT.emod)]
 syntax Int ::= Bytes2Int(Bytes, Endianness, Signedness)
-    [function, functional, hook(BYTES.bytes2int)]
+    [function, total, hook(BYTES.bytes2int)]
 
 syntax Bytes ::= "nilBytes"
                | Int ":" Bytes
 
 syntax Bytes ::= #drop ( Int , Bytes )
-    [klabel(dropBytes), function, functional]
+    [klabel(dropBytes), function, total]
 rule #drop(N, BS:Bytes) => BS
     requires notBool N >Int 0
 rule #drop(N, BS:Bytes) => .Bytes

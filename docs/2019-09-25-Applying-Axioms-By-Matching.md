@@ -23,7 +23,7 @@ and a goal `φ → •ψ` such that
 
 (2) `α(Y)` can be decomposed as `α(Y) = αₜ(Y) ∧ αₚ(Y)`
 
-and there exist(s) functional pattern(s) `t` such that
+and there exist(s) total-function-like pattern(s) `t` such that
 
 (3) `φₚ → (φₜ = αₜ(t))` and
 
@@ -40,7 +40,7 @@ it is true that `φ → •ψ`.
 
 Premise (0) says
 
-`∀ Y .α(Y) → •β(Y)`; instantiating `Y` with `t` (functional) we get
+`∀ Y .α(Y) → •β(Y)`; instantiating `Y` with `t` (total-function-like) we get
 
 `α(t) → •β(t)` which is equivalent by (2) with
 
@@ -74,7 +74,7 @@ QED
 
 ### Coverage concerns (All-path-reachability)
 
-Note that if `φ` and `αₜ(Y)` are not functional and constructor-based,
+Note that if `φ` and `αₜ(Y)` are not total-function-like and constructor-based,
 then the MGU migh not be computable.
 In this case,  the above technique does not guarantee coverage as-is,
 since `t` is not guaranteed to be the most general unifier
@@ -109,7 +109,7 @@ and a goal `φ → ψ` such that
 
 (1) `φ` can be decomposed as `φ = φₜ ∧ φₚ`
 
-and there exist(s) functional pattern(s) `t` such that
+and there exist(s) total-function-like pattern(s) `t` such that
 
 (2) `φₚ → (φₜ = αₜ(t))` and
 
@@ -125,7 +125,7 @@ it is true that `φ → ψ`.
 
 Premise (0) says
 
-(0) `∀ Y . αₚ(Y) → (αₜ(Y) = β(Y))`; instantiating `Y` with `t` (functional) we get
+(0) `∀ Y . αₚ(Y) → (αₜ(Y) = β(Y))`; instantiating `Y` with `t` (total-function-like) we get
 
 `αₚ(t) → (αₜ(t) = β(t))`; by (3) and transitivity of `→` we get
 

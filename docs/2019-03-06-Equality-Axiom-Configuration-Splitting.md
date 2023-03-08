@@ -67,7 +67,7 @@ The most general unifier is
     -- since f is a function
   = ⌈f(x)⌉ ∧ (f(x) == f(z)) ∧ z < 0
 
-    -- since f is actually functional
+    -- since f is actually total-function-like
   = (f(x) == f(z)) ∧ z < 0
 ```
 from which we can't infer a substitution for `z` since `(f(x) == f(z)) ∧ z < 0`
@@ -80,7 +80,7 @@ So we search for a unifier which lies somewhere between `⊥` and the most
 general unifier. For this, we match the structure of the two terms as much as
 possible, identifying identical node types (e.g. both nodes are `application`s
 of the same head, both nodes are `and` and so on), and we have a few special
-cases for handling different node types (e.g. a variable vs a functional term
+cases for handling different node types (e.g. a variable vs a total-function-like term
 becomes a substitution).
 
 This unifier consists of a predicate `Q(X, Z)` and a substitution `S(X,Z)`.
@@ -127,8 +127,8 @@ variables in `Z`, then, for all formulas `ψ(Z)`, there is another formula
   -- ∃ Z . a ∧ b = a ∧ ∃ Z . b if Z does not occur free in a
   = P'(X) ∧ ψ'(X) ∧ ∃ Z . S(X, Z)
 
-  -- ∃ Z . Z = a is always top if a is functional, and we assume that
-  -- patterns used in substitutions are relatively functional.
+  -- ∃ Z . Z = a is always top if a is total-function-like, and we assume that
+  -- patterns used in substitutions are relatively total-function-like.
   = P'(X) ∧ ψ'(X)
 ```
 

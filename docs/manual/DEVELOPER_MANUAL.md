@@ -856,9 +856,9 @@ A valid Kkore pattern conforms to the grammar of `<pattern>` described above and
 
   1. (adjective) A function-like [pattern](#glossary-pattern) can have at most one value, i.e. it satisfies $(\exists x . x = \varphi ) \vee \neg \lceil \varphi \rceil$.
 
-[*functional*]{#glossary-functional}
+[*total-function-like*]{#glossary-total-function-like}
 
-  1. (adjective) A functional [pattern](#glossary-pattern) has exactly one value, i.e. it satisfies $(\exists x . x = \varphi)$.
+  1. (adjective) A total-function-like [pattern](#glossary-pattern) has exactly one value, i.e. it satisfies $(\exists x . x = \varphi)$.
 
 [*pattern*]{#glossary-pattern}
 
