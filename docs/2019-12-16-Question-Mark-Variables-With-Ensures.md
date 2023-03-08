@@ -312,7 +312,7 @@ Its axiom is
 ### Frontend Syntax
 
 Since expressing the axiom for `interval` requires an an existential
-quantification on the right-hand-side, thus making it a non-functional symbol
+quantification on the right-hand-side, thus making it a non-total-function-like symbol
 defined through an equation, using `?` variables might be confusing since their
 usage would be different from that presented in the previous sections.
 

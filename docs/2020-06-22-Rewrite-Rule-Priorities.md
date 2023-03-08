@@ -90,9 +90,9 @@ Applying the second rule when the first one doesn't work makes most sense for
 function-like patterns. For non-function-like patterns understanding what it
 means to apply the rules separately is slightly trickier, but it can be
 reduced to splitting the pattern into function like ones (if possible) and
-applying the rules on the functional components.
+applying the rules on the total-function-like components.
 
-If C(Y) is functional, then the first rule does not apply iff
+If C(Y) is total-function-like, then the first rule does not apply iff
 `¬ ∃ X₁ ⌈ C(Y) ∧ φ₁(X₁) ⌉`, so
 applying the second rule when the first one does
 not work is equivalent to computing
@@ -139,7 +139,7 @@ Let's see if the two are equivalent:
     ⌉
     ∧ ψ₂(X)
 ===
-// if A is functional, then A ∧ B = A ∧ ⌈ A ∧ B ⌉
+// if A is total-function-like, then A ∧ B = A ∧ ⌈ A ∧ B ⌉
 ∃ X .
     ⌈
         C(Y) ∧ φ₂(X)
@@ -196,7 +196,7 @@ Applying the second rule with a priority predicate means computing:
 // A ∧ ¬ B = A ∧ ¬ (A ∧ B)
 ∃ X . ⌈ C(Y) ∧ φ₂(X) ∧ P₂(X) ∧ ¬ ∃ X₁ . φ₂(X) ∧ ⌈φ₂(X) ∧ φ₁(X₁)⌉ ∧ P₁(X₁) ⌉ ∧ ψ₂(X)
 ===
-// Assuming φ₂(X) is functional,
+// Assuming φ₂(X) is total-function-like,
 // φ₂(X) ∧ ⌈φ₂(X) ∧ φ₁(X₁)⌉ === φ₂(X) ∧ φ₁(X₁)
 ∃ X . ⌈ C(Y) ∧ φ₂(X) ∧ P₂(X) ∧ ¬ ∃ X₁ . φ₂(X) ∧ φ₁(X₁) ∧ P₁(X₁) ⌉ ∧ ψ₂(X)
 ===

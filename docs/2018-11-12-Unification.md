@@ -32,7 +32,7 @@ Additional constraints and assumptions
   `S(X, Y)` and `P(X) ∧ ⌈t(X)⌉`. Indeed, many of the unification cases
   explicitly use `⌈φ(X) ∧ α(Y)⌉`.
 * The unification algorithm assumes that it mostly unifies term patterns, i.e.
-  it usually works only with variables and functional symbols, but,
+  it usually works only with variables and total-function-like symbols, but,
   in some cases, it can allow other symbols and logical operators.
 * We are only interested in substitutions that resolve the entire `Y`.
 * We will assume that infinite constructor-based recursion can't exist,
@@ -113,14 +113,14 @@ not-handled-error otherwise
 
 ### variable vs function-like pattern
 
-Creates a substitution for that variable and pattern. If the functional pattern
+Creates a substitution for that variable and pattern. If the total-function-like pattern
 is also a variable, the substitution maps the lower variable to the higher one (using the default variable order). This has two uses:
 * The callers use it to substitute axiom variables for pattern variables
   whenever there is a choice.
 * The substitution normalization algorithm can work under the assumption that
   we don't have both `x->y` and `y->x` as substitutions.
 
-Note that, at first sight, this should work only for functional patterns, not
+Note that, at first sight, this should work only for total-function-like patterns, not
 for random function-like patterns. However, the unification result is
 `f ∧ [x -> f]`, which, if we check it carefully, is equal to `x ∧ f` for all
 function-like patterns `f`.

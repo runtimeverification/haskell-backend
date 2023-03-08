@@ -34,13 +34,13 @@ and with the unification predicate `θp(X)`, then
 Background
 ----------
 
-### Functional and function-like patterns
+### Function-like and total-function-like patterns
 
 See the `glossary.md` file for term definitions (e.g.
-[functional](glossary.md#functional) and
-[function-like](glossary.md#functionlike)).
+[function-like](glossary.md#functionlike)) and
+[total-function-like](glossary.md#total-function-like).
 
-If `t` is functional (or function-like) and `φ` is a predicate,
+If `t` is total-function-like (or function-like) and `φ` is a predicate,
 then `t ∧ φ` is function-like.
 
 In the sequel all of our pattern meta-variables will be assumes to denote

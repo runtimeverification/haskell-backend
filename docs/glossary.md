@@ -26,10 +26,10 @@
    A function-like pattern can have at most one value, i.e. it satisfies
    `(∃x . x=φ) ∨ ¬⌈φ⌉`.
 
-<a name="functional"></a>*functional*
+<a name="total-function-like"></a>*total-function-like*
 
 1. (adjective)
-   A functional pattern has exactly one value, i.e. it satisfies `(∃x . x=φ)`.
+   A total-function-like pattern has exactly one value, i.e. it satisfies `(∃x . x=φ)`.
 
 <a name="pattern"></a>*pattern*
 

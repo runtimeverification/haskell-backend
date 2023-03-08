@@ -979,8 +979,8 @@ Patterns built with only function symbols are called
 \emph{term patterns}, or simply just \emph{terms}.
 The functionality property can be extended from a symbol to
 a pattern: equation ``$\exists y\,.\,\varphi = y$'' states that pattern
-$\varphi$ is \emph{functional}; it is easy to see that terms are
-functional patterns.
+$\varphi$ is \emph{total-function-like}; it is easy to see that terms are
+total-function-like patterns.
 Partial functions and total relations can also be axiomatized;
 we refer the interested reader to \cite{rosu-2017-lmcs}.
 
@@ -1026,8 +1026,8 @@ That follows because for any two variables $x$ and $y$ of same sort,
 $x \wedge y$ is interpreted as either a singleton set when $x$ and $y$
 are interpreted as the same element, or as the empty set otherwise.
 \end{description}
-Additionally, if each $c_i$ is functional, then we call them
-\textbf{functional constructors}.
+Additionally, if each $c_i$ is total-function-like, then we call them
+\textbf{total-function-like constructors}.
 The usual way to define a set of constructors is to have $A$
 include all the patterns above.
 
@@ -1297,7 +1297,7 @@ Section~\ref{sec:deduction}.
 \label{sec:binders}
 
 \info[inline]{More recent research shows that binders can be defined as
-functional symbols. Change section 4.1--4.3 to reflect that.}
+total-function-like symbols. Change section 4.1--4.3 to reflect that.}
 
 The \K framework allows to define binders, such as the $\lambda$ binder in
 $\lambda$-calculus, using the attribute \texttt{binder}.
