@@ -84,6 +84,16 @@ Finally, run `direnv allow` inside the repo folder to load up the nix shell.
 
 Note that only `cabal` currently works within the nix shell and since it does not support the HPack `package.yaml` file format, any changes to this file will require running `hpack` before they are picked up by cabal.
 
+### scripts/update-haskell-backend.sh
+
+To bump the version of the haskell-backend consistently within the project (i.e. in nix, cabal.project and stack.yaml) call
+
+```
+nix run .#update-haskell-backend
+```
+
+you can optionally pass a commit hash above if you don't want master.
+
 ### HLS in VSCode
 
 To get HLS working in VSCode, install these two extensions:

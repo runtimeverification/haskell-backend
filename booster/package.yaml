@@ -77,6 +77,7 @@ library:
   - hashable
   - hpp
   - json-rpc
+  - kore-rpc-types
   - language-c
   - monad-logger
   - optparse-applicative
@@ -180,6 +181,30 @@ executables:
       - transformers
       - unix
       - unordered-containers
+    ghc-options:
+    - -rtsopts
+
+  hs-booster-proxy:
+    source-dirs: tools/hs-booster-proxy
+    main: Server.hs
+    dependencies:
+      - aeson
+      - base
+      - casing
+      - clock
+      - conduit-extra
+      - containers
+      - deepseq
+      - exceptions
+      - hs-backend-booster
+      - json-rpc
+      - kore
+      - kore-rpc-types
+      - monad-logger
+      - optparse-applicative
+      - stm
+      - text
+      - transformers
     ghc-options:
     - -rtsopts
 
