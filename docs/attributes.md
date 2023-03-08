@@ -179,17 +179,15 @@ A symbol is injective if it is given the `injective` attribute, the
 function{}()
 ```
 
-A symbol is a function if it is given the `function` attribute or if it is
-functional.
+A symbol is a function if it is given the `function` attribute.
 
-### Functional
+### Total
 
 ```
-functional{}()
+total{}()
 ```
 
-A symbol is functional if it is given the `functional` attribute or the
-`sortInjection` attribute.
+A symbol is total-function-like if it is given the `total` + `function` attributes.
 
 ### Hook
 
@@ -261,7 +259,7 @@ sortInjection{}()
 A symbol is injective if it is given the `injective` attribute, the
 `constructor` attribute, or the `sortInjection` attribute.
 
-A symbol is functional if it is given the `functional` attribute or the
+A symbol is total-function-like if it is given the `total` + `function` attributes or the
 `sortInjection` attribute.
 
 ## misc.

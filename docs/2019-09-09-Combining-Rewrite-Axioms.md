@@ -25,10 +25,10 @@ based on non-injective symbols.
 The general transformation
 --------------------------
 
-Let us take a configuration `φ(X)` which is functional,
+Let us take a configuration `φ(X)` which is total-function-like,
 and which can be a single variable.
 
-Let us also take a configuration `α(X)→•β(X)`, with `α(X)` being functional.
+Let us also take a configuration `α(X)→•β(X)`, with `α(X)` being total-function-like.
 Then, similar to
 [basic symbolic execution algorithm](2018-11-08-Applying-Axioms.md), we have:
 
@@ -37,7 +37,7 @@ Then, similar to
 1. α(Y) ∧ ⌈α(Y) ∧ φ(X)⌉ → (•β(Y)) ∧ ⌈α(Y) ∧ φ(X)⌉
    // from (1) and propositional reasoning
 1. α(Y) ∧ ⌈α(Y) ∧ φ(X)⌉ = α(Y) ∧ φ(X)
-   // ML paper Prop. 5.24, needs `α` and `φ` to be functional
+   // ML paper Prop. 5.24, needs `α` and `φ` to be total-function-like
 1. α(Y) ∧ φ(X) → (•β(Y)) ∧ ⌈α(Y) ∧ φ(X)⌉
    // from (2) and (3)
 1. φ(X) ∧ ⌈α(Y) ∧ φ(X)⌉ → (•β(Y)) ∧ ⌈α(Y) ∧ φ(X)⌉
@@ -60,7 +60,7 @@ variables in `Y` and `Y’` when computing `⌈α(Y) ∧ φ(X)⌉`, which usuall
 us to remove these variables. However, when combining rewriting axioms,
 we don’t always get such substitutions, so we need to take a different approach.
 
-First, let us note that if `φ₁`, `φ₂` and `φ₃` are *functional*, then
+First, let us note that if `φ₁`, `φ₂` and `φ₃` are *total-function-like*, then
 ```
 ⌈φ₁∧φ₂⌉ ∧ ⌈φ₁∧φ₃⌉
 = (φ₁ == φ₂) ∧ (φ₁ == φ₃)
@@ -132,11 +132,11 @@ above to make it work).
 ### Using function-like patterns
 
 Usually `φ(X)` and `α(X)` are only function-like, but the above requires
-functional patterns. We will show that the same formula also works for function-like patterns.
+total-function-like patterns. We will show that the same formula also works for function-like patterns.
 
 ```
 1. φ(X) ∧ ⌈α(Y) ∧ φ(X)⌉ → •β(Y)
-   // Works only for functional patterns
+   // Works only for total-function-like patterns
 1. (⌈φ(X)⌉ ∧ ⌈α(Y)⌉) → (φ(X) ∧ ⌈α(Y) ∧ φ(X)⌉ → •β(Y))
    // Adding definedness conditions, works for function-like patterns
 1. ⌈φ(X)⌉ ∧ ⌈α(Y)⌉ ∧ φ(X) ∧ ⌈α(Y) ∧ φ(X)⌉ → •β(Y)
