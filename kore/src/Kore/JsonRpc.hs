@@ -36,6 +36,7 @@ import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (pattern PredicateTrue)
 import Kore.Internal.TermLike (TermLike)
 import Kore.Internal.TermLike qualified as TermLike
+import Kore.JsonRpc.Error
 import Kore.JsonRpc.Server (ErrorObj (..), JsonRpcHandler (JsonRpcHandler), Request (getReqId), Respond, jsonRpcServer)
 import Kore.JsonRpc.Types
 import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown, srcLoc)
@@ -75,7 +76,6 @@ import Log qualified
 import Prelude.Kore
 import Pretty qualified
 import SMT qualified
-import Kore.JsonRpc.Error
 
 respond ::
     forall m.
