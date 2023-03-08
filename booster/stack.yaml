@@ -4,7 +4,18 @@ packages:
 - .
 
 # Dependency packages to be pulled from upstream that are not in the resolver.
-extra-deps: []
+extra-deps:
+  - chronos-1.1.5
+  - co-log-0.5.0.0
+  - compact-0.2.0.0
+  - decision-diagrams-0.2.0.0
+  - typerep-map-0.6.0.0
+  - monad-validate-1.2.0.0@sha256:9850f408431098b28806dd464b6825a88a0b56c84f380d7fe0454c1df9d6f881,3505
+  - git: https://github.com/runtimeverification/haskell-backend.git
+    commit: f4a105acf3293db845ea3f1f66c6207d4afa457f
+    subdirs:
+      - kore
+      - kore-rpc-types
 
 # Control whether we use the GHC we find on the path
 # system-ghc: true
@@ -17,3 +28,5 @@ extra-deps: []
 compiler-check: newer-minor
 
 local-bin-path: ./.build/kore/bin
+
+allow-newer: true
