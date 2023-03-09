@@ -5,7 +5,15 @@ import Control.Monad.Logger (logWarnN)
 import Data.Aeson
 import Data.Text qualified as Text
 import Kore.JsonRpc.Server (ErrorObj (..), JsonRpcHandler (..))
-import Text.Casing (fromHumps, toWords)
+import Text.Casing (fromHumps, Identifier (unIdentifier))
+import Data.Char (toLower)
+
+toSentence :: Identifier String -> String
+toSentence = unwords . sentence . unIdentifier
+  where
+    sentence = \case
+      (first:rest) -> first : map (map toLower) rest 
+      other -> other
 
 -- RPC Server implementation errors
 
@@ -14,8 +22,10 @@ cancelUnsupportedInBatchMode = ErrorObj "Cancel request unsupported in batch mod
 -- using "Method does not exist" error code
 notImplemented = ErrorObj "Not implemented" (-32601) Null
 
-unsupportedField :: Value -> ErrorObj
-unsupportedField = ErrorObj "Unsupported option" (-32002)
+runtimeError, unsupportedOption :: ToJSON a => a -> ErrorObj
+runtimeError = ErrorObj "Runtime error" (-32002) . toJSON
+
+unsupportedOption = ErrorObj "Unsupported option" (-32003) . toJSON
 
 -- Runtime backend errors
 
@@ -25,8 +35,7 @@ unsupportedField = ErrorObj "Unsupported option" (-32002)
     the error codes in `ErrorObj`.
 -}
 data JsonRpcBackendError
-    = RuntimeError
-    | CouldNotParsePattern
+    = CouldNotParsePattern
     | CouldNotVerifyPattern
     | CouldNotFindModule
     | ImplicationCheckError
@@ -36,7 +45,7 @@ data JsonRpcBackendError
     deriving stock (Enum, Show)
 
 backendError :: ToJSON a => JsonRpcBackendError -> a -> ErrorObj
-backendError err detail = ErrorObj (toWords $ fromHumps $ show err) (fromEnum err + 1) (toJSON detail)
+backendError err detail = ErrorObj (toSentence $ fromHumps $ show err) (fromEnum err + 1) (toJSON detail)
 
 -- Common runtime error handlers
 
@@ -45,9 +54,9 @@ handleErrorCall = JsonRpcHandler $
     \(ErrorCallWithLocation msg loc) -> do
         logWarnN $ Text.pack $ "Error in " <> loc <> ": " <> msg
         pure $
-            backendError RuntimeError $
+            runtimeError $
                 object ["error" .= msg, "context" .= loc]
 handleSomeException = JsonRpcHandler $
     \(err :: SomeException) -> do
         logWarnN $ Text.pack $ show err
-        pure $ backendError RuntimeError $ object ["error" .= show err]
+        pure $ runtimeError $ object ["error" .= show err]
