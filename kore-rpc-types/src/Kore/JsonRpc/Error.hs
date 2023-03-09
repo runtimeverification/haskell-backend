@@ -37,7 +37,7 @@ backendError err detail = ErrorObj (toWords $ fromHumps $ show err) (fromEnum er
 handleErrorCall, handleSomeException :: JsonRpcHandler
 handleErrorCall = JsonRpcHandler $
     \err@(ErrorCallWithLocation msg loc) -> do
-        logInfoN $ Text.pack $ show err
+        logWarnN $ Text.pack $ "Error in " <> loc <> ": " <> msg
         pure $
             backendError RuntimeError $
                 object ["error" .= msg, "context" .= loc]
