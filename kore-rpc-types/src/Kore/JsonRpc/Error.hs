@@ -11,10 +11,11 @@ import Text.Casing (fromHumps, toWords)
 
 cancelUnsupportedInBatchMode, notImplemented :: ErrorObj
 cancelUnsupportedInBatchMode = ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
-notImplemented = ErrorObj "Not implemented" (-32002) Null
+-- using "Method does not exist" error code
+notImplemented = ErrorObj "Not implemented" (-32601) Null
 
 unsupportedField :: Value -> ErrorObj
-unsupportedField = ErrorObj "Unsupported option" (-32003)
+unsupportedField = ErrorObj "Unsupported option" (-32002)
 
 -- Runtime backend errors
 
