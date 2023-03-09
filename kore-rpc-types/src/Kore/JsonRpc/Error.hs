@@ -1,7 +1,7 @@
 module Kore.JsonRpc.Error (module Kore.JsonRpc.Error) where
 
 import Control.Exception (ErrorCall (..), SomeException)
-import Control.Monad.Logger (logInfoN)
+import Control.Monad.Logger (logWarnN)
 import Data.Aeson
 import Data.Text qualified as Text
 import Kore.JsonRpc.Server (ErrorObj (..), JsonRpcHandler (..))
@@ -18,6 +18,11 @@ unsupportedField = ErrorObj "Unsupported option" (-32003)
 
 -- Runtime backend errors
 
+{- | Do NOT re-order the constructors in this type!
+    If new error types are to be added, only append at the end.
+    This restriction is due to using the Enum instance to generate
+    the error codes in `ErrorObj`.
+-}
 data JsonRpcBackendError
     = RuntimeError
     | CouldNotParsePattern
@@ -30,18 +35,18 @@ data JsonRpcBackendError
     deriving stock (Enum, Show)
 
 backendError :: ToJSON a => JsonRpcBackendError -> a -> ErrorObj
-backendError err detail = ErrorObj (toWords $ fromHumps $ show err) (fromEnum err) (toJSON detail)
+backendError err detail = ErrorObj (toWords $ fromHumps $ show err) (fromEnum err + 1) (toJSON detail)
 
 -- Common runtime error handlers
 
 handleErrorCall, handleSomeException :: JsonRpcHandler
 handleErrorCall = JsonRpcHandler $
-    \err@(ErrorCallWithLocation msg loc) -> do
+    \(ErrorCallWithLocation msg loc) -> do
         logWarnN $ Text.pack $ "Error in " <> loc <> ": " <> msg
         pure $
             backendError RuntimeError $
                 object ["error" .= msg, "context" .= loc]
 handleSomeException = JsonRpcHandler $
     \(err :: SomeException) -> do
-        logInfoN $ Text.pack $ show err
+        logWarnN $ Text.pack $ show err
         pure $ backendError RuntimeError $ object ["error" .= show err]
