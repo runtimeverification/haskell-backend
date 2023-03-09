@@ -3,17 +3,17 @@ module Kore.JsonRpc.Error (module Kore.JsonRpc.Error) where
 import Control.Exception (ErrorCall (..), SomeException)
 import Control.Monad.Logger (logWarnN)
 import Data.Aeson
+import Data.Char (toLower)
 import Data.Text qualified as Text
 import Kore.JsonRpc.Server (ErrorObj (..), JsonRpcHandler (..))
-import Text.Casing (fromHumps, Identifier (unIdentifier))
-import Data.Char (toLower)
+import Text.Casing (Identifier (unIdentifier), fromHumps)
 
 toSentence :: Identifier String -> String
 toSentence = unwords . sentence . unIdentifier
   where
     sentence = \case
-      (first:rest) -> first : map (map toLower) rest 
-      other -> other
+        (first : rest) -> first : map (map toLower) rest
+        other -> other
 
 -- RPC Server implementation errors
 
@@ -24,7 +24,6 @@ notImplemented = ErrorObj "Not implemented" (-32601) Null
 
 runtimeError, unsupportedOption :: ToJSON a => a -> ErrorObj
 runtimeError = ErrorObj "Runtime error" (-32002) . toJSON
-
 unsupportedOption = ErrorObj "Unsupported option" (-32003) . toJSON
 
 -- Runtime backend errors
