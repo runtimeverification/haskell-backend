@@ -14,6 +14,7 @@ import Control.Monad.Logger (logInfoN, runLoggingT)
 import Data.Aeson.Types (ToJSON (..))
 import Data.Coerce (coerce)
 import Data.Conduit.Network (serverSettings)
+import Data.Default (Default (..))
 import Data.IORef (readIORef)
 import Data.InternedText (globalInternedTextCache)
 import Data.Limit (Limit (..))
@@ -23,6 +24,7 @@ import GlobalMain (
     LoadedDefinition (..),
     SerializedDefinition (..),
  )
+import Kore.Attribute.Attributes (Attributes)
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.Builtin qualified as Builtin
 import Kore.Exec qualified as Exec
@@ -43,7 +45,7 @@ import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown, srcLoc)
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
-import Kore.Parser (parseKoreDefinition)
+import Kore.Parser (parseKoreModule)
 import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite (
     ProgramState,
@@ -319,17 +321,16 @@ respond serverState moduleName runSMT =
                     PatternJson.toParsedPattern $
                         PatternJson.term state
         AddModule AddModuleRequest{_module} ->
-            case parseKoreDefinition "" _module of
+            case parseKoreModule "<add-module>" _module of
                 Left err -> pure $ Left $ backendError CouldNotParsePattern err
-                Right parsedModule -> do
+                Right parsedModule@Module{moduleName = name} -> do
                     LoadedDefinition{indexedModules, definedNames, kFileLocations} <-
                         liftIO $ loadedDefinition <$> MVar.readMVar serverState
-                    let Module{moduleName = name} = head $ definitionModules parsedModule
-                        verified =
+                    let verified =
                             verifyAndIndexDefinitionWithBase
                                 (indexedModules, definedNames)
                                 Builtin.koreVerifiers
-                                parsedModule
+                                (Definition (def @Attributes) [parsedModule])
                     case verified of
                         Left err -> pure $ Left $ backendError CouldNotVerifyPattern err
                         Right (indexedModules', definedNames') ->
