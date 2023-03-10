@@ -10,11 +10,11 @@ module Main (main) where
 import Control.Concurrent.MVar (newMVar)
 import Control.Concurrent.MVar qualified as MVar
 import Control.DeepSeq (force)
-import Control.Exception (SomeException, evaluate)
+import Control.Exception (evaluate)
 import Control.Monad (forM_, void)
 import Control.Monad.Catch (bracket)
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Control.Monad.Logger (LogLevel (..), LoggingT (runLoggingT), MonadLoggerIO (askLoggerIO), ToLogStr (toLogStr), defaultLoc, logInfoN)
+import Control.Monad.Logger (LogLevel (..), LoggingT (runLoggingT), MonadLoggerIO (askLoggerIO), ToLogStr (toLogStr), defaultLoc)
 import Control.Monad.Logger qualified as Logger
 import Data.Conduit.Network (serverSettings)
 import Data.IORef (writeIORef)
@@ -32,15 +32,15 @@ import Booster.JsonRpc qualified as Booster
 import Booster.LLVM.Internal (mkAPI, withDLib)
 import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
-import Data.Aeson (toJSON)
 import Data.Text qualified as Text
 import GlobalMain qualified
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.BugReport (BugReportOption (..), withBugReport)
 import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
 import Kore.Internal.TermLike (TermLike, VariableName)
-import Kore.JsonRpc (ServerState (..), serverError)
+import Kore.JsonRpc (ServerState (..))
 import Kore.JsonRpc qualified as Kore
+import Kore.JsonRpc.Error
 import Kore.JsonRpc.Server
 import Kore.JsonRpc.Types (API, ReqOrRes (Req, Res))
 import Kore.Log (ExeName (..), KoreLogType (LogSomeAction), LogAction (LogAction), TimestampsSwitch (TimestampsDisable), defaultKoreLogOptions, swappableLogger, withLogger)
@@ -114,7 +114,7 @@ main = do
                             jsonRpcServer
                                 srvSettings
                                 (const $ Proxy.respondEither boosterRespond koreRespond)
-                                [JsonRpcHandler $ \(err :: SomeException) -> logInfoN (Text.pack $ show err) >> pure (serverError "crashed" $ toJSON $ show err)]
+                                [handleErrorCall, handleSomeException]
                     runLoggingT server monadLogger
   where
     clParser =
