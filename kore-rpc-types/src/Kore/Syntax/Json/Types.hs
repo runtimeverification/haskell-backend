@@ -199,10 +199,15 @@ data KorePattern
         }
     | -- TODO textual parser also understands And/Implies/Iff
 
-      -- | left/right associative app pattern
-      KJMultiApp
-        { assoc :: LeftRight
-        , symbol :: Id -- may start by a '\\'
+      -- | left associative app pattern
+      KJLeftAssoc
+        { symbol :: Id -- may start by a '\\'
+        , sorts :: [Sort]
+        , argss :: NE.NonEmpty KorePattern
+        }
+    | -- | right associative app pattern
+      KJRightAssoc
+        { symbol :: Id -- may start by a '\\'
         , sorts :: [Sort]
         , argss :: NE.NonEmpty KorePattern
         }
@@ -265,8 +270,10 @@ lexicalCheck p =
             reportErrors txt "string literal" checkLatin1Range
         -- Input supports std Unicode (as per json spec). toJSON could
         -- check that only allowed escape sequences will be generated.
-        KJMultiApp{symbol = Id n} ->
-            reportErrors n "multi-app symbol" checkSymbolName
+        KJLeftAssoc{symbol = Id n} ->
+            reportErrors n "left-assoc symbol" checkSymbolName
+        KJRightAssoc{symbol = Id n} ->
+            reportErrors n "left-assoc symbol" checkSymbolName
         _ -> pure p
   where
     reportErrors :: Text -> String -> (Text -> [String]) -> Json.Parser KorePattern

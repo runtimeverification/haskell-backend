@@ -117,8 +117,10 @@ toParsedPattern = \case
             Kore.DomainValue (mkSort sort) (toParsedPattern (KJString value))
     KJMultiOr{assoc, sort, argss} ->
         withAssoc assoc (mkOr sort) $ NE.map toParsedPattern argss
-    KJMultiApp{assoc, symbol, sorts, argss} ->
-        withAssoc assoc (mkF symbol sorts) $ NE.map toParsedPattern argss
+    KJLeftAssoc{symbol, sorts, argss} ->
+        foldl1 (mkF symbol sorts) $ NE.map toParsedPattern argss
+    KJRightAssoc{symbol, sorts, argss} ->
+        foldr1 (mkF symbol sorts) $ NE.map toParsedPattern argss
   where
     embedVar ::
         (VariableName -> SomeVariableName VariableName) ->
