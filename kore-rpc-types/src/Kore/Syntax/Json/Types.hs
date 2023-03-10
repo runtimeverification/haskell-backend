@@ -205,8 +205,7 @@ data KorePattern
         , sorts :: [Sort]
         , argss :: NE.NonEmpty KorePattern
         }
-    |
-      -- | right associative app pattern
+    | -- | right associative app pattern
       KJRightAssoc
         { symbol :: Id -- may start by a '\\'
         , sorts :: [Sort]
