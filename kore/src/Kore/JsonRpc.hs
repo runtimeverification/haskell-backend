@@ -65,8 +65,9 @@ import Kore.Simplify.API (evalSimplifier)
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (Simplifier)
 import Kore.Syntax (VariableName)
+import Kore.Syntax.Definition (Definition (..))
 import Kore.Syntax.Json qualified as PatternJson
-import Kore.Syntax.Module (ModuleName (..))
+import Kore.Syntax.Module (Module (..), ModuleName (..))
 import Kore.Syntax.Sentence (
     SentenceAxiom,
  )
@@ -317,13 +318,14 @@ respond serverState moduleName runSMT =
                 PatternVerifier.verifyStandalonePattern Nothing $
                     PatternJson.toParsedPattern $
                         PatternJson.term state
-        AddModule AddModuleRequest{name, _module} ->
+        AddModule AddModuleRequest{_module} ->
             case parseKoreDefinition "" _module of
                 Left err -> pure $ Left $ backendError CouldNotParsePattern err
                 Right parsedModule -> do
                     LoadedDefinition{indexedModules, definedNames, kFileLocations} <-
                         liftIO $ loadedDefinition <$> MVar.readMVar serverState
-                    let verified =
+                    let Module{moduleName = name} = head $ definitionModules parsedModule
+                        verified =
                             verifyAndIndexDefinitionWithBase
                                 (indexedModules, definedNames)
                                 Builtin.koreVerifiers
