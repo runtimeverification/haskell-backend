@@ -128,7 +128,7 @@ extractRewriteAxioms idxMod =
             ( Bifunctor.second
                 (Recursive.project . stripForall . Syntax.sentenceAxiomPattern)
             )
-        $ indexedModuleAxioms idxMod
+        $ recursiveIndexedModuleAxioms idxMod
   where
     extractRewrites [] = []
     extractRewrites (simple : complex) =
@@ -262,6 +262,7 @@ complexRewriteTermToRule attributes pat =
                     (TermLike.And_ _ requires lhs)
                 )
             -- Don't store anti-left pattern for now to improve performance
+            -- TODO JB are we sure we don't want to store the antiLeft?
             rhs ->
                 RewriteRule
                     RulePattern

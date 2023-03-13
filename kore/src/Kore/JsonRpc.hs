@@ -337,12 +337,12 @@ respond serverState moduleName runSMT =
                             case Map.lookup (coerce name) indexedModules' of
                                 Nothing -> pure $ Left $ backendError CouldNotFindModule name
                                 Just mainModule -> do
-                                    let metadataTools = MetadataTools.build mainModule -- TODO needs to build recursively
-                                        lemmas = getSMTLemmas mainModule -- TODO needs to get lemmas recursively
+                                    let metadataTools = MetadataTools.build mainModule
+                                        lemmas = getSMTLemmas mainModule -- recursive now
                                     serializedModule' <-
                                         liftIO
                                             . runSMT metadataTools lemmas
-                                            $ Exec.makeSerializedModule mainModule -- TODO needs to extract recursively
+                                            $ Exec.makeSerializedModule mainModule
                                     internedTextCache <- liftIO $ readIORef globalInternedTextCache
 
                                     liftIO . MVar.modifyMVar_ serverState $

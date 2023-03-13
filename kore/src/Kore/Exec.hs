@@ -249,7 +249,7 @@ makeSerializedModule ::
     SMT SerializedModule
 makeSerializedModule verifiedModule =
     evalSimplifier (indexedModuleSyntax verifiedModule') sortGraph overloadGraph metadataTools equations $ do
-        rewrites <- initializeAndSimplify verifiedModule
+        rewrites <- initializeAndSimplify verifiedModule -- recursive now
         return
             SerializedModule
                 { sortGraph
@@ -260,9 +260,9 @@ makeSerializedModule verifiedModule =
                 , equations
                 }
   where
-    sortGraph = SortGraph.fromIndexedModule verifiedModule
-    overloadGraph = OverloadGraph.fromIndexedModule verifiedModule
-    earlyMetadataTools = MetadataTools.build verifiedModule
+    sortGraph = SortGraph.fromIndexedModule verifiedModule -- recursive now
+    overloadGraph = OverloadGraph.fromIndexedModule verifiedModule -- was already recursive
+    earlyMetadataTools = MetadataTools.build verifiedModule -- was already recursive
     verifiedModule' =
         IndexedModule.mapPatterns
             (Builtin.internalize earlyMetadataTools)
@@ -998,7 +998,7 @@ initializeProver ::
     Maybe (VerifiedModule StepperAttributes) ->
     Simplifier InitializedProver
 initializeProver koreLogOptions definitionModule specModule maybeTrustedModule = do
-    initialized <- initializeAndSimplify definitionModule
+    initialized <- initializeAndSimplify definitionModule -- NB recursive now!
     let Initialized{rewriteRules} = initialized
         equations = extractEquations definitionModule
         undefinedLabels = runValidate $ validateDebugOptions equations rewriteRules koreLogOptions
