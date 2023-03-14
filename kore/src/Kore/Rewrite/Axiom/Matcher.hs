@@ -412,7 +412,7 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
                 decomposeOverload unifyData
         (_, _)
             | Just True <- List.isListSort tools sort ->
-                case (List.normalize pat, List.normalize subject) of
+                case (List.internalize tools pat, List.internalize tools subject) of
                     (Var_ var1, Var_ var2)
                         | var1 == var2 ->
                             discharge
