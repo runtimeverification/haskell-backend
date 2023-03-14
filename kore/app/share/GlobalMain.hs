@@ -668,7 +668,7 @@ makeSerializedDefinition solverOptions definitionFileName mainModuleName = do
     definition <- loadDefinitions [definitionFileName]
     mainModule <- loadModule mainModuleName definition
     let metadataTools = MetadataTools.build mainModule
-    let lemmas = getSMTLemmas mainModule -- NB recursive now
+    let lemmas = getSMTLemmas mainModule
     serializedModule <-
         execute solverOptions metadataTools lemmas $
             makeSerializedModule mainModule

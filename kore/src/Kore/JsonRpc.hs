@@ -338,7 +338,7 @@ respond serverState moduleName runSMT =
                                 Nothing -> pure $ Left $ backendError CouldNotFindModule name
                                 Just mainModule -> do
                                     let metadataTools = MetadataTools.build mainModule
-                                        lemmas = getSMTLemmas mainModule -- recursive now
+                                        lemmas = getSMTLemmas mainModule
                                     serializedModule' <-
                                         liftIO
                                             . runSMT metadataTools lemmas
