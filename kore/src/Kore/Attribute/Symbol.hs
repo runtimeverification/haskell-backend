@@ -62,6 +62,14 @@ module Kore.Attribute.Symbol (
     NoEvaluators (..),
     noEvaluatorsAttribute,
 
+    -- * Macro symbols
+    Macro (..),
+    macroAttribute,
+
+    -- * Alias symbols
+    AliasKywd (..),
+    aliasKywdAttribute,
+
     -- * Derived attributes
     isConstructorLike,
     isTotal,
@@ -90,8 +98,10 @@ import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
 import Kore.Attribute.SortInjection
 import Kore.Attribute.SourceLocation
+import Kore.Attribute.Symbol.AliasKywd
 import Kore.Attribute.Symbol.Anywhere
 import Kore.Attribute.Symbol.Klabel
+import Kore.Attribute.Symbol.Macro
 import Kore.Attribute.Symbol.Memo
 import Kore.Attribute.Symbol.NoEvaluators
 import Kore.Attribute.Symbol.SymbolKywd
@@ -128,6 +138,8 @@ data Symbol = Symbol
     , noEvaluators :: !NoEvaluators
     , -- | Location in the original (source) file.
       sourceLocation :: !SourceLocation
+    , macro :: !Macro
+    , aliasKywd :: !AliasKywd
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -155,6 +167,8 @@ instance ParseAttributes Symbol where
             >=> typed @SymbolKywd (parseAttribute attr)
             >=> typed @NoEvaluators (parseAttribute attr)
             >=> typed @SourceLocation (parseAttribute attr)
+            >=> typed @Macro (parseAttribute attr)
+            >=> typed @AliasKywd (parseAttribute attr)
 
 instance From Symbol Attributes where
     from =
@@ -174,6 +188,8 @@ instance From Symbol Attributes where
                 , from . symbolKywd
                 , from . noEvaluators
                 , from . sourceLocation
+                , from . macro
+                , from . aliasKywd
                 ]
 
 type StepperAttributes = Symbol
@@ -195,6 +211,8 @@ defaultSymbolAttributes =
         , symbolKywd = def
         , noEvaluators = def
         , sourceLocation = def
+        , macro = def
+        , aliasKywd = def
         }
 
 -- | See also: 'defaultSymbolAttributes'
