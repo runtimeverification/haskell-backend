@@ -14,6 +14,7 @@ import Control.Monad.Logger (logInfoN, runLoggingT)
 import Data.Aeson.Types (ToJSON (..))
 import Data.Coerce (coerce)
 import Data.Conduit.Network (serverSettings)
+import Data.Default (Default (..))
 import Data.IORef (readIORef)
 import Data.InternedText (globalInternedTextCache)
 import Data.Limit (Limit (..))
@@ -23,6 +24,7 @@ import GlobalMain (
     LoadedDefinition (..),
     SerializedDefinition (..),
  )
+import Kore.Attribute.Attributes (Attributes)
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.Builtin qualified as Builtin
 import Kore.Exec qualified as Exec
@@ -43,7 +45,7 @@ import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown, srcLoc)
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
-import Kore.Parser (parseKoreDefinition)
+import Kore.Parser (parseKoreModule)
 import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite (
     ProgramState,
@@ -65,8 +67,9 @@ import Kore.Simplify.API (evalSimplifier)
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (Simplifier)
 import Kore.Syntax (VariableName)
+import Kore.Syntax.Definition (Definition (..))
 import Kore.Syntax.Json qualified as PatternJson
-import Kore.Syntax.Module (ModuleName (..))
+import Kore.Syntax.Module (Module (..), ModuleName (..))
 import Kore.Syntax.Sentence (
     SentenceAxiom,
  )
@@ -317,17 +320,17 @@ respond serverState moduleName runSMT =
                 PatternVerifier.verifyStandalonePattern Nothing $
                     PatternJson.toParsedPattern $
                         PatternJson.term state
-        AddModule AddModuleRequest{name, _module} ->
-            case parseKoreDefinition "" _module of
+        AddModule AddModuleRequest{_module} ->
+            case parseKoreModule "<add-module>" _module of
                 Left err -> pure $ Left $ backendError CouldNotParsePattern err
-                Right parsedModule -> do
+                Right parsedModule@Module{moduleName = name} -> do
                     LoadedDefinition{indexedModules, definedNames, kFileLocations} <-
                         liftIO $ loadedDefinition <$> MVar.readMVar serverState
                     let verified =
                             verifyAndIndexDefinitionWithBase
                                 (indexedModules, definedNames)
                                 Builtin.koreVerifiers
-                                parsedModule
+                                (Definition (def @Attributes) [parsedModule])
                     case verified of
                         Left err -> pure $ Left $ backendError CouldNotVerifyPattern err
                         Right (indexedModules', definedNames') ->
@@ -336,12 +339,10 @@ respond serverState moduleName runSMT =
                                 Just mainModule -> do
                                     let metadataTools = MetadataTools.build mainModule
                                         lemmas = getSMTLemmas mainModule
-
                                     serializedModule' <-
                                         liftIO
                                             . runSMT metadataTools lemmas
                                             $ Exec.makeSerializedModule mainModule
-
                                     internedTextCache <- liftIO $ readIORef globalInternedTextCache
 
                                     liftIO . MVar.modifyMVar_ serverState $

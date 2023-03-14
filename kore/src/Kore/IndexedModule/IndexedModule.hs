@@ -549,7 +549,7 @@ internalIndexedModuleSubsorts imod = do
     let attributes =
             [ sentenceAxiomAttributes
             | (_, SentenceAxiom{sentenceAxiomAttributes}) <-
-                indexedModuleAxioms imod
+                recursiveIndexedModuleAxioms imod
             ]
     Subsorts subsorts <-
         Attribute.Parser.liftParser $

@@ -81,7 +81,7 @@ If the verification of the `state` pattern fails, the following error is returne
       ],
       "error": "Head \'Lbl\'UndsUndsUnds\'TESTFOO-SYNTAX\'Unds\'Stmt\'Unds\'Stmt\'Unds\'Stmt\' not defined."
     },
-    "code": -32002,
+    "code": 2,
     "message": "Could not verify KORE pattern"
   }
 }
@@ -234,7 +234,7 @@ Other errors are specific to the implication checker and what it supports. These
       ],
       "error": "Term does not simplify to a singleton pattern"
     }
-    "code": -32003,
+    "code": 4,
     "message": "Implication check error"
   }
 }
@@ -333,18 +333,37 @@ Same as for execute
   "id": 1,
   "method": "add-module",
   "params": {
-    "name": "MODULE-NAME",
-    "module": "<plain text>"
+    "module": "module MODULE-NAME endmodule []"
   }
 }
 ```
 
-* `name` is the name of the main module.
-* `module` is module represented in KORE.
+* `module` is a module represented in textual KORE format. The module may import modules that have been loaded or added earlier.
+
+### Error Response:
+
+If the textual KORE in `module` is syntactically wrong, the response will use the error code
+`Could not parse pattern` with the parse error in the `data` field (also see below).
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "data": ":21:286: unexpected token TokenIdent \\"hasDomainValues\\"\\n",
+    "code": 1,
+    "message": "Could not parse pattern"
+  }
+}
+```
+
+Other errors, for instance, using an unknown sort or symbol, will be reported with the error code
+`Could not verify pattern` and a more specific error message in the `data` field.
 
 ### Correct Response:
 
-Responds with an empty array if successful.
+Responds with an empty array if successful. The module `MODULE-NAME` can now be used in subsequent
+requests to the server by passing `"module": "MODULE-NAME"`.
 
 ```json
 {
@@ -396,7 +415,7 @@ The server uses the JSON RPC spec way of returning errors. Namely, the returned 
 }
 ```
 
-The kore-rpc specific error messages will use error codes in the range -32000 to -32099 and are listed for individual calles above as well as collected below for convenience.
+The kore-rpc specific error messages will use error codes in the range -32000 to -32099 and are listed for individual calls above as well as collected below for convenience.
 
 ## -32001 Cancel request unsupported in batch mode
 
@@ -498,5 +517,4 @@ Error returned when the SMT solver crashes or is unable to discharge a goal.
 
 ## 7 Multiple states
 
-The two errors above indicate that the execute endpoint ended up in an erroneous/inconsistent state and the returned error message is should be included in the bug report.  
-
+The two errors above indicate that the execute endpoint ended up in an erroneous/inconsistent state and the returned error message is should be included in the bug report.
