@@ -9,26 +9,24 @@ module Kore.JsonRpc (
 ) where
 
 import Control.Concurrent.MVar qualified as MVar
-import Control.Exception (ErrorCall (..), SomeException)
-import Control.Monad.Catch (MonadCatch, handle)
 import Control.Monad.Except (runExceptT)
 import Control.Monad.Logger (logInfoN, runLoggingT)
-import Data.Aeson.Types (ToJSON (..), Value (..))
+import Data.Aeson.Types (ToJSON (..))
 import Data.Coerce (coerce)
 import Data.Conduit.Network (serverSettings)
+import Data.Default (Default (..))
 import Data.IORef (readIORef)
 import Data.InternedText (globalInternedTextCache)
 import Data.Limit (Limit (..))
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
-import Data.Text qualified as Text
 import GlobalMain (
     LoadedDefinition (..),
     SerializedDefinition (..),
  )
+import Kore.Attribute.Attributes (Attributes)
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.Builtin qualified as Builtin
-import Kore.Error (Error (..))
 import Kore.Exec qualified as Exec
 import Kore.Exec.GraphTraversal qualified as GraphTraversal
 import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
@@ -40,13 +38,14 @@ import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (pattern PredicateTrue)
 import Kore.Internal.TermLike (TermLike)
 import Kore.Internal.TermLike qualified as TermLike
+import Kore.JsonRpc.Error
 import Kore.JsonRpc.Server (ErrorObj (..), JsonRpcHandler (JsonRpcHandler), Request (getReqId), Respond, jsonRpcServer)
 import Kore.JsonRpc.Types
 import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown, srcLoc)
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
-import Kore.Parser (parseKoreDefinition)
+import Kore.Parser (parseKoreModule)
 import Kore.Reachability.Claim qualified as Claim
 import Kore.Rewrite (
     ProgramState,
@@ -68,8 +67,9 @@ import Kore.Simplify.API (evalSimplifier)
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (Simplifier)
 import Kore.Syntax (VariableName)
+import Kore.Syntax.Definition (Definition (..))
 import Kore.Syntax.Json qualified as PatternJson
-import Kore.Syntax.Module (ModuleName (..))
+import Kore.Syntax.Module (Module (..), ModuleName (..))
 import Kore.Syntax.Sentence (
     SentenceAxiom,
  )
@@ -77,14 +77,12 @@ import Kore.Validate.DefinitionVerifier (verifyAndIndexDefinitionWithBase)
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Log qualified
 import Prelude.Kore
-import Pretty (Pretty)
 import Pretty qualified
 import SMT qualified
 
 respond ::
     forall m.
     MonadIO m =>
-    MonadCatch m =>
     MVar.MVar ServerState ->
     ModuleName ->
     ( forall a.
@@ -95,13 +93,13 @@ respond ::
     ) ->
     Respond (API 'Req) m (API 'Res)
 respond serverState moduleName runSMT =
-    withErrHandler . \case
+    \case
         Execute ExecuteRequest{state, maxDepth, _module, cutPointRules, terminalRules, movingAverageStepTimeout, stepTimeout} -> withMainModule (coerce _module) $ \serializedModule lemmas ->
             case PatternVerifier.runPatternVerifier (verifierContext serializedModule) $
                 PatternVerifier.verifyStandalonePattern Nothing $
                     PatternJson.toParsedPattern $
                         PatternJson.term state of
-                Left err -> pure $ Left $ couldNotVerify $ toJSON err
+                Left err -> pure $ Left $ backendError CouldNotVerifyPattern err
                 Right verifiedPattern -> do
                     traversalResult <-
                         liftIO
@@ -205,9 +203,9 @@ respond serverState moduleName runSMT =
                                     }
                 -- these are programmer errors
                 result@GraphTraversal.Aborted{} ->
-                    Left $ serverError "aborted" $ asText (show result)
+                    Left $ backendError Kore.JsonRpc.Error.Aborted $ show result
                 other ->
-                    Left $ serverError "multiple states in result" $ asText (show other)
+                    Left $ backendError MultipleStates $ show other
 
             patternToExecState ::
                 TermLike.Sort ->
@@ -231,7 +229,7 @@ respond serverState moduleName runSMT =
         Implies ImpliesRequest{antecedent, consequent, _module} -> withMainModule (coerce _module) $ \serializedModule lemmas ->
             case PatternVerifier.runPatternVerifier (verifierContext serializedModule) verify of
                 Left err ->
-                    pure $ Left $ couldNotVerify $ toJSON err
+                    pure $ Left $ backendError CouldNotVerifyPattern $ toJSON err
                 Right (antVerified, consVerified) -> do
                     let leftPatt =
                             mkRewritingPattern $ Pattern.parsePatternFromTermLike antVerified
@@ -275,7 +273,7 @@ respond serverState moduleName runSMT =
                         , substitution = fromMaybe noSubstitution mbSubstitution
                         }
 
-            buildResult _ (Left err) = Left $ implicationError $ toJSON err
+            buildResult _ (Left err) = Left $ backendError ImplicationCheckError $ toJSON err
             buildResult sort (Right (term, r)) =
                 let jsonTerm =
                         PatternJson.fromTermLike $
@@ -296,7 +294,7 @@ respond serverState moduleName runSMT =
         Simplify SimplifyRequest{state, _module} -> withMainModule (coerce _module) $ \serializedModule lemmas ->
             case PatternVerifier.runPatternVerifier (verifierContext serializedModule) verifyState of
                 Left err ->
-                    pure $ Left $ couldNotVerify $ toJSON err
+                    pure $ Left $ backendError CouldNotVerifyPattern err
                 Right stateVerified -> do
                     let patt =
                             mkRewritingPattern $ Pattern.parsePatternFromTermLike stateVerified
@@ -322,31 +320,29 @@ respond serverState moduleName runSMT =
                 PatternVerifier.verifyStandalonePattern Nothing $
                     PatternJson.toParsedPattern $
                         PatternJson.term state
-        AddModule AddModuleRequest{name, _module} ->
-            case parseKoreDefinition "" _module of
-                Left err -> pure . Left . couldNotParse $ toJSON err
-                Right parsedModule -> do
+        AddModule AddModuleRequest{_module} ->
+            case parseKoreModule "<add-module>" _module of
+                Left err -> pure $ Left $ backendError CouldNotParsePattern err
+                Right parsedModule@Module{moduleName = name} -> do
                     LoadedDefinition{indexedModules, definedNames, kFileLocations} <-
                         liftIO $ loadedDefinition <$> MVar.readMVar serverState
                     let verified =
                             verifyAndIndexDefinitionWithBase
                                 (indexedModules, definedNames)
                                 Builtin.koreVerifiers
-                                parsedModule
+                                (Definition (def @Attributes) [parsedModule])
                     case verified of
-                        Left err -> pure . Left . couldNotVerify $ toJSON err
+                        Left err -> pure $ Left $ backendError CouldNotVerifyPattern err
                         Right (indexedModules', definedNames') ->
                             case Map.lookup (coerce name) indexedModules' of
-                                Nothing -> pure . Left . couldNotFindModule $ toJSON name
+                                Nothing -> pure $ Left $ backendError CouldNotFindModule name
                                 Just mainModule -> do
                                     let metadataTools = MetadataTools.build mainModule
                                         lemmas = getSMTLemmas mainModule
-
                                     serializedModule' <-
                                         liftIO
                                             . runSMT metadataTools lemmas
                                             $ Exec.makeSerializedModule mainModule
-
                                     internedTextCache <- liftIO $ readIORef globalInternedTextCache
 
                                     liftIO . MVar.modifyMVar_ serverState $
@@ -374,35 +370,15 @@ respond serverState moduleName runSMT =
                                     pure . Right $ AddModule ()
 
         -- this case is only reachable if the cancel appeared as part of a batch request
-        Cancel -> pure $ Left $ ErrorObj "Cancel request unsupported in batch mode" (-32001) Null
+        Cancel -> pure $ Left cancelUnsupportedInBatchMode
   where
     withMainModule module' act = do
         let mainModule = fromMaybe moduleName module'
         ServerState{serializedModules} <- liftIO $ MVar.readMVar serverState
         case Map.lookup mainModule serializedModules of
-            Nothing -> pure . Left . couldNotFindModule $ toJSON mainModule
+            Nothing -> pure $ Left $ backendError CouldNotFindModule mainModule
             Just (SerializedDefinition{serializedModule, lemmas}) ->
                 act serializedModule lemmas
-
-    couldNotVerify err = ErrorObj "Could not verify KORE pattern" (-32002) err
-
-    couldNotParse err = ErrorObj "Could not parse KORE pattern" (-32004) err
-
-    couldNotFindModule err = ErrorObj "Could not find module" (-32005) err
-
-    asText :: Pretty.Pretty a => a -> Value
-    asText = String . Pretty.renderText . Pretty.layoutOneLine . Pretty.pretty
-
-    implicationError err = ErrorObj "Implication check error" (-32003) err
-
-    -- catch all calls to `error` that may occur within the guts of the engine
-    withErrHandler ::
-        m (Either ErrorObj res) ->
-        m (Either ErrorObj res)
-    withErrHandler =
-        let mkError (ErrorCallWithLocation msg loc) =
-                Error{errorContext = [loc], errorError = msg}
-         in handle (pure . Left . serverError "crashed" . toJSON . mkError)
 
     verifierContext Exec.SerializedModule{verifiedModule} =
         PatternVerifier.verifiedModuleContext verifiedModule
@@ -423,10 +399,6 @@ respond serverState moduleName runSMT =
                 overloadGraph
                 metadataTools
                 equations
-
-serverError :: String -> Value -> ErrorObj
-serverError detail payload =
-    ErrorObj ("Server error: " <> detail) (-32032) payload
 
 data ServerState = ServerState
     { serializedModules :: Map.Map ModuleName SerializedDefinition
@@ -452,8 +424,9 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
             (\req parsed -> log (InfoJsonRpcProcessRequest (getReqId req) parsed) >> respond serverState mainModule runSMT parsed)
             [ JsonRpcHandler $ \(err :: DecidePredicateUnknown) ->
                 let mkPretty = Pretty.renderText . Pretty.layoutPretty Pretty.defaultLayoutOptions . Pretty.pretty
-                 in logInfoN (mkPretty err) >> pure (serverError "crashed" $ toJSON $ mkPretty err)
-            , JsonRpcHandler $ \(err :: SomeException) -> logInfoN (Text.pack $ show err) >> pure (serverError "crashed" $ toJSON $ show err)
+                 in logInfoN (mkPretty err) >> pure (backendError SmtSolverError $ mkPretty err)
+            , handleErrorCall
+            , handleSomeException
             ]
   where
     srvSettings = serverSettings port "*"

@@ -81,7 +81,7 @@ If the verification of the `state` pattern fails, the following error is returne
       ],
       "error": "Head \'Lbl\'UndsUndsUnds\'TESTFOO-SYNTAX\'Unds\'Stmt\'Unds\'Stmt\'Unds\'Stmt\' not defined."
     },
-    "code": -32002,
+    "code": 2,
     "message": "Could not verify KORE pattern"
   }
 }
@@ -234,7 +234,7 @@ Other errors are specific to the implication checker and what it supports. These
       ],
       "error": "Term does not simplify to a singleton pattern"
     }
-    "code": -32003,
+    "code": 4,
     "message": "Implication check error"
   }
 }
@@ -333,18 +333,37 @@ Same as for execute
   "id": 1,
   "method": "add-module",
   "params": {
-    "name": "MODULE-NAME",
-    "module": "<plain text>"
+    "module": "module MODULE-NAME endmodule []"
   }
 }
 ```
 
-* `name` is the name of the main module.
-* `module` is module represented in KORE.
+* `module` is a module represented in textual KORE format. The module may import modules that have been loaded or added earlier.
+
+### Error Response:
+
+If the textual KORE in `module` is syntactically wrong, the response will use the error code
+`Could not parse pattern` with the parse error in the `data` field (also see below).
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "data": ":21:286: unexpected token TokenIdent \\"hasDomainValues\\"\\n",
+    "code": 1,
+    "message": "Could not parse pattern"
+  }
+}
+```
+
+Other errors, for instance, using an unknown sort or symbol, will be reported with the error code
+`Could not verify pattern` and a more specific error message in the `data` field.
 
 ### Correct Response:
 
-Responds with an empty array if successful.
+Responds with an empty array if successful. The module `MODULE-NAME` can now be used in subsequent
+requests to the server by passing `"module": "MODULE-NAME"`.
 
 ```json
 {
@@ -389,30 +408,61 @@ The server uses the JSON RPC spec way of returning errors. Namely, the returned 
   "jsonrpc": "2.0",
   "id": 1,
   "error": {
-    "code": -32002,
-    "message": "Could not verify KORE pattern",
+    "code": 2,
+    "message": "Could not verify pattern",
     "data": {}
   }
 }
 ```
 
-The kore-rpc specific error messages will use error codes in the range -32000 to -32099 and are listed for individual calles above as well as collected below for convenience.
+The kore-rpc specific error messages will use error codes in the range -32000 to -32099 and are listed for individual calls above as well as collected below for convenience.
 
 ## -32001 Cancel request unsupported in batch mode
 
 Due to the way that cancel is implemented, we do not allow a cancel message within batch mode. This message should never occur if batch mode is not used.
 
-## -32002 Could not verify KORE pattern
+## -32002 Runtime error
 
-This error wraps the internal error thrown when validating the received pattern agains the loaded definition file.
+A catch all when the backend throws an error, e.g. an assertion violation or an IO runtime error.
+
+This error indicates an internal problem with the server implementation. Its data is not expected to be processed by a client (other than including it in a bug report).
+
+## -32601 Not implemented
+
+The backend currently does not support the requested function.
+
+## -32003 Unsupported option
+
+With multiple backends, there might not be full feature parity between the different servers. If the current backend does support the given function but doesnt support some optional parameters, it will throw `-32003 Unsupported option` for the given parameter instead of `-32601 Not implemented`.
+
+
+## 1 Could not parse pattern
+
+This error wraps the internal error thrown when parsing the received plain text module.
 
 ```json
 {
   "jsonrpc": "2.0",
   "id": 1,
   "error": {
-    "code": -32002,
-    "message": "Could not verify KORE pattern",
+    "data": ":21:286: unexpected token TokenIdent \\"hasDomainValues\\"\\n",
+    "code": 1,
+    "message": "Could not parse pattern"
+  }
+}
+```
+
+## 2 Could not verify pattern
+
+This error wraps the internal error thrown when validating the received pattern against the loaded definition file.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "code": 2,
+    "message": "Could not verify pattern",
     "data": {
       "context": ["\\top (<unknown location>)","sort 'IntSort' (<unknown location>)","(<unknown location>)"],
       "error": "Sort 'IntSort' not defined."
@@ -421,7 +471,23 @@ This error wraps the internal error thrown when validating the received pattern 
 }
 ```
 
-## -32003 Implication check error
+## 3 Could not find module
+
+This error wraps the internal error thrown when a module with the given name can not be found.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "data": "MODULE-NAME",
+    "code": 3,
+    "message": "Could not find module"
+  }
+}
+```
+
+## 4 Implication check error
 
 This error wraps an error message from the internal implication check routine, in case the input data is inconsistent or otherwise unsuitable for the check.
 
@@ -430,7 +496,7 @@ This error wraps an error message from the internal implication check routine, i
   "jsonrpc":"2.0",
   "id":1
   "error": {
-    "code": -32003,
+    "code": 4,
     "message": "Implication check error",
     "data": {
       "context": [
@@ -442,37 +508,13 @@ This error wraps an error message from the internal implication check routine, i
 }
 ```
 
-## -32004 Could not parse KORE pattern
 
-This error wraps the internal error thrown when parsing the received plain text module.
+## 5 Smt solver error
 
-```json
-{
-  "jsonrpc":"2.0",
-  "id":1,
-  "error":  {
-    "data":":21:286: unexpected token TokenIdent \\"hasDomainValues\\"\\n",
-    "code":-32004,
-    "message":"Could not parse KORE pattern"
-  }
-}
-```
-## -32005 Could not find module
+Error returned when the SMT solver crashes or is unable to discharge a goal.
 
-This error wraps the internal error thrown when a module with the given name can not be found.
+## 6 Aborted
 
-```json
-{
-  "jsonrpc":"2.0",
-  "id":1,
-  "error":  {
-    "data":"MODULE-NAME",
-    "code":-32005,
-    "message":"Could not find module"
-  }
-}
-```
+## 7 Multiple states
 
-## -32032 Internal server error
-
-This error indicates an internal problem with the server implementation. Its data is not expected to be processed by a client (other than including it in a bug report).
+The two errors above indicate that the execute endpoint ended up in an erroneous/inconsistent state and the returned error message is should be included in the bug report.

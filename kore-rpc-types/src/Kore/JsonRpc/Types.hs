@@ -64,8 +64,7 @@ data SimplifyRequest = SimplifyRequest
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab, StripPrefix "_"]] SimplifyRequest
 
 data AddModuleRequest = AddModuleRequest
-    { name :: Text
-    , _module :: Text
+    { _module :: Text
     }
     deriving stock (Generic, Show, Eq)
     deriving

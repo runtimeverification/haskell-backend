@@ -128,7 +128,7 @@ extractRewriteAxioms idxMod =
             ( Bifunctor.second
                 (Recursive.project . stripForall . Syntax.sentenceAxiomPattern)
             )
-        $ indexedModuleAxioms idxMod
+        $ recursiveIndexedModuleAxioms idxMod
   where
     extractRewrites [] = []
     extractRewrites (simple : complex) =

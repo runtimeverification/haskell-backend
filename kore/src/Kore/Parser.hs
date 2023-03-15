@@ -20,6 +20,7 @@ main = do
 -}
 module Kore.Parser (
     parseKoreDefinition,
+    parseKoreModule,
     parseKorePattern,
     ParsedPattern,
     Parser.embedParsedPattern,
@@ -59,3 +60,11 @@ parseKorePattern ::
     Text ->
     Either String ParsedPattern
 parseKorePattern = Parser.parsePattern
+
+parseKoreModule ::
+    -- | Filename used for error messages
+    FilePath ->
+    -- | concrete kore syntax of a Kore module
+    Text ->
+    Either String (Module ParsedSentence)
+parseKoreModule = Parser.parseModule

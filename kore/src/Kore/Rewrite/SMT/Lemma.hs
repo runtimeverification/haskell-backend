@@ -58,7 +58,10 @@ import SMT (
 getSMTLemmas ::
     VerifiedModule StepperAttributes ->
     [SentenceAxiom (TermLike VariableName)]
-getSMTLemmas m = map snd $ filter (isSmtLemma . Attribute.smtLemma . fst) $ indexedModuleAxioms m
+getSMTLemmas =
+    map snd
+        . filter (isSmtLemma . Attribute.smtLemma . fst)
+        . recursiveIndexedModuleAxioms
 
 {- | Given an indexed module, `declareSMTLemmas` translates all
  rewrite rules marked with the smt-lemma attribute into the

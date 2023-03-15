@@ -33,6 +33,7 @@
         (hsPkgs."aeson" or (errorHandler.buildDepError "aeson"))
         (hsPkgs."aeson-pretty" or (errorHandler.buildDepError "aeson-pretty"))
         (hsPkgs."bytestring" or (errorHandler.buildDepError "bytestring"))
+        (hsPkgs."casing" or (errorHandler.buildDepError "casing"))
         (hsPkgs."conduit" or (errorHandler.buildDepError "conduit"))
         (hsPkgs."conduit-extra" or (errorHandler.buildDepError "conduit-extra"))
         (hsPkgs."deriving-aeson" or (errorHandler.buildDepError
@@ -47,8 +48,12 @@
         (hsPkgs."unliftio" or (errorHandler.buildDepError "unliftio"))
       ];
       buildable = true;
-      modules =
-        [ "Kore/JsonRpc/Types" "Kore/JsonRpc/Server" "Kore/Syntax/Json/Types" ];
+      modules = [
+        "Kore/JsonRpc/Error"
+        "Kore/JsonRpc/Types"
+        "Kore/JsonRpc/Server"
+        "Kore/Syntax/Json/Types"
+      ];
       hsSourceDirs = [ "src" ];
     };
   };

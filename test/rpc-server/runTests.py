@@ -175,6 +175,7 @@ def_path = "./add-module/add/definition.kore"
 params_execute_json_path = "./add-module/execute/params.json"
 resp_execute_fail_golden_path = "./add-module/execute/response-fail.golden"
 resp_execute_success_golden_path = "./add-module/execute/response-success.golden"
+resp_execute_defaultmodule_golden_path = "./add-module/execute/response-defaultmodule.golden"
 state_execute_path = "./add-module/execute/state.json"
 with open(params_execute_json_path, 'r') as params_json:
   with open(state_execute_path, 'r') as state_json:
@@ -182,6 +183,7 @@ with open(params_execute_json_path, 'r') as params_json:
     params_execute = json.loads(params_json.read())
     params_execute["state"] = state
     req_execute = rpc_request_id1("execute", params_execute)
+    req_execute_default = rpc_request_id1("execute", {"state": state})
 
 params_add_json_path = "./add-module/add/params.json"
 resp_add_golden_path = "./add-module/add/response.golden"
@@ -189,7 +191,7 @@ with open(params_add_json_path, 'r') as params_json:
   params_add = json.loads(params_json.read())
   req_add = rpc_request_id1("add-module", params_add)
 
-with subprocess.Popen(f"kore-rpc {def_path} --module K --server-port {PORT} --log-level {server_log_level[VERBOSITY]}".split()) as process:
+with subprocess.Popen(f"kore-rpc {def_path} --module TEST --server-port {PORT} --log-level {server_log_level[VERBOSITY]}".split()) as process:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
           while True:
             try:
@@ -206,6 +208,13 @@ with subprocess.Popen(f"kore-rpc {def_path} --module K --server-port {PORT} --lo
             debug(resp)
             checkGolden(resp, resp_execute_fail_golden_path)
 
+            name = "execute-default"
+            info(f"- test '{name}'...")
+            s.sendall(req_execute_default)
+            resp = recv_all(s)
+            debug(resp)
+            checkGolden(resp, resp_execute_defaultmodule_golden_path)
+
             name = "add-module"
             info(f"- test '{name}'...")
             s.sendall(req_add)
@@ -220,5 +229,11 @@ with subprocess.Popen(f"kore-rpc {def_path} --module K --server-port {PORT} --lo
             debug(resp)
             checkGolden(resp, resp_execute_success_golden_path)
 
+            name = "execute-default again"
+            info(f"- test '{name}'...")
+            s.sendall(req_execute_default)
+            resp = recv_all(s)
+            debug(resp)
+            checkGolden(resp, resp_execute_defaultmodule_golden_path)
           finally:
             process.kill()
