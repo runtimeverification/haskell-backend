@@ -1,0 +1,47 @@
+\and{SortGeneratedTopCell{}}(
+    /* term: */
+    /* Fn Spa */
+    Lbl'-LT-'generatedTop'-GT-'{}(
+        /* Fn Spa */
+        Lbl'-LT-'tasks'-GT-'{}(
+            /* Fn Spa */
+            LblTaskCellListItem{}(
+                /* T Fn D Spa */
+                Lbl'-LT-'task'-GT-'{}(
+                    /* T Fn D Spa */
+                    Lbl'-LT-'k'-GT-'{}(
+                        /* T Fn D Spa */
+                        kseq{}(
+                            /* T Fn D Spa */
+                            /* Inj: */ inj{SortType{}, SortKItem{}}(
+                                /* T Fn D Sfa */ ConfigVarT:SortType{}
+                            ),
+                            /* T Fn D Sfa Cl */ dotk{}()
+                        )
+                    ),
+                    /* T Fn D Sfa */ ConfigVar'Unds'DotVar1:SortTenvCell{}
+                )
+            )
+        ),
+        /* T Fn D Sfa */ ConfigVar'Unds'DotVar0:SortGeneratedCounterCell{}
+    ),
+\and{SortGeneratedTopCell{}}(
+    /* predicate: */
+    /* Spa */
+    \equals{SortBool{}, SortGeneratedTopCell{}}(
+        /* T Fn D Spa */
+        LblisType{}(
+            /* T Fn D Spa */
+            kseq{}(
+                /* T Fn D Spa */
+                /* Inj: */ inj{SortType{}, SortKItem{}}(
+                    /* T Fn D Sfa */ ConfigVarT:SortType{}
+                ),
+                /* T Fn D Sfa Cl */ dotk{}()
+            )
+        ),
+        /* T Fn D Sfa Cl */ \dv{SortBool{}}("true")
+    ),
+    /* substitution: */
+    \top{SortGeneratedTopCell{}}()
+))
