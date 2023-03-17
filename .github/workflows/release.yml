@@ -4,6 +4,10 @@ on:
     branches:
       - master
 
+env:
+  ghc_version: "9.2.5"
+  stack_version: "2.9.1"
+
 jobs:
 
   check:
@@ -71,8 +75,6 @@ jobs:
   cache-cabal:
     name: 'Cache Cabal'
     runs-on: ubuntu-20.04
-    env:
-      ghc_version: "9.2.5"
     steps:
       - name: Install prerequisites
         run: |
@@ -128,9 +130,9 @@ jobs:
       - uses: haskell/actions/setup@v2
         id: setup-haskell-stack
         with:
+          ghc-version: ${{ env.ghc_version }}
+          stack-version: ${{ env.stack_version }}
           enable-stack: true
-          stack-no-global: true
-          stack-setup-ghc: true
 
       - name: Build dependencies
         run: |
@@ -161,9 +163,9 @@ jobs:
       - uses: haskell/actions/setup@v2
         id: setup-haskell-stack
         with:
+          ghc-version: ${{ env.ghc_version }}
+          stack-version: ${{ env.stack_version }}
           enable-stack: true
-          stack-no-global: true
-          stack-setup-ghc: true
 
       - name: Check documentation
         run: |
