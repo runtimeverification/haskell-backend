@@ -110,11 +110,10 @@ jobs:
           path: |
             ~/.cabal/packages
             ~/.cabal/store
-          key: cabal-1-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}
+          key: cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('kore/kore.cabal') }}
           restore-keys: |
-            cabal-1-${{ runner.os }}-ghc-${{ env.ghc_version }}-
-            cabal-1-${{ runner.os }}-ghc-
-            cabal-1-
+            cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}
+            cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}
 
       - uses: haskell/actions/setup@v1
         id: setup-haskell-cabal
@@ -146,10 +145,10 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.stack
-          key: stack-1-${{ runner.os }}-${{ hashFiles('stack.yaml.lock') }}
+          key: stack-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
           restore-keys: |
-            stack-1-${{ runner.os }}-
-            stack-1-
+            stack-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}
+            stack-2-${{ runner.os }}-
 
       - uses: haskell/actions/setup@v1
         id: setup-haskell-stack
@@ -187,10 +186,10 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.stack
-          key: stack-haddock-${{ runner.os }}-${{ hashFiles('stack.yaml.lock') }}
+          key: stack-haddock-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
           restore-keys: |
-            stack-haddock-${{ runner.os }}-
-            stack-haddock-
+            stack-haddock-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}
+            stack-haddock-2-${{ runner.os }}
 
       - uses: haskell/actions/setup@v1
         id: setup-haskell-stack
