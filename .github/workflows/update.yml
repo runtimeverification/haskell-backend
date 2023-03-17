@@ -16,7 +16,7 @@ jobs:
             ref="${{ github.event.pull_request.head.sha }}"
           fi
           ref="${ref#refs/heads/}"
-          echo "::set-output name=ref::$ref"
+          echo "ref=$ref" >> $GITHUB_OUTPUT
 
           git config --global user.name github-actions
           git config --global user.email github-actions@github.com
@@ -84,7 +84,7 @@ jobs:
             ref="${{ github.event.pull_request.head.sha }}"
           fi
           ref="${ref#refs/heads/}"
-          echo "::set-output name=ref::$ref"
+          echo "ref=$ref" >> $GITHUB_OUTPUT
 
           git config --global user.name github-actions
           git config --global user.email github-actions@github.com
