@@ -16,13 +16,13 @@ jobs:
             ref="${{ github.event.pull_request.head.sha }}"
           fi
           ref="${ref#refs/heads/}"
-          echo "::set-output name=ref::$ref"
+          echo "ref=$ref" >> $GITHUB_OUTPUT
 
           git config --global user.name github-actions
           git config --global user.email github-actions@github.com
 
       - name: Check out code
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3
         with:
           ref: ${{ steps.config.outputs.ref }}
           submodules: recursive
@@ -84,13 +84,13 @@ jobs:
             ref="${{ github.event.pull_request.head.sha }}"
           fi
           ref="${ref#refs/heads/}"
-          echo "::set-output name=ref::$ref"
+          echo "ref=$ref" >> $GITHUB_OUTPUT
 
           git config --global user.name github-actions
           git config --global user.email github-actions@github.com
 
       - name: Check out code
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3
         with:
           ref: ${{ steps.config.outputs.ref }}
           submodules: recursive
