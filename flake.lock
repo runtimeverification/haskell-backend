@@ -900,16 +900,16 @@
     "z3-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1647807944,
-        "narHash": "sha256-hXlwaLsrMKm0rPAhRtynCjdhkeXIYzfNcjS04sHHfHY=",
+        "lastModified": 1674011426,
+        "narHash": "sha256-7cuUf29TMpX62PwO1ab3ZuzmzlcrRjTKB1CyXnYgYus=",
         "owner": "Z3Prover",
         "repo": "z3",
-        "rev": "f1806d32d6f21fd4df7a08719abbc1f6493d9dc5",
+        "rev": "3012293c35eadbfd73e5b94adbe50b0cc44ffb83",
         "type": "github"
       },
       "original": {
         "owner": "Z3Prover",
-        "ref": "z3-4.8.15",
+        "ref": "z3-4.12.1",
         "repo": "z3",
         "type": "github"
       }
