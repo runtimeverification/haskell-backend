@@ -115,7 +115,7 @@ jobs:
             cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}
             cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}
 
-      - uses: haskell/actions/setup@v1
+      - uses: haskell/actions/setup@v2
         id: setup-haskell-cabal
         with:
           ghc-version: ${{ env.ghc_version }}
@@ -150,7 +150,7 @@ jobs:
             stack-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}
             stack-2-${{ runner.os }}-
 
-      - uses: haskell/actions/setup@v1
+      - uses: haskell/actions/setup@v2
         id: setup-haskell-stack
         with:
           enable-stack: true
@@ -191,7 +191,7 @@ jobs:
             stack-haddock-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}
             stack-haddock-2-${{ runner.os }}
 
-      - uses: haskell/actions/setup@v1
+      - uses: haskell/actions/setup@v2
         id: setup-haskell-stack
         with:
           enable-stack: true
