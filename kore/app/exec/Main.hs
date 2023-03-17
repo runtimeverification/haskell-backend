@@ -48,6 +48,9 @@ import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
     indexedModuleRawSentences,
  )
+import Kore.IndexedModule.MetadataTools (
+    SmtMetadataTools,
+ )
 import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
     build,
  )
@@ -706,8 +709,8 @@ koreSearch execOptions = do
             , bound
             , searchType
             } = fromMaybe (error "This never should happen") koreSearchOptions
-    target <- mainParseSearchPattern verifiedModule searchFileName
-    initial <- loadPattern verifiedModule patternFileName
+    target <- mainParseSearchPattern metadataTools verifiedModule searchFileName
+    initial <- loadPattern metadataTools verifiedModule patternFileName
     let config = Search.Config{bound, searchType}
     final <-
         execute koreSolverOptions metadataTools lemmas $
@@ -748,7 +751,7 @@ koreRun execOptions = do
         undefinedLabels = runValidate $ validateDebugOptions equations (rewriteRules rewrites) koreLogOptions
     when (isLeft undefinedLabels) $ throwM . DebugOptionsValidationError $ fromLeft mempty undefinedLabels
     lift $ writeIORef globalInternedTextCache internedTextCache
-    initial <- loadPattern verifiedModule patternFileName
+    initial <- loadPattern metadataTools verifiedModule patternFileName
     (exitCode, final) <-
         execute koreSolverOptions metadataTools lemmas $
             exec
@@ -921,10 +924,14 @@ koreProve execOptions = do
                 , definitionModules = [provenModule]
                 }
 
-loadPattern :: LoadedModuleSyntax -> Maybe FilePath -> Main (TermLike VariableName)
-loadPattern mainModule (Just fileName) =
-    mainPatternParseAndVerify mainModule fileName
-loadPattern _ Nothing = error "Missing: --pattern PATTERN_FILE"
+loadPattern ::
+    SmtMetadataTools StepperAttributes ->
+    LoadedModuleSyntax ->
+    Maybe FilePath ->
+    Main (TermLike VariableName)
+loadPattern metadataTools mainModule (Just fileName) =
+    mainPatternParseAndVerify metadataTools mainModule fileName
+loadPattern _ _ Nothing = error "Missing: --pattern PATTERN_FILE"
 
 renderResult :: KoreExecOptions -> Doc ann -> IO ()
 renderResult KoreExecOptions{outputFileName} doc =
