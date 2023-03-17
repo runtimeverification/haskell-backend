@@ -105,7 +105,7 @@ jobs:
           submodules: recursive
 
       - name: Cache Cabal package database and store
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cabal/packages
@@ -143,7 +143,7 @@ jobs:
           submodules: recursive
 
       - name: Cache Stack root
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.stack
           key: stack-1-${{ runner.os }}-${{ hashFiles('stack.yaml.lock') }}
@@ -184,7 +184,7 @@ jobs:
           submodules: recursive
 
       - name: Cache Stack root
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.stack
           key: stack-haddock-${{ runner.os }}-${{ hashFiles('stack.yaml.lock') }}
