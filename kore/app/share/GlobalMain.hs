@@ -720,11 +720,12 @@ loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule
 loadModule moduleName = lookupMainModule moduleName . indexedModules
 
 mainParseSearchPattern ::
+    SmtMetadataTools StepperAttributes ->
     VerifiedModuleSyntax StepperAttributes ->
     String ->
     Main (Pattern VariableName)
-mainParseSearchPattern indexedModule patternFileName = do
-    purePattern <- mainPatternParseAndVerify indexedModule patternFileName
+mainParseSearchPattern metadataTools indexedModule patternFileName = do
+    purePattern <- mainPatternParseAndVerify metadataTools indexedModule patternFileName
     case purePattern of
         And_ _ term predicateTerm ->
             return
@@ -743,11 +744,12 @@ mainParseSearchPattern indexedModule patternFileName = do
  converts it to a pure pattern, and prints timing information.
 -}
 mainPatternParseAndVerify ::
+    SmtMetadataTools StepperAttributes ->
     VerifiedModuleSyntax StepperAttributes ->
     String ->
     Main (TermLike VariableName)
-mainPatternParseAndVerify indexedModule patternFileName =
-    mainPatternParse patternFileName >>= mainPatternVerify indexedModule
+mainPatternParseAndVerify metadataTools indexedModule patternFileName =
+    Builtin.internalize metadataTools <$> (mainPatternParse patternFileName >>= mainPatternVerify indexedModule)
 
 {- | IO action that parses a kore pattern from a filename and prints timing
  information.
