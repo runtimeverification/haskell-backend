@@ -133,6 +133,7 @@ jobs:
           ghc-version: ${{ env.ghc_version }}
           stack-version: ${{ env.stack_version }}
           enable-stack: true
+          stack-setup-ghc: true
 
       - name: Build dependencies
         run: |
@@ -166,6 +167,7 @@ jobs:
           ghc-version: ${{ env.ghc_version }}
           stack-version: ${{ env.stack_version }}
           enable-stack: true
+          stack-setup-ghc: true
 
       - name: Check documentation
         run: |
