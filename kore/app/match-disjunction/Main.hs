@@ -10,6 +10,9 @@ import Kore.IndexedModule.IndexedModule (
     VerifiedModule,
     indexedModuleSyntax,
  )
+import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
+    build,
+ )
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.TermLike (
@@ -147,7 +150,8 @@ koreMatchDisjunction :: LocalOptions KoreMatchDisjunctionOptions -> Main ExitCod
 koreMatchDisjunction LocalOptions{execOptions} = do
     definition <- loadDefinitions [definitionFileName]
     mainModule <- loadModule mainModuleName definition
-    matchPattern <- mainParseMatchPattern (indexedModuleSyntax mainModule) matchFileName
+    let metadataTools = MetadataTools.build mainModule
+    matchPattern <- mainParseMatchPattern metadataTools (indexedModuleSyntax mainModule) matchFileName
     disjunctionPattern <-
         mainParseDisjunctionPattern mainModule disjunctionFileName
     final <-
@@ -163,8 +167,8 @@ koreMatchDisjunction LocalOptions{execOptions} = do
             (unparse final)
     return ExitSuccess
   where
-    mainParseMatchPattern mainModule fileName =
-        mainParseSearchPattern mainModule fileName
+    mainParseMatchPattern metadataTools mainModule fileName =
+        mainParseSearchPattern metadataTools mainModule fileName
             <&> mkRewritingPattern
     KoreMatchDisjunctionOptions
         { definitionFileName
@@ -178,7 +182,8 @@ mainParseDisjunctionPattern ::
     String ->
     Main [Pattern RewritingVariableName]
 mainParseDisjunctionPattern indexedModule patternFileName = do
-    purePattern <- mainPatternParseAndVerify (indexedModuleSyntax indexedModule) patternFileName
+    let metadataTools = MetadataTools.build indexedModule
+    purePattern <- mainPatternParseAndVerify metadataTools (indexedModuleSyntax indexedModule) patternFileName
     return $ parseDisjunction purePattern
   where
     parseDisjunction (Or_ _ term1 term2) =

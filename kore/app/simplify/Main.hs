@@ -10,6 +10,9 @@ import Kore.IndexedModule.IndexedModule (
     IndexedModule (..),
     VerifiedModule,
  )
+import Kore.IndexedModule.MetadataToolsBuilder qualified as MetadataTools (
+    build,
+ )
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Log (
@@ -155,7 +158,8 @@ mainParseInputPattern ::
     String ->
     Main (Pattern RewritingVariableName)
 mainParseInputPattern indexedModule patternFileName = do
-    purePattern <- mainPatternParseAndVerify (indexedModuleSyntax indexedModule) patternFileName
+    let metadataTools = MetadataTools.build indexedModule
+    purePattern <- mainPatternParseAndVerify metadataTools (indexedModuleSyntax indexedModule) patternFileName
     return $ parsePattern purePattern
   where
     parsePattern = mkRewritingPattern . Pattern.fromTermLike
