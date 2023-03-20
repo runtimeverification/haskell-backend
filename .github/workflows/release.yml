@@ -4,6 +4,10 @@ on:
     branches:
       - master
 
+env:
+  ghc_version: "9.2.5"
+  stack_version: "2.9.1"
+
 jobs:
 
   check:
@@ -11,14 +15,14 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out code
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: 'Install Nix'
         uses: cachix/install-nix-action@v19
         with:
-          install_url: https://releases.nixos.org/nix/nix-2.13.3/install  
+          install_url: https://releases.nixos.org/nix/nix-2.13.3/install
           extra_nix_config: |
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
             substituters = http://cache.nixos.org https://hydra.iohk.io
@@ -46,7 +50,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out code
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -56,7 +60,7 @@ jobs:
           install_url: https://releases.nixos.org/nix/nix-2.13.3/install
           extra_nix_config: |
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-            substituters = http://cache.nixos.org https://hydra.iohk.io
+            substituters = http://cache.nixos.org https://cache.iog.io
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
 
       - name: Install Cachix
@@ -71,30 +75,29 @@ jobs:
   cache-cabal:
     name: 'Cache Cabal'
     runs-on: ubuntu-20.04
-    env:
-      ghc_version: "9.2.5"
     steps:
       - name: Install prerequisites
         run: |
           sudo apt install --yes z3
 
       - name: Check out code
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: Cache Cabal package database and store
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cabal/packages
             ~/.cabal/store
-          key: cabal-1-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}
+          key: cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('kore/kore.cabal') }}-${{ hashFiles('kore-rpc-types/kore-rpc-types.cabal') }}
           restore-keys: |
-            cabal-1-${{ runner.os }}-ghc-${{ env.ghc_version }}-
-            cabal-1-${{ runner.os }}-ghc-
+            cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('kore/kore.cabal') }}
+            cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}
+            cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}
 
-      - uses: haskell/actions/setup@v1
+      - uses: haskell/actions/setup@v2
         id: setup-haskell-cabal
         with:
           ghc-version: ${{ env.ghc_version }}
@@ -112,24 +115,25 @@ jobs:
           sudo apt install --yes z3
 
       - name: Check out code
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: Cache Stack root
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.stack
-          key: stack-1-${{ runner.os }}-${{ hashFiles('stack.yaml.lock') }}
+          key: stack-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
           restore-keys: |
-            stack-1-${{ runner.os }}-
-            stack-1-
+            stack-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}
+            stack-2-${{ runner.os }}-
 
-      - uses: haskell/actions/setup@v1
+      - uses: haskell/actions/setup@v2
         id: setup-haskell-stack
         with:
+          ghc-version: ${{ env.ghc_version }}
+          stack-version: ${{ env.stack_version }}
           enable-stack: true
-          stack-no-global: true
           stack-setup-ghc: true
 
       - name: Build dependencies
@@ -145,24 +149,25 @@ jobs:
           sudo apt install --yes z3
 
       - name: Check out code
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: Cache Stack root
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.stack
-          key: stack-haddock-${{ runner.os }}-${{ hashFiles('stack.yaml.lock') }}
+          key: stack-haddock-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
           restore-keys: |
-            stack-haddock-${{ runner.os }}-
-            stack-haddock-
+            stack-haddock-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}
+            stack-haddock-2-${{ runner.os }}
 
-      - uses: haskell/actions/setup@v1
+      - uses: haskell/actions/setup@v2
         id: setup-haskell-stack
         with:
+          ghc-version: ${{ env.ghc_version }}
+          stack-version: ${{ env.stack_version }}
           enable-stack: true
-          stack-no-global: true
           stack-setup-ghc: true
 
       - name: Check documentation
