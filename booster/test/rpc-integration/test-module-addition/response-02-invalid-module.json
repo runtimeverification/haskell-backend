@@ -1,0 +1,9 @@
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "error": {
+        "code": 3,
+        "data": "NONEXISTENT",
+        "message": "Could not find module"
+    }
+}

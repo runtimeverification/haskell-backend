@@ -5,9 +5,9 @@
 
 packages:
 - completed:
-    hackage: chronos-1.1.5@sha256:ca35be5fdbbb384414226b4467c6d1c8b44defe59a9c8a3af32c1c5fb250c781,3830
+    hackage: chronos-1.1.5@sha256:116b63db6e79574e7ac50bf12a6303af5dae4048b222c0f78380d24f481abb5a,3696
     pantry-tree:
-      sha256: 329bf39a05362a9c1f507a4a529725c757208843b562c55e0b7c88538dc3160f
+      sha256: 0eb2e0874c845e299c2e174144fd37da1a7957fd0055b2b99b33d23a06c7720e
       size: 581
   original:
     hackage: chronos-1.1.5
@@ -47,29 +47,29 @@ packages:
   original:
     hackage: monad-validate-1.2.0.0@sha256:9850f408431098b28806dd464b6825a88a0b56c84f380d7fe0454c1df9d6f881,3505
 - completed:
-    commit: ecd3f6762c00ebbbfe60c59e906003156864db01
+    commit: c5d61bd8a1ebeca522b1f6612f3c35b1c4c65a59
     git: https://github.com/runtimeverification/haskell-backend.git
     name: kore
     pantry-tree:
-      sha256: ae733112b631019a5c001783ced7746e66ad0ed4d0f4c86f1bdcab74c3d576bf
+      sha256: 81fbbd1511df45b657de115ae6fc68ebca18068b21e591425e6c6e864852d22a
       size: 44324
     subdir: kore
     version: 0.60.0.0
   original:
-    commit: ecd3f6762c00ebbbfe60c59e906003156864db01
+    commit: c5d61bd8a1ebeca522b1f6612f3c35b1c4c65a59
     git: https://github.com/runtimeverification/haskell-backend.git
     subdir: kore
 - completed:
-    commit: ecd3f6762c00ebbbfe60c59e906003156864db01
+    commit: c5d61bd8a1ebeca522b1f6612f3c35b1c4c65a59
     git: https://github.com/runtimeverification/haskell-backend.git
     name: kore-rpc-types
     pantry-tree:
-      sha256: 4d114b67282a75a1db393d3df586c150103574730ce6e68e3e193d9d63fce086
+      sha256: 437f23455eb4035a518c52bfe5b470f9b10d64b010c958a4ea532fc0f8cf8122
       size: 334
     subdir: kore-rpc-types
     version: 0.60.0.0
   original:
-    commit: ecd3f6762c00ebbbfe60c59e906003156864db01
+    commit: c5d61bd8a1ebeca522b1f6612f3c35b1c4c65a59
     git: https://github.com/runtimeverification/haskell-backend.git
     subdir: kore-rpc-types
 snapshots:
