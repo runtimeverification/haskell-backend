@@ -149,7 +149,11 @@ executables:
     main: ParsetestBinary.hs
     dependencies:
       - base
+      - binary
+      - bytestring
+      - containers
       - hs-backend-booster
+      - text
     ghc-options:
     - -rtsopts
   dltest:

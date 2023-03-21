@@ -7,7 +7,6 @@ License     : BSD-3-Clause
 -}
 module Proxy (
     KoreServer (..),
-    BoosterServer (..),
     serverError,
     respondEither,
 ) where
@@ -21,13 +20,10 @@ import Data.Text qualified as Text
 import Network.JSONRPC
 import SMT qualified
 
-import Booster.Definition.Base (KoreDefinition)
-import Booster.LLVM.Internal qualified as LLVM
-
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
 import Kore.Internal.TermLike (TermLike, VariableName)
-import Kore.JsonRpc (ServerState)
+import Kore.JsonRpc qualified as Kore (ServerState)
 import Kore.JsonRpc.Types
 import Kore.JsonRpc.Types qualified as ExecuteRequest (ExecuteRequest (..))
 import Kore.Log qualified
@@ -35,7 +31,7 @@ import Kore.Syntax.Definition (SentenceAxiom)
 import Kore.Syntax.Json.Types qualified as KoreJson
 
 data KoreServer = KoreServer
-    { serverState :: MVar.MVar ServerState
+    { serverState :: MVar.MVar Kore.ServerState
     , mainModule :: Text
     , runSMT ::
         forall a.
@@ -44,11 +40,6 @@ data KoreServer = KoreServer
         SMT.SMT a ->
         IO a
     , loggerEnv :: Kore.Log.LoggerEnv IO
-    }
-
-data BoosterServer = BoosterServer
-    { definition :: KoreDefinition
-    , mLlvmLibrary :: Maybe LLVM.API
     }
 
 serverError :: String -> Value -> ErrorObj
@@ -62,13 +53,17 @@ respondEither ::
     Respond (API 'Req) m (API 'Res)
 respondEither booster kore req = case req of
     Execute execReq
-        | isJust execReq._module -> kore req
         | isJust execReq.stepTimeout -> kore req
         | isJust execReq.movingAverageStepTimeout -> kore req
         | otherwise -> loop 0 execReq
     Implies _ -> loggedKore "Implies" req
     Simplify _ -> loggedKore "Simplify" req
-    AddModule _ -> loggedKore "AddModule" req -- FIXME should go to both
+    AddModule _ -> do
+        -- execute in booster first, assuming that kore won't throw an
+        -- error if booster did not. The response is empty anyway.
+        booster req >>= \case
+            Left err -> pure $ Left err
+            Right _ -> kore req
     Cancel -> pure $ Left $ ErrorObj "Cancel not supported" (-32601) Null
   where
     loggedKore msg r = Log.logInfoNS "proxy" (msg <> " (using kore)") >> kore r

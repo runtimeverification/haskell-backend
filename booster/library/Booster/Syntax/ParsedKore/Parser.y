@@ -10,6 +10,7 @@ module Booster.Syntax.ParsedKore.Parser (
     Parser,
     parseDefinition,
     parsePattern,
+    parseModule,
 ) where
 
 import Data.ByteString.Lazy.Char8 qualified as B
@@ -286,7 +287,7 @@ PatternList :: { [KorePattern] }
 
 data AliasApp = AliasApp Id [Sort] [KorePattern]
     deriving (Eq, Show)
-  
+
 data ParsedAliasHead = ParsedAliasHead Json.Id [Json.Id]
     deriving (Eq, Show)
 
@@ -295,7 +296,7 @@ data ParsedSentence
     = SentenceImport (Json.Id, ParsedAttributes)
     | SentenceSort ParsedSort
     | SentenceSymbol ParsedSymbol
-    | SentenceAlias ParsedAliasHead [Sort] Sort AliasApp KorePattern ParsedAttributes 
+    | SentenceAlias ParsedAliasHead [Sort] Sort AliasApp KorePattern ParsedAttributes
     | SentenceAxiom ParsedAxiom
     | SentenceClaim -- ParsedClaim
     deriving (Eq, Show)

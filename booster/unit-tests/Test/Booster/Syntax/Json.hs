@@ -82,9 +82,12 @@ genMultiKorePattern =
             <$> Gen.element [Left, Right]
             <*> genSort
             <*> (NE.fromList <$> between 3 12 (Gen.small genAllKorePatterns))
-        , KJMultiApp
-            <$> Gen.element [Left, Right]
-            <*> (Gen.element [('\\' -:), id] <*> genId)
+        , KJLeftAssoc
+            <$> (Gen.element [('\\' -:), id] <*> genId)
+            <*> exactly 2 genSort
+            <*> (NE.fromList <$> between 3 12 (Gen.small genAllKorePatterns))
+        , KJRightAssoc
+            <$> (Gen.element [('\\' -:), id] <*> genId)
             <*> exactly 2 genSort
             <*> (NE.fromList <$> between 3 12 (Gen.small genAllKorePatterns))
         ]
