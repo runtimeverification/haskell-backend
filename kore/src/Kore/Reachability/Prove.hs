@@ -447,7 +447,6 @@ proveClaim
 
         -- result interpretation for GraphTraversal.simpleTransition
         toTransitionResultWithDepth ::
-            Unparse c =>
             (ProofDepth, ClaimState c) ->
             [(ProofDepth, ClaimState c)] ->
             GraphTraversal.TransitionResult (ProofDepth, ClaimState c)
@@ -461,20 +460,12 @@ proveClaim
             [c@(_, ClaimState.Remaining{})] -> GraphTraversal.Continuing c
             [c@(_, ClaimState.Stuck{})] -> GraphTraversal.Stuck c
             [(_, ClaimState.Proven)] -> GraphTraversal.Final prior
-            cs@(c : cs')
-                | noneStuck (map snd cs) -> GraphTraversal.Branch prior (c :| cs')
-                | otherwise ->
-                    error . show $
-                        Pretty.vsep $
-                            [ "The backend cannot return both stuck and unstuck states from the same step."
-                            , "Prior state of toTransitionResult:"
-                            , Pretty.indent 4 $ Pretty.pretty prior
-                            , "Next states of toTransitionResult:"
-                            ]
-                                <> map Pretty.pretty cs
-              where
-                noneStuck :: [ClaimState c] -> Bool
-                noneStuck = null . mapMaybe ClaimState.extractStuck
+            multiple@(_ : _) ->
+                -- prune proven states to avoid unnecessary branching
+                case filter (isJust . extractUnproven . snd) multiple of
+                    [] -> GraphTraversal.Final prior -- all proven
+                    [single] -> GraphTraversal.Continuing single
+                    (c : cs) -> GraphTraversal.Branch prior (c :| cs)
 
         unparseConfig =
             fmap (unparseToString . getConfiguration)
