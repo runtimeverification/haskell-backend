@@ -6,6 +6,7 @@ module Booster.Syntax.ParsedKore (
     -- * Parsing
     parseKoreDefinition,
     parseKorePattern,
+    parseKoreModule,
     decodeJsonKoreDefinition,
     encodeJsonKoreDefinition,
 
@@ -22,6 +23,8 @@ import Data.Aeson qualified as Json
 import Data.Aeson.Encode.Pretty qualified as Json
 import Data.Bifunctor (first)
 import Data.ByteString.Lazy (ByteString)
+import Data.Map.Strict (Map)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.IO qualified as Text
@@ -31,6 +34,7 @@ import Booster.Syntax.Json qualified as KoreJson
 import Booster.Syntax.ParsedKore.Base
 import Booster.Syntax.ParsedKore.Internalise as Internalise
 import Booster.Syntax.ParsedKore.Parser qualified as Parser
+import Kore.Syntax.Json.Types (Id (..))
 
 -- Parsing text
 
@@ -61,6 +65,15 @@ parseKorePattern ::
     Either String KoreJson.KorePattern
 parseKorePattern = Parser.parsePattern
 
+-- | Parse a string representing a Kore module (for add-module)
+parseKoreModule ::
+    -- | Filename used for error messages
+    FilePath ->
+    -- | concrete kore syntax of a Kore module
+    Text ->
+    Either String ParsedModule
+parseKoreModule = Parser.parseModule
+
 -- Parsing and encoding Json
 
 {- | Read a Kore definition from Json.
@@ -82,14 +95,20 @@ encodeJsonKoreDefinition = Json.encodePretty' KoreJson.prettyJsonOpts
 -- internalising parsed data
 
 internalise :: Maybe Text -> ParsedDefinition -> Either DefinitionError KoreDefinition
-internalise mbMainModule = runExcept . Internalise.buildDefinition mbMainModule
+internalise mbMainModule definition =
+    runExcept $ Internalise.buildDefinitions definition >>= Internalise.lookupModule mainModule
+  where
+    mainModule = fromMaybe defaultMain mbMainModule
+    defaultMain = (last definition.modules).name.getId
 
-{- | Loads a Kore definition from the given file, using the given name
-as the main module (combined parsing and internalisation)
+{- | Loads Kore definitions from the given file (combined parsing and
+internalisation). The map of module names to definitions is returned
+so the main module can be changed.
 -}
-loadDefinition :: Text -> FilePath -> IO (Either DefinitionError KoreDefinition)
-loadDefinition mainModuleName file = runExceptT $ do
+loadDefinition ::
+    FilePath -> IO (Either DefinitionError (Map Text KoreDefinition))
+loadDefinition file = runExceptT $ do
     parsedDef <-
         liftIO (Text.readFile file)
             >>= except . first (ParseError . Text.pack) . parseKoreDefinition file
-    except $ internalise (Just mainModuleName) parsedDef
+    except $ runExcept $ Internalise.buildDefinitions parsedDef

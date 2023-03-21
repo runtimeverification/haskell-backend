@@ -189,6 +189,7 @@ jobs:
           nix run .#hs-backend-booster:test:llvm-integration --extra-experimental-features 'nix-command flakes' --print-build-logs
           export JQ=$(nix-build '<nixpkgs>' -A jq --no-link)/bin/jq
           nix build .#checks.${{ matrix.nix }}.integration.a-to-f --extra-experimental-features 'nix-command flakes' --print-build-logs
+          nix build .#checks.${{ matrix.nix }}.integration.module-addition --extra-experimental-features 'nix-command flakes' --print-build-logs
           nix build .#checks.${{ matrix.nix }}.integration.imp --extra-experimental-features 'nix-command flakes' --print-build-logs -o imp.md
           echo "${{ matrix.nix }}" > out.md
           cat imp.md >> out.md

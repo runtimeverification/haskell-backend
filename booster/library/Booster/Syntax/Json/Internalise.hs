@@ -10,6 +10,7 @@ module Booster.Syntax.Json.Internalise (
     PatternError (..),
     checkSort,
     SortError (..),
+    renderSortError,
     ----------------
     textToBS,
 ) where
@@ -155,8 +156,10 @@ internaliseTerm sortVars definition@KoreDefinition{sorts, symbols} pat =
                 <$> lookupInternalSort' sort
                 <*> pure (textToBS value)
         Syntax.KJMultiOr{} -> predicate
-        Syntax.KJMultiApp{assoc, symbol, sorts = argSorts, argss} ->
-            recursion $ withAssoc assoc (mkF symbol argSorts) argss
+        Syntax.KJLeftAssoc{symbol, sorts = argSorts, argss} ->
+            recursion $ foldl1 (mkF symbol argSorts) argss
+        Syntax.KJRightAssoc{symbol, sorts = argSorts, argss} ->
+            recursion $ foldr1 (mkF symbol argSorts) argss
   where
     predicate = throwE $ TermExpected pat
 
@@ -239,7 +242,8 @@ internalisePredicate sortVars definition@KoreDefinition{sorts} pat = case pat of
     Syntax.KJDV{} -> term
     Syntax.KJMultiOr{assoc, sort, argss} ->
         recursion $ withAssoc assoc (Syntax.KJOr sort) argss
-    Syntax.KJMultiApp{} -> term
+    Syntax.KJLeftAssoc{} -> term
+    Syntax.KJRightAssoc{} -> term
   where
     term = throwE $ PredicateExpected pat
     notSupported = throwE $ NotSupported pat
@@ -252,7 +256,7 @@ internalisePredicate sortVars definition@KoreDefinition{sorts} pat = case pat of
     sortCheck :: (Internal.Sort, Internal.Sort) -> Except PatternError ()
     sortCheck = mapExcept (first $ PatternSortError pat) . uncurry ensureSortsAgree
 
--- converts MultiApp and MultiOr to a chain at syntax level
+-- converts MultiOr to a chain at syntax level
 withAssoc :: Syntax.LeftRight -> (a -> a -> a) -> NonEmpty a -> a
 withAssoc Syntax.Left = foldl1
 withAssoc Syntax.Right = foldr1
@@ -329,7 +333,8 @@ isTermM pat = case pat of
     Syntax.KJRewrites{} -> notSupported -- should only occur in claims
     Syntax.KJDV{} -> pure True
     Syntax.KJMultiOr{} -> pure False
-    Syntax.KJMultiApp{} -> pure True
+    Syntax.KJLeftAssoc{} -> pure True
+    Syntax.KJRightAssoc{} -> pure True
   where
     notSupported = throwE $ NotSupported pat
 

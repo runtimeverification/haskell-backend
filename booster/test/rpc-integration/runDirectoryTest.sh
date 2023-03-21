@@ -52,6 +52,12 @@ for test in $(ls $dir/state-*.json); do
     else
         params=""
     fi
-    echo "$client --execute $test $params --expect $dir/response-${testname} $*"
-    $client --execute $test $params --expect $dir/response-${testname} $*
+    # choose --send (raw) mode if name ends in "-raw.json"
+    if [[ $test == *-raw.json ]]; then
+        mode="--send"
+    else
+        mode="--execute"
+    fi
+    echo "$client $mode $test $params --expect $dir/response-${testname} $*"
+    $client $mode $test $params --expect $dir/response-${testname} $*
 done

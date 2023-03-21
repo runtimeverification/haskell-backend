@@ -41,4 +41,5 @@ in {
     name = "imp";
     nativeBuildInputs = [ k ];
   };
+  module-addition = mkIntegrationTest { name = "module-addition"; };
 }

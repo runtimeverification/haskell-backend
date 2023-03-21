@@ -1,12 +1,11 @@
 {-# LANGUAGE PatternSynonyms #-}
 
-module Booster.Pattern.Binary (Version (..), Block (..), decodeTerm, decodeTerm', decodePattern, encodeMagicHeaderAndVersion, encodePattern, encodeTerm, test, encodeSingleBlock, decodeSingleBlock) where
+module Booster.Pattern.Binary (Version (..), Block (..), decodeTerm, decodeTerm', decodePattern, encodeMagicHeaderAndVersion, encodePattern, encodeTerm, encodeSingleBlock, decodeSingleBlock) where
 
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
 import Booster.Pattern.Base
 import Booster.Pattern.Util (sortOfTerm)
-import Booster.Syntax.ParsedKore
 import Control.Monad (forM_, unless)
 import Control.Monad.Extra (forM)
 import Control.Monad.Trans.Class (MonadTrans (..))
@@ -17,11 +16,9 @@ import Data.Binary.Put
 import Data.Bits (Bits (complement, shiftL, (.&.), (.|.)), shiftR)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
-import Data.ByteString.Lazy qualified as BL
 import Data.Int (Int16)
 import Data.List (intercalate)
 import Data.Map qualified as Map
-import Data.Text qualified as Text
 import Data.Word (Word64)
 import GHC.Word (Word8)
 
@@ -333,15 +330,6 @@ decodeSingleBlock = do
     runDecodeM version Nothing decodeBlock >>= \case
         [b] -> pure b
         _ -> fail "Expecting a single block on the top of the stack"
-
-test :: Maybe (FilePath, Text.Text) -> FilePath -> IO Term
-test (Just (definitionFile, mainModuleName)) f = do
-    internalModule <-
-        either (error . show) id
-            <$> loadDefinition mainModuleName definitionFile
-    runGet (decodeTerm internalModule) <$> BL.readFile f
-test Nothing f =
-    runGet (decodeTerm' Nothing) <$> BL.readFile f
 
 encodeMagicHeaderAndVersion :: Version -> Put
 encodeMagicHeaderAndVersion (Version major minor patch) = do

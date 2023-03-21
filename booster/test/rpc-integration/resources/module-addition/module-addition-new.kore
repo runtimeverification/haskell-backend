@@ -1,0 +1,31 @@
+[topCellInitializer{}(LblinitGeneratedTopCell{}()), org'Stop'kframework'Stop'attributes'Stop'Source{}("rpc-request")]
+
+module NEW
+  import TEST []
+
+// rule `<generatedTop>`(`<k>`(inj{State,KItem}(#token("d","State"))~>_DotVar1),_DotVar0)=>`<generatedTop>`(`<k>`(inj{State,KItem}(#token("e","State"))~>_DotVar1),_DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(a042e8abc8a92dc1a4c0bf0ca8b14a266a049cca42cb03da291f8a960978f859), label(NEW.DE), org.kframework.attributes.Location(Location(10,14,10,33)), org.kframework.attributes.Source(rpc-request), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  alias rule3LHS{}(SortGeneratedCounterCell{},SortK{}) : SortGeneratedTopCell{}
+  where rule3LHS{}(Var'Unds'DotVar0:SortGeneratedCounterCell{},Var'Unds'DotVar1:SortK{}) :=
+    \and{SortGeneratedTopCell{}} (
+      \top{SortGeneratedTopCell{}}(), Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortState{}, SortKItem{}}(\dv{SortState{}}("d")),Var'Unds'DotVar1:SortK{})),Var'Unds'DotVar0:SortGeneratedCounterCell{})) []
+
+  axiom{} \rewrites{SortGeneratedTopCell{}} (
+    rule3LHS{}(Var'Unds'DotVar0:SortGeneratedCounterCell{},Var'Unds'DotVar1:SortK{}),
+    \and{SortGeneratedTopCell{}} (
+      \top{SortGeneratedTopCell{}}(), Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortState{}, SortKItem{}}(\dv{SortState{}}("e")),Var'Unds'DotVar1:SortK{})),Var'Unds'DotVar0:SortGeneratedCounterCell{})))
+  [label{}("NEW.DE"), org'Stop'kframework'Stop'attributes'Stop'Source{}("rpc-request"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(10,14,10,33)")]
+
+// rule `<generatedTop>`(`<k>`(inj{State,KItem}(#token("e","State"))~>_DotVar1),_DotVar0)=>`<generatedTop>`(`<k>`(inj{State,KItem}(#token("f","State"))~>_DotVar1),_DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(326083bfd90582092d450c8db2c16552b080ed66344a5d424a189caab7fe33ef), label(NEW.EF), org.kframework.attributes.Location(Location(11,14,11,33)), org.kframework.attributes.Source(rpc-request), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  alias rule4LHS{}(SortGeneratedCounterCell{},SortK{}) : SortGeneratedTopCell{}
+  where rule4LHS{}(Var'Unds'DotVar0:SortGeneratedCounterCell{},Var'Unds'DotVar1:SortK{}) :=
+    \and{SortGeneratedTopCell{}} (
+      \top{SortGeneratedTopCell{}}(), Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortState{}, SortKItem{}}(\dv{SortState{}}("e")),Var'Unds'DotVar1:SortK{})),Var'Unds'DotVar0:SortGeneratedCounterCell{})) []
+
+  axiom{} \rewrites{SortGeneratedTopCell{}} (
+    rule4LHS{}(Var'Unds'DotVar0:SortGeneratedCounterCell{},Var'Unds'DotVar1:SortK{}),
+    \and{SortGeneratedTopCell{}} (
+      \top{SortGeneratedTopCell{}}(), Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortState{}, SortKItem{}}(\dv{SortState{}}("f")),Var'Unds'DotVar1:SortK{})),Var'Unds'DotVar0:SortGeneratedCounterCell{})))
+  [label{}("NEW.EF"), org'Stop'kframework'Stop'attributes'Stop'Source{}("rpc-request"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(11,14,11,33)")]
+
+
+endmodule [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(3,1,13,10)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("rpc-request")]
