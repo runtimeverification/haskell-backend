@@ -40,7 +40,7 @@
                               "Ceil", "Floor", "Equals", "In",
                               "Next", "Rewrites",
                               "DV",
-                              "MultiOr", "MultiApp"
+                              "MultiOr", "LeftAssoc", "RightAssoc"
                             ]
                 }
             },
@@ -140,7 +140,11 @@
                     "then": { "$ref": "#/definitions/KoreJSONMultiOr" }
                 },
                 {
-                    "if": {"properties": {"tag": { "const": "MultiApp" } } },
+                    "if": {"properties": {"tag": { "const": "LeftAssoc" } } },
+                    "then": { "$ref": "#/definitions/KoreJSONMultiApp" }
+                },
+                {
+                    "if": {"properties": {"tag": { "const": "RightAssoc" } } },
                     "then": { "$ref": "#/definitions/KoreJSONMultiApp" }
                 }
             ]
@@ -442,10 +446,6 @@
         "KoreJSONMultiApp": {
             "type": "object",
             "properties": {
-                "assoc": {
-                    "type": "string",
-                    "enum": [ "Left", "Right" ]
-                },
                 "symbol": {
                     "type": "string",
                     "pattern": "^\\\\?[a-zA-Z][a-zA-Z0-9-']*$"
@@ -466,7 +466,6 @@
                 }
             },
             "required": [
-                "assoc",
                 "symbol",
                 "sorts",
                 "argss"
