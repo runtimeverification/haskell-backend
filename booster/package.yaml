@@ -104,7 +104,11 @@ executables:
     main: Main.hs
     dependencies:
     - base
+    - containers
+    - deepseq
     - hs-backend-booster
+    - optparse-applicative
+    - text
     ghc-options:
     - -rtsopts
     - -eventlog
@@ -227,6 +231,7 @@ tests:
     - filepath
     - hedgehog
     - hs-backend-booster
+    - kore-rpc-types
     - monad-logger
     - process
     - tasty
@@ -253,6 +258,7 @@ tests:
       - hspec
       - hspec-hedgehog
       - hs-backend-booster
+      - kore-rpc-types
       - process
       - text
       - transformers

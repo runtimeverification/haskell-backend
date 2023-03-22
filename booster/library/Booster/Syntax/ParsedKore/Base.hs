@@ -19,7 +19,7 @@ import Data.Text (Text)
 import Deriving.Aeson (CustomJSON (..))
 import GHC.Generics (Generic)
 
-import Booster.Syntax.Json.Base qualified as Json
+import Kore.Syntax.Json.Types qualified as Syntax
 
 data ParsedDefinition = ParsedDefinition
     { modules :: [ParsedModule]
@@ -29,8 +29,8 @@ data ParsedDefinition = ParsedDefinition
     deriving (FromJSON, ToJSON) via CustomJSON '[] ParsedDefinition
 
 data ParsedModule = ParsedModule
-    { name :: Json.Id
-    , imports :: [(Json.Id, ParsedAttributes)]
+    { name :: Syntax.Id
+    , imports :: [(Syntax.Id, ParsedAttributes)]
     , sorts :: [ParsedSort]
     , symbols :: [ParsedSymbol]
     , aliases :: [ParsedAlias]
@@ -42,8 +42,8 @@ data ParsedModule = ParsedModule
     deriving (FromJSON, ToJSON) via CustomJSON '[] ParsedModule
 
 data ParsedSort = ParsedSort
-    { name :: Json.Id
-    , sortVars :: [Json.Id]
+    { name :: Syntax.Id
+    , sortVars :: [Syntax.Id]
     , isHooked :: Bool
     , attributes :: ParsedAttributes
     }
@@ -51,10 +51,10 @@ data ParsedSort = ParsedSort
     deriving (FromJSON, ToJSON) via CustomJSON '[] ParsedSort
 
 data ParsedSymbol = ParsedSymbol
-    { name :: Json.Id
-    , sortVars :: [Json.Id]
-    , argSorts :: [Json.Sort]
-    , sort :: Json.Sort
+    { name :: Syntax.Id
+    , sortVars :: [Syntax.Id]
+    , argSorts :: [Syntax.Sort]
+    , sort :: Syntax.Sort
     , isHooked :: Bool
     , attributes :: ParsedAttributes
     }
@@ -62,21 +62,21 @@ data ParsedSymbol = ParsedSymbol
     deriving (FromJSON, ToJSON) via CustomJSON '[] ParsedSymbol
 
 data ParsedAlias = ParsedAlias
-    { name :: Json.Id
-    , sortVars :: [Json.Id]
-    , argSorts :: [Json.Sort]
-    , sort :: Json.Sort
-    , args :: [Json.Id]
-    , rhs :: Json.KorePattern
+    { name :: Syntax.Id
+    , sortVars :: [Syntax.Id]
+    , argSorts :: [Syntax.Sort]
+    , sort :: Syntax.Sort
+    , args :: [Syntax.Id]
+    , rhs :: Syntax.KorePattern
     , attributes :: ParsedAttributes
     }
     deriving stock (Eq, Show, Generic)
     deriving (FromJSON, ToJSON) via CustomJSON '[] ParsedAlias
 
 data ParsedAxiom = ParsedAxiom
-    { axiom :: Json.KorePattern -- assumed to have certain shape
+    { axiom :: Syntax.KorePattern -- assumed to have certain shape
     -- (not validated here)
-    , sortVars :: [Json.Id]
+    , sortVars :: [Syntax.Id]
     , attributes :: ParsedAttributes
     }
     deriving stock (Eq, Show, Generic)
@@ -85,8 +85,8 @@ data ParsedAxiom = ParsedAxiom
 -- newtype ParsedClaim = ParsedClaim ParsedAxiom
 
 type ParsedAttributes = [(AttributeName, AttributeValue)]
-type AttributeName = Json.Id
+type AttributeName = Syntax.Id
 type AttributeValue = Maybe Text
 
 getAttribute :: Text -> ParsedAttributes -> Maybe AttributeValue
-getAttribute = lookup . Json.Id
+getAttribute = lookup . Syntax.Id

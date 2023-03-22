@@ -24,6 +24,7 @@ import Data.Hashable (Hashable)
 import Data.Text (Text)
 import Data.Word (Word8)
 import GHC.Generics (Generic)
+import Prettyprinter as Pretty
 
 data DefinitionAttributes = DefinitionAttributes
     {
@@ -72,6 +73,10 @@ data Location = Location
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData)
 
+instance Pretty Location where
+    pretty Location{file, position} =
+        Pretty.hsep [pretty file, ": ", pretty (position.line, position.column)]
+
 data Position = Position
     { line :: Int
     , column :: Int
@@ -97,7 +102,5 @@ data SymbolAttributes = SymbolAttributes
 newtype SortAttributes = SortAttributes
     { argCount :: Int
     }
-    -- none needed
-
     deriving stock (Eq, Show, Generic)
     deriving anyclass (NFData)
