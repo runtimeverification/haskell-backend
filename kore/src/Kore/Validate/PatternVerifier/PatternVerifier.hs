@@ -110,6 +110,7 @@ data Context = Context
       indexedModule ::
         !(IndexedModuleSyntax Verified.Pattern Attribute.Symbol)
     , patternVerifierHook :: !PatternVerifierHook
+    , isRpcRequest :: Bool
     }
     deriving stock (GHC.Generic)
 
@@ -120,6 +121,7 @@ verifiedModuleContext indexedModule =
         , declaredSortVariables = mempty
         , indexedModule
         , patternVerifierHook = mempty
+        , isRpcRequest = False
         }
 
 newtype PatternVerifier a = PatternVerifier
