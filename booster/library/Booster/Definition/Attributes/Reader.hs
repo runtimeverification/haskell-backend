@@ -8,22 +8,24 @@ values are hard-wired.
 -}
 module Booster.Definition.Attributes.Reader (
     HasAttributes (..),
+    readLocation,
 ) where
 
+import Control.Applicative (liftA2)
+import Control.Monad.Extra (whenM)
+import Control.Monad.Trans.Except
+import Data.Bifunctor
 import Data.Kind
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Word
 import Text.Read (readEither)
-
--- import Text.Regex.Base
 import Text.Regex.PCRE
 
 import Booster.Definition.Attributes.Base
 import Booster.Syntax.ParsedKore.Base
-
--- TODO maybe write a proper applicative parsing framework for these attributes (later)
+import Kore.Syntax.Json.Types (Id (..))
 
 {- | A class describing all attributes we want to extract from parsed
  entities
@@ -31,28 +33,28 @@ import Booster.Syntax.ParsedKore.Base
 class HasAttributes ty where
     type Attributes ty :: Type
 
-    extract :: ty -> Attributes ty
+    mkAttributes :: ty -> Except Text (Attributes ty)
 
 instance HasAttributes ParsedDefinition where
     type Attributes ParsedDefinition = DefinitionAttributes
 
-    extract _ = DefinitionAttributes
+    mkAttributes _ = pure DefinitionAttributes
 
 instance HasAttributes ParsedModule where
     type Attributes ParsedModule = ModuleAttributes
 
-    extract _ = ModuleAttributes
+    mkAttributes _ = pure ModuleAttributes
 
 instance HasAttributes ParsedAxiom where
     type Attributes ParsedAxiom = AxiomAttributes
 
-    extract ParsedAxiom{attributes} =
+    mkAttributes ParsedAxiom{attributes} =
         AxiomAttributes
-            (Location (attributes .: sourceName) (attributes .: locationName))
-            (fromMaybe 50 $ attributes .:? "priority")
-            (attributes .:? "label")
-            (attributes .! "simplification")
-            (attributes .:? "preserves-definedness")
+            <$> readLocation attributes
+            <*> (fromMaybe 50 <$> attributes .:? "priority")
+            <*> (attributes .:? "label")
+            <*> (attributes .! "simplification")
+            <*> (attributes .:? "preserves-definedness")
 
 sourceName
     , locationName ::
@@ -60,63 +62,83 @@ sourceName
 sourceName = "org'Stop'kframework'Stop'attributes'Stop'Source"
 locationName = "org'Stop'kframework'Stop'attributes'Stop'Location"
 
+readLocation :: ParsedAttributes -> Except Text Location
+readLocation attributes =
+    Location <$> attributes .: sourceName <*> attributes .: locationName
+
 instance HasAttributes ParsedSymbol where
     type Attributes ParsedSymbol = SymbolAttributes
 
-    extract ParsedSymbol{name, attributes} =
+    mkAttributes ParsedSymbol{name, attributes} = do
+        isInjctn <- attributes .! "sortInjection"
+        let symbolType = do
+                isConstr <- attributes .! "constructor"
+                isFunctn <- attributes .! "function"
+                isTotal <- attributes .! "total" <||> attributes .! "functional"
+                case (isConstr, isInjctn, isFunctn, isTotal) of
+                    (True, _, _, _) -> pure Constructor
+                    (_, True, _, _) -> pure SortInjection
+                    (_, _, _, True) -> pure TotalFunction
+                    (_, _, True, _) -> pure PartialFunction
+                    _other ->
+                        throwE $ "Invalid symbol type '" <> name.getId <> "', attributes: " <> Text.pack (show attributes)
+            isIdem = do
+                whenM (attributes .! "sortInjection" <&&> attributes .! "idem") $
+                    throwE $
+                        "Sort injection '" <> name.getId <> "' cannot be idempotent."
+                attributes .! "idem"
+            isAssoc = do
+                whenM (attributes .! "sortInjection" <&&> attributes .! "assoc") $
+                    throwE $
+                        "Sort injection '" <> name.getId <> "' cannot be associative."
+                attributes .! "assoc"
         SymbolAttributes
-            { symbolType =
-                if attributes .! "constructor"
-                    then Constructor
-                    else
-                        if attributes .! "sortInjection"
-                            then SortInjection
-                            else
-                                if attributes .! "functional" || attributes .! "total"
-                                    then TotalFunction
-                                    else
-                                        if attributes .! "function"
-                                            then PartialFunction
-                                            else error $ "Invalid symbol '" <> show name <> "' attributes: " <> show attributes
-            , isIdem =
-                if attributes .! "sortInjection" && attributes .! "idem"
-                    then error "Sort injection cannot be an AC constructor"
-                    else attributes .! "idem"
-            , isAssoc =
-                if attributes .! "sortInjection" && attributes .! "assoc"
-                    then error "Sort injection cannot be an AC constructor"
-                    else attributes .! "assoc"
-            }
+            <$> symbolType
+            <*> isIdem
+            <*> isAssoc
 
 instance HasAttributes ParsedSort where
     type Attributes ParsedSort = SortAttributes
 
-    extract ParsedSort{sortVars} =
-        SortAttributes
-            { argCount = length sortVars
-            }
+    mkAttributes ParsedSort{sortVars} =
+        pure SortAttributes{argCount = length sortVars}
 
 ----------------------------------------
 
-extractAttribute :: ReadT a => Text -> ParsedAttributes -> a
-extractAttribute name =
-    extractAttributeOrDefault (error $ show name <> " not found in attributes") name
+extractAttribute :: ReadT a => Text -> ParsedAttributes -> Except Text a
+extractAttribute name attribs =
+    (maybe (throwE notFound) pure $ getAttribute name attribs)
+        >>= except . first Text.pack . readT
+  where
+    notFound = Text.pack $ show name <> " not found in attributes."
 
-(.:) :: ReadT a => ParsedAttributes -> Text -> a
+(.:) :: ReadT a => ParsedAttributes -> Text -> Except Text a
 (.:) = flip extractAttribute
 
-extractAttributeOrDefault :: ReadT a => a -> Text -> ParsedAttributes -> a
+extractAttributeOrDefault :: ReadT a => a -> Text -> ParsedAttributes -> Except Text a
 extractAttributeOrDefault def name attribs =
-    maybe def (either (error . (<> " " <> show attribs)) id . readT) $ getAttribute name attribs
+    maybe (pure def) (either (throwE . Text.pack) pure . readT) $ getAttribute name attribs
 
-(.:?) :: ReadT a => ParsedAttributes -> Text -> Maybe a
-attribs .:? name = either error id . readT <$> getAttribute name attribs
+(.:?) :: forall a. ReadT a => ParsedAttributes -> Text -> Except Text (Maybe a)
+attribs .:? name =
+    except . first Text.pack . mapM readT $ getAttribute name attribs
 
-extractFlag :: Text -> ParsedAttributes -> Bool
+extractFlag :: Text -> ParsedAttributes -> Except Text Bool
 extractFlag = extractAttributeOrDefault False
 
-(.!) :: ParsedAttributes -> Text -> Bool
+(.!) :: ParsedAttributes -> Text -> Except Text Bool
 (.!) = flip extractFlag
+
+infix 5 .!
+infix 5 .:?
+infix 5 .:
+
+-- see GHC.Utils.Misc:
+(<&&>), (<||>) :: Applicative m => m Bool -> m Bool -> m Bool
+(<&&>) = liftA2 (&&)
+(<||>) = liftA2 (||)
+infixr 3 <&&>
+infixr 2 <||>
 
 ----------------------------------------
 

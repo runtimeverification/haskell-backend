@@ -8,7 +8,7 @@ module Booster.Syntax.Json.Internalise (
     internaliseTerm,
     internalisePredicate,
     PatternError (..),
-    checkSort,
+    internaliseSort,
     SortError (..),
     renderSortError,
     ----------------
@@ -37,8 +37,8 @@ import Booster.Definition.Attributes.Base
 import Booster.Definition.Base (KoreDefinition (..))
 import Booster.Pattern.Base qualified as Internal
 import Booster.Pattern.Util (sortOfTerm)
-import Booster.Syntax.Json.Base qualified as Syntax
 import Booster.Syntax.Json.Externalise (externaliseSort)
+import Kore.Syntax.Json.Types qualified as Syntax
 
 internalisePattern ::
     Maybe [Syntax.Id] ->
@@ -87,7 +87,7 @@ lookupInternalSort ::
     Except PatternError Internal.Sort
 lookupInternalSort sortVars sorts pat =
     let knownVarSet = maybe Set.empty (Set.fromList . map Syntax.getId) sortVars
-     in mapExcept (first $ PatternSortError pat) . checkSort knownVarSet sorts
+     in mapExcept (first $ PatternSortError pat) . internaliseSort knownVarSet sorts
 
 -- Throws errors when a predicate is encountered. The 'And' case
 -- should be analysed before, this function produces an 'AndTerm'.
@@ -222,7 +222,8 @@ internalisePredicate sortVars definition@KoreDefinition{sorts} pat = case pat of
                 b <- internaliseTerm sortVars definition arg2
                 argS <- lookupInternalSort' argSort
                 -- check that argS and sorts of a and b "agree"
-                mapM_ sortCheck [(sortOfTerm a, argS), (sortOfTerm b, argS)]
+                ensureEqualSorts (sortOfTerm a) argS
+                ensureEqualSorts (sortOfTerm b) argS
                 pure $ Internal.EqualsTerm a b
             (False, False) ->
                 Internal.EqualsPredicate
@@ -235,7 +236,8 @@ internalisePredicate sortVars definition@KoreDefinition{sorts} pat = case pat of
         b <- internaliseTerm sortVars definition arg2
         s <- lookupInternalSort' sort
         -- check that `sort` and sorts of a and b agree
-        mapM_ sortCheck [(sortOfTerm a, s), (sortOfTerm b, s)]
+        ensureEqualSorts (sortOfTerm a) s
+        ensureEqualSorts (sortOfTerm b) s
         pure $ Internal.In a b
     Syntax.KJNext{} -> notSupported
     Syntax.KJRewrites{} -> notSupported -- should only occur in claims!
@@ -252,9 +254,24 @@ internalisePredicate sortVars definition@KoreDefinition{sorts} pat = case pat of
 
     lookupInternalSort' = lookupInternalSort sortVars sorts pat
 
-    -- check that two sorts "agree". Incomplete, see comment on ensureSortsAgree.
-    sortCheck :: (Internal.Sort, Internal.Sort) -> Except PatternError ()
-    sortCheck = mapExcept (first $ PatternSortError pat) . uncurry ensureSortsAgree
+    -- Recursively check that two (internal) sorts are the same.
+    -- Sort variables must be eliminated (instantiated) before checking.
+    ensureEqualSorts :: Internal.Sort -> Internal.Sort -> Except PatternError ()
+    ensureEqualSorts s s' = mapExcept (first $ PatternSortError pat) $ go s s'
+      where
+        go :: Internal.Sort -> Internal.Sort -> Except SortError ()
+        go s1 s2 =
+            case (s1, s2) of
+                (Internal.SortVar n, _) ->
+                    throwE $ GeneralError ("ensureSortsAgree found variable " <> decodeLatin1 n)
+                (_, Internal.SortVar n) ->
+                    throwE $ GeneralError ("ensureSortsAgree found variable " <> decodeLatin1 n)
+                (Internal.SortApp name1 args1, Internal.SortApp name2 args2) -> do
+                    unless (name1 == name2) $
+                        throwE (IncompatibleSorts (map externaliseSort [s1, s2]))
+                    zipWithM_ go args1 args2
+
+----------------------------------------
 
 -- converts MultiOr to a chain at syntax level
 withAssoc :: Syntax.LeftRight -> (a -> a -> a) -> NonEmpty a -> a
@@ -279,12 +296,12 @@ textToBS = BS.pack . Text.unpack
 {- | Given a set of sort variable names and a sort attribute map, checks
    a given syntactic @Sort@ and converts to an internal Sort
 -}
-checkSort ::
+internaliseSort ::
     Set Text ->
     Map Internal.SortName (SortAttributes, Set Internal.SortName) ->
     Syntax.Sort ->
     Except SortError Internal.Sort
-checkSort knownVars sortMap = check'
+internaliseSort knownVars sortMap = check'
   where
     check' :: Syntax.Sort -> Except SortError Internal.Sort
     check' var@Syntax.SortVar{name = Syntax.Id n} = do
@@ -349,28 +366,6 @@ explodeAnd other = [other]
 
 ----------------------------------------
 
-{- | check that two (internal) sorts are compatible.
-
- For a sort application, ensure the sort constructor is the same,
- then check recursively that the arguments are compatible, too.
-
- Sort variables must be eliminated (instantiated) before checking.
--}
-ensureSortsAgree ::
-    Internal.Sort ->
-    Internal.Sort ->
-    Except SortError ()
-ensureSortsAgree (Internal.SortVar n) _ =
-    throwE $ GeneralError ("ensureSortsAgree found variable " <> decodeLatin1 n)
-ensureSortsAgree _ (Internal.SortVar n) =
-    throwE $ GeneralError ("ensureSortsAgree found variable " <> decodeLatin1 n)
-ensureSortsAgree
-    s1@(Internal.SortApp name1 args1)
-    s2@(Internal.SortApp name2 args2) = do
-        unless (name1 == name2) $ throwE $ IncompatibleSorts (map externaliseSort [s1, s2])
-        mapM_ (uncurry ensureSortsAgree) $ zip args1 args2
-
-----------------------------------------
 data PatternError
     = NotSupported Syntax.KorePattern
     | NoTermFound Syntax.KorePattern

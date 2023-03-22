@@ -6,7 +6,9 @@ Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
 -}
 module Booster.JsonRpc (
-    module Booster.JsonRpc,
+    ServerState (..),
+    respond,
+    runServer,
     rpcJsonConfig,
 ) where
 
@@ -109,76 +111,6 @@ respond stateVar =
             Nothing -> pure $ Left $ backendError CouldNotFindModule mainName
             Just d -> action (d, state.mLlvmLibrary)
 
-    execResponse :: (Natural, RewriteResult Pattern) -> Either ErrorObj (API 'Res)
-    execResponse (_, RewriteSingle{}) =
-        error "Single rewrite result"
-    execResponse (d, RewriteBranch p nexts) =
-        Right $
-            Execute
-                ExecuteResult
-                    { reason = Branching
-                    , depth = Depth d
-                    , state = toExecState p
-                    , nextStates = Just $ map toExecState $ toList nexts
-                    , rule = Nothing
-                    }
-    execResponse (d, RewriteStuck p) =
-        Right $
-            Execute
-                ExecuteResult
-                    { reason = Stuck
-                    , depth = Depth d
-                    , state = toExecState p
-                    , nextStates = Nothing
-                    , rule = Nothing
-                    }
-    execResponse (d, RewriteCutPoint lbl p next) =
-        Right $
-            Execute
-                ExecuteResult
-                    { reason = CutPointRule
-                    , depth = Depth d
-                    , state = toExecState p
-                    , nextStates = Just [toExecState next]
-                    , rule = Just lbl
-                    }
-    execResponse (d, RewriteTerminal lbl p) =
-        Right $
-            Execute
-                ExecuteResult
-                    { reason = TerminalRule
-                    , depth = Depth d
-                    , state = toExecState p
-                    , nextStates = Nothing
-                    , rule = Just lbl
-                    }
-    execResponse (d, RewriteStopped p) =
-        Right $
-            Execute
-                ExecuteResult
-                    { reason = DepthBound
-                    , depth = Depth d
-                    , state = toExecState p
-                    , nextStates = Nothing
-                    , rule = Nothing
-                    }
-    execResponse (d, RewriteAborted p) =
-        Right $
-            Execute
-                ExecuteResult
-                    { reason = Kore.JsonRpc.Types.Aborted
-                    , depth = Depth d
-                    , state = toExecState p
-                    , nextStates = Nothing
-                    , rule = Nothing
-                    }
-
-    toExecState :: Pattern -> ExecuteState
-    toExecState pat =
-        ExecuteState{term = addHeader t, predicate = fmap addHeader p, substitution = Nothing}
-      where
-        (t, p) = externalisePattern pat
-
 runServer ::
     Int ->
     Map Text KoreDefinition ->
@@ -208,3 +140,74 @@ data ServerState = ServerState
     , mLlvmLibrary :: Maybe LLVM.API
     -- ^ optional LLVM simplification library
     }
+
+execResponse :: (Natural, RewriteResult Pattern) -> Either ErrorObj (API 'Res)
+execResponse = \case
+    (_, RewriteSingle{}) ->
+        error "Single rewrite result"
+    (d, RewriteBranch p nexts) ->
+        Right $
+            Execute
+                ExecuteResult
+                    { reason = Branching
+                    , depth = Depth d
+                    , state = toExecState p
+                    , nextStates = Just $ map toExecState $ toList nexts
+                    , rule = Nothing
+                    }
+    (d, RewriteStuck p) ->
+        Right $
+            Execute
+                ExecuteResult
+                    { reason = Stuck
+                    , depth = Depth d
+                    , state = toExecState p
+                    , nextStates = Nothing
+                    , rule = Nothing
+                    }
+    (d, RewriteCutPoint lbl p next) ->
+        Right $
+            Execute
+                ExecuteResult
+                    { reason = CutPointRule
+                    , depth = Depth d
+                    , state = toExecState p
+                    , nextStates = Just [toExecState next]
+                    , rule = Just lbl
+                    }
+    (d, RewriteTerminal lbl p) ->
+        Right $
+            Execute
+                ExecuteResult
+                    { reason = TerminalRule
+                    , depth = Depth d
+                    , state = toExecState p
+                    , nextStates = Nothing
+                    , rule = Just lbl
+                    }
+    (d, RewriteStopped p) ->
+        Right $
+            Execute
+                ExecuteResult
+                    { reason = DepthBound
+                    , depth = Depth d
+                    , state = toExecState p
+                    , nextStates = Nothing
+                    , rule = Nothing
+                    }
+    (d, RewriteAborted p) ->
+        Right $
+            Execute
+                ExecuteResult
+                    { reason = Kore.JsonRpc.Types.Aborted
+                    , depth = Depth d
+                    , state = toExecState p
+                    , nextStates = Nothing
+                    , rule = Nothing
+                    }
+  where
+    toExecState :: Pattern -> ExecuteState
+    toExecState pat =
+        ExecuteState{term = addHeader t, predicate = fmap addHeader p, substitution = Nothing}
+      where
+        (t, p) = externalisePattern pat
