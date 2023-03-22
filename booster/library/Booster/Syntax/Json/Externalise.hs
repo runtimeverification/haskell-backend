@@ -13,7 +13,7 @@ import Data.Text.Encoding qualified as Text
 
 import Booster.Pattern.Base qualified as Internal
 import Booster.Pattern.Util (sortOfTerm)
-import Booster.Syntax.Json.Base qualified as Syntax
+import Kore.Syntax.Json.Types qualified as Syntax
 
 {- | Converts an internal pattern to a pair of term and predicate in
  external format. The predicate is 'And'ed to avoid leaking

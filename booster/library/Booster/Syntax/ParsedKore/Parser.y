@@ -30,7 +30,7 @@ import Numeric.Natural
 import Booster.Syntax.ParsedKore.Lexer
 import Booster.Syntax.ParsedKore.LexerWrapper
 import Booster.Syntax.ParsedKore.Base
-import Booster.Syntax.Json.Base as Json
+import Kore.Syntax.Json.Types as Syntax
 
 }
 
@@ -288,12 +288,12 @@ PatternList :: { [KorePattern] }
 data AliasApp = AliasApp Id [Sort] [KorePattern]
     deriving (Eq, Show)
 
-data ParsedAliasHead = ParsedAliasHead Json.Id [Json.Id]
+data ParsedAliasHead = ParsedAliasHead Syntax.Id [Syntax.Id]
     deriving (Eq, Show)
 
 -- | helpers for parsing module components
 data ParsedSentence
-    = SentenceImport (Json.Id, ParsedAttributes)
+    = SentenceImport (Syntax.Id, ParsedAttributes)
     | SentenceSort ParsedSort
     | SentenceSymbol ParsedSymbol
     | SentenceAlias ParsedAliasHead [Sort] Sort AliasApp KorePattern ParsedAttributes
@@ -301,7 +301,7 @@ data ParsedSentence
     | SentenceClaim -- ParsedClaim
     deriving (Eq, Show)
 
-mkModule :: Json.Id -> ParsedAttributes -> [ParsedSentence] -> ParsedModule
+mkModule :: Syntax.Id -> ParsedAttributes -> [ParsedSentence] -> ParsedModule
 mkModule name attributes sentences
 --     = ParsedModule {name, imports, sorts, symbols, aliases, axioms, claims, attributes}
     = ParsedModule {name, imports, sorts, symbols, axioms, aliases, attributes}
@@ -309,9 +309,9 @@ mkModule name attributes sentences
     (imports, sorts, symbols, axioms, aliases) = foldl' collect ([], [], [], [], []) sentences
     -- intentionally reversing the list
     collect ::
-        ([(Json.Id, ParsedAttributes)], [ParsedSort], [ParsedSymbol], [ParsedAxiom], [ParsedAlias]) ->
+        ([(Syntax.Id, ParsedAttributes)], [ParsedSort], [ParsedSymbol], [ParsedAxiom], [ParsedAlias]) ->
         ParsedSentence ->
-        ([(Json.Id, ParsedAttributes)], [ParsedSort], [ParsedSymbol], [ParsedAxiom], [ParsedAlias])
+        ([(Syntax.Id, ParsedAttributes)], [ParsedSort], [ParsedSymbol], [ParsedAxiom], [ParsedAlias])
     collect acc@(!imports, !sorts, !symbols, !axioms, !aliases) = \case
         SentenceImport id -> (id:imports, sorts, symbols, axioms, aliases)
         SentenceSort s -> (imports, s:sorts, symbols, axioms, aliases)
@@ -339,10 +339,10 @@ mkParsedAlias
     attributes
     | name /= appName =
         error ("Alias declaration inconsistency: " <> show name <> " is different from " <> show appName)
-    | Just appSortVarIds <- traverse Json.retractSortVariable appSortVars
+    | Just appSortVarIds <- traverse retractSortVariable appSortVars
     , sortVars /= appSortVarIds =
         error ("Alias declaration inconsistency: " <> show sortVars <> " is different from " <> show appSortVarIds <> " in declaration for " <> show name)
-    | Just args <- traverse Json.retractVariable pattArgs =
+    | Just args <- traverse retractVariable pattArgs =
         ParsedAlias
             { name
             , sortVars
@@ -354,6 +354,15 @@ mkParsedAlias
             }
     | otherwise =
         error ("Alias " <> show name <> " should only have variables as arguments.")
+  where
+    retractVariable :: Syntax.KorePattern -> Maybe Syntax.Id
+    retractVariable Syntax.KJEVar{name} = Just name
+    retractVariable Syntax.KJSVar{name} = Just name
+    retractVariable _ = Nothing
+
+    retractSortVariable :: Syntax.Sort -> Maybe Syntax.Id
+    retractSortVariable Syntax.SortVar{name} = Just name
+    retractSortVariable _ = Nothing
 
 -- helper to parse attributes
 attributeFromPattern :: KorePattern -> (AttributeName, AttributeValue)
@@ -362,13 +371,13 @@ attributeFromPattern KJApp {name, sorts = [], args = []}
 attributeFromPattern KJApp {name, sorts = [], args = [KJString{value}]}
     = (name, Just value)
 -- attributes of AC structure sorts have this shape
-attributeFromPattern KJApp {name, sorts = [], args = [KJApp{name = Json.Id name2, args = []}]}
+attributeFromPattern KJApp {name, sorts = [], args = [KJApp{name = Syntax.Id name2, args = []}]}
     = (name, Just name2)
 -- priorities attribute has this shape
 attributeFromPattern KJApp {name, sorts = [], args}
     = (name, Just $ asTextList args)
 -- The subsort attribute information is given in the sort field
-attributeFromPattern KJApp {name, sorts = [SortApp{name = Json.Id s1}, SortApp{name = Json.Id s2}], args = []}
+attributeFromPattern KJApp {name, sorts = [SortApp{name = Syntax.Id s1}, SortApp{name = Syntax.Id s2}], args = []}
     = (name, Just $ s1 <> " < " <> s2)
 attributeFromPattern badPat
     = error $ "Unexpected attribute shape: " <> show badPat
@@ -376,7 +385,7 @@ attributeFromPattern badPat
 -- extract attributes from patterns used for attributes
 asText :: KorePattern -> Maybe Text
 asText KJString{value} = Just value
-asText KJApp{name = Json.Id n, sorts = [], args = []} = Just n
+asText KJApp{name = Syntax.Id n, sorts = [], args = []} = Just n
 asText other = Nothing  -- HACK
 
 asTextList :: [KorePattern] -> Text

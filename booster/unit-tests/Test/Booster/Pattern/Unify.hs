@@ -43,7 +43,10 @@ injections =
             $ success [("Y", someSort, Injection aSubsort someSort dSub)]
         , let t1 = Injection someSort kItemSort varSome
               t2 = Injection differentSort kItemSort dOther
-           in test "sort injection mismatch" t1 t2 $ failed (DifferentSymbols t1 t2)
+           in test "sort injection source mismatch" t1 t2 $ failed (DifferentSorts varSome dOther)
+        , let t1 = Injection aSubsort someSort varSub
+              t2 = Injection aSubsort kItemSort dOther
+           in test "sort injection target mismatch" t1 t2 $ failed (DifferentSorts t1 t2)
         ]
   where
     varSub = var "X" aSubsort
@@ -55,19 +58,12 @@ sorts :: TestTree
 sorts =
     testGroup
         "sort variables"
-        [ test "one sort variable in argument" (app con1 [varX]) (app con1 [dSome]) $
-            success [("X", sVar, dSome)]
-        , test "sort inconsistency in arguments" (app con3 [varX, varY]) (app con3 [dSome, dSub]) $
-            sortErr $
-                InconsistentSortVariable "sort me!" [someSort, aSubsort]
-        , test "sort variable used twice" (app con3 [varX, varY]) (app con3 [dSome, dSome]) $
-            success [("X", sVar, dSome), ("Y", sVar, dSome)]
-        , test "several sort variables" (app con3 [varX, varZ]) (app con3 [dSome, dSub]) $
-            success [("X", sVar, dSome), ("Z", sVar2, dSub)]
-        , test "sort variable in subject" (app con3 [varX, dSub]) (app con3 [dSome, varZ]) $
-            success [("X", sVar, dSome), ("Z", sVar2, dSub)]
-        , test "same sort variable in both" (app con1 [varX]) (app con1 [varY]) $
-            success [("X", sVar, varY)]
+        [ test "sort variable in pattern" (app con1 [varX]) (app con1 [dSome]) $
+            sortErr (FoundSortVariable "sort me!")
+        , test "sort variable in subject" (app con1 [dSub]) (app con1 [varZ]) $
+            sortErr (FoundSortVariable "me, too!")
+        , test "several sort variables" (app con3 [varX, varY]) (app con3 [dSome, varZ]) $
+            sortErr (FoundSortVariable "sort me!")
         ]
   where
     sVar = SortVar "sort me!"
@@ -103,7 +99,7 @@ constructors =
                 "same constructors, arguments differ in sorts"
                 (app con1 [v])
                 (app con1 [d])
-                (sortErr $ IncompatibleSorts [someSort, differentSort])
+                (failed $ DifferentSorts v d)
         , test
             "same constructor, var./term argument"
             (app con1 [var "X" someSort])
@@ -155,14 +151,11 @@ varsAndValues =
         , let v1 = var "X" someSort
               v2 = var "Y" aSubsort
            in test "two variables (v2 subsort v1)" v1 v2 $
-                -- TODO could be allowed once subsorts are considered while checking
-                sortErr $
-                    IncompatibleSorts [someSort, aSubsort]
+                success [("X", someSort, v2)]
         , let v1 = var "X" aSubsort
               v2 = var "Y" someSort
            in test "two variables (v1 subsort v2)" v1 v2 $
-                sortErr $
-                    IncompatibleSorts [aSubsort, someSort]
+                failed (DifferentSorts v1 v2)
         , let v1 = var "X" someSort
               v2 = var "X" differentSort
            in test "same variable name, different sort" v1 v2 $
@@ -182,7 +175,7 @@ varsAndValues =
         , let d1 = dv someSort "1"
               d2 = dv differentSort "1"
            in test "same domain values, different sort" d1 d2 $
-                remainder [(d1, d2)]
+                failed (DifferentSorts d1 d2)
         , let v = var "X" someSort
               d = dv someSort ""
            in test "var and domain value (same sort)" v d $
@@ -190,8 +183,7 @@ varsAndValues =
         , let v = var "X" someSort
               d = dv differentSort ""
            in test "var and domain value (different sort)" v d $
-                sortErr $
-                    IncompatibleSorts [someSort, differentSort]
+                failed (DifferentSorts v d)
         ]
 
 andTerms :: TestTree
@@ -205,7 +197,7 @@ andTerms =
                 "And-term on the left, remainder returns both pairs"
                 (AndTerm fa fb)
                 d
-                (remainder [(fa, d), (fb, d)])
+                (remainder [(fb, d), (fa, d)])
         , let d = dv someSort "a"
               fa = app f1 [d]
               fb = app f1 [dv someSort "b"]
@@ -213,25 +205,25 @@ andTerms =
                 "And-term on the right, remainder returns both pairs"
                 d
                 (AndTerm fa fb)
-                (remainder [(d, fa), (d, fb)])
+                (remainder [(d, fb), (d, fa)])
         , let da = dv someSort "a"
               db = dv someSort "b"
               ca = app con1 [da]
               cb = app con1 [db]
            in test
-                "And-term on the left, one pair resolves"
-                (AndTerm ca da)
-                cb
-                (remainder [(da, cb), (da, db)])
-        , let da = dv someSort "a"
-              db = dv someSort "b"
-              ca = app con1 [da]
-              cb = app con1 [db]
-           in test
-                "And-term on the right, one pair resolves"
+                "And-term on the left, one unifies one fails"
+                (AndTerm ca cb)
                 ca
-                (AndTerm cb da)
-                (remainder [(ca, da), (da, db)])
+                (failed $ DifferentValues db da)
+        , let da = dv someSort "a"
+              db = dv someSort "b"
+              ca = app con1 [da]
+              cb = app con1 [db]
+           in test
+                "And-term on the right, one unifies one fails"
+                ca
+                (AndTerm cb ca)
+                (failed $ DifferentValues da db)
         ]
 
 ----------------------------------------

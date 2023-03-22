@@ -15,8 +15,6 @@ module Test.Booster.Syntax.Json (
     upTo,
 ) where
 
-import Booster.Syntax.Json
-import Booster.Syntax.Json.Base -- for testing and generating test data
 import Control.Monad (forever, void)
 import Data.Bifunctor qualified as Bifunctor
 import Data.ByteString.Lazy.Char8 qualified as BS
@@ -37,6 +35,9 @@ import Test.Tasty.Hedgehog
 import Text.Printf (printf)
 import Prelude hiding (Left, Right)
 import Prelude qualified
+
+import Booster.Syntax.Json
+import Kore.Syntax.Json.Types -- for testing and generating test data
 
 genKoreJson :: Gen KorePattern -> Gen KoreJson
 genKoreJson = fmap (KoreJson KORE KJ1)
