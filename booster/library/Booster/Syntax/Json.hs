@@ -14,11 +14,12 @@ module Booster.Syntax.Json (
     prettyJsonOpts,
 ) where
 
-import Booster.Syntax.Json.Base
 import Data.Aeson as Json
 import Data.Aeson.Encode.Pretty as Json
 import Data.ByteString.Lazy (ByteString)
 import Data.Either.Extra hiding (Left, Right)
+
+import Kore.Syntax.Json.Types
 
 -- reading
 

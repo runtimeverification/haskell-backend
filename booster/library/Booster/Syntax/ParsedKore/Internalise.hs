@@ -37,15 +37,15 @@ import Data.Tuple (swap)
 import Prettyprinter
 
 import Booster.Definition.Attributes.Base
-import Booster.Definition.Attributes.Reader
+import Booster.Definition.Attributes.Reader as Attributes
 import Booster.Definition.Base as Def
 import Booster.Pattern.Base qualified as Def
 import Booster.Pattern.Index (TermIndex, computeTermIndex)
 import Booster.Pattern.Util qualified as Util
 import Booster.Prettyprinter hiding (attributes)
-import Booster.Syntax.Json.Base qualified as Json
 import Booster.Syntax.Json.Internalise
 import Booster.Syntax.ParsedKore.Base
+import Kore.Syntax.Json.Types qualified as Syntax
 
 {- | Traverses all modules of a parsed definition, to build internal
 @KoreDefinition@s for each of the modules (when used as the main
@@ -56,15 +56,13 @@ Only very few validations are performed on the parsed data.
 -}
 buildDefinitions :: ParsedDefinition -> Except DefinitionError (Map Text KoreDefinition)
 buildDefinitions def@ParsedDefinition{modules} = do
-    definitionMap <$> execStateT buildAllModules startState
+    definitionAttributes <- withExcept DefinitionAttributeError $ mkAttributes def
+    definitionMap
+        <$> execStateT
+            buildAllModules
+            State{moduleMap, definitionMap = Map.empty, definitionAttributes}
   where
     moduleMap = Map.fromList [(m.name.getId, m) | m <- modules]
-    startState =
-        State
-            { moduleMap
-            , definitionMap = Map.empty
-            , definitionAttributes = extract def
-            }
     buildAllModules = mapM descendFrom $ Map.keys moduleMap
 
 {- | API function that adds the KoreDefinition for a given new module to
@@ -126,7 +124,7 @@ descendFrom m = do
 
             -- traverse imports recursively in pre-order before
             -- dealing with the current module.
-            let imported = map (Json.getId . fst) $ imports theModule
+            let imported = map ((.getId) . fst) $ imports theModule
             mapM_ descendFrom imported
 
             -- build the module's context from imports
@@ -150,7 +148,9 @@ descendFrom m = do
 mergeDefs :: ImportedDefinition -> KoreDefinition -> Except DefinitionError ImportedDefinition
 mergeDefs k1 k2
     | k1.imported.attributes /= k2.attributes =
-        throwE $ DefinitionAttributeError [k1.imported.attributes, k2.attributes]
+        throwE $
+            DefinitionAttributeError $
+                "Definition attributes differ: " <> Text.pack (show [k1.imported.attributes, k2.attributes])
     | otherwise =
         fmap Imported $
             KoreDefinition k2.attributes
@@ -191,7 +191,7 @@ addModule ::
     Except DefinitionError KoreDefinition
 addModule
     m@ParsedModule
-        { name = Json.Id n
+        { name = Syntax.Id n
         , sorts = parsedSorts
         , symbols = parsedSymbols
         , aliases = parsedAliases
@@ -199,7 +199,7 @@ addModule
         }
     ( Imported
             ( KoreDefinition
-                    { attributes
+                    { attributes = defAttributes
                     , modules = currentModules
                     , sorts = currentSorts
                     , symbols = currentSymbols
@@ -214,7 +214,8 @@ addModule
             when (modName `Map.member` currentModules) $
                 throwE $
                     DuplicateModule n
-            let modules = Map.insert modName (extract m) currentModules
+            attributes <- withExcept DefinitionAttributeError $ mkAttributes m
+            let modules = Map.insert modName attributes currentModules
 
             -- ensure sorts are unique and only refer to known other sorts
             let (newSorts, sortDups) = parsedSorts `mappedBy` (textToBS . (.name.getId))
@@ -228,9 +229,13 @@ addModule
                 throwE $
                     DuplicateSorts sortCollisions
             -- prior and locally-defined sorts, no subsort information
-            let sorts' =
-                    Map.map (\s -> (extract s, Set.singleton (textToBS s.name.getId))) newSorts
-                        <> currentSorts
+            let mkSortEntry ::
+                    ParsedSort -> Except DefinitionError (SortAttributes, Set ByteString)
+                mkSortEntry parsedSort =
+                    withExcept DefinitionAttributeError $
+                        (,Set.singleton (textToBS parsedSort.name.getId))
+                            <$> mkAttributes parsedSort
+            sorts' <- (currentSorts <>) <$> traverse mkSortEntry newSorts
 
             -- ensure parsed symbols are not duplicates and only refer
             -- to known sorts
@@ -249,7 +254,7 @@ addModule
             let defWithNewSortsAndSymbols =
                     Partial
                         KoreDefinition
-                            { attributes
+                            { attributes = defAttributes
                             , modules
                             , sorts = sorts' -- no subsort information yet
                             , symbols
@@ -262,16 +267,21 @@ addModule
                     Except DefinitionError (Def.AliasName, Alias)
                 -- TODO(Ana): do we need to handle attributes?
                 internaliseAlias palias@ParsedAlias{name, sortVars, argSorts, sort, args, rhs} = do
-                    unless (length argSorts == length args) (throwE (DefinitionAliasError (Json.getId name) . WrongAliasSortCount $ palias))
-                    let paramNames = Json.getId <$> sortVars
+                    unless (length argSorts == length args) (throwE (DefinitionAliasError name.getId . WrongAliasSortCount $ palias))
+                    let paramNames = (.getId) <$> sortVars
                         params = Def.SortVar . textToBS <$> paramNames
-                        argNames = textToBS . Json.getId <$> args
-                        internalName = textToBS $ Json.getId name
-                    internalArgSorts <- traverse (withExcept DefinitionSortError . checkSort (Set.fromList paramNames) sorts') argSorts
-                    internalResSort <- withExcept DefinitionSortError $ checkSort (Set.fromList paramNames) sorts' sort
+                        argNames = textToBS . (.getId) <$> args
+                        internalName = textToBS name.getId
+                    internalArgSorts <-
+                        traverse
+                            (withExcept DefinitionSortError . internaliseSort (Set.fromList paramNames) sorts')
+                            argSorts
+                    internalResSort <-
+                        withExcept DefinitionSortError $
+                            internaliseSort (Set.fromList paramNames) sorts' sort
                     let internalArgs = uncurry Def.Variable <$> zip internalArgSorts argNames
                     internalRhs <-
-                        withExcept (DefinitionAliasError (Json.getId name) . InconsistentAliasPattern) $
+                        withExcept (DefinitionAliasError name.getId . InconsistentAliasPattern) $
                             internaliseTermOrPredicate (Just sortVars) defWithNewSortsAndSymbols.partial rhs
                     let rhsSort = Util.sortOfTermOrPredicate internalRhs
                     unless (fromMaybe internalResSort rhsSort == internalResSort) (throwE (DefinitionSortError (GeneralError "IncompatibleSorts")))
@@ -341,34 +351,37 @@ data AxiomResult
 -- helper type to carry relevant extracted data from a pattern (what
 -- is passed to the internalising function later)
 data AxiomData
-    = RewriteRuleAxiom' Text [Json.KorePattern] Json.KorePattern AxiomAttributes [Json.Id]
-    | SubsortAxiom' Json.Sort Json.Sort
+    = RewriteRuleAxiom' Text [Syntax.KorePattern] Syntax.KorePattern AxiomAttributes
+    | SubsortAxiom' Syntax.Sort Syntax.Sort
 
 classifyAxiom :: ParsedAxiom -> Except DefinitionError (Maybe AxiomData)
-classifyAxiom parsedAx@ParsedAxiom{axiom, sortVars} = case axiom of
-    -- rewrite: an actual rewrite rule
-    Json.KJRewrites _ lhs rhs
-        | Json.KJAnd _ (Json.KJNot _ _) (Json.KJApp (Json.Id aliasName) _ aliasArgs) <- lhs ->
-            pure $ Just $ RewriteRuleAxiom' aliasName aliasArgs rhs (extract parsedAx) sortVars
-        | Json.KJApp (Json.Id aliasName) _ aliasArgs <- lhs ->
-            pure $ Just $ RewriteRuleAxiom' aliasName aliasArgs rhs (extract parsedAx) sortVars
-        | otherwise ->
-            throwE $ DefinitionRewriteRuleError $ MalformedRewriteRule parsedAx
-    -- subsort axiom formulated as an existential rule
-    Json.KJExists{var, varSort = super, arg}
-        | Json.KJEquals{first = aVar, second = anApp} <- arg
-        , aVar == Json.KJEVar{name = var, sort = super}
-        , Json.KJApp{name, args} <- anApp
-        , Json.Id "inj" <- name
-        , [Json.KJEVar{name = _, sort = sub}] <- args ->
-            pure $ Just $ SubsortAxiom' sub super
-    -- implies: an equation
-    Json.KJImplies{} ->
-        pure Nothing -- not handled yet
+classifyAxiom parsedAx@ParsedAxiom{axiom} = do
+    case axiom of
+        -- rewrite: an actual rewrite rule
+        Syntax.KJRewrites _ lhs rhs
+            | Syntax.KJAnd _ (Syntax.KJNot _ _) (Syntax.KJApp (Syntax.Id aliasName) _ aliasArgs) <- lhs -> do
+                attributes <- withExcept DefinitionAttributeError $ mkAttributes parsedAx
+                pure $ Just $ RewriteRuleAxiom' aliasName aliasArgs rhs attributes
+            | Syntax.KJApp (Syntax.Id aliasName) _ aliasArgs <- lhs -> do
+                attributes <- withExcept DefinitionAttributeError $ mkAttributes parsedAx
+                pure $ Just $ RewriteRuleAxiom' aliasName aliasArgs rhs attributes
+            | otherwise ->
+                throwE $ DefinitionRewriteRuleError $ MalformedRewriteRule parsedAx
+        -- subsort axiom formulated as an existential rule
+        Syntax.KJExists{var, varSort = super, arg}
+            | Syntax.KJEquals{first = aVar, second = anApp} <- arg
+            , aVar == Syntax.KJEVar{name = var, sort = super}
+            , Syntax.KJApp{name, args} <- anApp
+            , Syntax.Id "inj" <- name
+            , [Syntax.KJEVar{name = _, sort = sub}] <- args ->
+                pure $ Just $ SubsortAxiom' sub super
+        -- implies: an equation
+        Syntax.KJImplies{} ->
+            pure Nothing -- not handled yet
 
-    -- anything else: not handled yet but not an error (this case
-    -- becomes an error if the list becomes comprehensive)
-    _ -> pure Nothing
+        -- anything else: not handled yet but not an error (this case
+        -- becomes an error if the list becomes comprehensive)
+        _ -> pure Nothing
 
 internaliseAxiom ::
     PartialDefinition ->
@@ -379,23 +392,23 @@ internaliseAxiom (Partial partialDefinition) parsedAxiom =
   where
     processAxiom :: AxiomData -> Except DefinitionError (Maybe AxiomResult)
     processAxiom = \case
-        SubsortAxiom' Json.SortApp{name = Json.Id sub} Json.SortApp{name = Json.Id super} -> do
+        SubsortAxiom' Syntax.SortApp{name = Syntax.Id sub} Syntax.SortApp{name = Syntax.Id super} -> do
             when (sub == super) $
                 throwE $
                     DefinitionSortError $
                         GeneralError ("Bad subsort rule " <> sub <> " < " <> super)
             pure $ Just $ SubsortAxiom (textToBS sub, textToBS super)
-        SubsortAxiom' Json.SortVar{name = Json.Id sub} _ ->
+        SubsortAxiom' Syntax.SortVar{name = Syntax.Id sub} _ ->
             throwE $
                 DefinitionSortError $
                     GeneralError ("Sort variable " <> sub <> " in subsort axiom")
-        SubsortAxiom' _ Json.SortVar{name = Json.Id super} ->
+        SubsortAxiom' _ Syntax.SortVar{name = Syntax.Id super} ->
             throwE $
                 DefinitionSortError $
                     GeneralError ("Sort variable " <> super <> " in subsort axiom")
-        RewriteRuleAxiom' alias args rhs attribs sortVars ->
+        RewriteRuleAxiom' alias args rhs attribs ->
             Just . RewriteRuleAxiom
-                <$> internaliseRewriteRule partialDefinition (textToBS alias) args rhs attribs sortVars
+                <$> internaliseRewriteRule partialDefinition (textToBS alias) args rhs attribs
 
 orFailWith :: Maybe a -> e -> Except e a
 mbX `orFailWith` err = maybe (throwE err) pure mbX
@@ -403,17 +416,19 @@ mbX `orFailWith` err = maybe (throwE err) pure mbX
 internaliseRewriteRule ::
     KoreDefinition ->
     AliasName ->
-    [Json.KorePattern] ->
-    Json.KorePattern ->
+    [Syntax.KorePattern] ->
+    Syntax.KorePattern ->
     AxiomAttributes ->
-    [Json.Id] ->
     Except DefinitionError RewriteRule
-internaliseRewriteRule partialDefinition aliasName aliasArgs right axAttributes sortVars = do
+internaliseRewriteRule partialDefinition aliasName aliasArgs right axAttributes = do
     alias <-
         withExcept (DefinitionAliasError $ Text.decodeLatin1 aliasName) $
             Map.lookup aliasName partialDefinition.aliases
                 `orFailWith` UnknownAlias aliasName
-    args <- traverse (withExcept DefinitionPatternError . internaliseTerm (Just sortVars) partialDefinition) aliasArgs
+    args <-
+        traverse
+            (withExcept DefinitionPatternError . internaliseTerm Nothing partialDefinition)
+            aliasArgs
     result <- expandAlias alias args
 
     -- prefix all variables in lhs and rhs with "Rule#" to avoid
@@ -426,7 +441,7 @@ internaliseRewriteRule partialDefinition aliasName aliasArgs right axAttributes 
     rhs <-
         fmap (removeTops . Util.modifyVariables ("Rule#" <>)) $
             withExcept DefinitionPatternError $
-                internalisePattern (Just sortVars) partialDefinition right
+                internalisePattern Nothing partialDefinition right
     let preservesDefinedness =
             -- users can override the definedness computation by an explicit attribute
             fromMaybe (Util.checkTermSymbols Util.isDefinedSymbol rhs.term) axAttributes.preserving
@@ -442,7 +457,9 @@ internaliseRewriteRule partialDefinition aliasName aliasArgs right axAttributes 
 expandAlias :: Alias -> [Def.Term] -> Except DefinitionError Def.TermOrPredicate
 expandAlias alias currentArgs
     | length alias.args /= length currentArgs =
-        throwE (DefinitionAliasError (Text.decodeLatin1 alias.name) $ WrongAliasArgCount alias currentArgs)
+        throwE $
+            DefinitionAliasError (Text.decodeLatin1 alias.name) $
+                WrongAliasArgCount alias currentArgs
     | otherwise =
         let substitution = Map.fromList (zip alias.args currentArgs)
          in return $ substitute substitution alias.rhs
@@ -489,20 +506,19 @@ internaliseSymbol sorts parsedSymbol = do
             DuplicateNames (map (.getId) parsedSymbol.sortVars)
     resultSort <- check parsedSymbol.sort
     argSorts <- mapM check parsedSymbol.argSorts
+    attributes <- withExcept DefinitionAttributeError $ mkAttributes parsedSymbol
     let name = textToBS parsedSymbol.name.getId
-        attributes = extract parsedSymbol
         internalSymbol = Def.Symbol{name, sortVars, resultSort, argSorts, attributes}
-    -- TODO(Ana): rename extract
     pure (name, internalSymbol)
   where
     knownVars = Set.fromList sortVarsT
     sortVarsT = map (.getId) parsedSymbol.sortVars
     sortVars = map textToBS sortVarsT
 
-    check :: Json.Sort -> Except DefinitionError Def.Sort
+    check :: Syntax.Sort -> Except DefinitionError Def.Sort
     check =
         mapExcept (first DefinitionSortError)
-            . checkSort knownVars sorts
+            . internaliseSort knownVars sorts
 
 {- | Computes all-pairs reachability in a directed graph given as an
    adjacency list mapping. Using a naive algorithm because the subsort
@@ -539,7 +555,7 @@ data DefinitionError
     | DuplicateSymbols [ParsedSymbol]
     | DuplicateAliases [ParsedAlias]
     | DuplicateNames [Text]
-    | DefinitionAttributeError [DefinitionAttributes]
+    | DefinitionAttributeError Text
     | DefinitionSortError SortError
     | DefinitionPatternError PatternError
     | DefinitionAliasError Text AliasError
@@ -564,16 +580,16 @@ instance Pretty DefinitionError where
             pretty $ "Duplicate aliases: " <> show (map (.name.getId) aliases)
         DuplicateNames names ->
             pretty $ "Duplicate names (import clashes): " <> show names
-        DefinitionAttributeError attrs ->
-            pretty $ "Definition attributes differ: " <> show attrs
+        DefinitionAttributeError msg ->
+            pretty $ "Attribute error: " <> msg
         DefinitionSortError sortErr ->
             pretty $ "Sort error: " <> renderSortError sortErr
         DefinitionPatternError patErr ->
             pretty $ "Pattern error: " <> show patErr -- TODO define a pretty instance?
         DefinitionAliasError name err ->
             pretty $ "Alias error in " <> Text.unpack name <> ": " <> show err
-        DefinitionRewriteRuleError (MalformedRewriteRule rule) ->
-            pretty $ "Malformed rewrite rule " <> show (extract rule).location
+        DefinitionRewriteRuleError err ->
+            "Bad rewrite rule " <> pretty err
         DefinitionTermOrPredicateError (PatternExpected p) ->
             pretty $ "Expected a pattern but found a predicate: " <> show p
         AddModuleError msg ->
@@ -593,7 +609,7 @@ instance ToJSON DefinitionError where
         DefinitionPatternError patErr ->
             "Pattern error in definition" `withContext` [toJSON patErr]
         DefinitionRewriteRuleError (MalformedRewriteRule rule) ->
-            "Malformed rewrite rule" `withContext` [toJSON rule]
+            "Bad rewrite rule" `withContext` [toJSON rule]
         other ->
             object ["error" .= renderOneLineText (pretty other), "context" .= Null]
       where
@@ -611,6 +627,13 @@ data AliasError
 newtype RewriteRuleError
     = MalformedRewriteRule ParsedAxiom
     deriving stock (Eq, Show)
+
+instance Pretty RewriteRuleError where
+    pretty = \case
+        MalformedRewriteRule rule ->
+            "Malformed rule at " <> either (const "unknown location") pretty location
+          where
+            location = runExcept $ Attributes.readLocation rule.attributes
 
 newtype TermOrPredicateError
     = PatternExpected Def.TermOrPredicate
