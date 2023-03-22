@@ -48,6 +48,8 @@ symbolAttributeGen =
         <*> symbolKywdAttributeGen
         <*> noEvaluatorsAttributeGen
         <*> sourceLocationAttributeGen
+        <*> macroAttributeGen
+        <*> aliasKywdAttributeGen
 
 functionAttributeGen :: Gen Attribute.Function
 functionAttributeGen = Attribute.Function <$> Gen.bool
@@ -90,3 +92,9 @@ noEvaluatorsAttributeGen = Attribute.NoEvaluators <$> Gen.bool
 
 sourceLocationAttributeGen :: Gen Kore.Attribute.SourceLocation.SourceLocation
 sourceLocationAttributeGen = pure Default.def
+
+macroAttributeGen :: Gen Attribute.Macro
+macroAttributeGen = Attribute.Macro <$> Gen.bool
+
+aliasKywdAttributeGen :: Gen Attribute.AliasKywd
+aliasKywdAttributeGen = Attribute.AliasKywd <$> Gen.bool
