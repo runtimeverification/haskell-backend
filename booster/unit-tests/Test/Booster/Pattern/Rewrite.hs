@@ -139,11 +139,16 @@ rule ruleLabel lhs rhs priority =
     RewriteRule
         { lhs
         , rhs
-        , attributes = AxiomAttributes{location, priority, ruleLabel, simplification = False, preserving = Nothing}
+        , attributes =
+            AxiomAttributes
+                { location = Nothing
+                , priority
+                , ruleLabel
+                , simplification = Nothing
+                , preserving = Nothing
+                }
         , computedAttributes = ComputedAxiomAttributes False True
         }
-  where
-    location = Location "no-file" $ Position 0 0
 
 mkTheory :: [(TermIndex, [RewriteRule])] -> RewriteTheory
 mkTheory = Map.map mkPriorityGroups . Map.fromList
