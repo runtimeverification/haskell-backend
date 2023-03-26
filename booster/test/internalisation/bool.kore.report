@@ -1,14 +1,16 @@
 Modules: BOOL
-Sorts: Bool
-Symbols: 5
-  - andBool
-  - false
-  - notBool
-  - orBool
-  - true
+Sorts: SortBool
+Symbols: 7
+  - Lbl_andBool_
+  - Lbl_andThenBool_
+  - Lbl_impliesBool_
+  - Lbl_orBool_
+  - Lbl_orElseBool_
+  - Lbl_xorBool_
+  - LblnotBool_
 Axioms: 0
 Axioms preserving definedness: 0
 Axioms containing AC symbols: 0
 Subsorts:
-- Bool: Bool
+- SortBool: SortBool
 Axioms grouped by term index:

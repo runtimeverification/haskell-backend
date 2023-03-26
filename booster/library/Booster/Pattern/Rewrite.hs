@@ -12,6 +12,7 @@ module Booster.Pattern.Rewrite (
     runRewriteM,
 ) where
 
+import Control.Applicative ((<|>))
 import Control.Monad
 import Control.Monad.Logger.CallStack
 import Control.Monad.Trans.Class
@@ -22,7 +23,7 @@ import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromMaybe)
-import Data.Text (Text, pack, split, unpack)
+import Data.Text (Text, pack)
 import Numeric.Natural
 import Prettyprinter
 
@@ -211,7 +212,7 @@ instance Pretty RewriteFailed where
     pretty (RuleApplicationUnclear rule term remainder) =
         hsep
             [ "Uncertain about unification of rule"
-            , pretty (ruleId rule)
+            , ruleId rule
             , " with term "
             , pretty term
             , "Remainder:"
@@ -220,14 +221,14 @@ instance Pretty RewriteFailed where
     pretty (RuleConditionUnclear rule predicate) =
         hsep
             [ "Uncertain about a condition in rule"
-            , pretty (ruleId rule)
+            , ruleId rule
             , ": "
             , pretty predicate
             ]
     pretty (DefinednessUnclear rule pat) =
         hsep
             [ "Uncertain about definedness of rule "
-            , pretty (ruleId rule)
+            , ruleId rule
             , " applied to "
             , pretty pat
             ]
@@ -236,7 +237,7 @@ instance Pretty RewriteFailed where
             [ "Unification produced a non-match:"
             , pretty $ Map.toList subst
             , "when matching rule"
-            , pretty (ruleId rule)
+            , ruleId rule
             , "with term"
             , pretty term
             ]
@@ -245,22 +246,17 @@ instance Pretty RewriteFailed where
             [ "Sort error while unifying"
             , pretty term
             , "with rule"
-            , pretty (ruleId rule)
+            , ruleId rule
             , ":"
             , pretty $ show sortError
             ]
     pretty (TermIndexIsNone term) =
         "Term index is None for term " <> pretty term
 
-ruleId :: RewriteRule -> String
-ruleId rule = (<> ": ") $ maybe ruleLoc show rule.attributes.ruleLabel
-  where
-    ruleLoc =
-        unpack (last (split (== '/') rule.attributes.location.file))
-            <> show
-                ( rule.attributes.location.position.line
-                , rule.attributes.location.position.column
-                )
+ruleId :: RewriteRule -> Doc a
+ruleId rule =
+    fromMaybe "unknown rule" $
+        fmap pretty rule.attributes.ruleLabel <|> fmap pretty rule.attributes.location
 
 -- | Different rewrite results (returned from RPC execute endpoint)
 data RewriteResult pat
@@ -385,7 +381,7 @@ performRewrite def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pat = do
                         let simplifiedPat = simplify pat'
                         logRewrite $
                             "Unification unclear for rule "
-                                <> pack (ruleId rule)
+                                <> renderOneLineText (ruleId rule)
                                 <> " and term "
                                 <> prettyText term
                         logRewrite $

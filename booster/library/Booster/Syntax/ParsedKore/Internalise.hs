@@ -27,7 +27,7 @@ import Data.List (foldl', groupBy, partition, sortOn)
 import Data.List.Extra (groupSort)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isJust)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -353,20 +353,64 @@ data AxiomResult
 data AxiomData
     = RewriteRuleAxiom' Text [Syntax.KorePattern] Syntax.KorePattern AxiomAttributes
     | SubsortAxiom' Syntax.Sort Syntax.Sort
+    | EquationAxiom'
+        Syntax.KorePattern -- requires
+        Syntax.KorePattern -- LHS
+        Syntax.KorePattern -- And(RHS, ensures)
+        [Syntax.Id] -- sort variables
+        AxiomAttributes
 
+{- | Recognises axioms generated from a K definition and classifies them
+   according to their purpose.
+
+* Rewrite rule:
+  with anti-left:    \rewrites(\and{}(\not(_), <aliasName>(..)), _)
+  without anti-left: \rewrites(<aliasName>(..)), _)
+* Subsort axiom:
+  \exists(V:<super>, \equals(V, inj{<sub>,<super>}(V':<sub>)))
+* equation (simplification or function equation)
+  \implies(<requires>, \equals(<lhs-symbol>(_), \and(<rhs>, <ensures>)))
+* matching logic simplification equation
+  \implies(<requires>, \equals(lhs, \and(<rhs>, <ensures>)))
+  (with lhs something different from a symbol application). Used in
+  domains.md for SortBool simplification
+* functional/total rule
+  \exists(V:_ , \equals(V, <total-symbol>(..args..))) [functional()]
+* no confusion, same constructor (con)
+  \implies(\and(<con>(X), <con>(Y)), <con>(\and(X, Y))) [constructor()]
+* no confusion, different constructors (con1, con2)
+  \not(\and(<con1>(X), <con2>(Y))) [constructor()]
+* no junk: chain of \or (possibly with chain of \exists in arguments) ending in \bottom
+  \or(\exists(X, \exists(Y, ..., <con>(X, Y, ...)), \or(..., \bottom)) [constructor()]
+* associativity
+  \equals(<sym>(<sym>(K1, K2), K3), <sym>(K1, <sym>(K2, K3))) [assoc()]
+* commutativity
+  \equals(<sym>(K1, K2), <sym>(K2, K1)) [comm()]
+* idempotency
+  \equals(<sym>(K, K), K) [idem()]
+* left unit
+  \equals(<sym1>(<unit>, K), K) [unit()]
+* right unit
+  \equals(<sym1>(K, <unit>), K) [unit()]
+
+* one bespoke simplification rule for injections:
+  '\equals{...}(inj{S2, S3}(inj{S1, S2}(T:S1), inj{S1, S3}(T:S1))'
+  without conditions (no \implies)
+* some no-junk axioms are just "\bottom{...}" (SortList, SortK, SortMap, SortSet)
+-}
 classifyAxiom :: ParsedAxiom -> Except DefinitionError (Maybe AxiomData)
-classifyAxiom parsedAx@ParsedAxiom{axiom} = do
+classifyAxiom parsedAx@ParsedAxiom{axiom, sortVars, attributes} =
     case axiom of
         -- rewrite: an actual rewrite rule
         Syntax.KJRewrites _ lhs rhs
-            | Syntax.KJAnd _ (Syntax.KJNot _ _) (Syntax.KJApp (Syntax.Id aliasName) _ aliasArgs) <- lhs -> do
-                attributes <- withExcept DefinitionAttributeError $ mkAttributes parsedAx
-                pure $ Just $ RewriteRuleAxiom' aliasName aliasArgs rhs attributes
-            | Syntax.KJApp (Syntax.Id aliasName) _ aliasArgs <- lhs -> do
-                attributes <- withExcept DefinitionAttributeError $ mkAttributes parsedAx
-                pure $ Just $ RewriteRuleAxiom' aliasName aliasArgs rhs attributes
+            | Syntax.KJAnd _ (Syntax.KJNot _ _) (Syntax.KJApp (Syntax.Id aliasName) _ aliasArgs) <- lhs ->
+                Just . RewriteRuleAxiom' aliasName aliasArgs rhs
+                    <$> withExcept DefinitionAttributeError (mkAttributes parsedAx)
+            | Syntax.KJApp (Syntax.Id aliasName) _ aliasArgs <- lhs ->
+                Just . RewriteRuleAxiom' aliasName aliasArgs rhs
+                    <$> withExcept DefinitionAttributeError (mkAttributes parsedAx)
             | otherwise ->
-                throwE $ DefinitionRewriteRuleError $ MalformedRewriteRule parsedAx
+                throwE $ DefinitionAxiomError $ MalformedRewriteRule parsedAx
         -- subsort axiom formulated as an existential rule
         Syntax.KJExists{var, varSort = super, arg}
             | Syntax.KJEquals{first = aVar, second = anApp} <- arg
@@ -375,13 +419,53 @@ classifyAxiom parsedAx@ParsedAxiom{axiom} = do
             , Syntax.Id "inj" <- name
             , [Syntax.KJEVar{name = _, sort = sub}] <- args ->
                 pure $ Just $ SubsortAxiom' sub super
-        -- implies: an equation
-        Syntax.KJImplies{} ->
-            pure Nothing -- not handled yet
-
-        -- anything else: not handled yet but not an error (this case
-        -- becomes an error if the list becomes comprehensive)
-        _ -> pure Nothing
+        -- implies with a symbol application: an equation
+        Syntax.KJImplies _ req (Syntax.KJEquals _ _ lhs@Syntax.KJApp{} rhs@Syntax.KJAnd{}) ->
+            Just . EquationAxiom' req lhs rhs sortVars
+                <$> withExcept DefinitionAttributeError (mkAttributes parsedAx)
+        -- implies with the LHS not a symbol application, tagged as simplification
+        Syntax.KJImplies _ _req (Syntax.KJEquals _sort _ _lhs _rhs@Syntax.KJAnd{})
+            | hasAttribute "simplification" ->
+                pure Nothing
+        Syntax.KJExists{var, varSort, arg = Syntax.KJEquals{first = aVar, second = Syntax.KJApp{}}}
+            | hasAttribute "functional" || hasAttribute "total"
+            , aVar == Syntax.KJEVar{name = var, sort = varSort} -> do
+                do
+                    -- TODO assert that symbol `name` is indeed a total function (or a constructor)
+                    pure Nothing
+        Syntax.KJImplies _ Syntax.KJAnd{first = con1@Syntax.KJApp{}, second = con2@Syntax.KJApp{}} Syntax.KJApp{name}
+            | hasAttribute "constructor"
+            , con1.name == con2.name
+            , con1.name == name ->
+                -- no confusion same constructor. Could assert `name` is a constructor
+                pure Nothing
+        Syntax.KJNot _ (Syntax.KJAnd{first = con1@Syntax.KJApp{}, second = con2@Syntax.KJApp{}})
+            | hasAttribute "constructor"
+            , con1.name /= con2.name ->
+                -- no confusion different constructors. Could check whether con*.name are constructors
+                pure Nothing
+        Syntax.KJOr{}
+            | hasAttribute "constructor" ->
+                -- no junk
+                pure Nothing
+        Syntax.KJEquals{}
+            | hasAttribute "assoc" -> pure Nothing -- could check symbol axiom.first.name
+            | hasAttribute "comm" -> pure Nothing -- could check symbol axiom.first.name
+            | hasAttribute "idem" -> pure Nothing -- could check axiom.first.name
+            | hasAttribute "unit" -> pure Nothing -- could check axiom.first.name and the unit symbol in axiom.first.args
+            | hasAttribute "simplification" -- special case of injection simplification
+            , Syntax.KJApp{name = sym1} <- axiom.first
+            , sym1 == Syntax.Id "inj"
+            , Syntax.KJApp{name = sym2} <- axiom.second
+            , sym2 == Syntax.Id "inj" ->
+                pure Nothing
+        Syntax.KJBottom{sort = Syntax.SortApp _ []}
+            | hasAttribute "constructor" ->
+                pure Nothing
+        -- anything else:  error, as the list should be comprehensive
+        _ -> throwE $ DefinitionAxiomError $ UnexpectedAxiom parsedAx
+  where
+    hasAttribute name = isJust $ lookup (Syntax.Id name) attributes
 
 internaliseAxiom ::
     PartialDefinition ->
@@ -409,6 +493,8 @@ internaliseAxiom (Partial partialDefinition) parsedAxiom =
         RewriteRuleAxiom' alias args rhs attribs ->
             Just . RewriteRuleAxiom
                 <$> internaliseRewriteRule partialDefinition (textToBS alias) args rhs attribs
+        EquationAxiom'{} ->
+            pure Nothing
 
 orFailWith :: Maybe a -> e -> Except e a
 mbX `orFailWith` err = maybe (throwE err) pure mbX
@@ -559,7 +645,7 @@ data DefinitionError
     | DefinitionSortError SortError
     | DefinitionPatternError PatternError
     | DefinitionAliasError Text AliasError
-    | DefinitionRewriteRuleError RewriteRuleError
+    | DefinitionAxiomError AxiomError
     | DefinitionTermOrPredicateError TermOrPredicateError
     | AddModuleError Text
     deriving stock (Eq, Show)
@@ -588,7 +674,7 @@ instance Pretty DefinitionError where
             pretty $ "Pattern error: " <> show patErr -- TODO define a pretty instance?
         DefinitionAliasError name err ->
             pretty $ "Alias error in " <> Text.unpack name <> ": " <> show err
-        DefinitionRewriteRuleError err ->
+        DefinitionAxiomError err ->
             "Bad rewrite rule " <> pretty err
         DefinitionTermOrPredicateError (PatternExpected p) ->
             pretty $ "Expected a pattern but found a predicate: " <> show p
@@ -608,8 +694,12 @@ instance ToJSON DefinitionError where
             "DuplicateAliases" `withContext` map toJSON aliases
         DefinitionPatternError patErr ->
             "Pattern error in definition" `withContext` [toJSON patErr]
-        DefinitionRewriteRuleError (MalformedRewriteRule rule) ->
-            "Bad rewrite rule" `withContext` [toJSON rule]
+        DefinitionAxiomError (MalformedRewriteRule rule) ->
+            "Malformed rewrite rule" `withContext` [toJSON rule]
+        DefinitionAxiomError (MalformedEquation rule) ->
+            "Malformed equation" `withContext` [toJSON rule]
+        DefinitionAxiomError (UnexpectedAxiom rule) ->
+            "Unknown kind of axiom" `withContext` [toJSON rule]
         other ->
             object ["error" .= renderOneLineText (pretty other), "context" .= Null]
       where
@@ -624,16 +714,25 @@ data AliasError
     | InconsistentAliasPattern [PatternError]
     deriving stock (Eq, Show)
 
-newtype RewriteRuleError
+data AxiomError
     = MalformedRewriteRule ParsedAxiom
+    | MalformedEquation ParsedAxiom
+    | UnexpectedAxiom ParsedAxiom
     deriving stock (Eq, Show)
 
-instance Pretty RewriteRuleError where
+instance Pretty AxiomError where
     pretty = \case
         MalformedRewriteRule rule ->
-            "Malformed rule at " <> either (const "unknown location") pretty location
-          where
-            location = runExcept $ Attributes.readLocation rule.attributes
+            "Malformed rewrite rule at " <> location rule
+        MalformedEquation rule ->
+            "Malformed equation at " <> location rule
+        UnexpectedAxiom rule ->
+            "Unknown kind of axiom at " <> location rule
+      where
+        location :: ParsedAxiom -> Doc a
+        location rule =
+            either (const "unknown location") pretty $
+                runExcept (Attributes.readLocation rule.attributes)
 
 newtype TermOrPredicateError
     = PatternExpected Def.TermOrPredicate
