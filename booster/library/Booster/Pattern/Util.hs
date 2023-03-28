@@ -24,8 +24,9 @@ module Booster.Pattern.Util (
     decodeLabel,
 ) where
 
-import Booster.Definition.Attributes.Base (SymbolAttributes (..), SymbolType (..))
+import Booster.Definition.Attributes.Base (Flag (..), SymbolAttributes (..), SymbolType (..))
 import Booster.Pattern.Base
+import Data.Coerce (coerce)
 import Data.Functor.Foldable (Corecursive (embed), cata)
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -130,7 +131,7 @@ isDefinedSymbol symbol =
 
 checkSymbolIsAc :: Symbol -> Bool
 checkSymbolIsAc symbol =
-    symbol.attributes.isAssoc || symbol.attributes.isIdem
+    coerce symbol.attributes.isAssoc || coerce symbol.attributes.isIdem
 
 checkTermSymbols :: (Symbol -> Bool) -> Term -> Bool
 checkTermSymbols check = cata $ \case
