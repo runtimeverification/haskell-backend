@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
@@ -25,6 +27,7 @@ import Text.Regex.PCRE
 
 import Booster.Definition.Attributes.Base
 import Booster.Syntax.ParsedKore.Base
+import Data.Coerce (Coercible, coerce)
 import Kore.Syntax.Json.Types (Id (..))
 
 {- | A class describing all attributes we want to extract from parsed
@@ -99,6 +102,7 @@ instance HasAttributes ParsedSymbol where
             <$> symbolType
             <*> isIdem
             <*> isAssoc
+            <*> (coerce <$> (attributes .! "macro" <||> attributes .! "alias'Kywd'"))
 
 instance HasAttributes ParsedSort where
     type Attributes ParsedSort = SortAttributes
@@ -129,10 +133,10 @@ extractAttributeOrDefault def name attribs =
 attribs .:? name =
     except . first (readError name) . mapM readT $ getAttribute name attribs
 
-extractFlag :: Text -> ParsedAttributes -> Except Text Bool
-extractFlag = extractAttributeOrDefault False
+extractFlag :: Coercible Bool b => Text -> ParsedAttributes -> Except Text b
+extractFlag = coerce . extractAttributeOrDefault False
 
-(.!) :: ParsedAttributes -> Text -> Except Text Bool
+(.!) :: Coercible Bool b => ParsedAttributes -> Text -> Except Text b
 (.!) = flip extractFlag
 
 infix 5 .!

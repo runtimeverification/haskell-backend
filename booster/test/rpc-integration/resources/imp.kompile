@@ -1,5 +1,5 @@
 kompile --llvm-kompile-type c -o imp-llvm-library imp.k
-cp imp-llvm-library/interpreter ./imp.dylib
+cp imp-llvm-library/interpreter.* ./imp.dylib
 rm -r imp-llvm-library
 kompile --backend haskell -o imp-haskell imp.k
 cp imp-haskell/definition.kore ./imp.kore

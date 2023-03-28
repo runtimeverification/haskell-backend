@@ -63,9 +63,9 @@ app :: Symbol -> [Term] -> Term
 app s = SymbolApplication s []
 
 asTotalFunction, asPartialFunction, asConstructor :: SymbolAttributes
-asTotalFunction = SymbolAttributes TotalFunction False False
-asPartialFunction = SymbolAttributes PartialFunction False False
-asConstructor = SymbolAttributes Constructor False False
+asTotalFunction = SymbolAttributes TotalFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias
+asPartialFunction = SymbolAttributes PartialFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias
+asConstructor = SymbolAttributes Constructor IsNotIdem IsNotAssoc IsNotMacroOrAlias
 
 con1, con2, con3, con4, f1, f2 :: Symbol
 con1 =

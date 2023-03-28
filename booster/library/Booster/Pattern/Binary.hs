@@ -176,7 +176,7 @@ lookupKoreDefinitionSymbol name = DecodeM $ do
     pure $ case mDef of
         -- return a symbol with dummy attributes if no definition is supplied.
         -- this should be used for testing ONLY!
-        Nothing -> Just $ Symbol name [] [] (SortApp "UNKNOWN" []) (SymbolAttributes PartialFunction False False)
+        Nothing -> Just $ Symbol name [] [] (SortApp "UNKNOWN" []) (SymbolAttributes PartialFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias)
         Just def -> Map.lookup name $ symbols def
 
 {- | Successively decodes items from the given "block" of bytes,
