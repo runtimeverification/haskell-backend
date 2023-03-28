@@ -55,7 +55,7 @@ respond stateVar =
             | isJust req.movingAverageStepTimeout -> pure $ Left $ unsupportedOption ("moving-average-step-timeout" :: String)
         Execute req -> withContext req._module $ \(def, mLlvmLibrary) -> do
             -- internalise given constrained term
-            let internalised = runExcept $ internalisePattern Nothing def req.state.term
+            let internalised = runExcept $ internalisePattern False Nothing def req.state.term
 
             case internalised of
                 Left patternError -> do

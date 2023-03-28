@@ -31,8 +31,8 @@ app :: Symbol -> [Term] -> Term
 app s = SymbolApplication s []
 
 asTotalFunction, asConstructor :: SymbolAttributes
-asTotalFunction = SymbolAttributes TotalFunction False False
-asConstructor = SymbolAttributes Constructor False False
+asTotalFunction = SymbolAttributes TotalFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias
+asConstructor = SymbolAttributes Constructor IsNotIdem IsNotAssoc IsNotMacroOrAlias
 
 someSort :: Sort
 someSort = SortApp "SomeSort" []

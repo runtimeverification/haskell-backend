@@ -1,3 +1,6 @@
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE PolyKinds #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
@@ -18,6 +21,13 @@ module Booster.Definition.Attributes.Base (
     Position (..),
     FileSource (..),
     Priority,
+    Flag (..),
+    pattern IsIdem,
+    pattern IsNotIdem,
+    pattern IsAssoc,
+    pattern IsNotAssoc,
+    pattern IsMacroOrAlias,
+    pattern IsNotMacroOrAlias,
 ) where
 
 import Control.DeepSeq (NFData (..))
@@ -101,9 +111,30 @@ data SymbolType
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData, Hashable)
 
+newtype Flag (name :: k) = Flag Bool
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData, Hashable)
+
+pattern IsIdem, IsNotIdem :: Flag "isIdem"
+pattern IsIdem = Flag True
+pattern IsNotIdem = Flag False
+{-# COMPLETE IsIdem, IsNotIdem #-}
+
+pattern IsAssoc, IsNotAssoc :: Flag "isAssoc"
+pattern IsAssoc = Flag True
+pattern IsNotAssoc = Flag False
+{-# COMPLETE IsAssoc, IsNotAssoc #-}
+
+pattern IsMacroOrAlias, IsNotMacroOrAlias :: Flag "isMacroOrAlias"
+pattern IsMacroOrAlias = Flag True
+pattern IsNotMacroOrAlias = Flag False
+{-# COMPLETE IsMacroOrAlias, IsNotMacroOrAlias #-}
+
 data SymbolAttributes = SymbolAttributes
     { symbolType :: SymbolType
-    , isIdem, isAssoc :: Bool
+    , isIdem :: Flag "isIdem"
+    , isAssoc :: Flag "isAssoc"
+    , isMacroOrAlias :: Flag "isMacroOrAlias"
     }
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData, Hashable)
