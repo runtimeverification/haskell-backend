@@ -78,6 +78,7 @@ validateAxiom attrs verified =
         Left TotalAxiom -> return ()
         Left ConstructorAxiom -> return ()
         Left SubsortAxiom -> return ()
+        Left err@(UnsupportedLHS _) -> failWithBadEquation err
   where
     failWithBadEquation =
         koreFailWithLocations [sentenceAxiomPattern verified]
