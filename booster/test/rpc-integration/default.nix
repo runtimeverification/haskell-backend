@@ -41,5 +41,6 @@ in {
     name = "imp";
     nativeBuildInputs = [ k ];
   };
+  existentials = mkIntegrationTest { name = "existentials"; };
   module-addition = mkIntegrationTest { name = "module-addition"; };
 }

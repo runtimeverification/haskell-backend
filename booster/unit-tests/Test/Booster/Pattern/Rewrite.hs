@@ -148,6 +148,7 @@ rule ruleLabel lhs rhs priority =
                 , preserving = Nothing
                 }
         , computedAttributes = ComputedAxiomAttributes False True
+        , existentials = mempty
         }
 
 mkTheory :: [(TermIndex, [RewriteRule])] -> RewriteTheory

@@ -7,6 +7,7 @@ module Booster.Syntax.Json.Internalise (
     internaliseTermOrPredicate,
     internaliseTerm,
     internalisePredicate,
+    lookupInternalSort,
     PatternError (..),
     internaliseSort,
     SortError (..),

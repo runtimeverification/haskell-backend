@@ -78,7 +78,7 @@ substituteInPredicate substitution = cata $ \case
         EqualsTerm (substituteInTerm substitution t1) (substituteInTerm substitution t2)
     other -> embed other
 
-modifyVariables :: (VarName -> VarName) -> Pattern -> Pattern
+modifyVariables :: (Variable -> Variable) -> Pattern -> Pattern
 modifyVariables f p =
     Pattern
         { term = modifyT p.term
@@ -87,8 +87,7 @@ modifyVariables f p =
   where
     modifyT :: Term -> Term
     modifyT = cata $ \case
-        VarF v@Variable{variableName} ->
-            Var v{variableName = f variableName}
+        VarF v -> Var $ f v
         other -> embed other
     modifyP :: Predicate -> Predicate
     modifyP = cata $ \case
