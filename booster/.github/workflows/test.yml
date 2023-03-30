@@ -191,6 +191,7 @@ jobs:
           nix build .#checks.${{ matrix.nix }}.integration.a-to-f --extra-experimental-features 'nix-command flakes' --print-build-logs
           nix build .#checks.${{ matrix.nix }}.integration.module-addition --extra-experimental-features 'nix-command flakes' --print-build-logs
           nix build .#checks.${{ matrix.nix }}.integration.imp --extra-experimental-features 'nix-command flakes' --print-build-logs -o imp.md
+          nix build .#checks.${{ matrix.nix }}.integration.existentials --extra-experimental-features 'nix-command flakes' --print-build-logs
           echo "${{ matrix.nix }}" > out.md
           cat imp.md >> out.md
           cat out.md >> $GITHUB_STEP_SUMMARY

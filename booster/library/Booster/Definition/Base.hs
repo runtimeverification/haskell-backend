@@ -67,6 +67,7 @@ data RewriteRule = RewriteRule
     , rhs :: Pattern
     , attributes :: AxiomAttributes
     , computedAttributes :: ComputedAxiomAttributes
+    , existentials :: Set Variable
     }
     deriving stock (Eq, Ord, Show, GHC.Generic)
     deriving anyclass (NFData)
