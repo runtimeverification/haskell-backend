@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# OPTIONS_GHC -Wno-ambiguous-fields #-}
 
 {- |
@@ -27,13 +28,14 @@ import Data.List (foldl', groupBy, partition, sortOn)
 import Data.List.Extra (groupSort)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromMaybe, isJust)
+import Data.Maybe (fromMaybe, isJust, mapMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
 import Data.Tuple (swap)
+import GHC.Records (HasField (..))
 import Prettyprinter
 
 import Booster.Definition.Attributes.Base
@@ -44,7 +46,7 @@ import Booster.Definition.Attributes.Reader as Attributes (
 import Booster.Definition.Base as Def
 import Booster.Pattern.Base (Variable (..))
 import Booster.Pattern.Base qualified as Def
-import Booster.Pattern.Index (TermIndex, computeTermIndex)
+import Booster.Pattern.Index as Idx
 import Booster.Pattern.Util qualified as Util
 import Booster.Prettyprinter hiding (attributes)
 import Booster.Syntax.Json.Internalise
@@ -163,11 +165,19 @@ mergeDefs k1 k2
                 <*> mergeDisjoint sorts k1 k2
                 <*> mergeDisjoint symbols k1 k2
                 <*> mergeDisjoint aliases k1 k2
-                <*> pure (mergeTheories k1 k2)
+                <*> pure (mergeTheories rewriteTheory k1 k2)
+                <*> pure (mergeTheories functionEquations k1 k2)
+                <*> pure (mergeTheories simplifications k1 k2)
+                <*> pure (mergeTheories predicateSimplifications k1 k2)
   where
-    mergeTheories :: ImportedDefinition -> KoreDefinition -> RewriteTheory
-    mergeTheories (Imported m1) m2 =
-        Map.unionWith (Map.unionWith (<>)) (rewriteTheory m1) (rewriteTheory m2)
+    mergeTheories ::
+        forall r.
+        (KoreDefinition -> Theory r) ->
+        ImportedDefinition ->
+        KoreDefinition ->
+        Theory r
+    mergeTheories selector (Imported m1) m2 =
+        Map.unionWith (Map.unionWith (<>)) (selector m1) (selector m2)
 
     mergeDisjoint ::
         (KoreDefinition -> Map ByteString a) ->
@@ -210,6 +220,9 @@ addModule
                     , symbols = currentSymbols
                     , aliases = currentAliases
                     , rewriteTheory = currentRewriteTheory
+                    , functionEquations = currentFctEqs
+                    , simplifications = currentSimpls
+                    , predicateSimplifications = currentPredicateSimplifications
                     }
                 )
         ) =
@@ -265,6 +278,9 @@ addModule
                             , symbols
                             , aliases = currentAliases -- no aliases yet
                             , rewriteTheory = currentRewriteTheory -- no rules yet
+                            , functionEquations = Map.empty
+                            , simplifications = Map.empty
+                            , predicateSimplifications = Map.empty
                             }
 
             let internaliseAlias ::
@@ -300,15 +316,34 @@ addModule
 
             let defWithAliases :: PartialDefinition
                 defWithAliases = Partial defWithNewSortsAndSymbols.partial{aliases}
+            newAxioms <- mapMaybeM (internaliseAxiom defWithAliases) parsedAxioms
 
-            (newRewriteRules, subsortPairs) <-
-                partitionAxioms
-                    <$> mapMaybeM (internaliseAxiom defWithAliases) parsedAxioms
-
-            let rewriteTheory = addToTheory newRewriteRules currentRewriteTheory
+            let newRewriteRules = mapMaybe retractRewriteRule newAxioms
+                subsortPairs = mapMaybe retractSubsortRule newAxioms
+                newFunctionEquations = mapMaybe retractFunctionRule newAxioms
+                newSimplifications = mapMaybe retractSimplificationRule newAxioms
+                newPredicateSimplifications = mapMaybe retractPredicateSimplificationRule newAxioms
+            let rewriteTheory =
+                    addToTheoryWith (Idx.kCellTermIndex . (.lhs.term)) newRewriteRules currentRewriteTheory
+                functionEquations =
+                    addToTheoryWith (Idx.termTopIndex . (.lhs.term)) newFunctionEquations currentFctEqs
+                simplifications =
+                    addToTheoryWith (Idx.termTopIndex . (.lhs.term)) newSimplifications currentSimpls
                 sorts = subsortClosure sorts' subsortPairs
+                predicateSimplifications =
+                    addToTheoryWith
+                        (predicateTopIndex . (.target))
+                        newPredicateSimplifications
+                        currentPredicateSimplifications
 
-            pure $ defWithAliases.partial{sorts, rewriteTheory}
+            pure $
+                defWithAliases.partial
+                    { sorts
+                    , rewriteTheory
+                    , functionEquations
+                    , simplifications
+                    , predicateSimplifications
+                    }
       where
         -- Uses 'getKey' to construct a finite mapping from the list,
         -- returning elements that yield the same key separately.
@@ -326,13 +361,6 @@ addModule
                 , [(getKey $ head d, d) | d <- dups]
                 )
 
-        partitionAxioms :: [AxiomResult] -> ([RewriteRule], [(Def.SortName, Def.SortName)])
-        partitionAxioms = go [] []
-          where
-            go rules sorts [] = (rules, sorts)
-            go rules sorts (RewriteRuleAxiom r : rest) = go (r : rules) sorts rest
-            go rules sorts (SubsortAxiom pair : rest) = go rules (pair : sorts) rest
-
         subsortClosure ::
             Map Def.SortName (SortAttributes, Set Def.SortName) ->
             [(Def.SortName, Def.SortName)] ->
@@ -349,16 +377,50 @@ addModule
 -- Result type from internalisation of different axioms
 data AxiomResult
     = -- | Rewrite rule
-      RewriteRuleAxiom RewriteRule
+      RewriteRuleAxiom (RewriteRule "Rewrite")
     | -- | subsort data: a pair of sorts
       SubsortAxiom (Def.SortName, Def.SortName)
+    | -- | Function equation
+      FunctionAxiom (RewriteRule "Function")
+    | -- | Simplification
+      SimplificationAxiom (RewriteRule "Simplification")
+    | -- | Predicate simplification
+      PredicateSimplificationAxiom PredicateEquation
+
+-- retract helpers
+retractRewriteRule :: AxiomResult -> Maybe (RewriteRule "Rewrite")
+retractRewriteRule (RewriteRuleAxiom r) = Just r
+retractRewriteRule _ = Nothing
+
+retractSubsortRule :: AxiomResult -> Maybe (Def.SortName, Def.SortName)
+retractSubsortRule (SubsortAxiom r) = Just r
+retractSubsortRule _ = Nothing
+
+retractFunctionRule :: AxiomResult -> Maybe (RewriteRule "Function")
+retractFunctionRule (FunctionAxiom r) = Just r
+retractFunctionRule _ = Nothing
+
+retractSimplificationRule :: AxiomResult -> Maybe (RewriteRule "Simplification")
+retractSimplificationRule (SimplificationAxiom r) = Just r
+retractSimplificationRule _ = Nothing
+
+retractPredicateSimplificationRule :: AxiomResult -> Maybe PredicateEquation
+retractPredicateSimplificationRule (PredicateSimplificationAxiom r) = Just r
+retractPredicateSimplificationRule _ = Nothing
 
 -- helper type to carry relevant extracted data from a pattern (what
 -- is passed to the internalising function later)
 data AxiomData
     = RewriteRuleAxiom' Text [Syntax.KorePattern] Syntax.KorePattern AxiomAttributes
     | SubsortAxiom' Syntax.Sort Syntax.Sort
-    | EquationAxiom'
+    | FunctionAxiom'
+        Syntax.KorePattern -- requires
+        [(Syntax.Id, Syntax.Sort, Syntax.KorePattern)] -- arguments (as variable substitution)
+        Syntax.KorePattern -- LHS
+        Syntax.KorePattern -- And(RHS, ensures)
+        [Syntax.Id] -- sort variables
+        AxiomAttributes
+    | SimplificationAxiom'
         Syntax.KorePattern -- requires
         Syntax.KorePattern -- LHS
         Syntax.KorePattern -- And(RHS, ensures)
@@ -425,13 +487,37 @@ classifyAxiom parsedAx@ParsedAxiom{axiom, sortVars, attributes} =
             , [Syntax.KJEVar{name = _, sort = sub}] <- args ->
                 pure $ Just $ SubsortAxiom' sub super
         -- implies with a symbol application: an equation
-        Syntax.KJImplies _ req (Syntax.KJEquals _ _ lhs@Syntax.KJApp{} rhs@Syntax.KJAnd{}) ->
-            Just . EquationAxiom' req lhs rhs sortVars
-                <$> withExcept DefinitionAttributeError (mkAttributes parsedAx)
-        -- implies with the LHS not a symbol application, tagged as simplification
-        Syntax.KJImplies _ _req (Syntax.KJEquals _sort _ _lhs _rhs@Syntax.KJAnd{})
+        Syntax.KJImplies _ req (Syntax.KJEquals _ _ lhs@Syntax.KJApp{args} rhs@Syntax.KJAnd{})
             | hasAttribute "simplification" ->
-                pure Nothing
+                Just . SimplificationAxiom' req lhs rhs sortVars
+                    <$> withExcept DefinitionAttributeError (mkAttributes parsedAx)
+            -- requires and argument predicate, no antiLeft
+            | Syntax.KJAnd _ requires argPred@Syntax.KJAnd{first = Syntax.KJIn{}} <- req
+            , all isVar args -> do
+                argTuples <- extractBinders argPred
+                Just . FunctionAxiom' requires argTuples lhs rhs sortVars
+                    <$> withExcept DefinitionAttributeError (mkAttributes parsedAx)
+            -- antiLeft (discarded), requires and argument predicate
+            | Syntax.KJAnd _ _antiLeft Syntax.KJAnd{first = reqs, second = argPred} <- req
+            , all isVar args -> do
+                argTuples <- extractBinders argPred
+                Just . FunctionAxiom' reqs argTuples lhs rhs sortVars
+                    <$> withExcept DefinitionAttributeError (mkAttributes parsedAx)
+            -- no arguments, no antiLeft
+            | Syntax.KJAnd _ requires Syntax.KJTop{} <- req
+            , all isVar args -> do
+                Just . FunctionAxiom' requires [] lhs rhs sortVars
+                    <$> withExcept DefinitionAttributeError (mkAttributes parsedAx)
+            | otherwise ->
+                throwE $ DefinitionAxiomError $ MalformedEquation parsedAx
+        -- implies with the LHS not a symbol application, tagged as simplification
+        Syntax.KJImplies _ req (Syntax.KJEquals _sort _ lhs rhs@Syntax.KJAnd{})
+            | hasAttribute "simplification" ->
+                Just . SimplificationAxiom' req lhs rhs sortVars
+                    <$> withExcept DefinitionAttributeError (mkAttributes parsedAx)
+        -- implies with equals but RHS not an and: malformed equation
+        Syntax.KJImplies _ _req (Syntax.KJEquals _sort _ _lhs _rhs) ->
+            throwE $ DefinitionAxiomError $ MalformedEquation parsedAx
         Syntax.KJExists{var, varSort, arg = Syntax.KJEquals{first = aVar, second = Syntax.KJApp{}}}
             | hasAttribute "functional" || hasAttribute "total"
             , aVar == Syntax.KJEVar{name = var, sort = varSort} -> do
@@ -472,6 +558,22 @@ classifyAxiom parsedAx@ParsedAxiom{axiom, sortVars, attributes} =
   where
     hasAttribute name = isJust $ lookup (Syntax.Id name) attributes
 
+    isVar Syntax.KJEVar{} = True
+    isVar _other = False
+
+    -- deconstructs function argument predicates (\and-chain of \in ended by \top)
+    extractBinders ::
+        Syntax.KorePattern ->
+        Except DefinitionError [(Syntax.Id, Syntax.Sort, Syntax.KorePattern)]
+    extractBinders = \case
+        Syntax.KJTop{} ->
+            pure []
+        Syntax.KJIn{first = Syntax.KJEVar{name, sort}, second = term} ->
+            pure [(name, sort, term)]
+        Syntax.KJAnd{first = Syntax.KJIn _ _ Syntax.KJEVar{name, sort} term, second = rest} ->
+            ((name, sort, term) :) <$> extractBinders rest
+        other -> throwE $ DefinitionAxiomError $ MalformedArgumentBinder parsedAx other
+
 internaliseAxiom ::
     PartialDefinition ->
     ParsedAxiom ->
@@ -504,9 +606,32 @@ internaliseAxiom (Partial partialDefinition) parsedAxiom =
         RewriteRuleAxiom' alias args rhs' attribs ->
             let (rhs, existentials) = extractExistentials rhs'
              in Just . RewriteRuleAxiom
-                    <$> internaliseRewriteRule partialDefinition existentials (textToBS alias) args rhs attribs
-        EquationAxiom'{} ->
-            pure Nothing
+                    <$> internaliseRewriteRule
+                        partialDefinition
+                        existentials
+                        (textToBS alias)
+                        args
+                        rhs
+                        attribs
+        SimplificationAxiom' requires lhs rhs sortVars attribs ->
+            Just
+                <$> internaliseSimpleEquation
+                    partialDefinition
+                    requires
+                    lhs
+                    rhs
+                    sortVars
+                    attribs
+        FunctionAxiom' requires args lhs rhs sortVars attribs ->
+            Just
+                <$> internaliseFunctionEquation
+                    partialDefinition
+                    requires
+                    args
+                    lhs
+                    rhs
+                    sortVars
+                    attribs
 
 orFailWith :: Maybe a -> e -> Except e a
 mbX `orFailWith` err = maybe (throwE err) pure mbX
@@ -518,7 +643,7 @@ internaliseRewriteRule ::
     [Syntax.KorePattern] ->
     Syntax.KorePattern ->
     AxiomAttributes ->
-    Except DefinitionError RewriteRule
+    Except DefinitionError (RewriteRule k)
 internaliseRewriteRule partialDefinition exs aliasName aliasArgs right axAttributes = do
     alias <-
         withExcept (DefinitionAliasError $ Text.decodeLatin1 aliasName) $
@@ -534,12 +659,15 @@ internaliseRewriteRule partialDefinition exs aliasName aliasArgs right axAttribu
     -- name clashes with patterns from the user
     -- filter out literal `Top` constraints
     lhs <-
-        fmap (removeTops . Util.modifyVariables (modifyVarName ("Rule#" <>))) $
+        fmap (removeTops . Util.modifyVariables (Util.modifyVarName ("Rule#" <>))) $
             Util.retractPattern result
                 `orFailWith` DefinitionTermOrPredicateError (PatternExpected result)
     existentials' <- fmap Set.fromList $ withExcept DefinitionPatternError $ mapM mkVar exs
+    let renameVariable v
+            | v `Set.member` existentials' = Util.modifyVarName ("Ex#" <>) v
+            | otherwise = Util.modifyVarName ("Rule#" <>) v
     rhs <-
-        fmap (removeTops . Util.modifyVariables (\v -> modifyVarName (if v `Set.member` existentials' then ("Ex#" <>) else ("Rule#" <>)) v)) $
+        fmap (removeTops . Util.modifyVariables renameVariable) $
             withExcept DefinitionPatternError $
                 internalisePattern True Nothing partialDefinition right
     let preservesDefinedness =
@@ -549,14 +677,9 @@ internaliseRewriteRule partialDefinition exs aliasName aliasArgs right axAttribu
             Util.checkTermSymbols Util.checkSymbolIsAc lhs.term
         computedAttributes =
             ComputedAxiomAttributes{preservesDefinedness, containsAcSymbols}
-        existentials = Set.map (modifyVarName ("Ex#" <>)) existentials'
+        existentials = Set.map (Util.modifyVarName ("Ex#" <>)) existentials'
     return RewriteRule{lhs, rhs, attributes = axAttributes, computedAttributes, existentials}
   where
-    removeTops :: Def.Pattern -> Def.Pattern
-    removeTops p = p{Def.constraints = filter (/= Def.Top) p.constraints}
-
-    modifyVarName f v = v{Def.variableName = f v.variableName}
-
     mkVar (name, sort) = do
         variableSort <- lookupInternalSort Nothing partialDefinition.sorts right sort
         let variableName = textToBS name.getId
@@ -584,23 +707,158 @@ expandAlias alias currentArgs
                             Util.substituteInPredicate substitution <$> constraints
                         }
 
-addToTheory :: [RewriteRule] -> RewriteTheory -> RewriteTheory
-addToTheory axioms theory =
+removeTops :: Def.Pattern -> Def.Pattern
+removeTops p = p{Def.constraints = filter (/= Def.Top) p.constraints}
+
+{- | Internalises simplification rules, for both term simplification
+   (represented as a 'RewriteRule') and predicate simplification
+   (represented as a 'PredicateEquation').
+
+   Term simplifications may introduce undefined terms, or remove them
+   erroneously, so the 'preservesDefinedness' check refers to both the
+   LHS and the RHS term.
+   Predicates have no problem with definedness, as a rule with a
+   \bottom predicate will simply never apply
+-}
+internaliseSimpleEquation ::
+    KoreDefinition -> -- context
+    Syntax.KorePattern -> -- requires
+    Syntax.KorePattern -> -- LHS
+    Syntax.KorePattern -> -- And(RHS, ensures)
+    [Syntax.Id] -> -- sort variables
+    AxiomAttributes ->
+    Except DefinitionError AxiomResult
+internaliseSimpleEquation partialDef precond left right sortVars attributes
+    | isJust $ attributes.simplification = do
+        lhsIsTerm <- withExcept DefinitionPatternError $ isTermM left
+        if lhsIsTerm
+            then do
+                lhs <- internalisePattern' $ Syntax.KJAnd left.sort left precond
+                rhs <- internalisePattern' right
+                let -- checking the lhs term, too, as a safe approximation
+                    -- (rhs may _introduce_ undefined, lhs may _hide_ it)
+                    alwaysDefined = all (Util.checkTermSymbols Util.isDefinedSymbol) [lhs.term, rhs.term]
+                    computedAttributes =
+                        ComputedAxiomAttributes
+                            { containsAcSymbols =
+                                any (Util.checkTermSymbols Util.checkSymbolIsAc) [lhs.term, rhs.term]
+                            , preservesDefinedness =
+                                fromMaybe alwaysDefined attributes.preserving
+                            }
+                pure $
+                    SimplificationAxiom
+                        RewriteRule{lhs, rhs, attributes, computedAttributes, existentials = Set.empty}
+            else do
+                target <- internalisePredicate' left
+                conditions <- mapM internalisePredicate' $ explodeAnd precond
+                rhs <- mapM internalisePredicate' $ explodeAnd right
+                -- undefined predicates will invalidate the rule, no flags required
+                let computedAttributes = ComputedAxiomAttributes False True
+                pure $
+                    PredicateSimplificationAxiom
+                        PredicateEquation{target, conditions, rhs, attributes, computedAttributes}
+    | otherwise = error "internaliseSimpleEquation should only be called for simplifications"
+  where
+    internalisePattern' =
+        withExcept DefinitionPatternError
+            . fmap (removeTops . Util.modifyVariables (Util.modifyVarName ("Eq#" <>)))
+            . internalisePattern True (Just sortVars) partialDef
+    internalisePredicate' =
+        withExcept DefinitionPatternError
+            . internalisePredicate True (Just sortVars) partialDef
+
+{- | Internalises a function rule from its components that were matched
+  before.
+
+   Argument patterns are inlined, but checked to ensure they are
+   always defined (conservative: only allowing constructors and total
+   functions).  However, since function rules are anyway not allowed
+   to contain nested function calls, this check will only detect AC
+   symbols.
+
+   Any function rule that contains any AC symbols in arguments is
+   marked as not preserving definedness. Processing should abort when
+   such a rule could match.
+-}
+internaliseFunctionEquation ::
+    KoreDefinition -> -- context
+    Syntax.KorePattern -> -- requires
+    [(Syntax.Id, Syntax.Sort, Syntax.KorePattern)] -> -- argument binders
+    Syntax.KorePattern -> -- LHS
+    Syntax.KorePattern -> -- And(RHS, ensures)
+    [Syntax.Id] -> -- sort variables
+    AxiomAttributes ->
+    Except DefinitionError AxiomResult
+internaliseFunctionEquation partialDef requires args leftTerm right sortVars attributes = do
+    -- internalise the LHS (LHS term and requires)
+    left <- -- expected to be a simple term, f(X_1, X_2,..)
+        withExcept DefinitionPatternError $
+            internalisePattern True (Just sortVars) partialDef $
+                Syntax.KJAnd leftTerm.sort leftTerm requires
+    -- extract argument binders from predicates and inline in to LHS term
+    argPairs <- mapM internaliseArg args
+    let lhs =
+            removeTops . Util.modifyVariables (Util.modifyVarName ("Eq#" <>)) $
+                left{Def.term = Util.substituteInTerm (Map.fromList argPairs) left.term}
+    rhs <- internaliseSide right
+    let argsDefined =
+            all (Util.checkTermSymbols Util.isDefinedSymbol . snd) argPairs
+        rhsPreserves =
+            -- users can override the definedness computation by an explicit attribute
+            fromMaybe (Util.checkTermSymbols Util.isDefinedSymbol rhs.term) attributes.preserving
+        containsAcSymbols =
+            any (Util.checkTermSymbols Util.checkSymbolIsAc . snd) argPairs
+        computedAttributes =
+            ComputedAxiomAttributes
+                { preservesDefinedness = argsDefined && rhsPreserves
+                , containsAcSymbols
+                }
+    pure $
+        FunctionAxiom
+            RewriteRule{lhs, rhs, attributes, computedAttributes, existentials = Set.empty}
+  where
+    internaliseSide =
+        withExcept DefinitionPatternError
+            . fmap (removeTops . Util.modifyVariables (Util.modifyVarName ("Eq#" <>)))
+            . internalisePattern True (Just sortVars) partialDef
+
+    internaliseTerm' =
+        withExcept DefinitionPatternError
+            . internaliseTerm True (Just sortVars) partialDef
+
+    internaliseArg ::
+        (Syntax.Id, Syntax.Sort, Syntax.KorePattern) ->
+        Except DefinitionError (Def.Variable, Def.Term)
+    internaliseArg (Syntax.Id name, sort, term) = do
+        variableSort <-
+            withExcept DefinitionSortError $ internaliseSort (Set.fromList $ map (.getId) sortVars) partialDef.sorts sort
+        (Def.Variable{variableSort, variableName = textToBS name},) <$> internaliseTerm' term
+
+addToTheoryWith ::
+    HasField "attributes" axiom AxiomAttributes =>
+    (axiom -> TermIndex) ->
+    [axiom] ->
+    Theory axiom ->
+    Theory axiom
+addToTheoryWith termIndex axioms theory =
     let newTheory =
             Map.map groupByPriority
-                . groupByTermIndex
+                . groupByTermIndex termIndex
                 $ axioms
      in Map.unionWith (Map.unionWith (<>)) theory newTheory
 
-groupByTermIndex :: [RewriteRule] -> Map TermIndex [RewriteRule]
-groupByTermIndex axioms =
+groupByTermIndex :: (axiom -> TermIndex) -> [axiom] -> Map TermIndex [axiom]
+groupByTermIndex termIndex axioms =
     let withTermIndexes = do
             axiom <- axioms
-            let termIndex = computeTermIndex axiom.lhs.term
-            return (termIndex, axiom)
+            let index = termIndex axiom
+            return (index, axiom)
      in Map.fromAscList . groupSort $ withTermIndexes
 
-groupByPriority :: [RewriteRule] -> Map Priority [RewriteRule]
+groupByPriority ::
+    HasField "attributes" axiom AxiomAttributes =>
+    [axiom] ->
+    Map Priority [axiom]
 groupByPriority axioms =
     Map.fromAscList . groupSort $ [(ax.attributes.priority, ax) | ax <- axioms]
 
@@ -740,6 +998,7 @@ data AxiomError
     = MalformedRewriteRule ParsedAxiom
     | MalformedEquation ParsedAxiom
     | UnexpectedAxiom ParsedAxiom
+    | MalformedArgumentBinder ParsedAxiom Syntax.KorePattern
     deriving stock (Eq, Show)
 
 instance Pretty AxiomError where
@@ -750,6 +1009,10 @@ instance Pretty AxiomError where
             "Malformed equation at " <> location rule
         UnexpectedAxiom rule ->
             "Unknown kind of axiom at " <> location rule
+        MalformedArgumentBinder rule pat ->
+            pretty ("Malformed argument binder " <> show pat)
+                <> " in function equation at "
+                <> location rule
       where
         location :: ParsedAxiom -> Doc a
         location rule =

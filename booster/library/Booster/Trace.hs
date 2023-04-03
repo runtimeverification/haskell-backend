@@ -17,6 +17,7 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as BL
 import Data.IORef
 import Data.Kind (Type)
+import Data.Proxy (Proxy (..))
 import Debug.Trace.Binary (traceBinaryEvent, traceBinaryEventIO)
 import Debug.Trace.Flags
 import GHC.IO (unsafePerformIO)
@@ -41,7 +42,7 @@ instance DecodeUserEvents '[] where
 
 instance (CustomUserEvent e, DecodeUserEvents es) => DecodeUserEvents (e ': es) where
     decodeUserEvents' tag =
-        if userEventTag (undefined :: proxy e) == tag
+        if userEventTag (Proxy @e) == tag
             then Left <$> decodeUserEvent @e
             else Right <$> decodeUserEvents' @es tag
 

@@ -81,12 +81,20 @@ externalisePredicate sort =
                     }
             Internal.EqualsPredicate p1 p2 ->
                 Syntax.KJEquals{argSort = sort, sort, first = recursion p1, second = recursion p2}
-            Internal.Exists varName p1 ->
-                let varSort = Syntax.SortVar . varNameToId $ "Sort" <> varName
-                 in Syntax.KJExists{sort, var = varNameToId varName, varSort, arg = recursion p1}
-            Internal.Forall varName p1 ->
-                let varSort = Syntax.SortVar . varNameToId $ "Sort" <> varName
-                 in Syntax.KJForall{sort, var = varNameToId varName, varSort, arg = recursion p1}
+            Internal.Exists var p1 ->
+                Syntax.KJExists
+                    { sort
+                    , var = varNameToId var.variableName
+                    , varSort = externaliseSort $ var.variableSort
+                    , arg = recursion p1
+                    }
+            Internal.Forall var p1 ->
+                Syntax.KJForall
+                    { sort
+                    , var = varNameToId var.variableName
+                    , varSort = externaliseSort $ var.variableSort
+                    , arg = recursion p1
+                    }
             Internal.Iff p1 p2 ->
                 Syntax.KJIff{sort, first = recursion p1, second = recursion p2}
             Internal.Implies p1 p2 ->

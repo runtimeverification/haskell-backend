@@ -69,7 +69,7 @@ varX, varY :: Term
 varX = var "X" someSort
 varY = var "Y" someSort
 
-rule1, rule1', rule2, rule3, rule4 :: RewriteRule
+rule1, rule1', rule2, rule3, rule4 :: RewriteRule "Rewrite"
 rule1 =
     rule
         (Just "con1-f1")
@@ -95,14 +95,12 @@ rule3 =
         (termInKCell "RuleVar" (app con1 [dv someSort "somethingElse"]))
         42
 rule4 =
-    ( rule
+    rule
         (Just "con4-f2-partial")
         (termInKCell "RuleVar" (app con4 [varX, varY]))
         (termInKCell "RuleVar" (app f2 [varY]))
         42
-    )
-        { computedAttributes = ComputedAxiomAttributes False False
-        }
+        `withComputedAttributes` ComputedAxiomAttributes False False
 
 termInKCell :: ByteString -> Term -> Pattern
 termInKCell varName = flip Pattern [] . withinKCell varName
@@ -134,7 +132,7 @@ kseq =
 injKItem :: Term -> Term
 injKItem t = Injection (sortOfTerm t) kItemSort t
 
-rule :: Maybe Text -> Pattern -> Pattern -> Priority -> RewriteRule
+rule :: Maybe Text -> Pattern -> Pattern -> Priority -> RewriteRule "Rewrite"
 rule ruleLabel lhs rhs priority =
     RewriteRule
         { lhs
@@ -151,10 +149,14 @@ rule ruleLabel lhs rhs priority =
         , existentials = mempty
         }
 
-mkTheory :: [(TermIndex, [RewriteRule])] -> RewriteTheory
+withComputedAttributes :: RewriteRule r -> ComputedAxiomAttributes -> RewriteRule r
+r@RewriteRule{lhs} `withComputedAttributes` computedAttributes =
+    r{lhs, computedAttributes}
+
+mkTheory :: [(TermIndex, [RewriteRule "Rewrite"])] -> Theory (RewriteRule "Rewrite")
 mkTheory = Map.map mkPriorityGroups . Map.fromList
   where
-    mkPriorityGroups :: [RewriteRule] -> Map Priority [RewriteRule]
+    mkPriorityGroups :: [RewriteRule "Rewrite"] -> Map Priority [RewriteRule "Rewrite"]
     mkPriorityGroups rules =
         Map.unionsWith
             (<>)
@@ -219,7 +221,7 @@ branchesTo :: Pattern -> [Pattern] -> IO ()
 p `branchesTo` ps =
     runRewriteM def Nothing (rewriteStep [] [] p) @?= Right (RewriteBranch p $ NE.fromList ps)
 
-failsWith :: Pattern -> RewriteFailed -> IO ()
+failsWith :: Pattern -> RewriteFailed "Rewrite" -> IO ()
 failsWith p err =
     runRewriteM def Nothing (rewriteStep [] [] p) @?= Left err
 

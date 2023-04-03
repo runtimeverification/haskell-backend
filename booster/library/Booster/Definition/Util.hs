@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 {- | Utilities for (internalised) definitions and other things
 
 Copyright   : (c) Runtime Verification, 2022
@@ -11,14 +13,16 @@ module Booster.Definition.Util (
 ) where
 
 import Control.DeepSeq (NFData (..))
-import Data.Bifunctor (first)
+import Data.Bifunctor
 import Data.ByteString.Char8 (ByteString)
 import Data.ByteString.Char8 qualified as BS
+import Data.List (partition)
 import Data.List.Extra (sortOn)
 import Data.Map qualified as Map
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromJust, isJust)
 import Data.Set qualified as Set
 import GHC.Generics (Generic)
+import GHC.Records (HasField (..))
 import Prettyprinter (Doc, Pretty, pretty)
 import Prettyprinter qualified as Pretty
 import Prettyprinter.Render.String qualified as Pretty (renderString)
@@ -34,38 +38,55 @@ data Summary = Summary
     , modNames, sortNames, symbolNames :: [ByteString]
     , subSorts :: Map.Map ByteString [ByteString]
     , axiomCount, preserveDefinednessCount, containAcSymbolsCount :: Int
-    , termIndexes :: Map.Map TermIndex [Location]
+    , functionRuleCount, simplificationCount, predicateSimplificationCount :: Int
+    , rewriteRules :: Map.Map TermIndex [Location]
+    , functionRules :: Map.Map TermIndex [Location]
+    , simplifications :: Map.Map TermIndex [Location]
+    , predicateSimplifications :: Map.Map TermIndex [Location]
     }
     deriving stock (Eq, Show, Generic)
     deriving anyclass (NFData)
 
 mkSummary :: FilePath -> KoreDefinition -> Summary
-mkSummary file KoreDefinition{modules, sorts, symbols, rewriteTheory} =
+mkSummary file def =
     Summary
         { file
-        , modNames = Map.keys modules
-        , sortNames = Map.keys sorts
-        , symbolNames = Map.keys symbols
-        , subSorts = Map.map (Set.toList . snd) sorts
-        , axiomCount = length $ concat $ concatMap Map.elems (Map.elems rewriteTheory)
+        , modNames = Map.keys def.modules
+        , sortNames = Map.keys def.sorts
+        , symbolNames = Map.keys def.symbols
+        , subSorts = Map.map (Set.toList . snd) def.sorts
+        , axiomCount = length $ concat $ concatMap Map.elems (Map.elems def.rewriteTheory)
         , preserveDefinednessCount =
             length $
                 filter (\rule -> rule.computedAttributes.preservesDefinedness) $
                     concat $
-                        concatMap Map.elems (Map.elems rewriteTheory)
+                        concatMap Map.elems (Map.elems def.rewriteTheory)
         , containAcSymbolsCount =
             length $
                 filter (\rule -> rule.computedAttributes.containsAcSymbols) $
                     concat $
-                        concatMap Map.elems (Map.elems rewriteTheory)
-        , termIndexes =
-            Map.map (map locate . concat . Map.elems) rewriteTheory
+                        concatMap Map.elems (Map.elems def.rewriteTheory)
+        , functionRuleCount =
+            length $ concat $ concatMap Map.elems (Map.elems def.functionEquations)
+        , simplificationCount =
+            length $ concat $ concatMap Map.elems (Map.elems def.functionEquations)
+        , predicateSimplificationCount =
+            length $ concat $ concatMap Map.elems (Map.elems def.functionEquations)
+        , rewriteRules =
+            Map.map (fst . locate . concat . Map.elems) def.rewriteTheory
+        , functionRules =
+            Map.map (fst . locate . concat . Map.elems) def.functionEquations
+        , simplifications =
+            Map.map (fst . locate . concat . Map.elems) def.simplifications
+        , predicateSimplifications =
+            Map.map (fst . locate . concat . Map.elems) def.predicateSimplifications
         }
   where
-    locate :: RewriteRule -> Location
-    locate rule = fromMaybe noLocation rule.attributes.location
-
-    noLocation = Location "no file" $ Position 0 0
+    locate :: HasField "attributes" a AxiomAttributes => [a] -> ([Location], Int)
+    locate =
+        bimap (map fromJust) length
+            . partition isJust
+            . map (.attributes.location)
 
 prettySummary :: Summary -> String
 prettySummary = Pretty.renderString . layoutPrettyUnbounded . pretty
@@ -80,8 +101,21 @@ instance Pretty Summary where
             , "Axioms preserving definedness: " <> pretty summary.preserveDefinednessCount
             , "Axioms containing AC symbols: " <> pretty summary.containAcSymbolsCount
             ]
-                <> ("Subsorts:" : tableView prettyLabel prettyLabel summary.subSorts)
-                <> ("Axioms grouped by term index:" : tableView prettyTermIndex pretty summary.termIndexes)
+                <> ( "Subsorts:"
+                        : tableView prettyLabel prettyLabel summary.subSorts
+                   )
+                <> ( "Rewrite rules by term index:"
+                        : tableView prettyTermIndex pretty summary.rewriteRules
+                   )
+                <> ( "Function equations by term index:"
+                        : tableView prettyTermIndex pretty summary.functionRules
+                   )
+                <> ( "Simplifications by term index:"
+                        : tableView prettyTermIndex pretty summary.simplifications
+                   )
+                <> ( "Predicate simplifications by term index:"
+                        : tableView prettyTermIndex pretty summary.predicateSimplifications
+                   )
                 <> [mempty]
       where
         tableView :: (k -> Doc a) -> (elem -> Doc a) -> Map.Map k [elem] -> [Doc a]

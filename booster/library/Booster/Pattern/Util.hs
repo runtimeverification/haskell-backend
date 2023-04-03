@@ -12,6 +12,7 @@ module Booster.Pattern.Util (
     substituteInTerm,
     substituteInPredicate,
     modifyVariables,
+    modifyVarName,
     freeVariables,
     isConstructorSymbol,
     isSortInjectionSymbol,
@@ -93,7 +94,18 @@ modifyVariables f p =
     modifyP = cata $ \case
         EqualsTermF t1 t2 ->
             EqualsTerm (modifyT t1) (modifyT t2)
+        InF t1 t2 ->
+            In (modifyT t1) (modifyT t2)
+        CeilF t ->
+            Ceil (modifyT t)
+        ExistsF v pr ->
+            Exists (f v) (modifyP pr)
+        ForallF v pr ->
+            Forall (f v) (modifyP pr)
         other -> embed other
+
+modifyVarName :: (VarName -> VarName) -> Variable -> Variable
+modifyVarName f v = v{variableName = f v.variableName}
 
 freeVariables :: Term -> Set Variable
 freeVariables (Term attributes _) = attributes.variables

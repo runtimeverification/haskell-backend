@@ -159,7 +159,7 @@ class ReadT a where
     readT = maybe (Left "empty") (readEither . Text.unpack)
 
 instance ReadT Priority where
-    readT Nothing = Left "empty priority"
+    readT Nothing = Right 50 -- HACK to accept `simplification()` from internal modules
     readT (Just "") = Right 50
     readT (Just n)
         | all isDigit (Text.unpack n) = readEither $ "Priority " <> Text.unpack n
