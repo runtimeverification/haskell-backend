@@ -57,8 +57,8 @@ genPredicate =
         , Ceil <$> genTerm
         , EqualsTerm <$> genTerm <*> genTerm
         , EqualsPredicate <$> genPredicate <*> genPredicate
-        , Exists <$> Gen.utf8 (Range.linear 1 32) Gen.alphaNum <*> genPredicate
-        , Forall <$> Gen.utf8 (Range.linear 1 32) Gen.alphaNum <*> genPredicate
+        , Exists <$> genVariable <*> genPredicate
+        , Forall <$> genVariable <*> genPredicate
         , Iff <$> genPredicate <*> genPredicate
         , Implies <$> genPredicate <*> genPredicate
         , In <$> genTerm <*> genTerm

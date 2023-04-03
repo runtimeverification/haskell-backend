@@ -40,13 +40,16 @@ data KoreDefinition = KoreDefinition
     , sorts :: Map SortName (SortAttributes, Set SortName)
     , symbols :: Map SymbolName Symbol -- constructors and functions
     , aliases :: Map AliasName Alias
-    , rewriteTheory :: RewriteTheory
+    , rewriteTheory :: Theory (RewriteRule "Rewrite")
+    , functionEquations :: Theory (RewriteRule "Function")
+    , simplifications :: Theory (RewriteRule "Simplification")
+    , predicateSimplifications :: Theory PredicateEquation
     }
     deriving stock (Eq, Show, GHC.Generic)
     deriving anyclass (NFData)
 
--- | Optimized for lookup by term-index
-type RewriteTheory = Map TermIndex (Map Priority [RewriteRule])
+-- | Axiom store, optimized for lookup by term-index and priority
+type Theory axiomType = Map TermIndex (Map Priority [axiomType])
 
 {- | The starting point for building up the definition. Could be
  'Monoid' instance if the attributes had a Default.
@@ -60,9 +63,12 @@ emptyKoreDefinition attributes =
         , symbols = Map.empty
         , aliases = Map.empty
         , rewriteTheory = Map.empty
+        , functionEquations = Map.empty
+        , simplifications = Map.empty
+        , predicateSimplifications = Map.empty
         }
 
-data RewriteRule = RewriteRule
+data RewriteRule (tag :: k) = RewriteRule
     { lhs :: Pattern
     , rhs :: Pattern
     , attributes :: AxiomAttributes
@@ -79,6 +85,16 @@ data Alias = Alias
     , params :: [Sort]
     , args :: [Variable]
     , rhs :: TermOrPredicate
+    }
+    deriving stock (Eq, Ord, Show, GHC.Generic)
+    deriving anyclass (NFData)
+
+data PredicateEquation = PredicateEquation
+    { target :: Predicate
+    , conditions :: [Predicate]
+    , rhs :: [Predicate]
+    , attributes :: AxiomAttributes
+    , computedAttributes :: ComputedAxiomAttributes
     }
     deriving stock (Eq, Ord, Show, GHC.Generic)
     deriving anyclass (NFData)
