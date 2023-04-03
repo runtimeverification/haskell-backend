@@ -5,7 +5,10 @@ License     : BSD-3-Clause
 Everything to do with term indexing.
 -}
 module Booster.Pattern.Index (
-    module Booster.Pattern.Index,
+    TermIndex (..),
+    kCellTermIndex,
+    termTopIndex,
+    predicateTopIndex,
 ) where
 
 import Control.Applicative (Alternative (..), asum)
@@ -51,19 +54,21 @@ data TermIndex
   matches an 'AndTerm t1 t2' must match both 't1' and 't2', so 't1'
   and 't2' must have "compatible" indexes for this to be possible.
 -}
-combine :: TermIndex -> TermIndex -> TermIndex
-combine None _ = None
-combine _ None = None
-combine x Anything = x
-combine Anything x = x
-combine s@(TopSymbol s1) (TopSymbol s2)
-    | s1 == s2 = s
---     | otherwise = None -- redundant
-combine _ _ = None -- incompatible indexes
+instance Semigroup TermIndex where
+    None <> _ = None
+    _ <> None = None
+    x <> Anything = x
+    Anything <> x = x
+    s@(TopSymbol s1) <> TopSymbol s2
+        | s1 == s2 = s
+        | otherwise = None -- incompatible indexes
 
--- | computes the index of a term
-computeTermIndex :: Term -> TermIndex
-computeTermIndex config =
+{- | Indexes a term by the constructor inside the head of its <k>-cell.
+
+  Only constructors are used, function symbols get index 'Anything'.
+-}
+kCellTermIndex :: Term -> TermIndex
+kCellTermIndex config =
     case lookForKCell config of
         Just (SymbolApplication _ _ children) ->
             maybe None getTermIndex (lookForTopTerm (getFirstKCellElem children))
@@ -77,7 +82,7 @@ computeTermIndex config =
                     Constructor -> TopSymbol symbol.name
                     _ -> Anything
             AndTerm term1 term2 ->
-                combine (getTermIndex term1) (getTermIndex term2)
+                getTermIndex term1 <> getTermIndex term2
             _ -> Anything
 
     -- it is assumed there is only one K cell
@@ -112,5 +117,32 @@ computeTermIndex config =
     getKSeqFirst [] = error "lookForTopTerm: empty KSeq"
     getKSeqFirst (x : _) = x
 
-    getFirstKCellElem [] = error "computeTermIndex: empty K cell"
+    getFirstKCellElem [] = error "kCellTermIndex: empty K cell"
     getFirstKCellElem (x : _) = x
+
+-- | indexes terms by their top symbol (combining '\and' branches)
+termTopIndex :: Term -> TermIndex
+termTopIndex = \case
+    SymbolApplication symbol _ _ ->
+        TopSymbol symbol.name
+    AndTerm t1 t2 ->
+        termTopIndex t1 <> termTopIndex t2
+    _other ->
+        Anything
+
+-- indexes predicates by the name of their top-level connective
+predicateTopIndex :: Predicate -> TermIndex
+predicateTopIndex = \case
+    AndPredicate{} -> TopSymbol "\\and"
+    Bottom -> TopSymbol "\\bottom"
+    Ceil{} -> TopSymbol "\\ceil"
+    EqualsTerm{} -> TopSymbol "\\equalsTerm"
+    EqualsPredicate{} -> TopSymbol "\\equalsPredicate"
+    Exists{} -> TopSymbol "\\exists"
+    Forall{} -> TopSymbol "\\forall"
+    Iff{} -> TopSymbol "\\iff"
+    Implies{} -> TopSymbol "\\implies"
+    In{} -> TopSymbol "\\in"
+    Not{} -> TopSymbol "\\not"
+    Or{} -> TopSymbol "\\or"
+    Top -> TopSymbol "\\top"

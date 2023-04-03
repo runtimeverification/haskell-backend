@@ -37,6 +37,7 @@ default-extensions:
   NamedFieldPuns
   OverloadedRecordDot
   OverloadedStrings
+  PolyKinds
   ScopedTypeVariables
   StandaloneDeriving
   TupleSections

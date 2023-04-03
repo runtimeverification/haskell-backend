@@ -245,8 +245,8 @@ data Predicate
     | Ceil Term
     | EqualsTerm Term Term
     | EqualsPredicate Predicate Predicate
-    | Exists VarName Predicate
-    | Forall VarName Predicate
+    | Exists Variable Predicate
+    | Forall Variable Predicate
     | Iff Predicate Predicate
     | Implies Predicate Predicate
     | In Term Term
@@ -400,14 +400,14 @@ instance Pretty Predicate where
                 "\\equalsPredicate"
                     <> KPretty.noParameters
                     <> KPretty.argumentsP [p1, p2]
-            Exists vn p ->
+            Exists v p ->
                 "\\exists"
                     <> KPretty.noParameters
-                    <> KPretty.arguments' [prettyBS vn, pretty p]
-            Forall vn p ->
+                    <> KPretty.arguments' [pretty v, pretty p]
+            Forall v p ->
                 "\\forall"
                     <> KPretty.noParameters
-                    <> KPretty.arguments' [prettyBS vn, pretty p]
+                    <> KPretty.arguments' [pretty v, pretty p]
             Iff p1 p2 ->
                 "\\iff"
                     <> KPretty.noParameters

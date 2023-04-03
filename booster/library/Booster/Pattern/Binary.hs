@@ -248,9 +248,9 @@ decodeBlock = do
     mkSymbolApplication "\\equals" _ [BPredicate p1, BPredicate p2] = pure $ BPredicate $ EqualsPredicate p1 p2
     mkSymbolApplication "\\equals" _ bs =
         argError "EqualBTerm/EqualBPredicate" [BTerm undefined, BTerm undefined] bs
-    mkSymbolApplication "\\exists" _ [BTerm (Var (Variable _ var)), BPredicate p] = pure $ BPredicate $ Exists var p
+    mkSymbolApplication "\\exists" _ [BTerm (Var var), BPredicate p] = pure $ BPredicate $ Exists var p
     mkSymbolApplication "\\exists" _ bs = argError "Exists" [BTerm undefined, BPredicate undefined] bs
-    mkSymbolApplication "\\forall" _ [BTerm (Var (Variable _ var)), BPredicate p] = pure $ BPredicate $ Forall var p
+    mkSymbolApplication "\\forall" _ [BTerm (Var var), BPredicate p] = pure $ BPredicate $ Forall var p
     mkSymbolApplication "\\forall" _ bs = argError "Forall" [BTerm undefined, BPredicate undefined] bs
     mkSymbolApplication "\\iff" _ [BPredicate p1, BPredicate p2] = pure $ BPredicate $ Iff p1 p2
     mkSymbolApplication "\\iff" _ bs = argError "Iff" [BPredicate undefined, BPredicate undefined] bs
@@ -407,14 +407,14 @@ encodePredicate = \case
         encodeSymbolApplication
             "\\exists"
             []
-            [ Left $ Var $ Variable (SortApp "PREDICATE" []) v
+            [ Left $ Var v
             , Right p
             ]
     Forall v p ->
         encodeSymbolApplication
             "\\forall"
             []
-            [ Left $ Var $ Variable (SortApp "PREDICATE" []) v
+            [ Left $ Var v
             , Right p
             ]
     Iff p1 p2 -> encodeSymbolApplication "\\iff" [] [Right p1, Right p2]
