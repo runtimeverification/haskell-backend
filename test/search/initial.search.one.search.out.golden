@@ -1,5 +1,5 @@
   {
-    Result
+    Result:GeneratedTopCell
   #Equals
     <k>
       next1 ~> .
@@ -7,7 +7,7 @@
   }
 #Or
   {
-    Result
+    Result:GeneratedTopCell
   #Equals
     <k>
       next2 ~> .

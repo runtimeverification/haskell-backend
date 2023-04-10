@@ -1,11 +1,11 @@
     #Not ( {
-      ?_Gen0
+      ?_Gen0:Int
     #Equals
       1
     } )
   #And
     #Not ( {
-      ?_Gen0
+      ?_Gen0:Int
     #Equals
       2
     } )
@@ -14,22 +14,10 @@
       ?_Gen0:Int ~> .
     </k>
 #Or
-    <k>
-      one ~> .
-    </k>
-  #And
-    {
-      ?_Gen0
-    #Equals
-      1
-    }
+  <k>
+    one ~> .
+  </k>
 #Or
-    <k>
-      two ~> .
-    </k>
-  #And
-    {
-      ?_Gen0
-    #Equals
-      2
-    }
+  <k>
+    two ~> .
+  </k>
