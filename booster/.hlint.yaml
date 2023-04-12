@@ -3,4 +3,6 @@
 # see `hlint --default` for help
 ################################
 
+- arguments: [ -XOverloadedRecordDot ]
+
 - ignore: { name: "Use <$>", name: "Move brackets to avoid $" }
