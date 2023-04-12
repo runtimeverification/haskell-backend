@@ -3,17 +3,20 @@ Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
 -}
 module Booster.Pattern.Unify (
-    module Booster.Pattern.Unify,
+    UnificationResult (..),
+    FailReason (..),
+    Substitution,
+    unifyTerms,
+    checkSubsort,
+    SortError (..),
 ) where
 
 import Control.Monad
-import Control.Monad.Extra (whenJust)
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.State
 import Data.Either.Extra
-import Data.Foldable (toList)
-import Data.List.NonEmpty as NE (NonEmpty ((:|)), fromList)
+import Data.List.NonEmpty as NE (NonEmpty, fromList)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Sequence (Seq (..), (><))
@@ -181,7 +184,10 @@ unify1
             enqueueProblem trm1 trm2
         | Var v <- trm1 = do
             -- variable in pattern, check source sorts and bind
-            isSubsort <- checkSubsort source2 source1
+            subsorts <- gets uSubsorts
+            isSubsort <-
+                lift . withExcept UnificationSortError $
+                    checkSubsort subsorts source2 source1
             if isSubsort
                 then bindVariable v (Injection source2 source1 trm2)
                 else failWith (DifferentSorts trm1 trm2)
@@ -220,7 +226,10 @@ unify1
     term2 =
         do
             let termSort = sortOfTerm term2
-            isSubsort <- checkSubsort termSort variableSort
+            subsorts <- gets uSubsorts
+            isSubsort <-
+                lift . withExcept UnificationSortError $
+                    checkSubsort subsorts termSort variableSort
             if isSubsort
                 then bindVariable var term2
                 else failWith $ DifferentSorts term1 term2
@@ -282,24 +291,23 @@ bindVariable var term = do
                 bindVariable var2 (Var var)
         -- regular case
         _other -> do
-            let mbOldTerm = Map.lookup var currentSubst
-            whenJust mbOldTerm $ \oldTerm ->
-                -- TODO the term in the binding could be _equivalent_
-                -- (not necessarily syntactically equal) to term'
-                failWith $ VariableConflict var oldTerm term
-            let -- apply existing substitutions to term
-                term' = substituteInTerm currentSubst term
-            when (var `Set.member` freeVariables term') $
-                failWith (VariableRecursion var term)
-            let -- substitute in existing substitution terms
-                currentSubst' = Map.map (substituteInTerm $ Map.singleton var term') currentSubst
-            let newSubst = Map.insert var term' currentSubst'
-            modify $ \s -> s{uSubstitution = newSubst}
-
-returnAsRemainder :: Term -> Term -> StateT UnificationState (Except UnificationResult) ()
-returnAsRemainder t1 t2 = do
-    remainder <- gets uQueue
-    lift $ throwE $ UnificationRemainder $ (t1, t2) :| toList remainder
+            case Map.lookup var currentSubst of
+                Just oldTerm
+                    | oldTerm == term -> pure () -- already bound
+                    | otherwise ->
+                        -- the term in the binding could be _equivalent_
+                        -- (not necessarily syntactically equal) to term'
+                        failWith $ VariableConflict var oldTerm term
+                Nothing -> do
+                    let -- apply existing substitutions to term
+                        term' = substituteInTerm currentSubst term
+                    when (var `Set.member` freeVariables term') $
+                        failWith (VariableRecursion var term)
+                    let -- substitute in existing substitution terms
+                        currentSubst' =
+                            Map.map (substituteInTerm $ Map.singleton var term') currentSubst
+                        newSubst = Map.insert var term' currentSubst'
+                    modify $ \s -> s{uSubstitution = newSubst}
 
 addIndeterminate :: Term -> Term -> StateT UnificationState (Except UnificationResult) ()
 addIndeterminate pat subj =
@@ -308,27 +316,25 @@ addIndeterminate pat subj =
 {- | Matches a subject sort to a pattern sort, ensuring that the subject
    sort can be used in place of the pattern sort, i.e., is a subsort.
 
-Sort variables generally do not occur in the patterns matched/unified
-here, and should not be sent by clients either. Therefore, unification
-is immediately aborted if a sort variable is met.
+Sort variables are only accepted if they are syntactically identical.
+They should not occur in the patterns matched/unified here, and should
+not be sent by clients either.
 -}
-checkSubsort :: Sort -> Sort -> StateT UnificationState (Except UnificationResult) Bool
-checkSubsort sub sup
-    | SortVar s <- sub = sortError $ FoundSortVariable s
-    | SortVar s <- sup = sortError $ FoundSortVariable s
+checkSubsort :: SortTable -> Sort -> Sort -> Except SortError Bool
+checkSubsort subsorts sub sup
+    | sub == sup = pure True
+    | SortVar s <- sub = throwE $ FoundSortVariable s
+    | SortVar s <- sup = throwE $ FoundSortVariable s
     | SortApp subName subArgs <- sub
-    , SortApp supName supArgs <- sup = do
-        mbSubsorts <- gets $ Map.lookup supName . uSubsorts
-        case mbSubsorts of
+    , SortApp supName supArgs <- sup =
+        case Map.lookup supName subsorts of
             Nothing ->
-                sortError $ FoundUnknownSort sup
-            Just subsorts
-                | not (subName `Set.member` subsorts) -> pure False
+                throwE $ FoundUnknownSort sup
+            Just result
+                | not (subName `Set.member` result) -> pure False
                 | otherwise -> do
-                    argsCheck <- zipWithM checkSubsort subArgs supArgs
+                    argsCheck <- zipWithM (checkSubsort subsorts) subArgs supArgs
                     pure $ and argsCheck
-  where
-    sortError = lift . throwE . UnificationSortError
 
 data SortError
     = FoundSortVariable VarName
