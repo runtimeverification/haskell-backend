@@ -60,6 +60,7 @@ data MatchEquationError variable
     | TotalAxiom
     | ConstructorAxiom
     | SubsortAxiom
+    | UnsupportedLHS !(TermLike variable)
     deriving stock (GHC.Generic)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug)
@@ -97,6 +98,11 @@ instance InternalVariable variable => Pretty (MatchEquationError variable) where
     pretty TotalAxiom = "The term is a total axiom."
     pretty ConstructorAxiom = "The term is a constructor axiom."
     pretty SubsortAxiom = "The term is a subsort axiom."
+    pretty (UnsupportedLHS term) =
+        Pretty.vsep
+            [ "Unsupported LHS of equation:"
+            , unparse term
+            ]
 
 matchEquation ::
     forall variable.
@@ -197,6 +203,7 @@ matchEquation attributes termLike
                     )
             ) =
             do
+                left' <- matchLhs left
                 requires' <- makePredicate requires & Bifunctor.first RequiresError
                 ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
                 pure
@@ -204,12 +211,12 @@ matchEquation attributes termLike
                         { requires = requires'
                         , argument = Nothing
                         , antiLeft = Nothing
-                        , left
+                        , left = left'
                         , right
                         , ensures = ensures'
                         , attributes
                         }
-    match (TermLike.Equals_ _ _ left right) =
+    match (TermLike.Equals_ _ _ left right) = do
         pure
             Equation
                 { requires = Predicate.makeTruePredicate
@@ -220,7 +227,7 @@ matchEquation attributes termLike
                 , ensures = Predicate.makeTruePredicate
                 , attributes
                 }
-    match left@(TermLike.Ceil_ _ sort _) =
+    match left@(TermLike.Ceil_ _ sort _) = do
         pure
             Equation
                 { requires = Predicate.makeTruePredicate
@@ -232,6 +239,14 @@ matchEquation attributes termLike
                 , attributes
                 }
     match termLike' = Left (NotEquation termLike')
+    matchLhs term =
+        case term of
+            TermLike.Equals_ _ _ _ _ -> Right term
+            TermLike.Ceil_ _ _ _ -> Right term
+            TermLike.App_ _ _ -> Right term
+            TermLike.Inj_ _ -> Right term
+            TermLike.Not_ _ _ -> Right term
+            _ -> Left $ UnsupportedLHS term
 
     -- If the ensures and requires are the same, then the ensures is redundant.
     removeRedundantEnsures equation@Equation{requires, ensures}

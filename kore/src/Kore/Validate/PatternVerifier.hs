@@ -30,6 +30,9 @@ import Kore.Attribute.Pattern.FreeVariables (
  )
 import Kore.Attribute.Sort qualified as Attribute.Sort
 import Kore.Attribute.Sort.HasDomainValues qualified as Attribute.HasDomainValues
+import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Attribute.Symbol.AliasKywd
+import Kore.Attribute.Symbol.Macro
 import Kore.Attribute.Synthetic
 import Kore.Builtin qualified as Builtin
 import Kore.Error
@@ -380,6 +383,9 @@ verifyApplySymbol ::
     MaybeT PatternVerifier (Application Internal.Symbol child)
 verifyApplySymbol getChildSort application =
     lookupSymbol symbolOrAlias >>= \symbol -> Trans.lift $ do
+        let Attribute.Symbol{macro, aliasKywd} = Internal.symbolAttributes symbol
+        isRpcRequest' <- Reader.asks isRpcRequest
+        when (isRpcRequest' && (isMacro macro || isAliasKywd aliasKywd)) $ koreFail "A symbol cannot be an alias or a macro"
         let verified = application{applicationSymbolOrAlias = symbol}
             sorts = Internal.symbolSorts symbol
         verifyApplicationChildren getChildSort verified sorts

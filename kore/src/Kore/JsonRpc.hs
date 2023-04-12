@@ -74,6 +74,7 @@ import Kore.Syntax.Sentence (
     SentenceAxiom,
  )
 import Kore.Validate.DefinitionVerifier (verifyAndIndexDefinitionWithBase)
+import Kore.Validate.PatternVerifier (Context (..))
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Log qualified
 import Prelude.Kore
@@ -383,6 +384,9 @@ respond serverState moduleName runSMT =
     verifierContext Exec.SerializedModule{verifiedModule} =
         PatternVerifier.verifiedModuleContext verifiedModule
             & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
+            & withRpcRequest
+      where
+        withRpcRequest context = context{isRpcRequest = True}
 
     evalInSimplifierContext :: Exec.SerializedModule -> Simplifier a -> SMT.SMT a
     evalInSimplifierContext

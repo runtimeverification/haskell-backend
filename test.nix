@@ -29,7 +29,7 @@ let
   inherit (default) kore prelude-kore;
 
   kframework = let
-    tag = lib.fileContents ./deps/k_release;
+    tag = "v" + (lib.fileContents ./deps/k_release);
     url =
       "https://github.com/runtimeverification/k/releases/download/${tag}/release.nix";
     args = import (builtins.fetchurl { inherit url; });

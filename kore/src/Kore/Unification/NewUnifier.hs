@@ -150,6 +150,7 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkConfigVariable,
  )
+import Kore.Simplify.Condition (simplifyCondition)
 import Kore.Simplify.ExpandAlias (
     UnifyExpandAlias (..),
     matchExpandAlias,
@@ -379,7 +380,7 @@ unifyTerms' ::
     Condition RewritingVariableName ->
     Map Sort [AcEquation] ->
     NewUnifier (Condition RewritingVariableName)
-unifyTerms' rootSort _ origVars _ [] bindings constraints acEquations
+unifyTerms' rootSort sideCondition origVars _ [] bindings constraints acEquations
     | Map.null acEquations = do
         let freeBindings = Map.mapMaybe fromFree bindings
             (origBindings, acVarBindings) = Map.partitionWithKey isOrigVar freeBindings
@@ -389,7 +390,11 @@ unifyTerms' rootSort _ origVars _ [] bindings constraints acEquations
             Nothing -> empty
             Just normalization -> do
                 let condition = Condition.fromNormalizationSimplified normalization
-                    solution = Condition.andCondition condition constraints
+                    solution'@Conditional{substitution} = Condition.andCondition condition constraints
+                [solution] <-
+                    if Substitution.isNormalized substitution
+                        then pure [solution']
+                        else liftSimplifier $ observeAllT $ simplifyCondition sideCondition solution'
                 debugUnificationSolved (Pattern.fromCondition rootSort solution)
                 return solution
   where
