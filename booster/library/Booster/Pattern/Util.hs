@@ -1,5 +1,3 @@
-{-# OPTIONS -fno-warn-unrecognised-pragmas #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
@@ -12,6 +10,8 @@ module Booster.Pattern.Util (
     substituteInTerm,
     substituteInPredicate,
     modifyVariables,
+    modifyVariablesInT,
+    modifyVariablesInP,
     modifyVarName,
     freeVariables,
     isConstructorSymbol,
@@ -58,7 +58,6 @@ retractPattern :: TermOrPredicate -> Maybe Pattern
 retractPattern (TermAndPredicate patt) = Just patt
 retractPattern _ = Nothing
 
-{-# HLINT ignore substituteInTerm "Redundant bracket" #-}
 substituteInTerm :: Map Variable Term -> Term -> Term
 substituteInTerm substitution = goSubst
   where
@@ -82,27 +81,28 @@ substituteInPredicate substitution = cata $ \case
 modifyVariables :: (Variable -> Variable) -> Pattern -> Pattern
 modifyVariables f p =
     Pattern
-        { term = modifyT p.term
-        , constraints = map modifyP p.constraints
+        { term = modifyVariablesInT f p.term
+        , constraints = map (modifyVariablesInP f) p.constraints
         }
-  where
-    modifyT :: Term -> Term
-    modifyT = cata $ \case
-        VarF v -> Var $ f v
-        other -> embed other
-    modifyP :: Predicate -> Predicate
-    modifyP = cata $ \case
-        EqualsTermF t1 t2 ->
-            EqualsTerm (modifyT t1) (modifyT t2)
-        InF t1 t2 ->
-            In (modifyT t1) (modifyT t2)
-        CeilF t ->
-            Ceil (modifyT t)
-        ExistsF v pr ->
-            Exists (f v) (modifyP pr)
-        ForallF v pr ->
-            Forall (f v) (modifyP pr)
-        other -> embed other
+
+modifyVariablesInT :: (Variable -> Variable) -> Term -> Term
+modifyVariablesInT f = cata $ \case
+    VarF v -> Var (f v)
+    other -> embed other
+
+modifyVariablesInP :: (Variable -> Variable) -> Predicate -> Predicate
+modifyVariablesInP f = cata $ \case
+    EqualsTermF t1 t2 ->
+        EqualsTerm (modifyVariablesInT f t1) (modifyVariablesInT f t2)
+    InF t1 t2 ->
+        In (modifyVariablesInT f t1) (modifyVariablesInT f t2)
+    CeilF t ->
+        Ceil (modifyVariablesInT f t)
+    ExistsF v pr ->
+        Exists (f v) (modifyVariablesInP f pr)
+    ForallF v pr ->
+        Forall (f v) (modifyVariablesInP f pr)
+    other -> embed other
 
 modifyVarName :: (VarName -> VarName) -> Variable -> Variable
 modifyVarName f v = v{variableName = f v.variableName}

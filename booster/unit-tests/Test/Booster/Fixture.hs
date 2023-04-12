@@ -65,6 +65,9 @@ dv = DomainValue
 app :: Symbol -> [Term] -> Term
 app s = SymbolApplication s []
 
+inj :: Sort -> Sort -> Term -> Term
+inj = Injection
+
 asTotalFunction, asPartialFunction, asConstructor :: SymbolAttributes
 asTotalFunction = SymbolAttributes TotalFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias
 asPartialFunction = SymbolAttributes PartialFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias
