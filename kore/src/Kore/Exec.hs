@@ -351,8 +351,8 @@ exec
         execStrategy :: [Strategy.Step Prim]
         execStrategy =
             Limit.takeWithin depthLimit $
-                [Begin, Simplify, Rewrite, Simplify] :
-                repeat [Begin, Rewrite, Simplify]
+                [Begin, Simplify, Rewrite, Simplify]
+                    : repeat [Begin, Rewrite, Simplify]
 
         transit ::
             GraphTraversal.TState
@@ -401,12 +401,12 @@ data StopLabels = StopLabels
 
 -- | Type for json-rpc execution state, for readability
 data RpcExecState v = RpcExecState
-    { -- | program state
-      rpcProgState :: ProgramState (Pattern v)
-    , -- | rule label/id we have stopped on
-      rpcRule :: Maybe Text
-    , -- | execution depth
-      rpcDepth :: ExecDepth
+    { rpcProgState :: ProgramState (Pattern v)
+    -- ^ program state
+    , rpcRule :: Maybe Text
+    -- ^ rule label/id we have stopped on
+    , rpcDepth :: ExecDepth
+    -- ^ execution depth
     }
     deriving stock (Eq, Show)
 
@@ -481,8 +481,8 @@ rpcExec
         execStrategy :: [Strategy.Step Prim]
         execStrategy =
             Limit.takeWithin depthLimit $
-                [Begin, Simplify, Rewrite, Simplify] :
-                repeat [Begin, Rewrite, Simplify]
+                [Begin, Simplify, Rewrite, Simplify]
+                    : repeat [Begin, Rewrite, Simplify]
 
         transit ::
             GraphTraversal.TState Prim (RpcExecState RewritingVariableName) ->
@@ -545,10 +545,10 @@ rpcExec
             labels
             (RewriteRule RulePattern{attributes = Attribute.Axiom{label, uniqueId}})
                 | Just lbl <- Attribute.unLabel label
-                  , lbl `elem` labels =
+                , lbl `elem` labels =
                     Just lbl
                 | Just uid <- Attribute.getUniqueId uniqueId
-                  , uid `elem` labels =
+                , uid `elem` labels =
                     Just uid
                 | otherwise =
                     Nothing
@@ -888,10 +888,12 @@ checkFunctions ::
 checkFunctions verifiedModule =
     evalSimplifierProofs verifiedModule $ do
         -- check if RHS is function pattern
-        equations >>= filter (not . isFunctionPattern . right)
+        equations
+            >>= filter (not . isFunctionPattern . right)
             & mapM_ errorEquationRightFunction
         -- check if two equations both match the same term
-        equations >>= inOrderPairs
+        equations
+            >>= inOrderPairs
             & filterM (uncurry bothMatch)
             >>= mapM_ (uncurry errorEquationsSameMatch)
   where
@@ -963,7 +965,7 @@ initialize ::
 initialize simplificationProcedure verifiedModule = do
     rewriteRules <-
         Logic.observeAllT $ do
-            rule <- Logic.scatter (extractRewriteAxioms verifiedModule)
+            rule <- Logic.scatter (either error id (extractRewriteAxioms verifiedModule))
             initializeRule (mapRuleVariables (pure mkRuleVariable) rule)
     pure Initialized{rewriteRules}
   where
