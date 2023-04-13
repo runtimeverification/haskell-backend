@@ -145,7 +145,7 @@ extractRewriteAxioms idxMod =
  a verified definition.
 -}
 extractImplicationClaims ::
-    -- |'IndexedModule' containing the definition
+    -- | 'IndexedModule' containing the definition
     VerifiedModule declAtts ->
     [ ( Attribute.Axiom Internal.Symbol.Symbol VariableName
       , ImplicationRule VariableName
@@ -207,15 +207,26 @@ simpleRewriteTermToRule attributes pat =
                         , Pretty.indent 4 $ unparse pat
                         ]
         -- normal rewrite axioms
-        TermLike.Rewrites _ (TermLike.And_ _ requires lhs) rhs ->
-            RewriteRule
-                RulePattern
-                    { left = lhs
-                    , antiLeft = Nothing
-                    , requires = Predicate.wrapPredicate requires
-                    , rhs = termToRHS rhs
-                    , attributes
-                    }
+        TermLike.Rewrites _ (TermLike.And_ _ requires' lhs) rhs
+            | Right requires <- Predicate.makePredicate requires' ->
+                RewriteRule
+                    RulePattern
+                        { left = lhs
+                        , antiLeft = Nothing
+                        , requires
+                        , rhs = termToRHS rhs
+                        , attributes
+                        }
+        TermLike.Rewrites _ (TermLike.And_ _ lhs requires') rhs
+            | Right requires <- Predicate.makePredicate requires' ->
+                RewriteRule
+                    RulePattern
+                        { left = lhs
+                        , antiLeft = Nothing
+                        , requires
+                        , rhs = termToRHS rhs
+                        , attributes
+                        }
         _ ->
             (error . show . Pretty.vsep)
                 [ "Expected simple rewrite rule form, but got"
