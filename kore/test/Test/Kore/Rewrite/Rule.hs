@@ -73,6 +73,7 @@ axiomPatternsUnitTests =
                 ( simpleRewriteTermToRule
                     def
                     (mkRewriteAxiomPattern varI1 varI2 Nothing)
+                    & fromRight (error "Expected simple rewrite rule")
                 )
             )
         , testCase
@@ -96,6 +97,7 @@ axiomPatternsUnitTests =
                 ( simpleRewriteTermToRule
                     def
                     (mkAliasAxiomPattern applyAliasLHS varI2)
+                    & fromRight (error "Expected simple rewrite rule")
                 )
             )
         , let axiom1, axiom2 :: Verified.Sentence
@@ -131,11 +133,12 @@ axiomPatternsUnitTests =
                         , definitionModules = [moduleTest]
                         }
            in testCase "definition containing I1:AInt => I2:AInt"
-              --TODO(traiansf): such checks should be made during verification
+              -- TODO(traiansf): such checks should be made during verification
               $
                 assertErrorIO
                     (assertSubstring "" "Unsupported pattern type in axiom")
-                    ( evaluate . force
+                    ( evaluate
+                        . force
                         . map fromSentenceAxiom
                         . indexedModuleAxioms
                         $ extractIndexedModule "TEST" indexedDefinition
@@ -173,6 +176,7 @@ axiomPatternsIntegrationTests =
                 ( simpleRewriteTermToRule
                     def
                     (mkRewriteAxiomPattern left right Nothing)
+                    & fromRight (error "Expected simple rewrite rule")
                 )
             )
         ]
@@ -238,7 +242,9 @@ test_rewritePatternToRewriteRuleAndBack =
         ]
   where
     perhapsFinalPattern attribute initialPattern =
-        rewriteRuleToTerm $ simpleRewriteTermToRule attribute initialPattern
+        rewriteRuleToTerm $
+            fromRight (error "Expected simple rewrite rule") $
+                simpleRewriteTermToRule attribute initialPattern
 
 test_patternToAxiomPatternAndBack :: TestTree
 test_patternToAxiomPatternAndBack =
