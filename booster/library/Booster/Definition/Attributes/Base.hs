@@ -78,7 +78,7 @@ data ComputedAxiomAttributes = ComputedAxiomAttributes
 type Label = Text
 
 newtype Priority = Priority Word8
-    deriving stock (Eq, Ord, Read, Show)
+    deriving stock (Eq, Ord, Read, Show, Bounded)
     deriving newtype (Num, NFData)
 
 newtype FileSource = FileSource FilePath
