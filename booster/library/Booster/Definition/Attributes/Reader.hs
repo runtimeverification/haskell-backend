@@ -19,7 +19,6 @@ import Control.Monad.Trans.Except
 import Data.Bifunctor
 import Data.Char (isDigit)
 import Data.Kind
-import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Text.Read (readEither)
@@ -54,7 +53,7 @@ instance HasAttributes ParsedAxiom where
     mkAttributes ParsedAxiom{attributes} =
         AxiomAttributes
             <$> readLocation attributes
-            <*> (fromMaybe 50 <$> attributes .:? "priority")
+            <*> readPriority attributes
             <*> (attributes .:? "label")
             <*> (attributes .:? "simplification")
             <*> (attributes .:? "preserves-definedness")
@@ -71,6 +70,24 @@ readLocation attributes = do
     case file of
         Nothing -> pure Nothing
         Just f -> Just . Location f <$> attributes .: locationName
+
+{- | Read 'priority' attribute (with -optional- number in [0..200]) and
+   'owise' flag, returning either the given priority or lowest
+   priority if 'owise'. Reports an error if both are present, defaults
+   to 50 if none.
+-}
+readPriority :: ParsedAttributes -> Except Text Priority
+readPriority attributes = do
+    priority <- attributes .:? "priority"
+    hasOwise <- attributes .! "owise"
+    maybe
+        (pure $ if hasOwise then maxBound else 50)
+        (if hasOwise then throwE . errBothPresent else pure)
+        priority
+  where
+    errBothPresent :: Priority -> Text
+    errBothPresent p =
+        Text.pack $ "Both " <> show p <> " and 'owise' attribute in a rule"
 
 instance HasAttributes ParsedSymbol where
     type Attributes ParsedSymbol = SymbolAttributes
