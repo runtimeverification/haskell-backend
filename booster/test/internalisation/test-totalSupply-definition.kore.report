@@ -2809,12 +2809,12 @@ Rewrite rules by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1989, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1995, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1986, 10)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1996, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1994, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1992, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1993, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1991, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1990, 10)
+  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1996, 10)
 - Lbl#gasExec(_,_)_EVM_InternalOp_Schedule_OpCode: 88
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2106, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2119, 10)
@@ -3146,9 +3146,9 @@ Function equations by term index:
 - Lbl#blockhash(_,_,_,_)_EVM_Int_List_Int_Int_Int: 5
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1024, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1025, 10)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1028, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1027, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1026, 10)
+  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1028, 10)
 - Lbl#bloomFilter(_)_EVM_ByteArray_List: evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (699, 10)
 - Lbl#bloomFilter(_,_)_EVM_ByteArray_List_Int: 3
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (701, 10)
@@ -3160,13 +3160,13 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (594, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (590, 10)
 - Lbl#changesState(_,_)_EVM_Bool_OpCode_WordStack: 7
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (424, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (418, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (422, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (421, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (419, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (423, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (420, 10)
+  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (424, 10)
 - Lbl#cleanBranchMap(_)_SERIALIZATION_Map_Map: evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (613, 10)
 - Lbl#cleanBranchMapAux(_,_,_)_SERIALIZATION_Map_Map_List_Set: 3
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (616, 10)
@@ -3180,7 +3180,6 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1411, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1410, 10)
 - Lbl#dasmOpCode(_,_)_EVM_OpCode_Int_Schedule: 144
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2876, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2733, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2734, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2743, 10)
@@ -3324,17 +3323,18 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2798, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2799, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2800, 10)
+  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2876, 10)
 - Lbl#dasmTxPrefix(_)_EVM-TYPES_Int_TxType: 3
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (564, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (565, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (563, 10)
 - Lbl#decodeLengthPrefix(_,_)_SERIALIZATION_LengthPrefix_String_Int: evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (447, 10)
 - Lbl#decodeLengthPrefix(_,_,_)_SERIALIZATION_LengthPrefix_String_Int_Int: 5
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (453, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (451, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (452, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (450, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (449, 10)
+  - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (453, 10)
 - Lbl#decodeLengthPrefixLength(_,_,_,_)_SERIALIZATION_LengthPrefix_LengthPrefixType_Int_Int_Int: evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (457, 10)
 - Lbl#decodeLengthPrefixLength(_,_,_,_)_SERIALIZATION_LengthPrefix_LengthPrefixType_String_Int_Int: 2
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (456, 10)
@@ -3482,8 +3482,8 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1889, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1890, 10)
 - Lbl#inStorageAux1(_,_)_EVM_Bool_KItem_Int: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1893, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1892, 10)
+  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1893, 10)
 - Lbl#inStorageAux2(_,_)_EVM_Bool_Set_Int: 2
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1895, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1896, 10)
@@ -3597,7 +3597,6 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (535, 34)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (532, 34)
 - Lbl#memory(_,_)_EVM_Int_OpCode_Int: 16
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1931, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1911, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1913, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1912, 10)
@@ -3613,6 +3612,7 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1919, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1929, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1928, 10)
+  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1931, 10)
 - Lbl#memoryUsageUpdate(_,_,_)_EVM_Int_Int_Int_Int: 2
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1954, 37)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1953, 37)
@@ -3631,8 +3631,8 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (676, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (662, 10)
 - Lbl#merkleUpdateBranch(_,_,_,_,_)_SERIALIZATION_MerkleTree_Map_String_Int_ByteArray_String: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (624, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (621, 10)
+  - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (624, 10)
 - Lbl#modexp1(_,_,_,_)_EVM_ByteArray_Int_Int_Int_ByteArray: 2
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1763, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1764, 10)
@@ -3681,8 +3681,8 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (185, 10)
 - Lbl#parseWord(_)_SERIALIZATION_Int_String: 3
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (138, 10)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (139, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (137, 10)
+  - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (139, 10)
 - Lbl#point(_)_EVM_ByteArray_G1Point: evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1795, 10)
 - Lbl#precompiled(_)_EVM_PrecompiledOp_Int: 9
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1689, 10)
@@ -3754,8 +3754,8 @@ Function equations by term index:
 - Lbl#rlpEncodeReceipt(_,_,_,_)_SERIALIZATION_String_Int_Int_ByteArray_List: evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (338, 24)
 - Lbl#rlpEncodeString(_)_SERIALIZATION_String_String: 3
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (304, 10)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (305, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (303, 10)
+  - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (305, 10)
 - Lbl#rlpEncodeTopics(_,_)_SERIALIZATION_String_List_StringBuffer: 2
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (358, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (359, 10)
@@ -3789,7 +3789,6 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (301, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (302, 10)
 - Lbl#stackAdded(_)_EVM_Int_OpCode: 21
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (392, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (391, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (372, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (374, 10)
@@ -3810,6 +3809,7 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (379, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (383, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (389, 10)
+  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (392, 10)
 - Lbl#stackDelta(_)_EVM_Int_OpCode: evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (396, 10)
 - Lbl#stackNeeded(_)_EVM_Int_OpCode: 12
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (361, 10)
@@ -3888,9 +3888,9 @@ Function equations by term index:
 - Lbl#usesAccessList(_)_EVM_Bool_OpCode: 5
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1969, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1970, 10)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1973, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1971, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1972, 10)
+  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1973, 10)
 - Lbl#usesMemory(_)_EVM_Bool_OpCode: evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1935, 10)
 - Lbl#widthOp(_)_EVM_Int_OpCode: 2
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (534, 10)
@@ -3944,8 +3944,8 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2354, 10)
 - LblG0(_,_,_)_EVM_Int_Schedule_ByteArray_Bool: evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2352, 10)
 - LblG0(_,_,_,_,_)_EVM_Int_Schedule_ByteArray_Int_Int_Int: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2358, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2357, 10)
+  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2358, 10)
 - LblHPEncodeAux(_)_SERIALIZATION_Int_Int: 2
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (607, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (608, 10)
@@ -3958,7 +3958,6 @@ Function equations by term index:
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (2007, 8)
 - LblM3:2048(_)_EVM_Int_ByteArray: evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (717, 10)
 - LblMerkleCheck(_)_SERIALIZATION_MerkleTree_MerkleTree: 8
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (549, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (555, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (553, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (554, 10)
@@ -3966,6 +3965,7 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (558, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (557, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (551, 10)
+  - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (549, 10)
 - LblMerkleDelete(_,_)_SERIALIZATION_MerkleTree_MerkleTree_ByteArray: 8
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (531, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (542, 10)
@@ -4300,8 +4300,8 @@ Function equations by term index:
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1594, 8)
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1595, 8)
 - Lblfoundry_success: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/foundry.md :  (130, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/foundry.md :  (129, 10)
+  - evm-semantics/.build/usr/lib/kevm/include/kframework/foundry.md :  (130, 10)
 - LblfreshInt(_)_INT_Int_Int: /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1160, 8)
 - LblgetBloomFilterBit(_,_)_EVM_Int_ByteArray_Int: evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (725, 10)
 - LblgetExitCode: -
@@ -4412,16 +4412,16 @@ Function equations by term index:
 - LblisActiveAccountsCell: -
 - LblisActiveAccountsCellOpt: -
 - LblisAddr1Op(_)_EVM_Bool_OpCode: 6
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (511, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (506, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (510, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (508, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (509, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (507, 10)
+  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (511, 10)
 - LblisAddr2Op(_)_EVM_Bool_OpCode: 3
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (515, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (513, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (514, 10)
+  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (515, 10)
 - LblisBExp: -
 - LblisBalanceCell: -
 - LblisBalanceCellOpt: -
