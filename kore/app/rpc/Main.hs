@@ -3,9 +3,11 @@
 module Main (main) where
 
 import Control.Concurrent.MVar as MVar
+import Control.Exception (AsyncException (..))
 import Control.Monad.Catch (
     bracket,
     handle,
+    handleJust,
  )
 import Control.Monad.Reader (
     ReaderT (..),
@@ -29,6 +31,8 @@ import Kore.JsonRpc (
  )
 import Kore.Log (
     KoreLogOptions (..),
+    LoggerT,
+    logInfo,
     parseKoreLogOptions,
     runKoreLogThreadSafe,
  )
@@ -140,11 +144,21 @@ mainWithOptions localOptions@GlobalMain.LocalOptions{execOptions = KoreRpcServer
             bugReportOption
             ( \tmpDir ->
                 koreRpcServerRun localOptions
+                    & handleJust isInterrupt handleInterrupt
                     & handle handleSomeException
                     & runKoreLogThreadSafe
                         tmpDir
                         koreLogOptions
             )
+  where
+    isInterrupt :: AsyncException -> Maybe ()
+    isInterrupt UserInterrupt = Just ()
+    isInterrupt _other = Nothing
+
+    handleInterrupt :: () -> LoggerT IO ExitCode
+    handleInterrupt () = do
+        logInfo "RPC server shutting down"
+        pure ExitSuccess
 
 koreRpcServerRun ::
     GlobalMain.LocalOptions KoreRpcServerOptions ->
