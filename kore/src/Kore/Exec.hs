@@ -888,10 +888,12 @@ checkFunctions ::
 checkFunctions verifiedModule =
     evalSimplifierProofs verifiedModule $ do
         -- check if RHS is function pattern
-        equations >>= filter (not . isFunctionPattern . right)
+        equations
+            >>= filter (not . isFunctionPattern . right)
             & mapM_ errorEquationRightFunction
         -- check if two equations both match the same term
-        equations >>= inOrderPairs
+        equations
+            >>= inOrderPairs
             & filterM (uncurry bothMatch)
             >>= mapM_ (uncurry errorEquationsSameMatch)
   where
@@ -963,7 +965,7 @@ initialize ::
 initialize simplificationProcedure verifiedModule = do
     rewriteRules <-
         Logic.observeAllT $ do
-            rule <- Logic.scatter (extractRewriteAxioms verifiedModule)
+            rule <- Logic.scatter (either error id (extractRewriteAxioms verifiedModule))
             initializeRule (mapRuleVariables (pure mkRuleVariable) rule)
     pure Initialized{rewriteRules}
   where
