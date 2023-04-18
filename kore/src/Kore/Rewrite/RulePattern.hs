@@ -361,8 +361,12 @@ termToRHS (TermLike.Exists_ _ v pat) =
     rhs{existentials = v : existentials rhs}
   where
     rhs = termToRHS pat
-termToRHS (TermLike.And_ _ ensures right) =
-    RHS{existentials = [], right, ensures = Predicate.wrapPredicate ensures}
+termToRHS (TermLike.And_ _ right ensures')
+    | Right ensures <- Predicate.makePredicate ensures' =
+        RHS{existentials = [], right, ensures}
+termToRHS (TermLike.And_ _ ensures' right)
+    | Right ensures <- Predicate.makePredicate ensures' =
+        RHS{existentials = [], right, ensures}
 termToRHS term = injectTermIntoRHS term
 
 instance
@@ -382,7 +386,7 @@ instance
                 <> freeVariables requires
                 <> freeVariables rhs
 
--- |Is the rule free of the given variables?
+-- | Is the rule free of the given variables?
 isFreeOf ::
     forall variable.
     InternalVariable variable =>
