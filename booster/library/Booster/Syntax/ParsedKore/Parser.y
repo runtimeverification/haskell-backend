@@ -367,29 +367,30 @@ mkParsedAlias
 -- helper to parse attributes
 attributeFromPattern :: KorePattern -> (AttributeName, AttributeValue)
 attributeFromPattern KJApp {name, sorts = [], args = []}
-    = (name, Nothing)
+    = (name, [])
 attributeFromPattern KJApp {name, sorts = [], args = [KJString{value}]}
-    = (name, Just value)
+    = (name, [value])
 -- attributes of AC structure sorts have this shape
 attributeFromPattern KJApp {name, sorts = [], args = [KJApp{name = Syntax.Id name2, args = []}]}
-    = (name, Just name2)
--- priorities attribute has this shape
+    = (name, [name2])
+-- priorities attribute or concrete/symbolic has this shape
 attributeFromPattern KJApp {name, sorts = [], args}
-    = (name, Just $ asTextList args)
+    = (name, asTextList args)
 -- The subsort attribute information is given in the sort field
 attributeFromPattern KJApp {name, sorts = [SortApp{name = Syntax.Id s1}, SortApp{name = Syntax.Id s2}], args = []}
-    = (name, Just $ s1 <> " < " <> s2)
+    = (name, [s1 <> " < " <> s2])
 attributeFromPattern badPat
     = error $ "Unexpected attribute shape: " <> show badPat
 
 -- extract attributes from patterns used for attributes
-asText :: KorePattern -> Maybe Text
-asText KJString{value} = Just value
-asText KJApp{name = Syntax.Id n, sorts = [], args = []} = Just n
-asText other = Nothing  -- HACK
+asText :: KorePattern -> [Text]
+asText KJString{value} = [value]
+asText KJApp{name = Syntax.Id n, sorts = [], args = []} = [n]
+asText KJEVar{name = Syntax.Id n, sort = SortApp{name = Syntax.Id s}} = [n <> ":" <> s]
+asText other = []  -- HACK
 
-asTextList :: [KorePattern] -> Text
-asTextList = Text.intercalate "," . mapMaybe asText
+asTextList :: [KorePattern] -> [Text]
+asTextList = concatMap asText
 
 
 {- | Expand a \\left-assoc or \\right-assoc directive into a ParsedPattern. First

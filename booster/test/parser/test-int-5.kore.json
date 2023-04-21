@@ -9,11 +9,13 @@
           "attributes": [
             [
               "hook",
-              "INT.Int"
+              [
+                "INT.Int"
+              ]
             ],
             [
               "hasDomainValues",
-              null
+              []
             ]
           ],
           "isHooked": true,

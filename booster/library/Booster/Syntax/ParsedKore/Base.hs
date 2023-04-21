@@ -86,7 +86,7 @@ data ParsedAxiom = ParsedAxiom
 
 type ParsedAttributes = [(AttributeName, AttributeValue)]
 type AttributeName = Syntax.Id
-type AttributeValue = Maybe Text
+type AttributeValue = [Text]
 
 getAttribute :: Text -> ParsedAttributes -> Maybe AttributeValue
 getAttribute = lookup . Syntax.Id

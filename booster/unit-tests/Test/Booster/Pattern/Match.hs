@@ -183,11 +183,11 @@ success assocs =
             ]
 
 failed :: FailReason -> MatchResult
-failed = MatchFailed
+failed = MatchFailed . General
 
 errors :: String -> Term -> Term -> TestTree
 errors name pat subj =
     testCase name $
         case matchTerm testDefinition pat subj of
-            MatchError _ -> pure ()
-            other -> assertFailure $ "Expected MatchError, got " <> show other
+            MatchFailed _ -> pure ()
+            other -> assertFailure $ "Expected MatchFailed, got " <> show other
