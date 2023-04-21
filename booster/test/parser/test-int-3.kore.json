@@ -25,7 +25,9 @@
           "attributes": [
             [
               "hook",
-              "BOOL.Bool"
+              [
+                "BOOL.Bool"
+              ]
             ]
           ],
           "isHooked": true,
@@ -46,7 +48,9 @@
           "attributes": [
             [
               "hook",
-              "INT.Int"
+              [
+                "INT.Int"
+              ]
             ]
           ],
           "isHooked": true,
@@ -84,7 +88,9 @@
           "attributes": [
             [
               "hook",
-              "INT.ge"
+              [
+                "INT.ge"
+              ]
             ]
           ],
           "isHooked": true,

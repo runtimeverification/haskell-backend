@@ -27,7 +27,9 @@
           "attributes": [
             [
               "hook",
-              "S.f"
+              [
+                "S.f"
+              ]
             ]
           ],
           "isHooked": true,
@@ -59,7 +61,9 @@
           "attributes": [
             [
               "hook",
-              "S.f"
+              [
+                "S.f"
+              ]
             ]
           ],
           "isHooked": true,

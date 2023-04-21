@@ -9,7 +9,9 @@
           "attributes": [
             [
               "hook",
-              "BOOL.Bool"
+              [
+                "BOOL.Bool"
+              ]
             ]
           ],
           "isHooked": true,
@@ -60,7 +62,9 @@
           "attributes": [
             [
               "hook",
-              "BOOL.and"
+              [
+                "BOOL.and"
+              ]
             ]
           ],
           "isHooked": true,

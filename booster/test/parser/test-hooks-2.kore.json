@@ -9,7 +9,9 @@
           "attributes": [
             [
               "hook",
-              "S.S"
+              [
+                "S.S"
+              ]
             ]
           ],
           "isHooked": true,

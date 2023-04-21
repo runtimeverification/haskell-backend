@@ -9,7 +9,6 @@ module Booster.Definition.Util (
     Summary (..),
     mkSummary,
     prettySummary,
-    decodeLabel,
 ) where
 
 import Control.DeepSeq (NFData (..))
@@ -29,9 +28,9 @@ import Prettyprinter.Render.String qualified as Pretty (renderString)
 
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
-import Booster.Pattern.Base (decodeLabel)
 import Booster.Pattern.Index (TermIndex (..))
 import Booster.Prettyprinter
+import Booster.Util
 
 data Summary = Summary
     { file :: FilePath
@@ -58,7 +57,7 @@ mkSummary file def =
         , axiomCount = length $ concat $ concatMap Map.elems (Map.elems def.rewriteTheory)
         , preserveDefinednessCount =
             length $
-                filter (\rule -> rule.computedAttributes.preservesDefinedness) $
+                filter (\rule -> null $ rule.computedAttributes.notPreservesDefinednessReasons) $
                     concat $
                         concatMap Map.elems (Map.elems def.rewriteTheory)
         , containAcSymbolsCount =

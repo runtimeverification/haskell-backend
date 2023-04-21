@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE InstanceSigs #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2022
@@ -18,15 +19,38 @@ import Control.Monad.Extra (whenM)
 import Control.Monad.Trans.Except
 import Data.Bifunctor
 import Data.Char (isDigit)
+import Data.Coerce (Coercible, coerce)
 import Data.Kind
+import Data.Map qualified as Map
+import Data.Maybe (catMaybes, fromMaybe)
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Text.Encoding qualified as Text
 import Text.Read (readEither)
 import Text.Regex.PCRE
 
-import Booster.Definition.Attributes.Base
+import Booster.Definition.Attributes.Base (
+    AxiomAttributes (AxiomAttributes),
+    Concreteness (..),
+    Constrained (..),
+    DefinitionAttributes (..),
+    FileSource (..),
+    Flag (Flag),
+    Location (Location),
+    ModuleAttributes (..),
+    Position (Position),
+    Priority (..),
+    SortAttributes (..),
+    SymbolAttributes (SymbolAttributes),
+    SymbolType (
+        Constructor,
+        PartialFunction,
+        SortInjection,
+        TotalFunction
+    ),
+ )
 import Booster.Syntax.ParsedKore.Base
-import Data.Coerce (Coercible, coerce)
 import Kore.Syntax.Json.Types (Id (..))
 
 {- | A class describing all attributes we want to extract from parsed
@@ -50,13 +74,15 @@ instance HasAttributes ParsedModule where
 instance HasAttributes ParsedAxiom where
     type Attributes ParsedAxiom = AxiomAttributes
 
+    mkAttributes :: ParsedAxiom -> Except Text (Attributes ParsedAxiom)
     mkAttributes ParsedAxiom{attributes} =
         AxiomAttributes
             <$> readLocation attributes
             <*> readPriority attributes
             <*> (attributes .:? "label")
-            <*> (attributes .:? "simplification")
-            <*> (attributes .:? "preserves-definedness")
+            <*> (attributes .! "simplification")
+            <*> (attributes .! "preserves-definedness")
+            <*> readConcreteness attributes
 
 sourceName
     , locationName ::
@@ -71,23 +97,54 @@ readLocation attributes = do
         Nothing -> pure Nothing
         Just f -> Just . Location f <$> attributes .: locationName
 
-{- | Read 'priority' attribute (with -optional- number in [0..200]) and
-   'owise' flag, returning either the given priority or lowest
-   priority if 'owise'. Reports an error if both are present, defaults
-   to 50 if none.
+{- | Reads 'priority' and 'simplification' attributes (with -optional-
+   number in [0..200]) and 'owise' flag, returning either the given
+   priority or lowest priority if 'owise'. Reports an error if more
+   than one of these is present, defaults to 50 if none.
 -}
 readPriority :: ParsedAttributes -> Except Text Priority
 readPriority attributes = do
-    priority <- attributes .:? "priority"
-    hasOwise <- attributes .! "owise"
-    maybe
-        (pure $ if hasOwise then maxBound else 50)
-        (if hasOwise then throwE . errBothPresent else pure)
-        priority
+    priority <-
+        fmap ("priority",) <$> attributes .:? "priority"
+    simplification <-
+        fmap ("simplification",) <$> attributes .:? "simplification"
+    owise <-
+        fmap ("owise",) . (\b -> if b then Just maxBound else Nothing) <$> attributes .! "owise"
+    case catMaybes [simplification, priority, owise] of
+        [] ->
+            pure 50
+        [(_, p)] ->
+            pure p
+        more ->
+            throwE $ "Several priorities given: " <> Text.intercalate "," (map fst more)
+
+readConcreteness :: ParsedAttributes -> Except Text Concreteness
+readConcreteness attributes = do
+    concrete <- maybe (pure Nothing) ((Just <$>) . mapM readVar) $ getAttribute "concrete" attributes
+    symbolic <- maybe (pure Nothing) ((Just <$>) . mapM readVar) $ getAttribute "symbolic" attributes
+    case (concrete, symbolic) of
+        (Nothing, Nothing) -> pure Unconstrained
+        -- case concrete, symbolic(v1,...,vn)
+        (Just [], Just _) -> do
+            loc <- readLocation attributes
+            throwE $ "Concreteness overlap at " <> Text.pack (show loc)
+        -- case concrete(v1,...,vn), symbolic
+        (Just _, Just []) -> do
+            loc <- readLocation attributes
+            throwE $ "Concreteness overlap at " <> Text.pack (show loc)
+        (Just [], Nothing) -> pure $ AllConstrained Concrete
+        (Nothing, Just []) -> pure $ AllConstrained Symbolic
+        (cs', ss') ->
+            let overlap = Set.fromList (fromMaybe [] cs') `Set.intersection` Set.fromList (fromMaybe [] ss')
+             in if not $ null overlap
+                    then do
+                        loc <- readLocation attributes
+                        throwE $ "Concreteness overlap for " <> Text.intercalate "," (Set.toList $ Set.map (Text.decodeUtf8 . fst) overlap) <> " at " <> Text.pack (show loc)
+                    else pure $ SomeConstrained $ Map.fromList [(c, Concrete) | c <- fromMaybe [] cs'] <> Map.fromList [(s, Symbolic) | s <- fromMaybe [] ss']
   where
-    errBothPresent :: Priority -> Text
-    errBothPresent p =
-        Text.pack $ "Both " <> show p <> " and 'owise' attribute in a rule"
+    readVar str = except $ case Text.splitOn ":" str of
+        [name, sort] -> Right (Text.encodeUtf8 name, Text.encodeUtf8 sort)
+        _ -> Left "Invalid variable"
 
 instance HasAttributes ParsedSymbol where
     type Attributes ParsedSymbol = SymbolAttributes
@@ -142,19 +199,14 @@ extractAttribute name attribs =
 (.:) :: ReadT a => ParsedAttributes -> Text -> Except Text a
 (.:) = flip extractAttribute
 
-extractAttributeOrDefault :: ReadT a => a -> Text -> ParsedAttributes -> Except Text a
-extractAttributeOrDefault def name attribs =
-    maybe (pure def) (either (throwE . readError name) pure . readT) $ getAttribute name attribs
-
 (.:?) :: forall a. ReadT a => ParsedAttributes -> Text -> Except Text (Maybe a)
 attribs .:? name =
     except . first (readError name) . mapM readT $ getAttribute name attribs
 
-extractFlag :: Coercible Bool b => Text -> ParsedAttributes -> Except Text b
-extractFlag = coerce . extractAttributeOrDefault False
-
 (.!) :: Coercible Bool b => ParsedAttributes -> Text -> Except Text b
-(.!) = flip extractFlag
+attrs .! name = except $ case getAttribute name attrs of
+    Nothing -> Right $ coerce False
+    Just _ -> Right $ coerce True
 
 infix 5 .!
 infix 5 .:?
@@ -171,26 +223,25 @@ infixr 2 <||>
 
 -- | Type class providing safe readers for different types
 class ReadT a where
-    readT :: Maybe Text -> Either String a
-    default readT :: Read a => Maybe Text -> Either String a
-    readT = maybe (Left "empty") (readEither . Text.unpack)
+    readT :: [Text] -> Either String a
 
 instance ReadT Priority where
-    readT Nothing = Right 50 -- HACK to accept `simplification()` from internal modules
-    readT (Just "") = Right 50
-    readT (Just n)
-        | all isDigit (Text.unpack n) = readEither $ "Priority " <> Text.unpack n
+    readT [] = Right 50 -- HACK to accept `simplification()` from internal modules
+    readT [n]
+        | Text.null n = Right 50 -- HACK to accept `simplification("")`
+        | all isDigit (Text.unpack n) = Priority <$> readEither (Text.unpack n)
         | otherwise = Left $ "invalid priority value " <> show n
-
--- | Bool instance: presence of the attribute implies 'True'
-instance ReadT Bool where
-    readT = maybe (Right True) (readEither . Text.unpack)
+    readT ns = Left $ "invalid priority value " <> show ns
 
 instance ReadT Text where
-    readT = maybe (Left "empty") Right
+    readT :: [Text] -> Either String Text
+    readT [] = Left "empty"
+    readT [t] = Right t
+    readT ts = Left $ "invalid text value " <> show ts
 
 instance ReadT Position where
-    readT = maybe (Left "empty position") readLocationType
+    readT [] = Left "empty position"
+    readT [p] = readLocationType p
       where
         readLocationType :: Text -> Either String Position
         readLocationType input =
@@ -218,11 +269,13 @@ instance ReadT Position where
                 , natRegex
                 , "\\)$"
                 ]
+    readT ps = Left $ "invalid position value " <> show ps
 
 -- Strips away the Source(...) constructor that gets printed, if there
 -- is one. If there is none, it uses the attribute string as-is.
 instance ReadT FileSource where
-    readT = maybe (Left "empty file source") readSource
+    readT [] = Left "empty file source"
+    readT [f] = readSource f
       where
         readSource :: Text -> Either String FileSource
         readSource input =
@@ -233,6 +286,7 @@ instance ReadT FileSource where
                     Right $ FileSource unmatched
                 _other ->
                     Left $ "bad source: " <> show input
+    readT fs = Left $ "invalid source value " <> show fs
 
 -- helper to pin regex match type
 (%%~) :: Text -> String -> (String, String, String, [String])

@@ -91,7 +91,7 @@ clOptionsParser =
 
 -- custom log levels that can be selected
 allowedLogLevels :: [String]
-allowedLogLevels = ["Rewrite"]
+allowedLogLevels = ["Rewrite", "Simplify"]
 
 -- Partition provided log levels into standard and custom ones, and
 -- select the lowest standard level. Default to 'LevelInfo' if no
