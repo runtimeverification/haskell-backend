@@ -9,7 +9,7 @@
           "attributes": [
             [
               "hasDomainValues",
-              null
+              []
             ]
           ],
           "isHooked": false,

@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveTraversable #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2022
@@ -19,24 +19,31 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Reader (ReaderT (..), ask)
+import Data.Hashable qualified as Hashable
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromMaybe)
-import Data.Text (Text, pack)
+import Data.Set qualified as Set
+import Data.Text as Text (Text, pack, unlines)
 import Numeric.Natural
 import Prettyprinter
 
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
 import Booster.LLVM.Internal qualified as LLVM
+import Booster.Pattern.ApplyEquations (
+    ApplyEquationResult (..),
+    Direction (..),
+    EquationFailure (..),
+    evaluateTerm,
+ )
 import Booster.Pattern.Base
 import Booster.Pattern.Index (TermIndex (..), kCellTermIndex)
 import Booster.Pattern.Simplify
 import Booster.Pattern.Unify
 import Booster.Pattern.Util
 import Booster.Prettyprinter
-import Data.Set qualified as Set
 
 newtype RewriteM err a = RewriteM {unRewriteM :: ReaderT (KoreDefinition, Maybe LLVM.API) (Except err) a}
     deriving newtype (Functor, Applicative, Monad)
@@ -110,7 +117,7 @@ rewriteStep cutLabels terminalLabels pat = do
                 | labelOf r `elem` terminalLabels ->
                     pure $ RewriteTerminal (labelOf r) x
                 | otherwise ->
-                    pure $ RewriteSingle x
+                    pure $ RewriteSingle (labelOf r) x
             rxs ->
                 pure $ RewriteBranch pat $ NE.fromList $ map snd rxs
 
@@ -133,7 +140,7 @@ applyRule ::
 applyRule pat rule = runMaybeT $ do
     def <- lift getDefinition
     -- unify terms
-    let unified = unifyTerms def rule.lhs.term pat.term
+    let unified = unifyTerms def rule.lhs pat.term
     subst <- case unified of
         UnificationFailed _reason ->
             fail "Unification failed"
@@ -146,32 +153,39 @@ applyRule pat rule = runMaybeT $ do
 
     -- check it is a "matching" substitution (substitutes variables
     -- from the subject term only). Fail the entire rewrite if not.
-    unless (Map.keysSet subst == freeVariables rule.lhs.term) $
+    unless (Map.keysSet subst == freeVariables rule.lhs) $
         failRewrite $
             UnificationIsNotMatch rule pat.term subst
 
     -- Also fail the whole rewrite if a rule applies but may introduce
     -- an undefined term.
-    unless rule.computedAttributes.preservesDefinedness $
+    unless (null rule.computedAttributes.notPreservesDefinednessReasons) $
         failRewrite $
-            DefinednessUnclear rule pat
+            DefinednessUnclear rule pat $
+                rule.computedAttributes.notPreservesDefinednessReasons
 
-    -- apply substitution to rule constraints and simplify (one by one
+    -- apply substitution to rule requires constraints and simplify (one by one
     -- in isolation). Stop if false, abort rewrite if indeterminate.
-    let newConstraints =
-            concatMap (splitBoolPredicates . substituteInPredicate subst) $
-                rule.lhs.constraints <> rule.rhs.constraints
-    unclearConditions <- catMaybes <$> mapM checkConstraint newConstraints
-
-    unless (null unclearConditions) $
+    let ruleRequires =
+            concatMap (splitBoolPredicates . substituteInPredicate subst) rule.requires
+        failIfUnclear = RuleConditionUnclear rule
+    unclearRequires <- catMaybes <$> mapM (checkConstraint failIfUnclear) ruleRequires
+    unless (null unclearRequires) $
         failRewrite $
-            head unclearConditions
+            head unclearRequires
+
+    -- check ensures constraints (new) from rhs: stop (prune here) if
+    -- any are false, remove all that are trivially true, return the rest
+    let ruleEnsures =
+            concatMap (splitBoolPredicates . substituteInPredicate subst) rule.ensures
+    newConstraints <-
+        catMaybes <$> mapM (checkConstraint id) ruleEnsures
 
     let rewritten =
             Pattern
-                (substituteInTerm (refreshExistentials subst) rule.rhs.term)
-                -- NB no new constraints, as they have been checked to be `Top`
-                (map (substituteInPredicate subst) $ pat.constraints)
+                (substituteInTerm (refreshExistentials subst) rule.rhs)
+                -- adding new constraints that have not been trivially `Top`
+                (newConstraints <> map (substituteInPredicate subst) pat.constraints)
     return (rule, rewritten)
   where
     failRewrite = lift . throw
@@ -186,13 +200,16 @@ applyRule pat rule = runMaybeT $ do
         | v `Set.member` vs = freshen v{variableName = vn <> "'"} vs
         | otherwise = v
 
-    checkConstraint :: Predicate -> MaybeT (RewriteM (RewriteFailed k)) (Maybe (RewriteFailed k))
-    checkConstraint p = do
+    checkConstraint ::
+        (Predicate -> a) ->
+        Predicate ->
+        MaybeT (RewriteM (RewriteFailed k)) (Maybe a)
+    checkConstraint onUnclear p = do
         mApi <- lift getLLVM
         case simplifyPredicate mApi p of
             Bottom -> fail "Rule condition was False"
             Top -> pure Nothing
-            other -> pure $ Just $ RuleConditionUnclear rule other
+            other -> pure $ Just $ onUnclear other
 
 {- | Reason why a rewrite did not produce a result. Contains additional
    information for logging what happened during the rewrite.
@@ -207,7 +224,7 @@ data RewriteFailed k
     | -- | A rule condition is indeterminate
       RuleConditionUnclear (RewriteRule k) Predicate
     | -- | A rewrite rule does not preserve definedness
-      DefinednessUnclear (RewriteRule k) Pattern
+      DefinednessUnclear (RewriteRule k) Pattern [NotPreservesDefinednessReason]
     | -- | A unification produced a non-match substitution
       UnificationIsNotMatch (RewriteRule k) Term Substitution
     | -- | A sort error was detected during unification
@@ -237,13 +254,13 @@ instance Pretty (RewriteFailed k) where
             , ": "
             , pretty predicate
             ]
-    pretty (DefinednessUnclear rule pat) =
-        hsep
+    pretty (DefinednessUnclear rule _pat reasons) =
+        hsep $
             [ "Uncertain about definedness of rule "
             , ruleId rule
-            , " applied to "
-            , pretty pat
+            , "because of:"
             ]
+                ++ map pretty reasons
     pretty (UnificationIsNotMatch rule term subst) =
         hsep
             [ "Unification produced a non-match:"
@@ -273,7 +290,7 @@ ruleId rule =
 -- | Different rewrite results (returned from RPC execute endpoint)
 data RewriteResult pat
     = -- | single result (internal use, not returned)
-      RewriteSingle pat
+      RewriteSingle Text pat
     | -- | branch point
       RewriteBranch pat (NonEmpty pat)
     | -- | no rules could be applied, config is stuck
@@ -288,11 +305,16 @@ data RewriteResult pat
       -- (signalled by exceptions)
       RewriteAborted pat
     deriving stock (Eq, Show)
-    deriving (Functor)
+    deriving (Functor, Foldable, Traversable)
 
 instance Pretty (RewriteResult Pattern) where
-    pretty (RewriteSingle pat) =
-        showPattern "Rewritten to" pat
+    pretty (RewriteSingle lbl pat) =
+        hang 4 . vsep $
+            [ "Rewritten to:"
+            , pretty pat
+            , "Using rule:"
+            , parens (pretty lbl)
+            ]
     pretty (RewriteBranch pat nexts) =
         hang 4 . vsep $
             [ "Branch reached at:"
@@ -318,7 +340,7 @@ instance Pretty (RewriteResult Pattern) where
         showPattern "Rewrite aborted" pat
 
 showPattern :: Doc a -> Pattern -> Doc a
-showPattern title pat = hang 4 $ vsep [title, pretty pat]
+showPattern title pat = hang 4 $ vsep [title, pretty (PrettyTerm pat.term)]
 
 {- | Interface for RPC execute: Rewrite given term as long as there is
    exactly one result in each step.
@@ -346,10 +368,10 @@ performRewrite ::
     Pattern ->
     io (Natural, RewriteResult Pattern)
 performRewrite def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pat = do
-    logRewrite $ "Rewriting pattern " <> prettyText pat
     doSteps False 0 pat
   where
     logRewrite = logOther (LevelOther "Rewrite")
+    logSimplify = logOther (LevelOther "Simplify")
 
     prettyText :: Pretty a => a -> Text
     prettyText = pack . renderDefault . pretty
@@ -358,8 +380,85 @@ performRewrite def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pat = do
 
     showCounter = (<> " steps.") . pack . show
 
-    simplify :: Pattern -> Pattern
-    simplify p = p{term = simplifyConcrete mLlvmLibrary def p.term}
+    simplifyP :: Pattern -> io Pattern
+    simplifyP p = do
+        let result = evaluateTerm TopDown def mLlvmLibrary p.term
+        case result of
+            Left (TooManyIterations n _ t) -> do
+                logWarn $ "Simplification unable to finish in " <> prettyText n <> " steps."
+                -- could output term before and after at debug or custom log level
+                pure p{term = t}
+            Left (EquationLoop (t : ts)) -> do
+                let termDiffs = zipWith (curry mkDiffTerms) (t : ts) ts
+                logError "Equation evaluation loop"
+                logSimplify $
+                    "Equation evaluation loop: " <> Text.unlines (map (prettyText . fst) termDiffs)
+                pure p{term = t} -- use result from before the loop
+            Left other -> do
+                logError . pack $ "Simplification error during rewrite: " <> show other
+                pure p
+            Right (newTerm, traces) -> do
+                forM_ traces $ \(l, mloc, mlabel, r) ->
+                    case r of
+                        Success rewritten ->
+                            logSimplify . pack . renderDefault $
+                                vsep
+                                    [ "Simplifying term"
+                                    , pretty (PrettyTerm l)
+                                    , "to"
+                                    , pretty (PrettyTerm rewritten)
+                                    , "using " <> pretty mloc <> " - " <> pretty mlabel
+                                    ]
+                        FailedMatch _ -> pure ()
+                        IndeterminateMatch -> pure ()
+                        RuleNotPreservingDefinedness ->
+                            logSimplify . pack . renderDefault $
+                                vsep
+                                    [ "Simplifying term"
+                                    , pretty (PrettyTerm l)
+                                    , "failed because the rule at"
+                                    , pretty mloc <> " - " <> pretty mlabel
+                                    , "does not preserve definedness"
+                                    ]
+                        IndeterminateCondition ->
+                            logSimplify . pack . renderDefault $
+                                vsep
+                                    [ "Simplifying term"
+                                    , pretty (PrettyTerm l)
+                                    , "failed with indeterminate condition"
+                                    , "using " <> pretty mloc <> " - " <> pretty mlabel
+                                    ]
+                        ConditionFalse ->
+                            logSimplify . pack . renderDefault $
+                                vsep
+                                    [ "Simplifying term"
+                                    , pretty (PrettyTerm l)
+                                    , "failed with false condition"
+                                    , "using " <> pretty mloc <> " - " <> pretty mlabel
+                                    ]
+                pure p{term = newTerm}
+
+    diff p1 p2 =
+        let (t1, t2) = mkDiffTerms (p1.term, p2.term)
+         in -- TODO print differences in predicates
+            (p1{term = t1}, p2{term = t2})
+    mkDiffTerms :: (Term, Term) -> (Term, Term)
+    mkDiffTerms = \case
+        (t1@(SymbolApplication s1 ss1 xs), t2@(SymbolApplication s2 ss2 ys)) ->
+            if Hashable.hash t1 == Hashable.hash t2
+                then (DotDotDot, DotDotDot)
+                else
+                    let (xs', ys') =
+                            unzip
+                                $ foldr
+                                    ( \xy rest -> case mkDiffTerms xy of
+                                        (DotDotDot, _) -> (DotDotDot, DotDotDot) : dropWhile (\(l, _) -> l == DotDotDot) rest
+                                        r -> r : rest
+                                    )
+                                    []
+                                $ zip xs ys
+                     in (SymbolApplication s1 ss1 xs', SymbolApplication s2 ss2 ys')
+        r -> r
 
     doSteps :: Bool -> Natural -> Pattern -> io (Natural, RewriteResult Pattern)
     doSteps wasSimplified !counter pat'
@@ -367,38 +466,53 @@ performRewrite def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pat = do
             let title =
                     pretty $ "Reached maximum depth of " <> maybe "?" showCounter mbMaxDepth
             logRewrite $ pack $ renderDefault $ showPattern title pat'
-            pure (counter, (if wasSimplified then id else fmap simplify) $ RewriteStopped pat')
+            result <- (if wasSimplified then pure else mapM simplifyP) $ RewriteStopped pat'
+            pure (counter, result)
         | otherwise = do
             let res =
                     runRewriteM def mLlvmLibrary $
                         rewriteStep cutLabels terminalLabels pat'
             case res of
-                Right (RewriteSingle single) ->
+                Right (RewriteSingle lbl single) -> do
+                    let (l, r) = diff pat' single
+                    logRewrite $
+                        pack $
+                            renderDefault $
+                                vsep
+                                    [ "Rewriting configuration"
+                                    , pretty (PrettyTerm l.term)
+                                    , "to"
+                                    , pretty (PrettyTerm r.term)
+                                    , "using " <> pretty lbl
+                                    ]
                     doSteps False (counter + 1) single
                 Right terminal@RewriteTerminal{} -> do
                     logRewrite $
                         "Terminal rule after " <> showCounter (counter + 1)
                     logRewrite $ prettyText terminal
-                    pure (counter + 1, fmap simplify terminal)
+                    simplified <- mapM simplifyP terminal
+                    logRewrite $ "Simplified pattern " <> prettyText simplified
+                    pure (counter + 1, simplified)
                 Right other -> do
                     logRewrite $ "Stopped after " <> showCounter counter
                     logRewrite $ prettyText other
-                    let simplifiedOther = fmap simplify other
+                    simplifiedOther <- mapM simplifyP other
                     logRewrite $ "Simplified: " <> prettyText simplifiedOther
                     pure (counter, simplifiedOther)
                 -- if unification was unclear and the pattern was
                 -- unsimplified, simplify and retry rewriting once
-                Left (RuleApplicationUnclear rule term _)
+                Left (RuleApplicationUnclear rule _term _)
                     | not wasSimplified -> do
-                        let simplifiedPat = simplify pat'
+                        simplifiedPat <- simplifyP pat'
+                        let (l, r) = diff pat' simplifiedPat
                         logRewrite $
                             "Unification unclear for rule "
                                 <> renderOneLineText (ruleId rule)
                                 <> " and term "
-                                <> prettyText term
+                                <> prettyText (PrettyTerm l.term)
                         logRewrite $
                             "Retrying with simplified pattern "
-                                <> prettyText simplifiedPat
+                                <> prettyText (PrettyTerm r.term)
                         doSteps True counter simplifiedPat
                 -- if there were no applicable rules and the pattern
                 -- was unsimplified, simplify and re-try once
@@ -407,10 +521,11 @@ performRewrite def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pat = do
                     if wasSimplified
                         then pure (counter, RewriteStuck pat')
                         else do
-                            let simplifiedPat = simplify pat'
-                            logRewrite $ "Retrying with simplified pattern " <> prettyText simplifiedPat
+                            simplifiedPat <- simplifyP pat'
+                            logRewrite $ "Retrying with simplified pattern " <> prettyText (PrettyTerm simplifiedPat.term)
                             doSteps True counter simplifiedPat
                 Left failure -> do
                     logRewrite $ "Aborted after " <> showCounter counter
                     logRewrite $ prettyText failure
-                    pure (counter, (if wasSimplified then id else fmap simplify) $ RewriteAborted pat')
+                    result <- (if wasSimplified then pure else mapM simplifyP) $ RewriteAborted pat'
+                    pure (counter, result)

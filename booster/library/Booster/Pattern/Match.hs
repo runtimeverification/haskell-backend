@@ -4,6 +4,7 @@ License     : BSD-3-Clause
 -}
 module Booster.Pattern.Match (
     MatchResult (..),
+    MatchFailReason (..),
     PredicatesDoNotMatch (..),
     matchTerm,
     matchPredicate,
@@ -16,19 +17,16 @@ import Control.Monad.Trans.State
 import Control.Monad.Trans.Writer
 import Data.Bifunctor (second)
 import Data.Either.Extra
-import Data.List.NonEmpty as NE (fromList)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Sequence (Seq (..), (><))
 import Data.Sequence qualified as Seq
 import Data.Set (Set)
 import Data.Set qualified as Set
-import Data.Text (Text)
-import Data.Text qualified as Text
 
 import Booster.Definition.Base
 import Booster.Pattern.Base
-import Booster.Pattern.Unify (FailReason (..), checkSubsort)
+import Booster.Pattern.Unify (FailReason (..), SortError, checkSubsort)
 import Booster.Pattern.Util (
     checkSymbolIsAc,
     freeVariables,
@@ -42,11 +40,20 @@ data MatchResult
     = -- | found a matching substitution
       MatchSuccess (Map Variable Term)
     | -- | pattern and subject have differences (using same failure type as unification)
-      MatchFailed FailReason
+      MatchFailed MatchFailReason
     | -- | match cannot be determined
       MatchIndeterminate Term Term
-    | -- | internal errors (invariants violated etc)
-      MatchError Text
+    deriving stock (Eq, Show)
+
+data MatchFailReason
+    = -- | shared with unification
+      General FailReason
+    | -- | Shared variables between matching terms
+      SharedVariables (Set Variable)
+    | -- | Subsorting related errors
+      SubsortingError SortError
+    | -- | The two terms have differing argument lengths
+      ArgLengthsDiffer Term Term
     deriving stock (Eq, Show)
 
 {- | Attempts to find a matching substitution for the given
@@ -68,10 +75,7 @@ matchTerm KoreDefinition{sorts} term1 term2 =
         freeVars2 = freeVariables term2
         sharedVars = freeVars1 `Set.intersection` freeVars2
      in if not $ Set.null sharedVars
-            then
-                MatchError . Text.pack . ("Shared Variables: " <>) . show $
-                    NE.fromList
-                        [(Var v, Var v) | v <- Set.toList sharedVars]
+            then MatchFailed $ SharedVariables sharedVars
             else
                 runMatching
                     State
@@ -109,7 +113,7 @@ match1
             let termSort = sortOfTerm term2
             subsorts <- gets mSubsorts
             isSubsort <-
-                lift . withExcept (MatchError . Text.pack . show) $
+                lift . withExcept (MatchFailed . SubsortingError) $
                     checkSubsort subsorts termSort variableSort
             unless isSubsort $
                 failWith $
@@ -161,7 +165,7 @@ match1
             -- variable in pattern, check source sorts and bind
             subsorts <- gets mSubsorts
             isSubsort <-
-                lift . withExcept (MatchError . Text.pack . show) $
+                lift . withExcept (MatchFailed . SubsortingError) $
                     checkSubsort subsorts source2 source1
             if isSubsort
                 then bindVariable v (Injection source2 source1 trm2)
@@ -180,8 +184,7 @@ match1
     t2@(SymbolApplication symbol2 sorts2 args2)
         | symbol1.name /= symbol2.name = failWith (DifferentSymbols t1 t2)
         | length args1 /= length args2 =
-            lift . throwE . MatchError . Text.pack $
-                "Argument counts differ for same symbol" <> show (t1, t2)
+            lift $ throwE $ MatchFailed $ ArgLengthsDiffer t1 t2
         | sorts1 /= sorts2 = failWith (DifferentSorts t1 t2)
         | checkSymbolIsAc symbol1 =
             -- If the symbol is non-free (AC symbol), return indeterminate
@@ -195,7 +198,7 @@ match1
         failWith $ DifferentSymbols t1 t2
 
 failWith :: FailReason -> StateT s (Except MatchResult) ()
-failWith = lift . throwE . MatchFailed
+failWith = lift . throwE . MatchFailed . General
 
 enqueueProblem :: Monad m => Term -> Term -> StateT MatchState m ()
 enqueueProblem term1 term2 =

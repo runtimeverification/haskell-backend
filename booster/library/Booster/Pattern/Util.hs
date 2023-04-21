@@ -13,6 +13,7 @@ module Booster.Pattern.Util (
     modifyVariablesInT,
     modifyVariablesInP,
     modifyVarName,
+    modifyVarNameConcreteness,
     freeVariables,
     isConstructorSymbol,
     isSortInjectionSymbol,
@@ -22,11 +23,11 @@ module Booster.Pattern.Util (
     checkTermSymbols,
     isBottom,
     isConcrete,
-    decodeLabel,
+    filterTermSymbols,
 ) where
 
-import Booster.Definition.Attributes.Base (Flag (..), SymbolAttributes (..), SymbolType (..))
-import Booster.Pattern.Base
+import Data.Bifunctor (first)
+import Data.ByteString (ByteString)
 import Data.Coerce (coerce)
 import Data.Functor.Foldable (Corecursive (embed), cata)
 import Data.Map (Map)
@@ -34,6 +35,14 @@ import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
+
+import Booster.Definition.Attributes.Base (
+    Concreteness (..),
+    Flag (..),
+    SymbolAttributes (..),
+    SymbolType (..),
+ )
+import Booster.Pattern.Base
 
 -- | Returns the sort of a term
 sortOfTerm :: Term -> Sort
@@ -107,6 +116,11 @@ modifyVariablesInP f = cata $ \case
 modifyVarName :: (VarName -> VarName) -> Variable -> Variable
 modifyVarName f v = v{variableName = f v.variableName}
 
+modifyVarNameConcreteness :: (ByteString -> ByteString) -> Concreteness -> Concreteness
+modifyVarNameConcreteness f = \case
+    SomeConstrained m -> SomeConstrained $ Map.mapKeys (first f) m
+    other -> other
+
 freeVariables :: Term -> Set Variable
 freeVariables (Term attributes _) = attributes.variables
 
@@ -148,6 +162,15 @@ checkTermSymbols :: (Symbol -> Bool) -> Term -> Bool
 checkTermSymbols check = cata $ \case
     SymbolApplicationF symbol _ ts -> check symbol && and ts
     other -> and other
+
+filterTermSymbols :: (Symbol -> Bool) -> Term -> [Symbol]
+filterTermSymbols check = cata $ \case
+    SymbolApplicationF symbol _ ts
+        | check symbol -> symbol : concat ts
+        | otherwise -> concat ts
+    AndTermF t1 t2 -> t1 <> t2
+    InjectionF _ _ t -> t
+    _ -> []
 
 isBottom :: Pattern -> Bool
 isBottom = (Bottom `elem`) . constraints
