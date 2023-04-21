@@ -5121,7 +5121,6 @@ Simplifications by term index:
   - evm-semantics/tests/specs/int-simplification.k :  (82, 10)
   - evm-semantics/tests/specs/int-simplification.k :  (40, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/infinite-gas.md :  (78, 10)
-  - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1091, 8)
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1065, 8)
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1095, 8)
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1097, 8)
@@ -5145,9 +5144,9 @@ Simplifications by term index:
   - evm-semantics/tests/specs/int-simplification.k :  (102, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/infinite-gas.md :  (77, 10)
   - evm-semantics/tests/specs/int-simplification.k :  (81, 10)
+  - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1091, 8)
 - Lbl_-Int_: 22
   - evm-semantics/tests/specs/int-simplification.k :  (79, 10)
-  - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1092, 8)
   - evm-semantics/tests/specs/int-simplification.k :  (86, 12)
   - evm-semantics/tests/specs/int-simplification.k :  (80, 10)
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1066, 8)
@@ -5168,6 +5167,7 @@ Simplifications by term index:
   - evm-semantics/tests/specs/int-simplification.k :  (58, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/infinite-gas.md :  (80, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/infinite-gas.md :  (81, 10)
+  - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1092, 8)
 - Lbl_/Int_: 6
   - evm-semantics/tests/specs/int-simplification.k :  (121, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/infinite-gas.md :  (87, 10)

@@ -588,11 +588,11 @@
           "attributes": [
             [
               "constructor",
-              null
+              []
             ],
             [
               "functional",
-              null
+              []
             ]
           ],
           "isHooked": false,
@@ -615,11 +615,11 @@
           "attributes": [
             [
               "constructor",
-              null
+              []
             ],
             [
               "functional",
-              null
+              []
             ]
           ],
           "isHooked": false,
@@ -647,7 +647,7 @@
           "attributes": [
             [
               "functional",
-              null
+              []
             ]
           ],
           "isHooked": false,

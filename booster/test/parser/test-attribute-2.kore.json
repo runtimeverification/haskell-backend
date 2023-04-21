@@ -9,7 +9,9 @@
           "attributes": [
             [
               "hook",
-              "NAT.Nat"
+              [
+                "NAT.Nat"
+              ]
             ]
           ],
           "isHooked": true,
@@ -43,15 +45,17 @@
           "attributes": [
             [
               "hook",
-              "NAT.plus"
+              [
+                "NAT.plus"
+              ]
             ],
             [
               "associative",
-              null
+              []
             ],
             [
               "commutative",
-              null
+              []
             ]
           ],
           "isHooked": true,

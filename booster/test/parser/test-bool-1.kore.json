@@ -9,11 +9,13 @@
           "attributes": [
             [
               "hook",
-              "BOOL.Bool"
+              [
+                "BOOL.Bool"
+              ]
             ],
             [
               "hasDomainValues",
-              null
+              []
             ]
           ],
           "isHooked": true,
@@ -90,7 +92,9 @@
           "attributes": [
             [
               "hook",
-              "BOOL.and"
+              [
+                "BOOL.and"
+              ]
             ]
           ],
           "isHooked": true,
@@ -118,7 +122,9 @@
           "attributes": [
             [
               "hook",
-              "BOOL.or"
+              [
+                "BOOL.or"
+              ]
             ]
           ],
           "isHooked": true,
@@ -146,7 +152,9 @@
           "attributes": [
             [
               "hook",
-              "BOOL.andThen"
+              [
+                "BOOL.andThen"
+              ]
             ]
           ],
           "isHooked": true,
@@ -174,7 +182,9 @@
           "attributes": [
             [
               "hook",
-              "BOOL.orElse"
+              [
+                "BOOL.orElse"
+              ]
             ]
           ],
           "isHooked": true,
@@ -202,7 +212,9 @@
           "attributes": [
             [
               "hook",
-              "BOOL.xor"
+              [
+                "BOOL.xor"
+              ]
             ]
           ],
           "isHooked": true,
@@ -230,7 +242,9 @@
           "attributes": [
             [
               "hook",
-              "BOOL.implies"
+              [
+                "BOOL.implies"
+              ]
             ]
           ],
           "isHooked": true,
@@ -258,7 +272,9 @@
           "attributes": [
             [
               "hook",
-              "BOOL.ne"
+              [
+                "BOOL.ne"
+              ]
             ]
           ],
           "isHooked": true,
@@ -286,7 +302,9 @@
           "attributes": [
             [
               "hook",
-              "BOOL.eq"
+              [
+                "BOOL.eq"
+              ]
             ]
           ],
           "isHooked": true,
@@ -309,7 +327,9 @@
           "attributes": [
             [
               "hook",
-              "BOOL.not"
+              [
+                "BOOL.not"
+              ]
             ]
           ],
           "isHooked": true,

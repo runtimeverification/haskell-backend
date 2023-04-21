@@ -25,7 +25,9 @@
           "attributes": [
             [
               "hook",
-              "BOOL.Bool"
+              [
+                "BOOL.Bool"
+              ]
             ]
           ],
           "isHooked": true,
@@ -46,11 +48,13 @@
           "attributes": [
             [
               "hook",
-              "INT.Int"
+              [
+                "INT.Int"
+              ]
             ],
             [
               "hasDomainValues",
-              null
+              []
             ]
           ],
           "isHooked": true,
@@ -141,7 +145,9 @@
           "attributes": [
             [
               "hook",
-              "INT.bitRange"
+              [
+                "INT.bitRange"
+              ]
             ]
           ],
           "isHooked": true,
@@ -169,7 +175,9 @@
           "attributes": [
             [
               "hook",
-              "INT.ge"
+              [
+                "INT.ge"
+              ]
             ]
           ],
           "isHooked": true,
@@ -197,7 +205,9 @@
           "attributes": [
             [
               "hook",
-              "INT.xor"
+              [
+                "INT.xor"
+              ]
             ]
           ],
           "isHooked": true,
@@ -225,7 +235,9 @@
           "attributes": [
             [
               "hook",
-              "INT.add"
+              [
+                "INT.add"
+              ]
             ]
           ],
           "isHooked": true,
@@ -253,7 +265,9 @@
           "attributes": [
             [
               "hook",
-              "INT.ne"
+              [
+                "INT.ne"
+              ]
             ]
           ],
           "isHooked": true,
@@ -276,7 +290,9 @@
           "attributes": [
             [
               "hook",
-              "INT.rand"
+              [
+                "INT.rand"
+              ]
             ]
           ],
           "isHooked": true,
@@ -304,7 +320,9 @@
           "attributes": [
             [
               "hook",
-              "INT.le"
+              [
+                "INT.le"
+              ]
             ]
           ],
           "isHooked": true,
@@ -327,7 +345,9 @@
           "attributes": [
             [
               "hook",
-              "INT.log2"
+              [
+                "INT.log2"
+              ]
             ]
           ],
           "isHooked": true,
@@ -355,7 +375,9 @@
           "attributes": [
             [
               "hook",
-              "INT.and"
+              [
+                "INT.and"
+              ]
             ]
           ],
           "isHooked": true,
@@ -378,7 +400,9 @@
           "attributes": [
             [
               "hook",
-              "INT.srand"
+              [
+                "INT.srand"
+              ]
             ]
           ],
           "isHooked": true,
@@ -406,7 +430,9 @@
           "attributes": [
             [
               "hook",
-              "INT.ediv"
+              [
+                "INT.ediv"
+              ]
             ]
           ],
           "isHooked": true,
@@ -439,7 +465,9 @@
           "attributes": [
             [
               "hook",
-              "INT.powmod"
+              [
+                "INT.powmod"
+              ]
             ]
           ],
           "isHooked": true,
@@ -467,7 +495,9 @@
           "attributes": [
             [
               "hook",
-              "INT.eq"
+              [
+                "INT.eq"
+              ]
             ]
           ],
           "isHooked": true,
@@ -495,7 +525,9 @@
           "attributes": [
             [
               "hook",
-              "INT.tmod"
+              [
+                "INT.tmod"
+              ]
             ]
           ],
           "isHooked": true,
@@ -518,7 +550,9 @@
           "attributes": [
             [
               "hook",
-              "INT.abs"
+              [
+                "INT.abs"
+              ]
             ]
           ],
           "isHooked": true,
@@ -541,7 +575,9 @@
           "attributes": [
             [
               "hook",
-              "INT.not"
+              [
+                "INT.not"
+              ]
             ]
           ],
           "isHooked": true,
@@ -569,7 +605,9 @@
           "attributes": [
             [
               "hook",
-              "INT.shl"
+              [
+                "INT.shl"
+              ]
             ]
           ],
           "isHooked": true,
@@ -602,7 +640,9 @@
           "attributes": [
             [
               "hook",
-              "INT.signExtendBitRange"
+              [
+                "INT.signExtendBitRange"
+              ]
             ]
           ],
           "isHooked": true,
@@ -630,7 +670,9 @@
           "attributes": [
             [
               "hook",
-              "INT.emod"
+              [
+                "INT.emod"
+              ]
             ]
           ],
           "isHooked": true,
@@ -658,7 +700,9 @@
           "attributes": [
             [
               "hook",
-              "INT.or"
+              [
+                "INT.or"
+              ]
             ]
           ],
           "isHooked": true,
@@ -686,7 +730,9 @@
           "attributes": [
             [
               "hook",
-              "INT.shr"
+              [
+                "INT.shr"
+              ]
             ]
           ],
           "isHooked": true,
@@ -714,7 +760,9 @@
           "attributes": [
             [
               "hook",
-              "INT.mul"
+              [
+                "INT.mul"
+              ]
             ]
           ],
           "isHooked": true,
@@ -742,7 +790,9 @@
           "attributes": [
             [
               "hook",
-              "INT.gt"
+              [
+                "INT.gt"
+              ]
             ]
           ],
           "isHooked": true,
@@ -770,7 +820,9 @@
           "attributes": [
             [
               "hook",
-              "INT.tdiv"
+              [
+                "INT.tdiv"
+              ]
             ]
           ],
           "isHooked": true,
@@ -798,7 +850,9 @@
           "attributes": [
             [
               "hook",
-              "INT.min"
+              [
+                "INT.min"
+              ]
             ]
           ],
           "isHooked": true,
@@ -826,7 +880,9 @@
           "attributes": [
             [
               "hook",
-              "INT.lt"
+              [
+                "INT.lt"
+              ]
             ]
           ],
           "isHooked": true,
@@ -854,7 +910,9 @@
           "attributes": [
             [
               "hook",
-              "INT.sub"
+              [
+                "INT.sub"
+              ]
             ]
           ],
           "isHooked": true,
@@ -882,7 +940,9 @@
           "attributes": [
             [
               "hook",
-              "INT.max"
+              [
+                "INT.max"
+              ]
             ]
           ],
           "isHooked": true,
@@ -910,7 +970,9 @@
           "attributes": [
             [
               "hook",
-              "INT.pow"
+              [
+                "INT.pow"
+              ]
             ]
           ],
           "isHooked": true,

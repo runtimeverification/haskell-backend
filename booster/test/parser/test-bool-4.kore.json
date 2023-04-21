@@ -9,11 +9,13 @@
           "attributes": [
             [
               "hook",
-              "BOOL.Bool"
+              [
+                "BOOL.Bool"
+              ]
             ],
             [
               "hasDomainValues",
-              null
+              []
             ]
           ],
           "isHooked": true,
