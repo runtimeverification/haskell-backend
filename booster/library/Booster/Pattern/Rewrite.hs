@@ -33,10 +33,11 @@ import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
 import Booster.LLVM.Internal qualified as LLVM
 import Booster.Pattern.ApplyEquations (
-    ApplyEquationResult (..),
     Direction (..),
     EquationFailure (..),
     evaluateTerm,
+    isMatchFailure,
+    isSuccess,
  )
 import Booster.Pattern.Base
 import Booster.Pattern.Index (TermIndex (..), kCellTermIndex)
@@ -388,55 +389,22 @@ performRewrite def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pat = do
                 logWarn $ "Simplification unable to finish in " <> prettyText n <> " steps."
                 -- could output term before and after at debug or custom log level
                 pure p{term = t}
-            Left (EquationLoop (t : ts)) -> do
+            Left (EquationLoop traces (t : ts)) -> do
                 let termDiffs = zipWith (curry mkDiffTerms) (t : ts) ts
                 logError "Equation evaluation loop"
+                logTraces $ filter isSuccess traces
                 logSimplify $
-                    "Equation evaluation loop: " <> Text.unlines (map (prettyText . fst) termDiffs)
+                    "produced the evaluation loop: " <> Text.unlines (map (prettyText . fst) termDiffs)
                 pure p{term = t} -- use result from before the loop
             Left other -> do
                 logError . pack $ "Simplification error during rewrite: " <> show other
                 pure p
             Right (newTerm, traces) -> do
-                forM_ traces $ \(l, mloc, mlabel, r) ->
-                    case r of
-                        Success rewritten ->
-                            logSimplify . pack . renderDefault $
-                                vsep
-                                    [ "Simplifying term"
-                                    , pretty (PrettyTerm l)
-                                    , "to"
-                                    , pretty (PrettyTerm rewritten)
-                                    , "using " <> pretty mloc <> " - " <> pretty mlabel
-                                    ]
-                        FailedMatch _ -> pure ()
-                        IndeterminateMatch -> pure ()
-                        RuleNotPreservingDefinedness ->
-                            logSimplify . pack . renderDefault $
-                                vsep
-                                    [ "Simplifying term"
-                                    , pretty (PrettyTerm l)
-                                    , "failed because the rule at"
-                                    , pretty mloc <> " - " <> pretty mlabel
-                                    , "does not preserve definedness"
-                                    ]
-                        IndeterminateCondition ->
-                            logSimplify . pack . renderDefault $
-                                vsep
-                                    [ "Simplifying term"
-                                    , pretty (PrettyTerm l)
-                                    , "failed with indeterminate condition"
-                                    , "using " <> pretty mloc <> " - " <> pretty mlabel
-                                    ]
-                        ConditionFalse ->
-                            logSimplify . pack . renderDefault $
-                                vsep
-                                    [ "Simplifying term"
-                                    , pretty (PrettyTerm l)
-                                    , "failed with false condition"
-                                    , "using " <> pretty mloc <> " - " <> pretty mlabel
-                                    ]
+                logTraces $ filter (not . isMatchFailure) traces
                 pure p{term = newTerm}
+
+    logTraces =
+        mapM_ (logSimplify . pack . renderDefault . pretty)
 
     diff p1 p2 =
         let (t1, t2) = mkDiffTerms (p1.term, p2.term)
