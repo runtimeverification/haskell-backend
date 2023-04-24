@@ -144,7 +144,8 @@ functions =
               c2T = app con2 [someDv]
               con3f1c1 = app con3 [f1T, c1T]
               con3f2c2 = app con3 [f2T, c2T]
-           in test "different constrs after different functions" con3f1c1 con3f2c2 $ failed (DifferentSymbols c1T c2T)
+           in test "different constrs after different functions" con3f1c1 con3f2c2 $
+                failed (DifferentSymbols c1T c2T)
         ]
 
 varsAndValues :: TestTree

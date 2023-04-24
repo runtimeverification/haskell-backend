@@ -81,7 +81,8 @@ internaliseTermOrPredicate ::
     Syntax.KorePattern ->
     Except [PatternError] Internal.TermOrPredicate
 internaliseTermOrPredicate allowAlias sortVars definition syntaxPatt =
-    Internal.APredicate <$> (withExcept (: []) $ internalisePredicate allowAlias sortVars definition syntaxPatt)
+    Internal.APredicate
+        <$> (withExcept (: []) $ internalisePredicate allowAlias sortVars definition syntaxPatt)
         <|> Internal.TermAndPredicate
             <$> (withExcept (: []) $ internalisePattern allowAlias sortVars definition syntaxPatt)
 
