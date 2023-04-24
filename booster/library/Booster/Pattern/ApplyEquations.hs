@@ -9,7 +9,10 @@ module Booster.Pattern.ApplyEquations (
     Direction (..),
     EquationPreference (..),
     EquationFailure (..),
+    EquationTrace (..),
     ApplyEquationResult (..),
+    isMatchFailure,
+    isSuccess,
 ) where
 
 import Control.Monad
@@ -27,6 +30,7 @@ import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust)
 import Data.Sequence (Seq (..))
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Prettyprinter
 
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
@@ -47,7 +51,7 @@ throw = EquationM . lift . throwE
 data EquationFailure
     = IndexIsNone Term
     | TooManyIterations Int Term Term
-    | EquationLoop [Term]
+    | EquationLoop [EquationTrace] [Term]
     | InternalError Text
     deriving stock (Eq, Show)
 
@@ -56,8 +60,63 @@ data EquationState = EquationState
     , llvmApi :: Maybe LLVM.API
     , termStack :: [Term]
     , changed :: Bool
-    , trace :: Seq (Term, Maybe Location, Maybe Label, ApplyEquationResult)
+    , trace :: Seq EquationTrace
     }
+
+data EquationTrace = EquationTrace
+    { subjectTerm :: Term
+    , location :: Maybe Location
+    , label :: Maybe Label
+    , result :: ApplyEquationResult
+    }
+    deriving stock (Eq, Show)
+
+instance Pretty EquationTrace where
+    pretty EquationTrace{subjectTerm, location, label, result} = case result of
+        Success rewritten ->
+            vsep
+                [ "Simplifying term"
+                , prettyTerm
+                , "to"
+                , pretty (PrettyTerm rewritten)
+                , "using " <> locationInfo
+                ]
+        FailedMatch _ ->
+            vsep ["Term did not match rule " <> locationInfo, prettyTerm]
+        IndeterminateMatch ->
+            vsep ["Term had indeterminate match for rule " <> locationInfo, prettyTerm]
+        RuleNotPreservingDefinedness ->
+            vsep
+                [ "Simplifying term"
+                , prettyTerm
+                , "failed because the rule at"
+                , locationInfo
+                , "does not preserve definedness"
+                ]
+        IndeterminateCondition ->
+            vsep
+                [ "Simplifying term"
+                , prettyTerm
+                , "failed with indeterminate condition"
+                , "using " <> locationInfo
+                ]
+        ConditionFalse ->
+            vsep
+                [ "Simplifying term"
+                , prettyTerm
+                , "failed with false condition"
+                , "using " <> locationInfo
+                ]
+      where
+        locationInfo = pretty location <> " - " <> pretty label
+        prettyTerm = pretty $ PrettyTerm subjectTerm
+
+isMatchFailure, isSuccess :: EquationTrace -> Bool
+isMatchFailure EquationTrace{result = FailedMatch{}} = True
+isMatchFailure EquationTrace{result = IndeterminateMatch{}} = True
+isMatchFailure _ = False
+isSuccess EquationTrace{result = Success{}} = True
+isSuccess _ = False
 
 startState :: KoreDefinition -> Maybe LLVM.API -> EquationState
 startState definition llvmApi =
@@ -81,9 +140,9 @@ getChanged = EquationM $ gets (.changed)
 
 checkForLoop :: Term -> EquationM ()
 checkForLoop t = do
-    stack <- (.termStack) <$> getState
-    whenJust (elemIndex t stack) $ \i ->
-        throw (EquationLoop . reverse $ t : take (i + 1) stack)
+    EquationState{termStack, trace} <- getState
+    whenJust (elemIndex t termStack) $ \i -> do
+        throw (EquationLoop (toList trace) . reverse $ t : take (i + 1) termStack)
 
 data Direction = TopDown | BottomUp
     deriving stock (Eq, Show)
@@ -95,7 +154,7 @@ runEquationM ::
     KoreDefinition ->
     Maybe LLVM.API ->
     EquationM a ->
-    Either EquationFailure (a, [(Term, Maybe Location, Maybe Label, ApplyEquationResult)])
+    Either EquationFailure (a, [EquationTrace])
 runEquationM definition llvmApi (EquationM m) =
     fmap (fmap $ toList . trace) <$> runExcept $ runStateT m $ startState definition llvmApi
 
@@ -131,7 +190,7 @@ evaluateTerm ::
     KoreDefinition ->
     Maybe LLVM.API ->
     Term ->
-    Either EquationFailure (Term, [(Term, Maybe Location, Maybe Label, ApplyEquationResult)])
+    Either EquationFailure (Term, [EquationTrace])
 evaluateTerm direction def llvmApi =
     runEquationM def llvmApi
         . iterateEquations 100 direction PreferFunctions
@@ -310,7 +369,7 @@ traceRuleApplication ::
     EquationM ()
 traceRuleApplication t loc lbl res =
     EquationM . modify $
-        \s -> s{trace = s.trace :|> (t, loc, lbl, res)}
+        \s -> s{trace = s.trace :|> EquationTrace t loc lbl res}
 
 applyEquation ::
     forall tag.
