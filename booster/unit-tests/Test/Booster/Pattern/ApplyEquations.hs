@@ -102,11 +102,14 @@ test_errors =
             let a = var "A" someSort
                 f = app f1 . (: [])
                 subj = f $ app con1 [a]
-                result =
-                    EquationLoop
-                        [f $ app con1 [a], f $ app con2 [a], f $ app con3 [a, a], f $ app con1 [a]]
-            evaluateTerm TopDown loopDef Nothing subj @?= Left result
+                loopTerms =
+                    [f $ app con1 [a], f $ app con2 [a], f $ app con3 [a, a], f $ app con1 [a]]
+            isLoop loopTerms $ evaluateTerm TopDown loopDef Nothing subj
         ]
+  where
+    isLoop ts (Left (EquationLoop _ ts')) = ts @?= ts'
+    isLoop _ (Left err) = assertFailure $ "Unexpected error " <> show err
+    isLoop _ (Right r) = assertFailure $ "Unexpected result " <> show r
 
 ----------------------------------------
 
