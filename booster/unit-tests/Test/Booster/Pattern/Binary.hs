@@ -34,7 +34,10 @@ genVariable = Variable <$> genSort <*> Gen.utf8 (Range.linear 1 32) Gen.alphaNum
 -}
 genSymbolUnknownSort :: Gen Symbol
 genSymbolUnknownSort =
-    (\name -> Symbol name [] [] (SortApp "UNKNOWN" []) $ SymbolAttributes PartialFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias)
+    ( \name ->
+        Symbol name [] [] (SortApp "UNKNOWN" []) $
+            SymbolAttributes PartialFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias
+    )
         <$> Gen.utf8 (Range.linear 0 32) Gen.alphaNum
 
 genTerm :: Gen Term

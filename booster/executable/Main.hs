@@ -21,7 +21,14 @@ import Booster.Trace
 main :: IO ()
 main = do
     options <- execParser clParser
-    let CLOptions{definitionFile, mainModuleName, port, logLevels, llvmLibraryFile, eventlogEnabledUserEvents} = options
+    let CLOptions
+            { definitionFile
+            , mainModuleName
+            , port
+            , logLevels
+            , llvmLibraryFile
+            , eventlogEnabledUserEvents
+            } = options
 
     forM_ eventlogEnabledUserEvents $ \t -> do
         putStrLn $ "Tracing " <> show t
@@ -53,4 +60,5 @@ main = do
 parserInfoModifiers :: InfoMod options
 parserInfoModifiers =
     fullDesc
-        <> header "Haskell Backend Booster - a JSON RPC server for quick symbolic execution of Kore definitions"
+        <> header
+            "Haskell Backend Booster - a JSON RPC server for quick symbolic execution of Kore definitions"

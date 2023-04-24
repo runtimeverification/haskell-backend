@@ -299,11 +299,13 @@ bindVariable var term = do
                         -- (not necessarily syntactically equal) to term'
                         failWith $ VariableConflict var oldTerm term
                 Nothing -> do
-                    let -- apply existing substitutions to term
+                    let
+                        -- apply existing substitutions to term
                         term' = substituteInTerm currentSubst term
                     when (var `Set.member` freeVariables term') $
                         failWith (VariableRecursion var term)
-                    let -- substitute in existing substitution terms
+                    let
+                        -- substitute in existing substitution terms
                         currentSubst' =
                             Map.map (substituteInTerm $ Map.singleton var term') currentSubst
                         newSubst = Map.insert var term' currentSubst'

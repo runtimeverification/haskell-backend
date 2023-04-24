@@ -194,7 +194,15 @@ mkAPI dlib = flip runReaderT dlib $ do
                 Foreign.free strPtr
                 pure str
 
-    let patt = KorePatternAPI{new = newPattern, addArgument = addArgumentPattern, string, token, fromSymbol, dump = dumpPattern}
+    let patt =
+            KorePatternAPI
+                { new = newPattern
+                , addArgument = addArgumentPattern
+                , string
+                , token
+                , fromSymbol
+                , dump = dumpPattern
+                }
 
     freeSymbol <- {-# SCC "LLVM.symbol.free" #-} koreSymbolFreeFunPtr
 
@@ -284,7 +292,8 @@ mkAPI dlib = flip runReaderT dlib $ do
                                 Trace.traceIO $
                                     LlvmCall
                                         { call = "kore_simplify"
-                                        , args = [Right $ somePtr patPtr, Right $ somePtr sortPtr, Right $ somePtr strPtr, Right $ somePtr lenPtr]
+                                        , args =
+                                            [Right $ somePtr patPtr, Right $ somePtr sortPtr, Right $ somePtr strPtr, Right $ somePtr lenPtr]
                                         , ret = Nothing
                                         }
                                 len <- fromIntegral <$> peek lenPtr

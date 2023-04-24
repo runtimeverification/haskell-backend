@@ -52,7 +52,8 @@ respond stateVar =
     \case
         Execute req
             | isJust req.stepTimeout -> pure $ Left $ unsupportedOption ("step-timeout" :: String)
-            | isJust req.movingAverageStepTimeout -> pure $ Left $ unsupportedOption ("moving-average-step-timeout" :: String)
+            | isJust req.movingAverageStepTimeout ->
+                pure $ Left $ unsupportedOption ("moving-average-step-timeout" :: String)
         Execute req -> withContext req._module $ \(def, mLlvmLibrary) -> do
             -- internalise given constrained term
             let internalised = runExcept $ internalisePattern False Nothing def req.state.term
@@ -92,7 +93,8 @@ respond stateVar =
                                 abortWith $ backendError CouldNotVerifyPattern err
                             Right newDefinitions -> do
                                 liftIO $ putMVar stateVar state{definitions = newDefinitions}
-                                Log.logInfo $ "Added a new module. Now in scope: " <> Text.intercalate ", " (Map.keys newDefinitions)
+                                Log.logInfo $
+                                    "Added a new module. Now in scope: " <> Text.intercalate ", " (Map.keys newDefinitions)
                                 pure $ Right $ AddModule ()
 
         -- this case is only reachable if the cancel appeared as part of a batch request

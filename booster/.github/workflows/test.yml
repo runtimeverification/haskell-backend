@@ -14,7 +14,7 @@ concurrency:
 env:
   ghc_version: '9.2.5'
   hlint_version: '3.4.1'
-  fourmolu_version: '0.8.2.0'
+  fourmolu_version: '0.12.0.0'
   hpack_version: '0.34.2'
 
 jobs:

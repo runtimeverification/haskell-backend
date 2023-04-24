@@ -67,7 +67,10 @@ parseCHeader input_file =
                     [("__STDC__", "1"), ("__STDC_VERSION__", "199409L")]
         -- run the hpp preprocessor on the input_file first to get rid of all macros
         Hpp.readLines input_file
-            >>= Hpp.hppIO (fromMaybe (error "could not create an HPP config") $ Hpp.realizeConfig cfg) cppEnv input_file
+            >>= Hpp.hppIO
+                (fromMaybe (error "could not create an HPP config") $ Hpp.realizeConfig cfg)
+                cppEnv
+                input_file
             >>= \case
                 Left cpp_err -> error (show cpp_err)
                 Right (_, preprocessed) ->
@@ -87,11 +90,16 @@ foreignImport name' ty' = do
 
     pure
         [ -- foreign import ccall "dynamic" <camel_name>Unwrap :: FunPtr <ty> -> <ty>
-          TH.ForeignD $ TH.ImportF TH.CCall TH.Safe "dynamic" nameUnwrap $ TH.AppT (TH.AppT TH.ArrowT $ TH.AppT (TH.ConT ''FunPtr) ty) ty
+          TH.ForeignD $
+            TH.ImportF TH.CCall TH.Safe "dynamic" nameUnwrap $
+                TH.AppT (TH.AppT TH.ArrowT $ TH.AppT (TH.ConT ''FunPtr) ty) ty
         , -- <camel_name>FunPtr :: ReaderT DL IO (FunPtr <ty>)
           TH.SigD
             nameFunPtr
-            (TH.AppT (TH.AppT (TH.AppT (TH.ConT ''ReaderT) (TH.ConT ''Linker.DL)) (TH.ConT ''IO)) (TH.AppT (TH.ConT ''FunPtr) ty))
+            ( TH.AppT
+                (TH.AppT (TH.AppT (TH.ConT ''ReaderT) (TH.ConT ''Linker.DL)) (TH.ConT ''IO))
+                (TH.AppT (TH.ConT ''FunPtr) ty)
+            )
         , -- <camel_name>FunPtr = ReaderT $ \libHandle -> Linker.dlsym libHandle "<name>"
           TH.ValD
             (TH.VarP nameFunPtr)
@@ -99,7 +107,10 @@ foreignImport name' ty' = do
                 ( TH.InfixE
                     (Just (TH.ConE 'ReaderT))
                     (TH.VarE '($))
-                    (Just $ TH.LamE [TH.VarP libHandle] $ TH.AppE (TH.AppE (TH.VarE 'Linker.dlsym) $ TH.VarE libHandle) (TH.LitE $ TH.StringL name'))
+                    ( Just $
+                        TH.LamE [TH.VarP libHandle] $
+                            TH.AppE (TH.AppE (TH.VarE 'Linker.dlsym) $ TH.VarE libHandle) (TH.LitE $ TH.StringL name')
+                    )
                 )
             )
             []

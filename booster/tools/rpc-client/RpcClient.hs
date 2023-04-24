@@ -300,7 +300,8 @@ postProcess prettify postProcessing output =
                     expected <- BS.readFile expectFile
                     when (prettyOutput /= expected) $ do
                         BS.writeFile "response" prettyOutput
-                        (_, result, _) <- readProcessWithExitCode "git" ["diff", "--no-index", "--color-words=.", expectFile, "response"] ""
+                        (_, result, _) <-
+                            readProcessWithExitCode "git" ["diff", "--no-index", "--color-words=.", expectFile, "response"] ""
                         putStrLn result
 
                         if regenerate

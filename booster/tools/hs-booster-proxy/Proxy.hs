@@ -71,7 +71,10 @@ respondEither booster kore req = case req of
     toRequestState :: ExecuteState -> KoreJson.KoreJson
     toRequestState ExecuteState{term = t, substitution, predicate} =
         let subAndPred = catMaybes [KoreJson.term <$> substitution, KoreJson.term <$> predicate]
-         in t{KoreJson.term = foldr (KoreJson.KJAnd $ KoreJson.SortApp (KoreJson.Id "SortGeneratedTopCell") []) t.term subAndPred}
+         in t
+                { KoreJson.term =
+                    foldr (KoreJson.KJAnd $ KoreJson.SortApp (KoreJson.Id "SortGeneratedTopCell") []) t.term subAndPred
+                }
 
     -- loop :: Depth -> ExecuteRequest -> m (Either Response)
     loop currentDepth r = do

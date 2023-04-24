@@ -60,7 +60,7 @@
               haskell-language-server = { inherit index-state; };
               fourmolu = {
                 inherit index-state;
-                version = "0.8.2.0";
+                version = "0.12.0.0";
               };
               hlint = "latest";
             };
