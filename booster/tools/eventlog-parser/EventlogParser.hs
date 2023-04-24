@@ -42,7 +42,8 @@ type CustomUserEvents = '[Start, Stop, LlvmCall]
 
 $(mkSumPatterns @CustomUserEvents)
 
-type CustomUserEventData = (Events.Timestamp, Either Events.EventInfo (Sum CustomUserEvents), Maybe Int)
+type CustomUserEventData =
+    (Events.Timestamp, Either Events.EventInfo (Sum CustomUserEvents), Maybe Int)
 
 parseEventLog :: Events.Event -> CustomUserEventData
 parseEventLog Events.Event{evTime, evSpec, evCap} =
@@ -167,7 +168,8 @@ emitFrameEvent threadId frame = do
             Just b -> b <> charUtf8 '\n' <> charUtf8 ',' <> lazyByteString (encode frame)
     modify' $ \st -> st{frameBuilders = Map.insert threadId builder builders}
 
-emitSpeedscopeProfile :: FilePath -> FrameDict -> [(Events.ThreadId, Builder)] -> Events.Timestamp -> IO ()
+emitSpeedscopeProfile ::
+    FilePath -> FrameDict -> [(Events.ThreadId, Builder)] -> Events.Timestamp -> IO ()
 emitSpeedscopeProfile file frames threads endTime = do
     removeFileIfExists file
     withBinaryFile file AppendMode $ \jsonHandle -> do
@@ -195,7 +197,8 @@ emitSpeedscopeProfile file frames threads endTime = do
                 hPutBuilder jsonHandle $ events <> lazyByteString "]}"
         hPutBuilder jsonHandle $ lazyByteString "]}"
 
-emitLlvmCall :: Handle -> Maybe (ByteString, SomePtr) -> ByteString -> [Either ByteString SomePtr] -> IO ()
+emitLlvmCall ::
+    Handle -> Maybe (ByteString, SomePtr) -> ByteString -> [Either ByteString SomePtr] -> IO ()
 emitLlvmCall llvmCallsHandle ret call args = do
     let prettyRet = case ret of
             Just (ty, SomePtr ptr) -> byteString ty <> lazyByteString " v" <> byteString ptr <> lazyByteString " = "
@@ -205,12 +208,18 @@ emitLlvmCall llvmCallsHandle ret call args = do
             charUtf8 '('
                 <> mconcat
                     ( intersperse (charUtf8 ',') $
-                        map (either (\str -> charUtf8 '"' <> byteString str <> charUtf8 '"') (\(SomePtr ptr) -> charUtf8 'v' <> byteString ptr)) args
+                        map
+                            ( either
+                                (\str -> charUtf8 '"' <> byteString str <> charUtf8 '"')
+                                (\(SomePtr ptr) -> charUtf8 'v' <> byteString ptr)
+                            )
+                            args
                     )
                 <> charUtf8 ')'
     hPutBuilder llvmCallsHandle $ prettyRet <> byteString call <> prettyArgs <> lazyByteString ";\n"
 
-analyse :: [Text] -> [Text] -> [Text] -> Handle -> CustomUserEventData -> StateT ProcessAnalysis IO ()
+analyse ::
+    [Text] -> [Text] -> [Text] -> Handle -> CustomUserEventData -> StateT ProcessAnalysis IO ()
 analyse matching nonMatching notMatchingChildren llvmCallsHandle (evTime, evSpec, evCap) = do
     modify' $ \s@ProcessAnalysis{endTime} -> s{endTime = max endTime evTime}
     case evSpec of
@@ -227,7 +236,12 @@ analyse matching nonMatching notMatchingChildren llvmCallsHandle (evTime, evSpec
             eventThreadId <- expectThreadId cap
             frameDict <- gets frames
             let (eventFrameId, frameDict') =
-                    FrameDict.insert (FrameName $ Text.decodeUtf8 ident) matching nonMatching notMatchingChildren frameDict
+                    FrameDict.insert
+                        (FrameName $ Text.decodeUtf8 ident)
+                        matching
+                        nonMatching
+                        notMatchingChildren
+                        frameDict
                 frameFilter = FrameDict.frameFilter $ fromMaybe frameDict frameDict'
 
                 frame =
@@ -250,7 +264,12 @@ analyse matching nonMatching notMatchingChildren llvmCallsHandle (evTime, evSpec
             eventThreadId <- expectThreadId cap
             frameDict <- gets frames
             let (eventFrameId, frameDict') =
-                    FrameDict.insert (FrameName $ Text.decodeUtf8 ident) matching nonMatching notMatchingChildren frameDict
+                    FrameDict.insert
+                        (FrameName $ Text.decodeUtf8 ident)
+                        matching
+                        nonMatching
+                        notMatchingChildren
+                        frameDict
                 frameFilter = FrameDict.frameFilter frameDict
 
             unless (isNothing frameDict') $ error "expected no new inserts in the FrameDict"

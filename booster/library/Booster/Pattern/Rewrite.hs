@@ -68,7 +68,8 @@ getLLVM = RewriteM $ snd <$> ask
   failed), or a rewritten pattern with a new term and possibly new
   additional constraints.
 -}
-rewriteStep :: [Text] -> [Text] -> Pattern -> RewriteM (RewriteFailed "Rewrite") (RewriteResult Pattern)
+rewriteStep ::
+    [Text] -> [Text] -> Pattern -> RewriteM (RewriteFailed "Rewrite") (RewriteResult Pattern)
 rewriteStep cutLabels terminalLabels pat = do
     let termIdx = kCellTermIndex pat.term
     when (termIdx == None) $ throw (TermIndexIsNone pat.term)

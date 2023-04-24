@@ -171,7 +171,8 @@ pattern SymbolApplication sym sorts args <- Term _ (SymbolApplicationF sym sorts
              in Term
                     argAttributes
                         { isEvaluated = newEvaluatedFlag
-                        , hash = Hashable.hash ("SymbolApplication" :: ByteString, sym, sorts, map (hash . getAttributes) args)
+                        , hash =
+                            Hashable.hash ("SymbolApplication" :: ByteString, sym, sorts, map (hash . getAttributes) args)
                         }
                     $ SymbolApplicationF sym sorts args
 

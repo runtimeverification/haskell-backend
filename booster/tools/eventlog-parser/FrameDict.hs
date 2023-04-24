@@ -48,7 +48,8 @@ data FrameFilter = FrameFilter
     , notMatchingChildrenIds :: !(Set FrameId)
     }
 
-updateFrameFilter :: FrameFilter -> [Text] -> [Text] -> [Text] -> FrameId -> FrameName -> FrameFilter
+updateFrameFilter ::
+    FrameFilter -> [Text] -> [Text] -> [Text] -> FrameId -> FrameName -> FrameFilter
 updateFrameFilter
     FrameFilter
         { matchingIds
@@ -98,7 +99,8 @@ insert frameName matching notMatching notMatchingChildren frameDict =
                         { frameNames = Map.insert frameId frameName (frameNames frameDict)
                         , frameIds = HashMap.insert frameName frameId (frameIds frameDict)
                         , size = unFrameId frameId + 1
-                        , frameFilter = updateFrameFilter (frameFilter frameDict) matching notMatching notMatchingChildren frameId frameName
+                        , frameFilter =
+                            updateFrameFilter (frameFilter frameDict) matching notMatching notMatchingChildren frameId frameName
                         }
              in (frameId, Just frameDict')
 

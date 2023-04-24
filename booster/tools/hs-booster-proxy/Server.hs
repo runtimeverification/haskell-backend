@@ -14,7 +14,13 @@ import Control.Exception (evaluate)
 import Control.Monad (forM_, void)
 import Control.Monad.Catch (bracket)
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Control.Monad.Logger (LogLevel (..), LoggingT (runLoggingT), MonadLoggerIO (askLoggerIO), ToLogStr (toLogStr), defaultLoc)
+import Control.Monad.Logger (
+    LogLevel (..),
+    LoggingT (runLoggingT),
+    MonadLoggerIO (askLoggerIO),
+    ToLogStr (toLogStr),
+    defaultLoc,
+ )
 import Control.Monad.Logger qualified as Logger
 import Data.Conduit.Network (serverSettings)
 import Data.IORef (writeIORef)
@@ -43,7 +49,15 @@ import Kore.JsonRpc qualified as Kore
 import Kore.JsonRpc.Error
 import Kore.JsonRpc.Server
 import Kore.JsonRpc.Types (API, ReqOrRes (Req, Res))
-import Kore.Log (ExeName (..), KoreLogType (LogSomeAction), LogAction (LogAction), TimestampsSwitch (TimestampsDisable), defaultKoreLogOptions, swappableLogger, withLogger)
+import Kore.Log (
+    ExeName (..),
+    KoreLogType (LogSomeAction),
+    LogAction (LogAction),
+    TimestampsSwitch (TimestampsDisable),
+    defaultKoreLogOptions,
+    swappableLogger,
+    withLogger,
+ )
 import Kore.Log qualified as Log
 import Kore.Rewrite.SMT.Lemma (declareSMTLemmas)
 import Kore.Syntax.Definition (ModuleName (ModuleName), SentenceAxiom)
@@ -56,7 +70,18 @@ main :: IO ()
 main = do
     startTime <- getTime Monotonic
     options <- execParser clParser
-    let CLProxyOptions{clOptions = clOPts@CLOptions{definitionFile, mainModuleName, port, logLevels, llvmLibraryFile, eventlogEnabledUserEvents}, koreSolverOptions} = options
+    let CLProxyOptions
+            { clOptions =
+                clOPts@CLOptions
+                    { definitionFile
+                    , mainModuleName
+                    , port
+                    , logLevels
+                    , llvmLibraryFile
+                    , eventlogEnabledUserEvents
+                    }
+            , koreSolverOptions
+            } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
         levelFilter :: Logger.LogSource -> LogLevel -> Bool
         levelFilter _source lvl =
