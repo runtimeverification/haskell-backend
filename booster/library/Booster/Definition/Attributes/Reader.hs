@@ -139,8 +139,16 @@ readConcreteness attributes = do
              in if not $ null overlap
                     then do
                         loc <- readLocation attributes
-                        throwE $ "Concreteness overlap for " <> Text.intercalate "," (Set.toList $ Set.map (Text.decodeUtf8 . fst) overlap) <> " at " <> Text.pack (show loc)
-                    else pure $ SomeConstrained $ Map.fromList [(c, Concrete) | c <- fromMaybe [] cs'] <> Map.fromList [(s, Symbolic) | s <- fromMaybe [] ss']
+                        throwE $
+                            "Concreteness overlap for "
+                                <> Text.intercalate "," (Set.toList $ Set.map (Text.decodeUtf8 . fst) overlap)
+                                <> " at "
+                                <> Text.pack (show loc)
+                    else
+                        pure $
+                            SomeConstrained $
+                                Map.fromList [(c, Concrete) | c <- fromMaybe [] cs']
+                                    <> Map.fromList [(s, Symbolic) | s <- fromMaybe [] ss']
   where
     readVar str = except $ case Text.splitOn ":" str of
         [name, sort] -> Right (Text.encodeUtf8 name, Text.encodeUtf8 sort)

@@ -1,6 +1,17 @@
 {-# LANGUAGE PatternSynonyms #-}
 
-module Booster.Pattern.Binary (Version (..), Block (..), decodeTerm, decodeTerm', decodePattern, encodeMagicHeaderAndVersion, encodePattern, encodeTerm, encodeSingleBlock, decodeSingleBlock) where
+module Booster.Pattern.Binary (
+    Version (..),
+    Block (..),
+    decodeTerm,
+    decodeTerm',
+    decodePattern,
+    encodeMagicHeaderAndVersion,
+    encodePattern,
+    encodeTerm,
+    encodeSingleBlock,
+    decodeSingleBlock,
+) where
 
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
@@ -23,7 +34,15 @@ import Data.Word (Word64)
 import GHC.Word (Word8)
 
 -- | tags indicating the next element in a block, see @'decodeBlock'@
-pattern KORECompositePattern, KOREStringPattern, KORECompositeSort, KORESortVariable, KORESymbol, KOREVariablePattern, KOREVariable :: Word8
+pattern
+    KORECompositePattern
+    , KOREStringPattern
+    , KORECompositeSort
+    , KORESortVariable
+    , KORESymbol
+    , KOREVariablePattern
+    , KOREVariable ::
+        Word8
 pattern KORECompositePattern = 0x4
 pattern KOREStringPattern = 0x5
 pattern KORECompositeSort = 0x6
@@ -147,7 +166,11 @@ decodeString = do
                             [ show n <> " -> " <> show s <> "\n"
                             | (n, s) <- Map.assocs m
                             ]
-                    fail $ "Incorrect offset for interned string at " <> show (position, backref) <> " with table\n " <> unwords offsets
+                    fail $
+                        "Incorrect offset for interned string at "
+                            <> show (position, backref)
+                            <> " with table\n "
+                            <> unwords offsets
         _ -> fail "Incorrect String encoding"
 
 getStack :: DecodeM [Block]
@@ -176,7 +199,14 @@ lookupKoreDefinitionSymbol name = DecodeM $ do
     pure $ case mDef of
         -- return a symbol with dummy attributes if no definition is supplied.
         -- this should be used for testing ONLY!
-        Nothing -> Just $ Symbol name [] [] (SortApp "UNKNOWN" []) (SymbolAttributes PartialFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias)
+        Nothing ->
+            Just $
+                Symbol
+                    name
+                    []
+                    []
+                    (SortApp "UNKNOWN" [])
+                    (SymbolAttributes PartialFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias)
         Just def -> Map.lookup name $ symbols def
 
 {- | Successively decodes items from the given "block" of bytes,

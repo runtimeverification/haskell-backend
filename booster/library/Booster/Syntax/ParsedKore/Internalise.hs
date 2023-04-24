@@ -289,7 +289,9 @@ addModule
                     Except DefinitionError (Def.AliasName, Alias)
                 -- TODO(Ana): do we need to handle attributes?
                 internaliseAlias palias@ParsedAlias{name, sortVars, argSorts, sort, args, rhs} = do
-                    unless (length argSorts == length args) (throwE (DefinitionAliasError name.getId . WrongAliasSortCount $ palias))
+                    unless
+                        (length argSorts == length args)
+                        (throwE (DefinitionAliasError name.getId . WrongAliasSortCount $ palias))
                     let paramNames = (.getId) <$> sortVars
                         params = Def.SortVar . textToBS <$> paramNames
                         argNames = textToBS . (.getId) <$> args
@@ -306,7 +308,9 @@ addModule
                         withExcept (DefinitionAliasError name.getId . InconsistentAliasPattern) $
                             internaliseTermOrPredicate True (Just sortVars) defWithNewSortsAndSymbols.partial rhs
                     let rhsSort = Util.sortOfTermOrPredicate internalRhs
-                    unless (fromMaybe internalResSort rhsSort == internalResSort) (throwE (DefinitionSortError (GeneralError "IncompatibleSorts")))
+                    unless
+                        (fromMaybe internalResSort rhsSort == internalResSort)
+                        (throwE (DefinitionSortError (GeneralError "IncompatibleSorts")))
                     return (internalName, Alias{name = internalName, params, args = internalArgs, rhs = internalRhs})
                 -- filter out "antiLeft" aliases, recognised by name and argument count
                 notPriority :: ParsedAlias -> Bool
@@ -350,7 +354,7 @@ addModule
         -- returning elements that yield the same key separately.
         mappedBy ::
             forall a k.
-            (Ord k) =>
+            Ord k =>
             [a] ->
             (a -> k) ->
             (Map k a, [(k, [a])])
@@ -525,12 +529,15 @@ classifyAxiom parsedAx@ParsedAxiom{axiom, sortVars, attributes} =
                 do
                     -- TODO assert that symbol `name` is indeed a total function (or a constructor)
                     pure Nothing
-        Syntax.KJImplies _ Syntax.KJAnd{first = con1@Syntax.KJApp{}, second = con2@Syntax.KJApp{}} Syntax.KJApp{name}
-            | hasAttribute "constructor"
-            , con1.name == con2.name
-            , con1.name == name ->
-                -- no confusion same constructor. Could assert `name` is a constructor
-                pure Nothing
+        Syntax.KJImplies
+            _
+            Syntax.KJAnd{first = con1@Syntax.KJApp{}, second = con2@Syntax.KJApp{}}
+            Syntax.KJApp{name}
+                | hasAttribute "constructor"
+                , con1.name == con2.name
+                , con1.name == name ->
+                    -- no confusion same constructor. Could assert `name` is a constructor
+                    pure Nothing
         Syntax.KJNot _ (Syntax.KJAnd{first = con1@Syntax.KJApp{}, second = con2@Syntax.KJApp{}})
             | hasAttribute "constructor"
             , con1.name /= con2.name ->
@@ -753,7 +760,8 @@ internaliseSimpleEquation partialDef precond left right sortVars attrs
             then do
                 lhs <- internalisePattern' $ Syntax.KJAnd left.sort left precond
                 rhs <- internalisePattern' right
-                let -- checking the lhs term, too, as a safe approximation
+                let
+                    -- checking the lhs term, too, as a safe approximation
                     -- (rhs may _introduce_ undefined, lhs may _hide_ it)
                     undefinedSymbols =
                         nub . concatMap (Util.filterTermSymbols (not . Util.isDefinedSymbol)) $
@@ -888,7 +896,8 @@ internaliseFunctionEquation partialDef requires args leftTerm right sortVars att
         Except DefinitionError (Def.Variable, Def.Term)
     internaliseArg (Syntax.Id name, sort, term) = do
         variableSort <-
-            withExcept DefinitionSortError $ internaliseSort (Set.fromList $ map (.getId) sortVars) partialDef.sorts sort
+            withExcept DefinitionSortError $
+                internaliseSort (Set.fromList $ map (.getId) sortVars) partialDef.sorts sort
         (Def.Variable{variableSort, variableName = textToBS name},) <$> internaliseTerm' term
 
 addToTheoryWith ::
@@ -947,7 +956,7 @@ internaliseSymbol sorts parsedSymbol = do
    adjacency list mapping. Using a naive algorithm because the subsort
    graph will usually be broad and flat rather than deep.
 -}
-transitiveClosure :: forall k. (Ord k) => Map k (Set.Set k) -> Map k (Set.Set k)
+transitiveClosure :: forall k. Ord k => Map k (Set.Set k) -> Map k (Set.Set k)
 transitiveClosure adjacencies = snd $ update adjacencies
   where
     allKeys = Map.keys adjacencies
