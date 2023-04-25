@@ -25,6 +25,7 @@ import Network.JSONRPC (
  )
 import Numeric.Natural
 import Prettyprinter qualified as Pretty
+import Kore.JsonRpc.Types.Log (LogEntry)
 
 newtype Depth = Depth {getNat :: Natural}
     deriving stock (Show, Eq)
@@ -38,6 +39,10 @@ data ExecuteRequest = ExecuteRequest
     , terminalRules :: !(Maybe [Text])
     , movingAverageStepTimeout :: !(Maybe Bool)
     , stepTimeout :: !(Maybe Int)
+    , logSuccessfulRewrites :: !Bool
+    , logFailedRewrites :: !Bool
+    , logSuccessfulSimplifications :: !Bool
+    , logFailedSimplifications :: !Bool
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -112,6 +117,7 @@ data ExecuteResult = ExecuteResult
     , state :: ExecuteState
     , nextStates :: Maybe [ExecuteState]
     , rule :: Maybe Text
+    , logs :: [LogEntry]
     }
     deriving stock (Generic, Show, Eq)
     deriving
