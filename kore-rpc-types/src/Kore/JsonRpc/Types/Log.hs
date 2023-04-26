@@ -30,19 +30,23 @@ data LogSimplificationResult = Success {
 data LogEntry = 
     RewriteSuccess {
       rewrittenTerm :: Maybe KoreJson,
-      ruleId :: Text
+      ruleId :: Text,
+      origin :: Text
     } |
     RewriteFailure {
       reason :: Text,
-      ruleId :: Text
+      ruleId :: Text,
+      origin :: Text
     } |
     LlvmSimplification {
       originalTerm :: Maybe KoreJson,
-      result :: LogSimplificationResult
+      result :: LogSimplificationResult,
+      origin :: Text
     } |
     Simplification {
       originalTerm :: Maybe KoreJson,
-      result :: LogSimplificationResult
+      result :: LogSimplificationResult,
+      origin :: Text
     }
     deriving stock (Generic, Show, Eq)
     deriving

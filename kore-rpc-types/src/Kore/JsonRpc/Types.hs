@@ -19,13 +19,13 @@ import Deriving.Aeson (
     StripPrefix,
  )
 import GHC.Generics (Generic)
+import Kore.JsonRpc.Types.Log (LogEntry)
 import Kore.Syntax.Json.Types (KoreJson)
 import Network.JSONRPC (
     FromRequest (..),
  )
 import Numeric.Natural
 import Prettyprinter qualified as Pretty
-import Kore.JsonRpc.Types.Log (LogEntry)
 
 newtype Depth = Depth {getNat :: Natural}
     deriving stock (Show, Eq)
