@@ -77,6 +77,7 @@ import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HashMap
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
+import Data.Sequence (Seq)
 import Data.Text (Text)
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
@@ -156,12 +157,12 @@ A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
 A @Simplifier@ can write to the log through 'HasLog'.
 -}
 newtype Simplifier a
-    = Simplifier (StateT SimplifierCache (ReaderT Env SMT) a)
+    = Simplifier (StateT (SimplifierCache, Seq (Maybe Text)) (ReaderT Env SMT) a)
     deriving newtype (Functor, Applicative, Monad)
     deriving newtype (MonadSMT, MonadLog, MonadProf)
     deriving newtype (MonadIO, MonadCatch, MonadThrow, MonadMask)
     deriving newtype (MonadReader Env)
-    deriving newtype (MonadState SimplifierCache)
+    deriving newtype (MonadState (SimplifierCache, Seq (Maybe Text)))
     deriving newtype (MonadBase IO, MonadBaseControl IO)
 
 {- | Run a simplification, returning the result of only one branch.
@@ -172,7 +173,7 @@ that may branch.
 -}
 runSimplifier :: Env -> Simplifier a -> SMT a
 runSimplifier env (Simplifier simplifier) =
-    runReaderT (evalStateT simplifier initCache) env
+    runReaderT (evalStateT simplifier (initCache, mempty)) env
 
 -- | Run a simplification, returning the results along all branches.
 runSimplifierBranch ::
@@ -267,10 +268,10 @@ askOverloadSimplifier :: MonadSimplify m => m OverloadSimplifier
 askOverloadSimplifier = liftSimplifier $ asks overloadSimplifier
 
 getCache :: MonadSimplify m => m SimplifierCache
-getCache = liftSimplifier get
+getCache = fst <$> liftSimplifier get
 
 putCache :: MonadSimplify m => SimplifierCache -> m ()
-putCache = liftSimplifier . put
+putCache c = liftSimplifier $ modify $ \(_c, rules) -> (c, rules)
 
 askHookedSymbols :: MonadSimplify m => m (Map Id Text)
 askHookedSymbols = liftSimplifier $ asks hookedSymbols

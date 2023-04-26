@@ -26,6 +26,7 @@ module Kore.Exec (
     SerializedModule (..),
 ) where
 
+import Control.Arrow (first)
 import Control.Concurrent.MVar
 import Control.DeepSeq (
     deepseq,
@@ -55,7 +56,7 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
-import Data.Sequence (Seq)
+import Data.Sequence (Seq, (><))
 import Data.Text (Text)
 import GHC.Generics qualified as GHC
 import Kore.Attribute.Axiom qualified as Attribute
@@ -403,8 +404,8 @@ data StopLabels = StopLabels
 data RpcExecState v = RpcExecState
     { -- | program state
       rpcProgState :: ProgramState (Pattern v)
-    , -- | rule label/id we have stopped on
-      rpcRule :: Maybe Text
+    , -- | rule label/ids we have applied so far
+      rpcRules :: Seq (Maybe Text, Seq (Maybe Text))
     , -- | execution depth
       rpcDepth :: ExecDepth
     }
@@ -414,7 +415,7 @@ startState :: TermLike RewritingVariableName -> RpcExecState RewritingVariableNa
 startState t =
     RpcExecState
         { rpcProgState = Start $ Pattern.fromTermLike t
-        , rpcRule = Nothing
+        , rpcRules = mempty
         , rpcDepth = ExecDepth 0
         }
 
@@ -503,13 +504,13 @@ rpcExec
             TransitionRule m r (ExecDepth, ProgramState (Pattern v)) ->
             TransitionRule m r (RpcExecState v)
         withRpcExecState transition =
-            \prim RpcExecState{rpcProgState, rpcRule, rpcDepth} ->
-                fmap (\(d, st) -> RpcExecState st rpcRule d) $
+            \prim RpcExecState{rpcProgState, rpcRules, rpcDepth} ->
+                fmap (\(d, st) -> RpcExecState st rpcRules d) $
                     transition prim (rpcDepth, rpcProgState)
 
         toTransitionResult ::
             RpcExecState v ->
-            [(RpcExecState v, Seq (RewriteRule v))] ->
+            [(RpcExecState v, Seq (RewriteRule v, Seq (Maybe Text)))] ->
             (GraphTraversal.TransitionResult (RpcExecState v))
         toTransitionResult prior@RpcExecState{rpcProgState = priorPState} [] =
             case priorPState of
@@ -518,23 +519,26 @@ rpcExec
                 -- returns `Final` to signal that no instructions were left.
                 Start _ -> GraphTraversal.Final prior
                 Rewritten _ -> GraphTraversal.Final prior
-        toTransitionResult prior [(next, rules)]
-            | (l : _) <- mapMaybe isCutPoint $ toList rules =
+        toTransitionResult prior@RpcExecState{rpcRules = priorRules} [(next, rules)]
+            | (_ : _) <- mapMaybe (isCutPoint . fst) (toList rules) =
                 GraphTraversal.Stop
-                    prior{rpcRule = Just l}
-                    [next]
-            | (l : _) <- mapMaybe isTerminalRule $ toList rules =
+                    prior
+                    [next{rpcRules = priorRules >< fmap (first extractUniqueId) rules}]
+            | (_ : _) <- mapMaybe (isTerminalRule . fst) $ toList rules =
                 GraphTraversal.Stop
-                    next{rpcRule = Just l}
+                    next{rpcRules = priorRules >< fmap (first extractUniqueId) rules}
                     []
-        toTransitionResult _prior [(next@RpcExecState{rpcProgState = nextPState}, _rules)] =
+        toTransitionResult RpcExecState{rpcRules = priorRules} [(next@RpcExecState{rpcProgState = nextPState}, rules)] =
             case nextPState of
-                Start _ -> GraphTraversal.Continuing next
-                Rewritten _ -> GraphTraversal.Continuing next
-                Remaining _ -> GraphTraversal.Stuck next
-                Kore.Rewrite.Bottom -> GraphTraversal.Stuck next
+                Start _ -> GraphTraversal.Continuing next{rpcRules = priorRules >< fmap (first extractUniqueId) rules}
+                Rewritten _ -> GraphTraversal.Continuing next{rpcRules = priorRules >< fmap (first extractUniqueId) rules}
+                Remaining _ -> GraphTraversal.Stuck next{rpcRules = priorRules >< fmap (first extractUniqueId) rules}
+                Kore.Rewrite.Bottom -> GraphTraversal.Stuck next{rpcRules = priorRules >< fmap (first extractUniqueId) rules}
         toTransitionResult prior (s : ss) =
             GraphTraversal.Branch prior $ fmap fst (s :| ss)
+
+        extractUniqueId :: RewriteRule v -> Maybe Text
+        extractUniqueId = Attribute.getUniqueId . Attribute.uniqueId . RulePattern.attributes . getRewriteRule
 
         -- helpers to extract a matched rule label or identifier
         isCutPoint, isTerminalRule :: RewriteRule v -> Maybe Text

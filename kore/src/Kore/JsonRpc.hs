@@ -19,6 +19,7 @@ import Data.IORef (readIORef)
 import Data.InternedText (globalInternedTextCache)
 import Data.Limit (Limit (..))
 import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Data.Text (Text)
 import GlobalMain (
     LoadedDefinition (..),
@@ -41,6 +42,7 @@ import Kore.Internal.TermLike qualified as TermLike
 import Kore.JsonRpc.Error
 import Kore.JsonRpc.Server (ErrorObj (..), JsonRpcHandler (JsonRpcHandler), Request (getReqId), Respond, jsonRpcServer)
 import Kore.JsonRpc.Types
+import Kore.JsonRpc.Types.Log
 import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown, srcLoc)
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
@@ -123,13 +125,20 @@ respond serverState moduleName runSMT =
             toStopLabels cpRs tRs =
                 Exec.StopLabels (fromMaybe [] cpRs) (fromMaybe [] tRs)
 
+            mkLogs rules =
+                concat
+                    [ [Simplification Nothing (Success Nothing (fromMaybe "UNKNOWN" s)) "kore-rpc" | s <- toList simps]
+                    ++ [RewriteSuccess Nothing (fromMaybe "UNKNOWN" r) "kore-rpc"]
+                    | (r, simps) <- toList rules
+                    ]
+
             buildResult ::
                 TermLike.Sort ->
                 GraphTraversal.TraversalResult (Exec.RpcExecState TermLike.VariableName) ->
                 Either ErrorObj (API 'Res)
             buildResult sort = \case
                 GraphTraversal.Ended
-                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result}] ->
+                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result, rpcRules = rules}] ->
                         -- Actually not "ended" but out of instructions.
                         -- See @toTransitionResult@ in @rpcExec@.
                         Right $
@@ -140,10 +149,11 @@ respond serverState moduleName runSMT =
                                     , reason = DepthBound
                                     , rule = Nothing
                                     , nextStates = Nothing
+                                    , logs = mkLogs rules
                                     }
                 GraphTraversal.GotStuck
                     _n
-                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result}] ->
+                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result, rpcRules = rules}] ->
                         Right $
                             Execute $
                                 ExecuteResult
@@ -152,46 +162,48 @@ respond serverState moduleName runSMT =
                                     , reason = Stuck
                                     , rule = Nothing
                                     , nextStates = Nothing
+                                    , logs = mkLogs rules
                                     }
                 GraphTraversal.Stopped
-                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRule = Nothing}]
-                    nexts ->
-                        Right $
-                            Execute $
-                                ExecuteResult
-                                    { state = patternToExecState sort rpcProgState
-                                    , depth = Depth depth
-                                    , reason = Branching
-                                    , rule = Nothing
-                                    , nextStates =
-                                        Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
-                                    }
-                GraphTraversal.Stopped
-                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRule = Just lbl}]
+                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRules = rules}]
                     nexts
-                        | lbl `elem` fromMaybe [] cutPointRules ->
+                        | not $ Set.null $ Set.fromList (map fst $ toList rules) `Set.intersection` Set.fromList (maybe [] (map Just) cutPointRules) ->
                             Right $
                                 Execute $
                                     ExecuteResult
                                         { state = patternToExecState sort rpcProgState
                                         , depth = Depth depth
                                         , reason = CutPointRule
-                                        , rule = Just lbl
+                                        , rule = Set.findMin $ Set.fromList (map fst $ toList rules) `Set.intersection` Set.fromList (maybe [] (map Just) cutPointRules)
                                         , nextStates =
                                             Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
+                                        , logs = mkLogs rules
                                         }
-                        | lbl `elem` fromMaybe [] terminalRules ->
+                        | not $ Set.null $ Set.fromList (map fst $ toList rules) `Set.intersection` Set.fromList (maybe [] (map Just) terminalRules) ->
                             Right $
                                 Execute $
                                     ExecuteResult
                                         { state = patternToExecState sort rpcProgState
                                         , depth = Depth depth
                                         , reason = TerminalRule
-                                        , rule = Just lbl
+                                        , rule = Set.findMin $ Set.fromList (map fst $ toList rules) `Set.intersection` Set.fromList (maybe [] (map Just) terminalRules)
                                         , nextStates = Nothing
+                                        , logs = mkLogs rules
+                                        }
+                        | otherwise ->
+                            Right $
+                                Execute $
+                                    ExecuteResult
+                                        { state = patternToExecState sort rpcProgState
+                                        , depth = Depth depth
+                                        , reason = Branching
+                                        , rule = Nothing
+                                        , nextStates =
+                                            Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
+                                        , logs = mkLogs rules
                                         }
                 GraphTraversal.TimedOut
-                    Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState}
+                    Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRules = rules}
                     _ ->
                         Right $
                             Execute $
@@ -201,6 +213,7 @@ respond serverState moduleName runSMT =
                                     , reason = Timeout
                                     , rule = Nothing
                                     , nextStates = Nothing
+                                    , logs = mkLogs rules
                                     }
                 -- these are programmer errors
                 result@GraphTraversal.Aborted{} ->
