@@ -130,11 +130,11 @@ respond serverState moduleName runSMT =
                     [ [ Simplification
                         Nothing
                         (Success Nothing (fromMaybe "UNKNOWN" s))
-                        "kore-rpc"
+                        KoreRpc
                       | fromMaybe False logSuccessfulSimplifications
                       , s <- toList simps
                       ]
-                        ++ [RewriteSuccess Nothing (fromMaybe "UNKNOWN" r) "kore-rpc" | fromMaybe False logSuccessfulRewrites]
+                        ++ [Rewrite (Success Nothing (fromMaybe "UNKNOWN" r)) KoreRpc | fromMaybe False logSuccessfulRewrites]
                     | (r, simps) <- toList rules
                     ]
 

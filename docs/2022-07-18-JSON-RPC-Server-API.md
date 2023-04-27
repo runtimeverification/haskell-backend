@@ -33,12 +33,16 @@ The server runs over sockets and can be interacted with by sending JSON RPC mess
       "format": "KORE",
       "version": 1,
       "term": {}
-    }
+    },
+    "log_successful_rewrites": true,
+    "log_failed_rewrites": true,
+    "log_successful_simplifications": true,
+    "log_failed_simplifications": true
   }
 }
 ```
 
-Optional parameters: `max-depth`, `cut-point-rules`, `terminal-rules`, `moving-average-step-timeout`, `step-timeout` (timeout is in milliseconds), `module` (main module name)
+Optional parameters: `max-depth`, `cut-point-rules`, `terminal-rules`, `moving-average-step-timeout`, `step-timeout` (timeout is in milliseconds), `module` (main module name) and all the `log_*` options, which default to false if unspecified.
 
 _Note: `id` can be an int or a string and each message must have a new `id`. The response objects have the same id as the message._
 
@@ -111,7 +115,7 @@ A field `state` contains the state reached (including optional `predicate` and `
       "predicate": {"format":"KORE", "version":1, "term":{}},
       "substitution": {"format":"KORE", "version":1, "term":{}},
     },
-    "depth": 1
+    "depth": 1,
     "reason": "stuck"
   }
 }
@@ -196,6 +200,60 @@ If `"reason": "cut-point-rule"`, the `next-states` field contains the next state
   }
 }
 ```
+
+All the correct responses will also include a `logs` field with objects of the following structure:
+
+```json
+{
+  "tag": "Simplification",
+  "origin": "kore_rpc",
+  "original_term": {"format": "KORE", "version": 1, "term": {}},
+  "result": {
+    "tag": "Success",
+    "rule-id": "7aa41f364663373c0dc6613c939af530caa55b28f158986657981ee1d8d93fcb",
+    "rewritten_term": {"format": "KORE", "version": 1, "term": {}}
+  }
+}
+
+{
+  "tag": "Simplification",
+  "origin": "kore_rpc",  
+  "original_term": {"format": "KORE", "version": 1, "term": {}},
+  "result": {
+    "tag": "Failure",
+    "rule-id": "f6e4ebb55eec38bc4c83677e31cf2a40a72f5f943b2ea1b613049c92af92125c",
+    "reason": "..."
+  }
+}
+```
+
+where `original_term` and `rewritten_term` are optional and `origin` is one of `kore_rpc`, `booster` or `llvm`. The above will be emitted when `log_successful_simplifications` and `log_failed_simplifications` are set to true respectively. Not all backends may support both message types. When `log_successful_rewrites` or `log_failed_rewrites` is sent, the following will be logged respectively:
+
+```json
+{
+  "tag": "Rewrite",
+  "origin": "kore_rpc",
+  "result": {
+    "tag": "Success",
+    "rule-id": "7aa41f364663373c0dc6613c939af530caa55b28f158986657981ee1d8d93fcb",
+    "rewritten_term": {"format": "KORE", "version": 1, "term": {}}
+  }
+}
+
+{
+  "tag": "Rewrite",
+  "origin": "kore_rpc",  
+  "result": {
+    "tag": "Failure",
+    "rule-id": "f6e4ebb55eec38bc4c83677e31cf2a40a72f5f943b2ea1b613049c92af92125c",
+    "reason": "..."
+  }
+}
+```
+
+where `rewritten_term` is optional and `origin` is one of `kore_rpc`, `booster` or `llvm`.
+
+
 ## Implies
 
 ### Request:

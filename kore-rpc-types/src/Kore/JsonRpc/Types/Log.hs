@@ -14,7 +14,13 @@ import Deriving.Aeson (
     OmitNothingFields,
  )
 
-data LogSimplificationResult
+data LogOrigin = KoreRpc | Booster | Llvm
+    deriving stock (Generic, Show, Eq)
+    deriving
+        (FromJSON, ToJSON)
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] LogOrigin
+
+data LogRewriteResult
     = Success
         { rewrittenTerm :: Maybe KoreJson
         , ruleId :: Text
@@ -26,28 +32,17 @@ data LogSimplificationResult
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] LogSimplificationResult
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] LogRewriteResult
 
 data LogEntry
-    = RewriteSuccess
-        { rewrittenTerm :: Maybe KoreJson
-        , ruleId :: Text
-        , origin :: Text
-        }
-    | RewriteFailure
-        { reason :: Text
-        , ruleId :: Text
-        , origin :: Text
-        }
-    | LlvmSimplification
-        { originalTerm :: Maybe KoreJson
-        , result :: LogSimplificationResult
-        , origin :: Text
+    = Rewrite
+        { result :: LogRewriteResult
+        , origin :: LogOrigin
         }
     | Simplification
         { originalTerm :: Maybe KoreJson
-        , result :: LogSimplificationResult
-        , origin :: Text
+        , result :: LogRewriteResult
+        , origin :: LogOrigin
         }
     deriving stock (Generic, Show, Eq)
     deriving
