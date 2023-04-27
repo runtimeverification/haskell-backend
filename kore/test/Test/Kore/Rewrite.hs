@@ -12,7 +12,6 @@ import Data.Generics.Wrapped (
 import Data.Limit (
     Limit (..),
  )
-import Data.Text (Text)
 import Hedgehog (
     Gen,
  )
@@ -57,6 +56,7 @@ import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 import Test.Tasty.Hedgehog
+import Kore.Attribute.Axiom (UniqueId)
 
 test_stepStrategy :: [TestTree]
 test_stepStrategy =
@@ -377,7 +377,7 @@ runStepWorker ::
     result
         ~ Strategy.ExecutionGraph
             (ProgramState (Pattern RewritingVariableName))
-            (RewriteRule RewritingVariableName, Strategy.Seq (Maybe Text)) =>
+            (RewriteRule RewritingVariableName, Strategy.Seq UniqueId) =>
     (Env -> Simplifier result -> IO result) ->
     -- | depth limit
     Limit Natural ->
