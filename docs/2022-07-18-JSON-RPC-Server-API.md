@@ -205,7 +205,7 @@ All the correct responses will also include a `logs` field with objects of the f
 
 ```json
 {
-  "tag": "Simplification",
+  "tag": "simplification",
   "origin": "kore_rpc",
   "original_term": {"format": "KORE", "version": 1, "term": {}},
   "result": {
@@ -216,7 +216,7 @@ All the correct responses will also include a `logs` field with objects of the f
 }
 
 {
-  "tag": "Simplification",
+  "tag": "simplification",
   "origin": "kore_rpc",  
   "original_term": {"format": "KORE", "version": 1, "term": {}},
   "result": {
@@ -231,7 +231,7 @@ where `original_term` and `rewritten_term` are optional and `origin` is one of `
 
 ```json
 {
-  "tag": "Rewrite",
+  "tag": "rewrite",
   "origin": "kore_rpc",
   "result": {
     "tag": "Success",
@@ -241,7 +241,7 @@ where `original_term` and `rewritten_term` are optional and `origin` is one of `
 }
 
 {
-  "tag": "Rewrite",
+  "tag": "rewrite",
   "origin": "kore_rpc",  
   "result": {
     "tag": "Failure",

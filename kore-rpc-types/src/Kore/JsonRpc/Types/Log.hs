@@ -11,14 +11,14 @@ import Deriving.Aeson (
     CamelToKebab,
     CustomJSON (..),
     FieldLabelModifier,
-    OmitNothingFields,
+    OmitNothingFields, ConstructorTagModifier,
  )
 
 data LogOrigin = KoreRpc | Booster | Llvm
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] LogOrigin
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab], ConstructorTagModifier '[CamelToKebab]] LogOrigin
 
 data LogRewriteResult
     = Success
@@ -32,7 +32,7 @@ data LogRewriteResult
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] LogRewriteResult
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab], ConstructorTagModifier '[CamelToKebab]] LogRewriteResult
 
 data LogEntry
     = Rewrite
@@ -47,4 +47,4 @@ data LogEntry
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] LogEntry
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab], ConstructorTagModifier '[CamelToKebab]] LogEntry
