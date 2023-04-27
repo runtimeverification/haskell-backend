@@ -209,7 +209,7 @@ All the correct responses will also include a `logs` field with objects of the f
   "origin": "kore_rpc",
   "original_term": {"format": "KORE", "version": 1, "term": {}},
   "result": {
-    "tag": "Success",
+    "tag": "success",
     "rule-id": "7aa41f364663373c0dc6613c939af530caa55b28f158986657981ee1d8d93fcb",
     "rewritten_term": {"format": "KORE", "version": 1, "term": {}}
   }
@@ -220,7 +220,7 @@ All the correct responses will also include a `logs` field with objects of the f
   "origin": "kore_rpc",  
   "original_term": {"format": "KORE", "version": 1, "term": {}},
   "result": {
-    "tag": "Failure",
+    "tag": "failure",
     "rule-id": "f6e4ebb55eec38bc4c83677e31cf2a40a72f5f943b2ea1b613049c92af92125c",
     "reason": "..."
   }
@@ -234,7 +234,7 @@ where `original_term` and `rewritten_term` are optional and `origin` is one of `
   "tag": "rewrite",
   "origin": "kore_rpc",
   "result": {
-    "tag": "Success",
+    "tag": "success",
     "rule-id": "7aa41f364663373c0dc6613c939af530caa55b28f158986657981ee1d8d93fcb",
     "rewritten_term": {"format": "KORE", "version": 1, "term": {}}
   }
@@ -244,7 +244,7 @@ where `original_term` and `rewritten_term` are optional and `origin` is one of `
   "tag": "rewrite",
   "origin": "kore_rpc",  
   "result": {
-    "tag": "Failure",
+    "tag": "failure",
     "rule-id": "f6e4ebb55eec38bc4c83677e31cf2a40a72f5f943b2ea1b613049c92af92125c",
     "reason": "..."
   }
