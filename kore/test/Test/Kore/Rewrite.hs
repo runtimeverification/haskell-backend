@@ -18,6 +18,7 @@ import Hedgehog (
 import Hedgehog qualified
 import Hedgehog.Gen qualified
 import Hedgehog.Range qualified
+import Kore.Attribute.Axiom (UniqueId)
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Pattern (
@@ -56,7 +57,6 @@ import Test.Kore.Simplify
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 import Test.Tasty.Hedgehog
-import Kore.Attribute.Axiom (UniqueId)
 
 test_stepStrategy :: [TestTree]
 test_stepStrategy =
