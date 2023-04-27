@@ -12,6 +12,7 @@ import Data.Generics.Wrapped (
 import Data.Limit (
     Limit (..),
  )
+import Data.Text (Text)
 import Hedgehog (
     Gen,
  )
@@ -376,7 +377,7 @@ runStepWorker ::
     result
         ~ Strategy.ExecutionGraph
             (ProgramState (Pattern RewritingVariableName))
-            (RewriteRule RewritingVariableName) =>
+            (RewriteRule RewritingVariableName, Strategy.Seq (Maybe Text)) =>
     (Env -> Simplifier result -> IO result) ->
     -- | depth limit
     Limit Natural ->

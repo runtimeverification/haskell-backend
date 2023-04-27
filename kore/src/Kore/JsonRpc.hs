@@ -97,7 +97,7 @@ respond ::
     Respond (API 'Req) m (API 'Res)
 respond serverState moduleName runSMT =
     \case
-        Execute ExecuteRequest{state, maxDepth, _module, cutPointRules, terminalRules, movingAverageStepTimeout, stepTimeout} -> withMainModule (coerce _module) $ \serializedModule lemmas ->
+        Execute ExecuteRequest{state, maxDepth, _module, cutPointRules, terminalRules, movingAverageStepTimeout, stepTimeout, logSuccessfulRewrites, logSuccessfulSimplifications} -> withMainModule (coerce _module) $ \serializedModule lemmas ->
             case PatternVerifier.runPatternVerifier (verifierContext serializedModule) $
                 PatternVerifier.verifyStandalonePattern Nothing $
                     PatternJson.toParsedPattern $
@@ -127,8 +127,14 @@ respond serverState moduleName runSMT =
 
             mkLogs rules =
                 concat
-                    [ [Simplification Nothing (Success Nothing (fromMaybe "UNKNOWN" s)) "kore-rpc" | s <- toList simps]
-                    ++ [RewriteSuccess Nothing (fromMaybe "UNKNOWN" r) "kore-rpc"]
+                    [ [ Simplification
+                        Nothing
+                        (Success Nothing (fromMaybe "UNKNOWN" s))
+                        "kore-rpc"
+                      | fromMaybe False logSuccessfulSimplifications
+                      , s <- toList simps
+                      ]
+                        ++ [RewriteSuccess Nothing (fromMaybe "UNKNOWN" r) "kore-rpc" | fromMaybe False logSuccessfulRewrites]
                     | (r, simps) <- toList rules
                     ]
 
