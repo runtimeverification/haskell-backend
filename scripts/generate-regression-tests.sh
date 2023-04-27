@@ -1,7 +1,56 @@
 #!/usr/bin/env bash
 
 shopt -s extglob
-set -exuo pipefail
+set -e -o pipefail
+
+log() {
+    level=${2:-info}
+    echo "$(date +'%Y-%m-%d %T.%N') [$level] $1"
+}
+
+err() {
+    log "$1" error
+    log "Aborting script execution." error
+    return 1
+}
+
+# working directory
+if [ -z "$KORE" ]; then
+    KORE=$(cd $(dirname $0)/.. && pwd)
+    log "No working directory, defaulting to $KORE" warn
+else
+    KORE=$(realpath $KORE)
+    [ -d "$KORE" ] || err "$KORE: no such directory"
+fi
+
+pushd $KORE
+trap popd EXIT
+
+case $(uname) in
+    # MacOS
+    Darwin*)
+        sed="gsed"
+    ;;
+    # Assumed to be Linux
+    *)
+        sed="sed"
+    ;;
+esac
+which $sed > /dev/null || err "$sed tool not available"
+
+# evm-semantics checkout (created unless one is provided)
+if [ -z "${EVM_SEMANTICS}" ]; then
+    log "No evm-semantics directory provided, using $KORE/evm-semantics" info
+    EVM_SEMANTICS=$KORE/evm-semantics
+    git clone git@github.com:runtimeverification/evm-semantics.git $EVM_SEMANTICS || \
+        [ -f "${EVM_SEMANTICS}/include/kframework/evm.md" ] || \
+        err "Unable to use $KORE/evm-semantics directory"
+    (cd $EVM_SEMANTICS && git submodule update --init --recursive)
+else
+    EVM_SEMANTICS=$(realpath ${EVM_SEMANTICS})
+    [ -f "$EVM_SEMANTICS/include/kframework/evm.md" ] || \
+        err "Provided evm-semantics directory '${EVM_SEMANTICS}' appears damaged"
+fi
 
 kollect() {
     local name="$1"
@@ -12,7 +61,7 @@ kollect() {
     local spec=test-$name-spec.kore
     local tmp=$name-tmp
 
-    cd $KORE/evm-semantics
+    cd ${EVM_SEMANTICS}
 
     mkdir $tmp
     mv $archive $tmp
@@ -23,66 +72,74 @@ kollect() {
     mv vdefinition.kore $def
     mv spec.kore $spec
 
-    $KORE/scripts/trim-source-paths.sh *.kore
-    sed -i "s/result.kore/$script.out/g" test-$name.sh
-    sed -i "s/vdefinition.kore/$def/g" test-$name.sh
-    sed -i "s/spec.kore/$spec/g" test-$name.sh
+    sed -i -e "s,${EVM_SEMANTICS}/,evm-semantics/,g" *.kore
+    sed -i -e "s/result.kore/$script.out/g" \
+        -e "s/vdefinition.kore/$def/g" \
+        -e "s/spec.kore/$spec/g" \
+        $script
 
-    mv * $KORE/evm-semantics
-    cd $KORE/evm-semantics
-    rm -rf $tmp
+    cd ..
+    mv $tmp/* .
+    rmdir $tmp
 }
 
 build-evm() {
-    cd $KORE
-    git clone git@github.com:runtimeverification/evm-semantics.git
-    cd evm-semantics
+    log "Checking out and building latest master in ${EVM_SEMANTICS}"
+    cd ${EVM_SEMANTICS}
+    git checkout master
+    git pull
     git submodule update --init --recursive
-    make plugin-deps
+    make deps plugin-deps poetry kevm-pyk
     export PATH=$(pwd)/.build/usr/bin:$PATH
     make build-haskell
 }
 
+# test paths will be prefixed with tests/specs, and suffixed with -spec.k.prove
+ALL_TESTS="\
+        examples/sum-to-n \
+        functional/lemmas \
+        benchmarks/storagevar03 \
+        erc20/ds/totalSupply \
+        mcd/flipper-addu48u48-fail-rough \
+        mcd/dsvalue-peek-pass-rough \
+        benchmarks/functional \
+        "
+
 generate-evm() {
-    cd $KORE/evm-semantics
+    local prior=$(pwd)
+
+    TARGETS=$@
+
+    if [ -z "$TARGETS" ]; then
+        TARGETS=$ALL_TESTS
+    fi
+
+    log "Generating test data for tests $TARGETS"
+
+    cd ${EVM_SEMANTICS}
+
+    # FIXME check that test files actually exist before running anything?
 
     export \
         TEST_CONCRETE_BACKEND=haskell \
         TEST_SYMBOLIC_BACKEND=haskell \
-        KEVM_OPTS=--bug-report \
         CHECK=true \
         KEEP_OUTPUTS=true
 
-    make tests/specs/examples/sum-to-n-spec.k.prove -s -e
-    kollect sum-to-n
-
-    make tests/specs/functional/lemmas-spec.k.prove -s -e
-    kollect lemmas
-
-    make tests/specs/benchmarks/storagevar03-spec.k.prove -s -e
-    kollect storagevar03
-
-    make tests/specs/erc20/ds/totalSupply-spec.k.prove -s -e
-    kollect totalSupply
-
-    make tests/specs/mcd/flipper-addu48u48-fail-rough-spec.k.prove -s -e
-    kollect flipper-addu48u48-fail-rough
-
-    make tests/specs/mcd/dsvalue-peek-pass-rough-spec.k.prove -s -e
-    kollect dsvalue-peek-pass-rough
-
-    make tests/specs/benchmarks/functional-spec.k.prove -s -e
-    kollect functional
+    for TEST in $TARGETS; do
+        log "Running $TEST"
+        make tests/specs/$TEST-spec.k.prove -e  KPROVE_OPTS="--bug-report"
+        log "Collecting data for $TEST"
+        kollect $(basename $TEST)
+    done
 }
 
 replace-tests() {
     local testdir=$KORE/$1
-    local tests=$KORE/$2/test-*
+    local tests=$2/test-*
 
-    if [ -d $testdir ]
+    if [ ! -d $testdir ]
     then
-        rm $testdir/!(*.golden|Makefile)
-    else
         mkdir $testdir
         echo "include \$(CURDIR)/../include.mk" > $testdir/Makefile
         echo "" >> $testdir/Makefile
@@ -92,6 +149,6 @@ replace-tests() {
 }
 
 build-evm
-generate-evm
-replace-tests "test/regression-evm" "evm-semantics"
+generate-evm $@
+replace-tests "test/regression-evm" ${EVM_SEMANTICS}
 rm -rf $KORE/evm-semantics
