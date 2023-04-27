@@ -34,10 +34,10 @@ The server runs over sockets and can be interacted with by sending JSON RPC mess
       "version": 1,
       "term": {}
     },
-    "log_successful_rewrites": true,
-    "log_failed_rewrites": true,
-    "log_successful_simplifications": true,
-    "log_failed_simplifications": true
+    "log-successful-rewrites": true,
+    "log-failed-rewrites": true,
+    "log-successful-simplifications": true,
+    "log-failed-simplifications": true
   }
 }
 ```
@@ -116,7 +116,8 @@ A field `state` contains the state reached (including optional `predicate` and `
       "substitution": {"format":"KORE", "version":1, "term":{}},
     },
     "depth": 1,
-    "reason": "stuck"
+    "reason": "stuck",
+    "logs": []
   }
 }
 ```
@@ -140,7 +141,8 @@ If `"reason":  "terminal-rule"`, an additional `rule` field indicates which of t
     },
     "depth": 1,
     "reason": "terminal-rule",
-    "rule": "ruleFoo"
+    "rule": "ruleFoo",
+    "logs": []
   }
 }
 ```
@@ -170,7 +172,8 @@ If `"reason": "branching"`, an additional `next-states` field contains all follo
         "predicate": {"format":"KORE", "version":1, "term":{}},
         "substitution": {"format":"KORE", "version":1, "term":{}},
       }
-    ]
+    ],
+    "logs": []
   }
 }
 ```
@@ -196,29 +199,30 @@ If `"reason": "cut-point-rule"`, the `next-states` field contains the next state
         "predicate": {"format":"KORE", "version":1, "term":{}},
         "substitution": {"format":"KORE", "version":1, "term":{}},
       }
-    ]
+    ],
+    "logs": []
   }
 }
 ```
 
-All the correct responses will also include a `logs` field with objects of the following structure:
+The `logs` field in the correct responses (if not empty) will contain objects of the following structure:
 
 ```json
 {
   "tag": "simplification",
-  "origin": "kore_rpc",
-  "original_term": {"format": "KORE", "version": 1, "term": {}},
+  "origin": "kore-rpc",
+  "original-term": {"format": "KORE", "version": 1, "term": {}},
   "result": {
     "tag": "success",
     "rule-id": "7aa41f364663373c0dc6613c939af530caa55b28f158986657981ee1d8d93fcb",
-    "rewritten_term": {"format": "KORE", "version": 1, "term": {}}
+    "rewritten-term": {"format": "KORE", "version": 1, "term": {}}
   }
 }
 
 {
   "tag": "simplification",
-  "origin": "kore_rpc",  
-  "original_term": {"format": "KORE", "version": 1, "term": {}},
+  "origin": "kore-rpc",  
+  "original-term": {"format": "KORE", "version": 1, "term": {}},
   "result": {
     "tag": "failure",
     "rule-id": "f6e4ebb55eec38bc4c83677e31cf2a40a72f5f943b2ea1b613049c92af92125c",
@@ -227,22 +231,22 @@ All the correct responses will also include a `logs` field with objects of the f
 }
 ```
 
-where `original_term` and `rewritten_term` are optional and `origin` is one of `kore_rpc`, `booster` or `llvm`. The above will be emitted when `log_successful_simplifications` and `log_failed_simplifications` are set to true respectively. Not all backends may support both message types. When `log_successful_rewrites` or `log_failed_rewrites` is sent, the following will be logged respectively:
+where `original-term` and `rewritten-term` are optional and `origin` is one of `kore-rpc`, `booster` or `llvm`. The above will be emitted when `log-successful-simplifications` and `log-failed-simplifications` are set to true respectively. Not all backends may support both message types. When `log-successful-rewrites` or `log-failed-rewrites` is sent, the following will be logged respectively:
 
 ```json
 {
   "tag": "rewrite",
-  "origin": "kore_rpc",
+  "origin": "kore-rpc",
   "result": {
     "tag": "success",
     "rule-id": "7aa41f364663373c0dc6613c939af530caa55b28f158986657981ee1d8d93fcb",
-    "rewritten_term": {"format": "KORE", "version": 1, "term": {}}
+    "rewritten-term": {"format": "KORE", "version": 1, "term": {}}
   }
 }
 
 {
   "tag": "rewrite",
-  "origin": "kore_rpc",  
+  "origin": "kore-rpc",  
   "result": {
     "tag": "failure",
     "rule-id": "f6e4ebb55eec38bc4c83677e31cf2a40a72f5f943b2ea1b613049c92af92125c",
@@ -251,7 +255,7 @@ where `original_term` and `rewritten_term` are optional and `origin` is one of `
 }
 ```
 
-where `rewritten_term` is optional and `origin` is one of `kore_rpc`, `booster` or `llvm`.
+where `rewritten-term` is optional and `origin` is one of `kore-rpc`, `booster` or `llvm`.
 
 
 ## Implies

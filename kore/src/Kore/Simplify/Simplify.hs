@@ -129,6 +129,7 @@ import SMT (
     MonadSMT (..),
     SMT,
  )
+import Kore.Attribute.Axiom (UniqueId)
 
 -- * Simplifier
 
@@ -157,12 +158,12 @@ A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
 A @Simplifier@ can write to the log through 'HasLog'.
 -}
 newtype Simplifier a
-    = Simplifier (StateT (SimplifierCache, Seq (Maybe Text)) (ReaderT Env SMT) a)
+    = Simplifier (StateT (SimplifierCache, Seq UniqueId) (ReaderT Env SMT) a)
     deriving newtype (Functor, Applicative, Monad)
     deriving newtype (MonadSMT, MonadLog, MonadProf)
     deriving newtype (MonadIO, MonadCatch, MonadThrow, MonadMask)
     deriving newtype (MonadReader Env)
-    deriving newtype (MonadState (SimplifierCache, Seq (Maybe Text)))
+    deriving newtype (MonadState (SimplifierCache, Seq UniqueId))
     deriving newtype (MonadBase IO, MonadBaseControl IO)
 
 {- | Run a simplification, returning the result of only one branch.

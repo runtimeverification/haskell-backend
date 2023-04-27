@@ -82,6 +82,8 @@ import Log qualified
 import Prelude.Kore
 import Pretty qualified
 import SMT qualified
+import Kore.Attribute.Axiom (Label(Label), getUniqueId, UniqueId (UniqueId), unLabel)
+import Data.List.Extra (mconcatMap)
 
 respond ::
     forall m.
@@ -125,17 +127,27 @@ respond serverState moduleName runSMT =
             toStopLabels cpRs tRs =
                 Exec.StopLabels (fromMaybe [] cpRs) (fromMaybe [] tRs)
 
+
+            containsLabelOrRuleId rules = \case
+                Nothing -> Nothing
+                Just lblsOrRuleIds -> 
+                    let requestSet = 
+                            Set.fromList $ concat [ [Left $ Label $ Just lblOrRid, Right $ UniqueId $ Just lblOrRid] | lblOrRid <- lblsOrRuleIds ]
+                        ruleSet =
+                            Set.fromList $ concat [ [Left lbl, Right ruleId] | ((ruleId, lbl), _) <- toList rules ]
+                    in
+                        either unLabel getUniqueId <$> Set.lookupMin (requestSet `Set.intersection` ruleSet)
             mkLogs rules =
                 concat
                     [ [ Simplification
                         Nothing
-                        (Success Nothing (fromMaybe "UNKNOWN" s))
+                        (Success Nothing (fromMaybe "UNKNOWN" $ getUniqueId s))
                         KoreRpc
                       | fromMaybe False logSuccessfulSimplifications
                       , s <- toList simps
                       ]
-                        ++ [Rewrite (Success Nothing (fromMaybe "UNKNOWN" r)) KoreRpc | fromMaybe False logSuccessfulRewrites]
-                    | (r, simps) <- toList rules
+                        ++ [Rewrite (Success Nothing (fromMaybe "UNKNOWN" $ getUniqueId r)) KoreRpc | fromMaybe False logSuccessfulRewrites]
+                    | ((r,_), simps) <- toList rules
                     ]
 
             buildResult ::
@@ -173,26 +185,26 @@ respond serverState moduleName runSMT =
                 GraphTraversal.Stopped
                     [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRules = rules}]
                     nexts
-                        | not $ Set.null $ Set.fromList (map fst $ toList rules) `Set.intersection` Set.fromList (maybe [] (map Just) cutPointRules) ->
+                        | Just rule <- containsLabelOrRuleId (mconcatMap Exec.rpcRules nexts) cutPointRules ->
                             Right $
                                 Execute $
                                     ExecuteResult
                                         { state = patternToExecState sort rpcProgState
                                         , depth = Depth depth
                                         , reason = CutPointRule
-                                        , rule = Set.findMin $ Set.fromList (map fst $ toList rules) `Set.intersection` Set.fromList (maybe [] (map Just) cutPointRules)
+                                        , rule
                                         , nextStates =
                                             Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
                                         , logs = mkLogs rules
                                         }
-                        | not $ Set.null $ Set.fromList (map fst $ toList rules) `Set.intersection` Set.fromList (maybe [] (map Just) terminalRules) ->
+                        | Just rule <- containsLabelOrRuleId rules terminalRules ->
                             Right $
                                 Execute $
                                     ExecuteResult
                                         { state = patternToExecState sort rpcProgState
                                         , depth = Depth depth
                                         , reason = TerminalRule
-                                        , rule = Set.findMin $ Set.fromList (map fst $ toList rules) `Set.intersection` Set.fromList (maybe [] (map Just) terminalRules)
+                                        , rule
                                         , nextStates = Nothing
                                         , logs = mkLogs rules
                                         }

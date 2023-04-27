@@ -36,7 +36,6 @@ import Data.Stream.Infinite (
     Stream,
  )
 import Data.Stream.Infinite qualified as Stream
-import Data.Text (Text)
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Axiom qualified as Attribute
@@ -77,6 +76,7 @@ import Pretty (
     Pretty,
  )
 import Pretty qualified
+import Kore.Attribute.Axiom (UniqueId)
 
 -- | The program's state during symbolic execution.
 data ProgramState a
@@ -173,7 +173,7 @@ transitionRule ::
     ExecutionMode ->
     TransitionRule
         Simplifier
-        (RewriteRule RewritingVariableName, Seq (Maybe Text))
+        (RewriteRule RewritingVariableName, Seq UniqueId)
         (ProgramState (Pattern RewritingVariableName))
 transitionRule rewriteGroups = transitionRuleWorker
   where
@@ -229,7 +229,7 @@ transitionRule rewriteGroups = transitionRuleWorker
 deriveResults ::
     Comonad w =>
     Result.Results (w (RulePattern variable)) a ->
-    TransitionT (RewriteRule variable, Seq (Maybe Text)) Simplifier (ProgramState a)
+    TransitionT (RewriteRule variable, Seq UniqueId) Simplifier (ProgramState a)
 deriveResults Result.Results{results, remainders} =
     if null results && null remainders
         then pure Bottom
@@ -237,7 +237,7 @@ deriveResults Result.Results{results, remainders} =
   where
     addResults results' = asum (addResult <$> results')
     addResult Result.Result{appliedRule, result} = do
-        (_, rules :: Seq (Maybe Text)) <- lift get
+        (_, rules :: Seq UniqueId) <- lift get
         lift $ modify $ \(cache, _rules) -> (cache, mempty)
         addRule (RewriteRule $ extract appliedRule, rules)
         asum (pure . Rewritten <$> toList result)

@@ -257,7 +257,7 @@ applyEquation _ equation result = do
     let results = OrPattern.fromPattern result
     let simplify = return
     debugApplyEquation equation result
-    modify $ \(cache, equations) -> (cache, equations |> Attribute.getUniqueId (Attribute.uniqueId $ attributes equation))
+    modify $ \(cache, equations) -> (cache, equations |> Attribute.uniqueId (attributes equation))
     simplify results
 
 {- | Use a 'MatchResult' to instantiate an 'Equation'.
