@@ -26,7 +26,7 @@ module Kore.Exec (
     SerializedModule (..),
 ) where
 
-import Control.Arrow (first, Arrow ((&&&)))
+import Control.Arrow (Arrow ((&&&)), first)
 import Control.Concurrent.MVar
 import Control.DeepSeq (
     deepseq,
@@ -59,6 +59,7 @@ import Data.Map.Strict qualified as Map
 import Data.Sequence (Seq, (><))
 import Data.Text (Text)
 import GHC.Generics qualified as GHC
+import Kore.Attribute.Axiom (Label, UniqueId)
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Definition
 import Kore.Attribute.Symbol (
@@ -222,7 +223,6 @@ import SMT (
 import System.Exit (
     ExitCode (..),
  )
-import Kore.Attribute.Axiom (UniqueId, Label)
 
 -- | Semantic rule used during execution.
 type Rewrite = RewriteRule RewritingVariableName

@@ -38,6 +38,7 @@ import Data.Stream.Infinite (
 import Data.Stream.Infinite qualified as Stream
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
+import Kore.Attribute.Axiom (UniqueId)
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Debug
 import Kore.Internal.Pattern (
@@ -76,7 +77,6 @@ import Pretty (
     Pretty,
  )
 import Pretty qualified
-import Kore.Attribute.Axiom (UniqueId)
 
 -- | The program's state during symbolic execution.
 data ProgramState a

@@ -81,6 +81,7 @@ import Data.Sequence (Seq)
 import Data.Text (Text)
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
+import Kore.Attribute.Axiom (UniqueId)
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Debug
 import Kore.Equation.DebugEquation (AttemptEquationError)
@@ -129,7 +130,6 @@ import SMT (
     MonadSMT (..),
     SMT,
  )
-import Kore.Attribute.Axiom (UniqueId)
 
 -- * Simplifier
 
