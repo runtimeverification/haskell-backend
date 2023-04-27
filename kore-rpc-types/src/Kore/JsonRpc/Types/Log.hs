@@ -9,9 +9,10 @@ import Kore.Syntax.Json.Types (KoreJson)
 
 import Deriving.Aeson (
     CamelToKebab,
+    ConstructorTagModifier,
     CustomJSON (..),
     FieldLabelModifier,
-    OmitNothingFields, ConstructorTagModifier,
+    OmitNothingFields,
  )
 
 data LogOrigin = KoreRpc | Booster | Llvm
