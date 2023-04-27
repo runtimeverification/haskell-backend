@@ -39,10 +39,10 @@ data ExecuteRequest = ExecuteRequest
     , terminalRules :: !(Maybe [Text])
     , movingAverageStepTimeout :: !(Maybe Bool)
     , stepTimeout :: !(Maybe Int)
-    , logSuccessfulRewrites :: !Bool
-    , logFailedRewrites :: !Bool
-    , logSuccessfulSimplifications :: !Bool
-    , logFailedSimplifications :: !Bool
+    , logSuccessfulRewrites :: !(Maybe Bool)
+    , logFailedRewrites :: !(Maybe Bool)
+    , logSuccessfulSimplifications :: !(Maybe Bool)
+    , logFailedSimplifications :: !(Maybe Bool)
     }
     deriving stock (Generic, Show, Eq)
     deriving
