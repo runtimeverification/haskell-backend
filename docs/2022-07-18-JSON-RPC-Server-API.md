@@ -42,7 +42,7 @@ The server runs over sockets and can be interacted with by sending JSON RPC mess
 }
 ```
 
-Optional parameters: `max-depth`, `cut-point-rules`, `terminal-rules`, `moving-average-step-timeout`, `step-timeout` (timeout is in milliseconds), `module` (main module name) and all the `log_*` options, which default to false if unspecified.
+Optional parameters: `max-depth`, `cut-point-rules`, `terminal-rules`, `moving-average-step-timeout`, `step-timeout` (timeout is in milliseconds), `module` (main module name) and all the `log-*` options, which default to false if unspecified.
 
 _Note: `id` can be an int or a string and each message must have a new `id`. The response objects have the same id as the message._
 
