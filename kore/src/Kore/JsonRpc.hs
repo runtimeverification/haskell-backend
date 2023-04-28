@@ -133,7 +133,7 @@ respond serverState moduleName runSMT =
                     let requestSet =
                             Set.fromList $ concat [[Left $ Label $ Just lblOrRid, Right $ UniqueId $ Just lblOrRid] | lblOrRid <- lblsOrRuleIds]
                         ruleSet =
-                            Set.fromList $ concat [[Left lbl, Right ruleId] | ((ruleId, lbl), _) <- toList rules]
+                            Set.fromList $ concat [[Left ruleLabel, Right ruleId] | Exec.RuleTrace{ruleId, ruleLabel} <- toList rules]
                      in either unLabel getUniqueId <$> Set.lookupMin (requestSet `Set.intersection` ruleSet)
             mkLogs rules
                 | fromMaybe False logSuccessfulRewrites || fromMaybe False logSuccessfulSimplifications =
@@ -151,20 +151,20 @@ respond serverState moduleName runSMT =
                                 , origin = KoreRpc
                                 }
                               | fromMaybe False logSuccessfulSimplifications
-                              , s <- toList simps
+                              , s <- toList simplifications
                               ]
                                 ++ [ Rewrite
                                     { result =
                                         Success
                                             { rewrittenTerm = Nothing
                                             , substitution = Nothing
-                                            , ruleId = fromMaybe "UNKNOWN" $ getUniqueId r
+                                            , ruleId = fromMaybe "UNKNOWN" $ getUniqueId ruleId
                                             }
                                     , origin = KoreRpc
                                     }
                                    | fromMaybe False logSuccessfulRewrites
                                    ]
-                            | ((r, _), simps) <- toList rules
+                            | Exec.RuleTrace{simplifications, ruleId} <- toList rules
                             ]
                 | otherwise = Nothing
 
