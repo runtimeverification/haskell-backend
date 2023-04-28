@@ -205,7 +205,7 @@ If `"reason": "cut-point-rule"`, the `next-states` field contains the next state
 }
 ```
 
-The `logs` field in the correct responses (if not empty) will contain objects of the following structure:
+If any logging is enabled, the optional `logs` field will be returned containing an array of objects of the following structure:
 
 ```json
 {

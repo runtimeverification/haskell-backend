@@ -117,7 +117,7 @@ data ExecuteResult = ExecuteResult
     , state :: ExecuteState
     , nextStates :: Maybe [ExecuteState]
     , rule :: Maybe Text
-    , logs :: [LogEntry]
+    , logs :: Maybe [LogEntry]
     }
     deriving stock (Generic, Show, Eq)
     deriving

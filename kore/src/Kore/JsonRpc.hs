@@ -135,18 +135,20 @@ respond serverState moduleName runSMT =
                         ruleSet =
                             Set.fromList $ concat [[Left lbl, Right ruleId] | ((ruleId, lbl), _) <- toList rules]
                      in either unLabel getUniqueId <$> Set.lookupMin (requestSet `Set.intersection` ruleSet)
-            mkLogs rules =
-                concat
-                    [ [ Simplification
-                        Nothing
-                        (Success Nothing (fromMaybe "UNKNOWN" $ getUniqueId s))
-                        KoreRpc
-                      | fromMaybe False logSuccessfulSimplifications
-                      , s <- toList simps
-                      ]
-                        ++ [Rewrite (Success Nothing (fromMaybe "UNKNOWN" $ getUniqueId r)) KoreRpc | fromMaybe False logSuccessfulRewrites]
-                    | ((r, _), simps) <- toList rules
-                    ]
+            mkLogs rules
+                | fromMaybe False logSuccessfulRewrites || fromMaybe False logSuccessfulSimplifications =
+                    Just $ concat
+                        [ [ Simplification
+                            Nothing
+                            (Success Nothing (fromMaybe "UNKNOWN" $ getUniqueId s))
+                            KoreRpc
+                        | fromMaybe False logSuccessfulSimplifications
+                        , s <- toList simps
+                        ]
+                            ++ [Rewrite (Success Nothing (fromMaybe "UNKNOWN" $ getUniqueId r)) KoreRpc | fromMaybe False logSuccessfulRewrites]
+                        | ((r, _), simps) <- toList rules
+                        ]
+                | otherwise = Nothing
 
             buildResult ::
                 TermLike.Sort ->
