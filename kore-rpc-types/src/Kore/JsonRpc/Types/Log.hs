@@ -24,6 +24,7 @@ data LogOrigin = KoreRpc | Booster | Llvm
 data LogRewriteResult
     = Success
         { rewrittenTerm :: Maybe KoreJson
+        , substitution :: Maybe KoreJson
         , ruleId :: Text
         }
     | Failure
@@ -42,6 +43,7 @@ data LogEntry
         }
     | Simplification
         { originalTerm :: Maybe KoreJson
+        , originalTermIndex :: Maybe [Int]
         , result :: LogRewriteResult
         , origin :: LogOrigin
         }

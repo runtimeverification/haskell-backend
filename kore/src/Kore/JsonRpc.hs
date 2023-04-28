@@ -140,13 +140,30 @@ respond serverState moduleName runSMT =
                     Just $
                         concat
                             [ [ Simplification
-                                Nothing
-                                (Success Nothing (fromMaybe "UNKNOWN" $ getUniqueId s))
-                                KoreRpc
+                                { originalTerm = Nothing
+                                , originalTermIndex = Nothing
+                                , result =
+                                    Success
+                                        { rewrittenTerm = Nothing
+                                        , substitution = Nothing
+                                        , ruleId = fromMaybe "UNKNOWN" $ getUniqueId s
+                                        }
+                                , origin = KoreRpc
+                                }
                               | fromMaybe False logSuccessfulSimplifications
                               , s <- toList simps
                               ]
-                                ++ [Rewrite (Success Nothing (fromMaybe "UNKNOWN" $ getUniqueId r)) KoreRpc | fromMaybe False logSuccessfulRewrites]
+                                ++ [ Rewrite
+                                    { result =
+                                        Success
+                                            { rewrittenTerm = Nothing
+                                            , substitution = Nothing
+                                            , ruleId = fromMaybe "UNKNOWN" $ getUniqueId r
+                                            }
+                                    , origin = KoreRpc
+                                    }
+                                   | fromMaybe False logSuccessfulRewrites
+                                   ]
                             | ((r, _), simps) <- toList rules
                             ]
                 | otherwise = Nothing

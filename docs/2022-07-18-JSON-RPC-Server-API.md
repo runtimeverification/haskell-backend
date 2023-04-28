@@ -212,10 +212,12 @@ If any logging is enabled, the optional `logs` field will be returned containing
   "tag": "simplification",
   "origin": "kore-rpc",
   "original-term": {"format": "KORE", "version": 1, "term": {}},
+  "original-term-index": [0,0,1,0,2]
   "result": {
     "tag": "success",
     "rule-id": "7aa41f364663373c0dc6613c939af530caa55b28f158986657981ee1d8d93fcb",
-    "rewritten-term": {"format": "KORE", "version": 1, "term": {}}
+    "rewritten-term": {"format": "KORE", "version": 1, "term": {}},
+    "substitution": {"format": "KORE", "version": 1, "term": {}}
   }
 }
 
@@ -223,6 +225,7 @@ If any logging is enabled, the optional `logs` field will be returned containing
   "tag": "simplification",
   "origin": "kore-rpc",  
   "original-term": {"format": "KORE", "version": 1, "term": {}},
+  "original-term-index": [0,0,1,0,2]
   "result": {
     "tag": "failure",
     "rule-id": "f6e4ebb55eec38bc4c83677e31cf2a40a72f5f943b2ea1b613049c92af92125c",
@@ -231,7 +234,7 @@ If any logging is enabled, the optional `logs` field will be returned containing
 }
 ```
 
-where `original-term` and `rewritten-term` are optional and `origin` is one of `kore-rpc`, `booster` or `llvm`. The above will be emitted when `log-successful-simplifications` and `log-failed-simplifications` are set to true respectively. Not all backends may support both message types. When `log-successful-rewrites` or `log-failed-rewrites` is sent, the following will be logged respectively:
+where `original-term`, `original-term-index`, `substitution` and `rewritten-term` are optional and `origin` is one of `kore-rpc`, `booster` or `llvm`. The order of the trace messages in the `logs` array is the order the backend attempted and applied the rules and should allow for visualisation/reconstruction of the steps the backend took. The `original-term-index` is referencing the JSON KORE format and is 0 indexed. The above traces will be emitted when `log-successful-simplifications` and `log-failed-simplifications` are set to true respectively. Not all backends may support both message types. When `log-successful-rewrites` or `log-failed-rewrites` is sent, the following will be logged respectively:
 
 ```json
 {
@@ -240,7 +243,8 @@ where `original-term` and `rewritten-term` are optional and `origin` is one of `
   "result": {
     "tag": "success",
     "rule-id": "7aa41f364663373c0dc6613c939af530caa55b28f158986657981ee1d8d93fcb",
-    "rewritten-term": {"format": "KORE", "version": 1, "term": {}}
+    "rewritten-term": {"format": "KORE", "version": 1, "term": {}},
+    "substitution": {"format": "KORE", "version": 1, "term": {}}
   }
 }
 
@@ -256,7 +260,6 @@ where `original-term` and `rewritten-term` are optional and `origin` is one of `
 ```
 
 where `rewritten-term` is optional and `origin` is one of `kore-rpc`, `booster` or `llvm`.
-
 
 ## Implies
 
