@@ -1,4 +1,31 @@
-#!/usr/bin/env bash
+# #!/usr/bin/env bash
+#
+# generate-regression-tests.sh
+#
+#   extracts kore files and run scripts for proofs from evm-semantics
+#   to update tests/regression-evm files.
+#
+#   Particular test names can be provided as arguments, for instance,
+#
+#   $ generate-regression-tests.sh functional/lemmas erc20/ds/totalSupply
+#
+#   Some environment variables can be used to control working
+#   directories and K version
+#
+#   * KORE - Working directory, default: top-level of haskell-backend.
+#
+#   * EVM_SEMANTICS - Optional directory with checked-out tree of
+#                     evm-semantics.  This tree will be modified,
+#                     building master with a custom K version.  If
+#                     nothing is provided, $KORE/evm-semantics will be
+#                     used.
+#
+#   * K_VERSION - Optional revision identifier for K repository If
+#                 given, this K version will be used as the
+#                 evm-semantics dependency (otherwise deps/k_version
+#                 will be used).
+#
+################################################################################
 
 shopt -s extglob
 set -e -o pipefail
@@ -37,6 +64,7 @@ case $(uname) in
     ;;
 esac
 which $sed > /dev/null || err "$sed tool not available"
+which git > /dev/null || err "git not available"
 
 # evm-semantics checkout (created unless one is provided)
 if [ -z "${EVM_SEMANTICS}" ]; then
@@ -50,6 +78,13 @@ else
     EVM_SEMANTICS=$(realpath ${EVM_SEMANTICS})
     [ -f "$EVM_SEMANTICS/include/kframework/evm.md" ] || \
         err "Provided evm-semantics directory '${EVM_SEMANTICS}' appears damaged"
+fi
+
+# determine K version to use from $KORE/deps/k, unless provided
+# deps/k_release contains a version number, the tag has a prefix 'v'
+if [ -z "${K_VERSION}" ]; then
+    [ -f $KORE/deps/k_release ] && K_VERSION=v$(cat $KORE/deps/k_release)
+    log "K version set to ${K_VERSION}"
 fi
 
 kollect() {
@@ -72,8 +107,8 @@ kollect() {
     mv vdefinition.kore $def
     mv spec.kore $spec
 
-    sed -i -e "s,${EVM_SEMANTICS}/,evm-semantics/,g" *.kore
-    sed -i -e "s/result.kore/$script.out/g" \
+    $sed -i -e "s,${EVM_SEMANTICS}/,evm-semantics/,g" *.kore
+    $sed -i -e "s/result.kore/$script.out/g" \
         -e "s/vdefinition.kore/$def/g" \
         -e "s/spec.kore/$spec/g" \
         $script
@@ -84,11 +119,14 @@ kollect() {
 }
 
 build-evm() {
-    log "Checking out and building latest master in ${EVM_SEMANTICS}"
+    log "Checking out latest master in ${EVM_SEMANTICS}"
     cd ${EVM_SEMANTICS}
     git checkout master
     git pull
     git submodule update --init --recursive
+    log "Manually setting K dependency to ${K_VERSION}"
+    (cd deps/k && git checkout ${K_VERSION} && git submodule update --init --recursive)
+    log "Building evm-semantics with dependencies"
     make deps plugin-deps poetry kevm-pyk
     export PATH=$(pwd)/.build/usr/bin:$PATH
     make build-haskell
