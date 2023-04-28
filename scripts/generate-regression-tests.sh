@@ -127,7 +127,7 @@ build-evm() {
     log "Manually setting K dependency to ${K_VERSION}"
     (cd deps/k && git checkout ${K_VERSION} && git submodule update --init --recursive)
     log "Building evm-semantics with dependencies"
-    make deps plugin-deps poetry kevm-pyk
+    make clean deps plugin-deps poetry kevm-pyk
     export PATH=$(pwd)/.build/usr/bin:$PATH
     make build-haskell
 }
