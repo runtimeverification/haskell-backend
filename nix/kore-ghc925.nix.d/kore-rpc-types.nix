@@ -36,6 +36,7 @@
         (hsPkgs."casing" or (errorHandler.buildDepError "casing"))
         (hsPkgs."conduit" or (errorHandler.buildDepError "conduit"))
         (hsPkgs."conduit-extra" or (errorHandler.buildDepError "conduit-extra"))
+        (hsPkgs."deepseq" or (errorHandler.buildDepError "deepseq"))
         (hsPkgs."deriving-aeson" or (errorHandler.buildDepError
           "deriving-aeson"))
         (hsPkgs."json-rpc" or (errorHandler.buildDepError "json-rpc"))
@@ -51,6 +52,7 @@
       modules = [
         "Kore/JsonRpc/Error"
         "Kore/JsonRpc/Types"
+        "Kore/JsonRpc/Types/Log"
         "Kore/JsonRpc/Server"
         "Kore/Syntax/Json/Types"
       ];
