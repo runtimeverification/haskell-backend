@@ -22,10 +22,12 @@ import Control.Error (
 import Control.Monad (
     (>=>),
  )
+import Control.Monad.State (modify)
 import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import Data.Sequence ((|>))
 import Data.Set (
     Set,
  )
@@ -255,6 +257,7 @@ applyEquation _ equation result = do
     let results = OrPattern.fromPattern result
     let simplify = return
     debugApplyEquation equation result
+    modify $ \(cache, equations) -> (cache, equations |> Attribute.uniqueId (attributes equation))
     simplify results
 
 {- | Use a 'MatchResult' to instantiate an 'Equation'.

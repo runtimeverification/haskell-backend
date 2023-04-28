@@ -19,6 +19,7 @@ import Deriving.Aeson (
     StripPrefix,
  )
 import GHC.Generics (Generic)
+import Kore.JsonRpc.Types.Log (LogEntry)
 import Kore.Syntax.Json.Types (KoreJson)
 import Network.JSONRPC (
     FromRequest (..),
@@ -38,6 +39,10 @@ data ExecuteRequest = ExecuteRequest
     , terminalRules :: !(Maybe [Text])
     , movingAverageStepTimeout :: !(Maybe Bool)
     , stepTimeout :: !(Maybe Int)
+    , logSuccessfulRewrites :: !(Maybe Bool)
+    , logFailedRewrites :: !(Maybe Bool)
+    , logSuccessfulSimplifications :: !(Maybe Bool)
+    , logFailedSimplifications :: !(Maybe Bool)
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -112,6 +117,7 @@ data ExecuteResult = ExecuteResult
     , state :: ExecuteState
     , nextStates :: Maybe [ExecuteState]
     , rule :: Maybe Text
+    , logs :: Maybe [LogEntry]
     }
     deriving stock (Generic, Show, Eq)
     deriving
