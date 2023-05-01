@@ -129,7 +129,7 @@ build-evm() {
     log "Building evm-semantics with dependencies"
     make clean deps plugin-deps poetry kevm-pyk
     export PATH=$(pwd)/.build/usr/bin:$PATH
-    make build-haskell
+    make build-kevm build-haskell
 }
 
 # test paths will be prefixed with tests/specs, and suffixed with -spec.k.prove
@@ -144,8 +144,6 @@ ALL_TESTS="\
         "
 
 generate-evm() {
-    local prior=$(pwd)
-
     TARGETS=$@
 
     if [ -z "$TARGETS" ]; then
@@ -158,6 +156,7 @@ generate-evm() {
 
     # FIXME check that test files actually exist before running anything?
 
+    export PATH=$(pwd)/.build/usr/bin:$PATH
     export \
         TEST_CONCRETE_BACKEND=haskell \
         TEST_SYMBOLIC_BACKEND=haskell \
