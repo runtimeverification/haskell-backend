@@ -18,13 +18,16 @@ import Data.Default (Default (..))
 import Data.IORef (readIORef)
 import Data.InternedText (globalInternedTextCache)
 import Data.Limit (Limit (..))
+import Data.List.Extra (mconcatMap)
 import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Data.Text (Text)
 import GlobalMain (
     LoadedDefinition (..),
     SerializedDefinition (..),
  )
 import Kore.Attribute.Attributes (Attributes)
+import Kore.Attribute.Axiom (Label (Label), UniqueId (UniqueId), getUniqueId, unLabel)
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.Builtin qualified as Builtin
 import Kore.Exec qualified as Exec
@@ -41,6 +44,7 @@ import Kore.Internal.TermLike qualified as TermLike
 import Kore.JsonRpc.Error
 import Kore.JsonRpc.Server (ErrorObj (..), JsonRpcHandler (JsonRpcHandler), Request (getReqId), Respond, jsonRpcServer)
 import Kore.JsonRpc.Types
+import Kore.JsonRpc.Types.Log
 import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown, srcLoc)
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
@@ -95,7 +99,7 @@ respond ::
     Respond (API 'Req) m (API 'Res)
 respond serverState moduleName runSMT =
     \case
-        Execute ExecuteRequest{state, maxDepth, _module, cutPointRules, terminalRules, movingAverageStepTimeout, stepTimeout} -> withMainModule (coerce _module) $ \serializedModule lemmas ->
+        Execute ExecuteRequest{state, maxDepth, _module, cutPointRules, terminalRules, movingAverageStepTimeout, stepTimeout, logSuccessfulRewrites, logSuccessfulSimplifications} -> withMainModule (coerce _module) $ \serializedModule lemmas ->
             case PatternVerifier.runPatternVerifier (verifierContext serializedModule) $
                 PatternVerifier.verifyStandalonePattern Nothing $
                     PatternJson.toParsedPattern $
@@ -123,13 +127,54 @@ respond serverState moduleName runSMT =
             toStopLabels cpRs tRs =
                 Exec.StopLabels (fromMaybe [] cpRs) (fromMaybe [] tRs)
 
+            containsLabelOrRuleId rules = \case
+                Nothing -> Nothing
+                Just lblsOrRuleIds ->
+                    let requestSet =
+                            Set.fromList $ concat [[Left $ Label $ Just lblOrRid, Right $ UniqueId $ Just lblOrRid] | lblOrRid <- lblsOrRuleIds]
+                        ruleSet =
+                            Set.fromList $ concat [[Left ruleLabel, Right ruleId] | Exec.RuleTrace{ruleId, ruleLabel} <- toList rules]
+                     in either unLabel getUniqueId <$> Set.lookupMin (requestSet `Set.intersection` ruleSet)
+            mkLogs rules
+                | fromMaybe False logSuccessfulRewrites || fromMaybe False logSuccessfulSimplifications =
+                    Just $
+                        concat
+                            [ [ Simplification
+                                { originalTerm = Nothing
+                                , originalTermIndex = Nothing
+                                , result =
+                                    Success
+                                        { rewrittenTerm = Nothing
+                                        , substitution = Nothing
+                                        , ruleId = fromMaybe "UNKNOWN" $ getUniqueId s
+                                        }
+                                , origin = KoreRpc
+                                }
+                              | fromMaybe False logSuccessfulSimplifications
+                              , s <- toList simplifications
+                              ]
+                                ++ [ Rewrite
+                                    { result =
+                                        Success
+                                            { rewrittenTerm = Nothing
+                                            , substitution = Nothing
+                                            , ruleId = fromMaybe "UNKNOWN" $ getUniqueId ruleId
+                                            }
+                                    , origin = KoreRpc
+                                    }
+                                   | fromMaybe False logSuccessfulRewrites
+                                   ]
+                            | Exec.RuleTrace{simplifications, ruleId} <- toList rules
+                            ]
+                | otherwise = Nothing
+
             buildResult ::
                 TermLike.Sort ->
                 GraphTraversal.TraversalResult (Exec.RpcExecState TermLike.VariableName) ->
                 Either ErrorObj (API 'Res)
             buildResult sort = \case
                 GraphTraversal.Ended
-                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result}] ->
+                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result, rpcRules = rules}] ->
                         -- Actually not "ended" but out of instructions.
                         -- See @toTransitionResult@ in @rpcExec@.
                         Right $
@@ -140,10 +185,11 @@ respond serverState moduleName runSMT =
                                     , reason = DepthBound
                                     , rule = Nothing
                                     , nextStates = Nothing
+                                    , logs = mkLogs rules
                                     }
                 GraphTraversal.GotStuck
                     _n
-                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result}] ->
+                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result, rpcRules = rules}] ->
                         Right $
                             Execute $
                                 ExecuteResult
@@ -152,46 +198,48 @@ respond serverState moduleName runSMT =
                                     , reason = Stuck
                                     , rule = Nothing
                                     , nextStates = Nothing
+                                    , logs = mkLogs rules
                                     }
                 GraphTraversal.Stopped
-                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRule = Nothing}]
-                    nexts ->
-                        Right $
-                            Execute $
-                                ExecuteResult
-                                    { state = patternToExecState sort rpcProgState
-                                    , depth = Depth depth
-                                    , reason = Branching
-                                    , rule = Nothing
-                                    , nextStates =
-                                        Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
-                                    }
-                GraphTraversal.Stopped
-                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRule = Just lbl}]
+                    [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRules = rules}]
                     nexts
-                        | lbl `elem` fromMaybe [] cutPointRules ->
+                        | Just rule <- containsLabelOrRuleId (mconcatMap Exec.rpcRules nexts) cutPointRules ->
                             Right $
                                 Execute $
                                     ExecuteResult
                                         { state = patternToExecState sort rpcProgState
                                         , depth = Depth depth
                                         , reason = CutPointRule
-                                        , rule = Just lbl
+                                        , rule
                                         , nextStates =
                                             Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
+                                        , logs = mkLogs rules
                                         }
-                        | lbl `elem` fromMaybe [] terminalRules ->
+                        | Just rule <- containsLabelOrRuleId rules terminalRules ->
                             Right $
                                 Execute $
                                     ExecuteResult
                                         { state = patternToExecState sort rpcProgState
                                         , depth = Depth depth
                                         , reason = TerminalRule
-                                        , rule = Just lbl
+                                        , rule
                                         , nextStates = Nothing
+                                        , logs = mkLogs rules
+                                        }
+                        | otherwise ->
+                            Right $
+                                Execute $
+                                    ExecuteResult
+                                        { state = patternToExecState sort rpcProgState
+                                        , depth = Depth depth
+                                        , reason = Branching
+                                        , rule = Nothing
+                                        , nextStates =
+                                            Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
+                                        , logs = mkLogs rules
                                         }
                 GraphTraversal.TimedOut
-                    Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState}
+                    Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRules = rules}
                     _ ->
                         Right $
                             Execute $
@@ -201,6 +249,7 @@ respond serverState moduleName runSMT =
                                     , reason = Timeout
                                     , rule = Nothing
                                     , nextStates = Nothing
+                                    , logs = mkLogs rules
                                     }
                 -- these are programmer errors
                 result@GraphTraversal.Aborted{} ->
