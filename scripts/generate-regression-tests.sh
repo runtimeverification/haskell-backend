@@ -154,18 +154,15 @@ generate-evm() {
 
     cd ${EVM_SEMANTICS}
 
-    # FIXME check that test files actually exist before running anything?
-
-    export PATH=$(pwd)/.build/usr/bin:$PATH
-    export \
-        TEST_CONCRETE_BACKEND=haskell \
-        TEST_SYMBOLIC_BACKEND=haskell \
-        CHECK=true \
-        KEEP_OUTPUTS=true
+    # check that test files actually exist before running anything
+    for TEST in $TARGETS; do
+        log "Checking tests/specs/$TEST-spec.k"
+        [ -f tests/specs/$TEST-spec.k ] || err "$TEST's K file does not exist"
+    done
 
     for TEST in $TARGETS; do
         log "Running $TEST"
-        make tests/specs/$TEST-spec.k.prove -e  KPROVE_OPTS="--bug-report"
+        make tests/specs/$TEST-spec.k.prove KPROVE_OPTS=--bug-report CHECK=true
         log "Collecting data for $TEST"
         kollect $(basename $TEST)
     done
