@@ -60,7 +60,7 @@ import Kore.Rewrite.ClaimPattern qualified as ClaimPattern
 import Kore.Rewrite.RewritingVariable (
     getRewritingVariable,
     mkRewritingPattern,
-    mkRewritingTerm,
+    mkRewritingTerm, getRewritingTerm,
  )
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Rewrite.SMT.Lemma (getSMTLemmas)
@@ -70,7 +70,7 @@ import Kore.Rewrite.Timeout (
  )
 import Kore.Simplify.API (evalSimplifierLogged)
 import Kore.Simplify.Pattern qualified as Pattern
-import Kore.Simplify.Simplify (Simplifier)
+import Kore.Simplify.Simplify (Simplifier, SimplifierTrace (..))
 import Kore.Syntax (VariableName)
 import Kore.Syntax.Definition (Definition (..))
 import Kore.Syntax.Json qualified as PatternJson
@@ -88,7 +88,7 @@ import SMT qualified
 
 respond ::
     forall m.
-    MonadIO m =>
+    (MonadIO m) =>
     MVar.MVar ServerState ->
     ModuleName ->
     ( forall a.
@@ -141,18 +141,18 @@ respond serverState moduleName runSMT =
                     Just $
                         concat
                             [ [ Simplification
-                                { originalTerm = Nothing
+                                { originalTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm originalTerm
                                 , originalTermIndex = Nothing
                                 , result =
                                     Success
-                                        { rewrittenTerm = Nothing
+                                        { rewrittenTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm $ Pattern.term rewrittenTerm
                                         , substitution = Nothing
-                                        , ruleId = fromMaybe "UNKNOWN" $ getUniqueId s
+                                        , ruleId = fromMaybe "UNKNOWN" $ getUniqueId equationId
                                         }
                                 , origin = KoreRpc
                                 }
                               | fromMaybe False logSuccessfulSimplifications
-                              , s <- toList simplifications
+                              , SimplifierTrace{originalTerm, rewrittenTerm, equationId} <- toList simplifications
                               ]
                                 ++ [ Rewrite
                                     { result =
@@ -439,26 +439,27 @@ respond serverState moduleName runSMT =
       where
         withRpcRequest context = context{isRpcRequest = True}
 
-    mkSimplifierLogs :: Maybe Bool -> Seq UniqueId -> Maybe [LogEntry]
+
+    mkSimplifierLogs :: Maybe Bool -> Seq SimplifierTrace -> Maybe [LogEntry]
     mkSimplifierLogs Nothing _ = Nothing
     mkSimplifierLogs (Just False) _ = Nothing
-    mkSimplifierLogs (Just True) logs =
-        Just
-            [ Simplification
-                { originalTerm = Nothing
-                , originalTermIndex = Nothing
-                , result =
-                    Success
-                        { rewrittenTerm = Nothing
-                        , substitution = Nothing
-                        , ruleId = fromMaybe "UNKNOWN" ruleId
-                        }
-                , origin = KoreRpc
-                }
-            | (UniqueId ruleId) <- toList logs
-            ]
+    mkSimplifierLogs (Just True) logs = Just [
 
-    evalInSimplifierContext :: Exec.SerializedModule -> Simplifier a -> SMT.SMT (Seq UniqueId, a)
+        Simplification
+            { originalTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm originalTerm
+            , originalTermIndex = Nothing
+            , result =
+                Success
+                    { rewrittenTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm $ Pattern.term rewrittenTerm
+                    , substitution = Nothing
+                    , ruleId = fromMaybe "UNKNOWN" $ getUniqueId equationId
+                    }
+            , origin = KoreRpc
+            }
+            | SimplifierTrace{originalTerm, rewrittenTerm, equationId} <- toList logs
+        ]
+
+    evalInSimplifierContext :: Exec.SerializedModule -> Simplifier a -> SMT.SMT (Seq SimplifierTrace, a)
     evalInSimplifierContext
         Exec.SerializedModule
             { sortGraph

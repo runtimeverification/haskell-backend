@@ -58,6 +58,7 @@ module Kore.Simplify.Simplify (
     MonadSMT,
     MonadLog,
     runSimplifierLogged,
+    SimplifierTrace(..),
 ) where
 
 import Control.Monad.Base (MonadBase)
@@ -152,6 +153,12 @@ data Env = Env
     , hookedSymbols :: !(Map Id Text)
     }
 
+data SimplifierTrace = SimplifierTrace {
+    originalTerm :: TermLike RewritingVariableName
+  , equationId :: UniqueId
+  , rewrittenTerm :: Pattern RewritingVariableName
+}
+    deriving stock (Eq, Show)
 {- | @Simplifier@ represents a simplification action.
 
 A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
@@ -159,12 +166,12 @@ A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
 A @Simplifier@ can write to the log through 'HasLog'.
 -}
 newtype Simplifier a
-    = Simplifier (StateT (SimplifierCache, Seq UniqueId) (ReaderT Env SMT) a)
+    = Simplifier (StateT (SimplifierCache, Seq SimplifierTrace) (ReaderT Env SMT) a)
     deriving newtype (Functor, Applicative, Monad)
     deriving newtype (MonadSMT, MonadLog, MonadProf)
     deriving newtype (MonadIO, MonadCatch, MonadThrow, MonadMask)
     deriving newtype (MonadReader Env)
-    deriving newtype (MonadState (SimplifierCache, Seq UniqueId))
+    deriving newtype (MonadState (SimplifierCache, Seq SimplifierTrace))
     deriving newtype (MonadBase IO, MonadBaseControl IO)
 
 {- | Run a simplification, returning the result of only one branch.
@@ -177,7 +184,7 @@ runSimplifier :: Env -> Simplifier a -> SMT a
 runSimplifier env (Simplifier simplifier) =
     runReaderT (evalStateT simplifier (initCache, mempty)) env
 
-runSimplifierLogged :: Env -> Simplifier a -> SMT (Seq UniqueId, a)
+runSimplifierLogged :: Env -> Simplifier a -> SMT (Seq SimplifierTrace, a)
 runSimplifierLogged env (Simplifier simplifier) =
     runReaderT
         ( runStateT simplifier (initCache, mempty) >>= \(res, (_, logs)) ->

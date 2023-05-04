@@ -102,7 +102,7 @@ import Kore.Rewrite.SMT.Evaluator qualified as SMT
 import Kore.Rewrite.Substitution qualified as Substitution
 import Kore.Simplify.Simplify (
     Simplifier,
-    liftSimplifier,
+    liftSimplifier, SimplifierTrace (..),
  )
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute
@@ -250,14 +250,15 @@ applySubstitutionAndSimplify
 
 applyEquation ::
     SideCondition RewritingVariableName ->
+    TermLike RewritingVariableName ->
     Equation RewritingVariableName ->
     Pattern RewritingVariableName ->
     Simplifier (OrPattern RewritingVariableName)
-applyEquation _ equation result = do
+applyEquation _ term equation result = do
     let results = OrPattern.fromPattern result
     let simplify = return
     debugApplyEquation equation result
-    modify $ \(cache, equations) -> (cache, equations |> Attribute.uniqueId (attributes equation))
+    modify $ \(cache, equations) -> (cache, equations |> SimplifierTrace term (Attribute.uniqueId (attributes equation)) result)
     simplify results
 
 {- | Use a 'MatchResult' to instantiate an 'Equation'.

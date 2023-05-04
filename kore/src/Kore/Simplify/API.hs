@@ -21,7 +21,6 @@ import Data.Map.Strict (
  )
 import Data.Map.Strict qualified as Map
 import Data.Sequence (Seq)
-import Kore.Attribute.Axiom (UniqueId)
 import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
@@ -182,7 +181,7 @@ evalSimplifierLogged ::
     SmtMetadataTools Attribute.Symbol ->
     Map AxiomIdentifier [Equation VariableName] ->
     Simplifier a ->
-    SMT (Seq UniqueId, a)
+    SMT (Seq SimplifierTrace, a)
 evalSimplifierLogged verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
     env <- mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquations
     runSimplifierLogged env simplifier
