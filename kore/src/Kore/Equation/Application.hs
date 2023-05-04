@@ -102,7 +102,8 @@ import Kore.Rewrite.SMT.Evaluator qualified as SMT
 import Kore.Rewrite.Substitution qualified as Substitution
 import Kore.Simplify.Simplify (
     Simplifier,
-    liftSimplifier, SimplifierTrace (..),
+    SimplifierTrace (..),
+    liftSimplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
 import Kore.Substitute

@@ -58,7 +58,7 @@ module Kore.Simplify.Simplify (
     MonadSMT,
     MonadLog,
     runSimplifierLogged,
-    SimplifierTrace(..),
+    SimplifierTrace (..),
 ) where
 
 import Control.Monad.Base (MonadBase)
@@ -153,12 +153,13 @@ data Env = Env
     , hookedSymbols :: !(Map Id Text)
     }
 
-data SimplifierTrace = SimplifierTrace {
-    originalTerm :: TermLike RewritingVariableName
-  , equationId :: UniqueId
-  , rewrittenTerm :: Pattern RewritingVariableName
-}
+data SimplifierTrace = SimplifierTrace
+    { originalTerm :: TermLike RewritingVariableName
+    , equationId :: UniqueId
+    , rewrittenTerm :: Pattern RewritingVariableName
+    }
     deriving stock (Eq, Show)
+
 {- | @Simplifier@ represents a simplification action.
 
 A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.

@@ -58,9 +58,10 @@ import Kore.Rewrite (
  )
 import Kore.Rewrite.ClaimPattern qualified as ClaimPattern
 import Kore.Rewrite.RewritingVariable (
+    getRewritingTerm,
     getRewritingVariable,
     mkRewritingPattern,
-    mkRewritingTerm, getRewritingTerm,
+    mkRewritingTerm,
  )
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Rewrite.SMT.Lemma (getSMTLemmas)
@@ -439,25 +440,24 @@ respond serverState moduleName runSMT =
       where
         withRpcRequest context = context{isRpcRequest = True}
 
-
     mkSimplifierLogs :: Maybe Bool -> Seq SimplifierTrace -> Maybe [LogEntry]
     mkSimplifierLogs Nothing _ = Nothing
     mkSimplifierLogs (Just False) _ = Nothing
-    mkSimplifierLogs (Just True) logs = Just [
-
-        Simplification
-            { originalTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm originalTerm
-            , originalTermIndex = Nothing
-            , result =
-                Success
-                    { rewrittenTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm $ Pattern.term rewrittenTerm
-                    , substitution = Nothing
-                    , ruleId = fromMaybe "UNKNOWN" $ getUniqueId equationId
-                    }
-            , origin = KoreRpc
-            }
+    mkSimplifierLogs (Just True) logs =
+        Just
+            [ Simplification
+                { originalTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm originalTerm
+                , originalTermIndex = Nothing
+                , result =
+                    Success
+                        { rewrittenTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm $ Pattern.term rewrittenTerm
+                        , substitution = Nothing
+                        , ruleId = fromMaybe "UNKNOWN" $ getUniqueId equationId
+                        }
+                , origin = KoreRpc
+                }
             | SimplifierTrace{originalTerm, rewrittenTerm, equationId} <- toList logs
-        ]
+            ]
 
     evalInSimplifierContext :: Exec.SerializedModule -> Simplifier a -> SMT.SMT (Seq SimplifierTrace, a)
     evalInSimplifierContext
