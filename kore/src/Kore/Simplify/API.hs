@@ -20,6 +20,8 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import Data.Sequence (Seq)
+import Kore.Attribute.Axiom (UniqueId)
 import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
@@ -69,8 +71,6 @@ import Prof
 import SMT (
     SMT,
  )
-import Data.Sequence (Seq)
-import Kore.Attribute.Axiom (UniqueId)
 
 traceProfSimplify ::
     MonadProf prof =>

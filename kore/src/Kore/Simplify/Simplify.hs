@@ -179,8 +179,11 @@ runSimplifier env (Simplifier simplifier) =
 
 runSimplifierLogged :: Env -> Simplifier a -> SMT (Seq UniqueId, a)
 runSimplifierLogged env (Simplifier simplifier) =
-    runReaderT (runStateT simplifier (initCache, mempty) >>= \(res, (_, logs)) ->
-        pure (logs, res)) env
+    runReaderT
+        ( runStateT simplifier (initCache, mempty) >>= \(res, (_, logs)) ->
+            pure (logs, res)
+        )
+        env
 
 -- | Run a simplification, returning the results along all branches.
 runSimplifierBranch ::

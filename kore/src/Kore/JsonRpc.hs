@@ -20,6 +20,7 @@ import Data.InternedText (globalInternedTextCache)
 import Data.Limit (Limit (..))
 import Data.List.Extra (mconcatMap)
 import Data.Map.Strict qualified as Map
+import Data.Sequence (Seq)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import GlobalMain (
@@ -84,7 +85,6 @@ import Log qualified
 import Prelude.Kore
 import Pretty qualified
 import SMT qualified
-import Data.Sequence (Seq)
 
 respond ::
     forall m.
@@ -439,22 +439,24 @@ respond serverState moduleName runSMT =
       where
         withRpcRequest context = context{isRpcRequest = True}
 
-
     mkSimplifierLogs :: Maybe Bool -> Seq UniqueId -> Maybe [LogEntry]
     mkSimplifierLogs Nothing _ = Nothing
     mkSimplifierLogs (Just False) _ = Nothing
-    mkSimplifierLogs (Just True) logs = Just [
-            Simplification
-            { originalTerm  = Nothing
-            , originalTermIndex = Nothing
-            , result =  Success
-                { rewrittenTerm = Nothing
-                , substitution = Nothing
-                , ruleId = fromMaybe "UNKNOWN" ruleId
+    mkSimplifierLogs (Just True) logs =
+        Just
+            [ Simplification
+                { originalTerm = Nothing
+                , originalTermIndex = Nothing
+                , result =
+                    Success
+                        { rewrittenTerm = Nothing
+                        , substitution = Nothing
+                        , ruleId = fromMaybe "UNKNOWN" ruleId
+                        }
+                , origin = KoreRpc
                 }
-            , origin = KoreRpc
-            } | (UniqueId ruleId) <- toList logs
-        ]
+            | (UniqueId ruleId) <- toList logs
+            ]
 
     evalInSimplifierContext :: Exec.SerializedModule -> Simplifier a -> SMT.SMT (Seq UniqueId, a)
     evalInSimplifierContext
