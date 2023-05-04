@@ -67,7 +67,7 @@ import Kore.Rewrite.Timeout (
     EnableMovingAverage (..),
     StepTimeout (..),
  )
-import Kore.Simplify.API (evalSimplifier)
+import Kore.Simplify.API (evalSimplifierLogged)
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (Simplifier)
 import Kore.Syntax (VariableName)
@@ -84,6 +84,7 @@ import Log qualified
 import Prelude.Kore
 import Pretty qualified
 import SMT qualified
+import Data.Sequence (Seq)
 
 respond ::
     forall m.
@@ -276,7 +277,7 @@ respond serverState moduleName runSMT =
                 p = fromMaybe (Pattern.bottomOf sort) $ extractProgramState s
 
         -- Step StepRequest{} -> pure $ Right $ Step $ StepResult []
-        Implies ImpliesRequest{antecedent, consequent, _module} -> withMainModule (coerce _module) $ \serializedModule lemmas ->
+        Implies ImpliesRequest{antecedent, consequent, _module, logSuccessfulSimplifications} -> withMainModule (coerce _module) $ \serializedModule lemmas ->
             case PatternVerifier.runPatternVerifier (verifierContext serializedModule) verify of
                 Left err ->
                     pure $ Left $ backendError CouldNotVerifyPattern $ toJSON err
@@ -289,7 +290,7 @@ respond serverState moduleName runSMT =
                                 mkRewritingTerm consVerified
                         rightPatt = Pattern.parsePatternFromTermLike consWOExistentials
 
-                    result <-
+                    (logs, result) <-
                         liftIO
                             . runSMT (Exec.metadataTools serializedModule) lemmas
                             . (evalInSimplifierContext serializedModule)
@@ -298,7 +299,7 @@ respond serverState moduleName runSMT =
                                 leftPatt
                                 rightPatt
                                 existentialVars
-                    pure $ buildResult sort result
+                    pure $ buildResult (mkSimplifierLogs logSuccessfulSimplifications logs) sort result
           where
             verify = do
                 antVerified <-
@@ -323,25 +324,25 @@ respond serverState moduleName runSMT =
                         , substitution = fromMaybe noSubstitution mbSubstitution
                         }
 
-            buildResult _ (Left err) = Left $ backendError ImplicationCheckError $ toJSON err
-            buildResult sort (Right (term, r)) =
+            buildResult _ _ (Left err) = Left $ backendError ImplicationCheckError $ toJSON err
+            buildResult logs sort (Right (term, r)) =
                 let jsonTerm =
                         PatternJson.fromTermLike $
                             TermLike.mapVariables getRewritingVariable term
                  in Right . Implies $
                         case r of
                             Claim.Implied Nothing ->
-                                ImpliesResult jsonTerm True (Just . renderCond sort $ Condition.bottom)
+                                ImpliesResult jsonTerm True (Just . renderCond sort $ Condition.bottom) logs
                             Claim.Implied (Just cond) ->
-                                ImpliesResult jsonTerm True (Just . renderCond sort $ cond)
+                                ImpliesResult jsonTerm True (Just . renderCond sort $ cond) logs
                             Claim.NotImplied _ ->
-                                ImpliesResult jsonTerm False Nothing
+                                ImpliesResult jsonTerm False Nothing logs
                             Claim.NotImpliedStuck (Just cond) ->
                                 let jsonCond = renderCond sort cond
-                                 in ImpliesResult jsonTerm False (Just jsonCond)
+                                 in ImpliesResult jsonTerm False (Just jsonCond) logs
                             Claim.NotImpliedStuck Nothing ->
-                                ImpliesResult jsonTerm False (Just . renderCond sort $ Condition.bottom)
-        Simplify SimplifyRequest{state, _module} -> withMainModule (coerce _module) $ \serializedModule lemmas ->
+                                ImpliesResult jsonTerm False (Just . renderCond sort $ Condition.bottom) logs
+        Simplify SimplifyRequest{state, _module, logSuccessfulSimplifications} -> withMainModule (coerce _module) $ \serializedModule lemmas ->
             case PatternVerifier.runPatternVerifier (verifierContext serializedModule) verifyState of
                 Left err ->
                     pure $ Left $ backendError CouldNotVerifyPattern err
@@ -350,7 +351,7 @@ respond serverState moduleName runSMT =
                             mkRewritingPattern $ Pattern.parsePatternFromTermLike stateVerified
                         sort = TermLike.termLikeSort stateVerified
 
-                    result <-
+                    (logs, result) <-
                         liftIO
                             . runSMT (Exec.metadataTools serializedModule) lemmas
                             . (evalInSimplifierContext serializedModule)
@@ -364,6 +365,7 @@ respond serverState moduleName runSMT =
                                         PatternJson.fromTermLike $
                                             TermLike.mapVariables getRewritingVariable $
                                                 OrPattern.toTermLike sort result
+                                    , logs = mkSimplifierLogs logSuccessfulSimplifications logs
                                     }
           where
             verifyState =
@@ -437,7 +439,24 @@ respond serverState moduleName runSMT =
       where
         withRpcRequest context = context{isRpcRequest = True}
 
-    evalInSimplifierContext :: Exec.SerializedModule -> Simplifier a -> SMT.SMT a
+
+    mkSimplifierLogs :: Maybe Bool -> Seq UniqueId -> Maybe [LogEntry]
+    mkSimplifierLogs Nothing _ = Nothing
+    mkSimplifierLogs (Just False) _ = Nothing
+    mkSimplifierLogs (Just True) logs = Just [
+            Simplification
+            { originalTerm  = Nothing
+            , originalTermIndex = Nothing
+            , result =  Success
+                { rewrittenTerm = Nothing
+                , substitution = Nothing
+                , ruleId = fromMaybe "UNKNOWN" ruleId
+                }
+            , origin = KoreRpc
+            } | (UniqueId ruleId) <- toList logs
+        ]
+
+    evalInSimplifierContext :: Exec.SerializedModule -> Simplifier a -> SMT.SMT (Seq UniqueId, a)
     evalInSimplifierContext
         Exec.SerializedModule
             { sortGraph
@@ -446,7 +465,7 @@ respond serverState moduleName runSMT =
             , verifiedModule
             , equations
             } =
-            evalSimplifier
+            evalSimplifierLogged
                 verifiedModule
                 sortGraph
                 overloadGraph

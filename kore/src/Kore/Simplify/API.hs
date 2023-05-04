@@ -12,6 +12,7 @@ Portability : portable
 module Kore.Simplify.API (
     evalSimplifier,
     evalSimplifierProofs,
+    evalSimplifierLogged,
 ) where
 
 import Control.Monad.Reader
@@ -68,6 +69,8 @@ import Prof
 import SMT (
     SMT,
  )
+import Data.Sequence (Seq)
+import Kore.Attribute.Axiom (UniqueId)
 
 traceProfSimplify ::
     MonadProf prof =>
@@ -171,6 +174,18 @@ evalSimplifier ::
 evalSimplifier verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
     env <- mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquations
     runSimplifier env simplifier
+
+evalSimplifierLogged ::
+    VerifiedModuleSyntax Attribute.Symbol ->
+    SortGraph ->
+    OverloadGraph ->
+    SmtMetadataTools Attribute.Symbol ->
+    Map AxiomIdentifier [Equation VariableName] ->
+    Simplifier a ->
+    SMT (Seq UniqueId, a)
+evalSimplifierLogged verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
+    env <- mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquations
+    runSimplifierLogged env simplifier
 
 evalSimplifierProofs ::
     VerifiedModule Attribute.Symbol ->

@@ -57,6 +57,7 @@ module Kore.Simplify.Simplify (
     -- * Re-exports
     MonadSMT,
     MonadLog,
+    runSimplifierLogged,
 ) where
 
 import Control.Monad.Base (MonadBase)
@@ -175,6 +176,11 @@ that may branch.
 runSimplifier :: Env -> Simplifier a -> SMT a
 runSimplifier env (Simplifier simplifier) =
     runReaderT (evalStateT simplifier (initCache, mempty)) env
+
+runSimplifierLogged :: Env -> Simplifier a -> SMT (Seq UniqueId, a)
+runSimplifierLogged env (Simplifier simplifier) =
+    runReaderT (runStateT simplifier (initCache, mempty) >>= \(res, (_, logs)) ->
+        pure (logs, res)) env
 
 -- | Run a simplification, returning the results along all branches.
 runSimplifierBranch ::
