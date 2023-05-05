@@ -57,11 +57,26 @@ test_evaluateFunction =
           testCase "Matching uses priorities" $ do
             let subj = app f1 [inj aSubsort someSort (app con4 [a, b])]
             eval TopDown subj @?= Right a
+        , -- f1(con1("hey")) unmodified, since "hey" is concrete
+          testCase "f1 with concrete argument, constraints prevent rule application" $ do
+            let subj = app f1 [app con1 [d]]
+            eval TopDown subj @?= Right subj
+            eval BottomUp subj @?= Right subj
+        , testCase "f2 with symbolic argument, constraint prevents rule application" $ do
+            let subj = app f2 [app con1 [a]]
+            eval TopDown subj @?= Right subj
+            eval BottomUp subj @?= Right subj
+        , testCase "f2 with concrete argument, satisfying constraint" $ do
+            let subj = app f2 [app con1 [d]]
+                result = app f2 [d]
+            eval TopDown subj @?= Right result
+            -- eval BottomUp subj @?= Right result
         ]
   where
     eval direction = fmap fst . evaluateTerm direction funDef Nothing
     a = var "A" someSort
     b = var "B" someSort
+    d = dv someSort "hey"
     apply f = app f . (: [])
     n `times` f = foldr (.) id (replicate n $ apply f)
 
@@ -198,6 +213,7 @@ f1Equations =
         (Pattern (app f1 [app con1 [varX]]) [])
         (Pattern (app con2 [app f1 [varX]]) [])
         42
+        `withAttributes` (\as -> as{concreteness = AllConstrained Symbolic})
     , equation -- f1(inj{aSubsort,someSort}(con4(X, _Y))) == X
         (Just "f1-con4-projects-arg1")
         (Pattern (app f1 [inj aSubsort someSort (app con4 [varX, varY])]) [])
@@ -208,9 +224,16 @@ f1Equations =
         (Pattern (app f1 [varX]) [])
         (Pattern varX [])
         50
+        `withAttributes` (\as -> as{concreteness = SomeConstrained (Map.singleton ("X", "SomeSort") Symbolic)})
     ]
 f2Equations =
     [ equation
+        Nothing
+        (Pattern (app f2 [app con1 [varX]]) [])
+        (Pattern (app f2 [varX]) [])
+        42
+        `withAttributes` (\as -> as{concreteness = SomeConstrained (Map.singleton ("X", "SomeSort") Concrete)})
+    , equation
         Nothing
         (Pattern (app f2 [varX]) [])
         (Pattern (app con4 [varX, varX]) [])
@@ -237,6 +260,10 @@ equation ruleLabel lhs rhs priority =
         , computedAttributes = ComputedAxiomAttributes False []
         , existentials = mempty
         }
+
+withAttributes :: RewriteRule t -> (AxiomAttributes -> AxiomAttributes) -> RewriteRule t
+r@RewriteRule{lhs, attributes, computedAttributes} `withAttributes` f =
+    r{lhs, computedAttributes, attributes = f attributes}
 
 withComputedAttributes :: RewriteRule t -> ComputedAxiomAttributes -> RewriteRule t
 r@RewriteRule{lhs} `withComputedAttributes` computedAttributes =

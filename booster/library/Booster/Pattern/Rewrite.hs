@@ -109,6 +109,7 @@ rewriteStep cutLabels terminalLabels pat = do
         -- let finalResults = filter (not . isBottom . simplifyPattern dl . snd) results
 
         let labelOf = fromMaybe "" . (.ruleLabel) . (.attributes)
+            ruleIdT = renderOneLineText . ruleId
 
         case results of
             [] ->
@@ -119,7 +120,7 @@ rewriteStep cutLabels terminalLabels pat = do
                 | labelOf r `elem` terminalLabels ->
                     pure $ RewriteTerminal (labelOf r) x
                 | otherwise ->
-                    pure $ RewriteSingle (labelOf r) x
+                    pure $ RewriteSingle (ruleIdT r) x
             rxs ->
                 pure $ RewriteBranch pat $ NE.fromList $ map snd rxs
 
