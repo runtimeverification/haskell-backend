@@ -13,6 +13,7 @@ module Booster.Pattern.ApplyEquations (
     ApplyEquationResult (..),
     isMatchFailure,
     isSuccess,
+    simplifyConstraint,
 ) where
 
 import Control.Monad
@@ -488,7 +489,7 @@ applyEquation term rule = fmap (either id Success) $ runExceptT $ do
 
 --------------------------------------------------------------------
 
--- | Helper pattern for simplifyConstraint until predicates have a simpler representation
+-- | Helper pattern for simplifyConstraint
 pattern TrueBool :: Term
 pattern TrueBool = DomainValue SortBool "true"
 
@@ -497,20 +498,30 @@ pattern FalseBool = DomainValue SortBool "false"
 
 {- | Simplification for boolean predicates
 
-  This is used inside function evaluation as well as simplification,
-  so it should run using the same state as the caller instead of
-  running nested but needs to both evaluate and simplify.
+    This is used during rewriting to simplify side conditions of rules
+    (to decide whether or not a rule can apply, not to retain the
+    ensured conditions).
 
-  Outer MaybeT: failure indicates a constraint was false
-  Inner Maybe: Nothing if constraint was true, otherwise simplified constraint
+    If and as soon as this function is used inside equation
+    application, it needs to run within the same 'EquationM' context
+    so we can detect simplification loops and avoid monad nesting.
 -}
-_simplifyConstraint ::
+simplifyConstraint ::
+    KoreDefinition ->
+    Maybe LLVM.API ->
     Predicate ->
-    EquationM Predicate
---  Awaiting a simplier representation of constraints, we are assuming
---  all predicates are of the form 'P ==Bool true' and evaluating them
---  using simplifyBool if they are concrete.
-_simplifyConstraint = \case
+    Predicate
+simplifyConstraint def mbApi p =
+    either (const p) fst
+        . runEquationM def mbApi
+        $ simplifyConstraint' p
+
+-- version for internal nested evaluation
+simplifyConstraint' :: Predicate -> EquationM Predicate
+-- We are assuming all predicates are of the form 'P ==Bool true' and
+-- evaluating them using simplifyBool if they are concrete.
+-- Non-concrete \equals predicates are simplified using evaluateTerm.
+simplifyConstraint' = \case
     EqualsTerm t TrueBool
         | isConcrete t -> do
             mbApi <- (.llvmApi) <$> getState
@@ -525,7 +536,7 @@ _simplifyConstraint = \case
             evalBool t >>= prune
     EqualsTerm TrueBool t ->
         -- although "true" is usually 2nd
-        _simplifyConstraint (EqualsTerm t TrueBool)
+        simplifyConstraint' (EqualsTerm t TrueBool)
     other ->
         pure other -- should not occur, predicates should be '_ ==Bool true'
   where
@@ -534,10 +545,10 @@ _simplifyConstraint = \case
             TrueBool -> Top
             FalseBool -> Bottom
             other -> EqualsTerm other TrueBool
+
     evalBool :: Term -> EquationM Term
     evalBool t = do
-        prior <- getState -- save state before so we can "switch"
-        -- between evaluate and simplify modes
-        let result = t -- FIXME simplify and evaluate here
+        prior <- getState -- save prior state so we can revert
+        result <- iterateEquations 100 TopDown PreferFunctions t
         EquationM $ put prior
         pure result

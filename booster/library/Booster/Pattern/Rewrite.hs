@@ -38,6 +38,7 @@ import Booster.Pattern.ApplyEquations (
     evaluateTerm,
     isMatchFailure,
     isSuccess,
+    simplifyConstraint,
  )
 import Booster.Pattern.Base
 import Booster.Pattern.Index (TermIndex (..), kCellTermIndex)
@@ -57,9 +58,6 @@ throw = RewriteM . lift . throwE
 
 getDefinition :: RewriteM err KoreDefinition
 getDefinition = RewriteM $ fst <$> ask
-
-getLLVM :: RewriteM err (Maybe LLVM.API)
-getLLVM = RewriteM $ snd <$> ask
 
 {- | Performs a rewrite step (using suitable rewrite rules from the
    definition).
@@ -208,8 +206,8 @@ applyRule pat rule = runMaybeT $ do
         Predicate ->
         MaybeT (RewriteM (RewriteFailed k)) (Maybe a)
     checkConstraint onUnclear p = do
-        mApi <- lift getLLVM
-        case simplifyPredicate mApi p of
+        (def, mApi) <- lift $ RewriteM ask
+        case simplifyConstraint def mApi p of
             Bottom -> fail "Rule condition was False"
             Top -> pure Nothing
             other -> pure $ Just $ onUnclear other
