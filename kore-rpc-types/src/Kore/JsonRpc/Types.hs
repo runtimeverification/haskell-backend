@@ -53,6 +53,8 @@ data ImpliesRequest = ImpliesRequest
     { antecedent :: !KoreJson
     , consequent :: !KoreJson
     , _module :: !(Maybe Text)
+    , logSuccessfulSimplifications :: !(Maybe Bool)
+    , logFailedSimplifications :: !(Maybe Bool)
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -62,6 +64,8 @@ data ImpliesRequest = ImpliesRequest
 data SimplifyRequest = SimplifyRequest
     { state :: KoreJson
     , _module :: !(Maybe Text)
+    , logSuccessfulSimplifications :: !(Maybe Bool)
+    , logFailedSimplifications :: !(Maybe Bool)
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -137,14 +141,16 @@ data ImpliesResult = ImpliesResult
     { implication :: KoreJson
     , satisfiable :: Bool
     , condition :: Maybe Condition
+    , logs :: Maybe [LogEntry]
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ImpliesResult
 
-newtype SimplifyResult = SimplifyResult
+data SimplifyResult = SimplifyResult
     { state :: KoreJson
+    , logs :: Maybe [LogEntry]
     }
     deriving stock (Generic, Show, Eq)
     deriving
