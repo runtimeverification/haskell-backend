@@ -27,6 +27,7 @@ import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 import Data.Hashable (Hashable)
 import Data.Hashable qualified as Hashable
+import Data.List (foldl1')
 import Data.Map qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
@@ -99,7 +100,11 @@ data TermF t
 data TermAttributes = TermAttributes
     { variables :: !(Set Variable)
     , isEvaluated :: !Bool
+    -- ^ false for function calls, true for
+    -- variables, recursive through AndTerm
     , hash :: !Int
+    , isConstructorLike :: !Bool
+    -- ^ false for function calls, variables, and AndTerms
     }
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData, Hashable)
@@ -110,10 +115,11 @@ instance Semigroup TermAttributes where
             { variables = a1.variables <> a2.variables
             , isEvaluated = a1.isEvaluated && a2.isEvaluated
             , hash = 0
+            , isConstructorLike = a1.isConstructorLike && a2.isConstructorLike
             }
 
 instance Monoid TermAttributes where
-    mempty = TermAttributes Set.empty True 0
+    mempty = TermAttributes Set.empty True 0 False
 
 -- | A term together with its attributes.
 data Term = Term TermAttributes (TermF Term)
@@ -150,6 +156,9 @@ pattern AndTerm t1 t2 <- Term _ (AndTermF t1 t2)
             Term
                 (a1 <> a2)
                     { hash = Hashable.hash ("AndTerm" :: ByteString, hash a1, hash a2)
+                    , isConstructorLike = False
+                    -- irrelevant, since anyway we never allow
+                    -- AndTerm as a replacement in a match
                     }
                 $ AndTermF t1 t2
 
@@ -159,20 +168,23 @@ pattern SymbolApplication sym sorts args <- Term _ (SymbolApplicationF sym sorts
         SymbolApplication sym [source, target] [arg]
             | sym == injectionSymbol = Injection source target arg
         SymbolApplication sym sorts args =
-            let argAttributes = mconcat $ map getAttributes args
-                newEvaluatedFlag =
-                    case sym.attributes.symbolType of
-                        -- constructors and injections are evaluated if their arguments are
-                        Constructor -> argAttributes.isEvaluated
-                        SortInjection -> argAttributes.isEvaluated
-                        -- function calls are not evaluated
-                        PartialFunction -> False
-                        TotalFunction -> False
+            let argAttributes
+                    | null args = mempty
+                    -- avoid using default isConstructorLike = False
+                    -- if there are arg.s
+                    | otherwise = foldl1' (<>) $ map getAttributes args
+                symIsConstructor =
+                    sym.attributes.symbolType `elem` [Constructor, SortInjection]
              in Term
                     argAttributes
-                        { isEvaluated = newEvaluatedFlag
+                        { isEvaluated =
+                            -- Constructors and injections are evaluated if their arguments are.
+                            -- Function calls are not evaluated.
+                            symIsConstructor && argAttributes.isEvaluated
                         , hash =
                             Hashable.hash ("SymbolApplication" :: ByteString, sym, sorts, map (hash . getAttributes) args)
+                        , isConstructorLike =
+                            symIsConstructor && argAttributes.isConstructorLike
                         }
                     $ SymbolApplicationF sym sorts args
 
@@ -183,6 +195,7 @@ pattern DomainValue sort value <- Term _ (DomainValueF sort value)
             Term
                 mempty
                     { hash = Hashable.hash ("DomainValue" :: ByteString, sort, value)
+                    , isConstructorLike = True
                     }
                 $ DomainValueF sort value
 
