@@ -18,7 +18,6 @@ import Hedgehog (
 import Hedgehog qualified
 import Hedgehog.Gen qualified
 import Hedgehog.Range qualified
-import Kore.Attribute.Axiom (UniqueId)
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Pattern (
@@ -49,6 +48,7 @@ import Kore.Rewrite.RulePattern as RulePattern (
  )
 import Kore.Rewrite.Strategy (Step)
 import Kore.Rewrite.Strategy qualified as Strategy
+import Kore.Simplify.Simplify (SimplifierTrace)
 import Kore.Syntax.Variable
 import Prelude.Kore
 import Test.Kore.Internal.Pattern qualified as Pattern
@@ -377,7 +377,7 @@ runStepWorker ::
     result
         ~ Strategy.ExecutionGraph
             (ProgramState (Pattern RewritingVariableName))
-            (RewriteRule RewritingVariableName, Strategy.Seq UniqueId) =>
+            (RewriteRule RewritingVariableName, Strategy.Seq SimplifierTrace) =>
     (Env -> Simplifier result -> IO result) ->
     -- | depth limit
     Limit Natural ->

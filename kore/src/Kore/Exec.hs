@@ -198,6 +198,7 @@ import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     MonadSimplify (liftSimplifier),
     Simplifier,
+    SimplifierTrace,
     askMetadataTools,
  )
 import Kore.Syntax.Module (
@@ -403,7 +404,7 @@ data StopLabels = StopLabels
     }
 
 data RuleTrace = RuleTrace
-    { simplifications :: Seq (UniqueId)
+    { simplifications :: Seq SimplifierTrace
     , ruleId :: UniqueId
     , ruleLabel :: Label
     }
@@ -519,7 +520,7 @@ rpcExec
 
         toTransitionResult ::
             RpcExecState v ->
-            [(RpcExecState v, Seq (RewriteRule v, Seq UniqueId))] ->
+            [(RpcExecState v, Seq (RewriteRule v, Seq SimplifierTrace))] ->
             (GraphTraversal.TransitionResult (RpcExecState v))
         toTransitionResult prior@RpcExecState{rpcProgState = priorPState} [] =
             case priorPState of

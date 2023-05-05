@@ -12,6 +12,7 @@ Portability : portable
 module Kore.Simplify.API (
     evalSimplifier,
     evalSimplifierProofs,
+    evalSimplifierLogged,
 ) where
 
 import Control.Monad.Reader
@@ -19,6 +20,7 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import Data.Sequence (Seq)
 import Kore.Attribute.Symbol qualified as Attribute (
     Symbol,
  )
@@ -171,6 +173,18 @@ evalSimplifier ::
 evalSimplifier verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
     env <- mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquations
     runSimplifier env simplifier
+
+evalSimplifierLogged ::
+    VerifiedModuleSyntax Attribute.Symbol ->
+    SortGraph ->
+    OverloadGraph ->
+    SmtMetadataTools Attribute.Symbol ->
+    Map AxiomIdentifier [Equation VariableName] ->
+    Simplifier a ->
+    SMT (Seq SimplifierTrace, a)
+evalSimplifierLogged verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
+    env <- mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquations
+    runSimplifierLogged env simplifier
 
 evalSimplifierProofs ::
     VerifiedModule Attribute.Symbol ->
