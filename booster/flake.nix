@@ -24,7 +24,7 @@
         };
       allNixpkgsFor = perSystem nixpkgsForSystem;
       nixpkgsFor = system: allNixpkgsFor.${system};
-      index-state = "2023-01-19T00:00:00Z";
+      index-state = "2023-04-24T00:00:00Z";
 
       boosterBackendFor = { compiler, pkgs, profiling ? false, k }:
         let
@@ -40,6 +40,7 @@
         in
         pkgs.haskell-nix.cabalProject {
           name = "hs-backend-booster";
+          supportHpack = true;
           compiler-nix-name = compiler;
           src = pkgs.nix-gitignore.gitignoreSourcePure [
             ''
@@ -86,11 +87,11 @@
           }];
         };
 
-      defaultCompiler = "ghc925";
+      defaultCompiler = "ghc927";
 
       # Get flake outputs for different GHC versions
       flakesFor = pkgs: k:
-        let compilers = [ defaultCompiler "ghc924" ];
+        let compilers = [ defaultCompiler ];
 
         in builtins.listToAttrs (lib.lists.forEach compilers (compiler:
           lib.attrsets.nameValuePair compiler
