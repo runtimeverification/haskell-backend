@@ -100,9 +100,9 @@ library:
     - alex
 
 executables:
-  hs-backend-booster:
-    source-dirs: executable
-    main: Main.hs
+  booster-dev:
+    source-dirs: tools/booster-dev
+    main: Server.hs
     dependencies:
     - base
     - containers
@@ -193,8 +193,8 @@ executables:
     ghc-options:
     - -rtsopts
 
-  hs-booster-proxy:
-    source-dirs: tools/hs-booster-proxy
+  booster:
+    source-dirs: tools/booster
     main: Server.hs
     dependencies:
       - aeson

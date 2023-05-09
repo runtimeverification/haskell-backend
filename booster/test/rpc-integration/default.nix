@@ -1,4 +1,4 @@
-{ stdenv, coreutils, lib, hs-backend-booster, rpc-client, git, k }:
+{ stdenv, coreutils, lib, booster-dev, rpc-client, git, k }:
 
 let
   mkIntegrationTest =
@@ -15,7 +15,7 @@ let
         ${lib.strings.concatMapStrings (f: ''
           export ${f}
         '') buildFlags}
-        export SERVER=${hs-backend-booster}/bin/hs-backend-booster
+        export SERVER=${booster-dev}/bin/booster-dev
         export CLIENT=${rpc-client}/bin/rpc-client
 
         patchShebangs runDirectoryTest.sh
