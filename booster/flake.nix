@@ -75,7 +75,7 @@
           modules = [{
             enableProfiling = profiling;
             enableLibraryProfiling = profiling;
-            packages.hs-backend-booster.components.exes.hs-booster-proxy = add-z3 "hs-booster-proxy";
+            packages.hs-backend-booster.components.exes.booster = add-z3 "booster";
             packages.hs-backend-booster.components.tests.llvm-integration = {
               build-tools = with pkgs; lib.mkForce [ makeWrapper ];
               postInstall = ''
@@ -136,12 +136,12 @@
           pkgs = nixpkgsFor system;
           flakes = flakesFor pkgs k-framework.packages.${system}.k;
         in {
-          hs-backend-booster =
-            packages."hs-backend-booster:exe:hs-backend-booster";
+          booster =
+            packages."hs-backend-booster:exe:booster";
+          booster-dev = packages."hs-backend-booster:exe:booster-dev";
           rpc-client = packages."hs-backend-booster:exe:rpc-client";
           parsetest = packages."hs-backend-booster:exe:parsetest";
           dltest = packages."hs-backend-booster:exe:dltest";
-          hs-booster-proxy = packages."hs-backend-booster:exe:hs-booster-proxy";
         } // packages // collectOutputs "packages" flakes);
 
       apps = perSystem (system:
@@ -163,12 +163,12 @@
           };
 
         in {
-          hs-backend-booster = apps."hs-backend-booster:exe:hs-backend-booster";
+          booster = apps."hs-backend-booster:exe:booster";
+          booster-dev = apps."hs-backend-booster:exe:booster-dev";
           rpc-client = apps."hs-backend-booster:exe:rpc-client";
           parsetest = apps."hs-backend-booster:exe:parsetest";
           parsetest-binary = apps."hs-backend-booster:exe:parsetest-binary";
           dltest = apps."hs-backend-booster:exe:dltest";
-          hs-booster-proxy = apps."hs-backend-booster:exe:hs-booster-proxy";
           update-haskell-backend = {
             type = "app";
             program = "${scripts}/update-haskell-backend.sh";
@@ -197,8 +197,8 @@
           integration = with nixpkgsFor system;
             with flakes.${defaultCompiler};
             callPackage ./test/rpc-integration {
-              hs-backend-booster =
-                packages."hs-backend-booster:exe:hs-backend-booster";
+              booster-dev =
+                packages."hs-backend-booster:exe:booster-dev";
               rpc-client = packages."hs-backend-booster:exe:rpc-client";
               inherit (k-framework.packages.${system}) k;
             };
@@ -211,8 +211,8 @@
         (_: prev:
           let inherit ((flakesFor prev k-framework.packages.${prev.system}.k).${defaultCompiler}) packages;
           in {
-            hs-backend-booster =
-              packages."hs-backend-booster:exe:hs-backend-booster";
+            booster =
+              packages."hs-backend-booster:exe:booster";
             rpc-client = packages."hs-backend-booster:exe:rpc-client";
           })
       ];
