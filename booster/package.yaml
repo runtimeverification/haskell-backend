@@ -205,12 +205,14 @@ executables:
       - containers
       - deepseq
       - exceptions
+      - extra
       - hs-backend-booster
       - json-rpc
       - kore
       - kore-rpc-types
       - monad-logger
       - optparse-applicative
+      - prettyprinter
       - stm
       - text
       - transformers
