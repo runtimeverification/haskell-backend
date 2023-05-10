@@ -40,7 +40,7 @@ echo "Starting server"
 $server $kore --module ${MODULE?"Unable to find main module"} $server_params &
 server_pid=$!
 
-trap 'kill -9 ${server_pid}; popd' ERR EXIT
+trap 'kill -2 ${server_pid}; popd' ERR EXIT
 echo "Server PID ${server_pid}"
 
 sleep 2
