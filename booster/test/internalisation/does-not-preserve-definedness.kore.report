@@ -1,11 +1,10 @@
 Modules: 5
   - BASIC-K
-  - EXISTENTIALS
+  - DOES-NOT-PRESERVE-DEFINEDNESS
   - INJ
   - K
   - KSEQ
-Sorts: 16
-  - SortBaz
+Sorts: 15
   - SortBool
   - SortFoo
   - SortGeneratedCounterCell
@@ -21,7 +20,7 @@ Sorts: 16
   - SortList
   - SortMap
   - SortSet
-Symbols: 87
+Symbols: 85
   - Lbl<generatedCounter>
   - Lbl<generatedTop>
   - Lbl<generatedTop>-fragment
@@ -42,10 +41,9 @@ Symbols: 87
   - Lbl_[_]orDefault__MAP_KItem_Map_KItem_KItem
   - Lbl_|->_
   - Lbl_|Set__SET_Set_Set_Set
-  - LblBar()_EXISTENTIALS_Foo
-  - LblBaz(_)_EXISTENTIALS_Baz_Foo
-  - LblBeep(_,_)_EXISTENTIALS_Baz_Foo_Baz
-  - LblFoo()_EXISTENTIALS_Foo
+  - LblBar()_DOES-NOT-PRESERVE-DEFINEDNESS_Foo
+  - LblBaz()_DOES-NOT-PRESERVE-DEFINEDNESS_Foo
+  - LblFoo()_DOES-NOT-PRESERVE-DEFINEDNESS_Foo
   - LblList:get
   - LblList:range
   - LblListItem
@@ -57,12 +55,12 @@ Symbols: 87
   - Lblchoice(_)_MAP_KItem_Map
   - Lblchoice(_)_SET_KItem_Set
   - LblfillList(_,_,_,_)_LIST_List_List_Int_Int_KItem
+  - Lblfrob
   - LblgetGeneratedCounterCell
   - LblinitGeneratedCounterCell
   - LblinitGeneratedTopCell
   - LblinitKCell
   - LblintersectSet(_,_)_SET_Set_Set_Set
-  - LblisBaz
   - LblisBool
   - LblisFoo
   - LblisGeneratedCounterCell
@@ -83,7 +81,6 @@ Symbols: 87
   - LblmakeList(_,_)_LIST_List_Int_KItem
   - LblnoGeneratedCounterCell
   - LblnoKCell
-  - Lblproject:Baz
   - Lblproject:Bool
   - Lblproject:Foo
   - Lblproject:GeneratedCounterCell
@@ -109,11 +106,10 @@ Symbols: 87
   - dotk
   - inj
   - kseq
-Axioms: 2
-Axioms preserving definedness: 2
+Axioms: 1
+Axioms preserving definedness: 0
 Axioms containing AC symbols: 0
 Subsorts:
-- SortBaz: SortBaz
 - SortBool: SortBool
 - SortFoo: SortFoo
 - SortGeneratedCounterCell: SortGeneratedCounterCell
@@ -129,8 +125,7 @@ Subsorts:
   - SortKCell
   - SortKCellOpt
 - SortKConfigVar: SortKConfigVar
-- SortKItem: 15
-  - SortBaz
+- SortKItem: 14
   - SortBool
   - SortFoo
   - SortGeneratedCounterCell
@@ -149,16 +144,13 @@ Subsorts:
 - SortMap: SortMap
 - SortSet: SortSet
 Rewrite rules by term index:
-- LblBaz(_)_EXISTENTIALS_Baz_Foo: 2
-  - /home/jost/work/RV/code/hs-backend-booster/test/internalisation/existentials.k :  (8, 8)
-  - /home/jost/work/RV/code/hs-backend-booster/test/internalisation/existentials.k :  (7, 8)
+- LblFoo()_DOES-NOT-PRESERVE-DEFINEDNESS_Foo: /home/jost/work/RV/code/hs-backend-booster/test/internalisation/does-not-preserve-definedness.k :  (4, 8)
 Function equations by term index:
 - Lbl_|Set__SET_Set_Set_Set: /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (531, 8)
 - LblgetGeneratedCounterCell: -
 - LblinitGeneratedCounterCell: -
 - LblinitGeneratedTopCell: -
 - LblinitKCell: -
-- LblisBaz: -
 - LblisBool: -
 - LblisFoo: -
 - LblisGeneratedCounterCell: -
@@ -174,7 +166,6 @@ Function equations by term index:
 - LblisList: -
 - LblisMap: -
 - LblisSet: -
-- Lblproject:Baz: -
 - Lblproject:Bool: -
 - Lblproject:Foo: -
 - Lblproject:GeneratedCounterCell: -
