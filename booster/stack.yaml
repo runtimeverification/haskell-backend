@@ -1,4 +1,4 @@
-resolver: lts-20.8
+resolver: lts-20.20
 
 packages:
 - .
@@ -27,6 +27,6 @@ extra-deps:
 # Allow a newer minor version of GHC than the snapshot specifies
 compiler-check: newer-minor
 
-local-bin-path: ./.build/kore/bin
+local-bin-path: ./.build/booster/bin
 
 allow-newer: true

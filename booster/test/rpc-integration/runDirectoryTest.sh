@@ -1,3 +1,25 @@
+#!/usr/bin/env bash
+
+# Run RPC integration tests using files in a given directory.
+# The directory name is expected to match "test-<stem>"
+#
+# - starts an RPC server (SERVER)
+#   - with a kore definition resources/<stem>.kore
+#   - if it exists, using an llvm library resources/<stem>.dylib
+# - sends the files named test-<stem>/state-<test>.json as requests
+#   - using CLIENT
+#   - if file suffix is "-raw.json", sending the json as-is
+#   - otherwise sending as an "execute" request, with additional
+#     parameters from file test-<stem>/params-<test>.json
+#   - expecting the response to match test-<stem>/response-<test>.json
+#
+# Environment variables
+#   SERVER:      path to RPC server executable
+#                  (default <top>/.build/booster/bin/booster)
+#   CLIENT:      path to RPC client executable
+#                  (default <top>/.build/booster/bin/rpc-client)
+#   SERVER_OPTS: additional options to pass to the SERVER
+#                  (default: none)
 
 directory=${1?"Please provide a test directory in a single argument"}
 
@@ -7,9 +29,9 @@ pushd $(dirname $0)
 shift
 
 dir=$(basename $directory)
-bindir=../../.build/kore/bin
+bindir=../../.build/booster/bin
 
-server=${SERVER:-$bindir/hs-backend-booster}
+server=${SERVER:-$bindir/booster}
 client=${CLIENT:-$bindir/rpc-client}
 
 kore=resources/${dir#test-}.kore

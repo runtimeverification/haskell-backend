@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  ghc_version: '9.2.5'
+  ghc_version: '9.2.7'
   hlint_version: '3.4.1'
   fourmolu_version: '0.12.0.0'
   hpack_version: '0.34.2'
@@ -34,11 +34,11 @@ jobs:
         uses: actions/cache@v3
         with:
           path: stack-cache
-          key: stack-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
+          key: stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
           restore-keys: |
-            stack-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
-            stack-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}
-            stack-2-${{ runner.os }}
+            stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
+            stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}
+            stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}
 
       - name: 'Set up Docker'
         uses: ./.github/actions/with-docker
@@ -193,9 +193,5 @@ jobs:
           nix build .#checks.${{ matrix.nix }}.integration.module-addition --extra-experimental-features 'nix-command flakes' --print-build-logs
           nix build .#checks.${{ matrix.nix }}.integration.imp --extra-experimental-features 'nix-command flakes' --print-build-logs -o imp.md
           nix build .#checks.${{ matrix.nix }}.integration.existentials --extra-experimental-features 'nix-command flakes' --print-build-logs
-          echo "${{ matrix.nix }}" > out.md
-          cat imp.md >> out.md
-          cat out.md >> $GITHUB_STEP_SUMMARY
-          [[ ! -z "${{ github.event.pull_request.head.sha }}" ]] && \
-            gh pr comment ${{ github.event.pull_request.number }} -F out.md || \
-            cat out.md
+          echo "${{ matrix.nix }}" >> $GITHUB_STEP_SUMMARY
+          cat imp.md >> $GITHUB_STEP_SUMMARY
