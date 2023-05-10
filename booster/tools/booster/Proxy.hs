@@ -12,6 +12,7 @@ module Proxy (
 ) where
 
 import Control.Concurrent.MVar qualified as MVar
+import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Logger qualified as Log
 import Data.Aeson.Types (Value (..))
 import Data.Maybe (catMaybes, isJust)
@@ -29,6 +30,7 @@ import Kore.JsonRpc.Types qualified as ExecuteRequest (ExecuteRequest (..))
 import Kore.Log qualified
 import Kore.Syntax.Definition (SentenceAxiom)
 import Kore.Syntax.Json.Types qualified as KoreJson
+import Stats (APIMethods (..), StatsVar, addStats, microsWithUnit, timed)
 
 data KoreServer = KoreServer
     { serverState :: MVar.MVar Kore.ServerState
@@ -48,25 +50,54 @@ serverError detail = ErrorObj ("Server error: " <> detail) (-32032)
 respondEither ::
     forall m.
     Log.MonadLogger m =>
+    MonadIO m =>
+    Maybe StatsVar ->
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res)
-respondEither booster kore req = case req of
+respondEither mbStatsVar booster kore req = case req of
     Execute execReq
-        | isJust execReq.stepTimeout -> kore req
-        | isJust execReq.movingAverageStepTimeout -> kore req
-        | otherwise -> loop 0 execReq
-    Implies _ -> loggedKore "Implies" req
-    Simplify _ -> loggedKore "Simplify" req
+        | isJust execReq.stepTimeout || isJust execReq.movingAverageStepTimeout ->
+            loggedKore Stats.ExecuteM req
+        | otherwise ->
+            startLoop execReq
+    Implies _ ->
+        loggedKore Stats.ImpliesM req
+    Simplify _ ->
+        loggedKore Stats.SimplifyM req
     AddModule _ -> do
         -- execute in booster first, assuming that kore won't throw an
         -- error if booster did not. The response is empty anyway.
-        booster req >>= \case
-            Left err -> pure $ Left err
-            Right _ -> kore req
-    Cancel -> pure $ Left $ ErrorObj "Cancel not supported" (-32601) Null
+        (boosterResult, boosterTime) <- withTime $ booster req
+        case boosterResult of
+            Left _err -> pure boosterResult
+            Right _ -> do
+                (koreRes, koreTime) <- withTime $ kore req
+                logStats Stats.AddModuleM (boosterTime + koreTime, koreTime)
+                pure koreRes
+    Cancel ->
+        pure $ Left $ ErrorObj "Cancel not supported" (-32601) Null
   where
-    loggedKore msg r = Log.logInfoNS "proxy" (msg <> " (using kore)") >> kore r
+    loggedKore method r = do
+        Log.logInfoNS "proxy" . Text.pack $ show method <> " (using kore)"
+        (result, time) <- withTime $ kore r
+        logStats method (time, time)
+        pure result
+
+    withTime = if isJust mbStatsVar then Stats.timed else fmap (,0.0)
+
+    logStats method (time, koreTime)
+        | Just v <- mbStatsVar = do
+            addStats v method time koreTime
+            Log.logInfoNS "proxy" . Text.pack . unwords $
+                [ "Performed"
+                , show method
+                , "in"
+                , microsWithUnit time
+                , "(" <> microsWithUnit koreTime <> " kore time)"
+                ]
+        | otherwise =
+            pure ()
 
     toRequestState :: ExecuteState -> KoreJson.KoreJson
     toRequestState ExecuteState{term = t, substitution, predicate} =
@@ -76,56 +107,66 @@ respondEither booster kore req = case req of
                     foldr (KoreJson.KJAnd $ KoreJson.SortApp (KoreJson.Id "SortGeneratedTopCell") []) t.term subAndPred
                 }
 
-    -- loop :: Depth -> ExecuteRequest -> m (Either Response)
-    loop currentDepth r = do
+    startLoop = loop (0, 0.0, 0.0)
+
+    -- loop :: (Depth, Double, Double) -> ExecuteRequest -> m (Either Response)
+    loop (!currentDepth, !time, !koreTime) r = do
         Log.logInfoNS "proxy" . Text.pack $
-            "Iterating execute request at " <> show currentDepth
+            if currentDepth == 0
+                then "Starting execute request"
+                else "Iterating execute request at " <> show currentDepth
         let mbDepthLimit = flip (-) currentDepth <$> r.maxDepth
-         in booster (Execute r{maxDepth = mbDepthLimit}) >>= \case
-                Right (Execute boosterResult)
-                    -- if the new backend aborts or gets stuck, revert to the old one
-                    --
-                    -- if we are stuck in the new backend we try to re-run
-                    -- in the old one to work around any potential
-                    -- unification bugs.
-                    | boosterResult.reason `elem` [Aborted, Stuck] -> do
-                        -- attempt to do one step in the old backend
-                        Log.logInfoNS "proxy" . Text.pack $
-                            "Booster " <> show boosterResult.reason <> " at " <> show boosterResult.depth
-                        kore
-                            ( Execute
-                                r
-                                    { state = toRequestState boosterResult.state
-                                    , maxDepth = Just $ Depth 1
-                                    }
-                            )
-                            >>= \case
-                                Right (Execute koreResult)
-                                    | koreResult.reason == DepthBound -> do
-                                        -- if we made one step, add the number of
-                                        -- steps we have taken to the counter and
-                                        -- attempt with booster again
-                                        Log.logInfoNS "proxy" "kore depth-bound, continuing"
-                                        loop
-                                            (currentDepth + boosterResult.depth + koreResult.depth)
-                                            r{ExecuteRequest.state = toRequestState koreResult.state}
-                                    | otherwise -> do
-                                        -- otherwise we have hit a different
-                                        -- HaltReason, at which point we should
-                                        -- return, setting the correct depth
-                                        Log.logInfoNS "proxy" . Text.pack $
-                                            "Kore " <> show koreResult.reason
-                                        pure $
-                                            Right $
-                                                Execute koreResult{depth = currentDepth + boosterResult.depth + koreResult.depth}
-                                -- can only be an error at this point
-                                res -> pure res
-                    | otherwise -> do
-                        -- we were successful with the booster, thus we
-                        -- return the booster result with the updated
-                        -- depth, in case we previously looped
-                        Log.logInfoNS "proxy" . Text.pack $
-                            "Booster " <> show boosterResult.reason <> " at " <> show boosterResult.depth
-                        pure $ Right $ Execute boosterResult{depth = currentDepth + boosterResult.depth}
-                -- can only be an error at this point
-                res -> pure res
+        (bResult, bTime) <- withTime $ booster (Execute r{maxDepth = mbDepthLimit})
+        case bResult of
+            Right (Execute boosterResult)
+                -- if the new backend aborts or gets stuck, revert to the old one
+                --
+                -- if we are stuck in the new backend we try to re-run
+                -- in the old one to work around any potential
+                -- unification bugs.
+                | boosterResult.reason `elem` [Aborted, Stuck] -> do
+                    -- attempt to do one step in the old backend
+                    Log.logInfoNS "proxy" . Text.pack $
+                        "Booster " <> show boosterResult.reason <> " at " <> show boosterResult.depth
+                    (kResult, kTime) <-
+                        withTime $
+                            kore
+                                ( Execute
+                                    r
+                                        { state = toRequestState boosterResult.state
+                                        , maxDepth = Just $ Depth 1
+                                        }
+                                )
+                    case kResult of
+                        Right (Execute koreResult)
+                            | koreResult.reason == DepthBound -> do
+                                -- if we made one step, add the number of
+                                -- steps we have taken to the counter and
+                                -- attempt with booster again
+                                Log.logInfoNS "proxy" "kore depth-bound, continuing"
+                                loop
+                                    ( currentDepth + boosterResult.depth + koreResult.depth
+                                    , time + bTime + kTime
+                                    , koreTime + kTime
+                                    )
+                                    r{ExecuteRequest.state = toRequestState koreResult.state}
+                            | otherwise -> do
+                                -- otherwise we have hit a different
+                                -- HaltReason, at which point we should
+                                -- return, setting the correct depth
+                                Log.logInfoNS "proxy" . Text.pack $
+                                    "Kore " <> show koreResult.reason
+                                logStats Stats.ExecuteM (time + bTime + kTime, koreTime + kTime)
+                                pure $ Right $ Execute koreResult{depth = currentDepth + boosterResult.depth + koreResult.depth}
+                        -- can only be an error at this point
+                        res -> pure res
+                | otherwise -> do
+                    -- we were successful with the booster, thus we
+                    -- return the booster result with the updated
+                    -- depth, in case we previously looped
+                    Log.logInfoNS "proxy" . Text.pack $
+                        "Booster " <> show boosterResult.reason <> " at " <> show boosterResult.depth
+                    logStats Stats.ExecuteM (time + bTime, koreTime)
+                    pure $ Right $ Execute boosterResult{depth = currentDepth + boosterResult.depth}
+            -- can only be an error at this point
+            res -> pure res
