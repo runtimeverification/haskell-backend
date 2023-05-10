@@ -9,3 +9,4 @@ result*
 .envrc
 /test/llvm-integration/definition/llvm-kompiled/
 .DS_Store
+/*.code-workspace
