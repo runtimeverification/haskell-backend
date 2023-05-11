@@ -104,7 +104,9 @@ import Test.Tasty.HUnit (
  )
 
 test_replInterpreter :: [TestTree]
-test_replInterpreter =
+test_replInterpreter = (:[]) . testCase "Interpreter tests" . foldl1 (>>) $
+    -- we need to sequentialise these tests, `runInputT` in
+    -- `runWithState` is not thread-safe
     [ showUsage `tests` "Showing the usage message"
     , help `tests` "Showing the help message"
     , step5 `tests` "Performing 5 steps"
@@ -797,8 +799,8 @@ hasCurrentClaimIndex st expectedClaimIndex =
     let actualClaimIndex = claimIndex st
      in actualClaimIndex `equals` expectedClaimIndex
 
-tests :: IO () -> String -> TestTree
-tests = flip testCase
+tests :: IO () -> String -> IO () -- TestTree
+tests = const -- flip testCase
 
 mkState ::
     TimeSpec ->
