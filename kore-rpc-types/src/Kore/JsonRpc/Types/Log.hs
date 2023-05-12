@@ -13,6 +13,7 @@ import Deriving.Aeson (
     CustomJSON (..),
     FieldLabelModifier,
     OmitNothingFields,
+    StripPrefix,
  )
 
 data LogOrigin = KoreRpc | Booster | Llvm
@@ -29,12 +30,12 @@ data LogRewriteResult
         }
     | Failure
         { reason :: Text
-        , ruleId :: Maybe Text
+        , _ruleId :: Maybe Text
         }
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab], ConstructorTagModifier '[CamelToKebab]] LogRewriteResult
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab, StripPrefix "_"], ConstructorTagModifier '[CamelToKebab]] LogRewriteResult
 
 data LogEntry
     = Rewrite
