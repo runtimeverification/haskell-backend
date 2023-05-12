@@ -29,7 +29,7 @@ data LogRewriteResult
         }
     | Failure
         { reason :: Text
-        , ruleId :: Text
+        , ruleId :: Maybe Text
         }
     deriving stock (Generic, Show, Eq)
     deriving
