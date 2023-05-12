@@ -13,7 +13,7 @@
       kore-rpc-types = ./kore-rpc-types.nix;
     };
   };
-  resolver = "lts-20.8";
+  resolver = "lts-20.20";
   modules = [
     ({ lib, ... }: { packages = { }; })
     { packages = { "$everything" = { ghcOptions = [ "-haddock" ]; }; }; }
