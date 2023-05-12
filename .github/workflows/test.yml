@@ -54,7 +54,9 @@ jobs:
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
 
       - name: Build
-        run: nix-build -A kore
+        run: |
+          nix --version
+          nix-build -A kore
 
       - name: Check shell
         run: nix develop --print-build-logs --command stack --version

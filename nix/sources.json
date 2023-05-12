@@ -29,10 +29,10 @@
         "homepage": "https://input-output-hk.github.io/haskell.nix",
         "owner": "input-output-hk",
         "repo": "haskell.nix",
-        "rev": "418612f2f2b814ae6161682fb3770c3c86c41b44",
-        "sha256": "04nbb1xr6wkclwp9yzw9mlyamc36z3vm9zgx01qa08mi4f2n692s",
+        "rev": "204242923b5b41248b263dce9d108276a35722b4",
+        "sha256": "15154ffn9zry267y0y86gli7mp42lbgc6r6zbvcny73algsd7hkv",
         "type": "tarball",
-        "url": "https://github.com/input-output-hk/haskell.nix/archive/418612f2f2b814ae6161682fb3770c3c86c41b44.tar.gz",
+        "url": "https://github.com/input-output-hk/haskell.nix/archive/204242923b5b41248b263dce9d108276a35722b4.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
         "version": "05f99684cb3b86703e910da6be1e619447788c7b"
     },
