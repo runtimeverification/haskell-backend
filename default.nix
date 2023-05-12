@@ -36,7 +36,7 @@ in let
       ignore = [ "/*" "!/stack.yaml" "!/kore" "!/kore-rpc-types" ];
     };
     inherit checkMaterialization;
-    materialized = ./nix/kore-ghc925.nix.d;
+    materialized = ./nix/kore-ghc927.nix.d;
     modules = [{
       # package *
       enableLibraryProfiling = true;
