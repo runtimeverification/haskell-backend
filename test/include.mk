@@ -33,8 +33,8 @@ TESTS = \
 OUTS += $(foreach TEST, $(TESTS), $(TEST).out)
 GOLDEN += $(foreach OUT, $(OUTS), $(OUT).golden)
 
-KOMPILE_OPTS += --output-definition $(DEF_DIR)
-KRUN_OPTS += --definition $(DEF_DIR)
+KOMPILE_OPTS += --output-definition $(KOMPILED)
+KRUN_OPTS += --definition $(KOMPILED)
 KORE_EXEC_OPTS += \
 	$(if $(STORE_PROOFS),\
 		--save-proofs $(STORE_PROOFS),\
