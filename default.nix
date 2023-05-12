@@ -80,9 +80,9 @@ in let
     };
 
     # Change the compiler when updating our own resolver.
-    compiler-nix-name = "ghc925";
-    ghcVersion = "8.10.7";
-    index-state = "2023-01-25T00:00:00Z";
+    compiler-nix-name = "ghc927";
+    ghcVersion = "9.2.7";
+    index-state = "2023-04-24T00:00:00Z";
   };
 
 in default

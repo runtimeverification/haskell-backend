@@ -63,7 +63,7 @@
         };
 
       projectOverlay = { pkgs, pkgs', src, shell ? { }
-        , compiler-nix-name ? "ghc8107", profiling ? false
+        , compiler-nix-name ? "ghc927", profiling ? false
         , profilingDetail ? "toplevel-functions", ghcOptions ? [ ] }:
         let
           add-z3 = exe: {
@@ -141,23 +141,23 @@
     in {
       prelude-kore = ./src/main/kore/prelude.kore;
 
-      project = projectForGhc { ghc = "ghc925"; };
+      project = projectForGhc { ghc = "ghc927"; };
 
       projectProfilingEventlog = projectForGhc {
-        ghc = "ghc925";
+        ghc = "ghc927";
         profiling = true;
         ghcOptions = [ "-eventlog" ];
       };
 
 
       projectEventlogInfoTable = projectForGhc {
-        ghc = "ghc925";
+        ghc = "ghc927";
         ghcOptions =
           [ "-finfo-table-map" "-fdistinct-constructor-tables" "-eventlog" ];
       };
 
       flake = perSystem (system: self.project.${system}.flake { });
-      
+
       flakeGhc9 = perSystem (system: self.projectGhc9.${system}.flake { });
 
       packages = perSystem (system:
@@ -226,7 +226,7 @@
             pkgs' = final;
             src = haskell-backend-src {
               pkgs = prev;
-              ghc = "ghc925";
+              ghc = "ghc927";
             };
           };
         })
