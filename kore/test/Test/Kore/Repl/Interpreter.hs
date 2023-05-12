@@ -95,54 +95,79 @@ import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.Kore.Simplify
 import Test.Tasty (
+    DependencyType (AllFinish),
     TestTree,
+    after_,
+    testGroup,
  )
 import Test.Tasty.HUnit (
     Assertion,
     testCase,
     (@?=),
  )
+import Test.Tasty.Patterns.Types as T (Expr (..))
 
-test_replInterpreter :: [TestTree]
-test_replInterpreter = (:[]) . testCase "Interpreter tests" . foldl1 (>>) $
-    -- we need to sequentialise these tests, `runInputT` in
-    -- `runWithState` is not thread-safe
-    [ showUsage `tests` "Showing the usage message"
-    , help `tests` "Showing the help message"
-    , step5 `tests` "Performing 5 steps"
-    , step100 `tests` "Stepping over proof completion"
-    , stepf5noBranching `tests` "Performing 5 foced steps in non-branching proof"
-    , stepf100noBranching `tests` "Stepping over proof completion"
-    , makeSimpleAlias `tests` "Creating an alias with no arguments"
-    , trySimpleAlias `tests` "Executing an existing alias with no arguments"
-    , makeAlias `tests` "Creating an alias with arguments"
-    , aliasOfExistingCommand `tests` "Create alias of existing command"
-    , aliasOfUnknownCommand `tests` "Create alias of unknown command"
-    , recursiveAlias `tests` "Create alias of unknown command"
-    , tryAlias `tests` "Executing an existing alias with arguments"
-    , unificationFailure `tests` "Try axiom that doesn't unify"
-    , unificationSuccess `tests` "Try axiom that does unify"
-    , forceFailure `tests` "TryF axiom that doesn't unify"
-    , forceSuccess `tests` "TryF axiom that does unify"
-    , tryResultsInProven `tests` "TryF axiom results in proven config"
-    , proofStatus `tests` "Multi claim proof status"
-    , logUpdatesState `tests` "Log command updates the state"
-    , debugAttemptEquationUpdatesState `tests` "DebugAttemptEquation command updates the state"
-    , debugApplyEquationUpdatesState `tests` "DebugApplyEquation command updates the state"
-    , debugEquationUpdatesState `tests` "DebugEquation command updates the state"
-    , showCurrentClaim `tests` "Showing current claim"
-    , showClaim1 `tests` "Showing the claim at index 1"
-    , showClaimByName `tests` "Showing the claim with the name 0to10Claim"
-    , showAxiomByName `tests` "Showing the axiom with the name add1Axiom"
-    , unificationFailureWithName `tests` "Try axiom by name that doesn't unify"
-    , unificationSuccessWithName `tests` "Try axiom by name that does unify"
-    , forceFailureWithName `tests` "TryF axiom by name that doesn't unify"
-    , forceSuccessWithName `tests` "TryF axiom by name that does unify"
-    , proveSecondClaim `tests` "Starting to prove the second claim"
-    , proveSecondClaimByName
-        `tests` "Starting to prove the second claim\
-                \ referenced by name"
-    ]
+runSequentially :: [(String, IO ())] -> [TestTree]
+runSequentially tests
+    | null tests = []
+    | otherwise = foldr before [testCase (withNum 0 lastName) lastTest] $ init tests
+  where
+    (lastName, lastTest) = last tests
+    total = length tests
+    withNum n s = show (total - n) <> " - " <> s
+
+    before :: (String, IO ()) -> [TestTree] -> [TestTree]
+    (name, t) `before` [] =
+        [testCase (withNum total name) t]
+    (name, t) `before` (next : rest) =
+        let name' = withNum (length rest + 1) name
+         in testCase name' t :
+            after_ AllFinish (T.EQ (Field NF) (StringLit name')) next :
+            rest
+
+test_replInterpreter :: TestTree
+test_replInterpreter =
+    testGroup "Interpreter interaction" . runSequentially $
+        -- we need to sequentialise these tests, `runInputT` in
+        -- `runWithState` is not thread-safe
+        [ showUsage `tests` "Showing the usage message"
+        , help `tests` "Showing the help message"
+        , step5 `tests` "Performing 5 steps"
+        , step100 `tests` "Stepping over proof completion"
+        , stepf5noBranching `tests` "Performing 5 foced steps in non-branching proof"
+        , stepf100noBranching `tests` "Stepping over proof completion"
+        , makeSimpleAlias `tests` "Creating an alias with no arguments"
+        , trySimpleAlias `tests` "Executing an existing alias with no arguments"
+        , makeAlias `tests` "Creating an alias with arguments"
+        , aliasOfExistingCommand `tests` "Create alias of existing command"
+        , aliasOfUnknownCommand `tests` "Create alias of unknown command"
+        , recursiveAlias `tests` "Create alias of unknown command"
+        , tryAlias `tests` "Executing an existing alias with arguments"
+        , unificationFailure `tests` "Try axiom that doesn't unify"
+        , unificationSuccess `tests` "Try axiom that does unify"
+        , forceFailure `tests` "TryF axiom that doesn't unify"
+        , forceSuccess `tests` "TryF axiom that does unify"
+        , tryResultsInProven `tests` "TryF axiom results in proven config"
+        , proofStatus `tests` "Multi claim proof status"
+        , logUpdatesState `tests` "Log command updates the state"
+        , debugAttemptEquationUpdatesState `tests` "DebugAttemptEquation command updates the state"
+        , debugApplyEquationUpdatesState `tests` "DebugApplyEquation command updates the state"
+        , debugEquationUpdatesState `tests` "DebugEquation command updates the state"
+        , showCurrentClaim `tests` "Showing current claim"
+        , showClaim1 `tests` "Showing the claim at index 1"
+        , showClaimByName `tests` "Showing the claim with the name 0to10Claim"
+        , showAxiomByName `tests` "Showing the axiom with the name add1Axiom"
+        , unificationFailureWithName `tests` "Try axiom by name that doesn't unify"
+        , unificationSuccessWithName `tests` "Try axiom by name that does unify"
+        , forceFailureWithName `tests` "TryF axiom by name that doesn't unify"
+        , forceSuccessWithName `tests` "TryF axiom by name that does unify"
+        , proveSecondClaim `tests` "Starting to prove the second claim"
+        , proveSecondClaimByName
+            `tests` "Starting to prove the second claim\
+                    \ referenced by name"
+        ]
+  where
+    x `tests` name = (name, x)
 
 showUsage :: IO ()
 showUsage =
@@ -798,9 +823,6 @@ hasCurrentClaimIndex :: ReplState -> ClaimIndex -> IO ()
 hasCurrentClaimIndex st expectedClaimIndex =
     let actualClaimIndex = claimIndex st
      in actualClaimIndex `equals` expectedClaimIndex
-
-tests :: IO () -> String -> IO () -- TestTree
-tests = const -- flip testCase
 
 mkState ::
     TimeSpec ->
