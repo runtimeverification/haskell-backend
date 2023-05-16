@@ -9,6 +9,7 @@ module Booster.Pattern.Rewrite (
     rewriteStep,
     RewriteFailed (..),
     RewriteResult (..),
+    RewriteTrace (..),
     runRewriteM,
 ) where
 
@@ -19,11 +20,13 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Reader (ReaderT (..), ask)
+import Control.Monad.Trans.State.Strict (StateT (runStateT), get, modify)
 import Data.Hashable qualified as Hashable
-import Data.List.NonEmpty (NonEmpty (..))
+import Data.List.NonEmpty (NonEmpty (..), toList)
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromMaybe)
+import Data.Sequence (Seq, (|>))
 import Data.Set qualified as Set
 import Data.Text as Text (Text, pack, unlines)
 import Numeric.Natural
@@ -35,6 +38,7 @@ import Booster.LLVM.Internal qualified as LLVM
 import Booster.Pattern.ApplyEquations (
     Direction (..),
     EquationFailure (..),
+    EquationTrace,
     evaluateTerm,
     isMatchFailure,
     isSuccess,
@@ -107,20 +111,21 @@ rewriteStep cutLabels terminalLabels pat = do
         -- let finalResults = filter (not . isBottom . simplifyPattern dl . snd) results
 
         let labelOf = fromMaybe "" . (.ruleLabel) . (.attributes)
-            ruleIdT = renderOneLineText . ruleId
+            ruleLabelOrLocT = renderOneLineText . ruleLabelOrLoc
+            uniqueId = (.uniqueId) . (.attributes)
 
         case results of
             [] ->
                 processGroups rest
             [(r, x)]
                 | labelOf r `elem` cutLabels ->
-                    pure $ RewriteCutPoint (labelOf r) pat x
+                    pure $ RewriteCutPoint (labelOf r) (uniqueId r) pat x
                 | labelOf r `elem` terminalLabels ->
-                    pure $ RewriteTerminal (labelOf r) x
+                    pure $ RewriteTerminal (labelOf r) (uniqueId r) x
                 | otherwise ->
-                    pure $ RewriteSingle (ruleIdT r) x
+                    pure $ RewriteFinished (Just $ ruleLabelOrLocT r) (uniqueId r) x
             rxs ->
-                pure $ RewriteBranch pat $ NE.fromList $ map snd rxs
+                pure $ RewriteBranch pat $ NE.fromList $ map (\(r, p) -> (labelOf r, uniqueId r, p)) rxs
 
 {- | Tries to apply one rewrite rule:
 
@@ -242,7 +247,7 @@ instance Pretty (RewriteFailed k) where
     pretty (RuleApplicationUnclear rule term remainder) =
         hsep
             [ "Uncertain about unification of rule"
-            , ruleId rule
+            , ruleLabelOrLoc rule
             , " with term "
             , pretty term
             , "Remainder:"
@@ -251,14 +256,14 @@ instance Pretty (RewriteFailed k) where
     pretty (RuleConditionUnclear rule predicate) =
         hsep
             [ "Uncertain about a condition in rule"
-            , ruleId rule
+            , ruleLabelOrLoc rule
             , ": "
             , pretty predicate
             ]
     pretty (DefinednessUnclear rule _pat reasons) =
         hsep $
             [ "Uncertain about definedness of rule "
-            , ruleId rule
+            , ruleLabelOrLoc rule
             , "because of:"
             ]
                 ++ map pretty reasons
@@ -267,7 +272,7 @@ instance Pretty (RewriteFailed k) where
             [ "Unification produced a non-match:"
             , pretty $ Map.toList subst
             , "when matching rule"
-            , ruleId rule
+            , ruleLabelOrLoc rule
             , "with term"
             , pretty term
             ]
@@ -276,69 +281,105 @@ instance Pretty (RewriteFailed k) where
             [ "Sort error while unifying"
             , pretty term
             , "with rule"
-            , ruleId rule
+            , ruleLabelOrLoc rule
             , ":"
             , pretty $ show sortError
             ]
     pretty (TermIndexIsNone term) =
         "Term index is None for term " <> pretty term
 
-ruleId :: RewriteRule k -> Doc a
-ruleId rule =
+ruleLabelOrLoc :: RewriteRule k -> Doc a
+ruleLabelOrLoc rule =
     fromMaybe "unknown rule" $
         fmap pretty rule.attributes.ruleLabel <|> fmap pretty rule.attributes.location
 
 -- | Different rewrite results (returned from RPC execute endpoint)
 data RewriteResult pat
-    = -- | single result (internal use, not returned)
-      RewriteSingle Text pat
-    | -- | branch point
-      RewriteBranch pat (NonEmpty pat)
+    = -- | branch point
+      RewriteBranch pat (NonEmpty (Text, Maybe UniqueId, pat))
     | -- | no rules could be applied, config is stuck
       RewriteStuck pat
     | -- | cut point rule, return current (lhs) and single next state
-      RewriteCutPoint Text pat pat
+      RewriteCutPoint Text (Maybe UniqueId) pat pat
     | -- | terminal rule, return rhs (final state reached)
-      RewriteTerminal Text pat
+      RewriteTerminal Text (Maybe UniqueId) pat
     | -- | stopping because maximum depth has been reached
-      RewriteStopped pat
+      RewriteFinished (Maybe Text) (Maybe UniqueId) pat
     | -- | unable to handle the current case with this rewriter
       -- (signalled by exceptions)
       RewriteAborted pat
     deriving stock (Eq, Show)
     deriving (Functor, Foldable, Traversable)
 
-instance Pretty (RewriteResult Pattern) where
-    pretty (RewriteSingle lbl pat) =
-        hang 4 . vsep $
-            [ "Rewritten to:"
-            , pretty pat
-            , "Using rule:"
-            , parens (pretty lbl)
-            ]
-    pretty (RewriteBranch pat nexts) =
-        hang 4 . vsep $
-            [ "Branch reached at:"
-            , pretty pat
-            , "Next states:"
-            ]
-                <> map pretty (NE.toList nexts)
-    pretty (RewriteStuck pat) =
-        showPattern "Stuck at" pat
-    pretty (RewriteCutPoint lbl pat next) =
-        hang 4 $
-            vsep
-                [ "Cut point reached " <> parens (pretty lbl)
-                , pretty pat
-                , "Next state"
-                , pretty next
+apliedRuleAndResultFromRewriteResult :: RewriteResult pat -> Maybe (Text, Maybe UniqueId, pat)
+apliedRuleAndResultFromRewriteResult = \case
+    RewriteBranch{} -> Nothing
+    RewriteStuck{} -> Nothing
+    RewriteCutPoint lbl uid _ next -> Just (lbl, uid, next)
+    RewriteTerminal lbl uid next -> Just (lbl, uid, next)
+    RewriteFinished (Just lbl) uid next -> Just (lbl, uid, next)
+    RewriteFinished{} -> Nothing
+    RewriteAborted{} -> Nothing
+
+data RewriteTrace pat
+    = -- | single step of execution
+      RewriteSingleStep Text (Maybe UniqueId) pat pat
+    | -- | branching step of execution
+      RewriteBranchingStep pat (NonEmpty (Text, Maybe UniqueId))
+    | -- | attempted rewrite failed
+      RewriteStepFailed (RewriteFailed "Rewrite")
+    | -- | Applied simplification to the pattern
+      RewriteSimplified (Either EquationFailure [EquationTrace])
+    deriving stock (Eq, Show)
+    deriving (Functor, Foldable, Traversable)
+
+instance Pretty (RewriteTrace Pattern) where
+    pretty = \case
+        RewriteSingleStep lbl _uniqueId pat rewritten ->
+            let
+                (l, r) = diff pat rewritten
+             in
+                hang 4 . vsep $
+                    [ "Rewriting configuration"
+                    , pretty (PrettyTerm l.term)
+                    , "to"
+                    , pretty (PrettyTerm r.term)
+                    , "Using rule:"
+                    , pretty lbl
+                    ]
+        RewriteBranchingStep pat branches ->
+            hang 4 . vsep $
+                [ "Configuration"
+                , pretty (PrettyTerm $ term pat)
+                , "branches on rules:"
+                , hang 2 $ vsep [pretty lbl | (lbl, _) <- toList branches]
                 ]
-    pretty (RewriteTerminal lbl pat) =
-        showPattern ("Terminal rule reached " <> parens (pretty lbl)) pat
-    pretty (RewriteStopped pat) =
-        showPattern "Stopped (max depth reached) at" pat
-    pretty (RewriteAborted pat) =
-        showPattern "Rewrite aborted" pat
+        RewriteSimplified{} -> "Applied simplification"
+        RewriteStepFailed failure -> pretty failure
+
+diff :: Pattern -> Pattern -> (Pattern, Pattern)
+diff p1 p2 =
+    let (t1, t2) = mkDiffTerms (p1.term, p2.term)
+     in -- TODO print differences in predicates
+        (p1{term = t1}, p2{term = t2})
+
+mkDiffTerms :: (Term, Term) -> (Term, Term)
+mkDiffTerms = \case
+    (t1@(SymbolApplication s1 ss1 xs), t2@(SymbolApplication s2 ss2 ys)) ->
+        if Hashable.hash t1 == Hashable.hash t2
+            then (DotDotDot, DotDotDot)
+            else
+                let (xs', ys') =
+                        unzip
+                            $ foldr
+                                ( \xy rest -> case mkDiffTerms xy of
+                                    (DotDotDot, _) -> (DotDotDot, DotDotDot) : dropWhile (\(l, _) -> l == DotDotDot) rest
+                                    r -> r : rest
+                                )
+                                []
+                            $ zip xs ys
+                 in (SymbolApplication s1 ss1 xs', SymbolApplication s2 ss2 ys')
+    r -> r
 
 showPattern :: Doc a -> Pattern -> Doc a
 showPattern title pat = hang 4 $ vsep [title, pretty (PrettyTerm pat.term)]
@@ -367,9 +408,10 @@ performRewrite ::
     -- | terminal rule labels
     [Text] ->
     Pattern ->
-    io (Natural, RewriteResult Pattern)
+    io (Natural, Seq (RewriteTrace Pattern), RewriteResult Pattern)
 performRewrite def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pat = do
-    doSteps False 0 pat
+    (rr, (counter, traces)) <- flip runStateT (0, mempty) $ doSteps False pat
+    pure (counter, traces, rr)
   where
     logRewrite = logOther (LevelOther "Rewrite")
     logSimplify = logOther (LevelOther "Simplify")
@@ -381,119 +423,100 @@ performRewrite def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pat = do
 
     showCounter = (<> " steps.") . pack . show
 
-    simplifyP :: Pattern -> io Pattern
+    rewriteTrace t = do
+        logRewrite $ pack $ renderDefault $ pretty t
+        modify $ \(counter, traces) -> (counter, traces |> t)
+    incrementCounter = modify $ \(counter, traces) -> (counter + 1, traces)
+
+    simplifyP :: Pattern -> StateT (Natural, Seq (RewriteTrace Pattern)) io Pattern
     simplifyP p = do
         let result = evaluateTerm TopDown def mLlvmLibrary p.term
         case result of
-            Left (TooManyIterations n _ t) -> do
+            Left r@(TooManyIterations n _ t) -> do
                 logWarn $ "Simplification unable to finish in " <> prettyText n <> " steps."
                 -- could output term before and after at debug or custom log level
+                rewriteTrace $ RewriteSimplified $ Left r
                 pure p{term = t}
-            Left (EquationLoop traces (t : ts)) -> do
+            Left r@(EquationLoop traces (t : ts)) -> do
                 let termDiffs = zipWith (curry mkDiffTerms) (t : ts) ts
                 logError "Equation evaluation loop"
                 logTraces $ filter isSuccess traces
                 logSimplify $
                     "produced the evaluation loop: " <> Text.unlines (map (prettyText . fst) termDiffs)
+                rewriteTrace $ RewriteSimplified $ Left r
                 pure p{term = t} -- use result from before the loop
             Left other -> do
                 logError . pack $ "Simplification error during rewrite: " <> show other
+                rewriteTrace $ RewriteSimplified $ Left other
                 pure p
             Right (newTerm, traces) -> do
                 logTraces $ filter (not . isMatchFailure) traces
+                rewriteTrace $ RewriteSimplified $ Right traces
                 pure p{term = newTerm}
 
     logTraces =
         mapM_ (logSimplify . pack . renderDefault . pretty)
 
-    diff p1 p2 =
-        let (t1, t2) = mkDiffTerms (p1.term, p2.term)
-         in -- TODO print differences in predicates
-            (p1{term = t1}, p2{term = t2})
-    mkDiffTerms :: (Term, Term) -> (Term, Term)
-    mkDiffTerms = \case
-        (t1@(SymbolApplication s1 ss1 xs), t2@(SymbolApplication s2 ss2 ys)) ->
-            if Hashable.hash t1 == Hashable.hash t2
-                then (DotDotDot, DotDotDot)
-                else
-                    let (xs', ys') =
-                            unzip
-                                $ foldr
-                                    ( \xy rest -> case mkDiffTerms xy of
-                                        (DotDotDot, _) -> (DotDotDot, DotDotDot) : dropWhile (\(l, _) -> l == DotDotDot) rest
-                                        r -> r : rest
-                                    )
-                                    []
-                                $ zip xs ys
-                     in (SymbolApplication s1 ss1 xs', SymbolApplication s2 ss2 ys')
-        r -> r
-
-    doSteps :: Bool -> Natural -> Pattern -> io (Natural, RewriteResult Pattern)
-    doSteps wasSimplified !counter pat'
-        | depthReached counter = do
-            let title =
-                    pretty $ "Reached maximum depth of " <> maybe "?" showCounter mbMaxDepth
-            logRewrite $ pack $ renderDefault $ showPattern title pat'
-            result <- (if wasSimplified then pure else mapM simplifyP) $ RewriteStopped pat'
-            pure (counter, result)
-        | otherwise = do
-            let res =
-                    runRewriteM def mLlvmLibrary $
-                        rewriteStep cutLabels terminalLabels pat'
-            case res of
-                Right (RewriteSingle lbl single) -> do
-                    let (l, r) = diff pat' single
-                    logRewrite $
-                        pack $
-                            renderDefault $
-                                vsep
-                                    [ "Rewriting configuration"
-                                    , pretty (PrettyTerm l.term)
-                                    , "to"
-                                    , pretty (PrettyTerm r.term)
-                                    , "using " <> pretty lbl
-                                    ]
-                    doSteps False (counter + 1) single
-                Right terminal@RewriteTerminal{} -> do
-                    logRewrite $
-                        "Terminal rule after " <> showCounter (counter + 1)
-                    logRewrite $ prettyText terminal
-                    simplified <- mapM simplifyP terminal
-                    logRewrite $ "Simplified pattern " <> prettyText simplified
-                    pure (counter + 1, simplified)
-                Right other -> do
-                    logRewrite $ "Stopped after " <> showCounter counter
-                    logRewrite $ prettyText other
-                    simplifiedOther <- mapM simplifyP other
-                    logRewrite $ "Simplified: " <> prettyText simplifiedOther
-                    pure (counter, simplifiedOther)
-                -- if unification was unclear and the pattern was
-                -- unsimplified, simplify and retry rewriting once
-                Left (RuleApplicationUnclear rule _term _)
-                    | not wasSimplified -> do
-                        simplifiedPat <- simplifyP pat'
-                        let (l, r) = diff pat' simplifiedPat
+    doSteps ::
+        Bool -> Pattern -> StateT (Natural, Seq (RewriteTrace Pattern)) io (RewriteResult Pattern)
+    doSteps wasSimplified pat' = do
+        (counter, _) <- get
+        if depthReached counter
+            then do
+                let title =
+                        pretty $ "Reached maximum depth of " <> maybe "?" showCounter mbMaxDepth
+                logRewrite $ pack $ renderDefault $ showPattern title pat'
+                (if wasSimplified then pure else mapM simplifyP) $ RewriteFinished Nothing Nothing pat'
+            else do
+                let res =
+                        runRewriteM def mLlvmLibrary $
+                            rewriteStep cutLabels terminalLabels pat'
+                case res of
+                    Right (RewriteFinished mlbl uniqueId single) -> do
+                        case mlbl of
+                            Just lbl -> rewriteTrace $ RewriteSingleStep lbl uniqueId pat' single
+                            Nothing -> pure ()
+                        incrementCounter
+                        doSteps False single
+                    Right terminal@(RewriteTerminal lbl uniqueId single) -> do
+                        rewriteTrace $ RewriteSingleStep lbl uniqueId pat' single
                         logRewrite $
-                            "Unification unclear for rule "
-                                <> renderOneLineText (ruleId rule)
-                                <> " and term "
-                                <> prettyText (PrettyTerm l.term)
-                        logRewrite $
-                            "Retrying with simplified pattern "
-                                <> prettyText (PrettyTerm r.term)
-                        doSteps True counter simplifiedPat
-                -- if there were no applicable rules and the pattern
-                -- was unsimplified, simplify and re-try once
-                Left NoApplicableRules{} -> do
-                    logRewrite $ "No rules found for " <> prettyText pat'
-                    if wasSimplified
-                        then pure (counter, RewriteStuck pat')
-                        else do
+                            "Terminal rule after " <> showCounter (counter + 1)
+                        simplified <- mapM simplifyP terminal
+                        incrementCounter
+                        pure simplified
+                    Right branching@(RewriteBranch pat'' branches) -> do
+                        rewriteTrace $ RewriteBranchingStep pat'' $ fmap (\(lbl, uid, _) -> (lbl, uid)) branches
+                        simplifiedBranching <- mapM simplifyP branching
+                        logRewrite $ "Stopped due to branching after " <> showCounter counter
+                        pure simplifiedBranching
+                    Right other -> do
+                        case apliedRuleAndResultFromRewriteResult other of
+                            Just (lbl, uniqueId, single) -> rewriteTrace $ RewriteSingleStep lbl uniqueId pat' single
+                            Nothing -> pure ()
+                        simplifiedOther <- mapM simplifyP other
+                        logRewrite $ "Stopped after " <> showCounter counter
+                        pure simplifiedOther
+                    -- if unification was unclear and the pattern was
+                    -- unsimplified, simplify and retry rewriting once
+                    Left failure@RuleApplicationUnclear{}
+                        | not wasSimplified -> do
+                            rewriteTrace $ RewriteStepFailed failure
                             simplifiedPat <- simplifyP pat'
-                            logRewrite $ "Retrying with simplified pattern " <> prettyText (PrettyTerm simplifiedPat.term)
-                            doSteps True counter simplifiedPat
-                Left failure -> do
-                    logRewrite $ "Aborted after " <> showCounter counter
-                    logRewrite $ prettyText failure
-                    result <- (if wasSimplified then pure else mapM simplifyP) $ RewriteAborted pat'
-                    pure (counter, result)
+                            logRewrite "Retrying with simplified pattern"
+                            doSteps True simplifiedPat
+                    -- if there were no applicable rules and the pattern
+                    -- was unsimplified, simplify and re-try once
+                    Left failure@NoApplicableRules{} -> do
+                        rewriteTrace $ RewriteStepFailed failure
+                        if wasSimplified
+                            then pure $ RewriteStuck pat'
+                            else do
+                                simplifiedPat <- simplifyP pat'
+                                logRewrite "Retrying with simplified pattern"
+                                doSteps True simplifiedPat
+                    Left failure -> do
+                        rewriteTrace $ RewriteStepFailed failure
+                        res' <- (if wasSimplified then pure else mapM simplifyP) $ RewriteAborted pat'
+                        logRewrite $ "Aborted after " <> showCounter counter
+                        pure res'

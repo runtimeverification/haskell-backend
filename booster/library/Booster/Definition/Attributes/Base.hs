@@ -19,6 +19,7 @@ module Booster.Definition.Attributes.Base (
     SymbolAttributes (..),
     SortAttributes (..),
     Label,
+    UniqueId (..),
     Location (..),
     Position (..),
     FileSource (..),
@@ -71,6 +72,7 @@ data AxiomAttributes = AxiomAttributes
     { location :: Maybe Location
     , priority :: Priority -- priorities are <= 200
     , ruleLabel :: Maybe Label
+    , uniqueId :: Maybe UniqueId
     , simplification :: Flag "isSimplification"
     , preserving :: Flag "preservingDefinedness" -- this will override the computed attribute
     , concreteness :: Concreteness
@@ -95,6 +97,10 @@ instance Pretty NotPreservesDefinednessReason where
         UndefinedPredicate -> "undefined predicate"
 
 type Label = Text
+
+newtype UniqueId = UniqueId {getUniqueId :: Text}
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData)
 
 newtype Priority = Priority Word8
     deriving stock (Eq, Ord, Read, Show, Bounded)
