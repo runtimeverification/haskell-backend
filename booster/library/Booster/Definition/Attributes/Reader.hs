@@ -49,6 +49,7 @@ import Booster.Definition.Attributes.Base (
         SortInjection,
         TotalFunction
     ),
+    UniqueId (..),
  )
 import Booster.Syntax.ParsedKore.Base
 import Kore.Syntax.Json.Types (Id (..))
@@ -80,15 +81,18 @@ instance HasAttributes ParsedAxiom where
             <$> readLocation attributes
             <*> readPriority attributes
             <*> (attributes .:? "label")
+            <*> (fmap UniqueId <$> (attributes .:? uniqueIdName))
             <*> (attributes .! "simplification")
             <*> (attributes .! "preserves-definedness")
             <*> readConcreteness attributes
 
 sourceName
-    , locationName ::
+    , locationName
+    , uniqueIdName ::
         Text
 sourceName = "org'Stop'kframework'Stop'attributes'Stop'Source"
 locationName = "org'Stop'kframework'Stop'attributes'Stop'Location"
+uniqueIdName = "UNIQUE'Unds'ID"
 
 readLocation :: ParsedAttributes -> Except Text (Maybe Location)
 readLocation attributes = do
