@@ -69,6 +69,7 @@ data EquationTrace = EquationTrace
     { subjectTerm :: Term
     , location :: Maybe Location
     , label :: Maybe Label
+    , ruleId :: Maybe UniqueId
     , result :: ApplyEquationResult
     }
     deriving stock (Eq, Show)
@@ -371,18 +372,19 @@ applyEquations theory handler term = do
         pure term -- nothing to do, term stays the same
     processEquations (eq : rest) = do
         res <- applyEquation term eq
-        traceRuleApplication term eq.attributes.location eq.attributes.ruleLabel res
+        traceRuleApplication term eq.attributes.location eq.attributes.ruleLabel eq.attributes.uniqueId res
         handler (\t -> setChanged >> pure t) (processEquations rest) (pure term) res
 
 traceRuleApplication ::
     Term ->
     Maybe Location ->
     Maybe Label ->
+    Maybe UniqueId ->
     ApplyEquationResult ->
     EquationM ()
-traceRuleApplication t loc lbl res =
+traceRuleApplication t loc lbl uid res =
     EquationM . modify $
-        \s -> s{trace = s.trace :|> EquationTrace t loc lbl res}
+        \s -> s{trace = s.trace :|> EquationTrace t loc lbl uid res}
 
 applyEquation ::
     forall tag.

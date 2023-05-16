@@ -15,12 +15,13 @@ import Control.Concurrent.MVar qualified as MVar
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Logger qualified as Log
 import Data.Aeson.Types (Value (..))
-import Data.Maybe (catMaybes, isJust)
+import Data.Maybe (isJust)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Network.JSONRPC
 import SMT qualified
 
+import Booster.JsonRpc (execStateToKoreJson)
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
 import Kore.Internal.TermLike (TermLike, VariableName)
@@ -29,7 +30,6 @@ import Kore.JsonRpc.Types
 import Kore.JsonRpc.Types qualified as ExecuteRequest (ExecuteRequest (..))
 import Kore.Log qualified
 import Kore.Syntax.Definition (SentenceAxiom)
-import Kore.Syntax.Json.Types qualified as KoreJson
 import Stats (APIMethods (..), StatsVar, addStats, microsWithUnit, timed)
 
 data KoreServer = KoreServer
@@ -99,14 +99,6 @@ respondEither mbStatsVar booster kore req = case req of
         | otherwise =
             pure ()
 
-    toRequestState :: ExecuteState -> KoreJson.KoreJson
-    toRequestState ExecuteState{term = t, substitution, predicate} =
-        let subAndPred = catMaybes [KoreJson.term <$> substitution, KoreJson.term <$> predicate]
-         in t
-                { KoreJson.term =
-                    foldr (KoreJson.KJAnd $ KoreJson.SortApp (KoreJson.Id "SortGeneratedTopCell") []) t.term subAndPred
-                }
-
     startLoop = loop (0, 0.0, 0.0)
 
     -- loop :: (Depth, Double, Double) -> ExecuteRequest -> m (Either Response)
@@ -133,7 +125,7 @@ respondEither mbStatsVar booster kore req = case req of
                             kore
                                 ( Execute
                                     r
-                                        { state = toRequestState boosterResult.state
+                                        { state = execStateToKoreJson boosterResult.state
                                         , maxDepth = Just $ Depth 1
                                         }
                                 )
@@ -149,7 +141,7 @@ respondEither mbStatsVar booster kore req = case req of
                                     , time + bTime + kTime
                                     , koreTime + kTime
                                     )
-                                    r{ExecuteRequest.state = toRequestState koreResult.state}
+                                    r{ExecuteRequest.state = execStateToKoreJson koreResult.state}
                             | otherwise -> do
                                 -- otherwise we have hit a different
                                 -- HaltReason, at which point we should
