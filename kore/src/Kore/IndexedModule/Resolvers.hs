@@ -289,7 +289,8 @@ resolveHookHandler builtinName results =
                 ("Builtin " ++ Text.unpack builtinName ++ " is not hooked.")
         hookIds ->
             koreFail
-                ( "Builtin " ++ Text.unpack builtinName
+                ( "Builtin "
+                    ++ Text.unpack builtinName
                     ++ " is hooked to multiple identifiers: "
                     ++ List.intercalate
                         ", "

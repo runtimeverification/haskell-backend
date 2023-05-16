@@ -111,7 +111,8 @@ safeChr i =
         then return (chr i)
         else
             Left
-                ( "Character code " ++ show i
+                ( "Character code "
+                    ++ show i
                     ++ " outside of the representable codes."
                 )
 

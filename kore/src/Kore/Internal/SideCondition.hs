@@ -601,7 +601,7 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
     applyAssumptionsWorker assumptions original
         | Just result <- HashMap.lookup original (predicateMap assumptions) = Changed result
         | HashMap.null (termLikeMap assumptions')
-          , HashMap.null (predicateMap assumptions') =
+        , HashMap.null (predicateMap assumptions') =
             Unchanged original
         | otherwise =
             case replaceIn of
@@ -817,13 +817,15 @@ isDefined sideCondition@SideCondition{definedTerms} term =
                         generateNormalizedAcs internalMap
                             & HashSet.map TermLike.mkInternalMap
                  in isSymbolicSingleton internalMap
-                        || subMaps `isNonEmptySubset` definedTerms
+                        || subMaps
+                        `isNonEmptySubset` definedTerms
             TermLike.InternalSet_ internalSet ->
                 let subSets =
                         generateNormalizedAcs internalSet
                             & HashSet.map TermLike.mkInternalSet
                  in isSymbolicSingleton internalSet
-                        || subSets `isNonEmptySubset` definedTerms
+                        || subSets
+                        `isNonEmptySubset` definedTerms
             _ -> False
 
     isNonEmptySubset subset set

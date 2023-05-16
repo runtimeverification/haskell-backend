@@ -734,7 +734,8 @@ runWithState command axioms claims claim stateTransformer = do
     let state = stateTransformer $ mkState startTime axioms claims claim
     let config = mkConfig mvar claims ma
         runLogger =
-            runTestLoggerT . liftSimplifier
+            runTestLoggerT
+                . liftSimplifier
                 . flip runStateT state
                 . flip runReaderT config
                 . runInputT defaultSettings

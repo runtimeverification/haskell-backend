@@ -185,7 +185,7 @@ matchBools ::
     Maybe UnifyBool
 matchBools term1 term2
     | InternalBool_ bool1 <- term2
-      , InternalBool_ bool2 <- term1 =
+    , InternalBool_ bool2 <- term1 =
         Just UnifyBool{bool1, bool2, term1, term2}
     | otherwise = Nothing
 {-# INLINE matchBools #-}
@@ -232,12 +232,12 @@ matchUnifyBoolAnd ::
     Maybe UnifyBoolAnd
 matchUnifyBoolAnd first second
     | Just True <- matchBool first
-      , Just boolAnd <- matchBoolAnd second
-      , isFunctionPattern second =
+    , Just boolAnd <- matchBoolAnd second
+    , isFunctionPattern second =
         Just $ UnifyBoolAnd{term = first, boolAnd}
     | Just True <- matchBool second
-      , Just boolAnd <- matchBoolAnd first
-      , isFunctionPattern first =
+    , Just boolAnd <- matchBoolAnd first
+    , isFunctionPattern first =
         Just $ UnifyBoolAnd{term = second, boolAnd}
     | otherwise =
         Nothing
@@ -305,12 +305,12 @@ matchUnifyBoolOr ::
     Maybe UnifyBoolOr
 matchUnifyBoolOr first second
     | Just False <- matchBool first
-      , Just boolOr <- matchBoolOr second
-      , isFunctionPattern second =
+    , Just boolOr <- matchBoolOr second
+    , isFunctionPattern second =
         Just UnifyBoolOr{term = first, boolOr}
     | Just False <- matchBool second
-      , Just boolOr <- matchBoolOr first
-      , isFunctionPattern first =
+    , Just boolOr <- matchBoolOr first
+    , isFunctionPattern first =
         Just UnifyBoolOr{term = second, boolOr}
     | otherwise = Nothing
 {-# INLINE matchUnifyBoolOr #-}
@@ -352,12 +352,12 @@ matchUnifyBoolNot ::
     Maybe UnifyBoolNot
 matchUnifyBoolNot first second
     | Just boolNot <- matchBoolNot first
-      , isFunctionPattern first
-      , Just value <- matchInternalBool second =
+    , isFunctionPattern first
+    , Just value <- matchInternalBool second =
         Just UnifyBoolNot{boolNot, value}
     | Just boolNot <- matchBoolNot second
-      , isFunctionPattern second
-      , Just value <- matchInternalBool first =
+    , isFunctionPattern second
+    , Just value <- matchInternalBool first =
         Just UnifyBoolNot{boolNot, value}
     | otherwise = Nothing
 {-# INLINE matchUnifyBoolNot #-}

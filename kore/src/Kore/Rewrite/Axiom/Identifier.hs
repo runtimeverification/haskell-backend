@@ -129,10 +129,12 @@ matchAxiomIdentifier = Recursive.fold matchWorker
                 Variable
             EndiannessF endiannessF ->
                 mkAppId $
-                    Endianness.toApplication $ getConst endiannessF
+                    Endianness.toApplication $
+                        getConst endiannessF
             SignednessF signednessF ->
                 mkAppId $
-                    Signedness.toApplication $ getConst signednessF
+                    Signedness.toApplication $
+                        getConst signednessF
             InjF inj -> mkAppId $ Inj.toApplication inj
             InternalListF internalList -> listToId internalList
             InternalSetF internalSet -> acToId internalSet

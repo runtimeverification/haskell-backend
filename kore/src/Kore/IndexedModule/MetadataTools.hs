@@ -76,12 +76,12 @@ modify the NFData instance so that it uses Typeable to check that the type
 it contains has an NFData instance.
 -}
 data MetadataTools sortConstructors smt attributes = MetadataTools
-    { -- | syntax of module
-      syntax :: MetadataSyntaxData attributes
-    , -- | The SMT data for the given module.
-      smtData :: smt
-    , -- | The constructors for each sort.
-      sortConstructors :: Map Id sortConstructors
+    { syntax :: MetadataSyntaxData attributes
+    -- ^ syntax of module
+    , smtData :: smt
+    -- ^ The SMT data for the given module.
+    , sortConstructors :: Map Id sortConstructors
+    -- ^ The constructors for each sort.
     }
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)

@@ -22,12 +22,14 @@ test_HasDomainValues :: TestTree
 test_HasDomainValues =
     testCase "[hasDomainValues{}()] :: HasDomainValues" $
         expectSuccess HasDomainValues{getHasDomainValues = True} $
-            parseHasDomainValues $ Attributes [hasDomainValuesAttribute]
+            parseHasDomainValues $
+                Attributes [hasDomainValuesAttribute]
 
 test_Attributes :: TestTree
 test_Attributes =
     testCase "[hasDomainValues{}()] :: Attributes" $
-        expectSuccess attrs $ parseAttributes attrs
+        expectSuccess attrs $
+            parseAttributes attrs
   where
     attrs = Attributes [hasDomainValuesAttribute]
 
@@ -42,7 +44,8 @@ test_arity :: TestTree
 test_arity =
     testCase "[hasDomainValues{}(hasDomainValues{}(), hasDomainValues{}())]" $
         expectFailure $
-            parseHasDomainValues $ Attributes [illegalAttribute]
+            parseHasDomainValues $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)
@@ -66,7 +69,8 @@ test_arguments :: TestTree
 test_arguments =
     testCase "[hasDomainValues{}(\"illegal\")]" $
         expectFailure $
-            parseHasDomainValues $ Attributes [illegalAttribute]
+            parseHasDomainValues $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)
@@ -82,7 +86,8 @@ test_parameters :: TestTree
 test_parameters =
     testCase "[hasDomainValues{illegal}()]" $
         expectFailure $
-            parseHasDomainValues $ Attributes [illegalAttribute]
+            parseHasDomainValues $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)

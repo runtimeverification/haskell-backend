@@ -181,7 +181,9 @@ koreRpcServerRun GlobalMain.LocalOptions{execOptions} = do
                     }
     GlobalMain.clockSomethingIO "Executing" $
         -- wrap the call to runServer in the logger monad
-        Log.LoggerT $ ReaderT $ \loggerEnv -> runServer port serverState mainModuleName (runSMT loggerEnv) loggerEnv
+        Log.LoggerT $
+            ReaderT $
+                \loggerEnv -> runServer port serverState mainModuleName (runSMT loggerEnv) loggerEnv
 
     pure ExitSuccess
   where

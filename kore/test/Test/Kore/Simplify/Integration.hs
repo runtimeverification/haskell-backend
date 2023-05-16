@@ -269,7 +269,8 @@ test_simplificationIntegration =
                     (Mock.g Mock.b)
             expect =
                 OrPattern.fromTermLike $
-                    Mock.functionalConstr11 $ Mock.g Mock.a
+                    Mock.functionalConstr11 $
+                        Mock.g Mock.a
         actual <-
             evaluateConditionalWithAxioms
                 ( Map.fromList
@@ -780,7 +781,8 @@ test_simplificationIntegrationUnification =
                     (Mock.g Mock.b)
             expect =
                 OrPattern.fromTermLike $
-                    Mock.functionalConstr11 $ Mock.g Mock.a
+                    Mock.functionalConstr11 $
+                        Mock.g Mock.a
         actual <-
             evaluateConditionalWithAxioms
                 ( Map.fromList

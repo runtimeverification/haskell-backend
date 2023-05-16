@@ -228,7 +228,8 @@ class (MonadIO m, MonadLog m, MonadSMT m) => MonadSimplify m where
     simplifyCondition sideCondition conditional = do
         results <-
             lift . lift $
-                observeAllT $ simplifyCondition sideCondition conditional
+                observeAllT $
+                    simplifyCondition sideCondition conditional
         scatter results
     {-# INLINE simplifyCondition #-}
 
@@ -566,10 +567,10 @@ applyFirstSimplifierThatWorksWorker
 
 -- | A type holding the result of applying an axiom to a pattern.
 data AttemptedAxiomResults variable = AttemptedAxiomResults
-    { -- | The result of applying the axiom
-      results :: !(OrPattern variable)
-    , -- | The part of the pattern that was not rewritten by the axiom.
-      remainders :: !(OrPattern variable)
+    { results :: !(OrPattern variable)
+    -- ^ The result of applying the axiom
+    , remainders :: !(OrPattern variable)
+    -- ^ The part of the pattern that was not rewritten by the axiom.
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)

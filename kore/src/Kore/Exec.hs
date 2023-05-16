@@ -355,8 +355,8 @@ exec
         execStrategy :: [Strategy.Step Prim]
         execStrategy =
             Limit.takeWithin depthLimit $
-                [Begin, Simplify, Rewrite, Simplify] :
-                repeat [Begin, Rewrite, Simplify]
+                [Begin, Simplify, Rewrite, Simplify]
+                    : repeat [Begin, Rewrite, Simplify]
 
         transit ::
             GraphTraversal.TState
@@ -412,12 +412,12 @@ data RuleTrace = RuleTrace
 
 -- | Type for json-rpc execution state, for readability
 data RpcExecState v = RpcExecState
-    { -- | program state
-      rpcProgState :: ProgramState (Pattern v)
-    , -- | rule label/ids we have applied so far
-      rpcRules :: Seq RuleTrace
-    , -- | execution depth
-      rpcDepth :: ExecDepth
+    { rpcProgState :: ProgramState (Pattern v)
+    -- ^ program state
+    , rpcRules :: Seq RuleTrace
+    -- ^ rule label/ids we have applied so far
+    , rpcDepth :: ExecDepth
+    -- ^ execution depth
     }
     deriving stock (Eq, Show)
 
@@ -492,8 +492,8 @@ rpcExec
         execStrategy :: [Strategy.Step Prim]
         execStrategy =
             Limit.takeWithin depthLimit $
-                [Begin, Simplify, Rewrite, Simplify] :
-                repeat [Begin, Rewrite, Simplify]
+                [Begin, Simplify, Rewrite, Simplify]
+                    : repeat [Begin, Rewrite, Simplify]
 
         transit ::
             GraphTraversal.TState Prim (RpcExecState RewritingVariableName) ->
@@ -560,10 +560,10 @@ rpcExec
             labels
             (RewriteRule RulePattern{attributes = Attribute.Axiom{label, uniqueId}})
                 | Just lbl <- Attribute.unLabel label
-                  , lbl `elem` labels =
+                , lbl `elem` labels =
                     Just lbl
                 | Just uid <- Attribute.getUniqueId uniqueId
-                  , uid `elem` labels =
+                , uid `elem` labels =
                     Just uid
                 | otherwise =
                     Nothing

@@ -59,7 +59,8 @@ expectError ::
 expectError _ (Left _) = pure ()
 expectError what (Right got) =
     assertFailure
-        ( "expected error parsing '" ++ what
+        ( "expected error parsing '"
+            ++ what
             ++ "', but got: '"
             ++ show got
             ++ "'"

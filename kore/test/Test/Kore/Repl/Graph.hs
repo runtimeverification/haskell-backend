@@ -35,11 +35,12 @@ test_graph =
         , testCase
             "The only nodes with in/out degree == 1\
             \ are included in the children of branchings"
-            $ assertBool "" $
-                Set.fromList (inOutDegreeOne g1')
-                    `isSubsetOf` Set.fromList (childrenOfBranchings g1)
+            $ assertBool ""
+            $ Set.fromList (inOutDegreeOne g1')
+                `isSubsetOf` Set.fromList (childrenOfBranchings g1)
         , testCase "actual === expected" $
-            assert (g1' == expectedG1') $ return ()
+            assert (g1' == expectedG1') $
+                return ()
         ]
     , testGroup
         "Smooth out graph with two nodes"
@@ -50,11 +51,12 @@ test_graph =
         , testCase
             "The only nodes with in/out degree == 1\
             \ are included in the children of branchings"
-            $ assertBool "" $
-                Set.fromList (inOutDegreeOne g2')
-                    `isSubsetOf` Set.fromList (childrenOfBranchings g2)
+            $ assertBool ""
+            $ Set.fromList (inOutDegreeOne g2')
+                `isSubsetOf` Set.fromList (childrenOfBranchings g2)
         , testCase "actual === expected" $
-            assert (g2' == expectedG2') $ return ()
+            assert (g2' == expectedG2') $
+                return ()
         ]
     , testGroup
         "Smooth out chain graph"
@@ -65,11 +67,12 @@ test_graph =
         , testCase
             "The only nodes with in/out degree == 1\
             \ are included in the children of branchings"
-            $ assertBool "" $
-                Set.fromList (inOutDegreeOne chain')
-                    `isSubsetOf` Set.fromList (childrenOfBranchings chain)
+            $ assertBool ""
+            $ Set.fromList (inOutDegreeOne chain')
+                `isSubsetOf` Set.fromList (childrenOfBranchings chain)
         , testCase "actual === expected" $
-            assert (chain' == expectedChain') $ return ()
+            assert (chain' == expectedChain') $
+                return ()
         ]
     , testGroup
         "Smooth out arbitrary tree1"
@@ -80,11 +83,12 @@ test_graph =
         , testCase
             "The only nodes with in/out degree == 1\
             \ are included in the children of branchings"
-            $ assertBool "" $
-                Set.fromList (inOutDegreeOne tree1')
-                    `isSubsetOf` Set.fromList (childrenOfBranchings tree1)
+            $ assertBool ""
+            $ Set.fromList (inOutDegreeOne tree1')
+                `isSubsetOf` Set.fromList (childrenOfBranchings tree1)
         , testCase "actual === expected" $
-            assert (tree1' == expectedTree1') $ return ()
+            assert (tree1' == expectedTree1') $
+                return ()
         ]
     , testGroup
         "Smooth out tree with branching at the root"
@@ -95,11 +99,12 @@ test_graph =
         , testCase
             "The only nodes with in/out degree == 1\
             \ are included in the children of branchings"
-            $ assertBool "" $
-                Set.fromList (inOutDegreeOne tree2')
-                    `isSubsetOf` Set.fromList (childrenOfBranchings tree2)
+            $ assertBool ""
+            $ Set.fromList (inOutDegreeOne tree2')
+                `isSubsetOf` Set.fromList (childrenOfBranchings tree2)
         , testCase "actual === expected" $
-            assert (tree2' == expectedTree2') $ return ()
+            assert (tree2' == expectedTree2') $
+                return ()
         ]
     ]
 

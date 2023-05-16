@@ -72,7 +72,8 @@ smtForSortIs
             case Map.lookup sortId sorts of
                 Nothing ->
                     assertFailure
-                        ( "Key (" ++ show sortId
+                        ( "Key ("
+                            ++ show sortId
                             ++ ") not found in ("
                             ++ show (Map.keysSet sorts)
                             ++ ")"
@@ -97,7 +98,8 @@ smtForSymbolIs
             case Map.lookup sortId symbols of
                 Nothing ->
                     assertFailure
-                        ( "Key (" ++ show sortId
+                        ( "Key ("
+                            ++ show sortId
                             ++ ") not found in ("
                             ++ show (Map.keysSet symbols)
                             ++ ")"

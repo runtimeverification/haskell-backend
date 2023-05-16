@@ -508,7 +508,7 @@ test_onePathStrategy =
                     Mock.a
                     $ makeEqualsPredicate
                         Mock.c
-                        $ Mock.f Mock.b
+                    $ Mock.f Mock.b
                 ]
         actualReach <-
             runOnePathSteps
@@ -524,7 +524,7 @@ test_onePathStrategy =
                     Mock.a
                     $ makeEqualsPredicate
                         Mock.c
-                        $ Mock.f Mock.b
+                    $ Mock.f Mock.b
                 ]
         assertEqual
             ""
@@ -533,10 +533,10 @@ test_onePathStrategy =
                     Conditional
                         { term = Mock.functionalConstr10 Mock.b
                         , predicate =
-                            makeNotPredicate $
-                                makeEqualsPredicate
+                            makeNotPredicate
+                                $ makeEqualsPredicate
                                     Mock.c
-                                    $ Mock.f Mock.b
+                                $ Mock.f Mock.b
                         , substitution = mempty
                         }
                     (fromTermLike Mock.a)

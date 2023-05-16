@@ -59,10 +59,10 @@ import Prelude.Kore hiding (
 
 -- | Overload solution requiring narrowing
 data Narrowing variable = Narrowing
-    { -- |narrowing substitution represented as a 'Condition'
-      narrowingSubst :: !(Condition variable)
-    , -- |the fresh variables within the narrowingSubst
-      narrowingVars :: ![ElementVariable variable]
+    { narrowingSubst :: !(Condition variable)
+    -- ^narrowing substitution represented as a 'Condition'
+    , narrowingVars :: ![ElementVariable variable]
+    -- ^the fresh variables within the narrowingSubst
     , overloadPair :: !(Pair (TermLike variable))
     -- overload solution
     }
@@ -263,7 +263,7 @@ unifyOverloadingCommonOverload
     (Application secondHead secondChildren)
     injProto@Inj{injTo}
         | isOverloaded firstHead
-          , isOverloaded secondHead =
+        , isOverloaded secondHead =
             case unifyOverloadWithinBound injProto firstHead secondHead injTo of
                 Nothing -> Just $ ClashResult "overloaded constructors not unifiable"
                 Just InjectedOverload{overload, injectionHead} ->
@@ -306,7 +306,7 @@ unifyOverloadingVsOverloaded
     (Application overloadedHead overloadedChildren)
     injProto
         | isOverloaded overloadingHead
-          , isConstructor overloadedHead || isOverloaded overloadedHead =
+        , isConstructor overloadedHead || isOverloaded overloadedHead =
             let ~overloadedTerm' =
                     resolveOverloading injProto overloadingHead overloadedChildren
              in if isOverloading overloadingHead overloadedHead
