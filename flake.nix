@@ -11,7 +11,7 @@
       url = "github:edolstra/flake-compat";
       flake = false;
     };
-    mach-nix = "github:DavHau/mach-nix";
+    mach-nix.url = "github:DavHau/mach-nix";
   };
   outputs = { self, nixpkgs, haskell-nix, z3-src, mach-nix, ... }:
     let
@@ -28,9 +28,8 @@
         });
       });
       integration-tests-overlay = (final: prev: {
-
-        kore-tests = final.callPackage ./test { inherit mach-nix; };
-      })
+        kore-tests = final.callPackage ./nix/integration-shell.nix { mach-nix = mach-nix.lib."${prev.system}"; };
+      });
       perSystem = lib.genAttrs nixpkgs.lib.systems.flakeExposed;
       nixpkgsFor = system:
         import nixpkgs {
@@ -41,6 +40,7 @@
 
       compiler-nix-name = "ghc927";
       index-state = "2023-04-24T00:00:00Z";
+      fourmolu-version = "0.12.0.0";
 
       haskell-backend-src = pkgs:
         pkgs.applyPatches {
@@ -87,7 +87,7 @@
               haskell-language-server = { inherit index-state; };
               fourmolu = {
                 inherit index-state;
-                version = "0.12.0.0";
+                version = fourmolu-version;
               };
               eventlog2html = "latest";
               ghc-prof-flamegraph = "latest";
@@ -167,10 +167,31 @@
             kore-exec-infotable =
               self.projectEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
           };
+          fourmolu = haskell-nix.hackage-package { name = "fourmolu"; version = fourmolu-version; inherit compiler-nix-name index-state; }.components.exes.fourmolu;
+          scripts = pkgs.symlinkJoin {
+            name = "fourmolu-format";
+            paths = [ ./scripts ];
+            buildInputs = [ pkgs.makeWrapper ];
+            postBuild = ''
+              wrapProgram $out/fourmolu.sh \
+                --set PATH ${
+                  with pkgs;
+                  lib.makeBinPath [ haskellPackages.fourmolu fd findutils ]
+                }
+            '';
+          };
         in {
           profile = {
             type = "app";
             program = "${profiling-script}/bin/run-profiling";
+          };
+          format = {
+            type = "app";
+            program = "${scripts}/fourmolu.sh";
+          };
+          remove-import-groups = {
+            type = "app";
+            program = "${scripts}/fourmolu.sh";
           };
         }));
 
