@@ -6,3 +6,9 @@ diff-friendly-import-export: true # 'false' uses Ormolu-style lists
 respectful: true # don't be too opinionated about newlines etc.
 haddock-style: multi-line # '--' vs. '{-'
 newlines-between-decls: 1 # number of newlines between top-level declarations
+
+# reformat lines which are longer than this
+column-limit: 100
+
+# whether to put parentheses around single constraints (`auto` would keep existing ones)
+single-constraint-parens: never
