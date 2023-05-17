@@ -179,7 +179,7 @@
               wrapProgram $out/fourmolu.sh \
                 --set PATH ${
                   with pkgs;
-                  lib.makeBinPath [ haskellPackages.fourmolu git grep findutils ]
+                  lib.makeBinPath [ haskellPackages.fourmolu git gnugrep findutils ]
                 }
             '';
           };
