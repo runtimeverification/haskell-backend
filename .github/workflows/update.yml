@@ -67,7 +67,8 @@ jobs:
             elif [[ $GITHUB_EVENT_NAME == 'push' ]]; then
               git add '*.hs'
               git commit -m 'Format with fourmolu'
-              git push
+              git show
+              exit 1 # git push
             else
               echo 2>&1 "Error: event not supported: $GITHUB_EVENT_NAME"
               exit 1
