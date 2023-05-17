@@ -6,8 +6,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  ghc_version: "9.2.5"
-  stack_version: "2.9.1"
+  ghc_version: "9.2.7"
+  stack_version: "2.9.3"
 
 jobs:
   nix-build:
@@ -154,10 +154,10 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.stack
-          key: stack-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
+          key: stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
           restore-keys: |
-            stack-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}
-            stack-2-${{ runner.os }}-
+            stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}
+            stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}
 
       - uses: haskell/actions/setup@v2
         id: setup-haskell-stack
@@ -196,10 +196,10 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.stack
-          key: stack-haddock-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
+          key: stack-haddock-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
           restore-keys: |
-            stack-haddock-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}
-            stack-haddock-2-${{ runner.os }}
+            stack-haddock-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}
+            stack-haddock-2-${{ runner.os }}-ghc-${{ env.ghc_version }}
 
       - uses: haskell/actions/setup@v2
         id: setup-haskell-stack
