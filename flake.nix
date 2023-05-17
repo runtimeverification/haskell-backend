@@ -40,7 +40,7 @@
 
       compiler-nix-name = "ghc927";
       index-state = "2023-04-24T00:00:00Z";
-      fourmolu-version = "0.3.0.0";
+      fourmolu-version = "0.12.0.0";
 
       haskell-backend-src = pkgs:
         pkgs.applyPatches {
@@ -191,7 +191,7 @@
           };
           remove-import-groups = {
             type = "app";
-            program = "${scripts}/fourmolu.sh";
+            program = "${scripts}/remove-import-groups.sh";
           };
         }));
 
