@@ -41,6 +41,7 @@
       compiler-nix-name = "ghc927";
       index-state = "2023-04-24T00:00:00Z";
       fourmolu-version = "0.12.0.0";
+      hlint-version = "3.4.1";
 
       haskell-backend-src = pkgs:
         pkgs.applyPatches {
@@ -91,8 +92,10 @@
               };
               eventlog2html = "latest";
               ghc-prof-flamegraph = "latest";
-              hs-speedscope = "latest";
-              hlint = "latest";
+              hlint = {
+                inherit index-state;
+                version = hlint-version;
+              };
             };
             nativeBuildInputs = with nixpkgs.legacyPackages.${pkgs.system};
               [ nixpkgs-fmt ]
@@ -159,7 +162,7 @@
           pkgs = nixpkgsFor system;
           profiling-script = pkgs.callPackage ./nix/run-profiling.nix {
             inherit (pkgs.haskellPackages)
-              hp2pretty hs-speedscope eventlog2html;
+              hp2pretty eventlog2html;
             kore-exec =
               self.project.${system}.hsPkgs.kore.components.exes.kore-exec;
             kore-exec-prof =
@@ -176,7 +179,7 @@
               wrapProgram $out/fourmolu.sh \
                 --set PATH ${
                   with pkgs;
-                  lib.makeBinPath [ haskellPackages.fourmolu findutils ]
+                  lib.makeBinPath [ haskellPackages.fourmolu git grep findutils ]
                 }
             '';
           };
