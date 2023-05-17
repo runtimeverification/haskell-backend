@@ -156,7 +156,7 @@ withBugReport exeName bugReportOption act =
                 | Just (DebugOptionsValidationError _) <- fromException someException ->
                     optionalWriteBugReport tmpDir
                 | Just (ioe :: IOException) <- fromException someException
-                  , NoSuchThing <- ioe_type ioe -> do
+                , NoSuchThing <- ioe_type ioe -> do
                     hPutStrLn stderr $ displayException someException
                     optionalWriteBugReport tmpDir
                 | otherwise -> do

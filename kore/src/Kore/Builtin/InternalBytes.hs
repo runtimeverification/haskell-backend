@@ -318,7 +318,7 @@ evalUpdate =
         _value <- fromInteger <$> Int.expectBuiltinInt updateKey _value
         let result
                 | _index >= 0
-                  , _index < ByteString.length _bytes =
+                , _index < ByteString.length _bytes =
                     ByteString.take _index _bytes
                         <> ByteString.singleton _value
                         <> ByteString.drop (_index + 1) _bytes
@@ -337,7 +337,7 @@ evalGet =
         _index <- fromInteger <$> Int.expectBuiltinInt getKey _index
         let result
                 | _index >= 0
-                  , _index < ByteString.length _bytes =
+                , _index < ByteString.length _bytes =
                     ByteString.index _bytes _index
                         & toInteger
                         & Int.asPattern resultSort
@@ -357,8 +357,8 @@ evalSubstr =
         _end <- fromInteger <$> Int.expectBuiltinInt substrKey _end
         let result
                 | _start >= 0
-                  , _end >= _start
-                  , _end <= ByteString.length _bytes =
+                , _end >= _start
+                , _end <= ByteString.length _bytes =
                     _bytes
                         & ByteString.drop _start
                         & ByteString.take (_end - _start)
@@ -572,7 +572,7 @@ matchBytes ::
     Maybe UnifyBytes
 matchBytes first second
     | _ :< InternalBytesF (Const bytes1) <- Recursive.project first
-      , _ :< InternalBytesF (Const bytes2) <- Recursive.project second =
+    , _ :< InternalBytesF (Const bytes2) <- Recursive.project second =
         Just UnifyBytes{bytes1, bytes2}
     | otherwise = Nothing
 {-# INLINE matchBytes #-}

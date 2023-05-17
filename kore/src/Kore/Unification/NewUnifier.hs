@@ -451,12 +451,12 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
             (_, ElemVar_ var2) | isFunctionPattern first -> bindVarToPattern (inject var2) first
             (App_ firstHead firstChildren, App_ secondHead secondChildren)
                 | Symbol.isInjective firstHead
-                  , firstHead == secondHead ->
+                , firstHead == secondHead ->
                     decomposeList (zip firstChildren secondChildren)
             (App_ firstHead _, App_ secondHead _)
                 | firstHead /= secondHead
-                  , Symbol.isConstructor firstHead || isOverloaded firstHead
-                  , Symbol.isConstructor secondHead || isOverloaded secondHead ->
+                , Symbol.isConstructor firstHead || isOverloaded firstHead
+                , Symbol.isConstructor secondHead || isOverloaded secondHead ->
                     failUnify
                         "Cannot unify different constructors or incompatible \
                         \sort injections"
@@ -578,13 +578,13 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                     (_, ElemVar_ var2) | isFunctionPattern second -> bindVarToPattern (inject var2) first
                     (App_ symbol1 [InternalList_ InternalList{internalListChild = l1}, var1@(ElemVar_ _)], App_ symbol2 [InternalList_ InternalList{internalListChild = l2}, var2@(ElemVar_ _)])
                         | List.isSymbolConcat symbol1
-                          , List.isSymbolConcat symbol2 ->
+                        , List.isSymbolConcat symbol2 ->
                             let (l1', var1', l2', var2') = if length l1 <= length l2 then (l1, var1, l2, var2) else (l2, var2, l1, var1)
                                 (start, left) = Seq.splitAt (length l1') l2'
                              in decomposeList $ (var1', mkApplySymbol symbol1 [List.asInternal tools sort left, var2']) : zip (toList l1') (toList start)
                     (App_ symbol1 [var1@(ElemVar_ _), InternalList_ InternalList{internalListChild = l1}], App_ symbol2 [var2@(ElemVar_ _), InternalList_ InternalList{internalListChild = l2}])
                         | List.isSymbolConcat symbol1
-                          , List.isSymbolConcat symbol2 ->
+                        , List.isSymbolConcat symbol2 ->
                             let (l1', var1', l2', var2') = if length l1 <= length l2 then (l1, var1, l2, var2) else (l2, var2, l1, var1)
                                 (left, end) = Seq.splitAt (length l2' - length l1') l2'
                              in decomposeList $ (var1', mkApplySymbol symbol1 [var2', List.asInternal tools sort left]) : zip (toList l1') (toList end)
@@ -754,7 +754,9 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
         let newConstraints =
                 Condition.andCondition constraints $
                     Condition.fromPredicate $
-                        makeCeilPredicate $ mkAnd condition $ Bool.asInternal (termLikeSort condition) bool
+                        makeCeilPredicate $
+                            mkAnd condition $
+                                Bool.asInternal (termLikeSort condition) bool
         unifyTerms' rootSort sideCondition origVars vars ((branch, other) : rest) bindings newConstraints acEquations
 
     substAndSimplify ::

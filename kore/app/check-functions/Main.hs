@@ -82,10 +82,10 @@ checkerInfoModifiers =
         <> header "kore-check-functions - a tool to check function definitions"
 
 data KoreCheckerOptions = KoreCheckerOptions
-    { -- | Name for a file containing function definitions to verify.
-      fileName :: !FilePath
-    , -- | Name of the main module in the definition
-      mainModuleName :: !ModuleName
+    { fileName :: !FilePath
+    -- ^ Name for a file containing function definitions to verify.
+    , mainModuleName :: !ModuleName
+    -- ^ Name of the main module in the definition
     , bugReportOption :: !BugReportOption
     , koreLogOptions :: !KoreLogOptions
     }

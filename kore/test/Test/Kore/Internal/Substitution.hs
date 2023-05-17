@@ -83,193 +83,193 @@ monoidTests :: TestTree
 monoidTests =
     testGroup
         "Substitution.Monoid"
-        [ testCase "empty <> empty == empty" $
-            assertEqual
+        [ testCase "empty <> empty == empty"
+            $ assertEqual
                 ""
                 mempty
-                $ wrap mempty <> wrap emptyRawSubst
-        , testCase "empty <> normalized == normalized" $
-            assertEqual
+            $ wrap mempty <> wrap emptyRawSubst
+        , testCase "empty <> normalized == normalized"
+            $ assertEqual
                 ""
                 (unsafeWrapFromAssignments singletonSubst)
-                $ wrap mempty <> unsafeWrapFromAssignments singletonSubst
-        , testCase "empty normalized <> normalized == normalized" $
-            assertEqual
+            $ wrap mempty <> unsafeWrapFromAssignments singletonSubst
+        , testCase "empty normalized <> normalized == normalized"
+            $ assertEqual
                 ""
                 (unsafeWrapFromAssignments singletonSubst)
-                $ emptySubst <> unsafeWrapFromAssignments singletonSubst
-        , testCase "normalized <> empty == normalized" $
-            assertEqual
+            $ emptySubst <> unsafeWrapFromAssignments singletonSubst
+        , testCase "normalized <> empty == normalized"
+            $ assertEqual
                 ""
                 (unsafeWrapFromAssignments singletonSubst)
-                $ unsafeWrapFromAssignments singletonSubst <> wrap mempty
-        , testCase "normalized <> empty normalized == normalized" $
-            assertEqual
+            $ unsafeWrapFromAssignments singletonSubst <> wrap mempty
+        , testCase "normalized <> empty normalized == normalized"
+            $ assertEqual
                 ""
                 (unsafeWrapFromAssignments singletonSubst)
-                $ unsafeWrapFromAssignments singletonSubst <> emptySubst
+            $ unsafeWrapFromAssignments singletonSubst <> emptySubst
         ]
 
 unwrapTests :: TestTree
 unwrapTests =
     testGroup
         "Substitution.unwrap"
-        [ testCase "empty Substitution is empty" $
-            assertEqual
+        [ testCase "empty Substitution is empty"
+            $ assertEqual
                 ""
                 mempty
-                $ unwrap emptySubst
-        , testCase "unwrap . wrap == id" $
-            assertEqual
+            $ unwrap emptySubst
+        , testCase "unwrap . wrap == id"
+            $ assertEqual
                 ""
                 singletonSubst
                 . unwrap
                 . wrap
-                $ singletonSubst
-        , testCase "unwrap . unsafeWrap == id" $
-            assertEqual
+            $ singletonSubst
+        , testCase "unwrap . unsafeWrap == id"
+            $ assertEqual
                 ""
                 singletonSubst
                 . unwrap
                 . unsafeWrapFromAssignments
-                $ singletonSubst
+            $ singletonSubst
         ]
 
 modifyTests :: TestTree
 modifyTests =
     testGroup
         "Substitution.modify"
-        [ testCase "modify id un-normalized == id" $
-            assertEqual
+        [ testCase "modify id un-normalized == id"
+            $ assertEqual
                 ""
                 (wrap singletonSubst)
                 . modify id
-                $ wrap singletonSubst
-        , testCase "modify id normalized substitution un-normalizes" $
-            assertEqual
+            $ wrap singletonSubst
+        , testCase "modify id normalized substitution un-normalizes"
+            $ assertEqual
                 ""
                 (wrap singletonSubst)
                 . modify id
-                $ unsafeWrapFromAssignments singletonSubst
-        , testCase "modify empty subst == id" $
-            assertEqual
+            $ unsafeWrapFromAssignments singletonSubst
+        , testCase "modify empty subst == id"
+            $ assertEqual
                 ""
                 mempty
                 . modify id
-                $ emptySubst
+            $ emptySubst
         ]
 
 mapVariablesTests :: TestTree
 mapVariablesTests =
     testGroup
         "Substitution.mapVariables"
-        [ testCase "map id over empty is empty" $
-            assertEqual
+        [ testCase "map id over empty is empty"
+            $ assertEqual
                 ""
                 (wrap mempty)
                 . mapVariables (pure id)
-                $ emptySubst
-        , testCase "map id over wrap empty is normalized empty" $
-            assertEqual
+            $ emptySubst
+        , testCase "map id over wrap empty is normalized empty"
+            $ assertEqual
                 ""
                 (wrap mempty)
                 . mapVariables (pure id)
-                $ wrap emptyRawSubst
-        , testCase "map id over singleton == id" $
-            assertEqual
+            $ wrap emptyRawSubst
+        , testCase "map id over singleton == id"
+            $ assertEqual
                 ""
                 (wrap singletonSubst)
                 . mapVariables (pure id)
-                $ wrap singletonSubst
-        , testCase "map id over normalized singletonSubst" $
-            assertEqual
+            $ wrap singletonSubst
+        , testCase "map id over normalized singletonSubst"
+            $ assertEqual
                 ""
                 (wrap singletonSubst)
                 . mapVariables (pure id)
-                $ unsafeWrapFromAssignments singletonSubst
+            $ unsafeWrapFromAssignments singletonSubst
         ]
 
 isNormalizedTests :: TestTree
 isNormalizedTests =
     testGroup
         "Substitution.isNormalized"
-        [ testCase "mempty is normalized" $
-            assertEqual
+        [ testCase "mempty is normalized"
+            $ assertEqual
                 ""
                 True
                 . isNormalized
-                $ emptySubst
-        , testCase "wrap is not normalized" $
-            assertEqual
+            $ emptySubst
+        , testCase "wrap is not normalized"
+            $ assertEqual
                 ""
                 False
                 . isNormalized
-                $ wrap singletonSubst
-        , testCase "unsafeWrap is normalized" $
-            assertEqual
+            $ wrap singletonSubst
+        , testCase "unsafeWrap is normalized"
+            $ assertEqual
                 ""
                 True
                 . isNormalized
-                $ unsafeWrapFromAssignments singletonSubst
+            $ unsafeWrapFromAssignments singletonSubst
         ]
 
 nullTests :: TestTree
 nullTests =
     testGroup
         "Substitution.null"
-        [ testCase "mempty is null" $
-            assertEqual
+        [ testCase "mempty is null"
+            $ assertEqual
                 ""
                 True
                 . null
-                $ wrap emptyRawSubst
-        , testCase "unsafeWrap empty is null" $
-            assertEqual
+            $ wrap emptyRawSubst
+        , testCase "unsafeWrap empty is null"
+            $ assertEqual
                 ""
                 True
                 . null
-                $ unsafeWrapFromAssignments emptyRawSubst
-        , testCase "nonempty is not null" $
-            assertEqual
+            $ unsafeWrapFromAssignments emptyRawSubst
+        , testCase "nonempty is not null"
+            $ assertEqual
                 ""
                 False
                 . null
-                $ wrap singletonSubst
-        , testCase "nonempty normalized is not null" $
-            assertEqual
+            $ wrap singletonSubst
+        , testCase "nonempty normalized is not null"
+            $ assertEqual
                 ""
                 False
                 . null
-                $ unsafeWrapFromAssignments singletonSubst
+            $ unsafeWrapFromAssignments singletonSubst
         ]
 
 variablesTests :: TestTree
 variablesTests =
     testGroup
         "Substitution.variables"
-        [ testCase "empty subst has no variables" $
-            assertEqual
+        [ testCase "empty subst has no variables"
+            $ assertEqual
                 ""
                 mempty
-                $ variables emptySubst
-        , testCase "empty wrapped subst has no variables" $
-            assertEqual
+            $ variables emptySubst
+        , testCase "empty wrapped subst has no variables"
+            $ assertEqual
                 ""
                 mempty
                 . variables
-                $ wrap emptyRawSubst
-        , testCase "singleton normalized subst has one variable" $
-            assertEqual
+            $ wrap emptyRawSubst
+        , testCase "singleton normalized subst has one variable"
+            $ assertEqual
                 ""
                 (Set.fromList $ assignedVariable <$> singletonSubst)
                 . variables
-                $ unsafeWrapFromAssignments singletonSubst
-        , testCase "singleton subst has one variable" $
-            assertEqual
+            $ unsafeWrapFromAssignments singletonSubst
+        , testCase "singleton subst has one variable"
+            $ assertEqual
                 ""
                 (Set.fromList $ assignedVariable <$> singletonSubst)
                 . variables
-                $ wrap singletonSubst
+            $ wrap singletonSubst
         ]
 
 orderRenameAndRenormalizeTODOTests :: TestTree

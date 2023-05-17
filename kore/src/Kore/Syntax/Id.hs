@@ -153,7 +153,8 @@ prettyPrintAstLocation
                 , column = column'
                 }
         ) =
-        Text.pack name <> " "
+        Text.pack name
+            <> " "
             <> Text.pack (show line')
             <> ":"
             <> Text.pack (show column')

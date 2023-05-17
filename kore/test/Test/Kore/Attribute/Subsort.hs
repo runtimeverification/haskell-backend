@@ -28,7 +28,8 @@ test_subsort :: TestTree
 test_subsort =
     testCase "[subsort{sub{},super{}}()] :: Subsort" $
         expectSuccess subsorts $
-            parseSubsorts $ Attributes [subsortAttribute sub super]
+            parseSubsorts $
+                Attributes [subsortAttribute sub super]
   where
     subsorts =
         Subsorts
@@ -39,7 +40,8 @@ test_subsort =
 test_Attributes :: TestTree
 test_Attributes =
     testCase "[subsort{sub{},super{}}()] :: Attributes" $
-        expectSuccess attrs $ parseAttributes attrs
+        expectSuccess attrs $
+            parseAttributes attrs
   where
     attrs = Attributes [subsortAttribute sub super]
 
@@ -47,7 +49,8 @@ test_zeroParams :: TestTree
 test_zeroParams =
     testCase "[subsort{}()]" $
         expectFailure $
-            parseSubsorts $ Attributes [illegalAttribute]
+            parseSubsorts $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)
@@ -64,7 +67,8 @@ test_arguments :: TestTree
 test_arguments =
     testCase "[subsort{sub{},super{}}(illegal)]" $
         expectFailure $
-            parseSubsorts $ Attributes [illegalAttribute]
+            parseSubsorts $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         attributePattern (subsortSymbol sub super) [attributeString "illegal"]

@@ -564,7 +564,7 @@ checkVariable var vars =
                         <+> unparse v
                         <+> "and"
                         <+> unparse var
-                        <> Pretty.dot
+                            <> Pretty.dot
 
 patternNameForContext :: PatternF VariableName p -> Text
 patternNameForContext (AndF _) = "\\and"

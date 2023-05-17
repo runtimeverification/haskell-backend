@@ -40,7 +40,8 @@ instance
         case Map.lookup expectedKey actualContainer of
             Nothing ->
                 assertFailure
-                    ( "Key (" ++ show expectedKey
+                    ( "Key ("
+                        ++ show expectedKey
                         ++ ") not found in ("
                         ++ show (Map.keysSet actualContainer)
                         ++ ")"

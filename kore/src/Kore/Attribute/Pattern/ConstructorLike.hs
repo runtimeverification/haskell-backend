@@ -74,14 +74,14 @@ instance Synthetic ConstructorLike (Application Symbol) where
         -- The constructor application is constructor-like if all
         -- its children are constructor-like.
         | Symbol.isConstructor symbol
-          , childrenAreConstructorLike =
+        , childrenAreConstructorLike =
             ConstructorLike . Just $ ConstructorLikeHead
         -- Checks that the children of a sort injection are
         -- not sort injections, i.e. that the triangle axiom
         -- for sort injections has been fully applied.
         | Symbol.isSortInjection symbol
-          , childrenAreConstructorLike
-          , childrenAreNotSortInjections =
+        , childrenAreConstructorLike
+        , childrenAreNotSortInjections =
             ConstructorLike . Just $ SortInjectionHead
         | otherwise =
             ConstructorLike Nothing

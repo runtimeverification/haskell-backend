@@ -27,7 +27,8 @@ test_productionID =
 test_Attributes :: TestTree
 test_Attributes =
     testCase "[productionID{}(\"string\")] :: Attributes" $
-        expectSuccess attrs $ parseAttributes attrs
+        expectSuccess attrs $
+            parseAttributes attrs
   where
     attrs = Attributes [productionIDAttribute "string"]
 
@@ -35,7 +36,8 @@ test_duplicate :: TestTree
 test_duplicate =
     testCase "[productionID{}(\"string\"), productionID{}(\"string\")]" $
         expectFailure $
-            parseProductionID $ Attributes [attr, attr]
+            parseProductionID $
+                Attributes [attr, attr]
   where
     attr = productionIDAttribute "string"
 
@@ -43,7 +45,8 @@ test_zeroArguments :: TestTree
 test_zeroArguments =
     testCase "[productionID{}()]" $
         expectFailure $
-            parseProductionID $ Attributes [illegalAttribute]
+            parseProductionID $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)
@@ -56,7 +59,8 @@ test_twoArguments :: TestTree
 test_twoArguments =
     testCase "[productionID{}()]" $
         expectFailure $
-            parseProductionID $ Attributes [illegalAttribute]
+            parseProductionID $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         attributePattern
@@ -67,7 +71,8 @@ test_parameters :: TestTree
 test_parameters =
     testCase "[productionID{illegal}(\"string\")]" $
         expectFailure $
-            parseProductionID $ Attributes [illegalAttribute]
+            parseProductionID $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         attributePattern

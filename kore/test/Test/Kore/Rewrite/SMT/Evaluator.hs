@@ -271,10 +271,10 @@ test_Int_contradictions =
                 (eqInt a (int 0))
     , testCase "f(0) = 123 ∧ f(0) = 456  -- uninterpreted functions"
         . assertRefuted
-        $ makeEqualsPredicate true $
-            andBool
-                (eqInt (dummyFunctionalInt (int 0)) (int 123))
-                (eqInt (dummyFunctionalInt (int 0)) (int 456))
+        $ makeEqualsPredicate true
+        $ andBool
+            (eqInt (dummyFunctionalInt (int 0)) (int 123))
+            (eqInt (dummyFunctionalInt (int 0)) (int 456))
     , testCase "¬(0 < a → (a / 2) < a)" . assertRefuted $
         makeEqualsPredicate false $
             impliesBool (int 0 `ltInt` a) (ltInt (a `tdivInt` int 2) a)

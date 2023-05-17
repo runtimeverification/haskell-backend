@@ -1040,15 +1040,15 @@ rewriteAxiomPriority lhsName rhsName priority antiLeft =
         . withPriority priority
         . mkAxiom_
     )
-        $ rewriteRuleToTerm $
-            RewriteRule
-                RulePattern
-                    { left = applyToNoArgs mySort lhsName
-                    , antiLeft
-                    , requires = makeTruePredicate
-                    , rhs = injectTermIntoRHS (applyToNoArgs mySort rhsName)
-                    , attributes = def
-                    }
+        $ rewriteRuleToTerm
+        $ RewriteRule
+            RulePattern
+                { left = applyToNoArgs mySort lhsName
+                , antiLeft
+                , requires = makeTruePredicate
+                , rhs = injectTermIntoRHS (applyToNoArgs mySort rhsName)
+                , attributes = def
+                }
   where
     withPriority =
         maybe id (axiomWithAttribute . Attribute.Axiom.priorityAttribute)

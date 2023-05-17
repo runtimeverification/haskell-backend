@@ -129,9 +129,9 @@ data IndexedModuleSyntax pat declAtts = IndexedModuleSyntax
            , IndexedModuleSyntax pat declAtts
            )
          ]
-    , -- | set of hooked identifiers
-      indexedModuleHookedIdentifiers ::
+    , indexedModuleHookedIdentifiers ::
         !(Set.Set Id)
+    -- ^ set of hooked identifiers
     }
     deriving stock (Generic, Show, Functor, Foldable, Traversable)
 
@@ -152,10 +152,10 @@ data IndexedModule pat declAtts axiomAtts = IndexedModule
       -- builtin is not actually valid, but the index must admit invalid data
       -- because verification only happens after.
 
-      -- | map from builtin domain (symbol and sort) identifiers to the hooked
-      -- identifiers
       indexedModuleHooks ::
         !(Map.Map Text [Id])
+    -- ^ map from builtin domain (symbol and sort) identifiers to the hooked
+    -- identifiers
     }
     deriving stock (Generic, Show, Functor, Foldable, Traversable)
 

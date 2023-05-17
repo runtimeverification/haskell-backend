@@ -173,7 +173,8 @@ test_stepStrategy =
                                 )
                                 Mock.c
                             ]
-                    let -- f( X ) /\ not( a == f( X ) )
+                    let
+                        -- f( X ) /\ not( a == f( X ) )
                         firstRemainderPattern =
                             Pattern.fromTermAndPredicate
                                 (Mock.functionalConstr10 (Mock.f xTerm))

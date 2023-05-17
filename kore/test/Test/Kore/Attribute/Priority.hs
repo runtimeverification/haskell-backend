@@ -27,7 +27,8 @@ test_priority =
 test_Attributes :: TestTree
 test_Attributes =
     testCase "[priority{}(\"123\")] :: Attributes" $
-        expectSuccess attrs $ parseAttributes attrs
+        expectSuccess attrs $
+            parseAttributes attrs
   where
     attrs = Attributes [priorityAttribute 123]
 
@@ -35,7 +36,8 @@ test_duplicate :: TestTree
 test_duplicate =
     testCase "[priority{}(\"123\")], priority{}(\"123\")]" $
         expectFailure $
-            parsePriority $ Attributes [attr, attr]
+            parsePriority $
+                Attributes [attr, attr]
   where
     attr = priorityAttribute 123
 
@@ -43,7 +45,8 @@ test_zeroArguments :: TestTree
 test_zeroArguments =
     testCase "[priority{}()]" $
         expectFailure $
-            parsePriority $ Attributes [illegalAttribute]
+            parsePriority $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)
@@ -56,7 +59,8 @@ test_twoArguments :: TestTree
 test_twoArguments =
     testCase "[priority{}(\"illegal\", \"illegal\")]" $
         expectFailure $
-            parsePriority $ Attributes [illegalAttribute]
+            parsePriority $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         attributePattern

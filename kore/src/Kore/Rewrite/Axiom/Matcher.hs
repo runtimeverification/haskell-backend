@@ -309,18 +309,18 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
     case (pat, subject) of
         (Var_ var1, Var_ var2)
             | isFree var1
-              , var1 == var2 ->
+            , var1 == var2 ->
                 discharge
         (ElemVar_ var1, _)
             | isFree (inject var1)
-              , isFunctionPattern subject ->
+            , isFunctionPattern subject ->
                 bind (inject var1) subject
         (SetVar_ var1, _)
             | isFree (inject var1) ->
                 bind (inject var1) subject
         (Var_ var1, Var_ var2)
             | not $ isFree var1
-              , var1 `isBoundToSameAs` var2 ->
+            , var1 `isBoundToSameAs` var2 ->
                 discharge
         (StringLiteral_ str1, StringLiteral_ str2) ->
             if str1 == str2
@@ -561,15 +561,15 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
     -- (exactly) one concrete excess elements is mapped to an abstract
     -- element in the pattern
     | null excessConcrete1 -- see above, should not happen
-      , [element1] <- excessAbstract1 -- excess in pattern is single K |-> V
-      , null opaque1
-      , [concElem2] <- HashMap.toList excessConcrete2 -- excess in subject is single assoc
-      , null excessAbstract2
-      , null opaque2 -- ? do we need this? could also mean opaques are all empty?
-      -- ensure the symbolic key is not in the subject map
-      -- (see intersectionMerge, should not happen)
-      , (key1, _) <- unwrapElement element1
-      , isNothing (lookupSymbolicKeyOfAc key1 normalized2) =
+    , [element1] <- excessAbstract1 -- excess in pattern is single K |-> V
+    , null opaque1
+    , [concElem2] <- HashMap.toList excessConcrete2 -- excess in subject is single assoc
+    , null excessAbstract2
+    , null opaque2 -- ? do we need this? could also mean opaques are all empty?
+    -- ensure the symbolic key is not in the subject map
+    -- (see intersectionMerge, should not happen)
+    , (key1, _) <- unwrapElement element1
+    , isNothing (lookupSymbolicKeyOfAc key1 normalized2) =
         -- bind element1 <- concElem2, deal with the identical parts
         let concElem2' = wrapElement $ Bifunctor.first (from @Key) concElem2
          in decomposeList $
@@ -587,8 +587,8 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
                 [frame1]
                     -- One opaque each, rest are syntactically equal
                     | null excessAbstract2
-                      , null excessConcrete2
-                      , [frame2] <- opaque2 ->
+                    , null excessConcrete2
+                    , [frame2] <- opaque2 ->
                         decomposeList $ (frame1, frame2) : unwrapValues (concrete12 ++ abstractMerge)
                     -- Match singular opaque1 with excess part of normalized2
                     | otherwise ->
@@ -602,16 +602,16 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
                 frames1
                     -- Opaque parts are equivalent, rest is syntactically equal
                     | null excessAbstract2
-                      , null excessConcrete2
-                      , frames2 <- opaque2
-                      , length frames1 == length frames2 ->
+                    , null excessConcrete2
+                    , frames2 <- opaque2
+                    , length frames1 == length frames2 ->
                         decomposeList $ unwrapValues (concrete12 ++ abstractMerge) ++ zip opaque1ACs opaque2ACs
                     | otherwise -> failMatch "unimplemented ac collection case"
     -- Case for AC iteration:
     -- Normalized1 looks like K |-> V M:Map
     | [element1] <- abstract1
-      , [frame1] <- opaque1
-      , null concrete1 = do
+    , [frame1] <- opaque1
+    , null concrete1 = do
         let (key1, value1) = unwrapElement element1
         case lookupSymbolicKeyOfAc key1 normalized2 of
             -- If K in_keys(normalized2)
@@ -646,8 +646,8 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
                     _ -> failMatch "unimplemented ac collection case"
     -- Case for ACs which are structurally equal:
     | length excessAbstract1 == length excessAbstract2
-      , length concrete1 == length concrete2
-      , length opaque1 == length opaque2 =
+    , length concrete1 == length concrete2
+    , length opaque1 == length opaque2 =
         decomposeList $ unwrapValues (abstractMerge ++ concrete12) ++ unwrapElements (zip excessAbstract1 excessAbstract2) ++ (zip opaque1ACs opaque2ACs)
     | otherwise = failMatch "unimplemented ac collection case"
   where

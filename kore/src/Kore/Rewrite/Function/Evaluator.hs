@@ -105,7 +105,8 @@ evaluateApplication
             for_ canMemoize (recordOrPattern results)
             let unexpectedBottomResult = Symbol.isTotal symbol && isBottom results
             when unexpectedBottomResult $
-                lift $ errorBottomTotalFunction termLike
+                lift $
+                    errorBottomTotalFunction termLike
             return results
       where
         finishT :: ExceptT r Simplifier r -> Simplifier r
@@ -141,10 +142,10 @@ evaluateApplication
 
         canMemoize
             | Symbol.isMemo symbol
-              , ( isTop childrenCondition
+            , ( isTop childrenCondition
                     && isTop (SideCondition.toPredicate sideCondition)
-                )
-                    || all TermLike.isConstructorLike application =
+              )
+                || all TermLike.isConstructorLike application =
                 traverse asConcrete application
             | otherwise =
                 Nothing
@@ -158,18 +159,18 @@ evaluateApplication
 
         recordOrPattern orPattern key
             | [result] <- OrPattern.toPatterns orPattern
-              , Just term <- asConcrete (Pattern.term result)
-              , -- If the pattern and predicate are concrete, then we expect the predicate
-                -- to be fully-evaluated, so it must be Top. It may not be fully-evaluated
-                -- due to some uninterpreted function or an unsolved unification problem;
-                -- these are not errors, but they are unusual enough that we don't want to
-                -- deal with them here.
-                isTop (Pattern.predicate result)
-              , -- We already checked that childrenCondition has no substitutions, so we
-                -- don't expect the result to have any substitutions either. As with the
-                -- predicate, it might be possible to have a substitution in some cases,
-                -- but they are unusual enough that we don't need to deal with them here.
-                isTop (Pattern.substitution result) =
+            , Just term <- asConcrete (Pattern.term result)
+            , -- If the pattern and predicate are concrete, then we expect the predicate
+              -- to be fully-evaluated, so it must be Top. It may not be fully-evaluated
+              -- due to some uninterpreted function or an unsolved unification problem;
+              -- these are not errors, but they are unusual enough that we don't want to
+              -- deal with them here.
+              isTop (Pattern.predicate result)
+            , -- We already checked that childrenCondition has no substitutions, so we
+              -- don't expect the result to have any substitutions either. As with the
+              -- predicate, it might be possible to have a substitution in some cases,
+              -- but they are unusual enough that we don't need to deal with them here.
+              isTop (Pattern.substitution result) =
                 do
                     Memo.Self{record} <- askMemo
                     record key term

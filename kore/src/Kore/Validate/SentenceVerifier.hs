@@ -457,7 +457,8 @@ verifyNonHooks sentences =
 verifyNonHookSentence :: ParsedSentence -> SentenceVerifier ()
 verifyNonHookSentence sentence =
     withSentenceContext sentence $
-        verifyNoHookAttribute $ sentenceAttributes sentence
+        verifyNoHookAttribute $
+            sentenceAttributes sentence
 
 buildDeclaredSortVariables ::
     MonadError (Error e) error =>

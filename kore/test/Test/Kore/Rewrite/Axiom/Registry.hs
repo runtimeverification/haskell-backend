@@ -507,7 +507,8 @@ test_functionRegistry =
         simplified <-
             testRunSimplifier testEnv $
                 Pattern.simplify $
-                    makePattern $ mkApplySymbol gHead []
+                    makePattern $
+                        mkApplySymbol gHead []
         let actual = Pattern.term <$> toList simplified
         assertEqual "" expect actual
     , testCase "Checking that evaluator simplifies correctly" $ do
@@ -515,7 +516,8 @@ test_functionRegistry =
         simplified <-
             testRunSimplifier testEnv $
                 Pattern.simplify $
-                    makePattern $ mkApplySymbol pHead []
+                    makePattern $
+                        mkApplySymbol pHead []
         let actual = Pattern.term <$> toList simplified
         assertEqual "" expect actual
     , testCase

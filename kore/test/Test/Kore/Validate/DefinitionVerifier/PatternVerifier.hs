@@ -295,7 +295,7 @@ test_patternVerifier =
         [ objectSortSentence
         , anotherSortSentence
         , anotherObjectSortSentence2
-        --, objectSymbolSentence
+        -- , objectSymbolSentence
         ]
         NeedsInternalDefinitions
     , failureTestsForObjectPattern
@@ -975,9 +975,9 @@ patternsInAllContexts
                 (DeclaredSort anotherSort)
                 sortVariables
                 objectSortVariables
-                ( symbolSentence :
-                  aliasSentence :
-                  sentences
+                ( symbolSentence
+                    : aliasSentence
+                    : sentences
                 )
                 patternRestrict
         rawSymbolName = namePrefix <> "_anotherSymbol"
@@ -1408,9 +1408,9 @@ testsForUnifiedPatternInTopLevelGenericContext
                     { testDataDescription = "Pattern in axiom"
                     , testDataError =
                         Error
-                            ( "module 'MODULE'" :
-                              "axiom declaration" :
-                              testPatternErrorStackStrings testPattern
+                            ( "module 'MODULE'"
+                                : "axiom declaration"
+                                : testPatternErrorStackStrings testPattern
                             )
                             defaultErrorMessage
                     , testDataDefinition =
@@ -1419,8 +1419,8 @@ testsForUnifiedPatternInTopLevelGenericContext
                             ( axiomSentenceWithParamsAndAttrs
                                 (testPatternUnverifiedPattern testPattern)
                                 sortVariables
-                                [simplificationAttribute Nothing] :
-                              additionalSentences
+                                [simplificationAttribute Nothing]
+                                : additionalSentences
                             )
                     }
          in case patternRestrict of

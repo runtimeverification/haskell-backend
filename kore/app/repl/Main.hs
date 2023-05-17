@@ -254,7 +254,8 @@ mainWithOptions LocalOptions{execOptions} = do
                             ( replMode == RunScript
                                 && isNothing (unReplScript replScript)
                             )
-                            $ lift $ do
+                            $ lift
+                            $ do
                                 hPutStrLn
                                     stderr
                                     "You must supply the path to the repl script\
@@ -265,7 +266,8 @@ mainWithOptions LocalOptions{execOptions} = do
                             ( replMode == Interactive
                                 && scriptModeOutput == EnableOutput
                             )
-                            $ lift $ do
+                            $ lift
+                            $ do
                                 hPutStrLn
                                     stderr
                                     "The --save-run-output flag is only available\

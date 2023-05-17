@@ -1884,7 +1884,7 @@ applyModality modality term =
 containsSymbolWithId :: String -> TermLike variable -> Bool
 containsSymbolWithId symId term
     | App_ sym _ <- term
-      , getId (symbolConstructor sym) == Text.pack symId =
+    , getId (symbolConstructor sym) == Text.pack symId =
         True
     | otherwise =
         any

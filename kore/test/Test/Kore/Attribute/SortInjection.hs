@@ -20,12 +20,14 @@ test_sortInjection :: TestTree
 test_sortInjection =
     testCase "[sortInjection{}()] :: SortInjection" $
         expectSuccess SortInjection{isSortInjection = True} $
-            parseSortInjection $ Attributes [sortInjectionAttribute]
+            parseSortInjection $
+                Attributes [sortInjectionAttribute]
 
 test_Attributes :: TestTree
 test_Attributes =
     testCase "[sortInjection{}()] :: Attributes" $
-        expectSuccess attrs $ parseAttributes attrs
+        expectSuccess attrs $
+            parseAttributes attrs
   where
     attrs = Attributes [sortInjectionAttribute]
 
@@ -40,7 +42,8 @@ test_arguments :: TestTree
 test_arguments =
     testCase "[sortInjection{}(\"illegal\")]" $
         expectFailure $
-            parseSortInjection $ Attributes [illegalAttribute]
+            parseSortInjection $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         attributePattern sortInjectionSymbol [attributeString "illegal"]
@@ -49,7 +52,8 @@ test_parameters :: TestTree
 test_parameters =
     testCase "[sortInjection{illegal}()]" $
         expectFailure $
-            parseSortInjection $ Attributes [illegalAttribute]
+            parseSortInjection $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)

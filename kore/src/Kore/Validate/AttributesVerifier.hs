@@ -148,7 +148,8 @@ verifyNoHookedSupersort ::
     error ()
 verifyNoHookedSupersort indexedModule axiom subsorts = do
     let isHooked =
-            getHasDomainValues . hasDomainValues
+            getHasDomainValues
+                . hasDomainValues
                 . getSortAttributes (indexedModuleSyntax indexedModule)
                 . Subsort.supersort
         hookedSubsort = find isHooked subsorts
