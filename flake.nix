@@ -99,7 +99,7 @@
             };
             nativeBuildInputs = with nixpkgs.legacyPackages.${pkgs.system};
               [ nixpkgs-fmt ]
-              ++ lib.optional (pkgs.system == "aarch64-darwin") pkgs'.llvm_12;
+              ++ lib.optional (pkgs.system == "aarch64-darwin") pkgs.llvm_12;
           };
 
           modules = [{
@@ -170,7 +170,7 @@
             kore-exec-infotable =
               self.projectEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
           };
-          fourmolu = haskell-nix.hackage-package { name = "fourmolu"; version = fourmolu-version; inherit compiler-nix-name index-state; }.components.exes.fourmolu;
+          fourmolu = (pkgs.haskell-nix.hackage-package { name = "fourmolu"; version = fourmolu-version; inherit compiler-nix-name index-state; }).components.exes.fourmolu;
           scripts = pkgs.symlinkJoin {
             name = "fourmolu-format";
             paths = [ ./scripts ];
@@ -179,7 +179,7 @@
               wrapProgram $out/fourmolu.sh \
                 --set PATH ${
                   with pkgs;
-                  lib.makeBinPath [ haskellPackages.fourmolu git gnugrep findutils ]
+                  lib.makeBinPath [ fourmolu git gnugrep findutils ]
                 }
             '';
           };
