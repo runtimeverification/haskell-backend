@@ -45,7 +45,6 @@ jobs:
 
       - name: Format
         run: |
-          nix run .#remove-import-groups
           nix run .#format
 
       - name: Update branch

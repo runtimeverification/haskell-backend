@@ -176,7 +176,7 @@
               wrapProgram $out/fourmolu.sh \
                 --set PATH ${
                   with pkgs;
-                  lib.makeBinPath [ haskellPackages.fourmolu fd findutils ]
+                  lib.makeBinPath [ haskellPackages.fourmolu findutils ]
                 }
             '';
           };
@@ -188,10 +188,6 @@
           format = {
             type = "app";
             program = "${scripts}/fourmolu.sh";
-          };
-          remove-import-groups = {
-            type = "app";
-            program = "${scripts}/remove-import-groups.sh";
           };
         }));
 
