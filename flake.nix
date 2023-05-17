@@ -96,7 +96,7 @@
             };
             nativeBuildInputs = with nixpkgs.legacyPackages.${pkgs.system};
               [ nixpkgs-fmt ]
-              ++ optional (pkgs.system == "aarch64-darwin") pkgs'.llvm_12;
+              ++ lib.optional (pkgs.system == "aarch64-darwin") pkgs'.llvm_12;
           };
 
           modules = [{
