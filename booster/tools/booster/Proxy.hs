@@ -12,6 +12,7 @@ module Proxy (
 ) where
 
 import Control.Concurrent.MVar qualified as MVar
+import Control.Monad (when)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Logger qualified as Log
 import Data.Aeson.Types (Value (..))
@@ -129,6 +130,9 @@ respondEither mbStatsVar booster kore req = case req of
                                         , maxDepth = Just $ Depth 1
                                         }
                                 )
+                    when (isJust mbStatsVar) $
+                        Log.logInfoNS "proxy" . Text.pack $
+                            "Kore fall-back in " <> microsWithUnit kTime
                     case kResult of
                         Right (Execute koreResult)
                             | koreResult.reason == DepthBound -> do
