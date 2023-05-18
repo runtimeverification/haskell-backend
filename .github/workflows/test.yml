@@ -10,8 +10,68 @@ env:
   stack_version: "2.9.3"
 
 jobs:
+  formatting:
+    name: 'Auto-formatting'
+    runs-on: ubuntu-20.04
+    steps:
+      - id: config
+        run: |
+          ref="${{ github.event.pull_request.head.sha }}"
+          ref="${ref#refs/heads/}"
+          echo "ref=$ref" >> $GITHUB_OUTPUT
+
+          git config --global user.name github-actions
+          git config --global user.email github-actions@github.com
+
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ steps.config.outputs.ref }}
+          submodules: recursive
+          token: ${{ secrets.JENKINS_GITHUB_PAT }}
+
+      - name: 'Install Nix'
+        uses: cachix/install-nix-action@v19
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.13.3/install
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+            substituters = http://cache.nixos.org https://cache.iog.io
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+
+      - name: 'Install Cachix'
+        uses: cachix/cachix-action@v12
+        with:
+          name: k-framework
+          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
+
+      - name: Format
+        run: |
+          nix run .#format
+
+      - name: Update branch
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
+            if git status -s -b | grep -q '^##.*(no branch)$'; then
+              echo 2>&1 "Error: Git is in detached HEAD state"
+              exit 1
+            fi
+          fi
+
+          if [ -n "$(git status --porcelain '*.hs')" ]; then
+            git add '*.hs'
+            git commit -m "Format with fourmolu"
+            git show --stat
+            # git push
+            echo "Reformatted code pushed, aborting this workflow" | tee -a $GITHUB_STEP_SUMMARY
+            # exit 1
+          fi
+
   nix-build:
     name: 'Nix / Unit Tests'
+    needs: formatting
     strategy:
       fail-fast: false
       matrix:
@@ -100,6 +160,7 @@ jobs:
 
   cabal:
     name: 'Cabal / Unit Tests'
+    needs: formatting
     runs-on: ubuntu-20.04
     steps:
       - name: Install prerequisites
@@ -138,6 +199,7 @@ jobs:
 
   stack:
     name: 'Stack / Unit Tests'
+    needs: formatting
     runs-on: ubuntu-20.04
     steps:
       - name: Install prerequisites
@@ -180,6 +242,7 @@ jobs:
 
   stack-haddock:
     name: 'Stack / Haddock check'
+    needs: formatting
     runs-on: ubuntu-20.04
     steps:
       - name: Install prerequisites
@@ -214,6 +277,7 @@ jobs:
           stack haddock --fast
   hlint:
     name: 'HLint'
+    needs: formatting
     runs-on: ubuntu-20.04
     env:
       hlint_version: "3.4.1"
