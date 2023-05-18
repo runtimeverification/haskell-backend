@@ -12,7 +12,7 @@ env:
 jobs:
   formatting:
     name: 'Auto-formatting'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - id: config
         run: |
@@ -76,8 +76,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu-20.04
-            os: ubuntu-20.04
+          - runner: ubuntu-22.04
+            os: ubuntu-22.04
             nix: x86_64-linux
           - runner: macos-12
             os: macos-12
@@ -127,7 +127,7 @@ jobs:
 
   nix-integration:
     name: 'Nix / Integration'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: nix-build
     steps:
       - name: Check out code
@@ -161,7 +161,7 @@ jobs:
   cabal:
     name: 'Cabal / Unit Tests'
     needs: formatting
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Install prerequisites
         run: |
@@ -200,7 +200,7 @@ jobs:
   stack:
     name: 'Stack / Unit Tests'
     needs: formatting
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Install prerequisites
         run: |
@@ -243,7 +243,7 @@ jobs:
   stack-haddock:
     name: 'Stack / Haddock check'
     needs: formatting
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Install prerequisites
         run: |
@@ -278,7 +278,7 @@ jobs:
   hlint:
     name: 'HLint'
     needs: formatting
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       hlint_version: "3.4.1"
     steps:
