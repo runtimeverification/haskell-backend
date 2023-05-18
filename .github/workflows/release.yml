@@ -142,7 +142,7 @@ jobs:
     name: 'Publish Release'
     runs-on: ubuntu-latest
     environment: production
-    needs: [check, release, cache-cabal, cache-stack, cache-stack-haddock]
+    needs: [release, cache-cabal, cache-stack, cache-stack-haddock]
     steps:
       - name: 'Update dependents'
         env:
