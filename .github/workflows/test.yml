@@ -154,9 +154,9 @@ jobs:
 
       - name: Run integration tests
         run: |
-          nix develop github:runtimeverification/k/sam/nix-kore-integration-shell#kore-integration-tests --override-input haskell-backend . --update-input haskell-backend
-          cd test
-          make -j8 -l8 --output-sync test
+          nix develop github:runtimeverification/k/sam/nix-kore-integration-shell#kore-integration-tests \
+                --override-input haskell-backend . --update-input haskell-backend \
+                --command bash -c "cd test && make -j8 -l8 --output-sync test"
 
   cabal:
     name: 'Cabal / Unit Tests'
