@@ -152,6 +152,11 @@ jobs:
           name: k-framework
           skipPush: true
 
+      - name: Test paths to Haskell backend binaries
+        run: |
+          nix develop github:runtimeverification/k/sam/nix-kore-integration-shell#kore-integration-tests \
+                --override-input haskell-backend . --update-input haskell-backend \
+                --command bash -c "echo kore-exec; which kore-exec; kore-exec --version; echo kore-parser; which kore-parser; kore-parser --version"
       - name: Run integration tests
         run: |
           nix develop github:runtimeverification/k/sam/nix-kore-integration-shell#kore-integration-tests \
