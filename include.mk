@@ -32,29 +32,17 @@ STACK = stack --allow-different-user
 STACK_HADDOCK = $(STACK) --work-dir=.stack-work-haddock
 STACK_TEST = $(STACK) --work-dir=.stack-work-test
 
-ifeq ($(strip $(NIX)),)
 KORE_PARSER = $(BUILD_DIR)/kore/bin/kore-parser
-else
-KORE_PARSER = kore-parser
-endif
 KORE_PARSER_OPTS =
 export KORE_PARSER
 export KORE_PARSER_OPTS
 
-ifeq ($(strip $(NIX)),)
 KORE_EXEC = $(BUILD_DIR)/kore/bin/kore-exec
-else
-KORE_EXEC = kore-exec
-endif
 KORE_EXEC_OPTS = --no-bug-report
 export KORE_EXEC
 export KORE_EXEC_OPTS
 
-ifeq ($(strip $(NIX)),)
 KORE_REPL = $(BUILD_DIR)/kore/bin/kore-repl
-else
-KORE_REPL = kore-repl
-endif
 KORE_REPL_OPTS = --no-bug-report
 export KORE_REPL
 export KORE_REPL_OPTS
