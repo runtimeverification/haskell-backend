@@ -63,7 +63,7 @@ data FreeVariableInfo = FreeVariableInfo
 instance Ord variable => Semigroup (FreeVariables variable) where
     (<>) FreeVariables{getFreeVariables = m1} FreeVariables{getFreeVariables = m2} = FreeVariables $ Map.unionWith unionCounts m1 m2
 
-instance Semigroup (FreeVariables variable) => Monoid (FreeVariables variable) where
+instance Ord variable => Monoid (FreeVariables variable) where
     mempty :: FreeVariables variable
     mempty = FreeVariables{getFreeVariables = Map.empty}
 
