@@ -97,8 +97,6 @@ common library
   build-depends: adjunctions >=4.4
   build-depends: aeson >=1.4 && <2.1
   build-depends: aeson-pretty == 0.8.9
-  -- pinned this to avoid optparse-applicative problems
-  build-depends: ansi-wl-pprint < 1.0
   build-depends: array
   build-depends: async >=2.2
   build-depends: binary >=0.8.8.0
@@ -148,7 +146,7 @@ common library
   build-depends: mono-traversable >=1.0
   build-depends: mtl >=2.2
   build-depends: multiset >=0.3.4.3
-  build-depends: optparse-applicative >=0.14 && <0.18
+  build-depends: optparse-applicative >=0.14 && <0.17.1
   build-depends: parser-combinators >=1.1
   build-depends: pqueue >=1.4.1.3
   build-depends: prettyprinter >=1.2
