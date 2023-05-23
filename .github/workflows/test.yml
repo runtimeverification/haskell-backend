@@ -117,13 +117,13 @@ jobs:
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
 
       - name: Build
-        run: nix-build -A project.${{ matrix.nix }}.kore.components.exes
+        run: GC_DONT_GC=1 nix-build -A project.${{ matrix.nix }}.kore.components.exes
 
       - name: Check shell
         run: nix develop --print-build-logs --command cabal --version
 
       - name: Run unit tests
-        run: nix-build -A project.${{ matrix.nix }}.kore.checks
+        run: GC_DONT_GC=1 nix-build -A project.${{ matrix.nix }}.kore.checks
 
   nix-integration:
     name: 'Nix / Integration'
