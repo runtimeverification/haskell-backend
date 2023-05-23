@@ -7,7 +7,7 @@ homepage:       https://github.com/runtimeverification/haskell-backend#readme
 bug-reports:    https://github.com/runtimeverification/haskell-backend/issues
 author:         Runtime Verification Inc
 maintainer:     ana.pantilie@runtimeverification.com
-copyright:      2018-2021 Runtime Verification Inc
+copyright:      2022-2023 Runtime Verification Inc
 license:        BSD-3-Clause
 build-type:     Simple
 
@@ -51,12 +51,12 @@ common haskell
     -Wnoncanonical-monad-instances
     -Wmissing-deriving-strategies
   ghc-options:
-    -j6
+    -j4
   ghc-options:
-  if impl(ghc >= 8.4)
-    ghc-options: -Wmissing-export-lists -Wpartial-fields
-  if impl(ghc >= 8.8)
-    ghc-options: -fwrite-ide-info -hiedir=.hie
+    -Wmissing-export-lists
+    -Wpartial-fields
+    -fwrite-ide-info
+    -hiedir=.hie
 
 common library
   -- Dependencies of the library, shared in common with the tests

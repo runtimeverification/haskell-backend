@@ -46,8 +46,11 @@ module Kore.Builtin.String (
 import Control.Error (
     MaybeT,
  )
-import Data.Char (
+import Data.Char as Char (
     chr,
+    isAsciiLower,
+    isAsciiUpper,
+    isDigit,
     ord,
  )
 import Data.Functor.Const
@@ -314,19 +317,19 @@ evalString2Base = Builtin.applicationEvaluator evalString2Base0
     evalString2Base0 _ _ = Builtin.wrongArity string2BaseKey
 
 readWithBase :: Integer -> ReadS Integer
-readWithBase base = sign $ readInt base isDigit valDigit
+readWithBase base = sign $ readInt base isValidDigit valDigit
   where
     sign p ('-' : cs) = do
         (a, str') <- p cs
         return (negate a, str')
     sign p ('+' : cs) = p cs
     sign p cs = p cs
-    isDigit = maybe False (< base) . valDig
+    isValidDigit = maybe False (< base) . valDig
     valDigit = fromMaybe 0 . valDig
     valDig c
-        | '0' <= c && c <= '9' = Just $ fromIntegral $ ord c - ord '0'
-        | 'a' <= c && c <= 'z' = Just $ fromIntegral $ ord c - ord 'a' + 10
-        | 'A' <= c && c <= 'Z' = Just $ fromIntegral $ ord c - ord 'A' + 10
+        | isDigit c = Just $ fromIntegral $ ord c - ord '0'
+        | isAsciiLower c = Just $ fromIntegral $ ord c - ord 'a' + 10
+        | isAsciiUpper c = Just $ fromIntegral $ ord c - ord 'A' + 10
         | otherwise = Nothing
 
 evalBase2String :: BuiltinAndAxiomSimplifier

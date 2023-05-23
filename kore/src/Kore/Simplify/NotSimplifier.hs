@@ -28,7 +28,7 @@ import Kore.Syntax (
    notSimplifier = "Kore.Simplify.Not".'Kore.Simplify.Not.simplify'
  @
 -}
-class NotSimplifier simplifier | -> simplifier where
+class NotSimplifier simplifier where
     notSimplifier ::
         SideCondition RewritingVariableName ->
         Not Sort (OrPattern RewritingVariableName) ->
