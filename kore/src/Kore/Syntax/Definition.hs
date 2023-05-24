@@ -55,7 +55,7 @@ instance Unparse sentence => Unparse (Definition sentence) where
         Pretty.vsep
             (unparse2 definitionAttributes : map unparse2 definitionModules)
 
--- |'PureDefinition' is the pure (fixed-@level@) version of 'Definition'
+-- | 'PureDefinition' is the pure (fixed-@level@) version of 'Definition'
 type PureDefinition = Definition PureSentence
 
 type ParsedDefinition = Definition ParsedSentence

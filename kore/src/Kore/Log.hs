@@ -133,7 +133,9 @@ checkLogFilePath exeName prefix logFile = do
     if not pathExists
         then do
             hPutStrLn stderr $
-                getExeName exeName <> ": Warning: the path '" <> takeDirectory logFile
+                getExeName exeName
+                    <> ": Warning: the path '"
+                    <> takeDirectory logFile
                     <> "' does not exist. Logging to '"
                     <> defaultLogFile
                     <> "' instead."
@@ -142,7 +144,9 @@ checkLogFilePath exeName prefix logFile = do
             if fileExists
                 then do
                     hPutStrLn stderr $
-                        getExeName exeName <> ": Warning: the file '" <> logFile
+                        getExeName exeName
+                            <> ": Warning: the file '"
+                            <> logFile
                             <> "' already exists. Logging to '"
                             <> defaultLogFile
                             <> "' instead."

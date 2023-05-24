@@ -228,17 +228,22 @@ class (MonadIO m, MonadLog m, MonadSMT m) => MonadSimplify m where
     simplifyCondition sideCondition conditional = do
         results <-
             lift . lift $
-                observeAllT $ simplifyCondition sideCondition conditional
+                observeAllT $
+                    simplifyCondition sideCondition conditional
         scatter results
     {-# INLINE simplifyCondition #-}
 
     localAxiomEquations ::
-        (Map AxiomIdentifier [Equation RewritingVariableName] -> Map AxiomIdentifier [Equation RewritingVariableName]) ->
+        ( Map AxiomIdentifier [Equation RewritingVariableName] ->
+          Map AxiomIdentifier [Equation RewritingVariableName]
+        ) ->
         m a ->
         m a
     default localAxiomEquations ::
         (MFunctor t, MonadSimplify n, m ~ t n) =>
-        (Map AxiomIdentifier [Equation RewritingVariableName] -> Map AxiomIdentifier [Equation RewritingVariableName]) ->
+        ( Map AxiomIdentifier [Equation RewritingVariableName] ->
+          Map AxiomIdentifier [Equation RewritingVariableName]
+        ) ->
         m a ->
         m a
     localAxiomEquations locally =
@@ -472,7 +477,7 @@ firstFullEvaluation simplifiers =
     BuiltinAndAxiomSimplifier
         (applyFirstSimplifierThatWorks simplifiers)
 
-{- |Whether a term cannot be simplified regardless of the side condition,
+{- | Whether a term cannot be simplified regardless of the side condition,
 or only with the current side condition.
 
 Example usage for @applyFirstSimplifierThatWorksWorker@:
@@ -566,10 +571,10 @@ applyFirstSimplifierThatWorksWorker
 
 -- | A type holding the result of applying an axiom to a pattern.
 data AttemptedAxiomResults variable = AttemptedAxiomResults
-    { -- | The result of applying the axiom
-      results :: !(OrPattern variable)
-    , -- | The part of the pattern that was not rewritten by the axiom.
-      remainders :: !(OrPattern variable)
+    { results :: !(OrPattern variable)
+    -- ^ The result of applying the axiom
+    , remainders :: !(OrPattern variable)
+    -- ^ The part of the pattern that was not rewritten by the axiom.
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -673,12 +678,12 @@ exceptNotApplicable ::
 exceptNotApplicable =
     fmap (either (const NotApplicable) Applied) . runExceptT
 
--- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
+-- | Yields a pure 'Simplifier' which always returns 'NotApplicable'
 notApplicableAxiomEvaluator ::
     Applicative m => m (AttemptedAxiom RewritingVariableName)
 notApplicableAxiomEvaluator = pure NotApplicable
 
--- |Yields a pure 'Simplifier' which produces a given 'TermLike'
+-- | Yields a pure 'Simplifier' which produces a given 'TermLike'
 purePatternAxiomEvaluator ::
     Applicative m =>
     TermLike RewritingVariableName ->

@@ -136,13 +136,23 @@ patternMatch ::
     TermLike RewritingVariableName ->
     Simplifier (Either Text (MatchResult RewritingVariableName))
 patternMatch sideCondition pat subject =
-    patternMatch' sideCondition [MatchItem pat subject [] Set.empty] MinQueue.empty MultiAnd.top Map.empty
+    patternMatch'
+        sideCondition
+        [MatchItem pat subject [] Set.empty]
+        MinQueue.empty
+        MultiAnd.top
+        Map.empty
 
 -- Pattern
 -- Subject
 -- List of variables bound by binders in pattern and subject
 -- Set of variables bound by binders in subject
-data MatchItem = MatchItem (TermLike RewritingVariableName) (TermLike RewritingVariableName) [(SomeVariable RewritingVariableName, SomeVariable RewritingVariableName)] (Set (SomeVariableName RewritingVariableName))
+data MatchItem
+    = MatchItem
+        (TermLike RewritingVariableName)
+        (TermLike RewritingVariableName)
+        [(SomeVariable RewritingVariableName, SomeVariable RewritingVariableName)]
+        (Set (SomeVariableName RewritingVariableName))
     deriving stock (Eq)
 
 type Element normalized =
@@ -232,9 +242,21 @@ patternMatch' sideCondition [] queue predicate subst = do
     let pat' = renormalizeBuiltins $ InjSimplifier.normalize injSimplifier $ substitute subst pat
     case (pat', subject) of
         (InternalMap_ map1, InternalMap_ map2) ->
-            matchNormalizedAc decomposeList unwrapMapValue unwrapMapElement (wrapMap map2) (unwrapAc $ builtinAcChild map1) (unwrapAc $ builtinAcChild map2)
+            matchNormalizedAc
+                decomposeList
+                unwrapMapValue
+                unwrapMapElement
+                (wrapMap map2)
+                (unwrapAc $ builtinAcChild map1)
+                (unwrapAc $ builtinAcChild map2)
         (InternalSet_ set1, InternalSet_ set2) ->
-            matchNormalizedAc decomposeList unwrapSetValue unwrapSetElement (wrapSet set2) (unwrapAc $ builtinAcChild set1) (unwrapAc $ builtinAcChild set2)
+            matchNormalizedAc
+                decomposeList
+                unwrapSetValue
+                unwrapSetElement
+                (wrapSet set2)
+                (unwrapAc $ builtinAcChild set1)
+                (unwrapAc $ builtinAcChild set2)
         _ -> error "error in matching algorithm: unexpected deferred term"
   where
     (MatchItem pat subject boundVars boundSet, rest) = MinQueue.deleteFindMin queue
@@ -309,18 +331,18 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
     case (pat, subject) of
         (Var_ var1, Var_ var2)
             | isFree var1
-              , var1 == var2 ->
+            , var1 == var2 ->
                 discharge
         (ElemVar_ var1, _)
             | isFree (inject var1)
-              , isFunctionPattern subject ->
+            , isFunctionPattern subject ->
                 bind (inject var1) subject
         (SetVar_ var1, _)
             | isFree (inject var1) ->
                 bind (inject var1) subject
         (Var_ var1, Var_ var2)
             | not $ isFree var1
-              , var1 `isBoundToSameAs` var2 ->
+            , var1 `isBoundToSameAs` var2 ->
                 discharge
         (StringLiteral_ str1, StringLiteral_ str2) ->
             if str1 == str2
@@ -374,7 +396,9 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
         (App_ symbol1 children1, App_ symbol2 children2) ->
             if symbol1 == symbol2
                 then decomposeList (zip children1 children2)
-                else failMatch $ "distinct application symbols: " <> (unparseToText symbol1) <> ", " <> (unparseToText symbol2)
+                else
+                    failMatch $
+                        "distinct application symbols: " <> (unparseToText symbol1) <> ", " <> (unparseToText symbol2)
         (Inj_ inj1, Inj_ inj2)
             | Just unifyData <- matchInjs inj1 inj2 ->
                 case unifyData of
@@ -402,7 +426,9 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
                     (Application secondHead secondChildren)
                     inj{injChild = ()} ->
                 decomposeOverload unifyData
-        (Inj_ inj1@Inj{injChild = App_ firstHead firstChildren}, Inj_ Inj{injChild = App_ secondHead secondChildren})
+        ( Inj_ inj1@Inj{injChild = App_ firstHead firstChildren}
+            , Inj_ Inj{injChild = App_ secondHead secondChildren}
+            )
             | Just unifyData <-
                 unifyOverloadingCommonOverload
                     overloadSimplifier
@@ -421,18 +447,24 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
                             bind (inject var1) subject
                     (SetVar_ var1, _) ->
                         bind (inject var1) subject
-                    (InternalList_ InternalList{internalListChild = l1}, InternalList_ InternalList{internalListChild = l2}) ->
+                    ( InternalList_ InternalList{internalListChild = l1}
+                        , InternalList_ InternalList{internalListChild = l2}
+                        ) ->
                         if length l1 == length l2
                             then decomposeList $ zip (toList l1) (toList l2)
                             else failMatch "list lengths are not equal"
-                    (App_ symbol [InternalList_ InternalList{internalListChild = l1}, var@(ElemVar_ _)], InternalList_ InternalList{internalListChild = l2})
+                    ( App_ symbol [InternalList_ InternalList{internalListChild = l1}, var@(ElemVar_ _)]
+                        , InternalList_ InternalList{internalListChild = l2}
+                        )
                         | List.isSymbolConcat symbol ->
                             if length l1 <= length l2
                                 then
                                     let (start, l2') = Seq.splitAt (length l1) l2
                                      in decomposeList $ (var, List.asInternal tools sort l2') : zip (toList l1) (toList start)
                                 else failMatch "subject list is too short"
-                    (App_ symbol [var@(ElemVar_ _), InternalList_ InternalList{internalListChild = l1}], InternalList_ InternalList{internalListChild = l2})
+                    ( App_ symbol [var@(ElemVar_ _), InternalList_ InternalList{internalListChild = l1}]
+                        , InternalList_ InternalList{internalListChild = l2}
+                        )
                         | List.isSymbolConcat symbol ->
                             if length l1 <= length l2
                                 then
@@ -465,8 +497,17 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
              in if not $ Set.disjoint freeVars boundSet
                     then failMatch "bound variable would escape binder"
                     else case Map.lookup varName subst of
-                        Nothing -> patternMatch' sideCondition rest deferred (isTermDefined var term) (Map.insert (variableName var) term subst)
-                        Just binding -> if binding == term then patternMatch' sideCondition rest deferred predicate subst else failMatch "nonlinear matching fails equality test"
+                        Nothing ->
+                            patternMatch'
+                                sideCondition
+                                rest
+                                deferred
+                                (isTermDefined var term)
+                                (Map.insert (variableName var) term subst)
+                        Just binding ->
+                            if binding == term
+                                then patternMatch' sideCondition rest deferred predicate subst
+                                else failMatch "nonlinear matching fails equality test"
         | otherwise = failMatch "sorts don't match"
 
     -- compute the new predicate of a `bind` operation
@@ -483,12 +524,24 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
         Simplifier (Either Text (MatchResult RewritingVariableName))
-    decompose term1 term2 = patternMatch' sideCondition ((MatchItem term1 term2 boundVars boundSet) : rest) deferred predicate subst
+    decompose term1 term2 =
+        patternMatch'
+            sideCondition
+            ((MatchItem term1 term2 boundVars boundSet) : rest)
+            deferred
+            predicate
+            subst
 
     -- recusre by moving a MatchItem to the priority queue
     defer ::
         Simplifier (Either Text (MatchResult RewritingVariableName))
-    ~defer = patternMatch' sideCondition rest (MinQueue.insert (MatchItem pat subject boundVars boundSet) deferred) predicate subst
+    ~defer =
+        patternMatch'
+            sideCondition
+            rest
+            (MinQueue.insert (MatchItem pat subject boundVars boundSet) deferred)
+            predicate
+            subst
 
     --- recurse by adding two new MatchItems
     decomposeTwo ::
@@ -497,7 +550,13 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
         Simplifier (Either Text (MatchResult RewritingVariableName))
-    decomposeTwo term11 term21 term12 term22 = patternMatch' sideCondition ((MatchItem term11 term21 boundVars boundSet) : (MatchItem term12 term22 boundVars boundSet) : rest) deferred predicate subst
+    decomposeTwo term11 term21 term12 term22 =
+        patternMatch'
+            sideCondition
+            ((MatchItem term11 term21 boundVars boundSet) : (MatchItem term12 term22 boundVars boundSet) : rest)
+            deferred
+            predicate
+            subst
 
     -- recurse by adding a list of MatchItems
     decomposeList ::
@@ -514,7 +573,14 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
         SomeVariable RewritingVariableName ->
         TermLike RewritingVariableName ->
         Simplifier (Either Text (MatchResult RewritingVariableName))
-    decomposeBinder var1 term1 var2 term2 = patternMatch' sideCondition ((MatchItem term1 term2 ((var1, var2) : boundVars) (Set.insert (variableName var2) boundSet)) : rest) deferred predicate subst
+    decomposeBinder var1 term1 var2 term2 =
+        patternMatch'
+            sideCondition
+            ( (MatchItem term1 term2 ((var1, var2) : boundVars) (Set.insert (variableName var2) boundSet)) : rest
+            )
+            deferred
+            predicate
+            subst
 
     -- recurse with a specified result from the overload simplifier
     decomposeOverload (Overloading.Resolution (Simple (Pair term1 term2))) = decompose term1 term2
@@ -545,11 +611,15 @@ type PushList a = [(a, a)] -> Simplifier (Either Text (MatchResult RewritingVari
 -- perform AC matching on a particular Set/Map pair.
 matchNormalizedAc ::
     forall normalized.
-    ( AcWrapper normalized
-    ) =>
+    AcWrapper normalized =>
     PushList (TermLike RewritingVariableName) ->
-    ([(Value normalized, Value normalized)] -> [(TermLike RewritingVariableName, TermLike RewritingVariableName)]) ->
-    (Element normalized -> Element normalized -> [(TermLike RewritingVariableName, TermLike RewritingVariableName)]) ->
+    ( [(Value normalized, Value normalized)] ->
+      [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
+    ) ->
+    ( Element normalized ->
+      Element normalized ->
+      [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
+    ) ->
     (NormalizedAc normalized -> TermLike RewritingVariableName) ->
     NormalizedAc normalized ->
     NormalizedAc normalized ->
@@ -561,15 +631,15 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
     -- (exactly) one concrete excess elements is mapped to an abstract
     -- element in the pattern
     | null excessConcrete1 -- see above, should not happen
-      , [element1] <- excessAbstract1 -- excess in pattern is single K |-> V
-      , null opaque1
-      , [concElem2] <- HashMap.toList excessConcrete2 -- excess in subject is single assoc
-      , null excessAbstract2
-      , null opaque2 -- ? do we need this? could also mean opaques are all empty?
-      -- ensure the symbolic key is not in the subject map
-      -- (see intersectionMerge, should not happen)
-      , (key1, _) <- unwrapElement element1
-      , isNothing (lookupSymbolicKeyOfAc key1 normalized2) =
+    , [element1] <- excessAbstract1 -- excess in pattern is single K |-> V
+    , null opaque1
+    , [concElem2] <- HashMap.toList excessConcrete2 -- excess in subject is single assoc
+    , null excessAbstract2
+    , null opaque2 -- ? do we need this? could also mean opaques are all empty?
+    -- ensure the symbolic key is not in the subject map
+    -- (see intersectionMerge, should not happen)
+    , (key1, _) <- unwrapElement element1
+    , isNothing (lookupSymbolicKeyOfAc key1 normalized2) =
         -- bind element1 <- concElem2, deal with the identical parts
         let concElem2' = wrapElement $ Bifunctor.first (from @Key) concElem2
          in decomposeList $
@@ -587,8 +657,8 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
                 [frame1]
                     -- One opaque each, rest are syntactically equal
                     | null excessAbstract2
-                      , null excessConcrete2
-                      , [frame2] <- opaque2 ->
+                    , null excessConcrete2
+                    , [frame2] <- opaque2 ->
                         decomposeList $ (frame1, frame2) : unwrapValues (concrete12 ++ abstractMerge)
                     -- Match singular opaque1 with excess part of normalized2
                     | otherwise ->
@@ -602,16 +672,16 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
                 frames1
                     -- Opaque parts are equivalent, rest is syntactically equal
                     | null excessAbstract2
-                      , null excessConcrete2
-                      , frames2 <- opaque2
-                      , length frames1 == length frames2 ->
+                    , null excessConcrete2
+                    , frames2 <- opaque2
+                    , length frames1 == length frames2 ->
                         decomposeList $ unwrapValues (concrete12 ++ abstractMerge) ++ zip opaque1ACs opaque2ACs
                     | otherwise -> failMatch "unimplemented ac collection case"
     -- Case for AC iteration:
     -- Normalized1 looks like K |-> V M:Map
     | [element1] <- abstract1
-      , [frame1] <- opaque1
-      , null concrete1 = do
+    , [frame1] <- opaque1
+    , null concrete1 = do
         let (key1, value1) = unwrapElement element1
         case lookupSymbolicKeyOfAc key1 normalized2 of
             -- If K in_keys(normalized2)
@@ -646,9 +716,12 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
                     _ -> failMatch "unimplemented ac collection case"
     -- Case for ACs which are structurally equal:
     | length excessAbstract1 == length excessAbstract2
-      , length concrete1 == length concrete2
-      , length opaque1 == length opaque2 =
-        decomposeList $ unwrapValues (abstractMerge ++ concrete12) ++ unwrapElements (zip excessAbstract1 excessAbstract2) ++ (zip opaque1ACs opaque2ACs)
+    , length concrete1 == length concrete2
+    , length opaque1 == length opaque2 =
+        decomposeList $
+            unwrapValues (abstractMerge ++ concrete12)
+                ++ unwrapElements (zip excessAbstract1 excessAbstract2)
+                ++ (zip opaque1ACs opaque2ACs)
     | otherwise = failMatch "unimplemented ac collection case"
   where
     abstract1 = elementsWithVariables normalized1

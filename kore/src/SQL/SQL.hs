@@ -39,10 +39,10 @@ newtype SQL a = SQL {getSQL :: ReaderT SQLite.Connection IO a}
     deriving newtype (Functor, Applicative, Monad)
     deriving newtype (MonadIO)
 
-instance (Semigroup a) => Semigroup (SQL a) where
+instance Semigroup a => Semigroup (SQL a) where
     (<>) sqlt1 sqlt2 = SQL $ (<>) <$> getSQL sqlt1 <*> getSQL sqlt2
 
-instance (Monoid a) => Monoid (SQL a) where
+instance Monoid a => Monoid (SQL a) where
     mempty = pure mempty
 
 -- | Run the given sequence of statements in the named database.

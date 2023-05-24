@@ -39,7 +39,8 @@ test_concrete :: TestTree
 test_concrete =
     testCase "[concrete{}()] :: Concrete" $
         expectSuccess Concrete{unConcrete = freeVars} $
-            parseConcrete freeVars $ Attributes [concreteAttribute []]
+            parseConcrete freeVars $
+                Attributes [concreteAttribute []]
   where
     freeVars = foldMap freeVariable [inject Mock.x, inject Mock.y]
 
@@ -47,7 +48,8 @@ test_concrete_select :: TestTree
 test_concrete_select =
     testCase "[concrete{}(x:testSort)] :: Concrete" $
         expectSuccess Concrete{unConcrete = concreteVars} $
-            parseConcrete freeVars $ Attributes [concreteAttribute [inject Mock.x]]
+            parseConcrete freeVars $
+                Attributes [concreteAttribute [inject Mock.x]]
   where
     freeVars = foldMap freeVariable [inject Mock.x, inject Mock.y]
     concreteVars = freeVariable (inject Mock.x)
@@ -68,7 +70,8 @@ test_concrete_selectx2 =
 test_Attributes :: TestTree
 test_Attributes =
     testCase "[concrete{}()] :: Attributes" $
-        expectSuccess attrs $ parseAttributes attrs
+        expectSuccess attrs $
+            parseAttributes attrs
   where
     attrs = Attributes [concreteAttribute []]
 
@@ -115,7 +118,8 @@ test_arguments :: TestTree
 test_arguments =
     testCase "[concrete{}(\"illegal\")]" $
         expectFailure $
-            parseConcrete freeVars $ Attributes [illegalAttribute]
+            parseConcrete freeVars $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         attributePattern concreteSymbol [attributeString "illegal"]
@@ -125,7 +129,8 @@ test_parameters :: TestTree
 test_parameters =
     testCase "[concrete{illegal}()]" $
         expectFailure $
-            parseConcrete freeVars $ Attributes [illegalAttribute]
+            parseConcrete freeVars $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         attributePattern_

@@ -37,7 +37,8 @@ test_symbolic :: TestTree
 test_symbolic =
     testCase "[symbolic{}()] :: Symbolic" $
         expectSuccess Symbolic{unSymbolic = freeVars} $
-            parseSymbolic freeVars $ Attributes [symbolicAttribute []]
+            parseSymbolic freeVars $
+                Attributes [symbolicAttribute []]
   where
     freeVars = foldMap freeVariable [inject Mock.x, inject Mock.y]
 
@@ -45,7 +46,8 @@ test_symbolic_select :: TestTree
 test_symbolic_select =
     testCase "[symbolic{}(x:testSort)] :: Symbolic" $
         expectSuccess Symbolic{unSymbolic = symbolicVars} $
-            parseSymbolic freeVars $ Attributes [symbolicAttribute [inject Mock.x]]
+            parseSymbolic freeVars $
+                Attributes [symbolicAttribute [inject Mock.x]]
   where
     freeVars = foldMap freeVariable [inject Mock.x, inject Mock.y]
     symbolicVars = freeVariable (inject Mock.x)
@@ -66,7 +68,8 @@ test_symbolic_selectx2 =
 test_Attributes :: TestTree
 test_Attributes =
     testCase "[symbolic{}()] :: Attributes" $
-        expectSuccess attrs $ parseAttributes attrs
+        expectSuccess attrs $
+            parseAttributes attrs
   where
     attrs = Attributes [symbolicAttribute []]
 
@@ -113,7 +116,8 @@ test_arguments :: TestTree
 test_arguments =
     testCase "[symbolic{}(\"illegal\")]" $
         expectFailure $
-            parseSymbolic freeVars $ Attributes [illegalAttribute]
+            parseSymbolic freeVars $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         attributePattern symbolicSymbol [attributeString "illegal"]
@@ -123,7 +127,8 @@ test_parameters :: TestTree
 test_parameters =
     testCase "[symbolic{illegal}()]" $
         expectFailure $
-            parseSymbolic freeVars $ Attributes [illegalAttribute]
+            parseSymbolic freeVars $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         attributePattern_

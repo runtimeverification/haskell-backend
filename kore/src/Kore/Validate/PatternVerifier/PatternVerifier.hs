@@ -104,11 +104,11 @@ instance Monoid PatternVerifierHook where
 
 data Context = Context
     { declaredVariables :: !DeclaredVariables
-    , -- | The sort variables in scope.
-      declaredSortVariables :: !(Set SortVariable)
-    , -- | The indexed Kore module containing all definitions in scope.
-      indexedModule ::
+    , declaredSortVariables :: !(Set SortVariable)
+    -- ^ The sort variables in scope.
+    , indexedModule ::
         !(IndexedModuleSyntax Verified.Pattern Attribute.Symbol)
+    -- ^ The indexed Kore module containing all definitions in scope.
     , patternVerifierHook :: !PatternVerifierHook
     , isRpcRequest :: Bool
     }
@@ -287,11 +287,11 @@ assertSameSort expectedSort actualSort =
     koreFailWithLocationsWhen
         (expectedSort /= actualSort)
         [expectedSort, actualSort]
-        $ Pretty.renderText . Pretty.layoutCompact $
-            "Expecting sort"
-                <+> unparse expectedSort
-                <+> "but got"
-                <+> unparse actualSort
+        $ Pretty.renderText . Pretty.layoutCompact
+        $ "Expecting sort"
+            <+> unparse expectedSort
+            <+> "but got"
+            <+> unparse actualSort
                 <> Pretty.dot
 
 assertExpectedSort ::

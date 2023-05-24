@@ -40,7 +40,8 @@ instance
         case Map.lookup expectedKey actualContainer of
             Nothing ->
                 assertFailure
-                    ( "Key (" ++ show expectedKey
+                    ( "Key ("
+                        ++ show expectedKey
                         ++ ") not found in ("
                         ++ show (Map.keysSet actualContainer)
                         ++ ")"
@@ -49,7 +50,7 @@ instance
                 assertEqual "" expectedValue actualValue
 
 instance
-    (Diff (AST.Sort sort symbol name)) =>
+    Diff (AST.Sort sort symbol name) =>
     AssertContains
         (AST.Declarations sort symbol name)
         (Kore.Id, AST.Sort sort symbol name)
@@ -58,7 +59,7 @@ instance
         assertContains sorts
 
 instance
-    (Diff (AST.Symbol sort name)) =>
+    Diff (AST.Symbol sort name) =>
     AssertContains
         (AST.Declarations sort symbol name)
         (Kore.Id, AST.Symbol sort name)

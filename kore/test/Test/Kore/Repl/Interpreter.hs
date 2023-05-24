@@ -121,9 +121,9 @@ runSequentially tests
         [testCase (withNum total name) t]
     (name, t) `before` (next : rest) =
         let name' = withNum (length rest + 1) name
-         in testCase name' t :
-            after_ AllFinish (T.EQ (Field NF) (StringLit name')) next :
-            rest
+         in testCase name' t
+                : after_ AllFinish (T.EQ (Field NF) (StringLit name')) next
+                : rest
 
 test_replInterpreter :: TestTree
 test_replInterpreter =
@@ -761,7 +761,8 @@ runWithState command axioms claims claim stateTransformer = do
     let state = stateTransformer $ mkState startTime axioms claims claim
     let config = mkConfig mvar claims ma
         runLogger =
-            runTestLoggerT . liftSimplifier
+            runTestLoggerT
+                . liftSimplifier
                 . flip runStateT state
                 . flip runReaderT config
                 . runInputT defaultSettings
@@ -876,7 +877,17 @@ mkConfig logger claims' ma =
         ReplNode ->
         Simplifier (Maybe ExecutionGraph)
     stepper0 _ enableMA axioms' graph (ReplNode node) =
-        proveClaimStep Nothing Nothing ma enableMA EnabledStuckCheck DisallowedVacuous claims' axioms' graph node
+        proveClaimStep
+            Nothing
+            Nothing
+            ma
+            enableMA
+            EnabledStuckCheck
+            DisallowedVacuous
+            claims'
+            axioms'
+            graph
+            node
 
 formatUnifiers ::
     NonEmpty (Condition RewritingVariableName) ->

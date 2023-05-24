@@ -119,8 +119,8 @@ builtinDeclaration
                                 { name = AST.AlreadyEncoded smtName
                                 , sortDependencies =
                                     AST.SortReference
-                                        <$> sentenceSymbolResultSort :
-                                    sentenceSymbolSorts
+                                        <$> sentenceSymbolResultSort
+                                            : sentenceSymbolSorts
                                 }
                     }
                 )
@@ -180,8 +180,8 @@ constructorDeclaration
                                     { name = encodedName
                                     , sortDependencies =
                                         AST.SortReference
-                                            <$> sentenceSymbolResultSort :
-                                        sentenceSymbolSorts
+                                            <$> sentenceSymbolResultSort
+                                                : sentenceSymbolSorts
                                     }
                         }
                     )

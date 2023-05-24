@@ -66,7 +66,7 @@ import Prelude.Kore
 -- that it messes up top/bottom testing so moving it up must be done
 -- immediately after evaluating the children.
 
-{- |'simplify' simplifies an 'Forall' pattern with an 'OrPattern'
+{- | 'simplify' simplifies an 'Forall' pattern with an 'OrPattern'
 child.
 
 Right now this has special cases for (top and bottom children),

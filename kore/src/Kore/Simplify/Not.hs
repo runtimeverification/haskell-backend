@@ -72,7 +72,7 @@ import Kore.TopBottom (
 import Logic
 import Prelude.Kore
 
-{- |'simplify' simplifies a 'Not' pattern with an 'OrPattern'
+{- | 'simplify' simplifies a 'Not' pattern with an 'OrPattern'
 child.
 
 Right now this uses the following:
@@ -104,7 +104,7 @@ simplifyEvaluatedPredicate notChild =
                 )
         mkMultiAndPredicate andPredicate
 
-{- |'makeEvaluate' simplifies a 'Not' pattern given its 'Pattern'
+{- | 'makeEvaluate' simplifies a 'Not' pattern given its 'Pattern'
 child.
 
 See 'simplify' for details.

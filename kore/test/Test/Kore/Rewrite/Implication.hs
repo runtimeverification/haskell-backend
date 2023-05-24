@@ -101,7 +101,9 @@ test_substitute =
                     (Map.singleton (inject $ variableName y) (mkElemVar x))
                     imp
         assertBool "Expected the expected variable to not be captured" $
-            not $ nullFreeVariables $ freeVariablesRight newImp
+            not $
+                nullFreeVariables $
+                    freeVariablesRight newImp
     ]
 
 testRulePattern :: Implication ()

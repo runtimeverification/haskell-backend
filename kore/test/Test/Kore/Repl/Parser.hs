@@ -170,7 +170,8 @@ graphTests =
     , "graph expanded file svg" `parsesTo_` ShowGraph (Just Expanded) (Just "file") (Just Graph.Svg)
     , "graph \"f ile\"" `parsesTo_` ShowGraph Nothing (Just "f ile") Nothing
     , "graph \"f ile\" jpg" `parsesTo_` ShowGraph Nothing (Just "f ile") (Just Graph.Jpeg)
-    , "graph expanded \"f ile\" jpg" `parsesTo_` ShowGraph (Just Expanded) (Just "f ile") (Just Graph.Jpeg)
+    , "graph expanded \"f ile\" jpg"
+        `parsesTo_` ShowGraph (Just Expanded) (Just "f ile") (Just Graph.Jpeg)
     , "graph f ile" `fails` ()
     ]
 
@@ -408,7 +409,8 @@ pipeTests :: [ParserTest ReplCommand]
 pipeTests =
     [ "config | script" `parsesTo_` pipeConfig Nothing "script" []
     , "config 5 | script" `parsesTo_` pipeConfig (Just (ReplNode 5)) "script" []
-    , "config 5 | script \"arg1\" \"arg2\"" `parsesTo_` pipeConfig (Just (ReplNode 5)) "script" ["arg1", "arg2"]
+    , "config 5 | script \"arg1\" \"arg2\""
+        `parsesTo_` pipeConfig (Just (ReplNode 5)) "script" ["arg1", "arg2"]
     , "step 5 | script" `parsesTo_` pipeStep 5 "script" []
     , "step 5 | \"s c ri p t\"" `parsesTo_` pipeStep 5 "s c ri p t" []
     , "claim | exe a1 a2" `parsesTo_` pipeClaim Nothing "exe" ["a1", "a2"]

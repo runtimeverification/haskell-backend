@@ -136,7 +136,9 @@ main = do
     for_ (GlobalMain.localOptions options) mainWithOptions
 
 mainWithOptions :: GlobalMain.LocalOptions KoreRpcServerOptions -> IO ()
-mainWithOptions localOptions@GlobalMain.LocalOptions{execOptions = KoreRpcServerOptions{koreSolverOptions, koreLogOptions, bugReportOption}} = do
+mainWithOptions localOptions@GlobalMain.LocalOptions
+                    { execOptions = KoreRpcServerOptions{koreSolverOptions, koreLogOptions, bugReportOption}
+                    } = do
     ensureSmtPreludeExists koreSolverOptions
     exitWith
         =<< withBugReport
@@ -181,7 +183,9 @@ koreRpcServerRun GlobalMain.LocalOptions{execOptions} = do
                     }
     GlobalMain.clockSomethingIO "Executing" $
         -- wrap the call to runServer in the logger monad
-        Log.LoggerT $ ReaderT $ \loggerEnv -> runServer port serverState mainModuleName (runSMT loggerEnv) loggerEnv
+        Log.LoggerT $
+            ReaderT $
+                \loggerEnv -> runServer port serverState mainModuleName (runSMT loggerEnv) loggerEnv
 
     pure ExitSuccess
   where

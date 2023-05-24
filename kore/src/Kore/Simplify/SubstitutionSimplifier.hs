@@ -136,13 +136,13 @@ substitutionSimplifier =
 
 -- | Interface for constructing a simplified 'And' pattern.
 newtype MakeAnd monad = MakeAnd
-    { -- | Construct a simplified 'And' pattern of two 'TermLike's under
-      -- the given 'Predicate.Predicate'.
-      makeAnd ::
+    { makeAnd ::
         TermLike RewritingVariableName ->
         TermLike RewritingVariableName ->
         SideCondition RewritingVariableName ->
         monad (Pattern RewritingVariableName)
+    -- ^ Construct a simplified 'And' pattern of two 'TermLike's under
+    -- the given 'Predicate.Predicate'.
     }
 
 simplificationMakeAnd ::
@@ -206,7 +206,7 @@ deduplicateSubstitution sideCondition makeAnd' =
   where
     checkSetVars m
         | problems <- getProblems m
-          , (not . null) problems =
+        , (not . null) problems =
             (error . show . Pretty.vsep)
                 [ "Cannot reconcile multiple assignments of a set variable:"
                 , Pretty.indent 4 (debug problems)
@@ -232,7 +232,8 @@ deduplicateSubstitution sideCondition makeAnd' =
             return (predicate, deduplicated)
         | otherwise = do
             simplified <- collectConditions <$> traverse simplifyAnds' substitutions
-            let -- Substitutions de-duplicated by simplification.
+            let
+                -- Substitutions de-duplicated by simplification.
                 substitutions' = toMultiMap $ Conditional.term simplified
                 -- New conditions produced by simplification.
                 Conditional{predicate = predicate'} = simplified
@@ -295,7 +296,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
             Nothing -> empty
             Just normalization@Normalization{denormalized}
                 | not fullySimplified
-                  , makingProgress -> do
+                , makingProgress -> do
                     Lens.assign (field @"count") thisCount
                     addSubstitution substitution
                     addSubstitution $ Substitution.wrapNormalization normalization
@@ -407,10 +408,10 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
     #-}
 
 data Private variable = Private
-    { -- | The current condition, accumulated during simplification.
-      accum :: !(Condition variable)
-    , -- | The current number of denormalized substitutions.
-      count :: !Int
+    { accum :: !(Condition variable)
+    -- ^ The current condition, accumulated during simplification.
+    , count :: !Int
+    -- ^ The current number of denormalized substitutions.
     }
     deriving stock (GHC.Generic)
 

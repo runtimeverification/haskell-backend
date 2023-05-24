@@ -385,7 +385,8 @@ verifyApplySymbol getChildSort application =
     lookupSymbol symbolOrAlias >>= \symbol -> Trans.lift $ do
         let Attribute.Symbol{macro, aliasKywd} = Internal.symbolAttributes symbol
         isRpcRequest' <- Reader.asks isRpcRequest
-        when (isRpcRequest' && (isMacro macro || isAliasKywd aliasKywd)) $ koreFail "A symbol cannot be an alias or a macro"
+        when (isRpcRequest' && (isMacro macro || isAliasKywd aliasKywd)) $
+            koreFail "A symbol cannot be an alias or a macro"
         let verified = application{applicationSymbolOrAlias = symbol}
             sorts = Internal.symbolSorts symbol
         verifyApplicationChildren getChildSort verified sorts
@@ -564,7 +565,7 @@ checkVariable var vars =
                         <+> unparse v
                         <+> "and"
                         <+> unparse var
-                        <> Pretty.dot
+                            <> Pretty.dot
 
 patternNameForContext :: PatternF VariableName p -> Text
 patternNameForContext (AndF _) = "\\and"

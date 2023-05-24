@@ -107,7 +107,7 @@ instance Unparse Symbol where
     unparse2 Symbol{symbolConstructor} =
         unparse2 symbolConstructor
 
-{- |Given an 'Id', 'groundSymbol' produces the unparameterized 'Symbol'
+{- | Given an 'Id', 'groundSymbol' produces the unparameterized 'Symbol'
  corresponding to that argument.
 -}
 groundSymbol :: Id -> Symbol
@@ -635,25 +635,25 @@ instance SentenceSymbolOrAlias SentenceSymbol where
     getSentenceSymbolOrAliasAttributes = sentenceSymbolAttributes
     getSentenceSymbolOrAliasSentenceName _ = "symbol"
 
--- |'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
+-- | 'PureSentenceAxiom' is the pure (fixed-@level@) version of 'SentenceAxiom'
 type PureSentenceAxiom = SentenceAxiom ParsedPattern
 
--- |'PureSentenceAlias' is the pure (fixed-@level@) version of 'SentenceAlias'
+-- | 'PureSentenceAlias' is the pure (fixed-@level@) version of 'SentenceAlias'
 type PureSentenceAlias = SentenceAlias ParsedPattern
 
--- |'PureSentenceSymbol' is the pure (fixed-@level@) version of 'SentenceSymbol'
+-- | 'PureSentenceSymbol' is the pure (fixed-@level@) version of 'SentenceSymbol'
 type PureSentenceSymbol = SentenceSymbol
 
--- |'PureSentenceImport' is the pure (fixed-@level@) version of 'SentenceImport'
+-- | 'PureSentenceImport' is the pure (fixed-@level@) version of 'SentenceImport'
 type PureSentenceImport = SentenceImport
 
 -- | 'PureSentenceHook' is the pure (fixed-@level@) version of 'SentenceHook'.
 type PureSentenceHook = SentenceHook
 
--- |'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
+-- | 'PureSentence' is the pure (fixed-@level@) version of 'Sentence'
 type PureSentence = Sentence ParsedPattern
 
--- |'PureModule' is the pure (fixed-@level@) version of 'Module'
+-- | 'PureModule' is the pure (fixed-@level@) version of 'Module'
 type PureModule = Module PureSentence
 
 type ParsedSentenceSort = SentenceSort

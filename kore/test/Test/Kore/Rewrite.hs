@@ -173,7 +173,8 @@ test_stepStrategy =
                                 )
                                 Mock.c
                             ]
-                    let -- f( X ) /\ not( a == f( X ) )
+                    let
+                        -- f( X ) /\ not( a == f( X ) )
                         firstRemainderPattern =
                             Pattern.fromTermAndPredicate
                                 (Mock.functionalConstr10 (Mock.f xTerm))
@@ -354,7 +355,7 @@ runStep ::
     Limit Natural ->
     -- | execution mode
     ExecutionMode ->
-    -- |left-hand-side of unification
+    -- | left-hand-side of unification
     Pattern VariableName ->
     [RewriteRule RewritingVariableName] ->
     IO [ProgramState (Pattern VariableName)]
@@ -367,7 +368,7 @@ runStepSMT ::
     Limit Natural ->
     -- | execution mode
     ExecutionMode ->
-    -- |left-hand-side of unification
+    -- | left-hand-side of unification
     Pattern VariableName ->
     [RewriteRule RewritingVariableName] ->
     IO [ProgramState (Pattern VariableName)]
@@ -385,7 +386,7 @@ runStepWorker ::
     Limit Natural ->
     -- | execution mode
     ExecutionMode ->
-    -- |left-hand-side of unification
+    -- | left-hand-side of unification
     Pattern VariableName ->
     [RewriteRule RewritingVariableName] ->
     IO [ProgramState (Pattern VariableName)]

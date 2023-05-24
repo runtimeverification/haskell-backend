@@ -43,7 +43,13 @@ import Kore.Internal.Predicate (pattern PredicateTrue)
 import Kore.Internal.TermLike (TermLike)
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.JsonRpc.Error
-import Kore.JsonRpc.Server (ErrorObj (..), JsonRpcHandler (JsonRpcHandler), Request (getReqId), Respond, jsonRpcServer)
+import Kore.JsonRpc.Server (
+    ErrorObj (..),
+    JsonRpcHandler (JsonRpcHandler),
+    Request (getReqId),
+    Respond,
+    jsonRpcServer,
+ )
 import Kore.JsonRpc.Types
 import Kore.JsonRpc.Types.Log
 import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown, srcLoc)
@@ -89,7 +95,7 @@ import SMT qualified
 
 respond ::
     forall m.
-    (MonadIO m) =>
+    MonadIO m =>
     MVar.MVar ServerState ->
     ModuleName ->
     ( forall a.
@@ -101,7 +107,18 @@ respond ::
     Respond (API 'Req) m (API 'Res)
 respond serverState moduleName runSMT =
     \case
-        Execute ExecuteRequest{state, maxDepth, _module, cutPointRules, terminalRules, movingAverageStepTimeout, stepTimeout, logSuccessfulRewrites, logSuccessfulSimplifications} -> withMainModule (coerce _module) $ \serializedModule lemmas ->
+        Execute
+            ExecuteRequest
+                { state
+                , maxDepth
+                , _module
+                , cutPointRules
+                , terminalRules
+                , movingAverageStepTimeout
+                , stepTimeout
+                , logSuccessfulRewrites
+                , logSuccessfulSimplifications
+                } -> withMainModule (coerce _module) $ \serializedModule lemmas ->
             case PatternVerifier.runPatternVerifier (verifierContext serializedModule) $
                 PatternVerifier.verifyStandalonePattern Nothing $
                     PatternJson.toParsedPattern $
@@ -133,9 +150,12 @@ respond serverState moduleName runSMT =
                 Nothing -> Nothing
                 Just lblsOrRuleIds ->
                     let requestSet =
-                            Set.fromList $ concat [[Left $ Label $ Just lblOrRid, Right $ UniqueId $ Just lblOrRid] | lblOrRid <- lblsOrRuleIds]
+                            Set.fromList $
+                                concat
+                                    [[Left $ Label $ Just lblOrRid, Right $ UniqueId $ Just lblOrRid] | lblOrRid <- lblsOrRuleIds]
                         ruleSet =
-                            Set.fromList $ concat [[Left ruleLabel, Right ruleId] | Exec.RuleTrace{ruleId, ruleLabel} <- toList rules]
+                            Set.fromList $
+                                concat [[Left ruleLabel, Right ruleId] | Exec.RuleTrace{ruleId, ruleLabel} <- toList rules]
                      in either unLabel getUniqueId <$> Set.lookupMin (requestSet `Set.intersection` ruleSet)
             mkLogs rules
                 | fromMaybe False logSuccessfulRewrites || fromMaybe False logSuccessfulSimplifications =
@@ -496,7 +516,10 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
     flip runLoggingT logFun $
         jsonRpcServer
             srvSettings
-            (\req parsed -> log (InfoJsonRpcProcessRequest (getReqId req) parsed) >> respond serverState mainModule runSMT parsed)
+            ( \req parsed ->
+                log (InfoJsonRpcProcessRequest (getReqId req) parsed)
+                    >> respond serverState mainModule runSMT parsed
+            )
             [ JsonRpcHandler $ \(err :: DecidePredicateUnknown) ->
                 let mkPretty = Pretty.renderText . Pretty.layoutPretty Pretty.defaultLayoutOptions . Pretty.pretty
                  in logInfoN (mkPretty err) >> pure (backendError SmtSolverError $ mkPretty err)

@@ -144,7 +144,9 @@ simplifyClaimRule claimPattern = fmap MultiAnd.make $
         Pattern RewritingVariableName ->
         LogicT Simplifier (Pattern RewritingVariableName)
     filterWithSolver conditional = do
-        l <- lift $ SMT.Evaluator.evalConditional (ErrorDecidePredicateUnknown $srcLoc Nothing) conditional Nothing
+        l <-
+            lift $
+                SMT.Evaluator.evalConditional (ErrorDecidePredicateUnknown $srcLoc Nothing) conditional Nothing
         case l of
             Just False -> empty
             _ -> return conditional

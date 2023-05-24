@@ -207,21 +207,21 @@ import System.IO (IOMode (..), SeekMode (..), hSeek, withFile)
 type Main = LoggerT IO
 
 data KoreProveOptions = KoreProveOptions
-    { -- | Name of file containing the spec to be proven
-      specFileName :: !FilePath
-    , -- | The main module of the spec to be proven
-      specMainModule :: !ModuleName
-    , -- | Search order of the execution graph
-      graphSearch :: GraphSearchOrder
-    , -- | The file in which to save the proven claims in case the prover
-      -- fails.
-      saveProofs :: !(Maybe FilePath)
-    , -- | Whether to apply the stuck state detection heuristic
-      stuckCheck :: !StuckCheck
-    , -- | Forces the prover to run at least n steps
-      minDepth :: !(Maybe MinDepth)
-    , -- | Enables discharging #Bottom paths as #Top at implication checking time.
-      allowVacuous :: AllowVacuous
+    { specFileName :: !FilePath
+    -- ^ Name of file containing the spec to be proven
+    , specMainModule :: !ModuleName
+    -- ^ The main module of the spec to be proven
+    , graphSearch :: GraphSearchOrder
+    -- ^ Search order of the execution graph
+    , saveProofs :: !(Maybe FilePath)
+    -- ^ The file in which to save the proven claims in case the prover
+    -- fails.
+    , stuckCheck :: !StuckCheck
+    -- ^ Whether to apply the stuck state detection heuristic
+    , minDepth :: !(Maybe MinDepth)
+    -- ^ Forces the prover to run at least n steps
+    , allowVacuous :: AllowVacuous
+    -- ^ Enables discharging #Bottom paths as #Top at implication checking time.
     , stepTimeout :: !(Maybe StepTimeout)
     , enableMovingAverage :: !EnableMovingAverage
     }
@@ -336,8 +336,8 @@ parseKoreProveOptions =
 the project
 -}
 data GlobalOptions = GlobalOptions
-    { -- | Version flag [default=false]
-      willVersion :: !Bool
+    { willVersion :: !Bool
+    -- ^ Version flag [default=false]
     }
 
 -- | Record type to store all state and options for the subMain operations
@@ -749,7 +749,8 @@ mainPatternParseAndVerify ::
     String ->
     Main (TermLike VariableName)
 mainPatternParseAndVerify metadataTools indexedModule patternFileName =
-    Builtin.internalize metadataTools <$> (mainPatternParse patternFileName >>= mainPatternVerify indexedModule)
+    Builtin.internalize metadataTools
+        <$> (mainPatternParse patternFileName >>= mainPatternVerify indexedModule)
 
 {- | IO action that parses a kore pattern from a filename and prints timing
  information.
@@ -768,4 +769,4 @@ addExtraAxioms ::
 addExtraAxioms definitionModule moduleWithExtraAxioms =
     definitionModule
         & field @"indexedModuleAxioms"
-        <>~ indexedModuleAxioms moduleWithExtraAxioms
+            <>~ indexedModuleAxioms moduleWithExtraAxioms

@@ -17,7 +17,7 @@ import Kore.Unparser
 import Prelude.Kore
 import Pretty qualified
 
-{- |'Mu' corresponds to the @μ@ syntactic category from the
+{- | 'Mu' corresponds to the @μ@ syntactic category from the
  Syntax of the MμL
 
 The sort of the variable is the same as the sort of the result.

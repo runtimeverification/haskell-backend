@@ -94,7 +94,7 @@ import Kore.Validate.Verifier
 import Kore.Verified qualified as Verified
 import Prelude.Kore
 
-{- |'verifyUniqueNames' verifies that names defined in a list of sentences are
+{- | 'verifyUniqueNames' verifies that names defined in a list of sentences are
 unique both within the list and outside, using the provided name set.
 -}
 verifyUniqueNames ::
@@ -457,7 +457,8 @@ verifyNonHooks sentences =
 verifyNonHookSentence :: ParsedSentence -> SentenceVerifier ()
 verifyNonHookSentence sentence =
     withSentenceContext sentence $
-        verifyNoHookAttribute $ sentenceAttributes sentence
+        verifyNoHookAttribute $
+            sentenceAttributes sentence
 
 buildDeclaredSortVariables ::
     MonadError (Error e) error =>

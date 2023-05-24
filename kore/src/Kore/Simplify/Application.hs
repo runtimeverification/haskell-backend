@@ -48,7 +48,7 @@ import Prelude.Kore
 type ExpandedApplication variable =
     Conditional variable (Application Symbol (TermLike variable))
 
-{- |'simplify' simplifies an 'Application' of 'OrPattern'.
+{- | 'simplify' simplifies an 'Application' of 'OrPattern'.
 
 To do that, it first distributes the terms, making it an Or of Application
 patterns, each Application having 'Pattern's as children,

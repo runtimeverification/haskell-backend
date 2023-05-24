@@ -31,7 +31,7 @@ import Kore.TopBottom (
  )
 import Prelude.Kore
 
--- |'simplify' simplifies an 'Inj' of 'OrPattern'.
+-- | 'simplify' simplifies an 'Inj' of 'OrPattern'.
 simplify ::
     Inj (OrPattern RewritingVariableName) ->
     Simplifier (OrPattern RewritingVariableName)

@@ -91,8 +91,7 @@ asBuiltin tools internalListSort internalListChild =
 See also: 'asPattern'
 -}
 asPattern ::
-    ( InternalVariable variable
-    ) =>
+    InternalVariable variable =>
     SmtMetadataTools Attribute.Symbol ->
     Sort ->
     Seq (TermLike variable) ->

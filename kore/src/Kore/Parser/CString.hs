@@ -96,13 +96,13 @@ escapeAndAddCharT c
     code = ord c
     zeroPad i = Text.justifyRight i '0'
 
--- |Expects input string to be a properly escaped C String.
+-- | Expects input string to be a properly escaped C String.
 unescapeCString :: String -> Either String String
 unescapeCString "" = return ""
 unescapeCString ('\\' : cs) = unescapePrefixAndContinue cs
 unescapeCString (c : cs) = (c :) <$> unescapeCString cs
 
-{- |Transforms a unicode code point into a char, providing an error message
+{- | Transforms a unicode code point into a char, providing an error message
 otherwise.
 -}
 safeChr :: Int -> Either String Char
@@ -111,11 +111,12 @@ safeChr i =
         then return (chr i)
         else
             Left
-                ( "Character code " ++ show i
+                ( "Character code "
+                    ++ show i
                     ++ " outside of the representable codes."
                 )
 
-{- |Assumes that the previous character was the start of an escape sequence,
+{- | Assumes that the previous character was the start of an escape sequence,
 i.e. @\@ and continues the unescape of the string.
 -}
 unescapePrefixAndContinue :: String -> Either String String
@@ -141,7 +142,7 @@ unescapePrefixAndContinue (c : cs)
 unescapePrefixAndContinue cs =
     Left ("unescapeCString : Unknown escape sequence '\\" ++ cs ++ "'.")
 
--- |Unescapes the provided character.
+-- | Unescapes the provided character.
 unescapeOne :: Char -> Either String Char
 unescapeOne '\'' = return '\''
 unescapeOne '"' = return '"'
@@ -156,6 +157,6 @@ unescapeOne 't' = return '\t'
 unescapeOne 'v' = return '\v'
 unescapeOne c = Left ("Unexpected escape sequence '``" ++ show c ++ "'.")
 
--- |String to number conversion.
+-- | String to number conversion.
 digitsToNumber :: Int -> String -> Int
 digitsToNumber base = foldl (\r ch -> base * r + digitToInt ch) 0

@@ -33,7 +33,7 @@ import Kore.Syntax
 import Kore.Syntax.Definition
 import Prelude.Kore
 
-{- |'koreFailWithLocations' produces an error result with a context containing
+{- | 'koreFailWithLocations' produces an error result with a context containing
 the provided locations.
 -}
 koreFailWithLocations ::
@@ -44,7 +44,7 @@ koreFailWithLocations ::
 koreFailWithLocations locations errorMessage =
     withLocationsContext locations (koreFailText errorMessage)
 
-{- |'koreFailWithLocationsWhen' produces an error result with a context
+{- | 'koreFailWithLocationsWhen' produces an error result with a context
 containing the provided locations whenever the provided flag is true.
 -}
 koreFailWithLocationsWhen ::
@@ -56,7 +56,7 @@ koreFailWithLocationsWhen ::
 koreFailWithLocationsWhen condition locations errorMessage =
     withLocationsContext locations (koreFailWhenText condition errorMessage)
 
-{- |'withLocationsContext' prepends the given location to the error context
+{- | 'withLocationsContext' prepends the given location to the error context
 whenever the given action fails.
 -}
 withLocationsContext ::
@@ -71,7 +71,7 @@ withLocationsContext locations =
             <> ")"
         )
 
-{- |'withLocationsContext' prepends the given message, associated with the
+{- | 'withLocationsContext' prepends the given message, associated with the
 location, to the error context whenever the given action fails.
 -}
 withLocationAndContext ::

@@ -705,13 +705,13 @@ test_unifyConcrete =
 -- `MapItem(absInt(K:Int), absInt(V:Int)) Rest:Map`, or
 -- `Rest:Map MapItem(absInt(K:Int), absInt(V:Int))`, respectively.
 selectFunctionPattern ::
-    -- |key variable
+    -- | key variable
     ElementVariable RewritingVariableName ->
-    -- |value variable
+    -- | value variable
     ElementVariable RewritingVariableName ->
-    -- |map variable
+    -- | map variable
     ElementVariable RewritingVariableName ->
-    -- |scrambling function
+    -- | scrambling function
     (forall a. [a] -> [a]) ->
     TermLike RewritingVariableName
 selectFunctionPattern keyVar valueVar mapVar permutation =
@@ -742,13 +742,13 @@ makeElementLookup key valueVar =
 -- `MapItem(K:Int, V:Int) Rest:Map`, or `Rest:Map MapItem(K:Int, V:Int)`,
 -- respectively.
 selectPattern ::
-    -- |key variable
+    -- | key variable
     ElementVariable RewritingVariableName ->
-    -- |value variable
+    -- | value variable
     ElementVariable RewritingVariableName ->
-    -- |map variable
+    -- | map variable
     ElementVariable RewritingVariableName ->
-    -- |scrambling function
+    -- | scrambling function
     (forall a. [a] -> [a]) ->
     TermLike RewritingVariableName
 selectPattern keyVar valueVar mapVar permutation =
@@ -757,9 +757,9 @@ selectPattern keyVar valueVar mapVar permutation =
     element = makeElementSelect keyVar valueVar
 
 addSelectElement ::
-    -- |key variable
+    -- | key variable
     ElementVariable RewritingVariableName ->
-    -- |value variable
+    -- | value variable
     ElementVariable RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
@@ -769,9 +769,9 @@ addSelectElement keyVar valueVar mapPattern =
     element = makeElementSelect keyVar valueVar
 
 addLookupElement ::
-    -- |key
+    -- | key
     TermLike Concrete ->
-    -- |value variable
+    -- | value variable
     ElementVariable RewritingVariableName ->
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName

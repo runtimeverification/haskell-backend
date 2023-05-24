@@ -69,16 +69,16 @@ envName :: String
 envName = "KORE_MATCH_DISJUNCTION_OPTS"
 
 data KoreMatchDisjunctionOptions = KoreMatchDisjunctionOptions
-    { -- | Name of file containing a definition to verify and use for execution
-      definitionFileName :: !FilePath
-    , -- | Name of file containing a disjunction to verify and use for matching
-      disjunctionFileName :: !FilePath
-    , -- | Name of file used to match with disjunction
-      matchFileName :: !FilePath
-    , -- | Name for file to contain the output pattern
-      outputFileName :: !(Maybe FilePath)
-    , -- | The name of the main module in the definition
-      mainModuleName :: !ModuleName
+    { definitionFileName :: !FilePath
+    -- ^ Name of file containing a definition to verify and use for execution
+    , disjunctionFileName :: !FilePath
+    -- ^ Name of file containing a disjunction to verify and use for matching
+    , matchFileName :: !FilePath
+    -- ^ Name of file used to match with disjunction
+    , outputFileName :: !(Maybe FilePath)
+    -- ^ Name for file to contain the output pattern
+    , mainModuleName :: !ModuleName
+    -- ^ The name of the main module in the definition
     , bugReportOption :: !BugReportOption
     , koreLogOptions :: !KoreLogOptions
     }
@@ -122,7 +122,8 @@ parserInfoModifiers :: InfoMod options
 parserInfoModifiers =
     fullDesc
         <> progDesc "Matches Kore pattern in MATCH_FILE with Kore pattern in DISJUNCTION_FILE"
-        <> header "kore-match-disjunction - a tool for applying search patterns to disjunctions of configurations"
+        <> header
+            "kore-match-disjunction - a tool for applying search patterns to disjunctions of configurations"
 
 main :: IO ()
 main = do
@@ -183,7 +184,8 @@ mainParseDisjunctionPattern ::
     Main [Pattern RewritingVariableName]
 mainParseDisjunctionPattern indexedModule patternFileName = do
     let metadataTools = MetadataTools.build indexedModule
-    purePattern <- mainPatternParseAndVerify metadataTools (indexedModuleSyntax indexedModule) patternFileName
+    purePattern <-
+        mainPatternParseAndVerify metadataTools (indexedModuleSyntax indexedModule) patternFileName
     return $ parseDisjunction purePattern
   where
     parseDisjunction (Or_ _ term1 term2) =

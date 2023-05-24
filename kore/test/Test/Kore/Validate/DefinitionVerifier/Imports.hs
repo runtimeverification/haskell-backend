@@ -733,8 +733,8 @@ symbolVisibilityTests =
                 , sentenceSymbolResultSort =
                     SortVariableSort (SortVariable (testId "sv1"))
                 , sentenceSymbolAttributes = Attributes []
-                } :
-        defaultSymbolSupportSentences
+                }
+            : defaultSymbolSupportSentences
 
 aliasVisibilityTests :: [TestTree]
 aliasVisibilityTests =
@@ -979,8 +979,8 @@ aliasVisibilityTests =
                     , sentenceAliasRightPattern =
                         externalize $ mkTop sentenceAliasResultSort
                     , sentenceAliasAttributes = Attributes []
-                    } :
-            defaultAliasSupportSentences
+                    }
+                : defaultAliasSupportSentences
 
 defaultSort :: Sort
 defaultSort =
@@ -1051,9 +1051,9 @@ nameReferenceSuccessTests
                     [ Module
                         { moduleName = ModuleName "M1"
                         , moduleSentences =
-                            usingSentence :
-                            declaringSentence :
-                            supportingSentences
+                            usingSentence
+                                : declaringSentence
+                                : supportingSentences
                         , moduleAttributes = Attributes []
                         }
                     ]

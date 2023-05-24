@@ -20,12 +20,14 @@ test_assoc :: TestTree
 test_assoc =
     testCase "[assoc{}()] :: Assoc" $
         expectSuccess Assoc{isAssoc = True} $
-            parseAssoc $ Attributes [assocAttribute]
+            parseAssoc $
+                Attributes [assocAttribute]
 
 test_Attributes :: TestTree
 test_Attributes =
     testCase "[assoc{}()] :: Attributes" $
-        expectSuccess attrs $ parseAttributes attrs
+        expectSuccess attrs $
+            parseAttributes attrs
   where
     attrs = Attributes [assocAttribute]
 
@@ -33,13 +35,15 @@ test_duplicate :: TestTree
 test_duplicate =
     testCase "[assoc{}(), assoc{}()]" $
         expectFailure $
-            parseAssoc $ Attributes [assocAttribute, assocAttribute]
+            parseAssoc $
+                Attributes [assocAttribute, assocAttribute]
 
 test_arguments :: TestTree
 test_arguments =
     testCase "[assoc{}(\"illegal\")]" $
         expectFailure $
-            parseAssoc $ Attributes [illegalAttribute]
+            parseAssoc $
+                Attributes [illegalAttribute]
   where
     illegalAttribute = attributePattern assocSymbol [attributeString "illegal"]
 
@@ -47,7 +51,8 @@ test_parameters :: TestTree
 test_parameters =
     testCase "[assoc{illegal}()]" $
         expectFailure $
-            parseAssoc $ Attributes [illegalAttribute]
+            parseAssoc $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)

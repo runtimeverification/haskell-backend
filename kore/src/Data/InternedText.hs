@@ -38,8 +38,8 @@ import System.IO.Unsafe (unsafePerformIO)
 -- | A pool containing all of the process' interned strings.
 data InternedTextCache = InternedTextCache
     { internedTexts :: !(HashMap Text InternedText)
-    , -- | An incremental counter used to generate new IDs.
-      counter :: {-# UNPACK #-} !Word
+    , counter :: {-# UNPACK #-} !Word
+    -- ^ An incremental counter used to generate new IDs.
     }
     deriving stock (Generic)
     deriving anyclass (NFData)

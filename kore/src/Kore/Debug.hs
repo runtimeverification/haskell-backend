@@ -103,7 +103,7 @@ data DebugResult = DebugResult | DebugNoResult
 debugArg :: Show a => String -> a -> DebugArg
 debugArg n v = DebugArg{name = n, value = show v}
 
-{- |Applies a function only when the condition is met.  Useful for conditional
+{- | Applies a function only when the condition is met.  Useful for conditional
 debugging, among other things.
 -}
 applyWhen :: Bool -> (a -> a) -> (a -> a)
@@ -169,7 +169,7 @@ traceWhenEnabled place logger =
             Nothing -> id
             Just debugResult -> logger debugResult
 
-{- |Wraps an 'ExceptT' action for printing debug messages, similar to 'trace'.
+{- | Wraps an 'ExceptT' action for printing debug messages, similar to 'trace'.
 
 It prints the name and the start values before the action, and the action
 result after.
@@ -208,7 +208,7 @@ traceExceptTS name startValues debugResult action = ExceptT $ do
             endThing name ("result: " ++ show r) debugResult $
                 return (Right r)
 
-{- |Wraps a 'MaybeT' action for printing debug messages, similar to 'trace'.
+{- | Wraps a 'MaybeT' action for printing debug messages, similar to 'trace'.
 
 It prints the name and the start values before the action, and the action
 result after.
@@ -247,7 +247,7 @@ traceMaybeTS name startValues debugResult action = MaybeT $ do
             endThing name ("result: " ++ show r) debugResult $
                 return (Just r)
 
-{- |Wraps an 'Either' action for printing debug messages, similar to 'trace'.
+{- | Wraps an 'Either' action for printing debug messages, similar to 'trace'.
 
 It prints the name and the start values before the action, and the action
 result after.
@@ -286,7 +286,7 @@ traceEitherS name startValues debugResult action =
                 endThing name ("result: " ++ show r) debugResult $
                     Right r
 
-{- |Wraps a 'Maybe' action for printing debug messages, similar to 'trace'.
+{- | Wraps a 'Maybe' action for printing debug messages, similar to 'trace'.
 
 It prints the name and the start values before the action, and the action
 result after.
@@ -324,7 +324,7 @@ traceMaybeS name startValues debugResult action =
                 endThing name ("result: " ++ show r) debugResult $
                     Just r
 
-{- |Wraps a generic monad action for printing debug messages, similar to 'trace'.
+{- | Wraps a generic monad action for printing debug messages, similar to 'trace'.
 
 The monad must not have an error case because this function will
 not print an "ending ..." line for errors, making the output confusing
@@ -364,13 +364,13 @@ traceNonErrorMonadS name startValues debugResult action =
             endThing name ("result: " ++ show result) debugResult $
                 return result
 
-{- |Wraps a function for printing debug messages, similar to 'Debug.trace'.
+{- | Wraps a function for printing debug messages, similar to 'Debug.trace'.
 
 It prints the name and the start values before evaluating the function,
 and the function result after.
 -}
 traceFunction ::
-    (Show a) =>
+    Show a =>
     -- | function name
     DebugPlace ->
     -- | Extra debugging info (usually the inputs)
@@ -384,7 +384,7 @@ traceFunction name startValues =
         (traceFunctionS (show name) startValues)
 
 traceFunctionS ::
-    (Show a) =>
+    Show a =>
     -- | function name
     String ->
     -- | Extra debugging info (usually the inputs)

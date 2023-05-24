@@ -65,14 +65,14 @@ envName :: String
 envName = "KORE_SIMPLIFY_OPTS"
 
 data KoreSimplifyOptions = KoreSimplifyOptions
-    { -- | Name of file containing a definition to verify
-      definitionFileName :: !FilePath
-    , -- | Name of file containing a pattern to verify and simplify
-      patternFileName :: !FilePath
-    , -- | Name for file to contain the output pattern
-      outputFileName :: !(Maybe FilePath)
-    , -- | The name of the main module in the definition
-      mainModuleName :: !ModuleName
+    { definitionFileName :: !FilePath
+    -- ^ Name of file containing a definition to verify
+    , patternFileName :: !FilePath
+    -- ^ Name of file containing a pattern to verify and simplify
+    , outputFileName :: !(Maybe FilePath)
+    -- ^ Name for file to contain the output pattern
+    , mainModuleName :: !ModuleName
+    -- ^ The name of the main module in the definition
     , bugReportOption :: !BugReportOption
     , koreLogOptions :: !KoreLogOptions
     }
@@ -159,7 +159,8 @@ mainParseInputPattern ::
     Main (Pattern RewritingVariableName)
 mainParseInputPattern indexedModule patternFileName = do
     let metadataTools = MetadataTools.build indexedModule
-    purePattern <- mainPatternParseAndVerify metadataTools (indexedModuleSyntax indexedModule) patternFileName
+    purePattern <-
+        mainPatternParseAndVerify metadataTools (indexedModuleSyntax indexedModule) patternFileName
     return $ parsePattern purePattern
   where
     parsePattern = mkRewritingPattern . Pattern.fromTermLike
