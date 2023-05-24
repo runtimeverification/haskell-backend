@@ -64,9 +64,9 @@ jobs:
             git add '*.hs'
             git commit -m "Format with fourmolu"
             git show --stat
-            # git push
+            git push
             echo "Reformatted code pushed, aborting this workflow" | tee -a $GITHUB_STEP_SUMMARY
-            # exit 1
+            exit 1
           fi
 
   nix-build:
