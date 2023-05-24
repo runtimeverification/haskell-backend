@@ -136,31 +136,32 @@ main = do
     for_ (GlobalMain.localOptions options) mainWithOptions
 
 mainWithOptions :: GlobalMain.LocalOptions KoreRpcServerOptions -> IO ()
-mainWithOptions localOptions@GlobalMain.LocalOptions
-                    { execOptions = KoreRpcServerOptions{koreSolverOptions, koreLogOptions, bugReportOption}
-                    } = do
-    ensureSmtPreludeExists koreSolverOptions
-    exitWith
-        =<< withBugReport
-            Main.exeName
-            bugReportOption
-            ( \tmpDir ->
-                koreRpcServerRun localOptions
-                    & handleJust isInterrupt handleInterrupt
-                    & handle handleSomeException
-                    & runKoreLogThreadSafe
-                        tmpDir
-                        koreLogOptions
-            )
-  where
-    isInterrupt :: AsyncException -> Maybe ()
-    isInterrupt UserInterrupt = Just ()
-    isInterrupt _other = Nothing
+mainWithOptions
+    localOptions@GlobalMain.LocalOptions
+        { execOptions = KoreRpcServerOptions{koreSolverOptions, koreLogOptions, bugReportOption}
+        } = do
+        ensureSmtPreludeExists koreSolverOptions
+        exitWith
+            =<< withBugReport
+                Main.exeName
+                bugReportOption
+                ( \tmpDir ->
+                    koreRpcServerRun localOptions
+                        & handleJust isInterrupt handleInterrupt
+                        & handle handleSomeException
+                        & runKoreLogThreadSafe
+                            tmpDir
+                            koreLogOptions
+                )
+      where
+        isInterrupt :: AsyncException -> Maybe ()
+        isInterrupt UserInterrupt = Just ()
+        isInterrupt _other = Nothing
 
-    handleInterrupt :: () -> LoggerT IO ExitCode
-    handleInterrupt () = do
-        logInfo "RPC server shutting down"
-        pure ExitSuccess
+        handleInterrupt :: () -> LoggerT IO ExitCode
+        handleInterrupt () = do
+            logInfo "RPC server shutting down"
+            pure ExitSuccess
 
 koreRpcServerRun ::
     GlobalMain.LocalOptions KoreRpcServerOptions ->

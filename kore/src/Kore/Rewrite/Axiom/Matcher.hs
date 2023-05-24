@@ -429,13 +429,13 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
         ( Inj_ inj1@Inj{injChild = App_ firstHead firstChildren}
             , Inj_ Inj{injChild = App_ secondHead secondChildren}
             )
-            | Just unifyData <-
-                unifyOverloadingCommonOverload
-                    overloadSimplifier
-                    (Application firstHead firstChildren)
-                    (Application secondHead secondChildren)
-                    inj1{injChild = ()} ->
-                decomposeOverload unifyData
+                | Just unifyData <-
+                    unifyOverloadingCommonOverload
+                        overloadSimplifier
+                        (Application firstHead firstChildren)
+                        (Application secondHead secondChildren)
+                        inj1{injChild = ()} ->
+                    decomposeOverload unifyData
         (_, _)
             | Just True <- List.isListSort tools sort ->
                 case (List.normalize pat, List.normalize subject) of
@@ -450,27 +450,27 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
                     ( InternalList_ InternalList{internalListChild = l1}
                         , InternalList_ InternalList{internalListChild = l2}
                         ) ->
-                        if length l1 == length l2
-                            then decomposeList $ zip (toList l1) (toList l2)
-                            else failMatch "list lengths are not equal"
+                            if length l1 == length l2
+                                then decomposeList $ zip (toList l1) (toList l2)
+                                else failMatch "list lengths are not equal"
                     ( App_ symbol [InternalList_ InternalList{internalListChild = l1}, var@(ElemVar_ _)]
                         , InternalList_ InternalList{internalListChild = l2}
                         )
-                        | List.isSymbolConcat symbol ->
-                            if length l1 <= length l2
-                                then
-                                    let (start, l2') = Seq.splitAt (length l1) l2
-                                     in decomposeList $ (var, List.asInternal tools sort l2') : zip (toList l1) (toList start)
-                                else failMatch "subject list is too short"
+                            | List.isSymbolConcat symbol ->
+                                if length l1 <= length l2
+                                    then
+                                        let (start, l2') = Seq.splitAt (length l1) l2
+                                         in decomposeList $ (var, List.asInternal tools sort l2') : zip (toList l1) (toList start)
+                                    else failMatch "subject list is too short"
                     ( App_ symbol [var@(ElemVar_ _), InternalList_ InternalList{internalListChild = l1}]
                         , InternalList_ InternalList{internalListChild = l2}
                         )
-                        | List.isSymbolConcat symbol ->
-                            if length l1 <= length l2
-                                then
-                                    let (l2', end) = Seq.splitAt (length l2 - length l1) l2
-                                     in decomposeList $ (var, List.asInternal tools sort l2') : zip (toList l1) (toList end)
-                                else failMatch "subject list is too short"
+                            | List.isSymbolConcat symbol ->
+                                if length l1 <= length l2
+                                    then
+                                        let (l2', end) = Seq.splitAt (length l2 - length l1) l2
+                                         in decomposeList $ (var, List.asInternal tools sort l2') : zip (toList l1) (toList end)
+                                    else failMatch "subject list is too short"
                     _ -> failMatch "unimplemented list matching case"
         (InternalMap_ _, InternalMap_ _) ->
             defer
