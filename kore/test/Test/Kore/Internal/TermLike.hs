@@ -542,29 +542,35 @@ test_uninternalize =
             assertEqual
                 "InternalBool"
                 (toPattern $ Mock.builtinBool True)
-                $ asPattern $
-                    PatternF.DomainValueF $
-                        DomainValue Mock.boolSort $
-                            asPattern $
-                                PatternF.StringLiteralF $ PatternF.Const $ StringLiteral "true"
+                $ asPattern
+                $ PatternF.DomainValueF
+                $ DomainValue Mock.boolSort
+                $ asPattern
+                $ PatternF.StringLiteralF
+                $ PatternF.Const
+                $ StringLiteral "true"
 
             assertEqual
                 "InternalInt"
                 (toPattern $ Mock.builtinInt 42)
-                $ asPattern $
-                    PatternF.DomainValueF $
-                        DomainValue Mock.intSort $
-                            asPattern $
-                                PatternF.StringLiteralF $ PatternF.Const $ StringLiteral "42"
+                $ asPattern
+                $ PatternF.DomainValueF
+                $ DomainValue Mock.intSort
+                $ asPattern
+                $ PatternF.StringLiteralF
+                $ PatternF.Const
+                $ StringLiteral "42"
 
             assertEqual
                 "InternalString"
                 (toPattern $ Mock.builtinString "hello")
-                $ asPattern $
-                    PatternF.DomainValueF $
-                        DomainValue Mock.stringSort $
-                            asPattern $
-                                PatternF.StringLiteralF $ PatternF.Const $ StringLiteral "hello"
+                $ asPattern
+                $ PatternF.DomainValueF
+                $ DomainValue Mock.stringSort
+                $ asPattern
+                $ PatternF.StringLiteralF
+                $ PatternF.Const
+                $ StringLiteral "hello"
         )
     , testCase
         "uninternalize InternalList"
@@ -572,37 +578,37 @@ test_uninternalize =
             assertEqual
                 "empty list"
                 (toPattern $ Mock.builtinList [])
-                $ asPattern $
-                    PatternF.ApplicationF $
-                        Application (Symbol.toSymbolOrAlias Mock.unitListSymbol) []
+                $ asPattern
+                $ PatternF.ApplicationF
+                $ Application (Symbol.toSymbolOrAlias Mock.unitListSymbol) []
 
             assertEqual
                 "singleton list"
                 (toPattern $ Mock.builtinList [mkElemVar Mock.x])
-                $ asPattern $
-                    PatternF.ApplicationF $
-                        Application
-                            (Symbol.toSymbolOrAlias Mock.elementListSymbol)
-                            [toPattern $ mkElemVar Mock.x]
+                $ asPattern
+                $ PatternF.ApplicationF
+                $ Application
+                    (Symbol.toSymbolOrAlias Mock.elementListSymbol)
+                    [toPattern $ mkElemVar Mock.x]
 
             assertEqual
                 "two element list"
                 (toPattern $ Mock.builtinList [mkElemVar Mock.x, mkElemVar Mock.y])
-                $ asPattern $
-                    PatternF.ApplicationF $
-                        Application
-                            (Symbol.toSymbolOrAlias Mock.concatListSymbol)
-                            [ asPattern $
-                                PatternF.ApplicationF $
-                                    Application
-                                        (Symbol.toSymbolOrAlias Mock.elementListSymbol)
-                                        [toPattern $ mkElemVar Mock.x]
-                            , asPattern $
-                                PatternF.ApplicationF $
-                                    Application
-                                        (Symbol.toSymbolOrAlias Mock.elementListSymbol)
-                                        [toPattern $ mkElemVar Mock.y]
-                            ]
+                $ asPattern
+                $ PatternF.ApplicationF
+                $ Application
+                    (Symbol.toSymbolOrAlias Mock.concatListSymbol)
+                    [ asPattern $
+                        PatternF.ApplicationF $
+                            Application
+                                (Symbol.toSymbolOrAlias Mock.elementListSymbol)
+                                [toPattern $ mkElemVar Mock.x]
+                    , asPattern $
+                        PatternF.ApplicationF $
+                            Application
+                                (Symbol.toSymbolOrAlias Mock.elementListSymbol)
+                                [toPattern $ mkElemVar Mock.y]
+                    ]
         )
     , testCase
         "uninternalize InternalSet"
@@ -610,37 +616,37 @@ test_uninternalize =
             assertEqual
                 "empty set"
                 (toPattern $ Mock.builtinSet [])
-                $ asPattern $
-                    PatternF.ApplicationF $
-                        Application (Symbol.toSymbolOrAlias Mock.unitSetSymbol) []
+                $ asPattern
+                $ PatternF.ApplicationF
+                $ Application (Symbol.toSymbolOrAlias Mock.unitSetSymbol) []
 
             assertEqual
                 "singleton set"
                 (toPattern $ Mock.builtinSet [mkElemVar Mock.x])
-                $ asPattern $
-                    PatternF.ApplicationF $
-                        Application
-                            (Symbol.toSymbolOrAlias Mock.elementSetSymbol)
-                            [toPattern $ mkElemVar Mock.x]
+                $ asPattern
+                $ PatternF.ApplicationF
+                $ Application
+                    (Symbol.toSymbolOrAlias Mock.elementSetSymbol)
+                    [toPattern $ mkElemVar Mock.x]
 
             assertEqual
                 "two element set"
                 (toPattern $ Mock.builtinSet [mkElemVar Mock.x, mkElemVar Mock.y])
-                $ asPattern $
-                    PatternF.ApplicationF $
-                        Application
-                            (Symbol.toSymbolOrAlias Mock.concatSetSymbol)
-                            [ asPattern $
-                                PatternF.ApplicationF $
-                                    Application
-                                        (Symbol.toSymbolOrAlias Mock.elementSetSymbol)
-                                        [toPattern $ mkElemVar Mock.x]
-                            , asPattern $
-                                PatternF.ApplicationF $
-                                    Application
-                                        (Symbol.toSymbolOrAlias Mock.elementSetSymbol)
-                                        [toPattern $ mkElemVar Mock.y]
-                            ]
+                $ asPattern
+                $ PatternF.ApplicationF
+                $ Application
+                    (Symbol.toSymbolOrAlias Mock.concatSetSymbol)
+                    [ asPattern $
+                        PatternF.ApplicationF $
+                            Application
+                                (Symbol.toSymbolOrAlias Mock.elementSetSymbol)
+                                [toPattern $ mkElemVar Mock.x]
+                    , asPattern $
+                        PatternF.ApplicationF $
+                            Application
+                                (Symbol.toSymbolOrAlias Mock.elementSetSymbol)
+                                [toPattern $ mkElemVar Mock.y]
+                    ]
         )
     , testCase
         "uninternalize InternalMap"
@@ -648,9 +654,9 @@ test_uninternalize =
             assertEqual
                 "empty map"
                 (toPattern $ Mock.builtinMap [])
-                $ asPattern $
-                    PatternF.ApplicationF $
-                        Application (Symbol.toSymbolOrAlias Mock.unitMapSymbol) []
+                $ asPattern
+                $ PatternF.ApplicationF
+                $ Application (Symbol.toSymbolOrAlias Mock.unitMapSymbol) []
 
             assertEqual
                 "singleton map"
@@ -665,17 +671,17 @@ test_uninternalize =
                     Mock.builtinMap
                         [(mkElemVar Mock.x, mkElemVar Mock.x), (mkElemVar Mock.y, mkElemVar Mock.y)]
                 )
-                $ asPattern $
-                    PatternF.ApplicationF $
-                        Application
-                            (Symbol.toSymbolOrAlias Mock.concatMapSymbol)
-                            [ asPatternMapElement
-                                (toPattern $ mkElemVar Mock.x)
-                                (toPattern $ mkElemVar Mock.x)
-                            , asPatternMapElement
-                                (toPattern $ mkElemVar Mock.y)
-                                (toPattern $ mkElemVar Mock.y)
-                            ]
+                $ asPattern
+                $ PatternF.ApplicationF
+                $ Application
+                    (Symbol.toSymbolOrAlias Mock.concatMapSymbol)
+                    [ asPatternMapElement
+                        (toPattern $ mkElemVar Mock.x)
+                        (toPattern $ mkElemVar Mock.x)
+                    , asPatternMapElement
+                        (toPattern $ mkElemVar Mock.y)
+                        (toPattern $ mkElemVar Mock.y)
+                    ]
             assertEqual
                 "three element map"
                 ( toPattern $
@@ -685,30 +691,33 @@ test_uninternalize =
                         , (mkElemVar Mock.z, mkElemVar Mock.z)
                         ]
                 )
-                $ asPattern $
-                    PatternF.ApplicationF $
-                        Application
-                            (Symbol.toSymbolOrAlias Mock.concatMapSymbol)
-                            [ asPatternMapElement
-                                (toPattern $ mkElemVar Mock.x)
-                                (toPattern $ mkElemVar Mock.x)
-                            , asPattern $
-                                PatternF.ApplicationF $
-                                    Application
-                                        (Symbol.toSymbolOrAlias Mock.concatMapSymbol)
-                                        [ asPatternMapElement
-                                            (toPattern $ mkElemVar Mock.y)
-                                            (toPattern $ mkElemVar Mock.y)
-                                        , asPatternMapElement
-                                            (toPattern $ mkElemVar Mock.z)
-                                            (toPattern $ mkElemVar Mock.z)
-                                        ]
-                            ]
+                $ asPattern
+                $ PatternF.ApplicationF
+                $ Application
+                    (Symbol.toSymbolOrAlias Mock.concatMapSymbol)
+                    [ asPatternMapElement
+                        (toPattern $ mkElemVar Mock.x)
+                        (toPattern $ mkElemVar Mock.x)
+                    , asPattern $
+                        PatternF.ApplicationF $
+                            Application
+                                (Symbol.toSymbolOrAlias Mock.concatMapSymbol)
+                                [ asPatternMapElement
+                                    (toPattern $ mkElemVar Mock.y)
+                                    (toPattern $ mkElemVar Mock.y)
+                                , asPatternMapElement
+                                    (toPattern $ mkElemVar Mock.z)
+                                    (toPattern $ mkElemVar Mock.z)
+                                ]
+                    ]
         )
     ]
   where
     toPattern :: TermLike VariableName -> Pattern.Pattern VariableName Attribute.Null
-    toPattern trmLike = fmap (const Attribute.Null) (from trmLike :: Pattern.Pattern VariableName (TermAttributes VariableName))
+    toPattern trmLike =
+        fmap
+            (const Attribute.Null)
+            (from trmLike :: Pattern.Pattern VariableName (TermAttributes VariableName))
 
     asPattern pattF = Pattern.asPattern $ Attribute.Null :< pattF
 
@@ -723,12 +732,20 @@ test_toSyntaxPattern :: TestTree
 test_toSyntaxPattern = Hedgehog.testProperty "convert a valid pattern to a Syntax.Pattern and back" . Hedgehog.property $ do
     -- generate a consistent (internal) pattern to turn into a (general) term
     trmLike <- IPattern.toTermLike <$> forAll (runKoreGen Mock.generatorSetup ConsistentKore.patternGen)
-    let patt = fmap (const Attribute.Null) (from trmLike :: Pattern.Pattern VariableName (TermAttributes VariableName))
+    let patt =
+            fmap
+                (const Attribute.Null)
+                (from trmLike :: Pattern.Pattern VariableName (TermAttributes VariableName))
 
     case PatternVerifier.runPatternVerifier Mock.verifiedModuleContext $
         PatternVerifier.verifyStandalonePattern Nothing patt of
         Left Kore.Error.Error{errorError} ->
             fail $
-                unparseToString patt <> "\n\n"
+                unparseToString patt
+                    <> "\n\n"
                     <> show errorError
-        Right trmLike2 -> patt === fmap (const Attribute.Null) (from trmLike2 :: Pattern.Pattern VariableName (TermAttributes VariableName))
+        Right trmLike2 ->
+            patt
+                === fmap
+                    (const Attribute.Null)
+                    (from trmLike2 :: Pattern.Pattern VariableName (TermAttributes VariableName))

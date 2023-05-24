@@ -2469,7 +2469,12 @@ verifiedModuleContext =
                     ]
             , indexedModuleSortDescriptions =
                 Map.fromList
-                    [ (sortActualName, (attr{Attribute.hasDomainValues = Attribute.HasDomainValues True}, SentenceSort sortActualName [] Default.def))
+                    [ ( sortActualName
+                      ,
+                          ( attr{Attribute.hasDomainValues = Attribute.HasDomainValues True}
+                          , SentenceSort sortActualName [] Default.def
+                          )
+                      )
                     | (SortActualSort (SortActual{sortActualName}), attr) <- sortAttributesMapping
                     ]
             , indexedModuleImportsSyntax = mempty

@@ -191,7 +191,13 @@ evalSimplifierProofs ::
     Simplifier a ->
     SMT a
 evalSimplifierProofs verifiedModule simplifier =
-    evalSimplifier (indexedModuleSyntax verifiedModule) sortGraph overloadGraph metadataTools rawEquations simplifier
+    evalSimplifier
+        (indexedModuleSyntax verifiedModule)
+        sortGraph
+        overloadGraph
+        metadataTools
+        rawEquations
+        simplifier
   where
     sortGraph =
         {-# SCC "evalSimplifier/sortGraph" #-}

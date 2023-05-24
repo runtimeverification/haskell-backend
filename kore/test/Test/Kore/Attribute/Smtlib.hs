@@ -75,7 +75,8 @@ test_extracted_smtlib =
     test arg =
         testCase caseName $
             assertBool "expected successful parse" $
-                isRightAndJust $ parseSmtlib attrs
+                isRightAndJust $
+                    parseSmtlib attrs
       where
         attrs = Attributes [smtlibAttribute arg]
         caseName = "[smtlib{}(\"" ++ Text.unpack arg ++ "\")]"
@@ -100,7 +101,8 @@ test_extracted_smthook =
     test arg =
         testCase caseName $
             assertBool "expected successful parse" $
-                isSmthookRightAndJust $ parseSmthook attrs
+                isSmthookRightAndJust $
+                    parseSmthook attrs
       where
         attrs = Attributes [smthookAttribute arg]
         caseName = "[smt-hook{}(\"" ++ Text.unpack arg ++ "\")]"

@@ -46,7 +46,7 @@ instance Unparse ModuleName where
 getModuleNameForError :: ModuleName -> String
 getModuleNameForError = Text.unpack . getModuleName
 
-{- |A 'Module' consists of a 'ModuleName' a list of 'Sentence's and some
+{- | A 'Module' consists of a 'ModuleName' a list of 'Sentence's and some
 'Attributes'.
 
 They correspond to the second, third and forth non-terminals of the @definition@

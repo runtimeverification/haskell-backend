@@ -102,7 +102,7 @@ type SortDescription = SentenceSort
 
 data IndexModuleError
 
-{- |'IndexedModule' represents an AST 'Module' somewhat optimized for resolving
+{- | 'IndexedModule' represents an AST 'Module' somewhat optimized for resolving
 IDs.
 
 It contains mappings from IDs to the sentence that declares them
@@ -129,9 +129,9 @@ data IndexedModuleSyntax pat declAtts = IndexedModuleSyntax
            , IndexedModuleSyntax pat declAtts
            )
          ]
-    , -- | set of hooked identifiers
-      indexedModuleHookedIdentifiers ::
+    , indexedModuleHookedIdentifiers ::
         !(Set.Set Id)
+    -- ^ set of hooked identifiers
     }
     deriving stock (Generic, Show, Functor, Foldable, Traversable)
 
@@ -152,10 +152,10 @@ data IndexedModule pat declAtts axiomAtts = IndexedModule
       -- builtin is not actually valid, but the index must admit invalid data
       -- because verification only happens after.
 
-      -- | map from builtin domain (symbol and sort) identifiers to the hooked
-      -- identifiers
       indexedModuleHooks ::
         !(Map.Map Text [Id])
+    -- ^ map from builtin domain (symbol and sort) identifiers to the hooked
+    -- identifiers
     }
     deriving stock (Generic, Show, Functor, Foldable, Traversable)
 
@@ -183,7 +183,7 @@ recursiveIndexedModuleAxioms = recursiveIndexedModuleStuff indexedModuleAxioms
 
 recursiveIndexedModuleStuff ::
     forall pat declAtts axiomAtts stuff.
-    (Monoid stuff) =>
+    Monoid stuff =>
     (IndexedModule pat declAtts axiomAtts -> stuff) ->
     IndexedModule pat declAtts axiomAtts ->
     stuff
@@ -283,7 +283,7 @@ instance
     (NFData patternType, NFData declAttributes) =>
     NFData (IndexedModuleSyntax patternType declAttributes)
 
-{- |Convenient notation for retrieving a sentence from a
+{- | Convenient notation for retrieving a sentence from a
  @(attributes,sentence)@ pair format.
 -}
 getIndexedSentence :: (atts, sentence) -> sentence
@@ -458,7 +458,7 @@ indexedModuleRawSentences im =
         | otherwise =
             SentenceSymbolSentence symbolSentence
 
-{- |'ImplicitIndexedModule' is the type for the 'IndexedModule' containing
+{- | 'ImplicitIndexedModule' is the type for the 'IndexedModule' containing
 things that are implicitly defined.
 -}
 newtype ImplicitIndexedModule pat declAtts axiomAtts
@@ -489,7 +489,7 @@ emptyIndexedModule name =
         , indexedModuleHooks = Map.empty
         }
 
-{- |'indexedModuleWithDefaultImports' provides an 'IndexedModule' with the given
+{- | 'indexedModuleWithDefaultImports' provides an 'IndexedModule' with the given
 name and containing the implicit definitions module.
 -}
 indexedModuleWithDefaultImports ::

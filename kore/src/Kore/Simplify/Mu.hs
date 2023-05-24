@@ -33,7 +33,7 @@ import Kore.Rewrite.RewritingVariable (
  )
 import Prelude.Kore
 
-{- |'simplify' simplifies a 'Mu' pattern with an 'OrPattern'
+{- | 'simplify' simplifies a 'Mu' pattern with an 'OrPattern'
 child.
 -}
 simplify ::

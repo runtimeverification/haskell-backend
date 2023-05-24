@@ -93,12 +93,12 @@ import Prof
  dispatched through the `log` functions.
 -}
 data LogMessage = LogMessage
-    { -- | message being logged
-      message :: Text
-    , -- | log level / severity of message
-      severity :: !Severity
-    , -- | call stack of the message, when available
-      callstack :: !GHC.CallStack
+    { message :: Text
+    -- ^ message being logged
+    , severity :: !Severity
+    -- ^ log level / severity of message
+    , callstack :: !GHC.CallStack
+    -- ^ call stack of the message, when available
     }
     deriving stock (Show)
 
@@ -158,7 +158,7 @@ log s t = logMsg $ LogMessage t s GHC.callStack
 -- | Logs using 'Debug' log level. See 'log'.
 logDebug ::
     forall m.
-    (WithLog LogMessage m) =>
+    WithLog LogMessage m =>
     Text ->
     m ()
 logDebug = log Debug
@@ -166,7 +166,7 @@ logDebug = log Debug
 -- | Logs using 'Info' log level. See 'log'.
 logInfo ::
     forall m.
-    (WithLog LogMessage m) =>
+    WithLog LogMessage m =>
     Text ->
     m ()
 logInfo = log Info
@@ -174,7 +174,7 @@ logInfo = log Info
 -- | Logs using 'Warning' log level. See 'log'.
 logWarning ::
     forall m.
-    (WithLog LogMessage m) =>
+    WithLog LogMessage m =>
     Text ->
     m ()
 logWarning = log Warning
@@ -182,7 +182,7 @@ logWarning = log Warning
 -- | Logs using 'Error' log level. See 'log'.
 logError ::
     forall m.
-    (WithLog LogMessage m) =>
+    WithLog LogMessage m =>
     Text ->
     m ()
 logError = log Error

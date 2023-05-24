@@ -21,12 +21,14 @@ test_hook :: TestTree
 test_hook =
     testCase "[hook{}(\"BUILTIN.name\")] :: Hook" $
         expectSuccess Hook{getHook = Just "BUILTIN.name"} $
-            parseHook $ Attributes [hookAttribute "BUILTIN.name"]
+            parseHook $
+                Attributes [hookAttribute "BUILTIN.name"]
 
 test_Attributes :: TestTree
 test_Attributes =
     testCase "[hook{}(\"BUILTIN.name\")] :: Attributes" $
-        expectSuccess attrs $ parseAttributes attrs
+        expectSuccess attrs $
+            parseAttributes attrs
   where
     attrs = Attributes [hookAttribute "BUILTIN.name"]
 
@@ -34,7 +36,8 @@ test_duplicate :: TestTree
 test_duplicate =
     testCase "[hook{}(\"BUILTIN.name\"), hook{}(\"BUILTIN.name\")]" $
         expectFailure $
-            parseHook $ Attributes [attr, attr]
+            parseHook $
+                Attributes [attr, attr]
   where
     attr = hookAttribute "BUILTIN.name"
 
@@ -42,7 +45,8 @@ test_zeroArguments :: TestTree
 test_zeroArguments =
     testCase "[hook{}()]" $
         expectFailure $
-            parseHook $ Attributes [illegalAttribute]
+            parseHook $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)
@@ -55,7 +59,8 @@ test_twoArguments :: TestTree
 test_twoArguments =
     testCase "[hook{}()]" $
         expectFailure $
-            parseHook $ Attributes [illegalAttribute]
+            parseHook $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         attributePattern
@@ -66,7 +71,8 @@ test_parameters :: TestTree
 test_parameters =
     testCase "[hook{illegal}(\"BUILTIN.name\")]" $
         expectFailure $
-            parseHook $ Attributes [illegalAttribute]
+            parseHook $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         attributePattern

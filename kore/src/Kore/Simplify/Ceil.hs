@@ -181,7 +181,7 @@ newApplicationCeilSimplifier = CeilSimplifier $ \input ->
     case ceilChild input of
         App_ patternHead children
             | let headAttributes = symbolAttributes patternHead
-              , Attribute.Symbol.isNotBottom headAttributes -> do
+            , Attribute.Symbol.isNotBottom headAttributes -> do
                 return (NormalForm.fromPredicates $ fromCeil_ <$> children)
         _ -> empty
 

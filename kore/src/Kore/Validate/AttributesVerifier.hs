@@ -67,7 +67,7 @@ import Pretty
 parseAttributes :: MonadError (Error VerifyError) m => Attributes -> m Hook
 parseAttributes = Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
 
--- |'verifyAttributes' verifies the wellformedness of the given attributes.
+-- | 'verifyAttributes' verifies the wellformedness of the given attributes.
 verifyAttributes ::
     MonadError (Error VerifyError) m =>
     Attributes ->
@@ -148,7 +148,8 @@ verifyNoHookedSupersort ::
     error ()
 verifyNoHookedSupersort indexedModule axiom subsorts = do
     let isHooked =
-            getHasDomainValues . hasDomainValues
+            getHasDomainValues
+                . hasDomainValues
                 . getSortAttributes (indexedModuleSyntax indexedModule)
                 . Subsort.supersort
         hookedSubsort = find isHooked subsorts

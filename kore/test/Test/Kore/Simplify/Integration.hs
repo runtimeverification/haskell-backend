@@ -269,7 +269,8 @@ test_simplificationIntegration =
                     (Mock.g Mock.b)
             expect =
                 OrPattern.fromTermLike $
-                    Mock.functionalConstr11 $ Mock.g Mock.a
+                    Mock.functionalConstr11 $
+                        Mock.g Mock.a
         actual <-
             evaluateConditionalWithAxioms
                 ( Map.fromList
@@ -575,7 +576,9 @@ test_simplificationIntegration =
             let message = (show . unparse) pattern'
             let (term, condition) = Pattern.splitTerm pattern'
             assertBool "Expected simplified term" (TermLike.isSimplified sideRepresentation term)
-            assertBool (unlines ["Expected simplified condition:", message]) (Condition.isSimplified sideRepresentation condition)
+            assertBool
+                (unlines ["Expected simplified condition:", message])
+                (Condition.isSimplified sideRepresentation condition)
             assertBool message (Pattern.isSimplified sideRepresentation pattern')
     , testCase "Nu-And simplification" $ do
         let gt =
@@ -696,7 +699,10 @@ test_simplificationIntegration =
         let patt =
                 Conditional
                     { term = mkTop Mock.testSort
-                    , predicate = makeEqualsPredicate (Mock.functional10 (mkElemVar Mock.xConfig)) (Mock.functional10 (mkElemVar Mock.yConfig))
+                    , predicate =
+                        makeEqualsPredicate
+                            (Mock.functional10 (mkElemVar Mock.xConfig))
+                            (Mock.functional10 (mkElemVar Mock.yConfig))
                     , substitution = mempty
                     }
             expected = OrPattern.topOf Mock.testSort
@@ -720,7 +726,8 @@ test_simplificationIntegration =
         let patt =
                 Conditional
                     { term = mkTop Mock.testSort
-                    , predicate = makeEqualsPredicate (Mock.fBool (mkElemVar Mock.xConfigBool)) (Bool.asInternal Mock.boolSort True)
+                    , predicate =
+                        makeEqualsPredicate (Mock.fBool (mkElemVar Mock.xConfigBool)) (Bool.asInternal Mock.boolSort True)
                     , substitution = mempty
                     }
             expected = OrPattern.topOf Mock.testSort
@@ -731,7 +738,8 @@ test_simplificationIntegration =
                         ( AxiomIdentifier.Equals (AxiomIdentifier.Application Mock.fBoolId) AxiomIdentifier.DV
                         ,
                             [ axiom
-                                (mkEquals Mock.boolSort (Mock.fBool (mkElemVar Mock.xRuleBool)) (Bool.asInternal Mock.boolSort True))
+                                ( mkEquals Mock.boolSort (Mock.fBool (mkElemVar Mock.xRuleBool)) (Bool.asInternal Mock.boolSort True)
+                                )
                                 (mkTop Mock.testSort)
                                 makeTruePredicate
                             ]
@@ -780,7 +788,8 @@ test_simplificationIntegrationUnification =
                     (Mock.g Mock.b)
             expect =
                 OrPattern.fromTermLike $
-                    Mock.functionalConstr11 $ Mock.g Mock.a
+                    Mock.functionalConstr11 $
+                        Mock.g Mock.a
         actual <-
             evaluateConditionalWithAxioms
                 ( Map.fromList

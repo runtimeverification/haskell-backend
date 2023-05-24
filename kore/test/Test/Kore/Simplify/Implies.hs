@@ -31,7 +31,8 @@ import Test.Tasty.HUnit
 
 test_simplifyEvaluated :: [TestTree]
 test_simplifyEvaluated =
-    [ ([Pattern.topOf Mock.testSort], [Pattern.topOf Mock.testSort]) `becomes_` [Pattern.topOf Mock.testSort]
+    [ ([Pattern.topOf Mock.testSort], [Pattern.topOf Mock.testSort])
+        `becomes_` [Pattern.topOf Mock.testSort]
     , ([Pattern.topOf Mock.testSort], []) `becomes_` []
     , ([], [Pattern.topOf Mock.testSort]) `becomes_` [Pattern.topOf Mock.testSort]
     , ([], []) `becomes_` [Pattern.topOf Mock.testSort]

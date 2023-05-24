@@ -20,7 +20,9 @@ data LogOrigin = KoreRpc | Booster | Llvm
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab], ConstructorTagModifier '[CamelToKebab]] LogOrigin
+        via CustomJSON
+                '[OmitNothingFields, FieldLabelModifier '[CamelToKebab], ConstructorTagModifier '[CamelToKebab]]
+                LogOrigin
 
 data LogRewriteResult
     = Success
@@ -35,7 +37,12 @@ data LogRewriteResult
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab, StripPrefix "_"], ConstructorTagModifier '[CamelToKebab]] LogRewriteResult
+        via CustomJSON
+                '[ OmitNothingFields
+                 , FieldLabelModifier '[CamelToKebab, StripPrefix "_"]
+                 , ConstructorTagModifier '[CamelToKebab]
+                 ]
+                LogRewriteResult
 
 data LogEntry
     = Rewrite
@@ -51,4 +58,6 @@ data LogEntry
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab], ConstructorTagModifier '[CamelToKebab]] LogEntry
+        via CustomJSON
+                '[OmitNothingFields, FieldLabelModifier '[CamelToKebab], ConstructorTagModifier '[CamelToKebab]]
+                LogEntry

@@ -46,7 +46,8 @@ instance Entry WarnSymbolSMTRepresentation where
     entrySeverity _ = Warning
     oneLineDoc (WarnSymbolSMTRepresentation Symbol{symbolAttributes}) =
         Pretty.pretty (sourceLocation symbolAttributes)
-    helpDoc _ = "warn when a symbol cannot be translated for the SMT solver, despite being given an explicit translation"
+    helpDoc _ =
+        "warn when a symbol cannot be translated for the SMT solver, despite being given an explicit translation"
 
 instance SQL.Table WarnSymbolSMTRepresentation
 

@@ -29,7 +29,10 @@ import Kore.Internal.Predicate (
  )
 import Kore.Internal.SideCondition qualified as SideCondition
 import Kore.Internal.TermLike
-import Kore.Log.DecidePredicateUnknown (OnDecidePredicateUnknown (ErrorDecidePredicateUnknown), srcLoc)
+import Kore.Log.DecidePredicateUnknown (
+    OnDecidePredicateUnknown (ErrorDecidePredicateUnknown),
+    srcLoc,
+ )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     configElementVariableFromId,
@@ -168,13 +171,15 @@ evaluatePredicate ::
     Predicate VariableName ->
     IO (Maybe Bool)
 evaluatePredicate =
-    runSimplifierSMT Mock.env . flip (SMT.Evaluator.evalPredicate $ ErrorDecidePredicateUnknown $srcLoc Nothing) Nothing
+    runSimplifierSMT Mock.env
+        . flip (SMT.Evaluator.evalPredicate $ ErrorDecidePredicateUnknown $srcLoc Nothing) Nothing
 
 evaluateConditional ::
     Pattern VariableName ->
     IO (Maybe Bool)
 evaluateConditional =
-    runSimplifierSMT Mock.env . flip (SMT.Evaluator.evalConditional $ ErrorDecidePredicateUnknown $srcLoc Nothing) Nothing
+    runSimplifierSMT Mock.env
+        . flip (SMT.Evaluator.evalConditional $ ErrorDecidePredicateUnknown $srcLoc Nothing) Nothing
 
 evaluateMultiOr ::
     MultiOr (Conditional VariableName (TermLike VariableName)) ->
@@ -235,7 +240,10 @@ assertRefuted :: HasCallStack => Predicate RewritingVariableName -> Assertion
 assertRefuted prop = do
     let expect = Just False
     actual <-
-        SMT.Evaluator.decidePredicate (ErrorDecidePredicateUnknown $srcLoc Nothing) SideCondition.top (prop :| [])
+        SMT.Evaluator.decidePredicate
+            (ErrorDecidePredicateUnknown $srcLoc Nothing)
+            SideCondition.top
+            (prop :| [])
             & Test.runSimplifierSMT testEnv
     assertEqual "" expect actual
 
@@ -271,10 +279,10 @@ test_Int_contradictions =
                 (eqInt a (int 0))
     , testCase "f(0) = 123 ∧ f(0) = 456  -- uninterpreted functions"
         . assertRefuted
-        $ makeEqualsPredicate true $
-            andBool
-                (eqInt (dummyFunctionalInt (int 0)) (int 123))
-                (eqInt (dummyFunctionalInt (int 0)) (int 456))
+        $ makeEqualsPredicate true
+        $ andBool
+            (eqInt (dummyFunctionalInt (int 0)) (int 123))
+            (eqInt (dummyFunctionalInt (int 0)) (int 456))
     , testCase "¬(0 < a → (a / 2) < a)" . assertRefuted $
         makeEqualsPredicate false $
             impliesBool (int 0 `ltInt` a) (ltInt (a `tdivInt` int 2) a)

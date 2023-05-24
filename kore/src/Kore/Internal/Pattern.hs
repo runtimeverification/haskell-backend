@@ -182,7 +182,7 @@ freeElementVariables ::
 freeElementVariables =
     getFreeElementVariables . freeVariables
 
-{- |'mapVariables' transforms all variables, including the quantified ones,
+{- | 'mapVariables' transforms all variables, including the quantified ones,
 in an Pattern.
 -}
 mapVariables ::

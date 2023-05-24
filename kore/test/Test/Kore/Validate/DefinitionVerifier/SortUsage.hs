@@ -606,8 +606,8 @@ unfilteredTestExamplesForSort
                                     sort
                                     sortVariables
                                     (externalize $ mkTop sort)
-                                ) :
-                              additionalSentences
+                                )
+                                : additionalSentences
                             )
                     }
             }
@@ -634,8 +634,8 @@ unfilteredTestExamplesForSort
                                     additionalSort
                                     sortVariables
                                     (externalize $ mkTop additionalSort)
-                                ) :
-                              additionalSentences
+                                )
+                                : additionalSentences
                             )
                     }
             }
@@ -659,8 +659,8 @@ unfilteredTestExamplesForSort
                             (ModuleName "MODULE")
                             ( axiomSentenceWithSortParameters
                                 (simpleExistsParsedPattern variableName sort)
-                                sortVariables :
-                              additionalSentences
+                                sortVariables
+                                : additionalSentences
                             )
                     }
             }
@@ -688,8 +688,8 @@ unfilteredTestExamplesForSort
                                     (OperandSort sort)
                                     (ResultSort additionalSort)
                                 )
-                                sortVariables :
-                              additionalSentences
+                                sortVariables
+                                : additionalSentences
                             )
                     }
             }
@@ -717,8 +717,8 @@ unfilteredTestExamplesForSort
                                     (OperandSort additionalSort)
                                     (ResultSort sort)
                                 )
-                                sortVariables :
-                              additionalSentences
+                                sortVariables
+                                : additionalSentences
                             )
                     }
             }
@@ -745,14 +745,14 @@ unfilteredTestExamplesForSort
                                     (SymbolName rawAliasName)
                                     [sort]
                                 )
-                                sortVariables :
-                              sentenceSymbolSentence
-                                ( symbolSentenceWithSortParametersAux
-                                    (SymbolName rawAliasName)
-                                    (simpleSort additionalSortName)
-                                    [sortVariable sortVariableName1]
-                                ) :
-                              additionalSentences
+                                sortVariables
+                                : sentenceSymbolSentence
+                                    ( symbolSentenceWithSortParametersAux
+                                        (SymbolName rawAliasName)
+                                        (simpleSort additionalSortName)
+                                        [sortVariable sortVariableName1]
+                                    )
+                                : additionalSentences
                             )
                     }
             }
@@ -809,15 +809,15 @@ unfilteredTestExamplesForObjectSort
                                             }
                                     ]
                                 )
-                                sortVariables :
-                              symbolSentenceWithSortParameters
-                                (SymbolName "a")
-                                resultSort
-                                [sortVariable sortVariableName1] :
-                              sortSentenceWithSortParameters
-                                differentAdditionalSortName
-                                [sortVariable sortVariableName2] :
-                              additionalSentences
+                                sortVariables
+                                : symbolSentenceWithSortParameters
+                                    (SymbolName "a")
+                                    resultSort
+                                    [sortVariable sortVariableName1]
+                                : sortSentenceWithSortParameters
+                                    differentAdditionalSortName
+                                    [sortVariable sortVariableName2]
+                                : additionalSentences
                             )
                     }
             }

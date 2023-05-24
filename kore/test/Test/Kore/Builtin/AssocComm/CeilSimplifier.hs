@@ -85,9 +85,9 @@ hprop_Builtin_Set :: Property
     defineMapElement (key, val) =
         -- symbolic keys are defined
         [makeCeilPredicate key | (not . isConcrete) key]
-        ++
-        -- symbolic values are defined
-        [makeCeilPredicate val]
+            ++
+            -- symbolic values are defined
+            [makeCeilPredicate val]
 
     defineSetElement key =
         -- symbolic keys are defined

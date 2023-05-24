@@ -14,19 +14,11 @@ jobs:
     name: 'Auto-formatting'
     runs-on: ubuntu-22.04
     steps:
-      - id: config
-        run: |
-          ref="${{ github.event.pull_request.head.sha }}"
-          ref="${ref#refs/heads/}"
-          echo "ref=$ref" >> $GITHUB_OUTPUT
-
-          git config --global user.name github-actions
-          git config --global user.email github-actions@github.com
-
-      - name: Check out code
+      - name: 'Check out code'
         uses: actions/checkout@v3
         with:
-          ref: ${{ steps.config.outputs.ref }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
           submodules: recursive
           token: ${{ secrets.JENKINS_GITHUB_PAT }}
 
@@ -53,20 +45,20 @@ jobs:
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
-            if git status -s -b | grep -q '^##.*(no branch)$'; then
-              echo 2>&1 "Error: Git is in detached HEAD state"
-              exit 1
-            fi
+          if git status -s -b | grep -q '^##.*(no branch)$'; then
+            echo 2>&1 "Error: Git is in detached HEAD state"
+            exit 1
           fi
 
           if [ -n "$(git status --porcelain '*.hs')" ]; then
+            git config --global user.name github-actions
+            git config --global user.email github-actions@github.com
             git add '*.hs'
             git commit -m "Format with fourmolu"
             git show --stat
-            # git push
+            git push
             echo "Reformatted code pushed, aborting this workflow" | tee -a $GITHUB_STEP_SUMMARY
-            # exit 1
+            exit 1
           fi
 
   nix-build:

@@ -4,7 +4,7 @@
 
 {-
 
-* Debugging
+\* Debugging
 
 If building the test suite fails with some undecipherable error, add
 

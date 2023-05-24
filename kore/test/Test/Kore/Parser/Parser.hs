@@ -1132,7 +1132,8 @@ sentenceAliasParserTests =
                     , sentenceAliasAttributes =
                         Attributes
                             [ embedParsedPattern $
-                                StringLiteralF $ Const (StringLiteral "a")
+                                StringLiteralF $
+                                    Const (StringLiteral "a")
                             ]
                     } ::
                     ParsedSentenceAlias
@@ -1208,9 +1209,11 @@ sentenceAliasParserTests =
                     , sentenceAliasAttributes =
                         Attributes
                             [ embedParsedPattern $
-                                StringLiteralF $ Const (StringLiteral "a")
+                                StringLiteralF $
+                                    Const (StringLiteral "a")
                             , embedParsedPattern $
-                                StringLiteralF $ Const (StringLiteral "b")
+                                StringLiteralF $
+                                    Const (StringLiteral "b")
                             ]
                     } ::
                     ParsedSentenceAlias
@@ -1385,11 +1388,13 @@ sentenceAxiomParserTests =
                         [SortVariable (testId "sv1")]
                     , sentenceAxiomPattern =
                         embedParsedPattern $
-                            StringLiteralF $ Const (StringLiteral "a")
+                            StringLiteralF $
+                                Const (StringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
                             [ embedParsedPattern $
-                                StringLiteralF $ Const (StringLiteral "b")
+                                StringLiteralF $
+                                    Const (StringLiteral "b")
                             ]
                     } ::
                     ParsedSentenceAxiom
@@ -1404,11 +1409,13 @@ sentenceAxiomParserTests =
                     { sentenceAxiomParameters = []
                     , sentenceAxiomPattern =
                         embedParsedPattern $
-                            StringLiteralF $ Const (StringLiteral "a")
+                            StringLiteralF $
+                                Const (StringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
                             [ embedParsedPattern $
-                                StringLiteralF $ Const (StringLiteral "b")
+                                StringLiteralF $
+                                    Const (StringLiteral "b")
                             ]
                     } ::
                     ParsedSentenceAxiom
@@ -1424,11 +1431,13 @@ sentenceAxiomParserTests =
                         ]
                     , sentenceAxiomPattern =
                         embedParsedPattern $
-                            StringLiteralF $ Const (StringLiteral "a")
+                            StringLiteralF $
+                                Const (StringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
                             [ embedParsedPattern $
-                                StringLiteralF $ Const (StringLiteral "b")
+                                StringLiteralF $
+                                    Const (StringLiteral "b")
                             ]
                     } ::
                     ParsedSentenceAxiom
@@ -1455,11 +1464,13 @@ sentenceClaimParserTests =
                     { sentenceAxiomParameters = [SortVariable (testId "sv1")]
                     , sentenceAxiomPattern =
                         embedParsedPattern $
-                            StringLiteralF $ Const (StringLiteral "a")
+                            StringLiteralF $
+                                Const (StringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
                             [ embedParsedPattern $
-                                StringLiteralF $ Const (StringLiteral "b")
+                                StringLiteralF $
+                                    Const (StringLiteral "b")
                             ]
                     } ::
                     ParsedSentenceAxiom
@@ -1474,11 +1485,13 @@ sentenceClaimParserTests =
                     { sentenceAxiomParameters = []
                     , sentenceAxiomPattern =
                         embedParsedPattern $
-                            StringLiteralF $ Const (StringLiteral "a")
+                            StringLiteralF $
+                                Const (StringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
                             [ embedParsedPattern $
-                                StringLiteralF $ Const (StringLiteral "b")
+                                StringLiteralF $
+                                    Const (StringLiteral "b")
                             ]
                     } ::
                     ParsedSentenceAxiom
@@ -1494,11 +1507,13 @@ sentenceClaimParserTests =
                         ]
                     , sentenceAxiomPattern =
                         embedParsedPattern $
-                            StringLiteralF $ Const (StringLiteral "a")
+                            StringLiteralF $
+                                Const (StringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
                             [ embedParsedPattern $
-                                StringLiteralF $ Const (StringLiteral "b")
+                                StringLiteralF $
+                                    Const (StringLiteral "b")
                             ]
                     } ::
                     ParsedSentenceAxiom
@@ -1526,7 +1541,8 @@ sentenceImportParserTests =
                     , sentenceImportAttributes =
                         Attributes
                             [ embedParsedPattern $
-                                StringLiteralF $ Const (StringLiteral "b")
+                                StringLiteralF $
+                                    Const (StringLiteral "b")
                             ]
                     } ::
                     ParsedSentenceImport
@@ -1553,7 +1569,8 @@ sentenceSortParserTests =
                     , sentenceSortAttributes =
                         Attributes
                             [ embedParsedPattern $
-                                StringLiteralF $ Const (StringLiteral "a")
+                                StringLiteralF $
+                                    Const (StringLiteral "a")
                             ]
                     } ::
                     ParsedSentenceSort
@@ -1570,7 +1587,8 @@ sentenceSortParserTests =
                     , sentenceSortAttributes =
                         Attributes
                             [ embedParsedPattern $
-                                StringLiteralF $ Const (StringLiteral "a")
+                                StringLiteralF $
+                                    Const (StringLiteral "a")
                             ]
                     } ::
                     ParsedSentenceSort
@@ -1605,7 +1623,8 @@ sentenceSymbolParserTests =
                     , sentenceSymbolAttributes =
                         Attributes
                             [ embedParsedPattern $
-                                StringLiteralF $ Const (StringLiteral "a")
+                                StringLiteralF $
+                                    Const (StringLiteral "a")
                             ]
                     } ::
                     ParsedSentenceSymbol
@@ -1654,7 +1673,8 @@ sentenceHookedSortParserTests =
                         , sentenceSortAttributes =
                             Attributes
                                 [ embedParsedPattern $
-                                    StringLiteralF $ Const (StringLiteral "a")
+                                    StringLiteralF $
+                                        Const (StringLiteral "a")
                                 ]
                         } ::
                     ParsedSentenceHook
@@ -1672,7 +1692,8 @@ sentenceHookedSortParserTests =
                         , sentenceSortAttributes =
                             Attributes
                                 [ embedParsedPattern $
-                                    StringLiteralF $ Const (StringLiteral "a")
+                                    StringLiteralF $
+                                        Const (StringLiteral "a")
                                 ]
                         } ::
                     ParsedSentenceHook
@@ -1708,7 +1729,8 @@ sentenceHookedSymbolParserTests =
                         , sentenceSymbolAttributes =
                             Attributes
                                 [ embedParsedPattern $
-                                    StringLiteralF $ Const (StringLiteral "a")
+                                    StringLiteralF $
+                                        Const (StringLiteral "a")
                                 ]
                         } ::
                     ParsedSentenceHook
@@ -1850,7 +1872,8 @@ definitionParserTests =
                         , moduleAttributes =
                             Attributes
                                 [ embedParsedPattern $
-                                    StringLiteralF $ Const (StringLiteral "b")
+                                    StringLiteralF $
+                                        Const (StringLiteral "b")
                                 ]
                         }
                     ]
@@ -1881,7 +1904,8 @@ definitionParserTests =
                         , moduleAttributes =
                             Attributes
                                 [ embedParsedPattern $
-                                    StringLiteralF $ Const (StringLiteral "b")
+                                    StringLiteralF $
+                                        Const (StringLiteral "b")
                                 ]
                         }
                     , Module
@@ -1899,7 +1923,8 @@ definitionParserTests =
                         , moduleAttributes =
                             Attributes
                                 [ embedParsedPattern $
-                                    StringLiteralF $ Const (StringLiteral "e")
+                                    StringLiteralF $
+                                        Const (StringLiteral "e")
                                 ]
                         }
                     ]

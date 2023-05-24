@@ -100,7 +100,8 @@ normalize (dropTrivialSubstitutions -> substitutionMap) =
     mixedCtorCycle _ = empty
 
     simplifiableCycle (Set.fromList -> variables) = do
-        let -- Variables with simplifiable dependencies
+        let
+            -- Variables with simplifiable dependencies
             simplifiable = Set.filter (isSimplifiable variables) variables
             denormalized =
                 Substitution.mkUnwrappedSubstitution $

@@ -111,7 +111,8 @@ toParsedPattern = \case
             Kore.Next (mkSort sort) (toParsedPattern dest)
     KJRewrites{sort, source, dest} ->
         (embedParsedPattern . RewritesF) $
-            Kore.Rewrites (mkSort sort) (toParsedPattern source) $ toParsedPattern dest
+            Kore.Rewrites (mkSort sort) (toParsedPattern source) $
+                toParsedPattern dest
     KJDV{sort, value} ->
         (embedParsedPattern . DomainValueF) $
             Kore.DomainValue (mkSort sort) (toParsedPattern (KJString value))

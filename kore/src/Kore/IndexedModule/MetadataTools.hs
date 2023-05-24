@@ -65,7 +65,7 @@ instance NFData (MetadataSyntaxData attributes) where
     rnf (MetadataSyntaxData sdata) = sdata `seq` ()
     rnf (MetadataSyntaxDataExtension sdata) = sdata `seq` ()
 
-{- |'MetadataTools' defines a dictionary of functions which can be used to
+{- | 'MetadataTools' defines a dictionary of functions which can be used to
  access the metadata needed during the unification process.
 
 We do not derive Functor on this type because it is not currently possible
@@ -76,12 +76,12 @@ modify the NFData instance so that it uses Typeable to check that the type
 it contains has an NFData instance.
 -}
 data MetadataTools sortConstructors smt attributes = MetadataTools
-    { -- | syntax of module
-      syntax :: MetadataSyntaxData attributes
-    , -- | The SMT data for the given module.
-      smtData :: smt
-    , -- | The constructors for each sort.
-      sortConstructors :: Map Id sortConstructors
+    { syntax :: MetadataSyntaxData attributes
+    -- ^ syntax of module
+    , smtData :: smt
+    -- ^ The SMT data for the given module.
+    , sortConstructors :: Map Id sortConstructors
+    -- ^ The constructors for each sort.
     }
     deriving stock (GHC.Generic)
     deriving anyclass (NFData)
@@ -89,7 +89,7 @@ data MetadataTools sortConstructors smt attributes = MetadataTools
 type SmtMetadataTools attributes =
     MetadataTools Attribute.Constructors SMT.AST.SmtDeclarations attributes
 
-{- |'extractMetadataTools' extracts a set of 'MetadataTools' from a
+{- | 'extractMetadataTools' extracts a set of 'MetadataTools' from a
  'KoreIndexedModule'.  The metadata tools are functions yielding information
  about application heads, such as its attributes or
  its argument and result sorts.

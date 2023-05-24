@@ -29,7 +29,7 @@ import Kore.Unparser
 import Prelude.Kore
 import Pretty qualified
 
-{- |'SymbolOrAlias' corresponds to the @symbol-or-alias@ syntactic category from
+{- | 'SymbolOrAlias' corresponds to the @symbol-or-alias@ syntactic category from
 <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#sentences kore-syntax.md#sentences>
 -}
 data SymbolOrAlias = SymbolOrAlias
@@ -55,7 +55,7 @@ instance Unparse SymbolOrAlias where
 instance From SymbolOrAlias SymbolOrAlias where
     from = id
 
-{- |'Application' corresponds to the @application-pattern@ branch of the
+{- | 'Application' corresponds to the @application-pattern@ branch of the
 @pattern@ syntactic category from
 <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#patterns kore-syntax.md#patterns>.
 

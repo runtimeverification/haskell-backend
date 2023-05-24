@@ -85,11 +85,13 @@ externalize = Recursive.futu externalize1
             EndiannessF endiannessF ->
                 mkApp $
                     mapHead Symbol.toSymbolOrAlias $
-                        Endianness.toApplication $ getConst endiannessF
+                        Endianness.toApplication $
+                            getConst endiannessF
             SignednessF signednessF ->
                 mkApp $
                     mapHead Symbol.toSymbolOrAlias $
-                        Signedness.toApplication $ getConst signednessF
+                        Signedness.toApplication $
+                            getConst signednessF
             -- Internals
             InternalBoolF (Const internalBool) -> externalizeBool internalBool
             InternalIntF (Const internalInt) -> externalizeInt internalInt
@@ -174,7 +176,9 @@ externalizeMap builtin =
     concreteElement (key, mapValue) = element (into key, mapValue)
 
     element (key, MapValue value) =
-        (Attribute.Null :<) . Syntax.ApplicationF . fmap Pure
+        (Attribute.Null :<)
+            . Syntax.ApplicationF
+            . fmap Pure
             . mapHead toSymbolOrAlias
             $ symbolApplication elementSymbol [key, value]
 
@@ -212,7 +216,9 @@ externalizeSet builtin =
     concreteElement (key, value) = element (from @Key key, value)
 
     element (key, SetValue) =
-        (Attribute.Null :<) . Syntax.ApplicationF . fmap Pure
+        (Attribute.Null :<)
+            . Syntax.ApplicationF
+            . fmap Pure
             . mapHead toSymbolOrAlias
             $ symbolApplication elementSymbol [key]
 
@@ -235,11 +241,15 @@ externalizeList builtin
     InternalList{internalListConcat = concatSymbol} = builtin
 
     unit =
-        (Attribute.Null :<) . Syntax.ApplicationF . fmap Pure
+        (Attribute.Null :<)
+            . Syntax.ApplicationF
+            . fmap Pure
             . mapHead toSymbolOrAlias
             $ symbolApplication unitSymbol []
     element elem' =
-        (Attribute.Null :<) . Syntax.ApplicationF . fmap Pure
+        (Attribute.Null :<)
+            . Syntax.ApplicationF
+            . fmap Pure
             . mapHead toSymbolOrAlias
             $ symbolApplication elementSymbol [elem']
     concat' list1 list2 =

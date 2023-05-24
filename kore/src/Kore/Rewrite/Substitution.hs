@@ -59,7 +59,7 @@ normalize sideCondition conditional@Conditional{substitution} = do
     SubstitutionSimplifier{simplifySubstitution} =
         SubstitutionSimplifier.substitutionSimplifier
 
-{- |'mergePredicatesAndSubstitutions' merges a list of substitutions into
+{- | 'mergePredicatesAndSubstitutions' merges a list of substitutions into
 a single one, then merges the merge side condition and the given condition list
 into a condition.
 

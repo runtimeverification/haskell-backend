@@ -20,12 +20,14 @@ test_noEvaluators :: TestTree
 test_noEvaluators =
     testCase "[no-evaluators{}()] :: NoEvaluators" $
         expectSuccess NoEvaluators{hasNoEvaluators = True} $
-            parseNoEvaluators $ Attributes [noEvaluatorsAttribute]
+            parseNoEvaluators $
+                Attributes [noEvaluatorsAttribute]
 
 test_Attributes :: TestTree
 test_Attributes =
     testCase "[no-evaluators{}()] :: Attributes" $
-        expectSuccess attrs $ parseAttributes attrs
+        expectSuccess attrs $
+            parseAttributes attrs
   where
     attrs = Attributes [noEvaluatorsAttribute]
 
@@ -40,7 +42,8 @@ test_arguments :: TestTree
 test_arguments =
     testCase "[no-evaluators{}(\"illegal\")]" $
         expectFailure $
-            parseNoEvaluators $ Attributes [illegalAttribute]
+            parseNoEvaluators $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         attributePattern noEvaluatorsSymbol [attributeString "illegal"]
@@ -49,7 +52,8 @@ test_parameters :: TestTree
 test_parameters =
     testCase "[no-evaluators{illegal}()]" $
         expectFailure $
-            parseNoEvaluators $ Attributes [illegalAttribute]
+            parseNoEvaluators $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)

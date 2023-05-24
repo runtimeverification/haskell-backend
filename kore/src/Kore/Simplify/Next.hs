@@ -26,7 +26,7 @@ import Prelude.Kore
 -- that it messes up top/bottom testing so moving it up must be done
 -- immediately after evaluating the children.
 
-{- |'simplify' simplifies a 'Next' pattern with an 'OrPattern'
+{- | 'simplify' simplifies a 'Next' pattern with an 'OrPattern'
 child.
 
 Right now this does not do any actual simplification.

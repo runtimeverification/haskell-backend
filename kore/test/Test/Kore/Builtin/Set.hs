@@ -603,11 +603,11 @@ test_unifyFramingVariable =
 -- `Rest:Set SetItem(absInt(X:Int))`, respectively.
 selectFunctionPattern ::
     InternalVariable variable =>
-    -- |element variable
+    -- | element variable
     ElementVariable variable ->
-    -- |set variable
+    -- | set variable
     ElementVariable variable ->
-    -- |scrambling function
+    -- | scrambling function
     (forall a. [a] -> [a]) ->
     TermLike variable
 selectFunctionPattern elementVar setVar permutation =
@@ -628,11 +628,11 @@ makeElementVariable var =
 -- `SetItem(X:Int) Rest:Set`, or `Rest:Set SetItem(X:Int)`, respectively.
 selectPattern ::
     InternalVariable variable =>
-    -- |element variable
+    -- | element variable
     ElementVariable variable ->
-    -- |set variable
+    -- | set variable
     ElementVariable variable ->
-    -- |scrambling function
+    -- | scrambling function
     (forall a. [a] -> [a]) ->
     TermLike variable
 selectPattern elementVar setVar permutation =
@@ -640,9 +640,9 @@ selectPattern elementVar setVar permutation =
         permutation [makeElementVariable elementVar, mkElemVar setVar]
 
 addSelectElement ::
-    -- |element variable
+    -- | element variable
     ElementVariable RewritingVariableName ->
-    -- |existingPattern
+    -- | existingPattern
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName
 addSelectElement elementVar setPattern =

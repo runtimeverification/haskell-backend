@@ -508,7 +508,7 @@ test_onePathStrategy =
                     Mock.a
                     $ makeEqualsPredicate
                         Mock.c
-                        $ Mock.f Mock.b
+                    $ Mock.f Mock.b
                 ]
         actualReach <-
             runOnePathSteps
@@ -524,7 +524,7 @@ test_onePathStrategy =
                     Mock.a
                     $ makeEqualsPredicate
                         Mock.c
-                        $ Mock.f Mock.b
+                    $ Mock.f Mock.b
                 ]
         assertEqual
             ""
@@ -533,10 +533,10 @@ test_onePathStrategy =
                     Conditional
                         { term = Mock.functionalConstr10 Mock.b
                         , predicate =
-                            makeNotPredicate $
-                                makeEqualsPredicate
+                            makeNotPredicate
+                                $ makeEqualsPredicate
                                     Mock.c
-                                    $ Mock.f Mock.b
+                                $ Mock.f Mock.b
                         , substitution = mempty
                         }
                     (fromTermLike Mock.a)
@@ -896,7 +896,7 @@ runSteps ::
     (ExecutionGraph b c -> a) ->
     [claim] ->
     [[Rule claim]] ->
-    -- |left-hand-side of unification
+    -- | left-hand-side of unification
     claim ->
     [Step Prim] ->
     IO a
@@ -925,7 +925,7 @@ runOnePathSteps ::
     From (Rule claim) Attribute.Axiom.PriorityAttributes =>
     Limit Natural ->
     Limit Natural ->
-    -- |left-hand-side of unification
+    -- | left-hand-side of unification
     claim ->
     [claim] ->
     [Rule claim] ->

@@ -149,15 +149,15 @@ test_predicate =
                     ]
                 )
                 (freeVariables pr1 & FreeVariables.toSet)
-            assertBool "quantified variables are not included" $
-                not $
-                    FreeVariables.isFreeVariable
-                        (inject . variableName $ a Mock.testSort)
-                        $ freeVariables @_ @VariableName $
-                            makeExistsPredicate (a Mock.testSort) $
-                                makeEqualsPredicate
-                                    (mkElemVar $ a Mock.testSort)
-                                    (mkElemVar $ b Mock.testSort)
+            assertBool "quantified variables are not included"
+                $ not
+                $ FreeVariables.isFreeVariable
+                    (inject . variableName $ a Mock.testSort)
+                $ freeVariables @_ @VariableName
+                $ makeExistsPredicate (a Mock.testSort)
+                $ makeEqualsPredicate
+                    (mkElemVar $ a Mock.testSort)
+                    (mkElemVar $ b Mock.testSort)
         )
     , testGroup
         "makePredicate"

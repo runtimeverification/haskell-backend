@@ -97,7 +97,12 @@ jsonRpcServer serverSettings respond handlers =
 
 data JsonRpcHandler = forall e. Exception e => JsonRpcHandler (e -> Log.LoggingT IO ErrorObj)
 
-srv :: forall m q r. (MonadLoggerIO m, FromRequestCancellable q, ToJSON r) => (Request -> Respond q (Log.LoggingT IO) r) -> [JsonRpcHandler] -> JSONRPCT m ()
+srv ::
+    forall m q r.
+    (MonadLoggerIO m, FromRequestCancellable q, ToJSON r) =>
+    (Request -> Respond q (Log.LoggingT IO) r) ->
+    [JsonRpcHandler] ->
+    JSONRPCT m ()
 srv respond handlers = do
     reqQueue <- liftIO $ atomically newTChan
     let mainLoop tid =
@@ -153,7 +158,9 @@ srv respond handlers = do
                     sendResponses $ SingleResponse $ ResponseError reqVersion err reqId
                 SingleRequest Notif{} -> pure ()
                 BatchRequest reqs -> do
-                    sendResponses $ BatchResponse $ [ResponseError (getReqVer req) err (getReqId req) | req <- reqs, isRequest req]
+                    sendResponses $
+                        BatchResponse $
+                            [ResponseError (getReqVer req) err (getReqId req) | req <- reqs, isRequest req]
 
             processReq :: BatchRequest -> Log.LoggingT IO ()
             processReq = \case

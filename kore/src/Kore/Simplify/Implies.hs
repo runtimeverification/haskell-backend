@@ -39,7 +39,7 @@ import Logic (
 import Logic qualified
 import Prelude.Kore
 
-{- |'simplify' simplifies an 'Implies' pattern with 'OrPattern'
+{- | 'simplify' simplifies an 'Implies' pattern with 'OrPattern'
 children.
 
 Right now this uses the following simplifications:
@@ -165,7 +165,7 @@ makeEvaluateImpliesNonBool
         , substitution = secondSubstitution
         }
         | isTop firstTerm
-          , isTop secondTerm =
+        , isTop secondTerm =
             OrPattern.fromPatterns
                 [ Conditional
                     { term = firstTerm

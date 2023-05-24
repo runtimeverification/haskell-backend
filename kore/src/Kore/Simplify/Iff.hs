@@ -44,7 +44,7 @@ import Kore.Simplify.Not qualified as Not (
 import Kore.Simplify.Simplify
 import Prelude.Kore
 
-{- |'simplify' simplifies an 'Iff' pattern with 'OrPattern'
+{- | 'simplify' simplifies an 'Iff' pattern with 'OrPattern'
 children.
 
 Right now this has special cases only for top and bottom children
@@ -130,7 +130,7 @@ makeEvaluateNonBoolIff
         , substitution = secondSubstitution
         }
         | isTop firstTerm
-          , isTop secondTerm =
+        , isTop secondTerm =
             OrPattern.fromPatterns
                 [ Conditional
                     { term = firstTerm

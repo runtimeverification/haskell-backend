@@ -53,7 +53,8 @@ objectA =
 axiomA, axiomA' :: SentenceAxiom ParsedPattern
 axiomA =
     fmap externalize $
-        TermLike.mkAxiom_ $ TermLike.applySymbol_ objectA []
+        TermLike.mkAxiom_ $
+            TermLike.applySymbol_ objectA []
 axiomA' =
     fmap externalize $
         TermLike.mkAxiom [sortVariableR] $
@@ -68,7 +69,8 @@ axiomA' =
 objectB :: SentenceAlias ParsedPattern
 objectB =
     fmap externalize $
-        TermLike.mkAlias_ (testId "b") objectS1 [] $ TermLike.mkTop objectS1
+        TermLike.mkAlias_ (testId "b") objectS1 [] $
+            TermLike.mkTop objectS1
 
 metaA :: SentenceSymbol
 metaA = TermLike.mkSymbol_ (testId "#a") [] stringMetaSort

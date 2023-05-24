@@ -216,7 +216,8 @@ throws_ = throws_from_expected
 actual_predicate_name :: HasCallStack => a -> (a -> Bool) -> String -> TestTree
 actual_predicate_name actual predicate name =
     testCase name $
-        assertEqual "" True $ predicate actual
+        assertEqual "" True $
+            predicate actual
 
 {- |
  > actual_predicate 3 isOdd
