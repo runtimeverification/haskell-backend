@@ -341,16 +341,16 @@ instance Pretty (RewriteTrace Pattern) where
              in
                 hang 4 . vsep $
                     [ "Rewriting configuration"
-                    , pretty (PrettyTerm l.term)
+                    , pretty l.term
                     , "to"
-                    , pretty (PrettyTerm r.term)
+                    , pretty r.term
                     , "Using rule:"
                     , pretty lbl
                     ]
         RewriteBranchingStep pat branches ->
             hang 4 . vsep $
                 [ "Configuration"
-                , pretty (PrettyTerm $ term pat)
+                , pretty (term pat)
                 , "branches on rules:"
                 , hang 2 $ vsep [pretty lbl | (lbl, _) <- toList branches]
                 ]
@@ -382,7 +382,7 @@ mkDiffTerms = \case
     r -> r
 
 showPattern :: Doc a -> Pattern -> Doc a
-showPattern title pat = hang 4 $ vsep [title, pretty (PrettyTerm pat.term)]
+showPattern title pat = hang 4 $ vsep [title, pretty pat.term]
 
 {- | Interface for RPC execute: Rewrite given term as long as there is
    exactly one result in each step.

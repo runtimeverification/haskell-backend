@@ -26,7 +26,7 @@ module Booster.Pattern.Util (
     filterTermSymbols,
 ) where
 
-import Data.Bifunctor (first)
+import Data.Bifunctor (bimap, first)
 import Data.ByteString (ByteString)
 import Data.Coerce (coerce)
 import Data.Functor.Foldable (Corecursive (embed), cata)
@@ -39,6 +39,7 @@ import Data.Set qualified as Set
 import Booster.Definition.Attributes.Base (
     Concreteness (..),
     Flag (..),
+    KMapDefinition (..),
     SymbolAttributes (..),
     SymbolType (..),
  )
@@ -52,6 +53,7 @@ sortOfTerm (SymbolApplication symbol sorts _) =
 sortOfTerm (DomainValue sort _) = sort
 sortOfTerm (Var Variable{variableSort}) = variableSort
 sortOfTerm (Injection _ sort _) = sort
+sortOfTerm (KMap def _ _) = SortApp def.mapSortName []
 
 applySubst :: Map VarName Sort -> Sort -> Sort
 applySubst subst var@(SortVar n) =
@@ -80,6 +82,7 @@ substituteInTerm substitution = goSubst
                 SymbolApplication sym sorts $ map goSubst args
             AndTerm t1 t2 -> AndTerm (goSubst t1) (goSubst t2)
             Injection ss s sub -> Injection ss s (goSubst sub)
+            KMap attrs keyVals rest -> KMap attrs (bimap goSubst goSubst <$> keyVals) (goSubst <$> rest)
 
 substituteInPredicate :: Map Variable Term -> Predicate -> Predicate
 substituteInPredicate substitution = cata $ \case
@@ -170,6 +173,18 @@ filterTermSymbols check = cata $ \case
         | otherwise -> concat ts
     AndTermF t1 t2 -> t1 <> t2
     InjectionF _ _ t -> t
+    KMapF def [] Nothing -> [kmapUnitSymbol def | check $ kmapUnitSymbol def]
+    KMapF _ [] (Just t) -> t
+    KMapF def kvs t ->
+        let
+            concatSymbol = kmapConcatSymbol def
+            elementSymbol = kmapElementSymbol def
+            unitSymbol = kmapUnitSymbol def
+         in
+            (if check concatSymbol then (concatSymbol :) else id) $
+                (if check elementSymbol then (elementSymbol :) else id) $
+                    (if check unitSymbol then (unitSymbol :) else id) $
+                        concatMap (uncurry (<>)) kvs ++ fromMaybe [] t
     _ -> []
 
 isBottom :: Pattern -> Bool
