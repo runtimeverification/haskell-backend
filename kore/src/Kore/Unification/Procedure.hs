@@ -51,7 +51,7 @@ runUnifier ::
     Simplifier [a]
 runUnifier unifier = evalStateT (Logic.observeAllT unifier) HashMap.empty
 
-{- |'unificationProcedure' attempts to simplify @t1 = t2@, assuming @t1@ and
+{- | 'unificationProcedure' attempts to simplify @t1 = t2@, assuming @t1@ and
  @t2@ are terms (total patterns) to a substitution.
  If successful, it also produces a proof of how the substitution was obtained.
 -}

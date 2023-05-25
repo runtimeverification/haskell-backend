@@ -536,7 +536,7 @@ instance Attribute.HasConstructorLike (TermAttributes variable) where
         TermAttributes{termConstructorLike} =
             termConstructorLike
 
-instance (Ord variable) => From KeyAttributes (TermAttributes variable) where
+instance Ord variable => From KeyAttributes (TermAttributes variable) where
     from = fromKeyAttributes
 
 attributeSimplifiedAttribute ::
@@ -588,7 +588,7 @@ assertSimplifiedConsistency :: HasCallStack => TermAttributes variable -> a -> a
 assertSimplifiedConsistency
     TermAttributes{termConstructorLike, termSimplified}
         | Attribute.isConstructorLike termConstructorLike
-          , not (Attribute.isSimplifiedAnyCondition termSimplified) =
+        , not (Attribute.isSimplifiedAnyCondition termSimplified) =
             error "Inconsistent attributes, constructorLike implies fully simplified."
         | otherwise = id
 
@@ -655,8 +655,8 @@ data TermLike variable = TermLike__
     -- Some fields below are lazy to better match Cofree. Which do we actually
     -- want to be lazy, if any?
     { _tlAttributes :: ~(TermAttributes variable)
-    , -- | A hash of @_tlTermLikeF@
-      _tlHash :: ~Int
+    , _tlHash :: ~Int
+    -- ^ A hash of @_tlTermLikeF@
     , _tlTermLikeF :: ~(TermLikeF variable (TermLike variable))
     }
     deriving stock (Show)
@@ -831,7 +831,8 @@ vacuousVariables (TermLike__ attrs hsh termLikeF) = TermLike__ attrs' hsh (vacuo
   where
     !attrs' = attrs{termFreeVariables = FreeVariables.emptyFreeVariables}
 
-vacuousVariablesF :: forall variable. TermLikeF Concrete (TermLike Concrete) -> TermLikeF variable (TermLike variable)
+vacuousVariablesF ::
+    forall variable. TermLikeF Concrete (TermLike Concrete) -> TermLikeF variable (TermLike variable)
 vacuousVariablesF = runIdentity . traverseVariablesF adjuster . fmap vacuousVariables
   where
     adjuster = AdjSomeVariableName (ElementVariableName absurd) (SetVariableName absurd)
@@ -974,11 +975,11 @@ fromKeyAttributes attrs =
 toKeyAttributes :: TermAttributes variable -> Maybe KeyAttributes
 toKeyAttributes attrs@(TermAttributes _ _ _ _ _ _ _ _)
     | Attribute.nullFreeVariables termFreeVariables
-      , Attribute.isTotal termTotal
-      , Attribute.isFunction termFunction
-      , Attribute.isDefined termDefined
-      , Attribute.isSimplifiedAnyCondition termSimplified
-      , Attribute.isConstructorLike termConstructorLike =
+    , Attribute.isTotal termTotal
+    , Attribute.isFunction termFunction
+    , Attribute.isDefined termDefined
+    , Attribute.isSimplifiedAnyCondition termSimplified
+    , Attribute.isConstructorLike termConstructorLike =
         Just $ KeyAttributes termSort
     | otherwise = Nothing
   where
@@ -1331,10 +1332,12 @@ uninternalize = Pattern.Pattern . Recursive.cata go
                 if boolValue then "true" else "false"
         InternalBytesF (Const (InternalBytes bytesSort bytesValue)) ->
             uninternalizeInternalValue bytesSort $
-                Encoding.decode8Bit $ ByteString.fromShort bytesValue
+                Encoding.decode8Bit $
+                    ByteString.fromShort bytesValue
         InternalIntF (Const (InternalInt intSort intValue)) ->
             uninternalizeInternalValue intSort $
-                Text.pack $ show intValue
+                Text.pack $
+                    show intValue
         InternalStringF (Const (InternalString stringSort stringValue)) ->
             uninternalizeInternalValue stringSort stringValue
         InternalListF internalList -> uninternalizeInternalList internalList
@@ -1344,15 +1347,18 @@ uninternalize = Pattern.Pattern . Recursive.cata go
         EndiannessF (Const endianness) ->
             wrap $
                 PatternF.ApplicationF $
-                    first Symbol.toSymbolOrAlias $ Endianness.toApplication endianness
+                    first Symbol.toSymbolOrAlias $
+                        Endianness.toApplication endianness
         SignednessF (Const signedness) ->
             wrap $
                 PatternF.ApplicationF $
-                    first Symbol.toSymbolOrAlias $ Signedness.toApplication signedness
+                    first Symbol.toSymbolOrAlias $
+                        Signedness.toApplication signedness
         InjF inj ->
             wrap $
                 PatternF.ApplicationF $
-                    first Symbol.toSymbolOrAlias $ Inj.toApplication inj
+                    first Symbol.toSymbolOrAlias $
+                        Inj.toApplication inj
       where
         wrap x = CofreeT $ Identity $ attr :< x
         uninternalizeInternalValue sort strVal =
@@ -1360,7 +1366,9 @@ uninternalize = Pattern.Pattern . Recursive.cata go
                 PatternF.DomainValueF $
                     DomainValue sort $
                         wrap $
-                            PatternF.StringLiteralF $ Const $ StringLiteral strVal
+                            PatternF.StringLiteralF $
+                                Const $
+                                    StringLiteral strVal
 
         -- The uninternalized lists and ac types are all of the following form:
         -- If the structure has no elements, we simply get the application of the unit symbol with no arguments

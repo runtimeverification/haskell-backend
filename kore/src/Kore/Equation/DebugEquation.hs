@@ -45,7 +45,12 @@ import Kore.Internal.OrCondition (OrCondition)
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Predicate (Predicate)
 import Kore.Internal.SideCondition (SideCondition)
-import Kore.Internal.TermLike (AstLocation (AstLocationFile), FileLocation, SomeVariableName, TermLike)
+import Kore.Internal.TermLike (
+    AstLocation (AstLocationFile),
+    FileLocation,
+    SomeVariableName,
+    TermLike,
+ )
 import Kore.Rewrite.Axiom.MatcherData (
     MatchResult,
  )

@@ -52,7 +52,7 @@ import Kore.Validate.Verifier
 import Kore.Verified qualified as Verified
 import Prelude.Kore
 
-{- |'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
+{- | 'verifyDefinition' verifies the welformedness of a Kore 'Definition'.
 
 It does not fully verify the validity of object-meta combinations of patterns,
 e.g.:
@@ -79,7 +79,7 @@ verifyDefinition builtinVerifiers definition = do
         verifyAndIndexDefinition builtinVerifiers definition
     verifySuccess
 
-{- |'verifyAndIndexDefinition' verifies a definition and returns an indexed
+{- | 'verifyAndIndexDefinition' verifies a definition and returns an indexed
 collection of the definition's modules.
 -}
 verifyAndIndexDefinition ::
@@ -96,7 +96,7 @@ verifyAndIndexDefinition builtinVerifiers definition = do
             definition
     return indexedModules
 
-{- |Verifies a `ParsedDefinition` against a preverified definition, consisting of
+{- | Verifies a `ParsedDefinition` against a preverified definition, consisting of
 map of indexed modules and a map of defined names.
 
 If verification is successfull, it returns the updated maps of indexed modules

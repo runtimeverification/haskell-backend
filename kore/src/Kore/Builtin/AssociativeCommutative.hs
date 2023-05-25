@@ -152,16 +152,16 @@ class
         normalized Key (TermLike variable) ->
         TermLike variable
 
-    -- |Transforms a @TermLike@ representation into a @NormalizedOrBottom@.
+    -- | Transforms a @TermLike@ representation into a @NormalizedOrBottom@.
     --
-    --    The term may become bottom if we had conflicts between elements that were
-    --    not detected before, e.g.
+    --     The term may become bottom if we had conflicts between elements that were
+    --     not detected before, e.g.
     --
-    --    @
-    --    concat({1}, concat(X:Set, {1}))
-    --    concat(elem(Y:Int), concat({1}, elem(Y:Int)))
-    --    concat(X:Set, concat({1}, X:Set))
-    --    @
+    --     @
+    --     concat({1}, concat(X:Set, {1}))
+    --     concat(elem(Y:Int), concat({1}, elem(Y:Int)))
+    --     concat(X:Set, concat({1}, X:Set))
+    --     @
     toNormalized ::
         HasCallStack =>
         Ord variable =>
@@ -1511,7 +1511,7 @@ noCheckUnifyOpaqueChildren unifyChildren v1 second = do
     let (opaque, predicate) = Conditional.splitTerm unifier
     return ([] `Conditional.withCondition` predicate, [opaque])
 
-{- |Unifies two patterns represented as @ConcreteOrWithVariable@, making sure
+{- | Unifies two patterns represented as @ConcreteOrWithVariable@, making sure
 that a concrete pattern (if any) is sent on the first position of the unify
 function.
 
@@ -1632,7 +1632,7 @@ unifyEqualsElementPermutations unifier firsts seconds = do
         predicate = foldr andCondition Condition.top predicates
     return (terms `withCondition` predicate, remainderFirst, remainderSecond)
 
-{- |Given two lists generates k-permutation pairings and merges them using the
+{- | Given two lists generates k-permutation pairings and merges them using the
 provided merge function.
 
 k is the length of the second list, which means that, if the @[b]@ list is

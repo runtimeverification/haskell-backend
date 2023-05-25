@@ -48,6 +48,7 @@ import Kore.Rewrite.RulePattern as RulePattern (
  )
 import Kore.Rewrite.Strategy (Step)
 import Kore.Rewrite.Strategy qualified as Strategy
+import Kore.Simplify.Simplify (SimplifierTrace)
 import Kore.Syntax.Variable
 import Prelude.Kore
 import Test.Kore.Internal.Pattern qualified as Pattern
@@ -172,7 +173,8 @@ test_stepStrategy =
                                 )
                                 Mock.c
                             ]
-                    let -- f( X ) /\ not( a == f( X ) )
+                    let
+                        -- f( X ) /\ not( a == f( X ) )
                         firstRemainderPattern =
                             Pattern.fromTermAndPredicate
                                 (Mock.functionalConstr10 (Mock.f xTerm))
@@ -353,7 +355,7 @@ runStep ::
     Limit Natural ->
     -- | execution mode
     ExecutionMode ->
-    -- |left-hand-side of unification
+    -- | left-hand-side of unification
     Pattern VariableName ->
     [RewriteRule RewritingVariableName] ->
     IO [ProgramState (Pattern VariableName)]
@@ -366,7 +368,7 @@ runStepSMT ::
     Limit Natural ->
     -- | execution mode
     ExecutionMode ->
-    -- |left-hand-side of unification
+    -- | left-hand-side of unification
     Pattern VariableName ->
     [RewriteRule RewritingVariableName] ->
     IO [ProgramState (Pattern VariableName)]
@@ -376,7 +378,7 @@ runStepWorker ::
     result
         ~ Strategy.ExecutionGraph
             (ProgramState (Pattern RewritingVariableName))
-            (RewriteRule RewritingVariableName) =>
+            (RewriteRule RewritingVariableName, Strategy.Seq SimplifierTrace) =>
     (Env -> Simplifier result -> IO result) ->
     -- | depth limit
     Limit Natural ->
@@ -384,7 +386,7 @@ runStepWorker ::
     Limit Natural ->
     -- | execution mode
     ExecutionMode ->
-    -- |left-hand-side of unification
+    -- | left-hand-side of unification
     Pattern VariableName ->
     [RewriteRule RewritingVariableName] ->
     IO [ProgramState (Pattern VariableName)]

@@ -5,7 +5,7 @@ exec kore-exec \
     --module VERIFICATION \
     --strategy all \
     --max-counterexamples 1 \
-    --smt-timeout 40 \
+    --smt-timeout 99 \
     --smt-retry-limit 1 \
     --smt-reset-interval 100 \
     --smt z3 \
@@ -15,6 +15,8 @@ exec kore-exec \
     --prove test-sum-to-n-spec.kore \
     --spec-module SUM-TO-N-SPEC \
     --graph-search breadth-first \
+     \
+     \
      \
      \
      \

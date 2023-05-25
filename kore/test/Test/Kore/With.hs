@@ -105,7 +105,7 @@ class With a b where
 
 newtype Attribute = Attribute {getAttribute :: AttributePattern}
 
-instance (With b c) => With (a -> b) (a -> c) where
+instance With b c => With (a -> b) (a -> c) where
     with fb fc = \a -> fb a `with` fc a
 
 instance With [a] a where

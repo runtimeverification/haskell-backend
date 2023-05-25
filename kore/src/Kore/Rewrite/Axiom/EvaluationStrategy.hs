@@ -111,7 +111,7 @@ attemptEquationAndAccumulateErrors condition term equation =
                 term
                 equation
                 >>= either (return . Left . Just . Min) (fmap Right . apply)
-    apply = Equation.applyEquation condition equation
+    apply = Equation.applyEquation condition term equation
 
 attemptEquations ::
     Monoid error =>
@@ -137,7 +137,7 @@ simplificationEvaluation equation =
                 condition
                 term
                 equation
-        let apply = Equation.applyEquation condition equation
+        let apply = Equation.applyEquation condition term equation
         case result of
             Right applied -> do
                 results <- apply applied
@@ -188,8 +188,8 @@ evaluateBuiltin
             case result of
                 AttemptedAxiom.NotApplicable
                     | App_ appHead children <- patt
-                      , Just hook_ <- Text.unpack <$> Attribute.getHook (symbolHook appHead)
-                      , all isValue children ->
+                    , Just hook_ <- Text.unpack <$> Attribute.getHook (symbolHook appHead)
+                    , all isValue children ->
                         (error . show . Pretty.vsep)
                             [ "Expecting hook "
                                 <> Pretty.squotes (Pretty.pretty hook_)

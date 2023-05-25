@@ -17,7 +17,7 @@ import Kore.Syntax.Definition
 import Kore.Validate.Error
 import Prelude.Kore
 
--- |'verifySort' verifies the welformedness of a Kore 'Sort'.
+-- | 'verifySort' verifies the welformedness of a Kore 'Sort'.
 verifySort ::
     MonadError (Error VerifyError) m =>
     -- | Provides a sortMetaSorts description.

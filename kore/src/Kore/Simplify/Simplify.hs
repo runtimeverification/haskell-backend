@@ -57,6 +57,8 @@ module Kore.Simplify.Simplify (
     -- * Re-exports
     MonadSMT,
     MonadLog,
+    runSimplifierLogged,
+    SimplifierTrace (..),
 ) where
 
 import Control.Monad.Base (MonadBase)
@@ -77,9 +79,11 @@ import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HashMap
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
+import Data.Sequence (Seq)
 import Data.Text (Text)
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
+import Kore.Attribute.Axiom (UniqueId)
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Debug
 import Kore.Equation.DebugEquation (AttemptEquationError)
@@ -149,6 +153,13 @@ data Env = Env
     , hookedSymbols :: !(Map Id Text)
     }
 
+data SimplifierTrace = SimplifierTrace
+    { originalTerm :: TermLike RewritingVariableName
+    , equationId :: UniqueId
+    , rewrittenTerm :: Pattern RewritingVariableName
+    }
+    deriving stock (Eq, Show)
+
 {- | @Simplifier@ represents a simplification action.
 
 A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
@@ -156,12 +167,12 @@ A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
 A @Simplifier@ can write to the log through 'HasLog'.
 -}
 newtype Simplifier a
-    = Simplifier (StateT SimplifierCache (ReaderT Env SMT) a)
+    = Simplifier (StateT (SimplifierCache, Seq SimplifierTrace) (ReaderT Env SMT) a)
     deriving newtype (Functor, Applicative, Monad)
     deriving newtype (MonadSMT, MonadLog, MonadProf)
     deriving newtype (MonadIO, MonadCatch, MonadThrow, MonadMask)
     deriving newtype (MonadReader Env)
-    deriving newtype (MonadState SimplifierCache)
+    deriving newtype (MonadState (SimplifierCache, Seq SimplifierTrace))
     deriving newtype (MonadBase IO, MonadBaseControl IO)
 
 {- | Run a simplification, returning the result of only one branch.
@@ -172,7 +183,15 @@ that may branch.
 -}
 runSimplifier :: Env -> Simplifier a -> SMT a
 runSimplifier env (Simplifier simplifier) =
-    runReaderT (evalStateT simplifier initCache) env
+    runReaderT (evalStateT simplifier (initCache, mempty)) env
+
+runSimplifierLogged :: Env -> Simplifier a -> SMT (Seq SimplifierTrace, a)
+runSimplifierLogged env (Simplifier simplifier) =
+    runReaderT
+        ( runStateT simplifier (initCache, mempty) >>= \(res, (_, logs)) ->
+            pure (logs, res)
+        )
+        env
 
 -- | Run a simplification, returning the results along all branches.
 runSimplifierBranch ::
@@ -209,17 +228,22 @@ class (MonadIO m, MonadLog m, MonadSMT m) => MonadSimplify m where
     simplifyCondition sideCondition conditional = do
         results <-
             lift . lift $
-                observeAllT $ simplifyCondition sideCondition conditional
+                observeAllT $
+                    simplifyCondition sideCondition conditional
         scatter results
     {-# INLINE simplifyCondition #-}
 
     localAxiomEquations ::
-        (Map AxiomIdentifier [Equation RewritingVariableName] -> Map AxiomIdentifier [Equation RewritingVariableName]) ->
+        ( Map AxiomIdentifier [Equation RewritingVariableName] ->
+          Map AxiomIdentifier [Equation RewritingVariableName]
+        ) ->
         m a ->
         m a
     default localAxiomEquations ::
         (MFunctor t, MonadSimplify n, m ~ t n) =>
-        (Map AxiomIdentifier [Equation RewritingVariableName] -> Map AxiomIdentifier [Equation RewritingVariableName]) ->
+        ( Map AxiomIdentifier [Equation RewritingVariableName] ->
+          Map AxiomIdentifier [Equation RewritingVariableName]
+        ) ->
         m a ->
         m a
     localAxiomEquations locally =
@@ -267,10 +291,10 @@ askOverloadSimplifier :: MonadSimplify m => m OverloadSimplifier
 askOverloadSimplifier = liftSimplifier $ asks overloadSimplifier
 
 getCache :: MonadSimplify m => m SimplifierCache
-getCache = liftSimplifier get
+getCache = fst <$> liftSimplifier get
 
 putCache :: MonadSimplify m => SimplifierCache -> m ()
-putCache = liftSimplifier . put
+putCache c = liftSimplifier $ modify $ \(_c, rules) -> (c, rules)
 
 askHookedSymbols :: MonadSimplify m => m (Map Id Text)
 askHookedSymbols = liftSimplifier $ asks hookedSymbols
@@ -453,7 +477,7 @@ firstFullEvaluation simplifiers =
     BuiltinAndAxiomSimplifier
         (applyFirstSimplifierThatWorks simplifiers)
 
-{- |Whether a term cannot be simplified regardless of the side condition,
+{- | Whether a term cannot be simplified regardless of the side condition,
 or only with the current side condition.
 
 Example usage for @applyFirstSimplifierThatWorksWorker@:
@@ -547,10 +571,10 @@ applyFirstSimplifierThatWorksWorker
 
 -- | A type holding the result of applying an axiom to a pattern.
 data AttemptedAxiomResults variable = AttemptedAxiomResults
-    { -- | The result of applying the axiom
-      results :: !(OrPattern variable)
-    , -- | The part of the pattern that was not rewritten by the axiom.
-      remainders :: !(OrPattern variable)
+    { results :: !(OrPattern variable)
+    -- ^ The result of applying the axiom
+    , remainders :: !(OrPattern variable)
+    -- ^ The part of the pattern that was not rewritten by the axiom.
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -654,12 +678,12 @@ exceptNotApplicable ::
 exceptNotApplicable =
     fmap (either (const NotApplicable) Applied) . runExceptT
 
--- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
+-- | Yields a pure 'Simplifier' which always returns 'NotApplicable'
 notApplicableAxiomEvaluator ::
     Applicative m => m (AttemptedAxiom RewritingVariableName)
 notApplicableAxiomEvaluator = pure NotApplicable
 
--- |Yields a pure 'Simplifier' which produces a given 'TermLike'
+-- | Yields a pure 'Simplifier' which produces a given 'TermLike'
 purePatternAxiomEvaluator ::
     Applicative m =>
     TermLike RewritingVariableName ->

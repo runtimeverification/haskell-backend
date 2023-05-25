@@ -88,10 +88,10 @@ data ExecutionGraph config rule = ExecutionGraph
 -}
 data ChildNode config rule = ChildNode
     { config :: config
-    , -- | The predecessor configurations in the execution graph and the sequence
-      -- of rules applied from the parent configuration to the present
-      -- configuration.
-      parents :: [(Seq rule, Graph.Node)]
+    , parents :: [(Seq rule, Graph.Node)]
+    -- ^ The predecessor configurations in the execution graph and the sequence
+    -- of rules applied from the parent configuration to the present
+    -- configuration.
     }
     deriving stock (Eq, Show, Functor)
 

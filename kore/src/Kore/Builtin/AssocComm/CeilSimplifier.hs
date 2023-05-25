@@ -202,7 +202,9 @@ definePairWiseElements ::
     MkNotMember normalized RewritingVariableName ->
     InternalAc Key normalized (TermLike RewritingVariableName) ->
     PairWiseElements normalized Key (TermLike RewritingVariableName) ->
-    MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) (MultiAnd (Predicate RewritingVariableName))
+    MaybeT
+        (ReaderT (SideCondition RewritingVariableName) Simplifier)
+        (MultiAnd (Predicate RewritingVariableName))
 definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
     definedKeyPairs <-
         traverse

@@ -1040,15 +1040,15 @@ rewriteAxiomPriority lhsName rhsName priority antiLeft =
         . withPriority priority
         . mkAxiom_
     )
-        $ rewriteRuleToTerm $
-            RewriteRule
-                RulePattern
-                    { left = applyToNoArgs mySort lhsName
-                    , antiLeft
-                    , requires = makeTruePredicate
-                    , rhs = injectTermIntoRHS (applyToNoArgs mySort rhsName)
-                    , attributes = def
-                    }
+        $ rewriteRuleToTerm
+        $ RewriteRule
+            RulePattern
+                { left = applyToNoArgs mySort lhsName
+                , antiLeft
+                , requires = makeTruePredicate
+                , rhs = injectTermIntoRHS (applyToNoArgs mySort rhsName)
+                , attributes = def
+                }
   where
     withPriority =
         maybe id (axiomWithAttribute . Attribute.Axiom.priorityAttribute)
@@ -1213,7 +1213,13 @@ rpcExecTest ::
     SMT (TraversalResult (RpcExecState VariableName))
 rpcExecTest cutPointLs terminalLs depthLimit verifiedModule initial =
     makeSerializedModule verifiedModule >>= \serializedModule ->
-        rpcExec depthLimit Nothing DisableMovingAverage serializedModule (StopLabels cutPointLs terminalLs) initial
+        rpcExec
+            depthLimit
+            Nothing
+            DisableMovingAverage
+            serializedModule
+            (StopLabels cutPointLs terminalLs)
+            initial
 
 -- TODO(Ana): these functions should run the procedures twice,
 -- once with the experimental simplifier enabled and once with it

@@ -813,7 +813,8 @@ findUnprovenGoals (Strategy.graph -> graph) =
 currentClaimSort :: MonadState ReplState m => m Sort
 currentClaimSort = do
     claim <- Lens.use (field @"claim")
-    return . TermLike.termLikeSort
+    return
+        . TermLike.termLikeSort
         . Pattern.toTermLike
         . getConfiguration
         $ claim
@@ -863,8 +864,8 @@ createNewDefinition mainModuleName name claims =
         Module
             { moduleName = ModuleName . pack $ name
             , moduleSentences =
-                importVerification :
-                fmap claimToSentence claims
+                importVerification
+                    : fmap claimToSentence claims
             , moduleAttributes = Default.def
             }
 

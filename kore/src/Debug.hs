@@ -196,7 +196,7 @@ debugPrecGeneric a =
 
 debugPrecAux ::
     forall xss ann.
-    (All SOP.Top xss) =>
+    All SOP.Top xss =>
     NP ConstructorInfo xss ->
     SOP (K (Int -> Doc ann)) xss ->
     -- | Surrounding precedence
@@ -392,7 +392,7 @@ instance (Typeable a, Typeable b) => Debug (a -> b) where
         parens (precOut > 0) $
             "_" <+> "::" <+> (Pretty.pretty . show) (typeOf f)
 
-instance (Debug a) => Debug (Hashed a) where
+instance Debug a => Debug (Hashed a) where
     debugPrec h precOut =
         parens (precOut >= 10) ("Data.Hashable.hashed" <+> debug (unhashed h))
 

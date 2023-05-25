@@ -24,6 +24,7 @@ module Kore.Rewrite (
 import Control.Monad (
     foldM,
  )
+import Control.Monad.State (get, modify)
 import Data.Limit (
     Limit (..),
  )
@@ -171,7 +172,7 @@ transitionRule ::
     ExecutionMode ->
     TransitionRule
         Simplifier
-        (RewriteRule RewritingVariableName)
+        (RewriteRule RewritingVariableName, Seq SimplifierTrace)
         (ProgramState (Pattern RewritingVariableName))
 transitionRule rewriteGroups = transitionRuleWorker
   where
@@ -227,7 +228,7 @@ transitionRule rewriteGroups = transitionRuleWorker
 deriveResults ::
     Comonad w =>
     Result.Results (w (RulePattern variable)) a ->
-    TransitionT (RewriteRule variable) m (ProgramState a)
+    TransitionT (RewriteRule variable, Seq SimplifierTrace) Simplifier (ProgramState a)
 deriveResults Result.Results{results, remainders} =
     if null results && null remainders
         then pure Bottom
@@ -235,7 +236,9 @@ deriveResults Result.Results{results, remainders} =
   where
     addResults results' = asum (addResult <$> results')
     addResult Result.Result{appliedRule, result} = do
-        addRule (RewriteRule $ extract appliedRule)
+        (_, rules :: Seq SimplifierTrace) <- lift get
+        lift $ modify $ \(cache, _rules) -> (cache, mempty)
+        addRule (RewriteRule $ extract appliedRule, rules)
         asum (pure . Rewritten <$> toList result)
     addRemainders remainders' =
         asum (pure . Remaining <$> toList remainders')

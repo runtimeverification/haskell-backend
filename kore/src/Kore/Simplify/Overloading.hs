@@ -59,10 +59,10 @@ import Prelude.Kore hiding (
 
 -- | Overload solution requiring narrowing
 data Narrowing variable = Narrowing
-    { -- |narrowing substitution represented as a 'Condition'
-      narrowingSubst :: !(Condition variable)
-    , -- |the fresh variables within the narrowingSubst
-      narrowingVars :: ![ElementVariable variable]
+    { narrowingSubst :: !(Condition variable)
+    -- ^ narrowing substitution represented as a 'Condition'
+    , narrowingVars :: ![ElementVariable variable]
+    -- ^ the fresh variables within the narrowingSubst
     , overloadPair :: !(Pair (TermLike variable))
     -- overload solution
     }
@@ -73,9 +73,9 @@ data Narrowing variable = Narrowing
 
 -- | Result of applying the 'unifyOverloading' resolution procedure
 data OverloadingResolution variable
-    = -- |The overloading resolves yielding the transformed pair of terms
+    = -- | The overloading resolves yielding the transformed pair of terms
       Simple !(Pair (TermLike variable))
-    | -- |Overloading resolves, but additional narrowing is needed for solution
+    | -- | Overloading resolves, but additional narrowing is needed for solution
       WithNarrowing !(Narrowing variable)
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -263,7 +263,7 @@ unifyOverloadingCommonOverload
     (Application secondHead secondChildren)
     injProto@Inj{injTo}
         | isOverloaded firstHead
-          , isOverloaded secondHead =
+        , isOverloaded secondHead =
             case unifyOverloadWithinBound injProto firstHead secondHead injTo of
                 Nothing -> Just $ ClashResult "overloaded constructors not unifiable"
                 Just InjectedOverload{overload, injectionHead} ->
@@ -306,7 +306,7 @@ unifyOverloadingVsOverloaded
     (Application overloadedHead overloadedChildren)
     injProto
         | isOverloaded overloadingHead
-          , isConstructor overloadedHead || isOverloaded overloadedHead =
+        , isConstructor overloadedHead || isOverloaded overloadedHead =
             let ~overloadedTerm' =
                     resolveOverloading injProto overloadingHead overloadedChildren
              in if isOverloading overloadingHead overloadedHead
@@ -431,21 +431,21 @@ unifyOverloadingInjVsVariable
 
 computeNarrowing ::
     HasCallStack =>
-    -- |overloading simpifier
+    -- | overloading simpifier
     OverloadSimplifier ->
-    -- |overloading pair LHS
+    -- | overloading pair LHS
     TermLike RewritingVariableName ->
-    -- |optional injection
+    -- | optional injection
     Maybe (Inj ()) ->
-    -- |overloading symbol
+    -- | overloading symbol
     Symbol ->
-    -- |injection to overloading symbol
+    -- | injection to overloading symbol
     Inj () ->
-    -- |free vars in the unification pair
+    -- | free vars in the unification pair
     Attribute.FreeVariables RewritingVariableName ->
-    -- |injected variable (to be narrowed)
+    -- | injected variable (to be narrowed)
     ElementVariable RewritingVariableName ->
-    -- |overloaded symbol injected into the variable's sort
+    -- | overloaded symbol injected into the variable's sort
     InjectedOverload ->
     Narrowing RewritingVariableName
 computeNarrowing

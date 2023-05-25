@@ -167,14 +167,14 @@ For a set, the valueWapper would be something equivalent to @Data.Empty.T@.
 For a map, it would be something equivalent to @Identity@.
 -}
 data NormalizedAc (collection :: Type -> Type -> Type) key child = NormalizedAc
-    { -- | Non-concrete elements of the structure.
-      -- These would be of sorts @(Int, String)@ for a map from @Int@ to @String@.
-      elementsWithVariables :: [Element collection child]
-    , -- | Concrete elements of the structure.
-      -- These would be of sorts @(Int, String)@ for a map from @Int@ to @String@.
-      concreteElements :: HashMap key (Value collection child)
-    , -- | Unoptimized (i.e. non-element) parts of the structure.
-      opaque :: [child]
+    { elementsWithVariables :: [Element collection child]
+    -- ^ Non-concrete elements of the structure.
+    -- These would be of sorts @(Int, String)@ for a map from @Int@ to @String@.
+    , concreteElements :: HashMap key (Value collection child)
+    -- ^ Concrete elements of the structure.
+    -- These would be of sorts @(Int, String)@ for a map from @Int@ to @String@.
+    , opaque :: [child]
+    -- ^ Unoptimized (i.e. non-element) parts of the structure.
     }
     deriving stock (GHC.Generic)
 
@@ -392,8 +392,8 @@ retractSingleOpaqueElem
         , opaque
         }
         | null elementsWithVariables
-          , null concreteElements
-          , [singleOpaqueElem] <- opaque =
+        , null concreteElements
+        , [singleOpaqueElem] <- opaque =
             Just singleOpaqueElem
         | otherwise = Nothing
 
@@ -428,11 +428,11 @@ instance
         InternalAc{builtinAcChild} = builtin
 
 instance
-    (NFData (normalized key child)) =>
+    NFData (normalized key child) =>
     NFData (InternalAc key normalized child)
 
 instance
-    (Debug (normalized key child)) =>
+    Debug (normalized key child) =>
     Debug (InternalAc key normalized child)
 
 instance
@@ -440,7 +440,7 @@ instance
     Diff (InternalAc key normalized child)
 
 unparseInternalAc ::
-    (AcWrapper normalized) =>
+    AcWrapper normalized =>
     (key -> Pretty.Doc ann) ->
     (child -> Pretty.Doc ann) ->
     InternalAc key normalized child ->
@@ -605,13 +605,13 @@ generatePairWiseElements (unwrapAc -> normalized) =
     -- linearithmic, and reduces allocations by about half.
     pairWiseElemsOfSameTypeDistinct (List.sort -> elems) =
         [AcPair_ x y | x : ys <- List.tails elems, y <- ys]
-        & HashSet.fromList
+            & HashSet.fromList
     -- Without assuming unique elements, we additionally pay to drop any
     -- duplicates. If there are many of these, then we can `groupBy` after
     -- sorting, or build a `Set`, to bring this down to linearithmic.
     pairWiseElemsOfSameType (List.sort -> elems) =
         [AcPair_ x y | x : ys <- List.tails elems, y <- dropWhile (== x) ys]
-        & HashSet.fromList
+            & HashSet.fromList
     pairWiseElemsOfDifferentTypes elems1 elems2 =
         (,) <$> elems1 <*> elems2
             & HashSet.fromList

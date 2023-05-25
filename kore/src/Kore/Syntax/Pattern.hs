@@ -135,7 +135,7 @@ instance
         rnf annotation `seq` rnf pat
 
 instance
-    (Unparse variable) =>
+    Unparse variable =>
     Unparse (Pattern variable annotation)
     where
     unparse (Recursive.project -> _ :< pat) = unparse pat

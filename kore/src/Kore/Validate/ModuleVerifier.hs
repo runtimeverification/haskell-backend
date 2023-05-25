@@ -48,7 +48,7 @@ import Kore.Validate.SentenceVerifier qualified as SentenceVerifier
 import Kore.Validate.Verifier
 import Prelude.Kore
 
-{- |'verifyUniqueNames' verifies that names defined in a module are unique both
+{- | 'verifyUniqueNames' verifies that names defined in a module are unique both
 within the module and outside, using the provided name set.
 -}
 verifyUniqueNames ::

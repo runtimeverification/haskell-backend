@@ -41,7 +41,7 @@ import Kore.Simplify.Simplify
 import Logic qualified
 import Prelude.Kore
 
-{- |'simplify' simplifies an 'In' pattern with 'OrPattern'
+{- | 'simplify' simplifies an 'In' pattern with 'OrPattern'
 children.
 
 Right now this uses the following simplifications:

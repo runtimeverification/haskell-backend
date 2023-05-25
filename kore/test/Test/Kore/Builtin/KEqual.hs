@@ -180,7 +180,9 @@ test_KIte =
     , testCaseWithoutSMT "false" $ do
         let expect =
                 MultiOr.singleton $
-                    Pattern.fromTermLike $ inj kSort $ Test.Bool.asInternal True
+                    Pattern.fromTermLike $
+                        inj kSort $
+                            Test.Bool.asInternal True
             original =
                 kiteK
                     (Test.Bool.asInternal False)

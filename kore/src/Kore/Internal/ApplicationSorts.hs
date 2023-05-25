@@ -35,7 +35,7 @@ data ApplicationSorts = ApplicationSorts
 applicationSorts :: [Sort] -> Sort -> ApplicationSorts
 applicationSorts = ApplicationSorts
 
-{- |'symbolOrAliasSorts' builds the return and operand sorts for an application
+{- | 'symbolOrAliasSorts' builds the return and operand sorts for an application
 pattern from the given sort parameters.
 -}
 symbolOrAliasSorts ::

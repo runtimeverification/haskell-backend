@@ -273,7 +273,7 @@ apply patternHead patterns =
             , applicationChildren = patterns
             }
 
-{- |Applies the given head to the empty list of children to obtain a
+{- | Applies the given head to the empty list of children to obtain a
  constant 'ApplicationF'
 -}
 constant :: SymbolOrAlias -> PatternF variable child

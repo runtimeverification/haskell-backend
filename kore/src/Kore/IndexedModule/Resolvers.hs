@@ -87,14 +87,14 @@ sortSentencesMap ::
     Map.Map Id (Attribute.Sort, SentenceSort)
 sortSentencesMap = indexedModuleSortDescriptions
 
-{- |Given a KoreIndexedModule and a head, it looks up the 'SentenceSymbol' or
+{- | Given a KoreIndexedModule and a head, it looks up the 'SentenceSymbol' or
  'SentenceAlias', and instantiates sort parameters with the arguments
  specified by the head to obtain the corresponding 'ApplicationSorts'.
 -}
 getHeadApplicationSorts ::
     -- | Module representing an indexed definition
     IndexedModuleSyntax patternType declAtts ->
-    -- |the head we want to find sorts for
+    -- | the head we want to find sorts for
     SymbolOrAlias ->
     ApplicationSorts
 getHeadApplicationSorts m patternHead =
@@ -128,7 +128,7 @@ getSymbolAttributes m symbolId =
         Right (atts, _) -> atts
         Left _ -> error $ noSymbol symbolId
 
-{- |'resolveThing' looks up an id in an 'IndexedModule', also searching in the
+{- | 'resolveThing' looks up an id in an 'IndexedModule', also searching in the
 imported modules.
 -}
 resolveThing ::
@@ -185,7 +185,7 @@ resolveThingInternal
       where
         things = mapExtractor indexedModule
 
-{- |'resolveSymbol' looks up a symbol id in an 'IndexedModule',
+{- | 'resolveSymbol' looks up a symbol id in an 'IndexedModule',
 also searching in the imported modules.
 -}
 resolveSymbol ::
@@ -221,7 +221,7 @@ resolveInternalSymbol indexedModule symbolId = do
                 , symbolAttributes
                 }
 
-{- |'resolveAlias' looks up a symbol id in an 'IndexedModule',
+{- | 'resolveAlias' looks up a symbol id in an 'IndexedModule',
 also searching in the imported modules.
 -}
 resolveAlias ::
@@ -236,7 +236,7 @@ resolveAlias m headId =
         Just result ->
             return result
 
-{- |'resolveSort' looks up a sort id in an 'IndexedModule',
+{- | 'resolveSort' looks up a sort id in an 'IndexedModule',
 also searching in the imported modules.
 -}
 resolveSort ::
@@ -289,7 +289,8 @@ resolveHookHandler builtinName results =
                 ("Builtin " ++ Text.unpack builtinName ++ " is not hooked.")
         hookIds ->
             koreFail
-                ( "Builtin " ++ Text.unpack builtinName
+                ( "Builtin "
+                    ++ Text.unpack builtinName
                     ++ " is hooked to multiple identifiers: "
                     ++ List.intercalate
                         ", "

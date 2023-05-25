@@ -350,7 +350,8 @@ simplifyNot sideCondition Not{notChild = multiOr} = do
         MaybeT Simplifier (MultiOr (Predicate RewritingVariableName))
     applyUserDefined predicate = do
         -- produce a termlike that we can use for matching
-        let -- HAAAACK: sort stripped in NormalForm of predicates
+        let
+            -- HAAAACK: sort stripped in NormalForm of predicates
             helpSort = SortVariableSort . SortVariable $ noLocationId "SomeSort"
         -- call the equation matcher
         applied <-

@@ -12,6 +12,7 @@ module Kore.Exec (
     exec,
     rpcExec,
     StopLabels (..),
+    RuleTrace (..),
     RpcExecState (..),
     search,
     prove,
@@ -26,6 +27,7 @@ module Kore.Exec (
     SerializedModule (..),
 ) where
 
+import Control.Arrow (Arrow ((&&&)))
 import Control.Concurrent.MVar
 import Control.DeepSeq (
     deepseq,
@@ -55,9 +57,10 @@ import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
-import Data.Sequence (Seq)
+import Data.Sequence (Seq, (><))
 import Data.Text (Text)
 import GHC.Generics qualified as GHC
+import Kore.Attribute.Axiom (Label, UniqueId)
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Attribute.Definition
 import Kore.Attribute.Symbol (
@@ -195,6 +198,7 @@ import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (
     MonadSimplify (liftSimplifier),
     Simplifier,
+    SimplifierTrace,
     askMetadataTools,
  )
 import Kore.Syntax.Module (
@@ -351,8 +355,8 @@ exec
         execStrategy :: [Strategy.Step Prim]
         execStrategy =
             Limit.takeWithin depthLimit $
-                [Begin, Simplify, Rewrite, Simplify] :
-                repeat [Begin, Rewrite, Simplify]
+                [Begin, Simplify, Rewrite, Simplify]
+                    : repeat [Begin, Rewrite, Simplify]
 
         transit ::
             GraphTraversal.TState
@@ -399,14 +403,21 @@ data StopLabels = StopLabels
     , terminalLabels :: [Text]
     }
 
+data RuleTrace = RuleTrace
+    { simplifications :: Seq SimplifierTrace
+    , ruleId :: UniqueId
+    , ruleLabel :: Label
+    }
+    deriving stock (Eq, Show)
+
 -- | Type for json-rpc execution state, for readability
 data RpcExecState v = RpcExecState
-    { -- | program state
-      rpcProgState :: ProgramState (Pattern v)
-    , -- | rule label/id we have stopped on
-      rpcRule :: Maybe Text
-    , -- | execution depth
-      rpcDepth :: ExecDepth
+    { rpcProgState :: ProgramState (Pattern v)
+    -- ^ program state
+    , rpcRules :: Seq RuleTrace
+    -- ^ rule label/ids we have applied so far
+    , rpcDepth :: ExecDepth
+    -- ^ execution depth
     }
     deriving stock (Eq, Show)
 
@@ -414,7 +425,7 @@ startState :: TermLike RewritingVariableName -> RpcExecState RewritingVariableNa
 startState t =
     RpcExecState
         { rpcProgState = Start $ Pattern.fromTermLike t
-        , rpcRule = Nothing
+        , rpcRules = mempty
         , rpcDepth = ExecDepth 0
         }
 
@@ -481,8 +492,8 @@ rpcExec
         execStrategy :: [Strategy.Step Prim]
         execStrategy =
             Limit.takeWithin depthLimit $
-                [Begin, Simplify, Rewrite, Simplify] :
-                repeat [Begin, Rewrite, Simplify]
+                [Begin, Simplify, Rewrite, Simplify]
+                    : repeat [Begin, Rewrite, Simplify]
 
         transit ::
             GraphTraversal.TState Prim (RpcExecState RewritingVariableName) ->
@@ -503,13 +514,13 @@ rpcExec
             TransitionRule m r (ExecDepth, ProgramState (Pattern v)) ->
             TransitionRule m r (RpcExecState v)
         withRpcExecState transition =
-            \prim RpcExecState{rpcProgState, rpcRule, rpcDepth} ->
-                fmap (\(d, st) -> RpcExecState st rpcRule d) $
+            \prim RpcExecState{rpcProgState, rpcRules, rpcDepth} ->
+                fmap (\(d, st) -> RpcExecState st rpcRules d) $
                     transition prim (rpcDepth, rpcProgState)
 
         toTransitionResult ::
             RpcExecState v ->
-            [(RpcExecState v, Seq (RewriteRule v))] ->
+            [(RpcExecState v, Seq (RewriteRule v, Seq SimplifierTrace))] ->
             (GraphTraversal.TransitionResult (RpcExecState v))
         toTransitionResult prior@RpcExecState{rpcProgState = priorPState} [] =
             case priorPState of
@@ -518,23 +529,27 @@ rpcExec
                 -- returns `Final` to signal that no instructions were left.
                 Start _ -> GraphTraversal.Final prior
                 Rewritten _ -> GraphTraversal.Final prior
-        toTransitionResult prior [(next, rules)]
-            | (l : _) <- mapMaybe isCutPoint $ toList rules =
+        toTransitionResult prior@RpcExecState{rpcRules = priorRules} [(next, rules)]
+            | (_ : _) <- mapMaybe (isCutPoint . fst) (toList rules) =
                 GraphTraversal.Stop
-                    prior{rpcRule = Just l}
-                    [next]
-            | (l : _) <- mapMaybe isTerminalRule $ toList rules =
+                    prior
+                    [next{rpcRules = priorRules >< fmap extractRuleTrace rules}]
+            | (_ : _) <- mapMaybe (isTerminalRule . fst) $ toList rules =
                 GraphTraversal.Stop
-                    next{rpcRule = Just l}
+                    next{rpcRules = priorRules >< fmap extractRuleTrace rules}
                     []
-        toTransitionResult _prior [(next@RpcExecState{rpcProgState = nextPState}, _rules)] =
+        toTransitionResult RpcExecState{rpcRules = priorRules} [(next@RpcExecState{rpcProgState = nextPState}, rules)] =
             case nextPState of
-                Start _ -> GraphTraversal.Continuing next
-                Rewritten _ -> GraphTraversal.Continuing next
-                Remaining _ -> GraphTraversal.Stuck next
-                Kore.Rewrite.Bottom -> GraphTraversal.Stuck next
+                Start _ -> GraphTraversal.Continuing next{rpcRules = priorRules >< fmap extractRuleTrace rules}
+                Rewritten _ -> GraphTraversal.Continuing next{rpcRules = priorRules >< fmap extractRuleTrace rules}
+                Remaining _ -> GraphTraversal.Stuck next{rpcRules = priorRules >< fmap extractRuleTrace rules}
+                Kore.Rewrite.Bottom -> GraphTraversal.Stuck next{rpcRules = priorRules >< fmap extractRuleTrace rules}
         toTransitionResult prior (s : ss) =
             GraphTraversal.Branch prior $ fmap fst (s :| ss)
+
+        extractUniqueIdAndLabel :: RewriteRule v -> (UniqueId, Label)
+        extractUniqueIdAndLabel = (Attribute.uniqueId &&& Attribute.label) . RulePattern.attributes . getRewriteRule
+        extractRuleTrace = \(rr, simps) -> uncurry (RuleTrace simps) $ extractUniqueIdAndLabel rr
 
         -- helpers to extract a matched rule label or identifier
         isCutPoint, isTerminalRule :: RewriteRule v -> Maybe Text
@@ -545,10 +560,10 @@ rpcExec
             labels
             (RewriteRule RulePattern{attributes = Attribute.Axiom{label, uniqueId}})
                 | Just lbl <- Attribute.unLabel label
-                  , lbl `elem` labels =
+                , lbl `elem` labels =
                     Just lbl
                 | Just uid <- Attribute.getUniqueId uniqueId
-                  , uid `elem` labels =
+                , uid `elem` labels =
                     Just uid
                 | otherwise =
                     Nothing
@@ -888,10 +903,12 @@ checkFunctions ::
 checkFunctions verifiedModule =
     evalSimplifierProofs verifiedModule $ do
         -- check if RHS is function pattern
-        equations >>= filter (not . isFunctionPattern . right)
+        equations
+            >>= filter (not . isFunctionPattern . right)
             & mapM_ errorEquationRightFunction
         -- check if two equations both match the same term
-        equations >>= inOrderPairs
+        equations
+            >>= inOrderPairs
             & filterM (uncurry bothMatch)
             >>= mapM_ (uncurry errorEquationsSameMatch)
   where
@@ -929,7 +946,7 @@ bothMatch eq1 eq2 =
      in (not . isBottom) <$> Pattern.simplify patt
 
 simplify ::
-    (Monad m) =>
+    Monad m =>
     Pattern RewritingVariableName ->
     m (Pattern RewritingVariableName)
 simplify = return
@@ -963,7 +980,7 @@ initialize ::
 initialize simplificationProcedure verifiedModule = do
     rewriteRules <-
         Logic.observeAllT $ do
-            rule <- Logic.scatter (extractRewriteAxioms verifiedModule)
+            rule <- Logic.scatter (either error id (extractRewriteAxioms verifiedModule))
             initializeRule (mapRuleVariables (pure mkRuleVariable) rule)
     pure Initialized{rewriteRules}
   where
@@ -1002,7 +1019,9 @@ initializeProver koreLogOptions definitionModule specModule maybeTrustedModule =
     let Initialized{rewriteRules} = initialized
         equations = extractEquations definitionModule
         undefinedLabels = runValidate $ validateDebugOptions equations rewriteRules koreLogOptions
-    when (isLeft undefinedLabels) $ throwM . DebugOptionsValidationError $ fromLeft mempty undefinedLabels
+    when (isLeft undefinedLabels) $
+        throwM . DebugOptionsValidationError $
+            fromLeft mempty undefinedLabels
     tools <- askMetadataTools
     let changedSpecClaims :: [MaybeChanged SomeClaim]
         changedSpecClaims = expandClaim tools <$> extractClaims specModule

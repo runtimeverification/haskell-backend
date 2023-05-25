@@ -322,9 +322,9 @@ unparseAssoc' oper ident =
     worker [x] = x
     worker (x : xs) =
         mconcat
-            ( worker' x xs :
-              line' :
-              replicate (length xs) rparen
+            ( worker' x xs
+                : line'
+                : replicate (length xs) rparen
             )
 
     worker' x [] = indent 4 x

@@ -195,7 +195,7 @@ flatten = \case
         child : _ -> MultiOrTop child
     MultiOr ors -> mergeAll ors
 
-{- |Does a very simple attempt to check whether a pattern
+{- | Does a very simple attempt to check whether a pattern
 is top or bottom.
 -}
 patternToMaybeBool ::
@@ -230,7 +230,7 @@ make ~patts = foldr go stop patts Set.empty
 The result is simplified with the 'filterOr' function.
 -}
 merge ::
-    (Ord term) =>
+    Ord term =>
     MultiOr term ->
     MultiOr term ->
     MultiOr term

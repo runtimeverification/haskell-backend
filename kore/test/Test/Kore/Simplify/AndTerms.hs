@@ -1349,7 +1349,8 @@ test_equalsTermsSimplification =
                 mconcat
                     [ Condition.assign (inject Mock.xConfig) xValue
                     , Condition.assign (inject Mock.xConfigSet) $
-                        asInternal $ Set.fromList xSetValue
+                        asInternal $
+                            Set.fromList xSetValue
                     ]
                     & pure
         actual <-
@@ -1584,7 +1585,8 @@ simplifyEquals ::
 simplifyEquals axiomEquations first second =
     (fmap . fmap) toList $
         testRunSimplifier mockEnv $
-            runMaybeT $ termEquals (simplifiedTerm first) (simplifiedTerm second)
+            runMaybeT $
+                termEquals (simplifiedTerm first) (simplifiedTerm second)
   where
     mockEnv = Mock.env{axiomEquations}
 

@@ -228,7 +228,8 @@ test_runStrategy =
         testRunSimplifier Mock.env $
             Strategy.runStrategy
                 Unlimited
-                (Claim.transitionRule Claim.EnabledStuckCheck Claim.AllowedVacuous [MockClaim (unRule goal)] [axioms])
+                ( Claim.transitionRule Claim.EnabledStuckCheck Claim.AllowedVacuous [MockClaim (unRule goal)] [axioms]
+                )
                 (toList Claim.strategy)
                 (ClaimState.Claimed . MockClaim . unRule $ goal)
     disproves ::

@@ -145,10 +145,10 @@ extractState = \case
    traversal.
 -}
 data TState instr config = TState
-    { -- | remaining steps available for the traversal
-      nextSteps :: [Step instr]
-    , -- | current configuration (i.e., claim or program state)
-      currentState :: config
+    { nextSteps :: [Step instr]
+    -- ^ remaining steps available for the traversal
+    , currentState :: config
+    -- ^ current configuration (i.e., claim or program state)
     }
 
 ----------------------------------------
@@ -323,7 +323,8 @@ graphTraversal
                         GraphTraversalCancel -> do
                             let warnThread =
                                     liftIO $
-                                        threadDelay $ getTimeout timeoutMode
+                                        threadDelay $
+                                            getTimeout timeoutMode
                             race warnThread (timeAction execStep) >>= \case
                                 Right (time, stepResult) -> do
                                     updateStepMovingAverage ma time
@@ -418,12 +419,12 @@ instance Pretty a => Pretty (TraversalResult a) where
     pretty = \case
         GotStuck n as ->
             Pretty.hang 4 . Pretty.vsep $
-                ("Got stuck with queue of " <> Pretty.pretty n) :
-                map Pretty.pretty as
+                ("Got stuck with queue of " <> Pretty.pretty n)
+                    : map Pretty.pretty as
         Aborted as ->
             Pretty.hang 4 . Pretty.vsep $
-                "Aborted with queue of " :
-                map Pretty.pretty as
+                "Aborted with queue of "
+                    : map Pretty.pretty as
         Ended as ->
             Pretty.hang 4 . Pretty.vsep $
                 "Ended" : map Pretty.pretty as
@@ -433,8 +434,8 @@ instance Pretty a => Pretty (TraversalResult a) where
                     <> ("Queue" : map Pretty.pretty qu)
         TimedOut as qu ->
             Pretty.hang 4 . Pretty.vsep $
-                ("Timed out" <> Pretty.pretty as) :
-                ("Queue" : map Pretty.pretty qu)
+                ("Timed out" <> Pretty.pretty as)
+                    : ("Queue" : map Pretty.pretty qu)
 instance Functor TraversalResult where
     fmap f = \case
         GotStuck n rs -> GotStuck n (map f rs)

@@ -5,49 +5,13 @@ on:
       - master
 
 env:
-  ghc_version: "9.2.5"
-  stack_version: "2.9.1"
+  ghc_version: "9.2.7"
+  stack_version: "2.9.3"
 
 jobs:
-
-  check:
-    name: 'Check'
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-
-      - name: 'Install Nix'
-        uses: cachix/install-nix-action@v19
-        with:
-          install_url: https://releases.nixos.org/nix/nix-2.13.3/install
-          extra_nix_config: |
-            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-            substituters = http://cache.nixos.org https://hydra.iohk.io
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
-
-      - name: Install Cachix
-        uses: cachix/cachix-action@v12
-        with:
-          name: k-framework
-          skipPush: true
-
-      - name: Materialize
-        run: nix run .#update-cabal
-
-      - name: Check materialization
-        run: |
-          if [ -n "$(git status --porcelain 'nix/')" ]; then
-            echo 2>&1 "Error: found modified files"
-            git diff
-            exit 1
-          fi
-
   release:
     name: 'Release'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -70,11 +34,11 @@ jobs:
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
 
       - name: Build
-        run: nix-build -A kore -A project.kore.checks
+        run: nix-build -A project.x86_64-linux.kore -A project.x86_64-linux.kore.checks
 
   cache-cabal:
     name: 'Cache Cabal'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Install prerequisites
         run: |
@@ -108,7 +72,7 @@ jobs:
 
   cache-stack:
     name: 'Cache Stack'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Install prerequisites
         run: |
@@ -123,10 +87,10 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.stack
-          key: stack-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
+          key: stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
           restore-keys: |
-            stack-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}
-            stack-2-${{ runner.os }}-
+            stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}
+            stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}
 
       - uses: haskell/actions/setup@v2
         id: setup-haskell-stack
@@ -142,7 +106,7 @@ jobs:
 
   cache-stack-haddock:
     name: 'Cache Stack Haddock'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Install prerequisites
         run: |
@@ -157,10 +121,10 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.stack
-          key: stack-haddock-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
+          key: stack-haddock-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
           restore-keys: |
-            stack-haddock-2-${{ runner.os }}-${{ hashFiles('stack.yaml') }}
-            stack-haddock-2-${{ runner.os }}
+            stack-haddock-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}
+            stack-haddock-2-${{ runner.os }}-ghc-${{ env.ghc_version }}
 
       - uses: haskell/actions/setup@v2
         id: setup-haskell-stack
@@ -178,7 +142,7 @@ jobs:
     name: 'Publish Release'
     runs-on: ubuntu-latest
     environment: production
-    needs: [check, release, cache-cabal, cache-stack, cache-stack-haddock]
+    needs: [release, cache-cabal, cache-stack, cache-stack-haddock]
     steps:
       - name: 'Update dependents'
         env:

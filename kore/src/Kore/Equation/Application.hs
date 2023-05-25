@@ -22,10 +22,12 @@ import Control.Error (
 import Control.Monad (
     (>=>),
  )
+import Control.Monad.State (modify)
 import Data.Map.Strict (
     Map,
  )
 import Data.Map.Strict qualified as Map
+import Data.Sequence ((|>))
 import Data.Set (
     Set,
  )
@@ -100,6 +102,7 @@ import Kore.Rewrite.SMT.Evaluator qualified as SMT
 import Kore.Rewrite.Substitution qualified as Substitution
 import Kore.Simplify.Simplify (
     Simplifier,
+    SimplifierTrace (..),
     liftSimplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
@@ -248,13 +251,15 @@ applySubstitutionAndSimplify
 
 applyEquation ::
     SideCondition RewritingVariableName ->
+    TermLike RewritingVariableName ->
     Equation RewritingVariableName ->
     Pattern RewritingVariableName ->
     Simplifier (OrPattern RewritingVariableName)
-applyEquation _ equation result = do
+applyEquation _ term equation result = do
     let results = OrPattern.fromPattern result
     let simplify = return
     debugApplyEquation equation result
+    modify $ \(cache, equations) -> (cache, equations |> SimplifierTrace term (Attribute.uniqueId (attributes equation)) result)
     simplify results
 
 {- | Use a 'MatchResult' to instantiate an 'Equation'.
@@ -312,14 +317,14 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
 
     checkConcreteVariable variable termLike
         | Set.member variable concretes
-          , (not . TermLike.isConstructorLike) termLike =
+        , (not . TermLike.isConstructorLike) termLike =
             [NotConcrete variable termLike]
         | otherwise =
             empty
 
     checkSymbolicVariable variable termLike
         | Set.member variable symbolics
-          , TermLike.isConstructorLike termLike =
+        , TermLike.isConstructorLike termLike =
             [NotSymbolic variable termLike]
         | otherwise =
             empty

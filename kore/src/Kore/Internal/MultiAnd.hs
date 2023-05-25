@@ -108,14 +108,14 @@ instance Pretty child => Pretty (MultiAnd child) where
     pretty = unparseAssoc' "\\and{_}" "\\top{_}()" . (<$>) pretty . toList
     {-# INLINE pretty #-}
 
-instance (Ord child) => Semigroup (MultiAnd child) where
+instance Ord child => Semigroup (MultiAnd child) where
     MultiAndTop <> b = b
     a <> MultiAndTop = a
     a@(MultiAndBottom _) <> _ = a
     _ <> b@(MultiAndBottom _) = b
     (MultiAnd a) <> (MultiAnd b) = MultiAnd (a <> b)
 
-instance (Ord child) => Monoid (MultiAnd child) where
+instance Ord child => Monoid (MultiAnd child) where
     mempty = MultiAndTop
 
 instance

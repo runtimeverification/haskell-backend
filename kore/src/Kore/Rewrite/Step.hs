@@ -112,7 +112,7 @@ type Results rule =
         (UnifiedRule rule)
         (Pattern (UnifyingRuleVariable rule))
 
--- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.
+-- | Unifies/matches a list a rules against a configuration. See 'unifyRule'.
 unifyRules ::
     UnifyingRule rule =>
     UnifyingRuleVariable rule ~ RewritingVariableName =>
@@ -221,7 +221,7 @@ wouldNarrowWith unified =
     Conditional{substitution} = unified
     substitutionVariables = Map.keysSet (Substitution.toMap substitution)
 
--- |Errors if configuration or matching pattern are not function-like
+-- | Errors if configuration or matching pattern are not function-like
 assertFunctionLikeResults ::
     variable ~ UnifyingRuleVariable rule =>
     InternalVariable variable =>
@@ -237,7 +237,7 @@ assertFunctionLikeResults termLike results =
             Left err -> error err
             _ -> return ()
 
--- |Checks whether configuration and matching pattern are function-like
+-- | Checks whether configuration and matching pattern are function-like
 checkFunctionLike ::
     forall variable rule f.
     InternalVariable variable =>

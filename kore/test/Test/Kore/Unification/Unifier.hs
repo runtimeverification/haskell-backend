@@ -332,8 +332,9 @@ test_unification =
                 , predicate = Predicate.makeTruePredicate
                 }
             ]
-    , testCase "f(g(X),X) = f(Y,a) https://en.wikipedia.org/wiki/Unification_(computer_science)#Examples_of_syntactic_unification_of_first-order_terms" $
-        andSimplify
+    , testCase
+        "f(g(X),X) = f(Y,a) https://en.wikipedia.org/wiki/Unification_(computer_science)#Examples_of_syntactic_unification_of_first-order_terms"
+        $ andSimplify
             (UnificationTerm (nonLinF (nonLinG nonLinX) nonLinX))
             (UnificationTerm (nonLinF nonLinY nonLinA))
             [ UnificationResult

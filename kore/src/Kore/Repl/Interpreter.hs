@@ -1246,7 +1246,7 @@ savePartialProof maybeNatural file = do
         [SomeClaim]
     removeIfRoot (ReplNode node) (ClaimIndex index) claims
         | index >= 0 && index < length claims
-          , node == 0 =
+        , node == 0 =
             take index claims
                 <> drop (index + 1) claims
         | otherwise = claims
@@ -1443,7 +1443,8 @@ prettyClaimStateComponent transformation omitList =
     -- This is only used for unparsing \bottom.
     dummySort = SortVariableSort (SortVariable "R")
     prettyComponent =
-        unparseToString . OrPattern.toTermLike dummySort
+        unparseToString
+            . OrPattern.toTermLike dummySort
             . MultiOr.map (fmap hide . getRewritingPattern)
             . transformation
     hide ::
@@ -1736,4 +1737,5 @@ withExistingDirectory path action =
     ifM
         (doesParentDirectoryExist path)
         (action path)
-        $ liftIO . hPutStrLn stderr $ "Directory does not exist."
+        $ liftIO . hPutStrLn stderr
+        $ "Directory does not exist."

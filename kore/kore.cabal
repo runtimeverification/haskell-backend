@@ -28,9 +28,6 @@ common haskell
   -- Common Haskell dialect
   default-extensions:
     BangPatterns
-    -- GHC2021 prep
-    BinaryLiterals
-    -- end
     ConstraintKinds
     DataKinds
     DefaultSignatures
@@ -39,54 +36,29 @@ common haskell
     DeriveFoldable
     DeriveFunctor
     DeriveGeneric
-    -- GHC2021 prep
-    DeriveLift
-    -- end
     DeriveTraversable
     DerivingVia
     DuplicateRecordFields
     EmptyCase
-    -- GHC2021 prep
-    EmptyDataDeriving
-    -- end
     ExistentialQuantification
     FlexibleContexts
     FlexibleInstances
-    FunctionalDependencies
     GADTs
     GeneralizedNewtypeDeriving
-    -- GHC2021 prep
-    HexFloatLiterals
-    -- end
-    InstanceSigs
-    -- GHC2021 prep
     ImportQualifiedPost
-    -- end
+    InstanceSigs
     KindSignatures
     LambdaCase
     MultiParamTypeClasses
     NamedFieldPuns
-    -- GHC2021 prep
-    NamedWildCards
-    NumericUnderscores
-    -- end
     NoImplicitPrelude
     OverloadedStrings
     PatternSynonyms
-    -- GHC2021 prep
-    PolyKinds
-    PostfixOperators
-    -- end
     RankNTypes
     ScopedTypeVariables
     StandaloneDeriving
-    -- GHC2021 prep
-    StandaloneKindSignatures
-    -- end
     Strict
-    -- GHC2021 prep
     TupleSections
-    -- end
     TypeApplications
     TypeFamilies
     TypeOperators
@@ -174,7 +146,7 @@ common library
   build-depends: mono-traversable >=1.0
   build-depends: mtl >=2.2
   build-depends: multiset >=0.3.4.3
-  build-depends: optparse-applicative >=0.14
+  build-depends: optparse-applicative >=0.14 && <0.17.1
   build-depends: parser-combinators >=1.1
   build-depends: pqueue >=1.4.1.3
   build-depends: prettyprinter >=1.2
@@ -919,7 +891,7 @@ test-suite kore-test
   build-depends: quickcheck-instances >=0.3
   build-depends: tasty >=1.2
   build-depends: tasty-golden >=2.3
-  build-depends: tasty-hedgehog >=1.0 && <1.2
+  build-depends: tasty-hedgehog >=1.3
   build-depends: tasty-hunit >=0.10
   build-depends: tasty-quickcheck >=0.10
   build-depends: tasty-test-reporter >=0.1

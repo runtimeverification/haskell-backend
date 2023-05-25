@@ -195,13 +195,13 @@ type ProvenClaims = MultiAnd SomeClaim
 
 -- | The result of proving some claims.
 data ProveClaimsResult = ProveClaimsResult
-    { -- | The conjuction of stuck claims, that is: of claims which must still be
-      -- proven. If all claims were proved, then the remaining claims are @\\top@.
-      stuckClaims :: !StuckClaims
-    , -- | The conjunction of all claims which were proven.
-      provenClaims :: !ProvenClaims
-    , -- | A count of non-final states that were not explored further
-      unexplored :: Natural
+    { stuckClaims :: !StuckClaims
+    -- ^ The conjuction of stuck claims, that is: of claims which must still be
+    -- proven. If all claims were proved, then the remaining claims are @\\top@.
+    , provenClaims :: !ProvenClaims
+    -- ^ The conjunction of all claims which were proven.
+    , unexplored :: Natural
+    -- ^ A count of non-final states that were not explored further
     }
 
 proveClaims ::
@@ -423,10 +423,10 @@ proveClaim
             noCheckSteps <> repeat stepWithClaims
           where
             noCheckSteps =
-                [Begin, Simplify, ApplyAxioms, Simplify] :
-                replicate
-                    (getMinDepth d - 1)
-                    [Begin, Simplify, ApplyAxioms, ApplyClaims, Simplify]
+                [Begin, Simplify, ApplyAxioms, Simplify]
+                    : replicate
+                        (getMinDepth d - 1)
+                        [Begin, Simplify, ApplyAxioms, ApplyClaims, Simplify]
 
         stepNoClaims =
             [Begin, Simplify, CheckImplication, ApplyAxioms, Simplify]

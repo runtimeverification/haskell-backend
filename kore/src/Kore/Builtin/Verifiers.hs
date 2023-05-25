@@ -427,7 +427,8 @@ verifySort builtinName =
         declHook <- Verifier.Attributes.parseAttributes sentenceSortAttributes
         Kore.Error.koreFailWhen
             (expectHook /= declHook)
-            ( "Sort '" ++ getIdForError sortActualName
+            ( "Sort '"
+                ++ getIdForError sortActualName
                 ++ "' is not hooked to builtin sort '"
                 ++ Text.unpack builtinName
                 ++ "'"
@@ -456,7 +457,8 @@ verifySortHasDomainValues = SortVerifier worker
                     $ sortAttr
         Kore.Error.koreFailWhen
             (not hasDomainValues)
-            ( "Sort '" ++ getIdForError sortActualName
+            ( "Sort '"
+                ++ getIdForError sortActualName
                 ++ "' does not have domain values."
             )
     worker _ (SortVariableSort SortVariable{getSortVariable}) =
@@ -544,7 +546,8 @@ verifySymbolArguments verifyArguments =
                 arity = length sorts
             Kore.Error.koreFailWhen
                 (arity /= builtinArity)
-                ( "Expected " ++ show builtinArity
+                ( "Expected "
+                    ++ show builtinArity
                     ++ " arguments, found "
                     ++ show arity
                 )

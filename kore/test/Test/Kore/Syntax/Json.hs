@@ -125,7 +125,8 @@ genIdChar =
 genStringLiteral :: Gen Text
 genStringLiteral =
     fmap T.concat $
-        Gen.list (Range.linear 0 32) $ Gen.text (Range.linear 0 128) Gen.latin1
+        Gen.list (Range.linear 0 32) $
+            Gen.text (Range.linear 0 128) Gen.latin1
 
 exactly :: Int -> Gen a -> Gen [a]
 exactly n g
@@ -363,34 +364,40 @@ headerTests =
         [
             ( "Correct test data parses"
             , assert . isRight $
-                decodeKoreJson $ withHeader "KORE" "1" aString
+                decodeKoreJson $
+                    withHeader "KORE" "1" aString
             )
         ,
             ( "Format string errors are reported"
             , diffLeft "Error in $.format: expected \"KORE\"" $
-                decodeKoreJson $ withHeader "Gore" "1" aString
+                decodeKoreJson $
+                    withHeader "Gore" "1" aString
             )
         ,
             ( "Version string errors are reported"
             , diffLeft "Error in $.version: expected 1.0" $
-                decodeKoreJson $ withHeader "KORE" "2" aString
+                decodeKoreJson $
+                    withHeader "KORE" "2" aString
             )
         ,
             ( "Payload errors are reported"
             , expectLeft ("key \"tag\" not found" `isInfixOf`) $
-                decodeKoreJson $ withHeader "KORE" "1" rubbish
+                decodeKoreJson $
+                    withHeader "KORE" "1" rubbish
             )
         ,
             ( "Format errors take precedence"
             , diffLeft "Error in $.format: expected \"KORE\"" $
-                decodeKoreJson $ withHeader "Gore" "42" rubbish
+                decodeKoreJson $
+                    withHeader "Gore" "42" rubbish
             )
         ,
             ( "Version errors take precedence"
             , diffLeft "Error in $.version: expected 1.0" $
-                decodeKoreJson $ withHeader "KORE" "42" rubbish
-                -- NB if the payload is not an object, the version
-                -- error does _not_ take precedence!
+                decodeKoreJson $
+                    withHeader "KORE" "42" rubbish
+                    -- NB if the payload is not an object, the version
+                    -- error does _not_ take precedence!
             )
         ]
   where

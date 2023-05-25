@@ -665,7 +665,11 @@ inclusionSet setLeft setRight =
 -- ** IO
 logStringSymbol :: Internal.Symbol
 logStringSymbol =
-    builtinSymbol "logString" kSort [stringSort] & hook "IO.logString" & hook "IO.logString" & hook "IO.logString" & hook "IO.logString"
+    builtinSymbol "logString" kSort [stringSort]
+        & hook "IO.logString"
+        & hook "IO.logString"
+        & hook "IO.logString"
+        & hook "IO.logString"
 -- ** String
 eqStringSymbol :: Internal.Symbol
 eqStringSymbol =

@@ -426,8 +426,8 @@ checkImplication claim =
         & runSimplifierSMT Mock.env
 
 checkSimple ::
-    (v ~ VariableName) =>
-    (rv ~ RewritingVariableName) =>
+    v ~ VariableName =>
+    rv ~ RewritingVariableName =>
     Pattern v ->
     Pattern v ->
     [ElementVariable v] ->

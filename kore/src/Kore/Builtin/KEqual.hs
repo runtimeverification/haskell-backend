@@ -141,7 +141,7 @@ builtinFunctions key
 
 evalKEq ::
     forall variable.
-    (InternalVariable variable) =>
+    InternalVariable variable =>
     Bool ->
     SideCondition variable ->
     CofreeF

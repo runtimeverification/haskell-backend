@@ -29,7 +29,7 @@ import Kore.Rewrite.SMT.Representation.All qualified as SMT.Representation (
  )
 import Prelude.Kore ()
 
-{- |Creates a set of 'MetadataTools' from a 'KoreIndexedModule'.
+{- | Creates a set of 'MetadataTools' from a 'KoreIndexedModule'.
 
  The metadata tools are functions yielding information
  about application heads, such as its attributes or

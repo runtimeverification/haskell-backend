@@ -119,9 +119,10 @@ data QualifiedAxiomPattern variable
 -- | Extracts all 'RewriteRule' axioms from a 'VerifiedModule'.
 extractRewriteAxioms ::
     VerifiedModule declAtts ->
-    [RewriteRule VariableName]
+    Either String [RewriteRule VariableName]
 extractRewriteAxioms idxMod =
-    extractRewrites
+    sequence
+        . extractRewrites
         . groupSortOn (Attribute.getPriorityOfAxiom . fst)
         . filterRewrites
         . fmap
@@ -133,7 +134,10 @@ extractRewriteAxioms idxMod =
     extractRewrites [] = []
     extractRewrites (simple : complex) =
         map (uncurry simpleRewriteTermToRule) simple
-            ++ map (uncurry complexRewriteTermToRule) (concat complex)
+            ++ map (uncurry tryComplexOrSimple) (concat complex)
+
+    tryComplexOrSimple x y =
+        complexRewriteTermToRule x y <> simpleRewriteTermToRule x y
 
     stripForall (TermLike.Forall_ _ _ child) = stripForall child
     stripForall child = child
@@ -145,7 +149,7 @@ extractRewriteAxioms idxMod =
  a verified definition.
 -}
 extractImplicationClaims ::
-    -- |'IndexedModule' containing the definition
+    -- | 'IndexedModule' containing the definition
     VerifiedModule declAtts ->
     [ ( Attribute.Axiom Internal.Symbol.Symbol VariableName
       , ImplicationRule VariableName
@@ -192,7 +196,7 @@ simpleRewriteTermToRule ::
     InternalVariable variable =>
     Attribute.Axiom Internal.Symbol.Symbol variable ->
     TermLike.Rewrites TermLike.Sort (TermLike.TermLike variable) ->
-    RewriteRule variable
+    Either String (RewriteRule variable)
 simpleRewriteTermToRule attributes pat =
     case pat of
         TermLike.Rewrites sort (TermLike.ApplyAlias_ alias params) rhs ->
@@ -202,31 +206,48 @@ simpleRewriteTermToRule attributes pat =
                         attributes
                         (TermLike.Rewrites sort (TermLike.mkAnd requires lhs) rhs)
                 _ ->
-                    (error . show . Pretty.vsep)
-                        [ "LHS alias of rule is ill-formed."
+                    let errStr =
+                            (show . Pretty.vsep)
+                                [ "LHS alias of rule is ill-formed."
+                                , Pretty.indent 4 $ unparse pat
+                                ]
+                     in Left errStr
+        -- normal rewrite axioms
+        TermLike.Rewrites _ (TermLike.And_ _ requires' lhs) rhs
+            | Right requires <- Predicate.makePredicate requires' ->
+                RewriteRule
+                    RulePattern
+                        { left = lhs
+                        , antiLeft = Nothing
+                        , requires
+                        , rhs = termToRHS rhs
+                        , attributes
+                        }
+                    & Right
+        TermLike.Rewrites _ (TermLike.And_ _ lhs requires') rhs
+            | Right requires <- Predicate.makePredicate requires' ->
+                RewriteRule
+                    RulePattern
+                        { left = lhs
+                        , antiLeft = Nothing
+                        , requires
+                        , rhs = termToRHS rhs
+                        , attributes
+                        }
+                    & Right
+        _ ->
+            let errStr =
+                    (show . Pretty.vsep)
+                        [ "Expected simple rewrite rule form, but got"
                         , Pretty.indent 4 $ unparse pat
                         ]
-        -- normal rewrite axioms
-        TermLike.Rewrites _ (TermLike.And_ _ requires lhs) rhs ->
-            RewriteRule
-                RulePattern
-                    { left = lhs
-                    , antiLeft = Nothing
-                    , requires = Predicate.wrapPredicate requires
-                    , rhs = termToRHS rhs
-                    , attributes
-                    }
-        _ ->
-            (error . show . Pretty.vsep)
-                [ "Expected simple rewrite rule form, but got"
-                , Pretty.indent 4 $ unparse pat
-                ]
+             in Left errStr
 
 complexRewriteTermToRule ::
     InternalVariable variable =>
     Attribute.Axiom Internal.Symbol.Symbol variable ->
     TermLike.Rewrites TermLike.Sort (TermLike.TermLike variable) ->
-    RewriteRule variable
+    Either String (RewriteRule variable)
 complexRewriteTermToRule attributes pat =
     case pat of
         TermLike.Rewrites
@@ -250,10 +271,12 @@ complexRewriteTermToRule attributes pat =
                                 rhs
                             )
                     _ ->
-                        (error . show . Pretty.vsep)
-                            [ "LHS alias of rule is ill-formed."
-                            , Pretty.indent 4 $ unparse pat
-                            ]
+                        let errStr =
+                                (show . Pretty.vsep)
+                                    [ "LHS alias of rule is ill-formed."
+                                    , Pretty.indent 4 $ unparse pat
+                                    ]
+                         in Left errStr
         TermLike.Rewrites
             _
             ( TermLike.And_
@@ -271,11 +294,14 @@ complexRewriteTermToRule attributes pat =
                         , rhs = termToRHS rhs
                         , attributes
                         }
+                    & Right
         _ ->
-            (error . show . Pretty.vsep)
-                [ "Expected complex rewrite rule form, but got"
-                , Pretty.indent 4 $ unparse pat
-                ]
+            let errStr =
+                    (show . Pretty.vsep)
+                        [ "Expected complex rewrite rule form, but got"
+                        , Pretty.indent 4 $ unparse pat
+                        ]
+             in Left errStr
   where
     makePredicate ::
         InternalVariable variable =>

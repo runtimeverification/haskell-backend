@@ -68,7 +68,7 @@ instance Unparse SortVariable where
     unparse = unparse . getSortVariable
     unparse2 SortVariable{getSortVariable} = unparse2 getSortVariable
 
-{- |'SortActual' corresponds to the @sort-identifier{sorts}@ branch of the
+{- | 'SortActual' corresponds to the @sort-identifier{sorts}@ branch of the
 @sort@ syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#sorts kore-syntax.md#sorts>.
 -}
 data SortActual = SortActual
@@ -94,7 +94,7 @@ instance Unparse SortActual where
                     <> parameters2 sortActualSorts
                     <> ")"
 
-{- |'Sort' corresponds to the @sort@ syntactic category from
+{- | 'Sort' corresponds to the @sort@ syntactic category from
 <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#sorts kore-syntax.md#sorts>.
 -}
 data Sort
