@@ -81,7 +81,7 @@ instance Pretty EquationTrace where
                 [ "Simplifying term"
                 , prettyTerm
                 , "to"
-                , pretty (PrettyTerm rewritten)
+                , pretty rewritten
                 , "using " <> locationInfo
                 ]
         FailedMatch _ ->
@@ -120,7 +120,7 @@ instance Pretty EquationTrace where
                 ]
       where
         locationInfo = pretty location <> " - " <> pretty label
-        prettyTerm = pretty $ PrettyTerm subjectTerm
+        prettyTerm = pretty subjectTerm
 
 isMatchFailure, isSuccess :: EquationTrace -> Bool
 isMatchFailure EquationTrace{result = FailedMatch{}} = True
@@ -232,6 +232,8 @@ applyTerm BottomUp pref =
         SymbolApplicationF sym sorts args -> do
             t <- SymbolApplication sym sorts <$> sequence args
             applyAtTop pref t
+        KMapF def keyVals rest ->
+            KMap def <$> mapM (uncurry $ liftM2 (,)) keyVals <*> sequence rest
 applyTerm TopDown pref = \t@(Term attributes _) ->
     if attributes.isEvaluated
         then pure t
@@ -270,6 +272,10 @@ applyTerm TopDown pref = \t@(Term attributes _) ->
                 else
                     SymbolApplication sym sorts
                         <$> mapM (applyTerm TopDown pref) args
+        KMap def keyVals rest ->
+            KMap def
+                <$> mapM (\(k, v) -> (,) <$> applyTerm TopDown pref k <*> applyTerm TopDown pref v) keyVals
+                <*> maybe (pure Nothing) ((Just <$>) . applyTerm TopDown pref) rest
 
 {- | Try to apply function equations and simplifications to the given
    top-level term, in priority order and per group.

@@ -47,6 +47,9 @@ import Booster.Definition.Attributes.Reader as Attributes (
 import Booster.Definition.Base as Def
 import Booster.Pattern.Base (Variable (..))
 import Booster.Pattern.Base qualified as Def
+import Booster.Pattern.Base qualified as Def.Symbol (Symbol (..))
+
+import Booster.Definition.Attributes.Base qualified as Def
 import Booster.Pattern.Index as Idx
 import Booster.Pattern.Util qualified as Util
 import Booster.Prettyprinter hiding (attributes)
@@ -254,7 +257,7 @@ addModule
                     withExcept DefinitionAttributeError $
                         (,Set.singleton (textToBS parsedSort.name.getId))
                             <$> mkAttributes parsedSort
-            sorts' <- (currentSorts <>) <$> traverse mkSortEntry newSorts
+            newSorts' <- traverse mkSortEntry newSorts
 
             -- ensure parsed symbols are not duplicates and only refer
             -- to known sorts
@@ -267,8 +270,9 @@ addModule
             unless (null symCollisions) $
                 throwE $
                     DuplicateSymbols symCollisions
+            let sorts' = currentSorts <> newSorts'
             newSymbols' <- traverse (internaliseSymbol sorts') parsedSymbols
-            let symbols = Map.fromList newSymbols' <> currentSymbols
+            symbols <- (<> currentSymbols) <$> addKmapSymbols newSorts' (Map.fromList newSymbols')
 
             let defWithNewSortsAndSymbols =
                     Partial
@@ -378,6 +382,41 @@ addModule
                 transitiveClosure $ Map.unionWith (<>) (Map.map snd priorSortMap) newSubsorts
             newSubsorts =
                 Map.fromListWith (<>) $ map (second Set.singleton . swap) subsortPairs
+
+        addKmapSymbols ::
+            Map Def.SortName (SortAttributes, Set Def.SortName) ->
+            Map Def.SymbolName Def.Symbol ->
+            Except DefinitionError (Map Def.SymbolName Def.Symbol)
+        addKmapSymbols sorts symbols = do
+            let
+                extractKeyElemSortName :: Def.SymbolName -> Except DefinitionError (Def.SortName, Def.SortName)
+                extractKeyElemSortName symbolName = case Map.lookup symbolName symbols of
+                    Just Def.Symbol{argSorts = [Def.SortApp keySortName [], Def.SortApp elemSortName []]} -> pure (keySortName, elemSortName)
+                    Just s -> throwE $ ElemSymbolMalformed s
+                    Nothing -> throwE $ ElemSymbolNotFound symbolName
+
+            -- extractedMapSymbolNames :: Map Def.SymbolName Def.KMapDefinition
+            extractedMapSymbolNames <-
+                foldM
+                    ( \rest (mapSortName, (SortAttributes{kmapAttributes}, _)) -> case kmapAttributes of
+                        Just symbolNames@KMapAttributes{unitSymbolName, elementSymbolName, concatSymbolName} -> do
+                            (keySortName, elementSortName) <- extractKeyElemSortName elementSymbolName
+                            let def = KMapDefinition{symbolNames, mapSortName, keySortName, elementSortName}
+                            pure $
+                                Map.fromList [(unitSymbolName, def), (elementSymbolName, def), (concatSymbolName, def)]
+                                    `Map.union` rest
+                        _ -> pure rest
+                    )
+                    mempty
+                    (Map.toList sorts)
+            pure $
+                Map.mapWithKey
+                    ( \symbolName sym@Def.Symbol{attributes} -> case Map.lookup symbolName extractedMapSymbolNames of
+                        Just def ->
+                            sym{Def.Symbol.attributes = attributes{Def.isKMapSymbol = Just def}}
+                        Nothing -> sym
+                    )
+                    symbols
 
 -- Result type from internalisation of different axioms
 data AxiomResult
@@ -558,6 +597,7 @@ classifyAxiom parsedAx@ParsedAxiom{axiom, sortVars, attributes} =
             | hasAttribute "comm" -> pure Nothing -- could check symbol axiom.first.name
             | hasAttribute "idem" -> pure Nothing -- could check axiom.first.name
             | hasAttribute "unit" -> pure Nothing -- could check axiom.first.name and the unit symbol in axiom.first.args
+            | hasAttribute "overload" -> pure Nothing
             | hasAttribute "simplification" -- special case of injection simplification
             , Syntax.KJApp{name = sym1} <- axiom.first
             , sym1 == Syntax.Id "inj"
@@ -1059,6 +1099,8 @@ data DefinitionError
     | DefinitionAxiomError AxiomError
     | DefinitionTermOrPredicateError TermOrPredicateError
     | AddModuleError Text
+    | ElemSymbolMalformed Def.Symbol
+    | ElemSymbolNotFound Def.SymbolName
     deriving stock (Eq, Show)
 
 instance Pretty DefinitionError where
@@ -1091,6 +1133,10 @@ instance Pretty DefinitionError where
             pretty $ "Expected a pattern but found a predicate: " <> show p
         AddModuleError msg ->
             pretty $ "Add-module error: " <> msg
+        ElemSymbolMalformed sym ->
+            pretty $ "element{} symbol is malformed: " <> show sym
+        ElemSymbolNotFound sym ->
+            pretty $ "Expected an element{} symbol " <> show sym
 
 {- | ToJSON instance (user-facing for add-module endpoint):
 Renders the error string as 'error', with minimal context.
