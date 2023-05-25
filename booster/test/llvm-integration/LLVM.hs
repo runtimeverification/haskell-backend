@@ -198,38 +198,70 @@ testDef =
         Map.empty -- no simplifications
         Map.empty -- no predicate simplifications
 
+sortMapKmap :: KMapDefinition
+sortMapKmap =
+    KMapDefinition
+        { symbolNames =
+            KMapAttributes
+                { unitSymbolName = "Lbl'Stop'Map"
+                , elementSymbolName = "Lbl'UndsPipe'-'-GT-Unds'"
+                , concatSymbolName = "Lbl'Unds'Map'Unds'"
+                }
+        , keySortName = "SortKItem"
+        , elementSortName = "SortKItem"
+        , mapSortName = "SortMap"
+        }
+
 defSorts :: Map SortName (SortAttributes, Set SortName)
 defSorts =
     Map.fromList
-        [ ("SortBool", (SortAttributes{argCount = 0}, Set.fromList ["SortBool"]))
-        , ("SortBytes", (SortAttributes{argCount = 0}, Set.fromList ["SortBytes"]))
-        , ("SortEndianness", (SortAttributes{argCount = 0}, Set.fromList ["SortEndianness"]))
-        , ("SortEven", (SortAttributes{argCount = 0}, Set.fromList ["SortEven"]))
+        [ ("SortBool", (SortAttributes{kmapAttributes = Nothing, argCount = 0}, Set.fromList ["SortBool"]))
+        , ("SortBytes", (SortAttributes{kmapAttributes = Nothing, argCount = 0}, Set.fromList ["SortBytes"]))
+        ,
+            ( "SortEndianness"
+            , (SortAttributes{kmapAttributes = Nothing, argCount = 0}, Set.fromList ["SortEndianness"])
+            )
+        , ("SortEven", (SortAttributes{kmapAttributes = Nothing, argCount = 0}, Set.fromList ["SortEven"]))
         ,
             ( "SortGeneratedCounterCell"
-            , (SortAttributes{argCount = 0}, Set.fromList ["SortGeneratedCounterCell"])
+            , (SortAttributes{kmapAttributes = Nothing, argCount = 0}, Set.fromList ["SortGeneratedCounterCell"])
             )
         ,
             ( "SortGeneratedCounterCellOpt"
             ,
-                ( SortAttributes{argCount = 0}
+                ( SortAttributes{kmapAttributes = Nothing, argCount = 0}
                 , Set.fromList ["SortGeneratedCounterCell", "SortGeneratedCounterCellOpt"]
                 )
             )
-        , ("SortGeneratedTopCell", (SortAttributes{argCount = 0}, Set.fromList ["SortGeneratedTopCell"]))
+        ,
+            ( "SortGeneratedTopCell"
+            , (SortAttributes{kmapAttributes = Nothing, argCount = 0}, Set.fromList ["SortGeneratedTopCell"])
+            )
         ,
             ( "SortGeneratedTopCellFragment"
-            , (SortAttributes{argCount = 0}, Set.fromList ["SortGeneratedTopCellFragment"])
+            ,
+                ( SortAttributes{kmapAttributes = Nothing, argCount = 0}
+                , Set.fromList ["SortGeneratedTopCellFragment"]
+                )
             )
-        , ("SortInt", (SortAttributes{argCount = 0}, Set.fromList ["SortInt"]))
-        , ("SortK", (SortAttributes{argCount = 0}, Set.fromList ["SortK"]))
-        , ("SortKCell", (SortAttributes{argCount = 0}, Set.fromList ["SortKCell"]))
-        , ("SortKCellOpt", (SortAttributes{argCount = 0}, Set.fromList ["SortKCell", "SortKCellOpt"]))
-        , ("SortKConfigVar", (SortAttributes{argCount = 0}, Set.fromList ["SortKConfigVar"]))
+        , ("SortInt", (SortAttributes{kmapAttributes = Nothing, argCount = 0}, Set.fromList ["SortInt"]))
+        , ("SortK", (SortAttributes{kmapAttributes = Nothing, argCount = 0}, Set.fromList ["SortK"]))
+        , ("SortKCell", (SortAttributes{kmapAttributes = Nothing, argCount = 0}, Set.fromList ["SortKCell"]))
+        ,
+            ( "SortKCellOpt"
+            ,
+                ( SortAttributes{kmapAttributes = Nothing, argCount = 0}
+                , Set.fromList ["SortKCell", "SortKCellOpt"]
+                )
+            )
+        ,
+            ( "SortKConfigVar"
+            , (SortAttributes{kmapAttributes = Nothing, argCount = 0}, Set.fromList ["SortKConfigVar"])
+            )
         ,
             ( "SortKItem"
             ,
-                ( SortAttributes{argCount = 0}
+                ( SortAttributes{kmapAttributes = Nothing, argCount = 0}
                 , Set.fromList
                     [ "SortBool"
                     , "SortBytes"
@@ -254,13 +286,31 @@ defSorts =
                     ]
                 )
             )
-        , ("SortList", (SortAttributes{argCount = 0}, Set.fromList ["SortList"]))
-        , ("SortMap", (SortAttributes{argCount = 0}, Set.fromList ["SortMap"]))
-        , ("SortNum", (SortAttributes{argCount = 0}, Set.fromList ["SortEven", "SortNum", "SortOdd"]))
-        , ("SortOdd", (SortAttributes{argCount = 0}, Set.fromList ["SortOdd"]))
-        , ("SortSet", (SortAttributes{argCount = 0}, Set.fromList ["SortSet"]))
-        , ("SortSignedness", (SortAttributes{argCount = 0}, Set.fromList ["SortSignedness"]))
-        , ("SortString", (SortAttributes{argCount = 0}, Set.fromList ["SortString"]))
+        , ("SortList", (SortAttributes{kmapAttributes = Nothing, argCount = 0}, Set.fromList ["SortList"]))
+        ,
+            ( "SortMap"
+            ,
+                ( SortAttributes{kmapAttributes = Just sortMapKmap.symbolNames, argCount = 0}
+                , Set.fromList ["SortMap"]
+                )
+            )
+        ,
+            ( "SortNum"
+            ,
+                ( SortAttributes{kmapAttributes = Nothing, argCount = 0}
+                , Set.fromList ["SortEven", "SortNum", "SortOdd"]
+                )
+            )
+        , ("SortOdd", (SortAttributes{kmapAttributes = Nothing, argCount = 0}, Set.fromList ["SortOdd"]))
+        , ("SortSet", (SortAttributes{kmapAttributes = Nothing, argCount = 0}, Set.fromList ["SortSet"]))
+        ,
+            ( "SortSignedness"
+            , (SortAttributes{kmapAttributes = Nothing, argCount = 0}, Set.fromList ["SortSignedness"])
+            )
+        ,
+            ( "SortString"
+            , (SortAttributes{kmapAttributes = Nothing, argCount = 0}, Set.fromList ["SortString"])
+            )
         ]
 
 defSymbols :: Map SymbolName Symbol
@@ -275,7 +325,8 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedCounterCell" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -291,7 +342,8 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedTopCell" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -307,7 +359,8 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedTopCellFragment" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -323,7 +376,8 @@ defSymbols =
                 , resultSort = SortApp "SortKCell" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -340,7 +394,8 @@ defSymbols =
                 , resultSort = SortVar "SortSort"
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -356,7 +411,8 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -372,7 +428,8 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -388,7 +445,8 @@ defSymbols =
                 , resultSort = SortApp "SortMap" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Just sortMapKmap
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -404,7 +462,8 @@ defSymbols =
                 , resultSort = SortApp "SortSet" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -420,7 +479,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -436,7 +496,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -452,7 +513,8 @@ defSymbols =
                 , resultSort = SortApp "SortMap" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -468,7 +530,8 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -484,7 +547,8 @@ defSymbols =
                 , resultSort = SortApp "SortMap" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Just sortMapKmap
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -500,7 +564,8 @@ defSymbols =
                 , resultSort = SortApp "SortSet" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsIdem
                         , isAssoc = IsAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -516,7 +581,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -532,7 +598,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -548,7 +615,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -564,7 +632,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -580,7 +649,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -596,7 +666,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -612,7 +683,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -628,7 +700,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -644,7 +717,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -660,7 +734,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -676,7 +751,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -692,7 +768,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -708,7 +785,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -724,7 +802,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -740,7 +819,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -756,7 +836,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -772,7 +853,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -788,7 +870,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -804,7 +887,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -820,7 +904,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -836,7 +921,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -852,7 +938,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -868,7 +955,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -884,7 +972,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -900,7 +989,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -916,7 +1006,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -932,7 +1023,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -948,7 +1040,8 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -964,7 +1057,8 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -980,7 +1074,8 @@ defSymbols =
                 , resultSort = SortApp "SortMap" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -996,7 +1091,8 @@ defSymbols =
                 , resultSort = SortApp "SortKItem" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1012,7 +1108,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1028,7 +1125,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1044,7 +1142,8 @@ defSymbols =
                 , resultSort = SortApp "SortMap" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Just sortMapKmap
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1060,7 +1159,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1076,7 +1176,8 @@ defSymbols =
                 , resultSort = SortApp "SortSet" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1092,7 +1193,8 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1108,7 +1210,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1124,7 +1227,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1140,7 +1244,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1156,7 +1261,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1172,7 +1278,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1189,7 +1296,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1205,7 +1313,8 @@ defSymbols =
                 , resultSort = SortApp "SortString" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1221,7 +1330,8 @@ defSymbols =
                 , resultSort = SortApp "SortEven" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1237,7 +1347,8 @@ defSymbols =
                 , resultSort = SortApp "SortOdd" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1253,7 +1364,8 @@ defSymbols =
                 , resultSort = SortApp "SortEven" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1270,7 +1382,8 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1287,7 +1400,8 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1303,7 +1417,8 @@ defSymbols =
                 , resultSort = SortApp "SortKItem" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1319,7 +1434,8 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1335,7 +1451,8 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1351,7 +1468,8 @@ defSymbols =
                 , resultSort = SortApp "SortKItem" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1367,7 +1485,8 @@ defSymbols =
                 , resultSort = SortApp "SortMap" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1383,7 +1502,8 @@ defSymbols =
                 , resultSort = SortApp "SortOdd" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1399,7 +1519,8 @@ defSymbols =
                 , resultSort = SortApp "SortOdd" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1415,7 +1536,8 @@ defSymbols =
                 , resultSort = SortApp "SortSet" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1431,7 +1553,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1447,7 +1570,8 @@ defSymbols =
                 , resultSort = SortApp "SortSet" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1463,7 +1587,8 @@ defSymbols =
                 , resultSort = SortApp "SortOdd" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1479,7 +1604,8 @@ defSymbols =
                 , resultSort = SortApp "SortEven" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1495,7 +1621,8 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1511,7 +1638,8 @@ defSymbols =
                 , resultSort = SortApp "SortEven" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1527,7 +1655,8 @@ defSymbols =
                 , resultSort = SortApp "SortOdd" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1543,7 +1672,8 @@ defSymbols =
                 , resultSort = SortApp "SortEven" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1559,7 +1689,8 @@ defSymbols =
                 , resultSort = SortApp "SortEven" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1575,7 +1706,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1591,7 +1723,8 @@ defSymbols =
                 , resultSort = SortApp "SortEndianness" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1608,7 +1741,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1624,7 +1758,8 @@ defSymbols =
                 , resultSort = SortApp "SortKItem" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1640,7 +1775,8 @@ defSymbols =
                 , resultSort = SortApp "SortKItem" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1657,7 +1793,8 @@ defSymbols =
                 , resultSort = SortApp "SortString" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1673,7 +1810,8 @@ defSymbols =
                 , resultSort = SortApp "SortNum" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1690,7 +1828,8 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1706,7 +1845,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1724,7 +1864,8 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1740,7 +1881,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1756,7 +1898,8 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedCounterCell" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1772,7 +1915,8 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedCounterCell" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1788,7 +1932,8 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedTopCell" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1804,7 +1949,8 @@ defSymbols =
                 , resultSort = SortApp "SortKCell" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1820,7 +1966,8 @@ defSymbols =
                 , resultSort = SortApp "SortSet" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1836,7 +1983,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1852,7 +2000,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1868,7 +2017,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1884,7 +2034,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1900,7 +2051,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1916,7 +2068,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1932,7 +2085,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1948,7 +2102,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1964,7 +2119,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1980,7 +2136,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1996,7 +2153,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2012,7 +2170,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2028,7 +2187,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2044,7 +2204,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2060,7 +2221,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2076,7 +2238,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2092,7 +2255,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2108,7 +2272,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2124,7 +2289,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2140,7 +2306,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2156,7 +2323,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2172,7 +2340,8 @@ defSymbols =
                 , resultSort = SortApp "SortSet" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2188,7 +2357,8 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2204,7 +2374,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2220,7 +2391,8 @@ defSymbols =
                 , resultSort = SortApp "SortEndianness" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2236,7 +2408,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2252,7 +2425,8 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2268,7 +2442,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2284,7 +2459,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2300,7 +2476,8 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedCounterCellOpt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2316,7 +2493,8 @@ defSymbols =
                 , resultSort = SortApp "SortKCellOpt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2332,7 +2510,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2349,7 +2528,8 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2366,7 +2546,8 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2382,7 +2563,8 @@ defSymbols =
                 , resultSort = SortApp "SortNum" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2398,7 +2580,8 @@ defSymbols =
                 , resultSort = SortApp "SortBool" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2414,7 +2597,8 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2430,7 +2614,8 @@ defSymbols =
                 , resultSort = SortApp "SortEndianness" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2446,7 +2631,8 @@ defSymbols =
                 , resultSort = SortApp "SortEven" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2462,7 +2648,8 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedCounterCell" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2478,7 +2665,8 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedCounterCellOpt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2494,7 +2682,8 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedTopCell" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2510,7 +2699,8 @@ defSymbols =
                 , resultSort = SortApp "SortGeneratedTopCellFragment" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2526,7 +2716,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2542,7 +2733,8 @@ defSymbols =
                 , resultSort = SortApp "SortK" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2558,7 +2750,8 @@ defSymbols =
                 , resultSort = SortApp "SortKCell" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2574,7 +2767,8 @@ defSymbols =
                 , resultSort = SortApp "SortKCellOpt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2590,7 +2784,8 @@ defSymbols =
                 , resultSort = SortApp "SortKItem" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2606,7 +2801,8 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2622,7 +2818,8 @@ defSymbols =
                 , resultSort = SortApp "SortMap" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2638,7 +2835,8 @@ defSymbols =
                 , resultSort = SortApp "SortNum" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2654,7 +2852,8 @@ defSymbols =
                 , resultSort = SortApp "SortOdd" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2670,7 +2869,8 @@ defSymbols =
                 , resultSort = SortApp "SortSet" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2686,7 +2886,8 @@ defSymbols =
                 , resultSort = SortApp "SortSignedness" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2702,7 +2903,8 @@ defSymbols =
                 , resultSort = SortApp "SortString" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2718,7 +2920,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2734,7 +2937,8 @@ defSymbols =
                 , resultSort = SortApp "SortMap" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2751,7 +2955,8 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2767,7 +2972,8 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2784,7 +2990,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2800,7 +3007,8 @@ defSymbols =
                 , resultSort = SortApp "SortSignedness" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2816,7 +3024,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2832,7 +3041,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2848,7 +3058,8 @@ defSymbols =
                 , resultSort = SortApp "SortInt" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2864,7 +3075,8 @@ defSymbols =
                 , resultSort = SortApp "SortK" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2881,7 +3093,8 @@ defSymbols =
                 , resultSort = SortApp "SortBytes" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2897,7 +3110,8 @@ defSymbols =
                 , resultSort = SortApp "SortSignedness" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2913,7 +3127,8 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2929,7 +3144,8 @@ defSymbols =
                 , resultSort = SortApp "SortMap" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2945,7 +3161,8 @@ defSymbols =
                 , resultSort = SortApp "SortList" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = PartialFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = PartialFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2961,7 +3178,8 @@ defSymbols =
                 , resultSort = SortApp "SortK" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = TotalFunction
+                        { isKMapSymbol = Nothing
+                        , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2977,7 +3195,8 @@ defSymbols =
                 , resultSort = SortApp "SortK" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2993,7 +3212,8 @@ defSymbols =
                 , resultSort = SortVar "To"
                 , attributes =
                     SymbolAttributes
-                        { symbolType = SortInjection
+                        { isKMapSymbol = Nothing
+                        , symbolType = SortInjection
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3009,7 +3229,8 @@ defSymbols =
                 , resultSort = SortApp "SortK" []
                 , attributes =
                     SymbolAttributes
-                        { symbolType = Constructor
+                        { isKMapSymbol = Nothing
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
