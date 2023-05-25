@@ -146,12 +146,13 @@ jobs:
 
       - name: Test paths to Haskell backend binaries
         run: |
-          nix develop github:runtimeverification/k/sam/nix-kore-integration-shell#kore-integration-tests \
+          K_VERSION=v$(cat deps/k_release)
+          nix develop github:runtimeverification/k/v$(cat deps/k_release)#kore-integration-tests \
                 --override-input haskell-backend . --update-input haskell-backend \
                 --command bash -c "echo kore-exec; which kore-exec; kore-exec --version; echo kore-parser; which kore-parser; kore-parser --version; echo kore-repl; which kore-repl; kore-repl --version; echo kore-match-disjunction; which kore-match-disjunction; kore-match-disjunction --version"
       - name: Run integration tests
         run: |
-          nix develop github:runtimeverification/k/sam/nix-kore-integration-shell#kore-integration-tests \
+          nix develop github:runtimeverification/k/v$(cat deps/k_release)#kore-integration-tests \
                 --override-input haskell-backend . --update-input haskell-backend \
                 --command bash -c "cd test && make -j2 --output-sync test"
 
