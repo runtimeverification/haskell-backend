@@ -51,7 +51,12 @@ testDefinition =
         }
   where
     super `withSubsorts` subs =
-        (getName super, (SortAttributes{argCount = 0}, Set.fromList (getName super : map getName subs)))
+        ( getName super
+        ,
+            ( SortAttributes{argCount = 0, kmapAttributes = Nothing}
+            , Set.fromList (getName super : map getName subs)
+            )
+        )
     -- sort variables and sort applications with arguments cause an error
     getName (SortApp n []) = n
     getName other = error $ "subSortOf: " <> show other <> " not supported"
@@ -69,9 +74,9 @@ inj :: Sort -> Sort -> Term -> Term
 inj = Injection
 
 asTotalFunction, asPartialFunction, asConstructor :: SymbolAttributes
-asTotalFunction = SymbolAttributes TotalFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias
-asPartialFunction = SymbolAttributes PartialFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias
-asConstructor = SymbolAttributes Constructor IsNotIdem IsNotAssoc IsNotMacroOrAlias
+asTotalFunction = SymbolAttributes TotalFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias Nothing
+asPartialFunction = SymbolAttributes PartialFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias Nothing
+asConstructor = SymbolAttributes Constructor IsNotIdem IsNotAssoc IsNotMacroOrAlias Nothing
 
 con1, con2, con3, con4, f1, f2 :: Symbol
 con1 =

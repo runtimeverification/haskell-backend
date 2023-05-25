@@ -13,6 +13,7 @@ import Booster.LLVM (simplifyBool, simplifyTerm)
 import Booster.LLVM.Internal qualified as LLVM
 import Booster.Pattern.Base
 import Booster.Pattern.Util (isConcrete, sortOfTerm)
+import Data.Bifunctor (bimap)
 
 {- | We want to break apart predicates of type `X #Equals Y1 andBool ... Yn` into
 `X #Equals Y1, ..., X #Equals  Yn` in the case when some of the `Y`s are abstract
@@ -84,3 +85,4 @@ simplifyConcrete (Just mApi) def trm = recurse trm
                     SymbolApplication sym sorts (map recurse args)
                 Injection sources target sub ->
                     Injection sources target $ recurse sub
+                KMap mdef keyVals rest -> KMap mdef (map (bimap recurse recurse) keyVals) (recurse <$> rest)
