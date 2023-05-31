@@ -159,13 +159,14 @@ data SimplifyResult = SimplifyResult
 
 data ReqOrRes = Req | Res
 
-data APIMethods
+data APIMethod
     = ExecuteM
     | ImpliesM
     | SimplifyM
     | AddModuleM
+    deriving stock (Eq, Ord, Show, Enum)
 
-type family APIPayload (api :: APIMethods) (r :: ReqOrRes) where
+type family APIPayload (api :: APIMethod) (r :: ReqOrRes) where
     APIPayload 'ExecuteM 'Req = ExecuteRequest
     APIPayload 'ExecuteM 'Res = ExecuteResult
     APIPayload 'ImpliesM 'Req = ImpliesRequest
