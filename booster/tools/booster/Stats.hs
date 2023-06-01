@@ -5,7 +5,6 @@ module Stats (
     showStats,
     timed,
     microsWithUnit,
-    APIMethods (..),
     RequestStats (..),
     StatsVar,
 ) where
@@ -19,6 +18,7 @@ import System.Clock
 import Text.Printf
 
 import Booster.Prettyprinter
+import Kore.JsonRpc.Types (APIMethod)
 
 -- server statistics
 data RequestStats a = RequestStats
@@ -100,20 +100,12 @@ singleStats' x korePart =
         , koreMax = korePart
         }
 
--- HACK. Missing Eq and Ord instance for kore-rpc-types APIMethods
-data APIMethods
-    = ExecuteM
-    | SimplifyM
-    | ImpliesM
-    | AddModuleM
-    deriving stock (Eq, Ord, Show)
-
-type StatsVar = MVar (Map APIMethods (Stats' Double))
+type StatsVar = MVar (Map APIMethod (Stats' Double))
 
 addStats ::
     MonadIO m =>
-    MVar (Map APIMethods (Stats' Double)) ->
-    APIMethods ->
+    MVar (Map APIMethod (Stats' Double)) ->
+    APIMethod ->
     Double ->
     Double ->
     m ()
@@ -121,7 +113,7 @@ addStats statVar method time koreTime =
     liftIO . modifyMVar_ statVar $
         pure . Map.insertWith (<>) method (singleStats' time koreTime)
 
-newStats :: MonadIO m => m (MVar (Map APIMethods (Stats' Double)))
+newStats :: MonadIO m => m (MVar (Map APIMethod (Stats' Double)))
 newStats = liftIO $ newMVar Map.empty
 
 timed :: MonadIO m => m a -> m (a, Double)
@@ -150,7 +142,7 @@ finaliseStats Stats'{count, total, squares, maxVal, minVal, koreTotal, koreMax} 
     stddev = sqrt $ squares / fromIntegral count - average * average
     koreAverage = koreTotal / fromIntegral count
 
-showStats :: MVar (Map APIMethods (Stats' Double)) -> IO ()
+showStats :: MVar (Map APIMethod (Stats' Double)) -> IO ()
 showStats var = do
     statMap <- readMVar var
     let finalStats =
