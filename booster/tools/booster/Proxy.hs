@@ -31,7 +31,7 @@ import Kore.JsonRpc.Types
 import Kore.JsonRpc.Types qualified as ExecuteRequest (ExecuteRequest (..))
 import Kore.Log qualified
 import Kore.Syntax.Definition (SentenceAxiom)
-import Stats (APIMethods (..), StatsVar, addStats, microsWithUnit, timed)
+import Stats (StatsVar, addStats, microsWithUnit, timed)
 
 data KoreServer = KoreServer
     { serverState :: MVar.MVar Kore.ServerState
@@ -59,13 +59,13 @@ respondEither ::
 respondEither mbStatsVar booster kore req = case req of
     Execute execReq
         | isJust execReq.stepTimeout || isJust execReq.movingAverageStepTimeout ->
-            loggedKore Stats.ExecuteM req
+            loggedKore ExecuteM req
         | otherwise ->
             startLoop execReq
     Implies _ ->
-        loggedKore Stats.ImpliesM req
+        loggedKore ImpliesM req
     Simplify _ ->
-        loggedKore Stats.SimplifyM req
+        loggedKore SimplifyM req
     AddModule _ -> do
         -- execute in booster first, assuming that kore won't throw an
         -- error if booster did not. The response is empty anyway.
@@ -74,7 +74,7 @@ respondEither mbStatsVar booster kore req = case req of
             Left _err -> pure boosterResult
             Right _ -> do
                 (koreRes, koreTime) <- withTime $ kore req
-                logStats Stats.AddModuleM (boosterTime + koreTime, koreTime)
+                logStats AddModuleM (boosterTime + koreTime, koreTime)
                 pure koreRes
     Cancel ->
         pure $ Left $ ErrorObj "Cancel not supported" (-32601) Null
@@ -152,7 +152,7 @@ respondEither mbStatsVar booster kore req = case req of
                                 -- return, setting the correct depth
                                 Log.logInfoNS "proxy" . Text.pack $
                                     "Kore " <> show koreResult.reason
-                                logStats Stats.ExecuteM (time + bTime + kTime, koreTime + kTime)
+                                logStats ExecuteM (time + bTime + kTime, koreTime + kTime)
                                 pure $ Right $ Execute koreResult{depth = currentDepth + boosterResult.depth + koreResult.depth}
                         -- can only be an error at this point
                         res -> pure res
@@ -162,7 +162,7 @@ respondEither mbStatsVar booster kore req = case req of
                     -- depth, in case we previously looped
                     Log.logInfoNS "proxy" . Text.pack $
                         "Booster " <> show boosterResult.reason <> " at " <> show boosterResult.depth
-                    logStats Stats.ExecuteM (time + bTime, koreTime)
+                    logStats ExecuteM (time + bTime, koreTime)
                     pure $ Right $ Execute boosterResult{depth = currentDepth + boosterResult.depth}
             -- can only be an error at this point
             res -> pure res
