@@ -12,6 +12,7 @@ module Booster.Syntax.Json (
     decodePattern,
     decodeKoreJson,
     prettyJsonOpts,
+    sortOfJson,
 ) where
 
 import Data.Aeson as Json
@@ -72,3 +73,31 @@ prettyJsonOpts =
                 , "value"
                 ]
         }
+
+sortOfJson :: KorePattern -> Maybe Sort
+sortOfJson = \case
+    KJEVar{sort} -> Just sort
+    KJSVar{sort} -> Just sort
+    KJApp{} -> Nothing
+    KJString{} -> Just $ SortApp (Id "SortString") []
+    KJTop{sort} -> Just sort
+    KJBottom{sort} -> Just sort
+    KJNot{sort} -> Just sort
+    KJAnd{sort} -> Just sort
+    KJOr{sort} -> Just sort
+    KJImplies{sort} -> Just sort
+    KJIff{sort} -> Just sort
+    KJForall{sort} -> Just sort
+    KJExists{sort} -> Just sort
+    KJMu{varSort} -> Just varSort
+    KJNu{varSort} -> Just varSort
+    KJCeil{sort} -> Just sort
+    KJFloor{sort} -> Just sort
+    KJEquals{sort} -> Just sort
+    KJIn{sort} -> Just sort
+    KJNext{sort} -> Just sort
+    KJRewrites{sort} -> Just sort
+    KJDV{sort} -> Just sort
+    KJMultiOr{sort} -> Just sort
+    KJLeftAssoc{} -> Nothing
+    KJRightAssoc{} -> Nothing

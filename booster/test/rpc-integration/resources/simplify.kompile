@@ -1,0 +1,4 @@
+echo "kompiling simplify.k"
+kompile --backend haskell simplify.k
+cp simplify-kompiled/definition.kore simplify.kore
+rm -r simplify-kompiled
