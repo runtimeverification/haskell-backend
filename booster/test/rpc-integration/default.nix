@@ -1,4 +1,4 @@
-{ stdenv, coreutils, lib, booster-dev, rpc-client, git, k }:
+{ stdenv, coreutils, lib, booster, rpc-client, git, k }:
 
 let
   mkIntegrationTest =
@@ -15,7 +15,7 @@ let
         ${lib.strings.concatMapStrings (f: ''
           export ${f}
         '') buildFlags}
-        export SERVER=${booster-dev}/bin/booster-dev
+        export SERVER=${booster}/bin/booster
         export CLIENT=${rpc-client}/bin/rpc-client
 
         patchShebangs runDirectoryTest.sh
@@ -43,4 +43,5 @@ in {
   };
   existentials = mkIntegrationTest { name = "existentials"; };
   module-addition = mkIntegrationTest { name = "module-addition"; };
+  simplify = mkIntegrationTest { name = "simplify"; };
 }

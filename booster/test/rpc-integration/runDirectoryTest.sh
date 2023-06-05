@@ -6,11 +6,14 @@
 # - starts an RPC server (SERVER)
 #   - with a kore definition resources/<stem>.kore
 #   - if it exists, using an llvm library resources/<stem>.dylib
-# - sends the files named test-<stem>/state-<test>.json as requests
+# - sends the files named test-<stem>/state-<test>.<suffix> as requests
 #   - using CLIENT
-#   - if file suffix is "-raw.json", sending the json as-is
-#   - otherwise sending as an "execute" request, with additional
-#     parameters from file test-<stem>/params-<test>.json
+#   - the file suffix indicates how to send the file:
+#     - for suffix ".send", send the json as-is
+#     - for suffix "execute", send an "execute" request, with additional
+#       parameters from file test-<stem>/params-<test>.json
+#     - for suffix "simplify", send a "simplify" request, with additional
+#       parameters from file test-<stem>/params-<test>.json
 #   - expecting the response to match test-<stem>/response-<test>.json
 #
 # Environment variables
@@ -58,7 +61,7 @@ fi
 
 MODULE=$(grep -o -e "^module [A-Z0-9-]*" ./$kore | tail -1 | sed -e "s/module //")
 
-echo "Starting server"
+echo "Starting server: $server $kore --module ${MODULE:-UNKNOWN} $server_params"
 $server $kore --module ${MODULE?"Unable to find main module"} $server_params &
 server_pid=$!
 
@@ -67,19 +70,18 @@ echo "Server PID ${server_pid}"
 
 sleep 2
 
-for test in $(ls $dir/state-*.json); do
-    testname=${test#$dir/state-}
-    if [ -f "$dir/params-${testname}" ]; then
-        params="--param-file $dir/params-${testname}"
+for test in $( ls $dir/state-*.{execute,send,simplify} ); do
+    tmp=${test#$dir/state-}
+    testname=${tmp%.*}
+    # determine send mode from suffix
+    mode=${test##*.}
+    printf "########## Test: %10s %20s\n" "$mode" "$testname #######"
+    if [ -f "$dir/params-${testname}.json" ]; then
+        params="--param-file $dir/params-${testname}.json"
     else
         params=""
     fi
-    # choose --send (raw) mode if name ends in "-raw.json"
-    if [[ $test == *-raw.json ]]; then
-        mode="--send"
-    else
-        mode="--execute"
-    fi
-    echo "$client $mode $test $params --expect $dir/response-${testname} $*"
-    $client $mode $test $params --expect $dir/response-${testname} $*
+    # call rpc-client
+    echo "$client --$mode $test $params --expect $dir/response-${testname}.json $*"
+    $client --$mode $test $params --expect $dir/response-${testname}.json $*
 done
