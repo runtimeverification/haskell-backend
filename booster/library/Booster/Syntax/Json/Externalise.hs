@@ -4,6 +4,7 @@ License     : BSD-3-Clause
 -}
 module Booster.Syntax.Json.Externalise (
     externalisePattern,
+    externalisePredicate,
     externaliseSort,
     externaliseTerm,
 ) where

@@ -188,22 +188,15 @@ parsePostProcessing =
 
 parseMode :: Parser Mode
 parseMode =
-    (Exec <$> parseExec)
-        <|> (SendRaw <$> parseRaw)
+    parse Exec "execute" "execute (rewrite) the state in the file"
+        <|> parse SendRaw "send" "send the raw file contents directly"
+        <|> parse Simpl "simplify" "simplify the state or condition in the file"
   where
-    --        <|> Simpl <$> parseSimpl
-    --        <|> Check <$> parseCheck
+    --    <|> parse Check "implies" "check implication between antecedent and consequent in the file"
 
-    parseExec =
-        strOption $
-            long "execute"
-                <> metavar "TERMFILE"
-                <> help "execute (rewrite) the state in the file"
-    parseRaw =
-        strOption $
-            long "send"
-                <> metavar "JSONFILE"
-                <> help "send the raw file contents directly"
+    parse :: (String -> Mode) -> String -> String -> Parser Mode
+    parse constr modeName helpText =
+        constr <$> strOption (long modeName <> metavar "FILENAME" <> help helpText)
 
 ----------------------------------------
 prepareRequestData :: Mode -> Maybe FilePath -> [(String, String)] -> IO BS.ByteString
@@ -213,7 +206,16 @@ prepareRequestData (SendRaw file) mbFile opts = do
     unless (null opts) $
         hPutStrLn stderr "[Warning] Raw mode, ignoring given request options"
     BS.readFile file
-prepareRequestData (Exec file) mbOptFile opts = do
+prepareRequestData (Exec file) mbOptFile opts =
+    prepareOneTermRequest "execute" file mbOptFile opts
+prepareRequestData (Simpl file) mbOptFile opts =
+    prepareOneTermRequest "simplify" file mbOptFile opts
+prepareRequestData (Check _file1 _file2) _mbOptFile _opts = do
+    error "not implemented yet"
+
+prepareOneTermRequest ::
+    String -> FilePath -> Maybe FilePath -> [(String, String)] -> IO BS.ByteString
+prepareOneTermRequest method file mbOptFile opts = do
     term :: Json.Value <-
         Json.toJSON
             <$> ( BS.readFile file -- decode given term to test whether it is valid
@@ -228,14 +230,14 @@ prepareRequestData (Exec file) mbOptFile opts = do
             mbOptFile
     let params = paramsFromFile <> object opts
     let requestData =
-            mkRequest "execute"
+            object
+                [ "jsonrpc" ~> "2.0"
+                , "id" ~> "1"
+                , "method" ~> method
+                ]
                 +: "params"
                 ~> Json.Object (params +: "state" ~> term)
     pure $ Json.encode requestData
-prepareRequestData (Simpl _file) _mbOptFile _opts = do
-    error "not implemented yet"
-prepareRequestData (Check _file1 _file2) _mbOptFile _opts = do
-    error "not implemented yet"
 
 getObject :: Json.Value -> Json.Object
 getObject (Json.Object o) = o
@@ -272,14 +274,6 @@ infixl 5 ~>
 infixl 4 +:
 (+:) :: Json.Object -> (String, Json.Value) -> Json.Object
 o +: (k, v) = JsonKeyMap.insert (JsonKey.fromString k) v o
-
-mkRequest :: String -> Json.Object
-mkRequest method =
-    object
-        [ "jsonrpc" ~> "2.0"
-        , "id" ~> "1"
-        , "method" ~> method
-        ]
 
 postProcess :: Bool -> Maybe PostProcessing -> BS.ByteString -> IO ()
 postProcess prettify postProcessing output =

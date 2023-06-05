@@ -14,6 +14,7 @@ module Booster.Pattern.ApplyEquations (
     isMatchFailure,
     isSuccess,
     simplifyConstraint,
+    traceSimplifyConstraint,
 ) where
 
 import Control.Monad
@@ -520,9 +521,16 @@ simplifyConstraint ::
     Predicate ->
     Predicate
 simplifyConstraint def mbApi p =
-    either (const p) fst
-        . runEquationM def mbApi
-        $ simplifyConstraint' p
+    either (const p) fst $ traceSimplifyConstraint def mbApi p
+
+-- | Constraint simplification that collects a simplification trace
+traceSimplifyConstraint ::
+    KoreDefinition ->
+    Maybe LLVM.API ->
+    Predicate ->
+    Either EquationFailure (Predicate, [EquationTrace])
+traceSimplifyConstraint def mbApi p =
+    runEquationM def mbApi $ simplifyConstraint' p
 
 -- version for internal nested evaluation
 simplifyConstraint' :: Predicate -> EquationM Predicate
