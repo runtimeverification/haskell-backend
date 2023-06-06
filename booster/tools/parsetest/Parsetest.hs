@@ -14,11 +14,13 @@ import Control.Monad.Trans.Except
 import Data.Bifunctor (first)
 import Data.List (isPrefixOf, partition)
 import Data.Text.IO qualified as Text
+import Prettyprinter
 import System.Directory
 import System.Environment
 import System.FilePath
 
 import Booster.Definition.Util
+import Booster.Prettyprinter as Pretty
 import Booster.Syntax.ParsedKore as ParsedKore
 
 {- | Tests textual kore parser with given arguments and reports
@@ -53,7 +55,7 @@ testParse verbose f = do
 report :: FilePath -> IO (Either String Summary)
 report file = runExceptT $ do
     parsedDef <- liftIO (Text.readFile file) >>= except . parseKoreDefinition file
-    internalDef <- except (first show $ internalise Nothing parsedDef)
+    internalDef <- except (first (renderDefault . pretty) $ internalise Nothing parsedDef)
     pure $ mkSummary file internalDef
 
 findByExtension ::
