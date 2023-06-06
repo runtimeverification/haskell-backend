@@ -6,11 +6,18 @@ Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
 -}
 module Booster.Definition.Util (
+    -- * summarising a definition
     Summary (..),
     mkSummary,
     prettySummary,
+
+    -- * where things are
+    SourceRef (..),
+    HasSourceRef (..),
+    sourceRefText,
 ) where
 
+import Control.Applicative (Alternative (..))
 import Control.DeepSeq (NFData (..))
 import Data.Bifunctor
 import Data.ByteString.Char8 (ByteString)
@@ -18,8 +25,9 @@ import Data.ByteString.Char8 qualified as BS
 import Data.List (partition)
 import Data.List.Extra (sortOn)
 import Data.Map qualified as Map
-import Data.Maybe (fromJust, isJust)
+import Data.Maybe (fromJust, fromMaybe, isJust)
 import Data.Set qualified as Set
+import Data.Text (Text)
 import GHC.Generics (Generic)
 import GHC.Records (HasField (..))
 import Prettyprinter (Doc, Pretty, pretty)
@@ -38,7 +46,7 @@ data Summary = Summary
     , subSorts :: Map.Map ByteString [ByteString]
     , axiomCount, preserveDefinednessCount, containAcSymbolsCount :: Int
     , functionRuleCount, simplificationCount, predicateSimplificationCount :: Int
-    , rewriteRules :: Map.Map TermIndex [Location]
+    , rewriteRules :: Map.Map TermIndex [Location] -- FIXME use Identification type
     , functionRules :: Map.Map TermIndex [Location]
     , simplifications :: Map.Map TermIndex [Location]
     , predicateSimplifications :: Map.Map TermIndex [Location]
@@ -81,6 +89,7 @@ mkSummary file def =
             Map.map (fst . locate . concat . Map.elems) def.predicateSimplifications
         }
   where
+    -- FIXME use the identification function here
     locate :: HasField "attributes" a AxiomAttributes => [a] -> ([Location], Int)
     locate =
         bimap (map fromJust) length
@@ -136,3 +145,31 @@ instance Pretty Summary where
         prettyTermIndex Anything = "Anything"
         prettyTermIndex (TopSymbol sym) = prettyLabel sym
         prettyTermIndex None = "None"
+
+data SourceRef
+    = Labeled Text
+    | Located Location
+    | UNKNOWN
+    deriving (Eq, Ord, Show)
+
+instance Pretty SourceRef where
+    pretty = \case
+        Located l -> pretty l
+        Labeled l -> pretty l
+        UNKNOWN -> "UNKNOWN"
+
+sourceRefText :: HasSourceRef a => a -> Text
+sourceRefText = renderOneLineText . pretty . sourceRef
+
+-- | class of entities that have a location or ID to present to users
+class HasSourceRef a where
+    sourceRef :: a -> SourceRef
+
+instance HasSourceRef AxiomAttributes where
+    sourceRef attribs =
+        fromMaybe UNKNOWN $
+            fmap Labeled attribs.ruleLabel
+                <|> fmap Located attribs.location
+
+instance HasSourceRef (RewriteRule a) where
+    sourceRef r = sourceRef r.attributes

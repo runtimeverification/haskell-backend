@@ -37,7 +37,7 @@ import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
 import Data.Tuple (swap)
 import GHC.Records (HasField (..))
-import Prettyprinter
+import Prettyprinter as Pretty
 
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Attributes.Reader as Attributes (
@@ -45,6 +45,7 @@ import Booster.Definition.Attributes.Reader as Attributes (
     readLocation,
  )
 import Booster.Definition.Base as Def
+import Booster.Definition.Util (HasSourceRef (..), SourceRef)
 import Booster.Pattern.Base (Variable (..))
 import Booster.Pattern.Base qualified as Def
 import Booster.Pattern.Base qualified as Def.Symbol (Symbol (..))
@@ -707,20 +708,21 @@ internaliseRewriteRuleNoAlias ::
     AxiomAttributes ->
     Except DefinitionError (RewriteRule k)
 internaliseRewriteRuleNoAlias partialDefinition exs left right axAttributes = do
+    let ref = sourceRef axAttributes
     -- prefix all variables in lhs and rhs with "Rule#" to avoid
     -- name clashes with patterns from the user
     -- filter out literal `Top` constraints
     lhs <-
         fmap (removeTops . Util.modifyVariables (Util.modifyVarName ("Rule#" <>))) $
-            withExcept DefinitionPatternError $
+            withExcept (DefinitionPatternError ref) $
                 internalisePattern True Nothing partialDefinition left
-    existentials' <- fmap Set.fromList $ withExcept DefinitionPatternError $ mapM mkVar exs
+    existentials' <- fmap Set.fromList $ withExcept (DefinitionPatternError ref) $ mapM mkVar exs
     let renameVariable v
             | v `Set.member` existentials' = Util.modifyVarName ("Ex#" <>) v
             | otherwise = Util.modifyVarName ("Rule#" <>) v
     rhs <-
         fmap (removeTops . Util.modifyVariables renameVariable) $
-            withExcept DefinitionPatternError $
+            withExcept (DefinitionPatternError ref) $
                 internalisePattern True Nothing partialDefinition right
     let notPreservesDefinednessReasons =
             -- users can override the definedness computation by an explicit attribute
@@ -760,13 +762,16 @@ internaliseRewriteRule ::
     AxiomAttributes ->
     Except DefinitionError (RewriteRule k)
 internaliseRewriteRule partialDefinition exs aliasName aliasArgs right axAttributes = do
+    let ref = sourceRef axAttributes
     alias <-
         withExcept (DefinitionAliasError $ Text.decodeLatin1 aliasName) $
             Map.lookup aliasName partialDefinition.aliases
                 `orFailWith` UnknownAlias aliasName
     args <-
         traverse
-            (withExcept DefinitionPatternError . internaliseTerm True Nothing partialDefinition)
+            ( withExcept (DefinitionPatternError ref)
+                . internaliseTerm True Nothing partialDefinition
+            )
             aliasArgs
     result <- expandAlias alias args
 
@@ -776,14 +781,14 @@ internaliseRewriteRule partialDefinition exs aliasName aliasArgs right axAttribu
     lhs <-
         fmap (removeTops . Util.modifyVariables (Util.modifyVarName ("Rule#" <>))) $
             Util.retractPattern result
-                `orFailWith` DefinitionTermOrPredicateError (PatternExpected result)
-    existentials' <- fmap Set.fromList $ withExcept DefinitionPatternError $ mapM mkVar exs
+                `orFailWith` DefinitionTermOrPredicateError ref (PatternExpected result)
+    existentials' <- fmap Set.fromList $ withExcept (DefinitionPatternError ref) $ mapM mkVar exs
     let renameVariable v
             | v `Set.member` existentials' = Util.modifyVarName ("Ex#" <>) v
             | otherwise = Util.modifyVarName ("Rule#" <>) v
     rhs <-
         fmap (removeTops . Util.modifyVariables renameVariable) $
-            withExcept DefinitionPatternError $
+            withExcept (DefinitionPatternError ref) $
                 internalisePattern True Nothing partialDefinition right
 
     let notPreservesDefinednessReasons =
@@ -862,7 +867,7 @@ internaliseSimpleEquation ::
     Except DefinitionError AxiomResult
 internaliseSimpleEquation partialDef precond left right sortVars attrs
     | coerce attrs.simplification = do
-        lhsIsTerm <- withExcept DefinitionPatternError $ isTermM left
+        lhsIsTerm <- withExcept (DefinitionPatternError (sourceRef attrs)) $ isTermM left
         if lhsIsTerm
             then do
                 lhs <- internalisePattern' $ Syntax.KJAnd left.sort left precond
@@ -912,11 +917,11 @@ internaliseSimpleEquation partialDef precond left right sortVars attrs
     | otherwise = error "internaliseSimpleEquation should only be called for simplifications"
   where
     internalisePattern' =
-        withExcept DefinitionPatternError
+        withExcept (DefinitionPatternError (sourceRef attrs))
             . fmap (removeTops . Util.modifyVariables (Util.modifyVarName ("Eq#" <>)))
             . internalisePattern True (Just sortVars) partialDef
     internalisePredicate' =
-        withExcept DefinitionPatternError
+        withExcept (DefinitionPatternError (sourceRef attrs))
             . internalisePredicate True (Just sortVars) partialDef
 
 {- | Internalises a function rule from its components that were matched
@@ -944,7 +949,7 @@ internaliseFunctionEquation ::
 internaliseFunctionEquation partialDef requires args leftTerm right sortVars attrs = do
     -- internalise the LHS (LHS term and requires)
     left <- -- expected to be a simple term, f(X_1, X_2,..)
-        withExcept DefinitionPatternError $
+        withExcept (DefinitionPatternError (sourceRef attrs)) $
             internalisePattern True (Just sortVars) partialDef $
                 Syntax.KJAnd leftTerm.sort leftTerm requires
     -- extract argument binders from predicates and inline in to LHS term
@@ -988,12 +993,12 @@ internaliseFunctionEquation partialDef requires args leftTerm right sortVars att
         _ -> False
 
     internaliseSide =
-        withExcept DefinitionPatternError
+        withExcept (DefinitionPatternError (sourceRef attrs))
             . fmap (removeTops . Util.modifyVariables (Util.modifyVarName ("Eq#" <>)))
             . internalisePattern True (Just sortVars) partialDef
 
     internaliseTerm' =
-        withExcept DefinitionPatternError
+        withExcept (DefinitionPatternError (sourceRef attrs))
             . internaliseTerm True (Just sortVars) partialDef
 
     internaliseArg ::
@@ -1094,10 +1099,10 @@ data DefinitionError
     | DuplicateNames [Text]
     | DefinitionAttributeError Text
     | DefinitionSortError SortError
-    | DefinitionPatternError PatternError
+    | DefinitionPatternError SourceRef PatternError
     | DefinitionAliasError Text AliasError
     | DefinitionAxiomError AxiomError
-    | DefinitionTermOrPredicateError TermOrPredicateError
+    | DefinitionTermOrPredicateError SourceRef TermOrPredicateError
     | AddModuleError Text
     | ElemSymbolMalformed Def.Symbol
     | ElemSymbolNotFound Def.SymbolName
@@ -1123,18 +1128,19 @@ instance Pretty DefinitionError where
             pretty $ "Attribute error: " <> msg
         DefinitionSortError sortErr ->
             pretty $ "Sort error: " <> renderSortError sortErr
-        DefinitionPatternError patErr ->
-            pretty $ "Pattern error: " <> show patErr -- TODO define a pretty instance?
+        DefinitionPatternError ref patErr ->
+            "Pattern error in " <> pretty ref <> ": " <> pretty (show patErr)
+        -- TODO define a pretty instance?
         DefinitionAliasError name err ->
             pretty $ "Alias error in " <> Text.unpack name <> ": " <> show err
         DefinitionAxiomError err ->
             "Bad rewrite rule " <> pretty err
-        DefinitionTermOrPredicateError (PatternExpected p) ->
-            pretty $ "Expected a pattern but found a predicate: " <> show p
+        DefinitionTermOrPredicateError ref (PatternExpected p) ->
+            "Expected a pattern in " <> pretty ref <> " but found a predicate: " <> pretty (show p)
         AddModuleError msg ->
             pretty $ "Add-module error: " <> msg
         ElemSymbolMalformed sym ->
-            pretty $ "element{} symbol is malformed: " <> show sym
+            pretty $ "Element{} symbol is malformed: " <> show sym
         ElemSymbolNotFound sym ->
             pretty $ "Expected an element{} symbol " <> show sym
 
@@ -1149,8 +1155,8 @@ instance ToJSON DefinitionError where
             "Duplicate symbols" `withContext` map toJSON syms
         DuplicateAliases aliases ->
             "DuplicateAliases" `withContext` map toJSON aliases
-        DefinitionPatternError patErr ->
-            "Pattern error in definition" `withContext` [toJSON patErr]
+        DefinitionPatternError ref patErr ->
+            ("Pattern error at " <> render ref <> " in definition") `withContext` [toJSON patErr]
         DefinitionAxiomError (MalformedRewriteRule rule) ->
             "Malformed rewrite rule" `withContext` [toJSON rule]
         DefinitionAxiomError (MalformedEquation rule) ->
@@ -1158,11 +1164,14 @@ instance ToJSON DefinitionError where
         DefinitionAxiomError (UnexpectedAxiom rule) ->
             "Unknown kind of axiom" `withContext` [toJSON rule]
         other ->
-            object ["error" .= renderOneLineText (pretty other), "context" .= Null]
+            object ["error" .= render other, "context" .= Null]
       where
         withContext :: Text -> [Value] -> Value
         withContext errMsg context =
             object ["error" .= errMsg, "context" .= context]
+
+        render :: Pretty a => a -> Text
+        render = renderOneLineText . pretty
 
 data AliasError
     = UnknownAlias AliasName
