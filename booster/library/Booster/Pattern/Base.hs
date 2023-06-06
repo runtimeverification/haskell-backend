@@ -236,7 +236,20 @@ internaliseKmap def@KMapDefinition{symbolNames = KMapAttributes{elementSymbolNam
         , case (sym1, sym2) of
             (Nothing, b) -> b
             (a, Nothing) -> a
-            (Just a, Just b) -> Just $ SymbolApplication (kmapConcatSymbol def) [] [a, b]
+            (Just a@(Term aAttribs _), Just b@(Term bAttribs _)) ->
+                -- directly construct the internal term with functor to avoid a loop
+                let attribs =
+                        (aAttribs <> bAttribs)
+                            { isEvaluated = False
+                            , hash =
+                                Hashable.hash
+                                    ( "SymbolApplication" :: ByteString
+                                    , kmapConcatSymbol def
+                                    , map hash [aAttribs, bAttribs]
+                                    )
+                            , isConstructorLike = False
+                            }
+                 in Just $ Term attribs $ SymbolApplicationF (kmapConcatSymbol def) [] [a, b]
         )
 
 instance Corecursive Term where
