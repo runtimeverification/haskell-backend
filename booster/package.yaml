@@ -145,6 +145,7 @@ executables:
       - directory
       - filepath
       - hs-backend-booster
+      - prettyprinter
       - text
       - transformers
     ghc-options:
