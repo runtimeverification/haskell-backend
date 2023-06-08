@@ -434,19 +434,30 @@ respond serverState moduleName runSMT =
 
                                     pure . Right $ AddModule ()
         GetModel GetModelRequest{state, _module} ->
-            withMainModule (coerce _module) $ \serializedModule _lemmas ->
+            withMainModule (coerce _module) $ \serializedModule lemmas ->
                 case verifyIn serializedModule state of
                     Left err ->
                         pure $ Left $ backendError CouldNotVerifyPattern err
                     Right stateVerified -> do
-                        let _patt =
+                        let patt =
                                 mkRewritingPattern $ Pattern.parsePatternFromTermLike stateVerified
-                        -- TODO call SMT solver get-model on patt, encode the result
+
+                        -- TODO no need for the Simplifier context
+                        -- TODO restrict to simple predicates (or terms of sort bool?)
+                        -- TODO call SMT solver get-model if satisfiable, encode the result
+                        (_, result) <-
+                            liftIO
+                                . runSMT (Exec.metadataTools serializedModule) lemmas
+                                . (evalInSimplifierContext serializedModule)
+                                $ SMT.Evaluator.filterMultiOr $srcLoc (OrPattern.fromPattern patt)
+                        let satisfiable =
+                                if OrPattern.isFalse result then IsNotSatisfiable else SatisfiabilityUnknown
+
                         pure $
                             Right $
                                 GetModel
                                     GetModelResult
-                                        { satisfiable = SatisfiabilityUnknown
+                                        { satisfiable
                                         , substitution = Nothing
                                         }
 
