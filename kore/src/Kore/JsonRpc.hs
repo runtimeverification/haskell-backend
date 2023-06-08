@@ -119,10 +119,7 @@ respond serverState moduleName runSMT =
                 , logSuccessfulRewrites
                 , logSuccessfulSimplifications
                 } -> withMainModule (coerce _module) $ \serializedModule lemmas ->
-                case PatternVerifier.runPatternVerifier (verifierContext serializedModule) $
-                    PatternVerifier.verifyStandalonePattern Nothing $
-                        PatternJson.toParsedPattern $
-                            PatternJson.term state of
+                case verifyIn serializedModule state of
                     Left err -> pure $ Left $ backendError CouldNotVerifyPattern err
                     Right verifiedPattern -> do
                         traversalResult <-
@@ -364,7 +361,7 @@ respond serverState moduleName runSMT =
                             Claim.NotImpliedStuck Nothing ->
                                 ImpliesResult jsonTerm False (Just . renderCond sort $ Condition.bottom) logs
         Simplify SimplifyRequest{state, _module, logSuccessfulSimplifications} -> withMainModule (coerce _module) $ \serializedModule lemmas ->
-            case PatternVerifier.runPatternVerifier (verifierContext serializedModule) verifyState of
+            case verifyIn serializedModule state of
                 Left err ->
                     pure $ Left $ backendError CouldNotVerifyPattern err
                 Right stateVerified -> do
@@ -388,11 +385,6 @@ respond serverState moduleName runSMT =
                                                 OrPattern.toTermLike sort result
                                     , logs = mkSimplifierLogs logSuccessfulSimplifications logs
                                     }
-          where
-            verifyState =
-                PatternVerifier.verifyStandalonePattern Nothing $
-                    PatternJson.toParsedPattern $
-                        PatternJson.term state
         AddModule AddModuleRequest{_module} ->
             case parseKoreModule "<add-module>" _module of
                 Left err -> pure $ Left $ backendError CouldNotParsePattern err
@@ -441,6 +433,22 @@ respond serverState moduleName runSMT =
                                                     }
 
                                     pure . Right $ AddModule ()
+        GetModel GetModelRequest{state, _module} ->
+            withMainModule (coerce _module) $ \serializedModule _lemmas ->
+                case verifyIn serializedModule state of
+                    Left err ->
+                        pure $ Left $ backendError CouldNotVerifyPattern err
+                    Right stateVerified -> do
+                        let _patt =
+                                mkRewritingPattern $ Pattern.parsePatternFromTermLike stateVerified
+                        -- TODO call SMT solver get-model on patt, encode the result
+                        pure $
+                            Right $
+                                GetModel
+                                    GetModelResult
+                                        { satisfiable = SatisfiabilityUnknown
+                                        , substitution = Nothing
+                                        }
 
         -- this case is only reachable if the cancel appeared as part of a batch request
         Cancel -> pure $ Left cancelUnsupportedInBatchMode
@@ -459,6 +467,12 @@ respond serverState moduleName runSMT =
             & withRpcRequest
       where
         withRpcRequest context = context{isRpcRequest = True}
+
+    -- verifyIn :: Exec.SerializedModule -> PatternJson.KoreJson -> Either VerifyError (Pattern _)
+    verifyIn m state =
+        PatternVerifier.runPatternVerifier (verifierContext m) $
+            PatternVerifier.verifyStandalonePattern Nothing $
+                PatternJson.toParsedPattern (PatternJson.term state)
 
     mkSimplifierLogs :: Maybe Bool -> Seq SimplifierTrace -> Maybe [LogEntry]
     mkSimplifierLogs Nothing _ = Nothing
