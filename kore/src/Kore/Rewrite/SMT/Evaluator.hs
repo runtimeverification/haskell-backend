@@ -10,12 +10,13 @@ module Kore.Rewrite.SMT.Evaluator (
     evalPredicate,
     evalConditional,
     filterMultiOr,
+    getModelFor,
     translateTerm,
     translatePredicate,
 ) where
 
 import Control.Error (
-    MaybeT,
+    MaybeT (..),
     runMaybeT,
  )
 import Control.Lens qualified as Lens
@@ -29,6 +30,7 @@ import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Kore.Attribute.Pattern.FreeVariables qualified as FreeVariables
 import Kore.Attribute.Symbol qualified as Attribute (
+    StepperAttributes,
     Symbol,
  )
 import Kore.IndexedModule.MetadataTools (
@@ -51,6 +53,8 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import Kore.Internal.SideCondition qualified as SideCondition
+import Kore.Internal.Substitution (Substitution)
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike (
     ElementVariable,
     ElementVariableName,
@@ -155,8 +159,8 @@ The predicate is always sent to the external solver, even if it is trivial.
 -}
 decidePredicate ::
     forall variable.
-    OnDecidePredicateUnknown ->
     InternalVariable variable =>
+    OnDecidePredicateUnknown ->
     SideCondition variable ->
     NonEmpty (Predicate variable) ->
     Simplifier (Maybe Bool)
@@ -181,9 +185,6 @@ decidePredicate onUnknown sideCondition predicates =
                     empty
             & runMaybeT
   where
-    whenUnknown f Unknown = f
-    whenUnknown _ result = return result
-
     query :: MaybeT Simplifier Result
     query = SMT.withSolver . evalTranslator $ do
         tools <- Simplifier.askMetadataTools
@@ -195,35 +196,87 @@ decidePredicate onUnknown sideCondition predicates =
             traverse_ SMT.assert predicates'
             SMT.check >>= maybe empty return
 
-    retry :: MaybeT Simplifier Result
-    retry = do
-        SMT.RetryLimit limit <- SMT.askRetryLimit
-        -- Use the same timeout for the first retry, since sometimes z3
-        -- decides it doesn't want to work today and all we need is to
-        -- retry it once.
-        let timeoutScales = takeWithin limit [1 ..]
-        let retryActions = map retryOnceWithScaledTimeout timeoutScales
-        let combineRetries r1 r2 = r1 >>= whenUnknown r2
-        -- This works even if 'retryActions' is infinite, because the second
-        -- argument to 'whenUnknown' will be the 'combineRetries' of all of
-        -- the tail of the list. As soon as a result is not 'Unknown', the
-        -- rest of the fold is discarded.
-        foldr combineRetries (pure Unknown) retryActions
+    retry = retryWithScaledTimeout $ query <* debugRetrySolverQuery predicates
 
-    retryOnceWithScaledTimeout :: Integer -> MaybeT Simplifier Result
-    retryOnceWithScaledTimeout scale =
-        -- scale the timeout _inside_ 'retryOnce' so that we override the
-        -- call to 'SMT.reinit'.
-        retryOnce $ SMT.localTimeOut (scaleTimeOut scale) query
+retryWithScaledTimeout :: MonadSMT m => m Result -> m Result
+retryWithScaledTimeout q = do
+    SMT.RetryLimit limit <- SMT.askRetryLimit
+    -- Use the same timeout for the first retry, since sometimes z3
+    -- decides it doesn't want to work today and all we need is to
+    -- retry it once.
+    let timeoutScales = takeWithin limit [1 ..]
+        retryActions = map (retryOnceWithScaledTimeout q) timeoutScales
+        combineRetries r1 r2 = r1 >>= whenUnknown r2
+    -- This works even if 'retryActions' is infinite, because the second
+    -- argument to 'whenUnknown' will be the 'combineRetries' of all of
+    -- the tail of the list. As soon as a result is not 'Unknown', the
+    -- rest of the fold is discarded.
+    foldr combineRetries (pure Unknown) retryActions
+  where
+    -- helpers for re-trying solver queries with increasing timeout
+    retryOnceWithScaledTimeout :: MonadSMT m => m a -> Integer -> m a
+    retryOnceWithScaledTimeout action scale =
+        -- reinit with scaled timeout to override the original timeout
+        SMT.localTimeOut (scaleTimeOut scale) $ SMT.reinit >> action
 
+    scaleTimeOut :: Integer -> SMT.TimeOut -> SMT.TimeOut
     scaleTimeOut _ (SMT.TimeOut Unlimited) = SMT.TimeOut Unlimited
     scaleTimeOut n (SMT.TimeOut (Limit r)) = SMT.TimeOut (Limit (n * r))
 
-    retryOnce actionToRetry = do
-        SMT.reinit
-        result <- actionToRetry
-        debugRetrySolverQuery predicates
-        return result
+whenUnknown :: Monad m => m Result -> Result -> m Result
+whenUnknown f Unknown = f
+whenUnknown _ result = return result
+
+{- | Check if the given combination of predicates is satisfiable, and
+  provide a satisfying substitution if so. Otherwise indicate with a
+  boolean whether the solver was able to determine 'unsat' or returned
+  an 'unknown' result.
+
+  This means that if no SMT solver is configured, this function will
+  always return 'Left False'.
+
+  The solver query is retried with configurable scaled timeout. TODO
+-}
+getModelFor ::
+    forall variable.
+    InternalVariable variable =>
+    (SmtMetadataTools Attribute.StepperAttributes) ->
+    NonEmpty (Predicate variable) ->
+    SMT (Either Bool (Substitution variable))
+getModelFor tools predicates =
+    fmap (fromMaybe (Left False)) . runMaybeT $ do
+        (smtPredicates, translatorState) <-
+            runTranslator $
+                traverse (translatePredicate SideCondition.top tools) predicates
+        let variables = freeVars translatorState
+        result <- lift . SMT.withSolver $ satQuery smtPredicates (Map.elems variables)
+        case result of
+            Left Unknown -> pure (Left False)
+            Left Unsat -> pure (Left True)
+            Left Sat -> pure (Left False) -- error "impossible!"
+            Right mapping ->
+                pure
+                    . Right
+                    . Substitution.fromMap
+                    . Map.mapKeys TermLike.mkSomeVariable
+                    . Map.map (const undefined) -- FIXME make TermLikes (translate back)
+                    $ Map.compose mapping variables
+  where
+    satQuery ::
+        NonEmpty SExpr -> -- predicates
+        [SExpr] -> -- interesting variables
+        SMT (Either Result (Map.Map SExpr SExpr))
+    satQuery ps _vars = do
+        traverse_ SMT.assert ps
+        satResult <- SMT.check
+        case satResult of
+            Nothing -> pure $ Left Unknown
+            Just Unsat -> pure $ Left Unsat
+            Just Unknown -> pure $ Left Unknown
+            Just Sat -> do
+                -- FIXME missing function to call SimpleSMT.getExprs solver vars
+                -- and convert the Values back to SExpr (map (second SimpleSMT.value))
+                pure $ Right Map.empty
 
 translatePredicate ::
     forall variable.

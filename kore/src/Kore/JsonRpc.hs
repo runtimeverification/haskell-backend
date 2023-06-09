@@ -19,6 +19,7 @@ import Data.IORef (readIORef)
 import Data.InternedText (globalInternedTextCache)
 import Data.Limit (Limit (..))
 import Data.List.Extra (mconcatMap)
+import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map.Strict qualified as Map
 import Data.Sequence (Seq)
 import Data.Set qualified as Set
@@ -39,7 +40,8 @@ import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
-import Kore.Internal.Predicate (pattern PredicateTrue)
+import Kore.Internal.Predicate (getMultiAndPredicate, pattern PredicateTrue)
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike (TermLike)
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.JsonRpc.Error
@@ -439,26 +441,40 @@ respond serverState moduleName runSMT =
                     Left err ->
                         pure $ Left $ backendError CouldNotVerifyPattern err
                     Right stateVerified -> do
-                        let patt =
+                        let sort = TermLike.termLikeSort stateVerified
+                            patt =
+                                -- TODO should restrict this to pure predicates
                                 mkRewritingPattern $ Pattern.parsePatternFromTermLike stateVerified
+                            preds = getMultiAndPredicate $ Condition.predicate patt
 
-                        -- TODO no need for the Simplifier context
                         -- TODO restrict to simple predicates (or terms of sort bool?)
-                        -- TODO call SMT solver get-model if satisfiable, encode the result
-                        (_, result) <-
-                            liftIO
-                                . runSMT (Exec.metadataTools serializedModule) lemmas
-                                . (evalInSimplifierContext serializedModule)
-                                $ SMT.Evaluator.filterMultiOr $srcLoc (OrPattern.fromPattern patt)
-                        let satisfiable =
-                                if OrPattern.isFalse result then IsNotSatisfiable else SatisfiabilityUnknown
+                        -- We use the invariant that the parsing does not produce a substitution
 
-                        pure $
-                            Right $
-                                GetModel
+                        let tools = Exec.metadataTools serializedModule
+                        result <-
+                            liftIO
+                                . runSMT tools lemmas
+                                . SMT.Evaluator.getModelFor tools
+                                $ NonEmpty.fromList preds
+
+                        pure . Right . GetModel $
+                            case result of
+                                Left False ->
                                     GetModelResult
-                                        { satisfiable
+                                        { satisfiable = SatisfiabilityUnknown
                                         , substitution = Nothing
+                                        }
+                                Left True ->
+                                    GetModelResult
+                                        { satisfiable = IsNotSatisfiable
+                                        , substitution = Nothing
+                                        }
+                                Right subst ->
+                                    GetModelResult
+                                        { satisfiable = IsSatisfiable
+                                        , substitution =
+                                            PatternJson.fromSubstitution sort $
+                                                Substitution.mapVariables getRewritingVariable subst
                                         }
 
         -- this case is only reachable if the cancel appeared as part of a batch request
