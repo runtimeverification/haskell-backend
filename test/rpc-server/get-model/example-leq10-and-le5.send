@@ -1,0 +1,113 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "get-model",
+  "params": {
+    "state": {
+      "format": "KORE",
+      "version": 1,
+      "term": {
+        "tag": "And",
+        "sort": {
+          "tag": "SortApp",
+          "name": "SortBool",
+          "args": []
+        },
+        "first": {
+          "tag": "Equals",
+          "argSort": {
+            "tag": "SortApp",
+            "name": "SortBool",
+            "args": []
+          },
+          "sort": {
+            "tag": "SortApp",
+            "name": "SortBool",
+            "args": []
+          },
+          "first": {
+            "tag": "DV",
+            "sort": {
+              "tag": "SortApp",
+              "name": "SortBool",
+              "args": []
+            },
+            "value": "false"
+          },
+          "second": {
+            "tag": "App",
+            "name": "Lbl'Unds-LT-Eqls'Int'Unds'",
+            "sorts": [],
+            "args": [
+              {
+                "tag": "EVar",
+                "name": "X",
+                "sort": {
+                  "tag": "SortApp",
+                  "name": "SortInt",
+                  "args": []
+                }
+              },
+              {
+                "tag": "DV",
+                "sort": {
+                  "tag": "SortApp",
+                  "name": "SortInt",
+                  "args": []
+                },
+                "value": "10"
+              }
+            ]
+          }
+        },
+        "second": {
+          "tag": "Equals",
+          "argSort": {
+            "tag": "SortApp",
+            "name": "SortBool",
+            "args": []
+          },
+          "sort": {
+            "tag": "SortApp",
+            "name": "SortBool",
+            "args": []
+          },
+          "first": {
+            "tag": "DV",
+            "sort": {
+              "tag": "SortApp",
+              "name": "SortBool",
+              "args": []
+            },
+            "value": "false"
+          },
+          "second": {
+            "tag": "App",
+            "name": "Lbl'Unds-LT-'Int'Unds'",
+            "sorts": [],
+            "args": [
+              {
+                "tag": "EVar",
+                "name": "X",
+                "sort": {
+                  "tag": "SortApp",
+                  "name": "SortInt",
+                  "args": []
+                }
+              },
+              {
+                "tag": "DV",
+                "sort": {
+                  "tag": "SortApp",
+                  "name": "SortInt",
+                  "args": []
+                },
+                "value": "5"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
