@@ -14,6 +14,8 @@ module Kore.Rewrite.SMT.Translate (
     maybeToTranslator,
     -- For testing
     translatePattern,
+    --
+    backTranslateWith,
 ) where
 
 import Control.Comonad.Trans.Cofree qualified as Cofree
@@ -30,6 +32,7 @@ import Control.Monad.Counter (
  )
 import Control.Monad.Except
 import Control.Monad.Morph as Morph
+import Control.Monad.Trans.Reader qualified as Reader
 import Control.Monad.RWS.Strict (
     MonadReader,
     RWST (..),
@@ -473,3 +476,21 @@ maybeToTranslator = Translator . hoistMaybe
 withDefinednessAssumption :: Monad m => Translator p m a -> Translator p m a
 withDefinednessAssumption =
     local (const $ TranslatorEnv True)
+
+
+------------------------------------------------------------
+
+{- | back-translate SExpr -> TermLike, using a (read-only) prior state
+  SMT-built-in constructs need to be interpreted in a suitable way,
+  and all variables back-substituted.
+-}
+backTranslateWith ::
+    TranslatorState variable ->
+    SExpr ->
+    TermLike variable
+backTranslateWith priorState = flip Reader.runReader priorState . backTranslate
+
+backTranslate :: SExpr -> Reader.Reader (TranslatorState v) (TermLike v)
+backTranslate (Atom t) = undefined
+backTranslate (List xs)
+    | otherwise = undefined

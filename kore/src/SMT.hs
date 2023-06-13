@@ -23,6 +23,7 @@ module SMT (
     declareDatatypes,
     assert,
     check,
+    getValue,
     ackCommand,
     loadFile,
     reinit,
@@ -104,6 +105,7 @@ import Control.Monad.Trans.Control (MonadBaseControl (..))
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe qualified as Maybe
+import Data.Bifunctor (second)
 import Data.Generics.Product (
     field,
  )
@@ -207,6 +209,11 @@ assert = liftSMT . assertSMT
 check :: MonadSMT m => m (Maybe Result)
 check = liftSMT checkSMT
 {-# INLINE check #-}
+
+-- | Check if the current set of assertions is satisfiable.
+getValue :: MonadSMT m => [SExpr] -> m (Maybe [(SExpr, SExpr)])
+getValue = liftSMT . getValueSMT
+{-# INLINE getValue #-}
 
 -- | A command with an uninteresting result.
 ackCommand :: MonadSMT m => SExpr -> m ()
@@ -628,6 +635,22 @@ checkSMT =
                 traceProf ":solver:check" $
                     withSolver' solverSetup SimpleSMT.check
             return (Just result)
+
+getValueSMT :: [SExpr] -> SMT (Maybe [(SExpr, SExpr)])
+getValueSMT targets =
+    SMT $ \case
+        Nothing -> return Nothing
+        Just solverSetup ->
+            traceProf ":solver:get-value" $
+                onErrorNothing $
+                    fmap (map (second SimpleSMT.value)) $
+                        withSolver' solverSetup (flip SimpleSMT.getExprs targets)
+
+  where
+    onErrorNothing :: (MonadIO m, MonadCatch m) => m a -> m (Maybe a)
+    onErrorNothing action =
+        fmap Just action `Exception.catch` \(_::IOException) -> pure Nothing
+
 
 ackCommandSMT :: SExpr -> SMT ()
 ackCommandSMT command =

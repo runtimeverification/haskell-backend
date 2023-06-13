@@ -259,14 +259,14 @@ getModelFor tools predicates =
                     . Right
                     . Substitution.fromMap
                     . Map.mapKeys TermLike.mkSomeVariable
-                    . Map.map (const undefined) -- FIXME make TermLikes (translate back)
+                    . Map.map (backTranslateWith translatorState)
                     $ Map.compose mapping variables
   where
     satQuery ::
         NonEmpty SExpr -> -- predicates
         [SExpr] -> -- interesting variables
         SMT (Either Result (Map.Map SExpr SExpr))
-    satQuery ps _vars = do
+    satQuery ps vars = do
         traverse_ SMT.assert ps
         satResult <- SMT.check
         case satResult of
@@ -274,9 +274,10 @@ getModelFor tools predicates =
             Just Unsat -> pure $ Left Unsat
             Just Unknown -> pure $ Left Unknown
             Just Sat -> do
-                -- FIXME missing function to call SimpleSMT.getExprs solver vars
-                -- and convert the Values back to SExpr (map (second SimpleSMT.value))
-                pure $ Right Map.empty
+                mbMapping <- SMT.getValue vars
+                case mbMapping of
+                    Nothing -> pure $ Left Unknown -- something went wrong in getValue
+                    Just mapping -> pure . Right $ Map.fromList mapping
 
 translatePredicate ::
     forall variable.
