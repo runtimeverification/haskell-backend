@@ -249,7 +249,9 @@ getModelFor tools predicates =
             runTranslator $
                 traverse (translatePredicate SideCondition.top tools) predicates
         let variables = freeVars translatorState
-        result <- lift . SMT.withSolver $ satQuery smtPredicates (Map.elems variables)
+        result <-
+            -- FIXME consider variables for uninterpreted terms, too
+            lift . SMT.withSolver $ satQuery smtPredicates (Map.elems variables)
         case result of
             Left Unknown -> pure (Left False)
             Left Unsat -> pure (Left True)

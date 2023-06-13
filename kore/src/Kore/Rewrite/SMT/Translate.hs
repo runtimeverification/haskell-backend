@@ -32,7 +32,6 @@ import Control.Monad.Counter (
  )
 import Control.Monad.Except
 import Control.Monad.Morph as Morph
-import Control.Monad.Trans.Reader qualified as Reader
 import Control.Monad.RWS.Strict (
     MonadReader,
     RWST (..),
@@ -44,6 +43,7 @@ import Control.Monad.State.Strict (
     MonadState,
  )
 import Control.Monad.State.Strict qualified as State
+import Data.Char (isDigit)
 import Data.Default
 import Data.Functor.Const
 import Data.Functor.Foldable qualified as Recursive
@@ -55,6 +55,7 @@ import Data.Map.Strict qualified as Map
 import Data.Text (
     Text,
  )
+import Data.Text qualified as Text
 import GHC.Generics qualified as GHC
 import Kore.Attribute.Hook
 import Kore.Attribute.Smtlib
@@ -485,12 +486,63 @@ withDefinednessAssumption =
   and all variables back-substituted.
 -}
 backTranslateWith ::
+    forall variable.
+    InternalVariable variable =>
     TranslatorState variable ->
     SExpr ->
     TermLike variable
-backTranslateWith priorState = flip Reader.runReader priorState . backTranslate
+backTranslateWith priorState = backTranslate
+  where
+    reverseMap :: Map SExpr (TermLike variable)
+    reverseMap =
+        Map.empty
+            <> Map.map TermLike.mkElemVar (invert $ freeVars priorState)
+            <> invert (Map.map (Atom . smtName) $ terms priorState)
+            <> mkPredicateMap (predicates priorState)
 
-backTranslate :: SExpr -> Reader.Reader (TranslatorState v) (TermLike v)
-backTranslate (Atom t) = undefined
-backTranslate (List xs)
-    | otherwise = undefined
+    invert :: (Show k, Show a, Ord a) => Map k a -> Map a k
+    invert =
+        Map.fromListWithKey (\k x y -> error $ show (k, x, y))
+            . map swap
+            . Map.toList
+
+    backTranslate :: SExpr -> TermLike variable
+    backTranslate s@(Atom t)
+        | isVarName t =
+            fromMaybe (error $ "backtranslate: unbound atom" <> show t) $
+                Map.lookup s reverseMap
+        | t == "true" =
+            TermLike.mkInternalBool $ InternalBool (builtinSort Builtin.Bool.sort) True
+        | t == "false" =
+            TermLike.mkInternalBool $ InternalBool (builtinSort Builtin.Bool.sort) False
+        | Text.all isDigit t =
+            TermLike.mkInternalInt $ InternalInt (builtinSort Builtin.Int.sort) $ read (Text.unpack t)
+        | otherwise =
+            undefined -- FIXME translate built-in stuff
+
+    backTranslate (List []) = error "backtranslate: empty list"
+    backTranslate (List (x:xs))
+        | otherwise = undefined
+
+    builtinSort name = SortActualSort $ SortActual (Id name AstLocationNone) []
+
+    isVarName :: Text -> Bool
+    isVarName t =
+        Text.head t == '<'
+            && Text.last t == '>'
+            && Text.all isDigit (Text.init $ Text.tail t)
+
+    -- TODO do we actually need the predicate map at all?
+    backTranslateSort :: SExpr -> Sort
+    backTranslateSort (Atom t) = error $ "backTranslateSort: Atom " <> show t
+    backTranslateSort (List [Atom "Int"]) =
+        SortActualSort $ SortActual (Id Builtin.Int.sort AstLocationNone) []
+    backTranslateSort (List [Atom "Bool"]) =
+        SortActualSort $ SortActual (Id Builtin.Bool.sort AstLocationNone) []
+    backTranslateSort (List [Atom t]) = error "reverse the translateSort function" -- FIXME
+
+    mkPredicateMap =
+        Map.mapKeys fst
+            . Map.mapWithKey (\(_, s) -> Predicate.fromPredicate (backTranslateSort s))
+            . invert
+            . Map.map (\SMTDependentAtom{smtName, smtType} -> (Atom smtName, smtType))
