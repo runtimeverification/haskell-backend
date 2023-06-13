@@ -85,7 +85,23 @@
             withHoogle = true;
             tools = {
               cabal = { inherit index-state; };
-              haskell-language-server = { inherit index-state; };
+              haskell-language-server = { 
+                inherit index-state;
+                configureArgs = "--disable-benchmarks --disable-tests";
+                modules = [
+                    {
+                        packages = {
+                            # replicates https://github.com/input-output-hk/haskell.nix/pull/1977
+                            # however, updating haskell.nix causes other issues and takes a long time to fix
+                            # this should be removed next time we update haskell.nix
+                            haskell-language-server.components.exes.haskell-language-server = {
+                                keepGhc = pkgs.stdenv.hostPlatform.isDarwin;
+                                keepConfigFiles = pkgs.stdenv.hostPlatform.isDarwin;
+                            };
+                        };
+                    }
+                ];
+              };
               fourmolu = {
                 inherit index-state;
                 version = fourmolu-version;
