@@ -261,7 +261,8 @@ getModelFor tools predicates =
                         traverse (backTranslateWith tools translatorState) $
                             Map.compose mapping variables
                 case freeVarMap of
-                    Left _errMsg -> do
+                    Left errMsg -> do
+                        traceM $ "[Error] in back-translation: " <> errMsg
                         -- FIXME error logging?
                         pure (Left False)
                     Right m -> pure . Right $ mkSubst m
