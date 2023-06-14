@@ -8,7 +8,7 @@ A simpler and faster version of [K-Framework's haskell-backend](../haskell-backe
 
 ## Kompiling a K definition and running the RPC server
 
-The `hs-backend-booster` binary takes a `kore` file definition, parses and internalises it and then launches an RPC server, which executes requests agains this definition. It additionally accepts a path to a dynamic library compiled by the LLVM backend, which is used for simplification of bool sorted terms. In order to build the kore definition and the shared library out of a K definition, first call
+The `kore-rpc-booster` binary takes a `kore` file definition, parses and internalises it and then launches an RPC server, which executes requests agains this definition. It additionally accepts a path to a dynamic library compiled by the LLVM backend, which is used for simplification of bool sorted terms. In order to build the kore definition and the shared library out of a K definition, first call
 
 ```
 kompile --llvm-kompile-type c my_defintion.k
@@ -17,7 +17,7 @@ kompile --llvm-kompile-type c my_defintion.k
 and then launch the server via
 
 ```
-hs-backend-booster ./my_defintion-kompiled/definition.kore --module MY-DEFINITION --llvm-backend-library ./my_defintion-kompiled/interpreter
+kore-rpc-booster ./my_defintion-kompiled/definition.kore --module MY-DEFINITION --llvm-backend-library ./my_defintion-kompiled/interpreter
 ```
 
 
@@ -37,8 +37,8 @@ $ stack build
 $ cabal build
 ```
 
-* Prerequisites: `stack` or `cabal`, `ghc-9.2.5`
-* Stackage resolver: `nightly-2022-11-17` (`ghc-9.2.5`)
+* Prerequisites: `stack` or `cabal`, `ghc-9.2.7`
+* Stackage resolver: `lts-20.20` (`ghc-9.2.7`)
 
 ### Nix
 
@@ -49,15 +49,15 @@ There are several things you can do, to make the development via nix as seamless
 
 To open the nix shell you will need nix version 2.4 or newer. Then use either `nix develop` (if you have flakes enabled) or use the old style `nix-shell` command.
 
-If you want to open a shell for a different version of ghc (currently supporting `ghc925` and `ghc8107`), use
+If you want to open a shell for a different version of ghc (currently supporting `ghc927`), use
 
 ```bash
-nix develop .#ghc925
+nix develop .#ghc927
 ```
 or
 
 ```bash
-nix-shell --argstr ghc ghc925
+nix-shell --argstr ghc ghc927
 ```
 
 You can open a dev shell which contains cabal with all the required libraries compiled with profiling via:
@@ -68,16 +68,16 @@ nix develop .#ghc925-prof
 
 #### Nix-direnv
 
-Using a version of direnv that works with nix (https://github.com/nix-community/nix-direnv) allows seamless loading and unloading of the nix shell, which adds all the required packages such as `cabal`, `hpack`, `fourmolu`, etc. Use the above link to install `nix-direnv`, making sure to hook direnv into whichever shell you are using (https://direnv.net/docs/hook.html). You can use the default nix shell (currently GHC version 9.2.5) by running
+Using a version of direnv that works with nix (https://github.com/nix-community/nix-direnv) allows seamless loading and unloading of the nix shell, which adds all the required packages such as `cabal`, `hpack`, `fourmolu`, etc. Use the above link to install `nix-direnv`, making sure to hook direnv into whichever shell you are using (https://direnv.net/docs/hook.html). You can use the default nix shell (currently GHC version 9.2.7) by running
 
 ```bash
 echo "use nix" > .envrc
 ```
 
-If you want to use a different version of GHC for your shell, e.g. `ghc925`, use
+If you want to use a different version of GHC for your shell, e.g. `ghc927`, use
 
 ```bash
-echo "use flake .#ghc925" > .envrc
+echo "use flake .#ghc927" > .envrc
 ```
 
 Finally, run `direnv allow` inside the repo folder to load up the nix shell.
@@ -104,7 +104,7 @@ https://marketplace.visualstudio.com/items?itemName=haskell.haskell
 The `nix-env-selector` extension may prompt for the workspace to be re-loaded. Once re-loaded, HLS should start working. In case you need to use a specific version of ghc for this extension, modify the `.vscode/settings.json` file here:
 
 ```json
-  "nixEnvSelector.args": "--argstr ghc ghc924"
+  "nixEnvSelector.args": "--argstr ghc ghc927"
 ```
 
 ## Eventlog tracing
