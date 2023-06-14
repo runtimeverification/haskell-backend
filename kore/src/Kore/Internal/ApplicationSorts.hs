@@ -97,6 +97,7 @@ pairVariablesToSorts variables sorts
     | variablesLength < sortsLength =
         koreFail "Application uses more sorts than the declaration."
     | variablesLength > sortsLength =
+        trace ("Sort confusion: " <> show (variables, sorts)) $ 
         koreFail "Application uses less sorts than the declaration."
     | otherwise = return (zip variables sorts)
   where

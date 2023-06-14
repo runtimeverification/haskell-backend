@@ -508,7 +508,7 @@ backTranslateWith
 
         invert :: (Show k, Show a, Ord a) => Map k a -> Map a k
         invert =
-            Map.fromListWithKey (\k x y -> error $ show (k, x, y))
+            Map.fromListWithKey (\k x y -> trace ("[Warn] Duplicate keys " <> show (k, x, y)) y)
                 . map swap
                 . Map.toList
 
