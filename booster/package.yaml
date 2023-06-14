@@ -194,7 +194,7 @@ executables:
     ghc-options:
     - -rtsopts
 
-  booster:
+  kore-rpc-booster:
     source-dirs: tools/booster
     main: Server.hs
     dependencies:

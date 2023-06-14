@@ -34,7 +34,7 @@ shift
 dir=$(basename $directory)
 bindir=../../.build/booster/bin
 
-server=${SERVER:-$bindir/booster}
+server=${SERVER:-$bindir/kore-rpc-booster}
 client=${CLIENT:-$bindir/rpc-client}
 
 kore=resources/${dir#test-}.kore

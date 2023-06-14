@@ -191,7 +191,7 @@ jobs:
         run: |
           nix --version
           export JQ=$(nix-build '<nixpkgs>' -A jq --no-link)/bin/jq
-          booster=$(nix build .#hs-backend-booster:exe:booster --extra-experimental-features 'nix-command flakes' --print-build-logs --json | $JQ -r '.[].outputs | to_entries[].value')
+          booster=$(nix build .#hs-backend-booster:exe:kore-rpc-booster --extra-experimental-features 'nix-command flakes' --print-build-logs --json | $JQ -r '.[].outputs | to_entries[].value')
           drv=$(nix-store --query --deriver ${booster})
           nix-store --query --requisites --include-outputs ${drv} | cachix push k-framework
           nix build .#hs-backend-booster:exe:parsetest --extra-experimental-features 'nix-command flakes' --print-build-logs
