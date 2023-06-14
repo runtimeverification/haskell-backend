@@ -256,13 +256,15 @@ getModelFor tools predicates =
             Left Unknown -> pure (Left False)
             Left Unsat -> pure (Left True)
             Left Sat -> pure (Left False) -- error "impossible!"
-            Right mapping ->
-                pure
-                    . Right
-                    . Substitution.fromMap
-                    . Map.mapKeys TermLike.mkSomeVariable
-                    . Map.map (backTranslateWith translatorState)
-                    $ Map.compose mapping variables
+            Right mapping -> do
+                let freeVarMap =
+                        traverse (backTranslateWith tools translatorState) $
+                            Map.compose mapping variables
+                case freeVarMap of
+                    Left _errMsg -> do
+                        -- FIXME error logging?
+                        pure (Left False)
+                    Right m -> pure . Right $ mkSubst m
   where
     satQuery ::
         NonEmpty SExpr -> -- predicates
@@ -280,6 +282,11 @@ getModelFor tools predicates =
                 case mbMapping of
                     Nothing -> pure $ Left Unknown -- something went wrong in getValue
                     Just mapping -> pure . Right $ Map.fromList mapping
+
+    mkSubst ::
+        Map.Map (ElementVariable variable) (TermLike.TermLike variable) ->
+        Substitution variable
+    mkSubst = Substitution.fromMap . Map.mapKeys TermLike.mkSomeVariable
 
 translatePredicate ::
     forall variable.

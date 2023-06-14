@@ -645,12 +645,10 @@ getValueSMT targets =
                 onErrorNothing $
                     fmap (map (second SimpleSMT.value)) $
                         withSolver' solverSetup (flip SimpleSMT.getExprs targets)
-
   where
     onErrorNothing :: (MonadIO m, MonadCatch m) => m a -> m (Maybe a)
     onErrorNothing action =
-        fmap Just action `Exception.catch` \(_::IOException) -> pure Nothing
-
+        fmap Just action `Exception.catch` \(_ :: IOException) -> pure Nothing
 
 ackCommandSMT :: SExpr -> SMT ()
 ackCommandSMT command =

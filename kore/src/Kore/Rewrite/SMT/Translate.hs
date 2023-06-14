@@ -63,7 +63,7 @@ import Kore.Attribute.Sort qualified as Attribute
 import Kore.Attribute.Symbol qualified as Attribute
 import Kore.Builtin.Bool qualified as Builtin.Bool
 import Kore.Builtin.Int qualified as Builtin.Int
-import Kore.IndexedModule.MetadataTools
+import Kore.IndexedModule.MetadataTools as Tools
 import Kore.Internal.InternalBool
 import Kore.Internal.InternalInt
 import Kore.Internal.Predicate
@@ -77,6 +77,7 @@ import Kore.Internal.TermLike qualified as TermLike
 import Kore.Log.WarnSymbolSMTRepresentation (
     warnSymbolSMTRepresentation,
  )
+import Kore.Rewrite.SMT.AST qualified as AST
 import Kore.Rewrite.SMT.Resolvers (
     translateSort,
     translateSymbol,
@@ -478,71 +479,104 @@ withDefinednessAssumption :: Monad m => Translator p m a -> Translator p m a
 withDefinednessAssumption =
     local (const $ TranslatorEnv True)
 
-
 ------------------------------------------------------------
 
 {- | back-translate SExpr -> TermLike, using a (read-only) prior state
+  and metadata tools
+
   SMT-built-in constructs need to be interpreted in a suitable way,
   and all variables back-substituted.
 -}
 backTranslateWith ::
     forall variable.
     InternalVariable variable =>
+    SmtMetadataTools Attribute.Symbol ->
     TranslatorState variable ->
     SExpr ->
-    TermLike variable
-backTranslateWith priorState = backTranslate
-  where
-    reverseMap :: Map SExpr (TermLike variable)
-    reverseMap =
-        Map.empty
-            <> Map.map TermLike.mkElemVar (invert $ freeVars priorState)
-            <> invert (Map.map (Atom . smtName) $ terms priorState)
-            <> mkPredicateMap (predicates priorState)
+    Either String (TermLike variable)
+backTranslateWith
+    tools@MetadataTools{smtData = AST.Declarations{symbols}}
+    priorState =
+        runExcept . backTranslate
+      where
+        reverseMap :: Map SExpr (TermLike variable)
+        reverseMap =
+            Map.empty
+                <> Map.map TermLike.mkElemVar (invert $ freeVars priorState)
+                <> invert (Map.map (Atom . smtName) $ terms priorState)
+                <> mkPredicateMap (predicates priorState)
 
-    invert :: (Show k, Show a, Ord a) => Map k a -> Map a k
-    invert =
-        Map.fromListWithKey (\k x y -> error $ show (k, x, y))
-            . map swap
-            . Map.toList
+        invert :: (Show k, Show a, Ord a) => Map k a -> Map a k
+        invert =
+            Map.fromListWithKey (\k x y -> error $ show (k, x, y))
+                . map swap
+                . Map.toList
 
-    backTranslate :: SExpr -> TermLike variable
-    backTranslate s@(Atom t)
-        | isVarName t =
-            fromMaybe (error $ "backtranslate: unbound atom" <> show t) $
-                Map.lookup s reverseMap
-        | t == "true" =
-            TermLike.mkInternalBool $ InternalBool (builtinSort Builtin.Bool.sort) True
-        | t == "false" =
-            TermLike.mkInternalBool $ InternalBool (builtinSort Builtin.Bool.sort) False
-        | Text.all isDigit t =
-            TermLike.mkInternalInt $ InternalInt (builtinSort Builtin.Int.sort) $ read (Text.unpack t)
-        | otherwise =
-            undefined -- FIXME translate built-in stuff
+        backTranslate :: SExpr -> Except String (TermLike variable)
+        backTranslate s@(Atom t)
+            | isVarName t =
+                maybe (throwError $ "backtranslate: unbound atom" <> show t) pure $
+                    Map.lookup s reverseMap
+            -- Bool values are translated back to _terms_ not predicates
+            | t == "true" =
+                pure . TermLike.mkInternalBool $
+                    InternalBool (builtinSort Builtin.Bool.sort) True
+            | t == "false" =
+                pure . TermLike.mkInternalBool $
+                    InternalBool (builtinSort Builtin.Bool.sort) False
+            | Text.all isDigit t =
+                pure . TermLike.mkInternalInt $
+                    InternalInt (builtinSort Builtin.Int.sort) $
+                        read (Text.unpack t)
+            | otherwise =
+                throwError $ "unable to translate atom " <> show t
+        backTranslate (List xs)
+            | null xs =
+                throwError "backtranslate: empty list"
+            -- everything is translated back using symbol declarations,
+            -- not ML connectives (translating terms not predicates)
+            | (fct@Atom{} : rest) <- xs
+            , Just koreSym <- Map.lookup fct reverseMetadata = do
+                args <- mapM backTranslate rest
+                pure $ TermLike.mkApplySymbol koreSym args
+            | otherwise =
+                throwError "backTranslate.List-case: implement me!"
 
-    backTranslate (List []) = error "backtranslate: empty list"
-    backTranslate (List (x:xs))
-        | otherwise = undefined
+        builtinSort name = SortActualSort $ SortActual (Id name AstLocationNone) []
 
-    builtinSort name = SortActualSort $ SortActual (Id name AstLocationNone) []
+        isVarName :: Text -> Bool
+        isVarName t =
+            Text.head t == '<'
+                && Text.last t == '>'
+                && Text.all isDigit (Text.init $ Text.tail t)
 
-    isVarName :: Text -> Bool
-    isVarName t =
-        Text.head t == '<'
-            && Text.last t == '>'
-            && Text.all isDigit (Text.init $ Text.tail t)
+        -- symbol metadata reversed (collisions forbidden, crossing fingers)
+        reverseMetadata :: Map.Map SExpr Symbol
+        reverseMetadata = Map.map symbolFrom $ invert $ Map.map AST.symbolData symbols
 
-    -- TODO do we actually need the predicate map at all?
-    backTranslateSort :: SExpr -> Sort
-    backTranslateSort (Atom t) = error $ "backTranslateSort: Atom " <> show t
-    backTranslateSort (List [Atom "Int"]) =
-        SortActualSort $ SortActual (Id Builtin.Int.sort AstLocationNone) []
-    backTranslateSort (List [Atom "Bool"]) =
-        SortActualSort $ SortActual (Id Builtin.Bool.sort AstLocationNone) []
-    backTranslateSort (List [Atom t]) = error "reverse the translateSort function" -- FIXME
+        symbolFrom :: Id -> Symbol
+        symbolFrom name =
+            Symbol
+                name
+                [] -- FIXME cannot recover the sort parameters
+                (Tools.applicationSorts tools $ SymbolOrAlias name [])
+                (Tools.symbolAttributes tools name)
 
-    mkPredicateMap =
-        Map.mapKeys fst
-            . Map.mapWithKey (\(_, s) -> Predicate.fromPredicate (backTranslateSort s))
-            . invert
-            . Map.map (\SMTDependentAtom{smtName, smtType} -> (Atom smtName, smtType))
+        -- TODO do we actually need the predicate map at all?
+        backTranslateSort :: SExpr -> Sort
+        backTranslateSort (Atom "Int") =
+            SortActualSort $ SortActual (Id Builtin.Int.sort AstLocationNone) []
+        backTranslateSort (Atom "Bool") =
+            SortActualSort $ SortActual (Id Builtin.Bool.sort AstLocationNone) []
+        backTranslateSort (Atom t) = error $ "backTranslateSort: Atom " <> show t
+        backTranslateSort (List [Atom "Int"]) =
+            SortActualSort $ SortActual (Id Builtin.Int.sort AstLocationNone) []
+        backTranslateSort (List [Atom "Bool"]) =
+            SortActualSort $ SortActual (Id Builtin.Bool.sort AstLocationNone) []
+        backTranslateSort (List _) =
+            error "reverse the translateSort function" -- FIXME
+        mkPredicateMap =
+            Map.mapKeys fst
+                . Map.mapWithKey (\(_, s) -> Predicate.fromPredicate (backTranslateSort s))
+                . invert
+                . Map.map (\SMTDependentAtom{smtName, smtType} -> (Atom smtName, smtType))
