@@ -75,7 +75,7 @@
           modules = [{
             enableProfiling = profiling;
             enableLibraryProfiling = profiling;
-            packages.hs-backend-booster.components.exes.booster = add-z3 "booster";
+            packages.hs-backend-booster.components.exes.kore-rpc-booster = add-z3 "kore-rpc-booster";
             packages.hs-backend-booster.components.tests.llvm-integration = {
               build-tools = with pkgs; lib.mkForce [ makeWrapper ];
               postInstall = ''
@@ -136,8 +136,8 @@
           pkgs = nixpkgsFor system;
           flakes = flakesFor pkgs k-framework.packages.${system}.k;
         in {
-          booster =
-            packages."hs-backend-booster:exe:booster";
+          kore-rpc-booster =
+            packages."hs-backend-booster:exe:kore-rpc-booster";
           booster-dev = packages."hs-backend-booster:exe:booster-dev";
           rpc-client = packages."hs-backend-booster:exe:rpc-client";
           parsetest = packages."hs-backend-booster:exe:parsetest";
@@ -163,7 +163,7 @@
           };
 
         in {
-          booster = apps."hs-backend-booster:exe:booster";
+          kore-rpc-booster = apps."hs-backend-booster:exe:kore-rpc-booster";
           booster-dev = apps."hs-backend-booster:exe:booster-dev";
           rpc-client = apps."hs-backend-booster:exe:rpc-client";
           parsetest = apps."hs-backend-booster:exe:parsetest";
@@ -197,8 +197,8 @@
           integration = with nixpkgsFor system;
             with flakes.${defaultCompiler};
             callPackage ./test/rpc-integration {
-              booster =
-                packages."hs-backend-booster:exe:booster";
+              kore-rpc-booster =
+                packages."hs-backend-booster:exe:kore-rpc-booster";
               rpc-client =
                 packages."hs-backend-booster:exe:rpc-client";
               inherit (k-framework.packages.${system}) k;
@@ -212,8 +212,8 @@
         (_: prev:
           let inherit ((flakesFor prev k-framework.packages.${prev.system}.k).${defaultCompiler}) packages;
           in {
-            booster =
-              packages."hs-backend-booster:exe:booster";
+            kore-rpc-booster =
+              packages."hs-backend-booster:exe:kore-rpc-booster";
             rpc-client = packages."hs-backend-booster:exe:rpc-client";
           })
       ];

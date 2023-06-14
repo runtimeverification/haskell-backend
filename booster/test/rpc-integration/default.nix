@@ -1,4 +1,4 @@
-{ stdenv, coreutils, lib, booster, rpc-client, git, k }:
+{ stdenv, coreutils, lib, kore-rpc-booster, rpc-client, git, k }:
 
 let
   mkIntegrationTest =
@@ -15,7 +15,7 @@ let
         ${lib.strings.concatMapStrings (f: ''
           export ${f}
         '') buildFlags}
-        export SERVER=${booster}/bin/booster
+        export SERVER=${kore-rpc-booster}/bin/kore-rpc-booster
         export CLIENT=${rpc-client}/bin/rpc-client
 
         patchShebangs runDirectoryTest.sh
