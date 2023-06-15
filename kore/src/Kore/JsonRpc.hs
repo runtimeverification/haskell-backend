@@ -443,19 +443,18 @@ respond serverState moduleName runSMT =
                     Right stateVerified -> do
                         let sort = TermLike.termLikeSort stateVerified
                             patt =
-                                -- TODO should restrict this to pure predicates
                                 mkRewritingPattern $ Pattern.parsePatternFromTermLike stateVerified
                             preds = getMultiAndPredicate $ Condition.predicate patt
-
-                        -- TODO restrict to simple predicates (or terms of sort bool?)
                         -- We use the invariant that the parsing does not produce a substitution
 
                         let tools = Exec.metadataTools serializedModule
                         result <-
-                            liftIO
-                                . runSMT tools lemmas
-                                . SMT.Evaluator.getModelFor tools
-                                $ NonEmpty.fromList preds
+                            if all Pattern.isTop preds -- catch terms without predicates
+                                then pure $ Left False
+                                else liftIO
+                                         . runSMT tools lemmas
+                                         . SMT.Evaluator.getModelFor tools
+                                         $ NonEmpty.fromList preds
 
                         pure . Right . GetModel $
                             case result of

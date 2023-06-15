@@ -278,11 +278,14 @@ getModelFor tools predicates =
             Nothing -> pure $ Left Unknown
             Just Unsat -> pure $ Left Unsat
             Just Unknown -> pure $ Left Unknown
-            Just Sat -> do
-                mbMapping <- SMT.getValue vars
-                case mbMapping of
-                    Nothing -> pure $ Left Unknown -- something went wrong in getValue
-                    Just mapping -> pure . Right $ Map.fromList mapping
+            Just Sat ->
+                if null vars -- no free variables, trivial case
+                    then pure $ Right Map.empty
+                    else do
+                        mbMapping <- SMT.getValue vars
+                        case mbMapping of
+                            Nothing -> pure $ Left Unknown -- something went wrong in getValue
+                            Just mapping -> pure . Right $ Map.fromList mapping
 
     mkSubst ::
         Map.Map (ElementVariable variable) (TermLike.TermLike variable) ->
