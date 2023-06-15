@@ -438,6 +438,52 @@ requests to the server by passing `"module": "MODULE-NAME"`.
 }
 ```
 
+## Get-model
+
+A `get-model` request aims to find a variable substitution that satisfies all predicates in the provided kore term, or else responds that it is not satisfiable. The request may also fail to obtain an answer.
+
+### Request:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "get-model",
+  "params": {
+    "state": {"format": "KORE", "version": 1, "term": {...}},
+    "module": "MODULE-NAME"
+  }
+}
+```
+
+Optional parameters: `module` (main module name)
+
+### Error Response:
+
+same as for `execute`
+
+### Correct Response:
+
+```json
+{
+  "jsonrpc":"2.0",
+  "id":1,
+  "result":{
+    "satisfiable": "is-satisfiable",
+    "substitution": {"format": "KORE", "version": 1, "term": {...}}
+}
+```
+
+Optional fields: `substitution` (filled when `satisfiable = is-satisfiable`)
+
+The `satisfiable` field can have the following values:
+* `"satisfiable": "is-satisfiable"`:    
+  The predicates can be satisfied. The  field `substitution` must be present, and provides a substitution that fulfils all predicates in the supplied `state`. Exception: if the predicates are trivially satisfied without any variable assignments, the trivial (empty) `substitution` is omitted.
+* `"satisfiable": "is-not-satisfiable"`:    
+  The predicates are known to not be satisfiable. The `substitution` field is omitted.
+* `"satisfiable": "satisfiability-unknown"`:   
+  The backend was unable to decide whether or not there is a satisfying substitution. The `substitution` field is omitted.
+
 ## Cancel
 
 ### Request:
