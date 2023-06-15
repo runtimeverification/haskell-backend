@@ -574,6 +574,12 @@ backTranslateWith
                 (Tools.symbolAttributes tools name)
 
         -- TODO do we actually need the predicate map at all?
+        mkPredicateMap =
+            Map.mapKeys fst
+                . Map.mapWithKey (\(_, s) -> Predicate.fromPredicate (backTranslateSort s))
+                . invert
+                . Map.map (\SMTDependentAtom{smtName, smtType} -> (Atom smtName, smtType))
+
         backTranslateSort :: SExpr -> Sort
         backTranslateSort (Atom "Int") =
             simpleSort "SortInt"
@@ -586,9 +592,3 @@ backTranslateWith
             simpleSort "SortBool"
         backTranslateSort (List _) =
             error "reverse the translateSort function" -- FIXME
-
-        mkPredicateMap =
-            Map.mapKeys fst
-                . Map.mapWithKey (\(_, s) -> Predicate.fromPredicate (backTranslateSort s))
-                . invert
-                . Map.map (\SMTDependentAtom{smtName, smtType} -> (Atom smtName, smtType))
