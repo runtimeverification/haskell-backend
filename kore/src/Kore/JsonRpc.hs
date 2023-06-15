@@ -451,10 +451,11 @@ respond serverState moduleName runSMT =
                         result <-
                             if all Pattern.isTop preds -- catch terms without predicates
                                 then pure $ Left False
-                                else liftIO
-                                         . runSMT tools lemmas
-                                         . SMT.Evaluator.getModelFor tools
-                                         $ NonEmpty.fromList preds
+                                else
+                                    liftIO
+                                        . runSMT tools lemmas
+                                        . SMT.Evaluator.getModelFor tools
+                                        $ NonEmpty.fromList preds
 
                         pure . Right . GetModel $
                             case result of
