@@ -183,7 +183,7 @@ data SatResult
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[FieldLabelModifier '[CamelToKebab]] SatResult
+        via CustomJSON '[ConstructorTagModifier '[CamelToKebab]] SatResult
 
 data ReqOrRes = Req | Res
 
