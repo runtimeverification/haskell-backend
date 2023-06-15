@@ -520,13 +520,13 @@ backTranslateWith
             -- Bool values are translated back to _terms_ not predicates
             | t == "true" =
                 pure . TermLike.mkInternalBool $
-                    InternalBool (builtinSort Builtin.Bool.sort) True
+                    InternalBool (simpleSort "SortBool") True
             | t == "false" =
                 pure . TermLike.mkInternalBool $
-                    InternalBool (builtinSort Builtin.Bool.sort) False
+                    InternalBool (simpleSort "SortBool") False
             | Text.all isDigit t =
                 pure . TermLike.mkInternalInt $
-                    InternalInt (builtinSort Builtin.Int.sort) $
+                    InternalInt (simpleSort "SortInt") $
                         read (Text.unpack t)
             | otherwise =
                 throwError $ "unable to translate atom " <> show t
@@ -542,7 +542,8 @@ backTranslateWith
             | otherwise =
                 throwError "backTranslate.List-case: implement me!"
 
-        builtinSort name = SortActualSort $ SortActual (Id name AstLocationNone) []
+        -- FIXME unable to recover non-standard sort names (case where Int < OtherSort)
+        simpleSort name = SortActualSort $ SortActual (Id name AstLocationNone) []
 
         isVarName :: Text -> Bool
         isVarName t =
@@ -550,9 +551,19 @@ backTranslateWith
                 && Text.last t == '>'
                 && Text.all isDigit (Text.init $ Text.tail t)
 
-        -- symbol metadata reversed (collisions forbidden, crossing fingers)
+        -- Reverse map of symbol metadata (collisions forbidden).
+        -- We omit symbols that have an smt-hook (they should never
+        -- occur in a result)
         reverseMetadata :: Map.Map SExpr Symbol
-        reverseMetadata = Map.map symbolFrom $ invert $ Map.map AST.symbolData symbols
+        reverseMetadata =
+            Map.map symbolFrom
+                . invert
+                . Map.map AST.symbolData
+                $ Map.filter (not . isBuiltin . AST.symbolDeclaration) symbols
+
+        isBuiltin :: AST.KoreSymbolDeclaration a b -> Bool
+        isBuiltin AST.SymbolBuiltin{} = True
+        isBuiltin _other = False
 
         symbolFrom :: Id -> Symbol
         symbolFrom name =
@@ -565,16 +576,17 @@ backTranslateWith
         -- TODO do we actually need the predicate map at all?
         backTranslateSort :: SExpr -> Sort
         backTranslateSort (Atom "Int") =
-            SortActualSort $ SortActual (Id Builtin.Int.sort AstLocationNone) []
+            simpleSort "SortInt"
         backTranslateSort (Atom "Bool") =
-            SortActualSort $ SortActual (Id Builtin.Bool.sort AstLocationNone) []
+            simpleSort "SortBool"
         backTranslateSort (Atom t) = error $ "backTranslateSort: Atom " <> show t
         backTranslateSort (List [Atom "Int"]) =
-            SortActualSort $ SortActual (Id Builtin.Int.sort AstLocationNone) []
+            simpleSort "SortInt"
         backTranslateSort (List [Atom "Bool"]) =
-            SortActualSort $ SortActual (Id Builtin.Bool.sort AstLocationNone) []
+            simpleSort "SortBool"
         backTranslateSort (List _) =
             error "reverse the translateSort function" -- FIXME
+
         mkPredicateMap =
             Map.mapKeys fst
                 . Map.mapWithKey (\(_, s) -> Predicate.fromPredicate (backTranslateSort s))
