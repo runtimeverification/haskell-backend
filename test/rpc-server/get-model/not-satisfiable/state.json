@@ -27,11 +27,11 @@
           "name": "SortBool",
           "args": []
         },
-        "value": "false"
+        "value": "true"
       },
       "second": {
         "tag": "App",
-        "name": "Lbl'Unds-LT-Eqls'Int'Unds'",
+        "name": "Lbl'Unds-GT-Eqls'Int'Unds'",
         "sorts": [],
         "args": [
           {
@@ -74,7 +74,7 @@
           "name": "SortBool",
           "args": []
         },
-        "value": "false"
+        "value": "true"
       },
       "second": {
         "tag": "App",

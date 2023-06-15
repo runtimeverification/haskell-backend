@@ -237,3 +237,17 @@ with subprocess.Popen(f"kore-rpc {def_path} --module TEST --server-port {PORT} -
             checkGolden(resp, resp_execute_defaultmodule_golden_path)
           finally:
             process.kill()
+
+print("Running get-model tests:")
+
+for name in os.listdir("./get-model"):
+  info(f"- test '{name}'...")
+  get_model_def_path = os.path.join("./get-model", name, "definition.kore")
+  state_json_path = os.path.join("./get-model", name, "state.json")
+  resp_golden_path = os.path.join("./get-model", name, "response.golden")
+  with open(state_json_path, 'r') as state_json:
+      state = json.loads(state_json.read())
+      params = {}
+      params["state"] = state
+      req = rpc_request_id1("get-model", params)
+      runTest(get_model_def_path, req, resp_golden_path)
