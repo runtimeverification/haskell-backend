@@ -6,7 +6,7 @@ module IMP-SYNTAX
   imports ID
 
   syntax AExp  ::= Int | Id
-                 | "-" Int                    [klabae(-_), symbol, format(%1%2)]
+                 | "-" Int                    [klabel(-_), symbol, format(%1%2)]
                  | AExp "/" AExp              [klabel(_/_), symbol, left, seqstrict, color(pink)]
                  > AExp "+" AExp              [klabel(_+_), symbol, left, seqstrict, color(pink)]
                  | "(" AExp ")"               [bracket]
