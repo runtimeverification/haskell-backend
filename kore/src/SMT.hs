@@ -210,7 +210,7 @@ check :: MonadSMT m => m (Maybe Result)
 check = liftSMT checkSMT
 {-# INLINE check #-}
 
--- | Check if the current set of assertions is satisfiable.
+-- | Retrieve the given variables from the model (only valid if satisfiable)
 getValue :: MonadSMT m => [SExpr] -> m (Maybe [(SExpr, SExpr)])
 getValue = liftSMT . getValueSMT
 {-# INLINE getValue #-}
