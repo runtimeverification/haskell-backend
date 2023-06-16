@@ -2,7 +2,8 @@
   description = "hs-backend-booster";
 
   inputs = {
-    k-framework.url = "github:runtimeverification/k";
+    k-framework.url = "github:runtimeverification/k/v5.6.131";
+    k-framework.inputs.booster-backend.follows = "";
     nixpkgs.follows = "haskell-nix/nixpkgs-unstable";
     haskell-nix.url = "github:input-output-hk/haskell.nix";
     haskell-backend.url = "github:runtimeverification/haskell-backend";

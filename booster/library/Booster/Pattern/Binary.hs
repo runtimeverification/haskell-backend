@@ -32,6 +32,7 @@ import Data.List (intercalate)
 import Data.Map qualified as Map
 import Data.Word (Word64)
 import GHC.Word (Word8)
+import Text.Printf
 
 -- | tags indicating the next element in a block, see @'decodeBlock'@
 pattern
@@ -56,7 +57,10 @@ data Version = Version
     , minor :: Int16
     , patch :: Int16
     }
-    deriving (Show)
+    deriving (Eq, Ord)
+
+instance Show Version where
+    show version = printf "%d.%d.%d" version.major version.minor version.patch
 
 data Block
     = BTerm Term
@@ -95,12 +99,6 @@ insertInternedString pos str =
 
 areCompatible :: Version -> Version -> Bool
 areCompatible a b = a.major == b.major && a.minor == b.minor
-
-decodeMagicHeaderAndVersion :: Get Version
-decodeMagicHeaderAndVersion = do
-    header <- getByteString 5
-    unless (header == "\127KORE") $ fail "Invalid magic header for binary KORE"
-    Version <$> getInt16le <*> getInt16le <*> getInt16le
 
 {- | Length (non-negative integer) is encoded in one of two special
   formats (depending on the version).
@@ -218,9 +216,9 @@ lookupKoreDefinitionSymbol name = DecodeM $ do
   the block, the stack is expected to hold a single element (the
   resulting term which is returned).
 -}
-decodeBlock :: DecodeM [Block]
-decodeBlock = do
-    whileNotEmpty $ do
+decodeBlock :: Maybe Int -> DecodeM [Block]
+decodeBlock mbSize = do
+    whileNotEnded $ do
         liftDecode getWord8 >>= \case
             KORECompositePattern ->
                 -- apply node (arity), uses current symbol and the stack of terms
@@ -258,10 +256,23 @@ decodeBlock = do
 
     getStack
   where
-    whileNotEmpty m =
-        liftDecode isEmpty >>= \case
+    shouldStop = case mbSize of
+        Nothing ->
+            liftDecode isEmpty
+        Just n ->
+            liftDecode bytesRead >>= \case
+                size
+                    | size < fromIntegral n ->
+                        pure False
+                    | size > fromIntegral n ->
+                        fail $ "Block decoder consumed " <> show size <> " > " <> show n <> " bytes"
+                    | otherwise -> -- size == fromIntegral n
+                        pure True
+
+    whileNotEnded m = do
+        shouldStop >>= \case
             True -> pure ()
-            False -> m >> whileNotEmpty m
+            False -> m >> whileNotEnded m
 
     mkSymbolApplication :: ByteString -> [Sort] -> [Block] -> DecodeM Block
     mkSymbolApplication "\\and" _ [BPredicate p1, BPredicate p2] = pure $ BPredicate $ AndPredicate p1 p2
@@ -323,6 +334,7 @@ decodeBlock = do
         BSymbol _ _ -> "Symbol"
 
 {- | The term in binary format is stored as follows:
+
 Bytes   1    4      2         2         2                ?
       +----+------+---------+---------+---------------+---------+
       | 7f | KORE | <major> | <minor> | <patch-level> | <BLOCK> |
@@ -330,12 +342,45 @@ Bytes   1    4      2         2         2                ?
 with the first byte ignored (7f) a fixed magic header "KORE", major,
 minor, patch-level 16-bit integers (little-endian), and the block
 encoded as described in @'decodeBlock'@.
+
+Version 1.2.0 adds an 8-byte length field before the block.
+
+Bytes   1    4      2         2         2               8          <length>
+      +----+------+---------+---------+---------------+----------+---------+
+      | 7f | KORE | <major> | <minor> | <patch-level> | <length> | <BLOCK> |
+      +----+------+---------+---------+---------------+----------+---------+
+
+This function returns the _total_ size (including the header size)
+while the _remaining_ size is stored in the data.
+
 https://github.com/runtimeverification/llvm-backend/blob/master/docs/binary_kore.md
 -}
+decodeMagicHeaderAndVersion :: Get (Version, Maybe Int)
+decodeMagicHeaderAndVersion = do
+    header <- getByteString 5
+    unless (header == "\127KORE") $ fail "Invalid magic header for binary KORE"
+    version <- Version <$> getInt16le <*> getInt16le <*> getInt16le
+    unless (supported version) $
+        fail $
+            "Binary kore version " <> show version <> " not supported"
+    (version,) <$> decodeLengthField version
+  where
+    -- read the length field if version >= 1.2, use zero (variable length) otherwise
+    decodeLengthField :: Version -> Get (Maybe Int)
+    decodeLengthField version
+        | version >= Version 1 2 0 =
+            (\n -> if n > 0 then Just (n + hdrSize) else Nothing) . fromIntegral <$> getWord64le
+        | otherwise =
+            pure Nothing
+    hdrSize = 19
+
+supported :: Version -> Bool
+supported version = version.major == 1 && version.minor `elem` [0 .. 2]
+
 decodeTerm' :: Maybe KoreDefinition -> Get Term
 decodeTerm' mDef = do
-    version <- decodeMagicHeaderAndVersion
-    runDecodeM version mDef decodeBlock >>= \case
+    (version, mbSize) <- decodeMagicHeaderAndVersion
+    runDecodeM version mDef (decodeBlock mbSize) >>= \case
         [BTerm trm] -> pure trm
         _ -> fail "Expecting a single term on the top of the stack"
 
@@ -344,8 +389,8 @@ decodeTerm = decodeTerm' . Just
 
 decodePattern :: Maybe KoreDefinition -> Get Pattern
 decodePattern mDef = do
-    version <- decodeMagicHeaderAndVersion
-    res <- reverse <$> runDecodeM version mDef decodeBlock
+    (version, mbSize) <- decodeMagicHeaderAndVersion
+    res <- reverse <$> runDecodeM version mDef (decodeBlock mbSize)
     case res of
         BTerm trm : preds' -> do
             preds <- forM preds' $ \case
@@ -356,8 +401,8 @@ decodePattern mDef = do
 
 decodeSingleBlock :: Get Block
 decodeSingleBlock = do
-    version <- decodeMagicHeaderAndVersion
-    runDecodeM version Nothing decodeBlock >>= \case
+    (version, mbSize) <- decodeMagicHeaderAndVersion
+    runDecodeM version Nothing (decodeBlock mbSize) >>= \case
         [b] -> pure b
         _ -> fail "Expecting a single block on the top of the stack"
 
