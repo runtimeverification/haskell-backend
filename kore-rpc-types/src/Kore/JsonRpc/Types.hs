@@ -177,13 +177,13 @@ data GetModelResult = GetModelResult
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] GetModelResult
 
 data SatResult
-    = IsSatisfiable
-    | IsNotSatisfiable
-    | SatisfiabilityUnknown
+    = Sat
+    | Unsat
+    | Unknown
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[ConstructorTagModifier '[CamelToKebab]] SatResult
+        via CustomJSON '[] SatResult
 
 data ReqOrRes = Req | Res
 

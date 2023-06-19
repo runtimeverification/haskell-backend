@@ -1,1 +1,1 @@
-{"jsonrpc":"2.0","id":1,"result":{"satisfiable":"is-satisfiable"}}
+{"jsonrpc":"2.0","id":1,"result":{"satisfiable":"Sat"}}

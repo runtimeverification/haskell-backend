@@ -461,17 +461,17 @@ respond serverState moduleName runSMT =
                             case result of
                                 Left False ->
                                     GetModelResult
-                                        { satisfiable = SatisfiabilityUnknown
+                                        { satisfiable = Unknown
                                         , substitution = Nothing
                                         }
                                 Left True ->
                                     GetModelResult
-                                        { satisfiable = IsNotSatisfiable
+                                        { satisfiable = Unsat
                                         , substitution = Nothing
                                         }
                                 Right subst ->
                                     GetModelResult
-                                        { satisfiable = IsSatisfiable
+                                        { satisfiable = Sat
                                         , substitution =
                                             PatternJson.fromSubstitution sort $
                                                 Substitution.mapVariables getRewritingVariable subst

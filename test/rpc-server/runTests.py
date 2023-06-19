@@ -2,6 +2,9 @@
 from jsonrpcclient import request, request_uuid, notification
 import json, socket, os, subprocess, difflib
 
+script_path = os.path.dirname(os.path.realpath(__file__))
+kore_rpc = os.path.join('.build', 'kore', 'bin', 'kore-rpc')
+SERVER = os.getenv('SERVER',  os.path.join(script_path, '..', '..', kore_rpc))
 HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
 PORT = 31337  # Port to listen on (non-privileged ports are > 1023)
 CREATE_MISSING_GOLDEN = os.getenv("CREATE_MISSING_GOLDEN", 'False').lower() in ('true', '1', 't')
@@ -103,7 +106,7 @@ def checkGolden (resp, resp_golden_path):
 
 
 def runTest(def_path, req, resp_golden_path):
-    with subprocess.Popen(f"kore-rpc {def_path} --module TEST --server-port {PORT} --log-level {server_log_level[VERBOSITY]}".split()) as process:
+    with subprocess.Popen(f"{SERVER} {def_path} --module TEST --server-port {PORT} --log-level {server_log_level[VERBOSITY]}".split()) as process:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
           while True:
             try:
@@ -191,7 +194,7 @@ with open(params_add_json_path, 'r') as params_json:
   params_add = json.loads(params_json.read())
   req_add = rpc_request_id1("add-module", params_add)
 
-with subprocess.Popen(f"kore-rpc {def_path} --module TEST --server-port {PORT} --log-level {server_log_level[VERBOSITY]}".split()) as process:
+with subprocess.Popen(f"{SERVER} {def_path} --module TEST --server-port {PORT} --log-level {server_log_level[VERBOSITY]}".split()) as process:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
           while True:
             try:
