@@ -22,6 +22,16 @@ import Data.Text qualified as Text
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Attributes
+import Kore.Attribute.Parser (
+    ParseAttributes (..),
+    StringLiteral (..),
+    failDuplicate,
+    getOneArgument,
+    getStringLiteral,
+    getZeroParams,
+    parseSExpr,
+    withApplication,
+ )
 import Kore.Debug
 import Kore.Syntax.Application (
     SymbolOrAlias (..),
@@ -82,3 +92,16 @@ smtlibSymbol =
 smtlibAttribute :: Text -> AttributePattern
 smtlibAttribute syntax =
     attributePattern smtlibSymbol [attributeString syntax]
+
+instance ParseAttributes Smtlib where
+    parseAttribute =
+        withApplication' $ \params args Smtlib{getSmtlib} -> do
+            getZeroParams params
+            arg <- getOneArgument args
+            StringLiteral syntax <- getStringLiteral arg
+            sExpr <- parseSExpr syntax
+            unless (isNothing getSmtlib) failDuplicate'
+            return Smtlib{getSmtlib = Just sExpr}
+      where
+        withApplication' = withApplication smtlibId
+        failDuplicate' = failDuplicate smtlibId
