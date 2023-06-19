@@ -20,7 +20,7 @@ To run a test from a test directory, do the following:
 1) In one terminal, start the rpc server with the definition `resources/NAME.kore`:
 
 ```
-$ booster test/rpc-integration/resources/a-to-f.kore --module TEST`
+$ booster test/rpc-integration/resources/a-to-f.kore --module TEST
 ```
 
 2) In another terminal, send requests with the respective state and parameters using the `rpc-client` tool. For example, if the state file ends in `execute`, send an `execute` request like this:
@@ -32,6 +32,8 @@ rpc-client \
     --expect response-zero-steps.json
 ```
 
+NOTE: You may need to specify `--host 127.0.0.1` on Arch Linux.
+
 3) Repeat step 2 for all tests you want to run, using `rpc-client` modes indicated by the file suffixes (`execute`, `simplify`, `send`).
 
 4) Shut down the server in the other terminal (by pressing `^C`).
@@ -39,6 +41,19 @@ rpc-client \
 ## How to add tests or update expected output
 
 Step 2 above can be run using `--expect response-NAME.json --regenerate` to (over-)write the output file.
+
+## How to pretty-print Kore
+
+Use `tools/rpc-kast.sh` to pretty-print the kore terms from JSON requests and responses into pretty K. Specify the compiled K definition as `K_DEFINITION`. For example:
+
+```
+$ K_DEFINITION=./resources/simplify-kompiled/ ../../tools/rpc-kast.sh --request test-simplify/state-evaluate-under-function.simplify
+f ( 12 +Int 34 )
+$ K_DEFINITION=./resources/simplify-kompiled/ ../../tools/rpc-kast.sh --simplify test-simplify/response-evaluate-under-function.json
+f ( 46 )
+```
+
+`tools/rpc-kast.sh` assumes that you have `jq` and `pyk` on `PATH`. You can install `pyk` with `kup`.
 
 ## Automation
 
