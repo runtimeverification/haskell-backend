@@ -305,7 +305,7 @@ Rewrite rules by term index:
   - /home/jost/work/RV/code/playground/imp/imp.k :  (34, 20)
   - /home/jost/work/RV/code/playground/imp/imp.k :  (41, 20)
   - /home/jost/work/RV/code/playground/imp/imp.k :  (42, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (113, 8)
+  - variable_lookup
 - Lbl!__IMP-SYNTAX_BExp_BExp: 2
   - /home/jost/work/RV/code/playground/imp/imp.k :  (35, 20)
   - /home/jost/work/RV/code/playground/imp/imp.k :  (134, 8)
@@ -329,7 +329,7 @@ Rewrite rules by term index:
   - /home/jost/work/RV/code/playground/imp/imp.k :  (133, 8)
 - Lbl_=_;_IMP-SYNTAX_Stmt_Id_AExp: 2
   - /home/jost/work/RV/code/playground/imp/imp.k :  (41, 20)
-  - /home/jost/work/RV/code/playground/imp/imp.k :  (162, 8)
+  - variable_setting
 - Lbl___IMP-SYNTAX_Stmt_Stmt_Stmt: /home/jost/work/RV/code/playground/imp/imp.k :  (175, 8)
 - Lblif(_)_else__IMP-SYNTAX_Stmt_BExp_Block_Block: 3
   - /home/jost/work/RV/code/playground/imp/imp.k :  (42, 20)
@@ -382,75 +382,131 @@ Function equations by term index:
 - Lbl_|Set__SET_Set_Set_Set: /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (559, 8)
 - LblbitRangeInt(_,_,_)_INT-COMMON_Int_Int_Int_Int: /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1235, 8)
 - LblfreshInt(_)_INT_Int_Int: /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1254, 8)
-- LblgetGeneratedCounterCell: -
-- LblinitGeneratedCounterCell: -
-- LblinitGeneratedTopCell: -
-- LblinitKCell: -
-- LblinitStateCell: -
-- LblinitTCell: -
-- LblisAExp: -
-- LblisBExp: -
-- LblisBlock: -
-- LblisBool: -
-- LblisGeneratedCounterCell: -
-- LblisGeneratedCounterCellOpt: -
-- LblisGeneratedTopCell: -
-- LblisGeneratedTopCellFragment: -
-- LblisId: -
-- LblisIds: -
-- LblisInt: -
-- LblisK: -
-- LblisKCell: -
-- LblisKCellOpt: -
-- LblisKConfigVar: -
-- LblisKItem: -
-- LblisKResult: -
-- LblisList: -
-- LblisMap: -
-- LblisPgm: -
-- LblisSet: -
-- LblisStateCell: -
-- LblisStateCellOpt: -
-- LblisStmt: -
-- LblisString: -
-- LblisTCell: -
-- LblisTCellFragment: -
-- LblisTCellOpt: -
+- LblgetGeneratedCounterCell: UNKNOWN
+- LblinitGeneratedCounterCell: UNKNOWN
+- LblinitGeneratedTopCell: UNKNOWN
+- LblinitKCell: UNKNOWN
+- LblinitStateCell: UNKNOWN
+- LblinitTCell: UNKNOWN
+- LblisAExp: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisBExp: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisBlock: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisBool: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGeneratedCounterCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGeneratedCounterCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGeneratedTopCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGeneratedTopCellFragment: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisId: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisIds: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisInt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisK: UNKNOWN
+- LblisKCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisKCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisKConfigVar: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisKItem: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisKResult: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisList: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisMap: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisPgm: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisSet: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisStateCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisStateCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisStmt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisString: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTCellFragment: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
 - LblminInt(_,_)_INT-COMMON_Int_Int_Int: 2
   - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1247, 8)
   - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1248, 8)
 - LblnotBool_: 2
   - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (929, 8)
   - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (928, 8)
-- Lblproject:AExp: -
-- Lblproject:BExp: -
-- Lblproject:Block: -
-- Lblproject:Bool: -
-- Lblproject:GeneratedCounterCell: -
-- Lblproject:GeneratedCounterCellOpt: -
-- Lblproject:GeneratedTopCell: -
-- Lblproject:GeneratedTopCellFragment: -
-- Lblproject:Id: -
-- Lblproject:Ids: -
-- Lblproject:Int: -
-- Lblproject:K: -
-- Lblproject:KCell: -
-- Lblproject:KCellOpt: -
-- Lblproject:KItem: -
-- Lblproject:KResult: -
-- Lblproject:List: -
-- Lblproject:Map: -
-- Lblproject:Pgm: -
-- Lblproject:Set: -
-- Lblproject:StateCell: -
-- Lblproject:StateCellOpt: -
-- Lblproject:Stmt: -
-- Lblproject:String: -
-- Lblproject:TCell: -
-- Lblproject:TCellFragment: -
-- Lblproject:TCellOpt: -
+- Lblproject:AExp: UNKNOWN
+- Lblproject:BExp: UNKNOWN
+- Lblproject:Block: UNKNOWN
+- Lblproject:Bool: UNKNOWN
+- Lblproject:GeneratedCounterCell: UNKNOWN
+- Lblproject:GeneratedCounterCellOpt: UNKNOWN
+- Lblproject:GeneratedTopCell: UNKNOWN
+- Lblproject:GeneratedTopCellFragment: UNKNOWN
+- Lblproject:Id: UNKNOWN
+- Lblproject:Ids: UNKNOWN
+- Lblproject:Int: UNKNOWN
+- Lblproject:K: UNKNOWN
+- Lblproject:KCell: UNKNOWN
+- Lblproject:KCellOpt: UNKNOWN
+- Lblproject:KItem: UNKNOWN
+- Lblproject:KResult: UNKNOWN
+- Lblproject:List: UNKNOWN
+- Lblproject:Map: UNKNOWN
+- Lblproject:Pgm: UNKNOWN
+- Lblproject:Set: UNKNOWN
+- Lblproject:StateCell: UNKNOWN
+- Lblproject:StateCellOpt: UNKNOWN
+- Lblproject:Stmt: UNKNOWN
+- Lblproject:String: UNKNOWN
+- Lblproject:TCell: UNKNOWN
+- Lblproject:TCellFragment: UNKNOWN
+- Lblproject:TCellOpt: UNKNOWN
 - LblsignExtendBitRangeInt(_,_,_)_INT-COMMON_Int_Int_Int_Int: /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1237, 8)
-- append: -
+- append: 2
+  - UNKNOWN
+  - UNKNOWN
 Simplifications by term index:
 - Lbl_%Int_: /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1163, 8)
 - Lbl_&Int_: /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1198, 8)
@@ -482,12 +538,13 @@ Simplifications by term index:
   - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1242, 5)
   - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1162, 8)
 Predicate simplifications by term index:
-- \ceil: 5
+- \ceil: 6
   - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1179, 8)
   - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1178, 8)
   - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1182, 8)
   - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1181, 8)
   - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1180, 8)
+  - UNKNOWN
 - \equalsTerm: 24
   - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1222, 8)
   - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1220, 8)

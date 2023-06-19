@@ -2788,7 +2788,7 @@ Rewrite rules by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (436, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (434, 10)
 - Lbl#execute_EVM_KItem: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (285, 18)
+  - EVM.step
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (291, 10)
 - Lbl#finalizeBlock_EVM_EthereumCommand: evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (663, 10)
 - Lbl#finalizeStorage(_)_EVM_InternalOp_List: 2
@@ -2907,7 +2907,7 @@ Rewrite rules by term index:
 - Lbl#gas[_,_]_EVM_InternalOp_OpCode_OpCode: evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1852, 10)
 - Lbl#gas[_]_EVM_InternalOp_OpCode: evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1860, 10)
 - Lbl#halt_EVM_KItem: 11
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (284, 18)
+  - EVM.halt
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (270, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (271, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1571, 10)
@@ -2960,7 +2960,7 @@ Rewrite rules by term index:
 - Lbl#pushWorldState_EVM_InternalOp: evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (234, 10)
 - Lbl#refund__EVM_InternalOp_Exp: 2
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1447, 27)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1450, 20)
+  - EVM.refund
 - Lbl#rewardOmmers(_)_EVM_EthereumCommand_JSONs: 2
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (680, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (681, 10)
@@ -3092,19 +3092,19 @@ Rewrite rules by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1488, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1501, 10)
 - Lbl_________EVM_InternalOp_CallOp_Int_Int_Int_Int_Int_Int_Int: 15
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/foundry.md :  (401, 11)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/foundry.md :  (420, 10)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/foundry.md :  (376, 11)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/foundry.md :  (461, 10)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/foundry.md :  (222, 10)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/foundry.md :  (193, 10)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/foundry.md :  (174, 10)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/foundry.md :  (357, 10)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/foundry.md :  (316, 10)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/foundry.md :  (296, 10)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/foundry.md :  (256, 10)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/foundry.md :  (276, 10)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/foundry.md :  (336, 10)
+  - FOUNDRY-CHEAT-CODES.call.addr
+  - FOUNDRY-CHEAT-CODES.call.load
+  - FOUNDRY-CHEAT-CODES.call.getNonce
+  - FOUNDRY-CHEAT-CODES.call.store
+  - FOUNDRY-CHEAT-CODES.call.etch
+  - FOUNDRY-CHEAT-CODES.call.deal
+  - FOUNDRY-CHEAT-CODES.call.assume
+  - FOUNDRY-CHEAT-CODES.call.label
+  - FOUNDRY-CHEAT-CODES.call.chainId
+  - FOUNDRY-CHEAT-CODES.call.fee
+  - FOUNDRY-CHEAT-CODES.call.warp
+  - FOUNDRY-CHEAT-CODES.call.roll
+  - FOUNDRY-CHEAT-CODES.call.coinbase
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1477, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1466, 10)
 - Lblfoundry_assert: evm-semantics/.build/usr/lib/kevm/include/kframework/foundry.md :  (154, 10)
@@ -3129,8 +3129,8 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (143, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (144, 10)
 - Lbl#allBut64th(_)_EVM_Int_Int: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2333, 28)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2334, 28)
+  - EVM.allBut64th.pos
+  - EVM.allBut64th.neg
 - Lbl#asAccount(_)_EVM-TYPES_Account_ByteArray: 2
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (413, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (414, 10)
@@ -3352,7 +3352,7 @@ Function equations by term index:
 - Lbl#ecrec(_)_EVM_ByteArray_Account: 2
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1731, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1732, 10)
-- Lbl#ecrec(_,_,_,_)_EVM_ByteArray_ByteArray_ByteArray_ByteArray_ByteArray: evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1729, 19)
+- Lbl#ecrec(_,_,_,_)_EVM_ByteArray_ByteArray_ByteArray_ByteArray_ByteArray: EVM.ecrec
 - Lbl#emptyContractRLP_SERIALIZATION_String: evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (724, 10)
 - Lbl#enc(_)_EVM-ABI_ByteArray_TypedArg: 40
   - evm-semantics/.build/usr/lib/kevm/include/kframework/abi.md :  (288, 10)
@@ -3493,8 +3493,8 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (697, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (696, 10)
 - Lbl#isPrecompiledAccount(_,_)_EVM_Bool_Int_Schedule: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1345, 40)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1344, 40)
+  - EVM.isPrecompiledAccount.false
+  - EVM.isPrecompiledAccount.true
 - Lbl#isStaticType(_)_EVM-ABI_Bool_TypedArg: 40
   - evm-semantics/.build/usr/lib/kevm/include/kframework/abi.md :  (220, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/abi.md :  (266, 10)
@@ -3589,13 +3589,13 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/abi.md :  (165, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/abi.md :  (166, 10)
 - Lbl#lookup(_,_)_EVM-TYPES_Int_Map_Int: 3
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (528, 34)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (530, 34)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (527, 34)
+  - EVM-TYPES.#lookup.none
+  - EVM-TYPES.#lookup.notInt
+  - EVM-TYPES.#lookup.some
 - Lbl#lookupMemory(_,_)_EVM-TYPES_Int_Map_Int: 3
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (533, 34)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (535, 34)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (532, 34)
+  - EVM-TYPES.#lookupMemory.none
+  - EVM-TYPES.#lookupMemory.notInt
+  - EVM-TYPES.#lookupMemory.some
 - Lbl#memory(_,_)_EVM_Int_OpCode_Int: 16
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1911, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1913, 10)
@@ -3614,8 +3614,8 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1928, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1931, 10)
 - Lbl#memoryUsageUpdate(_,_,_)_EVM_Int_Int_Int_Int: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1954, 37)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1953, 37)
+  - EVM.#memoryUsageUpdate.some
+  - EVM.#memoryUsageUpdate.none
 - Lbl#merkleExtensionBrancher(_,_,_)_SERIALIZATION_MerkleTree_MerkleTree_ByteArray_MerkleTree: 2
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (656, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (652, 10)
@@ -3645,8 +3645,8 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2370, 10)
 - Lbl#nBits(_)_EVM-TYPES_Int_Int: evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (202, 10)
 - Lbl#nBytes(_)_EVM-TYPES_Int_Int: evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (203, 10)
-- Lbl#newAddr(_,_)_SERIALIZATION_Int_Int_Int: evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (37, 29)
-- Lbl#newAddr(_,_,_)_SERIALIZATION_Int_Int_Int_ByteArray: evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (38, 29)
+- Lbl#newAddr(_,_)_SERIALIZATION_Int_Int_Int: SERIALIZATION.#newAddr
+- Lbl#newAddr(_,_,_)_SERIALIZATION_Int_Int_Int_ByteArray: SERIALIZATION.#newAddrCreate2
 - Lbl#newMultComplexity(_)_EVM_Int_Int: evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2373, 10)
 - Lbl#nibbleize(_)_SERIALIZATION_ByteArray_ByteArray: 2
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (587, 10)
@@ -3659,7 +3659,7 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (441, 33)
 - Lbl#padToWidth(_,_)_EVM-TYPES_ByteArray_Int_ByteArray: 2
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (438, 33)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (439, 33)
+  - EVM-TYPES.padToWidthNonEmpty
 - Lbl#parseAccessListStorageKeys(_)_SERIALIZATION_List_JSONs: evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (194, 10)
 - Lbl#parseAccessListStorageKeys(_,_)_SERIALIZATION_List_JSONs_List: 2
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (196, 10)
@@ -3733,7 +3733,7 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (312, 10)
 - Lbl#rlpEncodeAddress(_)_SERIALIZATION_String_Account: evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (299, 10)
 - Lbl#rlpEncodeBytes(_)_SERIALIZATION_String_ByteArray: evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (301, 10)
-- Lbl#rlpEncodeFullAccount(_,_,_,_)_SERIALIZATION_String_Int_Int_Map_ByteArray: evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (325, 21)
+- Lbl#rlpEncodeFullAccount(_,_,_,_)_SERIALIZATION_String_Int_Int_Map_ByteArray: SERIALIZATION.rlpAcct
 - Lbl#rlpEncodeInt(_)_SERIALIZATION_String_Int: 3
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (295, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (294, 10)
@@ -3751,7 +3751,7 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (393, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (387, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (381, 10)
-- Lbl#rlpEncodeReceipt(_,_,_,_)_SERIALIZATION_String_Int_Int_ByteArray_List: evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (338, 24)
+- Lbl#rlpEncodeReceipt(_,_,_,_)_SERIALIZATION_String_Int_Int_ByteArray_List: SERIALIZATION.rlpReceipt
 - Lbl#rlpEncodeString(_)_SERIALIZATION_String_String: 3
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (304, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (303, 10)
@@ -3837,9 +3837,9 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (263, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (260, 10)
 - Lbl#take(_,_)_EVM-TYPES_WordStack_Int_WordStack: 3
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (246, 29)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (245, 29)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (247, 29)
+  - EVM-TYPES.#take.zero-pad
+  - EVM-TYPES.#take.base
+  - EVM-TYPES.#take.recursive
 - Lbl#typeName(_)_EVM-ABI_String_TypedArg: 41
   - evm-semantics/.build/usr/lib/kevm/include/kframework/abi.md :  (99, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/abi.md :  (146, 10)
@@ -3900,44 +3900,44 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (1418, 10)
 - Lbl#wordBytes(_)_SERIALIZATION_ByteArray_Int: evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (250, 10)
 - Lbl.StringBuffer_STRING-BUFFER-IN-K_StringBuffer: /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1672, 8)
-- LblAccountCellMapKey: -
+- LblAccountCellMapKey: UNKNOWN
 - LblBool2String(_)_STRING-COMMON_String_Bool: 2
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1491, 8)
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1490, 8)
-- LblCaddraccess(_,_)_EVM_Int_Schedule_Bool: evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2286, 28)
+- LblCaddraccess(_,_)_EVM_Int_Schedule_Bool: EVM.Caddraccess
 - LblCbalance(_)_EVM_Int_Schedule: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2299, 26)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2298, 26)
+  - EVM.Cbalance.old
+  - EVM.Cbalance.new
 - LblCextcodecopy(_,_)_EVM_Int_Schedule_Int: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2301, 30)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2302, 30)
+  - EVM.Cextcodecopy.new
+  - EVM.Cextcodecopy.old
 - LblCextcodehash(_)_EVM_Int_Schedule: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2296, 30)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2295, 30)
+  - EVM.Cextcodehash.old
+  - EVM.Cextcodehash.new
 - LblCextcodesize(_)_EVM_Int_Schedule: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2293, 30)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2292, 30)
+  - EVM.Cextcodesize.old
+  - EVM.Cextcodesize.new
 - LblCextra(_,_,_,_)_EVM_Int_Schedule_Bool_Int_Bool: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2274, 24)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2275, 24)
+  - EVM.Cextra.new
+  - EVM.Cextra.old
 - LblCgascap(_,_,_,_)_EVM_Int_Schedule_Int_Int_Int: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2236, 10)
+  - EVM.Cgascap
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2240, 10)
-- LblCmem(_,_)_EVM_Int_Schedule_Int: evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2284, 18)
+- LblCmem(_,_)_EVM_Int_Schedule_Int: EVM.Cmem
 - LblCmodexp(_,_,_,_,_)_EVM_Int_Schedule_ByteArray_Int_Int_Int: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2304, 25)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2306, 25)
-- LblCnew(_,_,_)_EVM_Int_Schedule_Bool_Int: evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2278, 10)
+  - EVM.Cmodexp.old
+  - EVM.Cmodexp.new
+- LblCnew(_,_,_)_EVM_Int_Schedule_Bool_Int: EVM.Cnew
 - LblCsload(_,_)_EVM_Int_Schedule_Bool: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2289, 24)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2290, 24)
+  - EVM.Csload.new
+  - EVM.Csload.old
 - LblCsstore(_,_,_,_)_EVM_Int_Schedule_Int_Int_Int: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2243, 10)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2247, 10)
-- LblCstorageaccess(_,_)_EVM_Int_Schedule_Bool: evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2287, 28)
+  - EVM.Csstore.new
+  - EVM.Csstore.old
+- LblCstorageaccess(_,_)_EVM_Int_Schedule_Bool: EVM.Cstorageaccess
 - LblCxfer(_,_)_EVM_Int_Schedule_Int: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2282, 24)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2281, 24)
+  - EVM.Cxfer.some
+  - EVM.Cxfer.none
 - LblG*(_,_,_,_)_EVM_Int_Int_Int_Int_Schedule: evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2364, 10)
 - LblG0(_,_)_EVM_Int_Schedule_Bool: 2
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2355, 10)
@@ -3994,11 +3994,11 @@ Function equations by term index:
 - LblMerkleUpdateMapAux(_,_,_)_SERIALIZATION_MerkleTree_MerkleTree_Map_List: 2
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (571, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (570, 10)
-- LblMessageCellMapKey: -
+- LblMessageCellMapKey: UNKNOWN
 - LblRaw2Hex(_)_SERIALIZATION_String_String: evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (264, 10)
 - LblRsstore(_,_,_,_)_EVM_Int_Schedule_Int_Int_Int: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2252, 10)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (2270, 10)
+  - EVM.Rsstore.new
+  - EVM.Rsstore.old
 - LblStatusCode2String(_)_NETWORK_String_StatusCode: 19
   - evm-semantics/.build/usr/lib/kevm/include/kframework/network.md :  (96, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/network.md :  (95, 10)
@@ -4030,8 +4030,8 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (100, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (99, 11)
 - Lbl_%sWord__EVM-TYPES_Int_Int_Int: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (125, 27)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (126, 27)
+  - EVM-TYPES.modSWord.pos
+  - EVM-TYPES.modSWord.neg
 - Lbl_&Word__EVM-TYPES_Int_Int_Int: evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (173, 10)
 - Lbl_*Word__EVM-TYPES_Int_Int_Int: evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (96, 10)
 - Lbl_++__EVM-TYPES_ByteArray_ByteArray_ByteArray: evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (422, 10)
@@ -4045,8 +4045,8 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (98, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (97, 11)
 - Lbl_/sWord__EVM-TYPES_Int_Int_Int: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (124, 27)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (123, 27)
+  - EVM-TYPES.divSWord.diff
+  - EVM-TYPES.divSWord.same
 - Lbl_:__EVM-TYPES_Bytes_Int_Bytes: evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (236, 10)
 - Lbl_<<Byte__WORD_Int_Int_Int: evm-semantics/.build/usr/lib/kevm/include/kframework/word.md :  (333, 10)
 - Lbl_<<Word__EVM-TYPES_Int_Int_Int: 2
@@ -4206,7 +4206,7 @@ Function equations by term index:
 - Lbl_>String__STRING-COMMON_Bool_String_String: /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1591, 8)
 - Lbl_>Word__EVM-TYPES_Int_Int_Int: evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (141, 10)
 - Lbl_[_.._]_EVM-TYPES_ByteArray_ByteArray_Int_Int: 3
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (427, 25)
+  - EVM-TYPES.bytesRange
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (426, 26)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (429, 26)
 - Lbl_[_:=_]_EVM-TYPES_Memory_Memory_Int_ByteArray: 2
@@ -4254,12 +4254,12 @@ Function equations by term index:
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (858, 8)
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (856, 8)
 - Lbl_s<Word__EVM-TYPES_Int_Int_Int: 4
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (152, 23)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (155, 23)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (153, 23)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (154, 23)
+  - EVM-TYPES.s<Word.pp
+  - EVM-TYPES.s<Word.nn
+  - EVM-TYPES.s<Word.pn
+  - EVM-TYPES.s<Word.np
 - Lbl_up/Int__EVM-TYPES_Int_Int_Int: 4
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (73, 24)
+  - EVM-TYPES.upDivInt
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (72, 24)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (70, 23)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (71, 23)
@@ -4304,113 +4304,149 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/foundry.md :  (130, 10)
 - LblfreshInt(_)_INT_Int_Int: /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1160, 8)
 - LblgetBloomFilterBit(_,_)_EVM_Int_ByteArray_Int: evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (725, 10)
-- LblgetExitCode: -
-- LblgetGeneratedCounterCell: -
-- LblinitAccessedAccountsCell: -
-- LblinitAccessedStorageCell: -
-- LblinitAccountCell: -
-- LblinitAccountsCell: -
-- LblinitAcctIDCell: -
-- LblinitActiveAccountsCell: -
-- LblinitBalanceCell: -
-- LblinitBaseFeeCell: -
-- LblinitBlockCell: -
-- LblinitBlockNonceCell: -
-- LblinitBlockhashesCell: -
-- LblinitCallDataCell: -
-- LblinitCallDepthCell: -
-- LblinitCallGasCell: -
-- LblinitCallStackCell: -
-- LblinitCallStateCell: -
-- LblinitCallValueCell: -
-- LblinitCallerCell: -
-- LblinitChainIDCell: -
-- LblinitCodeCell: -
-- LblinitCoinbaseCell: -
-- LblinitDataCell: -
-- LblinitDifficultyCell: -
-- LblinitEndPCCell: -
-- LblinitEthereumCell: -
-- LblinitEvmCell: -
-- LblinitExitCodeCell: -
-- LblinitExtraDataCell: -
-- LblinitGasCell: -
-- LblinitGasLimitCell: -
-- LblinitGasPriceCell: -
-- LblinitGasUsedCell: -
-- LblinitGeneratedCounterCell: -
-- LblinitGeneratedTopCell: -
-- LblinitIdCell: -
-- LblinitInterimStatesCell: -
-- LblinitJumpDestsCell: -
-- LblinitKCell: -
-- LblinitKevmCell: -
-- LblinitLocalMemCell: -
-- LblinitLogCell: -
-- LblinitLogsBloomCell: -
-- LblinitMemoryUsedCell: -
-- LblinitMessageCell: -
-- LblinitMessagesCell: -
-- LblinitMixHashCell: -
-- LblinitModeCell: -
-- LblinitMsgIDCell: -
-- LblinitNetworkCell: -
-- LblinitNonceCell: -
-- LblinitNumberCell: -
-- LblinitOmmerBlockHeadersCell: -
-- LblinitOmmersHashCell: -
-- LblinitOrigStorageCell: -
-- LblinitOriginCell: -
-- LblinitOutputCell: -
-- LblinitPcCell: -
-- LblinitPreviousHashCell: -
-- LblinitProgramCell: -
-- LblinitReceiptsRootCell: -
-- LblinitRefundCell: -
-- LblinitScheduleCell: -
-- LblinitSelfDestructCell: -
-- LblinitSigRCell: -
-- LblinitSigSCell: -
-- LblinitSigVCell: -
-- LblinitStateRootCell: -
-- LblinitStaticCell: -
-- LblinitStatusCodeCell: -
-- LblinitStorageCell: -
-- LblinitSubstateCell: -
-- LblinitTimestampCell: -
-- LblinitToCell: -
-- LblinitTouchedAccountsCell: -
-- LblinitTransactionsRootCell: -
-- LblinitTxAccessCell: -
-- LblinitTxChainIDCell: -
-- LblinitTxGasLimitCell: -
-- LblinitTxGasPriceCell: -
-- LblinitTxMaxFeeCell: -
-- LblinitTxNonceCell: -
-- LblinitTxOrderCell: -
-- LblinitTxPendingCell: -
-- LblinitTxPriorityFeeCell: -
-- LblinitTxTypeCell: -
-- LblinitValueCell: -
-- LblinitWordStackCell: -
-- LblisAccessListTx: -
-- LblisAccessedAccountsCell: -
-- LblisAccessedAccountsCellOpt: -
-- LblisAccessedStorageCell: -
-- LblisAccessedStorageCellOpt: -
-- LblisAccount: -
-- LblisAccountCell: -
-- LblisAccountCellFragment: -
-- LblisAccountCellMap: -
-- LblisAccountCode: -
-- LblisAccounts: -
-- LblisAccountsCell: -
-- LblisAccountsCellFragment: -
-- LblisAccountsCellOpt: -
-- LblisAcctIDCell: -
-- LblisAcctIDCellOpt: -
-- LblisActiveAccountsCell: -
-- LblisActiveAccountsCellOpt: -
+- LblgetExitCode: UNKNOWN
+- LblgetGeneratedCounterCell: UNKNOWN
+- LblinitAccessedAccountsCell: UNKNOWN
+- LblinitAccessedStorageCell: UNKNOWN
+- LblinitAccountCell: UNKNOWN
+- LblinitAccountsCell: UNKNOWN
+- LblinitAcctIDCell: UNKNOWN
+- LblinitActiveAccountsCell: UNKNOWN
+- LblinitBalanceCell: UNKNOWN
+- LblinitBaseFeeCell: UNKNOWN
+- LblinitBlockCell: UNKNOWN
+- LblinitBlockNonceCell: UNKNOWN
+- LblinitBlockhashesCell: UNKNOWN
+- LblinitCallDataCell: UNKNOWN
+- LblinitCallDepthCell: UNKNOWN
+- LblinitCallGasCell: UNKNOWN
+- LblinitCallStackCell: UNKNOWN
+- LblinitCallStateCell: UNKNOWN
+- LblinitCallValueCell: UNKNOWN
+- LblinitCallerCell: UNKNOWN
+- LblinitChainIDCell: UNKNOWN
+- LblinitCodeCell: UNKNOWN
+- LblinitCoinbaseCell: UNKNOWN
+- LblinitDataCell: UNKNOWN
+- LblinitDifficultyCell: UNKNOWN
+- LblinitEndPCCell: UNKNOWN
+- LblinitEthereumCell: UNKNOWN
+- LblinitEvmCell: UNKNOWN
+- LblinitExitCodeCell: UNKNOWN
+- LblinitExtraDataCell: UNKNOWN
+- LblinitGasCell: UNKNOWN
+- LblinitGasLimitCell: UNKNOWN
+- LblinitGasPriceCell: UNKNOWN
+- LblinitGasUsedCell: UNKNOWN
+- LblinitGeneratedCounterCell: UNKNOWN
+- LblinitGeneratedTopCell: UNKNOWN
+- LblinitIdCell: UNKNOWN
+- LblinitInterimStatesCell: UNKNOWN
+- LblinitJumpDestsCell: UNKNOWN
+- LblinitKCell: UNKNOWN
+- LblinitKevmCell: UNKNOWN
+- LblinitLocalMemCell: UNKNOWN
+- LblinitLogCell: UNKNOWN
+- LblinitLogsBloomCell: UNKNOWN
+- LblinitMemoryUsedCell: UNKNOWN
+- LblinitMessageCell: UNKNOWN
+- LblinitMessagesCell: UNKNOWN
+- LblinitMixHashCell: UNKNOWN
+- LblinitModeCell: UNKNOWN
+- LblinitMsgIDCell: UNKNOWN
+- LblinitNetworkCell: UNKNOWN
+- LblinitNonceCell: UNKNOWN
+- LblinitNumberCell: UNKNOWN
+- LblinitOmmerBlockHeadersCell: UNKNOWN
+- LblinitOmmersHashCell: UNKNOWN
+- LblinitOrigStorageCell: UNKNOWN
+- LblinitOriginCell: UNKNOWN
+- LblinitOutputCell: UNKNOWN
+- LblinitPcCell: UNKNOWN
+- LblinitPreviousHashCell: UNKNOWN
+- LblinitProgramCell: UNKNOWN
+- LblinitReceiptsRootCell: UNKNOWN
+- LblinitRefundCell: UNKNOWN
+- LblinitScheduleCell: UNKNOWN
+- LblinitSelfDestructCell: UNKNOWN
+- LblinitSigRCell: UNKNOWN
+- LblinitSigSCell: UNKNOWN
+- LblinitSigVCell: UNKNOWN
+- LblinitStateRootCell: UNKNOWN
+- LblinitStaticCell: UNKNOWN
+- LblinitStatusCodeCell: UNKNOWN
+- LblinitStorageCell: UNKNOWN
+- LblinitSubstateCell: UNKNOWN
+- LblinitTimestampCell: UNKNOWN
+- LblinitToCell: UNKNOWN
+- LblinitTouchedAccountsCell: UNKNOWN
+- LblinitTransactionsRootCell: UNKNOWN
+- LblinitTxAccessCell: UNKNOWN
+- LblinitTxChainIDCell: UNKNOWN
+- LblinitTxGasLimitCell: UNKNOWN
+- LblinitTxGasPriceCell: UNKNOWN
+- LblinitTxMaxFeeCell: UNKNOWN
+- LblinitTxNonceCell: UNKNOWN
+- LblinitTxOrderCell: UNKNOWN
+- LblinitTxPendingCell: UNKNOWN
+- LblinitTxPriorityFeeCell: UNKNOWN
+- LblinitTxTypeCell: UNKNOWN
+- LblinitValueCell: UNKNOWN
+- LblinitWordStackCell: UNKNOWN
+- LblisAccessListTx: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisAccessedAccountsCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisAccessedAccountsCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisAccessedStorageCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisAccessedStorageCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisAccount: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisAccountCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisAccountCellFragment: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisAccountCellMap: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisAccountCode: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisAccounts: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisAccountsCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisAccountsCellFragment: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisAccountsCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisAcctIDCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisAcctIDCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisActiveAccountsCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisActiveAccountsCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
 - LblisAddr1Op(_)_EVM_Bool_OpCode: 6
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (506, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (510, 10)
@@ -4422,242 +4458,710 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (513, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (514, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (515, 10)
-- LblisBExp: -
-- LblisBalanceCell: -
-- LblisBalanceCellOpt: -
-- LblisBaseFeeCell: -
-- LblisBaseFeeCellOpt: -
-- LblisBinStackOp: -
-- LblisBlockCell: -
-- LblisBlockCellFragment: -
-- LblisBlockCellOpt: -
-- LblisBlockNonceCell: -
-- LblisBlockNonceCellOpt: -
-- LblisBlockhashesCell: -
-- LblisBlockhashesCellOpt: -
-- LblisBool: -
-- LblisBytes: -
-- LblisCallDataCell: -
-- LblisCallDataCellOpt: -
-- LblisCallDepthCell: -
-- LblisCallDepthCellOpt: -
-- LblisCallGasCell: -
-- LblisCallGasCellOpt: -
-- LblisCallOp: -
-- LblisCallSixOp: -
-- LblisCallStackCell: -
-- LblisCallStackCellOpt: -
-- LblisCallStateCell: -
-- LblisCallStateCellFragment: -
-- LblisCallStateCellOpt: -
-- LblisCallValueCell: -
-- LblisCallValueCellOpt: -
-- LblisCallerCell: -
-- LblisCallerCellOpt: -
-- LblisChainIDCell: -
-- LblisChainIDCellOpt: -
-- LblisCodeCell: -
-- LblisCodeCellOpt: -
-- LblisCoinbaseCell: -
-- LblisCoinbaseCellOpt: -
-- LblisContract: -
-- LblisContractAccess: -
-- LblisDataCell: -
-- LblisDataCellOpt: -
-- LblisDifficultyCell: -
-- LblisDifficultyCellOpt: -
-- LblisDynamicFeeTx: -
-- LblisEndPCCell: -
-- LblisEndPCCellOpt: -
-- LblisEndStatusCode: -
-- LblisEndianness: -
-- LblisEthereumCell: -
-- LblisEthereumCellFragment: -
-- LblisEthereumCellOpt: -
-- LblisEthereumCommand: -
-- LblisEthereumSimulation: -
-- LblisEventArg: -
-- LblisEventArgs: -
-- LblisEvmCell: -
-- LblisEvmCellFragment: -
-- LblisEvmCellOpt: -
-- LblisExceptionalStatusCode: -
-- LblisExitCodeCell: -
-- LblisExitCodeCellOpt: -
-- LblisExp: -
-- LblisExtraDataCell: -
-- LblisExtraDataCellOpt: -
-- LblisField: -
-- LblisFloat: -
-- LblisFoundryContract: -
-- LblisFoundryField: -
-- LblisG1Point: -
-- LblisG2Point: -
-- LblisGasCell: -
-- LblisGasCellOpt: -
-- LblisGasLimitCell: -
-- LblisGasLimitCellOpt: -
-- LblisGasPriceCell: -
-- LblisGasPriceCellOpt: -
-- LblisGasUsedCell: -
-- LblisGasUsedCellOpt: -
-- LblisGeneratedCounterCell: -
-- LblisGeneratedCounterCellOpt: -
-- LblisGeneratedTopCell: -
-- LblisGeneratedTopCellFragment: -
-- LblisIdCell: -
-- LblisIdCellOpt: -
-- LblisInt: -
-- LblisIntList: -
-- LblisInterimStatesCell: -
-- LblisInterimStatesCellOpt: -
-- LblisInternalOp: -
-- LblisInvalidOp: -
-- LblisJSON: -
-- LblisJSONKey: -
-- LblisJSONs: -
-- LblisJumpDestsCell: -
-- LblisJumpDestsCellOpt: -
-- LblisK: -
-- LblisKCell: -
-- LblisKCellOpt: -
-- LblisKConfigVar: -
-- LblisKItem: -
-- LblisKResult: -
-- LblisKevmCell: -
-- LblisKevmCellFragment: -
-- LblisKevmCellOpt: -
-- LblisLegacyTx: -
-- LblisLengthPrefix: -
-- LblisLengthPrefixType: -
-- LblisList: -
-- LblisLocalMemCell: -
-- LblisLocalMemCellOpt: -
-- LblisLogCell: -
-- LblisLogCellOpt: -
-- LblisLogOp: -
-- LblisLogsBloomCell: -
-- LblisLogsBloomCellOpt: -
-- LblisMap: -
-- LblisMemoryUsedCell: -
-- LblisMemoryUsedCellOpt: -
-- LblisMerkleTree: -
-- LblisMessageCell: -
-- LblisMessageCellFragment: -
-- LblisMessageCellMap: -
-- LblisMessagesCell: -
-- LblisMessagesCellFragment: -
-- LblisMessagesCellOpt: -
-- LblisMixHashCell: -
-- LblisMixHashCellOpt: -
-- LblisMode: -
-- LblisModeCell: -
-- LblisModeCellOpt: -
-- LblisMsgIDCell: -
-- LblisMsgIDCellOpt: -
-- LblisNetworkCell: -
-- LblisNetworkCellFragment: -
-- LblisNetworkCellOpt: -
-- LblisNonceCell: -
-- LblisNonceCellOpt: -
-- LblisNullStackOp: -
-- LblisNumberCell: -
-- LblisNumberCellOpt: -
-- LblisOmmerBlockHeadersCell: -
-- LblisOmmerBlockHeadersCellOpt: -
-- LblisOmmersHashCell: -
-- LblisOmmersHashCellOpt: -
-- LblisOpCode: -
-- LblisOrigStorageCell: -
-- LblisOrigStorageCellOpt: -
-- LblisOriginCell: -
-- LblisOriginCellOpt: -
-- LblisOutputCell: -
-- LblisOutputCellOpt: -
-- LblisPcCell: -
-- LblisPcCellOpt: -
-- LblisPrecompiledOp: -
-- LblisPreviousHashCell: -
-- LblisPreviousHashCellOpt: -
-- LblisProgramCell: -
-- LblisProgramCellOpt: -
-- LblisPushOp: -
-- LblisQuadStackOp: -
-- LblisReceiptsRootCell: -
-- LblisReceiptsRootCellOpt: -
-- LblisRefundCell: -
-- LblisRefundCellOpt: -
-- LblisSchedule: -
-- LblisScheduleCell: -
-- LblisScheduleCellOpt: -
-- LblisScheduleConst: -
-- LblisScheduleFlag: -
-- LblisSelfDestructCell: -
-- LblisSelfDestructCellOpt: -
-- LblisSet: -
-- LblisSigRCell: -
-- LblisSigRCellOpt: -
-- LblisSigSCell: -
-- LblisSigSCellOpt: -
-- LblisSigVCell: -
-- LblisSigVCellOpt: -
-- LblisSignedness: -
-- LblisStackOp: -
-- LblisStateRootCell: -
-- LblisStateRootCellOpt: -
-- LblisStaticCell: -
-- LblisStaticCellOpt: -
-- LblisStatusCode: -
-- LblisStatusCodeCell: -
-- LblisStatusCodeCellOpt: -
-- LblisStorageCell: -
-- LblisStorageCellOpt: -
-- LblisString: -
-- LblisStringBuffer: -
-- LblisSubstateCell: -
-- LblisSubstateCellFragment: -
-- LblisSubstateCellOpt: -
-- LblisSubstateLogEntry: -
-- LblisTernStackOp: -
-- LblisTimestampCell: -
-- LblisTimestampCellOpt: -
-- LblisToCell: -
-- LblisToCellOpt: -
-- LblisTouchedAccountsCell: -
-- LblisTouchedAccountsCellOpt: -
-- LblisTransactionsRootCell: -
-- LblisTransactionsRootCellOpt: -
-- LblisTxAccessCell: -
-- LblisTxAccessCellOpt: -
-- LblisTxChainIDCell: -
-- LblisTxChainIDCellOpt: -
-- LblisTxData: -
-- LblisTxGasLimitCell: -
-- LblisTxGasLimitCellOpt: -
-- LblisTxGasPriceCell: -
-- LblisTxGasPriceCellOpt: -
-- LblisTxMaxFeeCell: -
-- LblisTxMaxFeeCellOpt: -
-- LblisTxNonceCell: -
-- LblisTxNonceCellOpt: -
-- LblisTxOrderCell: -
-- LblisTxOrderCellOpt: -
-- LblisTxPendingCell: -
-- LblisTxPendingCellOpt: -
-- LblisTxPriorityFeeCell: -
-- LblisTxPriorityFeeCellOpt: -
-- LblisTxType: -
-- LblisTxTypeCell: -
-- LblisTxTypeCellOpt: -
-- LblisTypedArg: -
-- LblisTypedArgs: -
-- LblisUnStackOp: -
-- LblisValueCell: -
-- LblisValueCellOpt: -
-- LblisWordStack: -
-- LblisWordStackCell: -
-- LblisWordStackCellOpt: -
-- Lblkeccak(_)_SERIALIZATION_Int_ByteArray: evm-semantics/.build/usr/lib/kevm/include/kframework/serialization.md :  (26, 20)
+- LblisBExp: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisBalanceCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisBalanceCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisBaseFeeCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisBaseFeeCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisBinStackOp: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisBlockCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisBlockCellFragment: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisBlockCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisBlockNonceCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisBlockNonceCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisBlockhashesCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisBlockhashesCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisBool: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisBytes: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCallDataCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCallDataCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCallDepthCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCallDepthCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCallGasCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCallGasCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCallOp: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCallSixOp: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCallStackCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCallStackCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCallStateCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCallStateCellFragment: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCallStateCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCallValueCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCallValueCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCallerCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCallerCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisChainIDCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisChainIDCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCodeCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCodeCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCoinbaseCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisCoinbaseCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisContract: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisContractAccess: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisDataCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisDataCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisDifficultyCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisDifficultyCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisDynamicFeeTx: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisEndPCCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisEndPCCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisEndStatusCode: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisEndianness: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisEthereumCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisEthereumCellFragment: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisEthereumCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisEthereumCommand: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisEthereumSimulation: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisEventArg: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisEventArgs: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisEvmCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisEvmCellFragment: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisEvmCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisExceptionalStatusCode: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisExitCodeCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisExitCodeCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisExp: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisExtraDataCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisExtraDataCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisField: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisFloat: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisFoundryContract: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisFoundryField: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisG1Point: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisG2Point: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGasCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGasCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGasLimitCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGasLimitCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGasPriceCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGasPriceCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGasUsedCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGasUsedCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGeneratedCounterCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGeneratedCounterCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGeneratedTopCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisGeneratedTopCellFragment: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisIdCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisIdCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisInt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisIntList: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisInterimStatesCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisInterimStatesCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisInternalOp: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisInvalidOp: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisJSON: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisJSONKey: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisJSONs: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisJumpDestsCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisJumpDestsCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisK: UNKNOWN
+- LblisKCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisKCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisKConfigVar: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisKItem: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisKResult: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisKevmCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisKevmCellFragment: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisKevmCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisLegacyTx: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisLengthPrefix: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisLengthPrefixType: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisList: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisLocalMemCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisLocalMemCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisLogCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisLogCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisLogOp: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisLogsBloomCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisLogsBloomCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisMap: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisMemoryUsedCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisMemoryUsedCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisMerkleTree: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisMessageCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisMessageCellFragment: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisMessageCellMap: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisMessagesCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisMessagesCellFragment: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisMessagesCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisMixHashCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisMixHashCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisMode: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisModeCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisModeCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisMsgIDCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisMsgIDCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisNetworkCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisNetworkCellFragment: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisNetworkCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisNonceCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisNonceCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisNullStackOp: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisNumberCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisNumberCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisOmmerBlockHeadersCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisOmmerBlockHeadersCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisOmmersHashCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisOmmersHashCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisOpCode: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisOrigStorageCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisOrigStorageCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisOriginCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisOriginCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisOutputCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisOutputCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisPcCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisPcCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisPrecompiledOp: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisPreviousHashCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisPreviousHashCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisProgramCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisProgramCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisPushOp: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisQuadStackOp: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisReceiptsRootCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisReceiptsRootCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisRefundCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisRefundCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisSchedule: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisScheduleCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisScheduleCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisScheduleConst: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisScheduleFlag: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisSelfDestructCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisSelfDestructCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisSet: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisSigRCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisSigRCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisSigSCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisSigSCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisSigVCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisSigVCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisSignedness: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisStackOp: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisStateRootCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisStateRootCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisStaticCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisStaticCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisStatusCode: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisStatusCodeCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisStatusCodeCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisStorageCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisStorageCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisString: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisStringBuffer: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisSubstateCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisSubstateCellFragment: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisSubstateCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisSubstateLogEntry: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTernStackOp: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTimestampCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTimestampCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisToCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisToCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTouchedAccountsCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTouchedAccountsCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTransactionsRootCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTransactionsRootCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxAccessCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxAccessCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxChainIDCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxChainIDCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxData: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxGasLimitCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxGasLimitCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxGasPriceCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxGasPriceCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxMaxFeeCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxMaxFeeCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxNonceCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxNonceCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxOrderCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxOrderCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxPendingCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxPendingCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxPriorityFeeCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxPriorityFeeCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxType: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxTypeCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTxTypeCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTypedArg: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisTypedArgs: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisUnStackOp: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisValueCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisValueCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisWordStack: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisWordStackCell: 2
+  - UNKNOWN
+  - UNKNOWN
+- LblisWordStackCellOpt: 2
+  - UNKNOWN
+  - UNKNOWN
+- Lblkeccak(_)_SERIALIZATION_Int_ByteArray: SERIALIZATION.keccak
 - LbllistAsByteArrays(_)_EVM_List_List: 2
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (706, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm.md :  (707, 10)
@@ -4669,290 +5173,290 @@ Function equations by term index:
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (835, 8)
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (834, 8)
 - Lblpowmod(_,_,_)_EVM-TYPES_Int_Int_Int_Int: 2
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (113, 28)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (114, 28)
-- Lblproject:AccessListTx: -
-- Lblproject:AccessListTxData(_,_,_,_,_,_,_,_)_EVM-TYPES_AccessListTx_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:accessLists: -
-- Lblproject:AccessListTxData(_,_,_,_,_,_,_,_)_EVM-TYPES_AccessListTx_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:chainId: -
-- Lblproject:AccessListTxData(_,_,_,_,_,_,_,_)_EVM-TYPES_AccessListTx_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:data: -
-- Lblproject:AccessListTxData(_,_,_,_,_,_,_,_)_EVM-TYPES_AccessListTx_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:gasLimit: -
-- Lblproject:AccessListTxData(_,_,_,_,_,_,_,_)_EVM-TYPES_AccessListTx_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:gasPrice: -
-- Lblproject:AccessListTxData(_,_,_,_,_,_,_,_)_EVM-TYPES_AccessListTx_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:nonce: -
-- Lblproject:AccessListTxData(_,_,_,_,_,_,_,_)_EVM-TYPES_AccessListTx_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:to: -
-- Lblproject:AccessListTxData(_,_,_,_,_,_,_,_)_EVM-TYPES_AccessListTx_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:value: -
-- Lblproject:AccessedAccountsCell: -
-- Lblproject:AccessedAccountsCellOpt: -
-- Lblproject:AccessedStorageCell: -
-- Lblproject:AccessedStorageCellOpt: -
-- Lblproject:Account: -
-- Lblproject:AccountCell: -
-- Lblproject:AccountCellFragment: -
-- Lblproject:AccountCellMap: -
-- Lblproject:AccountCode: -
-- Lblproject:Accounts: -
-- Lblproject:AccountsCell: -
-- Lblproject:AccountsCellFragment: -
-- Lblproject:AccountsCellOpt: -
-- Lblproject:AcctIDCell: -
-- Lblproject:AcctIDCellOpt: -
-- Lblproject:ActiveAccountsCell: -
-- Lblproject:ActiveAccountsCellOpt: -
-- Lblproject:BExp: -
-- Lblproject:BalanceCell: -
-- Lblproject:BalanceCellOpt: -
-- Lblproject:BaseFeeCell: -
-- Lblproject:BaseFeeCellOpt: -
-- Lblproject:BinStackOp: -
-- Lblproject:BlockCell: -
-- Lblproject:BlockCellFragment: -
-- Lblproject:BlockCellOpt: -
-- Lblproject:BlockNonceCell: -
-- Lblproject:BlockNonceCellOpt: -
-- Lblproject:BlockhashesCell: -
-- Lblproject:BlockhashesCellOpt: -
-- Lblproject:Bool: -
-- Lblproject:Bytes: -
-- Lblproject:CallDataCell: -
-- Lblproject:CallDataCellOpt: -
-- Lblproject:CallDepthCell: -
-- Lblproject:CallDepthCellOpt: -
-- Lblproject:CallGasCell: -
-- Lblproject:CallGasCellOpt: -
-- Lblproject:CallOp: -
-- Lblproject:CallSixOp: -
-- Lblproject:CallStackCell: -
-- Lblproject:CallStackCellOpt: -
-- Lblproject:CallStateCell: -
-- Lblproject:CallStateCellFragment: -
-- Lblproject:CallStateCellOpt: -
-- Lblproject:CallValueCell: -
-- Lblproject:CallValueCellOpt: -
-- Lblproject:CallerCell: -
-- Lblproject:CallerCellOpt: -
-- Lblproject:ChainIDCell: -
-- Lblproject:ChainIDCellOpt: -
-- Lblproject:CodeCell: -
-- Lblproject:CodeCellOpt: -
-- Lblproject:CoinbaseCell: -
-- Lblproject:CoinbaseCellOpt: -
-- Lblproject:Contract: -
-- Lblproject:ContractAccess: -
-- Lblproject:DataCell: -
-- Lblproject:DataCellOpt: -
-- Lblproject:DifficultyCell: -
-- Lblproject:DifficultyCellOpt: -
-- Lblproject:DynamicFeeTx: -
-- Lblproject:DynamicFeeTxData(_,_,_,_,_,_,_,_,_)_EVM-TYPES_DynamicFeeTx_Int_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:accessLists: -
-- Lblproject:DynamicFeeTxData(_,_,_,_,_,_,_,_,_)_EVM-TYPES_DynamicFeeTx_Int_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:chainId: -
-- Lblproject:DynamicFeeTxData(_,_,_,_,_,_,_,_,_)_EVM-TYPES_DynamicFeeTx_Int_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:data: -
-- Lblproject:DynamicFeeTxData(_,_,_,_,_,_,_,_,_)_EVM-TYPES_DynamicFeeTx_Int_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:gasLimit: -
-- Lblproject:DynamicFeeTxData(_,_,_,_,_,_,_,_,_)_EVM-TYPES_DynamicFeeTx_Int_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:maxGasFee: -
-- Lblproject:DynamicFeeTxData(_,_,_,_,_,_,_,_,_)_EVM-TYPES_DynamicFeeTx_Int_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:nonce: -
-- Lblproject:DynamicFeeTxData(_,_,_,_,_,_,_,_,_)_EVM-TYPES_DynamicFeeTx_Int_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:priorityGasFee: -
-- Lblproject:DynamicFeeTxData(_,_,_,_,_,_,_,_,_)_EVM-TYPES_DynamicFeeTx_Int_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:to: -
-- Lblproject:DynamicFeeTxData(_,_,_,_,_,_,_,_,_)_EVM-TYPES_DynamicFeeTx_Int_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:value: -
-- Lblproject:EndPCCell: -
-- Lblproject:EndPCCellOpt: -
-- Lblproject:EndStatusCode: -
-- Lblproject:Endianness: -
-- Lblproject:EthereumCell: -
-- Lblproject:EthereumCellFragment: -
-- Lblproject:EthereumCellOpt: -
-- Lblproject:EthereumCommand: -
-- Lblproject:EthereumSimulation: -
-- Lblproject:EventArg: -
-- Lblproject:EventArgs: -
-- Lblproject:EvmCell: -
-- Lblproject:EvmCellFragment: -
-- Lblproject:EvmCellOpt: -
-- Lblproject:ExceptionalStatusCode: -
-- Lblproject:ExitCodeCell: -
-- Lblproject:ExitCodeCellOpt: -
-- Lblproject:Exp: -
-- Lblproject:ExtraDataCell: -
-- Lblproject:ExtraDataCellOpt: -
-- Lblproject:Field: -
-- Lblproject:Float: -
-- Lblproject:FoundryContract: -
-- Lblproject:FoundryField: -
-- Lblproject:G1Point: -
-- Lblproject:G2Point: -
-- Lblproject:GasCell: -
-- Lblproject:GasCellOpt: -
-- Lblproject:GasLimitCell: -
-- Lblproject:GasLimitCellOpt: -
-- Lblproject:GasPriceCell: -
-- Lblproject:GasPriceCellOpt: -
-- Lblproject:GasUsedCell: -
-- Lblproject:GasUsedCellOpt: -
-- Lblproject:GeneratedCounterCell: -
-- Lblproject:GeneratedCounterCellOpt: -
-- Lblproject:GeneratedTopCell: -
-- Lblproject:GeneratedTopCellFragment: -
-- Lblproject:IdCell: -
-- Lblproject:IdCellOpt: -
-- Lblproject:Int: -
-- Lblproject:IntList: -
-- Lblproject:InterimStatesCell: -
-- Lblproject:InterimStatesCellOpt: -
-- Lblproject:InternalOp: -
-- Lblproject:InvalidOp: -
-- Lblproject:JSON: -
-- Lblproject:JSONKey: -
-- Lblproject:JSONs: -
-- Lblproject:JumpDestsCell: -
-- Lblproject:JumpDestsCellOpt: -
-- Lblproject:K: -
-- Lblproject:KCell: -
-- Lblproject:KCellOpt: -
-- Lblproject:KItem: -
-- Lblproject:KResult: -
-- Lblproject:KevmCell: -
-- Lblproject:KevmCellFragment: -
-- Lblproject:KevmCellOpt: -
-- Lblproject:LegacyProtectedTxData(_,_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray_Int:chainId: -
-- Lblproject:LegacyProtectedTxData(_,_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray_Int:data: -
-- Lblproject:LegacyProtectedTxData(_,_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray_Int:gasLimit: -
-- Lblproject:LegacyProtectedTxData(_,_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray_Int:gasPrice: -
-- Lblproject:LegacyProtectedTxData(_,_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray_Int:nonce: -
-- Lblproject:LegacyProtectedTxData(_,_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray_Int:to: -
-- Lblproject:LegacyProtectedTxData(_,_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray_Int:value: -
-- Lblproject:LegacyTx: -
-- Lblproject:LegacyTxData(_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray:data: -
-- Lblproject:LegacyTxData(_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray:gasLimit: -
-- Lblproject:LegacyTxData(_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray:gasPrice: -
-- Lblproject:LegacyTxData(_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray:nonce: -
-- Lblproject:LegacyTxData(_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray:to: -
-- Lblproject:LegacyTxData(_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray:value: -
-- Lblproject:LengthPrefix: -
-- Lblproject:LengthPrefixType: -
-- Lblproject:List: -
-- Lblproject:LocalMemCell: -
-- Lblproject:LocalMemCellOpt: -
-- Lblproject:LogCell: -
-- Lblproject:LogCellOpt: -
-- Lblproject:LogOp: -
-- Lblproject:LogsBloomCell: -
-- Lblproject:LogsBloomCellOpt: -
-- Lblproject:Map: -
-- Lblproject:MemoryUsedCell: -
-- Lblproject:MemoryUsedCellOpt: -
-- Lblproject:MerkleTree: -
-- Lblproject:MessageCell: -
-- Lblproject:MessageCellFragment: -
-- Lblproject:MessageCellMap: -
-- Lblproject:MessagesCell: -
-- Lblproject:MessagesCellFragment: -
-- Lblproject:MessagesCellOpt: -
-- Lblproject:MixHashCell: -
-- Lblproject:MixHashCellOpt: -
-- Lblproject:Mode: -
-- Lblproject:ModeCell: -
-- Lblproject:ModeCellOpt: -
-- Lblproject:MsgIDCell: -
-- Lblproject:MsgIDCellOpt: -
-- Lblproject:NetworkCell: -
-- Lblproject:NetworkCellFragment: -
-- Lblproject:NetworkCellOpt: -
-- Lblproject:NonceCell: -
-- Lblproject:NonceCellOpt: -
-- Lblproject:NullStackOp: -
-- Lblproject:NumberCell: -
-- Lblproject:NumberCellOpt: -
-- Lblproject:OmmerBlockHeadersCell: -
-- Lblproject:OmmerBlockHeadersCellOpt: -
-- Lblproject:OmmersHashCell: -
-- Lblproject:OmmersHashCellOpt: -
-- Lblproject:OpCode: -
-- Lblproject:OrigStorageCell: -
-- Lblproject:OrigStorageCellOpt: -
-- Lblproject:OriginCell: -
-- Lblproject:OriginCellOpt: -
-- Lblproject:OutputCell: -
-- Lblproject:OutputCellOpt: -
-- Lblproject:PcCell: -
-- Lblproject:PcCellOpt: -
-- Lblproject:PrecompiledOp: -
-- Lblproject:PreviousHashCell: -
-- Lblproject:PreviousHashCellOpt: -
-- Lblproject:ProgramCell: -
-- Lblproject:ProgramCellOpt: -
-- Lblproject:PushOp: -
-- Lblproject:QuadStackOp: -
-- Lblproject:ReceiptsRootCell: -
-- Lblproject:ReceiptsRootCellOpt: -
-- Lblproject:RefundCell: -
-- Lblproject:RefundCellOpt: -
-- Lblproject:Schedule: -
-- Lblproject:ScheduleCell: -
-- Lblproject:ScheduleCellOpt: -
-- Lblproject:ScheduleConst: -
-- Lblproject:ScheduleFlag: -
-- Lblproject:SelfDestructCell: -
-- Lblproject:SelfDestructCellOpt: -
-- Lblproject:Set: -
-- Lblproject:SigRCell: -
-- Lblproject:SigRCellOpt: -
-- Lblproject:SigSCell: -
-- Lblproject:SigSCellOpt: -
-- Lblproject:SigVCell: -
-- Lblproject:SigVCellOpt: -
-- Lblproject:Signedness: -
-- Lblproject:StackOp: -
-- Lblproject:StateRootCell: -
-- Lblproject:StateRootCellOpt: -
-- Lblproject:StaticCell: -
-- Lblproject:StaticCellOpt: -
-- Lblproject:StatusCode: -
-- Lblproject:StatusCodeCell: -
-- Lblproject:StatusCodeCellOpt: -
-- Lblproject:StorageCell: -
-- Lblproject:StorageCellOpt: -
-- Lblproject:String: -
-- Lblproject:StringBuffer: -
-- Lblproject:SubstateCell: -
-- Lblproject:SubstateCellFragment: -
-- Lblproject:SubstateCellOpt: -
-- Lblproject:SubstateLogEntry: -
-- Lblproject:TernStackOp: -
-- Lblproject:TimestampCell: -
-- Lblproject:TimestampCellOpt: -
-- Lblproject:ToCell: -
-- Lblproject:ToCellOpt: -
-- Lblproject:TouchedAccountsCell: -
-- Lblproject:TouchedAccountsCellOpt: -
-- Lblproject:TransactionsRootCell: -
-- Lblproject:TransactionsRootCellOpt: -
-- Lblproject:TxAccessCell: -
-- Lblproject:TxAccessCellOpt: -
-- Lblproject:TxChainIDCell: -
-- Lblproject:TxChainIDCellOpt: -
-- Lblproject:TxData: -
-- Lblproject:TxGasLimitCell: -
-- Lblproject:TxGasLimitCellOpt: -
-- Lblproject:TxGasPriceCell: -
-- Lblproject:TxGasPriceCellOpt: -
-- Lblproject:TxMaxFeeCell: -
-- Lblproject:TxMaxFeeCellOpt: -
-- Lblproject:TxNonceCell: -
-- Lblproject:TxNonceCellOpt: -
-- Lblproject:TxOrderCell: -
-- Lblproject:TxOrderCellOpt: -
-- Lblproject:TxPendingCell: -
-- Lblproject:TxPendingCellOpt: -
-- Lblproject:TxPriorityFeeCell: -
-- Lblproject:TxPriorityFeeCellOpt: -
-- Lblproject:TxType: -
-- Lblproject:TxTypeCell: -
-- Lblproject:TxTypeCellOpt: -
-- Lblproject:TypedArg: -
-- Lblproject:TypedArgs: -
-- Lblproject:UnStackOp: -
-- Lblproject:ValueCell: -
-- Lblproject:ValueCellOpt: -
-- Lblproject:WordStack: -
-- Lblproject:WordStackCell: -
-- Lblproject:WordStackCellOpt: -
+  - EVM-TYPES.powmod.nonzero
+  - EVM-TYPES.powmod.zero
+- Lblproject:AccessListTx: UNKNOWN
+- Lblproject:AccessListTxData(_,_,_,_,_,_,_,_)_EVM-TYPES_AccessListTx_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:accessLists: UNKNOWN
+- Lblproject:AccessListTxData(_,_,_,_,_,_,_,_)_EVM-TYPES_AccessListTx_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:chainId: UNKNOWN
+- Lblproject:AccessListTxData(_,_,_,_,_,_,_,_)_EVM-TYPES_AccessListTx_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:data: UNKNOWN
+- Lblproject:AccessListTxData(_,_,_,_,_,_,_,_)_EVM-TYPES_AccessListTx_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:gasLimit: UNKNOWN
+- Lblproject:AccessListTxData(_,_,_,_,_,_,_,_)_EVM-TYPES_AccessListTx_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:gasPrice: UNKNOWN
+- Lblproject:AccessListTxData(_,_,_,_,_,_,_,_)_EVM-TYPES_AccessListTx_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:nonce: UNKNOWN
+- Lblproject:AccessListTxData(_,_,_,_,_,_,_,_)_EVM-TYPES_AccessListTx_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:to: UNKNOWN
+- Lblproject:AccessListTxData(_,_,_,_,_,_,_,_)_EVM-TYPES_AccessListTx_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:value: UNKNOWN
+- Lblproject:AccessedAccountsCell: UNKNOWN
+- Lblproject:AccessedAccountsCellOpt: UNKNOWN
+- Lblproject:AccessedStorageCell: UNKNOWN
+- Lblproject:AccessedStorageCellOpt: UNKNOWN
+- Lblproject:Account: UNKNOWN
+- Lblproject:AccountCell: UNKNOWN
+- Lblproject:AccountCellFragment: UNKNOWN
+- Lblproject:AccountCellMap: UNKNOWN
+- Lblproject:AccountCode: UNKNOWN
+- Lblproject:Accounts: UNKNOWN
+- Lblproject:AccountsCell: UNKNOWN
+- Lblproject:AccountsCellFragment: UNKNOWN
+- Lblproject:AccountsCellOpt: UNKNOWN
+- Lblproject:AcctIDCell: UNKNOWN
+- Lblproject:AcctIDCellOpt: UNKNOWN
+- Lblproject:ActiveAccountsCell: UNKNOWN
+- Lblproject:ActiveAccountsCellOpt: UNKNOWN
+- Lblproject:BExp: UNKNOWN
+- Lblproject:BalanceCell: UNKNOWN
+- Lblproject:BalanceCellOpt: UNKNOWN
+- Lblproject:BaseFeeCell: UNKNOWN
+- Lblproject:BaseFeeCellOpt: UNKNOWN
+- Lblproject:BinStackOp: UNKNOWN
+- Lblproject:BlockCell: UNKNOWN
+- Lblproject:BlockCellFragment: UNKNOWN
+- Lblproject:BlockCellOpt: UNKNOWN
+- Lblproject:BlockNonceCell: UNKNOWN
+- Lblproject:BlockNonceCellOpt: UNKNOWN
+- Lblproject:BlockhashesCell: UNKNOWN
+- Lblproject:BlockhashesCellOpt: UNKNOWN
+- Lblproject:Bool: UNKNOWN
+- Lblproject:Bytes: UNKNOWN
+- Lblproject:CallDataCell: UNKNOWN
+- Lblproject:CallDataCellOpt: UNKNOWN
+- Lblproject:CallDepthCell: UNKNOWN
+- Lblproject:CallDepthCellOpt: UNKNOWN
+- Lblproject:CallGasCell: UNKNOWN
+- Lblproject:CallGasCellOpt: UNKNOWN
+- Lblproject:CallOp: UNKNOWN
+- Lblproject:CallSixOp: UNKNOWN
+- Lblproject:CallStackCell: UNKNOWN
+- Lblproject:CallStackCellOpt: UNKNOWN
+- Lblproject:CallStateCell: UNKNOWN
+- Lblproject:CallStateCellFragment: UNKNOWN
+- Lblproject:CallStateCellOpt: UNKNOWN
+- Lblproject:CallValueCell: UNKNOWN
+- Lblproject:CallValueCellOpt: UNKNOWN
+- Lblproject:CallerCell: UNKNOWN
+- Lblproject:CallerCellOpt: UNKNOWN
+- Lblproject:ChainIDCell: UNKNOWN
+- Lblproject:ChainIDCellOpt: UNKNOWN
+- Lblproject:CodeCell: UNKNOWN
+- Lblproject:CodeCellOpt: UNKNOWN
+- Lblproject:CoinbaseCell: UNKNOWN
+- Lblproject:CoinbaseCellOpt: UNKNOWN
+- Lblproject:Contract: UNKNOWN
+- Lblproject:ContractAccess: UNKNOWN
+- Lblproject:DataCell: UNKNOWN
+- Lblproject:DataCellOpt: UNKNOWN
+- Lblproject:DifficultyCell: UNKNOWN
+- Lblproject:DifficultyCellOpt: UNKNOWN
+- Lblproject:DynamicFeeTx: UNKNOWN
+- Lblproject:DynamicFeeTxData(_,_,_,_,_,_,_,_,_)_EVM-TYPES_DynamicFeeTx_Int_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:accessLists: UNKNOWN
+- Lblproject:DynamicFeeTxData(_,_,_,_,_,_,_,_,_)_EVM-TYPES_DynamicFeeTx_Int_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:chainId: UNKNOWN
+- Lblproject:DynamicFeeTxData(_,_,_,_,_,_,_,_,_)_EVM-TYPES_DynamicFeeTx_Int_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:data: UNKNOWN
+- Lblproject:DynamicFeeTxData(_,_,_,_,_,_,_,_,_)_EVM-TYPES_DynamicFeeTx_Int_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:gasLimit: UNKNOWN
+- Lblproject:DynamicFeeTxData(_,_,_,_,_,_,_,_,_)_EVM-TYPES_DynamicFeeTx_Int_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:maxGasFee: UNKNOWN
+- Lblproject:DynamicFeeTxData(_,_,_,_,_,_,_,_,_)_EVM-TYPES_DynamicFeeTx_Int_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:nonce: UNKNOWN
+- Lblproject:DynamicFeeTxData(_,_,_,_,_,_,_,_,_)_EVM-TYPES_DynamicFeeTx_Int_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:priorityGasFee: UNKNOWN
+- Lblproject:DynamicFeeTxData(_,_,_,_,_,_,_,_,_)_EVM-TYPES_DynamicFeeTx_Int_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:to: UNKNOWN
+- Lblproject:DynamicFeeTxData(_,_,_,_,_,_,_,_,_)_EVM-TYPES_DynamicFeeTx_Int_Int_Int_Int_Account_Int_ByteArray_Int_JSONs:value: UNKNOWN
+- Lblproject:EndPCCell: UNKNOWN
+- Lblproject:EndPCCellOpt: UNKNOWN
+- Lblproject:EndStatusCode: UNKNOWN
+- Lblproject:Endianness: UNKNOWN
+- Lblproject:EthereumCell: UNKNOWN
+- Lblproject:EthereumCellFragment: UNKNOWN
+- Lblproject:EthereumCellOpt: UNKNOWN
+- Lblproject:EthereumCommand: UNKNOWN
+- Lblproject:EthereumSimulation: UNKNOWN
+- Lblproject:EventArg: UNKNOWN
+- Lblproject:EventArgs: UNKNOWN
+- Lblproject:EvmCell: UNKNOWN
+- Lblproject:EvmCellFragment: UNKNOWN
+- Lblproject:EvmCellOpt: UNKNOWN
+- Lblproject:ExceptionalStatusCode: UNKNOWN
+- Lblproject:ExitCodeCell: UNKNOWN
+- Lblproject:ExitCodeCellOpt: UNKNOWN
+- Lblproject:Exp: UNKNOWN
+- Lblproject:ExtraDataCell: UNKNOWN
+- Lblproject:ExtraDataCellOpt: UNKNOWN
+- Lblproject:Field: UNKNOWN
+- Lblproject:Float: UNKNOWN
+- Lblproject:FoundryContract: UNKNOWN
+- Lblproject:FoundryField: UNKNOWN
+- Lblproject:G1Point: UNKNOWN
+- Lblproject:G2Point: UNKNOWN
+- Lblproject:GasCell: UNKNOWN
+- Lblproject:GasCellOpt: UNKNOWN
+- Lblproject:GasLimitCell: UNKNOWN
+- Lblproject:GasLimitCellOpt: UNKNOWN
+- Lblproject:GasPriceCell: UNKNOWN
+- Lblproject:GasPriceCellOpt: UNKNOWN
+- Lblproject:GasUsedCell: UNKNOWN
+- Lblproject:GasUsedCellOpt: UNKNOWN
+- Lblproject:GeneratedCounterCell: UNKNOWN
+- Lblproject:GeneratedCounterCellOpt: UNKNOWN
+- Lblproject:GeneratedTopCell: UNKNOWN
+- Lblproject:GeneratedTopCellFragment: UNKNOWN
+- Lblproject:IdCell: UNKNOWN
+- Lblproject:IdCellOpt: UNKNOWN
+- Lblproject:Int: UNKNOWN
+- Lblproject:IntList: UNKNOWN
+- Lblproject:InterimStatesCell: UNKNOWN
+- Lblproject:InterimStatesCellOpt: UNKNOWN
+- Lblproject:InternalOp: UNKNOWN
+- Lblproject:InvalidOp: UNKNOWN
+- Lblproject:JSON: UNKNOWN
+- Lblproject:JSONKey: UNKNOWN
+- Lblproject:JSONs: UNKNOWN
+- Lblproject:JumpDestsCell: UNKNOWN
+- Lblproject:JumpDestsCellOpt: UNKNOWN
+- Lblproject:K: UNKNOWN
+- Lblproject:KCell: UNKNOWN
+- Lblproject:KCellOpt: UNKNOWN
+- Lblproject:KItem: UNKNOWN
+- Lblproject:KResult: UNKNOWN
+- Lblproject:KevmCell: UNKNOWN
+- Lblproject:KevmCellFragment: UNKNOWN
+- Lblproject:KevmCellOpt: UNKNOWN
+- Lblproject:LegacyProtectedTxData(_,_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray_Int:chainId: UNKNOWN
+- Lblproject:LegacyProtectedTxData(_,_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray_Int:data: UNKNOWN
+- Lblproject:LegacyProtectedTxData(_,_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray_Int:gasLimit: UNKNOWN
+- Lblproject:LegacyProtectedTxData(_,_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray_Int:gasPrice: UNKNOWN
+- Lblproject:LegacyProtectedTxData(_,_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray_Int:nonce: UNKNOWN
+- Lblproject:LegacyProtectedTxData(_,_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray_Int:to: UNKNOWN
+- Lblproject:LegacyProtectedTxData(_,_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray_Int:value: UNKNOWN
+- Lblproject:LegacyTx: UNKNOWN
+- Lblproject:LegacyTxData(_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray:data: UNKNOWN
+- Lblproject:LegacyTxData(_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray:gasLimit: UNKNOWN
+- Lblproject:LegacyTxData(_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray:gasPrice: UNKNOWN
+- Lblproject:LegacyTxData(_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray:nonce: UNKNOWN
+- Lblproject:LegacyTxData(_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray:to: UNKNOWN
+- Lblproject:LegacyTxData(_,_,_,_,_,_)_EVM-TYPES_LegacyTx_Int_Int_Int_Account_Int_ByteArray:value: UNKNOWN
+- Lblproject:LengthPrefix: UNKNOWN
+- Lblproject:LengthPrefixType: UNKNOWN
+- Lblproject:List: UNKNOWN
+- Lblproject:LocalMemCell: UNKNOWN
+- Lblproject:LocalMemCellOpt: UNKNOWN
+- Lblproject:LogCell: UNKNOWN
+- Lblproject:LogCellOpt: UNKNOWN
+- Lblproject:LogOp: UNKNOWN
+- Lblproject:LogsBloomCell: UNKNOWN
+- Lblproject:LogsBloomCellOpt: UNKNOWN
+- Lblproject:Map: UNKNOWN
+- Lblproject:MemoryUsedCell: UNKNOWN
+- Lblproject:MemoryUsedCellOpt: UNKNOWN
+- Lblproject:MerkleTree: UNKNOWN
+- Lblproject:MessageCell: UNKNOWN
+- Lblproject:MessageCellFragment: UNKNOWN
+- Lblproject:MessageCellMap: UNKNOWN
+- Lblproject:MessagesCell: UNKNOWN
+- Lblproject:MessagesCellFragment: UNKNOWN
+- Lblproject:MessagesCellOpt: UNKNOWN
+- Lblproject:MixHashCell: UNKNOWN
+- Lblproject:MixHashCellOpt: UNKNOWN
+- Lblproject:Mode: UNKNOWN
+- Lblproject:ModeCell: UNKNOWN
+- Lblproject:ModeCellOpt: UNKNOWN
+- Lblproject:MsgIDCell: UNKNOWN
+- Lblproject:MsgIDCellOpt: UNKNOWN
+- Lblproject:NetworkCell: UNKNOWN
+- Lblproject:NetworkCellFragment: UNKNOWN
+- Lblproject:NetworkCellOpt: UNKNOWN
+- Lblproject:NonceCell: UNKNOWN
+- Lblproject:NonceCellOpt: UNKNOWN
+- Lblproject:NullStackOp: UNKNOWN
+- Lblproject:NumberCell: UNKNOWN
+- Lblproject:NumberCellOpt: UNKNOWN
+- Lblproject:OmmerBlockHeadersCell: UNKNOWN
+- Lblproject:OmmerBlockHeadersCellOpt: UNKNOWN
+- Lblproject:OmmersHashCell: UNKNOWN
+- Lblproject:OmmersHashCellOpt: UNKNOWN
+- Lblproject:OpCode: UNKNOWN
+- Lblproject:OrigStorageCell: UNKNOWN
+- Lblproject:OrigStorageCellOpt: UNKNOWN
+- Lblproject:OriginCell: UNKNOWN
+- Lblproject:OriginCellOpt: UNKNOWN
+- Lblproject:OutputCell: UNKNOWN
+- Lblproject:OutputCellOpt: UNKNOWN
+- Lblproject:PcCell: UNKNOWN
+- Lblproject:PcCellOpt: UNKNOWN
+- Lblproject:PrecompiledOp: UNKNOWN
+- Lblproject:PreviousHashCell: UNKNOWN
+- Lblproject:PreviousHashCellOpt: UNKNOWN
+- Lblproject:ProgramCell: UNKNOWN
+- Lblproject:ProgramCellOpt: UNKNOWN
+- Lblproject:PushOp: UNKNOWN
+- Lblproject:QuadStackOp: UNKNOWN
+- Lblproject:ReceiptsRootCell: UNKNOWN
+- Lblproject:ReceiptsRootCellOpt: UNKNOWN
+- Lblproject:RefundCell: UNKNOWN
+- Lblproject:RefundCellOpt: UNKNOWN
+- Lblproject:Schedule: UNKNOWN
+- Lblproject:ScheduleCell: UNKNOWN
+- Lblproject:ScheduleCellOpt: UNKNOWN
+- Lblproject:ScheduleConst: UNKNOWN
+- Lblproject:ScheduleFlag: UNKNOWN
+- Lblproject:SelfDestructCell: UNKNOWN
+- Lblproject:SelfDestructCellOpt: UNKNOWN
+- Lblproject:Set: UNKNOWN
+- Lblproject:SigRCell: UNKNOWN
+- Lblproject:SigRCellOpt: UNKNOWN
+- Lblproject:SigSCell: UNKNOWN
+- Lblproject:SigSCellOpt: UNKNOWN
+- Lblproject:SigVCell: UNKNOWN
+- Lblproject:SigVCellOpt: UNKNOWN
+- Lblproject:Signedness: UNKNOWN
+- Lblproject:StackOp: UNKNOWN
+- Lblproject:StateRootCell: UNKNOWN
+- Lblproject:StateRootCellOpt: UNKNOWN
+- Lblproject:StaticCell: UNKNOWN
+- Lblproject:StaticCellOpt: UNKNOWN
+- Lblproject:StatusCode: UNKNOWN
+- Lblproject:StatusCodeCell: UNKNOWN
+- Lblproject:StatusCodeCellOpt: UNKNOWN
+- Lblproject:StorageCell: UNKNOWN
+- Lblproject:StorageCellOpt: UNKNOWN
+- Lblproject:String: UNKNOWN
+- Lblproject:StringBuffer: UNKNOWN
+- Lblproject:SubstateCell: UNKNOWN
+- Lblproject:SubstateCellFragment: UNKNOWN
+- Lblproject:SubstateCellOpt: UNKNOWN
+- Lblproject:SubstateLogEntry: UNKNOWN
+- Lblproject:TernStackOp: UNKNOWN
+- Lblproject:TimestampCell: UNKNOWN
+- Lblproject:TimestampCellOpt: UNKNOWN
+- Lblproject:ToCell: UNKNOWN
+- Lblproject:ToCellOpt: UNKNOWN
+- Lblproject:TouchedAccountsCell: UNKNOWN
+- Lblproject:TouchedAccountsCellOpt: UNKNOWN
+- Lblproject:TransactionsRootCell: UNKNOWN
+- Lblproject:TransactionsRootCellOpt: UNKNOWN
+- Lblproject:TxAccessCell: UNKNOWN
+- Lblproject:TxAccessCellOpt: UNKNOWN
+- Lblproject:TxChainIDCell: UNKNOWN
+- Lblproject:TxChainIDCellOpt: UNKNOWN
+- Lblproject:TxData: UNKNOWN
+- Lblproject:TxGasLimitCell: UNKNOWN
+- Lblproject:TxGasLimitCellOpt: UNKNOWN
+- Lblproject:TxGasPriceCell: UNKNOWN
+- Lblproject:TxGasPriceCellOpt: UNKNOWN
+- Lblproject:TxMaxFeeCell: UNKNOWN
+- Lblproject:TxMaxFeeCellOpt: UNKNOWN
+- Lblproject:TxNonceCell: UNKNOWN
+- Lblproject:TxNonceCellOpt: UNKNOWN
+- Lblproject:TxOrderCell: UNKNOWN
+- Lblproject:TxOrderCellOpt: UNKNOWN
+- Lblproject:TxPendingCell: UNKNOWN
+- Lblproject:TxPendingCellOpt: UNKNOWN
+- Lblproject:TxPriorityFeeCell: UNKNOWN
+- Lblproject:TxPriorityFeeCellOpt: UNKNOWN
+- Lblproject:TxType: UNKNOWN
+- Lblproject:TxTypeCell: UNKNOWN
+- Lblproject:TxTypeCellOpt: UNKNOWN
+- Lblproject:TypedArg: UNKNOWN
+- Lblproject:TypedArgs: UNKNOWN
+- Lblproject:UnStackOp: UNKNOWN
+- Lblproject:ValueCell: UNKNOWN
+- Lblproject:ValueCellOpt: UNKNOWN
+- Lblproject:WordStack: UNKNOWN
+- Lblproject:WordStackCell: UNKNOWN
+- Lblproject:WordStackCellOpt: UNKNOWN
 - LblqsortJSONs(_)_JSON-EXT_JSONs_JSONs: 2
   - evm-semantics/.build/usr/lib/kevm/include/kframework/json-rpc.md :  (46, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/json-rpc.md :  (47, 10)
@@ -4977,9 +5481,9 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (49, 10)
 - LblsignExtendBitRangeInt(_,_,_)_INT-COMMON_Int_Int_Int_Int: /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1143, 8)
 - Lblsignextend(_,_)_EVM-TYPES_Int_Int_Int: 3
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (211, 33)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (213, 33)
-  - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (212, 33)
+  - EVM-TYPES.signextend.invalid
+  - EVM-TYPES.signextend.positive
+  - EVM-TYPES.signextend.negative
 - LblsortedJSONs(_)_JSON-EXT_Bool_JSONs: 3
   - evm-semantics/.build/usr/lib/kevm/include/kframework/json-rpc.md :  (59, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/json-rpc.md :  (60, 10)
@@ -4989,7 +5493,9 @@ Function equations by term index:
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (37, 10)
   - evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (38, 10)
 - Lbl~Word__EVM-TYPES_Int_Int: evm-semantics/.build/usr/lib/kevm/include/kframework/evm-types.md :  (171, 10)
-- append: -
+- append: 2
+  - UNKNOWN
+  - UNKNOWN
 Simplifications by term index:
 - Lbl#allBut64th(_)_EVM_Int_Int: evm-semantics/.build/usr/lib/kevm/include/kframework/infinite-gas.md :  (94, 10)
 - Lbl#asWord(_)_EVM-TYPES_Int_ByteArray: evm-semantics/tests/specs/lemmas.k :  (286, 10)
@@ -5324,7 +5830,7 @@ Simplifications by term index:
   - evm-semantics/tests/specs/lemmas.k :  (291, 10)
   - evm-semantics/tests/specs/lemmas.k :  (48, 10)
 Predicate simplifications by term index:
-- \ceil: 8
+- \ceil: 11
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (411, 8)
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1085, 8)
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1084, 8)
@@ -5333,6 +5839,9 @@ Predicate simplifications by term index:
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1086, 8)
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1996, 8)
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1995, 8)
+  - UNKNOWN
+  - UNKNOWN
+  - UNKNOWN
 - \equalsTerm: 30
   - evm-semantics/tests/specs/lemmas.k :  (408, 10)
   - /Users/anapantilie/RV/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1128, 8)

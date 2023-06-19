@@ -22,14 +22,12 @@ import Control.DeepSeq (NFData (..))
 import Data.Bifunctor
 import Data.ByteString.Char8 (ByteString)
 import Data.ByteString.Char8 qualified as BS
-import Data.List (partition)
 import Data.List.Extra (sortOn)
 import Data.Map qualified as Map
-import Data.Maybe (fromJust, fromMaybe, isJust)
+import Data.Maybe (fromMaybe)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import GHC.Generics (Generic)
-import GHC.Records (HasField (..))
 import Prettyprinter (Doc, Pretty, pretty)
 import Prettyprinter qualified as Pretty
 import Prettyprinter.Render.String qualified as Pretty (renderString)
@@ -46,10 +44,10 @@ data Summary = Summary
     , subSorts :: Map.Map ByteString [ByteString]
     , axiomCount, preserveDefinednessCount, containAcSymbolsCount :: Int
     , functionRuleCount, simplificationCount, predicateSimplificationCount :: Int
-    , rewriteRules :: Map.Map TermIndex [Location] -- FIXME use Identification type
-    , functionRules :: Map.Map TermIndex [Location]
-    , simplifications :: Map.Map TermIndex [Location]
-    , predicateSimplifications :: Map.Map TermIndex [Location]
+    , rewriteRules :: Map.Map TermIndex [SourceRef]
+    , functionRules :: Map.Map TermIndex [SourceRef]
+    , simplifications :: Map.Map TermIndex [SourceRef]
+    , predicateSimplifications :: Map.Map TermIndex [SourceRef]
     }
     deriving stock (Eq, Show, Generic)
     deriving anyclass (NFData)
@@ -79,22 +77,14 @@ mkSummary file def =
             length $ concat $ concatMap Map.elems (Map.elems def.functionEquations)
         , predicateSimplificationCount =
             length $ concat $ concatMap Map.elems (Map.elems def.functionEquations)
-        , rewriteRules =
-            Map.map (fst . locate . concat . Map.elems) def.rewriteTheory
-        , functionRules =
-            Map.map (fst . locate . concat . Map.elems) def.functionEquations
-        , simplifications =
-            Map.map (fst . locate . concat . Map.elems) def.simplifications
-        , predicateSimplifications =
-            Map.map (fst . locate . concat . Map.elems) def.predicateSimplifications
+        , rewriteRules = Map.map sourceRefs def.rewriteTheory
+        , functionRules = Map.map sourceRefs def.functionEquations
+        , simplifications = Map.map sourceRefs def.simplifications
+        , predicateSimplifications = Map.map sourceRefs def.predicateSimplifications
         }
   where
-    -- FIXME use the identification function here
-    locate :: HasField "attributes" a AxiomAttributes => [a] -> ([Location], Int)
-    locate =
-        bimap (map fromJust) length
-            . partition isJust
-            . map (.attributes.location)
+    sourceRefs :: HasSourceRef x => Map.Map k [x] -> [SourceRef]
+    sourceRefs = map sourceRef . concat . Map.elems
 
 prettySummary :: Summary -> String
 prettySummary = Pretty.renderString . layoutPrettyUnbounded . pretty
@@ -150,7 +140,8 @@ data SourceRef
     = Labeled Text
     | Located Location
     | UNKNOWN
-    deriving (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData)
 
 instance Pretty SourceRef where
     pretty = \case
@@ -172,4 +163,7 @@ instance HasSourceRef AxiomAttributes where
                 <|> fmap Located attribs.location
 
 instance HasSourceRef (RewriteRule a) where
+    sourceRef r = sourceRef r.attributes
+
+instance HasSourceRef PredicateEquation where
     sourceRef r = sourceRef r.attributes
