@@ -114,6 +114,8 @@ respondEither mbStatsVar booster kore req = case req of
                 (koreRes, koreTime) <- withTime $ kore req
                 logStats AddModuleM (boosterTime + koreTime, koreTime)
                 pure koreRes
+    GetModel _ ->
+        loggedKore GetModelM req
     Cancel ->
         pure $ Left $ ErrorObj "Cancel not supported" (-32601) Null
   where
