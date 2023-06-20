@@ -96,7 +96,6 @@ import Kore.Attribute.Attributes
 import Kore.Attribute.Null qualified as Attribute (
     Null,
  )
-import Kore.Attribute.Smtlib.Smtlib qualified as Attribute
 import Kore.Error (
     Error,
     castError,
@@ -388,16 +387,3 @@ parseSExpr syntax =
   where
     noParse = Kore.Error.koreFail "failed to parse S-expression"
     incompleteParse = Kore.Error.koreFail "failed to parse entire argument"
-
-instance ParseAttributes Attribute.Smtlib where
-    parseAttribute =
-        withApplication' $ \params args Attribute.Smtlib{getSmtlib} -> do
-            getZeroParams params
-            arg <- getOneArgument args
-            StringLiteral syntax <- getStringLiteral arg
-            sExpr <- parseSExpr syntax
-            unless (isNothing getSmtlib) failDuplicate'
-            return Attribute.Smtlib{getSmtlib = Just sExpr}
-      where
-        withApplication' = withApplication Attribute.smtlibId
-        failDuplicate' = failDuplicate Attribute.smtlibId

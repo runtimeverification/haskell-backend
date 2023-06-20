@@ -19,6 +19,7 @@ import Data.IORef (readIORef)
 import Data.InternedText (globalInternedTextCache)
 import Data.Limit (Limit (..))
 import Data.List.Extra (mconcatMap)
+import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map.Strict qualified as Map
 import Data.Sequence (Seq)
 import Data.Set qualified as Set
@@ -39,7 +40,8 @@ import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
-import Kore.Internal.Predicate (pattern PredicateTrue)
+import Kore.Internal.Predicate (getMultiAndPredicate, pattern PredicateTrue)
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike (TermLike)
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.JsonRpc.Error
@@ -119,10 +121,7 @@ respond serverState moduleName runSMT =
                 , logSuccessfulRewrites
                 , logSuccessfulSimplifications
                 } -> withMainModule (coerce _module) $ \serializedModule lemmas ->
-                case PatternVerifier.runPatternVerifier (verifierContext serializedModule) $
-                    PatternVerifier.verifyStandalonePattern Nothing $
-                        PatternJson.toParsedPattern $
-                            PatternJson.term state of
+                case verifyIn serializedModule state of
                     Left err -> pure $ Left $ backendError CouldNotVerifyPattern err
                     Right verifiedPattern -> do
                         traversalResult <-
@@ -364,7 +363,7 @@ respond serverState moduleName runSMT =
                             Claim.NotImpliedStuck Nothing ->
                                 ImpliesResult jsonTerm False (Just . renderCond sort $ Condition.bottom) logs
         Simplify SimplifyRequest{state, _module, logSuccessfulSimplifications} -> withMainModule (coerce _module) $ \serializedModule lemmas ->
-            case PatternVerifier.runPatternVerifier (verifierContext serializedModule) verifyState of
+            case verifyIn serializedModule state of
                 Left err ->
                     pure $ Left $ backendError CouldNotVerifyPattern err
                 Right stateVerified -> do
@@ -388,11 +387,6 @@ respond serverState moduleName runSMT =
                                                 OrPattern.toTermLike sort result
                                     , logs = mkSimplifierLogs logSuccessfulSimplifications logs
                                     }
-          where
-            verifyState =
-                PatternVerifier.verifyStandalonePattern Nothing $
-                    PatternJson.toParsedPattern $
-                        PatternJson.term state
         AddModule AddModuleRequest{_module} ->
             case parseKoreModule "<add-module>" _module of
                 Left err -> pure $ Left $ backendError CouldNotParsePattern err
@@ -441,6 +435,47 @@ respond serverState moduleName runSMT =
                                                     }
 
                                     pure . Right $ AddModule ()
+        GetModel GetModelRequest{state, _module} ->
+            withMainModule (coerce _module) $ \serializedModule lemmas ->
+                case verifyIn serializedModule state of
+                    Left err ->
+                        pure $ Left $ backendError CouldNotVerifyPattern err
+                    Right stateVerified -> do
+                        let sort = TermLike.termLikeSort stateVerified
+                            patt =
+                                mkRewritingPattern $ Pattern.parsePatternFromTermLike stateVerified
+                            preds = getMultiAndPredicate $ Condition.predicate patt
+                        -- We use the invariant that the parsing does not produce a substitution
+
+                        let tools = Exec.metadataTools serializedModule
+                        result <-
+                            if all Pattern.isTop preds -- catch terms without predicates
+                                then pure $ Left False
+                                else
+                                    liftIO
+                                        . runSMT tools lemmas
+                                        . SMT.Evaluator.getModelFor tools
+                                        $ NonEmpty.fromList preds
+
+                        pure . Right . GetModel $
+                            case result of
+                                Left False ->
+                                    GetModelResult
+                                        { satisfiable = Unknown
+                                        , substitution = Nothing
+                                        }
+                                Left True ->
+                                    GetModelResult
+                                        { satisfiable = Unsat
+                                        , substitution = Nothing
+                                        }
+                                Right subst ->
+                                    GetModelResult
+                                        { satisfiable = Sat
+                                        , substitution =
+                                            PatternJson.fromSubstitution sort $
+                                                Substitution.mapVariables getRewritingVariable subst
+                                        }
 
         -- this case is only reachable if the cancel appeared as part of a batch request
         Cancel -> pure $ Left cancelUnsupportedInBatchMode
@@ -459,6 +494,12 @@ respond serverState moduleName runSMT =
             & withRpcRequest
       where
         withRpcRequest context = context{isRpcRequest = True}
+
+    -- verifyIn :: Exec.SerializedModule -> PatternJson.KoreJson -> Either VerifyError (Pattern _)
+    verifyIn m state =
+        PatternVerifier.runPatternVerifier (verifierContext m) $
+            PatternVerifier.verifyStandalonePattern Nothing $
+                PatternJson.toParsedPattern (PatternJson.term state)
 
     mkSimplifierLogs :: Maybe Bool -> Seq SimplifierTrace -> Maybe [LogEntry]
     mkSimplifierLogs Nothing _ = Nothing
