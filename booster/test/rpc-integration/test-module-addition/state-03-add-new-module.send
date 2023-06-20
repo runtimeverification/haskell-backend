@@ -1,9 +1,0 @@
-{
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "add-module",
-    "params": {
-        "name": "NEW",
-        "module": "module NEW\n  import TEST []\n\n// hand-written rules, purposely not providing some of the usual attributes and using the simplest possible form\n  axiom{} \\rewrites{SortGeneratedTopCell{}} (\n    \\and{SortGeneratedTopCell{}} (\n      \\top{SortGeneratedTopCell{}}(),\n      Lbl'-LT-'generatedTop'-GT-'{}(\n        Lbl'-LT-'k'-GT-'{}(\n          kseq{}(inj{SortState{}, SortKItem{}}(\\dv{SortState{}}(\"d\")),Var'Unds'DotVar1:SortK{})\n        ),\n        Var'Unds'DotVar0:SortGeneratedCounterCell{}\n      )\n    ),\n    Lbl'-LT-'generatedTop'-GT-'{}(\n      Lbl'-LT-'k'-GT-'{}(\n        kseq{}(inj{SortState{}, SortKItem{}}(\\dv{SortState{}}(\"e\")),Var'Unds'DotVar1:SortK{})\n      ),\n      Var'Unds'DotVar0:SortGeneratedCounterCell{}\n    )\n  )\n  [label{}(\"NEW.DE\")] // optional label\n\n  axiom{} \\rewrites{SortGeneratedTopCell{}} (\n    \\and{SortGeneratedTopCell{}} (\n      \\top{SortGeneratedTopCell{}}(),\n      Lbl'-LT-'generatedTop'-GT-'{}(\n        Lbl'-LT-'k'-GT-'{}(\n          kseq{}(inj{SortState{}, SortKItem{}}(\\dv{SortState{}}(\"e\")),Var'Unds'DotVar1:SortK{})\n        ),\n        Var'Unds'DotVar0:SortGeneratedCounterCell{}\n      )\n    ),\n    Lbl'-LT-'generatedTop'-GT-'{}(\n      Lbl'-LT-'k'-GT-'{}(\n        kseq{}(inj{SortState{}, SortKItem{}}(\\dv{SortState{}}(\"f\")),Var'Unds'DotVar1:SortK{})\n      ),\n      Var'Unds'DotVar0:SortGeneratedCounterCell{}\n    )\n  )\n  [] // no label, no unique ID (rewrite tracing is unable to refer to this rule)\n\nendmodule []\n"
-    }
-}

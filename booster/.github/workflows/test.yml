@@ -200,7 +200,7 @@ jobs:
       - name: Run unit tests
         env:
           GC_DONT_GC: '1'
-        run: nix build .#hs-backend-booster:test:unit-tests --extra-experimental-features 'nix-command flakes' --print-build-logs
+        run: nix run .#hs-backend-booster:test:unit-tests --extra-experimental-features 'nix-command flakes' --print-build-logs
 
 
       - name: Run integration tests
@@ -215,5 +215,7 @@ jobs:
           nix build .#checks.${{ matrix.nix }}.integration.module-addition --extra-experimental-features 'nix-command flakes' --print-build-logs
           nix build .#checks.${{ matrix.nix }}.integration.imp --extra-experimental-features 'nix-command flakes' --print-build-logs -o imp.md
           nix build .#checks.${{ matrix.nix }}.integration.existentials --extra-experimental-features 'nix-command flakes' --print-build-logs
+          nix build .#checks.${{ matrix.nix }}.integration.simplify --extra-experimental-features 'nix-command flakes' --print-build-logs
+          nix build .#checks.${{ matrix.nix }}.integration.get-model --extra-experimental-features 'nix-command flakes' --print-build-logs
           echo "${{ matrix.nix }}" >> $GITHUB_STEP_SUMMARY
           cat imp.md >> $GITHUB_STEP_SUMMARY
