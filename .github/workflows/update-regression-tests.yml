@@ -46,7 +46,9 @@ jobs:
         with:
           repository: runtimeverification/evm-semantics
           submodules: recursive
+          path: ${{ env.EVM_SEMANTICS }}
       - run: |
+          echo "EVM_SEMANTICS: ${EVM_SEMANTICS} (preset by workflow)"
           echo "EVM_VERSION: ${EVM_VERSION-none given}"
           echo "K_VERSION: ${K_VERSION-none given}"
           echo "Run by Haskell backend version: $(git show --oneline -s)"
