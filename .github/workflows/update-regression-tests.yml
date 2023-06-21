@@ -1,0 +1,87 @@
+on:
+  schedule:
+    # Run every Sunday at 10pm UTC
+    - cron: '0 22 * * 0'
+  workflow_dispatch:
+    # allow manual runs using custom versions
+    inputs:
+      evm-version:
+        description: 'EVM version to use'
+        required: false
+        type: string
+      k-version:
+        description: 'K version to use'
+        required: false
+        type: string
+# FIXME CI TEST ONLY, REMOVE THIS BEFORE MERGING
+  pull_request:
+    types: [ labeled ]
+
+# don't allow several instances to run at the same time
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  generate-regression-evm:
+    runs-on: ubuntu-latest
+    env:
+      # FIXME CI TEST, LATER REPLACE BY EVM_VERSION: ${{ inputs.evm-version }}
+      EVM_VERSION: fixup
+      K_VERSION: ${{ inputs.k-version }}
+      REVIEWER: jberthold
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          # FIXME CI TEST ONLY, REMOVE THIS LINE BEFORE MERGING
+          ref: ${{ github.event.pull_request.head.ref }}
+      - name: Switch to update branch (or create it off master)
+        run: |
+          git checkout -B _update origin/_update || git checkout -B _update
+      - run: |
+          echo "EVM_VERSION: ${EVM_VERSION-none given}"
+          echo "K_VERSION: ${K_VERSION-none given}"
+          echo "Run by Haskell backend version: $(git show --oneline -s)"
+      - name: Install Nix
+        uses: cachix/install-nix-action@v22
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.13.3/install
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+            substituters = http://cache.nixos.org https://cache.iog.io
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+      - name: Install Cachix
+        uses: cachix/cachix-action@v12
+        with:
+          name: k-framework
+          skipPush: true
+      - name: Run test update script
+        run: |
+          echo "Using K version ${K_VERSION:-v$(cat deps/k-release)}"
+          nix develop \
+              github:runtimeverification/k/${K_VERSION:-v$(cat deps/k-release)}#kore-integration-tests \
+              --command bash scripts/update-regression-tests.sh"
+      - name: Capture result (commit and push diff if exists)
+        run: |
+          if git diff --exit-code; then
+            git config --global user.name github-actions
+            git config --global user.email github-actions@github.com
+            git add test/
+            git commit -m "Update regression tests"
+
+            # FIXME TESTING ONLY, REMOVE THIS BEFORE MERGING
+            hub pr list --format '%H%n' | grep -q '^_update$'
+            exit 1 # FIXME stop here while developing
+
+            git push --set-upstream origin _update
+            # open a PR if there isn't already one (use hub)
+            if ! hub pr list --format '%H%n' | grep -q '^_update$'; then
+                hub pull-request \
+                    --head _update --base master \
+                    --reviewer $REVIEWER --assign $REVIEWER \
+                    --labels automerge                  \
+                    --message 'Update regression tests'
+            fi
+          fi
