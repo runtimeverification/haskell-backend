@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   generate-regression-evm:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       # FIXME CI TEST, LATER REPLACE BY EVM_VERSION: ${{ inputs.evm-version }}
       EVM_VERSION: fixup
@@ -63,7 +63,7 @@ jobs:
           echo "Using K version ${USE_K_VERSION}"
           nix develop \
               github:runtimeverification/k/${USE_K_VERSION}#kore-integration-tests \
-              --command bash scripts/update-regression-tests.sh
+              --command bash -c "pwd && ls -l scripts/update-regression-tests.sh && scripts/update-regression-tests.sh"
       - name: Capture result (commit and push diff if exists)
         run: |
           if git diff --exit-code; then
