@@ -1,4 +1,4 @@
-# #!/usr/bin/env bash
+#!/usr/bin/env bash
 #
 # generate-regression-tests.sh
 #
@@ -19,7 +19,9 @@
 #                     building master with a custom K version.  If
 #                     nothing is provided, $KORE/evm-semantics will be
 #                     used.
-#
+#   * EVM_VERSION - Optional revision identifier for the evm-semantics
+#                   repository. If given, the run will use this version
+#                   of evm-semantics (otherwise using master).
 #   * K_VERSION - Optional revision identifier for K repository If
 #                 given, this K version will be used as the
 #                 evm-semantics dependency (otherwise deps/k_version
@@ -119,9 +121,10 @@ kollect() {
 }
 
 build-evm() {
-    log "Checking out latest master in ${EVM_SEMANTICS}"
+    log "Checking out ${EVM_VERSION:-latest master} in ${EVM_SEMANTICS}"
     cd ${EVM_SEMANTICS}
-    git checkout master
+    git fetch
+    git checkout ${EVM_VERSION:-master}
     git pull
     git submodule update --init --recursive
     log "Manually setting K dependency to ${K_VERSION}"
