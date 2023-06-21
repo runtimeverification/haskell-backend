@@ -11,10 +11,11 @@ mkShell {
         jsonrpcclient
       '';
     })
+    cmake # for evm-semantics
+    poetry
   ];
 
   shellHook = ''
     export NIX=1
   '';
 }
-
