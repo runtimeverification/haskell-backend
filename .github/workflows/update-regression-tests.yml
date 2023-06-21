@@ -26,10 +26,11 @@ jobs:
   generate-regression-evm:
     runs-on: [Linux, performance]
     env:
-      # FIXME CI TEST, LATER REPLACE BY EVM_VERSION: ${{ inputs.evm-version }}
-      EVM_VERSION: fixup
       K_VERSION: ${{ inputs.k-version }}
       REVIEWER: jberthold
+      EVM_SEMANTICS: ./evm-semantics
+      # FIXME CI TEST, LATER REPLACE BY EVM_VERSION: ${{ inputs.evm-version }}
+      EVM_VERSION: fixup
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -40,6 +41,11 @@ jobs:
       - name: Switch to update branch (or create it off master)
         run: |
           git checkout -B _update origin/_update || git checkout -B _update
+      - name: Check out evm-semantics
+        uses: actions/checkout@v3
+        with:
+          repository: runtimeverification/evm-semantics
+          submodules: recursive
       - run: |
           echo "EVM_VERSION: ${EVM_VERSION-none given}"
           echo "K_VERSION: ${K_VERSION-none given}"
