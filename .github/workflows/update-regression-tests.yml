@@ -63,7 +63,7 @@ jobs:
           echo "Using K version ${USE_K_VERSION}"
           nix develop \
               github:runtimeverification/k/${USE_K_VERSION}#kore-integration-tests \
-              --command bash -c "pwd && ls -l && scripts/update-regression-tests.sh"
+              --command bash scripts/generate-regression-tests.sh
       - name: Capture result (commit and push diff if exists)
         run: |
           if git diff --exit-code; then
