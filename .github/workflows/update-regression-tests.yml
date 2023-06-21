@@ -59,9 +59,10 @@ jobs:
           skipPush: true
       - name: Run test update script
         run: |
-          echo "Using K version ${K_VERSION:-v$(cat deps/k-release)}"
+          USE_K_VERSION="${K_VERSION:-v$(cat deps/k_release)}"
+          echo "Using K version ${USE_K_VERSION}"
           nix develop \
-              github:runtimeverification/k/${K_VERSION:-v$(cat deps/k-release)}#kore-integration-tests \
+              github:runtimeverification/k/${USE_K_VERSION}#kore-integration-tests \
               --command bash scripts/update-regression-tests.sh"
       - name: Capture result (commit and push diff if exists)
         run: |
