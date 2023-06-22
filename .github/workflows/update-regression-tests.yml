@@ -15,7 +15,7 @@ on:
         type: string
 # FIXME CI TEST ONLY, REMOVE THIS BEFORE MERGING
   pull_request:
-    types: [ labeled ]
+    types: [ synchronize ]
 
 # don't allow several instances to run at the same time
 concurrency:
