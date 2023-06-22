@@ -1,4 +1,4 @@
-{ ncurses, jq, miller, z3, stdenv, lib, nix-gitignore, mach-nix, mkShell }: k:
+{ ncurses, jq, miller, z3, stdenv, lib, nix-gitignore, mach-nix, mkShell, cmake, poetry }: k:
 mkShell {
   packages = [
     k
@@ -16,6 +16,6 @@ mkShell {
   ];
 
   shellHook = ''
-    export NIX=1
+    export NIX=1 PS1=nix-develop:$PS1
   '';
 }
