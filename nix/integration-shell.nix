@@ -1,4 +1,4 @@
-{ cmake, openssl, pkg-config, procps, gmp, autoconf, automake, ncurses, jq, miller, z3, stdenv, lib, nix-gitignore, mach-nix, mkShell }: k:
+{ cmake, openssl, pkg-config, procps, gmp, autoconf, automake, libtool, ncurses, jq, miller, z3, stdenv, lib, nix-gitignore, mach-nix, mkShell }: k:
 mkShell {
   packages = [
     k
@@ -20,6 +20,7 @@ mkShell {
     gmp.dev
     autoconf
     automake
+    libtool
   ];
 
   shellHook = ''
