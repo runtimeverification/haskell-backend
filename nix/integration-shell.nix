@@ -1,4 +1,4 @@
-{ ncurses, jq, miller, z3, stdenv, lib, nix-gitignore, mach-nix, mkShell, cmake, poetry }: k:
+{ cmake, ncurses, jq, miller, z3, stdenv, lib, nix-gitignore, mach-nix, mkShell }: k:
 mkShell {
   packages = [
     k
@@ -9,10 +9,10 @@ mkShell {
     (mach-nix.mkPython {
       requirements = ''
         jsonrpcclient
+        poetry
       '';
     })
     cmake # for evm-semantics
-    poetry
   ];
 
   shellHook = ''

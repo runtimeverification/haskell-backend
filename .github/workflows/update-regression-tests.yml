@@ -56,8 +56,11 @@ jobs:
         run: |
           USE_K_VERSION="${K_VERSION:-v$(cat deps/k_release)}"
           echo "Using K version ${USE_K_VERSION}"
+          # FIXME override to pick up integration-shell changes during
+          # CI TESTING, should remove before merging but does not hurt
           nix develop \
               github:runtimeverification/k/${USE_K_VERSION}#kore-integration-tests \
+              --override-input haskell-backend . --update-input haskell-backend \
               --command bash scripts/generate-regression-tests.sh
       - name: Capture result (commit and push diff if exists)
         run: |
