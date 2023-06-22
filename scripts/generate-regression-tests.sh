@@ -132,7 +132,10 @@ kollect() {
     mv vdefinition.kore $def
     mv spec.kore $spec
 
-    $sed -i -e "s,${EVM_SEMANTICS}/,evm-semantics/,g" *.kore
+    $sed -i \
+         -e "s,${EVM_SEMANTICS}/.build/usr/lib/kevm/kframework/include/,,g" \
+         -e "s,/nix/store/[a-z0-9]*-k-[^/]*maven/include/,,g" \
+         *.kore
     $sed -i -e "s/result.kore/$script.out/g" \
         -e "s/vdefinition.kore/$def/g" \
         -e "s/spec.kore/$spec/g" \
