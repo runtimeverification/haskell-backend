@@ -1,4 +1,4 @@
-{ cmake, ncurses, jq, miller, z3, stdenv, lib, nix-gitignore, mach-nix, mkShell }: k:
+{ cmake, openssl, ncurses, jq, miller, z3, stdenv, lib, nix-gitignore, mach-nix, mkShell }: k:
 mkShell {
   packages = [
     k
@@ -13,9 +13,10 @@ mkShell {
       '';
     })
     cmake # for evm-semantics
+    openssl.dev # for evm-semantics
   ];
 
   shellHook = ''
-    export NIX=1 PS1=nix-develop:$PS1
+    export NIX=1 PS1=integration-shell:$PS1
   '';
 }
