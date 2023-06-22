@@ -1,4 +1,4 @@
-{ cmake, openssl, ncurses, jq, miller, z3, stdenv, lib, nix-gitignore, mach-nix, mkShell }: k:
+{ cmake, openssl, pkg-config, ncurses, jq, miller, z3, stdenv, lib, nix-gitignore, mach-nix, mkShell }: k:
 mkShell {
   packages = [
     k
@@ -13,7 +13,8 @@ mkShell {
       '';
     })
     cmake # for evm-semantics
-    openssl.dev # for evm-semantics
+    openssl.dev # for evm-semantics plugin
+    pkg-config # for evm-semantics plugin
   ];
 
   shellHook = ''
