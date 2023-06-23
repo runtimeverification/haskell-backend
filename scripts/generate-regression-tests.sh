@@ -78,6 +78,7 @@ if [ -z "${EVM_SEMANTICS}" ]; then
     (cd $EVM_SEMANTICS && git submodule update --init --recursive)
 else
     EVM_SEMANTICS=$(realpath ${EVM_SEMANTICS})
+    log "Using directory ${EVM_SEMANTICS} for evm-semantics" info
     [ -f "$EVM_SEMANTICS/include/kframework/evm.md" ] || \
         err "Provided evm-semantics directory '${EVM_SEMANTICS}' appears damaged"
 fi
@@ -104,7 +105,10 @@ make clean
 if [ -z "$NIX" ]; then
     (cd deps/k && git checkout ${K_VERSION} && git submodule update --init --recursive)
     make deps
+    export PATH=$(pwd)/.build/usr/lib/kevm/kframework/bin:$PATH
+    which kore-exec
 else
+    log "Testing nix-provided K (kompile --version)"
     kompile --version && log "(^^^ nix-provided K ^^^)" || err "K unavailable but NIX=$NIX"
 fi
 log "Building evm-semantics with dependencies"
@@ -133,8 +137,10 @@ kollect() {
     mv spec.kore $spec
 
     $sed -i \
-         -e "s,${EVM_SEMANTICS}/.build/usr/lib/kevm/kframework/include/,,g" \
-         -e "s,/nix/store/[a-z0-9]*-k-[^/]*maven/include/,,g" \
+         -e "s,/nix/store/[a-z0-9]*-k-[^/]*maven/include/kframework/,evm-semantics/,g" \
+         -e "s,${EVM_SEMANTICS}/.build/usr/lib/kevm/kframework/include/kframework/,evm-semantics/,g" \
+         -e "s,${EVM_SEMANTICS}/.build/usr/lib/kevm/include/kframework/,evm-semantics/,g" \
+         -e "s,${EVM_SEMANTICS}/,evm-semantics/,g" \
          *.kore
     $sed -i -e "s/result.kore/$script.out/g" \
         -e "s/vdefinition.kore/$def/g" \
