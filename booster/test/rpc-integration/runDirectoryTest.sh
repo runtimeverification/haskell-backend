@@ -82,6 +82,6 @@ for test in $( ls $dir/state-*.{execute,send,simplify,add-module,get-model} 2>/d
         params=""
     fi
     # call rpc-client
-    echo "$client --$mode $test $params --expect $dir/response-${testname}.json $*"
-    $client --$mode $test $params --expect $dir/response-${testname}.json $*
+    echo "$client $mode $test $params --expect $dir/response-${testname}.json $*"
+    $client $mode $test $params --expect $dir/response-${testname}.json $*
 done
