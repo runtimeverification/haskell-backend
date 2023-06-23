@@ -13,7 +13,8 @@
     };
   };
 
-  outputs = { self, nixpkgs, haskell-nix, k-framework, haskell-backend, ... }@inputs:
+  outputs =
+    { self, nixpkgs, haskell-nix, k-framework, haskell-backend, ... }@inputs:
     let
       inherit (nixpkgs) lib;
       perSystem = lib.genAttrs nixpkgs.lib.systems.flakeExposed;
@@ -21,38 +22,35 @@
         import nixpkgs {
           inherit (haskell-nix) config;
           inherit system;
-          overlays = [ haskell-nix.overlays.combined haskell-backend.overlays.z3 ];
+          overlays =
+            [ haskell-nix.overlays.combined haskell-backend.overlays.z3 ];
         };
       allNixpkgsFor = perSystem nixpkgsForSystem;
       nixpkgsFor = system: allNixpkgsFor.${system};
       index-state = "2023-04-24T00:00:00Z";
 
       boosterBackendFor = { compiler, pkgs, profiling ? false, k }:
-        let
-          add-z3 = exe: {
-            build-tools = with pkgs; lib.mkForce [ makeWrapper ];
-            postInstall = ''
-              wrapProgram $out/bin/${exe} --prefix PATH : ${
-                with pkgs;
-                lib.makeBinPath [ z3 ]
-              }
-            '';
-          };
-        in
         pkgs.haskell-nix.cabalProject {
           name = "hs-backend-booster";
           supportHpack = true;
           compiler-nix-name = compiler;
-          src = pkgs.nix-gitignore.gitignoreSourcePure [
-            ''
-              /test/parser
-              /test/internalisation
-              /test/rpc-integration
-              /scripts
-              /.github
-            ''
-            ./.gitignore
-          ] ./.;
+          src = pkgs.applyPatches {
+            name = "booster-backend-src";
+            src = pkgs.nix-gitignore.gitignoreSourcePure [
+              ''
+                /test/parser
+                /test/internalisation
+                /test/rpc-integration
+                /scripts
+                /.github
+              ''
+              ./.gitignore
+            ] ./.;
+            postPatch = ''
+              substituteInPlace library/Booster/VersionInfo.hs \
+                --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}"'
+            '';
+          };
           inherit index-state;
 
           shell = {
@@ -76,11 +74,21 @@
           modules = [{
             enableProfiling = profiling;
             enableLibraryProfiling = profiling;
-            packages.hs-backend-booster.components.exes.kore-rpc-booster = add-z3 "kore-rpc-booster";
+            packages.hs-backend-booster.components.exes.kore-rpc-booster = {
+              build-tools = with pkgs; lib.mkForce [ makeWrapper ];
+              postInstall = ''
+                wrapProgram $out/bin/kore-rpc-booster --prefix PATH : ${
+                  with pkgs;
+                  lib.makeBinPath [ z3 ]
+                }
+              '';
+            };
             packages.hs-backend-booster.components.tests.llvm-integration = {
               build-tools = with pkgs; lib.mkForce [ makeWrapper ];
               postInstall = ''
-                wrapProgram $out/bin/llvm-integration --prefix PATH : ${lib.makeBinPath [ k ]}
+                wrapProgram $out/bin/llvm-integration --prefix PATH : ${
+                  lib.makeBinPath [ k ]
+                }
               '';
             };
 
@@ -137,8 +145,7 @@
           pkgs = nixpkgsFor system;
           flakes = flakesFor pkgs k-framework.packages.${system}.k;
         in {
-          kore-rpc-booster =
-            packages."hs-backend-booster:exe:kore-rpc-booster";
+          kore-rpc-booster = packages."hs-backend-booster:exe:kore-rpc-booster";
           booster-dev = packages."hs-backend-booster:exe:booster-dev";
           rpc-client = packages."hs-backend-booster:exe:rpc-client";
           parsetest = packages."hs-backend-booster:exe:parsetest";
@@ -148,7 +155,8 @@
       apps = perSystem (system:
         let
           inherit (flakes.${defaultCompiler}) apps;
-          flakes = flakesFor (nixpkgsFor system) k-framework.packages.${system}.k;
+          flakes =
+            flakesFor (nixpkgsFor system) k-framework.packages.${system}.k;
           pkgs = nixpkgsFor system;
           scripts = pkgs.symlinkJoin {
             name = "scripts";
@@ -179,7 +187,9 @@
       # To enter a development environment for a particular GHC version, use
       # the compiler name, e.g. `nix develop .#ghc8107`
       devShells = perSystem (system:
-        let flakes = flakesFor (nixpkgsFor system) k-framework.packages.${system}.k;
+        let
+          flakes =
+            flakesFor (nixpkgsFor system) k-framework.packages.${system}.k;
         in {
           default = flakes.${defaultCompiler}.devShell;
         } // lib.attrsets.mapAttrs'
@@ -192,7 +202,9 @@
       #
       # `nix build .#ghc8107:hs-backend-booster:test:unit-tests`
       checks = perSystem (system:
-        let flakes = flakesFor (nixpkgsFor system) k-framework.packages.${system}.k;
+        let
+          flakes =
+            flakesFor (nixpkgsFor system) k-framework.packages.${system}.k;
         in flakes.${defaultCompiler}.checks // collectOutputs "checks" flakes
         // {
           integration = with nixpkgsFor system;
@@ -200,8 +212,7 @@
             callPackage ./test/rpc-integration {
               kore-rpc-booster =
                 packages."hs-backend-booster:exe:kore-rpc-booster";
-              rpc-client =
-                packages."hs-backend-booster:exe:rpc-client";
+              rpc-client = packages."hs-backend-booster:exe:rpc-client";
               inherit (k-framework.packages.${system}) k;
             };
         });
@@ -211,7 +222,10 @@
           lib.optionalAttrs (!(prev ? haskell-nix))
           (inputs.haskell-nix.overlays.combined final prev))
         (_: prev:
-          let inherit ((flakesFor prev k-framework.packages.${prev.system}.k).${defaultCompiler}) packages;
+          let
+            inherit ((flakesFor prev
+              k-framework.packages.${prev.system}.k).${defaultCompiler})
+              packages;
           in {
             kore-rpc-booster =
               packages."hs-backend-booster:exe:kore-rpc-booster";
