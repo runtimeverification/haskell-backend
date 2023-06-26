@@ -7,14 +7,7 @@ import Control.Monad.Catch (
  )
 import Control.Monad.Extra as Monad
 import Control.Monad.Validate
-import Data.Binary qualified as Binary
-import Data.ByteString.Lazy (hPut)
-import Data.Compact (
-    compactWithSharing,
- )
-import Data.Compact.Serialize (
-    hPutCompact,
- )
+import Data.Compact.Serialize (writeCompact)
 import Data.Default (
     def,
  )
@@ -35,7 +28,7 @@ import Data.Set.Internal qualified as Set
 import Data.Text (
     unpack,
  )
-import GHC.Fingerprint as Fingerprint
+import GHC.Compact (compactWithSharing)
 import GHC.Generics qualified as GHC
 import GlobalMain
 import Kore.Attribute.Definition (
@@ -173,9 +166,6 @@ import System.Directory (
     setOwnerSearchable,
     setOwnerWritable,
     setPermissions,
- )
-import System.Environment (
-    getExecutablePath,
  )
 import System.Exit (
     exitWith,
@@ -793,11 +783,8 @@ koreSerialize execOptions = do
     case outputFileName of
         Nothing -> return (locations, ExitFailure 1)
         Just outputFile -> liftIO $ do
-            execHash <- getExecutablePath >>= Fingerprint.getFileHash
             compact <- compactWithSharing serializedDefinition
-            withFile outputFile WriteMode $ \outputHandle -> do
-                hPut outputHandle (Binary.encode execHash)
-                hPutCompact outputHandle compact
+            writeCompact outputFile compact
             return (locations, ExitSuccess)
 
 koreProve ::
