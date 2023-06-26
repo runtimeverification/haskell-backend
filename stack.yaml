@@ -54,9 +54,6 @@ extra-deps:
   - typerep-map-0.6.0.0
   - monad-validate-1.2.0.1
 
-# TODO (treeowl): Remove this when compact is updated upstream.
-allow-newer: true
-
 ghc-options:
   "$everything": -haddock
 
