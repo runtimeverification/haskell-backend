@@ -168,7 +168,6 @@
     within:
       - Test.Kore.Rewrite.Transition
 
-
 # Define some custom infix operators
 # - fixity: infixr 3 ~^#^~
 
