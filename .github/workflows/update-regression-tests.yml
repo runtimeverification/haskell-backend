@@ -1,7 +1,7 @@
 on:
-  schedule:
-    # Run every Sunday at 10pm UTC
-    - cron: '0 22 * * 0'
+  # schedule:
+  #  # Run every Sunday at 10pm UTC
+  #  - cron: '0 22 * * 0'
   workflow_dispatch:
     # allow manual runs using custom versions
     inputs:
@@ -13,9 +13,10 @@ on:
         description: 'K version to use'
         required: false
         type: string
-# FIXME CI TEST ONLY, REMOVE THIS BEFORE MERGING
-  pull_request:
-    types: [ synchronize ]
+      reviewer:
+        description: 'Reviewer for the created PR'
+        required: true
+        type: string
 
 # don't allow several instances to run at the same time
 concurrency:
@@ -27,17 +28,14 @@ jobs:
     runs-on: [Linux, performance]
     env:
       K_VERSION: ${{ inputs.k-version }}
-      REVIEWER: jberthold
+      EVM_VERSION: ${{ inputs.evm-version }}
+      REVIEWER:  ${{ inputs.reviewer }}
       EVM_SEMANTICS: ./evm-semantics
-      # FIXME CI TEST, LATER REPLACE BY EVM_VERSION: ${{ inputs.evm-version }}
-      EVM_VERSION: fixup
     steps:
       - name: Check out code
         uses: actions/checkout@v3
         with:
           submodules: recursive
-          # FIXME CI TEST ONLY, REMOVE THIS LINE BEFORE MERGING
-          ref: ${{ github.event.pull_request.head.ref }}
       - name: Switch to update branch (or create it off master)
         run: |
           git checkout -B _update origin/_update || git checkout -B _update
@@ -56,23 +54,16 @@ jobs:
         run: |
           USE_K_VERSION="${K_VERSION:-v$(cat deps/k_release)}"
           echo "Using K version ${USE_K_VERSION}"
-          # FIXME override to pick up integration-shell changes during
-          # CI TESTING, should remove before merging but does not hurt
           nix develop \
               github:runtimeverification/k/${USE_K_VERSION}#kore-integration-tests \
-              --override-input haskell-backend . --update-input haskell-backend \
               --command bash scripts/generate-regression-tests.sh
       - name: Capture result (commit and push diff if exists)
         run: |
-          if git diff --exit-code; then
+          if ! git diff --exit-code; then
             git config --global user.name github-actions
             git config --global user.email github-actions@github.com
             git add test/
             git commit -m "Update regression tests"
-
-            # FIXME TESTING ONLY, REMOVE THIS BEFORE MERGING
-            hub pr list --format '%H%n' | grep -q '^_update$'
-            exit 1 # FIXME stop here while developing
 
             git push --set-upstream origin _update
             # open a PR if there isn't already one (use hub)
