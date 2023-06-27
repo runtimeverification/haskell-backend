@@ -19,13 +19,6 @@ packages:
   original:
     hackage: co-log-0.5.0.0
 - completed:
-    hackage: compact-0.2.0.0@sha256:75ef98cb51201b4a0d6de95cbbb62be6237c092a3d594737346c70c5d56c2380,2413
-    pantry-tree:
-      sha256: 9514e48c9141b29a5f58b27c2950f17cc1c53eea3d393a6a1ed46ca16e876754
-      size: 546
-  original:
-    hackage: compact-0.2.0.0
-- completed:
     hackage: decision-diagrams-0.2.0.0@sha256:94058731961a98c53cd233bdb911f9ec4f1781de3f0d80a0133ebb3f4789938b,3415
     pantry-tree:
       sha256: 340509eeb518acd55bb125d8eeb29aa5247b9600096472db134c739b1924b828
@@ -40,12 +33,12 @@ packages:
   original:
     hackage: typerep-map-0.6.0.0
 - completed:
-    hackage: monad-validate-1.2.0.0@sha256:9850f408431098b28806dd464b6825a88a0b56c84f380d7fe0454c1df9d6f881,3505
+    hackage: monad-validate-1.2.0.1@sha256:5a100da896f11ca4b7c123da85decbedeb46c37054a097f258ac911e715cb68d,2587
     pantry-tree:
-      sha256: 8e049bd12ce2bd470909578f2ee8eb80b89d5ff88860afa30e29dd4eafecfa3e
-      size: 713
+      sha256: 034ee4de9765e38b763f5d73b236cc112205728e680cefbfe12d2882accc3264
+      size: 611
   original:
-    hackage: monad-validate-1.2.0.0@sha256:9850f408431098b28806dd464b6825a88a0b56c84f380d7fe0454c1df9d6f881,3505
+    hackage: monad-validate-1.2.0.1
 snapshots:
 - completed:
     sha256: 126fa33ceb11f5e85ceb4e86d434756bd9a8439e2e5776d306a15fbc63b01e89
