@@ -119,7 +119,7 @@ genIdChar =
     Gen.frequency
         [ (10, Gen.alpha)
         , (3, Gen.digit)
-        , (1, Gen.element "-'")
+        , (1, Gen.element ['-', '\''])
         ]
 
 genStringLiteral :: Gen Text
