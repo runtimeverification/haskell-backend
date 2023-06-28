@@ -54,6 +54,9 @@ extra-deps:
   - typerep-map-0.6.0.0
   - monad-validate-1.2.0.1
 
+# TODO remove when co-log is updated
+allow-newer: true
+
 ghc-options:
   "$everything": -haddock
 
