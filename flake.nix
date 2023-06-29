@@ -38,8 +38,8 @@
           overlays = [ haskell-nix.overlays.combined z3-overlay ];
         };
 
-      compiler-nix-name = "ghc927";
-      index-state = "2023-05-17T00:00:00Z";
+      compiler-nix-name = "ghc928";
+      index-state = "2023-06-26T23:55:21Z";
       fourmolu-version = "0.12.0.0";
       hlint-version = "3.5";
 
