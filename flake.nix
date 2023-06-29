@@ -39,7 +39,7 @@
         };
 
       compiler-nix-name = "ghc927";
-      index-state = "2023-04-24T00:00:00Z";
+      index-state = "2023-05-17T00:00:00Z";
       fourmolu-version = "0.12.0.0";
       hlint-version = "3.5";
 
@@ -85,7 +85,7 @@
             withHoogle = true;
             tools = {
               cabal = { inherit index-state; };
-              haskell-language-server = { 
+              haskell-language-server = {
                 inherit index-state;
                 configureArgs = "--disable-benchmarks --disable-tests";
                 modules = [
