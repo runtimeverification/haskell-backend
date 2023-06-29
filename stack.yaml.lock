@@ -26,12 +26,12 @@ packages:
   original:
     hackage: decision-diagrams-0.2.0.0
 - completed:
-    hackage: typerep-map-0.6.0.0@sha256:e54a4e99614ad890a10200da687efa189860c13207a97063db1b6881032ebecc,4890
+    hackage: typerep-map-0.5.0.0@sha256:34f1ba9b268a6d52e26ae460011a5571e8099b50a3f4a7c8db25dd8efe3be8ee,4667
     pantry-tree:
-      sha256: f970c9dc26194bf708a5c18cf4daac5a1518afa1d8b92e8f1c170959587ee7a6
+      sha256: ca5565de307d260dc67f6dae0d4d33eee42a3238183461569b5142ceb909c91d
       size: 1487
   original:
-    hackage: typerep-map-0.6.0.0
+    hackage: typerep-map-0.5.0.0
 - completed:
     hackage: monad-validate-1.2.0.1@sha256:5a100da896f11ca4b7c123da85decbedeb46c37054a097f258ac911e715cb68d,2587
     pantry-tree:
