@@ -7,12 +7,11 @@ packages:
 extra-deps:
   - chronos-1.1.5
   - co-log-0.5.0.0
-  - compact-0.2.0.0
   - decision-diagrams-0.2.0.0
-  - typerep-map-0.6.0.0
-  - monad-validate-1.2.0.0@sha256:9850f408431098b28806dd464b6825a88a0b56c84f380d7fe0454c1df9d6f881,3505
+  - typerep-map-0.5.0.0
+  - monad-validate-1.2.0.1
   - git: https://github.com/runtimeverification/haskell-backend.git
-    commit: 06c9515d802093b7e3267e2d3e7460f4a2cf8ede
+    commit: f739e52197754bec220a2b5f0ac397469ef90e7f
     subdirs:
       - kore
       - kore-rpc-types
@@ -25,7 +24,7 @@ extra-deps:
 # extra-lib-dirs: [/path/to/dir]
 
 # Allow a newer minor version of GHC than the snapshot specifies
-compiler-check: newer-minor
+# compiler-check: newer-minor
 
 local-bin-path: ./.build/booster/bin
 
