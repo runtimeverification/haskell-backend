@@ -50,5 +50,5 @@ RUN    cd $HOME \
     && cabal update
 # install fourmolu from source (binary package not working in this docker image)
 RUN    cd $HOME \
-    && cabal install fourmolu-${FOURMOLU_VERSION} \
+    && cabal install fourmolu-${FOURMOLU_VERSION} --constraint="aeson <2.2" \
     && fourmolu --version \
