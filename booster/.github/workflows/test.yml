@@ -76,8 +76,9 @@ jobs:
           path: |
             cabal-cache/packages
             cabal-cache/store
-          key: cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('package.yaml') }}
+          key: cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('cabal.project.freeze') }}
           restore-keys: |
+            cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('package.yaml') }}-
             cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-
 
       - name: 'Set up Docker'
