@@ -13,6 +13,7 @@ module Booster.Syntax.ParsedKore.Internalise (
     addToDefinitions,
     lookupModule,
     DefinitionError (..),
+    symb,
 ) where
 
 import Control.Monad
@@ -25,6 +26,7 @@ import Data.Bifunctor (first, second)
 import Data.ByteString.Char8 (ByteString)
 import Data.Coerce (coerce)
 import Data.Function (on)
+import Data.Generics (extQ)
 import Data.List (foldl', groupBy, nub, partition, sortOn)
 import Data.List.Extra (groupSort)
 import Data.Map.Strict (Map)
@@ -37,6 +39,7 @@ import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
 import Data.Tuple (swap)
 import GHC.Records (HasField (..))
+import Language.Haskell.TH.Quote (QuasiQuoter (..), dataToExpQ)
 import Prettyprinter as Pretty
 
 import Booster.Definition.Attributes.Base
@@ -49,13 +52,12 @@ import Booster.Definition.Util (HasSourceRef (..), SourceRef)
 import Booster.Pattern.Base (Variable (..))
 import Booster.Pattern.Base qualified as Def
 import Booster.Pattern.Base qualified as Def.Symbol (Symbol (..))
-
-import Booster.Definition.Attributes.Base qualified as Def
 import Booster.Pattern.Index as Idx
 import Booster.Pattern.Util qualified as Util
 import Booster.Prettyprinter hiding (attributes)
 import Booster.Syntax.Json.Internalise
 import Booster.Syntax.ParsedKore.Base
+import Booster.Syntax.ParsedKore.Parser (ParsedSentence (SentenceSymbol), parseSentence)
 import Kore.Syntax.Json.Types (Id, Sort)
 import Kore.Syntax.Json.Types qualified as Syntax
 
@@ -414,7 +416,7 @@ addModule
                 Map.mapWithKey
                     ( \symbolName sym@Def.Symbol{attributes} -> case Map.lookup symbolName extractedMapSymbolNames of
                         Just def ->
-                            sym{Def.Symbol.attributes = attributes{Def.isKMapSymbol = Just def}}
+                            sym{Def.Symbol.attributes = attributes{isKMapSymbol = Just def}}
                         Nothing -> sym
                     )
                     symbols
@@ -1038,11 +1040,12 @@ groupByPriority ::
 groupByPriority axioms =
     Map.fromAscList . groupSort $ [(ax.attributes.priority, ax) | ax <- axioms]
 
-internaliseSymbol ::
+internaliseSymbolRaw ::
+    Bool ->
     Map Def.SortName (SortAttributes, Set Def.SortName) ->
     ParsedSymbol ->
     Except DefinitionError (Def.SymbolName, Def.Symbol)
-internaliseSymbol sorts parsedSymbol = do
+internaliseSymbolRaw qq sorts parsedSymbol = do
     unless (Set.size knownVars == length parsedSymbol.sortVars) $
         throwE $
             DuplicateNames (map (.getId) parsedSymbol.sortVars)
@@ -1058,9 +1061,20 @@ internaliseSymbol sorts parsedSymbol = do
     sortVars = map textToBS sortVarsT
 
     check :: Syntax.Sort -> Except DefinitionError Def.Sort
-    check =
-        mapExcept (first DefinitionSortError)
-            . internaliseSort knownVars sorts
+    check s =
+        if qq
+            then pure $ case s of
+                Syntax.SortVar{name = Syntax.Id n} -> Def.SortVar $ textToBS n
+                Syntax.SortApp{name = Syntax.Id n} -> Def.SortApp (textToBS n) []
+            else
+                mapExcept (first DefinitionSortError) $
+                    internaliseSort knownVars sorts s
+
+internaliseSymbol ::
+    Map Def.SortName (SortAttributes, Set Def.SortName) ->
+    ParsedSymbol ->
+    Except DefinitionError (Def.SymbolName, Def.Symbol.Symbol)
+internaliseSymbol = internaliseSymbolRaw False
 
 {- | Computes all-pairs reachability in a directed graph given as an
    adjacency list mapping. Using a naive algorithm because the subsort
@@ -1208,3 +1222,21 @@ instance Pretty AxiomError where
 newtype TermOrPredicateError
     = PatternExpected Def.TermOrPredicate
     deriving stock (Eq, Show)
+
+symb :: QuasiQuoter
+symb =
+    QuasiQuoter
+        { quoteExp = \str -> do
+            case parseSentence "INLINE" $ Text.pack str of
+                Left err -> error err
+                Right (SentenceSymbol parsedSymbol) ->
+                    dataToExpQ (const Nothing `extQ` handleBS) $
+                        snd $
+                            either (error . show) id $
+                                runExcept $
+                                    internaliseSymbolRaw True mempty parsedSymbol
+                _ -> error "Not a symbol"
+        , quotePat = undefined
+        , quoteType = undefined
+        , quoteDec = undefined
+        }

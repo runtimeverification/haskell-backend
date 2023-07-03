@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE PolyKinds #-}
 
@@ -48,6 +50,8 @@ import GHC.Generics (Generic)
 import Prettyprinter as Pretty
 
 import Booster.Util qualified as Util
+import Data.Data (Data)
+import Language.Haskell.TH.Syntax (Lift)
 
 data DefinitionAttributes = DefinitionAttributes
     {
@@ -148,11 +152,11 @@ data SymbolType
     | TotalFunction
     | Constructor
     | SortInjection
-    deriving stock (Eq, Ord, Show, Generic)
+    deriving stock (Eq, Ord, Show, Generic, Data, Lift)
     deriving anyclass (NFData, Hashable)
 
 newtype Flag (name :: k) = Flag Bool
-    deriving stock (Eq, Ord, Show, Generic)
+    deriving stock (Eq, Ord, Show, Generic, Data, Lift)
     deriving anyclass (NFData, Hashable)
 
 pattern IsIdem, IsNotIdem :: Flag "isIdem"
@@ -177,7 +181,7 @@ data SymbolAttributes = SymbolAttributes
     , isMacroOrAlias :: Flag "isMacroOrAlias"
     , isKMapSymbol :: Maybe KMapDefinition
     }
-    deriving stock (Eq, Ord, Show, Generic)
+    deriving stock (Eq, Ord, Show, Generic, Data, Lift)
     deriving anyclass (NFData, Hashable)
 
 data KMapAttributes = KMapAttributes
@@ -185,7 +189,7 @@ data KMapAttributes = KMapAttributes
     , elementSymbolName :: ByteString
     , concatSymbolName :: ByteString
     }
-    deriving stock (Eq, Ord, Show, Generic)
+    deriving stock (Eq, Ord, Show, Generic, Data, Lift)
     deriving anyclass (NFData, Hashable)
 
 data KMapDefinition = KMapDefinition
@@ -194,7 +198,7 @@ data KMapDefinition = KMapDefinition
     , elementSortName :: ByteString
     , mapSortName :: ByteString
     }
-    deriving stock (Eq, Ord, Show, Generic)
+    deriving stock (Eq, Ord, Show, Generic, Data, Lift)
     deriving anyclass (NFData, Hashable)
 
 data SortAttributes = SortAttributes
