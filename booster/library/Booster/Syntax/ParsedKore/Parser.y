@@ -11,6 +11,8 @@ module Booster.Syntax.ParsedKore.Parser (
     parseDefinition,
     parsePattern,
     parseModule,
+    parseSentence,
+    ParsedSentence(SentenceSymbol)
 ) where
 
 import Data.ByteString.Lazy.Char8 qualified as B

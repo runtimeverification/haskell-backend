@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
@@ -16,6 +18,8 @@ module Booster.Syntax.Json.Internalise (
     explodeAnd,
     isTermM,
     textToBS,
+    trm,
+    handleBS,
 ) where
 
 import Control.Applicative ((<|>))
@@ -26,7 +30,10 @@ import Data.Aeson (ToJSON (..), Value, object, (.=))
 import Data.Bifunctor
 import Data.ByteString.Char8 (ByteString)
 import Data.ByteString.Char8 qualified as BS
+import Data.Char (isLower)
+import Data.Coerce (coerce)
 import Data.Foldable ()
+import Data.Generics (extQ)
 import Data.List (foldl1', nub)
 import Data.List.NonEmpty as NE (NonEmpty)
 import Data.Map (Map)
@@ -35,13 +42,16 @@ import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text as Text (Text, intercalate, pack, unpack)
 import Data.Text.Encoding (decodeLatin1)
+import Language.Haskell.TH (ExpQ, Lit (..), appE, litE, mkName, varE)
+import Language.Haskell.TH.Quote
 
 import Booster.Definition.Attributes.Base
-import Booster.Definition.Base (KoreDefinition (..))
+import Booster.Definition.Attributes.Base qualified as Internal
+import Booster.Definition.Base (KoreDefinition (..), emptyKoreDefinition)
 import Booster.Pattern.Base qualified as Internal
 import Booster.Pattern.Util (sortOfTerm)
 import Booster.Syntax.Json.Externalise (externaliseSort)
-import Data.Coerce (coerce)
+import Booster.Syntax.ParsedKore.Parser (parsePattern)
 import Kore.Syntax.Json.Types qualified as Syntax
 
 internalisePattern ::
@@ -98,13 +108,14 @@ lookupInternalSort sortVars sorts pat =
 
 -- Throws errors when a predicate is encountered. The 'And' case
 -- should be analysed before, this function produces an 'AndTerm'.
-internaliseTerm ::
+internaliseTermRaw ::
+    Bool ->
     Bool ->
     Maybe [Syntax.Id] ->
     KoreDefinition ->
     Syntax.KorePattern ->
     Except PatternError Internal.Term
-internaliseTerm allowAlias sortVars definition@KoreDefinition{sorts, symbols} pat =
+internaliseTermRaw qq allowAlias sortVars definition@KoreDefinition{sorts, symbols} pat =
     case pat of
         Syntax.KJEVar{name, sort} -> do
             variableSort <- lookupInternalSort' sort
@@ -122,11 +133,27 @@ internaliseTerm allowAlias sortVars definition@KoreDefinition{sorts, symbols} pa
                 pure $ Internal.Injection from' to' arg'
         symPatt@Syntax.KJApp{name, sorts = appSorts, args} -> do
             symbol <-
-                maybe (throwE $ UnknownSymbol name symPatt) pure $
-                    Map.lookup (textToBS name.getId) symbols
+                if qq
+                    then
+                        pure $
+                            Internal.Symbol
+                                (textToBS name.getId)
+                                []
+                                []
+                                (Internal.SortApp "QQ" [])
+                                Internal.SymbolAttributes
+                                    { symbolType = Internal.Constructor
+                                    , isIdem = Internal.IsNotIdem
+                                    , isAssoc = Internal.IsNotAssoc
+                                    , isMacroOrAlias = Internal.IsNotMacroOrAlias
+                                    , isKMapSymbol = Nothing
+                                    }
+                    else
+                        maybe (throwE $ UnknownSymbol name symPatt) pure $
+                            Map.lookup (textToBS name.getId) symbols
             -- Internalise sort variable instantiation (appSorts)
             -- Length must match sort variables in symbol declaration.
-            unless (length appSorts == length symbol.sortVars) $
+            unless (qq || length appSorts == length symbol.sortVars) $
                 throwE $
                     PatternSortError pat $
                         GeneralError
@@ -174,9 +201,22 @@ internaliseTerm allowAlias sortVars definition@KoreDefinition{sorts, symbols} pa
   where
     predicate = throwE $ TermExpected pat
 
-    lookupInternalSort' = lookupInternalSort sortVars sorts pat
+    lookupInternalSort' sort =
+        if qq
+            then pure $ case sort of
+                Syntax.SortApp{name = Syntax.Id n} -> Internal.SortApp (textToBS n) []
+                Syntax.SortVar{name = Syntax.Id n} -> Internal.SortVar $ textToBS n
+            else lookupInternalSort sortVars sorts pat sort
 
-    recursion = internaliseTerm allowAlias sortVars definition
+    recursion = internaliseTermRaw qq allowAlias sortVars definition
+
+internaliseTerm ::
+    Bool ->
+    Maybe [Syntax.Id] ->
+    KoreDefinition ->
+    Syntax.KorePattern ->
+    Except PatternError Internal.Term
+internaliseTerm = internaliseTermRaw False
 
 -- Throws errors when a term is encountered. The 'And' case
 -- is analysed before, this function produces an 'AndPredicate'.
@@ -452,3 +492,50 @@ renderSortError = \case
             "sort variable " <> n
         Syntax.SortApp (Syntax.Id n) args ->
             "sort " <> n <> "(" <> intercalate ", " (map render args) <> ")"
+
+recomputeTermAttributes :: Internal.Term -> Internal.Term
+recomputeTermAttributes = \case
+    Internal.AndTerm t1 t2 -> Internal.AndTerm (recomputeTermAttributes t1) (recomputeTermAttributes t2)
+    Internal.SymbolApplication sym sorts args -> Internal.SymbolApplication sym sorts $ map recomputeTermAttributes args
+    Internal.DomainValue sort dv -> Internal.DomainValue sort dv
+    Internal.Var v -> Internal.Var v
+    Internal.Injection from to t -> Internal.Injection from to $ recomputeTermAttributes t
+    Internal.KMap def keyVals rest ->
+        Internal.KMap
+            def
+            (map (bimap recomputeTermAttributes recomputeTermAttributes) keyVals)
+            (fmap recomputeTermAttributes rest)
+
+trm :: QuasiQuoter
+trm =
+    QuasiQuoter
+        { quoteExp = do
+            res <-
+                dataToExpQ (const Nothing `extQ` handleBS `extQ` metaSymb `extQ` metaTerm)
+                    . either (error . show) id
+                    . runExcept
+                    . internaliseTermRaw True False Nothing (emptyKoreDefinition DefinitionAttributes{})
+                    . either error id
+                    . parsePattern "INLINE"
+                    . pack
+            pure [|recomputeTermAttributes $(res)|]
+        , quotePat = undefined
+        , quoteType = undefined
+        , quoteDec = undefined
+        }
+  where
+    metaSymb :: Internal.Symbol -> Maybe ExpQ
+    metaSymb (Internal.Symbol{name}) =
+        Just [|$(varE (mkName $ BS.unpack name))|]
+
+    metaTerm :: Internal.Term -> Maybe ExpQ
+    metaTerm (Internal.Var Internal.Variable{variableName})
+        | not (BS.null variableName) && isLower (BS.head variableName) =
+            Just [|$(varE (mkName $ BS.unpack variableName))|]
+    metaTerm _ = Nothing
+
+handleBS :: ByteString -> Maybe ExpQ
+handleBS x =
+    -- convert the byte string to a string literal
+    -- and wrap it back with BS.pack
+    Just $ appE (varE 'BS.pack) $ litE $ StringL $ BS.unpack x
