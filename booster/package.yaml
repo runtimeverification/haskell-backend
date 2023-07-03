@@ -88,6 +88,7 @@ library:
   - regex-pcre-builtin
   - stm
   - stm-conduit
+  - syb
   - template-haskell
   - text
   - transformers
