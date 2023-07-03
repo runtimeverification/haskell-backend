@@ -1,0 +1,27 @@
+{
+  "format": "KORE",
+  "version": 1,
+  "term": {
+    "tag": "App",
+    "name": "Lblg'LParUndsRParUnds'TEST'Unds'Bool'Unds'Bool",
+    "sorts": [],
+    "args": [
+      {
+        "tag": "App",
+        "name": "Lblf'LParUndsRParUnds'TEST'Unds'Bool'Unds'Bool",
+        "sorts": [],
+        "args": [
+          {
+            "tag": "DV",
+            "sort": {
+              "tag": "SortApp",
+              "name": "SortBool",
+              "args": []
+            },
+            "value": "true"
+          }
+        ]
+      }
+    ]
+  }
+}

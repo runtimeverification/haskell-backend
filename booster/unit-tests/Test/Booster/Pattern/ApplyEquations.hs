@@ -35,11 +35,12 @@ test_evaluateFunction =
             let subj = app f2 [2 `times` f1 $ a]
             eval TopDown subj @?= Right (app f2 [a])
             eval BottomUp subj @?= Right (app f2 [a])
-        , -- f1(f2(f1(a))) => f2(a). Again f2 partial, so not evaluating
+        , -- f1(f2(f1(a))) => f1(f2(a)). Again f2 partial, so not evaluating,
+          -- therefore f1(x) => x not applied to unevaluated value
           testCase "Nested function applications with partial function inside" $ do
             let subj = app f1 [app f2 [app f1 [a]]]
-            eval TopDown subj @?= Right (app f2 [a])
-            eval BottomUp subj @?= Right (app f2 [a])
+            eval TopDown subj @?= Right (app f1 [app f2 [a]])
+            eval BottomUp subj @?= Right (app f1 [app f2 [a]])
         , -- f1(con1(con1(..con1(a)..))) => con2(con2(..con2(a)..))
           testCase "Recursive evaluation" $ do
             let subj depth = app f1 [iterate (apply con1) a !! depth]
