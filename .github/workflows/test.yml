@@ -6,7 +6,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  ghc_version: "9.2.7"
+  ghc_version: "9.2.8"
   stack_version: "2.9.3"
 
 jobs:
