@@ -45,4 +45,5 @@ in {
   module-addition = mkIntegrationTest { name = "module-addition"; };
   simplify = mkIntegrationTest { name = "simplify"; };
   get-model = mkIntegrationTest { name = "get-model"; };
+  issue212 = mkIntegrationTest { name = "issue212"; };
 }
