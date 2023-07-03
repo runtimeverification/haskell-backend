@@ -41,9 +41,17 @@ symbols =
             (app f1 [dv someSort "something"])
             (success [("X", someSort, dv someSort "something")])
         , let pat = app con1 [var "X" someSort]
-              subj = app f1 [var "Y" someSort]
+              subj = app con2 [var "Y" someSort]
            in test "different constructors" pat subj $
                 failed (DifferentSymbols pat subj)
+        , let pat = app con1 [var "X" someSort]
+              subj = app f1 [var "Y" someSort]
+           in test "constructor and function" pat subj $
+                MatchIndeterminate pat subj
+        , let pat = app f1 [var "X" someSort]
+              subj = app con1 [var "Y" someSort]
+           in test "function and constructor" pat subj $
+                MatchIndeterminate pat subj
         , let x = var "X" someSort
               d = dv differentSort "something"
               pat = app con1 [x]

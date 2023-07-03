@@ -30,6 +30,7 @@ import Booster.Pattern.Unify (FailReason (..), SortError, checkSubsort)
 import Booster.Pattern.Util (
     checkSymbolIsAc,
     freeVariables,
+    isConstructorSymbol,
     modifyVariablesInP,
     sortOfTerm,
     substituteInTerm,
@@ -135,7 +136,12 @@ match1
                 failWith (DifferentValues d1 d2)
             unless (s1 == s2) $ -- sorts must be exactly the same for DVs
                 failWith (DifferentSorts d1 d2)
--- subject not a domain value
+-- subject is function application (unevaluated): indeterminate
+match1
+    d1@DomainValue{}
+    fct@SymbolApplication{} =
+        indeterminate d1 fct
+-- subject not a domain value nor a function application: fail
 match1
     d1@DomainValue{}
     term2 =
@@ -172,6 +178,11 @@ match1
                 else failWith (DifferentSorts trm1 trm2)
         | otherwise =
             failWith (DifferentSorts pat subj)
+-- injection in pattern, unevaluated function call in subject: indeterminate
+match1
+    inj@Injection{}
+    trm@SymbolApplication{} =
+        indeterminate inj trm
 -- injection in pattern, no injection in subject: fail
 match1
     inj@Injection{}
@@ -182,13 +193,17 @@ match1
 match1
     t1@(SymbolApplication symbol1 sorts1 args1)
     t2@(SymbolApplication symbol2 sorts2 args2)
-        | symbol1.name /= symbol2.name = failWith (DifferentSymbols t1 t2)
+        | symbol1.name /= symbol2.name =
+            if isConstructorSymbol symbol1 && isConstructorSymbol symbol2
+                then failWith (DifferentSymbols t1 t2)
+                else indeterminate t1 t2
         | length args1 /= length args2 =
             lift $ throwE $ MatchFailed $ ArgLengthsDiffer t1 t2
-        | sorts1 /= sorts2 = failWith (DifferentSorts t1 t2)
+        | sorts1 /= sorts2 =
+            failWith (DifferentSorts t1 t2)
+        -- If the symbol is non-free (AC symbol), return indeterminate
         | checkSymbolIsAc symbol1 =
-            -- If the symbol is non-free (AC symbol), return indeterminate
-            lift $ throwE $ MatchIndeterminate t1 t2
+            indeterminate t1 t2
         | otherwise =
             enqueueProblems $ Seq.fromList $ zip args1 args2
 -- subject not a symbol application: fail
@@ -199,11 +214,13 @@ match1
 -- matching on maps unsupported
 match1
     t1@KMap{}
-    t2 =
-        lift $ throwE $ MatchIndeterminate t1 t2
+    t2 = indeterminate t1 t2
 
 failWith :: FailReason -> StateT s (Except MatchResult) ()
 failWith = lift . throwE . MatchFailed . General
+
+indeterminate :: Term -> Term -> StateT s (Except MatchResult) ()
+indeterminate t1 t2 = lift . throwE $ MatchIndeterminate t1 t2
 
 enqueueProblem :: Monad m => Term -> Term -> StateT MatchState m ()
 enqueueProblem term1 term2 =
