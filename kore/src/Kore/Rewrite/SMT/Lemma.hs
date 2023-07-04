@@ -122,31 +122,31 @@ declareSMTLemmas tools lemmas = do
                             )
                     )
             )
-        | -- matching a chain of "argument predicates" \in(Var_n, actualArg_n)
-          And_ _ requires' argPreds@(And_ _ In_{} _rest) <- requires = do
-              argBinders <- Map.fromList <$> extractBinders argPreds
-              let inlinedLeft = substitute argBinders left
-              requiresPred <- hush $ makePredicate requires'
-              ensuresPred <- hush $ makePredicate ensures
-              Just $
-                  fromPredicate impliesSort $
-                      makeImpliesPredicate
-                          requiresPred
-                          (makeAndPredicate (makeEqualsPredicate inlinedLeft right) ensuresPred)
-        | otherwise = do
-            requiresPredicate <- hush $ makePredicate requires
-            ensuresPredicate <- hush $ makePredicate ensures
-            Just $
-                fromPredicate impliesSort $
-                    makeImpliesPredicate
-                        requiresPredicate
-                        ( makeAndPredicate
-                            ( makeEqualsPredicate
-                                left
-                                right
+            | -- matching a chain of "argument predicates" \in(Var_n, actualArg_n)
+              And_ _ requires' argPreds@(And_ _ In_{} _rest) <- requires = do
+                argBinders <- Map.fromList <$> extractBinders argPreds
+                let inlinedLeft = substitute argBinders left
+                requiresPred <- hush $ makePredicate requires'
+                ensuresPred <- hush $ makePredicate ensures
+                Just $
+                    fromPredicate impliesSort $
+                        makeImpliesPredicate
+                            requiresPred
+                            (makeAndPredicate (makeEqualsPredicate inlinedLeft right) ensuresPred)
+            | otherwise = do
+                requiresPredicate <- hush $ makePredicate requires
+                ensuresPredicate <- hush $ makePredicate ensures
+                Just $
+                    fromPredicate impliesSort $
+                        makeImpliesPredicate
+                            requiresPredicate
+                            ( makeAndPredicate
+                                ( makeEqualsPredicate
+                                    left
+                                    right
+                                )
+                                ensuresPredicate
                             )
-                            ensuresPredicate
-                        )
     convert termLike = Just termLike
 
     extractBinders ::
@@ -155,7 +155,7 @@ declareSMTLemmas tools lemmas = do
     extractBinders Top_{} =
         Just []
     extractBinders (And_ _ (In_ _ _ (ElemVar_ var) t) rest) =
-        ((SomeVariableNameElement $ variableName var, t):) <$> extractBinders rest
+        ((SomeVariableNameElement $ variableName var, t) :) <$> extractBinders rest
     extractBinders _ =
         Nothing
 
