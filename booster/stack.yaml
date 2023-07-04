@@ -1,4 +1,4 @@
-resolver: lts-20.20
+resolver: lts-20.26
 
 packages:
 - .
@@ -11,7 +11,7 @@ extra-deps:
   - typerep-map-0.5.0.0
   - monad-validate-1.2.0.1
   - git: https://github.com/runtimeverification/haskell-backend.git
-    commit: f739e52197754bec220a2b5f0ac397469ef90e7f
+    commit: 039722de1227289ec71d66b5d267ed955e1b426f
     subdirs:
       - kore
       - kore-rpc-types
