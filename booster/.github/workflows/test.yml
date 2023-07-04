@@ -219,3 +219,7 @@ jobs:
           done
           echo "${{ matrix.nix }}" >> $GITHUB_STEP_SUMMARY
           cat imp.md >> $GITHUB_STEP_SUMMARY
+
+
+      - name: Check shell
+        run: GC_DONT_GC=1 nix develop --print-build-logs --command cabal --version
