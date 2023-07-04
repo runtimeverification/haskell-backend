@@ -5,9 +5,9 @@
 
 packages:
 - completed:
-    hackage: chronos-1.1.5@sha256:116b63db6e79574e7ac50bf12a6303af5dae4048b222c0f78380d24f481abb5a,3696
+    hackage: chronos-1.1.5@sha256:ca35be5fdbbb384414226b4467c6d1c8b44defe59a9c8a3af32c1c5fb250c781,3830
     pantry-tree:
-      sha256: 0eb2e0874c845e299c2e174144fd37da1a7957fd0055b2b99b33d23a06c7720e
+      sha256: 329bf39a05362a9c1f507a4a529725c757208843b562c55e0b7c88538dc3160f
       size: 581
   original:
     hackage: chronos-1.1.5
@@ -19,9 +19,9 @@ packages:
   original:
     hackage: co-log-0.5.0.0
 - completed:
-    hackage: decision-diagrams-0.2.0.0@sha256:d0d596a85e75252626ade6443473037d34329ccde88d3d947b96965bd098e342,3415
+    hackage: decision-diagrams-0.2.0.0@sha256:9f82d39f7331f6836784fa89354986e436a4d62d810b8fb2b44dd10c6a0beb85,3415
     pantry-tree:
-      sha256: 8bbf52f818afc03b08d0805867559f32474c971b6451eef1cd67e346f92824ef
+      sha256: 36696cfd2af10c44fc0b7d8746c57d94c476eef4ba16f6ac98c2d6dae04f4b36
       size: 866
   original:
     hackage: decision-diagrams-0.2.0.0
@@ -40,20 +40,20 @@ packages:
   original:
     hackage: monad-validate-1.2.0.1
 - completed:
-    commit: f739e52197754bec220a2b5f0ac397469ef90e7f
+    commit: 039722de1227289ec71d66b5d267ed955e1b426f
     git: https://github.com/runtimeverification/haskell-backend.git
     name: kore
     pantry-tree:
-      sha256: e8fc431edeca149e6f303ce1e20f515184dc5932e1c665011a2a48909eab89ff
+      sha256: 794a3536437cf0d4403860c078e9a6c38015b89035973e61475f390cbff8f022
       size: 44548
     subdir: kore
     version: 0.60.0.0
   original:
-    commit: f739e52197754bec220a2b5f0ac397469ef90e7f
+    commit: 039722de1227289ec71d66b5d267ed955e1b426f
     git: https://github.com/runtimeverification/haskell-backend.git
     subdir: kore
 - completed:
-    commit: f739e52197754bec220a2b5f0ac397469ef90e7f
+    commit: 039722de1227289ec71d66b5d267ed955e1b426f
     git: https://github.com/runtimeverification/haskell-backend.git
     name: kore-rpc-types
     pantry-tree:
@@ -62,12 +62,12 @@ packages:
     subdir: kore-rpc-types
     version: 0.60.0.0
   original:
-    commit: f739e52197754bec220a2b5f0ac397469ef90e7f
+    commit: 039722de1227289ec71d66b5d267ed955e1b426f
     git: https://github.com/runtimeverification/haskell-backend.git
     subdir: kore-rpc-types
 snapshots:
 - completed:
-    sha256: 126fa33ceb11f5e85ceb4e86d434756bd9a8439e2e5776d306a15fbc63b01e89
-    size: 650041
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/20.yaml
-  original: lts-20.20
+    sha256: 5a59b2a405b3aba3c00188453be172b85893cab8ebc352b1ef58b0eae5d248a2
+    size: 650475
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/26.yaml
+  original: lts-20.26
