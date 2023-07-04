@@ -40,6 +40,7 @@ import Kore.Rewrite.SMT.Declaration (
     declareSortsSymbols,
  )
 import Kore.Rewrite.SMT.Translate
+import Kore.Substitute
 import Kore.Syntax.Sentence (
     SentenceAxiom (..),
  )
@@ -120,7 +121,19 @@ declareSMTLemmas tools lemmas = do
                                 ensures
                             )
                     )
-            ) = do
+            )
+        | -- matching a chain of "argument predicates" \in(Var_n, actualArg_n)
+          And_ _ requires' argPreds@(And_ _ In_{} _rest) <- requires = do
+              argBinders <- Map.fromList <$> extractBinders argPreds
+              let inlinedLeft = substitute argBinders left
+              requiresPred <- hush $ makePredicate requires'
+              ensuresPred <- hush $ makePredicate ensures
+              Just $
+                  fromPredicate impliesSort $
+                      makeImpliesPredicate
+                          requiresPred
+                          (makeAndPredicate (makeEqualsPredicate inlinedLeft right) ensuresPred)
+        | otherwise = do
             requiresPredicate <- hush $ makePredicate requires
             ensuresPredicate <- hush $ makePredicate ensures
             Just $
@@ -135,6 +148,16 @@ declareSMTLemmas tools lemmas = do
                             ensuresPredicate
                         )
     convert termLike = Just termLike
+
+    extractBinders ::
+        TermLike VariableName ->
+        Maybe [(SomeVariableName VariableName, TermLike VariableName)]
+    extractBinders Top_{} =
+        Just []
+    extractBinders (And_ _ (In_ _ _ (ElemVar_ var) t) rest) =
+        ((SomeVariableNameElement $ variableName var, t):) <$> extractBinders rest
+    extractBinders _ =
+        Nothing
 
     addQuantifiers :: [SMTDependentAtom variable] -> SExpr -> SExpr
     addQuantifiers smtDependentAtoms lemma | null smtDependentAtoms = lemma
