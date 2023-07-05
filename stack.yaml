@@ -15,7 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-resolver: lts-20.20
+resolver: lts-20.26
 
 nix:
   packages:
@@ -51,8 +51,11 @@ extra-deps:
   - chronos-1.1.5
   - co-log-0.5.0.0
   - decision-diagrams-0.2.0.0
-  - typerep-map-0.6.0.0
+  - typerep-map-0.5.0.0
   - monad-validate-1.2.0.1
+
+# TODO remove when co-log is updated
+allow-newer: true
 
 ghc-options:
   "$everything": -haddock

@@ -6,7 +6,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  ghc_version: "9.2.7"
+  ghc_version: "9.2.8"
   stack_version: "2.9.3"
 
 jobs:
@@ -171,9 +171,10 @@ jobs:
           path: |
             ~/.cabal/packages
             ~/.cabal/store
-          key: cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('kore/kore.cabal') }}-${{ hashFiles('kore-rpc-types/kore-rpc-types.cabal') }}
+          key: cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}-${{ hashFiles('kore-rpc-types/kore-rpc-types.cabal') }}
           restore-keys: |
-            cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('kore/kore.cabal') }}
+            cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}
+            cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}
             cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}
             cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}
 
