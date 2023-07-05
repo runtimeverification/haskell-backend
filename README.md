@@ -42,7 +42,6 @@ stack build kore
 cabal build kore
 ```
 
-If using `cabal`, version 3.0 or later is recommended.
 You may pass `--fast` to `stack build` or `-O0` to `cabal build` in order to
 disable compiler optimizations and make build faster at the cost of slower runtime.
 
@@ -51,26 +50,6 @@ Using [make]:
 ```sh
 make all # builds all binaries
 ```
-
-### macOS
-
-Currently, LLVM 13 from Homebrew installs an incompatible version of
-`install_name_tool`, which breaks the Haskell backend build on macOS. To resolve
-this, uninstall `llvm` and install `llvm@12` from Homebrew, then build from
-scratch.
-
-#### Apple Silicon
-
-If you are building the project on an Apple Silicon machine, a temporary
-workaround is necessary to install a new enough version of GHC with support for
-ARM64 Darwin. To do so, follow the instructions in [this
-comment](https://github.com/commercialhaskell/stack/pull/5562#issuecomment-913015550).
-The command-line flags for `stack` should then be specified _everywhere_ an
-execution of `stack` is required. For `make` invocations in this project, set
-the environment variable `STACK_BUILD_OPTS=--compiler ghc-8.10.7 --system-ghc`.
-
-When `stack` and `ghc` merge their full support for ARM64 Darwin in future
-releases, it should be possible to remove this workaround.
 
 ## Developing
 
@@ -82,7 +61,7 @@ in addition to the requirements and recommendations below.
 For integration testing, we require:
 
 - GNU [make]
-- The [K Framework] frontend.
+- The [K Framework] frontend (its version should be the one stated in [/deps/k_release](https://github.com/runtimeverification/haskell-backend/blob/master/deps/k_release))
 
 You can install/have access to K by either:
   * using [kup]
@@ -109,15 +88,10 @@ For setting up a development environment, we recommend:
 - [direnv] to make the project's tools available in shells and editors.
 - [ghcup] or [Nix] for managing required Haskell tooling
 - [hlint] for compliance with project guidelines.
-- [entr] and [fd] for running `./entr.sh` to keep important files up-to-date.
-
-We recommend to keep `./entr.sh` running in the background
-to keep important files (such as package descriptions) up-to-date,
-especially if the developer is using Cabal.
 
 ### Running Haskell Language Server
 
-[ghcup] provides a straight-forward way of installing the language server,
+[ghcup] provides a straightforward way of installing the language server,
 if you prefer to use [Nix] please refer to the relevant resources on how to
 set up your [Nix] environment to build the server.
 **Note**: HLS has to be built with the project's GHC version.
@@ -134,7 +108,7 @@ Instructions on integrating with VSCode:
 
 To build and run nix based packages at RV, please follow these instructions to set up nix:
 
-_We are switching to using [nix flakes](https://nixos.wiki/wiki/Flakes) in all our repos. What this means at a high level is that some of the commands for building packages look a bit different._
+_We are using [nix flakes](https://nixos.wiki/wiki/Flakes) in all our repos. What this means at a high level is that some of the commands for building packages look a bit different._
 
 To set up nix flakes you will need to install `nix` 2.4 or higher.If you are on a standard Linux distribution, such as Ubuntu, first [install nix](https://nixos.org/download.html#download-nix)
 and then enable flakes by editing either `~/.config/nix/nix.conf` or `/etc/nix/nix.conf` and adding:
@@ -203,62 +177,45 @@ nix run .#format Foo.hs
 We provide a development nix shell with a suitable development environment and
 a binary cache at [runtimeverification.cachix.org]. The development can be launched via `nix develop` and then calling `stack build/test/etc`.
 
-When the `kore.cabal` package description file changes, run:
+### Upgrading dependencies
 
+When one of the  ackage description files (`kore.cabal`, `kore-rpc-types.cabal`) changes, or when upgrading to a newer `stack` resolver, the dependencies need to be consolidated to avoid accidental breakage from incompatible up-stream updates. We use a `cabal.project.freeze` file to pin the dependencies to what the current `stack` resolver is using.
 
-```
-# Requires Nix with flakes enabled.
-nix run .#update-cabal
-```
+The script [`scripts/freeze-cabal-to-stack-resolver.sh`](https://github.com/runtimeverification/haskell-backend/tree/master/scripts/freeze-cabal-to-stack-resolver.sh) should do most of that work (the existing `freeze` file must be removed before running it), and [`scripts/check-cabal-stack-sync.sh`](https://github.com/runtimeverification/haskell-backend/tree/master/scripts/check-cabal-stack-sync.sh) checks the result. Some manual adjustments will still be necessary for the `nix` builds in CI and locally to work.
 
-or
-
-```
-# Requires Nix to be installed.
-./nix/rematerialize.sh
-```
-
-This script is also run by an automatic workflow.
-
-### New GHC 9.2.5 dev shell
-
-In order to make use of the new profiling options in GHC 9.2, we've added a nix dev shell which builds kore with GHC 9.2.5. To open the shell, run
-
-```
-nix develop .#ghc9
-```
-
-Then, use stack to build:
-
-```
-stack build
-```
-
-If you modified the `kore.cabal` file and want to build with GHC 9, you will have to run
-
-```
-# Requires Nix with flakes enabled.
-nix run .#update-cabal-ghc9
-```
+In addition, any GHC or resolver upgrades must double-check the `compiler-nix-name` and `index-state` values in the [`flake.nix`](https://github.com/runtimeverification/haskell-backend/blob/master/flake.nix#L41-L42) file.
 
 ### Integration tests
 
-We provide a `test.nix` for running integration tests:
+Haskell-backend provides an integration shell for running integration tests, which compile the K framework (of a specified version) against your current version of haskell backend and brings K into scope of your current shell. 
+
+The integration shell is part of the `k` repository, but invoked from the local tree, adding additional tools (see [`nix/integration-shell.nix`](https://github.com/runtimeverification/haskell-backend/blob/master/nix/integration-shell.nix) and [`../k/flake.nix`](https://github.com/runtimeverification/k/blob/master/flake.nix#L180)). Its `haskell-backend` dependency must be overridden to use the `haskell-backend` dependency from the current checked-out tree, and the `k` version will usually be the one from `deps/k_release`.
+
+To use this nix shell, execute
 
 ``` sh
-nix-build test.nix  # run all integration tests
-nix-build test.nix --argstr test imp  # run the integration tests in test/imp
-nix-shell test.nix  # enter a shell where we can run tests manually
+me@somewhere:haskell-backend$ nix develop \
+    github:runtimeverification/k/v$(cat deps/k_release)#kore-integration-tests \
+    --override-input haskell-backend . --update-input haskell-backend
+...
+...(nix output)
+integration-shell:me@somewhere:haskell-backend$
 ```
 
-You can also us a new nix flake shell feature to compile the K framework against your current version of haskell backend and bring K into scope of your current shell via
+(This will take some time the first time you run it for a specific K framework version...)  
+A specific commit or version tag of the K framework github repository can be used instead of `$(cat deps/k_release)`.
+
+Running this command will add all of the K binaries like `kompile` or `kast` into the `PATH` of your current shell. This is not permanent and will only persist in your current shell window until you exit the active nix shell).
 
 ```
-nix shell github:runtimeverification/k/<commit> --override-input haskell-backend $(pwd)
+integration-shell:me@somewhere:haskell-backend$ make -C test/issue-3344 test
+...
+...(make output)
+integration-shell:me@somewhere:haskell-backend$ exit
+me@somewhere:haskell-backend$ 
 ```
 
-where `<commit>` can be empty or point to a specific version of the K framework github repository. Running this command will add all of the K binaries like `kompile` or `kast` into the `PATH` of your current shell (this is not permanent and will only persist in your current shell window until you close it).
-
+            
 
 [docs]: https://github.com/runtimeverification/haskell-backend/tree/master/docs
 [git]: https://git-scm.com/
