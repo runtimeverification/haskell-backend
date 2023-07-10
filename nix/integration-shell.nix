@@ -1,4 +1,6 @@
-{ cmake, openssl, pkg-config, procps, gmp, autoconf, automake, libtool, ncurses, jq, miller, z3, stdenv, lib, nix-gitignore, mach-nix, mkShell }: k:
+{ cmake, openssl, pkg-config, procps, gmp, autoconf, automake, libtool, ncurses
+, jq, miller, z3, stdenv, lib, nix-gitignore, mkShell, poetry, python }:
+k:
 mkShell {
   packages = [
     k
@@ -6,12 +8,8 @@ mkShell {
     jq
     miller # processing test statistics
     z3
-    (mach-nix.mkPython {
-      requirements = ''
-        jsonrpcclient
-        poetry
-      '';
-    })
+    poetry
+    python
     # for evm-semantics plugin
     cmake
     openssl.dev
