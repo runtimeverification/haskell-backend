@@ -42,7 +42,7 @@ import Booster.Pattern.Rewrite (
     RewriteTrace (..),
     performRewrite,
  )
-import Booster.Pattern.Util (sortOfTerm)
+import Booster.Pattern.Util (sortOfPattern)
 import Booster.Syntax.Json (KoreJson (..), addHeader, sortOfJson)
 import Booster.Syntax.Json.Externalise
 import Booster.Syntax.Json.Internalise (internalisePattern, internaliseTermOrPredicate)
@@ -141,17 +141,17 @@ respond stateVar =
                     Log.logError $ "Error internalising cterm: " <> Text.pack (show patternErrors)
                     pure $ Left $ backendError CouldNotVerifyPattern patternErrors
                 -- term and predicate (pattern)
-                Right (TermAndPredicate Pattern{term, constraints}) -> do
-                    Log.logInfoNS "booster" "Simplifying term of a pattern"
-                    ApplyEquations.evaluateTerm doTracing ApplyEquations.TopDown def mLlvmLibrary term >>= \case
-                        Right (newTerm, traces) -> do
-                            let (t, p) = externalisePattern Pattern{constraints, term = newTerm}
-                                tSort = externaliseSort (sortOfTerm newTerm)
+                Right (TermAndPredicate pat) -> do
+                    Log.logInfoNS "booster" "Simplifying a pattern"
+                    ApplyEquations.simplifyPattern doTracing def mLlvmLibrary pat >>= \case
+                        Right (newPattern, patternTraces) -> do
+                            let (t, p) = externalisePattern newPattern
+                                tSort = externaliseSort (sortOfPattern newPattern)
                                 result = maybe t (KoreJson.KJAnd tSort t) p
                             pure . Right . Simplify $
                                 SimplifyResult
                                     { state = addHeader result
-                                    , logs = mkTraces traces
+                                    , logs = mkTraces patternTraces
                                     }
                         Left (ApplyEquations.EquationLoop _traces terms) ->
                             pure . Left . backendError RpcError.Aborted $ map externaliseTerm terms -- FIXME
