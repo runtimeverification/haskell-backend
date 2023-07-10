@@ -62,6 +62,7 @@ For integration testing, we require:
 
 - GNU [make]
 - The [K Framework] frontend (its version should be the one stated in [/deps/k_release](https://github.com/runtimeverification/haskell-backend/blob/master/deps/k_release))
+- Python 3.x with the [`jsonrpcclient`](https://github.com/explodinglabs/jsonrpcclient) library installed
 
 You can install/have access to K by either:
   * using [kup]
@@ -179,7 +180,7 @@ a binary cache at [runtimeverification.cachix.org]. The development can be launc
 
 ### Upgrading dependencies
 
-When one of the  ackage description files (`kore.cabal`, `kore-rpc-types.cabal`) changes, or when upgrading to a newer `stack` resolver, the dependencies need to be consolidated to avoid accidental breakage from incompatible up-stream updates. We use a `cabal.project.freeze` file to pin the dependencies to what the current `stack` resolver is using.
+When one of the package description files (`kore.cabal`, `kore-rpc-types.cabal`) changes, or when upgrading to a newer `stack` resolver, the dependencies need to be consolidated to avoid accidental breakage from incompatible up-stream updates. We use a `cabal.project.freeze` file to pin the dependencies to what the current `stack` resolver is using.
 
 The script [`scripts/freeze-cabal-to-stack-resolver.sh`](https://github.com/runtimeverification/haskell-backend/tree/master/scripts/freeze-cabal-to-stack-resolver.sh) should do most of that work (the existing `freeze` file must be removed before running it), and [`scripts/check-cabal-stack-sync.sh`](https://github.com/runtimeverification/haskell-backend/tree/master/scripts/check-cabal-stack-sync.sh) checks the result. Some manual adjustments will still be necessary for the `nix` builds in CI and locally to work.
 
