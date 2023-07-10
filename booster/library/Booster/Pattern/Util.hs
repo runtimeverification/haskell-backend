@@ -6,6 +6,7 @@ module Booster.Pattern.Util (
     applySubst,
     sortOfTerm,
     sortOfTermOrPredicate,
+    sortOfPattern,
     retractPattern,
     substituteInTerm,
     substituteInPredicate,
@@ -64,6 +65,9 @@ applySubst subst (SortApp n args) =
 sortOfTermOrPredicate :: TermOrPredicate -> Maybe Sort
 sortOfTermOrPredicate (TermAndPredicate Pattern{term}) = Just (sortOfTerm term)
 sortOfTermOrPredicate (APredicate _) = Nothing
+
+sortOfPattern :: Pattern -> Sort
+sortOfPattern pat = sortOfTerm pat.term
 
 retractPattern :: TermOrPredicate -> Maybe Pattern
 retractPattern (TermAndPredicate patt) = Just patt

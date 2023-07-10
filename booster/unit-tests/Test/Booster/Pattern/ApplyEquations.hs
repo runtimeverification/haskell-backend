@@ -7,6 +7,7 @@ License     : BSD-3-Clause
 module Test.Booster.Pattern.ApplyEquations (
     test_evaluateFunction,
     test_simplify,
+    test_simplifyPattern,
     test_errors,
 ) where
 
@@ -93,7 +94,7 @@ test_simplify =
     testGroup
         "Performing simplifications"
         [ testCase "No simplification applies" $ do
-            let subj = app f1 [app f2 [a]]
+            let subj = [trm| f1{}(f2{}(A:SomeSort{})) |]
             simpl TopDown subj @?= Right subj
             simpl BottomUp subj @?= Right subj
         , -- con1(con2(f2(a))) => con2(f2(a))
@@ -110,6 +111,35 @@ test_simplify =
         ]
   where
     simpl direction = fmap fst . unsafePerformIO . runNoLoggingT . evaluateTerm False direction simplDef Nothing
+    a = var "A" someSort
+
+test_simplifyPattern :: TestTree
+test_simplifyPattern =
+    testGroup
+        "Performing simplifications"
+        [ testCase "No simplification applies" $ do
+            let subj = [trm| f1{}(f2{}(A:SomeSort{})) |]
+            simpl Pattern{term = subj, constraints = []} @?= Right Pattern{term = subj, constraints = []}
+            simpl Pattern{term = subj, constraints = []} @?= Right Pattern{term = subj, constraints = []}
+        , -- con1(con2(f2(a))) => con2(f2(a))
+          testCase "Simplification of constructors" $ do
+            let subj = app con1 [app con2 [app f2 [a]]]
+            simpl Pattern{term = subj, constraints = []}
+                @?= Right Pattern{term = app con2 [app f2 [a]], constraints = []}
+            simpl Pattern{term = subj, constraints = []}
+                @?= Right Pattern{term = app con2 [app f2 [a]], constraints = []}
+        , -- con3(f2(a), f2(a)) => inj{sub,some}(con4(f2(a), f2(a)))
+          testCase "Simplification with argument match" $ do
+            let subj = Pattern{term = [trm| con3{}(f2{}(A:SomeSort{}), f2{}(A:SomeSort{})) |], constraints = []}
+                result =
+                    Pattern
+                        { term = [trm| inj{AnotherSort{}, SomeSort{}}(con4{}(f2{}(A:SomeSort{}), f2{}(A:SomeSort{}))) |]
+                        , constraints = []
+                        }
+            simpl subj @?= Right result
+        ]
+  where
+    simpl = fmap fst . unsafePerformIO . runNoLoggingT . simplifyPattern False simplDef Nothing
     a = var "A" someSort
 
 test_errors :: TestTree
