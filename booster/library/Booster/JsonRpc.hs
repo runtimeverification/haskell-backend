@@ -29,7 +29,6 @@ import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
 import GHC.Records
 import Numeric.Natural
-import Prettyprinter
 
 import Booster.Definition.Attributes.Base (getUniqueId, uniqueId)
 import Booster.Definition.Base (KoreDefinition (..))
@@ -44,7 +43,6 @@ import Booster.Pattern.Rewrite (
     performRewrite,
  )
 import Booster.Pattern.Util (sortOfTerm)
-import Booster.Prettyprinter (renderDefault)
 import Booster.Syntax.Json (KoreJson (..), addHeader, sortOfJson)
 import Booster.Syntax.Json.Externalise
 import Booster.Syntax.Json.Internalise (internalisePattern, internaliseTermOrPredicate)
@@ -83,7 +81,15 @@ respond stateVar =
                     let cutPoints = fromMaybe [] req.cutPointRules
                         terminals = fromMaybe [] req.terminalRules
                         mbDepth = fmap getNat req.maxDepth
-                    execResponse req <$> performRewrite def mLlvmLibrary mbDepth cutPoints terminals pat
+                        doTracing =
+                            any
+                                (fromMaybe False)
+                                [ req.logSuccessfulRewrites
+                                , req.logFailedRewrites
+                                , req.logSuccessfulSimplifications
+                                , req.logFailedSimplifications
+                                ]
+                    execResponse req <$> performRewrite doTracing def mLlvmLibrary mbDepth cutPoints terminals pat
         AddModule req -> do
             -- block other request executions while modifying the server state
             state <- liftIO $ takeMVar stateVar
@@ -124,8 +130,12 @@ respond stateVar =
                         Just
                             . mapMaybe (mkLogEquationTrace (req.logSuccessfulSimplifications, req.logFailedSimplifications))
                             . toList
-                logTraces =
-                    mapM_ (Log.logOther (Log.LevelOther "Simplify") . pack . renderDefault . pretty)
+                doTracing =
+                    any
+                        (fromMaybe False)
+                        [ req.logSuccessfulSimplifications
+                        , req.logFailedSimplifications
+                        ]
             case internalised of
                 Left patternErrors -> do
                     Log.logError $ "Error internalising cterm: " <> Text.pack (show patternErrors)
@@ -133,9 +143,8 @@ respond stateVar =
                 -- term and predicate (pattern)
                 Right (TermAndPredicate Pattern{term, constraints}) -> do
                     Log.logInfoNS "booster" "Simplifying term of a pattern"
-                    case ApplyEquations.evaluateTerm ApplyEquations.TopDown def mLlvmLibrary term of
+                    ApplyEquations.evaluateTerm doTracing ApplyEquations.TopDown def mLlvmLibrary term >>= \case
                         Right (newTerm, traces) -> do
-                            logTraces $ filter (not . ApplyEquations.isMatchFailure) traces
                             let (t, p) = externalisePattern Pattern{constraints, term = newTerm}
                                 tSort = externaliseSort (sortOfTerm newTerm)
                                 result = maybe t (KoreJson.KJAnd tSort t) p
@@ -151,9 +160,8 @@ respond stateVar =
                             -- predicate only
                 Right (APredicate predicate) -> do
                     Log.logInfoNS "booster" "Simplifying a predicate"
-                    case ApplyEquations.traceSimplifyConstraint def mLlvmLibrary predicate of
+                    ApplyEquations.simplifyConstraint doTracing def mLlvmLibrary predicate >>= \case
                         Right (newPred, traces) -> do
-                            logTraces $ filter (not . ApplyEquations.isMatchFailure) traces
                             let predicateSort =
                                     fromMaybe (error "not a predicate") $
                                         sortOfJson req.state.term
