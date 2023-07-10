@@ -10,9 +10,11 @@ module Test.Booster.Pattern.ApplyEquations (
     test_errors,
 ) where
 
+import Control.Monad.Logger (runNoLoggingT)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text (Text)
+import GHC.IO.Unsafe (unsafePerformIO)
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -76,7 +78,7 @@ test_evaluateFunction =
             -- eval BottomUp subj @?= Right result
         ]
   where
-    eval direction = fmap fst . evaluateTerm direction funDef Nothing
+    eval direction = fmap fst . unsafePerformIO . runNoLoggingT . evaluateTerm False direction funDef Nothing
     a = var "A" someSort
     d = dv someSort "hey"
     apply f = app f . (: [])
@@ -107,7 +109,7 @@ test_simplify =
             simpl BottomUp subj @?= Right result
         ]
   where
-    simpl direction = fmap fst . evaluateTerm direction simplDef Nothing
+    simpl direction = fmap fst . unsafePerformIO . runNoLoggingT . evaluateTerm False direction simplDef Nothing
     a = var "A" someSort
 
 test_errors :: TestTree
@@ -120,7 +122,7 @@ test_errors =
                 subj = f $ app con1 [a]
                 loopTerms =
                     [f $ app con1 [a], f $ app con2 [a], f $ app con3 [a, a], f $ app con1 [a]]
-            isLoop loopTerms $ evaluateTerm TopDown loopDef Nothing subj
+            isLoop loopTerms . unsafePerformIO . runNoLoggingT $ evaluateTerm False TopDown loopDef Nothing subj
         ]
   where
     isLoop ts (Left (EquationLoop _ ts')) = ts @?= ts'
