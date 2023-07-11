@@ -61,6 +61,7 @@ import Kore.Log (
     withLogger,
  )
 import Kore.Log qualified as Log
+import Kore.Log.DebugSolver qualified as Log
 import Kore.Rewrite.SMT.Lemma (declareSMTLemmas)
 import Kore.Syntax.Definition (ModuleName (ModuleName), SentenceAxiom)
 import Options.SMT (KoreSolverOptions (..), parseKoreSolverOptions)
@@ -85,6 +86,7 @@ main = do
                     }
             , koreSolverOptions
             , proxyOptions = ProxyOptions{printStats}
+            , debugSolverOptions
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
         levelFilter :: Logger.LogSource -> LogLevel -> Bool
@@ -113,6 +115,7 @@ main = do
                 (defaultKoreLogOptions (ExeName "") startTime)
                     { Log.logLevel = coLogLevel
                     , Log.timestampsSwitch = TimestampsDisable
+                    , Log.debugSolverOptions = debugSolverOptions
                     , Log.logType = LogSomeAction $ LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt
                     }
             srvSettings = serverSettings port "*"
@@ -171,6 +174,7 @@ data CLProxyOptions = CLProxyOptions
     { clOptions :: CLOptions
     , proxyOptions :: ProxyOptions
     , koreSolverOptions :: !KoreSolverOptions
+    , debugSolverOptions :: !Log.DebugSolverOptions
     }
 
 newtype ProxyOptions = ProxyOptions
@@ -189,6 +193,7 @@ clProxyOptionsParser =
         <$> clOptionsParser
         <*> parseProxyOptions
         <*> parseKoreSolverOptions
+        <*> Log.parseDebugSolverOptions
   where
     parseProxyOptions =
         ProxyOptions
