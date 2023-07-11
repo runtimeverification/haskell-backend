@@ -163,16 +163,6 @@ executables:
       - text
     ghc-options:
     - -rtsopts
-  dltest:
-    source-dirs: tools/dltest
-    main: Dltest.hs
-    dependencies:
-      - base
-      - directory
-      - hs-backend-booster
-      - unix
-    ghc-options:
-    - -rtsopts
   eventlog-parser:
     source-dirs: tools/eventlog-parser
     main: EventlogParser.hs
