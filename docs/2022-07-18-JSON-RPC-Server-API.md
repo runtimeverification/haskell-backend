@@ -223,7 +223,7 @@ If any logging is enabled, the optional `logs` field will be returned containing
 
 {
   "tag": "simplification",
-  "origin": "kore-rpc",  
+  "origin": "kore-rpc",
   "original-term": {"format": "KORE", "version": 1, "term": {}},
   "original-term-index": [0,0,1,0,2]
   "result": {
@@ -250,7 +250,7 @@ where `original-term`, `original-term-index`, `substitution` and `rewritten-term
 
 {
   "tag": "rewrite",
-  "origin": "kore-rpc",  
+  "origin": "kore-rpc",
   "result": {
     "tag": "failure",
     "rule-id": "f6e4ebb55eec38bc4c83677e31cf2a40a72f5f943b2ea1b613049c92af92125c",
@@ -437,6 +437,56 @@ requests to the server by passing `"module": "MODULE-NAME"`.
   "result": []
 }
 ```
+
+## Get-model
+
+A `get-model` request aims to find a variable substitution that satisfies all predicates in the provided `state`, or else responds that it is not satisfiable. The request may also fail to obtain an answer.
+
+**Note that only the _predicates_ in the provided `state` are checked.**
+A predicate in matching logic is a construct that can only evaluate to `\top` or `\bottom`. Most ML connectives (with the exception of `\and` and `\or`) constitute predicates.  
+If the provided `state` _does not contain any predicates_, the endpoint will respond with `Unknown` (to avoid misunderstandings).
+
+### Request:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "get-model",
+  "params": {
+    "state": {"format": "KORE", "version": 1, "term": {}},
+    "module": "MODULE-NAME"
+  }
+}
+```
+
+Optional parameters: `module` (main module name)
+
+### Error Response:
+
+same as for `execute`
+
+### Correct Response:
+
+```json
+{
+  "jsonrpc":"2.0",
+  "id":1,
+  "result":{
+    "satisfiable": "Sat",
+    "substitution": {"format": "KORE", "version": 1, "term": {}}
+}
+```
+
+Optional fields: `substitution` (filled when `satisfiable = is-satisfiable`)
+
+The `satisfiable` field can have the following values:
+* `"satisfiable": "Sat"`:  
+  The predicates can be satisfied. The  field `substitution` must be present, and provides a substitution that fulfils all predicates in the supplied `state`. Exception: if the predicates are trivially satisfied without any variable assignments, the trivial (empty) `substitution` is omitted.
+* `"satisfiable": "Unsat"`:  
+  The predicates are known to not be satisfiable. The `substitution` field is omitted.
+* `"satisfiable": "Unknown"`:  
+  The backend was unable to decide whether or not there is a satisfying substitution, or the provided tern did not contain any predicates. The `substitution` field is omitted.
 
 ## Cancel
 

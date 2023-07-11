@@ -80,6 +80,15 @@ data AddModuleRequest = AddModuleRequest
         (FromJSON, ToJSON)
         via CustomJSON '[FieldLabelModifier '[StripPrefix "_"]] AddModuleRequest
 
+data GetModelRequest = GetModelRequest
+    { state :: KoreJson
+    , _module :: !(Maybe Text)
+    }
+    deriving stock (Generic, Show, Eq)
+    deriving
+        (FromJSON, ToJSON)
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab, StripPrefix "_"]] GetModelRequest
+
 data ReqException = CancelRequest deriving stock (Show)
 
 instance Exception ReqException
@@ -89,6 +98,7 @@ instance FromRequest (API 'Req) where
     parseParams "implies" = Just $ fmap (Implies <$>) parseJSON
     parseParams "simplify" = Just $ fmap (Simplify <$>) parseJSON
     parseParams "add-module" = Just $ fmap (AddModule <$>) parseJSON
+    parseParams "get-model" = Just $ fmap (GetModel <$>) parseJSON
     parseParams "cancel" = Just $ const $ return Cancel
     parseParams _ = Nothing
 
@@ -157,15 +167,35 @@ data SimplifyResult = SimplifyResult
         (FromJSON, ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] SimplifyResult
 
+data GetModelResult = GetModelResult
+    { satisfiable :: SatResult
+    , substitution :: Maybe KoreJson
+    }
+    deriving stock (Generic, Show, Eq)
+    deriving
+        (FromJSON, ToJSON)
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] GetModelResult
+
+data SatResult
+    = Sat
+    | Unsat
+    | Unknown
+    deriving stock (Generic, Show, Eq)
+    deriving
+        (FromJSON, ToJSON)
+        via CustomJSON '[] SatResult
+
 data ReqOrRes = Req | Res
 
-data APIMethods
+data APIMethod
     = ExecuteM
     | ImpliesM
     | SimplifyM
     | AddModuleM
+    | GetModelM
+    deriving stock (Eq, Ord, Show, Enum)
 
-type family APIPayload (api :: APIMethods) (r :: ReqOrRes) where
+type family APIPayload (api :: APIMethod) (r :: ReqOrRes) where
     APIPayload 'ExecuteM 'Req = ExecuteRequest
     APIPayload 'ExecuteM 'Res = ExecuteResult
     APIPayload 'ImpliesM 'Req = ImpliesRequest
@@ -174,12 +204,15 @@ type family APIPayload (api :: APIMethods) (r :: ReqOrRes) where
     APIPayload 'SimplifyM 'Res = SimplifyResult
     APIPayload 'AddModuleM 'Req = AddModuleRequest
     APIPayload 'AddModuleM 'Res = ()
+    APIPayload 'GetModelM 'Req = GetModelRequest
+    APIPayload 'GetModelM 'Res = GetModelResult
 
 data API (r :: ReqOrRes) where
     Execute :: APIPayload 'ExecuteM r -> API r
     Implies :: APIPayload 'ImpliesM r -> API r
     Simplify :: APIPayload 'SimplifyM r -> API r
     AddModule :: APIPayload 'AddModuleM r -> API r
+    GetModel :: APIPayload 'GetModelM r -> API r
     Cancel :: API 'Req
 
 deriving stock instance Show (API 'Req)
@@ -193,6 +226,7 @@ instance ToJSON (API 'Res) where
         Implies payload -> toJSON payload
         Simplify payload -> toJSON payload
         AddModule payload -> toJSON payload
+        GetModel payload -> toJSON payload
 
 instance Pretty.Pretty (API 'Req) where
     pretty = \case
@@ -200,6 +234,7 @@ instance Pretty.Pretty (API 'Req) where
         Implies _ -> "implies"
         Simplify _ -> "simplify"
         AddModule _ -> "add-module"
+        GetModel _ -> "get-model"
         Cancel -> "cancel"
 
 rpcJsonConfig :: PrettyJson.Config

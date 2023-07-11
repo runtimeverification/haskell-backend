@@ -114,7 +114,7 @@ becomes
 
 '#And ( ... (#And ( X1 #Equals t1, X2 #Equals t2), ...), Xn #Equals tn)'.
 
-The result sort is fixed to a made-up sort variable.
+The resulting predicate is attributed to the provided sort.
 -}
 fromSubstitution :: Kore.Sort -> Substitution VariableName -> Maybe KoreJson
 fromSubstitution sort subst
@@ -123,15 +123,9 @@ fromSubstitution sort subst
         Just
             . fromTermLike
             . foldl1 TermLike.mkAnd
-            . map (uncurry equals . asPair)
+            . map toEquals
             . Substitution.unwrap
             $ subst
   where
-    equals ::
-        Kore.SomeVariable VariableName ->
-        TermLike VariableName ->
-        TermLike VariableName
-    v `equals` t = TermLike.mkEquals sort (TermLike.mkVar v) t
-
-    asPair :: Assignment v -> (Kore.SomeVariable v, TermLike v)
-    asPair (Substitution.Assignment v t) = (v, t)
+    toEquals :: Assignment VariableName -> TermLike VariableName
+    toEquals (Substitution.Assignment v t) = TermLike.mkEquals sort (TermLike.mkVar v) t

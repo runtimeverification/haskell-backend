@@ -104,7 +104,7 @@ common library
   build-depends: clock >=0.8
   build-depends: co-log >=0.4
   build-depends: comonad >=5.0
-  build-depends: compact >= 0.2.0.0
+  build-depends: ghc-compact
   build-depends: conduit-extra >=1.3
   build-depends: containers >=0.5.8
   build-depends: cryptonite >=0.25
@@ -146,7 +146,7 @@ common library
   build-depends: mono-traversable >=1.0
   build-depends: mtl >=2.2
   build-depends: multiset >=0.3.4.3
-  build-depends: optparse-applicative >=0.14 && <0.17.1
+  build-depends: optparse-applicative >=0.14 && <0.17.2
   build-depends: parser-combinators >=1.1
   build-depends: pqueue >=1.4.1.3
   build-depends: prettyprinter >=1.2
@@ -180,6 +180,7 @@ library
   exposed-modules:
     Changed
     Control.Monad.Counter
+    Data.Compact.Serialize
     Data.Graph.TopologicalSort
     Data.InternedText
     Data.Limit
@@ -584,7 +585,7 @@ executable kore-exec
   build-depends: binary >=0.8.8.0
   build-depends: bytestring >=0.10
   build-depends: clock >=0.8
-  build-depends: compact >=0.2.0.0
+  build-depends: ghc-compact
   build-depends: containers >=0.5
   build-depends: data-default >=0.7
   build-depends: directory >=1.3

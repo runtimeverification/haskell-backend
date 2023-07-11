@@ -15,7 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-resolver: lts-20.20
+resolver: lts-20.26
 
 nix:
   packages:
@@ -50,12 +50,11 @@ packages:
 extra-deps:
   - chronos-1.1.5
   - co-log-0.5.0.0
-  - compact-0.2.0.0
   - decision-diagrams-0.2.0.0
-  - typerep-map-0.6.0.0
-  - monad-validate-1.2.0.0@sha256:9850f408431098b28806dd464b6825a88a0b56c84f380d7fe0454c1df9d6f881,3505
+  - typerep-map-0.5.0.0
+  - monad-validate-1.2.0.1
 
-# TODO (treeowl): Remove this when compact is updated upstream.
+# TODO remove when co-log is updated
 allow-newer: true
 
 ghc-options:

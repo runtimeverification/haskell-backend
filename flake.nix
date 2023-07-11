@@ -11,9 +11,8 @@
       url = "github:edolstra/flake-compat";
       flake = false;
     };
-    mach-nix.url = "github:DavHau/mach-nix";
   };
-  outputs = { self, nixpkgs, haskell-nix, z3-src, mach-nix, ... }:
+  outputs = { self, nixpkgs, haskell-nix, z3-src, ... }:
     let
       inherit (nixpkgs) lib;
       z3-overlay = (final: prev: {
@@ -28,7 +27,26 @@
         });
       });
       integration-tests-overlay = (final: prev: {
-        kore-tests = final.callPackage ./nix/integration-shell.nix { mach-nix = mach-nix.lib."${prev.system}"; };
+        kore-tests = final.callPackage ./nix/integration-shell.nix {
+          python = final.python3.withPackages (ps:
+            with ps;
+            [
+              (buildPythonPackage rec {
+                pname = "jsonrpcclient";
+                version = "4.0.3";
+                src = prev.fetchFromGitHub {
+                  owner = "explodinglabs";
+                  repo = pname;
+                  rev = version;
+                  sha256 =
+                    "sha256-xqQwqNFXatGzc4JprZY1OpdPPGgpP5/ucG/qyV/n8hw=";
+                };
+                doCheck = false;
+                format = "pyproject";
+                buildInputs = [ setuptools ];
+              })
+            ]);
+        };
       });
       perSystem = lib.genAttrs nixpkgs.lib.systems.flakeExposed;
       nixpkgsFor = system:
@@ -38,8 +56,8 @@
           overlays = [ haskell-nix.overlays.combined z3-overlay ];
         };
 
-      compiler-nix-name = "ghc927";
-      index-state = "2023-04-24T00:00:00Z";
+      compiler-nix-name = "ghc928";
+      index-state = "2023-06-26T23:55:21Z";
       fourmolu-version = "0.12.0.0";
       hlint-version = "3.5";
 
@@ -84,8 +102,8 @@
           shell = {
             withHoogle = true;
             tools = {
-              cabal = { inherit index-state; };
-              haskell-language-server = { inherit index-state; };
+              cabal = "latest";
+              haskell-language-server = "latest";
               fourmolu = {
                 inherit index-state;
                 version = fourmolu-version;
@@ -161,8 +179,7 @@
         self.flake.${system}.apps // (let
           pkgs = nixpkgsFor system;
           profiling-script = pkgs.callPackage ./nix/run-profiling.nix {
-            inherit (pkgs.haskellPackages)
-              hp2pretty eventlog2html;
+            inherit (pkgs.haskellPackages) hp2pretty eventlog2html;
             kore-exec =
               self.project.${system}.hsPkgs.kore.components.exes.kore-exec;
             kore-exec-prof =
@@ -170,7 +187,11 @@
             kore-exec-infotable =
               self.projectEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
           };
-          fourmolu = (pkgs.haskell-nix.hackage-package { name = "fourmolu"; version = fourmolu-version; inherit compiler-nix-name index-state; }).components.exes.fourmolu;
+          fourmolu = (pkgs.haskell-nix.hackage-package {
+            name = "fourmolu";
+            version = fourmolu-version;
+            inherit compiler-nix-name index-state;
+          }).components.exes.fourmolu;
           scripts = pkgs.symlinkJoin {
             name = "fourmolu-format";
             paths = [ ./scripts ];

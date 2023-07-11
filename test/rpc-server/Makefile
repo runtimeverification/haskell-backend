@@ -1,3 +1,8 @@
+# in nix, do not use the default binary location
+ifneq ($(strip $(NIX)),)
+export SERVER = kore-rpc
+endif
+
 test:
 	python3 runTests.py
 

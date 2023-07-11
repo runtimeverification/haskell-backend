@@ -1,4 +1,4 @@
-# #!/usr/bin/env bash
+#!/usr/bin/env bash
 #
 # generate-regression-tests.sh
 #
@@ -19,7 +19,9 @@
 #                     building master with a custom K version.  If
 #                     nothing is provided, $KORE/evm-semantics will be
 #                     used.
-#
+#   * EVM_VERSION - Optional revision identifier for the evm-semantics
+#                   repository. If given, the run will use this version
+#                   of evm-semantics (otherwise using master).
 #   * K_VERSION - Optional revision identifier for K repository If
 #                 given, this K version will be used as the
 #                 evm-semantics dependency (otherwise deps/k_version
@@ -76,6 +78,7 @@ if [ -z "${EVM_SEMANTICS}" ]; then
     (cd $EVM_SEMANTICS && git submodule update --init --recursive)
 else
     EVM_SEMANTICS=$(realpath ${EVM_SEMANTICS})
+    log "Using directory ${EVM_SEMANTICS} for evm-semantics" info
     [ -f "$EVM_SEMANTICS/include/kframework/evm.md" ] || \
         err "Provided evm-semantics directory '${EVM_SEMANTICS}' appears damaged"
 fi
@@ -86,6 +89,32 @@ if [ -z "${K_VERSION}" ]; then
     [ -f $KORE/deps/k_release ] && K_VERSION=v$(cat $KORE/deps/k_release)
     log "K version set to ${K_VERSION}"
 fi
+
+# build evm-semantics
+log "Checking out and building ${EVM_VERSION:-latest master} in ${EVM_SEMANTICS}"
+cd ${EVM_SEMANTICS}
+git fetch
+git checkout ${EVM_VERSION:-master}
+git pull
+git submodule update --init --recursive
+log "Manually setting K dependency to ${K_VERSION}"
+
+log "Cleaning ${EVM_SEMANTICS}"
+make clean
+# if we are under a nix develop shell (NIX variable set), don't build K
+if [ -z "$NIX" ]; then
+    (cd deps/k && git checkout ${K_VERSION} && git submodule update --init --recursive)
+    make deps
+    export PATH=$(pwd)/.build/usr/lib/kevm/kframework/bin:$PATH
+    which kore-exec
+else
+    log "Testing nix-provided K (kompile --version)"
+    kompile --version && log "(^^^ nix-provided K ^^^)" || err "K unavailable but NIX=$NIX"
+fi
+log "Building evm-semantics with dependencies"
+make plugin-deps poetry kevm-pyk
+export PATH=$(pwd)/.build/usr/bin:$PATH
+make build-kevm build-haskell
 
 kollect() {
     local name="$1"
@@ -107,7 +136,12 @@ kollect() {
     mv vdefinition.kore $def
     mv spec.kore $spec
 
-    $sed -i -e "s,${EVM_SEMANTICS}/,evm-semantics/,g" *.kore
+    $sed -i \
+         -e "s,/nix/store/[a-z0-9]*-k-[^/]*maven/include/kframework/,evm-semantics/,g" \
+         -e "s,${EVM_SEMANTICS}/.build/usr/lib/kevm/kframework/include/kframework/,evm-semantics/,g" \
+         -e "s,${EVM_SEMANTICS}/.build/usr/lib/kevm/include/kframework/,evm-semantics/,g" \
+         -e "s,${EVM_SEMANTICS}/,evm-semantics/,g" \
+         *.kore
     $sed -i -e "s/result.kore/$script.out/g" \
         -e "s/vdefinition.kore/$def/g" \
         -e "s/spec.kore/$spec/g" \
@@ -116,20 +150,6 @@ kollect() {
     cd ..
     mv $tmp/* .
     rmdir $tmp
-}
-
-build-evm() {
-    log "Checking out latest master in ${EVM_SEMANTICS}"
-    cd ${EVM_SEMANTICS}
-    git checkout master
-    git pull
-    git submodule update --init --recursive
-    log "Manually setting K dependency to ${K_VERSION}"
-    (cd deps/k && git checkout ${K_VERSION} && git submodule update --init --recursive)
-    log "Building evm-semantics with dependencies"
-    make clean deps plugin-deps poetry kevm-pyk
-    export PATH=$(pwd)/.build/usr/bin:$PATH
-    make build-kevm build-haskell
 }
 
 # test paths will be prefixed with tests/specs, and suffixed with -spec.k.prove
@@ -182,7 +202,6 @@ replace-tests() {
     mv $tests $testdir
 }
 
-build-evm
 generate-evm $@
 replace-tests "test/regression-evm" ${EVM_SEMANTICS}
 rm -rf $KORE/evm-semantics
