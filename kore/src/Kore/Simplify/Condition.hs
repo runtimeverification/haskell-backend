@@ -179,7 +179,7 @@ simplifyPredicates sideCondition original = do
     let predicates =
             SideCondition.simplifyConjunctionByAssumption original
                 & fst . extract
-    simplifiedPredicates <- 
+    simplifiedPredicates <-
         simplifyPredicatesWithAssumptions
             sideCondition
             (toList predicates)
