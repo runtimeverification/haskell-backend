@@ -773,7 +773,7 @@ checkSimpleImplication inLeft inRight existentials =
         rhsBottom <-
             fmap isBottom . liftSimplifier $
                 SMT.Evaluator.filterMultiOr $srcLoc
-                    =<< Pattern.simplify right
+                    =<< Exists.makeEvaluate SideCondition.top existentials right
 
         case (trivial, rhsBottom) of
             (True, _) -> pure (claimToCheck, Implied Nothing)
