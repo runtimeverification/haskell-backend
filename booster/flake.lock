@@ -450,6 +450,7 @@
       "original": {
         "owner": "runtimeverification",
         "repo": "haskell-backend",
+        "rev": "a6230144a37ee9ebf0f6dffc849faf5ce10df380",
         "type": "github"
       }
     },

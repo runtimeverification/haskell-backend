@@ -1,0 +1,60 @@
+name: 'Update Nix Flake Inputs'
+on:
+  push:
+    branches:
+      - '_update-deps/runtimeverification/haskell-backend'
+  workflow_dispatch:
+# Stop in progress workflows on the same branch and same workflow to use latest committed code
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  nix-flake-submodule-sync:
+    name: 'Nix flake submodule sync'
+    runs-on: ubuntu-20.04
+    steps:
+      - name: 'Check out code, set up Git'
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.JENKINS_GITHUB_PAT }}
+          submodules: recursive
+      - run: |
+          git config --global user.name rv-jenkins
+          git config --global user.email devops@runtimeverification.com
+
+      - name: 'Install Nix'
+        uses: cachix/install-nix-action@v22
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.13.3/install
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+            substituters = http://cache.nixos.org https://hydra.iohk.io
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+
+      - name: 'Install Cachix'
+        uses: cachix/cachix-action@v12
+        with:
+          name: k-framework
+          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
+
+      - name: 'Update Nix flake from haskell backend release tag'
+        run: |
+          set -euxo pipefail
+          changed=false
+
+          haskell_backend_version=$(cat deps/haskell-backend_release)
+          sed -i 's!    haskell-backend.url = "github:runtimeverification/haskell-backend/[0-9a-f]*";!    haskell-backend.url = "github:runtimeverification/haskell-backend/'${haskell_backend_version}'";!' flake.nix
+          if git add flake.nix && git commit -m "flake.nix: update haskell-backend to version ${haskell_backend_version}"; then
+            changed=true
+          fi
+
+          nix flake update
+          if git add flake.lock && git commit -m 'flake.lock: update'; then
+            changed=true
+          fi
+
+          if ${changed}; then
+            git push
+          fi
