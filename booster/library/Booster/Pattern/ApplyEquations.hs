@@ -99,8 +99,8 @@ instance Pretty EquationTrace where
                 , pretty rewritten
                 , "using " <> locationInfo
                 ]
-        FailedMatch _ ->
-            vsep ["Term did not match rule " <> locationInfo, prettyTerm]
+        FailedMatch reason ->
+            vsep ["Term did not match rule " <> locationInfo, prettyTerm, pretty reason]
         IndeterminateMatch ->
             vsep ["Term had indeterminate match for rule " <> locationInfo, prettyTerm]
         RuleNotPreservingDefinedness ->

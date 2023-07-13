@@ -137,6 +137,18 @@ varsAndValues =
               d = dv differentSort ""
            in test "var and domain value (different sort)" v d $
                 failed (DifferentSorts v d)
+        , let v = var "X" someSort
+              d = dv someSort ""
+           in test "dv matching a var (on RHS): indeterminate" d v $
+                MatchIndeterminate d v
+        , let d = dv someSort ""
+              f = app f1 [d]
+           in test "dv matching a function call (on RHS): indeterminate" d f $
+                MatchIndeterminate d f
+        , let d = dv someSort ""
+              c = app con1 [d]
+           in test "dv matching a constructor (on RHS): fail" d c $
+                failed (DifferentValues d c)
         ]
 
 andTerms :: TestTree
@@ -165,10 +177,10 @@ andTerms =
               fa = app f1 [d]
               fb = app f1 [dv someSort "b"]
            in test
-                "And-term on the right, fails"
+                "And-term on the right, indeterminate"
                 d
                 (AndTerm fa fb)
-                (failed $ DifferentValues d (AndTerm fa fb))
+                (MatchIndeterminate d (AndTerm fa fb))
         ]
 
 cornerCases :: TestTree

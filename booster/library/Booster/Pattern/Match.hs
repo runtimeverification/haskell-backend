@@ -23,6 +23,7 @@ import Data.Sequence (Seq (..), (><))
 import Data.Sequence qualified as Seq
 import Data.Set (Set)
 import Data.Set qualified as Set
+import Prettyprinter
 
 import Booster.Definition.Base
 import Booster.Pattern.Base
@@ -31,6 +32,7 @@ import Booster.Pattern.Util (
     checkSymbolIsAc,
     freeVariables,
     isConstructorSymbol,
+    isFunctionSymbol,
     modifyVariablesInP,
     sortOfTerm,
     substituteInTerm,
@@ -56,6 +58,13 @@ data MatchFailReason
     | -- | The two terms have differing argument lengths
       ArgLengthsDiffer Term Term
     deriving stock (Eq, Show)
+
+instance Pretty MatchFailReason where
+    pretty = \case
+        General reason -> pretty reason
+        SharedVariables vs -> "Shared variables:" <+> hsep (map pretty $ Set.toList vs)
+        SubsortingError err -> pretty $ show err
+        ArgLengthsDiffer t1 t2 -> vsep ["Argument length differ", pretty t1, pretty t2]
 
 {- | Attempts to find a matching substitution for the given
    term1 to term2.
@@ -107,6 +116,38 @@ match1 ::
     StateT MatchState (Except MatchResult) ()
 ----- Variables
 -- pattern term is a (target) variable: check sorts, introduce a new binding
+
+-- Matching term2 with term1, when term2 is a variable is safe here,
+-- because functional equations are ordered.
+-- Consider a function f:
+--
+--   rule f(foo(A)) => baz() [priority(40)]
+--   rule f(A) => A
+-- where foo() is a constructor and A is a variable.
+--
+-- We can safely match f(foo(X)) and rewrite to baz(), because there
+-- are no preceding equations involving the constructor foo.
+--
+-- If instead there was a higher-priority rule
+--
+--   rule f(foo(bar())) => flob() [priority(30)]
+--
+-- the preceding match would be indeterminate and the function
+-- application would be aborted before reaching the
+--   f(foo(A)) => baz()
+-- case.
+--
+-- Finally, if the rules had the opposite priorities
+--
+--   rule f(foo(A)) => baz()      [priority(30)]
+--   rule f(foo(bar())) => flob() [priority(40)]
+--   rule f(A) => A
+--
+-- Since function equations are ordered, the pattern
+--    f(foo(bar())) => flob()
+-- would be unreachable anyway, hence
+--   f(foo(A)) => baz()
+-- must always apply to f(foo(X))
 match1
     term1@(Var var@Variable{variableSort})
     term2 =
@@ -126,26 +167,37 @@ match1
                     then term2
                     else Injection termSort variableSort term2
                 )
+-- subject term is a variable but pattern term is not: indeterminate
+match1
+    pat
+    var@Var{} =
+        indeterminate pat var
+-- and-terms in subject term are considered indeterminate
+-- (what would they mean?)
+match1
+    pat
+    andTerm@AndTerm{} =
+        indeterminate pat andTerm
 ----- Domain values
--- two domain values: have to fully agree
 match1
     d1@(DomainValue s1 t1)
-    d2@(DomainValue s2 t2) =
-        do
-            unless (t1 == t2) $
-                failWith (DifferentValues d1 d2)
-            unless (s1 == s2) $ -- sorts must be exactly the same for DVs
-                failWith (DifferentSorts d1 d2)
--- subject is function application (unevaluated): indeterminate
-match1
-    d1@DomainValue{}
-    fct@SymbolApplication{} =
-        indeterminate d1 fct
--- subject not a domain value nor a function application: fail
-match1
-    d1@DomainValue{}
-    term2 =
-        failWith $ DifferentValues d1 term2
+    subj =
+        case subj of
+            -- two domain values: have to fully agree
+            DomainValue s2 t2 -> do
+                unless (t1 == t2) $
+                    failWith (DifferentValues d1 subj)
+                unless (s1 == s2) $ -- sorts must be exactly the same for DVs
+                    failWith (DifferentSorts d1 subj)
+            SymbolApplication sym _ _
+                -- subject is function application (unevaluated): indeterminate
+                | isFunctionSymbol sym -> indeterminate d1 subj
+                -- subject is constructor: fail
+                | otherwise -> failWith $ DifferentValues d1 subj
+            -- Var{} case caught above
+            -- injections, and-terms, maps: fail
+            _other ->
+                failWith $ DifferentValues d1 subj
 ----- And Terms
 -- and-term in pattern: must unify with both arguments (typically used
 -- to bind variables while also matching)
@@ -156,61 +208,67 @@ match1
             enqueueProblem t1a term2
             enqueueProblem t1b term2
 ----- Injections
--- two injections. Try to unify the contained terms if the sorts
--- agree. Target sorts must be the same, source sorts may differ if
--- the contained pattern term is just a variable, otherwise they need
--- to be identical.
 match1
-    pat@(Injection source1 target1 trm1)
-    subj@(Injection source2 target2 trm2)
-        | target1 /= target2 = do
-            failWith (DifferentSorts pat subj)
-        | source1 == source2 = do
-            enqueueProblem trm1 trm2
-        | Var v <- trm1 = do
-            -- variable in pattern, check source sorts and bind
-            subsorts <- gets mSubsorts
-            isSubsort <-
-                lift . withExcept (MatchFailed . SubsortingError) $
-                    checkSubsort subsorts source2 source1
-            if isSubsort
-                then bindVariable v (Injection source2 source1 trm2)
-                else failWith (DifferentSorts trm1 trm2)
-        | otherwise =
-            failWith (DifferentSorts pat subj)
--- injection in pattern, unevaluated function call in subject: indeterminate
-match1
-    inj@Injection{}
-    trm@SymbolApplication{} =
-        indeterminate inj trm
--- injection in pattern, no injection in subject: fail
-match1
-    inj@Injection{}
-    trm =
-        failWith $ DifferentSymbols inj trm
+    inj@(Injection source1 target1 trm1)
+    subj =
+        case subj of
+            -- matching two injections:
+            -- Try to unify the contained terms if the sorts
+            -- agree. Target sorts must be the same, source sorts may
+            -- differ if the contained pattern term is just a
+            -- variable, otherwise they need to be identical.
+            Injection source2 target2 trm2
+                | target1 /= target2 -> do
+                    failWith (DifferentSorts inj subj)
+                | source1 == source2 -> do
+                    enqueueProblem trm1 trm2
+                | Var v <- trm1 -> do
+                    -- variable in pattern, check source sorts and bind
+                    subsorts <- gets mSubsorts
+                    isSubsort <-
+                        lift . withExcept (MatchFailed . SubsortingError) $
+                            checkSubsort subsorts source2 source1
+                    if isSubsort
+                        then bindVariable v (Injection source2 source1 trm2)
+                        else failWith (DifferentSorts trm1 trm2)
+                | otherwise ->
+                    failWith (DifferentSorts inj subj)
+            -- injection in pattern, unevaluated function call in
+            -- subject: indeterminate
+            SymbolApplication sym _ _
+                | isFunctionSymbol sym -> indeterminate inj subj
+                | otherwise -> failWith $ DifferentSymbols inj subj
+            -- injection in pattern, no injection in subject: fail
+            -- Var{} case caught above
+            -- and, domain values, maps: fail
+            _other ->
+                failWith $ DifferentSymbols inj subj
 ----- Symbol Applications
--- two symbol applications: fail if names differ, recurse
 match1
-    t1@(SymbolApplication symbol1 sorts1 args1)
-    t2@(SymbolApplication symbol2 sorts2 args2)
-        | symbol1.name /= symbol2.name =
-            if isConstructorSymbol symbol1 && isConstructorSymbol symbol2
-                then failWith (DifferentSymbols t1 t2)
-                else indeterminate t1 t2
-        | length args1 /= length args2 =
-            lift $ throwE $ MatchFailed $ ArgLengthsDiffer t1 t2
-        | sorts1 /= sorts2 =
-            failWith (DifferentSorts t1 t2)
-        -- If the symbol is non-free (AC symbol), return indeterminate
-        | checkSymbolIsAc symbol1 =
-            indeterminate t1 t2
-        | otherwise =
-            enqueueProblems $ Seq.fromList $ zip args1 args2
--- subject not a symbol application: fail
-match1
-    t1@SymbolApplication{}
-    t2 =
-        failWith $ DifferentSymbols t1 t2
+    app@(SymbolApplication symbol1 sorts1 args1)
+    subj =
+        case subj of
+            -- two symbol applications: fail if names differ, match
+            -- argument count and sorts, recurse
+            SymbolApplication symbol2 sorts2 args2
+                | symbol1.name /= symbol2.name ->
+                    if isConstructorSymbol symbol1 && isConstructorSymbol symbol2
+                        then failWith (DifferentSymbols app subj)
+                        else indeterminate app subj
+                | length args1 /= length args2 ->
+                    lift $ throwE $ MatchFailed $ ArgLengthsDiffer app subj
+                | sorts1 /= sorts2 ->
+                    failWith (DifferentSorts app subj)
+                -- If the symbol is non-free (AC symbol), return indeterminate
+                | checkSymbolIsAc symbol1 ->
+                    indeterminate app subj
+                | otherwise ->
+                    enqueueProblems $ Seq.fromList $ zip args1 args2
+            -- subject not a symbol application: fail
+            -- Var{} case caught above
+            -- and, domain values, injections, maps: fail
+            _other ->
+                failWith $ DifferentSymbols app subj
 -- matching on maps unsupported
 match1
     t1@KMap{}
