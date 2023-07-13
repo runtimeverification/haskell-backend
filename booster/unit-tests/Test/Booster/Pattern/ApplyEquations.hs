@@ -36,29 +36,37 @@ test_evaluateFunction =
         "Evaluating functions using rules without side conditions"
         [ -- f1(a) => a
           testCase "Simple function evaluation" $ do
-            eval TopDown [trm| f1{}(A:SomeSort{}) |] @?= Right [trm| A:SomeSort{} |]
-            eval BottomUp [trm| f1{}(A:SomeSort{}) |] @?= Right [trm| A:SomeSort{} |]
-        , -- f2(f1(f1(a))) => f2(a). f2 is marked as partial, so not evaluating
+            eval TopDown [trm| f1{}(con2{}(A:SomeSort{})) |] @?= Right [trm| con2{}(A:SomeSort{}) |]
+            eval BottomUp [trm| f1{}(con2{}(A:SomeSort{})) |] @?= Right [trm| con2{}(A:SomeSort{}) |]
+        , -- f2(f1(f1(con2(a)))) => f2(con2(a)). f2 is marked as partial, so not evaluating
           testCase "Nested function applications, one not to be evaluated" $ do
-            eval TopDown [trm| f2{}(f1{}(f1{}(A:SomeSort{}))) |] @?= Right [trm| f2{}(A:SomeSort{}) |]
-            eval BottomUp [trm| f2{}(f1{}(f1{}(A:SomeSort{}))) |] @?= Right [trm| f2{}(A:SomeSort{}) |]
-        , -- f1(f2(f1(a))) => f1(f2(a)). Again f2 partial, so not evaluating,
+            let subj = [trm| f2{}(f1{}(f1{}(con2{}(A:SomeSort{})))) |]
+                goal = [trm| f2{}(con2{}(A:SomeSort{})) |]
+            eval TopDown subj @?= Right goal
+            eval BottomUp subj @?= Right goal
+        , -- f1(f2(f1(con2(a)))) => f1(f2(con2(a))). Again f2 partial, so not evaluating,
           -- therefore f1(x) => x not applied to unevaluated value
           testCase "Nested function applications with partial function inside" $ do
-            eval TopDown [trm| f1{}(f2{}(f1{}(A:SomeSort{}))) |] @?= Right [trm| f1{}(f2{}(A:SomeSort{})) |]
-            eval BottomUp [trm| f1{}(f2{}(f1{}(A:SomeSort{}))) |] @?= Right [trm| f1{}(f2{}(A:SomeSort{})) |]
-        , -- f1(con1(con1(..con1(a)..))) => con2(con2(..con2(a)..))
+            let subj = [trm| f1{}(f2{}(f1{}(con2{}(A:SomeSort{})))) |]
+                goal = [trm| f1{}(f2{}(con2{}(A:SomeSort{}))) |]
+            eval TopDown subj @?= Right goal
+            eval BottomUp subj @?= Right goal
+        , -- f1(con1(con1(..con1(con2(a))..))) => con2(con2(..con2(a)..))
+          -- using f1(con1(X)) => con2(X) repeatedly
           testCase "Recursive evaluation" $ do
             let subj depth = app f1 [iterate (apply con1) a !! depth]
+                a = app con2 [var "A" someSort]
+                apply f = app f . (: [])
+                n `times` f = foldr (.) id (replicate n $ apply f)
             -- top-down evaluation: a single iteration is enough
             eval TopDown (subj 101) @?= Right (101 `times` con2 $ a)
             -- bottom-up evaluation: `depth` many iterations
             eval BottomUp (subj 100) @?= Right (100 `times` con2 $ a)
             isTooManyIterations $ eval BottomUp (subj 101)
-        , -- con3(f1(a), f1(con1(b))) => con3(a, con2(b))
+        , -- con3(f1(con2(a)), f1(con1(con2(b)))) => con3(con2(a), con2(con2(b)))
           testCase "Several function calls inside a constructor" $ do
-            eval TopDown [trm| con3{}(f1{}(A:SomeSort{}), f1{}(con1{}(B:SomeSort{}))) |]
-                @?= Right [trm| con3{}(A:SomeSort{}, con2{}(B:SomeSort{})) |]
+            eval TopDown [trm| con3{}(f1{}(con2{}(A:SomeSort{})), f1{}(con1{}(con2{}(B:SomeSort{})))) |]
+                @?= Right [trm| con3{}(con2{}(A:SomeSort{}), con2{}(con2{}(B:SomeSort{}))) |]
         , -- f1(inj{sub,some}(con4(a, b))) => f1(a) => a (not using f1-is-identity)
           testCase "Matching uses priorities" $ do
             eval TopDown [trm| f1{}(inj{AnotherSort{}, SomeSort{}}(con4{}(A:SomeSort{}, B:SomeSort{}))) |]
@@ -69,21 +77,17 @@ test_evaluateFunction =
             eval TopDown subj @?= Right subj
             eval BottomUp subj @?= Right subj
         , testCase "f2 with symbolic argument, constraint prevents rule application" $ do
-            let subj = app f2 [app con1 [a]]
+            let subj = [trm| f2{}(con1{}(A:SomeSort{})) |]
             eval TopDown subj @?= Right subj
             eval BottomUp subj @?= Right subj
         , testCase "f2 with concrete argument, satisfying constraint" $ do
-            let subj = app f2 [app con1 [d]]
-                result = app f2 [d]
+            let subj = [trm| f2{}(con1{}(\dv{SomeSort{}}("hey"))) |]
+                result = [trm| f2{}(\dv{SomeSort{}}("hey")) |]
             eval TopDown subj @?= Right result
-            -- eval BottomUp subj @?= Right result
+            eval BottomUp subj @?= Right result
         ]
   where
     eval direction = fmap fst . unsafePerformIO . runNoLoggingT . evaluateTerm False direction funDef Nothing
-    a = var "A" someSort
-    d = dv someSort "hey"
-    apply f = app f . (: [])
-    n `times` f = foldr (.) id (replicate n $ apply f)
 
     isTooManyIterations (Left (TooManyIterations _n _ _)) = pure ()
     isTooManyIterations (Left err) = assertFailure $ "Unexpected error " <> show err
