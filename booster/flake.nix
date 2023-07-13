@@ -150,7 +150,6 @@
           booster-dev = packages."hs-backend-booster:exe:booster-dev";
           rpc-client = packages."hs-backend-booster:exe:rpc-client";
           parsetest = packages."hs-backend-booster:exe:parsetest";
-          dltest = packages."hs-backend-booster:exe:dltest";
         } // packages // collectOutputs "packages" flakes);
 
       apps = perSystem (system:
@@ -178,7 +177,6 @@
           rpc-client = apps."hs-backend-booster:exe:rpc-client";
           parsetest = apps."hs-backend-booster:exe:parsetest";
           parsetest-binary = apps."hs-backend-booster:exe:parsetest-binary";
-          dltest = apps."hs-backend-booster:exe:dltest";
           update-haskell-backend = {
             type = "app";
             program = "${scripts}/update-haskell-backend.sh";
