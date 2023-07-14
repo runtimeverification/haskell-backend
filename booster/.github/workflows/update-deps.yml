@@ -9,6 +9,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  ghc_version: "9.2.8"
+  stack_version: "2.9.3"
+
 jobs:
 
   nix-flake-submodule-sync:
@@ -39,6 +43,15 @@ jobs:
           name: k-framework
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
 
+      - uses: haskell/actions/setup@v2
+        id: setup-haskell
+        with:
+          ghc-version: ${{ env.ghc_version }}
+          stack-version: ${{ env.stack_version }}
+          enable-stack: true
+          stack-setup-ghc: true
+          cabal-update: true
+
       - name: 'Update Nix flake from haskell backend release tag'
         run: |
           set -euxo pipefail
@@ -53,6 +66,7 @@ jobs:
           fi
 
           if ${changed}; then
+            cabal update
             scripts/update-haskell-backend.sh ${haskell_backend_version}
             git add flake.lock stack.yaml cabal.project cabal.project.freeze
             git commit -m "update haskell-backend to version ${haskell_backend_version}"
