@@ -21,7 +21,7 @@ import Data.Limit (Limit (..))
 import Data.List.Extra (mconcatMap)
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map.Strict qualified as Map
-import Data.Sequence (Seq)
+import Data.Sequence as Seq (Seq, empty)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import GlobalMain (
@@ -77,7 +77,7 @@ import Kore.Rewrite.Timeout (
     EnableMovingAverage (..),
     StepTimeout (..),
  )
-import Kore.Simplify.API (evalSimplifierLogged)
+import Kore.Simplify.API (evalSimplifier, evalSimplifierLogged)
 import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (Simplifier, SimplifierTrace (..))
 import Kore.Syntax (VariableName)
@@ -134,6 +134,7 @@ respond serverState moduleName runSMT =
                                             then EnableMovingAverage
                                             else DisableMovingAverage
                                         )
+                                        (fromMaybe False $ liftA2 (||) logSuccessfulRewrites logSuccessfulSimplifications)
                                         serializedModule
                                         (toStopLabels cutPointRules terminalRules)
                                         verifiedPattern
@@ -313,7 +314,7 @@ respond serverState moduleName runSMT =
                     (logs, result) <-
                         liftIO
                             . runSMT (Exec.metadataTools serializedModule) lemmas
-                            . (evalInSimplifierContext serializedModule)
+                            . (evalInSimplifierContext (fromMaybe False logSuccessfulSimplifications) serializedModule)
                             . runExceptT
                             $ Claim.checkSimpleImplication
                                 leftPatt
@@ -374,7 +375,7 @@ respond serverState moduleName runSMT =
                     (logs, result) <-
                         liftIO
                             . runSMT (Exec.metadataTools serializedModule) lemmas
-                            . (evalInSimplifierContext serializedModule)
+                            . evalInSimplifierContext (fromMaybe False logSuccessfulSimplifications) serializedModule
                             $ SMT.Evaluator.filterMultiOr $srcLoc =<< Pattern.simplify patt
 
                     pure $
@@ -520,21 +521,32 @@ respond serverState moduleName runSMT =
             | SimplifierTrace{originalTerm, rewrittenTerm, equationId} <- toList logs
             ]
 
-    evalInSimplifierContext :: Exec.SerializedModule -> Simplifier a -> SMT.SMT (Seq SimplifierTrace, a)
+    evalInSimplifierContext ::
+        Bool -> Exec.SerializedModule -> Simplifier a -> SMT.SMT (Seq SimplifierTrace, a)
     evalInSimplifierContext
+        doTracing
         Exec.SerializedModule
             { sortGraph
             , overloadGraph
             , metadataTools
             , verifiedModule
             , equations
-            } =
-            evalSimplifierLogged
-                verifiedModule
-                sortGraph
-                overloadGraph
-                metadataTools
-                equations
+            }
+            | doTracing =
+                evalSimplifierLogged
+                    verifiedModule
+                    sortGraph
+                    overloadGraph
+                    metadataTools
+                    equations
+            | otherwise =
+                fmap (Seq.empty,)
+                    . evalSimplifier
+                        verifiedModule
+                        sortGraph
+                        overloadGraph
+                        metadataTools
+                        equations
 
 data ServerState = ServerState
     { serializedModules :: Map.Map ModuleName SerializedDefinition
