@@ -192,6 +192,7 @@ import Kore.Rewrite.Transition (
  )
 import Kore.Simplify.API (
     evalSimplifier,
+    evalSimplifierLogged,
     evalSimplifierProofs,
  )
 import Kore.Simplify.Pattern qualified as Pattern
@@ -472,7 +473,7 @@ rpcExec
         }
     StopLabels{cutPointLabels, terminalLabels}
     (mkRewritingTerm -> initialTerm) =
-        evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations $
+        simplifierRun $
             fmap stateGetRewritingPattern
                 <$> GraphTraversal.graphTraversal
                     GraphTraversal.GraphTraversalCancel
@@ -487,6 +488,12 @@ rpcExec
                     execStrategy
                     (startState initialTerm)
       where
+        simplifierRun
+            | tracingEnabled =
+                fmap snd . evalSimplifierLogged verifiedModule' sortGraph overloadGraph metadataTools equations
+            | otherwise =
+                evalSimplifier verifiedModule' sortGraph overloadGraph metadataTools equations
+
         verifiedModule' =
             IndexedModule.mapAliasPatterns
                 (Builtin.internalize metadataTools)
@@ -554,8 +561,11 @@ rpcExec
         setTraces ::
             Seq (RewriteRule v, Seq SimplifierTrace) -> Seq RuleTrace -> RpcExecState v -> RpcExecState v
         setTraces rules priorTraces state
-            | tracingEnabled = state{rpcRules = priorTraces >< fmap extractRuleTrace rules}
-            | otherwise = state
+            | tracingEnabled =
+                state{rpcRules = priorTraces >< fmap extractRuleTrace rules}
+            | otherwise -- need to retain the last trace for the terminal/cut-point check
+                =
+                state{rpcRules = fmap extractRuleTrace rules}
           where
             extractUniqueIdAndLabel :: RewriteRule v -> (UniqueId, Label)
             extractUniqueIdAndLabel = (Attribute.uniqueId &&& Attribute.label) . RulePattern.attributes . getRewriteRule
