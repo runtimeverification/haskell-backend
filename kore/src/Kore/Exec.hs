@@ -448,6 +448,8 @@ rpcExec ::
     Limit Natural ->
     Maybe StepTimeout ->
     EnableMovingAverage ->
+    -- | whether tracing is enabled
+    Bool ->
     -- | The main module
     SerializedModule ->
     -- | additional labels/rule names for stopping
@@ -459,6 +461,7 @@ rpcExec
     depthLimit
     stepTimeout
     enableMA
+    tracingEnabled
     SerializedModule
         { sortGraph
         , overloadGraph
@@ -533,23 +536,30 @@ rpcExec
             | (_ : _) <- mapMaybe (isCutPoint . fst) (toList rules) =
                 GraphTraversal.Stop
                     prior
-                    [next{rpcRules = priorRules >< fmap extractRuleTrace rules}]
+                    [setTraces rules priorRules next]
             | (_ : _) <- mapMaybe (isTerminalRule . fst) $ toList rules =
                 GraphTraversal.Stop
-                    next{rpcRules = priorRules >< fmap extractRuleTrace rules}
+                    (setTraces rules priorRules next)
                     []
         toTransitionResult RpcExecState{rpcRules = priorRules} [(next@RpcExecState{rpcProgState = nextPState}, rules)] =
-            case nextPState of
-                Start _ -> GraphTraversal.Continuing next{rpcRules = priorRules >< fmap extractRuleTrace rules}
-                Rewritten _ -> GraphTraversal.Continuing next{rpcRules = priorRules >< fmap extractRuleTrace rules}
-                Remaining _ -> GraphTraversal.Stuck next{rpcRules = priorRules >< fmap extractRuleTrace rules}
-                Kore.Rewrite.Bottom -> GraphTraversal.Stuck next{rpcRules = priorRules >< fmap extractRuleTrace rules}
+            let next' = setTraces rules priorRules next
+             in case nextPState of
+                    Start _ -> GraphTraversal.Continuing next'
+                    Rewritten _ -> GraphTraversal.Continuing next'
+                    Remaining _ -> GraphTraversal.Stuck next'
+                    Kore.Rewrite.Bottom -> GraphTraversal.Stuck next'
         toTransitionResult prior (s : ss) =
             GraphTraversal.Branch prior $ fmap fst (s :| ss)
 
-        extractUniqueIdAndLabel :: RewriteRule v -> (UniqueId, Label)
-        extractUniqueIdAndLabel = (Attribute.uniqueId &&& Attribute.label) . RulePattern.attributes . getRewriteRule
-        extractRuleTrace = \(rr, simps) -> uncurry (RuleTrace simps) $ extractUniqueIdAndLabel rr
+        setTraces ::
+            Seq (RewriteRule v, Seq SimplifierTrace) -> Seq RuleTrace -> RpcExecState v -> RpcExecState v
+        setTraces rules priorTraces state
+            | tracingEnabled = state{rpcRules = priorTraces >< fmap extractRuleTrace rules}
+            | otherwise = state
+          where
+            extractUniqueIdAndLabel :: RewriteRule v -> (UniqueId, Label)
+            extractUniqueIdAndLabel = (Attribute.uniqueId &&& Attribute.label) . RulePattern.attributes . getRewriteRule
+            extractRuleTrace = \(rr, simps) -> uncurry (RuleTrace simps) $ extractUniqueIdAndLabel rr
 
         -- helpers to extract a matched rule label or identifier
         isCutPoint, isTerminalRule :: RewriteRule v -> Maybe Text

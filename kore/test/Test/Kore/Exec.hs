@@ -1217,6 +1217,7 @@ rpcExecTest cutPointLs terminalLs depthLimit verifiedModule initial =
             depthLimit
             Nothing
             DisableMovingAverage
+            False
             serializedModule
             (StopLabels cutPointLs terminalLs)
             initial

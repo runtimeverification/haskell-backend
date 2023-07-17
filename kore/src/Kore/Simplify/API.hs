@@ -86,13 +86,14 @@ traceProfSimplify =
         . Pattern.toTermLike
 
 mkSimplifierEnv ::
+    Bool ->
     VerifiedModuleSyntax Attribute.Symbol ->
     SortGraph ->
     OverloadGraph ->
     SmtMetadataTools Attribute.Symbol ->
     Map AxiomIdentifier [Equation VariableName] ->
     SMT Env
-mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquations =
+mkSimplifierEnv tracingEnabled verifiedModule sortGraph overloadGraph metadataTools rawEquations =
     runSimplifier earlyEnv initialize
   where
     !earlyEnv =
@@ -107,6 +108,7 @@ mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquation
             , injSimplifier
             , overloadSimplifier
             , hookedSymbols = Map.empty
+            , tracingEnabled
             }
     injSimplifier =
         {-# SCC "evalSimplifier/injSimplifier" #-}
@@ -154,6 +156,7 @@ mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquation
                 , overloadSimplifier
                 , hookedSymbols
                 , axiomEquations
+                , tracingEnabled
                 }
 
 {- | Evaluate a simplifier computation, returning the result of only one branch.
@@ -171,7 +174,7 @@ evalSimplifier ::
     Simplifier a ->
     SMT a
 evalSimplifier verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
-    env <- mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquations
+    env <- mkSimplifierEnv False verifiedModule sortGraph overloadGraph metadataTools rawEquations
     runSimplifier env simplifier
 
 evalSimplifierLogged ::
@@ -183,7 +186,7 @@ evalSimplifierLogged ::
     Simplifier a ->
     SMT (Seq SimplifierTrace, a)
 evalSimplifierLogged verifiedModule sortGraph overloadGraph metadataTools rawEquations simplifier = do
-    env <- mkSimplifierEnv verifiedModule sortGraph overloadGraph metadataTools rawEquations
+    env <- mkSimplifierEnv True verifiedModule sortGraph overloadGraph metadataTools rawEquations
     runSimplifierLogged env simplifier
 
 evalSimplifierProofs ::

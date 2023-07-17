@@ -151,6 +151,7 @@ data Env = Env
     , injSimplifier :: !InjSimplifier
     , overloadSimplifier :: !OverloadSimplifier
     , hookedSymbols :: !(Map Id Text)
+    , tracingEnabled :: Bool
     }
 
 data SimplifierTrace = SimplifierTrace
