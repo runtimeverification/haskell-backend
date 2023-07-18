@@ -143,7 +143,7 @@ test_simplifyPattern =
             simpl subj @?= Right result
         ]
   where
-    simpl = fmap fst . unsafePerformIO . runNoLoggingT . simplifyPattern False simplDef Nothing
+    simpl = fmap fst . unsafePerformIO . runNoLoggingT . evaluatePattern False simplDef Nothing
     a = var "A" someSort
 
 test_errors :: TestTree
