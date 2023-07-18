@@ -55,8 +55,8 @@ data FailReason
       DifferentSymbols Term Term
     | -- | The unificands have different sorts
       DifferentSorts Term Term
-    | -- | Variable would refer to itself. FIXME should not happen at
-      -- all. Need to rename rule variables to avoid it.
+    | -- | Variable would refer to itself. This should not happen
+      -- because we rename rule variables to avoid it.
       VariableRecursion Variable Term
     | -- | Variable reassigned
       VariableConflict Variable Term Term
