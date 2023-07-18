@@ -143,7 +143,7 @@ respond stateVar =
                 -- term and predicate (pattern)
                 Right (TermAndPredicate pat) -> do
                     Log.logInfoNS "booster" "Simplifying a pattern"
-                    ApplyEquations.simplifyPattern doTracing def mLlvmLibrary pat >>= \case
+                    ApplyEquations.evaluatePattern doTracing def mLlvmLibrary pat >>= \case
                         Right (newPattern, patternTraces) -> do
                             let (t, p) = externalisePattern newPattern
                                 tSort = externaliseSort (sortOfPattern newPattern)
@@ -152,6 +152,13 @@ respond stateVar =
                                 SimplifyResult
                                     { state = addHeader result
                                     , logs = mkTraces patternTraces
+                                    }
+                        Left (ApplyEquations.SideConditionsFalse _ traces) -> do
+                            let tSort = fromMaybe (error "unknown sort") $ sortOfJson req.state.term
+                            pure . Right . Simplify $
+                                SimplifyResult
+                                    { state = addHeader $ KoreJson.KJBottom tSort
+                                    , logs = mkTraces traces
                                     }
                         Left (ApplyEquations.EquationLoop _traces terms) ->
                             pure . Left . backendError RpcError.Aborted $ map externaliseTerm terms -- FIXME
@@ -508,5 +515,12 @@ mkLogRewriteTrace
                                     , originalTermIndex = Nothing
                                     , origin = Booster
                                     , result = Failure{reason = "Internal error: " <> err, _ruleId = Nothing}
+                                    }
+                            ApplyEquations.SideConditionsFalse _predicates _traces ->
+                                Simplification
+                                    { originalTerm = Nothing
+                                    , originalTermIndex = Nothing
+                                    , origin = Booster
+                                    , result = Failure{reason = "Side conditions false", _ruleId = Nothing}
                                     }
             _ -> Nothing

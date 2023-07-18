@@ -75,7 +75,7 @@ data Stats' a = Stats'
 instance (Ord a, Num a) => Semigroup (Stats' a) where
     (<>) = addStats'
 
--- FIXME specialise to Double (pragma)
+{-# SPECIALIZE addStats' :: Stats' Double -> Stats' Double -> Stats' Double #-}
 addStats' :: (Ord a, Num a) => Stats' a -> Stats' a -> Stats' a
 addStats' stats1 stats2 =
     Stats'

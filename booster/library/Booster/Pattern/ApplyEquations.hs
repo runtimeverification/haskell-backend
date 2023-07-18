@@ -6,6 +6,7 @@ License     : BSD-3-Clause
 -}
 module Booster.Pattern.ApplyEquations (
     evaluateTerm,
+    evaluatePattern,
     Direction (..),
     EquationPreference (..),
     EquationFailure (..),
@@ -14,7 +15,6 @@ module Booster.Pattern.ApplyEquations (
     isMatchFailure,
     isSuccess,
     simplifyConstraint,
-    simplifyPattern,
 ) where
 
 import Control.Monad
@@ -31,13 +31,14 @@ import Control.Monad.Trans.Except
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Reader (ReaderT (..), ask)
 import Control.Monad.Trans.State
-import Data.Foldable (toList)
+import Data.Foldable (toList, traverse_)
 import Data.Functor.Foldable
 import Data.List (elemIndex)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust)
 import Data.Sequence (Seq (..))
+import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text, pack)
 import Data.Text qualified as Text
@@ -65,6 +66,7 @@ data EquationFailure
     = IndexIsNone Term
     | TooManyIterations Int Term Term
     | EquationLoop [EquationTrace] [Term]
+    | SideConditionsFalse [Predicate] [EquationTrace]
     | InternalError Text
     deriving stock (Eq, Show)
 
@@ -77,6 +79,7 @@ data EquationConfig = EquationConfig
 data EquationState = EquationState
     { termStack :: [Term]
     , changed :: Bool
+    , predicates :: Set Predicate
     , trace :: Seq EquationTrace
     }
 
@@ -125,6 +128,14 @@ instance Pretty EquationTrace where
                 , "failed with false condition"
                 , "using " <> locationInfo
                 ]
+        EnsuresFalse ps ->
+            vsep $
+                [ "Simplifying term"
+                , prettyTerm
+                , "using " <> locationInfo
+                , "resulted in ensuring false conditions"
+                ]
+                    <> map pretty ps
         MatchConstraintViolated constrained varName ->
             vsep
                 [ "Concreteness constraint violated: "
@@ -146,7 +157,7 @@ isSuccess _ = False
 
 startState :: EquationState
 startState =
-    EquationState{termStack = [], changed = False, trace = mempty}
+    EquationState{termStack = [], changed = False, predicates = mempty, trace = mempty}
 
 getState :: MonadLoggerIO io => EquationT io EquationState
 getState = EquationT get
@@ -159,6 +170,9 @@ countSteps = length . (.termStack) <$> getState
 
 pushTerm :: MonadLoggerIO io => Term -> EquationT io ()
 pushTerm t = EquationT . modify $ \s -> s{termStack = t : s.termStack}
+
+pushConstraints :: MonadLoggerIO io => [Predicate] -> EquationT io ()
+pushConstraints ps = EquationT . modify $ \s -> s{predicates = s.predicates <> Set.fromList ps}
 
 setChanged, resetChanged :: MonadLoggerIO io => EquationT io ()
 setChanged = EquationT . modify $ \s -> s{changed = True}
@@ -221,7 +235,9 @@ iterateEquations maxIterations direction preference startTerm =
                 else pure currentTerm
 
 ----------------------------------------
--- Interface function
+-- Interface functions
+
+-- | Evaluate and simplify a term.
 evaluateTerm ::
     MonadLoggerIO io =>
     Bool ->
@@ -241,6 +257,42 @@ evaluateTerm' ::
     Term ->
     EquationT io Term
 evaluateTerm' direction = iterateEquations 100 direction PreferFunctions
+
+{- | Simplify a Pattern, processing its constraints independently.
+     Returns either the first failure or the new pattern if no failure was encountered
+-}
+evaluatePattern ::
+    MonadLoggerIO io =>
+    Bool ->
+    KoreDefinition ->
+    Maybe LLVM.API ->
+    Pattern ->
+    io (Either EquationFailure (Pattern, [EquationTrace]))
+evaluatePattern doTracing def mLlvmLibrary =
+    runEquationT doTracing def mLlvmLibrary . evaluatePattern'
+
+-- version for internal nested evaluation
+evaluatePattern' ::
+    MonadLoggerIO io =>
+    Pattern ->
+    EquationT io Pattern
+evaluatePattern' Pattern{term, constraints} = do
+    pushConstraints constraints
+    newTerm <- evaluateTerm' TopDown term
+    -- after evaluating the term, evaluate all (existing and
+    -- newly-acquired) constraints, once
+    traverse_ simplifyAssumedPredicate . predicates =<< getState
+    -- this may yield additional new constraints, left unevaluated
+    evaluatedConstraints <- predicates <$> getState
+    pure Pattern{constraints = Set.toList evaluatedConstraints, term = newTerm}
+  where
+    -- evaluate the given predicate assuming all others
+    simplifyAssumedPredicate p = do
+        allPs <- predicates <$> getState
+        let otherPs = Set.delete p allPs
+        EquationT $ modify $ \s -> s{predicates = otherPs}
+        newP <- simplifyConstraint' p
+        pushConstraints [newP]
 
 ----------------------------------------
 
@@ -344,6 +396,7 @@ data ApplyEquationResult
     | IndeterminateMatch
     | IndeterminateCondition
     | ConditionFalse
+    | EnsuresFalse [Predicate]
     | RuleNotPreservingDefinedness
     | MatchConstraintViolated Constrained VarName
     deriving stock (Eq, Show)
@@ -358,23 +411,25 @@ type ResultHandler io =
     ApplyEquationResult ->
     EquationT io Term
 
-handleFunctionEquation :: ResultHandler io
+handleFunctionEquation :: MonadLoggerIO io => ResultHandler io
 handleFunctionEquation success continue abort = \case
     Success rewritten -> success rewritten
     FailedMatch _ -> continue
     IndeterminateMatch -> abort
     IndeterminateCondition -> abort
     ConditionFalse -> continue
+    EnsuresFalse ps -> getState >>= throw . SideConditionsFalse ps . toList . trace
     RuleNotPreservingDefinedness -> abort
     MatchConstraintViolated{} -> continue
 
-handleSimplificationEquation :: ResultHandler io
+handleSimplificationEquation :: MonadLoggerIO io => ResultHandler io
 handleSimplificationEquation success continue _abort = \case
     Success rewritten -> success rewritten
     FailedMatch _ -> continue
     IndeterminateMatch -> continue
     IndeterminateCondition -> continue
     ConditionFalse -> continue
+    EnsuresFalse ps -> getState >>= throw . SideConditionsFalse ps . toList . trace
     RuleNotPreservingDefinedness -> continue
     MatchConstraintViolated{} -> continue
 
@@ -465,12 +520,11 @@ applyEquation term rule = fmap (either id Success) $ runExceptT $ do
             -- is violated
             checkConcreteness rule.attributes.concreteness subst
 
-            -- check conditions, using substitution (will call back
-            -- into the simplifier! -> import loop)
-            let newConstraints =
+            -- check required conditions, using substitution
+            let required =
                     concatMap (splitBoolPredicates . substituteInPredicate subst) $
                         rule.requires
-            unclearConditions' <- runMaybeT $ catMaybes <$> mapM checkConstraint newConstraints
+            unclearConditions' <- runMaybeT $ catMaybes <$> mapM checkConstraint required
 
             case unclearConditions' of
                 Nothing -> throwE ConditionFalse
@@ -478,11 +532,20 @@ applyEquation term rule = fmap (either id Success) $ runExceptT $ do
                     if not $ null unclearConditions
                         then throwE IndeterminateCondition
                         else do
-                            let rewritten =
-                                    substituteInTerm subst rule.rhs
-                            -- NB no new constraints, as they have been checked to be `Top`
-                            -- FIXME what about symbolic constraints here?
-                            pure rewritten
+                            -- check ensured conditions, filter any
+                            -- true ones, prune if any is false
+                            let ensured =
+                                    concatMap (splitBoolPredicates . substituteInPredicate subst) $
+                                        rule.ensures
+                            mbEnsuredConditions <-
+                                runMaybeT $ catMaybes <$> mapM checkConstraint ensured
+                            case mbEnsuredConditions of
+                                -- throws if an ensured condition found to be false
+                                Nothing -> throwE $ EnsuresFalse ensured
+                                -- pushes new ensured conditions and return result
+                                Just conditions ->
+                                    lift $ pushConstraints conditions
+                            pure $ substituteInTerm subst rule.rhs
   where
     -- evaluate/simplify a predicate, cut the operation short when it
     -- is Bottom.
@@ -605,27 +668,3 @@ simplifyConstraint' = \case
         result <- iterateEquations 100 TopDown PreferFunctions t
         EquationT $ put prior
         pure result
-
---------------------------------------------------------------------
-
-{- | Simplify a Pattern, processing its constraints independently.
-     Returns either the first failure or the new pattern if no failure was encountered
--}
-simplifyPattern ::
-    MonadLoggerIO io =>
-    Bool ->
-    KoreDefinition ->
-    Maybe LLVM.API ->
-    Pattern ->
-    io (Either EquationFailure (Pattern, [EquationTrace]))
-simplifyPattern doTracing def mLlvmLibrary = runEquationT doTracing def mLlvmLibrary . simplifyPattern'
-
--- version for internal nested evaluation
-simplifyPattern' ::
-    MonadLoggerIO io =>
-    Pattern ->
-    EquationT io Pattern
-simplifyPattern' Pattern{term, constraints} = do
-    newTerm <- evaluateTerm' TopDown term
-    simplifiedConstraints <- traverse simplifyConstraint' constraints
-    pure Pattern{constraints = simplifiedConstraints, term = newTerm}
