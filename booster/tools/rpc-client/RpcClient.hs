@@ -43,12 +43,21 @@ import Debug.Trace
 
 main :: IO ()
 main = do
-    Options{host, port, mode, optionFile, options, postProcessing, prettify, time} <-
+    Options{host, port, mode, optionFile, options, postProcessing, prettify, time, dryRun} <-
         execParser parseOptions
+    request <-
+        trace "[Info] Preparing request data" $
+            prepareRequestData mode optionFile options
+    when dryRun $ do
+        traceM "[Info] Dry-run mode, just showing request instead of sending"
+        let write
+                | Just (Expect True file) <- postProcessing =
+                    trace ("[Info] Writing request to file " <> file) (BS.writeFile file)
+                | otherwise = BS.putStrLn
+            reformat = Json.encodePretty' rpcJsonConfig . Json.decode @Json.Value
+        write $ if not prettify then request else reformat request
+        exitSuccess
     runTCPClient host (show port) $ \s -> do
-        request <-
-            trace "[Info] Preparing request data" $
-                prepareRequestData mode optionFile options
         start <- getTime Monotonic
         trace "[Info] Sending request..." $
             sendAll s request
@@ -58,7 +67,7 @@ main = do
             timeStr = timeSpecs start end
         hPutStrLn stderr $ "[info] Round trip time for request '" <> modeFile <> "' was " <> timeStr
         when time $ do
-            hPutStrLn stderr $ "[info] Saving timing for " <> modeFile
+            hPutStrLn stderr $ "[Info] Saving timing for " <> modeFile
             writeFile (modeFile <> ".time") timeStr
 
         trace "[Info] Response received." $
@@ -82,6 +91,7 @@ data Options = Options
     , postProcessing :: Maybe PostProcessing
     , prettify :: Bool
     , time :: Bool
+    , dryRun :: Bool
     }
     deriving stock (Show)
 
@@ -134,6 +144,7 @@ parseOptions =
             <*> optional parsePostProcessing
             <*> prettifyOpt
             <*> timeOpt
+            <*> dryRunOpt
     hostOpt =
         strOption $
             long "host"
@@ -167,6 +178,7 @@ parseOptions =
     flagOpt name desc = flag False True $ long name <> help desc
     prettifyOpt = flagOpt "prettify" "format JSON before printing"
     timeOpt = flagOpt "time" "record the timing information between sending a request and receiving a response"
+    dryRunOpt = flagOpt "dry-run" "Do not send anything, just output the request"
 
 parsePostProcessing :: Parser PostProcessing
 parsePostProcessing =

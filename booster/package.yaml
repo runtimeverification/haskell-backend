@@ -70,6 +70,7 @@ library:
   - containers
   - deepseq
   - deriving-aeson
+  - Diff
   - exceptions
   - extra
   - filepath
@@ -184,6 +185,14 @@ executables:
       - unordered-containers
     ghc-options:
     - -rtsopts
+  kore-json-differ:
+    source-dirs: tools/kore-json-differ
+    main: Main.hs
+    dependencies:
+      - base
+      - bytestring
+      - containers
+      - hs-backend-booster
 
   kore-rpc-booster:
     source-dirs: tools/booster
