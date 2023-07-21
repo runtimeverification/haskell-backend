@@ -42,6 +42,7 @@
                 /test/parser
                 /test/internalisation
                 /test/rpc-integration
+                /test/jsonrpc-examples
                 /scripts
                 /.github
               ''
