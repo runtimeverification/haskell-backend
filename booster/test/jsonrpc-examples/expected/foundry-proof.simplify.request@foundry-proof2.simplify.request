@@ -1,0 +1,583 @@
+Files test/jsonrpc-examples/foundry-proof.simplify.request and test/jsonrpc-examples/foundry-proof2.simplify.request are different SimplifyM requests
+6,11c6
+<             "tag": "Ceil",
+<             "argSort": {
+<                 "tag": "SortApp",
+<                 "name": "SortGeneratedTopCell",
+<                 "args": []
+<             },
+---
+>             "tag": "And",
+17c12
+<             "arg": {
+---
+>             "first": {
+285,291c280,304
+<                                                                         "tag": "EVar",
+<                                                                         "name": "VarCALLER'Unds'ID",
+<                                                                         "sort": {
+<                                                                             "tag": "SortApp",
+<                                                                             "name": "SortAccount",
+<                                                                             "args": []
+<                                                                         }
+---
+>                                                                         "tag": "App",
+>                                                                         "name": "inj",
+>                                                                         "sorts": [
+>                                                                             {
+>                                                                                 "tag": "SortApp",
+>                                                                                 "name": "SortInt",
+>                                                                                 "args": []
+>                                                                             },
+>                                                                             {
+>                                                                                 "tag": "SortApp",
+>                                                                                 "name": "SortAccount",
+>                                                                                 "args": []
+>                                                                             }
+>                                                                         ],
+>                                                                         "args": [
+>                                                                             {
+>                                                                                 "tag": "EVar",
+>                                                                                 "name": "VarCALLER'Unds'ID",
+>                                                                                 "sort": {
+>                                                                                     "tag": "SortApp",
+>                                                                                     "name": "SortInt",
+>                                                                                     "args": []
+>                                                                                 }
+>                                                                             }
+>                                                                         ]
+579,585c592,616
+<                                                                 "tag": "EVar",
+<                                                                 "name": "VarORIGIN'Unds'ID",
+<                                                                 "sort": {
+<                                                                     "tag": "SortApp",
+<                                                                     "name": "SortAccount",
+<                                                                     "args": []
+<                                                                 }
+---
+>                                                                 "tag": "App",
+>                                                                 "name": "inj",
+>                                                                 "sorts": [
+>                                                                     {
+>                                                                         "tag": "SortApp",
+>                                                                         "name": "SortInt",
+>                                                                         "args": []
+>                                                                     },
+>                                                                     {
+>                                                                         "tag": "SortApp",
+>                                                                         "name": "SortAccount",
+>                                                                         "args": []
+>                                                                     }
+>                                                                 ],
+>                                                                 "args": [
+>                                                                     {
+>                                                                         "tag": "EVar",
+>                                                                         "name": "VarORIGIN'Unds'ID",
+>                                                                         "sort": {
+>                                                                             "tag": "SortApp",
+>                                                                             "name": "SortInt",
+>                                                                             "args": []
+>                                                                         }
+>                                                                     }
+>                                                                 ]
+1675a1707,2205
+>             },
+>             "second": {
+>                 "tag": "And",
+>                 "sort": {
+>                     "tag": "SortApp",
+>                     "name": "SortGeneratedTopCell",
+>                     "args": []
+>                 },
+>                 "first": {
+>                     "tag": "Equals",
+>                     "argSort": {
+>                         "tag": "SortApp",
+>                         "name": "SortBool",
+>                         "args": []
+>                     },
+>                     "sort": {
+>                         "tag": "SortApp",
+>                         "name": "SortGeneratedTopCell",
+>                         "args": []
+>                     },
+>                     "first": {
+>                         "tag": "DV",
+>                         "sort": {
+>                             "tag": "SortApp",
+>                             "name": "SortBool",
+>                             "args": []
+>                         },
+>                         "value": "true"
+>                     },
+>                     "second": {
+>                         "tag": "App",
+>                         "name": "Lbl'Unds'andBool'Unds'",
+>                         "sorts": [],
+>                         "args": [
+>                             {
+>                                 "tag": "App",
+>                                 "name": "Lbl'Unds-LT-Eqls'Int'Unds'",
+>                                 "sorts": [],
+>                                 "args": [
+>                                     {
+>                                         "tag": "DV",
+>                                         "sort": {
+>                                             "tag": "SortApp",
+>                                             "name": "SortInt",
+>                                             "args": []
+>                                         },
+>                                         "value": "0"
+>                                     },
+>                                     {
+>                                         "tag": "EVar",
+>                                         "name": "VarCALLER'Unds'ID",
+>                                         "sort": {
+>                                             "tag": "SortApp",
+>                                             "name": "SortInt",
+>                                             "args": []
+>                                         }
+>                                     }
+>                                 ]
+>                             },
+>                             {
+>                                 "tag": "App",
+>                                 "name": "Lbl'Unds-LT-'Int'Unds'",
+>                                 "sorts": [],
+>                                 "args": [
+>                                     {
+>                                         "tag": "EVar",
+>                                         "name": "VarCALLER'Unds'ID",
+>                                         "sort": {
+>                                             "tag": "SortApp",
+>                                             "name": "SortInt",
+>                                             "args": []
+>                                         }
+>                                     },
+>                                     {
+>                                         "tag": "DV",
+>                                         "sort": {
+>                                             "tag": "SortApp",
+>                                             "name": "SortInt",
+>                                             "args": []
+>                                         },
+>                                         "value": "1461501637330902918203684832716283019655932542976"
+>                                     }
+>                                 ]
+>                             }
+>                         ]
+>                     }
+>                 },
+>                 "second": {
+>                     "tag": "And",
+>                     "sort": {
+>                         "tag": "SortApp",
+>                         "name": "SortGeneratedTopCell",
+>                         "args": []
+>                     },
+>                     "first": {
+>                         "tag": "Equals",
+>                         "argSort": {
+>                             "tag": "SortApp",
+>                             "name": "SortBool",
+>                             "args": []
+>                         },
+>                         "sort": {
+>                             "tag": "SortApp",
+>                             "name": "SortGeneratedTopCell",
+>                             "args": []
+>                         },
+>                         "first": {
+>                             "tag": "DV",
+>                             "sort": {
+>                                 "tag": "SortApp",
+>                                 "name": "SortBool",
+>                                 "args": []
+>                             },
+>                             "value": "true"
+>                         },
+>                         "second": {
+>                             "tag": "App",
+>                             "name": "Lbl'Unds'andBool'Unds'",
+>                             "sorts": [],
+>                             "args": [
+>                                 {
+>                                     "tag": "App",
+>                                     "name": "Lbl'Unds-LT-Eqls'Int'Unds'",
+>                                     "sorts": [],
+>                                     "args": [
+>                                         {
+>                                             "tag": "DV",
+>                                             "sort": {
+>                                                 "tag": "SortApp",
+>                                                 "name": "SortInt",
+>                                                 "args": []
+>                                             },
+>                                             "value": "0"
+>                                         },
+>                                         {
+>                                             "tag": "EVar",
+>                                             "name": "VarORIGIN'Unds'ID",
+>                                             "sort": {
+>                                                 "tag": "SortApp",
+>                                                 "name": "SortInt",
+>                                                 "args": []
+>                                             }
+>                                         }
+>                                     ]
+>                                 },
+>                                 {
+>                                     "tag": "App",
+>                                     "name": "Lbl'Unds-LT-'Int'Unds'",
+>                                     "sorts": [],
+>                                     "args": [
+>                                         {
+>                                             "tag": "EVar",
+>                                             "name": "VarORIGIN'Unds'ID",
+>                                             "sort": {
+>                                                 "tag": "SortApp",
+>                                                 "name": "SortInt",
+>                                                 "args": []
+>                                             }
+>                                         },
+>                                         {
+>                                             "tag": "DV",
+>                                             "sort": {
+>                                                 "tag": "SortApp",
+>                                                 "name": "SortInt",
+>                                                 "args": []
+>                                             },
+>                                             "value": "1461501637330902918203684832716283019655932542976"
+>                                         }
+>                                     ]
+>                                 }
+>                             ]
+>                         }
+>                     },
+>                     "second": {
+>                         "tag": "And",
+>                         "sort": {
+>                             "tag": "SortApp",
+>                             "name": "SortGeneratedTopCell",
+>                             "args": []
+>                         },
+>                         "first": {
+>                             "tag": "Equals",
+>                             "argSort": {
+>                                 "tag": "SortApp",
+>                                 "name": "SortBool",
+>                                 "args": []
+>                             },
+>                             "sort": {
+>                                 "tag": "SortApp",
+>                                 "name": "SortGeneratedTopCell",
+>                                 "args": []
+>                             },
+>                             "first": {
+>                                 "tag": "DV",
+>                                 "sort": {
+>                                     "tag": "SortApp",
+>                                     "name": "SortBool",
+>                                     "args": []
+>                                 },
+>                                 "value": "true"
+>                             },
+>                             "second": {
+>                                 "tag": "App",
+>                                 "name": "Lbl'Unds'andBool'Unds'",
+>                                 "sorts": [],
+>                                 "args": [
+>                                     {
+>                                         "tag": "App",
+>                                         "name": "Lbl'Unds-LT-Eqls'Int'Unds'",
+>                                         "sorts": [],
+>                                         "args": [
+>                                             {
+>                                                 "tag": "DV",
+>                                                 "sort": {
+>                                                     "tag": "SortApp",
+>                                                     "name": "SortInt",
+>                                                     "args": []
+>                                                 },
+>                                                 "value": "0"
+>                                             },
+>                                             {
+>                                                 "tag": "EVar",
+>                                                 "name": "VarNUMBER'Unds'CELL",
+>                                                 "sort": {
+>                                                     "tag": "SortApp",
+>                                                     "name": "SortInt",
+>                                                     "args": []
+>                                                 }
+>                                             }
+>                                         ]
+>                                     },
+>                                     {
+>                                         "tag": "App",
+>                                         "name": "Lbl'Unds-LT-Eqls'Int'Unds'",
+>                                         "sorts": [],
+>                                         "args": [
+>                                             {
+>                                                 "tag": "EVar",
+>                                                 "name": "VarNUMBER'Unds'CELL",
+>                                                 "sort": {
+>                                                     "tag": "SortApp",
+>                                                     "name": "SortInt",
+>                                                     "args": []
+>                                                 }
+>                                             },
+>                                             {
+>                                                 "tag": "DV",
+>                                                 "sort": {
+>                                                     "tag": "SortApp",
+>                                                     "name": "SortInt",
+>                                                     "args": []
+>                                                 },
+>                                                 "value": "57896044618658097711785492504343953926634992332820282019728792003956564819967"
+>                                             }
+>                                         ]
+>                                     }
+>                                 ]
+>                             }
+>                         },
+>                         "second": {
+>                             "tag": "And",
+>                             "sort": {
+>                                 "tag": "SortApp",
+>                                 "name": "SortGeneratedTopCell",
+>                                 "args": []
+>                             },
+>                             "first": {
+>                                 "tag": "Equals",
+>                                 "argSort": {
+>                                     "tag": "SortApp",
+>                                     "name": "SortBool",
+>                                     "args": []
+>                                 },
+>                                 "sort": {
+>                                     "tag": "SortApp",
+>                                     "name": "SortGeneratedTopCell",
+>                                     "args": []
+>                                 },
+>                                 "first": {
+>                                     "tag": "DV",
+>                                     "sort": {
+>                                         "tag": "SortApp",
+>                                         "name": "SortBool",
+>                                         "args": []
+>                                     },
+>                                     "value": "true"
+>                                 },
+>                                 "second": {
+>                                     "tag": "App",
+>                                     "name": "Lbl'Unds'andBool'Unds'",
+>                                     "sorts": [],
+>                                     "args": [
+>                                         {
+>                                             "tag": "App",
+>                                             "name": "Lbl'Unds-LT-Eqls'Int'Unds'",
+>                                             "sorts": [],
+>                                             "args": [
+>                                                 {
+>                                                     "tag": "DV",
+>                                                     "sort": {
+>                                                         "tag": "SortApp",
+>                                                         "name": "SortInt",
+>                                                         "args": []
+>                                                     },
+>                                                     "value": "0"
+>                                                 },
+>                                                 {
+>                                                     "tag": "DV",
+>                                                     "sort": {
+>                                                         "tag": "SortApp",
+>                                                         "name": "SortInt",
+>                                                         "args": []
+>                                                     },
+>                                                     "value": "9223372036854775807"
+>                                                 }
+>                                             ]
+>                                         },
+>                                         {
+>                                             "tag": "App",
+>                                             "name": "Lbl'Unds-LT-'Int'Unds'",
+>                                             "sorts": [],
+>                                             "args": [
+>                                                 {
+>                                                     "tag": "DV",
+>                                                     "sort": {
+>                                                         "tag": "SortApp",
+>                                                         "name": "SortInt",
+>                                                         "args": []
+>                                                     },
+>                                                     "value": "9223372036854775807"
+>                                                 },
+>                                                 {
+>                                                     "tag": "DV",
+>                                                     "sort": {
+>                                                         "tag": "SortApp",
+>                                                         "name": "SortInt",
+>                                                         "args": []
+>                                                     },
+>                                                     "value": "115792089237316195423570985008687907853269984665640564039457584007913129639936"
+>                                                 }
+>                                             ]
+>                                         }
+>                                     ]
+>                                 }
+>                             },
+>                             "second": {
+>                                 "tag": "And",
+>                                 "sort": {
+>                                     "tag": "SortApp",
+>                                     "name": "SortGeneratedTopCell",
+>                                     "args": []
+>                                 },
+>                                 "first": {
+>                                     "tag": "Equals",
+>                                     "argSort": {
+>                                         "tag": "SortApp",
+>                                         "name": "SortBool",
+>                                         "args": []
+>                                     },
+>                                     "sort": {
+>                                         "tag": "SortApp",
+>                                         "name": "SortGeneratedTopCell",
+>                                         "args": []
+>                                     },
+>                                     "first": {
+>                                         "tag": "DV",
+>                                         "sort": {
+>                                             "tag": "SortApp",
+>                                             "name": "SortBool",
+>                                             "args": []
+>                                         },
+>                                         "value": "true"
+>                                     },
+>                                     "second": {
+>                                         "tag": "App",
+>                                         "name": "Lbl'Unds-LT-'Int'Unds'",
+>                                         "sorts": [],
+>                                         "args": [
+>                                             {
+>                                                 "tag": "App",
+>                                                 "name": "LbllengthBytes'LParUndsRParUnds'BYTES-HOOKED'Unds'Int'Unds'Bytes",
+>                                                 "sorts": [],
+>                                                 "args": [
+>                                                     {
+>                                                         "tag": "App",
+>                                                         "name": "Lblmethod'Unds'AccountParamsTest",
+>                                                         "sorts": [],
+>                                                         "args": [
+>                                                             {
+>                                                                 "tag": "App",
+>                                                                 "name": "Lblcontract'Unds'AccountParamsTest",
+>                                                                 "sorts": [],
+>                                                                 "args": []
+>                                                             },
+>                                                             {
+>                                                                 "tag": "App",
+>                                                                 "name": "Lblmethod'Unds'AccountParamsTest'Unds'testDealConcrete'Unds'",
+>                                                                 "sorts": [],
+>                                                                 "args": []
+>                                                             }
+>                                                         ]
+>                                                     }
+>                                                 ]
+>                                             },
+>                                             {
+>                                                 "tag": "DV",
+>                                                 "sort": {
+>                                                     "tag": "SortApp",
+>                                                     "name": "SortInt",
+>                                                     "args": []
+>                                                 },
+>                                                 "value": "340282366920938463463374607431768211456"
+>                                             }
+>                                         ]
+>                                     }
+>                                 },
+>                                 "second": {
+>                                     "tag": "Equals",
+>                                     "argSort": {
+>                                         "tag": "SortApp",
+>                                         "name": "SortBool",
+>                                         "args": []
+>                                     },
+>                                     "sort": {
+>                                         "tag": "SortApp",
+>                                         "name": "SortGeneratedTopCell",
+>                                         "args": []
+>                                     },
+>                                     "first": {
+>                                         "tag": "DV",
+>                                         "sort": {
+>                                             "tag": "SortApp",
+>                                             "name": "SortBool",
+>                                             "args": []
+>                                         },
+>                                         "value": "true"
+>                                     },
+>                                     "second": {
+>                                         "tag": "App",
+>                                         "name": "Lbl'Unds'andBool'Unds'",
+>                                         "sorts": [],
+>                                         "args": [
+>                                             {
+>                                                 "tag": "App",
+>                                                 "name": "Lbl'Unds-LT-Eqls'Int'Unds'",
+>                                                 "sorts": [],
+>                                                 "args": [
+>                                                     {
+>                                                         "tag": "DV",
+>                                                         "sort": {
+>                                                             "tag": "SortApp",
+>                                                             "name": "SortInt",
+>                                                             "args": []
+>                                                         },
+>                                                         "value": "0"
+>                                                     },
+>                                                     {
+>                                                         "tag": "DV",
+>                                                         "sort": {
+>                                                             "tag": "SortApp",
+>                                                             "name": "SortInt",
+>                                                             "args": []
+>                                                         },
+>                                                         "value": "728815563385977040452943777879061427756277306518"
+>                                                     }
+>                                                 ]
+>                                             },
+>                                             {
+>                                                 "tag": "App",
+>                                                 "name": "Lbl'Unds-LT-'Int'Unds'",
+>                                                 "sorts": [],
+>                                                 "args": [
+>                                                     {
+>                                                         "tag": "DV",
+>                                                         "sort": {
+>                                                             "tag": "SortApp",
+>                                                             "name": "SortInt",
+>                                                             "args": []
+>                                                         },
+>                                                         "value": "728815563385977040452943777879061427756277306518"
+>                                                     },
+>                                                     {
+>                                                         "tag": "DV",
+>                                                         "sort": {
+>                                                             "tag": "SortApp",
+>                                                             "name": "SortInt",
+>                                                             "args": []
+>                                                         },
+>                                                         "value": "1461501637330902918203684832716283019655932542976"
+>                                                     }
+>                                                 ]
+>                                             }
+>                                         ]
+>                                     }
+>                                 }
+>                             }
+>                         }
+>                     }
+>                 }
+
