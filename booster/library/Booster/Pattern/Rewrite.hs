@@ -41,8 +41,6 @@ import Booster.Pattern.ApplyEquations (
     EquationFailure (..),
     EquationTrace,
     evaluatePattern,
-    isMatchFailure,
-    isSuccess,
     simplifyConstraint,
  )
 import Booster.Pattern.Base
@@ -228,11 +226,11 @@ applyRule pat rule = runMaybeT $ do
         MaybeT (RewriteT io (RewriteFailed k)) (Maybe a)
     checkConstraint onUnclear p = do
         RewriteConfig{definition, llvmApi, doTracing} <- lift $ RewriteT ask
-        simplified <- simplifyConstraint doTracing definition llvmApi p
+        (simplified, _traces) <- simplifyConstraint doTracing definition llvmApi p
         case simplified of
-            Right (Bottom, _) -> fail "Rule condition was False"
-            Right (Top, _) -> pure Nothing
-            Right (other, _) -> pure $ Just $ onUnclear other
+            Right Bottom -> fail "Rule condition was False"
+            Right Top -> pure Nothing
+            Right other -> pure $ Just $ onUnclear other
             Left _ -> pure $ Just $ onUnclear p
 
 {- | Reason why a rewrite did not produce a result. Contains additional
@@ -337,7 +335,7 @@ data RewriteTrace pat
     | -- | attempted rewrite failed
       RewriteStepFailed (RewriteFailed "Rewrite")
     | -- | Applied simplification to the pattern
-      RewriteSimplified (Either EquationFailure [EquationTrace])
+      RewriteSimplified [EquationTrace] (Maybe EquationFailure)
     deriving stock (Eq, Show)
     deriving (Functor, Foldable, Traversable)
 
@@ -440,36 +438,35 @@ performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pa
 
     simplifyP :: Pattern -> StateT (Natural, Seq (RewriteTrace Pattern)) io (Maybe Pattern)
     simplifyP p =
-        evaluatePattern doTracing def mLlvmLibrary p >>= \case
-            Right (newPattern, traces) -> do
-                logTraces $ filter (not . isMatchFailure) traces
-                rewriteTrace $ RewriteSimplified $ Right traces
-                pure $ Just newPattern
-            Left r@(SideConditionsFalse _ps traces) -> do
-                logSimplify "Side conditions were found to be false, pruning"
-                logTraces $ filter (not . isMatchFailure) traces
-                rewriteTrace $ RewriteSimplified $ Left r
-                pure Nothing
-            -- NB any errors here might be caused by simplifying one
-            -- of the constraints, so we cannot use partial results
-            -- and have to return the original on errors.
-            Left r@(TooManyIterations n _start _result) -> do
-                logWarn $ "Simplification unable to finish in " <> prettyText n <> " steps."
-                -- could output term before and after at debug or custom log level
-                rewriteTrace $ RewriteSimplified $ Left r
-                pure $ Just p
-            Left r@(EquationLoop traces (t : ts)) -> do
-                let termDiffs = zipWith (curry mkDiffTerms) (t : ts) ts
-                logError "Equation evaluation loop"
-                logTraces $ filter isSuccess traces
-                logSimplify $
-                    "produced the evaluation loop: " <> Text.unlines (map (prettyText . fst) termDiffs)
-                rewriteTrace $ RewriteSimplified $ Left r
-                pure $ Just p
-            Left other -> do
-                logError . pack $ "Simplification error during rewrite: " <> show other
-                rewriteTrace $ RewriteSimplified $ Left other
-                pure $ Just p
+        evaluatePattern doTracing def mLlvmLibrary p >>= \(res, traces) -> do
+            logTraces traces
+            case res of
+                Right newPattern -> do
+                    rewriteTrace $ RewriteSimplified traces Nothing
+                    pure $ Just newPattern
+                Left r@(SideConditionsFalse _ps) -> do
+                    logSimplify "Side conditions were found to be false, pruning"
+                    rewriteTrace $ RewriteSimplified traces (Just r)
+                    pure Nothing
+                -- NB any errors here might be caused by simplifying one
+                -- of the constraints, so we cannot use partial results
+                -- and have to return the original on errors.
+                Left r@(TooManyIterations n _start _result) -> do
+                    logWarn $ "Simplification unable to finish in " <> prettyText n <> " steps."
+                    -- could output term before and after at debug or custom log level
+                    rewriteTrace $ RewriteSimplified traces (Just r)
+                    pure $ Just p
+                Left r@(EquationLoop (t : ts)) -> do
+                    let termDiffs = zipWith (curry mkDiffTerms) (t : ts) ts
+                    logError "Equation evaluation loop"
+                    logSimplify $
+                        "produced the evaluation loop: " <> Text.unlines (map (prettyText . fst) termDiffs)
+                    rewriteTrace $ RewriteSimplified traces (Just r)
+                    pure $ Just p
+                Left other -> do
+                    logError . pack $ "Simplification error during rewrite: " <> show other
+                    rewriteTrace $ RewriteSimplified traces (Just other)
+                    pure $ Just p
 
     -- Results may change when simplification prunes a false side
     -- condition, otherwise this would mainly be fmap simplifyP

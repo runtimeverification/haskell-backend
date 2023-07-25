@@ -56,17 +56,18 @@ import Booster.Pattern.Util
 import Booster.Prettyprinter (renderDefault)
 
 newtype EquationT io a
-    = EquationT (StateT EquationState (ReaderT EquationConfig (ExceptT EquationFailure io)) a)
+    = EquationT (ReaderT EquationConfig (ExceptT EquationFailure (StateT EquationState io)) a)
+    -- ~ EquationConfig -> EquationState -> io (Either EquationFailure a, EquationState)
     deriving newtype (Functor, Applicative, Monad, MonadIO, MonadLogger, MonadLoggerIO)
 
 throw :: MonadLoggerIO io => EquationFailure -> EquationT io a
-throw = EquationT . lift . lift . throwE
+throw = EquationT . lift . throwE
 
 data EquationFailure
     = IndexIsNone Term
     | TooManyIterations Int Term Term
-    | EquationLoop [EquationTrace] [Term]
-    | SideConditionsFalse [Predicate] [EquationTrace]
+    | EquationLoop [Term]
+    | SideConditionsFalse [Predicate]
     | InternalError Text
     deriving stock (Eq, Show)
 
@@ -160,32 +161,32 @@ startState =
     EquationState{termStack = [], changed = False, predicates = mempty, trace = mempty}
 
 getState :: MonadLoggerIO io => EquationT io EquationState
-getState = EquationT get
+getState = EquationT (lift $ lift get)
 
 getConfig :: MonadLoggerIO io => EquationT io EquationConfig
-getConfig = EquationT (lift ask)
+getConfig = EquationT ask
 
 countSteps :: MonadLoggerIO io => EquationT io Int
 countSteps = length . (.termStack) <$> getState
 
 pushTerm :: MonadLoggerIO io => Term -> EquationT io ()
-pushTerm t = EquationT . modify $ \s -> s{termStack = t : s.termStack}
+pushTerm t = EquationT . lift . lift . modify $ \s -> s{termStack = t : s.termStack}
 
 pushConstraints :: MonadLoggerIO io => [Predicate] -> EquationT io ()
-pushConstraints ps = EquationT . modify $ \s -> s{predicates = s.predicates <> Set.fromList ps}
+pushConstraints ps = EquationT . lift . lift . modify $ \s -> s{predicates = s.predicates <> Set.fromList ps}
 
 setChanged, resetChanged :: MonadLoggerIO io => EquationT io ()
-setChanged = EquationT . modify $ \s -> s{changed = True}
-resetChanged = EquationT . modify $ \s -> s{changed = False}
+setChanged = EquationT . lift . lift . modify $ \s -> s{changed = True}
+resetChanged = EquationT . lift . lift . modify $ \s -> s{changed = False}
 
 getChanged :: MonadLoggerIO io => EquationT io Bool
-getChanged = EquationT $ gets (.changed)
+getChanged = EquationT $ lift $ lift $ gets (.changed)
 
 checkForLoop :: MonadLoggerIO io => Term -> EquationT io ()
 checkForLoop t = do
-    EquationState{termStack, trace} <- getState
+    EquationState{termStack} <- getState
     whenJust (elemIndex t termStack) $ \i -> do
-        throw (EquationLoop (toList trace) . reverse $ t : take (i + 1) termStack)
+        throw (EquationLoop $ reverse $ t : take (i + 1) termStack)
 
 data Direction = TopDown | BottomUp
     deriving stock (Eq, Show)
@@ -199,14 +200,13 @@ runEquationT ::
     KoreDefinition ->
     Maybe LLVM.API ->
     EquationT io a ->
-    io (Either EquationFailure (a, [EquationTrace]))
+    io (Either EquationFailure a, [EquationTrace])
 runEquationT doTracing definition llvmApi (EquationT m) = do
-    endState <-
-        runExceptT
-            . flip runReaderT EquationConfig{definition, llvmApi, doTracing}
-            . runStateT m
-            $ startState
-    pure (fmap (toList . trace) <$> endState)
+    (res, endState) <-
+        flip runStateT startState $
+            runExceptT $
+                runReaderT m EquationConfig{definition, llvmApi, doTracing}
+    pure (res, toList $ trace endState)
 
 iterateEquations ::
     MonadLoggerIO io =>
@@ -245,7 +245,7 @@ evaluateTerm ::
     KoreDefinition ->
     Maybe LLVM.API ->
     Term ->
-    io (Either EquationFailure (Term, [EquationTrace]))
+    io (Either EquationFailure Term, [EquationTrace])
 evaluateTerm doTracing direction def llvmApi =
     runEquationT doTracing def llvmApi
         . evaluateTerm' direction
@@ -267,7 +267,7 @@ evaluatePattern ::
     KoreDefinition ->
     Maybe LLVM.API ->
     Pattern ->
-    io (Either EquationFailure (Pattern, [EquationTrace]))
+    io (Either EquationFailure Pattern, [EquationTrace])
 evaluatePattern doTracing def mLlvmLibrary =
     runEquationT doTracing def mLlvmLibrary . evaluatePattern'
 
@@ -290,7 +290,7 @@ evaluatePattern' Pattern{term, constraints} = do
     simplifyAssumedPredicate p = do
         allPs <- predicates <$> getState
         let otherPs = Set.delete p allPs
-        EquationT $ modify $ \s -> s{predicates = otherPs}
+        EquationT $ lift $ lift $ modify $ \s -> s{predicates = otherPs}
         newP <- simplifyConstraint' p
         pushConstraints [newP]
 
@@ -418,7 +418,7 @@ handleFunctionEquation success continue abort = \case
     IndeterminateMatch -> abort
     IndeterminateCondition -> abort
     ConditionFalse -> continue
-    EnsuresFalse ps -> getState >>= throw . SideConditionsFalse ps . toList . trace
+    EnsuresFalse ps -> throw $ SideConditionsFalse ps
     RuleNotPreservingDefinedness -> abort
     MatchConstraintViolated{} -> continue
 
@@ -429,7 +429,7 @@ handleSimplificationEquation success continue _abort = \case
     IndeterminateMatch -> continue
     IndeterminateCondition -> continue
     ConditionFalse -> continue
-    EnsuresFalse ps -> getState >>= throw . SideConditionsFalse ps . toList . trace
+    EnsuresFalse ps -> throw $ SideConditionsFalse ps
     RuleNotPreservingDefinedness -> continue
     MatchConstraintViolated{} -> continue
 
@@ -488,7 +488,7 @@ traceRuleApplication t loc lbl uid res = do
     logOther (LevelOther "Simplify") (pack . renderDefault . pretty $ newTraceItem)
     config <- getConfig
     when (config.doTracing) $
-        EquationT . modify $
+        EquationT . lift . lift . modify $
             \s -> s{trace = s.trace :|> newTraceItem}
 
 applyEquation ::
@@ -628,7 +628,7 @@ simplifyConstraint ::
     KoreDefinition ->
     Maybe LLVM.API ->
     Predicate ->
-    io (Either EquationFailure (Predicate, [EquationTrace]))
+    io (Either EquationFailure Predicate, [EquationTrace])
 simplifyConstraint doTracing def mbApi p =
     runEquationT doTracing def mbApi $ simplifyConstraint' p
 
@@ -666,5 +666,5 @@ simplifyConstraint' = \case
     evalBool t = do
         prior <- getState -- save prior state so we can revert
         result <- iterateEquations 100 TopDown PreferFunctions t
-        EquationT $ put prior
+        EquationT $ lift $ lift $ put prior
         pure result
