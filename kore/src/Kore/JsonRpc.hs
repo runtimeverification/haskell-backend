@@ -477,7 +477,7 @@ respond serverState moduleName runSMT =
                                             PatternJson.fromSubstitution sort $
                                                 Substitution.mapVariables getRewritingVariable subst
                                         }
-
+        SimplifyImplies _ -> pure . Left $ Kore.JsonRpc.Error.notImplemented
         -- this case is only reachable if the cancel appeared as part of a batch request
         Cancel -> pure $ Left cancelUnsupportedInBatchMode
   where
