@@ -144,7 +144,7 @@ respond stateVar =
                 Right (TermAndPredicate pat) -> do
                     Log.logInfoNS "booster" "Simplifying a pattern"
                     ApplyEquations.evaluatePattern doTracing def mLlvmLibrary pat >>= \case
-                        Right (newPattern, patternTraces) -> do
+                        (Right newPattern, patternTraces) -> do
                             let (t, p) = externalisePattern newPattern
                                 tSort = externaliseSort (sortOfPattern newPattern)
                                 result = maybe t (KoreJson.KJAnd tSort t) p
@@ -153,22 +153,22 @@ respond stateVar =
                                     { state = addHeader result
                                     , logs = mkTraces patternTraces
                                     }
-                        Left (ApplyEquations.SideConditionsFalse _ traces) -> do
+                        (Left ApplyEquations.SideConditionsFalse{}, patternTraces) -> do
                             let tSort = fromMaybe (error "unknown sort") $ sortOfJson req.state.term
                             pure . Right . Simplify $
                                 SimplifyResult
                                     { state = addHeader $ KoreJson.KJBottom tSort
-                                    , logs = mkTraces traces
+                                    , logs = mkTraces patternTraces
                                     }
-                        Left (ApplyEquations.EquationLoop _traces terms) ->
+                        (Left (ApplyEquations.EquationLoop terms), _traces) ->
                             pure . Left . backendError RpcError.Aborted $ map externaliseTerm terms -- FIXME
-                        Left other ->
+                        (Left other, _traces) ->
                             pure . Left . backendError RpcError.Aborted $ show other -- FIXME
                             -- predicate only
                 Right (APredicate predicate) -> do
                     Log.logInfoNS "booster" "Simplifying a predicate"
                     ApplyEquations.simplifyConstraint doTracing def mLlvmLibrary predicate >>= \case
-                        Right (newPred, traces) -> do
+                        (Right newPred, traces) -> do
                             let predicateSort =
                                     fromMaybe (error "not a predicate") $
                                         sortOfJson req.state.term
@@ -178,7 +178,7 @@ respond stateVar =
                                     { state = addHeader result
                                     , logs = mkTraces traces
                                     }
-                        Left something ->
+                        (Left something, _traces) ->
                             pure . Left . backendError RpcError.Aborted $ show something -- FIXME
 
         -- this case is only reachable if the cancel appeared as part of a batch request
@@ -481,13 +481,12 @@ mkLogRewriteTrace
                                             }
                                 , origin = Booster
                                 }
-            RewriteSimplified (Right equationTraces)
+            RewriteSimplified equationTraces Nothing
                 | fromMaybe False logSuccessfulSimplifications || fromMaybe False logFailedSimplifications ->
                     mapM (mkLogEquationTrace equationLogOpts) equationTraces
-            RewriteSimplified (Left failure)
-                | fromMaybe False logFailedSimplifications -> Just $
-                    singleton $
-                        case failure of
+            RewriteSimplified equationTraces (Just failure)
+                | fromMaybe False logFailedSimplifications -> do
+                    let final = singleton $ case failure of
                             ApplyEquations.IndexIsNone trm ->
                                 Simplification
                                     { originalTerm = Just $ execStateToKoreJson $ toExecState $ Pattern trm []
@@ -502,7 +501,7 @@ mkLogRewriteTrace
                                     , origin = Booster
                                     , result = Failure{reason = "Reached iteration depth limit " <> pack (show i), _ruleId = Nothing}
                                     }
-                            ApplyEquations.EquationLoop _ _ ->
+                            ApplyEquations.EquationLoop _ ->
                                 Simplification
                                     { originalTerm = Nothing
                                     , originalTermIndex = Nothing
@@ -516,11 +515,12 @@ mkLogRewriteTrace
                                     , origin = Booster
                                     , result = Failure{reason = "Internal error: " <> err, _ruleId = Nothing}
                                     }
-                            ApplyEquations.SideConditionsFalse _predicates _traces ->
+                            ApplyEquations.SideConditionsFalse _predicates ->
                                 Simplification
                                     { originalTerm = Nothing
                                     , originalTermIndex = Nothing
                                     , origin = Booster
                                     , result = Failure{reason = "Side conditions false", _ruleId = Nothing}
                                     }
+                    (<> final) <$> mapM (mkLogEquationTrace equationLogOpts) equationTraces
             _ -> Nothing
