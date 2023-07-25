@@ -148,15 +148,16 @@ data Condition = Condition
         (FromJSON, ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] Condition
 
-data SimplifyImpliesResult = SimplifyImpliesResult
-    { satisfiable :: SatResult
-    , substitution :: Maybe KoreJson
+data ImpliesResult = ImpliesResult
+    { implication :: KoreJson
+    , satisfiable :: Bool
+    , condition :: Maybe Condition
     , logs :: Maybe [LogEntry]
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] SimplifyImpliesResult
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ImpliesResult
 
 data SimplifyResult = SimplifyResult
     { state :: KoreJson
@@ -176,16 +177,15 @@ data GetModelResult = GetModelResult
         (FromJSON, ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] GetModelResult
 
-data ImpliesResult = ImpliesResult
-    { implication :: KoreJson
-    , satisfiable :: Bool
-    , condition :: Maybe Condition
+data SimplifyImpliesResult = SimplifyImpliesResult
+    { satisfiable :: SatResult
+    , substitution :: Maybe KoreJson
     , logs :: Maybe [LogEntry]
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ImpliesResult
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] SimplifyImpliesResult
 
 data SatResult
     = Sat
