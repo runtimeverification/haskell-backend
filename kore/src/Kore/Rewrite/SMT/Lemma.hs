@@ -84,8 +84,11 @@ declareSMTLemmas ::
 declareSMTLemmas tools lemmas = do
     declareSortsSymbols $ smtData tools
     mapM_ declareRule lemmas
-    isUnsatisfiable <- fmap (Unsat ==) <$> SMT.check
-    when (fromMaybe False isUnsatisfiable) errorInconsistentDefinitions
+    SMT.check >>= \case
+        Nothing -> pure ()
+        Just Sat -> pure()
+        Just Unsat -> errorInconsistentDefinitions
+        Just Unknown -> errorPossiblyInconsistentDefinitions
   where
     declareRule ::
         SentenceAxiom (TermLike VariableName) ->
@@ -173,6 +176,8 @@ declareSMTLemmas tools lemmas = do
 
     ~errorInconsistentDefinitions =
         error "The definitions sent to the solver are inconsistent."
+    ~errorPossiblyInconsistentDefinitions =
+        error "The definitions sent to the solver may not be consistent (Z3 timed out)."
 
 translateUninterpreted ::
     ( Ord variable
