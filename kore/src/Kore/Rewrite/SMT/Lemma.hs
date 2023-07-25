@@ -86,7 +86,7 @@ declareSMTLemmas tools lemmas = do
     mapM_ declareRule lemmas
     SMT.check >>= \case
         Nothing -> pure ()
-        Just Sat -> pure()
+        Just Sat -> pure ()
         Just Unsat -> errorInconsistentDefinitions
         Just Unknown -> errorPossiblyInconsistentDefinitions
   where
