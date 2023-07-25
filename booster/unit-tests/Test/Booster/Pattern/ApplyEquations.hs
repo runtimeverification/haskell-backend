@@ -87,7 +87,7 @@ test_evaluateFunction =
             eval BottomUp subj @?= Right result
         ]
   where
-    eval direction = fmap fst . unsafePerformIO . runNoLoggingT . evaluateTerm False direction funDef Nothing
+    eval direction = unsafePerformIO . runNoLoggingT . (fst <$>) . evaluateTerm False direction funDef Nothing
 
     isTooManyIterations (Left (TooManyIterations _n _ _)) = pure ()
     isTooManyIterations (Left err) = assertFailure $ "Unexpected error " <> show err
@@ -114,7 +114,7 @@ test_simplify =
             simpl BottomUp subj @?= Right result
         ]
   where
-    simpl direction = fmap fst . unsafePerformIO . runNoLoggingT . evaluateTerm False direction simplDef Nothing
+    simpl direction = unsafePerformIO . runNoLoggingT . (fst <$>) . evaluateTerm False direction simplDef Nothing
     a = var "A" someSort
 
 test_simplifyPattern :: TestTree
@@ -143,7 +143,7 @@ test_simplifyPattern =
             simpl subj @?= Right result
         ]
   where
-    simpl = fmap fst . unsafePerformIO . runNoLoggingT . evaluatePattern False simplDef Nothing
+    simpl = unsafePerformIO . runNoLoggingT . (fst <$>) . evaluatePattern False simplDef Nothing
     a = var "A" someSort
 
 test_errors :: TestTree
@@ -156,10 +156,11 @@ test_errors =
                 subj = f $ app con1 [a]
                 loopTerms =
                     [f $ app con1 [a], f $ app con2 [a], f $ app con3 [a, a], f $ app con1 [a]]
-            isLoop loopTerms . unsafePerformIO . runNoLoggingT $ evaluateTerm False TopDown loopDef Nothing subj
+            isLoop loopTerms . unsafePerformIO . runNoLoggingT $
+                fst <$> evaluateTerm False TopDown loopDef Nothing subj
         ]
   where
-    isLoop ts (Left (EquationLoop _ ts')) = ts @?= ts'
+    isLoop ts (Left (EquationLoop ts')) = ts @?= ts'
     isLoop _ (Left err) = assertFailure $ "Unexpected error " <> show err
     isLoop _ (Right r) = assertFailure $ "Unexpected result " <> show r
 
