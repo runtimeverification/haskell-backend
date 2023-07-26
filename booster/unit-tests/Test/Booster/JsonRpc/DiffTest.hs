@@ -77,7 +77,7 @@ test_jsonDiff = do
     compareTest f1 f2 = do
         let expectedName =
                 testDataDir </> "expected" </> takeFileName f1 <> "@" <> takeFileName f2
-            renderedDiff = renderResult f1 f2 <$> diffJson f1 f2
+            renderedDiff = fmap (renderResult f1 f2) $ diffJson <$> BS.readFile f1 <*> BS.readFile f2
             testName =
                 takeFileName f1 <> " vs " <> takeFileName f2
         testGoldenVsString testName expectedName renderedDiff
