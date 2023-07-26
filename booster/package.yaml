@@ -125,16 +125,20 @@ executables:
       - aeson-pretty
       - base
       - bytestring
+      - bz2
       - clock
       - directory
       - extra
+      - filepath
       - hs-backend-booster
       - network
       - network-run
       - optparse-applicative
       - process
+      - tar
       - text
       - vector
+      - zlib
     ghc-options:
       - -rtsopts
   parsetest:
