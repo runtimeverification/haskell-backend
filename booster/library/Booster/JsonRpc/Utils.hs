@@ -28,15 +28,10 @@ import Network.JSONRPC
 import Kore.JsonRpc.Types
 import Kore.Syntax.Json.Types hiding (Left, Right)
 
-diffJson :: FilePath -> FilePath -> IO DiffResult
-diffJson korefile1 korefile2 = do
-    contents1 <-
-        decodeKoreRpc <$> BS.readFile korefile1
-    contents2 <-
-        decodeKoreRpc <$> BS.readFile korefile2
-
-    pure $ case (contents1, contents2) of
-        (_, _)
+diffJson :: BS.ByteString -> BS.ByteString -> DiffResult
+diffJson file1 file2 =
+    case (decodeKoreRpc file1, decodeKoreRpc file2) of
+        (contents1, contents2)
             | contents1 == contents2 ->
                 Identical $ rpcTypeOf contents1
         (NotRpcJson lines1, NotRpcJson lines2) -> do
@@ -96,22 +91,25 @@ decodeKoreRpc input =
         req <- Json.decode @Request input
         parser <- parseParams req.getReqMethod
         parseMaybe parser req.getReqParams
-    rpcResponse = fmap RpcResponse $ do
+    rpcResponse = do
         resp <- Json.decode @Response input
-        foldl1
-            (<|>)
-            [ Execute <$> parseMaybe (Json.parseJSON @ExecuteResult) resp.getResult
-            , Implies <$> parseMaybe (Json.parseJSON @ImpliesResult) resp.getResult
-            , Simplify <$> parseMaybe (Json.parseJSON @SimplifyResult) resp.getResult
-            , AddModule <$> parseMaybe (Json.parseJSON @()) resp.getResult
-            , GetModel <$> parseMaybe (Json.parseJSON @GetModelResult) resp.getResult
-            ]
+        case resp of
+            ResponseError{} -> extractError resp.getError
+            OrphanError{} -> extractError resp.getError
+            Response{} ->
+                fmap RpcResponse . try $
+                    [ Execute <$> parseMaybe (Json.parseJSON @ExecuteResult) resp.getResult
+                    , Implies <$> parseMaybe (Json.parseJSON @ImpliesResult) resp.getResult
+                    , Simplify <$> parseMaybe (Json.parseJSON @SimplifyResult) resp.getResult
+                    , AddModule <$> parseMaybe (Json.parseJSON @()) resp.getResult
+                    , GetModel <$> parseMaybe (Json.parseJSON @GetModelResult) resp.getResult
+                    ]
     rpcError =
-        Json.decode @ErrorObj input
-            >>= \case
-                ErrorObj msg code mbData ->
-                    pure $ RpcError msg code mbData
-                ErrorVal{} -> fail "arbitrary json can be an ErrorVal"
+        Json.decode @ErrorObj input >>= extractError
+    extractError = \case
+        ErrorObj msg code mbData ->
+            pure $ RpcError msg code mbData
+        ErrorVal{} -> fail "arbitrary json can be an ErrorVal"
     koreJson =
         RpcKoreJson <$> Json.decode @KoreJson input
     unknown =

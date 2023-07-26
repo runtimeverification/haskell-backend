@@ -31,9 +31,11 @@ main = do
         _
             | "--help" `elem` args ->
                 putStrLn usage
-        [x, y] -> do
-            result <- diffJson x y
-            BS.putStrLn $ renderResult x y result
+        [file1, file2] -> do
+            x <- BS.readFile file1
+            y <- BS.readFile file2
+            let result = diffJson x y
+            BS.putStrLn $ renderResult file1 file2 result
             exitWith $ if isIdentical result then ExitSuccess else ExitFailure 1
         _other -> do
             putStrLn $ "ERROR: program requires exactly two arguments.\n\n" <> usage
