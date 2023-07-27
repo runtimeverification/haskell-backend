@@ -93,10 +93,7 @@ declareSMTLemmas tools lemmas = do
         Just Sat -> pure ()
         Just Unsat -> errorInconsistentDefinitions
         Just Unknown -> do
-            SMT.localTimeOut doubleTimeOut $ do
-                SMT.reinit
-                declareSortsSymbols $ smtData tools
-                mapM_ declareRule lemmas
+            SMT.localTimeOut doubleTimeOut $
                 SMT.check >>= \case
                     Nothing -> pure ()
                     Just Sat -> pure ()
