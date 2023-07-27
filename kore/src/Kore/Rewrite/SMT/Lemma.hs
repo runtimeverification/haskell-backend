@@ -57,7 +57,6 @@ import SMT (
     assert,
     check,
     localTimeOut,
-    reinit,
  )
 
 getSMTLemmas ::
@@ -93,16 +92,16 @@ declareSMTLemmas tools lemmas = do
         Just Sat -> pure ()
         Just Unsat -> errorInconsistentDefinitions
         Just Unknown -> do
-            SMT.localTimeOut doubleTimeOut $
+            SMT.localTimeOut quadrupleTimeOut $
                 SMT.check >>= \case
                     Nothing -> pure ()
                     Just Sat -> pure ()
                     Just Unsat -> errorInconsistentDefinitions
                     Just Unknown -> errorPossiblyInconsistentDefinitions
   where
-    doubleTimeOut :: SMT.TimeOut -> SMT.TimeOut
-    doubleTimeOut (SMT.TimeOut Unlimited) = SMT.TimeOut Unlimited
-    doubleTimeOut (SMT.TimeOut (Limit r)) = SMT.TimeOut (Limit (2 * r))
+    quadrupleTimeOut :: SMT.TimeOut -> SMT.TimeOut
+    quadrupleTimeOut (SMT.TimeOut Unlimited) = SMT.TimeOut Unlimited
+    quadrupleTimeOut (SMT.TimeOut (Limit r)) = SMT.TimeOut (Limit (4 * r))
 
     declareRule ::
         SentenceAxiom (TermLike VariableName) ->
