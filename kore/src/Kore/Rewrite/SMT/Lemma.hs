@@ -24,6 +24,7 @@ import Control.Monad.Except
 import Control.Monad.State qualified as State
 import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Product.Fields
+import Data.Limit (Limit (..))
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
 import Kore.Attribute.Axiom qualified as Attribute
@@ -52,8 +53,11 @@ import SMT (
     MonadSMT (..),
     Result (..),
     SExpr (..),
+    TimeOut (..),
     assert,
     check,
+    localTimeOut,
+    reinit,
  )
 
 getSMTLemmas ::
@@ -88,8 +92,21 @@ declareSMTLemmas tools lemmas = do
         Nothing -> pure ()
         Just Sat -> pure ()
         Just Unsat -> errorInconsistentDefinitions
-        Just Unknown -> errorPossiblyInconsistentDefinitions
+        Just Unknown -> do
+            SMT.localTimeOut doubleTimeOut $ do
+                SMT.reinit
+                declareSortsSymbols $ smtData tools
+                mapM_ declareRule lemmas
+                SMT.check >>= \case
+                    Nothing -> pure ()
+                    Just Sat -> pure ()
+                    Just Unsat -> errorInconsistentDefinitions
+                    Just Unknown -> errorPossiblyInconsistentDefinitions
   where
+    doubleTimeOut :: SMT.TimeOut -> SMT.TimeOut
+    doubleTimeOut (SMT.TimeOut Unlimited) = SMT.TimeOut Unlimited
+    doubleTimeOut (SMT.TimeOut (Limit r)) = SMT.TimeOut (Limit (2 * r))
+
     declareRule ::
         SentenceAxiom (TermLike VariableName) ->
         m (Maybe ())
