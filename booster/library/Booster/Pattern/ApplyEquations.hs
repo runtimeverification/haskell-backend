@@ -115,13 +115,14 @@ instance Pretty EquationTrace where
                 , locationInfo
                 , "does not preserve definedness"
                 ]
-        IndeterminateCondition ->
-            vsep
+        IndeterminateCondition cs ->
+            vsep $
                 [ "Simplifying term"
                 , prettyTerm
-                , "failed with indeterminate condition"
-                , "using " <> locationInfo
+                , "failed with indeterminate condition(s):"
                 ]
+                    ++ map pretty cs
+                    ++ ["using " <> locationInfo]
         ConditionFalse ->
             vsep
                 [ "Simplifying term"
@@ -394,7 +395,7 @@ data ApplyEquationResult
     = Success Term
     | FailedMatch MatchFailReason
     | IndeterminateMatch
-    | IndeterminateCondition
+    | IndeterminateCondition [Predicate]
     | ConditionFalse
     | EnsuresFalse [Predicate]
     | RuleNotPreservingDefinedness
@@ -416,7 +417,7 @@ handleFunctionEquation success continue abort = \case
     Success rewritten -> success rewritten
     FailedMatch _ -> continue
     IndeterminateMatch -> abort
-    IndeterminateCondition -> abort
+    IndeterminateCondition{} -> abort
     ConditionFalse -> continue
     EnsuresFalse ps -> throw $ SideConditionsFalse ps
     RuleNotPreservingDefinedness -> abort
@@ -427,7 +428,7 @@ handleSimplificationEquation success continue _abort = \case
     Success rewritten -> success rewritten
     FailedMatch _ -> continue
     IndeterminateMatch -> continue
-    IndeterminateCondition -> continue
+    IndeterminateCondition{} -> continue
     ConditionFalse -> continue
     EnsuresFalse ps -> throw $ SideConditionsFalse ps
     RuleNotPreservingDefinedness -> continue
@@ -530,7 +531,7 @@ applyEquation term rule = fmap (either id Success) $ runExceptT $ do
                 Nothing -> throwE ConditionFalse
                 Just unclearConditions ->
                     if not $ null unclearConditions
-                        then throwE IndeterminateCondition
+                        then throwE $ IndeterminateCondition unclearConditions
                         else do
                             -- check ensured conditions, filter any
                             -- true ones, prune if any is false
