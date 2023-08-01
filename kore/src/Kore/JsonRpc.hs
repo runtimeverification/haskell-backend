@@ -204,7 +204,7 @@ respond serverState moduleName runSMT =
                                     ExecuteResult
                                         { state = patternToExecState sort result
                                         , depth = Depth depth
-                                        , reason = Stuck
+                                        , reason = if Just (Depth depth) == maxDepth then DepthBound else Stuck
                                         , rule = Nothing
                                         , nextStates = Nothing
                                         , logs = mkLogs rules
