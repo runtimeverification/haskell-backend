@@ -179,7 +179,12 @@ respondEither mbStatsVar booster kore req = case req of
                                 -- if we made one step, add the number of
                                 -- steps we have taken to the counter and
                                 -- attempt with booster again
-                                Log.logInfoNS "proxy" "kore depth-bound, continuing"
+                                when (koreResult.depth == 0) $ error "Expected kore-rpc to take at least one step"
+                                Log.logInfoNS "proxy" $
+                                    Text.pack $
+                                        "kore depth-bound, continuing... (currently at "
+                                            <> show (currentDepth + boosterResult.depth + koreResult.depth)
+                                            <> ")"
                                 loop
                                     ( currentDepth + boosterResult.depth + koreResult.depth
                                     , time + bTime + kTime

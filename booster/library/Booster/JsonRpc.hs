@@ -375,7 +375,7 @@ mkLogEquationTrace
                             , origin
                             , result = Failure{reason = "Indeterminate match", _ruleId}
                             }
-            ApplyEquations.IndeterminateCondition
+            ApplyEquations.IndeterminateCondition _failedConditions
                 | fromMaybe False logFailedSimplifications ->
                     Just $
                         Simplification
