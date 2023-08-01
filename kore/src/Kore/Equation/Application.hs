@@ -22,7 +22,9 @@ import Control.Error (
 import Control.Monad (
     (>=>),
  )
+import Control.Monad.Reader (asks)
 import Control.Monad.State (modify)
+import Data.Bifunctor
 import Data.Map.Strict (
     Map,
  )
@@ -257,10 +259,12 @@ applyEquation ::
     Simplifier (OrPattern RewritingVariableName)
 applyEquation _ term equation result = do
     let results = OrPattern.fromPattern result
-    let simplify = return
     debugApplyEquation equation result
-    modify $ \(cache, equations) -> (cache, equations |> SimplifierTrace term (Attribute.uniqueId (attributes equation)) result)
-    simplify results
+    doTracing <- liftSimplifier $ asks Simplifier.tracingEnabled
+    when doTracing $
+        modify $
+            second (|> SimplifierTrace term (Attribute.uniqueId $ attributes equation) result)
+    pure results
 
 {- | Use a 'MatchResult' to instantiate an 'Equation'.
 

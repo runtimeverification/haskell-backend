@@ -24,6 +24,7 @@ import Control.Monad.Except
 import Control.Monad.State qualified as State
 import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Product.Fields
+import Data.Limit (Limit (..))
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as Text
 import Kore.Attribute.Axiom qualified as Attribute
@@ -52,8 +53,10 @@ import SMT (
     MonadSMT (..),
     Result (..),
     SExpr (..),
+    TimeOut (..),
     assert,
     check,
+    localTimeOut,
  )
 
 getSMTLemmas ::
@@ -84,9 +87,22 @@ declareSMTLemmas ::
 declareSMTLemmas tools lemmas = do
     declareSortsSymbols $ smtData tools
     mapM_ declareRule lemmas
-    isUnsatisfiable <- fmap (Unsat ==) <$> SMT.check
-    when (fromMaybe False isUnsatisfiable) errorInconsistentDefinitions
+    SMT.check >>= \case
+        Nothing -> pure ()
+        Just Sat -> pure ()
+        Just Unsat -> errorInconsistentDefinitions
+        Just Unknown -> do
+            SMT.localTimeOut quadrupleTimeOut $
+                SMT.check >>= \case
+                    Nothing -> pure ()
+                    Just Sat -> pure ()
+                    Just Unsat -> errorInconsistentDefinitions
+                    Just Unknown -> errorPossiblyInconsistentDefinitions
   where
+    quadrupleTimeOut :: SMT.TimeOut -> SMT.TimeOut
+    quadrupleTimeOut (SMT.TimeOut Unlimited) = SMT.TimeOut Unlimited
+    quadrupleTimeOut (SMT.TimeOut (Limit r)) = SMT.TimeOut (Limit (4 * r))
+
     declareRule ::
         SentenceAxiom (TermLike VariableName) ->
         m (Maybe ())
@@ -173,6 +189,8 @@ declareSMTLemmas tools lemmas = do
 
     ~errorInconsistentDefinitions =
         error "The definitions sent to the solver are inconsistent."
+    ~errorPossiblyInconsistentDefinitions =
+        error "The definitions sent to the solver may not be consistent (Z3 timed out)."
 
 translateUninterpreted ::
     ( Ord variable

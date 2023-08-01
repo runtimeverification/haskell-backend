@@ -2305,8 +2305,6 @@ overloadGraph = OverloadGraph.fromOverloads overloads
 overloadSimplifier :: OverloadSimplifier
 overloadSimplifier = mkOverloadSimplifier overloadGraph Test.Kore.Rewrite.MockSymbols.injSimplifier
 
--- TODO(Ana): if needed, create copy with experimental simplifier
--- enabled
 env :: Env
 env =
     Env
@@ -2319,6 +2317,7 @@ env =
         , injSimplifier = Test.Kore.Rewrite.MockSymbols.injSimplifier
         , overloadSimplifier = Test.Kore.Rewrite.MockSymbols.overloadSimplifier
         , hookedSymbols = Map.empty
+        , tracingEnabled = False
         }
 
 generatorSetup :: ConsistentKore.Setup
