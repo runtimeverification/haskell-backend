@@ -112,6 +112,7 @@ executables:
     - hs-backend-booster
     - optparse-applicative
     - text
+    - directory
     ghc-options:
     - -rtsopts
     - -eventlog
