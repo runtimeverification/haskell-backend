@@ -19,6 +19,7 @@ data CLOptions = CLOptions
     , port :: Int
     , logLevels :: [LogLevel]
     , eventlogEnabledUserEvents :: [CustomUserEventType]
+    , hijackEventlogFile :: Maybe FilePath
     }
     deriving (Show)
 
@@ -74,6 +75,14 @@ clOptionsParser =
                                 ", "
                                 [toKebab $ fromHumps $ show t | t <- [minBound .. maxBound] :: [CustomUserEventType]]
                         )
+                )
+            )
+        <*> optional
+            ( strOption
+                ( metavar "HIJACK_EVENTLOG_FILE"
+                    <> long "hijack-eventlog-file"
+                    <> help
+                        "Hijack LlvmCall tracing events and write them to a file to overcome GHC RTS' restriction on event size (2^16 bytes). Avoid at all costs."
                 )
             )
   where
