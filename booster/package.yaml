@@ -131,6 +131,7 @@ executables:
       - extra
       - filepath
       - hs-backend-booster
+      - monad-logger
       - network
       - network-run
       - optparse-applicative

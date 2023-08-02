@@ -1,4 +1,4 @@
-{ stdenv, coreutils, lib, kore-rpc-booster, rpc-client, git, k }:
+{ stdenv, coreutils, lib, kore-rpc-booster, rpc-client, git, k, blockchain-k-plugin, openssl, procps }:
 
 let
   mkIntegrationTest =
@@ -16,7 +16,8 @@ let
           export ${f}
         '') buildFlags}
         export SERVER=${kore-rpc-booster}/bin/kore-rpc-booster
-        export CLIENT=${rpc-client}/bin/rpc-client
+        export CLIENT="${rpc-client}/bin/rpc-client"
+        export PLUGIN_DIR=${blockchain-k-plugin}
 
         patchShebangs runDirectoryTest.sh
         ./runDirectoryTest.sh test-${name} --time ${
@@ -46,4 +47,5 @@ in {
   simplify = mkIntegrationTest { name = "simplify"; };
   get-model = mkIntegrationTest { name = "get-model"; };
   issue212 = mkIntegrationTest { name = "issue212"; };
+  foundry-bug-report.tar.gz = mkIntegrationTest { name = "foundry-bug-report.tar.gz"; nativeBuildInputs = [ k openssl procps ]; };
 }
