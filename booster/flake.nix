@@ -8,6 +8,10 @@
     haskell-nix.follows = "haskell-backend/haskell-nix";
     nixpkgs.follows = "haskell-backend/haskell-nix/nixpkgs-unstable";
 
+    blockchain-k-plugin.url = "github:runtimeverification/blockchain-k-plugin/da834be67f6c0aff11140ddfc0b04561494c14b8";
+    blockchain-k-plugin.inputs.flake-utils.follows = "k-framework/flake-utils";
+    blockchain-k-plugin.inputs.nixpkgs.follows = "k-framework/nixpkgs";
+
     flake-compat = {
       url = "github:edolstra/flake-compat";
       flake = false;
@@ -15,7 +19,7 @@
   };
 
   outputs =
-    { self, nixpkgs, haskell-nix, k-framework, haskell-backend, ... }@inputs:
+    { self, nixpkgs, haskell-nix, k-framework, haskell-backend, blockchain-k-plugin, ... }@inputs:
     let
       inherit (nixpkgs) lib;
       perSystem = lib.genAttrs nixpkgs.lib.systems.flakeExposed;
@@ -214,6 +218,7 @@
                 packages."hs-backend-booster:exe:kore-rpc-booster";
               rpc-client = packages."hs-backend-booster:exe:rpc-client";
               inherit (k-framework.packages.${system}) k;
+              blockchain-k-plugin = blockchain-k-plugin.defaultPackage.${system};
             };
         });
 
