@@ -32,6 +32,55 @@
         "type": "github"
       }
     },
+    "ate-pairing": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1499347915,
+        "narHash": "sha256-IMfWgKkkX7UcUaOPtGRcYD8MdVEP5Z9JOOSJ4+P07G8=",
+        "owner": "herumi",
+        "repo": "ate-pairing",
+        "rev": "e69890125746cdaf25b5b51227d96678f76479fe",
+        "type": "github"
+      },
+      "original": {
+        "owner": "herumi",
+        "repo": "ate-pairing",
+        "rev": "e69890125746cdaf25b5b51227d96678f76479fe",
+        "type": "github"
+      }
+    },
+    "blockchain-k-plugin": {
+      "inputs": {
+        "ate-pairing": "ate-pairing",
+        "cpp-httplib": "cpp-httplib",
+        "cryptopp": "cryptopp",
+        "flake-utils": [
+          "k-framework",
+          "flake-utils"
+        ],
+        "libff": "libff",
+        "nixpkgs": [
+          "k-framework",
+          "nixpkgs"
+        ],
+        "secp256k1": "secp256k1",
+        "xbyak": "xbyak"
+      },
+      "locked": {
+        "lastModified": 1689159696,
+        "narHash": "sha256-dGICJl8YAWXjpjeY1rcRMLyWka3kMZmW74B6q3gvrhQ=",
+        "owner": "runtimeverification",
+        "repo": "blockchain-k-plugin",
+        "rev": "da834be67f6c0aff11140ddfc0b04561494c14b8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "runtimeverification",
+        "repo": "blockchain-k-plugin",
+        "rev": "da834be67f6c0aff11140ddfc0b04561494c14b8",
+        "type": "github"
+      }
+    },
     "cabal-32": {
       "flake": false,
       "locked": {
@@ -163,6 +212,40 @@
       "original": {
         "owner": "input-output-hk",
         "repo": "cardano-shell",
+        "type": "github"
+      }
+    },
+    "cpp-httplib": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1595279716,
+        "narHash": "sha256-cZW/iEwlaB4UQ0OQLNqboY9addncIM/OsxxPzqmATmE=",
+        "owner": "yhirose",
+        "repo": "cpp-httplib",
+        "rev": "72ce293fed9f9335e92c95ab7d085feed18c0ee8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "yhirose",
+        "repo": "cpp-httplib",
+        "rev": "72ce293fed9f9335e92c95ab7d085feed18c0ee8",
+        "type": "github"
+      }
+    },
+    "cryptopp": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1632484127,
+        "narHash": "sha256-a3TYaK34WvKEXN7LKAfGwQ3ZL6a3k/zMZyyVfnkQqO4=",
+        "owner": "weidai11",
+        "repo": "cryptopp",
+        "rev": "69bf6b53052b59ccb57ce068ce741988ae087317",
+        "type": "github"
+      },
+      "original": {
+        "owner": "weidai11",
+        "repo": "cryptopp",
+        "rev": "69bf6b53052b59ccb57ce068ce741988ae087317",
         "type": "github"
       }
     },
@@ -763,6 +846,23 @@
         "type": "github"
       }
     },
+    "libff": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1588032522,
+        "narHash": "sha256-I0kH2XLvHDSrdL/o4i6XozWQJV0UDv9zH6+sWS0UQHg=",
+        "owner": "scipr-lab",
+        "repo": "libff",
+        "rev": "5835b8c59d4029249645cf551f417608c48f2770",
+        "type": "github"
+      },
+      "original": {
+        "owner": "scipr-lab",
+        "repo": "libff",
+        "rev": "5835b8c59d4029249645cf551f417608c48f2770",
+        "type": "github"
+      }
+    },
     "llvm-backend": {
       "inputs": {
         "fmt-src": "fmt-src",
@@ -1339,6 +1439,7 @@
     },
     "root": {
       "inputs": {
+        "blockchain-k-plugin": "blockchain-k-plugin",
         "flake-compat": "flake-compat",
         "haskell-backend": "haskell-backend",
         "haskell-nix": [
@@ -1365,6 +1466,23 @@
       "original": {
         "owner": "runtimeverification",
         "repo": "rv-nix-tools",
+        "type": "github"
+      }
+    },
+    "secp256k1": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1502408521,
+        "narHash": "sha256-PyqNZGER9VypH35S/aU4EBeepieI3BGXrYsJ141os24=",
+        "owner": "bitcoin-core",
+        "repo": "secp256k1",
+        "rev": "f532bdc9f77f7bbf7e93faabfbe9c483f0a9f75f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "bitcoin-core",
+        "repo": "secp256k1",
+        "rev": "f532bdc9f77f7bbf7e93faabfbe9c483f0a9f75f",
         "type": "github"
       }
     },
@@ -1457,6 +1575,23 @@
       "original": {
         "owner": "numtide",
         "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "xbyak": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1518572786,
+        "narHash": "sha256-jqDSNDcqK7010ig941hrJFkv1X7MbgXmhPOOE9wHmho=",
+        "owner": "herumi",
+        "repo": "xbyak",
+        "rev": "f0a8f7faa27121f28186c2a7f4222a9fc66c283d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "herumi",
+        "repo": "xbyak",
+        "rev": "f0a8f7faa27121f28186c2a7f4222a9fc66c283d",
         "type": "github"
       }
     },

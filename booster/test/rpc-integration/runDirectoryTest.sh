@@ -44,7 +44,7 @@ dylib=resources/${dir#test-}.dylib
 echo "Running tests from $dir with definition $kore"
 
 # make sure directory and kore file exist
-[ ! -d "./$dir" ] && exit 1
+[ ! -e "./$dir" ] && exit 1
 if [ ! -f "./$kore" ]; then
   [ ! -f "./$kompile" ] && exit 2
   cd resources
@@ -68,20 +68,25 @@ server_pid=$!
 trap 'kill -2 ${server_pid}; popd' ERR EXIT
 echo "Server PID ${server_pid}"
 
-sleep 2
+sleep 5
 
-for test in $( ls $dir/state-*.{execute,send,simplify,add-module,get-model} 2>/dev/null ); do
-    tmp=${test#$dir/state-}
-    testname=${tmp%.*}
-    # determine send mode from suffix
-    mode=${test##*.}
-    printf "########## Test: %10s %20s\n" "$mode" "$testname #######"
-    if [ -f "$dir/params-${testname}.json" ]; then
-        params="--param-file $dir/params-${testname}.json"
-    else
-        params=""
-    fi
-    # call rpc-client
-    echo "$client $mode $test $params --expect $dir/response-${testname}.json $*"
-    $client $mode $test $params --expect $dir/response-${testname}.json $*
-done
+if [ -d $dir ]; then
+    for test in $( ls $dir/state-*.{execute,send,simplify,add-module,get-model} 2>/dev/null ); do
+        tmp=${test#$dir/state-}
+        testname=${tmp%.*}
+        # determine send mode from suffix
+        mode=${test##*.}
+        printf "########## Test: %10s %20s\n" "$mode" "$testname #######"
+        if [ -f "$dir/params-${testname}.json" ]; then
+            params="--param-file $dir/params-${testname}.json"
+        else
+            params=""
+        fi
+        # call rpc-client
+        echo "$client $mode $test $params --expect $dir/response-${testname}.json $*"
+        $client $mode $test $params --expect $dir/response-${testname}.json $*
+    done
+else
+    echo "$dir is a file, running a tarball test"
+    $client run-tarball $dir
+fi
