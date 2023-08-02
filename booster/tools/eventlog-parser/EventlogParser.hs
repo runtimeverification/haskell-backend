@@ -4,7 +4,7 @@
 
 module Main (main) where
 
-import Booster.LLVM.Internal (LlvmCall (..), SomePtr (..))
+import Booster.LLVM.Internal (LlvmCall (..), LlvmCallArg (..), SomePtr (..))
 import Booster.Trace hiding (eventType)
 import Booster.Trace.TH
 import Control.Exception (catch, throwIO)
@@ -198,7 +198,7 @@ emitSpeedscopeProfile file frames threads endTime = do
         hPutBuilder jsonHandle $ lazyByteString "]}"
 
 emitLlvmCall ::
-    Handle -> Maybe (ByteString, SomePtr) -> ByteString -> [Either ByteString SomePtr] -> IO ()
+    Handle -> Maybe (ByteString, SomePtr) -> ByteString -> [LlvmCallArg] -> IO ()
 emitLlvmCall llvmCallsHandle ret call args = do
     let prettyRet = case ret of
             Just (ty, SomePtr ptr) -> byteString ty <> lazyByteString " v" <> byteString ptr <> lazyByteString " = "
@@ -209,9 +209,10 @@ emitLlvmCall llvmCallsHandle ret call args = do
                 <> mconcat
                     ( intersperse (charUtf8 ',') $
                         map
-                            ( either
-                                (\str -> charUtf8 '"' <> byteString str <> charUtf8 '"')
-                                (\(SomePtr ptr) -> charUtf8 'v' <> byteString ptr)
+                            ( \case
+                                LlvmCallArgByteString str -> charUtf8 '"' <> byteString str <> charUtf8 '"'
+                                LlvmCallArgWord int -> word64Dec (fromIntegral int)
+                                LlvmCallArgPtr (SomePtr ptr) -> charUtf8 'v' <> byteString ptr
                             )
                             args
                     )
