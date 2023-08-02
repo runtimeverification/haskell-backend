@@ -18,6 +18,7 @@ module Booster.LLVM.Internal (
     SomePtr (..),
     somePtr,
     LlvmCall (..),
+    LlvmCallArg (..),
     LlvmVar (..),
 ) where
 
@@ -25,6 +26,7 @@ import Booster.LLVM.TH (dynamicBindings)
 import Booster.Pattern.Base
 import Booster.Pattern.Binary hiding (Block)
 import Booster.Pattern.Util (sortOfTerm)
+import Booster.Prettyprinter qualified as KPretty
 import Booster.Trace
 import Booster.Trace qualified as Trace
 import Control.Monad (foldM, forM_, void, (>=>))
@@ -33,17 +35,22 @@ import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Control.Monad.Trans.Reader qualified as Reader
 import Data.Binary (Binary, get, put)
+import Data.ByteString.Builder
 import Data.ByteString.Char8 (ByteString, pack)
 import Data.ByteString.Char8 qualified as BS
+import Data.ByteString.Lazy qualified as BL
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HM
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
+import Data.List qualified as List (intersperse)
 import Foreign (ForeignPtr, finalizeForeignPtr, newForeignPtr, withForeignPtr)
 import Foreign qualified
 import Foreign.C qualified as C
 import Foreign.C.Types (CSize (..))
 import Foreign.Marshal (alloca)
 import Foreign.Storable (peek)
+import GHC.Generics (Generic)
+import Prettyprinter (Pretty (..))
 import System.Posix.DynamicLinker qualified as Linker
 
 data KorePattern
@@ -105,16 +112,45 @@ newtype SomePtr = SomePtr ByteString
 somePtr :: Show a => a -> SomePtr
 somePtr ptr = SomePtr $ pack $ show ptr
 
+data LlvmCallArg
+    = LlvmCallArgByteString ByteString
+    | LlvmCallArgWord Word
+    | LlvmCallArgPtr SomePtr
+    deriving (Generic)
+
+instance Binary LlvmCallArg
+
 data LlvmCall = LlvmCall
     { ret :: Maybe (ByteString, SomePtr)
     , call :: ByteString
-    , args :: [Either ByteString SomePtr]
+    , args :: [LlvmCallArg]
     }
 instance CustomUserEvent LlvmCall where
     encodeUserEvent (LlvmCall{ret, call, args}) = put ret <> put call <> put args
     decodeUserEvent = LlvmCall <$> get <*> get <*> get
     userEventTag _ = "LLVM "
     eventType _ = LlvmCalls
+
+    prettyPrintUserEvent (LlvmCall{ret, call, args}) =
+        let prettyRet = case ret of
+                Just (ty, SomePtr ptr) -> byteString ty <> lazyByteString " v" <> byteString ptr <> lazyByteString " = "
+                _ -> ""
+
+            prettyArgs =
+                charUtf8 '('
+                    <> mconcat
+                        ( List.intersperse (charUtf8 ',') $
+                            map
+                                ( \case
+                                    LlvmCallArgByteString str -> charUtf8 '"' <> byteString str <> charUtf8 '"'
+                                    LlvmCallArgWord int -> word64Dec (fromIntegral int)
+                                    LlvmCallArgPtr (SomePtr ptr) -> charUtf8 'v' <> byteString ptr
+                                )
+                                args
+                        )
+                    <> charUtf8 ')'
+            call_str = prettyRet <> byteString "api." <> byteString call <> prettyArgs
+         in BL.toStrict . toLazyByteString $ call_str <> lazyByteString ";\n"
 
 data LlvmVar = LlvmVar SomePtr Term
 
@@ -123,6 +159,7 @@ instance CustomUserEvent LlvmVar where
     decodeUserEvent = LlvmVar <$> get <*> decodeTerm' Nothing
     userEventTag _ = "LLVMV"
     eventType _ = LlvmCalls
+    prettyPrintUserEvent (LlvmVar (SomePtr ptr) trm) = "/* " <> ptr <> " |-> " <> BS.pack (KPretty.renderDefault $ pretty trm) <> " */\n"
 
 {- | Uses dlopen to load a .so/.dylib C library at runtime. For doucmentation of flags such as `RTL_LAZY`, consult e.g.
      https://man7.org/linux/man-pages/man3/dlopen.3.html
@@ -143,7 +180,7 @@ mkAPI dlib = flip runReaderT dlib $ do
             BS.useAsCString name $
                 newCompositePattern
                     >=> newForeignPtr freePattern
-                    >=> traceCall "kore_composite_pattern_new" [Left name] "kore_pattern*"
+                    >=> traceCall "kore_composite_pattern_new" [LlvmCallArgByteString name] "kore_pattern*"
 
     addArgumentCompositePattern <- koreCompositePatternAddArgument
     let addArgumentPattern parent child =
@@ -154,7 +191,7 @@ mkAPI dlib = flip runReaderT dlib $ do
                 Trace.traceIO $
                     LlvmCall
                         { call = "kore_composite_pattern_add_argument"
-                        , args = [Right $ somePtr parent, Right $ somePtr child]
+                        , args = [LlvmCallArgPtr $ somePtr parent, LlvmCallArgPtr $ somePtr child]
                         , ret = Nothing
                         }
                 pure parent
@@ -165,7 +202,7 @@ mkAPI dlib = flip runReaderT dlib $ do
             BS.useAsCStringLen name $ \(rawStr, len) ->
                 newString rawStr (fromIntegral len)
                     >>= ( newForeignPtr freePattern
-                            >=> traceCall "kore_string_pattern_new_with_len" [Left name] "kore_pattern*"
+                            >=> traceCall "kore_string_pattern_new_with_len" [LlvmCallArgByteString name] "kore_pattern*"
                         )
 
     newToken <- korePatternNewTokenWithLen
@@ -175,7 +212,10 @@ mkAPI dlib = flip runReaderT dlib $ do
                 withForeignPtr sort $
                     newToken rawName (fromIntegral len)
                         >=> newForeignPtr freePattern
-                        >=> traceCall "kore_pattern_new_token_with_len" [Left name] "kore_pattern*"
+                        >=> traceCall
+                            "kore_pattern_new_token_with_len"
+                            [LlvmCallArgByteString name, LlvmCallArgWord . fromIntegral $ len, LlvmCallArgPtr $ somePtr sort]
+                            "kore_pattern*"
 
     compositePatternFromSymbol <- koreCompositePatternFromSymbol
     let fromSymbol sym =
@@ -183,7 +223,7 @@ mkAPI dlib = flip runReaderT dlib $ do
             withForeignPtr sym $
                 compositePatternFromSymbol
                     >=> newForeignPtr freePattern
-                    >=> traceCall "kore_composite_pattern_from_symbol" [Right $ somePtr sym] "kore_pattern*"
+                    >=> traceCall "kore_composite_pattern_from_symbol" [LlvmCallArgPtr $ somePtr sym] "kore_pattern*"
 
     dumpPattern' <- korePatternDump
     let dumpPattern ptr =
@@ -213,7 +253,7 @@ mkAPI dlib = flip runReaderT dlib $ do
                 BS.useAsCString name $
                     newSymbol'
                         >=> newForeignPtr freeSymbol
-                        >=> traceCall "kore_symbol_new" [Left name] "kore_symbol*"
+                        >=> traceCall "kore_symbol_new" [LlvmCallArgByteString name] "kore_symbol*"
 
     addArgumentSymbol' <- koreSymbolAddFormalArgument
     let addArgumentSymbol sym sort =
@@ -223,7 +263,7 @@ mkAPI dlib = flip runReaderT dlib $ do
                 Trace.traceIO $
                     LlvmCall
                         { call = "kore_symbol_add_formal_argument"
-                        , args = [Right $ somePtr sym, Right $ somePtr sort]
+                        , args = [LlvmCallArgPtr $ somePtr sym, LlvmCallArgPtr $ somePtr sort]
                         , ret = Nothing
                         }
                 pure sym
@@ -240,7 +280,7 @@ mkAPI dlib = flip runReaderT dlib $ do
             BS.useAsCString name $
                 newSort'
                     >=> newForeignPtr freeSort
-                    >=> traceCall "kore_composite_sort_new" [Left name] "kore_sort*"
+                    >=> traceCall "kore_composite_sort_new" [LlvmCallArgByteString name] "kore_sort*"
 
     addArgumentSort' <- koreCompositeSortAddArgument
     let addArgumentSort parent child =
@@ -250,7 +290,7 @@ mkAPI dlib = flip runReaderT dlib $ do
                 Trace.traceIO $
                     LlvmCall
                         { call = "kore_composite_sort_add_formal_argument"
-                        , args = [Right $ somePtr parent, Right $ somePtr child]
+                        , args = [LlvmCallArgPtr $ somePtr parent, LlvmCallArgPtr $ somePtr child]
                         , ret = Nothing
                         }
                 pure parent
@@ -275,7 +315,7 @@ mkAPI dlib = flip runReaderT dlib $ do
                 Trace.traceIO $
                     LlvmCall
                         { call = "kore_simplify_bool"
-                        , args = [Right $ somePtr p]
+                        , args = [LlvmCallArgPtr $ somePtr p]
                         , ret = Nothing
                         }
                 withForeignPtr p $ fmap (== 1) <$> simplifyBool'
@@ -293,7 +333,11 @@ mkAPI dlib = flip runReaderT dlib $ do
                                     LlvmCall
                                         { call = "kore_simplify"
                                         , args =
-                                            [Right $ somePtr patPtr, Right $ somePtr sortPtr, Right $ somePtr strPtr, Right $ somePtr lenPtr]
+                                            [ LlvmCallArgPtr $ somePtr patPtr
+                                            , LlvmCallArgPtr $ somePtr sortPtr
+                                            , LlvmCallArgPtr $ somePtr strPtr
+                                            , LlvmCallArgPtr $ somePtr lenPtr
+                                            ]
                                         , ret = Nothing
                                         }
                                 len <- fromIntegral <$> peek lenPtr

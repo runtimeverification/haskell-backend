@@ -17,6 +17,7 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as BL
 import Data.IORef
 import Data.Kind (Type)
+import Data.Maybe (fromJust, isJust)
 import Data.Proxy (Proxy (..))
 import Debug.Trace.Binary (traceBinaryEvent, traceBinaryEventIO)
 import Debug.Trace.Flags
@@ -33,6 +34,7 @@ class CustomUserEvent e where
     decodeUserEvent :: Get e
     userEventTag :: proxy e -> ByteString
     eventType :: proxy e -> CustomUserEventType
+    prettyPrintUserEvent :: e -> ByteString
 
 class DecodeUserEvents es where
     decodeUserEvents' :: ByteString -> Get (Sum es)
@@ -53,14 +55,26 @@ enabledCustomUserEventTypes :: IORef Word32
 {-# NOINLINE enabledCustomUserEventTypes #-}
 enabledCustomUserEventTypes = unsafePerformIO $ newIORef 0
 
+enabledHijackEventlogFile :: IORef (Maybe FilePath)
+{-# NOINLINE enabledHijackEventlogFile #-}
+enabledHijackEventlogFile = unsafePerformIO $ newIORef Nothing
+
 enableCustomUserEvent :: Enum a => a -> IO ()
 enableCustomUserEvent a =
     modifyIORef enabledCustomUserEventTypes (.|. (bit $ fromEnum a))
+
+enableHijackEventlogFile :: FilePath -> IO ()
+enableHijackEventlogFile fpath = writeIORef enabledHijackEventlogFile (Just fpath)
 
 customUserEventEnabled :: Enum a => a -> Bool
 customUserEventEnabled a =
     unsafePerformIO $
         flip testBit (fromEnum a) <$> readIORef enabledCustomUserEventTypes
+
+hijackEventlogFileEnabled :: Maybe FilePath
+{-# NOINLINE hijackEventlogFileEnabled #-}
+hijackEventlogFileEnabled =
+    unsafePerformIO $ readIORef enabledHijackEventlogFile
 
 newtype Start = Start ByteString
 
@@ -69,7 +83,7 @@ instance CustomUserEvent Start where
     decodeUserEvent = Start <$> get
     userEventTag _ = "START"
     eventType _ = Timing
-
+    prettyPrintUserEvent (Start ident) = "START " <> ident
 newtype Stop = Stop ByteString
 
 instance CustomUserEvent Stop where
@@ -77,6 +91,7 @@ instance CustomUserEvent Stop where
     decodeUserEvent = Stop <$> get
     userEventTag _ = "STOP "
     eventType _ = Timing
+    prettyPrintUserEvent (Stop ident) = "STOP " <> ident
 
 encodeCustomUserEvent :: forall e. CustomUserEvent e => e -> Put
 encodeCustomUserEvent e = do
@@ -85,6 +100,9 @@ encodeCustomUserEvent e = do
 
 traceIO :: forall m e. MonadIO m => CustomUserEvent e => e -> m ()
 traceIO e
+    | isJust hijackEventlogFileEnabled = do
+        let fname = fromJust hijackEventlogFileEnabled
+        liftIO $ BS.appendFile fname (prettyPrintUserEvent e)
     | userTracingEnabled && customUserEventEnabled (eventType (undefined :: proxy e)) = do
         let message = BL.toStrict $ runPut $ encodeCustomUserEvent e
         when (BS.length message > 2 ^ (16 :: Int)) $ error "eventlog message too long"
