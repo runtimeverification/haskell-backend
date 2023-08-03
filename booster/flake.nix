@@ -9,9 +9,6 @@
     nixpkgs.follows = "haskell-backend/haskell-nix/nixpkgs-unstable";
 
     blockchain-k-plugin.url = "github:runtimeverification/blockchain-k-plugin/da834be67f6c0aff11140ddfc0b04561494c14b8";
-    blockchain-k-plugin.inputs.flake-utils.follows = "k-framework/flake-utils";
-    blockchain-k-plugin.inputs.nixpkgs.follows = "k-framework/nixpkgs";
-
     flake-compat = {
       url = "github:edolstra/flake-compat";
       flake = false;
