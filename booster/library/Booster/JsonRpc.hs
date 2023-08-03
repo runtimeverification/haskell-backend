@@ -108,7 +108,7 @@ respond stateVar =
                             unless (null newModule.sorts) $
                                 throwE . AddModuleError $
                                     "Module introduces new sorts: " <> listNames newModule.sorts
-                            unless (null $ newModule.symbols) $
+                            unless (null newModule.symbols) $
                                 throwE . AddModuleError $
                                     "Module introduces new symbols: " <> listNames newModule.symbols
                      in case runExcept (checkModule >> addToDefinitions newModule state.definitions) of
