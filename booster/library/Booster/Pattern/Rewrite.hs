@@ -181,7 +181,9 @@ applyRule pat rule = runMaybeT $ do
     -- an undefined term.
     unless (null rule.computedAttributes.notPreservesDefinednessReasons) $
         failRewrite $
-            DefinednessUnclear rule pat $
+            DefinednessUnclear
+                rule
+                pat
                 rule.computedAttributes.notPreservesDefinednessReasons
 
     -- apply substitution to rule requires constraints and simplify (one by one
