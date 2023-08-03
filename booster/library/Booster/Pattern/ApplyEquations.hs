@@ -488,7 +488,7 @@ traceRuleApplication t loc lbl uid res = do
     let newTraceItem = EquationTrace t loc lbl uid res
     logOther (LevelOther "Simplify") (pack . renderDefault . pretty $ newTraceItem)
     config <- getConfig
-    when (config.doTracing) $
+    when config.doTracing $
         EquationT . lift . lift . modify $
             \s -> s{trace = s.trace :|> newTraceItem}
 
@@ -523,7 +523,8 @@ applyEquation term rule = fmap (either id Success) $ runExceptT $ do
 
             -- check required conditions, using substitution
             let required =
-                    concatMap (splitBoolPredicates . substituteInPredicate subst) $
+                    concatMap
+                        (splitBoolPredicates . substituteInPredicate subst)
                         rule.requires
             unclearConditions' <- runMaybeT $ catMaybes <$> mapM checkConstraint required
 
@@ -536,7 +537,8 @@ applyEquation term rule = fmap (either id Success) $ runExceptT $ do
                             -- check ensured conditions, filter any
                             -- true ones, prune if any is false
                             let ensured =
-                                    concatMap (splitBoolPredicates . substituteInPredicate subst) $
+                                    concatMap
+                                        (splitBoolPredicates . substituteInPredicate subst)
                                         rule.ensures
                             mbEnsuredConditions <-
                                 runMaybeT $ catMaybes <$> mapM checkConstraint ensured

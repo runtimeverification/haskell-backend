@@ -88,14 +88,14 @@ externalisePredicate sort =
                 Syntax.KJExists
                     { sort
                     , var = varNameToId var.variableName
-                    , varSort = externaliseSort $ var.variableSort
+                    , varSort = externaliseSort var.variableSort
                     , arg = recursion p1
                     }
             Internal.Forall var p1 ->
                 Syntax.KJForall
                     { sort
                     , var = varNameToId var.variableName
-                    , varSort = externaliseSort $ var.variableSort
+                    , varSort = externaliseSort var.variableSort
                     , arg = recursion p1
                     }
             Internal.Iff p1 p2 ->
