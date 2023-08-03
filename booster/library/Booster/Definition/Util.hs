@@ -63,7 +63,7 @@ mkSummary file def =
         , axiomCount = length $ concat $ concatMap Map.elems (Map.elems def.rewriteTheory)
         , preserveDefinednessCount =
             length $
-                filter (\rule -> null $ rule.computedAttributes.notPreservesDefinednessReasons) $
+                filter (\rule -> null rule.computedAttributes.notPreservesDefinednessReasons) $
                     concat $
                         concatMap Map.elems (Map.elems def.rewriteTheory)
         , containAcSymbolsCount =
