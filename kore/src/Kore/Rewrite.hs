@@ -176,26 +176,22 @@ transitionRule ::
         (ProgramState (Pattern RewritingVariableName))
 transitionRule rewriteGroups = transitionRuleWorker
   where
+    transitionRuleWorker _ _ Bottom = pure Bottom
     transitionRuleWorker _ Begin (Rewritten a) = pure $ Start a
     transitionRuleWorker _ Begin (Remaining _) = empty
     transitionRuleWorker _ Begin state@(Start _) = pure state
-    transitionRuleWorker _ Begin Bottom = empty
     transitionRuleWorker _ Simplify (Rewritten patt) =
         transitionSimplify Rewritten patt
     transitionRuleWorker _ Simplify (Remaining patt) =
         transitionSimplify Remaining patt
     transitionRuleWorker _ Simplify (Start patt) =
         transitionSimplify Start patt
-    transitionRuleWorker _ Simplify Bottom =
-        empty
     transitionRuleWorker mode Rewrite (Remaining patt) =
         transitionRewrite mode patt
     transitionRuleWorker mode Rewrite (Start patt) =
         transitionRewrite mode patt
     transitionRuleWorker _ Rewrite state@(Rewritten _) =
         pure state
-    transitionRuleWorker _ Rewrite Bottom =
-        empty
 
     transitionSimplify prim config = do
         configs <- lift $ Pattern.simplifyTopConfiguration config
@@ -230,7 +226,7 @@ deriveResults ::
     Result.Results (w (RulePattern variable)) a ->
     TransitionT (RewriteRule variable, Seq SimplifierTrace) Simplifier (ProgramState a)
 deriveResults Result.Results{results, remainders} =
-    if null results && null remainders
+    if (null results || all (\Result.Result{result} -> null result) results) && null remainders
         then pure Bottom
         else addResults results <|> addRemainders remainders
   where
