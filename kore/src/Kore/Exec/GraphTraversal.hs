@@ -28,6 +28,7 @@ import Control.Exception.Lifted (uninterruptibleMask_)
 import Control.Monad (foldM)
 import Control.Monad.Extra (whenJust)
 import Control.Monad.Trans.State
+import Data.Bifunctor (bimap)
 import Data.Limit
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (fromJust)
@@ -78,6 +79,8 @@ data TransitionResult a
     | -- | no next state but not final (e.g., not goal state, or side
       -- conditions do not hold)
       Stuck a
+    | -- | the current configuration was simplified to bottom
+      Vacuous a
     | -- | final state (e.g., goal state reached, side conditions hold)
       Final a
     | -- | not stuck, but also not final (maximum depth reached before
@@ -90,6 +93,7 @@ instance Functor TransitionResult where
         Continuing a -> Continuing $ f a
         Branch a as -> Branch (f a) $ NE.map f as
         Stuck a -> Stuck $ f a
+        Vacuous a -> Vacuous $ f a
         Final a -> Final $ f a
         Stop a as -> Stop (f a) (map f as)
 
@@ -98,6 +102,7 @@ instance Pretty a => Pretty (TransitionResult a) where
         Continuing a -> single "Continuing" a
         Branch a as -> multi "Branch" "node" a "successors" (NE.toList as)
         Stuck a -> single "Stuck" a
+        Vacuous a -> single "Vacuous" a
         Final a -> single "Final" a
         Stop a as -> multi "Stop" "node" a "successors" as
       where
@@ -115,9 +120,10 @@ instance Pretty a => Pretty (TransitionResult a) where
                 ]
                     <> map (Pretty.indent 4 . Pretty.pretty) as
 
-isStuck, isFinal, isStop, isBranch :: TransitionResult a -> Bool
-isStuck (Stuck _) = True
-isStuck _ = False
+isStuckOrVacuous, isFinal, isStop, isBranch :: TransitionResult a -> Bool
+isStuckOrVacuous (Stuck _) = True
+isStuckOrVacuous (Vacuous _) = True
+isStuckOrVacuous _ = False
 isFinal (Final _) = True
 isFinal _ = False
 isStop (Stop _ _) = True
@@ -130,6 +136,7 @@ extractNext = \case
     Continuing a -> [a]
     Branch _ as -> NE.toList as
     Stuck _ -> []
+    Vacuous _ -> []
     Final _ -> []
     Stop _ as -> as
 
@@ -138,8 +145,15 @@ extractState = \case
     Continuing _ -> Nothing
     Branch a _ -> Just a
     Stuck a -> Just a
+    Vacuous a -> Just a
     Final a -> Just a
     Stop a _ -> Just a
+
+extractStuckOrVacuous :: TransitionResult a -> Maybe (Either a a)
+extractStuckOrVacuous = \case
+    Stuck a -> Just $ Left a
+    Vacuous a -> Just $ Right a
+    _ -> Nothing
 
 {- | The traversal state, including subsequent steps to take in the
    traversal.
@@ -239,7 +253,7 @@ graphTraversal
         ma <- liftIO newEmptyMVar
         enqueue [TState steps start] Seq.empty
             >>= either
-                (pure . const (GotStuck 0 [start]))
+                (pure . const (GotStuck 0 [Left start]))
                 (\q -> evalStateT (worker ma q >>= checkLeftUnproven) [])
       where
         enqueue' = unfoldSearchOrder direction
@@ -287,14 +301,14 @@ graphTraversal
                 Continue nextQ -> worker ma nextQ
                 Output oneResult nextQ -> do
                     modify (oneResult :)
-                    if not (isStuck oneResult)
+                    if not (isStuckOrVacuous oneResult)
                         then worker ma nextQ
                         else do
-                            stuck <- gets (filter isStuck)
+                            stuck <- gets (filter isStuckOrVacuous)
                             if maxCounterExamples <= Limit (fromIntegral (length stuck))
                                 then
                                     pure $
-                                        GotStuck (Seq.length nextQ) (mapMaybe extractState stuck)
+                                        GotStuck (Seq.length nextQ) (mapMaybe extractStuckOrVacuous stuck)
                                 else worker ma nextQ
                 Abort _lastState queue -> do
                     pure $ Aborted $ toList queue
@@ -337,7 +351,7 @@ graphTraversal
             Simplifier (StepResult (TState instr config))
         step a q = do
             next <- branchStop <$> transit a
-            if (isStuck next || isFinal next || isStop next)
+            if (isStuckOrVacuous next || isFinal next || isStop next)
                 then pure (Output next q)
                 else
                     let abort (LimitExceeded queue) = Abort next queue
@@ -353,7 +367,7 @@ graphTraversal
             result@(Ended{}) -> do
                 collected <- gets reverse
                 -- we collect a maximum of 'maxCounterExamples' Stuck states
-                let stuck = map (fmap currentState) $ filter isStuck collected
+                let stuck = map (fmap currentState) $ filter isStuckOrVacuous collected
                 -- Other states may be unfinished but not stuck (Stop)
                 -- Only provide the requested amount of states (maxCounterExamples)
                 let unproven =
@@ -362,7 +376,7 @@ graphTraversal
                 pure $
                     if
                             | (not $ null stuck) ->
-                                GotStuck 0 (mapMaybe extractState stuck)
+                                GotStuck 0 (mapMaybe extractStuckOrVacuous stuck)
                             | not $ null unproven ->
                                 Stopped
                                     (mapMaybe extractState unproven)
@@ -397,7 +411,7 @@ data StepResult a
 data TraversalResult a
     = -- | remaining queue length and stuck results (always at most
       -- maxCounterExamples many).
-      GotStuck Int [a]
+      GotStuck Int [Either a a]
     | -- | queue (length exceeding the limit), including result(s) of
       -- the last step that led to stopping.
       Aborted [a]
@@ -420,7 +434,7 @@ instance Pretty a => Pretty (TraversalResult a) where
         GotStuck n as ->
             Pretty.hang 4 . Pretty.vsep $
                 ("Got stuck with queue of " <> Pretty.pretty n)
-                    : map Pretty.pretty as
+                    : map (either Pretty.pretty Pretty.pretty) as
         Aborted as ->
             Pretty.hang 4 . Pretty.vsep $
                 "Aborted with queue of "
@@ -438,7 +452,7 @@ instance Pretty a => Pretty (TraversalResult a) where
                     : ("Queue" : map Pretty.pretty qu)
 instance Functor TraversalResult where
     fmap f = \case
-        GotStuck n rs -> GotStuck n (map f rs)
+        GotStuck n rs -> GotStuck n (map (bimap f f) rs)
         Aborted rs -> Aborted (map f rs)
         Ended rs -> Ended (map f rs)
         Stopped rs qu -> Stopped (map f rs) (map f qu)

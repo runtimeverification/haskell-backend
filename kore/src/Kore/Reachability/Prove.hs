@@ -399,7 +399,7 @@ proveClaim
 
         case traversalResult of
             GraphTraversal.GotStuck n rs ->
-                returnUnprovenClaims n rs
+                returnUnprovenClaims n $ map (either id id) rs
             GraphTraversal.Stopped rs nexts ->
                 returnUnprovenClaims (length nexts) rs
             GraphTraversal.Aborted rs ->
