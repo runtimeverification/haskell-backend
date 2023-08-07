@@ -201,7 +201,7 @@ test_rpcExecDepth =
     [ testCase "without depth limit" $ do
         result <-
             runDepth $ rpcExecTest [] [] Unlimited verifiedModule (state "c")
-        assertEqual "depth" (stuckAt 2) result
+        assertEqual "depth" (stuckAt $ Left 2) result
     , testCase "with depth limit limiting execution" $ do
         result <-
             runDepth $ rpcExecTest [] [] (Limit 1) verifiedModule (state "c")
@@ -209,7 +209,7 @@ test_rpcExecDepth =
     , testCase "with depth limit above execution limit" $ do
         result <-
             runDepth $ rpcExecTest [] [] (Limit 3) verifiedModule (state "c")
-        assertEqual "depth" (stuckAt 2) result
+        assertEqual "depth" (stuckAt $ Left 2) result
     , testCase "when branching" $ do
         result <-
             runDepth $ rpcExecTest [] [] Unlimited verifiedModule (state "a")
