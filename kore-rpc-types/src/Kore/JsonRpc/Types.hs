@@ -178,9 +178,8 @@ data GetModelResult = GetModelResult
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] GetModelResult
 
 data SimplifyImplicationResult = SimplifyImplicationResult
-    { satisfiable :: SatResult
-    , substitution :: Maybe KoreJson
-    { valid :: ValidityResult
+    { validity :: ValidityResult
+    , condition :: Maybe Condition
     , logs :: Maybe [LogEntry]
     }
     deriving stock (Generic, Show, Eq)
