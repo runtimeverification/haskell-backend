@@ -180,12 +180,22 @@ data GetModelResult = GetModelResult
 data SimplifyImplicationResult = SimplifyImplicationResult
     { satisfiable :: SatResult
     , substitution :: Maybe KoreJson
+    { valid :: ValidityResult
     , logs :: Maybe [LogEntry]
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] SimplifyImplicationResult
+
+data ValidityResult
+    = Valid
+    | Invalid
+    | ValidityUnknown
+    deriving stock (Generic, Show, Eq)
+    deriving
+        (FromJSON, ToJSON)
+        via CustomJSON '[] ValidityResult
 
 data SatResult
     = Sat
