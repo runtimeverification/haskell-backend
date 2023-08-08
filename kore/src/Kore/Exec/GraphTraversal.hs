@@ -13,7 +13,7 @@ module Kore.Exec.GraphTraversal (
     TraversalResult (..),
     transitionWithRule,
     GraphTraversalTimeoutMode (..),
-    StuckTraversalResult(..),
+    StuckTraversalResult (..),
     extractStuckTraversalResult,
 ) where
 
@@ -409,7 +409,7 @@ data StepResult a
       Timeout a (Seq a)
     deriving stock (Eq, Show)
 
-data StuckTraversalResult a = IsStuck a | IsVacuous a 
+data StuckTraversalResult a = IsStuck a | IsVacuous a
     deriving stock (Eq, Show)
     deriving stock (GHC.Generics.Generic, Functor)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
@@ -417,17 +417,15 @@ data StuckTraversalResult a = IsStuck a | IsVacuous a
 instance Debug a => Debug (StuckTraversalResult a)
 instance (Debug a, Diff a) => Diff (StuckTraversalResult a)
 
-
 instance Pretty a => Pretty (StuckTraversalResult a) where
     pretty = \case
         IsStuck a -> pretty a
-        IsVacuous a -> "(vacuous)" <+> pretty a 
-
+        IsVacuous a -> "(vacuous)" <+> pretty a
 
 extractStuckTraversalResult :: StuckTraversalResult a -> a
 extractStuckTraversalResult = \case
-        IsStuck a -> a
-        IsVacuous a -> a
+    IsStuck a -> a
+    IsVacuous a -> a
 
 data TraversalResult a
     = -- | remaining queue length and stuck results (always at most

@@ -55,6 +55,7 @@ import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Axiom qualified as Attribute.Axiom
 import Kore.Debug
+import Kore.Exec.GraphTraversal (extractStuckTraversalResult)
 import Kore.Exec.GraphTraversal qualified as GraphTraversal
 import Kore.Internal.Conditional (
     Conditional (..),
@@ -142,7 +143,6 @@ import Numeric.Natural (
 import Prelude.Kore
 import Pretty qualified
 import Prof
-import Kore.Exec.GraphTraversal (extractStuckTraversalResult)
 
 type CommonClaimState = ClaimState.ClaimState SomeClaim
 

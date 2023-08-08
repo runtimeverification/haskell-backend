@@ -79,6 +79,7 @@ import Kore.Equation qualified as Equation (
     argument,
     requires,
  )
+import Kore.Exec.GraphTraversal (extractStuckTraversalResult)
 import Kore.Exec.GraphTraversal qualified as GraphTraversal
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (..),
@@ -226,7 +227,6 @@ import SMT (
 import System.Exit (
     ExitCode (..),
  )
-import Kore.Exec.GraphTraversal (extractStuckTraversalResult)
 
 -- | Semantic rule used during execution.
 type Rewrite = RewriteRule RewritingVariableName

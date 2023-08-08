@@ -47,7 +47,7 @@ import Kore.Equation.Equation (
  )
 import Kore.Error qualified
 import Kore.Exec
-import Kore.Exec.GraphTraversal (TraversalResult (..), StuckTraversalResult (..))
+import Kore.Exec.GraphTraversal (StuckTraversalResult (..), TraversalResult (..))
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Pattern (
