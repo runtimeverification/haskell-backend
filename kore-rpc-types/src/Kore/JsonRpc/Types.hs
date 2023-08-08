@@ -192,7 +192,7 @@ data ImplicationValidityResult
     | -- | implication is invalid, explains why
       ImplicationInvalid ImplicationInvalidReason
     | -- | implication is unknown, explains why
-      ImplicationUnknwon ImplicationInvalidReason
+      ImplicationUnknown ImplicationInvalidReason
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
@@ -206,11 +206,11 @@ data ImplicationInvalidReason
         (FromJSON, ToJSON)
         via CustomJSON '[] ImplicationInvalidReason
 
-data ImplicationUnknwonReason = ImplicationConstraintSubsumptionUnknown KoreJson
+data ImplicationUnknownReason = ImplicationConstraintSubsumptionUnknown KoreJson
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[] ImplicationUnknwonReason
+        via CustomJSON '[] ImplicationUnknownReason
 
 data SatResult
     = Sat
