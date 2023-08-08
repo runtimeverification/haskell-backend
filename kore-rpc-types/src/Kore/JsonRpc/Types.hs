@@ -178,8 +178,7 @@ data GetModelResult = GetModelResult
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] GetModelResult
 
 data SimplifyImplicationResult = SimplifyImplicationResult
-    { validity :: ValidityResult
-    , condition :: Maybe Condition
+    { validity :: ImplicationValidityResult
     , logs :: Maybe [LogEntry]
     }
     deriving stock (Generic, Show, Eq)
@@ -187,14 +186,31 @@ data SimplifyImplicationResult = SimplifyImplicationResult
         (FromJSON, ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] SimplifyImplicationResult
 
-data ValidityResult
-    = Valid
-    | Invalid
-    | ValidityUnknown
+data ImplicationValidityResult
+    = -- | implication is valid, constrained substitution returned
+      ImplicationValid KoreJson
+    | -- | implication is invalid, explains why
+      ImplicationInvalid ImplicationInvalidReason
+    | -- | implication is unknown, explains why
+      ImplicationUnknwon ImplicationInvalidReason
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[] ValidityResult
+        via CustomJSON '[] ImplicationValidityResult
+
+data ImplicationInvalidReason
+    = ImplicationTermsDontUnify KoreJson
+    | ImplicationConstraintSubsumptionFailed KoreJson
+    deriving stock (Generic, Show, Eq)
+    deriving
+        (FromJSON, ToJSON)
+        via CustomJSON '[] ImplicationInvalidReason
+
+data ImplicationUnknwonReason = ImplicationConstraintSubsumptionUnknown KoreJson
+    deriving stock (Generic, Show, Eq)
+    deriving
+        (FromJSON, ToJSON)
+        via CustomJSON '[] ImplicationUnknwonReason
 
 data SatResult
     = Sat
