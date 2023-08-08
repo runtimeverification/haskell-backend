@@ -13,6 +13,8 @@ module Kore.Exec.GraphTraversal (
     TraversalResult (..),
     transitionWithRule,
     GraphTraversalTimeoutMode (..),
+    StuckTraversalResult(..),
+    extractStuckTraversalResult,
 ) where
 
 import Control.Concurrent (
@@ -28,7 +30,6 @@ import Control.Exception.Lifted (uninterruptibleMask_)
 import Control.Monad (foldM)
 import Control.Monad.Extra (whenJust)
 import Control.Monad.Trans.State
-import Data.Bifunctor (bimap)
 import Data.Limit
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (fromJust)
@@ -149,10 +150,10 @@ extractState = \case
     Final a -> Just a
     Stop a _ -> Just a
 
-extractStuckOrVacuous :: TransitionResult a -> Maybe (Either a a)
+extractStuckOrVacuous :: TransitionResult a -> Maybe (StuckTraversalResult a)
 extractStuckOrVacuous = \case
-    Stuck a -> Just $ Left a
-    Vacuous a -> Just $ Right a
+    Stuck a -> Just $ IsStuck a
+    Vacuous a -> Just $ IsVacuous a
     _ -> Nothing
 
 {- | The traversal state, including subsequent steps to take in the
@@ -253,7 +254,7 @@ graphTraversal
         ma <- liftIO newEmptyMVar
         enqueue [TState steps start] Seq.empty
             >>= either
-                (pure . const (GotStuck 0 [Left start]))
+                (pure . const (GotStuck 0 [IsStuck start]))
                 (\q -> evalStateT (worker ma q >>= checkLeftUnproven) [])
       where
         enqueue' = unfoldSearchOrder direction
@@ -408,10 +409,30 @@ data StepResult a
       Timeout a (Seq a)
     deriving stock (Eq, Show)
 
+data StuckTraversalResult a = IsStuck a | IsVacuous a 
+    deriving stock (Eq, Show)
+    deriving stock (GHC.Generics.Generic, Functor)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+
+instance Debug a => Debug (StuckTraversalResult a)
+instance (Debug a, Diff a) => Diff (StuckTraversalResult a)
+
+
+instance Pretty a => Pretty (StuckTraversalResult a) where
+    pretty = \case
+        IsStuck a -> pretty a
+        IsVacuous a -> "(vacuous)" <+> pretty a 
+
+
+extractStuckTraversalResult :: StuckTraversalResult a -> a
+extractStuckTraversalResult = \case
+        IsStuck a -> a
+        IsVacuous a -> a
+
 data TraversalResult a
     = -- | remaining queue length and stuck results (always at most
       -- maxCounterExamples many).
-      GotStuck Int [Either a a]
+      GotStuck Int [StuckTraversalResult a]
     | -- | queue (length exceeding the limit), including result(s) of
       -- the last step that led to stopping.
       Aborted [a]
@@ -434,7 +455,7 @@ instance Pretty a => Pretty (TraversalResult a) where
         GotStuck n as ->
             Pretty.hang 4 . Pretty.vsep $
                 ("Got stuck with queue of " <> Pretty.pretty n)
-                    : map (either Pretty.pretty Pretty.pretty) as
+                    : map Pretty.pretty as
         Aborted as ->
             Pretty.hang 4 . Pretty.vsep $
                 "Aborted with queue of "
@@ -452,7 +473,7 @@ instance Pretty a => Pretty (TraversalResult a) where
                     : ("Queue" : map Pretty.pretty qu)
 instance Functor TraversalResult where
     fmap f = \case
-        GotStuck n rs -> GotStuck n (map (bimap f f) rs)
+        GotStuck n rs -> GotStuck n (map (fmap f) rs)
         Aborted rs -> Aborted (map f rs)
         Ended rs -> Ended (map f rs)
         Stopped rs qu -> Stopped (map f rs) (map f qu)

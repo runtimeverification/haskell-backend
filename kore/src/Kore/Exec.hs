@@ -226,6 +226,7 @@ import SMT (
 import System.Exit (
     ExitCode (..),
  )
+import Kore.Exec.GraphTraversal (extractStuckTraversalResult)
 
 -- | Semantic rule used during execution.
 type Rewrite = RewriteRule RewritingVariableName
@@ -323,7 +324,7 @@ exec
                         GraphTraversal.Ended results ->
                             pure results
                         GraphTraversal.GotStuck _ results ->
-                            pure $ map (either id id) results
+                            pure $ map extractStuckTraversalResult results
                         GraphTraversal.Stopped results nexts -> do
                             when (null nexts) $
                                 forM_ depthLimit warnDepthLimitExceeded

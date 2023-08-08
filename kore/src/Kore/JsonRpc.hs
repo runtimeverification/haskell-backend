@@ -211,7 +211,7 @@ respond serverState moduleName runSMT =
                                         }
                     GraphTraversal.GotStuck
                         _n
-                        [Left Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result, rpcRules = rules}] ->
+                        [GraphTraversal.IsStuck Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result, rpcRules = rules}] ->
                             Right $
                                 Execute $
                                     ExecuteResult
@@ -224,7 +224,7 @@ respond serverState moduleName runSMT =
                                         }
                     GraphTraversal.GotStuck
                         _n
-                        [Right Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result, rpcRules = rules}] ->
+                        [GraphTraversal.IsVacuous Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result, rpcRules = rules}] ->
                             Right $
                                 Execute $
                                     ExecuteResult

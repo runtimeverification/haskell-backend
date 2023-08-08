@@ -142,6 +142,7 @@ import Numeric.Natural (
 import Prelude.Kore
 import Pretty qualified
 import Prof
+import Kore.Exec.GraphTraversal (extractStuckTraversalResult)
 
 type CommonClaimState = ClaimState.ClaimState SomeClaim
 
@@ -399,7 +400,7 @@ proveClaim
 
         case traversalResult of
             GraphTraversal.GotStuck n rs ->
-                returnUnprovenClaims n $ map (either id id) rs
+                returnUnprovenClaims n $ map extractStuckTraversalResult rs
             GraphTraversal.Stopped rs nexts ->
                 returnUnprovenClaims (length nexts) rs
             GraphTraversal.Aborted rs ->
