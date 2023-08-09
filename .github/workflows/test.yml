@@ -119,7 +119,7 @@ jobs:
 
   nix-integration:
     name: 'Nix / Integration'
-    runs-on: ubuntu-22.04
+    runs-on: [self-hosted, linux, normal]
     needs: nix-build
     steps:
       - name: Check out code
