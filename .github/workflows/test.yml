@@ -148,7 +148,7 @@ jobs:
         run: |
           nix develop github:runtimeverification/k/v$(cat deps/k_release)#kore-integration-tests \
                 --override-input haskell-backend . --update-input haskell-backend \
-                --command bash -c "cd test && make -j2 --output-sync test"
+                --command bash -c "cd test && spawn-kserver kserver.log && make -j2 --output-sync test || (stop-kserver ; return 1)"
 
   cabal:
     name: 'Cabal / Unit Tests'
