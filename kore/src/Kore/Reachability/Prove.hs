@@ -55,6 +55,7 @@ import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Axiom qualified as Attribute.Axiom
 import Kore.Debug
+import Kore.Exec.GraphTraversal (extractStuckTraversalResult)
 import Kore.Exec.GraphTraversal qualified as GraphTraversal
 import Kore.Internal.Conditional (
     Conditional (..),
@@ -399,7 +400,7 @@ proveClaim
 
         case traversalResult of
             GraphTraversal.GotStuck n rs ->
-                returnUnprovenClaims n rs
+                returnUnprovenClaims n $ map extractStuckTraversalResult rs
             GraphTraversal.Stopped rs nexts ->
                 returnUnprovenClaims (length nexts) rs
             GraphTraversal.Aborted rs ->

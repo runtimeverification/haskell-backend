@@ -211,13 +211,30 @@ respond serverState moduleName runSMT =
                                         }
                     GraphTraversal.GotStuck
                         _n
-                        [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result, rpcRules = rules}] ->
+                        [ GraphTraversal.IsStuck
+                                Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result, rpcRules = rules}
+                            ] ->
                             Right $
                                 Execute $
                                     ExecuteResult
                                         { state = patternToExecState sort result
                                         , depth = Depth depth
                                         , reason = Stuck
+                                        , rule = Nothing
+                                        , nextStates = Nothing
+                                        , logs = mkLogs rules
+                                        }
+                    GraphTraversal.GotStuck
+                        _n
+                        [ GraphTraversal.IsVacuous
+                                Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result, rpcRules = rules}
+                            ] ->
+                            Right $
+                                Execute $
+                                    ExecuteResult
+                                        { state = patternToExecState sort result
+                                        , depth = Depth depth
+                                        , reason = Vacuous
                                         , rule = Nothing
                                         , nextStates = Nothing
                                         , logs = mkLogs rules
