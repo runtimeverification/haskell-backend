@@ -9,7 +9,7 @@ module Booster.JsonRpc (
     ServerState (..),
     respond,
     runServer,
-    rpcJsonConfig,
+    RpcTypes.rpcJsonConfig,
     execStateToKoreJson,
 ) where
 
@@ -51,9 +51,9 @@ import Booster.Syntax.ParsedKore.Base
 import Booster.Syntax.ParsedKore.Internalise (DefinitionError (..), addToDefinitions)
 import Data.List (singleton)
 import Data.Sequence (Seq)
-import Kore.JsonRpc.Error as RpcError
+import Kore.JsonRpc.Error qualified as RpcError
 import Kore.JsonRpc.Server
-import Kore.JsonRpc.Types
+import Kore.JsonRpc.Types qualified as RpcTypes
 import Kore.JsonRpc.Types.Log
 import Kore.Syntax.Json.Types (Id (..))
 import Kore.Syntax.Json.Types qualified as KoreJson
@@ -62,25 +62,25 @@ respond ::
     forall m.
     MonadLoggerIO m =>
     MVar ServerState ->
-    Respond (API 'Req) m (API 'Res)
+    Respond (RpcTypes.API 'RpcTypes.Req) m (RpcTypes.API 'RpcTypes.Res)
 respond stateVar =
     \case
-        Execute req
-            | isJust req.stepTimeout -> pure $ Left $ unsupportedOption ("step-timeout" :: String)
+        RpcTypes.Execute req
+            | isJust req.stepTimeout -> pure $ Left $ RpcError.unsupportedOption ("step-timeout" :: String)
             | isJust req.movingAverageStepTimeout ->
-                pure $ Left $ unsupportedOption ("moving-average-step-timeout" :: String)
-        Execute req -> withContext req._module $ \(def, mLlvmLibrary) -> do
+                pure $ Left $ RpcError.unsupportedOption ("moving-average-step-timeout" :: String)
+        RpcTypes.Execute req -> withContext req._module $ \(def, mLlvmLibrary) -> do
             -- internalise given constrained term
             let internalised = runExcept $ internalisePattern False Nothing def req.state.term
 
             case internalised of
                 Left patternError -> do
                     Log.logDebug $ "Error internalising cterm" <> Text.pack (show patternError)
-                    pure $ Left $ backendError CouldNotVerifyPattern patternError
+                    pure $ Left $ RpcError.backendError RpcError.CouldNotVerifyPattern patternError
                 Right pat -> do
                     let cutPoints = fromMaybe [] req.cutPointRules
                         terminals = fromMaybe [] req.terminalRules
-                        mbDepth = fmap getNat req.maxDepth
+                        mbDepth = fmap RpcTypes.getNat req.maxDepth
                         doTracing =
                             any
                                 (fromMaybe False)
@@ -90,7 +90,7 @@ respond stateVar =
                                 , req.logFailedSimplifications
                                 ]
                     execResponse req <$> performRewrite doTracing def mLlvmLibrary mbDepth cutPoints terminals pat
-        AddModule req -> do
+        RpcTypes.AddModule req -> do
             -- block other request executions while modifying the server state
             state <- liftIO $ takeMVar stateVar
             let abortWith err = do
@@ -101,7 +101,7 @@ respond stateVar =
 
             case parseKoreModule "rpc-request" req._module of
                 Left errMsg ->
-                    abortWith $ backendError CouldNotParsePattern errMsg
+                    abortWith $ RpcError.backendError RpcError.CouldNotParsePattern errMsg
                 Right newModule ->
                     -- constraints on add-module imposed by LLVM simplification library:
                     let checkModule = do
@@ -113,13 +113,13 @@ respond stateVar =
                                     "Module introduces new symbols: " <> listNames newModule.symbols
                      in case runExcept (checkModule >> addToDefinitions newModule state.definitions) of
                             Left err ->
-                                abortWith $ backendError CouldNotVerifyPattern err
+                                abortWith $ RpcError.backendError RpcError.CouldNotVerifyPattern err
                             Right newDefinitions -> do
                                 liftIO $ putMVar stateVar state{definitions = newDefinitions}
                                 Log.logInfo $
                                     "Added a new module. Now in scope: " <> Text.intercalate ", " (Map.keys newDefinitions)
-                                pure $ Right $ AddModule ()
-        Simplify req -> withContext req._module $ \(def, mLlvmLibrary) -> do
+                                pure $ Right $ RpcTypes.AddModule ()
+        RpcTypes.Simplify req -> withContext req._module $ \(def, mLlvmLibrary) -> do
             let internalised =
                     runExcept $ internaliseTermOrPredicate False Nothing def req.state.term
             let mkTraces
@@ -139,7 +139,7 @@ respond stateVar =
             case internalised of
                 Left patternErrors -> do
                     Log.logError $ "Error internalising cterm: " <> Text.pack (show patternErrors)
-                    pure $ Left $ backendError CouldNotVerifyPattern patternErrors
+                    pure $ Left $ RpcError.backendError RpcError.CouldNotVerifyPattern patternErrors
                 -- term and predicate (pattern)
                 Right (TermAndPredicate pat) -> do
                     Log.logInfoNS "booster" "Simplifying a pattern"
@@ -148,22 +148,22 @@ respond stateVar =
                             let (t, p) = externalisePattern newPattern
                                 tSort = externaliseSort (sortOfPattern newPattern)
                                 result = maybe t (KoreJson.KJAnd tSort t) p
-                            pure . Right . Simplify $
-                                SimplifyResult
+                            pure . Right . RpcTypes.Simplify $
+                                RpcTypes.SimplifyResult
                                     { state = addHeader result
                                     , logs = mkTraces patternTraces
                                     }
                         (Left ApplyEquations.SideConditionsFalse{}, patternTraces) -> do
                             let tSort = fromMaybe (error "unknown sort") $ sortOfJson req.state.term
-                            pure . Right . Simplify $
-                                SimplifyResult
+                            pure . Right . RpcTypes.Simplify $
+                                RpcTypes.SimplifyResult
                                     { state = addHeader $ KoreJson.KJBottom tSort
                                     , logs = mkTraces patternTraces
                                     }
                         (Left (ApplyEquations.EquationLoop terms), _traces) ->
-                            pure . Left . backendError RpcError.Aborted $ map externaliseTerm terms -- FIXME
+                            pure . Left . RpcError.backendError RpcError.Aborted $ map externaliseTerm terms -- FIXME
                         (Left other, _traces) ->
-                            pure . Left . backendError RpcError.Aborted $ show other -- FIXME
+                            pure . Left . RpcError.backendError RpcError.Aborted $ show other -- FIXME
                             -- predicate only
                 Right (APredicate predicate) -> do
                     Log.logInfoNS "booster" "Simplifying a predicate"
@@ -173,28 +173,28 @@ respond stateVar =
                                     fromMaybe (error "not a predicate") $
                                         sortOfJson req.state.term
                                 result = externalisePredicate predicateSort newPred
-                            pure . Right . Simplify $
-                                SimplifyResult
+                            pure . Right . RpcTypes.Simplify $
+                                RpcTypes.SimplifyResult
                                     { state = addHeader result
                                     , logs = mkTraces traces
                                     }
                         (Left something, _traces) ->
-                            pure . Left . backendError RpcError.Aborted $ show something -- FIXME
+                            pure . Left . RpcError.backendError RpcError.Aborted $ show something -- FIXME
 
         -- this case is only reachable if the cancel appeared as part of a batch request
-        Cancel -> pure $ Left cancelUnsupportedInBatchMode
+        RpcTypes.Cancel -> pure $ Left RpcError.cancelUnsupportedInBatchMode
         -- using "Method does not exist" error code
-        _ -> pure $ Left notImplemented
+        _ -> pure $ Left RpcError.notImplemented
   where
     withContext ::
         Maybe Text ->
-        ((KoreDefinition, Maybe LLVM.API) -> m (Either ErrorObj (API 'Res))) ->
-        m (Either ErrorObj (API 'Res))
+        ((KoreDefinition, Maybe LLVM.API) -> m (Either ErrorObj (RpcTypes.API 'RpcTypes.Res))) ->
+        m (Either ErrorObj (RpcTypes.API 'RpcTypes.Res))
     withContext mbMainModule action = do
         state <- liftIO $ readMVar stateVar
         let mainName = fromMaybe state.defaultMain mbMainModule
         case Map.lookup mainName state.definitions of
-            Nothing -> pure $ Left $ backendError CouldNotFindModule mainName
+            Nothing -> pure $ Left $ RpcError.backendError RpcError.CouldNotFindModule mainName
             Just d -> action (d, state.mLlvmLibrary)
 
 runServer ::
@@ -211,7 +211,7 @@ runServer port definitions defaultMain mLlvmLibrary (logLevel, customLevels) =
             jsonRpcServer
                 srvSettings
                 (const $ respond stateVar)
-                [handleErrorCall, handleSomeException]
+                [RpcError.handleErrorCall, RpcError.handleSomeException]
   where
     levelFilter _source lvl =
         lvl `elem` customLevels || lvl >= logLevel && lvl <= LevelError
@@ -227,8 +227,8 @@ data ServerState = ServerState
     -- ^ optional LLVM simplification library
     }
 
-execStateToKoreJson :: ExecuteState -> KoreJson.KoreJson
-execStateToKoreJson ExecuteState{term = t, substitution, predicate} =
+execStateToKoreJson :: RpcTypes.ExecuteState -> KoreJson.KoreJson
+execStateToKoreJson RpcTypes.ExecuteState{term = t, substitution, predicate} =
     let subAndPred = catMaybes [KoreJson.term <$> substitution, KoreJson.term <$> predicate]
      in t
             { KoreJson.term =
@@ -236,15 +236,15 @@ execStateToKoreJson ExecuteState{term = t, substitution, predicate} =
             }
 
 execResponse ::
-    ExecuteRequest ->
+    RpcTypes.ExecuteRequest ->
     (Natural, Seq (RewriteTrace Pattern), RewriteResult Pattern) ->
-    Either ErrorObj (API 'Res)
+    Either ErrorObj (RpcTypes.API 'RpcTypes.Res)
 execResponse req (d, traces, rr) = case rr of
     RewriteBranch p nexts ->
         Right $
-            Execute
-                ExecuteResult
-                    { reason = Branching
+            RpcTypes.Execute
+                RpcTypes.ExecuteResult
+                    { reason = RpcTypes.Branching
                     , depth
                     , logs
                     , state = toExecState p
@@ -253,9 +253,9 @@ execResponse req (d, traces, rr) = case rr of
                     }
     RewriteStuck p ->
         Right $
-            Execute
-                ExecuteResult
-                    { reason = Stuck
+            RpcTypes.Execute
+                RpcTypes.ExecuteResult
+                    { reason = RpcTypes.Stuck
                     , depth
                     , logs
                     , state = toExecState p
@@ -264,9 +264,9 @@ execResponse req (d, traces, rr) = case rr of
                     }
     RewriteCutPoint lbl _ p next ->
         Right $
-            Execute
-                ExecuteResult
-                    { reason = CutPointRule
+            RpcTypes.Execute
+                RpcTypes.ExecuteResult
+                    { reason = RpcTypes.CutPointRule
                     , depth
                     , logs
                     , state = toExecState p
@@ -275,9 +275,9 @@ execResponse req (d, traces, rr) = case rr of
                     }
     RewriteTerminal lbl _ p ->
         Right $
-            Execute
-                ExecuteResult
-                    { reason = TerminalRule
+            RpcTypes.Execute
+                RpcTypes.ExecuteResult
+                    { reason = RpcTypes.TerminalRule
                     , depth
                     , logs
                     , state = toExecState p
@@ -286,9 +286,9 @@ execResponse req (d, traces, rr) = case rr of
                     }
     RewriteFinished _ _ p ->
         Right $
-            Execute
-                ExecuteResult
-                    { reason = DepthBound
+            RpcTypes.Execute
+                RpcTypes.ExecuteResult
+                    { reason = RpcTypes.DepthBound
                     , depth
                     , logs
                     , state = toExecState p
@@ -297,9 +297,9 @@ execResponse req (d, traces, rr) = case rr of
                     }
     RewriteAborted p ->
         Right $
-            Execute
-                ExecuteResult
-                    { reason = Kore.JsonRpc.Types.Aborted
+            RpcTypes.Execute
+                RpcTypes.ExecuteResult
+                    { reason = RpcTypes.Aborted
                     , depth
                     , logs
                     , state = toExecState p
@@ -307,13 +307,13 @@ execResponse req (d, traces, rr) = case rr of
                     , rule = Nothing
                     }
   where
-    ExecuteRequest
+    RpcTypes.ExecuteRequest
         { logSuccessfulRewrites
         , logFailedRewrites
         , logSuccessfulSimplifications
         , logFailedSimplifications
         } = req
-    depth = Depth d
+    depth = RpcTypes.Depth d
 
     logs
         | not
@@ -332,9 +332,9 @@ execResponse req (d, traces, rr) = case rr of
                     )
                 $ toList traces
 
-toExecState :: Pattern -> ExecuteState
+toExecState :: Pattern -> RpcTypes.ExecuteState
 toExecState pat =
-    ExecuteState{term = addHeader t, predicate = fmap addHeader p, substitution = Nothing}
+    RpcTypes.ExecuteState{term = addHeader t, predicate = fmap addHeader p, substitution = Nothing}
   where
     (t, p) = externalisePattern pat
 
