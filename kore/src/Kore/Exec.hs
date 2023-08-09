@@ -79,6 +79,7 @@ import Kore.Equation qualified as Equation (
     argument,
     requires,
  )
+import Kore.Exec.GraphTraversal (extractStuckTraversalResult)
 import Kore.Exec.GraphTraversal qualified as GraphTraversal
 import Kore.IndexedModule.IndexedModule (
     IndexedModule (..),
@@ -323,7 +324,7 @@ exec
                         GraphTraversal.Ended results ->
                             pure results
                         GraphTraversal.GotStuck _ results ->
-                            pure results
+                            pure $ map extractStuckTraversalResult results
                         GraphTraversal.Stopped results nexts -> do
                             when (null nexts) $
                                 forM_ depthLimit warnDepthLimitExceeded
@@ -535,7 +536,8 @@ rpcExec
         toTransitionResult prior@RpcExecState{rpcProgState = priorPState} [] =
             case priorPState of
                 Remaining _ -> GraphTraversal.Stuck prior
-                Kore.Rewrite.Bottom -> GraphTraversal.Stuck prior
+                -- this should not be reachable unless we received bottom as initial configuration?
+                Kore.Rewrite.Bottom -> GraphTraversal.Vacuous prior
                 -- returns `Final` to signal that no instructions were left.
                 Start _ -> GraphTraversal.Final prior
                 Rewritten _ -> GraphTraversal.Final prior
@@ -548,13 +550,13 @@ rpcExec
                 GraphTraversal.Stop
                     (setTraces rules priorRules next)
                     []
-        toTransitionResult RpcExecState{rpcRules = priorRules} [(next@RpcExecState{rpcProgState = nextPState}, rules)] =
+        toTransitionResult prior@RpcExecState{rpcRules = priorRules} [(next@RpcExecState{rpcProgState = nextPState}, rules)] =
             let next' = setTraces rules priorRules next
              in case nextPState of
                     Start _ -> GraphTraversal.Continuing next'
                     Rewritten _ -> GraphTraversal.Continuing next'
                     Remaining _ -> GraphTraversal.Stuck next'
-                    Kore.Rewrite.Bottom -> GraphTraversal.Stuck next'
+                    Kore.Rewrite.Bottom -> GraphTraversal.Vacuous prior
         toTransitionResult prior (s : ss) =
             GraphTraversal.Branch prior $ fmap fst (s :| ss)
 
