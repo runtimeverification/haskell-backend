@@ -179,6 +179,7 @@ data GetModelResult = GetModelResult
 
 data SimplifyImplicationResult = SimplifyImplicationResult
     { validity :: ImplicationValidityResult
+    , substitution :: Maybe KoreJson
     , logs :: Maybe [LogEntry]
     }
     deriving stock (Generic, Show, Eq)
@@ -187,8 +188,8 @@ data SimplifyImplicationResult = SimplifyImplicationResult
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] SimplifyImplicationResult
 
 data ImplicationValidityResult
-    = -- | implication is valid, constrained substitution returned
-      ImplicationValid KoreJson
+    = -- | implication is valid
+      ImplicationValid
     | -- | implication is invalid, explains why
       ImplicationInvalid ImplicationInvalidReason
     | -- | implication is unknown, explains why
@@ -199,16 +200,20 @@ data ImplicationValidityResult
         via CustomJSON '[] ImplicationValidityResult
 
 data ImplicationInvalidReason
-    = MatchingFailed KoreJson
-    | ConstraintSubsumptionFailed KoreJson
+    = -- | antecedent and consequent do not match
+      MatchingFailed Text
+    | -- | matching was successful, but constraints don't agree: return unsatisfiable core of constraints
+      ConstraintSubsumptionFailed KoreJson
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
         via CustomJSON '[] ImplicationInvalidReason
 
 data ImplicationUnknownReason
-    = MatchingUnknown KoreJson
-    | ConstraintSubsumptionUnknown KoreJson
+    = -- | matching between antecedent and consequent is indeterminate, return the subterms that caused this
+      MatchingUnknown KoreJson KoreJson
+    | -- | matching was successful, but constraint subsumption is indeterminate: return unknown constraints
+      ConstraintSubsumptionUnknown KoreJson
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
