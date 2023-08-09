@@ -120,7 +120,6 @@ jobs:
   nix-integration:
     name: 'Nix / Integration'
     runs-on: [self-hosted, linux, normal]
-    needs: nix-build
     steps:
       - name: Check out code
         uses: actions/checkout@v3
