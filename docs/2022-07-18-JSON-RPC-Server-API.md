@@ -430,7 +430,7 @@ A constrained substitution as the result, and this is only returned if the impli
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
-    "validity": {"tag": "ImplicationValid"},
+    "validity": {"tag": "implication-valid"},
     "substitution": {"format": "KORE", "version": 1, "term": {}},
   }
 }
@@ -445,8 +445,8 @@ Matching between antecedent and consequent configurations failed (different cons
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
-    "validity": {"tag": "ImplicationInvalid",
-                 "contents": {"tag": "MatchingFailed",
+    "validity": {"tag": "implication-valid",
+                 "contents": {"tag": "matching-failed",
                               "contents": "Shared variables: X:SortWordStack{}"
                  }},
   }
@@ -462,8 +462,8 @@ Matching between antecedent and consequent configurations is successful, but con
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
-    "validity": {"tag": "ImplicationInvalid",
-                 "contents": {"tag": "ConstraintSubsumptionFailed",
+    "validity": {"tag": "implication-valid",
+                 "contents": {"tag": "constraint-subsumption-failed",
                               "contents": {"format": "KORE", "version": 1, "term": {}}
                  }},
     "substitution": {"format": "KORE", "version": 1, "term": {}},
@@ -480,8 +480,8 @@ The matching algorithm is incomplete and may return an indeterminate result. The
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
-    "validity": {"tag": "ImplicationUnknown",
-                 "contents": {"tag": "MatchingUnknown",
+    "validity": {"tag": "implication-unknown",
+                 "contents": {"tag": "matching-unknown",
                               "contents": {"first" : {"format": "KORE", "version": 1, "term": {}}
                                           ,"second" : {"format": "KORE", "version": 1, "term": {}}
                                           }
@@ -499,9 +499,9 @@ If matching is successful, but the constraint solver procedure (internal, or the
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
-    "validity": {"tag": "ImplicationUnknown",
-                 "contents": {"tag": "ConstraintSubsumptionUnknown",
-                              "contents": {"tag": "ConstraintSubsumptionFailed",
+    "validity": {"tag": "implication-unknown",
+                 "contents": {"tag": "constraint-subsumption-unknown",
+                              "contents": {"tag": "constraint-subsumption-failed",
                                            "contents": {"format": "KORE", "version": 1, "term": {}}
                  }},
     "substitution": {"format": "KORE", "version": 1, "term": {}},

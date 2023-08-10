@@ -198,7 +198,7 @@ data ImplicationValidityResult
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[] ImplicationValidityResult
+        via CustomJSON '[ConstructorTagModifier '[CamelToKebab]] ImplicationValidityResult
 
 data ImplicationInvalidReason
     = -- | antecedent and consequent do not match
@@ -208,7 +208,7 @@ data ImplicationInvalidReason
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[] ImplicationInvalidReason
+        via CustomJSON '[ConstructorTagModifier '[CamelToKebab]] ImplicationInvalidReason
 
 data ImplicationUnknownReason
     = -- | matching between antecedent and consequent is indeterminate, return the subterms that caused this
@@ -218,7 +218,7 @@ data ImplicationUnknownReason
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[] ImplicationUnknownReason
+        via CustomJSON '[ConstructorTagModifier '[CamelToKebab]] ImplicationUnknownReason
 
 data SatResult
     = Sat
