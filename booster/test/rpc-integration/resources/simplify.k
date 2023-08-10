@@ -1,8 +1,28 @@
 module SIMPLIFY
   imports INT
+  imports BOOL
   imports ID-SYNTAX
 
   syntax Int ::= f ( Int ) [function, no-evaluators] // a non-concrete value
+               | g ( Int ) [function, klabel("g"), symbol] // for simplification purposes
+
+  syntax Bool ::= p1 ( Int ) [function, total, no-evaluators, klabel("p1"), symbol]
+                | p2 ( Int ) [function, total, no-evaluators, klabel("p2"), symbol]
+                | p3 ( Int ) [function, total, klabel("p3"), symbol]
+
+  // an indirect simplifiation loop
+  rule [p1-if-p2]: p1(X) => true requires p2(X) [simplification]
+  rule [p2-if-p1]: p2(X) => true requires p1(X) [simplification]
+  // simplification of terms involving p1(_someInt) or p2(_someInt) will
+  // enter a loop of p1, p2, p1, p2... until depth 100 is reached, and then
+  // bail out in booster. Simplification in kore-rpc _loops to infinity_.
+
+  // an equation requiring a second-order evaluation of side condition p3
+  rule [eval-g]: g(X) => X requires p3(X)
+
+  rule [p3-true]: p3(1) => true
+  rule [p3-false]: p3(_) => false [owise]
+
 
 /* Simplification rules from domains.md, reproduced here for documentation
 
