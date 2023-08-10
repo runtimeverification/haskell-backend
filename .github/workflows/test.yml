@@ -119,8 +119,7 @@ jobs:
 
   nix-integration:
     name: 'Nix / Integration'
-    runs-on: ubuntu-22.04
-    needs: nix-build
+    runs-on: [self-hosted, linux, normal]
     steps:
       - name: Check out code
         uses: actions/checkout@v3

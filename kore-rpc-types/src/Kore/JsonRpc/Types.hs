@@ -116,6 +116,7 @@ data ExecuteState = ExecuteState
 data HaltReason
     = Branching
     | Stuck
+    | Vacuous
     | DepthBound
     | CutPointRule
     | TerminalRule

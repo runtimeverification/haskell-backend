@@ -47,7 +47,7 @@ import Kore.Equation.Equation (
  )
 import Kore.Error qualified
 import Kore.Exec
-import Kore.Exec.GraphTraversal (TraversalResult (..))
+import Kore.Exec.GraphTraversal (StuckTraversalResult (..), TraversalResult (..))
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Pattern (
@@ -201,7 +201,7 @@ test_rpcExecDepth =
     [ testCase "without depth limit" $ do
         result <-
             runDepth $ rpcExecTest [] [] Unlimited verifiedModule (state "c")
-        assertEqual "depth" (stuckAt 2) result
+        assertEqual "depth" (stuckAt $ IsStuck 2) result
     , testCase "with depth limit limiting execution" $ do
         result <-
             runDepth $ rpcExecTest [] [] (Limit 1) verifiedModule (state "c")
@@ -209,7 +209,7 @@ test_rpcExecDepth =
     , testCase "with depth limit above execution limit" $ do
         result <-
             runDepth $ rpcExecTest [] [] (Limit 3) verifiedModule (state "c")
-        assertEqual "depth" (stuckAt 2) result
+        assertEqual "depth" (stuckAt $ IsStuck 2) result
     , testCase "when branching" $ do
         result <-
             runDepth $ rpcExecTest [] [] Unlimited verifiedModule (state "a")
