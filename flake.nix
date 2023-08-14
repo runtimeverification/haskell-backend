@@ -57,7 +57,7 @@
         };
 
       compiler-nix-name = "ghc928";
-      index-state = "2023-06-26T23:55:21Z";
+      index-state = "2023-07-13T00:00:00Z";
       fourmolu-version = "0.12.0.0";
       hlint-version = "3.5";
 
