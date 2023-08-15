@@ -15,6 +15,7 @@ import Data.Set qualified as Set
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
 import Booster.Pattern.Base
+import Booster.Syntax.Json.Internalise (trm)
 import Booster.Syntax.ParsedKore.Internalise (symb)
 
 someSort, aSubsort, differentSort, kSort, kItemSort :: Sort
@@ -34,7 +35,6 @@ testDefinition =
                 [ someSort `withSubsorts` [aSubsort]
                 , aSubsort `withSubsorts` []
                 , differentSort `withSubsorts` []
-                , kItemSort `withSubsorts` [someSort, aSubsort, differentSort]
                 , kSort `withSubsorts` []
                 ]
         , symbols =
@@ -83,3 +83,42 @@ con3 = [symb| symbol con3{}(SomeSort{}, SomeSort{}) : SomeSort{} [constructor{}(
 con4 = [symb| symbol con4{}(SomeSort{}, SomeSort{}) : AnotherSort{} [constructor{}()] |]
 f1 = [symb| symbol f1{}(SomeSort{}) : SomeSort{} [function{}(), total{}()] |]
 f2 = [symb| symbol f2{}(SomeSort{}) : SomeSort{} [function{}()] |]
+
+--------------------------------------------------------------------------------
+
+testKMapDefinition :: KMapDefinition
+testKMapDefinition =
+    KMapDefinition
+        { symbolNames = testKMapSymbolNames
+        , keySortName = "SortTestKMapKey"
+        , elementSortName = "SortTestKMapItem"
+        , mapSortName = "SortTestKMap"
+        }
+  where
+    testKMapSymbolNames =
+        KMapAttributes
+            { unitSymbolName = "Lbl'Stop'TestKMap"
+            , elementSymbolName = "LblTestKMapItem"
+            , concatSymbolName = "Lbl'Unds'TestKMap'Unds'"
+            }
+
+emptyKMap, concreteKMapWithOneItem, symbolicKMapWithOneItem :: Term
+emptyKMap = KMap testKMapDefinition [] Nothing
+concreteKMapWithOneItem =
+    KMap
+        testKMapDefinition
+        [
+            ( [trm| \dv{SomeSort{}}("key")|]
+            , [trm| \dv{SomeSort{}}("value")|]
+            )
+        ]
+        Nothing
+symbolicKMapWithOneItem =
+    KMap
+        testKMapDefinition
+        [
+            ( [trm| \dv{SomeSort{}}("key")|]
+            , [trm| A:SomeSort|]
+            )
+        ]
+        Nothing

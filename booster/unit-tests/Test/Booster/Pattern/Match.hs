@@ -24,6 +24,7 @@ test_match =
         , cornerCases
         , andTerms
         , composite
+        , kmapTerms
         ]
 
 symbols :: TestTree
@@ -183,12 +184,46 @@ andTerms =
                 (MatchIndeterminate d (AndTerm fa fb))
         ]
 
+kmapTerms :: TestTree
+kmapTerms =
+    testGroup
+        "KMap on either side"
+        [ test
+            "Two empty KMaps: success with empty substitution"
+            emptyKMap
+            emptyKMap
+            (success [])
+        , test
+            "Two identical concrete KMaps: success with empty substitution"
+            concreteKMapWithOneItem
+            concreteKMapWithOneItem
+            (success [])
+        , test
+            "Empty KMap on the left, non-empty concrete KMap on the right: failed"
+            emptyKMap
+            concreteKMapWithOneItem
+            (MatchFailed (General (DifferentValues emptyKMap concreteKMapWithOneItem)))
+        , test
+            "Non-empty concrete KMap on the left, empty KMap on the right: failed"
+            concreteKMapWithOneItem
+            emptyKMap
+            (MatchFailed (General (DifferentValues concreteKMapWithOneItem emptyKMap)))
+        , test
+            "Non-empty symbolic KMap on the left, empty KMap on the right: indeterminate"
+            symbolicKMapWithOneItem
+            emptyKMap
+            (MatchIndeterminate symbolicKMapWithOneItem emptyKMap)
+        , test
+            "Non-empty symbolic KMap on the left, non-empty concrete KMap on the right: indeterminate"
+            symbolicKMapWithOneItem
+            concreteKMapWithOneItem
+            (MatchIndeterminate symbolicKMapWithOneItem concreteKMapWithOneItem)
+        ]
+
 cornerCases :: TestTree
 cornerCases =
     let v = var "X" someSort
      in errors "identical variables" v v
-
-----------------------------------------
 
 test :: String -> Term -> Term -> MatchResult -> TestTree
 test name pat subj expected =
