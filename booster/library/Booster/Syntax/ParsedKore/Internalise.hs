@@ -91,11 +91,8 @@ addToDefinitions ::
     ParsedModule ->
     Map Text KoreDefinition ->
     Except DefinitionError (Map Text KoreDefinition)
-addToDefinitions m prior
-    | Map.member m.name.getId prior =
-        throwE $ DuplicateModule m.name.getId
-    | otherwise = do
-        definitionMap <$> execStateT (descendFrom m.name.getId) currentState
+addToDefinitions m prior = do
+    definitionMap <$> execStateT (descendFrom m.name.getId) currentState
   where
     currentState =
         State
