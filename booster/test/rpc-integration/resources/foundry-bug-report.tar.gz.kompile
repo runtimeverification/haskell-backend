@@ -2,7 +2,6 @@ set -eux
 
 SCRIPT_DIR=$(dirname $0)
 PLUGIN_DIR=${PLUGIN_DIR:-""}
-NIX_LIBS=${NIX_LIBS:-""}
 
 
 if [ -z "$PLUGIN_DIR" ]; then
@@ -26,10 +25,13 @@ NAMETGZ=$(basename ${0%.kompile})
 # into a directory named after the tarball
 cd $SCRIPT_DIR
 mkdir -p $NAME
-tar xzf ../test-$NAMETGZ -C $NAME definition.kore llvm_definition/
+tar xzf ../test-$NAMETGZ -C $NAME definition.kore llvm_definition/definition.kore
 
 # provide definition
 cp $NAME/definition.kore ${NAMETGZ}.kore
+
+# Regenerate llvm backend decision tree
+llvm-backend-matching $NAME/llvm_definition/definition.kore qbaL $NAME/llvm_definition/dt 0
 
 # kompile llvm-definition to interpreter
 
