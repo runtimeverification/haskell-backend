@@ -210,16 +210,23 @@ jobs:
           GC_DONT_GC: '1'
           GH_TOKEN: ${{ github.token }}
         run: |
-          nix run .#hs-backend-booster:test:llvm-integration --extra-experimental-features 'nix-command flakes' --print-build-logs
           export JQ=$(nix-build '<nixpkgs>' -A jq --no-link)/bin/jq
-          for dir in $(cd test/rpc-integration && ls -d test-*); do
+          K_VERSION=$(cat deps/k_release)
+          PLUGIN_VERSION=$(cat deps/blockchain-k-plugin_release)
+          export PATH="$(nix build github:runtimeverification/k/v$K_VERSION#k.openssl.procps --no-link --json | $JQ -r '.[].outputs | to_entries[].value')/bin:$PATH"
+          nix run .#hs-backend-booster:test:llvm-integration --extra-experimental-features 'nix-command flakes' --print-build-logs
+          
+          # The runDirectoryTest.sh script expects the following env vars to be set
+          export PLUGIN_DIR=$(nix build github:runtimeverification/blockchain-k-plugin/$PLUGIN_VERSION --no-link --json | $JQ -r '.[].outputs | to_entries[].value')
+          export SERVER=$(nix build .#kore-rpc-booster --no-link --json | $JQ -r '.[].outputs | to_entries[].value')/bin/kore-rpc-booster
+          export CLIENT=$(nix build .#hs-backend-booster:exe:rpc-client --no-link --json | $JQ -r '.[].outputs | to_entries[].value')/bin/rpc-client
+          
+          cd test/rpc-integration
+          for dir in $(ls -d test-*); do
               name=${dir##test-}
-              echo $name
-              nix build .#checks.${{ matrix.nix }}.integration.$name --extra-experimental-features 'nix-command flakes' --print-build-logs -o $name.md
+              echo "Running $name..."
+              ./runDirectoryTest.sh test-$name --time
           done
-          echo "${{ matrix.nix }}" >> $GITHUB_STEP_SUMMARY
-          cat imp.md >> $GITHUB_STEP_SUMMARY
-
 
       - name: Check shell
         run: GC_DONT_GC=1 nix develop --print-build-logs --command cabal --version
