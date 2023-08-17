@@ -443,7 +443,9 @@ runTarball common tarFile keepGoing = do
                 liftIO $ Tar.foldEntries (unpackIfRpc tmp) (pure []) throwAnyError checked
             logInfo_ $ "RPC data:" <> show jsonFiles
 
-            let requests = mapMaybe (stripSuffix "_request.json") jsonFiles
+            -- we should not rely on the requests being returned in a sorted order and
+            -- should therefore sort them explicitly
+            let requests = sort $ mapMaybe (stripSuffix "_request.json") jsonFiles
             results <-
                 forM requests $ \r -> do
                     mbError <- runRequest skt tmp jsonFiles r
