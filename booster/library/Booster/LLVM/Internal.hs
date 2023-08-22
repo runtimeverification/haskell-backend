@@ -342,7 +342,9 @@ mkAPI dlib = flip runReaderT dlib $ do
                                         }
                                 len <- fromIntegral <$> peek lenPtr
                                 cstr <- peek strPtr
-                                BS.packCStringLen (cstr, len)
+                                result <- BS.packCStringLen (cstr, len)
+                                Foreign.free cstr
+                                pure result
 
     pure API{patt, symbol, sort, simplifyBool, simplify}
   where
