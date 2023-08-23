@@ -441,8 +441,8 @@ defaultConfig =
             ]
         , prelude = Prelude Nothing
         , logFile = Nothing
-        , timeOut = TimeOut (Limit 40)
-        , retryLimit = RetryLimit (Limit 1)
+        , timeOut = TimeOut (Limit 125)
+        , retryLimit = RetryLimit (Limit 3)
         , rLimit = RLimit Unlimited
         , resetInterval = ResetInterval 100
         }
