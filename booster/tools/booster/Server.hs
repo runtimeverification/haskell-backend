@@ -85,7 +85,7 @@ main = do
                     , eventlogEnabledUserEvents
                     }
             , koreSolverOptions
-            , proxyOptions = ProxyOptions{printStats, simplifyAfterExec}
+            , proxyOptions = ProxyOptions{printStats}
             , debugSolverOptions
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
@@ -142,7 +142,7 @@ main = do
                         server =
                             jsonRpcServer
                                 srvSettings
-                                (const $ Proxy.respondEither statVar simplifyAfterExec boosterRespond koreRespond)
+                                (const $ Proxy.respondEither statVar boosterRespond koreRespond)
                                 [handleErrorCall, handleSomeException]
                         interruptHandler _ = do
                             when (logLevel >= LevelInfo) $
@@ -177,11 +177,9 @@ data CLProxyOptions = CLProxyOptions
     , debugSolverOptions :: !Log.DebugSolverOptions
     }
 
-data ProxyOptions = ProxyOptions
+newtype ProxyOptions = ProxyOptions
     { printStats :: Bool
     -- ^ print timing statistics per request and on shutdown
-    , simplifyAfterExec :: Bool
-    -- ^ run kore simplifier on all result terms after executing
     }
 
 parserInfoModifiers :: InfoMod options
@@ -202,10 +200,6 @@ clProxyOptionsParser =
             <$> switch
                 ( long "print-stats"
                     <> help "(development) Print timing information per request and on shutdown"
-                )
-            <*> switch
-                ( long "simplify-after-exec"
-                    <> help "(experimental) Run kore simplifier on execute results before returning"
                 )
 
 mkKoreServer :: Log.LoggerEnv IO -> CLOptions -> KoreSolverOptions -> IO KoreServer

@@ -58,11 +58,10 @@ respondEither ::
     Log.MonadLogger m =>
     MonadIO m =>
     Maybe StatsVar ->
-    Bool ->
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res)
-respondEither mbStatsVar simplifyAfterExec booster kore req = case req of
+respondEither mbStatsVar booster kore req = case req of
     Execute execReq
         | isJust execReq.stepTimeout || isJust execReq.movingAverageStepTimeout ->
             loggedKore ExecuteM req
@@ -221,14 +220,12 @@ respondEither mbStatsVar simplifyAfterExec booster kore req = case req of
             res -> pure res
 
     postExecSimplify :: Maybe Text -> API 'Res -> m (API 'Res)
-    postExecSimplify mbModule
-        | not simplifyAfterExec = pure
-        | otherwise = \case
-            Execute res ->
-                case res.reason of
-                    Branching -> Execute <$> simplifyResult res
-                    _ -> pure (Execute res)
-            other -> pure other
+    postExecSimplify mbModule = \case
+        Execute res ->
+            case res.reason of
+                Branching -> Execute <$> simplifyResult res
+                _ -> pure (Execute res)
+        other -> pure other
       where
         simplifyResult :: ExecuteResult -> m ExecuteResult
         simplifyResult res@ExecuteResult{reason, state, nextStates} = do
