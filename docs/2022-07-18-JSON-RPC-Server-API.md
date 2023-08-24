@@ -314,7 +314,7 @@ Other errors are specific to the implication checker and what it supports. These
 
 The endpoint simplifies `antecedent` and `consequent` terms and checks whether the implication holds. The simplified implication is returned (as a KORE term) in field `implication`.
 
-If the implication holds, `satisfiable` is `true` and `condition` contains a unifying condition for the simplified antecedent and consequent (as provided in `implication`).
+If the implication holds, `satisfiable` is `true` and `condition` contains a witness, in the form of a predicate and a substitution which unifies the simplified antecedent and the consequent with existential quantifiers removed. The `condition.substitution` will contain a witnessing value for each existentially quantified variable of the RHS.
 
 ```json
 {
