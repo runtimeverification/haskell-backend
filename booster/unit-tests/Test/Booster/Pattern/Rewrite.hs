@@ -237,7 +237,7 @@ rewriteStuck =
     testCase "con3 app is stuck (no rules apply)" $ do
         let con3App =
                 [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con3{}( \dv{SomeSort{}}("thing"), \dv{SomeSort{}}("thing") ) ), ConfigVar:SortK{}) ) |]
-        con3App `failsWith` NoApplicableRules (Pattern con3App [])
+        getsStuck con3App
 rulePriority =
     testCase "con1 rewrites to a branch when higher priority does not apply" $
         [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("otherThing") ) ), ConfigVar:SortK{}) ) |]
@@ -255,6 +255,11 @@ rewritesTo :: Term -> (Text, Term) -> IO ()
 t1 `rewritesTo` (lbl, t2) =
     unsafePerformIO (runNoLoggingT $ runRewriteT False def Nothing (rewriteStep [] [] $ Pattern t1 []))
         @?= Right (RewriteFinished (Just lbl) Nothing $ Pattern t2 [])
+
+getsStuck :: Term -> IO ()
+getsStuck t1 =
+    unsafePerformIO (runNoLoggingT $ runRewriteT False def Nothing (rewriteStep [] [] $ Pattern t1 []))
+        @?= Right (RewriteStuck $ Pattern t1 [])
 
 branchesTo :: Term -> [(Text, Term)] -> IO ()
 t `branchesTo` ts =
