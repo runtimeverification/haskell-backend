@@ -178,6 +178,9 @@ If `"reason": "branching"`, an additional `next-states` field contains all follo
 }
 ```
 
+**Note that** it is possible that some of the `next-states` have not actually taken rewrite steps. In cases where one of the branches is stuck because of an added (branching) side condition, `next-states` will contain this branch with a term identical to the one in `state` and the branching condition added to the prior `predicate` from `term` (Rationale: a subsequent `execute` step starting from this `state` will of course immediately report `stuck`, and the branching should be indicated to the user).
+
+
 If `"reason": "cut-point-rule"`, the `next-states` field contains the next state (if any) in a list. The `rule` field indicates which rule led to stopping.
 
 ```json
