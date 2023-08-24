@@ -29,6 +29,7 @@ simplifyTerm api def trm sort = unsafePerformIO $ Internal.runLLVM api $ do
     trmPtr <- Trace.timeIO "LLVM.simplifyTerm.marshallTerm" $ Internal.marshallTerm trm
     sortPtr <- Trace.timeIO "LLVM.simplifyTerm.marshallSort" $ Internal.marshallSort sort
     binary <- liftIO $ kore.simplify trmPtr sortPtr
+    liftIO $ kore.collect
     Trace.traceIO $ Internal.LlvmVar (Internal.somePtr trmPtr) trm
     -- strip away the custom injection added by the LLVM backend
     Trace.timeIO "LLVM.simplifyTerm.decodeTerm" $ case runGet (decodeTerm def) (fromStrict binary) of
