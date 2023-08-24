@@ -262,6 +262,17 @@ execResponse req (d, traces, rr) = case rr of
                     , nextStates = Nothing
                     , rule = Nothing
                     }
+    RewriteTrivial p ->
+        Right $
+            RpcTypes.Execute
+                RpcTypes.ExecuteResult
+                    { reason = RpcTypes.Vacuous
+                    , depth
+                    , logs
+                    , state = toExecState p
+                    , nextStates = Nothing
+                    , rule = Nothing
+                    }
     RewriteCutPoint lbl _ p next ->
         Right $
             RpcTypes.Execute
