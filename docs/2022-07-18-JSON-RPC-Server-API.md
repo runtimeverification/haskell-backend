@@ -100,10 +100,11 @@ All correct responses have a result containing a `reason`, with one of the follo
 * `"reason": "depth-bound"`
 * `"reason": "cut-point-rule"`
 * `"reason": "terminal-rule"`
+* `"reason": "vacuous"`
 * `"reason": "timeout"`
 * `"reason": "aborted"`
 
-A field `state` contains the state reached (including optional `predicate` and `substitution`), a field `depth` indicates the execution depth.
+and a field `state` which contains the state reached (including optional `predicate` and `substitution`), as well as a field `depth` indicating the execution depth (i.e., number of rewrite steps.
 
 ```json
 {
@@ -122,12 +123,59 @@ A field `state` contains the state reached (including optional `predicate` and `
 }
 ```
 
-The above will be also be the same for:
-  * `"reason": "depth-bound"`
-  * `"reason": "timeout"`
-  * `"reason": "aborted"`
+#### Explanation of `reason` field and additional fields.
+The `reason` field provides information about why the execution stopped.
+Depending on the given `reason`, additional fields may be present.
 
-If `"reason":  "terminal-rule"`, an additional `rule` field indicates which of the `terminal-rule` labels or IDs led to terminating the execution:
+##### `"reason": "stuck"`
+Execution reached a state where no rewrite rule could be applied.
+This response has no additional fields.
+
+##### `"reason": "depth-bound"`
+Execution reached the `max-depth` bound provided in the request
+This response has no additional fields.
+
+##### `"reason": "timeout"`
+Execution was stopped because a rewrite step took longer than the `step-timeout` provided in the request (either in absolute time for a single step, or as a moving average value).
+This response has no additional fields.
+
+##### `"reason": "aborted"`
+Execution reached a state that the server cannot handle.
+This response has no additional fields.
+
+##### `"reason": "cut-point-rule"`
+Execution was about to perform a rewrite with a rule whose label is one of the `cut-point-rules` labels/IDs of the request.  
+An additional `rule` field indicates which of the `cut-point-rules` labels/IDs led to stopping.
+An additional `next-states` field contains the next state (which stems from the RHS of this rule) in a singleton list.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "state": {
+      "term": {"format":"KORE", "version":1, "term":{}},
+      "predicate": {"format":"KORE", "version":1, "term":{}},
+      "substitution": {"format":"KORE", "version":1, "term":{}},
+    },
+    "depth": 2,
+    "reason": "cut-point-rule",
+    "rule": "rule1",
+    "next-states": [
+      {
+        "term": {"format": "KORE", "version": 1, "term": {}},
+        "predicate": {"format":"KORE", "version":1, "term":{}},
+        "substitution": {"format":"KORE", "version":1, "term":{}},
+      }
+    ],
+    "logs": []
+  }
+}
+```
+
+##### `"reason": "terminal-rule"`
+Execution performed a rewrite with a rule whose label is one of the `terminal-rules` labels/IDs of the request.  
+An additional `rule` field indicates which of the `terminal-rule` labels or IDs led to terminating the execution:
 
 ```json
 {
@@ -147,8 +195,14 @@ If `"reason":  "terminal-rule"`, an additional `rule` field indicates which of t
 }
 ```
 
+##### `"reason": "vacuous"`
+Execution reached a state where, most likely because of ensured side conditions, the configuration became equivalent to `\bottom`.
+The `state` field contains this last configuration, no additional fields are present.
 
-If `"reason": "branching"`, an additional `next-states` field contains all following states of the branch point.
+##### `"reason": "branching"`
+More than one rewrite rule has applied (possibly because of splitting the state and adding branching conditions)
+
+An additional `next-states` field contains all following states of the branch point.
 ```json
 {
   "jsonrpc": "2.0",
@@ -178,33 +232,13 @@ If `"reason": "branching"`, an additional `next-states` field contains all follo
 }
 ```
 
-If `"reason": "cut-point-rule"`, the `next-states` field contains the next state (if any) in a list. The `rule` field indicates which rule led to stopping.
+##### Clarifications
+* It is possible that some of the `next-states` in a `branching` result have not actually taken rewrite steps. If one of the branches is stuck because of the added (branching) side condition, `next-states` will also contain this branch, with a term identical to the one in `state` and the branching condition added to the prior `predicate` from `term`.  
+  Rationale: The branching should be indicated to the user. A subsequent `execute` step starting from this stuck `state` will of course immediately report `stuck`.
+* `branching` results are preferred to `cut-point-rule` and `terminal-rule` results. That means, if execution reaches a branch with one of the applying rules having a label/ID from `cut-point-rules` or `terminal-rules`, the response will be `branching`.  
+  Rationale: The branching information must be provided, assuming the client will re-execute on each branch.
 
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "result": {
-    "state": {
-      "term": {"format":"KORE", "version":1, "term":{}},
-      "predicate": {"format":"KORE", "version":1, "term":{}},
-      "substitution": {"format":"KORE", "version":1, "term":{}},
-    },
-    "depth": 2,
-    "reason": "cut-point-rule",
-    "rule": "rule1",
-    "next-states": [
-      {
-        "term": {"format": "KORE", "version": 1, "term": {}},
-        "predicate": {"format":"KORE", "version":1, "term":{}},
-        "substitution": {"format":"KORE", "version":1, "term":{}},
-      }
-    ],
-    "logs": []
-  }
-}
-```
-
+#### Optional Logging
 If any logging is enabled, the optional `logs` field will be returned containing an array of objects of the following structure:
 
 ```json
@@ -314,7 +348,7 @@ Other errors are specific to the implication checker and what it supports. These
 
 The endpoint simplifies `antecedent` and `consequent` terms and checks whether the implication holds. The simplified implication is returned (as a KORE term) in field `implication`.
 
-If the implication holds, `satisfiable` is `true` and `condition` contains a unifying condition for the simplified antecedent and consequent (as provided in `implication`).
+If the implication holds, `satisfiable` is `true` and `condition` contains a witness, in the form of a predicate and a substitution which unifies the simplified antecedent and the consequent with existential quantifiers removed. The `condition.substitution` will contain a witnessing value for each existentially quantified variable of the RHS.
 
 ```json
 {
