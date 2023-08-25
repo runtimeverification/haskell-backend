@@ -19,7 +19,7 @@ import Control.Monad.Logger qualified as Log
 import Data.Aeson (ToJSON (..))
 import Data.Aeson.KeyMap qualified as Aeson
 import Data.Aeson.Types (Value (..))
-import Data.Maybe (catMaybes, isJust)
+import Data.Maybe (isJust)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Network.JSONRPC
@@ -66,10 +66,27 @@ respondEither mbStatsVar booster kore req = case req of
         | isJust execReq.stepTimeout || isJust execReq.movingAverageStepTimeout ->
             loggedKore ExecuteM req
         | otherwise ->
-            startLoop execReq >>= traverse (postExecSimplify execReq._module)
+            handleExecute execReq >>= traverse (postExecSimplify execReq._module)
     Implies _ ->
         loggedKore ImpliesM req
-    Simplify simplifyReq -> do
+    Simplify simplifyReq -> handleSimplify simplifyReq
+    AddModule _ -> do
+        -- execute in booster first, assuming that kore won't throw an
+        -- error if booster did not. The response is empty anyway.
+        (boosterResult, boosterTime) <- withTime $ booster req
+        case boosterResult of
+            Left _err -> pure boosterResult
+            Right _ -> do
+                (koreRes, koreTime) <- withTime $ kore req
+                logStats AddModuleM (boosterTime + koreTime, koreTime)
+                pure koreRes
+    GetModel _ ->
+        loggedKore GetModelM req
+    Cancel ->
+        pure $ Left $ ErrorObj "Cancel not supported" (-32601) Null
+  where
+    handleSimplify :: SimplifyRequest -> m (Either ErrorObj (API 'Res))
+    handleSimplify simplifyReq = do
         -- execute in booster first, then in kore. Log the difference
         (boosterResult, boosterTime) <- withTime $ booster req
         case boosterResult of
@@ -105,26 +122,6 @@ respondEither mbStatsVar booster kore req = case req of
                 loggedKore SimplifyM req
             _wrong ->
                 pure . Left $ ErrorObj "Wrong result type" (-32002) $ toJSON _wrong
-    AddModule _ -> do
-        -- execute in booster first, assuming that kore won't throw an
-        -- error if booster did not. The response is empty anyway.
-        (boosterResult, boosterTime) <- withTime $ booster req
-        case boosterResult of
-            Left _err -> pure boosterResult
-            Right _ -> do
-                (koreRes, koreTime) <- withTime $ kore req
-                logStats AddModuleM (boosterTime + koreTime, koreTime)
-                pure koreRes
-    GetModel _ ->
-        loggedKore GetModelM req
-    Cancel ->
-        pure $ Left $ ErrorObj "Cancel not supported" (-32601) Null
-  where
-    toRequestState :: ExecuteState -> KoreJson.KoreJson
-    toRequestState ExecuteState{term = t, substitution, predicate} =
-        let subAndPred = catMaybes [KoreJson.term <$> substitution, KoreJson.term <$> predicate]
-            termSort = KoreJson.SortApp (KoreJson.Id "SortGeneratedTopCell") []
-         in t{KoreJson.term = foldr (KoreJson.KJAnd termSort) t.term subAndPred}
 
     loggedKore method r = do
         Log.logInfoNS "proxy" . Text.pack $ show method <> " (using kore)"
@@ -147,10 +144,11 @@ respondEither mbStatsVar booster kore req = case req of
         | otherwise =
             pure ()
 
-    startLoop = loop (0, 0.0, 0.0)
+    handleExecute :: ExecuteRequest -> m (Either ErrorObj (API 'Res))
+    handleExecute = executionLoop (0, 0.0, 0.0)
 
-    -- loop :: (Depth, Double, Double) -> ExecuteRequest -> m (Either Response)
-    loop (!currentDepth, !time, !koreTime) r = do
+    executionLoop :: (Depth, Double, Double) -> ExecuteRequest -> m (Either ErrorObj (API 'Res))
+    executionLoop (!currentDepth, !time, !koreTime) r = do
         Log.logInfoNS "proxy" . Text.pack $
             if currentDepth == 0
                 then "Starting execute request"
@@ -165,15 +163,18 @@ respondEither mbStatsVar booster kore req = case req of
                 -- in the old one to work around any potential
                 -- unification bugs.
                 | boosterResult.reason `elem` [Aborted, Stuck] -> do
-                    -- attempt to do one step in the old backend
                     Log.logInfoNS "proxy" . Text.pack $
                         "Booster " <> show boosterResult.reason <> " at " <> show boosterResult.depth
+                    -- simplify Booster's state with Kore's simplifier
+                    Log.logInfoNS "proxy" . Text.pack $ "Simplifying booster state and falling back to Kore "
+                    simplifiedBoosterState <- simplifyExecuteState r._module boosterResult.state
+                    -- attempt to do one step in the old backend
                     (kResult, kTime) <-
                         withTime $
                             kore
                                 ( Execute
                                     r
-                                        { state = execStateToKoreJson boosterResult.state
+                                        { state = execStateToKoreJson simplifiedBoosterState
                                         , maxDepth = Just $ Depth 1
                                         }
                                 )
@@ -192,7 +193,7 @@ respondEither mbStatsVar booster kore req = case req of
                                         "kore depth-bound, continuing... (currently at "
                                             <> show (currentDepth + boosterResult.depth + koreResult.depth)
                                             <> ")"
-                                loop
+                                executionLoop
                                     ( currentDepth + boosterResult.depth + koreResult.depth
                                     , time + bTime + kTime
                                     , koreTime + kTime
@@ -219,6 +220,59 @@ respondEither mbStatsVar booster kore req = case req of
             -- can only be an error at this point
             res -> pure res
 
+    simplifyExecuteState :: Maybe Text -> ExecuteState -> m ExecuteState
+    simplifyExecuteState mbModule s = do
+        Log.logInfoNS "proxy" "Simplifying execution state"
+        simplResult <-
+            handleSimplify $ toSimplifyRequest s
+        case simplResult of
+            -- This request should not fail, as the only possible
+            -- failure mode would be malformed or invalid kore
+            Right (Simplify simplified) -> do
+                -- to convert back to a term/constraints form,
+                -- we run a trivial execute request (in booster)
+                -- We cannot call the booster internaliser without access to the server state
+                -- Again this should not fail.
+                let request =
+                        (emptyExecuteRequest simplified.state)
+                            { _module = mbModule
+                            , maxDepth = Just $ Depth 0
+                            }
+                Log.logInfoNS "proxy" "Making 0-step execute request to convert back to a term/constraints form"
+                result <- booster $ Execute request
+                case result of
+                    Right (Execute ExecuteResult{state = finalState}) -> pure finalState
+                    _other -> pure s
+            _other -> do
+                -- if we hit an error here, return the original
+                Log.logWarnNS "proxy" "Unexpected failure when calling Kore simplifier, returning original term"
+                pure s
+      where
+        toSimplifyRequest :: ExecuteState -> SimplifyRequest
+        toSimplifyRequest state =
+            SimplifyRequest
+                { state = execStateToKoreJson state
+                , _module = mbModule
+                , logSuccessfulSimplifications = Nothing
+                , logFailedSimplifications = Nothing
+                }
+
+        emptyExecuteRequest :: KoreJson.KoreJson -> ExecuteRequest
+        emptyExecuteRequest state =
+            ExecuteRequest
+                { state
+                , maxDepth = Nothing
+                , _module = Nothing
+                , cutPointRules = Nothing
+                , terminalRules = Nothing
+                , movingAverageStepTimeout = Nothing
+                , stepTimeout = Nothing
+                , logSuccessfulSimplifications = Nothing
+                , logFailedSimplifications = Nothing
+                , logSuccessfulRewrites = Nothing
+                , logFailedRewrites = Nothing
+                }
+
     postExecSimplify :: Maybe Text -> API 'Res -> m (API 'Res)
     postExecSimplify mbModule = \case
         Execute res ->
@@ -230,8 +284,8 @@ respondEither mbStatsVar booster kore req = case req of
         simplifyResult :: ExecuteResult -> m ExecuteResult
         simplifyResult res@ExecuteResult{reason, state, nextStates} = do
             Log.logInfoNS "proxy" . Text.pack $ "Simplifying state in " <> show reason <> " result"
-            simplifiedState <- runSimplify state
-            simplifiedNexts <- maybe (pure []) (mapM runSimplify) nextStates
+            simplifiedState <- simplifyExecuteState mbModule state
+            simplifiedNexts <- maybe (pure []) (mapM $ simplifyExecuteState mbModule) nextStates
             let filteredNexts = filter (not . isBottom) simplifiedNexts
             let result = case reason of
                     Branching
@@ -254,53 +308,3 @@ respondEither mbStatsVar booster kore req = case req of
         isBottom ExecuteState{predicate = Just p}
             | KoreJson.KJBottom _ <- p.term = True
         isBottom _ = False
-
-        runSimplify :: ExecuteState -> m ExecuteState
-        runSimplify s = do
-            let toSimplify = toRequestState s
-            Log.logInfoNS "proxy" "Simplify request"
-            simplResult <-
-                kore $
-                    Simplify
-                        SimplifyRequest
-                            { state = toSimplify
-                            , _module = mbModule
-                            , logSuccessfulSimplifications = Nothing
-                            , logFailedSimplifications = Nothing
-                            }
-            case simplResult of
-                -- This request should not fail, as the only possible
-                -- failure mode would be malformed or invalid kore
-                Right (Simplify simplified) -> do
-                    -- to convert back to a term/constraints form,
-                    -- we run a trivial execute request (in booster)
-                    -- We cannot call the booster internaliser without access to the server state
-                    -- Again this should not fail.
-                    let request =
-                            (emptyRequest simplified.state)
-                                { _module = mbModule
-                                , maxDepth = Just $ Depth 0
-                                }
-                    Log.logInfoNS "proxy" "0-step execute request"
-                    result <- booster $ Execute request
-                    case result of
-                        Right (Execute ExecuteResult{state = finalState}) -> pure finalState
-                        _other -> pure s
-                _other ->
-                    -- TODO log error
-                    pure s -- if we hit an error here, return the original
-        emptyRequest :: KoreJson.KoreJson -> ExecuteRequest
-        emptyRequest state =
-            ExecuteRequest
-                { state
-                , maxDepth = Nothing
-                , _module = Nothing
-                , cutPointRules = Nothing
-                , terminalRules = Nothing
-                , movingAverageStepTimeout = Nothing
-                , stepTimeout = Nothing
-                , logSuccessfulSimplifications = Nothing
-                , logFailedSimplifications = Nothing
-                , logSuccessfulRewrites = Nothing
-                , logFailedRewrites = Nothing
-                }
