@@ -88,7 +88,7 @@ respondEither mbStatsVar booster kore req = case req of
     handleSimplify :: SimplifyRequest -> m (Either ErrorObj (API 'Res))
     handleSimplify simplifyReq = do
         -- execute in booster first, then in kore. Log the difference
-        (boosterResult, boosterTime) <- withTime $ booster req
+        (boosterResult, boosterTime) <- withTime $ booster (Simplify simplifyReq)
         case boosterResult of
             Right (Simplify boosterRes) -> do
                 let koreReq = Simplify simplifyReq{SimplifyRequest.state = boosterRes.state}
