@@ -220,6 +220,7 @@ jobs:
           export PLUGIN_DIR=$(nix build github:runtimeverification/blockchain-k-plugin/$PLUGIN_VERSION --no-link --json | $JQ -r '.[].outputs | to_entries[].value')
           KORE_RPC_BOOSTER=$(nix build .#kore-rpc-booster --no-link --json | $JQ -r '.[].outputs | to_entries[].value')/bin/kore-rpc-booster
           BOOSTER_DEV=$(nix build .#hs-backend-booster:exe:booster-dev --no-link --json | $JQ -r '.[].outputs | to_entries[].value')/bin/booster-dev
+          KORE_RPC_DEV=$(nix build .#hs-backend-booster:exe:kore-rpc-dev --no-link --json | $JQ -r '.[].outputs | to_entries[].value')/bin/kore-rpc-dev
           export CLIENT=$(nix build .#hs-backend-booster:exe:rpc-client --no-link --json | $JQ -r '.[].outputs | to_entries[].value')/bin/rpc-client
           
           cd test/rpc-integration
@@ -228,6 +229,7 @@ jobs:
               echo "Running $name..."
               if [ "$name" = "a-to-f" ]; then
                   SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name --time
+                  SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name --time
               else
                   SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time
               fi

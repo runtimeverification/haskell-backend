@@ -31,6 +31,10 @@ import Kore.Syntax.Json.Types hiding (Left, Right)
 diffJson :: BS.ByteString -> BS.ByteString -> DiffResult
 diffJson file1 file2 =
     case (decodeKoreRpc file1, decodeKoreRpc file2) of
+        -- special case for Branching execute result with two next states,
+        -- useful when comparing responses of `kore-rpc` and `kore-rpc-booster`
+        (contents1@(RpcResponse (Execute res1)), RpcResponse (Execute res2))
+            | sameModuloBranchOrder res1 res2 -> Identical $ rpcTypeOf contents1
         (contents1, contents2)
             | contents1 == contents2 ->
                 Identical $ rpcTypeOf contents1
@@ -44,6 +48,18 @@ diffJson file1 file2 =
   where
     computeJsonDiff =
         getGroupedDiff `on` (BS.lines . encodePretty' rpcJsonConfig)
+
+    -- \| Branching execution results are considered equivalent if
+    -- \* they both have two branches
+    -- \* branches are syntactically the same, but may be in different order
+    sameModuloBranchOrder :: ExecuteResult -> ExecuteResult -> Bool
+    sameModuloBranchOrder res1 res2
+        | res1.reason == Branching && res1.reason == res2.reason =
+            case (res1.nextStates, res2.nextStates) of
+                (Just xs, Just ys) ->
+                    length xs == 2 && length ys == 2 && (xs == ys || xs == reverse ys)
+                _ -> False
+        | otherwise = False
 
 data DiffResult
     = Identical KoreRpcType
