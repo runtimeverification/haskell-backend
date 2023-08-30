@@ -199,7 +199,6 @@ executables:
       - bytestring
       - containers
       - hs-backend-booster
-
   kore-rpc-booster:
     source-dirs: tools/booster
     main: Server.hs
@@ -223,6 +222,25 @@ executables:
       - stm
       - text
       - transformers
+    ghc-options:
+    - -rtsopts
+  kore-rpc-dev:
+    source-dirs: tools/kore-rpc-dev
+    main: Server.hs
+    dependencies:
+      - aeson
+      - base
+      - clock
+      - conduit-extra
+      - containers
+      - exceptions
+      - hs-backend-booster
+      - json-rpc
+      - kore
+      - kore-rpc-types
+      - monad-logger
+      - optparse-applicative
+      - text
     ghc-options:
     - -rtsopts
 
