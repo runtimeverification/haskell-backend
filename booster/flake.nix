@@ -82,6 +82,15 @@
                 }
               '';
             };
+            packages.hs-backend-booster.components.exes.kore-rpc-dev = {
+              build-tools = with pkgs; lib.mkForce [ makeWrapper ];
+              postInstall = ''
+                wrapProgram $out/bin/kore-rpc-dev --prefix PATH : ${
+                  with pkgs;
+                  lib.makeBinPath [ z3 ]
+                }
+              '';
+            };
             packages = { ghc.components.library.doHaddock = false; };
           }];
         };
