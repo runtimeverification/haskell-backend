@@ -653,7 +653,8 @@ postProcess prettify postProcessing output =
                             liftIO . exitWith $ ExitFailure 1
                 True -> do
                     expected <- liftIO $ BS.readFile expectFile
-                    when (prettyOutput /= expected) $ do
+                    let diff = diffJson expected prettyOutput
+                    unless (isIdentical diff) $ do
                         liftIO $ BS.writeFile "response" prettyOutput
                         (_, result, _) <-
                             liftIO $
