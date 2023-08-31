@@ -1,0 +1,1 @@
+{"jsonrpc": "2.0", "id": 5, "method": "add-module", "params": {"module": "module FOUNDRY-MAIN-CIRCULARITIES-MODULE\n    import FOUNDRY-MAIN []\nendmodule []"}}

@@ -124,3 +124,10 @@ Besides compiling the backend with profiling mode, we can also enable a targeted
   ```
 
 * Timing information in IO - using `--trace timing +RTS -lsu` we can instrument code with `Trace.timeIO "foo" ...` calls which will measure time spent in `...` and attach the label `foo` to this region in the speedscope profile. `eventlog-parser` will produce a JSON file of these calls viewable in the speedscope app.
+
+## Generating an integration test from a bug-report.tar.gz
+
+1) Rename `bug-report.tar.gz` to something more descriptive like `issue-123.tar.gz`
+2) Copy the tar file into `test/rpc-integration/`
+3) Run `./generateDirectoryTest.sh issue-123.tar.gz`. This will copy the definition files into `resources/` and rpc commands into `test-issue-123/`
+4) Run the test via `./runDirectoryTest test-issue-123`
