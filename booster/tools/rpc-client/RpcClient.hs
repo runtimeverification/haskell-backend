@@ -114,7 +114,7 @@ makeRequest time name s request handleResponse = do
     readResponse :: IO BS.ByteString
     readResponse = do
         part <- recv s bufSize
-        if BS.length part < bufSize
+        if BS.length part < bufSize && '\n' `BS.elem` part
             then pure part
             else do
                 more <- readResponse
