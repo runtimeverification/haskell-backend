@@ -1,1 +1,5 @@
-{"jsonrpc":"2.0","id":4,"result":[]}
+{
+    "jsonrpc": "2.0",
+    "id": 4,
+    "result": []
+}
