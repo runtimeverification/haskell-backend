@@ -136,7 +136,6 @@ executables:
       - network
       - network-run
       - optparse-applicative
-      - process
       - tar
       - text
       - vector
