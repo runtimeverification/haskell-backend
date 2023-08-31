@@ -44,7 +44,6 @@ import System.Directory
 import System.Exit
 import System.FilePath
 import System.IO.Extra
-import System.Process
 import System.Time.Extra (Seconds, sleep)
 
 import Booster.JsonRpc (rpcJsonConfig)
@@ -75,7 +74,7 @@ main = do
                     liftIO exitSuccess
                 pure request
             -- runTCPClient operates on IO directly, therefore repeating runStderrLogging
-            retryTCPClient 1 5 common.host (show common.port) $ \s ->
+            retryTCPClient 2 10 common.host (show common.port) $ \s ->
                 cancelIfInterrupted s $ do
                     withLogLevel common.logLevel $
                         makeRequest
@@ -656,10 +655,7 @@ postProcess prettify postProcessing output =
                     let diff = diffJson expected prettyOutput
                     unless (isIdentical diff) $ do
                         liftIO $ BS.writeFile "response" prettyOutput
-                        (_, result, _) <-
-                            liftIO $
-                                readProcessWithExitCode "git" ["diff", "--no-index", "--color-words=.", expectFile, "response"] ""
-                        liftIO $ putStrLn result
+                        liftIO $ BS.putStrLn $ renderResult "expected response" "actual response" diff
 
                         if regenerate
                             then do
