@@ -406,3 +406,4 @@ marshallTerm t = do
             inj <- liftIO . kore.patt.fromSymbol =<< marshallSymbol injectionSymbol [source, target]
             marshallTerm trm >>= liftIO . kore.patt.addArgument inj
         KMap def keyVals rest -> marshallTerm $ externaliseKmapUnsafe def keyVals rest
+        KList def heads rest -> marshallTerm $ externaliseKList def heads rest

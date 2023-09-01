@@ -18,12 +18,13 @@ import Booster.Pattern.Base
 import Booster.Syntax.Json.Internalise (trm)
 import Booster.Syntax.ParsedKore.Internalise (symb)
 
-someSort, aSubsort, differentSort, kSort, kItemSort :: Sort
+someSort, aSubsort, differentSort, kSort, kItemSort, listSort :: Sort
 someSort = SortApp "SomeSort" []
 aSubsort = SortApp "AnotherSort" []
 differentSort = SortApp "DifferentSort" []
 kSort = SortApp "SortK" []
 kItemSort = SortApp "SortKItem" []
+listSort = SortApp testKListDef.listSortName []
 
 testDefinition :: KoreDefinition
 testDefinition =
@@ -36,6 +37,7 @@ testDefinition =
                 , aSubsort `withSubsorts` []
                 , differentSort `withSubsorts` []
                 , kSort `withSubsorts` []
+                , listSort `withSubsorts` []
                 ]
         , symbols =
             Map.fromList
@@ -46,6 +48,7 @@ testDefinition =
                 , ("f1", f1)
                 , ("f2", f2)
                 ]
+                <> listSymbols
         , aliases = Map.empty
         , rewriteTheory = Map.empty
         , functionEquations = Map.empty
@@ -56,7 +59,7 @@ testDefinition =
     super `withSubsorts` subs =
         ( getName super
         ,
-            ( SortAttributes{argCount = 0, kmapAttributes = Nothing}
+            ( SortAttributes{argCount = 0, collectionAttributes = Nothing}
             , Set.fromList (getName super : map getName subs)
             )
         )
@@ -96,7 +99,7 @@ testKMapDefinition =
         }
   where
     testKMapSymbolNames =
-        KMapAttributes
+        KCollectionSymbolNames
             { unitSymbolName = "Lbl'Stop'TestKMap"
             , elementSymbolName = "LblTestKMapItem"
             , concatSymbolName = "Lbl'Unds'TestKMap'Unds'"
@@ -122,3 +125,39 @@ symbolicKMapWithOneItem =
             )
         ]
         Nothing
+
+--------------------------------------------------------------------------------
+
+testKListDef :: KListDefinition
+testKListDef =
+    KListDefinition
+        { symbolNames =
+            KCollectionSymbolNames
+                { unitSymbolName = "Lbl'Stop'TestList"
+                , elementSymbolName = "LblTestListItem"
+                , concatSymbolName = "Lbl'Unds'TestList'Unds'"
+                }
+        , elementSortName = "SortTestListItem"
+        , listSortName = "SortTestList"
+        }
+
+concatSym, elemSym, unitSym :: Symbol
+(concatSym, elemSym, unitSym) = (withMeta cSym, withMeta eSym, withMeta uSym)
+  where
+    withMeta sym =
+        sym
+            { attributes = sym.attributes{collectionMetadata = Just $ KListMeta testKListDef}
+            , sortVars = sym.sortVars -- disambiguates the record update
+            }
+    cSym =
+        [symb| symbol Lbl'Unds'TestList'Unds'{}(SortTestList{}, SortTestList{}) : SortTestList{} [function{}(), total{}(), assoc{}()] |]
+    eSym = [symb| symbol LblTestListItem{}(SomeSort{}) : SortTestList{} [function{}(), total{}()] |]
+    uSym = [symb| symbol Lbl'Stop'TestList{}() : SortTestList{} [function{}(), total{}()] |]
+
+listSymbols :: Map.Map ByteString Symbol
+listSymbols =
+    Map.fromList
+        [ (testKListDef.symbolNames.unitSymbolName, unitSym)
+        , (testKListDef.symbolNames.elementSymbolName, elemSym)
+        , (testKListDef.symbolNames.concatSymbolName, concatSym)
+        ]
