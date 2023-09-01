@@ -38,6 +38,8 @@ module Booster.Definition.Attributes.Base (
     pattern IsNotAssoc,
     pattern IsMacroOrAlias,
     pattern IsNotMacroOrAlias,
+    pattern CanBeEvaluated,
+    pattern CannotBeEvaluated,
     NotPreservesDefinednessReason (..),
 ) where
 
@@ -177,11 +179,17 @@ pattern IsMacroOrAlias = Flag True
 pattern IsNotMacroOrAlias = Flag False
 {-# COMPLETE IsMacroOrAlias, IsNotMacroOrAlias #-}
 
+pattern CanBeEvaluated, CannotBeEvaluated :: Flag "canBeEvaluated"
+pattern CanBeEvaluated = Flag True
+pattern CannotBeEvaluated = Flag False
+{-# COMPLETE CanBeEvaluated, CannotBeEvaluated #-}
+
 data SymbolAttributes = SymbolAttributes
     { symbolType :: SymbolType
     , isIdem :: Flag "isIdem"
     , isAssoc :: Flag "isAssoc"
     , isMacroOrAlias :: Flag "isMacroOrAlias"
+    , hasEvaluators :: Flag "canBeEvaluated"
     , collectionMetadata :: Maybe KCollectionMetadata
     }
     deriving stock (Eq, Ord, Show, Generic, Data, Lift)
