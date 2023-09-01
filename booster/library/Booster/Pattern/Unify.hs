@@ -15,6 +15,7 @@ import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.State
+import Data.Bifunctor (bimap)
 import Data.Either.Extra
 import Data.List.NonEmpty as NE (NonEmpty, fromList)
 import Data.Map (Map)
@@ -274,16 +275,123 @@ unify1
     trm
     inj@Injection{} =
         failWith $ DifferentSymbols trm inj
------- Remaining other cases: mix of DomainValue and SymbolApplication
------- (either side). The remaining unification problems are returned.
+------ Internalised Lists
+-- unification for lists. Only solves simple cases, returns indeterminate otherwise
 unify1
-    t1@SymbolApplication{}
-    t2@DomainValue{} =
-        addIndeterminate t1 t2
+    l1@(KList def1 heads1 rest1)
+    l2@(KList def2 heads2 rest2)
+        | -- incompatible lists
+          def1 /= def2 =
+            failWith $ DifferentSorts l1 l2
+        | -- two fully-concrete lists of the same length
+          Nothing <- rest1
+        , Nothing <- rest2 =
+            if length heads1 == length heads2
+                then void $ enqueuePairs heads1 heads2
+                else failWith $ DifferentValues l1 l2
+        | -- left list has a symbolic part, right one is fully concrete
+          Just (symb1, tails1) <- rest1
+        , Nothing <- rest2 = do
+            let emptyList = KList def1 [] Nothing
+            remainder <- enqueuePairs heads1 heads2
+            case remainder of
+                Nothing -- equal head length, rest1 must become .List
+                    | null tails1 ->
+                        enqueueRegularProblem symb1 emptyList
+                    | otherwise -> do
+                        -- fully concrete list too short
+                        let surplusLeft = KList def1 [] rest1
+                        failWith $ DifferentValues surplusLeft emptyList
+                Just (Left leftover1) -> do
+                    -- fully concrete list too short
+                    let surplusLeft = KList def1 leftover1 rest1
+                    failWith $ DifferentValues surplusLeft emptyList
+                Just (Right leftover2)
+                    | null tails1 -> do
+                        let newRight = KList def2 leftover2 Nothing
+                        enqueueRegularProblem symb1 newRight
+                    | otherwise -> do
+                        tailRemainder <- -- reversed!
+                            enqueuePairs (reverse tails1) (reverse leftover2)
+                        case tailRemainder of
+                            Nothing ->
+                                -- again symb1 needs to become `.List`
+                                enqueueRegularProblem symb1 emptyList
+                            Just (Left tail1) -> do
+                                -- fully concrete list too short
+                                let surplusLeft = KList def1 [] $ Just (symb1, reverse tail1)
+                                failWith $ DifferentValues surplusLeft emptyList
+                            Just (Right tail2) -> do
+                                let newRight = KList def2 (reverse tail2) Nothing
+                                enqueueRegularProblem symb1 newRight
+        | -- mirrored case above: left list fully concrete, right one isn't
+          Nothing <- rest1
+        , Just _ <- rest2 =
+            unify1 l2 l1 -- won't loop, will fail later if unification succeeds
+        | -- two lists with symbolic middle
+          Just (symb1, tails1) <- rest1
+        , Just (symb2, tails2) <- rest2 = do
+            remainder <- enqueuePairs heads1 heads2
+            case remainder of
+                Nothing -> do
+                    -- proceed with tails and then symb
+                    tailRem <-
+                        fmap (bimap reverse reverse)
+                            <$> enqueuePairs (reverse tails1) (reverse tails2)
+                    case tailRem of
+                        Nothing ->
+                            enqueueRegularProblem symb1 symb2
+                        Just (Left tails1') -> do
+                            let newLeft = KList def1 [] (Just (symb1, tails1'))
+                            enqueueRegularProblem newLeft symb2
+                        Just (Right tails2') -> do
+                            let newRight = KList def2 [] (Just (symb2, tails2'))
+                            enqueueRegularProblem symb1 newRight
+                Just headRem -> do
+                    -- either left or right was longer, remove tails and proceed
+                    tailRem <-
+                        fmap (bimap reverse reverse)
+                            <$> enqueuePairs (reverse tails1) (reverse tails2)
+                    case (headRem, tailRem) of
+                        (Left heads1', Nothing) -> do
+                            let newLeft = KList def1 heads1' (Just (symb1, []))
+                            enqueueRegularProblem newLeft symb2
+                        (Left heads1', Just (Left tails1')) -> do
+                            let newLeft = KList def1 heads1' (Just (symb1, tails1'))
+                            enqueueRegularProblem newLeft symb2
+                        (Left heads1', Just (Right tails2')) -> do
+                            let surplusLeft = KList def1 heads1' (Just (symb1, []))
+                                surplusRight = KList def2 [] (Just (symb2, tails2'))
+                            addIndeterminate surplusLeft surplusRight
+                        (Right heads2', Nothing) -> do
+                            let newRight = KList def2 heads2' (Just (symb2, []))
+                            enqueueRegularProblem symb1 newRight
+                        (Right heads2', Just (Right tails2')) -> do
+                            let newRight = KList def2 heads2' (Just (symb2, tails2'))
+                            enqueueRegularProblem symb1 newRight
+                        (Right heads2', Just (Left tails1')) -> do
+                            let surplusLeft = KList def1 [] (Just (symb1, tails1'))
+                                surplusRight = KList def2 heads2' (Just (symb2, []))
+                            addIndeterminate surplusLeft surplusRight
+-- indeterminate if one of the terms is a symbol application (i.e., function)
 unify1
-    t1@DomainValue{}
-    t2@SymbolApplication{} =
-        addIndeterminate t1 t2
+    l1@KList{}
+    app@SymbolApplication{} =
+        addIndeterminate l1 app
+unify1
+    app@SymbolApplication{}
+    l2@KList{} =
+        addIndeterminate l2 app
+-- fail if one of the terms is neither symbol app nor KList (other cannot be a variable)
+unify1
+    l1@KList{}
+    other =
+        failWith $ DifferentValues l1 other
+unify1
+    other
+    l2@KList{} =
+        failWith $ DifferentValues other l2
+------ Internalised Maps
 unify1
     t1@(KMap def1 _ _)
     t2@(KMap def2 _ _)
@@ -349,6 +457,16 @@ unify1
     m@KMap{}
     trm =
         failWith $ DifferentSymbols m trm
+------ Remaining other cases: mix of DomainValue and SymbolApplication
+------ (either side). The remaining unification problems are returned.
+unify1
+    t1@SymbolApplication{}
+    t2@DomainValue{} =
+        addIndeterminate t1 t2
+unify1
+    t1@DomainValue{}
+    t2@SymbolApplication{} =
+        addIndeterminate t1 t2
 
 failWith :: FailReason -> StateT s (Except UnificationResult) ()
 failWith = lift . throwE . UnificationFailed
@@ -371,6 +489,27 @@ enqueueMapProblem term1 term2 =
 enqueueRegularProblems :: Monad m => Seq (Term, Term) -> StateT UnificationState m ()
 enqueueRegularProblems ts =
     modify $ \s@State{uQueue} -> s{uQueue = uQueue >< ts}
+
+{- | pair up the argument lists and enqueue the pairs. If the lists
+are of equal length, return Nothing, else return the remaining
+terms in the longer list, tagged with their origin).
+-}
+enqueuePairs ::
+    Monad m => [Term] -> [Term] -> StateT UnificationState m (Maybe (Either [Term] [Term]))
+enqueuePairs ts1 ts2
+    | l1 == l2 =
+        enqueue ts1 ts2 >> pure Nothing
+    | l1 > l2 =
+        let (ts1', rest1) = splitAt l2 ts1
+         in enqueue ts1' ts2 >> pure (Just $ Left rest1)
+    | otherwise -- l1 < l2
+        =
+        let (ts2', rest2) = splitAt l1 ts2
+         in enqueue ts1 ts2' >> pure (Just $ Right rest2)
+  where
+    l1 = length ts1
+    l2 = length ts2
+    enqueue xs ys = enqueueRegularProblems $ Seq.fromList $ zip xs ys
 
 -- modify $ \s@State{uQueue} -> s{uQueue = foldr (\(p, t) q -> PriorityQueue.insert t p () q) uQueue ts}
 
