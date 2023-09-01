@@ -31,6 +31,7 @@ import Control.Monad.Trans.Except
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Reader (ReaderT (..), ask)
 import Control.Monad.Trans.State
+import Data.Bifunctor (second)
 import Data.Foldable (toList, traverse_)
 import Data.Functor.Foldable
 import Data.List (elemIndex)
@@ -324,6 +325,10 @@ applyTerm BottomUp pref =
             applyAtTop pref t
         KMapF def keyVals rest ->
             KMap def <$> mapM (uncurry $ liftM2 (,)) keyVals <*> sequence rest
+        KListF def heads rest ->
+            KList def
+                <$> sequence heads
+                <*> mapM (uncurry (liftM2 (,)) . second sequence) rest
 applyTerm TopDown pref = \t@(Term attributes _) ->
     if attributes.isEvaluated
         then pure t
@@ -366,6 +371,18 @@ applyTerm TopDown pref = \t@(Term attributes _) ->
             KMap def
                 <$> mapM (\(k, v) -> (,) <$> applyTerm TopDown pref k <*> applyTerm TopDown pref v) keyVals
                 <*> maybe (pure Nothing) ((Just <$>) . applyTerm TopDown pref) rest
+        KList def heads rest ->
+            KList def
+                <$> mapM (applyTerm TopDown pref) heads
+                <*> maybe
+                    (pure Nothing)
+                    ( (Just <$>)
+                        . \(mid, tails) ->
+                            (,)
+                                <$> applyTerm TopDown pref mid
+                                <*> mapM (applyTerm TopDown pref) tails
+                    )
+                    rest
 
 {- | Try to apply function equations and simplifications to the given
    top-level term, in priority order and per group.
