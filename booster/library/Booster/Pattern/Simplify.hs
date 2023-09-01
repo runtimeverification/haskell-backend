@@ -71,7 +71,7 @@ simplifyConcrete (Just mApi) def trm = recurse trm
     recurse t@(Term attributes _)
         | attributes.isEvaluated =
             t
-        | isConcrete t =
+        | isConcrete t && attributes.canBeEvaluated =
             simplifyTerm mApi def t (sortOfTerm t)
         | otherwise =
             case t of

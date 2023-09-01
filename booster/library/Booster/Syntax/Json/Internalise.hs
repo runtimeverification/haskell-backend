@@ -146,6 +146,7 @@ internaliseTermRaw qq allowAlias sortVars definition@KoreDefinition{sorts, symbo
                                     , isIdem = Internal.IsNotIdem
                                     , isAssoc = Internal.IsNotAssoc
                                     , isMacroOrAlias = Internal.IsNotMacroOrAlias
+                                    , hasEvaluators = Flag False
                                     , collectionMetadata = Nothing
                                     }
                     else

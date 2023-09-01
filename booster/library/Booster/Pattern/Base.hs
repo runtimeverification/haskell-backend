@@ -21,6 +21,7 @@ import Booster.Definition.Attributes.Base (
     KMapDefinition (..),
     SymbolAttributes (..),
     SymbolType (..),
+    pattern CanBeEvaluated,
     pattern IsAssoc,
     pattern IsNotAssoc,
     pattern IsNotIdem,
@@ -121,6 +122,7 @@ data TermAttributes = TermAttributes
     -- variables, recursive through AndTerm
     , hash :: !Int
     , isConstructorLike :: !Bool
+    , canBeEvaluated :: !Bool
     -- ^ false for function calls, variables, and AndTerms
     }
     deriving stock (Eq, Ord, Show, Generic, Data, Lift)
@@ -136,10 +138,11 @@ instance Semigroup TermAttributes where
             , isEvaluated = a1.isEvaluated && a2.isEvaluated
             , hash = 0
             , isConstructorLike = a1.isConstructorLike && a2.isConstructorLike
+            , canBeEvaluated = a1.canBeEvaluated && a2.canBeEvaluated
             }
 
 instance Monoid TermAttributes where
-    mempty = TermAttributes Set.empty True 0 False
+    mempty = TermAttributes Set.empty True 0 False True
 
 -- | A term together with its attributes.
 data Term = Term TermAttributes (TermF Term)
@@ -174,6 +177,7 @@ unitSymbol def =
                 , isIdem = IsNotIdem
                 , isAssoc = IsNotAssoc
                 , isMacroOrAlias = IsNotMacroOrAlias
+                , hasEvaluators = CanBeEvaluated
                 , collectionMetadata = Just def
                 }
         }
@@ -194,6 +198,7 @@ concatSymbol def =
                 , isIdem = IsNotIdem
                 , isAssoc = IsAssoc
                 , isMacroOrAlias = IsNotMacroOrAlias
+                , hasEvaluators = CanBeEvaluated
                 , collectionMetadata = Just def
                 }
         }
@@ -216,6 +221,7 @@ kmapElementSymbol def =
                 , isIdem = IsNotIdem
                 , isAssoc = IsNotAssoc
                 , isMacroOrAlias = IsNotMacroOrAlias
+                , hasEvaluators = CanBeEvaluated
                 , collectionMetadata = Just $ KMapMeta def
                 }
         }
@@ -233,6 +239,7 @@ klistElementSymbol def =
                 , isIdem = IsNotIdem
                 , isAssoc = IsNotAssoc
                 , isMacroOrAlias = IsNotMacroOrAlias
+                , hasEvaluators = CanBeEvaluated
                 , collectionMetadata = Just $ KListMeta def
                 }
         }
@@ -445,6 +452,8 @@ pattern SymbolApplication sym sorts args <- Term _ (SymbolApplicationF sym sorts
                                 Hashable.hash ("SymbolApplication" :: ByteString, sym, sorts, map (hash . getAttributes) args)
                             , isConstructorLike =
                                 symIsConstructor && argAttributes.isConstructorLike
+                            , canBeEvaluated =
+                                CanBeEvaluated == sym.attributes.hasEvaluators && argAttributes.canBeEvaluated
                             }
                         (SymbolApplicationF sym sorts args)
 
@@ -516,6 +525,8 @@ pattern KMap def keyVals rest <- Term _ (KMapF def keyVals rest)
                                 )
                         , isConstructorLike =
                             argAttributes.isConstructorLike
+                        , canBeEvaluated =
+                            argAttributes.canBeEvaluated
                         }
                     $ KMapF def (Set.toList $ Set.fromList $ keyVals ++ keyVals') rest'
 
@@ -569,6 +580,7 @@ injectionSymbol =
                 , isIdem = IsNotIdem
                 , isAssoc = IsNotAssoc
                 , isMacroOrAlias = IsNotMacroOrAlias
+                , hasEvaluators = CanBeEvaluated
                 , collectionMetadata = Nothing
                 }
         }

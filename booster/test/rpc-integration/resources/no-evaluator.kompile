@@ -1,0 +1,10 @@
+echo "kompiling no-evaluator.k"
+kompile --backend haskell no-evaluator.k
+cp no-evaluator-kompiled/definition.kore no-evaluator.kore
+
+kompile --backend llvm no-evaluator.k
+
+llvm-kompile no-evaluator-kompiled/definition.kore no-evaluator-kompiled/dt c -- \
+             -fPIC -std=c++17 -o interpreter
+mv interpreter.* no-evaluator.dylib
+rm -r no-evaluator-kompiled
