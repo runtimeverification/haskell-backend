@@ -335,7 +335,7 @@ applyTerm TopDown pref = \t@(Term attributes _) ->
         else do
             config <- getConfig
             -- All fully concrete values go to the LLVM backend (top-down only)
-            if isConcrete t && isJust config.llvmApi
+            if isConcrete t && isJust config.llvmApi && attributes.canBeEvaluated
                 then do
                     let result = simplifyTerm (fromJust config.llvmApi) config.definition t (sortOfTerm t)
                     when (result /= t) setChanged
@@ -658,8 +658,8 @@ simplifyConstraint' :: MonadLoggerIO io => Predicate -> EquationT io Predicate
 -- evaluating them using simplifyBool if they are concrete.
 -- Non-concrete \equals predicates are simplified using evaluateTerm.
 simplifyConstraint' = \case
-    EqualsTerm t TrueBool
-        | isConcrete t -> do
+    EqualsTerm t@(Term attributes _) TrueBool
+        | isConcrete t && attributes.canBeEvaluated -> do
             mbApi <- (.llvmApi) <$> getConfig
             case mbApi of
                 Just api ->
