@@ -26,34 +26,13 @@ import Data.Maybe (catMaybes, fromMaybe)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Text.Encoding (encodeUtf8)
 import Data.Text.Encoding qualified as Text
 import Text.Read (readEither)
 import Text.Regex.PCRE
 
-import Booster.Definition.Attributes.Base (
-    AxiomAttributes (AxiomAttributes),
-    Concreteness (..),
-    Constrained (..),
-    DefinitionAttributes (..),
-    FileSource (..),
-    Flag (Flag),
-    KMapAttributes (..),
-    Location (Location),
-    ModuleAttributes (..),
-    Position (Position),
-    Priority (..),
-    SortAttributes (..),
-    SymbolAttributes (SymbolAttributes),
-    SymbolType (
-        Constructor,
-        PartialFunction,
-        SortInjection,
-        TotalFunction
-    ),
-    UniqueId (..),
- )
+import Booster.Definition.Attributes.Base
 import Booster.Syntax.ParsedKore.Base
-import Data.Text.Encoding (encodeUtf8)
 import Kore.Syntax.Json.Types (Id (..))
 
 {- | A class describing all attributes we want to extract from parsed
@@ -206,26 +185,42 @@ instance HasAttributes ParsedSort where
                 pure
                     SortAttributes
                         { argCount = length sortVars
-                        , kmapAttributes =
+                        , collectionAttributes =
                             Just
-                                KMapAttributes
+                                ( KCollectionSymbolNames
                                     { unitSymbolName
                                     , elementSymbolName
                                     , concatSymbolName
                                     }
+                                , KMapTag
+                                )
+                        }
+            (Just elementSymbolName, Just concatSymbolName, Just unitSymbolName, Just ("LIST.List" :: Text)) ->
+                pure
+                    SortAttributes
+                        { argCount = length sortVars
+                        , collectionAttributes =
+                            Just
+                                ( KCollectionSymbolNames
+                                    { unitSymbolName
+                                    , elementSymbolName
+                                    , concatSymbolName
+                                    }
+                                , KListTag
+                                )
                         }
             (Just _, Just _, Just _, Just _) ->
                 -- ignore any other hooked sorts like lists/sets
                 pure
                     SortAttributes
                         { argCount = length sortVars
-                        , kmapAttributes = Nothing
+                        , collectionAttributes = Nothing
                         }
             (Nothing, Nothing, Nothing, _) ->
                 pure
                     SortAttributes
                         { argCount = length sortVars
-                        , kmapAttributes = Nothing
+                        , collectionAttributes = Nothing
                         }
             _ -> throwE "Malformed hooked sort. Should contain unit, element and concat."
 

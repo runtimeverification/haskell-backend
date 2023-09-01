@@ -1,3 +1,7 @@
+{-# LANGUAGE QuasiQuotes #-}
+
+{-# OPTIONS -Wno-incomplete-uni-patterns #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
@@ -13,7 +17,9 @@ import Test.Tasty.HUnit
 
 import Booster.Pattern.Base
 import Booster.Pattern.Unify
+import Booster.Syntax.Json.Internalise (trm)
 import Test.Booster.Fixture
+import Test.Booster.Pattern.InternalCollections
 
 test_unification :: TestTree
 test_unification =
@@ -25,6 +31,7 @@ test_unification =
         , andTerms
         , sorts
         , injections
+        , internalLists
         ]
 
 injections :: TestTree
@@ -235,6 +242,129 @@ andTerms =
                 (AndTerm cb ca)
                 (failed $ DifferentValues da db)
         ]
+
+internalLists :: TestTree
+internalLists =
+    testGroup
+        "Internal lists"
+        [ test
+            "Can unify an empty list with itself"
+            emptyList
+            emptyList
+            (success [])
+        , test
+            "Can unify a concrete list with itself"
+            concreteList
+            concreteList
+            (success [])
+        , test
+            "Empty and non-empty concrete list fail to unify"
+            emptyList
+            concreteList
+            (failed $ DifferentValues emptyList concreteList)
+        , let two = klist (replicate 2 headElem) Nothing
+              three = klist (replicate 3 headElem) Nothing
+           in test
+                "Concrete lists of different length fail to unify"
+                two
+                three
+                (failed $ DifferentValues two three)
+        , test
+            "Empty and non-empty list fail to unify (symbolic tail)"
+            headList
+            emptyList
+            (failed $ DifferentValues headList emptyList)
+        , test
+            "Empty and non-empty list fail to unify (symbolic init)"
+            tailList
+            emptyList
+            (failed $ DifferentValues tailList emptyList)
+        , test
+            "Unification failures may swap the argument lists"
+            emptyList
+            tailList
+            (failed $ DifferentValues tailList emptyList)
+        , test
+            "Head list and tail list produce indeterminate unification"
+            headList
+            tailList
+            (remainder [(headList, tailList)])
+        , test
+            "Tail list and head list produce indeterminate unification"
+            tailList
+            headList
+            (remainder [(tailList, headList)])
+        , let listWithHeads = klist (replicate 3 headElem) Nothing
+           in test
+                "Can extract a single head element of a concrete list"
+                headList -- "head":TAIL
+                listWithHeads
+                (success [("TAIL", listSort, klist (replicate 2 headElem) Nothing)])
+        , let singletonList = klist [headElem] Nothing
+              matchHead =
+                klist [[trm| HEAD:SomeSort{} |]] $ Just ([trm| TAIL:SortTestList{} |], [])
+           in test
+                "Can extract a single head element of a singleton list"
+                matchHead
+                singletonList
+                ( success
+                    [ ("HEAD", someSort, headElem)
+                    , ("TAIL", listSort, klist [] Nothing)
+                    ]
+                )
+        , let KList _ hds (Just (v, tls)) = mixedList -- incomplete pattern match here
+              tailElement = last tls
+              initVariable = [trm| INIT:SortTestList{} |]
+              matchTail = klist [] (Just (initVariable, [tailElement]))
+              expected = klist hds (Just (v, init tls))
+           in test
+                "Can extract a single tail element of a mixed list"
+                matchTail
+                mixedList
+                (success [("INIT", listSort, expected)])
+        , let singletonList = klist [lastElem] Nothing
+              matchTail = klist [] $ Just ([trm| INIT:SortTestList{} |], [[trm| LAST:SomeSort{} |]])
+           in test
+                "Can extract the tail element of a singleton list"
+                matchTail
+                singletonList
+                ( success
+                    [ ("LAST", someSort, lastElem)
+                    , ("INIT", listSort, klist [] Nothing)
+                    ]
+                )
+        , let list1 =
+                klist
+                    (replicate 3 headElem)
+                    (Just (var "LIST1" listSort, replicate 2 lastElem))
+              list2 =
+                klist
+                    (replicate 3 headElem)
+                    (Just (var "LIST2" listSort, replicate 3 lastElem))
+           in test
+                "Unifies two lists with symbolic middle (binding LIST1)"
+                list1
+                list2
+                (success [("LIST1", listSort, klist [] (Just (var "LIST2" listSort, [lastElem])))])
+        , let list1 =
+                klist
+                    (replicate 3 headElem)
+                    (Just (var "LIST1" listSort, replicate 2 lastElem))
+              list2 =
+                klist
+                    (replicate 3 headElem)
+                    (Just (var "LIST2" listSort, replicate 3 lastElem))
+           in test
+                "Unifies two lists with symbolic middle (binding LIST1), reverse direction"
+                list2
+                list1
+                (success [("LIST1", listSort, klist [] (Just (var "LIST2" listSort, [lastElem])))])
+        ]
+  where
+    headElem = [trm| \dv{SomeSort{}}("head") |]
+    lastElem = [trm| \dv{SomeSort{}}("last") |]
+
+    klist = KList testKListDef
 
 ----------------------------------------
 

@@ -15,7 +15,9 @@ module Booster.Pattern.Base (
 ) where
 
 import Booster.Definition.Attributes.Base (
-    KMapAttributes (..),
+    KCollectionMetadata (..),
+    KCollectionSymbolNames (..),
+    KListDefinition (..),
     KMapDefinition (..),
     SymbolAttributes (..),
     SymbolType (..),
@@ -25,7 +27,9 @@ import Booster.Definition.Attributes.Base (
     pattern IsNotMacroOrAlias,
  )
 import Booster.Prettyprinter qualified as KPretty
+
 import Control.DeepSeq (NFData (..))
+import Data.Bifunctor (second)
 import Data.ByteString.Char8 (ByteString)
 import Data.ByteString.Char8 qualified as BS
 import Data.Data (Data)
@@ -86,8 +90,7 @@ data Symbol = Symbol
    variables.
    This is anything that can be part of a K configuration.
 
-   Deliberately kept simple in this codebase (leaving out built-in
-   types and containers).
+   This codebase deliberately does not include built-in types.
 -}
 data TermF t
     = AndTermF t t
@@ -98,6 +101,11 @@ data TermF t
       -- sorts between source and target are shortened out.
       InjectionF Sort Sort t
     | KMapF KMapDefinition [(t, t)] (Maybe t)
+    | -- | internal List
+      KListF
+        KListDefinition -- metadata
+        [t] -- head elements
+        (Maybe (t, [t])) -- optional (symbolic) middle and tail elements
     deriving stock (Eq, Ord, Show, Functor, Foldable, Traversable, Generic, Data, Lift)
     deriving anyclass (NFData, Hashable)
 
@@ -153,37 +161,49 @@ instance Recursive Term where
 getAttributes :: Term -> TermAttributes
 getAttributes (Term a _) = a
 
-kmapUnitSymbol, kmapConcatSymbol, kmapElementSymbol :: KMapDefinition -> Symbol
-kmapUnitSymbol def =
+unitSymbol, concatSymbol :: KCollectionMetadata -> Symbol
+unitSymbol def =
     Symbol
-        { name = def.symbolNames.unitSymbolName
+        { name = symbolNames.unitSymbolName
         , sortVars = []
         , argSorts = []
-        , resultSort = SortApp def.mapSortName []
+        , resultSort = SortApp collectionSort []
         , attributes =
             SymbolAttributes
                 { symbolType = TotalFunction
                 , isIdem = IsNotIdem
                 , isAssoc = IsNotAssoc
                 , isMacroOrAlias = IsNotMacroOrAlias
-                , isKMapSymbol = Just def
+                , collectionMetadata = Just def
                 }
         }
-kmapConcatSymbol def =
+  where
+    (symbolNames, collectionSort) =
+        case def of
+            KMapMeta mapDef -> (mapDef.symbolNames, mapDef.mapSortName)
+            KListMeta listDef -> (listDef.symbolNames, listDef.listSortName)
+concatSymbol def =
     Symbol
-        { name = def.symbolNames.concatSymbolName
+        { name = symbolNames.concatSymbolName
         , sortVars = []
-        , argSorts = [SortApp def.mapSortName [], SortApp def.mapSortName []]
-        , resultSort = SortApp def.mapSortName []
+        , argSorts = [SortApp collectionSort [], SortApp collectionSort []]
+        , resultSort = SortApp collectionSort []
         , attributes =
             SymbolAttributes
-                { symbolType = PartialFunction
+                { symbolType
                 , isIdem = IsNotIdem
                 , isAssoc = IsAssoc
                 , isMacroOrAlias = IsNotMacroOrAlias
-                , isKMapSymbol = Just def
+                , collectionMetadata = Just def
                 }
         }
+  where
+    (symbolNames, collectionSort, symbolType) =
+        case def of
+            KMapMeta mapDef -> (mapDef.symbolNames, mapDef.mapSortName, PartialFunction)
+            KListMeta listDef -> (listDef.symbolNames, listDef.listSortName, TotalFunction)
+
+kmapElementSymbol :: KMapDefinition -> Symbol
 kmapElementSymbol def =
     Symbol
         { name = def.symbolNames.elementSymbolName
@@ -196,7 +216,24 @@ kmapElementSymbol def =
                 , isIdem = IsNotIdem
                 , isAssoc = IsNotAssoc
                 , isMacroOrAlias = IsNotMacroOrAlias
-                , isKMapSymbol = Just def
+                , collectionMetadata = Just $ KMapMeta def
+                }
+        }
+
+klistElementSymbol :: KListDefinition -> Symbol
+klistElementSymbol def =
+    Symbol
+        { name = def.symbolNames.elementSymbolName
+        , sortVars = []
+        , argSorts = [SortApp def.elementSortName []]
+        , resultSort = SortApp def.listSortName []
+        , attributes =
+            SymbolAttributes
+                { symbolType = TotalFunction
+                , isIdem = IsNotIdem
+                , isAssoc = IsNotAssoc
+                , isMacroOrAlias = IsNotMacroOrAlias
+                , collectionMetadata = Just $ KListMeta def
                 }
         }
 
@@ -219,26 +256,28 @@ externaliseKmapUnsafe def keyVals rest =
                 s
                 keyVals
   where
-    stripIsKmap :: Symbol -> Symbol
-    stripIsKmap s@Symbol{attributes = attrs} = s{attributes = attrs{isKMapSymbol = Nothing}}
-
-    unit = SymbolApplication (stripIsKmap $ kmapUnitSymbol def) [] []
-    k |-> v = SymbolApplication (stripIsKmap $ kmapElementSymbol def) [] [k, v]
-    a `con` b = SymbolApplication (stripIsKmap $ kmapConcatSymbol def) [] [a, b]
+    unit = SymbolApplication (stripCollectionMetadata $ unitSymbol $ KMapMeta def) [] []
+    k |-> v = SymbolApplication (stripCollectionMetadata $ kmapElementSymbol def) [] [k, v]
+    a `con` b = SymbolApplication (stripCollectionMetadata $ concatSymbol $ KMapMeta def) [] [a, b]
 {-# INLINE externaliseKmapUnsafe #-}
 
+stripCollectionMetadata :: Symbol -> Symbol
+stripCollectionMetadata s@Symbol{attributes = attrs} =
+    s{attributes = attrs{collectionMetadata = Nothing}}
+
 internaliseKmap :: KMapDefinition -> Term -> ([(Term, Term)], Maybe Term)
-internaliseKmap def@KMapDefinition{symbolNames = KMapAttributes{elementSymbolName, concatSymbolName, unitSymbolName}} = \case
+internaliseKmap def@KMapDefinition{symbolNames = names} = \case
     SymbolApplication s _ []
-        | s.name == unitSymbolName -> ([], Nothing)
+        | s.name == names.unitSymbolName -> ([], Nothing)
     SymbolApplication s _ [k, v]
-        | s.name == elementSymbolName -> ([(k, v)], Nothing)
+        | s.name == names.elementSymbolName -> ([(k, v)], Nothing)
     SymbolApplication s _ [l, r]
-        | s.name == concatSymbolName -> combine (internaliseKmap def l) (internaliseKmap def r)
+        | s.name == names.concatSymbolName -> combine (internaliseKmap def l) (internaliseKmap def r)
     KMap def' keyVals rest
         | def == def' -> (keyVals, rest)
     other -> ([], Just other) -- do we want to recurse into this term in case there are some maps under e.g. function symbol??
   where
+    concatSym = concatSymbol (KMapMeta def)
     combine (conc1, sym1) (conc2, sym2) =
         ( conc1 ++ conc2
         , case (sym1, sym2) of
@@ -252,13 +291,103 @@ internaliseKmap def@KMapDefinition{symbolNames = KMapAttributes{elementSymbolNam
                             , hash =
                                 Hashable.hash
                                     ( "SymbolApplication" :: ByteString
-                                    , kmapConcatSymbol def
+                                    , concatSym
                                     , map hash [aAttribs, bAttribs]
                                     )
                             , isConstructorLike = False
                             }
-                 in Just $ Term attribs $ SymbolApplicationF (kmapConcatSymbol def) [] [a, b]
+                 in Just $ Term attribs $ SymbolApplicationF concatSym [] [a, b]
         )
+
+{- | try to represent a list-returning symbol application as an
+  internal list with head, optional middle and optional tail (empty
+  list otherwise).
+
+  In case of a concatenation, we might not succeed in representing the
+  result as the internal list type, and will construct the result
+  using list concatenation instead.
+-}
+internaliseKList :: KListDefinition -> Term -> Term
+internaliseKList def = \case
+    SymbolApplication s _ []
+        | s.name == def.symbolNames.unitSymbolName -> KList def [] Nothing
+    SymbolApplication s _ [x]
+        | s.name == def.symbolNames.elementSymbolName -> KList def [x] Nothing
+    SymbolApplication concatSym _ [x, y]
+        | concatSym.name == def.symbolNames.concatSymbolName ->
+            case (internaliseKList def x, internaliseKList def y) of
+                -- try to combine cases that can be represented as `heads mid tails`
+                (KList def1 hds1 rst1, KList def2 hds2 rst2)
+                    | def1 /= def2 -> inconsistent def1 def2
+                    | def /= def1 -> inconsistent def def1
+                    | Nothing <- rst1
+                    , Nothing <- rst2 ->
+                        KList def1 (hds1 <> hds2) Nothing
+                    | Nothing <- rst1 ->
+                        KList def1 (hds1 <> hds2) rst2
+                    | Nothing <- rst2 ->
+                        KList def1 hds1 $ fmap (second (<> hds2)) rst1
+                -- otherwise neither mid1 nor mid2 are trivial, we
+                -- reconstruct concat expression.
+                (a@KList{}, b@KList{}) ->
+                    let attribs = concatAttribs (getAttributes a) (getAttributes b)
+                     in Term attribs $ SymbolApplicationF concatSym [] [a, b]
+                -- One of the terms is a fully concrete KList and
+                -- the other is something else: combine to a KList
+                (KList def1 heads Nothing, nonKList)
+                    | def /= def1 -> inconsistent def def1
+                    | otherwise ->
+                        KList def heads (Just (nonKList, []))
+                (nonKList, KList def1 tails Nothing)
+                    | def /= def1 -> inconsistent def def1
+                    | otherwise ->
+                        KList def [] (Just (nonKList, tails))
+                -- two non-KList terms, keep the concat expression
+                (a@(Term aAttribs _), b@(Term bAttribs _)) ->
+                    let attribs = concatAttribs aAttribs bAttribs
+                     in Term attribs $ SymbolApplicationF concatSym [] [a, b]
+      where
+        inconsistent d1 d2 = error $ "Inconsistent list definitions " <> show (d1, d2)
+        concatAttribs :: TermAttributes -> TermAttributes -> TermAttributes
+        concatAttribs aAttribs bAttribs =
+            (aAttribs <> bAttribs)
+                { isEvaluated = False
+                , hash =
+                    Hashable.hash
+                        ( "SymbolApplication" :: ByteString
+                        , concatSym
+                        , map hash [aAttribs, bAttribs]
+                        )
+                , isConstructorLike = False
+                }
+    other -> other
+
+{- | reconstructs a list-constructing symbol application nest from an
+   internal list representation.
+
+   This is not a precise inverse of the above internalisation because
+   the list concatenation becomes right-biased as much as possible.
+
+   Assumes that mid is a list type but not KList (ensured by internalisation).
+-}
+externaliseKList :: KListDefinition -> [Term] -> Maybe (Term, [Term]) -> Term
+externaliseKList def heads optRest
+    | Nothing <- optRest =
+        concatList $ map singleton heads
+    | Just (mid, tails) <- optRest =
+        concatList $ map singleton heads <> (mid : map singleton tails)
+  where
+    elemSym = stripCollectionMetadata $ klistElementSymbol def
+    emptyList = SymbolApplication (stripCollectionMetadata $ unitSymbol $ KListMeta def) [] []
+    concatSym = stripCollectionMetadata $ concatSymbol $ KListMeta def
+
+    singleton :: Term -> Term
+    singleton = SymbolApplication elemSym [] . (: [])
+
+    -- concatenate ListItem terms or lists (right-biased)
+    concatList [] = emptyList
+    concatList xs =
+        foldr1 (\a b -> SymbolApplication concatSym [] [a, b]) xs
 
 instance Corecursive Term where
     embed (AndTermF t1 t2) = AndTerm t1 t2
@@ -266,7 +395,8 @@ instance Corecursive Term where
     embed (DomainValueF s t) = DomainValue s t
     embed (VarF v) = Var v
     embed (InjectionF source target t) = Injection source target t
-    embed (KMapF sort conc sym) = KMap sort conc sym
+    embed (KMapF def conc sym) = KMap def conc sym
+    embed (KListF def heads rest) = KList def heads rest
 
 -- smart term constructors, as bidirectional patterns
 pattern AndTerm :: Term -> Term -> Term
@@ -285,31 +415,38 @@ pattern AndTerm t1 t2 <- Term _ (AndTermF t1 t2)
 pattern SymbolApplication :: Symbol -> [Sort] -> [Term] -> Term
 pattern SymbolApplication sym sorts args <- Term _ (SymbolApplicationF sym sorts args)
     where
-        SymbolApplication sym [source, target] [arg]
-            | sym == injectionSymbol = Injection source target arg
-        SymbolApplication sym@Symbol{attributes = SymbolAttributes{isKMapSymbol = Just def}} sorts args =
-            let (keyVals, rest) = internaliseKmap def $ Term mempty $ SymbolApplicationF sym sorts args
-             in KMap def keyVals rest
-        SymbolApplication sym sorts args =
-            let argAttributes
-                    | null args = mempty
-                    -- avoid using default isConstructorLike = False
-                    -- if there are arg.s
-                    | otherwise = foldl1' (<>) $ map getAttributes args
-                symIsConstructor =
-                    sym.attributes.symbolType `elem` [Constructor, SortInjection]
-             in Term
-                    argAttributes
-                        { isEvaluated =
-                            -- Constructors and injections are evaluated if their arguments are.
-                            -- Function calls are not evaluated.
-                            symIsConstructor && argAttributes.isEvaluated
-                        , hash =
-                            Hashable.hash ("SymbolApplication" :: ByteString, sym, sorts, map (hash . getAttributes) args)
-                        , isConstructorLike =
-                            symIsConstructor && argAttributes.isConstructorLike
-                        }
-                    $ SymbolApplicationF sym sorts args
+        SymbolApplication sym sorts args
+            | sym == injectionSymbol
+            , [source, target] <- sorts
+            , [arg] <- args =
+                Injection source target arg
+            | Just (KMapMeta def) <- sym.attributes.collectionMetadata =
+                let (keyVals, rest) =
+                        internaliseKmap def $ Term mempty $ SymbolApplicationF sym sorts args
+                 in KMap def keyVals rest
+            | Just (KListMeta def) <- sym.attributes.collectionMetadata =
+                internaliseKList def $ Term mempty $ SymbolApplicationF sym sorts args
+            | otherwise =
+                let argAttributes
+                        | null args = mempty
+                        -- avoid using default isConstructorLike = False
+                        -- if there are arg.s
+                        | otherwise = foldl1' (<>) $ map getAttributes args
+                    symIsConstructor =
+                        sym.attributes.symbolType `elem` [Constructor, SortInjection]
+                 in Term
+                        argAttributes
+                            { isEvaluated =
+                                -- Constructors and injections are
+                                -- evaluated if their arguments are.
+                                -- Function calls are not evaluated.
+                                symIsConstructor && argAttributes.isEvaluated
+                            , hash =
+                                Hashable.hash ("SymbolApplication" :: ByteString, sym, sorts, map (hash . getAttributes) args)
+                            , isConstructorLike =
+                                symIsConstructor && argAttributes.isConstructorLike
+                            }
+                        (SymbolApplicationF sym sorts args)
 
 pattern DomainValue :: Sort -> ByteString -> Term
 pattern DomainValue sort value <- Term _ (DomainValueF sort value)
@@ -381,7 +518,42 @@ pattern KMap def keyVals rest <- Term _ (KMapF def keyVals rest)
                             argAttributes.isConstructorLike
                         }
                     $ KMapF def (Set.toList $ Set.fromList $ keyVals ++ keyVals') rest'
-{-# COMPLETE AndTerm, SymbolApplication, DomainValue, Var, Injection, KMap #-}
+
+pattern KList :: KListDefinition -> [Term] -> Maybe (Term, [Term]) -> Term
+pattern KList def heads rest <- Term _ (KListF def heads rest)
+    where
+        KList def heads rest =
+            let argAttributes =
+                    case (heads, rest) of
+                        ([], Nothing) ->
+                            mempty
+                        (nonEmpty, Nothing) ->
+                            foldl1' (<>) $ map getAttributes nonEmpty
+                        (_, Just (m, tails)) ->
+                            foldr ((<>) . getAttributes) (getAttributes m) $ heads <> tails
+                (newHeads, newRest) = case rest of
+                    Just (KList def' heads' rest', tails)
+                        | def' /= def ->
+                            error $ "Inconsistent list definition" <> show (def, def')
+                        | otherwise ->
+                            maybe
+                                (heads <> heads' <> tails, Nothing)
+                                (\(m, ts) -> (heads <> heads', Just (m, ts <> tails)))
+                                rest'
+                    other -> (heads, other)
+             in Term
+                    argAttributes
+                        { hash =
+                            Hashable.hash
+                                ( "KList" :: ByteString
+                                , def
+                                , map (hash . getAttributes) heads
+                                , fmap (hash . getAttributes . fst) rest
+                                , fmap (map (hash . getAttributes) . snd) rest
+                                )
+                        }
+                    $ KListF def newHeads newRest
+{-# COMPLETE AndTerm, SymbolApplication, DomainValue, Var, Injection, KMap, KList #-}
 
 -- hard-wired injection symbol
 injectionSymbol :: Symbol
@@ -397,7 +569,7 @@ injectionSymbol =
                 , isIdem = IsNotIdem
                 , isAssoc = IsNotAssoc
                 , isMacroOrAlias = IsNotMacroOrAlias
-                , isKMapSymbol = Nothing
+                , collectionMetadata = Nothing
                 }
         }
 
@@ -536,7 +708,21 @@ instance Pretty Term where
             Pretty.braces . Pretty.hsep . Pretty.punctuate Pretty.comma $
                 [pretty k <> "->" <> pretty v | (k, v) <- keyVals]
                     ++ maybe [] ((: []) . pretty) rest
+        KList _meta heads (Just (mid, tails)) ->
+            Pretty.hsep $
+                Pretty.punctuate
+                    " +"
+                    [renderList heads, pretty mid, renderList tails]
+        KList _meta [] Nothing ->
+            "[]"
+        KList _meta heads Nothing ->
+            renderList heads
       where
+        renderList l
+            | null l = mempty
+            | otherwise =
+                Pretty.brackets . Pretty.hsep . Pretty.punctuate Pretty.comma $
+                    map pretty l
         collectSet = \case
             SymbolApplication (Symbol "Lbl'Unds'Set'Unds'" _ _ _ _) _ args ->
                 concatMap collectSet args

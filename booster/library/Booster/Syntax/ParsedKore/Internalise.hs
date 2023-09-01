@@ -395,25 +395,64 @@ addModule
                     Just s -> throwE $ ElemSymbolMalformed s
                     Nothing -> throwE $ ElemSymbolNotFound symbolName
 
-            -- extractedMapSymbolNames :: Map Def.SymbolName Def.KMapDefinition
-            extractedMapSymbolNames <-
-                foldM
-                    ( \rest (mapSortName, (SortAttributes{kmapAttributes}, _)) -> case kmapAttributes of
-                        Just symbolNames@KMapAttributes{unitSymbolName, elementSymbolName, concatSymbolName} -> do
-                            (keySortName, elementSortName) <- extractKeyElemSortName elementSymbolName
-                            let def = KMapDefinition{symbolNames, mapSortName, keySortName, elementSortName}
+                extractElemSortName :: Def.SymbolName -> Except DefinitionError Def.SortName
+                extractElemSortName symbolName =
+                    case Map.lookup symbolName symbols of
+                        Just Def.Symbol{argSorts = [Def.SortApp sortName []]} -> pure sortName
+                        Just s -> throwE $ ElemSymbolMalformed s
+                        Nothing -> throwE $ ElemSymbolNotFound symbolName
+
+                extractMetadata ::
+                    Def.SortName ->
+                    SortAttributes ->
+                    Except DefinitionError (Map Def.SymbolName KCollectionMetadata)
+                extractMetadata resultSort attributes =
+                    case attributes.collectionAttributes of
+                        Nothing -> pure mempty
+                        Just (symbolNames, KMapTag) -> do
+                            (keySortName, elementSortName) <-
+                                extractKeyElemSortName symbolNames.elementSymbolName
+                            let def =
+                                    KMapMeta
+                                        KMapDefinition
+                                            { symbolNames
+                                            , keySortName
+                                            , elementSortName
+                                            , mapSortName = resultSort
+                                            }
                             pure $
-                                Map.fromList [(unitSymbolName, def), (elementSymbolName, def), (concatSymbolName, def)]
-                                    `Map.union` rest
-                        _ -> pure rest
-                    )
-                    mempty
-                    (Map.toList sorts)
+                                Map.fromList
+                                    [ (symbolNames.unitSymbolName, def)
+                                    , (symbolNames.elementSymbolName, def)
+                                    , (symbolNames.concatSymbolName, def)
+                                    ]
+                        Just (symbolNames, KListTag) -> do
+                            elementSortName <-
+                                extractElemSortName symbolNames.elementSymbolName
+                            let def =
+                                    KListMeta
+                                        KListDefinition
+                                            { symbolNames
+                                            , elementSortName
+                                            , listSortName = resultSort
+                                            }
+                            pure $
+                                Map.fromList
+                                    [ (symbolNames.unitSymbolName, def)
+                                    , (symbolNames.elementSymbolName, def)
+                                    , (symbolNames.concatSymbolName, def)
+                                    ]
+
+            -- extractedCollectionMetadata :: Map Def.SymbolName KCollectionMetadata
+            extractedCollectionMetadata <-
+                fmap Map.unions . mapM (uncurry extractMetadata) . Map.assocs $
+                    Map.map fst sorts
+
             pure $
                 Map.mapWithKey
-                    ( \symbolName sym@Def.Symbol{attributes} -> case Map.lookup symbolName extractedMapSymbolNames of
+                    ( \symbolName sym@Def.Symbol{attributes} -> case Map.lookup symbolName extractedCollectionMetadata of
                         Just def ->
-                            sym{Def.Symbol.attributes = attributes{isKMapSymbol = Just def}}
+                            sym{Def.Symbol.attributes = attributes{collectionMetadata = Just def}}
                         Nothing -> sym
                     )
                     symbols
