@@ -157,12 +157,12 @@ respondEither mbStatsVar booster kore req = case req of
         (bResult, bTime) <- withTime $ booster (Execute r{maxDepth = mbDepthLimit})
         case bResult of
             Right (Execute boosterResult)
-                -- if the new backend aborts or gets stuck, revert to the old one
+                -- if the new backend aborts, branches or gets stuck, revert to the old one
                 --
                 -- if we are stuck in the new backend we try to re-run
                 -- in the old one to work around any potential
                 -- unification bugs.
-                | boosterResult.reason `elem` [Aborted, Stuck] -> do
+                | boosterResult.reason `elem` [Aborted, Stuck, Branching] -> do
                     Log.logInfoNS "proxy" . Text.pack $
                         "Booster " <> show boosterResult.reason <> " at " <> show boosterResult.depth
                     -- simplify Booster's state with Kore's simplifier
@@ -204,7 +204,7 @@ respondEither mbStatsVar booster kore req = case req of
                                 -- HaltReason, at which point we should
                                 -- return, setting the correct depth
                                 Log.logInfoNS "proxy" . Text.pack $
-                                    "Kore " <> show koreResult.reason
+                                    "Kore " <> show koreResult.reason <> " at " <> show koreResult.depth
                                 logStats ExecuteM (time + bTime + kTime, koreTime + kTime)
                                 pure $ Right $ Execute koreResult{depth = currentDepth + boosterResult.depth + koreResult.depth}
                         -- can only be an error at this point
