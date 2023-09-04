@@ -83,8 +83,16 @@ if [ -d $dir ]; then
             params=""
         fi
         # call rpc-client
-        echo "$client $mode $test $params --expect $dir/response-${testname}.json $*"
-        $client $mode $test $params --expect $dir/response-${testname}.json $*
+        if [ $(basename $server) == "booster-dev" ] && [ -f "$dir/response-${testname}.booster-dev" ]; then
+            echo "$client $mode $test $params --expect $dir/response-${testname}.booster-dev $*"
+            $client $mode $test $params --expect $dir/response-${testname}.booster-dev $*
+        elif [ $(basename $server) == "kore-rpc-dev" ] && [ -f "$dir/response-${testname}.kore-rpc-dev" ]; then
+            echo "$client $mode $test $params --expect $dir/response-${testname}.kore-rpc-dev $*"
+            $client $mode $test $params --expect $dir/response-${testname}.kore-rpc-dev $*
+        else
+            echo "$client $mode $test $params --expect $dir/response-${testname}.json $*"
+            $client $mode $test $params --expect $dir/response-${testname}.json $*
+        fi
     done
 else
     echo "$dir is a file, running a tarball test"
