@@ -557,8 +557,16 @@ rpcExec
                     Rewritten _ -> GraphTraversal.Continuing next'
                     Remaining _ -> GraphTraversal.Stuck next'
                     Kore.Rewrite.Bottom -> GraphTraversal.Vacuous prior
-        toTransitionResult prior (s : ss) =
-            GraphTraversal.Branch prior $ fmap fst (s :| ss)
+        toTransitionResult prior rs =
+            case filter
+                ( \(RpcExecState{rpcProgState}, _) -> case rpcProgState of
+                    Kore.Rewrite.Bottom -> False
+                    _ -> True
+                )
+                rs of
+                (s : ss) -> GraphTraversal.Branch prior $ fmap fst (s :| ss)
+                --  either empty or single result
+                other -> toTransitionResult prior other
 
         setTraces ::
             Seq (RewriteRule v, Seq SimplifierTrace) -> Seq RuleTrace -> RpcExecState v -> RpcExecState v
