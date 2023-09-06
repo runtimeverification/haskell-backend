@@ -176,8 +176,7 @@ transitionRule ::
         (ProgramState (Pattern RewritingVariableName))
 transitionRule rewriteGroups = transitionRuleWorker
   where
-    transitionRuleWorker _ Simplify Bottom = pure Bottom
-    transitionRuleWorker _ _ Bottom = empty
+    transitionRuleWorker _ _ Bottom = pure Bottom
     transitionRuleWorker _ Begin (Rewritten a) = pure $ Start a
     transitionRuleWorker _ Begin (Remaining _) = empty
     transitionRuleWorker _ Begin state@(Start _) = pure state
