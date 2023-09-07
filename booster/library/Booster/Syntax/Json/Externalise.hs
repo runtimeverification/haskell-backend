@@ -10,6 +10,7 @@ module Booster.Syntax.Json.Externalise (
 ) where
 
 import Data.Foldable ()
+import Data.List (partition)
 import Data.Text.Encoding qualified as Text
 
 import Booster.Pattern.Base (externaliseKmapUnsafe)
@@ -17,25 +18,39 @@ import Booster.Pattern.Base qualified as Internal
 import Booster.Pattern.Util (sortOfTerm)
 import Kore.Syntax.Json.Types qualified as Syntax
 
-{- | Converts an internal pattern to a pair of term and predicate in
- external format. The predicate is 'And'ed to avoid leaking
+{- | Converts an internal pattern to a triple of term, predicate and substitution in
+ external format. The predicate and substitution are 'And'ed to avoid leaking
  Json format internals to the caller.
 -}
 externalisePattern ::
     Internal.Pattern ->
-    (Syntax.KorePattern, Maybe Syntax.KorePattern)
+    (Syntax.KorePattern, Maybe Syntax.KorePattern, Maybe Syntax.KorePattern)
 externalisePattern Internal.Pattern{term = term, constraints} =
     -- need a sort for the predicates in external format
     let sort = externaliseSort $ sortOfTerm term
-        predicate =
-            if null constraints
+        (substitutionItems, predicateItems) = partition isSubstitutionItem constraints
+        substitution =
+            if null substitutionItems
                 then Nothing
-                else Just $ multiAnd sort $ map (externalisePredicate sort) constraints
-     in (externaliseTerm term, predicate)
+                else Just . multiAnd sort . map (externalisePredicate sort) $ substitutionItems
+        predicate =
+            if null predicateItems
+                then Nothing
+                else Just . multiAnd sort . map (externalisePredicate sort) $ predicateItems
+     in (externaliseTerm term, predicate, substitution)
   where
     multiAnd :: Syntax.Sort -> [Syntax.KorePattern] -> Syntax.KorePattern
     multiAnd _ [] = error "multiAnd: empty"
     multiAnd sort ps = foldl1 (Syntax.KJAnd sort) ps
+
+    isSubstitutionItem :: Internal.Predicate -> Bool
+    isSubstitutionItem (Internal.EqualsTerm lhs _rhs) = isVariable lhs
+    isSubstitutionItem (Internal.AndPredicate lhs rhs) = isSubstitutionItem lhs && isSubstitutionItem rhs
+    isSubstitutionItem _ = False
+
+    isVariable :: Internal.Term -> Bool
+    isVariable (Internal.Var _) = True
+    isVariable _ = False
 
 -- TODO: should KorePattern be the only type with an actual Unparse instance?
 externaliseTerm :: Internal.Term -> Syntax.KorePattern
