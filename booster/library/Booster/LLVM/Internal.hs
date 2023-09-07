@@ -407,3 +407,4 @@ marshallTerm t = do
             marshallTerm trm >>= liftIO . kore.patt.addArgument inj
         KMap def keyVals rest -> marshallTerm $ externaliseKmapUnsafe def keyVals rest
         KList def heads rest -> marshallTerm $ externaliseKList def heads rest
+        KSet def heads rest -> marshallTerm $ externaliseKSet def heads rest

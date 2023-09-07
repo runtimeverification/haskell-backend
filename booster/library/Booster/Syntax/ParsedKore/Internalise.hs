@@ -442,6 +442,22 @@ addModule
                                     , (symbolNames.elementSymbolName, def)
                                     , (symbolNames.concatSymbolName, def)
                                     ]
+                        Just (symbolNames, KSetTag) -> do
+                            elementSortName <-
+                                extractElemSortName symbolNames.elementSymbolName
+                            let def =
+                                    KSetMeta
+                                        KListDefinition
+                                            { symbolNames
+                                            , elementSortName
+                                            , listSortName = resultSort
+                                            }
+                            pure $
+                                Map.fromList
+                                    [ (symbolNames.unitSymbolName, def)
+                                    , (symbolNames.elementSymbolName, def)
+                                    , (symbolNames.concatSymbolName, def)
+                                    ]
 
             -- extractedCollectionMetadata :: Map Def.SymbolName KCollectionMetadata
             extractedCollectionMetadata <-

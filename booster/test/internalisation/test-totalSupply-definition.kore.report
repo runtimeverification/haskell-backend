@@ -1980,7 +1980,7 @@ Symbols: 1720
   - inj
   - kseq
 Axioms: 352
-Axioms preserving definedness: 295
+Axioms preserving definedness: 296
 Axioms containing AC symbols: 0
 Subsorts:
 - SortAccessListTx: SortAccessListTx

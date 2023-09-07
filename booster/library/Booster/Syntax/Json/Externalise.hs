@@ -62,6 +62,8 @@ externaliseTerm = \case
     Internal.KMap def keyVals rest -> externaliseTerm $ externaliseKmapUnsafe def keyVals rest
     Internal.KList def heads rest ->
         externaliseTerm $ Internal.externaliseKList def heads rest
+    Internal.KSet def heads rest ->
+        externaliseTerm $ Internal.externaliseKSet def heads rest
 
 externalisePredicate :: Syntax.Sort -> Internal.Predicate -> Syntax.KorePattern
 externalisePredicate sort =
