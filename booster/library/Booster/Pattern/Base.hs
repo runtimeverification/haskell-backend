@@ -19,6 +19,7 @@ import Booster.Definition.Attributes.Base (
     KCollectionSymbolNames (..),
     KListDefinition (..),
     KMapDefinition (..),
+    KSetDefinition,
     SymbolAttributes (..),
     SymbolType (..),
     pattern CanBeEvaluated,
@@ -39,7 +40,7 @@ import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 import Data.Hashable (Hashable)
 import Data.Hashable qualified as Hashable
-import Data.List (foldl1')
+import Data.List as List (foldl1', sort)
 import Data.Map qualified as Map
 import Data.Set (Set, fromList, toList)
 import Data.Set qualified as Set
@@ -107,6 +108,11 @@ data TermF t
         KListDefinition -- metadata
         [t] -- head elements
         (Maybe (t, [t])) -- optional (symbolic) middle and tail elements
+    | -- | internal set
+      KSetF
+        KSetDefinition -- metadata, identical to KListDefinition
+        [t] -- known elements (no duplicate check)
+        (Maybe t) -- optional symbolic rest
     deriving stock (Eq, Ord, Show, Functor, Foldable, Traversable, Generic, Data, Lift)
     deriving anyclass (NFData, Hashable)
 
@@ -186,6 +192,7 @@ unitSymbol def =
         case def of
             KMapMeta mapDef -> (mapDef.symbolNames, mapDef.mapSortName)
             KListMeta listDef -> (listDef.symbolNames, listDef.listSortName)
+            KSetMeta setDef -> (setDef.symbolNames, setDef.listSortName)
 concatSymbol def =
     Symbol
         { name = symbolNames.concatSymbolName
@@ -207,6 +214,7 @@ concatSymbol def =
         case def of
             KMapMeta mapDef -> (mapDef.symbolNames, mapDef.mapSortName, PartialFunction)
             KListMeta listDef -> (listDef.symbolNames, listDef.listSortName, TotalFunction)
+            KSetMeta listDef -> (listDef.symbolNames, listDef.listSortName, PartialFunction)
 
 kmapElementSymbol :: KMapDefinition -> Symbol
 kmapElementSymbol def =
@@ -396,6 +404,64 @@ externaliseKList def heads optRest
     concatList xs =
         foldr1 (\a b -> SymbolApplication concatSym [] [a, b]) xs
 
+internaliseKSet :: KSetDefinition -> Term -> Term
+internaliseKSet def = \case
+    SymbolApplication s _ []
+        | s.name == def.symbolNames.unitSymbolName -> KSet def [] Nothing
+    SymbolApplication s _ [x]
+        | s.name == def.symbolNames.elementSymbolName -> KSet def [x] Nothing
+    SymbolApplication concatSym _ [x, y]
+        | concatSym.name == def.symbolNames.concatSymbolName ->
+            case (internaliseKSet def x, internaliseKSet def y) of
+                (KSet def1 elems1 rest1, KSet def2 elems2 rest2)
+                    | def1 /= def2 ->
+                        error $ "Inconsistent set definition " <> show (def1, def2)
+                    | def1 /= def ->
+                        error $ "Inconsistent set definition " <> show (def1, def)
+                    | Nothing <- rest1 ->
+                        KSet def (List.sort $ elems1 <> elems2) rest2
+                    | Nothing <- rest2 ->
+                        KSet def (List.sort $ elems1 <> elems2) rest1
+                    | Just r1 <- rest1
+                    , Just r2 <- rest2 ->
+                        KSet
+                            def
+                            (List.sort $ elems1 <> elems2)
+                            (Just $ SymbolApplication concatSym [] [r1, r2])
+                (KSet def1 elems1 rest1, other2)
+                    | def1 /= def -> error $ "Inconsistent set definition " <> show (def1, def)
+                    | Nothing <- rest1 ->
+                        KSet def elems1 (Just other2)
+                    | Just r1 <- rest1 ->
+                        KSet def elems1 (Just $ SymbolApplication concatSym [] [r1, other2])
+                (other1, KSet def2 elems2 rest2)
+                    | def2 /= def -> error $ "Inconsistent set definition " <> show (def2, def)
+                    | Nothing <- rest2 ->
+                        KSet def elems2 (Just other1)
+                    | Just r2 <- rest2 ->
+                        KSet def elems2 (Just $ SymbolApplication concatSym [] [other1, r2])
+                (other1, other2) ->
+                    SymbolApplication (stripCollectionMetadata concatSym) [] [other1, other2]
+    other -> other
+
+externaliseKSet :: KSetDefinition -> [Term] -> Maybe Term -> Term
+externaliseKSet def elements optRest
+    | Nothing <- optRest =
+        concatSet $ map singleton elements
+    | Just rest <- optRest =
+        concatSet $ map singleton elements <> [rest]
+  where
+    elemSym = stripCollectionMetadata $ klistElementSymbol def
+    concatSym = stripCollectionMetadata $ concatSymbol $ KSetMeta def
+
+    emptySet = SymbolApplication (stripCollectionMetadata $ unitSymbol $ KSetMeta def) [] []
+
+    singleton x = SymbolApplication elemSym [] [x]
+
+    concatSet [] = emptySet
+    concatSet xs =
+        foldr1 (\a b -> SymbolApplication concatSym [] [a, b]) xs
+
 instance Corecursive Term where
     embed (AndTermF t1 t2) = AndTerm t1 t2
     embed (SymbolApplicationF s ss ts) = SymbolApplication s ss ts
@@ -404,6 +470,7 @@ instance Corecursive Term where
     embed (InjectionF source target t) = Injection source target t
     embed (KMapF def conc sym) = KMap def conc sym
     embed (KListF def heads rest) = KList def heads rest
+    embed (KSetF def heads rest) = KSet def heads rest
 
 -- smart term constructors, as bidirectional patterns
 pattern AndTerm :: Term -> Term -> Term
@@ -433,6 +500,8 @@ pattern SymbolApplication sym sorts args <- Term _ (SymbolApplicationF sym sorts
                  in KMap def keyVals rest
             | Just (KListMeta def) <- sym.attributes.collectionMetadata =
                 internaliseKList def $ Term mempty $ SymbolApplicationF sym sorts args
+            | Just (KSetMeta def) <- sym.attributes.collectionMetadata =
+                internaliseKSet def $ Term mempty $ SymbolApplicationF sym sorts args
             | otherwise =
                 let argAttributes
                         | null args = mempty
@@ -458,15 +527,15 @@ pattern SymbolApplication sym sorts args <- Term _ (SymbolApplicationF sym sorts
                         (SymbolApplicationF sym sorts args)
 
 pattern DomainValue :: Sort -> ByteString -> Term
-pattern DomainValue sort value <- Term _ (DomainValueF sort value)
+pattern DomainValue s value <- Term _ (DomainValueF s value)
     where
-        DomainValue sort value =
+        DomainValue s value =
             Term
                 mempty
-                    { hash = Hashable.hash ("DomainValue" :: ByteString, sort, value)
+                    { hash = Hashable.hash ("DomainValue" :: ByteString, s, value)
                     , isConstructorLike = True
                     }
-                $ DomainValueF sort value
+                $ DomainValueF s value
 
 pattern Var :: Variable -> Term
 pattern Var v <- Term _ (VarF v)
@@ -564,7 +633,38 @@ pattern KList def heads rest <- Term _ (KListF def heads rest)
                                 )
                         }
                     $ KListF def newHeads newRest
-{-# COMPLETE AndTerm, SymbolApplication, DomainValue, Var, Injection, KMap, KList #-}
+
+pattern KSet :: KSetDefinition -> [Term] -> Maybe Term -> Term
+pattern KSet def elements rest <- Term _ (KSetF def elements rest)
+    where
+        KSet def elements rest =
+            let argAttributes
+                    | Nothing <- rest
+                    , null elements =
+                        mempty
+                    | Nothing <- rest =
+                        foldl1' (<>) $ map getAttributes elements
+                    | Just r <- rest =
+                        foldr ((<>) . getAttributes) (getAttributes r) elements
+                (newElements, newRest) = case rest of
+                    Just (KSet def' elements' rest')
+                        | def /= def' ->
+                            error $ "Inconsistent set definition " <> show (def, def')
+                        | otherwise ->
+                            (Set.toList . Set.fromList $ elements <> elements', rest')
+                    other -> (elements, other)
+             in Term
+                    argAttributes
+                        { hash =
+                            Hashable.hash
+                                ( "KSet" :: ByteString
+                                , def
+                                , map (hash . getAttributes) elements
+                                , fmap (hash . getAttributes) rest
+                                )
+                        }
+                    $ KSetF def newElements newRest
+{-# COMPLETE AndTerm, SymbolApplication, DomainValue, Var, Injection, KMap, KList, KSet #-}
 
 -- hard-wired injection symbol
 injectionSymbol :: Symbol
@@ -707,8 +807,6 @@ instance Pretty Term where
     pretty = \case
         AndTerm t1 t2 ->
             pretty t1 <> "/\\" <> pretty t2
-        SymbolApplication (Symbol "Lbl'Unds'Set'Unds'" _ _ _ _) _ args ->
-            Pretty.braces . Pretty.hsep . Pretty.punctuate Pretty.comma $ concatMap collectSet args
         SymbolApplication symbol _sortParams args ->
             pretty (Text.replace "Lbl" "" $ Text.decodeUtf8 $ decodeLabel' symbol.name)
                 <> KPretty.argumentsP args
@@ -729,17 +827,17 @@ instance Pretty Term where
             "[]"
         KList _meta heads Nothing ->
             renderList heads
+        KSet _meta [] Nothing -> "{}"
+        KSet _meta [] (Just rest) -> pretty rest
+        KSet _meta es rest ->
+            (Pretty.braces . Pretty.hsep . Pretty.punctuate Pretty.comma $ map pretty es)
+                Pretty.<+> maybe mempty ((" ++ " <>) . pretty) rest
       where
         renderList l
             | null l = mempty
             | otherwise =
                 Pretty.brackets . Pretty.hsep . Pretty.punctuate Pretty.comma $
                     map pretty l
-        collectSet = \case
-            SymbolApplication (Symbol "Lbl'Unds'Set'Unds'" _ _ _ _) _ args ->
-                concatMap collectSet args
-            SymbolApplication (Symbol "LblSetItem" _ _ _ _) _ args -> map pretty args
-            other -> [pretty other]
 
 instance Pretty Sort where
     pretty (SortApp name params) =

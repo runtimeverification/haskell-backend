@@ -58,6 +58,7 @@ sortOfTerm (Var Variable{variableSort}) = variableSort
 sortOfTerm (Injection _ sort _) = sort
 sortOfTerm (KMap def _ _) = SortApp def.mapSortName []
 sortOfTerm (KList def _ _) = SortApp def.listSortName []
+sortOfTerm (KSet def _ _) = SortApp def.listSortName []
 
 applySubst :: Map VarName Sort -> Sort -> Sort
 applySubst subst var@(SortVar n) =
@@ -92,6 +93,8 @@ substituteInTerm substitution = goSubst
             KMap attrs keyVals rest -> KMap attrs (bimap goSubst goSubst <$> keyVals) (goSubst <$> rest)
             KList def heads rest ->
                 KList def (map goSubst heads) (bimap goSubst (map goSubst) <$> rest)
+            KSet def elements rest ->
+                KSet def (map goSubst elements) (goSubst <$> rest)
 
 substituteInPredicate :: Map Variable Term -> Predicate -> Predicate
 substituteInPredicate substitution = cata $ \case
@@ -184,33 +187,52 @@ filterTermSymbols check = cata $ \case
     DomainValueF _ _ -> []
     VarF _ -> []
     InjectionF _ _ t -> t
-    KMapF def [] Nothing -> [unit | let unit = unitSymbol $ KMapMeta def, check unit]
-    KMapF _ [] (Just t) -> t
+    -- Note the different cases:
+    -- - empty collection: unit symbol only
+    -- - singleton collections: element symbol only
+    -- - opaque only: no collection symbols required
+    -- - non-empty collection: no unit symbol required
+    KMapF def [] Nothing ->
+        [unitSym | let unitSym = unitSymbol $ KMapMeta def, check unitSym]
+    KMapF def [(k, v)] Nothing ->
+        k <> v <> [elemSym | let elemSym = kmapElementSymbol def, check elemSym]
+    KMapF _ [] (Just t) ->
+        t
     KMapF def kvs t ->
         let
             concatSym = concatSymbol $ KMapMeta def
             elementSym = kmapElementSymbol def
-            unitSym = unitSymbol $ KMapMeta def
          in
-            filter check [concatSym, elementSym, unitSym]
+            filter check [concatSym, elementSym]
                 <> concatMap (uncurry (<>)) kvs
                 <> fromMaybe [] t
     KListF def heads Nothing ->
         let concatSym = concatSymbol $ KListMeta def
             elemSym = klistElementSymbol def
             unitSym = unitSymbol $ KListMeta def
-         in if null heads
-                then [unitSym | check unitSym]
-                else filter check [concatSym, elemSym] <> concat heads
+         in case heads of
+                [] -> [unitSym | check unitSym]
+                [x] -> [elemSym | check elemSym] <> x
+                more -> filter check [concatSym, elemSym] <> concat more
     KListF def heads (Just (mid, tails)) ->
         let concatSym = concatSymbol $ KListMeta def
             elemSym = klistElementSymbol def
-            unitSym = unitSymbol $ KListMeta def
             ends = heads <> tails
          in mid
                 <> if null ends
                     then []
-                    else filter check [concatSym, elemSym, unitSym] <> concat ends
+                    else filter check [concatSym, elemSym] <> concat ends
+    KSetF def elements rest ->
+        let concatSym = concatSymbol $ KSetMeta def
+            unitSym = unitSymbol $ KSetMeta def
+            elemSym = klistElementSymbol def
+         in case elements of
+                [] -> fromMaybe [unitSym | check unitSym] rest
+                [single] ->
+                    single
+                        <> maybe [elemSym | check elemSym] (filter check [concatSym, elemSym] <>) rest
+                more ->
+                    filter check [concatSym, elemSym] <> fromMaybe [] rest <> concat more
 
 isBottom :: Pattern -> Bool
 isBottom = (Bottom `elem`) . constraints

@@ -511,6 +511,11 @@ recomputeTermAttributes = \case
             def
             (map recomputeTermAttributes heads)
             (fmap (bimap recomputeTermAttributes (map recomputeTermAttributes)) rest)
+    Internal.KSet def heads rest ->
+        Internal.KSet
+            def
+            (map recomputeTermAttributes heads)
+            (fmap recomputeTermAttributes rest)
 
 trm :: QuasiQuoter
 trm =
