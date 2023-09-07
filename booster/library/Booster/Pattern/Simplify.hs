@@ -88,3 +88,5 @@ simplifyConcrete (Just mApi) def trm = recurse trm
                 KMap mdef keyVals rest -> KMap mdef (map (bimap recurse recurse) keyVals) (recurse <$> rest)
                 KList ldef heads rest ->
                     KList ldef (map recurse heads) (fmap (bimap recurse (map recurse)) rest)
+                KSet sdef heads rest ->
+                    KSet sdef (map recurse heads) (fmap recurse rest)

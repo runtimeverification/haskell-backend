@@ -457,6 +457,16 @@ unify1
     m@KMap{}
     trm =
         failWith $ DifferentSymbols m trm
+------ Internalised Sets
+-- not supported yet FIXME
+unify1
+    t1@KSet{}
+    t2 =
+        addIndeterminate t1 t2
+unify1
+    t1
+    t2@KSet{} =
+        addIndeterminate t1 t2
 ------ Remaining other cases: mix of DomainValue and SymbolApplication
 ------ (either side). The remaining unification problems are returned.
 unify1
