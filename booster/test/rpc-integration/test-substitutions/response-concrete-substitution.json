@@ -112,7 +112,7 @@
                     ]
                 }
             },
-            "predicate": {
+            "substitution": {
                 "format": "KORE",
                 "version": 1,
                 "term": {
