@@ -290,6 +290,10 @@ match1
 match1
     t1@KList{}
     t2 = indeterminate t1 t2
+-- no unification for sets, return indeterminate for now
+match1
+    t1@KSet{}
+    t2 = indeterminate t1 t2
 
 failWith :: FailReason -> StateT s (Except MatchResult) ()
 failWith = lift . throwE . MatchFailed . General

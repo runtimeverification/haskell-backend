@@ -211,8 +211,21 @@ instance HasAttributes ParsedSort where
                                 , KListTag
                                 )
                         }
+            (Just elementSymbolName, Just concatSymbolName, Just unitSymbolName, Just ("SET.Set" :: Text)) ->
+                pure
+                    SortAttributes
+                        { argCount = length sortVars
+                        , collectionAttributes =
+                            Just
+                                ( KCollectionSymbolNames
+                                    { unitSymbolName
+                                    , elementSymbolName
+                                    , concatSymbolName
+                                    }
+                                , KSetTag
+                                )
+                        }
             (Just _, Just _, Just _, Just _) ->
-                -- ignore any other hooked sorts like lists/sets
                 pure
                     SortAttributes
                         { argCount = length sortVars

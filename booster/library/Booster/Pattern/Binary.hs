@@ -458,6 +458,7 @@ encodeTerm = \case
     Injection source target t -> encodeSymbolApplication "inj" [source, target] [Left t]
     KMap def keyVals rest -> encodeTerm $ externaliseKmapUnsafe def keyVals rest
     KList def heads rest -> encodeTerm $ externaliseKList def heads rest
+    KSet def heads rest -> encodeTerm $ externaliseKSet def heads rest
 
 encodeSymbol :: ByteString -> [Sort] -> Put
 encodeSymbol name sorts = do
