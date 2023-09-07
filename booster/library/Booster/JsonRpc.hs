@@ -145,9 +145,11 @@ respond stateVar =
                     Log.logInfoNS "booster" "Simplifying a pattern"
                     ApplyEquations.evaluatePattern doTracing def mLlvmLibrary pat >>= \case
                         (Right newPattern, patternTraces) -> do
-                            let (t, p) = externalisePattern newPattern
+                            let (term, mbPredicate, mbSubstitution) = externalisePattern newPattern
                                 tSort = externaliseSort (sortOfPattern newPattern)
-                                result = maybe t (KoreJson.KJAnd tSort t) p
+                                predicate = fromMaybe (KoreJson.KJTop tSort) mbPredicate
+                                substitution = fromMaybe (KoreJson.KJTop tSort) mbSubstitution
+                                result = KoreJson.KJAnd tSort (KoreJson.KJAnd tSort term predicate) substitution
                             pure . Right . RpcTypes.Simplify $
                                 RpcTypes.SimplifyResult
                                     { state = addHeader result
@@ -352,9 +354,13 @@ execResponse req (d, traces, rr) = case rr of
 
 toExecState :: Pattern -> RpcTypes.ExecuteState
 toExecState pat =
-    RpcTypes.ExecuteState{term = addHeader t, predicate = fmap addHeader p, substitution = Nothing}
+    RpcTypes.ExecuteState
+        { term = addHeader t
+        , predicate = fmap addHeader p
+        , substitution = fmap addHeader s
+        }
   where
-    (t, p) = externalisePattern pat
+    (t, p, s) = externalisePattern pat
 
 mkLogEquationTrace :: (Maybe Bool, Maybe Bool) -> ApplyEquations.EquationTrace -> Maybe LogEntry
 mkLogEquationTrace
