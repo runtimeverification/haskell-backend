@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 {- |
 Module      : Booster.JsonRpc
@@ -45,7 +46,12 @@ import Booster.Pattern.Rewrite (
 import Booster.Pattern.Util (sortOfPattern)
 import Booster.Syntax.Json (KoreJson (..), addHeader, sortOfJson)
 import Booster.Syntax.Json.Externalise
-import Booster.Syntax.Json.Internalise (internalisePattern, internaliseTermOrPredicate)
+import Booster.Syntax.Json.Internalise (
+    internalisePattern,
+    internaliseTermOrPredicate,
+    pattern CheckSubsorts,
+    pattern DisallowAlias,
+ )
 import Booster.Syntax.ParsedKore (parseKoreModule)
 import Booster.Syntax.ParsedKore.Base
 import Booster.Syntax.ParsedKore.Internalise (DefinitionError (..), addToDefinitions)
@@ -71,7 +77,7 @@ respond stateVar =
                 pure $ Left $ RpcError.unsupportedOption ("moving-average-step-timeout" :: String)
         RpcTypes.Execute req -> withContext req._module $ \(def, mLlvmLibrary) -> do
             -- internalise given constrained term
-            let internalised = runExcept $ internalisePattern False Nothing def req.state.term
+            let internalised = runExcept $ internalisePattern DisallowAlias CheckSubsorts Nothing def req.state.term
 
             case internalised of
                 Left patternError -> do
@@ -121,7 +127,7 @@ respond stateVar =
                                 pure $ Right $ RpcTypes.AddModule ()
         RpcTypes.Simplify req -> withContext req._module $ \(def, mLlvmLibrary) -> do
             let internalised =
-                    runExcept $ internaliseTermOrPredicate False Nothing def req.state.term
+                    runExcept $ internaliseTermOrPredicate DisallowAlias CheckSubsorts Nothing def req.state.term
             let mkTraces
                     | all not . catMaybes $
                         [req.logSuccessfulSimplifications, req.logFailedSimplifications] =

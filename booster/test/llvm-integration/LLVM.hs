@@ -1,3 +1,5 @@
+{-# LANGUAGE PatternSynonyms #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2023
 License     : BSD-3-Clause
@@ -37,6 +39,7 @@ import Booster.LLVM as LLVM
 import Booster.LLVM.Internal as Internal
 import Booster.Pattern.Base
 import Booster.Syntax.Json.Externalise (externaliseTerm)
+import Booster.Syntax.Json.Internalise (pattern AllowAlias, pattern IgnoreSubsorts)
 import Booster.Syntax.Json.Internalise qualified as Syntax
 import Booster.Syntax.ParsedKore.Internalise (buildDefinitions)
 import Booster.Syntax.ParsedKore.Parser (parseDefinition)
@@ -132,7 +135,7 @@ latin1Prop api = property $ do
     fromSyntacticString =
         either (error . show) id
             . runExcept
-            . Syntax.internaliseTerm True Nothing testDef
+            . Syntax.internaliseTerm AllowAlias IgnoreSubsorts Nothing testDef
             . Syntax.KJDV syntaxStringSort
     syntaxStringSort :: Syntax.Sort
     syntaxStringSort = Syntax.SortApp (Syntax.Id "SortString") []
