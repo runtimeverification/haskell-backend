@@ -151,8 +151,8 @@ considering their erasure as computational steps in the resulting transition
 systems.  You can make these rules computational (dropping the attribute
 \texttt{structural}) if you do want these to count as computational steps. */
 
-  rule {} => .   [structural]
-  rule {S} => S  [structural]
+  rule {} => .
+  rule {S} => S
 
 /*@ \subsubsection{Assignment}
 The assigned variable is updated in the state.  The variable is expected
@@ -172,7 +172,7 @@ and counting only the steps corresponding to computational rules as
 transitions (i.e., hiding the structural rules as unobservable, or
 internal steps). */
 
-  rule S1:Stmt S2:Stmt => S1 ~> S2  [structural]
+  rule S1:Stmt S2:Stmt => S1 ~> S2
 
 /*@ \subsubsection{Conditional}
 The conditional statement has two semantic cases, corresponding to
@@ -188,7 +188,7 @@ argument is allowed to be evaluated. */
 We give the semantics of the \texttt{while} loop by unrolling.
 Note that we preferred to make the rule below structural. */
 
-  rule while (B) S => if (B) {S while (B) S} else {}  [structural]
+  rule while (B) S => if (B) {S while (B) S} else {}
 
 /*@ \subsection{Programs}
 The semantics of an IMP program is that its body statement is executed
@@ -205,7 +205,7 @@ a computational step. */
 
   rule <k> int (X,Xs => Xs);_ </k> <state> Rho:Map (.Map => X|->0) </state>
     requires notBool (X in keys(Rho))
-  rule int .Ids; S => S  [structural]
+  rule int .Ids; S => S
 
   // for add-spec, double-sum-spec, run-stepf-repl-scrip-spec, sum-div-spec
   // , sum-save-proofs-spec
