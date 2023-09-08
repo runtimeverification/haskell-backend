@@ -81,15 +81,15 @@ module SMC
   rule <k> && E => E ...</k>
        <stack> true : S:ValStack => S </stack>
 
-  rule {} => .   [structural]
-  rule {S} => S  [structural]
+  rule {} => .
+  rule {S} => S
 
   rule X:Id = E:AExp ; => E ~> X =
   rule <k> X = => . ...</k>
        <mem>... X |-> (_ => I) ...</mem>
        <stack> I:Int : S:ValStack => S </stack>
 
-  rule S1:Stmt S2:Stmt => S1 ~> S2  [structural]
+  rule S1:Stmt S2:Stmt => S1 ~> S2
 
   rule if (B:BExp) S1:Block else S2:Block  => B ~> choice(S1,S2)
   rule <k> choice(Bl,_) => Bl ...</k> <stack> true : S:ValStack => S </stack>
@@ -99,7 +99,7 @@ module SMC
 
   rule <k> int (X,Xs => Xs);_ </k> <mem> Rho:Map (.Map => X|->0) </mem>
     requires notBool (X in keys(Rho))
-  rule int .Ids; S => S  [structural]
+  rule int .Ids; S => S
 
   // for add-spec, add-stack-spec, double-sum-spec, double-sum-stack-spec,
   // sum-spec, sum-stack-spec
