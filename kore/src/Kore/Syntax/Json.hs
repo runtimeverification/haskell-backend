@@ -32,7 +32,8 @@ import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike qualified as TermLike
 import Kore.Internal.TermLike.TermLike (TermLike)
 import Kore.Syntax qualified as Kore
-import Kore.Syntax.Json.Internal
+import Kore.Syntax.Json.Internal hiding (fromTermLike)
+import Kore.Syntax.Json.Internal qualified
 import Kore.Syntax.Variable (VariableName (..))
 import Prelude.Kore
 
@@ -100,15 +101,14 @@ prettyJsonOpts =
 fromTermLike :: TermLike VariableName -> KoreJson
 fromTermLike =
     addHeader
-        . fromPattern
-        . from @_ @(Kore.Pattern _ (TermLike.TermAttributes VariableName))
+        . Kore.Syntax.Json.Internal.fromTermLike
 
 fromPredicate :: Kore.Sort -> Predicate VariableName -> KoreJson
 fromPredicate s = fromTermLike . Predicate.fromPredicate s
 
 {- | represent a @'Substitution'@ as a conjunction of equalities, so
 
-'[t1 / X1][t2 / X2]..[tn / Xn'
+'[t1 / X1][t2 / X2]..[tn / Xn]'
 
 becomes
 
