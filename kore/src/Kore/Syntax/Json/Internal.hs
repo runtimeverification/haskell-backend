@@ -570,63 +570,65 @@ fromTermLike = cata go
                         , argss = x :| xs
                         }
 
-        encodeInternalList InternalList
-                            { internalListUnit
-                            , internalListConcat
-                            , internalListElement =
-                                Kore.Symbol{symbolConstructor = elementSymbolConstructor, symbolParams = elementSymbolParams}
-                            , internalListChild
-                            } =
-            foldApplication internalListUnit internalListConcat children
-          where
-            encodeListElement e =
-                KJApp
-                    { name = fromKoreId elementSymbolConstructor
-                    , sorts = map fromSort elementSymbolParams
-                    , args = [e]
-                    }
+        encodeInternalList
+            InternalList
+                { internalListUnit
+                , internalListConcat
+                , internalListElement =
+                    Kore.Symbol{symbolConstructor = elementSymbolConstructor, symbolParams = elementSymbolParams}
+                , internalListChild
+                } =
+                foldApplication internalListUnit internalListConcat children
+              where
+                encodeListElement e =
+                    KJApp
+                        { name = fromKoreId elementSymbolConstructor
+                        , sorts = map fromSort elementSymbolParams
+                        , args = [e]
+                        }
 
-            children = map encodeListElement $ toList internalListChild
+                children = map encodeListElement $ toList internalListChild
 
         encodeInternalAc ::
             forall normalized.
             AcWrapper normalized =>
             InternalAc Key normalized KorePattern ->
             KorePattern
-        encodeInternalAc InternalAc
-                            { builtinAcUnit
-                            , builtinAcConcat
-                            , builtinAcElement =
-                                Kore.Symbol{symbolConstructor = elementSymbolConstructor, symbolParams = elementSymbolParams}
-                            , builtinAcChild
-                            } =
-            foldApplication builtinAcUnit builtinAcConcat children
-          where
-            NormalizedAc{elementsWithVariables, concreteElements, opaque} = unwrapAc builtinAcChild
+        encodeInternalAc
+            InternalAc
+                { builtinAcUnit
+                , builtinAcConcat
+                , builtinAcElement =
+                    Kore.Symbol{symbolConstructor = elementSymbolConstructor, symbolParams = elementSymbolParams}
+                , builtinAcChild
+                } =
+                foldApplication builtinAcUnit builtinAcConcat children
+              where
+                NormalizedAc{elementsWithVariables, concreteElements, opaque} = unwrapAc builtinAcChild
 
-            encodeAcElement args =
-                KJApp
-                    { name = fromKoreId elementSymbolConstructor
-                    , sorts = map fromSort elementSymbolParams
-                    , args
-                    }
+                encodeAcElement args =
+                    KJApp
+                        { name = fromKoreId elementSymbolConstructor
+                        , sorts = map fromSort elementSymbolParams
+                        , args
+                        }
 
-            encodedElementsWithVariables =
-                map
-                    ( encodeAcElement
-                        . elementToApplicationArgs
-                    )
-                    elementsWithVariables
+                encodedElementsWithVariables =
+                    map
+                        ( encodeAcElement
+                            . elementToApplicationArgs
+                        )
+                        elementsWithVariables
 
-            encodedConcreteElements =
-                map
-                    ( \(k, v) ->
-                        encodeAcElement $
-                            encodeKey k : concreteElementToApplicationArgs v
-                    )
-                    $ HashMap.toList concreteElements
+                encodedConcreteElements =
+                    map
+                        ( \(k, v) ->
+                            encodeAcElement $
+                                encodeKey k : concreteElementToApplicationArgs v
+                        )
+                        $ HashMap.toList concreteElements
 
-            encodeKey = fromTermLike . from
+                encodeKey = fromTermLike . from
 
-            children =
-                encodedElementsWithVariables ++ encodedConcreteElements ++ opaque
+                children =
+                    encodedElementsWithVariables ++ encodedConcreteElements ++ opaque
