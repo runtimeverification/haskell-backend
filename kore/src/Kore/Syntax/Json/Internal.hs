@@ -12,14 +12,37 @@ module Kore.Syntax.Json.Internal (
     module Kore.Syntax.Json.Types,
 ) where
 
+import Data.ByteString.Short qualified as ByteString
 import Data.Char (isDigit)
 import Data.Foldable ()
 import Data.Functor.Const (Const (..))
 import Data.Functor.Foldable as Recursive (Recursive (..))
+import Data.HashMap.Lazy qualified as HashMap
 import Data.List.NonEmpty qualified as NE
 import Data.Sup (Sup (..))
 import Data.Text qualified as T
+import Data.Text qualified as Text
 import Kore.Attribute.Attributes (ParsedPattern)
+import Kore.Builtin.Encoding qualified as Encoding
+import Kore.Builtin.Endianness.Endianness qualified as Endianness
+import Kore.Builtin.Signedness.Signedness qualified as Signedness
+import Kore.Internal.Alias qualified as Kore
+import Kore.Internal.Inj qualified as Inj
+import Kore.Internal.InternalBool (InternalBool (..))
+import Kore.Internal.InternalInt (InternalInt (..))
+import Kore.Internal.InternalList (InternalList (..))
+import Kore.Internal.InternalMap (
+    AcWrapper,
+    InternalAc (..),
+    NormalizedAc (..),
+    concreteElementToApplicationArgs,
+    elementToApplicationArgs,
+    unwrapAc,
+ )
+import Kore.Internal.InternalString (InternalString (..))
+import Kore.Internal.Symbol qualified as Kore
+import Kore.Internal.TermLike (InternalBytes (..), Key)
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Parser (embedParsedPattern)
 import Kore.Syntax qualified as Kore
 import Kore.Syntax.Json.Types
@@ -32,22 +55,7 @@ import Kore.Syntax.Variable (
     VariableName (..),
  )
 import Prelude.Kore hiding (Left, Right)
-import Kore.Internal.TermLike qualified as TermLike
-import  Kore.Internal.Symbol qualified as Kore
-import  Kore.Internal.Alias qualified as Kore
-import Kore.Builtin.Endianness.Endianness qualified as Endianness
-import Kore.Builtin.Signedness.Signedness qualified as Signedness
-import Kore.Internal.Inj qualified as Inj
-import Kore.Internal.InternalBool (InternalBool(..))
-import Kore.Internal.TermLike (InternalBytes(..), Key)
-import qualified Kore.Builtin.Encoding as Encoding
-import qualified Data.ByteString.Short as ByteString
-import Kore.Internal.InternalInt (InternalInt(..))
-import qualified Data.Text as Text
-import Kore.Internal.InternalString (InternalString(..))
-import Kore.Internal.InternalList (InternalList(..))
-import Kore.Internal.InternalMap (AcWrapper, InternalAc (..), NormalizedAc (..), unwrapAc, elementToApplicationArgs, concreteElementToApplicationArgs)
-import qualified Data.HashMap.Lazy as HashMap
+
 ------------------------------------------------------------
 -- reading
 
@@ -322,7 +330,7 @@ fromPatternF (_ :< patt) = case patt of
             KJSVar{name = fromKoreVariableName svar, sort}
       where
         sort = fromSort variableSort
-  
+
 fromSort :: Kore.Sort -> Sort
 fromSort = \case
     Kore.SortActualSort Kore.SortActual{sortActualName, sortActualSorts} ->
@@ -345,7 +353,6 @@ fromKoreVariableName VariableName{base, counter} =
                 Just (Element n) -> T.pack $ show n
                 Just Sup -> error "Found Sup while converting variable name"
 
-
 fromTermLike ::
     TermLike.TermLike VariableName ->
     KorePattern
@@ -358,7 +365,6 @@ fromTermLike = cata go
             KorePattern ->
         KorePattern
     go (_ :< trmLikePat) = case trmLikePat of
-
         TermLike.AndF Kore.And{andSort, andFirst, andSecond} ->
             KJAnd
                 { sort = fromSort andSort
@@ -367,7 +373,7 @@ fromTermLike = cata go
                 }
         TermLike.ApplySymbolF
             ( Kore.Application
-                    Kore.Symbol { symbolConstructor  , symbolParams }
+                    Kore.Symbol{symbolConstructor, symbolParams}
                     args
                 ) ->
                 KJApp
@@ -377,7 +383,7 @@ fromTermLike = cata go
                     }
         TermLike.ApplyAliasF
             ( Kore.Application
-                    Kore.Alias { aliasConstructor  , aliasParams }
+                    Kore.Alias{aliasConstructor, aliasParams}
                     args
                 ) ->
                 KJApp
@@ -491,25 +497,29 @@ fromTermLike = cata go
                 KJEVar{name = fromKoreVariableName evar, sort}
             | Kore.SomeVariableNameSet (SetVariableName svar) <- variableName ->
                 KJSVar{name = fromKoreVariableName svar, sort}
-            where
-                sort = fromSort variableSort
-        TermLike.EndiannessF (Const endianness) | Kore.Symbol { symbolConstructor  , symbolParams } <- Endianness.toSymbol endianness ->
-            KJApp
+          where
+            sort = fromSort variableSort
+        TermLike.EndiannessF (Const endianness)
+            | Kore.Symbol{symbolConstructor, symbolParams} <- Endianness.toSymbol endianness ->
+                KJApp
                     { name = fromKoreId symbolConstructor
                     , sorts = map fromSort symbolParams
                     , args = []
                     }
-        
-        TermLike.SignednessF (Const signedness) | Kore.Symbol { symbolConstructor  , symbolParams } <- Signedness.toSymbol signedness -> undefined
-             KJApp
-                    { name = fromKoreId symbolConstructor
-                    , sorts = map fromSort symbolParams
-                    , args = []
-                    }
-        TermLike.InjF inj | ( Kore.Application
-                    Kore.Symbol { symbolConstructor  , symbolParams }
+        TermLike.SignednessF (Const signedness)
+            | Kore.Symbol{symbolConstructor, symbolParams} <- Signedness.toSymbol signedness ->
+                undefined
+                    KJApp
+                        { name = fromKoreId symbolConstructor
+                        , sorts = map fromSort symbolParams
+                        , args = []
+                        }
+        TermLike.InjF inj
+            | ( Kore.Application
+                    Kore.Symbol{symbolConstructor, symbolParams}
                     args
-                ) <- Inj.toApplication inj ->
+                ) <-
+                Inj.toApplication inj ->
                 KJApp
                     { name = fromKoreId symbolConstructor
                     , sorts = map fromSort symbolParams
@@ -531,7 +541,6 @@ fromTermLike = cata go
         TermLike.InternalListF internalList -> encodeInternalList internalList
         TermLike.InternalMapF internalMap -> encodeInternalAc internalMap
         TermLike.InternalSetF internalSet -> encodeInternalAc internalSet
-        
       where
         encodeInternalValue domainValueSort value =
             KJDV
@@ -539,30 +548,35 @@ fromTermLike = cata go
                 , value
                 }
 
-
         -- The encoded lists and ac types are all of the following form:
         -- If the structure has no elements, we simply get the application of the unit symbol with no arguments
         -- If the structure has exactly one child, we just get the child.
         -- This child will be an application of internalElement symbol to its arguments
         -- For multiple children we will get a \right-assoc{concatSymbol}(x1,...x_n)
-        foldApplication Kore.Symbol { symbolConstructor = unitSymbolConstructor, symbolParams = unitSymbolParams} Kore.Symbol { symbolConstructor = concatSymbolConstructor, symbolParams = concatSymbolParams} = foldAux
+        foldApplication Kore.Symbol{symbolConstructor = unitSymbolConstructor, symbolParams = unitSymbolParams} Kore.Symbol{symbolConstructor = concatSymbolConstructor, symbolParams = concatSymbolParams} = foldAux
           where
             foldAux = \case
                 [] ->
                     KJApp
-                    { name = fromKoreId unitSymbolConstructor
-                    , sorts = map fromSort unitSymbolParams
-                    , args = []
-                    }
+                        { name = fromKoreId unitSymbolConstructor
+                        , sorts = map fromSort unitSymbolParams
+                        , args = []
+                        }
                 [x] -> x
                 (x : xs) ->
                     KJRightAssoc
-                    { symbol = fromKoreId concatSymbolConstructor
-                    , sorts = map fromSort concatSymbolParams
-                    , argss = x :| xs
-                    }
+                        { symbol = fromKoreId concatSymbolConstructor
+                        , sorts = map fromSort concatSymbolParams
+                        , argss = x :| xs
+                        }
 
-        encodeInternalList InternalList{internalListUnit, internalListConcat, internalListElement = Kore.Symbol { symbolConstructor = elementSymbolConstructor, symbolParams = elementSymbolParams}, internalListChild} =
+        encodeInternalList InternalList
+                            { internalListUnit
+                            , internalListConcat
+                            , internalListElement =
+                                Kore.Symbol{symbolConstructor = elementSymbolConstructor, symbolParams = elementSymbolParams}
+                            , internalListChild
+                            } =
             foldApplication internalListUnit internalListConcat children
           where
             encodeListElement e =
@@ -579,7 +593,13 @@ fromTermLike = cata go
             AcWrapper normalized =>
             InternalAc Key normalized KorePattern ->
             KorePattern
-        encodeInternalAc InternalAc{builtinAcUnit, builtinAcConcat, builtinAcElement= Kore.Symbol { symbolConstructor = elementSymbolConstructor, symbolParams = elementSymbolParams}, builtinAcChild} =
+        encodeInternalAc InternalAc
+                            { builtinAcUnit
+                            , builtinAcConcat
+                            , builtinAcElement =
+                                Kore.Symbol{symbolConstructor = elementSymbolConstructor, symbolParams = elementSymbolParams}
+                            , builtinAcChild
+                            } =
             foldApplication builtinAcUnit builtinAcConcat children
           where
             NormalizedAc{elementsWithVariables, concreteElements, opaque} = unwrapAc builtinAcChild
