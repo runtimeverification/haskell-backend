@@ -51,3 +51,4 @@ hie.yaml
 .hie/
 .direnv
 *~
+.DS_Store
