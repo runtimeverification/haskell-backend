@@ -124,6 +124,8 @@ respond serverState moduleName runSMT =
                 case verifyIn serializedModule state of
                     Left err -> pure $ Left $ backendError CouldNotVerifyPattern err
                     Right verifiedPattern -> do
+                        let tracingEnabled =
+                                fromMaybe False logSuccessfulRewrites || fromMaybe False logSuccessfulSimplifications
                         traversalResult <-
                             liftIO
                                 ( runSMT (Exec.metadataTools serializedModule) lemmas $
@@ -134,7 +136,7 @@ respond serverState moduleName runSMT =
                                             then EnableMovingAverage
                                             else DisableMovingAverage
                                         )
-                                        (fromMaybe False $ liftA2 (||) logSuccessfulRewrites logSuccessfulSimplifications)
+                                        tracingEnabled
                                         serializedModule
                                         (toStopLabels cutPointRules terminalRules)
                                         verifiedPattern
