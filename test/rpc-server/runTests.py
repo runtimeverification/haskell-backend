@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from jsonrpcclient import request, request_uuid, notification
-import json, socket, os, subprocess, difflib
+import json, socket, os, subprocess, difflib, time
 
 script_path = os.path.dirname(os.path.realpath(__file__))
 kore_rpc = os.path.join('.build', 'kore', 'bin', 'kore-rpc')
@@ -107,20 +107,23 @@ def checkGolden (resp, resp_golden_path):
 
 def runTest(def_path, req, resp_golden_path):
     with subprocess.Popen(f"{SERVER} {def_path} --module TEST --server-port {PORT} --log-level {server_log_level[VERBOSITY]}".split()) as process:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-          while True:
-            try:
-              s.connect((HOST, PORT))
-              debug("Connected to server...")
-              break
-            except:
-              pass
-          s.sendall(req)
-          resp = recv_all(s)
-          debug(resp)
-          process.kill()
+        try:
+            while True:
+                try:
+                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    s.connect((HOST, PORT))
+                    debug("Connected to server...")
+                    s.sendall(req)
+                    resp = recv_all(s)
+                    debug(resp)
+                    checkGolden(resp, resp_golden_path)
+                    break
+                except socket.error:
+                  debug("Attempting to connect...")
+                  time.sleep(1)
+        finally:
+            process.kill()
 
-          checkGolden(resp, resp_golden_path)
 
 print("Running execute tests:")
 
@@ -195,51 +198,54 @@ with open(params_add_json_path, 'r') as params_json:
   req_add = rpc_request_id1("add-module", params_add)
 
 with subprocess.Popen(f"{SERVER} {def_path} --module TEST --server-port {PORT} --log-level {server_log_level[VERBOSITY]}".split()) as process:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-          while True:
+    try:
+        while True:
             try:
-              s.connect((HOST, PORT))
-              debug("Connected to server...")
-              break
-            except:
-              pass
-          try:
-            name = "execute-fail"
-            info(f"- test '{name}'...")
-            s.sendall(req_execute)
-            resp = recv_all(s)
-            debug(resp)
-            checkGolden(resp, resp_execute_fail_golden_path)
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect((HOST, PORT))
+                debug("Connected to server...")
 
-            name = "execute-default"
-            info(f"- test '{name}'...")
-            s.sendall(req_execute_default)
-            resp = recv_all(s)
-            debug(resp)
-            checkGolden(resp, resp_execute_defaultmodule_golden_path)
+                name = "execute-fail"
+                info(f"- test '{name}'...")
+                s.sendall(req_execute)
+                resp = recv_all(s)
+                debug(resp)
+                checkGolden(resp, resp_execute_fail_golden_path)
 
-            name = "add-module"
-            info(f"- test '{name}'...")
-            s.sendall(req_add)
-            resp = recv_all(s)
-            debug(resp)
-            checkGolden(resp, resp_add_golden_path)
+                name = "execute-default"
+                info(f"- test '{name}'...")
+                s.sendall(req_execute_default)
+                resp = recv_all(s)
+                debug(resp)
+                checkGolden(resp, resp_execute_defaultmodule_golden_path)
 
-            name = "execute-success"
-            info(f"- test '{name}'...")
-            s.sendall(req_execute)
-            resp = recv_all(s)
-            debug(resp)
-            checkGolden(resp, resp_execute_success_golden_path)
+                name = "add-module"
+                info(f"- test '{name}'...")
+                s.sendall(req_add)
+                resp = recv_all(s)
+                debug(resp)
+                checkGolden(resp, resp_add_golden_path)
 
-            name = "execute-default again"
-            info(f"- test '{name}'...")
-            s.sendall(req_execute_default)
-            resp = recv_all(s)
-            debug(resp)
-            checkGolden(resp, resp_execute_defaultmodule_golden_path)
-          finally:
-            process.kill()
+                name = "execute-success"
+                info(f"- test '{name}'...")
+                s.sendall(req_execute)
+                resp = recv_all(s)
+                debug(resp)
+                checkGolden(resp, resp_execute_success_golden_path)
+
+                name = "execute-default again"
+                info(f"- test '{name}'...")
+                s.sendall(req_execute_default)
+                resp = recv_all(s)
+                debug(resp)
+                checkGolden(resp, resp_execute_defaultmodule_golden_path)
+            
+                break
+            except socket.error:
+                debug("Attempting to connect...")
+                time.sleep(1)
+    finally:
+        process.kill()
 
 print("Running get-model tests:")
 
