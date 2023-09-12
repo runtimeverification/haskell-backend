@@ -8,6 +8,11 @@ module TEST
                  | "c"    [token]
                  | "d"    [token]
 
+                 | "jnit" [token]
+                 | "e"    [token]
+                 | "f"    [token]
+                 | "g"    [token]
+
   configuration <k> $PGM:State ~> .K </k>
                 <int> 0:Int          </int>
 
@@ -21,5 +26,13 @@ module TEST
              ensures X =/=Int 42
   rule [BD]: <k> b => d ... </k>
   rule [CD]: <k> c => d ... </k>
+ //-----------------------------
+
+  rule [JNIT-E]: <k> jnit => e ... </k>
+                 <int> X        </int>
+                 requires X ==Int 42 andBool X =/=Int 42
+  rule [JNIT-F]: <k> jnit => f ... </k>
+  rule [EG]: <k> e => g ... </k>
+  rule [FG]: <k> f => g ... </k>
 
 endmodule
