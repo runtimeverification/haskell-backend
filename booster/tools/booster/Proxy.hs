@@ -296,7 +296,10 @@ respondEither mbStatsVar booster kore req = case req of
                             -- HACK. Would want to return the prior state
                             res{reason = Stuck, nextStates = Nothing}
                     _otherReason ->
-                        res{state = simplifiedState, nextStates}
+                        res
+                            { state = simplifiedState
+                            , nextStates = if null filteredNexts then Nothing else Just filteredNexts
+                            }
             pure result
 
         isBottom :: ExecuteState -> Bool

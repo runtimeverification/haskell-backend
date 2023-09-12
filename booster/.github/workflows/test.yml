@@ -234,6 +234,8 @@ jobs:
               elif [ "$name" = "substitutions" ]; then
                   SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name --time
                   SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time
+              elif [ "$name" = "no-evaluator" ]; then
+                  SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name --time
               else
                   SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time
               fi
