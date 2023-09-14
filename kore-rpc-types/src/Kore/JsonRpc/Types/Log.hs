@@ -46,7 +46,8 @@ data LogRewriteResult
 
 data LogEntry
     = Rewrite
-        { result :: LogRewriteResult
+        { originalTerm :: Maybe KoreJson
+        , result :: LogRewriteResult
         , origin :: LogOrigin
         }
     | Simplification
