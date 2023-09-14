@@ -3,8 +3,10 @@
 module Kore.JsonRpc.Types.Log (module Kore.JsonRpc.Types.Log) where
 
 import Data.Aeson (FromJSON, ToJSON)
+import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
 import GHC.Generics (Generic)
+import Kore.JsonRpc.Types.Depth (Depth (..))
 import Kore.Syntax.Json.Types (KoreJson)
 
 import Deriving.Aeson (
@@ -55,6 +57,21 @@ data LogEntry
         , originalTermIndex :: Maybe [Int]
         , result :: LogRewriteResult
         , origin :: LogOrigin
+        }
+    | -- | Indicates a fallback of an RPC-server to a more powerful, but slower backup server, i.e. Booster to Kore
+      Fallback
+        { originalTerm :: Maybe KoreJson
+        -- ^ state before fallback
+        , rewrittenTerm :: Maybe KoreJson
+        -- ^ state after fallback
+        , reason :: Text
+        -- ^ fallback reason
+        , ruleIds :: NonEmpty Text
+        -- ^ rules applied during fallback, the first rule is the one that caused the fallback
+        , recoveryDepth :: Depth
+        -- ^ depth reached in fallback, must be the same as (length ruleIds)
+        , origin :: LogOrigin
+        -- ^ proxy server the log was emitted from
         }
     deriving stock (Generic, Show, Eq)
     deriving
