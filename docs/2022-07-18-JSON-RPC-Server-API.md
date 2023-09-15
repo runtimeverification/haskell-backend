@@ -38,6 +38,7 @@ The server runs over sockets and can be interacted with by sending JSON RPC mess
     "log-failed-rewrites": true,
     "log-successful-simplifications": true,
     "log-failed-simplifications": true
+    "log-timing": true
   }
 }
 ```
@@ -144,7 +145,7 @@ Execution reached a state that the server cannot handle.
 This response has no additional fields.
 
 ##### `"reason": "cut-point-rule"`
-Execution was about to perform a rewrite with a rule whose label is one of the `cut-point-rules` labels/IDs of the request.  
+Execution was about to perform a rewrite with a rule whose label is one of the `cut-point-rules` labels/IDs of the request.
 An additional `rule` field indicates which of the `cut-point-rules` labels/IDs led to stopping.
 An additional `next-states` field contains the next state (which stems from the RHS of this rule) in a singleton list.
 
@@ -174,7 +175,7 @@ An additional `next-states` field contains the next state (which stems from the 
 ```
 
 ##### `"reason": "terminal-rule"`
-Execution performed a rewrite with a rule whose label is one of the `terminal-rules` labels/IDs of the request.  
+Execution performed a rewrite with a rule whose label is one of the `terminal-rules` labels/IDs of the request.
 An additional `rule` field indicates which of the `terminal-rule` labels or IDs led to terminating the execution:
 
 ```json
@@ -233,9 +234,9 @@ An additional `next-states` field contains all following states of the branch po
 ```
 
 ##### Clarifications
-* It is possible that some of the `next-states` in a `branching` result have not actually taken rewrite steps. If one of the branches is stuck because of the added (branching) side condition, `next-states` will also contain this branch, with a term identical to the one in `state` and the branching condition added to the prior `predicate` from `term`.  
+* It is possible that some of the `next-states` in a `branching` result have not actually taken rewrite steps. If one of the branches is stuck because of the added (branching) side condition, `next-states` will also contain this branch, with a term identical to the one in `state` and the branching condition added to the prior `predicate` from `term`.
   Rationale: The branching should be indicated to the user. A subsequent `execute` step starting from this stuck `state` will of course immediately report `stuck`.
-* `branching` results are preferred to `cut-point-rule` and `terminal-rule` results. That means, if execution reaches a branch with one of the applying rules having a label/ID from `cut-point-rules` or `terminal-rules`, the response will be `branching`.  
+* `branching` results are preferred to `cut-point-rule` and `terminal-rule` results. That means, if execution reaches a branch with one of the applying rules having a label/ID from `cut-point-rules` or `terminal-rules`, the response will be `branching`.
   Rationale: The branching information must be provided, assuming the client will re-execute on each branch.
 
 #### Optional Logging
@@ -293,7 +294,15 @@ where `original-term`, `original-term-index`, `substitution` and `rewritten-term
 }
 ```
 
-where `rewritten-term` is optional and `origin` is one of `kore-rpc`, `booster` or `llvm`.
+When `log-timing` is set to `true`, the response to `execute`, `simplify` and `implies` requests will contain information about the wall-clock time spent in different components (`kore-rpc`, `booster`, `proxy`) or overall (without qualifiing tag) while processing the request.
+
+```json
+{
+  "tag": "processing-time",
+  "timing": [[null, 69.12], ["kore-rpc", 12.34], ["booster", 56.78]]
+}
+```
+As a guideline, the number in the untagged value (`[null, 69.12]` in the example) should represent the overall wall-clock time spent processing the request, including the tagged component timings (which are optional). Not all backends support logging processing time, and some won't have the different components featured as `origin` here.
 
 ## Implies
 
@@ -477,7 +486,7 @@ requests to the server by passing `"module": "MODULE-NAME"`.
 A `get-model` request aims to find a variable substitution that satisfies all predicates in the provided `state`, or else responds that it is not satisfiable. The request may also fail to obtain an answer.
 
 **Note that only the _predicates_ in the provided `state` are checked.**
-A predicate in matching logic is a construct that can only evaluate to `\top` or `\bottom`. Most ML connectives (with the exception of `\and` and `\or`) constitute predicates.  
+A predicate in matching logic is a construct that can only evaluate to `\top` or `\bottom`. Most ML connectives (with the exception of `\and` and `\or`) constitute predicates.
 If the provided `state` _does not contain any predicates_, the endpoint will respond with `Unknown` (to avoid misunderstandings).
 
 ### Request:
@@ -515,11 +524,11 @@ same as for `execute`
 Optional fields: `substitution` (filled when `satisfiable = is-satisfiable`)
 
 The `satisfiable` field can have the following values:
-* `"satisfiable": "Sat"`:  
+* `"satisfiable": "Sat"`:
   The predicates can be satisfied. The  field `substitution` must be present, and provides a substitution that fulfils all predicates in the supplied `state`. Exception: if the predicates are trivially satisfied without any variable assignments, the trivial (empty) `substitution` is omitted.
-* `"satisfiable": "Unsat"`:  
+* `"satisfiable": "Unsat"`:
   The predicates are known to not be satisfiable. The `substitution` field is omitted.
-* `"satisfiable": "Unknown"`:  
+* `"satisfiable": "Unknown"`:
   The backend was unable to decide whether or not there is a satisfying substitution, or the provided tern did not contain any predicates. The `substitution` field is omitted.
 
 ## Cancel
