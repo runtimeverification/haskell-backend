@@ -18,7 +18,7 @@ import Deriving.Aeson (
     StripPrefix,
  )
 
-data LogOrigin = KoreRpc | Booster | Llvm
+data LogOrigin = KoreRpc | Booster | Llvm | Proxy
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
