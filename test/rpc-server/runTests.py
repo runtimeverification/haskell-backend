@@ -254,3 +254,66 @@ for name in os.listdir("./get-model"):
       params["state"] = state
       req = rpc_request_id1("get-model", params)
       runTest(get_model_def_path, req, resp_golden_path)
+
+print("Running test for log-timing")
+
+dir_path = "./logTiming/"
+def_path = dir_path + "definition.kore"
+with subprocess.Popen(f"{SERVER} {def_path} --module TEST --server-port {PORT} --log-level {server_log_level[VERBOSITY]}".split()) as process:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        while True:
+            try:
+              s.connect((HOST, PORT))
+              debug("Connected to server...")
+              break
+            except:
+              pass
+        try:
+            with open(dir_path + "state.json", 'r') as state_json:
+                state = json.loads(state_json.read())
+
+            info(f"- test with time logging enabled")
+            params_execute = json.loads('{ "log-timing": true }')
+            params_execute["state"] = state
+            debug(f"Request data: '{params_execute}'")
+            req_execute = rpc_request_id1("execute", params_execute)
+            s.sendall(req_execute)
+            resp = recv_all(s)
+            debug(f"Received '{resp}'")
+            respStr = str(resp, "utf-8")
+            debug(f"Received '{respStr}'")
+            respJson = json.loads(respStr)
+            # check expected fields successively:
+            if respJson["result"] is None:
+                info(f"Cannot find expected path .result in response '{respJson}'")
+                exit(1)
+            elif respJson["result"]["logs"] is None:
+                info(f"Cannot find expected path .result.logs[] in response '{respJson}'")
+                exit(1)
+            elif respJson["result"]["logs"][0]["timing"] is None:
+                info(f"Cannot find expected path .result.logs[0].timing in response '{respJson}'")
+                exit(1)
+            else: # expect result.logs[].timing to be a list containing a singleton 2-element list
+                timeValue = respJson["result"]["logs"][0]["timing"][0][1]
+                if not timeValue > 0.0:
+                    info(f'Received time value {timeValue} is invalid')
+                    exit(1)
+                else:
+                    info(f"Test with time logging {green}passed{endgreen}")
+
+            info(f"- test with time logging explicitly disabled")
+            params_execute = {}
+            params_execute["state"] = state
+            debug(f"Request data: '{params_execute}'")
+            req_execute = rpc_request_id1("execute", params_execute)
+            s.sendall(req_execute)
+            resp = recv_all(s)
+            debug(f"Received '{resp}'")
+            name = "time logging disabled"
+            checkGolden(resp, dir_path + "response.golden")
+
+            s.shutdown()
+        finally:
+            process.kill
+
+print("That's all, folks")
