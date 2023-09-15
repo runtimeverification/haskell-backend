@@ -184,7 +184,6 @@ respond serverState moduleName runSMT =
                                                 , substitution = Nothing
                                                 , ruleId = fromMaybe "UNKNOWN" $ getUniqueId ruleId
                                                 }
-                                        , originalTerm = Nothing
                                         , origin = KoreRpc
                                         }
                                        | fromMaybe False logSuccessfulRewrites
