@@ -311,9 +311,7 @@ with subprocess.Popen(f"{SERVER} {def_path} --module TEST --server-port {PORT} -
             debug(f"Received '{resp}'")
             name = "time logging disabled"
             checkGolden(resp, dir_path + "response.golden")
-
-            s.shutdown()
         finally:
-            process.kill
+            process.kill()
 
 print("That's all, folks")
