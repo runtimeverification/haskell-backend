@@ -56,7 +56,8 @@ data LogEntry
         , origin :: LogOrigin
         }
     | ProcessingTime
-        { timing :: [(LogOrigin, Double)] -- summatory timing, by origin
+        { timing :: [(Maybe LogOrigin, Double)]
+        -- ^ summatory timing, by origin or overall
         }
     deriving stock (Generic, Show, Eq)
     deriving
