@@ -40,6 +40,7 @@ data ExecuteRequest = ExecuteRequest
     , logFailedRewrites :: !(Maybe Bool)
     , logSuccessfulSimplifications :: !(Maybe Bool)
     , logFailedSimplifications :: !(Maybe Bool)
+    , logFallbacks :: !(Maybe Bool)
     }
     deriving stock (Generic, Show, Eq)
     deriving
