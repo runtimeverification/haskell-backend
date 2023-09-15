@@ -16,7 +16,7 @@ import Deriving.Aeson (
     StripPrefix,
  )
 
-data LogOrigin = KoreRpc | Booster | Llvm
+data LogOrigin = KoreRpc | Booster | Llvm | Proxy
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
@@ -54,6 +54,9 @@ data LogEntry
         , originalTermIndex :: Maybe [Int]
         , result :: LogRewriteResult
         , origin :: LogOrigin
+        }
+    | ProcessingTime
+        { timing :: [(LogOrigin, Double)] -- summatory timing, by origin
         }
     deriving stock (Generic, Show, Eq)
     deriving
