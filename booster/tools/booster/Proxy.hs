@@ -333,6 +333,7 @@ respondEither mbStatsVar booster kore req = case req of
                     , logFailedSimplifications = Nothing
                     , logSuccessfulRewrites = Nothing
                     , logFailedRewrites = Nothing
+                    , logFallbacks = Nothing
                     }
 
     postExecSimplify ::
