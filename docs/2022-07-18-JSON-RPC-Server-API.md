@@ -303,6 +303,7 @@ When `log-timing` is set to `true`, the response to `execute`, `simplify` and `i
   "timing": [[null, 69.12], ["kore-rpc", 12.34], ["booster", 56.78]]
 }
 ```
+All numbers in the `timing` list of associations represent time in seconds.  
 As a guideline, the number in the untagged value (`[null, 69.12]` in the example) should represent the overall wall-clock time spent processing the request, including the tagged component timings (which are optional). Not all backends support logging processing time, and some won't have the different components featured as `origin` here.
 
 ## Implies
