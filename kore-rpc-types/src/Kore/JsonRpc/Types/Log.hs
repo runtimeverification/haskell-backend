@@ -55,9 +55,10 @@ data LogEntry
         , result :: LogRewriteResult
         , origin :: LogOrigin
         }
-    | ProcessingTime
-        { timing :: [(Maybe LogOrigin, Double)]
-        -- ^ summatory timing, by origin or overall
+    | -- | summatory timing, by origin or overall
+      ProcessingTime
+        { component :: Maybe LogOrigin
+        , time :: Double
         }
     deriving stock (Generic, Show, Eq)
     deriving

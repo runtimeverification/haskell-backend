@@ -174,7 +174,7 @@ respond serverState moduleName runSMT =
                         || fromMaybe False logSuccessfulRewrites
                         || fromMaybe False logSuccessfulSimplifications =
                         Just . concat $
-                            maybe [] (\t -> [ProcessingTime [(Nothing, t)]]) mbDuration
+                            maybe [] (\t -> [ProcessingTime (Just KoreRpc) t]) mbDuration
                                 : [ [ Simplification
                                         { originalTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm originalTerm
                                         , originalTermIndex = Nothing
@@ -357,7 +357,8 @@ respond serverState moduleName runSMT =
                     stop <- liftIO $ getTime Monotonic
                     let timeLog =
                             ProcessingTime
-                                [(Nothing, fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9)]
+                                (Just KoreRpc)
+                                (fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9)
                         allLogs =
                             if (fromMaybe False logTiming)
                                 then maybe (Just [timeLog]) (Just . (timeLog :)) simplLogs
@@ -425,7 +426,8 @@ respond serverState moduleName runSMT =
                     stop <- liftIO $ getTime Monotonic
                     let timeLog =
                             ProcessingTime
-                                [(Nothing, fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9)]
+                                (Just KoreRpc)
+                                (fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9)
                         allLogs =
                             if (fromMaybe False logTiming)
                                 then maybe (Just [timeLog]) (Just . (timeLog :)) simplLogs

@@ -290,11 +290,11 @@ with subprocess.Popen(f"{SERVER} {def_path} --module TEST --server-port {PORT} -
             elif respJson["result"]["logs"] is None:
                 info(f"Cannot find expected path .result.logs[] in response '{respJson}'")
                 exit(1)
-            elif respJson["result"]["logs"][0]["timing"] is None:
-                info(f"Cannot find expected path .result.logs[0].timing in response '{respJson}'")
+            elif respJson["result"]["logs"][0]["time"] is None:
+                info(f"Cannot find expected path .result.logs[0].time in response '{respJson}'")
                 exit(1)
             else: # expect result.logs[].timing to be a list containing a singleton 2-element list
-                timeValue = respJson["result"]["logs"][0]["timing"][0][1]
+                timeValue = respJson["result"]["logs"][0]["time"]
                 if not timeValue > 0.0:
                     info(f'Received time value {timeValue} is invalid')
                     exit(1)
