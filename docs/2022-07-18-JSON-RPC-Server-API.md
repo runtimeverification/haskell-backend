@@ -295,16 +295,29 @@ where `original-term`, `original-term-index`, `substitution` and `rewritten-term
 ```
 where `rewritten-term` is optional and `origin` is one of `kore-rpc`, `booster` or `llvm`.
 
-When `log-timing` is set to `true`, the response to `execute`, `simplify` and `implies` requests will contain information about the wall-clock time spent in different components (`kore-rpc`, `booster`, `proxy`) or overall (without qualifiing tag) while processing the request.
+When `log-timing` is set to `true`, the response to `execute`, `simplify` and `implies` requests will contain information about the wall-clock time spent in different components (`kore-rpc`, `booster`, `proxy`) or overall (without qualifying `component`) while processing the request.
 
 ```json
 {
   "tag": "processing-time",
-  "timing": [[null, 69.12], ["kore-rpc", 12.34], ["booster", 56.78]]
+  "time": 69.12
+},
+{
+  "tag": "processing-time",
+  "component": kore-rpc",
+  "time": 12.34
+},
+{
+  "tag": "processing-time",
+  "component": "booster",
+  "time": 56.78
 }
 ```
-All numbers in the `timing` list of associations represent time in seconds.  
-As a guideline, the number in the untagged value (`[null, 69.12]` in the example) should represent the overall wall-clock time spent processing the request, including the tagged component timings (which are optional). Not all backends support logging processing time, and some won't have the different components featured as `origin` here.
+The number in the `time` field  of an entry represents time in seconds.
+
+When no component is given, the time (`69.12` in the example) is the overall wall-clock time spent processing the request, including the given component timings (which are optional). There should be at most one log object without `component` in the list of `logs`. In contrast, log entries with `component` may be repeated (in case there were several entries into the component).
+
+Not all backends support logging processing time, and some won't have the different components featured as `origin` here.
 
 ## Implies
 
