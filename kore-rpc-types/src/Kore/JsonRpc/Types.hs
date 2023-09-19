@@ -4,6 +4,7 @@ License     : BSD-3-Clause
 -}
 module Kore.JsonRpc.Types (
     module Kore.JsonRpc.Types,
+    module Kore.JsonRpc.Types.Depth,
 ) where
 
 import Control.Exception (Exception)
@@ -19,17 +20,13 @@ import Deriving.Aeson (
     StripPrefix,
  )
 import GHC.Generics (Generic)
+import Kore.JsonRpc.Types.Depth (Depth (..))
 import Kore.JsonRpc.Types.Log (LogEntry)
 import Kore.Syntax.Json.Types (KoreJson)
 import Network.JSONRPC (
     FromRequest (..),
  )
-import Numeric.Natural
 import Prettyprinter qualified as Pretty
-
-newtype Depth = Depth {getNat :: Natural}
-    deriving stock (Show, Eq)
-    deriving newtype (FromJSON, ToJSON, Num)
 
 data ExecuteRequest = ExecuteRequest
     { state :: !KoreJson
@@ -43,6 +40,7 @@ data ExecuteRequest = ExecuteRequest
     , logFailedRewrites :: !(Maybe Bool)
     , logSuccessfulSimplifications :: !(Maybe Bool)
     , logFailedSimplifications :: !(Maybe Bool)
+    , logFallbacks :: !(Maybe Bool)
     , logTiming :: !(Maybe Bool)
     }
     deriving stock (Generic, Show, Eq)
