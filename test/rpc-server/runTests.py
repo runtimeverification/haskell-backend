@@ -311,6 +311,24 @@ with subprocess.Popen(f"{SERVER} {def_path} --module TEST --server-port {PORT} -
             debug(f"Received '{resp}'")
             name = "time logging disabled"
             checkGolden(resp, dir_path + "response.golden")
+            # run a (trivial) simplify request with logTiming
+            info("- trivial simplification with time logging")
+            params_simplify = json.loads('{"log-timing": true}')
+            params_simplify["state"] = state
+            req_simplify = rpc_request_id1("simplify", params_simplify)
+            s.sendall(req_simplify)
+            resp = recv_all(s)
+            debug(f"Received '{resp}'")
+            try:
+                time = json.loads(str(resp, "utf-8"))["result"]["logs"][0]["time"]
+            except:
+                info("Cannot find expected path .result.logs[].time in response")
+                exit(1)
+            if not time > 0.0:
+                info(f"Received time value {time} is invalid")
+                exit(1)
+            else:
+                info(f"Simplification test with time logging {green}passed{endgreen}")
         finally:
             process.kill()
 
