@@ -304,7 +304,7 @@ When `log-timing` is set to `true`, the response to `execute`, `simplify` and `i
 },
 {
   "tag": "processing-time",
-  "component": kore-rpc",
+  "component": "kore-rpc",
   "time": 12.34
 },
 {
