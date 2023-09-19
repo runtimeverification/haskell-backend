@@ -153,6 +153,7 @@ common library
   build-depends: process >=1.6
   build-depends: profunctors >=5.3
   build-depends: recursion-schemes >=5.1
+  build-depends: secp256k1-haskell>=0.6
   build-depends: semialign >=1
   build-depends: sqlite-simple >=0.4
   build-depends: stm >=2.5
