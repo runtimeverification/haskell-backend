@@ -74,6 +74,11 @@ data LogEntry
         , origin :: !LogOrigin
         -- ^ proxy server the log was emitted from
         }
+    | -- | summatory timing, by origin or overall
+      ProcessingTime
+        { component :: Maybe LogOrigin
+        , time :: Double
+        }
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)

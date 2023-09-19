@@ -41,6 +41,7 @@ data ExecuteRequest = ExecuteRequest
     , logSuccessfulSimplifications :: !(Maybe Bool)
     , logFailedSimplifications :: !(Maybe Bool)
     , logFallbacks :: !(Maybe Bool)
+    , logTiming :: !(Maybe Bool)
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -53,6 +54,7 @@ data ImpliesRequest = ImpliesRequest
     , _module :: !(Maybe Text)
     , logSuccessfulSimplifications :: !(Maybe Bool)
     , logFailedSimplifications :: !(Maybe Bool)
+    , logTiming :: !(Maybe Bool)
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -64,6 +66,7 @@ data SimplifyRequest = SimplifyRequest
     , _module :: !(Maybe Text)
     , logSuccessfulSimplifications :: !(Maybe Bool)
     , logFailedSimplifications :: !(Maybe Bool)
+    , logTiming :: !(Maybe Bool)
     }
     deriving stock (Generic, Show, Eq)
     deriving
