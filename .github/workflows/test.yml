@@ -156,7 +156,7 @@ jobs:
     steps:
       - name: Install prerequisites
         run: |
-          sudo apt install --yes z3 libsecp256k1
+          sudo apt install --yes z3 secp256k1
 
       - uses: actions/checkout@v3
         with:
@@ -196,7 +196,7 @@ jobs:
     steps:
       - name: Install prerequisites
         run: |
-          sudo apt install --yes z3 libsecp256k1
+          sudo apt install --yes z3 secp256k1
 
       - uses: actions/checkout@v3
         with:
@@ -239,7 +239,7 @@ jobs:
     steps:
       - name: Install prerequisites
         run: |
-          sudo apt install --yes z3 libsecp256k1
+          sudo apt install --yes z3 secp256k1
 
       - uses: actions/checkout@v3
         with:
