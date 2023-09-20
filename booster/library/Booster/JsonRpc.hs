@@ -20,16 +20,20 @@ import Control.Monad.IO.Class
 import Control.Monad.Logger.CallStack (LogLevel (LevelError), MonadLoggerIO)
 import Control.Monad.Logger.CallStack qualified as Log
 import Control.Monad.Trans.Except (runExcept, throwE)
+import Data.Bifunctor (second)
 import Data.Conduit.Network (serverSettings)
 import Data.Foldable
+import Data.List (singleton)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (catMaybes, fromMaybe, isJust, mapMaybe)
+import Data.Sequence (Seq)
 import Data.Text (Text, pack)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
 import GHC.Records
 import Numeric.Natural
+import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 
 import Booster.Definition.Attributes.Base (getUniqueId, uniqueId)
 import Booster.Definition.Base (KoreDefinition (..))
@@ -55,8 +59,6 @@ import Booster.Syntax.Json.Internalise (
 import Booster.Syntax.ParsedKore (parseKoreModule)
 import Booster.Syntax.ParsedKore.Base
 import Booster.Syntax.ParsedKore.Internalise (DefinitionError (..), addToDefinitions)
-import Data.List (singleton)
-import Data.Sequence (Seq)
 import Kore.JsonRpc.Error qualified as RpcError
 import Kore.JsonRpc.Server
 import Kore.JsonRpc.Types qualified as RpcTypes
@@ -76,6 +78,7 @@ respond stateVar =
             | isJust req.movingAverageStepTimeout ->
                 pure $ Left $ RpcError.unsupportedOption ("moving-average-step-timeout" :: String)
         RpcTypes.Execute req -> withContext req._module $ \(def, mLlvmLibrary) -> do
+            start <- liftIO $ getTime Monotonic
             -- internalise given constrained term
             let internalised = runExcept $ internalisePattern DisallowAlias CheckSubsorts Nothing def req.state.term
 
@@ -95,7 +98,15 @@ respond stateVar =
                                 , req.logSuccessfulSimplifications
                                 , req.logFailedSimplifications
                                 ]
-                    execResponse req <$> performRewrite doTracing def mLlvmLibrary mbDepth cutPoints terminals pat
+                    result <- performRewrite doTracing def mLlvmLibrary mbDepth cutPoints terminals pat
+                    stop <- liftIO $ getTime Monotonic
+                    let duration =
+                            if fromMaybe False req.logTiming
+                                then
+                                    Just $
+                                        fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
+                                else Nothing
+                    pure $ execResponse duration req result
         RpcTypes.AddModule req -> do
             -- block other request executions while modifying the server state
             state <- liftIO $ takeMVar stateVar
@@ -126,25 +137,34 @@ respond stateVar =
                                     "Added a new module. Now in scope: " <> Text.intercalate ", " (Map.keys newDefinitions)
                                 pure $ Right $ RpcTypes.AddModule ()
         RpcTypes.Simplify req -> withContext req._module $ \(def, mLlvmLibrary) -> do
+            start <- liftIO $ getTime Monotonic
             let internalised =
                     runExcept $ internaliseTermOrPredicate DisallowAlias CheckSubsorts Nothing def req.state.term
-            let mkTraces
-                    | all not . catMaybes $
-                        [req.logSuccessfulSimplifications, req.logFailedSimplifications] =
-                        const Nothing
-                    | otherwise =
+            let mkEquationTraces
+                    | doTracing =
                         Just
                             . mapMaybe
                                 ( mkLogEquationTrace
-                                    (fromMaybe False req.logSuccessfulSimplifications, fromMaybe False req.logFailedSimplifications)
+                                    ( fromMaybe False req.logSuccessfulSimplifications
+                                    , fromMaybe False req.logFailedSimplifications
+                                    )
                                 )
+                    | otherwise =
+                        const Nothing
+                mkTraces duration traceData
+                    | Just True <- req.logTiming =
+                        Just $
+                            [ProcessingTime (Just Booster) duration]
+                                <> fromMaybe [] (mkEquationTraces traceData)
+                    | otherwise =
+                        mkEquationTraces traceData
                 doTracing =
                     any
                         (fromMaybe False)
                         [ req.logSuccessfulSimplifications
                         , req.logFailedSimplifications
                         ]
-            case internalised of
+            result <- case internalised of
                 Left patternErrors -> do
                     Log.logError $ "Error internalising cterm: " <> Text.pack (show patternErrors)
                     pure $ Left $ RpcError.backendError RpcError.CouldNotVerifyPattern patternErrors
@@ -158,18 +178,20 @@ respond stateVar =
                                 predicate = fromMaybe (KoreJson.KJTop tSort) mbPredicate
                                 substitution = fromMaybe (KoreJson.KJTop tSort) mbSubstitution
                                 result = KoreJson.KJAnd tSort (KoreJson.KJAnd tSort term predicate) substitution
-                            pure . Right . RpcTypes.Simplify $
-                                RpcTypes.SimplifyResult
-                                    { state = addHeader result
-                                    , logs = mkTraces patternTraces
-                                    }
+                            -- pure . Right . RpcTypes.Simplify $
+                            --     RpcTypes.SimplifyResult
+                            --         { state = addHeader result
+                            --         , logs = mkTraces patternTraces
+                            --         }
+                            pure $ Right (addHeader result, patternTraces)
                         (Left ApplyEquations.SideConditionsFalse{}, patternTraces) -> do
                             let tSort = fromMaybe (error "unknown sort") $ sortOfJson req.state.term
-                            pure . Right . RpcTypes.Simplify $
-                                RpcTypes.SimplifyResult
-                                    { state = addHeader $ KoreJson.KJBottom tSort
-                                    , logs = mkTraces patternTraces
-                                    }
+                            -- pure . Right . RpcTypes.Simplify $
+                            --     RpcTypes.SimplifyResult
+                            --         { state = addHeader $ KoreJson.KJBottom tSort
+                            --         , logs = mkTraces patternTraces
+                            --         }
+                            pure $ Right (addHeader $ KoreJson.KJBottom tSort, patternTraces)
                         (Left (ApplyEquations.EquationLoop terms), _traces) ->
                             pure . Left . RpcError.backendError RpcError.Aborted $ map externaliseTerm terms -- FIXME
                         (Left other, _traces) ->
@@ -183,13 +205,22 @@ respond stateVar =
                                     fromMaybe (error "not a predicate") $
                                         sortOfJson req.state.term
                                 result = externalisePredicate predicateSort newPred
-                            pure . Right . RpcTypes.Simplify $
-                                RpcTypes.SimplifyResult
-                                    { state = addHeader result
-                                    , logs = mkTraces traces
-                                    }
+                            -- pure . Right . RpcTypes.Simplify $
+                            --     RpcTypes.SimplifyResult
+                            --         { state = addHeader result
+                            --         , logs = mkTraces traces
+                            --         }
+                            pure $ Right (addHeader result, traces)
                         (Left something, _traces) ->
                             pure . Left . RpcError.backendError RpcError.Aborted $ show something -- FIXME
+            stop <- liftIO $ getTime Monotonic
+
+            let duration =
+                    fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
+                mkSimplifyResponse state traceData =
+                    RpcTypes.Simplify
+                        RpcTypes.SimplifyResult{state, logs = mkTraces duration traceData}
+            pure $ second (uncurry mkSimplifyResponse) result
 
         -- this case is only reachable if the cancel appeared as part of a batch request
         RpcTypes.Cancel -> pure $ Left RpcError.cancelUnsupportedInBatchMode
@@ -253,10 +284,11 @@ execStateToKoreJson RpcTypes.ExecuteState{term = t, substitution, predicate} =
             }
 
 execResponse ::
+    Maybe Double ->
     RpcTypes.ExecuteRequest ->
     (Natural, Seq (RewriteTrace Pattern), RewriteResult Pattern) ->
     Either ErrorObj (RpcTypes.API 'RpcTypes.Res)
-execResponse req (d, traces, rr) = case rr of
+execResponse mbDuration req (d, traces, rr) = case rr of
     RewriteBranch p nexts ->
         Right $
             RpcTypes.Execute
@@ -342,7 +374,7 @@ execResponse req (d, traces, rr) = case rr of
     depth = RpcTypes.Depth d
 
     logs =
-        let ls =
+        let traceLogs =
                 fmap concat
                     . mapM
                         ( mkLogRewriteTrace
@@ -350,9 +382,14 @@ execResponse req (d, traces, rr) = case rr of
                             (logSuccessfulSimplifications, logFailedSimplifications)
                         )
                     $ toList traces
-         in case ls of
-                Just [] -> Nothing
-                xs -> xs
+            timingLog =
+                fmap (ProcessingTime $ Just Booster) mbDuration
+         in case (timingLog, traceLogs) of
+                (Nothing, Nothing) -> Nothing
+                (Nothing, Just []) -> Nothing
+                (Nothing, Just xs@(_ : _)) -> Just xs
+                (Just t, Nothing) -> Just [t]
+                (Just t, Just xs) -> Just (t : xs)
 
 toExecState :: Pattern -> RpcTypes.ExecuteState
 toExecState pat =
