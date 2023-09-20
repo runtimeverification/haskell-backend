@@ -905,6 +905,15 @@ Compute the SHA3-256 hash of the input string.
         [hook{}("KRYPTO.sha3256")]
 ~~~
 
+### KRYPTO.ecdsaPubKey
+
+`ecdsaPubKey` takes a 32-character byte string of a private key, and returns the 64 byte hex-encoded public key.
+
+~~~
+    hooked-symbol ecdsaPubKey{}(String{}) : String{}
+        [hook{}("KRYPTO.ecdsaPubKey")]
+~~~
+
 ## BYTES
 
 Represents a sequence of bytes with update/get/padding operations as well as
