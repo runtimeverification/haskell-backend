@@ -28,7 +28,7 @@ import Data.Aeson.Key qualified as JsonKey
 import Data.Aeson.KeyMap qualified as JsonKeyMap
 import Data.Bifunctor
 import Data.ByteString.Lazy.Char8 qualified as BS
-import Data.Char (isDigit, toLower)
+import Data.Char (isDigit, toLower, toUpper)
 import Data.Int (Int64)
 import Data.List.Extra
 import Data.Maybe (isNothing, mapMaybe)
@@ -616,8 +616,13 @@ object = JsonKeyMap.fromList . map mkKeyPair
     valueFrom s
         | all isDigit s =
             Json.Number (fromInteger $ read s)
+        | map toLower s `elem` ["false", "true"] =
+            Json.Bool (read $ title $ map toLower s)
     valueFrom s =
         Json.String $ Text.pack s
+
+    title [] = []
+    title (x : xs) = toUpper x : xs
 
     -- comma-separated list of values
     valuesFrom :: String -> Json.Array

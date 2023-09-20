@@ -65,6 +65,7 @@ library:
   - binary
   - bytestring
   - casing
+  - clock
   - conduit
   - conduit-extra
   - containers
