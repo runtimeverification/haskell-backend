@@ -43,6 +43,7 @@ import Crypto.Hash (
  )
 import Crypto.PubKey.ECC.Prim
 import Crypto.PubKey.ECC.Types
+import Crypto.Secp256k1.Internal qualified as Secp256k1
 import Data.Bits
 import Data.ByteString (
     ByteString,
@@ -61,10 +62,12 @@ import Data.Text qualified as Text
 import Data.Word (
     Word8,
  )
+import Foreign (alloca, allocaBytes, peek, poke)
 import Kore.Builtin.Builtin qualified as Builtin
 import Kore.Builtin.Encoding (
     decode8Bit,
     encode8Bit,
+    toBase16,
  )
 import Kore.Builtin.Int qualified as Int
 import Kore.Builtin.String qualified as String
@@ -72,9 +75,11 @@ import Kore.Simplify.Simplify (
     BuiltinAndAxiomSimplifier,
  )
 import Prelude.Kore
+import System.IO.Unsafe (unsafePerformIO)
 
 keccak256Key
     , ecdsaRecoverKey
+    , ecdsaPubKey
     , sha256Key
     , sha512_256RawKey
     , sha3256Key
@@ -82,6 +87,7 @@ keccak256Key
         IsString s => s
 keccak256Key = "KRYPTO.keccak256"
 ecdsaRecoverKey = "KRYPTO.ecdsaRecover"
+ecdsaPubKey = "KRYPTO.ecdsaPubKey"
 sha256Key = "KRYPTO.sha256"
 sha512_256RawKey = "KRYPTO.sha512_256raw"
 sha3256Key = "KRYPTO.sha3256"
@@ -124,6 +130,7 @@ symbolVerifiers =
         , (sha512_256RawKey, verifyHashFunction)
         , (ripemd160Key, verifyHashFunction)
         , (hashRipemd160Key, verifyHashFunction)
+        , (ecdsaPubKey, verifyHashFunction)
         ,
             ( ecdsaRecoverKey
             , Builtin.verifySymbol
@@ -159,6 +166,7 @@ builtinFunctions key
     | key == ripemd160Key = Just evalRipemd160
     | key == hashRipemd160Key = Just evalRipemd160
     | key == ecdsaRecoverKey = Just evalECDSARecover
+    | key == ecdsaPubKey = Just evalECDSAPubKey
     | key == secp256k1EcdsaRecoverKey = Just evalECDSARecover
     | otherwise = Nothing
 
@@ -228,6 +236,38 @@ evalSha3256 = evalHashFunction sha3256Key SHA3_256
 
 evalRipemd160 :: BuiltinAndAxiomSimplifier
 evalRipemd160 = evalHashFunction ripemd160Key RIPEMD160
+
+secp256k1Ctx :: Secp256k1.Ctx
+secp256k1Ctx = unsafePerformIO $ Secp256k1.contextCreate Secp256k1.sign
+{-# NOINLINE secp256k1Ctx #-}
+
+evalECDSAPubKey :: BuiltinAndAxiomSimplifier
+evalECDSAPubKey =
+    Builtin.functionEvaluator evalWorker
+  where
+    evalWorker :: Builtin.Function
+    evalWorker _ resultSort [input] = do
+        sec_key <- encode8Bit <$> String.expectBuiltinString ecdsaPubKey input
+        return $
+            String.asPattern resultSort $
+                if ByteString.length sec_key /= 32
+                    then ""
+                    else unsafePerformIO $ Secp256k1.unsafeUseByteString sec_key $ \(sec_key_ptr, _) -> allocaBytes 64 $ \pub_key_ptr -> do
+                        createdKeySuccessfully <-
+                            Secp256k1.isSuccess <$> Secp256k1.ecPubKeyCreate secp256k1Ctx pub_key_ptr sec_key_ptr
+                        if not createdKeySuccessfully
+                            then pure ""
+                            else alloca $ \len_ptr -> allocaBytes 65 $ \out_ptr -> do
+                                poke len_ptr 65
+                                serializedKeySuccessfully <-
+                                    Secp256k1.isSuccess
+                                        <$> Secp256k1.ecPubKeySerialize secp256k1Ctx out_ptr len_ptr pub_key_ptr Secp256k1.uncompressed
+                                if not serializedKeySuccessfully
+                                    then pure ""
+                                    else do
+                                        final_len <- peek len_ptr
+                                        toBase16 . ByteString.tail <$> Secp256k1.packByteString (out_ptr, final_len)
+    evalWorker _ _ _ = Builtin.wrongArity ecdsaPubKey
 
 evalECDSARecover :: BuiltinAndAxiomSimplifier
 evalECDSARecover =
