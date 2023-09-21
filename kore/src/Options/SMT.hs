@@ -21,6 +21,7 @@ import Data.Limit (
 import Data.List (
     intercalate,
  )
+import Data.Text qualified as Text
 import Kore.Parser.ParserUtils (
     readPositiveIntegral,
  )
@@ -41,6 +42,7 @@ import SMT hiding (
     Solver,
     not,
  )
+import SMT.AST qualified as SMT (readSExpr)
 import System.Directory (
     copyFile,
     doesFileExist,
@@ -57,6 +59,7 @@ data KoreSolverOptions = KoreSolverOptions
     , resetInterval :: !ResetInterval
     , prelude :: !Prelude
     , solver :: !Solver
+    , tactic :: !(Maybe SExpr)
     }
 
 parseKoreSolverOptions :: Parser KoreSolverOptions
@@ -68,6 +71,7 @@ parseKoreSolverOptions =
         <*> parseResetInterval
         <*> parsePrelude
         <*> parseSolver
+        <*> parseTactic
   where
     parseTimeOut =
         option
@@ -115,11 +119,21 @@ parseKoreSolverOptions =
                     )
                 )
 
+    parseTactic =
+        option
+            readTactic
+            ( metavar "SMT_TACTIC"
+                <> long "smt-tactic"
+                <> help "Z3 tactic to use when checking satisfiability. Example: (check-sat-using smt)"
+                <> value defaultTactic
+            )
+
     SMT.Config
         { timeOut = defaultTimeOut
         , retryLimit = defaultRetryLimit
         , rLimit = defaultRLimit
         , resetInterval = defaultResetInterval
+        , tactic = defaultTactic
         } =
             SMT.defaultConfig
 
@@ -128,6 +142,11 @@ parseKoreSolverOptions =
     readRLimit = readPositiveIntegral (SMT.RLimit . Limit) "smt-rlimit"
     readResetInterval =
         readPositiveIntegral SMT.ResetInterval "smt-reset-interval"
+    readTactic = do
+        tacticStr <- str
+        case SMT.readSExpr @Maybe (Text.pack tacticStr) of
+            Nothing -> readerError . unwords $ ["smt-tactic", "must be a valid s-expression."]
+            Just sexpr -> pure . Just $ sexpr
 
 unparseKoreSolverOptions :: KoreSolverOptions -> [String]
 unparseKoreSolverOptions
@@ -138,6 +157,7 @@ unparseKoreSolverOptions
         , resetInterval
         , prelude = Prelude unwrappedPrelude
         , solver
+        , tactic
         } =
         catMaybes
             [ (\limit -> unwords ["--smt-timeout", show limit])
@@ -154,6 +174,7 @@ unparseKoreSolverOptions
             , unwrappedPrelude
                 $> unwords ["--smt-prelude", defaultSmtPreludeFilePath]
             , pure $ unwords ["--smt", unparseSolver solver]
+            , (\tacticSExpr -> unwords ["--smt-tactic", showSExpr tacticSExpr]) <$> tactic
             ]
 
 -- | Available SMT solvers.
