@@ -428,6 +428,8 @@ data Config = Config
     -- ^ query resource limit
     , resetInterval :: !ResetInterval
     -- ^ reset solver after this number of queries
+    , tactic :: !(Maybe SExpr)
+    -- ^ Z3 tactic to use when checking satisfiability
     }
 
 -- | Default configuration using the Z3 solver.
@@ -445,6 +447,7 @@ defaultConfig =
         , retryLimit = RetryLimit (Limit 3)
         , rLimit = RLimit Unlimited
         , resetInterval = ResetInterval 100
+        , tactic = Nothing
         }
 
 initSolver :: SolverSetup -> LoggerT IO ()
@@ -633,7 +636,7 @@ checkSMT =
         Just solverSetup -> do
             result <-
                 traceProf ":solver:check" $
-                    withSolver' solverSetup SimpleSMT.check
+                    withSolver' solverSetup (\solver -> SimpleSMT.checkUsing solver (tactic . config $ solverSetup))
             return (Just result)
 
 getValueSMT :: [SExpr] -> SMT (Maybe [(SExpr, SExpr)])
