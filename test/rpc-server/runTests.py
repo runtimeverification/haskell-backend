@@ -105,8 +105,10 @@ def checkGolden (resp, resp_golden_path):
 
 
 
-def runTest(def_path, req, resp_golden_path):
-    with subprocess.Popen(f"{SERVER} {def_path} --module TEST --server-port {PORT} --log-level {server_log_level[VERBOSITY]}".split()) as process:
+def runTest(def_path, req, resp_golden_path, smt_tactic = None):
+    smt_options = ["--smt-tactic", str(smt_tactic)] if smt_tactic else []
+    server_args = [SERVER, def_path, "--module", "TEST", "--server-port", str(PORT), *smt_options, "--log-level", server_log_level[VERBOSITY]]
+    with subprocess.Popen(executable=SERVER, args=server_args, text=True) as process:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
           while True:
             try:
@@ -137,6 +139,22 @@ for name in os.listdir("./execute"):
       params["state"] = state
       req = rpc_request_id1("execute", params)
       runTest(def_path, req, resp_golden_path)
+
+print("Running execute tests with a customized SMT tactic:")
+
+for name in os.listdir("./execute"):
+  info(f"- test '{name}'...")
+  def_path = os.path.join("./execute", name, "definition.kore")
+  params_json_path = os.path.join("./execute", name, "params.json")
+  state_json_path = os.path.join("./execute", name, "state.json")
+  resp_golden_path = os.path.join("./execute", name, "response.golden")
+  with open(params_json_path, 'r') as params_json:
+    with open(state_json_path, 'r') as state_json:
+      params = json.loads(params_json.read())
+      state = json.loads(state_json.read())
+      params["state"] = state
+      req = rpc_request_id1("execute", params)
+      runTest(def_path, req, resp_golden_path, smt_tactic='(check-sat-using smt)')
 
 print("Running implies tests:")
 
