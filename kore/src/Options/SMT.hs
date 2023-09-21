@@ -124,7 +124,7 @@ parseKoreSolverOptions =
             readTactic
             ( metavar "SMT_TACTIC"
                 <> long "smt-tactic"
-                <> help "Z3 tactic to use when checking satisfiability"
+                <> help "Z3 tactic to use when checking satisfiability. Example: (check-sat-using smt)"
                 <> value defaultTactic
             )
 
