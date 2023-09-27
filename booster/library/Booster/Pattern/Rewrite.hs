@@ -397,7 +397,7 @@ data RewriteResult pat
       RewriteFinished (Maybe Text) (Maybe UniqueId) pat
     | -- | unable to handle the current case with this rewriter
       -- (signalled by exceptions)
-      RewriteAborted pat
+      RewriteAborted (RewriteFailed "Rewrite") pat
     | -- | All applicable rules returned a pattern with a False
       -- ensures clause
       RewriteTrivial pat
@@ -637,8 +637,8 @@ performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pa
             maybe (RewriteTrivial orig) (RewriteTerminal lbl uId) <$> simplifyP p
         RewriteFinished lbl uId p ->
             maybe (RewriteTrivial orig) (RewriteFinished lbl uId) <$> simplifyP p
-        RewriteAborted p ->
-            maybe (RewriteTrivial orig) RewriteAborted <$> simplifyP p
+        RewriteAborted reason p ->
+            maybe (RewriteTrivial orig) (RewriteAborted reason) <$> simplifyP p
 
     logTraces =
         mapM_ (logSimplify . pack . renderDefault . pretty)
@@ -719,8 +719,8 @@ performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pa
                         rewriteTrace $ RewriteStepFailed failure
                         let msg = "Aborted after " <> showCounter counter
                         if wasSimplified
-                            then logRewrite msg >> pure (RewriteAborted pat')
-                            else withSimplified pat' msg (pure . RewriteAborted)
+                            then logRewrite msg >> pure (RewriteAborted failure pat')
+                            else withSimplified pat' msg (pure . RewriteAborted failure)
       where
         withSimplified p msg cont = do
             simplifyP p >>= \case
