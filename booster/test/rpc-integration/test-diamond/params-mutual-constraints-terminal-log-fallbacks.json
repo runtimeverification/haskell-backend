@@ -1,0 +1,7 @@
+{
+    "log-fallbacks": true,
+    "terminal-rules": [
+        "TEST.EG",
+        "TEST.FG"
+    ]
+}
