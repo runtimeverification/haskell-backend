@@ -60,6 +60,7 @@ module SMT.SimpleSMT (
     defineFun,
     assert,
     check,
+    checkUsing,
     Result (..),
     getExprs,
     getExpr,
@@ -712,8 +713,15 @@ assert solver e = ackCommand solver Nothing $ fun "assert" [e]
 
 -- | Check if the current set of assertion is consistent.
 check :: Solver -> IO Result
-check solver = do
-    res <- command solver Nothing (List [Atom "check-sat"])
+check solver = checkUsing solver Nothing
+
+{- | Check if the current set of assertion is consistent, using an optional 'SExpr' representing a Z3 tactic.
+  If no 'SExpr' is provided, use (check-sat), which is SMTLIB2-compatible.
+-}
+checkUsing :: Solver -> Maybe SExpr -> IO Result
+checkUsing solver tactic = do
+    let checkSatCommand = fromMaybe (List [Atom "check-sat"]) tactic
+    res <- command solver Nothing checkSatCommand
     case res of
         Atom "unsat" -> return Unsat
         Atom "unknown" -> do
