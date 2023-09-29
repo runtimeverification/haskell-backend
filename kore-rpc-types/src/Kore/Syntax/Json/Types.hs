@@ -106,13 +106,11 @@ data KorePattern
         }
     | KJAnd
         { sort :: Sort
-        , first :: KorePattern
-        , second :: KorePattern
+        , patterns :: [KorePattern]
         }
     | KJOr
         { sort :: Sort
-        , first :: KorePattern
-        , second :: KorePattern
+        , patterns :: [KorePattern]
         }
     | KJImplies
         { sort :: Sort
