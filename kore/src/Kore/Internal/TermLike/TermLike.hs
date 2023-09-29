@@ -122,6 +122,7 @@ import Kore.Internal.Variable
 import Kore.Sort
 import Kore.Substitute
 import Kore.Syntax.And
+import Kore.Syntax.BinaryAnd
 import Kore.Syntax.Application
 import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
@@ -139,6 +140,7 @@ import Kore.Syntax.Next
 import Kore.Syntax.Not
 import Kore.Syntax.Nu
 import Kore.Syntax.Or
+import Kore.Syntax.BinaryOr
 import Kore.Syntax.Pattern qualified as Pattern
 import Kore.Syntax.PatternF qualified as PatternF
 import Kore.Syntax.Rewrites
@@ -160,7 +162,7 @@ import SQL qualified
 
 -- | 'TermLikeF' is the 'Base' functor of internal term-like patterns.
 data TermLikeF variable child
-    = AndF !(And Sort child)
+    = AndF !(BinaryAnd Sort child)
     | ApplySymbolF !(Application Symbol child)
     | -- TODO (thomas.tuegel): Expand aliases during validation?
       ApplyAliasF !(Application (Alias (TermLike VariableName)) child)
@@ -178,7 +180,7 @@ data TermLikeF variable child
     | NextF !(Next Sort child)
     | NotF !(Not Sort child)
     | NuF !(Nu variable child)
-    | OrF !(Or Sort child)
+    | OrF !(BinaryOr Sort child)
     | RewritesF !(Rewrites Sort child)
     | TopF !(Top Sort child)
     | InhabitantF !(Inhabitant child)
@@ -1036,7 +1038,7 @@ instance
     where
     locationFromAst =
         \case
-            AndF And{andSort} -> locationFromAst andSort
+            AndF BinaryAnd{andSort} -> locationFromAst andSort
             ApplySymbolF Application{applicationSymbolOrAlias} ->
                 locationFromAst applicationSymbolOrAlias
             ApplyAliasF Application{applicationSymbolOrAlias} ->
@@ -1058,7 +1060,7 @@ instance
             NextF Next{nextSort} -> locationFromAst nextSort
             NotF Not{notSort} -> locationFromAst notSort
             NuF Nu{nuVariable} -> locationFromAst nuVariable
-            OrF Or{orSort} -> locationFromAst orSort
+            OrF BinaryOr{orSort} -> locationFromAst orSort
             RewritesF Rewrites{rewritesSort} ->
                 locationFromAst rewritesSort
             StringLiteralF _ -> AstLocationUnknown

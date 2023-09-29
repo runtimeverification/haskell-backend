@@ -70,7 +70,7 @@ import Kore.Internal.Substitution (
  )
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike (
-    And (..),
+    BinaryAnd (..),
     SomeVariable,
     SomeVariableName (..),
     TermLike,
@@ -176,7 +176,7 @@ simplifyAnds MakeAnd{makeAnd} sideCondition (NonEmpty.sort -> patterns) =
         monad (Pattern RewritingVariableName)
     simplifyAnds' intermediate termLike =
         case Cofree.tailF (Recursive.project termLike) of
-            AndF And{andFirst, andSecond} ->
+            AndF BinaryAnd{andFirst, andSecond} ->
                 foldM simplifyAnds' intermediate [andFirst, andSecond]
             _ -> do
                 simplified <-

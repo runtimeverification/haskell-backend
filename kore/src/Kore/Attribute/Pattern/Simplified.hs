@@ -37,7 +37,7 @@ import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Syntax (
-    And,
+    BinaryAnd,
     Application,
     Bottom,
     Ceil,
@@ -55,7 +55,7 @@ import Kore.Syntax (
     Next,
     Not,
     Nu,
-    Or,
+    BinaryOr,
     Rewrites,
     StringLiteral,
     Top,
@@ -306,11 +306,11 @@ instance Synthetic Simplified (Forall sort variable) where
     synthetic = notSimplified
     {-# INLINE synthetic #-}
 
-instance Synthetic Simplified (And sort) where
+instance Synthetic Simplified (BinaryAnd sort) where
     synthetic = notSimplified
     {-# INLINE synthetic #-}
 
-instance Synthetic Simplified (Or sort) where
+instance Synthetic Simplified (BinaryOr sort) where
     synthetic = notSimplified
     {-# INLINE synthetic #-}
 

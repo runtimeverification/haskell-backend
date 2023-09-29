@@ -5,7 +5,7 @@ License     : BSD-3-Clause
 module Kore.Simplify.And (
     makeEvaluate,
     simplify,
-    And (..),
+    BinaryAnd (..),
     termAnd,
 ) where
 
@@ -40,7 +40,7 @@ import Kore.Internal.SideCondition (
     SideCondition,
  )
 import Kore.Internal.TermLike (
-    And (..),
+    BinaryAnd (..),
     Sort,
     TermLike,
     mkAnd,
