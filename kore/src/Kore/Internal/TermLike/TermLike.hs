@@ -1301,7 +1301,7 @@ uninternalize = Pattern.Pattern . Recursive.cata go
             (Cofree (PatternF.PatternF variable) (TermAttributes variable)) ->
         Cofree (PatternF.PatternF variable) (TermAttributes variable)
     go (attr :< trmLikePat) = case trmLikePat of
-        AndF and' -> wrap $ PatternF.AndF and'
+        AndF BinaryAnd{andSort,andFirst,andSecond} -> wrap $ PatternF.AndF And{andSort, andChildren=[andFirst,andSecond]}
         ApplySymbolF application ->
             wrap $
                 PatternF.ApplicationF $
@@ -1324,7 +1324,7 @@ uninternalize = Pattern.Pattern . Recursive.cata go
         NextF next -> wrap $ PatternF.NextF next
         NotF not' -> wrap $ PatternF.NotF not'
         NuF nu -> wrap $ PatternF.NuF nu
-        OrF or' -> wrap $ PatternF.OrF or'
+        OrF BinaryOr{orSort,orFirst,orSecond} -> wrap $ PatternF.OrF Or{orSort, orChildren=[orFirst,orSecond]}
         RewritesF rewrites -> wrap $ PatternF.RewritesF rewrites
         TopF top -> wrap $ PatternF.TopF top
         InhabitantF inhabitant -> wrap $ PatternF.InhabitantF inhabitant
