@@ -5,7 +5,7 @@ ARG FOURMOLU_VERSION
 ARG HLINT_VERSION
 ARG GHC_VERSION
 
-FROM haskell:${GHC_VERSION}-slim-buster
+FROM haskell:${GHC_VERSION}-buster
 
 ENV TZ America/Chicago
 ENV DEBIAN_FRONTEND=noninteractive
@@ -17,6 +17,8 @@ ARG HLINT_VERSION
 RUN    apt-get update        \
     && apt-get install --yes \
         curl                 \
+        libsecp256k1-0       \
+        libsecp256k1-dev     \
         libtinfo5            \
         locales              \
         git                  \
