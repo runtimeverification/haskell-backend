@@ -46,6 +46,8 @@ import Kore.Internal.TermLike (
  )
 import Kore.Internal.TermLike qualified as Internal
 import Kore.Syntax as Syntax
+import Kore.Syntax.And as And
+import Kore.Syntax.Or as Or
 import Kore.Syntax.Definition
 import Kore.Unparser
 import Kore.Validate.Error
@@ -230,15 +232,39 @@ verifyOperands operandSort = \operator -> do
     traverse verifyChildWithSort operator
 {-# INLINE verifyOperands #-}
 
+internalizeAnd ::
+    And Sort Verified.Pattern ->
+    BinaryAnd Sort Verified.Pattern
+internalizeAnd And{andSort, andChildren = [andFirst, andSecond]} =
+    BinaryAnd{andSort, andFirst, andSecond}
+internalizeAnd And{andSort, andChildren} =
+    let first = head andChildren in
+    let second = internalizeAnd And{andSort, andChildren=tail andChildren} in
+    BinaryAnd{andSort, andFirst=first, andSecond=synthesize (Internal.AndF second)}
+
+internalizeOr ::
+    Or Sort Verified.Pattern ->
+    BinaryOr Sort Verified.Pattern
+internalizeOr Or{orSort, orChildren = [orFirst, orSecond]} =
+    BinaryOr{orSort, orFirst, orSecond}
+internalizeOr Or{orSort, orChildren} =
+    let first = head orChildren in
+    let second = internalizeOr Or{orSort, orChildren=tail orChildren} in
+    BinaryOr{orSort, orFirst=first, orSecond=synthesize (Internal.OrF second)}
+
 verifyAnd ::
     And Sort (PatternVerifier Verified.Pattern) ->
-    PatternVerifier (And Sort Verified.Pattern)
-verifyAnd = verifyOperands andSort
+    PatternVerifier (BinaryAnd Sort Verified.Pattern)
+verifyAnd operands = do
+    verifiedAnd <- verifyOperands And.andSort operands
+    return (internalizeAnd verifiedAnd)
 
 verifyOr ::
     Or Sort (PatternVerifier Verified.Pattern) ->
-    PatternVerifier (Or Sort Verified.Pattern)
-verifyOr = verifyOperands orSort
+    PatternVerifier (BinaryOr Sort Verified.Pattern)
+verifyOr operands = do
+    verifiedOr <- verifyOperands Or.orSort operands
+    return (internalizeOr verifiedOr)
 
 verifyIff ::
     Iff Sort (PatternVerifier Verified.Pattern) ->
