@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
+set -exuo pipefail
+
 # using variables from runDirectoryTest.sh
 
 echo "client=$client"
 echo "dir=$dir"
 echo "arguments=$*"
-
 
 diff="diff -s -"
 # remove "--regenerate" and tweak $diff if it is present
