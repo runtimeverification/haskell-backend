@@ -3,30 +3,6 @@
         .
       </k>
       <state>
-        max |-> ?_I:Int
-        x |-> ?_I:Int
-        y |-> ?_I0:Int
-        z |-> ?_I1:Int
-      </state>
-    </T>
-  #And
-    {
-      false
-    #Equals
-      ?_I:Int <=Int ?_I0:Int
-    }
-  #And
-    {
-      false
-    #Equals
-      ?_I:Int <=Int ?_I1:Int
-    }
-#Or
-    <T>
-      <k>
-        .
-      </k>
-      <state>
         max |-> ?_I0:Int
         x |-> ?_I:Int
         y |-> ?_I0:Int
@@ -92,4 +68,28 @@
       true
     #Equals
       ?_I:Int <=Int ?_I0:Int
+    }
+#Or
+    <T>
+      <k>
+        .
+      </k>
+      <state>
+        max |-> ?_I:Int
+        x |-> ?_I:Int
+        y |-> ?_I0:Int
+        z |-> ?_I1:Int
+      </state>
+    </T>
+  #And
+    {
+      false
+    #Equals
+      ?_I:Int <=Int ?_I0:Int
+    }
+  #And
+    {
+      false
+    #Equals
+      ?_I:Int <=Int ?_I1:Int
     }
