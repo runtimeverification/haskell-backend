@@ -60,12 +60,12 @@ toParsedPattern = \case
     KJNot s a ->
         (embedParsedPattern . NotF) $
             Kore.Not (mkSort s) (toParsedPattern a)
-    KJAnd s a b ->
+    KJAnd s as ->
         (embedParsedPattern . AndF) $
-            Kore.And (mkSort s) (toParsedPattern a) (toParsedPattern b)
-    KJOr s a b ->
+            Kore.And (mkSort s) (map toParsedPattern as)
+    KJOr s as ->
         (embedParsedPattern . OrF) $
-            Kore.Or (mkSort s) (toParsedPattern a) (toParsedPattern b)
+            Kore.Or (mkSort s) (map toParsedPattern as)
     KJImplies s a b ->
         (embedParsedPattern . ImpliesF) $
             Kore.Implies (mkSort s) (toParsedPattern a) (toParsedPattern b)
@@ -146,7 +146,7 @@ toParsedPattern = \case
 
     mkOr :: Sort -> ParsedPattern -> ParsedPattern -> ParsedPattern
     mkOr s a b =
-        embedParsedPattern . OrF $ Kore.Or (mkSort s) a b
+        embedParsedPattern . OrF $ Kore.Or (mkSort s) [a, b]
 
     mkF :: Id -> [Sort] -> ParsedPattern -> ParsedPattern -> ParsedPattern
     mkF n sorts a b =
@@ -183,11 +183,10 @@ fromPattern = cata fromPatternF
 
 fromPatternF :: CofreeF (Kore.PatternF VariableName) ann KorePattern -> KorePattern
 fromPatternF (_ :< patt) = case patt of
-    AndF Kore.And{andSort, andFirst, andSecond} ->
+    AndF Kore.And{andSort, andChildren} ->
         KJAnd
             { sort = fromSort andSort
-            , first = andFirst
-            , second = andSecond
+            , patterns = andChildren
             }
     ApplicationF
         ( Kore.Application
@@ -282,11 +281,10 @@ fromPatternF (_ :< patt) = case patt of
             , varSort = fromSort $ variableSort nuVariable
             , arg = nuChild
             }
-    OrF Kore.Or{orSort, orFirst, orSecond} ->
+    OrF Kore.Or{orSort, orChildren} ->
         KJOr
             { sort = fromSort orSort
-            , first = orFirst
-            , second = orSecond
+            , patterns = orChildren
             }
     RewritesF Kore.Rewrites{rewritesSort, rewritesFirst, rewritesSecond} ->
         KJRewrites

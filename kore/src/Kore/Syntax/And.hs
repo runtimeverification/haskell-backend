@@ -24,28 +24,35 @@ This represents the 'andFirst ∧ andSecond' Matching Logic construct.
 -}
 data And sort child = And
     { andSort :: !sort
-    , andFirst :: !child
-    , andSecond :: !child
+    , andChildren :: ![child]
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (Functor, Foldable, Traversable)
     deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
+
+instance (Debug sort, Debug child) => Debug (And sort child)
+
+instance
+    ( Debug sort
+    , Diff sort
+    , Debug child
+    , Diff child
+    ) =>
+    Diff (And sort child)
 
 instance Unparse child => Unparse (And Sort child) where
-    unparse And{andSort, andFirst, andSecond} =
+    unparse And{andSort, andChildren} =
         "\\and"
             <> parameters [andSort]
-            <> arguments [andFirst, andSecond]
+            <> arguments andChildren
 
-    unparse2 And{andFirst, andSecond} =
+    unparse2 And{andChildren} =
         Pretty.parens
             ( Pretty.fillSep
                 [ "\\and"
-                , unparse2 andFirst
-                , unparse2 andSecond
+                , arguments2 andChildren
                 ]
             )
 
@@ -54,8 +61,7 @@ instance Ord variable => Synthetic (FreeVariables variable) (And sort) where
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (And Sort) where
-    synthetic And{andSort, andFirst, andSecond} =
+    synthetic And{andSort, andChildren} =
         andSort
-            & seq (sameSort andSort andFirst)
-                . seq (sameSort andSort andSecond)
+            & seq (map (sameSort andSort) andChildren)
     {-# INLINE synthetic #-}

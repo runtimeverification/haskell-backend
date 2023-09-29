@@ -88,10 +88,10 @@ fromAnd ::
     p v ->
     p v
 fromAnd andFirst andSecond =
-    synthesizeFrom And{andFirst, andSecond, andSort = ()}
+    synthesizeFrom And{andChildren = [andFirst, andSecond], andSort = ()}
 
 fromOr :: forall a f v p. SynthesizeFrom (Or ()) a f v p p => p v -> p v -> p v
-fromOr orFirst orSecond = synthesizeFrom Or{orFirst, orSecond, orSort = ()}
+fromOr orFirst orSecond = synthesizeFrom Or{orChildren = [orFirst, orSecond], orSort = ()}
 
 fromNot :: forall a f v p. SynthesizeFrom (Not ()) a f v p p => p v -> p v
 fromNot notChild = synthesizeFrom Not{notChild, notSort = ()}
