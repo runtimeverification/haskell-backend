@@ -5,6 +5,7 @@ License     : BSD-3-Clause
 module Kore.Syntax (
     module Kore.Sort,
     module Kore.Syntax.And,
+    module Kore.Syntax.BinaryAnd,
     module Kore.Syntax.Application,
     module Kore.Syntax.Bottom,
     module Kore.Syntax.Ceil,
@@ -22,6 +23,7 @@ module Kore.Syntax (
     module Kore.Syntax.Not,
     module Kore.Syntax.Nu,
     module Kore.Syntax.Or,
+    module Kore.Syntax.BinaryOr,
     PatternF (..),
     module Kore.Syntax.Pattern,
     module Kore.Syntax.Rewrites,
@@ -33,6 +35,7 @@ module Kore.Syntax (
 
 import Kore.Sort
 import Kore.Syntax.And
+import Kore.Syntax.BinaryAnd
 import Kore.Syntax.Application
 import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
@@ -53,6 +56,7 @@ import Kore.Syntax.Next
 import Kore.Syntax.Not
 import Kore.Syntax.Nu
 import Kore.Syntax.Or
+import Kore.Syntax.BinaryOr
 import Kore.Syntax.Pattern
 import Kore.Syntax.Rewrites
 import Kore.Syntax.StringLiteral
