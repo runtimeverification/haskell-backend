@@ -251,10 +251,10 @@ ApplicationPattern :: {ParsedPattern}
                       { embedParsedPattern $ BottomF Bottom{bottomSort = $3} }
                     | not '{' Sort '}' '(' Pattern ')'
                       { embedParsedPattern $ NotF Not{notSort = $3, notChild = $6} }
-                    | and '{' Sort '}' '(' Patterns ')'
-                      { mkAnd $3 $6 }
-                    | or '{' Sort '}' '(' Patterns ')'
-                      { mkOr $3 $6 }
+                    | and '{' Sort '}' Patterns
+                      { mkAnd $3 $5 }
+                    | or '{' Sort '}' Patterns
+                      { mkOr $3 $5 }
                     | implies '{' Sort '}' '(' Pattern ',' Pattern ')'
                       { embedParsedPattern $ ImpliesF Implies{impliesSort = $3, impliesFirst = $6, impliesSecond = $8} }
                     | iff '{' Sort '}' '(' Pattern ',' Pattern ')'
