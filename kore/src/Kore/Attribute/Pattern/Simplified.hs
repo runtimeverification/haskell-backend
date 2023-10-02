@@ -37,8 +37,9 @@ import Kore.Internal.SideCondition.SideCondition qualified as SideCondition (
     Representation,
  )
 import Kore.Syntax (
-    BinaryAnd,
     Application,
+    BinaryAnd,
+    BinaryOr,
     Bottom,
     Ceil,
     Const,
@@ -55,7 +56,6 @@ import Kore.Syntax (
     Next,
     Not,
     Nu,
-    BinaryOr,
     Rewrites,
     StringLiteral,
     Top,

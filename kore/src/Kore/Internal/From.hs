@@ -25,6 +25,7 @@ import Kore.Attribute.Synthetic (
     synthesize,
  )
 import Kore.Syntax.BinaryAnd
+import Kore.Syntax.BinaryOr
 import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
 import Kore.Syntax.Equals
@@ -35,7 +36,6 @@ import Kore.Syntax.Iff
 import Kore.Syntax.Implies
 import Kore.Syntax.In
 import Kore.Syntax.Not
-import Kore.Syntax.BinaryOr
 import Kore.Syntax.Top
 import Kore.Syntax.Variable
 import Prelude.Kore

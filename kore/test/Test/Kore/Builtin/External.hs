@@ -61,7 +61,7 @@ externalize = Recursive.futu externalize1
     externalize1 termLike =
         -- TODO (thomas.tuegel): Make all these cases into classes.
         case termLikeF of
-            AndF BinaryAnd{andSort,andFirst,andSecond} -> mkPurePattern Syntax.AndF And{andSort, andChildren=[andFirst,andSecond]}
+            AndF BinaryAnd{andSort, andFirst, andSecond} -> mkPurePattern Syntax.AndF And{andSort, andChildren = [andFirst, andSecond]}
             ApplyAliasF applyAliasF -> mkApp $ mapHead Alias.toSymbolOrAlias applyAliasF
             ApplySymbolF applySymbolF -> mkApp $ mapHead Symbol.toSymbolOrAlias applySymbolF
             BottomF bottomF -> mkPurePattern Syntax.BottomF bottomF
@@ -78,7 +78,7 @@ externalize = Recursive.futu externalize1
             NextF nextF -> mkPurePattern Syntax.NextF nextF
             NotF notF -> mkPurePattern Syntax.NotF notF
             NuF nuF -> mkPurePattern Syntax.NuF nuF
-            OrF BinaryOr{orSort,orFirst,orSecond} -> mkPurePattern Syntax.OrF Or{orSort, orChildren=[orFirst,orSecond]}
+            OrF BinaryOr{orSort, orFirst, orSecond} -> mkPurePattern Syntax.OrF Or{orSort, orChildren = [orFirst, orSecond]}
             RewritesF rewritesF -> mkPurePattern Syntax.RewritesF rewritesF
             StringLiteralF stringLiteralF -> mkPurePattern Syntax.StringLiteralF stringLiteralF
             TopF topF -> mkPurePattern Syntax.TopF topF

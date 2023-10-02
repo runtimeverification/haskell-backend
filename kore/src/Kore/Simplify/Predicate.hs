@@ -82,6 +82,7 @@ import Kore.Simplify.Simplify
 import Kore.Substitute
 import Kore.Syntax (
     BinaryAnd (..),
+    BinaryOr (..),
     Bottom (..),
     Ceil (..),
     Equals (..),
@@ -92,7 +93,6 @@ import Kore.Syntax (
     Implies (..),
     In (..),
     Not (..),
-    BinaryOr (..),
     SomeVariableName,
     Sort (SortVariableSort),
     SortVariable (..),

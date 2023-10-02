@@ -122,8 +122,9 @@ import Kore.Internal.Variable
 import Kore.Sort
 import Kore.Substitute
 import Kore.Syntax.And
-import Kore.Syntax.BinaryAnd
 import Kore.Syntax.Application
+import Kore.Syntax.BinaryAnd
+import Kore.Syntax.BinaryOr
 import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
 import Kore.Syntax.DomainValue
@@ -140,7 +141,6 @@ import Kore.Syntax.Next
 import Kore.Syntax.Not
 import Kore.Syntax.Nu
 import Kore.Syntax.Or
-import Kore.Syntax.BinaryOr
 import Kore.Syntax.Pattern qualified as Pattern
 import Kore.Syntax.PatternF qualified as PatternF
 import Kore.Syntax.Rewrites
@@ -1301,7 +1301,7 @@ uninternalize = Pattern.Pattern . Recursive.cata go
             (Cofree (PatternF.PatternF variable) (TermAttributes variable)) ->
         Cofree (PatternF.PatternF variable) (TermAttributes variable)
     go (attr :< trmLikePat) = case trmLikePat of
-        AndF BinaryAnd{andSort,andFirst,andSecond} -> wrap $ PatternF.AndF And{andSort, andChildren=[andFirst,andSecond]}
+        AndF BinaryAnd{andSort, andFirst, andSecond} -> wrap $ PatternF.AndF And{andSort, andChildren = [andFirst, andSecond]}
         ApplySymbolF application ->
             wrap $
                 PatternF.ApplicationF $
@@ -1324,7 +1324,7 @@ uninternalize = Pattern.Pattern . Recursive.cata go
         NextF next -> wrap $ PatternF.NextF next
         NotF not' -> wrap $ PatternF.NotF not'
         NuF nu -> wrap $ PatternF.NuF nu
-        OrF BinaryOr{orSort,orFirst,orSecond} -> wrap $ PatternF.OrF Or{orSort, orChildren=[orFirst,orSecond]}
+        OrF BinaryOr{orSort, orFirst, orSecond} -> wrap $ PatternF.OrF Or{orSort, orChildren = [orFirst, orSecond]}
         RewritesF rewrites -> wrap $ PatternF.RewritesF rewrites
         TopF top -> wrap $ PatternF.TopF top
         InhabitantF inhabitant -> wrap $ PatternF.InhabitantF inhabitant

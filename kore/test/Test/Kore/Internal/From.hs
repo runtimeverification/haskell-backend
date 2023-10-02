@@ -10,6 +10,7 @@ import Kore.Internal.Predicate (
  )
 import Kore.Internal.TermLike (mkElemVar)
 import Kore.Syntax.BinaryAnd
+import Kore.Syntax.BinaryOr
 import Kore.Syntax.Ceil
 import Kore.Syntax.Equals
 import Kore.Syntax.Exists
@@ -19,7 +20,6 @@ import Kore.Syntax.Iff
 import Kore.Syntax.Implies
 import Kore.Syntax.In
 import Kore.Syntax.Not
-import Kore.Syntax.BinaryOr
 import Kore.Syntax.Variable
 import Prelude.Kore
 import Test.Kore.Rewrite.MockSymbols qualified as Mock

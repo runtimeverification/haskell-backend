@@ -35,13 +35,15 @@ module Kore.Syntax (
 
 import Kore.Sort
 import Kore.Syntax.And
-import Kore.Syntax.BinaryAnd
 import Kore.Syntax.Application
+import Kore.Syntax.BinaryAnd
 import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
 import Prelude.Kore
 
 -- TODO (thomas.tuegel): export Kore.Syntax.Definition here
+
+import Kore.Syntax.BinaryOr
 import Kore.Syntax.DomainValue
 import Kore.Syntax.Equals
 import Kore.Syntax.Exists
@@ -56,7 +58,6 @@ import Kore.Syntax.Next
 import Kore.Syntax.Not
 import Kore.Syntax.Nu
 import Kore.Syntax.Or
-import Kore.Syntax.BinaryOr
 import Kore.Syntax.Pattern
 import Kore.Syntax.Rewrites
 import Kore.Syntax.StringLiteral

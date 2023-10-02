@@ -255,8 +255,9 @@ import Kore.Internal.TermLike.TermLike
 import Kore.Internal.Variable
 import Kore.Sort
 import Kore.Substitute
-import Kore.Syntax.BinaryAnd
 import Kore.Syntax.Application
+import Kore.Syntax.BinaryAnd
+import Kore.Syntax.BinaryOr
 import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
 import Kore.Syntax.Definition hiding (
@@ -279,7 +280,6 @@ import Kore.Syntax.Mu
 import Kore.Syntax.Next
 import Kore.Syntax.Not
 import Kore.Syntax.Nu
-import Kore.Syntax.BinaryOr
 import Kore.Syntax.Rewrites
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
