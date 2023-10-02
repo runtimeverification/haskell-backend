@@ -9,7 +9,7 @@ import Kore.Internal.Predicate (
     PredicateF (..),
  )
 import Kore.Internal.TermLike (mkElemVar)
-import Kore.Syntax.And
+import Kore.Syntax.BinaryAnd
 import Kore.Syntax.Ceil
 import Kore.Syntax.Equals
 import Kore.Syntax.Exists
@@ -19,7 +19,7 @@ import Kore.Syntax.Iff
 import Kore.Syntax.Implies
 import Kore.Syntax.In
 import Kore.Syntax.Not
-import Kore.Syntax.Or
+import Kore.Syntax.BinaryOr
 import Kore.Syntax.Variable
 import Prelude.Kore
 import Test.Kore.Rewrite.MockSymbols qualified as Mock
@@ -100,14 +100,14 @@ test_Predicate =
     , testCase "\\and(\\top(), \\bottom())" $ do
         let actual = fromAnd fromTop_ fromBottom_
         case fromPredicate actual of
-            AndF And{andFirst, andSecond} -> do
+            AndF BinaryAnd{andFirst, andSecond} -> do
                 assertEqual "Expected \\top" fromTop_ andFirst
                 assertEqual "Expected \\bottom" fromBottom_ andSecond
             _ -> assertFailure "Expected AndF"
     , testCase "\\or(\\top(), \\bottom())" $ do
         let actual = fromOr fromTop_ fromBottom_
         case fromPredicate actual of
-            OrF Or{orFirst, orSecond} -> do
+            OrF BinaryOr{orFirst, orSecond} -> do
                 assertEqual "Expected \\top" fromTop_ orFirst
                 assertEqual "Expected \\bottom" fromBottom_ orSecond
             _ -> assertFailure "Expected OrF"
