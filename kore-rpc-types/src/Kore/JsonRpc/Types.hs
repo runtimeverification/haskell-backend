@@ -9,7 +9,7 @@ module Kore.JsonRpc.Types (
 
 import Control.Exception (Exception)
 import Data.Aeson.Encode.Pretty qualified as PrettyJson
-import Data.Aeson.Types (FromJSON (..), ToJSON (..), withArray, emptyArray)
+import Data.Aeson.Types (FromJSON (..), ToJSON (..), emptyArray, withArray)
 import Data.Text (Text)
 import Data.Vector qualified as Vector
 import Deriving.Aeson (
