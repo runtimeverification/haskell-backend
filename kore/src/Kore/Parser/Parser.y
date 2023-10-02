@@ -442,6 +442,14 @@ the result. Namely, \\and, \\or, \\implies, and \\iff. Designed to be passed to
 foldl1' or foldr1.
 -}
 mkApply :: Token -> [Sort] -> ParsedPattern -> ParsedPattern -> ParsedPattern
+mkApply tok@(Token _ TokenAnd) [andSort] andFirst andSecond =
+    embedParsedPattern $ AndF And{andSort, andFirst, andSecond}
+mkApply tok@(Token _ TokenOr) [orSort] orFirst orSecond =
+    embedParsedPattern $ OrF Or{orSort, orFirst, orSecond}
+mkApply tok@(Token _ TokenImplies) [impliesSort] impliesFirst impliesSecond =
+    embedParsedPattern $ ImpliesF Implies{impliesSort, impliesFirst, impliesSecond}
+mkApply tok@(Token _ TokenIff) [iffSort] iffFirst iffSecond =
+    embedParsedPattern $ IffF Iff{iffSort, iffFirst, iffSecond}
 mkApply tok@(Token _ (TokenIdent _)) sorts first second =
     embedParsedPattern $ ApplicationF Application
        { applicationSymbolOrAlias = SymbolOrAlias { symbolOrAliasConstructor = mkId tok
