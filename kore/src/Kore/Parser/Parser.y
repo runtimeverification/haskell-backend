@@ -443,9 +443,9 @@ foldl1' or foldr1.
 -}
 mkApply :: Token -> [Sort] -> ParsedPattern -> ParsedPattern -> ParsedPattern
 mkApply tok@(Token _ TokenAnd) [andSort] andFirst andSecond =
-    embedParsedPattern $ AndF And{andSort, andFirst, andSecond}
+    embedParsedPattern $ AndF And{andSort, andChildren=[andFirst, andSecond]}
 mkApply tok@(Token _ TokenOr) [orSort] orFirst orSecond =
-    embedParsedPattern $ OrF Or{orSort, orFirst, orSecond}
+    embedParsedPattern $ OrF Or{orSort, orChildren=[orFirst, orSecond]}
 mkApply tok@(Token _ TokenImplies) [impliesSort] impliesFirst impliesSecond =
     embedParsedPattern $ ImpliesF Implies{impliesSort, impliesFirst, impliesSecond}
 mkApply tok@(Token _ TokenIff) [iffSort] iffFirst iffSecond =
