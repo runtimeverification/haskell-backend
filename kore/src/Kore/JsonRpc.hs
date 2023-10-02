@@ -489,7 +489,7 @@ respond serverState moduleName runSMT =
                                                     , loadedDefinition
                                                     }
 
-                                    pure . Right $ AddModule ()
+                                    pure . Right $ AddModule AddModuleResult
         GetModel GetModelRequest{state, _module} ->
             withMainModule (coerce _module) $ \serializedModule lemmas ->
                 case verifyIn serializedModule state of
