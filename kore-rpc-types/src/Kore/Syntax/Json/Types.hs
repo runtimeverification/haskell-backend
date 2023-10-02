@@ -253,12 +253,14 @@ modifyAndOr v = return v
 
 flattenAndOr :: Json.Object -> Json.Parser Json.Value
 flattenAndOr v = do
-    if KeyMap.member (Key.fromString "patterns") v then return (Json.Object v) else do
-        first :: Json.Value <- v .: "first"
-        second :: Json.Value <- v .: "second"
-        tag :: Json.Value <- v .: "tag"
-        sort :: Json.Value <- v .: "sort"
-        return $ Json.object ["tag" .= tag, "sort" .= sort, "patterns" .= Vector.fromList [first, second]]
+    if KeyMap.member (Key.fromString "patterns") v
+        then return (Json.Object v)
+        else do
+            first :: Json.Value <- v .: "first"
+            second :: Json.Value <- v .: "second"
+            tag :: Json.Value <- v .: "tag"
+            sort :: Json.Value <- v .: "sort"
+            return $ Json.object ["tag" .= tag, "sort" .= sort, "patterns" .= Vector.fromList [first, second]]
 
 {- | Performs a (shallow, top-level, no recursion) lexical check of
  identifiers contained in the given node. For details see the check
