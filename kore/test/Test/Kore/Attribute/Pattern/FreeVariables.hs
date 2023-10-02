@@ -23,8 +23,8 @@ import Test.Tasty.HUnit
 
 test_Synthetic :: [TestTree]
 test_Synthetic =
-    [ And sort x y `gives` xy $ "And"
-    , And sort x x `gives` xx $ "And counts"
+    [ BinaryAnd sort x y `gives` xy $ "And"
+    , BinaryAnd sort x x `gives` xx $ "And counts"
     , Application sigma [x, y] `gives` xy $ "ApplySymbol"
     , Bottom sort `gives` mempty $ "Bottom"
     , Ceil sort sort x `gives` x $ "Ceil"
@@ -36,7 +36,7 @@ test_Synthetic =
     , In sort sort x y `gives` xy $ "In"
     , Next sort x `gives` x $ "Next"
     , Not sort x `gives` x $ "Not"
-    , Or sort x y `gives` xy $ "Or"
+    , BinaryOr sort x y `gives` xy $ "Or"
     , Rewrites sort x y `gives` xy $ "Rewrites"
     , Top sort `gives` mempty $ "Top"
     , -- Binders and variables are the only interesting cases:
@@ -52,8 +52,8 @@ test_Synthetic =
 
 test_instance_Synthetic_TermLike :: [TestTree]
 test_instance_Synthetic_TermLike =
-    [ AndF (And sort x y) `gives'` xy $ "AndF"
-    , AndF (And sort x x) `gives'` xx $ "AndF counts"
+    [ AndF (BinaryAnd sort x y) `gives'` xy $ "AndF"
+    , AndF (BinaryAnd sort x x) `gives'` xx $ "AndF counts"
     , ApplySymbolF (Application sigma [x, y]) `gives'` xy $ "ApplySymbolF"
     , BottomF (Bottom sort) `gives'` mempty $ "BottomF"
     , CeilF (Ceil sort sort x) `gives'` x $ "CeilF"
@@ -65,7 +65,7 @@ test_instance_Synthetic_TermLike =
     , InF (In sort sort x y) `gives'` xy $ "InF"
     , NextF (Next sort x) `gives'` x $ "NextF"
     , NotF (Not sort x) `gives'` x $ "NotF"
-    , OrF (Or sort x y) `gives'` xy $ "OrF"
+    , OrF (BinaryOr sort x y) `gives'` xy $ "OrF"
     , RewritesF (Rewrites sort x y) `gives'` xy $ "RewritesF"
     , TopF (Top sort) `gives'` mempty $ "TopF"
     , -- Binders and variables are the only interesting cases:

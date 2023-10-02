@@ -17,7 +17,7 @@ import Test.Tasty.HUnit
 
 test_instance_Synthetic :: [TestTree]
 test_instance_Synthetic =
-    [ testGroup "AndF" $ map (isn't . AndF) (And sort <$> range <*> range)
+    [ testGroup "AndF" $ map (isn't . AndF) (BinaryAnd sort <$> range <*> range)
     , testGroup
         "ApplySymbolF"
         [ testGroup "function" $ do
@@ -44,7 +44,7 @@ test_instance_Synthetic =
         x <- range
         [expect x $ NextF (Next sort x)]
     , testGroup "NotF" $ map (isn't . NotF) (Not sort <$> range)
-    , testGroup "OrF" $ map (isn't . OrF) (Or sort <$> range <*> range)
+    , testGroup "OrF" $ map (isn't . OrF) (BinaryOr sort <$> range <*> range)
     , testGroup "RewritesF" $
         map (isn't . RewritesF) (Rewrites sort <$> range <*> range)
     , testGroup "TopF" [isn't $ TopF (Top sort)]
