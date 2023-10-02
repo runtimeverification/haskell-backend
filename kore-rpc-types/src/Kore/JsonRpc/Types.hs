@@ -9,8 +9,9 @@ module Kore.JsonRpc.Types (
 
 import Control.Exception (Exception)
 import Data.Aeson.Encode.Pretty qualified as PrettyJson
-import Data.Aeson.Types (FromJSON (..), ToJSON (..))
+import Data.Aeson.Types (FromJSON (..), ToJSON (..), withArray, emptyArray)
 import Data.Text (Text)
+import Data.Vector qualified as Vector
 import Deriving.Aeson (
     CamelToKebab,
     ConstructorTagModifier,
@@ -22,7 +23,7 @@ import Deriving.Aeson (
 import GHC.Generics (Generic)
 import Kore.JsonRpc.Types.Depth (Depth (..))
 import Kore.JsonRpc.Types.Log (LogEntry)
-import Kore.Syntax.Json.Types (KoreJson)
+import Kore.Syntax.Json.Types (KoreJson, expect)
 import Network.JSONRPC (
     FromRequest (..),
  )
@@ -169,6 +170,15 @@ data SimplifyResult = SimplifyResult
         (FromJSON, ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] SimplifyResult
 
+data AddModuleResult = AddModuleResult
+    deriving stock (Generic, Show, Eq)
+
+instance FromJSON AddModuleResult where
+    parseJSON = withArray "AddModuleResult" (expect Vector.empty AddModuleResult)
+
+instance ToJSON AddModuleResult where
+    toJSON AddModuleResult = emptyArray
+
 data GetModelResult = GetModelResult
     { satisfiable :: SatResult
     , substitution :: Maybe KoreJson
@@ -205,7 +215,7 @@ type family APIPayload (api :: APIMethod) (r :: ReqOrRes) where
     APIPayload 'SimplifyM 'Req = SimplifyRequest
     APIPayload 'SimplifyM 'Res = SimplifyResult
     APIPayload 'AddModuleM 'Req = AddModuleRequest
-    APIPayload 'AddModuleM 'Res = ()
+    APIPayload 'AddModuleM 'Res = AddModuleResult
     APIPayload 'GetModelM 'Req = GetModelRequest
     APIPayload 'GetModelM 'Res = GetModelResult
 
