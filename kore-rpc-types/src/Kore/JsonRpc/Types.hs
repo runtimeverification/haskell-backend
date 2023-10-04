@@ -169,11 +169,11 @@ data SimplifyResult = SimplifyResult
         (FromJSON, ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] SimplifyResult
 
-data AddModuleResult = AddModuleResult
+data AddModuleResult = AddModuleResult {_module :: !Text}
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] AddModuleResult
+        via CustomJSON '[FieldLabelModifier '[StripPrefix "_"]] AddModuleResult
 
 data GetModelResult = GetModelResult
     { satisfiable :: SatResult
