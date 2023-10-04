@@ -8,7 +8,7 @@ echo "client=$client"
 echo "dir=$dir"
 echo "arguments=$*"
 
-diff="diff -s -"
+diff="git diff --no-index -"
 # remove "--regenerate" and tweak $diff if it is present
 
 client_args=""
