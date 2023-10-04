@@ -52,6 +52,13 @@ jobs:
           stack-setup-ghc: true
           cabal-update: true
 
+      - name: 'Install libsecp256k1'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes \
+               libsecp256k1-0        \
+               libsecp256k1-dev
+
       - name: 'Update Nix flake from haskell backend release tag'
         run: |
           set -euxo pipefail
