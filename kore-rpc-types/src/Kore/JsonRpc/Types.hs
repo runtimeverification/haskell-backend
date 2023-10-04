@@ -9,9 +9,8 @@ module Kore.JsonRpc.Types (
 
 import Control.Exception (Exception)
 import Data.Aeson.Encode.Pretty qualified as PrettyJson
-import Data.Aeson.Types (FromJSON (..), ToJSON (..), emptyArray, withArray)
+import Data.Aeson.Types (FromJSON (..), ToJSON (..))
 import Data.Text (Text)
-import Data.Vector qualified as Vector
 import Deriving.Aeson (
     CamelToKebab,
     ConstructorTagModifier,
@@ -23,7 +22,7 @@ import Deriving.Aeson (
 import GHC.Generics (Generic)
 import Kore.JsonRpc.Types.Depth (Depth (..))
 import Kore.JsonRpc.Types.Log (LogEntry)
-import Kore.Syntax.Json.Types (KoreJson, expect)
+import Kore.Syntax.Json.Types (KoreJson)
 import Network.JSONRPC (
     FromRequest (..),
  )
@@ -172,12 +171,9 @@ data SimplifyResult = SimplifyResult
 
 data AddModuleResult = AddModuleResult
     deriving stock (Generic, Show, Eq)
-
-instance FromJSON AddModuleResult where
-    parseJSON = withArray "AddModuleResult" (expect Vector.empty AddModuleResult)
-
-instance ToJSON AddModuleResult where
-    toJSON AddModuleResult = emptyArray
+    deriving
+        (FromJSON, ToJSON)
+        via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] AddModuleResult
 
 data GetModelResult = GetModelResult
     { satisfiable :: SatResult
