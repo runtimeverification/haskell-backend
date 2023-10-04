@@ -117,7 +117,7 @@ decodeKoreRpc input =
                     [ Execute <$> parseMaybe (Json.parseJSON @ExecuteResult) resp.getResult
                     , Implies <$> parseMaybe (Json.parseJSON @ImpliesResult) resp.getResult
                     , Simplify <$> parseMaybe (Json.parseJSON @SimplifyResult) resp.getResult
-                    , AddModule <$> parseMaybe (Json.parseJSON @()) resp.getResult
+                    , AddModule <$> parseMaybe (Json.parseJSON @AddModuleResult) resp.getResult
                     , GetModel <$> parseMaybe (Json.parseJSON @GetModelResult) resp.getResult
                     ]
     rpcError =
