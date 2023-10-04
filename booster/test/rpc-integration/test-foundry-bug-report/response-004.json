@@ -1,5 +1,5 @@
 {
     "jsonrpc": "2.0",
     "id": 4,
-    "result": []
+    "result": {"module": "FOUNDRY-MAIN-DEPENDS-MODULE"}
 }

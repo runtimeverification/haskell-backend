@@ -137,7 +137,7 @@ respond stateVar =
                                 liftIO $ putMVar stateVar state{definitions = newDefinitions}
                                 Log.logInfo $
                                     "Added a new module. Now in scope: " <> Text.intercalate ", " (Map.keys newDefinitions)
-                                pure $ Right $ RpcTypes.AddModule ()
+                                pure $ Right $ RpcTypes.AddModule $ RpcTypes.AddModuleResult $ getId newModule.name
         RpcTypes.Simplify req -> withContext req._module $ \(def, mLlvmLibrary) -> do
             start <- liftIO $ getTime Monotonic
             let internalised =
