@@ -19,11 +19,10 @@
         z3 = prev.z3.overrideAttrs (old: {
           src = z3-src;
           version =
-            # hacky way of keeping the version number of this derivation consistent with
-            # the z3-src input.
-            let lock = builtins.fromJSON (builtins.readFile ./flake.lock);
-            in builtins.replaceStrings [ "z3-" ] [ "" ]
-            lock.nodes.z3-src.original.ref;
+
+            let release = builtins.readFile "${z3-src}/scripts/release.yml";
+            # read the release version from scripts/release.yml
+            in builtins.head (builtins.match ".+ReleaseVersion: '([^']+).+" release);
         });
       });
       integration-tests-overlay = (final: prev: {
