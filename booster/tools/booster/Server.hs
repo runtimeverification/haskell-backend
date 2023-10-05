@@ -125,7 +125,9 @@ main = do
                 mvarLogAction <- newMVar actualLogAction
                 let logAction = swappableLogger mvarLogAction
 
-                kore@KoreServer{runSMT} <- mkKoreServer Log.LoggerEnv{logAction} clOPts koreSolverOptions
+                let defaultTactic = fromMaybe (SMT.List [SMT.Atom "check-sat-using", SMT.Atom "smt"]) koreSolverOptions.tactic
+                kore@KoreServer{runSMT} <-
+                    mkKoreServer Log.LoggerEnv{logAction} clOPts koreSolverOptions{tactic = Just defaultTactic}
 
                 withMDLib llvmLibraryFile $ \mdl -> do
                     mLlvmLibrary <- maybe (pure Nothing) (fmap Just . mkAPI) mdl
@@ -229,13 +231,14 @@ mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainMo
                 , loggerEnv
                 }
   where
-    KoreSolverOptions{timeOut, rLimit, resetInterval, prelude} = koreSolverOptions
+    KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, tactic} = koreSolverOptions
     smtConfig =
         SMT.defaultConfig
             { SMT.timeOut = timeOut
             , SMT.rLimit = rLimit
             , SMT.resetInterval = resetInterval
             , SMT.prelude = prelude
+            , SMT.tactic = tactic
             }
 
     -- SMT solver with user declared lemmas
