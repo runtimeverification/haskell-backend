@@ -169,6 +169,12 @@ data SimplifyResult = SimplifyResult
         (FromJSON, ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] SimplifyResult
 
+data AddModuleResult = AddModuleResult {_module :: !Text}
+    deriving stock (Generic, Show, Eq)
+    deriving
+        (FromJSON, ToJSON)
+        via CustomJSON '[FieldLabelModifier '[StripPrefix "_"]] AddModuleResult
+
 data GetModelResult = GetModelResult
     { satisfiable :: SatResult
     , substitution :: Maybe KoreJson
@@ -205,7 +211,7 @@ type family APIPayload (api :: APIMethod) (r :: ReqOrRes) where
     APIPayload 'SimplifyM 'Req = SimplifyRequest
     APIPayload 'SimplifyM 'Res = SimplifyResult
     APIPayload 'AddModuleM 'Req = AddModuleRequest
-    APIPayload 'AddModuleM 'Res = ()
+    APIPayload 'AddModuleM 'Res = AddModuleResult
     APIPayload 'GetModelM 'Req = GetModelRequest
     APIPayload 'GetModelM 'Res = GetModelResult
 
