@@ -811,7 +811,7 @@ instance Pretty Term where
             pretty (Text.replace "Lbl" "" $ Text.decodeUtf8 $ decodeLabel' symbol.name)
                 <> KPretty.argumentsP args
         DotDotDot -> "..."
-        DomainValue _sort bs -> pretty $ show $ Text.decodeLatin1 bs
+        DomainValue _sort bs -> pretty . show . Text.decodeLatin1 . shortenBS $ bs
         Var var -> pretty var
         Injection _source _target t' -> pretty t'
         KMap _attrs keyVals rest ->
@@ -838,6 +838,11 @@ instance Pretty Term where
             | otherwise =
                 Pretty.brackets . Pretty.hsep . Pretty.punctuate Pretty.comma $
                     map pretty l
+
+        -- shorten domain value ByteString to a readable length
+        shortenBS dv =
+            let cutoff = 16
+             in if BS.length dv < cutoff then dv else BS.take cutoff dv <> "...truncated"
 
 instance Pretty Sort where
     pretty (SortApp name params) =
