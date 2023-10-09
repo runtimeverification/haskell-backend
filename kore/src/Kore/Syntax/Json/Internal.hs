@@ -60,9 +60,13 @@ toParsedPattern = \case
     KJNot s a ->
         (embedParsedPattern . NotF) $
             Kore.Not (mkSort s) (toParsedPattern a)
+    KJAnd s [] -> toParsedPattern $ KJTop s
+    KJAnd _ [p] -> toParsedPattern p
     KJAnd s as ->
         (embedParsedPattern . AndF) $
             Kore.And (mkSort s) (map toParsedPattern as)
+    KJOr s [] -> toParsedPattern $ KJBottom s
+    KJOr _ [p] -> toParsedPattern p
     KJOr s as ->
         (embedParsedPattern . OrF) $
             Kore.Or (mkSort s) (map toParsedPattern as)
