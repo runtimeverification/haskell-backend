@@ -256,7 +256,9 @@ verifyAnd ::
     And Sort (PatternVerifier Verified.Pattern) ->
     PatternVerifier (BinaryAnd Sort Verified.Pattern)
 verifyAnd operands = do
-    koreFailWhen (length (And.andChildren operands) < 2) "Cannot internalize And with less than two children"
+    koreFailWhen
+        (length (And.andChildren operands) < 2)
+        "Cannot internalize And with less than two children"
     verifiedAnd <- verifyOperands And.andSort operands
     return (internalizeAnd verifiedAnd)
 
@@ -264,7 +266,9 @@ verifyOr ::
     Or Sort (PatternVerifier Verified.Pattern) ->
     PatternVerifier (BinaryOr Sort Verified.Pattern)
 verifyOr operands = do
-    koreFailWhen (length (Or.orChildren operands) < 2) "Cannot internalize Or with less than two children"
+    koreFailWhen
+        (length (Or.orChildren operands) < 2)
+        "Cannot internalize Or with less than two children"
     verifiedOr <- verifyOperands Or.orSort operands
     return (internalizeOr verifiedOr)
 
