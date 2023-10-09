@@ -501,6 +501,7 @@ library
     Kore.Substitute
     Kore.Syntax
     Kore.Syntax.And
+    Kore.Syntax.BinaryAnd
     Kore.Syntax.Application
     Kore.Syntax.Bottom
     Kore.Syntax.Ceil
@@ -523,6 +524,7 @@ library
     Kore.Syntax.Not
     Kore.Syntax.Nu
     Kore.Syntax.Or
+    Kore.Syntax.BinaryOr
     Kore.Syntax.Pattern
     Kore.Syntax.PatternF
     Kore.Syntax.Rewrites

@@ -97,9 +97,9 @@ test_simplify =
     binaryOr ::
         OrPattern.OrPattern RewritingVariableName ->
         OrPattern.OrPattern RewritingVariableName ->
-        Or Sort (OrPattern.OrPattern RewritingVariableName)
+        BinaryOr Sort (OrPattern.OrPattern RewritingVariableName)
     binaryOr orFirst orSecond =
-        Or{orSort = Mock.testSort, orFirst, orSecond}
+        BinaryOr{orSort = Mock.testSort, orFirst, orSecond}
 
 -- * Part 3: The values and functions relevant to this test
 
@@ -256,7 +256,7 @@ prettyOr ::
     Pattern RewritingVariableName ->
     Pretty.Doc a
 prettyOr orFirst orSecond =
-    Unparser.unparse Or{orSort, orFirst, orSecond}
+    Unparser.unparse BinaryOr{orSort, orFirst, orSecond}
   where
     orSort = termLikeSort (Pattern.term orFirst)
 

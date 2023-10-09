@@ -251,10 +251,10 @@ ApplicationPattern :: {ParsedPattern}
                       { embedParsedPattern $ BottomF Bottom{bottomSort = $3} }
                     | not '{' Sort '}' '(' Pattern ')'
                       { embedParsedPattern $ NotF Not{notSort = $3, notChild = $6} }
-                    | and '{' Sort '}' '(' Pattern ',' Pattern ')'
-                      { embedParsedPattern $ AndF And{andSort = $3, andFirst = $6, andSecond = $8} }
-                    | or '{' Sort '}' '(' Pattern ',' Pattern ')'
-                      { embedParsedPattern $ OrF Or{orSort = $3, orFirst = $6, orSecond = $8} }
+                    | and '{' Sort '}' Patterns
+                      { mkAnd $3 $5 }
+                    | or '{' Sort '}' Patterns
+                      { mkOr $3 $5 }
                     | implies '{' Sort '}' '(' Pattern ',' Pattern ')'
                       { embedParsedPattern $ ImpliesF Implies{impliesSort = $3, impliesFirst = $6, impliesSecond = $8} }
                     | iff '{' Sort '}' '(' Pattern ',' Pattern ')'
@@ -425,6 +425,16 @@ mkAssoc :: Bool -> Token -> [Sort] -> [ParsedPattern] -> ParsedPattern
 mkAssoc True id sorts ps = foldl1' (mkApply id sorts) ps
 mkAssoc False id sorts ps = foldr1 (mkApply id sorts) ps
 
+mkAnd :: Sort -> [ParsedPattern] -> ParsedPattern
+mkAnd s [] = embedParsedPattern $ TopF Top{topSort = s}
+mkAnd s [p] = p
+mkAnd s ps = embedParsedPattern $ AndF And{andSort = s, andChildren = ps}
+
+mkOr :: Sort -> [ParsedPattern] -> ParsedPattern
+mkOr s [] = embedParsedPattern $ BottomF Bottom{bottomSort = s}
+mkOr s [p] = p
+mkOr s ps = embedParsedPattern $ OrF Or{orSort = s, orChildren = ps}
+
 {- | Helper function to expand a \\left-assoc or \\right-assoc directive for
 a particular type of pattern. Only implemented for Application patterns and
 built-in patterns with one sort parameter and two children of the same sort as
@@ -433,9 +443,9 @@ foldl1' or foldr1.
 -}
 mkApply :: Token -> [Sort] -> ParsedPattern -> ParsedPattern -> ParsedPattern
 mkApply tok@(Token _ TokenAnd) [andSort] andFirst andSecond =
-    embedParsedPattern $ AndF And{andSort, andFirst, andSecond}
+    embedParsedPattern $ AndF And{andSort, andChildren=[andFirst, andSecond]}
 mkApply tok@(Token _ TokenOr) [orSort] orFirst orSecond =
-    embedParsedPattern $ OrF Or{orSort, orFirst, orSecond}
+    embedParsedPattern $ OrF Or{orSort, orChildren=[orFirst, orSecond]}
 mkApply tok@(Token _ TokenImplies) [impliesSort] impliesFirst impliesSecond =
     embedParsedPattern $ ImpliesF Implies{impliesSort, impliesFirst, impliesSecond}
 mkApply tok@(Token _ TokenIff) [iffSort] iffFirst iffSecond =

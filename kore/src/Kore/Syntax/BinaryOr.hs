@@ -2,8 +2,8 @@
 Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
 -}
-module Kore.Syntax.Or (
-    Or (..),
+module Kore.Syntax.BinaryOr (
+    BinaryOr (..),
 ) where
 
 import GHC.Generics qualified as GHC
@@ -23,69 +23,64 @@ import Pretty qualified
 
 'orSort' is both the sort of the operands and the sort of the result.
 -}
-data Or sort child = Or
+data BinaryOr sort child = BinaryOr
     { orSort :: !sort
-    , orChildren :: ![child]
+    , orFirst :: !child
+    , orSecond :: !child
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (Functor, Foldable, Traversable)
     deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
-instance (Debug sort, Debug child) => Debug (Or sort child)
-
-instance
-    ( Debug sort
-    , Diff sort
-    , Debug child
-    , Diff child
-    ) =>
-    Diff (Or sort child)
-
-instance Pretty child => Pretty (Or Sort child) where
-    pretty Or{orSort, orChildren} =
+instance Pretty child => Pretty (BinaryOr Sort child) where
+    pretty BinaryOr{orSort, orFirst, orSecond} =
         "\\or"
             <> parameters [orSort]
-            <> arguments' (pretty <$> orChildren)
+            <> arguments' (pretty <$> [orFirst, orSecond])
 
-instance Unparse child => Unparse (Or Sort child) where
-    unparse Or{orSort, orChildren} =
+instance Unparse child => Unparse (BinaryOr Sort child) where
+    unparse BinaryOr{orSort, orFirst, orSecond} =
         "\\or"
             <> parameters [orSort]
-            <> arguments orChildren
+            <> arguments [orFirst, orSecond]
 
-    unparse2 Or{orChildren} =
+    unparse2 BinaryOr{orFirst, orSecond} =
         Pretty.parens
             ( Pretty.fillSep
                 [ "\\or"
-                , arguments2 orChildren
+                , unparse2 orFirst
+                , unparse2 orSecond
                 ]
             )
 
-instance Pretty child => Pretty (Or () child) where
-    pretty Or{orChildren} =
+instance Pretty child => Pretty (BinaryOr () child) where
+    pretty BinaryOr{orFirst, orSecond} =
         "\\or"
-            <> arguments' (pretty <$> orChildren)
-instance Unparse child => Unparse (Or () child) where
-    unparse Or{orChildren} =
+            <> arguments' (pretty <$> [orFirst, orSecond])
+instance Unparse child => Unparse (BinaryOr () child) where
+    unparse BinaryOr{orFirst, orSecond} =
         "\\or"
-            <> arguments orChildren
+            <> arguments [orFirst, orSecond]
 
-    unparse2 Or{orChildren} =
+    unparse2 BinaryOr{orFirst, orSecond} =
         Pretty.parens
             ( Pretty.fillSep
                 [ "\\or"
-                , arguments2 orChildren
+                , unparse2 orFirst
+                , unparse2 orSecond
                 ]
             )
 
-instance Ord variable => Synthetic (FreeVariables variable) (Or sort) where
+instance Ord variable => Synthetic (FreeVariables variable) (BinaryOr sort) where
     synthetic = fold
     {-# INLINE synthetic #-}
 
-instance Synthetic Sort (Or Sort) where
-    synthetic Or{orSort, orChildren} =
+instance Synthetic Sort (BinaryOr Sort) where
+    synthetic BinaryOr{orSort, orFirst, orSecond} =
         orSort
-            & seq (map (sameSort orSort) orChildren)
+            & seq (sameSort orSort orFirst)
+                . seq (sameSort orSort orSecond)
     {-# INLINE synthetic #-}

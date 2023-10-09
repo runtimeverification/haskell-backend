@@ -61,7 +61,7 @@ newtype ConstructorLike = ConstructorLike
 instance Diff ConstructorLike where
     diffPrec = diffPrecIgnore
 
-instance Synthetic ConstructorLike (And sort) where
+instance Synthetic ConstructorLike (BinaryAnd sort) where
     synthetic = const (ConstructorLike Nothing)
     {-# INLINE synthetic #-}
 
@@ -158,7 +158,7 @@ instance Synthetic ConstructorLike (Nu sort) where
     synthetic = const (ConstructorLike Nothing)
     {-# INLINE synthetic #-}
 
-instance Synthetic ConstructorLike (Or sort) where
+instance Synthetic ConstructorLike (BinaryOr sort) where
     synthetic = const (ConstructorLike Nothing)
     {-# INLINE synthetic #-}
 

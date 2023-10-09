@@ -1158,8 +1158,7 @@ patternInUnquantifiedGenericPatterns
                 AndF
                     And
                         { andSort = testedSort
-                        , andFirst = testedUnifiedPattern
-                        , andSecond = anotherUnifiedPattern
+                        , andChildren = [testedUnifiedPattern, anotherUnifiedPattern]
                         }
             , testPatternSort = testedSort
             , testPatternErrorStack = ErrorStack ["\\and (<test data>)"]
@@ -1169,8 +1168,7 @@ patternInUnquantifiedGenericPatterns
                 AndF
                     And
                         { andSort = testedSort
-                        , andFirst = anotherUnifiedPattern
-                        , andSecond = testedUnifiedPattern
+                        , andChildren = [anotherUnifiedPattern, testedUnifiedPattern]
                         }
             , testPatternSort = testedSort
             , testPatternErrorStack = ErrorStack ["\\and (<test data>)"]
@@ -1304,8 +1302,7 @@ patternInUnquantifiedGenericPatterns
                 OrF
                     Or
                         { orSort = testedSort
-                        , orFirst = testedUnifiedPattern
-                        , orSecond = anotherUnifiedPattern
+                        , orChildren = [testedUnifiedPattern, anotherUnifiedPattern]
                         }
             , testPatternSort = testedSort
             , testPatternErrorStack = ErrorStack ["\\or (<test data>)"]
@@ -1315,8 +1312,7 @@ patternInUnquantifiedGenericPatterns
                 OrF
                     Or
                         { orSort = testedSort
-                        , orFirst = anotherUnifiedPattern
-                        , orSecond = testedUnifiedPattern
+                        , orChildren = [anotherUnifiedPattern, testedUnifiedPattern]
                         }
             , testPatternSort = testedSort
             , testPatternErrorStack = ErrorStack ["\\or (<test data>)"]

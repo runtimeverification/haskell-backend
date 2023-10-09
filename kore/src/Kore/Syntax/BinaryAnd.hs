@@ -2,8 +2,8 @@
 Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
 -}
-module Kore.Syntax.And (
-    And (..),
+module Kore.Syntax.BinaryAnd (
+    BinaryAnd (..),
 ) where
 
 import GHC.Generics qualified as GHC
@@ -22,46 +22,40 @@ import Pretty qualified
 
 This represents the 'andFirst ∧ andSecond' Matching Logic construct.
 -}
-data And sort child = And
+data BinaryAnd sort child = BinaryAnd
     { andSort :: !sort
-    , andChildren :: ![child]
+    , andFirst :: !child
+    , andSecond :: !child
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (Functor, Foldable, Traversable)
     deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
-instance (Debug sort, Debug child) => Debug (And sort child)
-
-instance
-    ( Debug sort
-    , Diff sort
-    , Debug child
-    , Diff child
-    ) =>
-    Diff (And sort child)
-
-instance Unparse child => Unparse (And Sort child) where
-    unparse And{andSort, andChildren} =
+instance Unparse child => Unparse (BinaryAnd Sort child) where
+    unparse BinaryAnd{andSort, andFirst, andSecond} =
         "\\and"
             <> parameters [andSort]
-            <> arguments andChildren
+            <> arguments [andFirst, andSecond]
 
-    unparse2 And{andChildren} =
+    unparse2 BinaryAnd{andFirst, andSecond} =
         Pretty.parens
             ( Pretty.fillSep
                 [ "\\and"
-                , arguments2 andChildren
+                , unparse2 andFirst
+                , unparse2 andSecond
                 ]
             )
 
-instance Ord variable => Synthetic (FreeVariables variable) (And sort) where
+instance Ord variable => Synthetic (FreeVariables variable) (BinaryAnd sort) where
     synthetic = fold
     {-# INLINE synthetic #-}
 
-instance Synthetic Sort (And Sort) where
-    synthetic And{andSort, andChildren} =
+instance Synthetic Sort (BinaryAnd Sort) where
+    synthetic BinaryAnd{andSort, andFirst, andSecond} =
         andSort
-            & seq (map (sameSort andSort) andChildren)
+            & seq (sameSort andSort andFirst)
+                . seq (sameSort andSort andSecond)
     {-# INLINE synthetic #-}

@@ -154,7 +154,7 @@ import Pretty qualified
 import SQL qualified
 
 data PredicateF variable child
-    = AndF !(And () child)
+    = AndF !(BinaryAnd () child)
     | BottomF !(Bottom () child)
     | CeilF !(Ceil () (TermLike variable))
     | EqualsF !(Equals () (TermLike variable))
@@ -165,7 +165,7 @@ data PredicateF variable child
     | ImpliesF !(Implies () child)
     | InF !(In () (TermLike variable))
     | NotF !(Not () child)
-    | OrF !(Or () child)
+    | OrF !(BinaryOr () child)
     | TopF !(Top () child)
     deriving stock (Eq, Ord, Show)
     deriving stock (Functor, Foldable, Traversable)
@@ -238,11 +238,11 @@ instance From (Forall () variable child) (PredicateF variable child) where
     from = ForallF
     {-# INLINE from #-}
 
-instance From (And () child) (PredicateF variable child) where
+instance From (BinaryAnd () child) (PredicateF variable child) where
     from = AndF
     {-# INLINE from #-}
 
-instance From (Or () child) (PredicateF variable child) where
+instance From (BinaryOr () child) (PredicateF variable child) where
     from = OrF
     {-# INLINE from #-}
 
@@ -529,12 +529,12 @@ pattern PredicateTrue <- (Recursive.project -> _ :< TopF _)
 pattern PredicateAnd ::
     Predicate variable -> Predicate variable -> Predicate variable
 pattern PredicateAnd p1 p2 <-
-    (Recursive.project -> _ :< AndF (And () p1 p2))
+    (Recursive.project -> _ :< AndF (BinaryAnd () p1 p2))
 
 pattern PredicateOr ::
     Predicate variable -> Predicate variable -> Predicate variable
 pattern PredicateOr p1 p2 <-
-    (Recursive.project -> _ :< OrF (Or () p1 p2))
+    (Recursive.project -> _ :< OrF (BinaryOr () p1 p2))
 
 pattern PredicateNot :: Predicate variable -> Predicate variable
 pattern PredicateNot p <-
@@ -571,7 +571,7 @@ fromPredicate sort = Recursive.fold worker
         TermLike.setSimplified
             (PredicatePattern.simplifiedAttribute pat)
             $ case predF of
-                AndF (And () t1 t2) -> TermLike.mkAnd t1 t2
+                AndF (BinaryAnd () t1 t2) -> TermLike.mkAnd t1 t2
                 BottomF _ -> TermLike.mkBottom sort
                 CeilF (Ceil () () t) -> TermLike.mkCeil sort t
                 EqualsF (Equals () () t1 t2) -> TermLike.mkEquals sort t1 t2
@@ -582,7 +582,7 @@ fromPredicate sort = Recursive.fold worker
                 ImpliesF (Implies () t1 t2) -> TermLike.mkImplies t1 t2
                 InF (In () () t1 t2) -> TermLike.mkIn sort t1 t2
                 NotF (Not () t) -> TermLike.mkNot t
-                OrF (Or () t1 t2) -> TermLike.mkOr t1 t2
+                OrF (BinaryOr () t1 t2) -> TermLike.mkOr t1 t2
                 TopF _ -> TermLike.mkTop sort
 
 {- | Simple type used to track whether a predicate building function performed
@@ -659,7 +659,7 @@ makeAndPredicate' p1 p2
     | otherwise =
         ( synthesize $
             AndF
-                And
+                BinaryAnd
                     { andSort = ()
                     , andFirst = p1
                     , andSecond = p2
@@ -688,7 +688,7 @@ makeOrPredicate' p1 p2
     | otherwise =
         ( synthesize $
             OrF
-                Or
+                BinaryOr
                     { orSort = ()
                     , orFirst = p1
                     , orSecond = p2

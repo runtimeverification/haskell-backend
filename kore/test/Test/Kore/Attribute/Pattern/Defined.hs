@@ -28,7 +28,7 @@ import Test.Tasty.HUnit
 
 test_instance_Synthetic :: [TestTree]
 test_instance_Synthetic =
-    [ testGroup "AndF" $ map (isn't . AndF) (And sort <$> range <*> range)
+    [ testGroup "AndF" $ map (isn't . AndF) (BinaryAnd sort <$> range <*> range)
     , testGroup "BottomF" [isn't $ BottomF (Bottom sort)]
     , testGroup "CeilF" $ map (isn't . CeilF) (Ceil sort sort <$> range)
     , testGroup "EqualsF" $
@@ -74,7 +74,7 @@ test_instance_Synthetic =
     , testGroup "OrF" $ do
         x <- range
         y <- range
-        [expect (Defined $ isDefined x || isDefined y) $ OrF $ Or sort x y]
+        [expect (Defined $ isDefined x || isDefined y) $ OrF $ BinaryOr sort x y]
     , testGroup
         "BuiltinSet"
         [ is . asSetBuiltin $

@@ -306,18 +306,27 @@ andPatternParserTests =
                 AndF
                     And
                         { andSort = sortVariableSort "s" :: Sort
-                        , andFirst =
-                            embedParsedPattern $ StringLiteralF $ Const (StringLiteral "a")
-                        , andSecond =
-                            embedParsedPattern $ StringLiteralF $ Const (StringLiteral "b")
+                        , andChildren =
+                            [ embedParsedPattern $ StringLiteralF $ Const (StringLiteral "a")
+                            , embedParsedPattern $ StringLiteralF $ Const (StringLiteral "b")
+                            ]
                         }
             )
+        , success
+            "\\and{s}()"
+            ( embedParsedPattern $
+                TopF
+                    Top
+                        { topSort = sortVariableSort "s" :: Sort
+                        }
+            )
+        , success
+            "\\and{s}(\"a\")"
+            (embedParsedPattern $ StringLiteralF $ Const (StringLiteral "a"))
         , FailureWithoutMessage
             [ ""
             , "\\and{s,s}(\"a\", \"b\")"
             , "\\and{}(\"a\", \"b\")"
-            , "\\and{s}(\"a\")"
-            , "\\and{s}(\"a\", \"b\", \"c\")"
             , "\\and{s}(\"a\" \"b\")"
             ]
         ]
@@ -474,31 +483,15 @@ applicationPatternParserTests =
                         }
             )
         , success
-            "\\left-assoc{}(\\or{s}(\"a\", \"b\"))"
+            "\\or{s}(\"a\", \"b\", \"c\")"
             ( embedParsedPattern $
                 OrF
                     Or
-                        { orFirst = StringLiteral "a" & Const & StringLiteralF & embedParsedPattern
-                        , orSecond = StringLiteral "b" & Const & StringLiteralF & embedParsedPattern
-                        , orSort = sortVariableSort "s" :: Sort
-                        }
-            )
-        , success
-            "\\left-assoc{}(\\or{s}(\"a\", \"b\", \"c\"))"
-            ( embedParsedPattern $
-                OrF
-                    Or
-                        { orFirst =
-                            embedParsedPattern $
-                                OrF
-                                    Or
-                                        { orFirst =
-                                            StringLiteral "a" & Const & StringLiteralF & embedParsedPattern
-                                        , orSecond =
-                                            StringLiteral "b" & Const & StringLiteralF & embedParsedPattern
-                                        , orSort = sortVariableSort "s" :: Sort
-                                        }
-                        , orSecond = StringLiteral "c" & Const & StringLiteralF & embedParsedPattern
+                        { orChildren =
+                            [ StringLiteral "a" & Const & StringLiteralF & embedParsedPattern
+                            , StringLiteral "b" & Const & StringLiteralF & embedParsedPattern
+                            , StringLiteral "c" & Const & StringLiteralF & embedParsedPattern
+                            ]
                         , orSort = sortVariableSort "s" :: Sort
                         }
             )
@@ -559,32 +552,16 @@ applicationPatternParserTests =
                         }
             )
         , success
-            "\\right-assoc{}(\\or{s}(\"a\", \"b\"))"
+            "\\and{s}(\"a\", \"b\", \"c\")"
             ( embedParsedPattern $
-                OrF
-                    Or
-                        { orFirst = StringLiteral "a" & Const & StringLiteralF & embedParsedPattern
-                        , orSecond = StringLiteral "b" & Const & StringLiteralF & embedParsedPattern
-                        , orSort = sortVariableSort "s" :: Sort
-                        }
-            )
-        , success
-            "\\right-assoc{}(\\or{s}(\"a\", \"b\", \"c\"))"
-            ( embedParsedPattern $
-                OrF
-                    Or
-                        { orFirst = StringLiteral "a" & Const & StringLiteralF & embedParsedPattern
-                        , orSecond =
-                            embedParsedPattern $
-                                OrF
-                                    Or
-                                        { orFirst =
-                                            StringLiteral "b" & Const & StringLiteralF & embedParsedPattern
-                                        , orSecond =
-                                            StringLiteral "c" & Const & StringLiteralF & embedParsedPattern
-                                        , orSort = sortVariableSort "s" :: Sort
-                                        }
-                        , orSort = sortVariableSort "s" :: Sort
+                AndF
+                    And
+                        { andChildren =
+                            [ StringLiteral "a" & Const & StringLiteralF & embedParsedPattern
+                            , StringLiteral "b" & Const & StringLiteralF & embedParsedPattern
+                            , StringLiteral "c" & Const & StringLiteralF & embedParsedPattern
+                            ]
+                        , andSort = sortVariableSort "s" :: Sort
                         }
             )
         , FailureWithoutMessage
@@ -596,7 +573,6 @@ applicationPatternParserTests =
             , "c{s}"
             , "\\left-assoc{}(c{}())"
             , "\\right-assoc{}(c{}())"
-            , "\\or{s}(\"a\", \"b\", \"c\")"
             ]
         ]
 bottomPatternParserTests :: [TestTree]
@@ -991,18 +967,27 @@ orPatternParserTests =
                 OrF
                     Or
                         { orSort = sortVariableSort "s" :: Sort
-                        , orFirst =
-                            embedParsedPattern $ StringLiteralF $ Const (StringLiteral "a")
-                        , orSecond =
-                            embedParsedPattern $ StringLiteralF $ Const (StringLiteral "b")
+                        , orChildren =
+                            [ embedParsedPattern $ StringLiteralF $ Const (StringLiteral "a")
+                            , embedParsedPattern $ StringLiteralF $ Const (StringLiteral "b")
+                            ]
                         }
             )
+        , success
+            "\\or{s}()"
+            ( embedParsedPattern $
+                BottomF
+                    Bottom
+                        { bottomSort = sortVariableSort "s" :: Sort
+                        }
+            )
+        , success
+            "\\or{s}(\"a\")"
+            (embedParsedPattern $ StringLiteralF $ Const (StringLiteral "a"))
         , FailureWithoutMessage
             [ ""
             , "\\or{s,s}(\"a\", \"b\")"
             , "\\or{}(\"a\", \"b\")"
-            , "\\or{s}(\"a\")"
-            , "\\or{s}(\"a\", \"b\", \"c\")"
             , "\\or{s}(\"a\" \"b\")"
             ]
         ]

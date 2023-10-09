@@ -81,7 +81,8 @@ import Kore.Simplify.Not qualified as Not
 import Kore.Simplify.Simplify
 import Kore.Substitute
 import Kore.Syntax (
-    And (..),
+    BinaryAnd (..),
+    BinaryOr (..),
     Bottom (..),
     Ceil (..),
     Equals (..),
@@ -92,7 +93,6 @@ import Kore.Syntax (
     Implies (..),
     In (..),
     Not (..),
-    Or (..),
     SomeVariableName,
     Sort (SortVariableSort),
     SortVariable (..),
@@ -199,7 +199,7 @@ mkSingleton = MultiOr.singleton . MultiAnd.singleton
 -- | See 'normalizeMultiAnd'.
 normalizeAnd ::
     Applicative simplifier =>
-    And () NormalForm ->
+    BinaryAnd () NormalForm ->
     simplifier NormalForm
 normalizeAnd = normalizeMultiAnd . foldMap MultiAnd.singleton
 
@@ -265,7 +265,7 @@ normalizeMultiAnd andOr =
 -}
 normalizeOr ::
     Applicative simplifier =>
-    Or () NormalForm ->
+    BinaryOr () NormalForm ->
     simplifier NormalForm
 normalizeOr = pure . fold
 {-# INLINE normalizeOr #-}
@@ -425,9 +425,9 @@ simplifyImplies sideCondition Implies{impliesFirst, impliesSecond} = do
     mkNotSimplified notChild =
         simplifyNot sideCondition Not{notSort = (), notChild}
     mkAndSimplified andFirst andSecond =
-        normalizeAnd And{andSort = (), andFirst, andSecond}
+        normalizeAnd BinaryAnd{andSort = (), andFirst, andSecond}
     mkOrSimplified orFirst orSecond =
-        normalizeOr Or{orSort = (), orFirst, orSecond}
+        normalizeOr BinaryOr{orSort = (), orFirst, orSecond}
 
 {- |
  @
@@ -449,9 +449,9 @@ simplifyIff sideCondition Iff{iffFirst, iffSecond} = do
     mkNotSimplified notChild =
         simplifyNot sideCondition Not{notSort = (), notChild}
     mkAndSimplified andFirst andSecond =
-        normalizeAnd And{andSort = (), andFirst, andSecond}
+        normalizeAnd BinaryAnd{andSort = (), andFirst, andSecond}
     mkOrSimplified orFirst orSecond =
-        normalizeOr Or{orSort = (), orFirst, orSecond}
+        normalizeOr BinaryOr{orSort = (), orFirst, orSecond}
 
 simplifyCeil ::
     SideCondition RewritingVariableName ->

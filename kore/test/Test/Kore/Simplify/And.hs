@@ -448,9 +448,9 @@ test_andSimplification =
 makeAnd ::
     [Pattern RewritingVariableName] ->
     [Pattern RewritingVariableName] ->
-    And Sort (OrPattern RewritingVariableName)
+    BinaryAnd Sort (OrPattern RewritingVariableName)
 makeAnd first second =
-    And
+    BinaryAnd
         { andSort = findSort (first ++ second)
         , andFirst = OrPattern.fromPatterns first
         , andSecond = OrPattern.fromPatterns second
@@ -461,9 +461,9 @@ findSort [] = testSort
 findSort (Conditional{term} : _) = termLikeSort term
 
 evaluate ::
-    And Sort (OrPattern RewritingVariableName) ->
+    BinaryAnd Sort (OrPattern RewritingVariableName) ->
     IO (OrPattern RewritingVariableName)
-evaluate And{andFirst, andSecond} =
+evaluate BinaryAnd{andFirst, andSecond} =
     MultiAnd.make [andFirst, andSecond]
         & simplify Mock.testSort SideCondition.top
         & testRunSimplifier Mock.env
