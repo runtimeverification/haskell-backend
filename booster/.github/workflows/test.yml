@@ -265,5 +265,3 @@ jobs:
               fi
           done
 
-      - name: Check shell
-        run: GC_DONT_GC=1 nix develop --print-build-logs --command cabal --version
