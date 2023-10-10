@@ -42,7 +42,7 @@ import Data.Coerce (coerce)
 import Data.Foldable ()
 import Data.Generics (extQ)
 import Data.List (foldl1', nub)
-import Data.List.NonEmpty as NE (NonEmpty)
+import Data.List.NonEmpty as NE (toList)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Set (Set)
@@ -204,13 +204,12 @@ internaliseTermRaw qq allowAlias checkSubsorts sortVars definition@KoreDefinitio
         Syntax.KJTop{} -> predicate
         Syntax.KJBottom{} -> predicate
         Syntax.KJNot{} -> predicate
-        Syntax.KJAnd{first = arg1, second = arg2} -> do
+        Syntax.KJAnd{patterns} -> do
             -- analysed beforehand, expecting this to operate on terms
-            a <- recursion arg1
-            b <- recursion arg2
+            args <- mapM recursion patterns
             -- TODO check that both a and b are of sort "resultSort"
             -- Which is a unification problem if this involves variables.
-            pure $ Internal.AndTerm a b
+            pure $ foldr1 Internal.AndTerm args
         Syntax.KJOr{} -> predicate
         Syntax.KJImplies{} -> predicate
         Syntax.KJIff{} -> predicate
@@ -282,16 +281,14 @@ internalisePredicate allowAlias checkSubsorts sortVars definition@KoreDefinition
         pure Internal.Bottom
     Syntax.KJNot{arg} -> do
         Internal.Not <$> recursion arg
-    Syntax.KJAnd{first = arg1, second = arg2} -> do
+    Syntax.KJAnd{patterns} -> do
         -- consistency should have been checked beforehand,
         -- building an AndPredicate
-        Internal.AndPredicate
-            <$> recursion arg1
-            <*> recursion arg2
-    Syntax.KJOr{first = arg1, second = arg2} ->
-        Internal.Or
-            <$> recursion arg1
-            <*> recursion arg2
+        args <- mapM recursion patterns
+        pure $ foldr1 Internal.AndPredicate args
+    Syntax.KJOr{patterns} -> do
+        args <- mapM recursion patterns
+        pure $ foldr1 Internal.Or args
     Syntax.KJImplies{first = arg1, second = arg2} ->
         Internal.Implies
             <$> recursion arg1
@@ -343,8 +340,8 @@ internalisePredicate allowAlias checkSubsorts sortVars definition@KoreDefinition
     Syntax.KJNext{} -> notSupported
     Syntax.KJRewrites{} -> notSupported -- should only occur in claims!
     Syntax.KJDV{} -> term
-    Syntax.KJMultiOr{assoc, sort, argss} ->
-        recursion $ withAssoc assoc (Syntax.KJOr sort) argss
+    Syntax.KJMultiOr{sort, argss} ->
+        recursion $ Syntax.KJOr sort $ NE.toList argss
     Syntax.KJLeftAssoc{} -> term
     Syntax.KJRightAssoc{} -> term
   where
@@ -373,11 +370,6 @@ internalisePredicate allowAlias checkSubsorts sortVars definition@KoreDefinition
                     zipWithM_ go args1 args2
 
 ----------------------------------------
-
--- converts MultiOr to a chain at syntax level
-withAssoc :: Syntax.LeftRight -> (a -> a -> a) -> NonEmpty a -> a
-withAssoc Syntax.Left = foldl1
-withAssoc Syntax.Right = foldr1
 
 -- for use with withAssoc
 mkF ::
@@ -431,11 +423,10 @@ isTermM pat = case pat of
     Syntax.KJTop{} -> pure False
     Syntax.KJBottom{} -> pure False
     Syntax.KJNot{} -> pure False
-    Syntax.KJAnd{first = arg1, second = arg2} -> do
-        a1Term <- isTermM arg1
-        a2Term <- isTermM arg2
-        when (a1Term /= a2Term) $ throwE (InconsistentPattern pat)
-        pure a1Term
+    Syntax.KJAnd{patterns} -> do
+        terms <- mapM isTermM patterns
+        when (length (nub terms) /= 1) $ throwE (InconsistentPattern pat)
+        pure $ head terms
     Syntax.KJOr{} -> pure False
     Syntax.KJImplies{} -> pure False
     Syntax.KJIff{} -> pure False
@@ -461,8 +452,8 @@ isTermM pat = case pat of
    ignored, no checks are performed.
 -}
 explodeAnd :: Syntax.KorePattern -> [Syntax.KorePattern]
-explodeAnd Syntax.KJAnd{first = arg1, second = arg2} =
-    explodeAnd arg1 <> explodeAnd arg2
+explodeAnd Syntax.KJAnd{patterns} =
+    concatMap explodeAnd patterns
 explodeAnd other = [other]
 
 ----------------------------------------
