@@ -283,125 +283,8 @@
                 }
               ]
             },
-            "first": {
-              "tag": "App",
-              "name": "nil",
-              "sorts": [
-                {
-                  "tag": "SortVar",
-                  "name": "S"
-                }
-              ],
-              "args": []
-            },
-            "second": {
-              "tag": "Exists",
-              "sort": {
-                "tag": "SortApp",
-                "name": "List",
-                "args": [
-                  {
-                    "tag": "SortVar",
-                    "name": "S"
-                  }
-                ]
-              },
-              "var": "X",
-              "varSort": {
-                "tag": "SortVar",
-                "name": "S"
-              },
-              "arg": {
-                "tag": "Exists",
-                "sort": {
-                  "tag": "SortApp",
-                  "name": "List",
-                  "args": [
-                    {
-                      "tag": "SortVar",
-                      "name": "S"
-                    }
-                  ]
-                },
-                "var": "L",
-                "varSort": {
-                  "tag": "SortApp",
-                  "name": "List",
-                  "args": [
-                    {
-                      "tag": "SortVar",
-                      "name": "S"
-                    }
-                  ]
-                },
-                "arg": {
-                  "tag": "App",
-                  "name": "cons",
-                  "sorts": [
-                    {
-                      "tag": "SortVar",
-                      "name": "S"
-                    }
-                  ],
-                  "args": [
-                    {
-                      "tag": "EVar",
-                      "name": "X",
-                      "sort": {
-                        "tag": "SortVar",
-                        "name": "S"
-                      }
-                    },
-                    {
-                      "tag": "EVar",
-                      "name": "L",
-                      "sort": {
-                        "tag": "SortApp",
-                        "name": "List",
-                        "args": [
-                          {
-                            "tag": "SortVar",
-                            "name": "S"
-                          }
-                        ]
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "sortVars": [
-            "S"
-          ]
-        },
-        {
-          "attributes": [],
-          "axiom": {
-            "tag": "Not",
-            "sort": {
-              "tag": "SortApp",
-              "name": "List",
-              "args": [
-                {
-                  "tag": "SortVar",
-                  "name": "S"
-                }
-              ]
-            },
-            "arg": {
-              "tag": "And",
-              "sort": {
-                "tag": "SortApp",
-                "name": "List",
-                "args": [
-                  {
-                    "tag": "SortVar",
-                    "name": "S"
-                  }
-                ]
-              },
-              "first": {
+            "patterns": [
+              {
                 "tag": "App",
                 "name": "nil",
                 "sorts": [
@@ -412,7 +295,7 @@
                 ],
                 "args": []
               },
-              "second": {
+              {
                 "tag": "Exists",
                 "sort": {
                   "tag": "SortApp",
@@ -488,6 +371,127 @@
                   }
                 }
               }
+            ]
+          },
+          "sortVars": [
+            "S"
+          ]
+        },
+        {
+          "attributes": [],
+          "axiom": {
+            "tag": "Not",
+            "sort": {
+              "tag": "SortApp",
+              "name": "List",
+              "args": [
+                {
+                  "tag": "SortVar",
+                  "name": "S"
+                }
+              ]
+            },
+            "arg": {
+              "tag": "And",
+              "sort": {
+                "tag": "SortApp",
+                "name": "List",
+                "args": [
+                  {
+                    "tag": "SortVar",
+                    "name": "S"
+                  }
+                ]
+              },
+              "patterns": [
+                {
+                  "tag": "App",
+                  "name": "nil",
+                  "sorts": [
+                    {
+                      "tag": "SortVar",
+                      "name": "S"
+                    }
+                  ],
+                  "args": []
+                },
+                {
+                  "tag": "Exists",
+                  "sort": {
+                    "tag": "SortApp",
+                    "name": "List",
+                    "args": [
+                      {
+                        "tag": "SortVar",
+                        "name": "S"
+                      }
+                    ]
+                  },
+                  "var": "X",
+                  "varSort": {
+                    "tag": "SortVar",
+                    "name": "S"
+                  },
+                  "arg": {
+                    "tag": "Exists",
+                    "sort": {
+                      "tag": "SortApp",
+                      "name": "List",
+                      "args": [
+                        {
+                          "tag": "SortVar",
+                          "name": "S"
+                        }
+                      ]
+                    },
+                    "var": "L",
+                    "varSort": {
+                      "tag": "SortApp",
+                      "name": "List",
+                      "args": [
+                        {
+                          "tag": "SortVar",
+                          "name": "S"
+                        }
+                      ]
+                    },
+                    "arg": {
+                      "tag": "App",
+                      "name": "cons",
+                      "sorts": [
+                        {
+                          "tag": "SortVar",
+                          "name": "S"
+                        }
+                      ],
+                      "args": [
+                        {
+                          "tag": "EVar",
+                          "name": "X",
+                          "sort": {
+                            "tag": "SortVar",
+                            "name": "S"
+                          }
+                        },
+                        {
+                          "tag": "EVar",
+                          "name": "L",
+                          "sort": {
+                            "tag": "SortApp",
+                            "name": "List",
+                            "args": [
+                              {
+                                "tag": "SortVar",
+                                "name": "S"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
             }
           },
           "sortVars": [
@@ -508,21 +512,83 @@
                 "tag": "SortVar",
                 "name": "R"
               },
-              "first": {
-                "tag": "Top",
-                "sort": {
-                  "tag": "SortVar",
-                  "name": "R"
-                }
-              },
-              "second": {
-                "tag": "And",
-                "sort": {
-                  "tag": "SortVar",
-                  "name": "R"
+              "patterns": [
+                {
+                  "tag": "Top",
+                  "sort": {
+                    "tag": "SortVar",
+                    "name": "R"
+                  }
                 },
-                "first": {
-                  "tag": "In",
+                {
+                  "tag": "And",
+                  "sort": {
+                    "tag": "SortVar",
+                    "name": "R"
+                  },
+                  "patterns": [
+                    {
+                      "tag": "In",
+                      "argSort": {
+                        "tag": "SortApp",
+                        "name": "List",
+                        "args": [
+                          {
+                            "tag": "SortVar",
+                            "name": "S"
+                          }
+                        ]
+                      },
+                      "sort": {
+                        "tag": "SortVar",
+                        "name": "R"
+                      },
+                      "first": {
+                        "tag": "EVar",
+                        "name": "n",
+                        "sort": {
+                          "tag": "SortApp",
+                          "name": "List",
+                          "args": [
+                            {
+                              "tag": "SortVar",
+                              "name": "S"
+                            }
+                          ]
+                        }
+                      },
+                      "second": {
+                        "tag": "App",
+                        "name": "nil",
+                        "sorts": [
+                          {
+                            "tag": "SortVar",
+                            "name": "S"
+                          }
+                        ],
+                        "args": []
+                      }
+                    },
+                    {
+                      "tag": "Top",
+                      "sort": {
+                        "tag": "SortVar",
+                        "name": "R"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "second": {
+              "tag": "And",
+              "sort": {
+                "tag": "SortVar",
+                "name": "R"
+              },
+              "patterns": [
+                {
+                  "tag": "Equals",
                   "argSort": {
                     "tag": "SortApp",
                     "name": "List",
@@ -538,8 +604,48 @@
                     "name": "R"
                   },
                   "first": {
+                    "tag": "App",
+                    "name": "append",
+                    "sorts": [
+                      {
+                        "tag": "SortVar",
+                        "name": "S"
+                      }
+                    ],
+                    "args": [
+                      {
+                        "tag": "EVar",
+                        "name": "n",
+                        "sort": {
+                          "tag": "SortApp",
+                          "name": "List",
+                          "args": [
+                            {
+                              "tag": "SortVar",
+                              "name": "S"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "tag": "EVar",
+                        "name": "L",
+                        "sort": {
+                          "tag": "SortApp",
+                          "name": "List",
+                          "args": [
+                            {
+                              "tag": "SortVar",
+                              "name": "S"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  "second": {
                     "tag": "EVar",
-                    "name": "n",
+                    "name": "L",
                     "sort": {
                       "tag": "SortApp",
                       "name": "List",
@@ -550,112 +656,16 @@
                         }
                       ]
                     }
-                  },
-                  "second": {
-                    "tag": "App",
-                    "name": "nil",
-                    "sorts": [
-                      {
-                        "tag": "SortVar",
-                        "name": "S"
-                      }
-                    ],
-                    "args": []
                   }
                 },
-                "second": {
+                {
                   "tag": "Top",
                   "sort": {
                     "tag": "SortVar",
                     "name": "R"
                   }
                 }
-              }
-            },
-            "second": {
-              "tag": "And",
-              "sort": {
-                "tag": "SortVar",
-                "name": "R"
-              },
-              "first": {
-                "tag": "Equals",
-                "argSort": {
-                  "tag": "SortApp",
-                  "name": "List",
-                  "args": [
-                    {
-                      "tag": "SortVar",
-                      "name": "S"
-                    }
-                  ]
-                },
-                "sort": {
-                  "tag": "SortVar",
-                  "name": "R"
-                },
-                "first": {
-                  "tag": "App",
-                  "name": "append",
-                  "sorts": [
-                    {
-                      "tag": "SortVar",
-                      "name": "S"
-                    }
-                  ],
-                  "args": [
-                    {
-                      "tag": "EVar",
-                      "name": "n",
-                      "sort": {
-                        "tag": "SortApp",
-                        "name": "List",
-                        "args": [
-                          {
-                            "tag": "SortVar",
-                            "name": "S"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "tag": "EVar",
-                      "name": "L",
-                      "sort": {
-                        "tag": "SortApp",
-                        "name": "List",
-                        "args": [
-                          {
-                            "tag": "SortVar",
-                            "name": "S"
-                          }
-                        ]
-                      }
-                    }
-                  ]
-                },
-                "second": {
-                  "tag": "EVar",
-                  "name": "L",
-                  "sort": {
-                    "tag": "SortApp",
-                    "name": "List",
-                    "args": [
-                      {
-                        "tag": "SortVar",
-                        "name": "S"
-                      }
-                    ]
-                  }
-                }
-              },
-              "second": {
-                "tag": "Top",
-                "sort": {
-                  "tag": "SortVar",
-                  "name": "R"
-                }
-              }
+              ]
             }
           },
           "sortVars": [
@@ -677,21 +687,106 @@
                 "tag": "SortVar",
                 "name": "R"
               },
-              "first": {
-                "tag": "Top",
-                "sort": {
-                  "tag": "SortVar",
-                  "name": "R"
-                }
-              },
-              "second": {
-                "tag": "And",
-                "sort": {
-                  "tag": "SortVar",
-                  "name": "R"
+              "patterns": [
+                {
+                  "tag": "Top",
+                  "sort": {
+                    "tag": "SortVar",
+                    "name": "R"
+                  }
                 },
-                "first": {
-                  "tag": "In",
+                {
+                  "tag": "And",
+                  "sort": {
+                    "tag": "SortVar",
+                    "name": "R"
+                  },
+                  "patterns": [
+                    {
+                      "tag": "In",
+                      "argSort": {
+                        "tag": "SortApp",
+                        "name": "List",
+                        "args": [
+                          {
+                            "tag": "SortVar",
+                            "name": "S"
+                          }
+                        ]
+                      },
+                      "sort": {
+                        "tag": "SortVar",
+                        "name": "R"
+                      },
+                      "first": {
+                        "tag": "EVar",
+                        "name": "XL0",
+                        "sort": {
+                          "tag": "SortApp",
+                          "name": "List",
+                          "args": [
+                            {
+                              "tag": "SortVar",
+                              "name": "S"
+                            }
+                          ]
+                        }
+                      },
+                      "second": {
+                        "tag": "App",
+                        "name": "cons",
+                        "sorts": [
+                          {
+                            "tag": "SortVar",
+                            "name": "S"
+                          }
+                        ],
+                        "args": [
+                          {
+                            "tag": "EVar",
+                            "name": "X",
+                            "sort": {
+                              "tag": "SortVar",
+                              "name": "S"
+                            }
+                          },
+                          {
+                            "tag": "EVar",
+                            "name": "L0",
+                            "sort": {
+                              "tag": "SortApp",
+                              "name": "List",
+                              "args": [
+                                {
+                                  "tag": "SortVar",
+                                  "name": "S"
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "tag": "Top",
+                      "sort": {
+                        "tag": "SortVar",
+                        "name": "R"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "second": {
+              "tag": "And",
+              "sort": {
+                "tag": "SortVar",
+                "name": "R"
+              },
+              "patterns": [
+                {
+                  "tag": "Equals",
                   "argSort": {
                     "tag": "SortApp",
                     "name": "List",
@@ -707,18 +802,44 @@
                     "name": "R"
                   },
                   "first": {
-                    "tag": "EVar",
-                    "name": "XL0",
-                    "sort": {
-                      "tag": "SortApp",
-                      "name": "List",
-                      "args": [
-                        {
-                          "tag": "SortVar",
-                          "name": "S"
+                    "tag": "App",
+                    "name": "append",
+                    "sorts": [
+                      {
+                        "tag": "SortVar",
+                        "name": "S"
+                      }
+                    ],
+                    "args": [
+                      {
+                        "tag": "EVar",
+                        "name": "XL0",
+                        "sort": {
+                          "tag": "SortApp",
+                          "name": "List",
+                          "args": [
+                            {
+                              "tag": "SortVar",
+                              "name": "S"
+                            }
+                          ]
                         }
-                      ]
-                    }
+                      },
+                      {
+                        "tag": "EVar",
+                        "name": "L",
+                        "sort": {
+                          "tag": "SortApp",
+                          "name": "List",
+                          "args": [
+                            {
+                              "tag": "SortVar",
+                              "name": "S"
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   },
                   "second": {
                     "tag": "App",
@@ -739,161 +860,56 @@
                         }
                       },
                       {
-                        "tag": "EVar",
-                        "name": "L0",
-                        "sort": {
-                          "tag": "SortApp",
-                          "name": "List",
-                          "args": [
-                            {
-                              "tag": "SortVar",
-                              "name": "S"
+                        "tag": "App",
+                        "name": "append",
+                        "sorts": [
+                          {
+                            "tag": "SortVar",
+                            "name": "S"
+                          }
+                        ],
+                        "args": [
+                          {
+                            "tag": "EVar",
+                            "name": "L0",
+                            "sort": {
+                              "tag": "SortApp",
+                              "name": "List",
+                              "args": [
+                                {
+                                  "tag": "SortVar",
+                                  "name": "S"
+                                }
+                              ]
                             }
-                          ]
-                        }
+                          },
+                          {
+                            "tag": "EVar",
+                            "name": "L",
+                            "sort": {
+                              "tag": "SortApp",
+                              "name": "List",
+                              "args": [
+                                {
+                                  "tag": "SortVar",
+                                  "name": "S"
+                                }
+                              ]
+                            }
+                          }
+                        ]
                       }
                     ]
                   }
                 },
-                "second": {
+                {
                   "tag": "Top",
                   "sort": {
                     "tag": "SortVar",
                     "name": "R"
                   }
                 }
-              }
-            },
-            "second": {
-              "tag": "And",
-              "sort": {
-                "tag": "SortVar",
-                "name": "R"
-              },
-              "first": {
-                "tag": "Equals",
-                "argSort": {
-                  "tag": "SortApp",
-                  "name": "List",
-                  "args": [
-                    {
-                      "tag": "SortVar",
-                      "name": "S"
-                    }
-                  ]
-                },
-                "sort": {
-                  "tag": "SortVar",
-                  "name": "R"
-                },
-                "first": {
-                  "tag": "App",
-                  "name": "append",
-                  "sorts": [
-                    {
-                      "tag": "SortVar",
-                      "name": "S"
-                    }
-                  ],
-                  "args": [
-                    {
-                      "tag": "EVar",
-                      "name": "XL0",
-                      "sort": {
-                        "tag": "SortApp",
-                        "name": "List",
-                        "args": [
-                          {
-                            "tag": "SortVar",
-                            "name": "S"
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "tag": "EVar",
-                      "name": "L",
-                      "sort": {
-                        "tag": "SortApp",
-                        "name": "List",
-                        "args": [
-                          {
-                            "tag": "SortVar",
-                            "name": "S"
-                          }
-                        ]
-                      }
-                    }
-                  ]
-                },
-                "second": {
-                  "tag": "App",
-                  "name": "cons",
-                  "sorts": [
-                    {
-                      "tag": "SortVar",
-                      "name": "S"
-                    }
-                  ],
-                  "args": [
-                    {
-                      "tag": "EVar",
-                      "name": "X",
-                      "sort": {
-                        "tag": "SortVar",
-                        "name": "S"
-                      }
-                    },
-                    {
-                      "tag": "App",
-                      "name": "append",
-                      "sorts": [
-                        {
-                          "tag": "SortVar",
-                          "name": "S"
-                        }
-                      ],
-                      "args": [
-                        {
-                          "tag": "EVar",
-                          "name": "L0",
-                          "sort": {
-                            "tag": "SortApp",
-                            "name": "List",
-                            "args": [
-                              {
-                                "tag": "SortVar",
-                                "name": "S"
-                              }
-                            ]
-                          }
-                        },
-                        {
-                          "tag": "EVar",
-                          "name": "L",
-                          "sort": {
-                            "tag": "SortApp",
-                            "name": "List",
-                            "args": [
-                              {
-                                "tag": "SortVar",
-                                "name": "S"
-                              }
-                            ]
-                          }
-                        }
-                      ]
-                    }
-                  ]
-                }
-              },
-              "second": {
-                "tag": "Top",
-                "sort": {
-                  "tag": "SortVar",
-                  "name": "R"
-                }
-              }
+              ]
             }
           },
           "sortVars": [
