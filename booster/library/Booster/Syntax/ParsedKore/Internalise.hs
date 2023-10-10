@@ -578,7 +578,7 @@ classifyAxiom parsedAx@ParsedAxiom{axiom, sortVars, attributes} =
     case axiom of
         -- rewrite: an actual rewrite rule
         Syntax.KJRewrites _ lhs rhs
-            | Syntax.KJAnd _ (Syntax.KJNot _ _) (Syntax.KJApp (Syntax.Id aliasName) _ aliasArgs) <- lhs ->
+            | Syntax.KJAnd _ [Syntax.KJNot _ _, Syntax.KJApp (Syntax.Id aliasName) _ aliasArgs] <- lhs ->
                 Just . RewriteRuleAxiom' aliasName aliasArgs rhs
                     <$> withExcept DefinitionAttributeError (mkAttributes parsedAx)
             | Syntax.KJApp (Syntax.Id aliasName) _ aliasArgs <- lhs ->
@@ -603,19 +603,19 @@ classifyAxiom parsedAx@ParsedAxiom{axiom, sortVars, attributes} =
                 Just . SimplificationAxiom' req lhs rhs sortVars
                     <$> withExcept DefinitionAttributeError (mkAttributes parsedAx)
             -- requires and argument predicate, no antiLeft
-            | Syntax.KJAnd _ requires argPred@Syntax.KJAnd{first = Syntax.KJIn{}} <- req
+            | Syntax.KJAnd _ [requires, argPred@Syntax.KJAnd{patterns = Syntax.KJIn{} : _}] <- req
             , all isVar args -> do
                 argTuples <- extractBinders argPred
                 Just . FunctionAxiom' requires argTuples lhs rhs sortVars
                     <$> withExcept DefinitionAttributeError (mkAttributes parsedAx)
             -- antiLeft (discarded), requires and argument predicate
-            | Syntax.KJAnd _ _antiLeft Syntax.KJAnd{first = reqs, second = argPred} <- req
+            | Syntax.KJAnd _ [_antiLeft, Syntax.KJAnd{patterns = [reqs, argPred]}] <- req
             , all isVar args -> do
                 argTuples <- extractBinders argPred
                 Just . FunctionAxiom' reqs argTuples lhs rhs sortVars
                     <$> withExcept DefinitionAttributeError (mkAttributes parsedAx)
             -- no arguments, no antiLeft
-            | Syntax.KJAnd _ requires Syntax.KJTop{} <- req
+            | Syntax.KJAnd _ [requires, Syntax.KJTop{}] <- req
             , all isVar args -> do
                 Just . FunctionAxiom' requires [] lhs rhs sortVars
                     <$> withExcept DefinitionAttributeError (mkAttributes parsedAx)
@@ -637,14 +637,14 @@ classifyAxiom parsedAx@ParsedAxiom{axiom, sortVars, attributes} =
                     pure Nothing
         Syntax.KJImplies
             _
-            Syntax.KJAnd{first = con1@Syntax.KJApp{}, second = con2@Syntax.KJApp{}}
+            Syntax.KJAnd{patterns = [con1@Syntax.KJApp{}, con2@Syntax.KJApp{}]}
             Syntax.KJApp{name}
                 | hasAttribute "constructor"
                 , con1.name == con2.name
                 , con1.name == name ->
                     -- no confusion same constructor. Could assert `name` is a constructor
                     pure Nothing
-        Syntax.KJNot _ (Syntax.KJAnd{first = con1@Syntax.KJApp{}, second = con2@Syntax.KJApp{}})
+        Syntax.KJNot _ (Syntax.KJAnd{patterns = [con1@Syntax.KJApp{}, con2@Syntax.KJApp{}]})
             | hasAttribute "constructor"
             , con1.name /= con2.name ->
                 -- no confusion different constructors. Could check whether con*.name are constructors
@@ -685,7 +685,7 @@ classifyAxiom parsedAx@ParsedAxiom{axiom, sortVars, attributes} =
             pure []
         Syntax.KJIn{first = Syntax.KJEVar{name, sort}, second = term} ->
             pure [(name, sort, term)]
-        Syntax.KJAnd{first = Syntax.KJIn _ _ Syntax.KJEVar{name, sort} term, second = rest} ->
+        Syntax.KJAnd{patterns = [Syntax.KJIn _ _ Syntax.KJEVar{name, sort} term, rest]} ->
             ((name, sort, term) :) <$> extractBinders rest
         other -> throwE $ DefinitionAxiomError $ MalformedArgumentBinder parsedAx other
 
@@ -930,7 +930,7 @@ internaliseSimpleEquation partialDef precond left right sortVars attrs
         lhsIsTerm <- withExcept (DefinitionPatternError (sourceRef attrs)) $ isTermM left
         if lhsIsTerm
             then do
-                lhs <- internalisePattern' $ Syntax.KJAnd left.sort left precond
+                lhs <- internalisePattern' $ Syntax.KJAnd left.sort [left, precond]
                 rhs <- internalisePattern' right
                 let
                     -- checking the lhs term, too, as a safe approximation
@@ -1011,7 +1011,7 @@ internaliseFunctionEquation partialDef requires args leftTerm right sortVars att
     left <- -- expected to be a simple term, f(X_1, X_2,..)
         withExcept (DefinitionPatternError (sourceRef attrs)) $
             internalisePattern AllowAlias IgnoreSubsorts (Just sortVars) partialDef $
-                Syntax.KJAnd leftTerm.sort leftTerm requires
+                Syntax.KJAnd leftTerm.sort [leftTerm, requires]
     -- extract argument binders from predicates and inline in to LHS term
     argPairs <- mapM internaliseArg args
     let lhs =

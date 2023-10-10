@@ -230,10 +230,10 @@ ApplicationPattern :: { KorePattern }
                       { KJBottom {sort = $3} }
                     | not '{' Sort '}' '(' Pattern ')'
                       { KJNot{sort = $3, arg = $6} }
-                    | and '{' Sort '}' '(' Pattern ',' Pattern ')'
-                      { KJAnd{sort = $3, first = $6, second = $8} }
-                    | or '{' Sort '}' '(' Pattern ',' Pattern ')'
-                      { KJOr{sort = $3, first = $6, second = $8} }
+                    | and '{' Sort '}' Patterns
+                      { mkAnd $3 $5 }
+                    | or '{' Sort '}' Patterns
+                      { mkOr $3 $5 }
                     | implies '{' Sort '}' '(' Pattern ',' Pattern ')'
                       { KJImplies{sort = $3, first = $6, second = $8} }
                     | iff '{' Sort '}' '(' Pattern ',' Pattern ')'
@@ -402,6 +402,16 @@ mkAssoc :: Bool -> Token -> [Sort] -> [KorePattern] -> KorePattern
 mkAssoc True id sorts ps = foldl1' (mkApply id sorts) ps
 mkAssoc False id sorts ps = foldr1 (mkApply id sorts) ps
 
+mkAnd :: Sort -> [KorePattern] -> KorePattern
+mkAnd s [] = KJTop s
+mkAnd s [p] = p
+mkAnd s ps = KJAnd s ps
+
+mkOr :: Sort -> [KorePattern] -> KorePattern
+mkOr s [] = KJBottom s
+mkOr s [p] = p
+mkOr s ps = KJOr s ps
+
 {- | Helper function to expand a \\left-assoc or \\right-assoc directive for
 a particular type of pattern. Only implemented for Application patterns and
 built-in patterns with one sort parameter and two children of the same sort as
@@ -410,8 +420,8 @@ foldl1' or foldr1.
 -}
 mkApply :: Token -> [Sort] -> KorePattern -> KorePattern -> KorePattern
 mkApply tok [sort] first second
-    | Token _ TokenAnd <- tok = KJAnd sort first second
-    | Token _ TokenOr <- tok = KJOr sort first second
+    | Token _ TokenAnd <- tok = KJAnd sort [first, second]
+    | Token _ TokenOr <- tok = KJOr sort [first, second]
     | Token _ TokenImplies <- tok = KJImplies sort first second
     | Token _ TokenIff <- tok = KJIff sort first second
 mkApply tok sorts@[_, _] first second
