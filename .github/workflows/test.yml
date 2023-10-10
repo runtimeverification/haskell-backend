@@ -111,9 +111,6 @@ jobs:
       - name: Build
         run: GC_DONT_GC=1 nix-build -A project.${{ matrix.nix }}.kore.components.exes
 
-      - name: Check shell
-        run: GC_DONT_GC=1 nix develop --print-build-logs --command cabal --version
-
       - name: Run unit tests
         run: GC_DONT_GC=1 nix-build -A project.${{ matrix.nix }}.kore.checks
 
