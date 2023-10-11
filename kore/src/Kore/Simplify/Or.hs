@@ -25,9 +25,9 @@ import Prelude.Kore ()
 merging its children.
 -}
 simplify ::
-    Or Sort (OrPattern RewritingVariableName) ->
+    BinaryOr Sort (OrPattern RewritingVariableName) ->
     OrPattern RewritingVariableName
-simplify Or{orFirst = first, orSecond = second} =
+simplify BinaryOr{orFirst = first, orSecond = second} =
     simplifyEvaluated first second
 
 {- | Simplify an 'Or' given its two 'OrPattern' children.
@@ -45,7 +45,7 @@ One way to preserve the required sort annotations is to make 'simplifyEvaluated'
 take an argument of type
 
 @
-CofreeF (Or Sort) (Attribute.Pattern variable) (OrPattern variable)
+CofreeF (BinaryOr Sort) (Attribute.Pattern variable) (OrPattern variable)
 @
 
 instead of two 'OrPattern' arguments. The type of 'makeEvaluate' may

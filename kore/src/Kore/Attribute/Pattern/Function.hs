@@ -35,7 +35,7 @@ alwaysFunction :: a -> Function
 alwaysFunction = const (Function True)
 {-# INLINE alwaysFunction #-}
 
-instance Synthetic Function (And sort) where
+instance Synthetic Function (BinaryAnd sort) where
     -- TODO (thomas.tuegel):
     -- synthetic = getAny . Foldable.foldMap (Any . isFunction)
     synthetic = const (Function False)
@@ -113,7 +113,7 @@ instance Synthetic Function (Nu sort) where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Function (Or sort) where
+instance Synthetic Function (BinaryOr sort) where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 

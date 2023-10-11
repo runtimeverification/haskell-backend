@@ -123,6 +123,8 @@ import Kore.Sort
 import Kore.Substitute
 import Kore.Syntax.And
 import Kore.Syntax.Application
+import Kore.Syntax.BinaryAnd
+import Kore.Syntax.BinaryOr
 import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
 import Kore.Syntax.DomainValue
@@ -160,7 +162,7 @@ import SQL qualified
 
 -- | 'TermLikeF' is the 'Base' functor of internal term-like patterns.
 data TermLikeF variable child
-    = AndF !(And Sort child)
+    = AndF !(BinaryAnd Sort child)
     | ApplySymbolF !(Application Symbol child)
     | -- TODO (thomas.tuegel): Expand aliases during validation?
       ApplyAliasF !(Application (Alias (TermLike VariableName)) child)
@@ -178,7 +180,7 @@ data TermLikeF variable child
     | NextF !(Next Sort child)
     | NotF !(Not Sort child)
     | NuF !(Nu variable child)
-    | OrF !(Or Sort child)
+    | OrF !(BinaryOr Sort child)
     | RewritesF !(Rewrites Sort child)
     | TopF !(Top Sort child)
     | InhabitantF !(Inhabitant child)
@@ -1036,7 +1038,7 @@ instance
     where
     locationFromAst =
         \case
-            AndF And{andSort} -> locationFromAst andSort
+            AndF BinaryAnd{andSort} -> locationFromAst andSort
             ApplySymbolF Application{applicationSymbolOrAlias} ->
                 locationFromAst applicationSymbolOrAlias
             ApplyAliasF Application{applicationSymbolOrAlias} ->
@@ -1058,7 +1060,7 @@ instance
             NextF Next{nextSort} -> locationFromAst nextSort
             NotF Not{notSort} -> locationFromAst notSort
             NuF Nu{nuVariable} -> locationFromAst nuVariable
-            OrF Or{orSort} -> locationFromAst orSort
+            OrF BinaryOr{orSort} -> locationFromAst orSort
             RewritesF Rewrites{rewritesSort} ->
                 locationFromAst rewritesSort
             StringLiteralF _ -> AstLocationUnknown
@@ -1299,7 +1301,7 @@ uninternalize = Pattern.Pattern . Recursive.cata go
             (Cofree (PatternF.PatternF variable) (TermAttributes variable)) ->
         Cofree (PatternF.PatternF variable) (TermAttributes variable)
     go (attr :< trmLikePat) = case trmLikePat of
-        AndF and' -> wrap $ PatternF.AndF and'
+        AndF BinaryAnd{andSort, andFirst, andSecond} -> wrap $ PatternF.AndF And{andSort, andChildren = [andFirst, andSecond]}
         ApplySymbolF application ->
             wrap $
                 PatternF.ApplicationF $
@@ -1322,7 +1324,7 @@ uninternalize = Pattern.Pattern . Recursive.cata go
         NextF next -> wrap $ PatternF.NextF next
         NotF not' -> wrap $ PatternF.NotF not'
         NuF nu -> wrap $ PatternF.NuF nu
-        OrF or' -> wrap $ PatternF.OrF or'
+        OrF BinaryOr{orSort, orFirst, orSecond} -> wrap $ PatternF.OrF Or{orSort, orChildren = [orFirst, orSecond]}
         RewritesF rewrites -> wrap $ PatternF.RewritesF rewrites
         TopF top -> wrap $ PatternF.TopF top
         InhabitantF inhabitant -> wrap $ PatternF.InhabitantF inhabitant

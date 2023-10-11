@@ -34,7 +34,7 @@ alwaysTotal :: a -> Total
 alwaysTotal = const (Total True)
 {-# INLINE alwaysTotal #-}
 
-instance Synthetic Total (And sort) where
+instance Synthetic Total (BinaryAnd sort) where
     synthetic = const (Total False)
     {-# INLINE synthetic #-}
 
@@ -107,7 +107,7 @@ instance Synthetic Total (Nu sort) where
     synthetic = const (Total False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Total (Or sort) where
+instance Synthetic Total (BinaryOr sort) where
     synthetic = const (Total False)
     {-# INLINE synthetic #-}
 
