@@ -49,8 +49,7 @@
               decision-diagrams = dontCheck hprev.decision-diagrams;
               fgl = dontCheck hprev.fgl;
               haskeline = dontCheck hprev.haskeline;
-              # Tar tests depend on bytestring-handle which is broken
-              tar = dontCheck hprev.tar;
+              json-rpc = dontCheck hprev.json-rpc;
               kore = (overrideCabal hprev.kore (drv: {
                 doCheck = false;
                 postPatch = ''
@@ -72,6 +71,7 @@
                 # breaks HLS in the dev shell.
                 ghc-compact = null;
               };
+              tar = dontCheck hprev.tar;
             };
 
           # Additional packages that should be available for development.
@@ -107,8 +107,7 @@
         let
           pkgs = nixpkgsFor system;
           kore = with pkgs;
-            haskell.lib.justStaticExecutables
-            haskell-backend.pkgSet.kore;
+            haskell.lib.justStaticExecutables haskell-backend.pkgSet.kore;
         in {
           kore-exec = withZ3 pkgs kore "kore-exec";
           kore-repl = withZ3 pkgs kore "kore-repl";
@@ -118,6 +117,11 @@
       devShells = perSystem (system: {
         haskell-backend-dev-shell =
           (nixpkgsFor system).haskell-backend.devShell;
+        # separate fourmolu shell just for CI
+        fourmolu = with nixpkgsFor system;
+          mkShell {
+            nativeBuildInputs = [ haskellPackages.fourmolu_0_12_0_0 ];
+          };
       });
 
       devShell =
