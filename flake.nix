@@ -11,6 +11,7 @@
   outputs = { self, nixpkgs, stacklock2nix, z3 }:
     let
       perSystem = nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed;
+      nixpkgsCleanFor = system: import nixpkgs { inherit system; };
       nixpkgsFor = system:
         import nixpkgs {
           inherit system;
@@ -91,6 +92,7 @@
               (haskell-language-server.override {
                 supportedGhcVersions = [ "928" ];
               })
+              final.z3
             ];
 
           all-cabal-hashes = final.fetchurl {
@@ -118,7 +120,7 @@
         haskell-backend-dev-shell =
           (nixpkgsFor system).haskell-backend.devShell;
         # separate fourmolu shell just for CI
-        fourmolu = with nixpkgsFor system;
+        fourmolu = with nixpkgsCleanFor system;
           mkShell {
             nativeBuildInputs = [ haskellPackages.fourmolu_0_12_0_0 ];
           };
