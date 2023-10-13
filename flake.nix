@@ -1,231 +1,161 @@
 {
   description = "K Kore Language Haskell Backend";
   inputs = {
-    haskell-nix.url = "github:input-output-hk/haskell.nix";
-    nixpkgs.follows = "haskell-nix/nixpkgs-unstable";
-    z3-src = {
+    nixpkgs.url = "nixpkgs/nixos-23.05";
+    stacklock2nix.url = "github:cdepillabout/stacklock2nix";
+    z3 = {
       url = "github:Z3Prover/z3/z3-4.12.1";
       flake = false;
     };
-    flake-compat = {
-      url = "github:edolstra/flake-compat";
-      flake = false;
-    };
   };
-  outputs = { self, nixpkgs, haskell-nix, z3-src, ... }:
+  outputs = { self, nixpkgs, stacklock2nix, z3 }:
     let
-      inherit (nixpkgs) lib;
-      z3-overlay = (final: prev: {
-        z3 = prev.z3.overrideAttrs (old: {
-          src = z3-src;
-          version =
-
-            let release = builtins.readFile "${z3-src}/scripts/release.yml";
-            # read the release version from scripts/release.yml
-            in builtins.head (builtins.match ".+ReleaseVersion: '([^']+).+" release);
-        });
-      });
-      integration-tests-overlay = (final: prev: {
-        kore-tests = final.callPackage ./nix/integration-shell.nix {
-          python = final.python3.withPackages (ps:
-            with ps;
-            [
-              (buildPythonPackage rec {
-                pname = "jsonrpcclient";
-                version = "4.0.3";
-                src = prev.fetchFromGitHub {
-                  owner = "explodinglabs";
-                  repo = pname;
-                  rev = version;
-                  sha256 =
-                    "sha256-xqQwqNFXatGzc4JprZY1OpdPPGgpP5/ucG/qyV/n8hw=";
-                };
-                doCheck = false;
-                format = "pyproject";
-                buildInputs = [ setuptools ];
-              })
-            ]);
-        };
-      });
-      perSystem = lib.genAttrs nixpkgs.lib.systems.flakeExposed;
+      perSystem = nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed;
       nixpkgsFor = system:
         import nixpkgs {
-          inherit (haskell-nix) config;
           inherit system;
-          overlays = [ haskell-nix.overlays.combined z3-overlay ];
+          overlays = [ stacklock2nix.overlay self.overlay self.overlays.z3 ];
         };
-
-      compiler-nix-name = "ghc928";
-      index-state = "2023-06-26T23:55:21Z";
-      fourmolu-version = "0.12.0.0";
-      hlint-version = "3.5";
-
-      haskell-backend-src = pkgs:
-        pkgs.applyPatches {
-          name = "haskell-backend-src";
-          # make sure we remove all nix files and flake.lock, since any changes to these triggers re-compilation of kore
-          src = pkgs.nix-gitignore.gitignoreSourcePure [
-            "./github"
-            "/nix"
-            "*.nix"
-            "*.nix.sh"
-            "/.github"
-            "flake.*"
-            "/profile"
-            "/profile-*"
-            ./.gitignore
-          ] ./.;
-          postPatch = ''
-            substituteInPlace kore/src/Kore/VersionInfo.hs \
-              --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}"'
+      withZ3 = pkgs: pkg: exe:
+        pkgs.stdenv.mkDerivation {
+          name = exe;
+          phases = [ "installPhase" ];
+          buildInputs = with pkgs; [ makeWrapper ];
+          installPhase = ''
+            mkdir -p $out/bin
+            makeWrapper ${pkg}/bin/${exe} $out/bin/${exe} --prefix PATH : ${pkgs.z3}/bin
           '';
         };
-
-      koreFor = { pkgs, profiling ? false
-        , profilingDetail ? "toplevel-functions", ghcOptions ? [ ] }:
-        let
-          add-z3 = exe: {
-            build-tools = with pkgs; lib.mkForce [ makeWrapper ];
-            postInstall = ''
-              wrapProgram $out/bin/${exe} --prefix PATH : ${
-                with pkgs;
-                lib.makeBinPath [ z3 ]
-              }
-            '';
-          };
-        in pkgs.haskell-nix.cabalProject ({
-          name = "kore";
-          inherit compiler-nix-name index-state;
-          src = haskell-backend-src pkgs;
-
-          shell = {
-            withHoogle = true;
-            tools = {
-              cabal = "latest";
-              haskell-language-server = "latest";
-              fourmolu = {
-                inherit index-state;
-                version = fourmolu-version;
-              };
-              eventlog2html = "latest";
-              ghc-prof-flamegraph = "latest";
-              hlint = {
-                inherit index-state;
-                version = hlint-version;
-              };
-            };
-            nativeBuildInputs = with nixpkgs.legacyPackages.${pkgs.system};
-              [ nixpkgs-fmt secp256k1 ]
-              ++ lib.optional (pkgs.system == "aarch64-darwin") pkgs.llvm_12;
-          };
-
-          modules = [{
-            enableProfiling = profiling;
-            enableLibraryProfiling = profiling;
-            packages.kore = {
-              inherit profilingDetail ghcOptions;
-
-              # Wrap all the kore-* executables which use Z3 with
-              # the path to our pinned Z3 version
-              components.exes.kore-exec = add-z3 "kore-exec";
-              components.exes.kore-rpc = add-z3 "kore-rpc";
-              components.exes.kore-repl = add-z3 "kore-repl";
-              components.exes.kore-check-functions =
-                add-z3 "kore-check-functions";
-
-              components.tests.kore-test.preCheck = ''
-                # provide parser test data for json golden tests
-                  mkdir -p ../test/parser
-                  cp -r ${./test/parser}/* ../test/parser
-                # Add Z3 to PATH for unit tests.
-                  export PATH="$PATH''${PATH:+:}${lib.getBin pkgs.z3}/bin"
-              '';
-            };
-          }];
-        });
     in {
+      overlay = final: prev: {
+        haskell-backend = final.stacklock2nix {
+          stackYaml = ./stack.yaml;
+
+          # The Haskell package set to use as a base.  You should change this
+          # based on the compiler version from the resolver in your stack.yaml.
+          baseHaskellPkgSet = final.haskell.packages.ghc928;
+
+          cabal2nixArgsOverrides = args:
+            args // {
+              # The Haskell package `"graphviz"` depends on the _system_
+              # package `graphviz`, and takes the system package `graphviz` as one of its build
+              # inputs, but it is actually getting passed _itself_ (not the system package
+              # `graphviz`), which causes the infinite recursion.
+              "graphviz" = _: { graphviz = final.graphviz; };
+            };
+          # # Any additional Haskell package overrides you may want to add.
+          additionalHaskellPkgSetOverrides = hfinal: hprev:
+            with final.haskell.lib; {
+              decision-diagrams = dontCheck hprev.decision-diagrams;
+              fgl = dontCheck hprev.fgl;
+              haskeline = dontCheck hprev.haskeline;
+              # Tar tests depend on bytestring-handle which is broken
+              tar = dontCheck hprev.tar;
+              kore = (overrideCabal hprev.kore (drv: {
+                doCheck = false;
+                postPatch = ''
+                  ${drv.postPatch or ""}
+                  substituteInPlace src/Kore/VersionInfo.hs \
+                    --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}"'
+                '';
+                postInstall = ''
+                  ${drv.postInstall or ""}
+                  rm $out/bin/kore-check-functions
+                  rm $out/bin/kore-format
+                  rm $out/bin/kore-match-disjunction
+                  rm $out/bin/kore-parser
+                  rm $out/bin/kore-simplify
+                '';
+              })).override {
+                # bit pathological, but ghc-compact is already included with
+                # the ghc compiler and depending on another copy of ghc-compact
+                # breaks HLS in the dev shell.
+                ghc-compact = null;
+              };
+            };
+
+          # Additional packages that should be available for development.
+          additionalDevShellNativeBuildInputs = stacklockHaskellPkgSet:
+            with final; [
+              haskell.packages.ghc928.cabal-install
+              haskellPackages.fourmolu_0_12_0_0
+              (let
+                ghc-lib-parser = haskellPackages.ghc-lib-parser_9_4_5_20230430;
+                ghc-lib-parser-ex =
+                  haskellPackages.ghc-lib-parser-ex_9_4_0_0.override {
+                    inherit ghc-lib-parser;
+                  };
+              in haskellPackages.hlint_3_5.override {
+                inherit ghc-lib-parser ghc-lib-parser-ex;
+              })
+              (haskell-language-server.override {
+                supportedGhcVersions = [ "928" ];
+              })
+            ];
+
+          all-cabal-hashes = final.fetchurl {
+            url =
+              "https://github.com/commercialhaskell/all-cabal-hashes/archive/779bc22f8c7f8e3566edd5a4922750b73a0e5ed5.tar.gz";
+            sha256 = "sha256-qJ/rrdjCTil5wBlcJQ0w+1NP9F/Cr7X/pAfnnx/ahLc=";
+          };
+        };
+      };
+
       prelude-kore = ./src/main/kore/prelude.kore;
 
-      project = perSystem (system: koreFor { pkgs = nixpkgsFor system; });
-
-      projectProfilingEventlog = perSystem (system:
-        koreFor {
-          pkgs = nixpkgsFor system;
-          profiling = true;
-          ghcOptions = [ "-eventlog" ];
-        });
-
-      projectEventlogInfoTable = perSystem (system:
-        koreFor {
-          pkgs = nixpkgsFor system;
-          ghcOptions =
-            [ "-finfo-table-map" "-fdistinct-constructor-tables" "-eventlog" ];
-        });
-
-      flake = perSystem (system: self.project.${system}.flake { });
-
       packages = perSystem (system:
-        self.flake.${system}.packages // {
-          kore-exec =
-            self.project.${system}.hsPkgs.kore.components.exes.kore-exec;
-          kore-exec-prof =
-            self.projectProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
-          kore-exec-infotable =
-            self.projectEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
+        let
+          pkgs = nixpkgsFor system;
+          kore = with pkgs;
+            haskell.lib.justStaticExecutables
+            haskell-backend.pkgSet.kore;
+        in {
+          kore-exec = withZ3 pkgs kore "kore-exec";
+          kore-repl = withZ3 pkgs kore "kore-repl";
+          kore-rpc = withZ3 pkgs kore "kore-rpc";
         });
 
-      apps = perSystem (system:
-        self.flake.${system}.apps // (let
-          pkgs = nixpkgsFor system;
-          profiling-script = pkgs.callPackage ./nix/run-profiling.nix {
-            inherit (pkgs.haskellPackages) hp2pretty eventlog2html;
-            kore-exec =
-              self.project.${system}.hsPkgs.kore.components.exes.kore-exec;
-            kore-exec-prof =
-              self.projectProfilingEventlog.${system}.hsPkgs.kore.components.exes.kore-exec;
-            kore-exec-infotable =
-              self.projectEventlogInfoTable.${system}.hsPkgs.kore.components.exes.kore-exec;
-          };
-          fourmolu = (pkgs.haskell-nix.hackage-package {
-            name = "fourmolu";
-            version = fourmolu-version;
-            inherit compiler-nix-name index-state;
-          }).components.exes.fourmolu;
-          scripts = pkgs.symlinkJoin {
-            name = "fourmolu-format";
-            paths = [ ./scripts ];
-            buildInputs = [ pkgs.makeWrapper ];
-            postBuild = ''
-              wrapProgram $out/fourmolu.sh \
-                --set PATH ${
-                  with pkgs;
-                  lib.makeBinPath [ fourmolu git gnugrep findutils ]
-                }
-            '';
-          };
-        in {
-          profile = {
-            type = "app";
-            program = "${profiling-script}/bin/run-profiling";
-          };
-          format = {
-            type = "app";
-            program = "${scripts}/fourmolu.sh";
-          };
-        }));
+      devShells = perSystem (system: {
+        haskell-backend-dev-shell =
+          (nixpkgsFor system).haskell-backend.devShell;
+      });
 
-      devShells =
-        perSystem (system: { default = self.flake.${system}.devShell; });
+      devShell =
+        perSystem (system: self.devShells.${system}.haskell-backend-dev-shell);
 
-      overlay = nixpkgs.lib.composeManyExtensions [
-        haskell-nix.overlay
-        (final: prev: {
-          haskell-backend-cabalProject = koreFor { pkgs = final; };
-        })
-        z3-overlay
-        integration-tests-overlay
-      ];
-      overlays.z3 = z3-overlay;
-      overlays.integration-tests = integration-tests-overlay;
+      overlays = {
+        z3 = (final: prev: {
+          z3 = prev.z3.overrideAttrs (_: {
+            src = z3;
+            version = let
+              release = builtins.readFile "${z3}/scripts/release.yml";
+              # read the release version from scripts/release.yml
+            in builtins.head
+            (builtins.match ".+ReleaseVersion: '([^']+).+" release);
+          });
+        });
+        integration-tests = (final: prev: {
+          kore-tests = final.callPackage ./nix/integration-shell.nix {
+            python = final.python3.withPackages (ps:
+              with ps;
+              [
+                (buildPythonPackage rec {
+                  pname = "jsonrpcclient";
+                  version = "4.0.3";
+                  src = prev.fetchFromGitHub {
+                    owner = "explodinglabs";
+                    repo = pname;
+                    rev = version;
+                    sha256 =
+                      "sha256-xqQwqNFXatGzc4JprZY1OpdPPGgpP5/ucG/qyV/n8hw=";
+                  };
+                  doCheck = false;
+                  format = "pyproject";
+                  buildInputs = [ setuptools ];
+                })
+              ]);
+          };
+        });
+      };
     };
 }

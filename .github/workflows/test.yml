@@ -39,7 +39,7 @@ jobs:
 
       - name: Format
         run: |
-          nix run .#format
+          nix develop . --command bash -c "./scripts/fourmolu.sh"
 
       - name: Update branch
         env:
@@ -109,10 +109,7 @@ jobs:
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
 
       - name: Build
-        run: GC_DONT_GC=1 nix-build -A project.${{ matrix.nix }}.kore.components.exes
-
-      - name: Run unit tests
-        run: GC_DONT_GC=1 nix-build -A project.${{ matrix.nix }}.kore.checks
+        run: GC_DONT_GC=1 nix build .#kore-exec
 
   nix-integration:
     name: 'Nix / Integration'

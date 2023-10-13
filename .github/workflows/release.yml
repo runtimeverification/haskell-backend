@@ -34,7 +34,7 @@ jobs:
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
 
       - name: Build
-        run: nix-build -A project.x86_64-linux.kore -A project.x86_64-linux.kore.checks
+        run: nix build .#kore-exec
 
   cache-cabal:
     name: 'Cache Cabal'
