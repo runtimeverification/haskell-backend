@@ -485,16 +485,19 @@ Other errors, for instance, using an unknown sort or symbol, will be reported wi
 
 ### Correct Response:
 
-Responds with an empty array if successful. The module `MODULE-NAME` can now be used in subsequent
-requests to the server by passing `"module": "MODULE-NAME"`.
+Responds with the name of the added module if successful.
 
 ```json
 {
   "jsonrpc": "2.0",
   "id": 1,
-  "result": []
+  "result": {
+    "module": "MODULE-NAME"
+  }
 }
 ```
+
+Module `MODULE-NAME` can now be used in subsequent requests to the server by passing `"module": "MODULE-NAME"`.
 
 ## Get-model
 
