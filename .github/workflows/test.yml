@@ -112,7 +112,7 @@ jobs:
         run: GC_DONT_GC=1 nix build .#kore-exec
 
       - name: Test
-        run: GC_DONT_GC=1 nix develop . --command bash -c "cabal v2-test --enable-tests --test-show-details=direct all"
+        run: GC_DONT_GC=1 nix develop . --command bash -c "cabal update && cabal test --enable-tests --test-show-details=direct all"
 
   nix-integration:
     name: 'Nix / Integration'
