@@ -38,6 +38,7 @@ import System.Clock (
     getTime,
  )
 import System.Exit
+import System.IO (hPutStrLn, stderr)
 
 import Booster.CLOptions
 import Booster.Trace
@@ -172,7 +173,7 @@ main = do
                             [handleErrorCall, handleSomeException]
                     interruptHandler _ = do
                         when (logLevel >= LevelInfo) $
-                            putStrLn "[Info#proxy] Server shutting down"
+                            hPutStrLn stderr "[Info#proxy] Server shutting down"
                         exitSuccess
                 handleJust isInterrupt interruptHandler $ runLoggingT server monadLogger
   where
