@@ -128,7 +128,7 @@
         cabal = with nixpkgsFor system;
           haskell-backend.pkgSet.shellFor {
             packages = haskell-backend.localPkgsSelector;
-            nativeBuildInputs = [ haskell.packages.ghc928.cabal-install ];
+            nativeBuildInputs = [ haskell.packages.ghc928.cabal-install z3 ];
           };
 
       });
