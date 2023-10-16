@@ -117,17 +117,21 @@
         });
 
       devShells = perSystem (system: {
-        haskell-backend-dev-shell =
-          (nixpkgsFor system).haskell-backend.devShell;
-        # separate fourmolu shell just for CI
+        # separate fourmolu and cabal shells just for CI
         fourmolu = with nixpkgsCleanFor system;
           mkShell {
             nativeBuildInputs = [ haskellPackages.fourmolu_0_12_0_0 ];
           };
+        cabal = with nixpkgsFor system;
+          haskell-backend.pkgSet.shellFor {
+            packages = haskell-backend.localPkgsSelector;
+            nativeBuildInputs = [ haskell.packages.ghc928.cabal-install ];
+          };
+
       });
 
       devShell =
-        perSystem (system: self.devShells.${system}.haskell-backend-dev-shell);
+        perSystem (system: (nixpkgsFor system).haskell-backend.devShell);
 
       overlays = {
         z3 = (final: prev: {

@@ -125,7 +125,7 @@ jobs:
             cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}
 
       - name: Test
-        run: GC_DONT_GC=1 nix develop . --command bash -c "cabal update && cabal test --enable-tests --test-show-details=direct all"
+        run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "cabal update && cabal test --enable-tests --test-show-details=direct all"
 
   nix-integration:
     name: 'Nix / Integration'
