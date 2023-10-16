@@ -120,7 +120,10 @@
         # separate fourmolu and cabal shells just for CI
         fourmolu = with nixpkgsCleanFor system;
           mkShell {
-            nativeBuildInputs = [ haskellPackages.fourmolu_0_12_0_0 ];
+            nativeBuildInputs = [
+              (haskell.lib.justStaticExecutables
+                haskellPackages.fourmolu_0_12_0_0)
+            ];
           };
         cabal = with nixpkgsFor system;
           haskell-backend.pkgSet.shellFor {
