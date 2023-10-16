@@ -125,12 +125,12 @@
                 haskellPackages.fourmolu_0_12_0_0)
             ];
           };
-        cabal = with nixpkgsFor system;
-          haskell-backend.pkgSet.shellFor {
-            packages = haskell-backend.localPkgsSelector;
-            nativeBuildInputs = [ haskell.packages.ghc928.cabal-install z3 ];
-          };
-
+        cabal = let pkgs = nixpkgsFor system;
+        in pkgs.haskell-backend.pkgSet.shellFor {
+          packages = pkgs.haskell-backend.localPkgsSelector;
+          nativeBuildInputs =
+            [ pkgs.haskell.packages.ghc928.cabal-install pkgs.z3 ];
+        };
       });
 
       devShell =
