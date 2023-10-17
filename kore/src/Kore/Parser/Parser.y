@@ -227,23 +227,7 @@ StringLiteral :: {StringLiteral}
 ApplicationPattern :: {ParsedPattern}
 		    : leftAssoc '{' '}' '(' ident SortsBrace NePatterns ')'
                       { mkAssoc True $5 $6 $7 }
-		    | leftAssoc '{' '}' '(' and SortsBrace NePatterns ')'
-                      { mkAssoc True $5 $6 $7 }
-		    | leftAssoc '{' '}' '(' or SortsBrace NePatterns ')'
-                      { mkAssoc True $5 $6 $7 }
-		    | leftAssoc '{' '}' '(' implies SortsBrace NePatterns ')'
-                      { mkAssoc True $5 $6 $7 }
-		    | leftAssoc '{' '}' '(' iff SortsBrace NePatterns ')'
-                      { mkAssoc True $5 $6 $7 }
                     | rightAssoc '{' '}' '(' ident SortsBrace NePatterns ')'
-                      { mkAssoc False $5 $6 $7 }
-                    | rightAssoc '{' '}' '(' and SortsBrace NePatterns ')'
-                      { mkAssoc False $5 $6 $7 }
-                    | rightAssoc '{' '}' '(' or SortsBrace NePatterns ')'
-                      { mkAssoc False $5 $6 $7 }
-                    | rightAssoc '{' '}' '(' implies SortsBrace NePatterns ')'
-                      { mkAssoc False $5 $6 $7 }
-                    | rightAssoc '{' '}' '(' iff SortsBrace NePatterns ')'
                       { mkAssoc False $5 $6 $7 }
                     | top '{' Sort '}' '(' ')'
                       { embedParsedPattern $ TopF Top{topSort = $3} }
@@ -442,14 +426,6 @@ the result. Namely, \\and, \\or, \\implies, and \\iff. Designed to be passed to
 foldl1' or foldr1.
 -}
 mkApply :: Token -> [Sort] -> ParsedPattern -> ParsedPattern -> ParsedPattern
-mkApply tok@(Token _ TokenAnd) [andSort] andFirst andSecond =
-    embedParsedPattern $ AndF And{andSort, andChildren=[andFirst, andSecond]}
-mkApply tok@(Token _ TokenOr) [orSort] orFirst orSecond =
-    embedParsedPattern $ OrF Or{orSort, orChildren=[orFirst, orSecond]}
-mkApply tok@(Token _ TokenImplies) [impliesSort] impliesFirst impliesSecond =
-    embedParsedPattern $ ImpliesF Implies{impliesSort, impliesFirst, impliesSecond}
-mkApply tok@(Token _ TokenIff) [iffSort] iffFirst iffSecond =
-    embedParsedPattern $ IffF Iff{iffSort, iffFirst, iffSecond}
 mkApply tok@(Token _ (TokenIdent _)) sorts first second =
     embedParsedPattern $ ApplicationF Application
        { applicationSymbolOrAlias = SymbolOrAlias { symbolOrAliasConstructor = mkId tok
