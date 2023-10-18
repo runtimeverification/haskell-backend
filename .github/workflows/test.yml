@@ -156,7 +156,7 @@ jobs:
       - name: Run integration tests
         run: |
           # nix develop github:runtimeverification/k/v$(cat deps/k_release)#kore-integration-tests \
-          nix develop github:runtimeverification/k/sam/slim-nix#kore-integration-tests \
+          nix develop github:runtimeverification/k/sam/slim-nix#kore-integration-tests --refresh \
                 --override-input haskell-backend . --update-input haskell-backend \
                 --command bash -c "cd test && make -j2 --output-sync test"
 
