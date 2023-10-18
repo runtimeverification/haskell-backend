@@ -60,7 +60,6 @@
                   rm $out/bin/kore-format
                   rm $out/bin/kore-match-disjunction
                   rm $out/bin/kore-parser
-                  rm $out/bin/kore-simplify
                 '';
               })).override {
                 # bit pathological, but ghc-compact is already included with the ghc compiler
@@ -106,6 +105,7 @@
             haskell.lib.justStaticExecutables haskell-backend.pkgSet.kore;
         in {
           kore-exec = withZ3 pkgs kore "kore-exec";
+          kore-parser = withZ3 pkgs kore "kore-parser";
           kore-repl = withZ3 pkgs kore "kore-repl";
           kore-rpc = withZ3 pkgs kore "kore-rpc";
         });
