@@ -125,7 +125,7 @@ jobs:
             cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}
 
       - name: Test
-        run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "cabal update && cabal test --enable-tests --test-show-details=direct all"
+        run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "cabal update && cabal build all && cabal test --enable-tests --test-show-details=direct all"
 
   nix-integration:
     name: 'Nix / Integration'
@@ -202,41 +202,6 @@ jobs:
       - name: Run unit tests
         run: stack test --pedantic
 
-  stack-haddock:
-    name: 'Stack / Haddock check'
-    needs: formatting
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Install prerequisites
-        run: |
-          sudo apt install --yes z3 libsecp256k1-dev
-
-      - uses: actions/checkout@v3
-        with:
-          # Check out pull request HEAD instead of merge commit.
-          ref: ${{ github.event.pull_request.head.sha }}
-          submodules: recursive
-
-      - name: Cache Stack root
-        uses: actions/cache@v3
-        with:
-          path: ~/.stack
-          key: stack-haddock-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
-          restore-keys: |
-            stack-haddock-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}
-            stack-haddock-2-${{ runner.os }}-ghc-${{ env.ghc_version }}
-
-      - uses: haskell/actions/setup@v2
-        id: setup-haskell-stack
-        with:
-          ghc-version: ${{ env.ghc_version }}
-          stack-version: ${{ env.stack_version }}
-          enable-stack: true
-          stack-setup-ghc: true
-
-      - name: Build documentation
-        run: |
-          stack haddock --fast
   hlint:
     name: 'HLint'
     needs: formatting

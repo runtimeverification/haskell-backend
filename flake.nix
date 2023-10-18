@@ -31,11 +31,8 @@
       overlay = final: prev: {
         haskell-backend = final.stacklock2nix {
           stackYaml = ./stack.yaml;
-
-          # The Haskell package set to use as a base.  You should change this
-          # based on the compiler version from the resolver in your stack.yaml.
+          # This should based on the compiler version from the resolver in stack.yaml.
           baseHaskellPkgSet = final.haskell.packages.ghc928;
-
           cabal2nixArgsOverrides = args:
             args // {
               # The Haskell package `"graphviz"` depends on the _system_
@@ -44,7 +41,6 @@
               # `graphviz`), which causes the infinite recursion.
               "graphviz" = _: { graphviz = final.graphviz; };
             };
-          # # Any additional Haskell package overrides you may want to add.
           additionalHaskellPkgSetOverrides = hfinal: hprev:
             with final.haskell.lib; {
               decision-diagrams = dontCheck hprev.decision-diagrams;
@@ -67,9 +63,8 @@
                   rm $out/bin/kore-simplify
                 '';
               })).override {
-                # bit pathological, but ghc-compact is already included with
-                # the ghc compiler and depending on another copy of ghc-compact
-                # breaks HLS in the dev shell.
+                # bit pathological, but ghc-compact is already included with the ghc compiler
+                # and depending on another copy of ghc-compact breaks HLS in the dev shell.
                 ghc-compact = null;
               };
               tar = dontCheck hprev.tar;
@@ -94,7 +89,6 @@
               })
               final.z3
             ];
-
           all-cabal-hashes = final.fetchurl {
             url =
               "https://github.com/commercialhaskell/all-cabal-hashes/archive/779bc22f8c7f8e3566edd5a4922750b73a0e5ed5.tar.gz";
@@ -117,7 +111,7 @@
         });
 
       devShells = perSystem (system: {
-        # separate fourmolu and cabal shells just for CI
+        # Separate fourmolu and cabal shells just for CI
         fourmolu = with nixpkgsCleanFor system;
           mkShell {
             nativeBuildInputs = [
@@ -142,7 +136,7 @@
             src = z3;
             version = let
               release = builtins.readFile "${z3}/scripts/release.yml";
-              # read the release version from scripts/release.yml
+              # Read the release version from scripts/release.yml
             in builtins.head
             (builtins.match ".+ReleaseVersion: '([^']+).+" release);
           });
