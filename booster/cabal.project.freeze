@@ -1,6 +1,5 @@
 active-repositories: hackage.haskell.org:merge
 constraints: any.Cabal ==3.6.3.0,
-             any.Diff ==0.4.1,
              any.Glob ==0.10.2,
              any.HUnit ==1.6.2.0,
              any.OneTuple ==0.3.1,

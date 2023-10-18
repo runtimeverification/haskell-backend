@@ -71,7 +71,6 @@ library:
   - containers
   - deepseq
   - deriving-aeson
-  - Diff
   - exceptions
   - extra
   - filepath
@@ -93,7 +92,6 @@ library:
   - stm-conduit
   - syb
   - template-haskell
-  - temporary
   - text
   - transformers
   - unix
