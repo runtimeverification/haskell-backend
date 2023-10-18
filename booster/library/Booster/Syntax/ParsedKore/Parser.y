@@ -206,23 +206,7 @@ StringLiteral :: { Text }
 ApplicationPattern :: { KorePattern }
 		    : leftAssoc '{' '}' '(' ident SortsBrace NePatterns ')'
                       { mkAssoc True $5 $6 $7 }
-		    | leftAssoc '{' '}' '(' and SortsBrace NePatterns ')'
-                      { mkAssoc True $5 $6 $7 }
-		    | leftAssoc '{' '}' '(' or SortsBrace NePatterns ')'
-                      { mkAssoc True $5 $6 $7 }
-		    | leftAssoc '{' '}' '(' implies SortsBrace NePatterns ')'
-                      { mkAssoc True $5 $6 $7 }
-		    | leftAssoc '{' '}' '(' iff SortsBrace NePatterns ')'
-                      { mkAssoc True $5 $6 $7 }
                     | rightAssoc '{' '}' '(' ident SortsBrace NePatterns ')'
-                      { mkAssoc False $5 $6 $7 }
-                    | rightAssoc '{' '}' '(' and SortsBrace NePatterns ')'
-                      { mkAssoc False $5 $6 $7 }
-                    | rightAssoc '{' '}' '(' or SortsBrace NePatterns ')'
-                      { mkAssoc False $5 $6 $7 }
-                    | rightAssoc '{' '}' '(' implies SortsBrace NePatterns ')'
-                      { mkAssoc False $5 $6 $7 }
-                    | rightAssoc '{' '}' '(' iff SortsBrace NePatterns ')'
                       { mkAssoc False $5 $6 $7 }
                     | top '{' Sort '}' '(' ')'
                       { KJTop {sort = $3} }
@@ -419,11 +403,6 @@ the result. Namely, \\and, \\or, \\implies, and \\iff. Designed to be passed to
 foldl1' or foldr1.
 -}
 mkApply :: Token -> [Sort] -> KorePattern -> KorePattern -> KorePattern
-mkApply tok [sort] first second
-    | Token _ TokenAnd <- tok = KJAnd sort [first, second]
-    | Token _ TokenOr <- tok = KJOr sort [first, second]
-    | Token _ TokenImplies <- tok = KJImplies sort first second
-    | Token _ TokenIff <- tok = KJIff sort first second
 mkApply tok sorts@[_, _] first second
     | Token _ (TokenIdent _) <- tok = KJApp (mkId tok) sorts [first, second]
 mkApply other _ _ _ = error $ "mkApply: unsupported token " <> show other
