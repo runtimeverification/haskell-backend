@@ -59,7 +59,6 @@
                   rm $out/bin/kore-check-functions
                   rm $out/bin/kore-format
                   rm $out/bin/kore-match-disjunction
-                  rm $out/bin/kore-parser
                 '';
               })).override {
                 # bit pathological, but ghc-compact is already included with the ghc compiler
