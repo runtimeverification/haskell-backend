@@ -21,8 +21,9 @@ import Data.Aeson.Types (parseMaybe)
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Maybe (fromMaybe)
 import Network.JSONRPC
-import System.IO (hFlush)
-import System.IO.Temp (withSystemTempFile)
+import System.Exit (ExitCode (..))
+import System.FilePath
+import System.IO.Extra (withTempDir)
 import System.IO.Unsafe (unsafePerformIO)
 import System.Process (readProcessWithExitCode)
 
@@ -201,17 +202,16 @@ rpcTypeOf = \case
         Cancel -> error "Cancel"
 
 -------------------------------------------------------------------
--- pretty diff output
--- Currently using a String-based module from the Diff package but
--- which should be rewritten to handle Text and Char8.ByteString
+-- doing the actual diff when output is requested
 
 renderDiff :: BS.ByteString -> BS.ByteString -> BS.ByteString
-renderDiff first second = unsafePerformIO $ do
-    withSystemTempFile "diff_file1.txt" $ \path1 handle1 -> do
-        withSystemTempFile "diff_file2.txt" $ \path2 handle2 -> do
-            BS.hPut handle1 first
-            BS.hPut handle2 second
-            hFlush handle1
-            hFlush handle2
-            (_, str, _) <- readProcessWithExitCode "diff" ["-w", path1, path2] ""
-            return $ BS.pack str
+renderDiff first second = unsafePerformIO . withTempDir $ \dir -> do
+    let path1 = dir </> "diff_file1.txt"
+        path2 = dir </> "diff_file2.txt"
+    BS.writeFile path1 first
+    BS.writeFile path2 second
+    (result, str, _) <- readProcessWithExitCode "diff" ["-w", path1, path2] ""
+    case result of
+        ExitSuccess -> error "Unexpected result: identical content"
+        ExitFailure 1 -> pure $ BS.pack str
+        ExitFailure n -> error $ "diff process exited with code " <> show n
