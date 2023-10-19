@@ -70,9 +70,6 @@ import Data.Text (
     pack,
  )
 import Data.Text.IO qualified as Text
-import Data.Version (
-    showVersion,
- )
 import GHC.Compact (getCompact)
 import GHC.Generics qualified as GHC
 import GHC.Stack (
@@ -180,9 +177,6 @@ import Options.Applicative.Help.Pretty qualified as Pretty
 import Options.SMT (
     KoreSolverOptions (..),
     Solver (..),
- )
-import Paths_kore qualified as MetaData (
-    version,
  )
 import Prelude.Kore
 import Pretty qualified as KorePretty
@@ -367,14 +361,12 @@ mainVersion :: IO ()
 mainVersion =
     mapM_
         putStrLn
-        [ "Kore version " ++ packageVersion
-        , "Git:"
+        [ "Git:"
         , "  revision:\t" ++ gitHash ++ if gitDirty then " (dirty)" else ""
         , "  branch:\t" ++ fromMaybe "<unknown>" gitBranch
         , "  last commit:\t" ++ gitCommitDate
         ]
   where
-    packageVersion = showVersion MetaData.version
     VersionInfo{gitHash, gitDirty, gitBranch, gitCommitDate} = $versionInfo
 
 --------------------
