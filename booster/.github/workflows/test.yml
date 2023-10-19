@@ -59,58 +59,6 @@ jobs:
         run: |
           docker stop --time=0 hs-booster-ci-stack-unit-buster-${{ github.run_id }}
 
-  cabal:
-    name: 'Cabal / Unit Tests'
-    runs-on: [self-hosted, linux, normal]
-    steps:
-
-      - name: 'Checkout Code'
-        uses: actions/checkout@v3
-        with:
-          # Check out pull request HEAD instead of merge commit.
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: 'Cache Cabal package database and store'
-        uses: actions/cache@v3
-        with:
-          path: |
-            cabal-cache/packages
-            cabal-cache/store
-          key: cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('cabal.project.freeze') }}
-          restore-keys: |
-            cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('package.yaml') }}-
-            cabal-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-
-
-      - name: 'Set up Docker'
-        uses: ./.github/actions/with-docker
-        with:
-          tag: hs-booster-ci-cabal-unit-buster-${{ github.run_id }}
-          os: ubuntu
-          distro: jammy
-          fourmolu: ${{ env.fourmolu_version }}
-          hlint: ${{ env.hlint_version }}
-          hpack: ${{ env.hpack_version }}
-          ghc: ${{ env.ghc_version }}
-
-      - name: 'Run hpack'
-        run: |
-          docker exec -t hs-booster-ci-cabal-unit-buster-${{ github.run_id }} /bin/bash -c 'hpack'
-
-      - name: 'Build and run unit tests'
-        run: |
-          docker exec -t hs-booster-ci-cabal-unit-buster-${{ github.run_id }} \
-            /bin/bash -c 'cabal --store-dir /opt/workspace/cabal-cache/store v2-test unit-tests --enable-tests --test-show-details=direct'
-
-      - name: 'Configure with profiling'
-        run: |
-          docker exec -t hs-booster-ci-cabal-unit-buster-${{ github.run_id }} \
-            /bin/bash -c 'cabal --store-dir /opt/workspace/cabal-cache/store v2-configure --enable-profiling -f-threaded'
-
-      - name: 'Tear down Docker'
-        if: always()
-        run: |
-          docker stop --time=0 hs-booster-ci-cabal-unit-buster-${{ github.run_id }}
-
   style:
     name: 'Formatting and Style'
     runs-on: [self-hosted, linux, normal]
@@ -213,55 +161,24 @@ jobs:
         run: |
           nix --version
           export JQ=$(nix-build '<nixpkgs>' -A jq --no-link)/bin/jq
-          booster=$(nix build .#hs-backend-booster:exe:kore-rpc-booster --extra-experimental-features 'nix-command flakes' --print-build-logs --json | $JQ -r '.[].outputs | to_entries[].value')
+          booster=$(nix build .#kore-rpc-booster --extra-experimental-features 'nix-command flakes' --print-build-logs --json | $JQ -r '.[].outputs | to_entries[].value')
           drv=$(nix-store --query --deriver ${booster})
           nix-store --query --requisites --include-outputs ${drv} | cachix push k-framework
-          nix build .#hs-backend-booster:exe:parsetest --extra-experimental-features 'nix-command flakes' --print-build-logs
-          nix build .#hs-backend-booster:exe:rpc-client --extra-experimental-features 'nix-command flakes' --print-build-logs
 
-      - name: Run unit tests
-        env:
-          GC_DONT_GC: '1'
-        run: nix run .#hs-backend-booster:test:unit-tests --extra-experimental-features 'nix-command flakes' --print-build-logs
+      - name: 'Cache Cabal package database and store'
+        uses: actions/cache@v3
+        with:
+          path: |
+            cabal-cache/packages
+            cabal-cache/store
+          key: cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('cabal.project.freeze') }}
+          restore-keys: |
+            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('package.yaml') }}-
+            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-
 
+      - name: Unit Tests
+        run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "hpack && cabal update && cabal test unit-tests --enable-tests --test-show-details=direct"
 
-      - name: Run integration tests
+      - name: Integration Tests
         if: ${{ matrix.os != 'macos-12' }}  ## takes long on public runner, already tested in MacM1
-        env:
-          GC_DONT_GC: '1'
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          export JQ=$(nix-build '<nixpkgs>' -A jq --no-link)/bin/jq
-          K_VERSION=$(cat deps/k_release)
-          PLUGIN_VERSION=$(cat deps/blockchain-k-plugin_release)
-          export PATH="$(nix build github:runtimeverification/k/v$K_VERSION#k.openssl.procps --no-link --json | $JQ -r '.[].outputs | to_entries[].value')/bin:$PATH"
-          nix run .#hs-backend-booster:test:llvm-integration --extra-experimental-features 'nix-command flakes' --print-build-logs
-
-          # The runDirectoryTest.sh script expects the following env vars to be set
-          export PLUGIN_DIR=$(nix build github:runtimeverification/blockchain-k-plugin/$PLUGIN_VERSION --no-link --json | $JQ -r '.[].outputs | to_entries[].value')
-          KORE_RPC_BOOSTER=$(nix build .#kore-rpc-booster --no-link --json | $JQ -r '.[].outputs | to_entries[].value')/bin/kore-rpc-booster
-          BOOSTER_DEV=$(nix build .#hs-backend-booster:exe:booster-dev --no-link --json | $JQ -r '.[].outputs | to_entries[].value')/bin/booster-dev
-          KORE_RPC_DEV=$(nix build .#hs-backend-booster:exe:kore-rpc-dev --no-link --json | $JQ -r '.[].outputs | to_entries[].value')/bin/kore-rpc-dev
-          export CLIENT=$(nix build .#hs-backend-booster:exe:rpc-client --no-link --json | $JQ -r '.[].outputs | to_entries[].value')/bin/rpc-client
-
-          cd test/rpc-integration
-          for dir in $(ls -d test-*); do
-              name=${dir##test-}
-              echo "Running $name..."
-              if [ "$name" = "a-to-f" ] || [ "$name" = "diamond" ]; then
-                  SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name --time
-                  SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name --time
-                  SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time
-              elif [ "$name" = "vacuous" ]; then
-                  SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name
-                  SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name
-              elif [ "$name" = "substitutions" ]; then
-                  SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name --time
-                  SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time
-              elif [ "$name" = "no-evaluator" ]; then
-                  SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name --time
-              else
-                  SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time
-              fi
-          done
-
+        run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "scripts/integration-tests.sh"
