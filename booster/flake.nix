@@ -2,237 +2,123 @@
   description = "hs-backend-booster";
 
   inputs = {
-    haskell-backend.url = "github:runtimeverification/haskell-backend/c209383c259aee0ca8b0859a4160d5c5757721b6";
-    haskell-nix.follows = "haskell-backend/haskell-nix";
-    nixpkgs.follows = "haskell-backend/haskell-nix/nixpkgs-unstable";
-    flake-compat = {
-      url = "github:edolstra/flake-compat";
-      flake = false;
-    };
+    haskell-backend.url = "github:runtimeverification/haskell-backend/03a6228f78d7f4805fee4b9d9c45208dcbe0c9fb";
+    stacklock2nix.follows = "haskell-backend/stacklock2nix";
+    nixpkgs.follows = "haskell-backend/nixpkgs";
   };
 
-  outputs =
-    { self, nixpkgs, haskell-nix, haskell-backend, ... }@inputs:
+  outputs = { self, nixpkgs, stacklock2nix, haskell-backend }:
     let
-      inherit (nixpkgs) lib;
-      perSystem = lib.genAttrs nixpkgs.lib.systems.flakeExposed;
-      nixpkgsForSystem = system:
+      perSystem = nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed;
+      nixpkgsCleanFor = system: import nixpkgs { inherit system; };
+      nixpkgsFor = system:
         import nixpkgs {
-          inherit (haskell-nix) config;
           inherit system;
           overlays =
-            [ haskell-nix.overlays.combined haskell-backend.overlays.z3 ];
+            [ stacklock2nix.overlay self.overlay haskell-backend.overlays.z3 ];
         };
-      allNixpkgsFor = perSystem nixpkgsForSystem;
-      nixpkgsFor = system: allNixpkgsFor.${system};
-      index-state = "2023-06-26T23:55:21Z";
-
-      boosterBackendFor = { compiler, pkgs, profiling ? false }:
-        pkgs.haskell-nix.cabalProject {
-          name = "hs-backend-booster";
-          supportHpack = true;
-          compiler-nix-name = compiler;
-          src = pkgs.applyPatches {
-            name = "booster-backend-src";
-            src = pkgs.nix-gitignore.gitignoreSourcePure [
-              ''
-                /test/parser
-                /test/internalisation
-                /test/rpc-integration
-                /test/jsonrpc-examples
-                /scripts
-                /.github
-              ''
-              ./.gitignore
-            ] ./.;
-            postPatch = ''
-              substituteInPlace library/Booster/VersionInfo.hs \
-                --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}"'
-            '';
-          };
-          inherit index-state;
-
-          shell = {
-            withHoogle = true;
-            tools = {
-              cabal = "latest";
-              haskell-language-server = "latest";
-              fourmolu = {
-                inherit index-state;
-                version = "0.12.0.0";
-              };
-              hlint = "latest";
-            };
-            nativeBuildInputs = with nixpkgs.legacyPackages.${pkgs.system}; [
-              nixpkgs-fmt
-              hpack
-              zlib
-              secp256k1
-            ];
-            shellHook = "rm -f *.cabal && hpack";
-          };
-          modules = [{
-            enableProfiling = profiling;
-            enableLibraryProfiling = profiling;
-            packages = {
-              hs-backend-booster = {
-                components.exes.kore-rpc-booster = {
-                  build-tools = with pkgs; lib.mkForce [ makeWrapper ];
-                  postInstall = ''
-                    wrapProgram $out/bin/kore-rpc-booster --prefix PATH : ${
-                      with pkgs;
-                      lib.makeBinPath [ z3 ]
-                    }
-                  '';
-                };
-                components.exes.kore-rpc-dev = {
-                  build-tools = with pkgs; lib.mkForce [ makeWrapper ];
-                  postInstall = ''
-                    wrapProgram $out/bin/kore-rpc-dev --prefix PATH : ${
-                      with pkgs;
-                      lib.makeBinPath [ z3 ]
-                    }
-                  '';
-                };
-                components.tests.unit-tests = {
-                  postInstall = ''
-                    wrapProgram $out/bin/unit-tests --prefix PATH : ${
-                      with pkgs;
-                      lib.makeBinPath [ nixpkgs.legacyPackages.${pkgs.system}.diffutils ]
-                    }
-                  '';
-                };
-              };
-              ghc.components.library.doHaddock = false;
-            };
-          }];
+      withZ3 = pkgs: pkg: exe:
+        pkgs.stdenv.mkDerivation {
+          name = exe;
+          phases = [ "installPhase" ];
+          buildInputs = with pkgs; [ makeWrapper ];
+          installPhase = ''
+            mkdir -p $out/bin
+            makeWrapper ${pkg}/bin/${exe} $out/bin/${exe} --prefix PATH : ${pkgs.z3}/bin
+          '';
         };
-
-      defaultCompiler = "ghc928";
-
-      # Get flake outputs for different GHC versions
-      flakesFor = pkgs:
-        let compilers = [ defaultCompiler ];
-
-        in builtins.listToAttrs (lib.lists.forEach compilers (compiler:
-          lib.attrsets.nameValuePair compiler
-          ((boosterBackendFor { inherit compiler pkgs; }).flake { }))
-          ++ lib.lists.forEach compilers (compiler:
-            lib.attrsets.nameValuePair (compiler + "-prof")
-            ((boosterBackendFor {
-              inherit compiler pkgs;
-              profiling = true;
-            }).flake { })));
-
-      # Takes an attribute set mapping compiler versions to `flake`s generated
-      # by `haskell.nix` (see `flakesFor` above) and suffixes each derivation
-      # in all flake outputs selected by `attr` with the corresponding compiler
-      # version, then flattens the resulting structure to combine all derivations
-      # into a single set
-      #
-      #    collectOutputs
-      #      "checks"
-      #      {
-      #        ghc8107 = { checks = { x:y:z = <drv>; }; };
-      #        ghc924 = { checks = { x:y:z = <drv>; }; };
-      #      }
-      #
-      # => { ghc8107:x:y:z = <drv>; ghc924:x:y:z = <drv>; }
-      collectOutputs = attr: flakes:
-        let
-          outputsByCompiler = lib.mapAttrsToList
-            (compiler: flake: { "${compiler}" = flake.${attr} or { }; }) flakes;
-          addPrefix = compiler:
-            lib.attrsets.mapAttrs' (output: drv:
-              lib.attrsets.nameValuePair "${compiler}:${output}" drv);
-          withPrefixes =
-            builtins.map (builtins.mapAttrs addPrefix) outputsByCompiler;
-          justOutputs = builtins.concatMap builtins.attrValues withPrefixes;
-        in builtins.foldl' (x: y: x // y) { } justOutputs;
-
     in {
+      overlay = final: prev: {
+        booster-backend = final.stacklock2nix {
+          stackYaml = ./stack.yaml;
+          # This should based on the compiler version from the resolver in stack.yaml.
+          baseHaskellPkgSet = final.haskell.packages.ghc928;
+          cabal2nixArgsOverrides = args:
+            args // {
+              # The Haskell package `"graphviz"` depends on the _system_
+              # package `graphviz`, and takes the system package `graphviz` as one of its build
+              # inputs, but it is actually getting passed _itself_ (not the system package
+              # `graphviz`), which causes the infinite recursion.
+              "graphviz" = _: { graphviz = final.graphviz; };
+            };
+          additionalHaskellPkgSetOverrides = hfinal: hprev:
+            with final.haskell.lib; {
+              decision-diagrams = dontCheck hprev.decision-diagrams;
+              fgl = dontCheck hprev.fgl;
+              haskeline = dontCheck hprev.haskeline;
+              hs-backend-booster = overrideCabal hprev.hs-backend-booster
+                (drv: {
+                  doCheck = false;
+                  postPatch = ''
+                    ${drv.postPatch or ""}
+                    substituteInPlace library/Booster/VersionInfo.hs \
+                      --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}"'
+                  '';
+                  buildTarget = "kore-rpc-booster";
+                });
+              json-rpc = dontCheck hprev.json-rpc;
+              kore = (dontCheck hprev.kore).override {
+                # bit pathological, but ghc-compact is already included with the ghc compiler
+                # and depending on another copy of ghc-compact breaks HLS in the dev shell.
+                ghc-compact = null;
+              };
+              tar = dontCheck hprev.tar;
+            };
+          # Additional packages that should be available for development.
+          additionalDevShellNativeBuildInputs = stacklockHaskellPkgSet:
+            with final; [
+              haskell.packages.ghc928.cabal-install
+              haskellPackages.fourmolu_0_12_0_0
+              (let
+                ghc-lib-parser = haskellPackages.ghc-lib-parser_9_4_5_20230430;
+                ghc-lib-parser-ex =
+                  haskellPackages.ghc-lib-parser-ex_9_4_0_0.override {
+                    inherit ghc-lib-parser;
+                  };
+              in haskellPackages.hlint_3_5.override {
+                inherit ghc-lib-parser ghc-lib-parser-ex;
+              })
+              (haskell-language-server.override {
+                supportedGhcVersions = [ "928" ];
+              })
+              final.z3
+              final.hpack
+            ];
+          all-cabal-hashes = final.fetchurl {
+            url =
+              "https://github.com/commercialhaskell/all-cabal-hashes/archive/779bc22f8c7f8e3566edd5a4922750b73a0e5ed5.tar.gz";
+            sha256 = "sha256-qJ/rrdjCTil5wBlcJQ0w+1NP9F/Cr7X/pAfnnx/ahLc=";
+          };
+        };
+      };
+
       packages = perSystem (system:
         let
-          inherit (flakes.${defaultCompiler}) packages;
           pkgs = nixpkgsFor system;
-          flakes = flakesFor pkgs;
+          hs-backend-booster = with pkgs;
+            haskell.lib.justStaticExecutables
+            booster-backend.pkgSet.hs-backend-booster;
         in {
-          kore-rpc-booster = packages."hs-backend-booster:exe:kore-rpc-booster";
-          booster-dev = packages."hs-backend-booster:exe:booster-dev";
-          rpc-client = packages."hs-backend-booster:exe:rpc-client";
-          parsetest = packages."hs-backend-booster:exe:parsetest";
-        } // packages // collectOutputs "packages" flakes);
+          kore-rpc-booster = withZ3 pkgs hs-backend-booster "kore-rpc-booster";
+        });
 
-      apps = perSystem (system:
-        let
-          inherit (flakes.${defaultCompiler}) apps;
-          flakes =
-            flakesFor (nixpkgsFor system);
-          pkgs = nixpkgsFor system;
-          scripts = pkgs.symlinkJoin {
-            name = "scripts";
-            paths = [ ./scripts ];
-            buildInputs = [ pkgs.makeWrapper ];
-            postBuild = ''
-              wrapProgram $out/update-haskell-backend.sh \
-                --prefix PATH : ${
-                  with pkgs;
-                  lib.makeBinPath [ nix gnused gnugrep jq ]
-                }
-            '';
-          };
+      devShells = perSystem (system: {
+        # Separate cabal shell just for CI
+        cabal = let pkgs = nixpkgsFor system;
+        in pkgs.booster-backend.pkgSet.shellFor {
+          packages = pkgs.booster-backend.localPkgsSelector;
+          nativeBuildInputs = [
+            pkgs.diffutils
+            pkgs.haskell.packages.ghc928.cabal-install
+            pkgs.hpack
+            pkgs.jq
+            pkgs.nix
+            pkgs.z3
+          ];
+        };
+      });
 
-        in {
-          kore-rpc-booster = apps."hs-backend-booster:exe:kore-rpc-booster";
-          booster-dev = apps."hs-backend-booster:exe:booster-dev";
-          rpc-client = apps."hs-backend-booster:exe:rpc-client";
-          parsetest = apps."hs-backend-booster:exe:parsetest";
-          parsetest-binary = apps."hs-backend-booster:exe:parsetest-binary";
-          update-haskell-backend = {
-            type = "app";
-            program = "${scripts}/update-haskell-backend.sh";
-          };
-        } // apps // collectOutputs "apps" flakes);
-
-      # To enter a development environment for a particular GHC version, use
-      # the compiler name, e.g. `nix develop .#ghc8107`
-      devShells = perSystem (system:
-        let
-          flakes =
-            flakesFor (nixpkgsFor system);
-        in {
-          default = flakes.${defaultCompiler}.devShell;
-        } // lib.attrsets.mapAttrs'
-        (compiler: v: lib.attrsets.nameValuePair compiler v.devShell) flakes);
-
-      # `nix build .#hs-backend-booster:test:unit-tests`
-      #
-      # To run a check for a particular compiler version, prefix the derivation
-      # name with the GHC version, e.g.
-      #
-      # `nix build .#ghc8107:hs-backend-booster:test:unit-tests`
-      checks = perSystem (system:
-        let
-          flakes =
-            flakesFor (nixpkgsFor system);
-        in flakes.${defaultCompiler}.checks // collectOutputs "checks" flakes);
-
-      overlays.default = lib.composeManyExtensions [
-        (final: prev:
-          lib.optionalAttrs (!(prev ? haskell-nix))
-          (inputs.haskell-nix.overlays.combined final prev))
-        (_: prev:
-          let
-            inherit (flakesFor prev) packages;
-          in {
-            kore-rpc-booster =
-              packages."hs-backend-booster:exe:kore-rpc-booster";
-            rpc-client = packages."hs-backend-booster:exe:rpc-client";
-          })
-      ];
-
-      formatter =
-        perSystem (system: nixpkgs.legacyPackages.${system}.nixpkgs-fmt);
-
+      devShell =
+        perSystem (system: (nixpkgsFor system).booster-backend.devShell);
     };
 }
