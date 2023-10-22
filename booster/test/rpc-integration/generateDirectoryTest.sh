@@ -45,7 +45,8 @@ cat >>resources/$NAME.kompile <<EOL
 cp $NAME.haskell.kore $NAME.kore
 
 # Regenerate llvm backend decision tree
-llvm-backend-matching $NAME.llvm.kore qbaL ./dt 0
+mkdir -p ./dt
+llvm-kompile-matching $NAME.llvm.kore qbaL ./dt 0
 
 # kompile llvm-definition to interpreter
 
