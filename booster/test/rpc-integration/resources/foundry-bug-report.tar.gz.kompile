@@ -31,7 +31,8 @@ tar xzf ../test-$NAMETGZ -C $NAME definition.kore llvm_definition/definition.kor
 cp $NAME/definition.kore ${NAMETGZ}.kore
 
 # Regenerate llvm backend decision tree
-llvm-backend-matching $NAME/llvm_definition/definition.kore qbaL $NAME/llvm_definition/dt 0
+mkdir -p $NAME/llvm_definition/dt
+llvm-kompile-matching $NAME/llvm_definition/definition.kore qbaL $NAME/llvm_definition/dt 0
 
 # kompile llvm-definition to interpreter
 
