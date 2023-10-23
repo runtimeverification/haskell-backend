@@ -181,9 +181,6 @@ A sort is either a _sort variable_ or a _sort constructor_ applied to a list of 
 <application-pattern> ::=
     <symbol-identifier> "{" <sorts> "}" "(" <patterns> ")"
 
-<multi-or> ::=
-    "\or" "{" <sort> "}" "(" <patterns> ")"
-
 <matching-logic-pattern>
   ::=
     // Connectives
@@ -213,9 +210,7 @@ A sort is either a _sort variable_ or a _sort constructor_ applied to a list of 
     | "\dv" "{" <sort> "}" "(" <string-literal> ")"
     // Syntactic sugar
     | "\left-assoc" "{" "}" "(" <application-pattern> ")"
-    | "\left-assoc" "{" "}" "(" <multi-or> ")"
     | "\right-assoc" "{" "}" "(" <application-pattern> ")"
-    | "\right-assoc" "{" "}" "(" <multi-or> ")"
 ```
 
 The left-assoc (resp. right-assoc) construct allows a chain of applications of
