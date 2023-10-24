@@ -111,6 +111,13 @@ jobs:
       - name: Build
         run: GC_DONT_GC=1 nix build .#kore-exec
 
+      - name: Build kup and publish binaries
+        env:
+          CACHIX_AUTH_TOKEN: '${{ secrets.K_FRAMEWORK_BINARY_SIGNING_KEY }}'
+        run: |
+          export PATH="$(nix build github:runtimeverification/kup/sam/kup2.0 --no-link --json | jq -r '.[].outputs | to_entries[].value')/bin:$PATH"
+          kup publish k-framework-binary .#kore-exec --keep-days 180
+
       - name: Cache Cabal package database and store
         uses: actions/cache@v3
         with:
