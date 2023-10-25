@@ -119,7 +119,7 @@ fi
 
 log "Building evm-semantics with dependencies"
 make poetry
-#poetry -C kevm-pyk run kevm-dist clean
+poetry -C kevm-pyk run kevm-dist clean
 poetry -C kevm-pyk run kevm-dist build plugin
 poetry -C kevm-pyk run kevm-dist build -j"$(nproc)"
 
