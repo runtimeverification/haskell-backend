@@ -62,10 +62,11 @@ respondEither ::
     Log.MonadLogger m =>
     MonadIO m =>
     Maybe StatsVar ->
+    Maybe Depth ->
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res)
-respondEither mbStatsVar booster kore req = case req of
+respondEither mbStatsVar forceFallback booster kore req = case req of
     Execute execReq
         | isJust execReq.stepTimeout || isJust execReq.movingAverageStepTimeout ->
             loggedKore ExecuteM req
@@ -175,22 +176,57 @@ respondEither mbStatsVar booster kore req = case req of
             pure ()
 
     handleExecute :: LogSettings -> ExecuteRequest -> m (Either ErrorObj (API 'Res))
-    handleExecute logSettings = executionLoop logSettings (0, 0.0, 0.0, Nothing)
+    handleExecute logSettings = executionLoop logSettings forceFallback (0, 0.0, 0.0, Nothing)
 
     executionLoop ::
         LogSettings ->
+        Maybe Depth ->
         (Depth, Double, Double, Maybe [RPCLog.LogEntry]) ->
         ExecuteRequest ->
         m (Either ErrorObj (API 'Res))
-    executionLoop logSettings (!currentDepth, !time, !koreTime, !rpcLogs) r = do
+    executionLoop logSettings mforceSimplification (currentDepth@(Depth cDepth), !time, !koreTime, !rpcLogs) r = do
         Log.logInfoNS "proxy" . Text.pack $
             if currentDepth == 0
                 then "Starting execute request"
                 else "Iterating execute request at " <> show currentDepth
-        let mbDepthLimit = flip (-) currentDepth <$> r.maxDepth
+        -- calculate depth limit, considering possible forced Kore simplification
+        let mbDepthLimit = case (mforceSimplification, r.maxDepth) of
+                (Just (Depth forceDepth), Just (Depth maxDepth)) ->
+                    if cDepth + forceDepth < maxDepth
+                        then Just $ Depth forceDepth
+                        else Just $ Depth $ maxDepth - cDepth
+                (Just forceDepth, _) -> Just forceDepth
+                (_, Just maxDepth) -> Just $ maxDepth - currentDepth
+                _ -> Nothing
         (bResult, bTime) <- Stats.timed $ booster (Execute r{maxDepth = mbDepthLimit})
         case bResult of
             Right (Execute boosterResult)
+                -- the execution reached the depth bound due to a forced Kore simplification
+                | boosterResult.reason == DepthBound && isJust mforceSimplification -> do
+                    Log.logInfoNS "proxy" . Text.pack $
+                        "Forced simplification at " <> show (currentDepth + boosterResult.depth)
+                    simplifyResult <- simplifyExecuteState logSettings r._module boosterResult.state
+                    case simplifyResult of
+                        Left logsOnly -> do
+                            -- state was simplified to \bottom, return vacuous
+                            Log.logInfoNS "proxy" "Vacuous state after simplification"
+                            pure . Right . Execute $ makeVacuous logsOnly boosterResult
+                        Right (simplifiedBoosterState, boosterStateSimplificationLogs) -> do
+                            let accumulatedLogs =
+                                    combineLogs
+                                        [ rpcLogs
+                                        , boosterResult.logs
+                                        , boosterStateSimplificationLogs
+                                        ]
+                            executionLoop
+                                logSettings
+                                mforceSimplification
+                                ( currentDepth + boosterResult.depth
+                                , time + bTime
+                                , koreTime
+                                , accumulatedLogs
+                                )
+                                r{ExecuteRequest.state = execStateToKoreJson simplifiedBoosterState}
                 -- if the new backend aborts, branches or gets stuck, revert to the old one
                 --
                 -- if we are stuck in the new backend we try to re-run
@@ -249,6 +285,7 @@ respondEither mbStatsVar booster kore req = case req of
                                                         ]
                                             executionLoop
                                                 logSettings
+                                                mforceSimplification
                                                 ( currentDepth + boosterResult.depth + koreResult.depth
                                                 , time + bTime + kTime
                                                 , koreTime + kTime
