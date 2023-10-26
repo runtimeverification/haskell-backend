@@ -26,10 +26,20 @@ module Booster.Pattern.Util (
     isBottom,
     isConcrete,
     filterTermSymbols,
+    sizeOfTerm,
+    termVarStats,
+    termSymbolStats,
+    freshenVar,
+    abstractTerm,
+    abstractSymbolicConstructorArguments,
+    cellSymbolStats,
+    cellVariableStats,
 ) where
 
 import Data.Bifunctor (bimap, first)
 import Data.ByteString (ByteString)
+import Data.ByteString qualified as BS
+import Data.Char (ord)
 import Data.Coerce (coerce)
 import Data.Functor.Foldable (Corecursive (embed), cata)
 import Data.Map (Map)
@@ -150,6 +160,53 @@ modifyVariablesInP f = cata $ \case
 modifyVarName :: (VarName -> VarName) -> Variable -> Variable
 modifyVarName f v = v{variableName = f v.variableName}
 
+freshenVar :: Variable -> Set Variable -> Variable
+freshenVar v@Variable{variableName = vn} vs
+    | v `Set.member` vs = freshenVar v{variableName = vn <> "'"} vs
+    | otherwise = v
+
+{- | Abstract a term into a variable, making sure the variable name is disjoint from the given set of variables.
+     Return the resulting singleton substitution.
+-}
+abstractTerm :: Set Variable -> Term -> (Term, Term)
+abstractTerm vs term =
+    let
+        varName = BS.pack . map (fromIntegral . ord) $ "HSVAR" <> show (abs (getAttributes term).hash)
+        var = Variable (sortOfTerm term) varName
+     in
+        (Var (freshenVar var vs), term)
+
+{- | Abstract the _arguments_ of given symbols in a term, making sure that they symbols are constructors.
+     Return the original term if abstraction failed.
+
+     Example (KEVM):
+       abstractSymbolicConstructorArguments (<kevm> ... <gas> LARGE_EXPR </gas> ... </kevm> ['<gas>'])
+       should turn LARGE_EXPR into a fresh variable
+-}
+abstractSymbolicConstructorArguments :: Set SymbolName -> Term -> Term
+abstractSymbolicConstructorArguments constructorNames term = goSubst (freeVariables term) term
+  where
+    goSubst freeVars t = case t of
+        Var{} -> t
+        DomainValue{} -> t
+        SymbolApplication sym sorts args ->
+            if sym.attributes.symbolType == Constructor && sym.name `Set.member` constructorNames
+                then
+                    SymbolApplication sym sorts $
+                        map (\x -> if not (isConcrete x) then fst . abstractTerm freeVars $ x else x) args
+                else SymbolApplication sym sorts $ map (goSubst freeVars) args
+        AndTerm t1 t2 -> AndTerm (goSubst freeVars t1) (goSubst freeVars t2)
+        Injection ss s sub -> Injection ss s (goSubst freeVars sub)
+        KMap attrs keyVals rest ->
+            KMap attrs (bimap (goSubst freeVars) (goSubst freeVars) <$> keyVals) (goSubst freeVars <$> rest)
+        KList def heads rest ->
+            KList
+                def
+                (map (goSubst freeVars) heads)
+                (bimap (goSubst freeVars) (map (goSubst freeVars)) <$> rest)
+        KSet def elements rest ->
+            KSet def (map (goSubst freeVars) elements) (goSubst freeVars <$> rest)
+
 modifyVarNameConcreteness :: (ByteString -> ByteString) -> Concreteness -> Concreteness
 modifyVarNameConcreteness f = \case
     SomeConstrained m -> SomeConstrained $ Map.mapKeys (first f) m
@@ -255,3 +312,103 @@ filterTermSymbols check = cata $ \case
 
 isBottom :: Pattern -> Bool
 isBottom = (Bottom `elem`) . constraints
+
+-- | Calculate size of a term in bytes
+sizeOfTerm :: Term -> Int
+sizeOfTerm = cata $ \case
+    SymbolApplicationF symbol _ ts -> sum ts + BS.length symbol.name
+    AndTermF t1 t2 -> t1 + t2
+    DomainValueF _ v -> BS.length v
+    VarF _ -> 1
+    InjectionF _ _ t -> t
+    KMapF _ xs mr -> sum (map (uncurry (+)) xs) + fromMaybe 0 mr
+    KListF _ xs mr -> sum xs + maybe 0 (\(a, bs) -> a + sum bs) mr
+    KSetF _ xs mr -> sum xs + fromMaybe 0 mr
+
+-- | Calculate variable statistics: "variable name" -> "number of its occurrences"
+termVarStats :: Term -> Map Variable Int
+termVarStats = cata $ \case
+    SymbolApplicationF _ _ vars -> Map.unionsWith (+) vars
+    AndTermF vars1 vars2 -> Map.unionWith (+) vars1 vars2
+    DomainValueF _ _ -> Map.empty
+    VarF var -> Map.singleton var 1
+    InjectionF _ _ t -> t
+    KMapF _ xs mr ->
+        Map.unionWith
+            (+)
+            (Map.unionsWith (+) (map (uncurry (Map.unionWith (+))) xs))
+            (fromMaybe Map.empty mr)
+    KListF _ xs mr ->
+        Map.unionWith
+            (+)
+            (Map.unionsWith (+) xs)
+            (maybe Map.empty (\(a, bs) -> Map.unionWith (+) a (Map.unionsWith (+) bs)) mr)
+    KSetF _ xs mr ->
+        Map.unionWith
+            (+)
+            (Map.unionsWith (+) xs)
+            (fromMaybe Map.empty mr)
+
+-- | Calculate symbol application statistics: "symbol name" -> "number of its applications"
+termSymbolStats :: Term -> Map Symbol Int
+termSymbolStats = cata $ \case
+    SymbolApplicationF symbol _ symbols -> Map.unionsWith (+) (Map.singleton symbol 1 : symbols)
+    AndTermF symbols1 symbols2 -> Map.unionWith (+) symbols1 symbols2
+    DomainValueF _ _ -> Map.empty
+    VarF _ -> Map.empty
+    InjectionF _ _ t -> t
+    KMapF _ xs mr ->
+        Map.unionWith
+            (+)
+            (Map.unionsWith (+) (map (uncurry (Map.unionWith (+))) xs))
+            (fromMaybe Map.empty mr)
+    KListF _ xs mr ->
+        Map.unionWith
+            (+)
+            (Map.unionsWith (+) xs)
+            (maybe Map.empty (\(a, bs) -> Map.unionWith (+) a (Map.unionsWith (+) bs)) mr)
+    KSetF _ xs mr ->
+        Map.unionWith
+            (+)
+            (Map.unionsWith (+) xs)
+            (fromMaybe Map.empty mr)
+
+{- | Calculate symbol application statistics: "symbol name" -> "number of its applications",
+     within the left-most top-most application of a specific Symbol
+-}
+cellSymbolStats :: SymbolName -> Term -> Map Symbol Int
+cellSymbolStats name = go
+  where
+    go :: Term -> Map Symbol Int
+    go t = case t of
+        Var{} -> Map.empty
+        DomainValue{} -> Map.empty
+        app@(SymbolApplication sym _ args) ->
+            if sym.attributes.symbolType == Constructor && sym.name == name
+                then termSymbolStats app
+                else Map.unionsWith (+) (map go args)
+        AndTerm t1 t2 -> Map.unionsWith (+) [go t1, go t2]
+        Injection _ _ sub -> go sub
+        KMap{} -> Map.empty
+        KList{} -> Map.empty
+        KSet{} -> Map.empty
+
+{- | Calculate variable statistics: "variable name" -> "number of its occurrences",
+     within the left-most top-most application of a specific Symbol
+-}
+cellVariableStats :: SymbolName -> Term -> Map Variable Int
+cellVariableStats name = go
+  where
+    go :: Term -> Map Variable Int
+    go t = case t of
+        Var{} -> Map.empty
+        DomainValue{} -> Map.empty
+        app@(SymbolApplication sym _ args) ->
+            if sym.attributes.symbolType == Constructor && sym.name == name
+                then termVarStats app
+                else Map.unionsWith (+) (map go args)
+        AndTerm t1 t2 -> Map.unionsWith (+) [go t1, go t2]
+        Injection _ _ sub -> go sub
+        KMap{} -> Map.empty
+        KList{} -> Map.empty
+        KSet{} -> Map.empty

@@ -52,6 +52,7 @@ import Kore.JsonRpc qualified as Kore
 import Kore.JsonRpc.Error
 import Kore.JsonRpc.Server
 import Kore.JsonRpc.Types (API, ReqOrRes (Req, Res))
+import Kore.JsonRpc.Types.Depth (Depth (..))
 import Kore.Log (
     ExeName (..),
     KoreLogType (LogSomeAction),
@@ -86,7 +87,7 @@ main = do
                     , eventlogEnabledUserEvents
                     }
             , koreSolverOptions
-            , proxyOptions = ProxyOptions{printStats}
+            , proxyOptions = ProxyOptions{printStats, forceFallback}
             , debugSolverOptions
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
@@ -145,7 +146,7 @@ main = do
                         server =
                             jsonRpcServer
                                 srvSettings
-                                (const $ Proxy.respondEither statVar boosterRespond koreRespond)
+                                (const $ Proxy.respondEither statVar forceFallback boosterRespond koreRespond)
                                 [handleErrorCall, handleSomeException]
                         interruptHandler _ = do
                             when (logLevel >= LevelInfo) $
@@ -180,9 +181,11 @@ data CLProxyOptions = CLProxyOptions
     , debugSolverOptions :: !Log.DebugSolverOptions
     }
 
-newtype ProxyOptions = ProxyOptions
+data ProxyOptions = ProxyOptions
     { printStats :: Bool
     -- ^ print timing statistics per request and on shutdown
+    , forceFallback :: Maybe Depth
+    -- ^ force fallback every n-steps
     }
 
 parserInfoModifiers :: InfoMod options
@@ -203,6 +206,15 @@ clProxyOptionsParser =
             <$> switch
                 ( long "print-stats"
                     <> help "(development) Print timing information per request and on shutdown"
+                )
+            <*> optional
+                ( option
+                    (Depth <$> auto)
+                    ( metavar "INTERIM_SIMPLIFICATION"
+                        <> long "interim-simplification"
+                        <> help "Perform pattern-wide simplification every N steps"
+                        <> showDefault
+                    )
                 )
 
 mkKoreServer :: Log.LoggerEnv IO -> CLOptions -> KoreSolverOptions -> IO KoreServer
