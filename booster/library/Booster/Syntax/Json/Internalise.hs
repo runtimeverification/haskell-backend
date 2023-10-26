@@ -97,7 +97,7 @@ internalisePattern allowAlias checkSubsorts sortVars definition p = do
     term <- andTerm p =<< mapM (internaliseTerm allowAlias checkSubsorts sortVars definition) terms
     -- internalise all predicates
     constraints <- mapM (internalisePredicate allowAlias checkSubsorts sortVars definition) predicates
-    pure Internal.Pattern{term, constraints}
+    pure Internal.Pattern{term, constraints = Set.fromList constraints}
   where
     andTerm :: Syntax.KorePattern -> [Internal.Term] -> Except PatternError Internal.Term
     andTerm _ [] = error "BUG: andTerm called with empty term list"

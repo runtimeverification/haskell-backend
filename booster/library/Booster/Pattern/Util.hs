@@ -125,7 +125,7 @@ modifyVariables :: (Variable -> Variable) -> Pattern -> Pattern
 modifyVariables f p =
     Pattern
         { term = modifyVariablesInT f p.term
-        , constraints = map (modifyVariablesInP f) p.constraints
+        , constraints = Set.map (modifyVariablesInP f) p.constraints
         }
 
 modifyVariablesInT :: (Variable -> Variable) -> Term -> Term
