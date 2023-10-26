@@ -70,7 +70,7 @@ emptyKoreDefinition attributes =
 
 data RewriteRule (tag :: k) = RewriteRule
     { lhs, rhs :: Term
-    , requires, ensures :: [Predicate]
+    , requires, ensures :: Set Predicate
     , attributes :: AxiomAttributes
     , computedAttributes :: ComputedAxiomAttributes
     , existentials :: Set Variable

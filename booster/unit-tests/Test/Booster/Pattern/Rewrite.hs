@@ -75,61 +75,51 @@ rule1, rule1', rule2, rule3, rule4 :: RewriteRule "Rewrite"
 rule1 =
     rule
         (Just "con1-f1")
-        ( Pattern
+        ( mkPattern
             [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing") ) ), RuleVar:SortK{}) ) |]
-            []
         )
-        ( Pattern
+        ( mkPattern
             [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}(   \dv{SomeSort{}}("thing") ) ), RuleVar:SortK{}) ) |]
-            []
         )
         42
 rule1' =
     rule
         (Just "con1-f1'")
-        ( Pattern
+        ( mkPattern
             [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( X:SomeSort{} ) ), RuleVar:SortK{}) ) |]
-            []
         )
-        ( Pattern
+        ( mkPattern
             [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f1{}(   X:SomeSort{} ) ), RuleVar:SortK{}) ) |]
-            []
         )
         50
 rule2 =
     rule
         (Just "con1-f2")
-        ( Pattern
+        ( mkPattern
             [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( X:SomeSort{} ) ),                  RuleVar:SortK{}) ) |]
-            []
         )
-        ( Pattern
+        ( mkPattern
             [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( X:SomeSort{}, X:SomeSort{} ) ), RuleVar:SortK{}) ) |]
-            []
         )
         50
 rule3 =
     rule
         (Just "con3-con1")
-        ( Pattern
+        ( mkPattern
             [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con3{}( \dv{SomeSort{}}("otherThing"), Y:SomeSort{} ) ), RuleVar:SortK{}) ) |]
-            []
         )
-        ( Pattern
+        ( mkPattern
             [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("somethingElse") ) ),            RuleVar:SortK{}) ) |]
-            []
         )
         42
 rule4 =
     rule
         (Just "con4-f2-partial")
-        ( Pattern
+        ( mkPattern
             [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( X:SomeSort{}, Y:SomeSort{} ) ), RuleVar:SortK{}) ) |]
-            []
         )
-        ( Pattern
+        ( mkPattern
             [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( f2{}(   Y:SomeSort{} ) ), RuleVar:SortK{}) ) |]
-            []
         )
         42
         `withComputedAttributes` ComputedAxiomAttributes False [UndefinedSymbol "f2"]
@@ -160,6 +150,9 @@ rule ruleLabel lhs rhs priority =
         , computedAttributes = ComputedAxiomAttributes False []
         , existentials = mempty
         }
+
+mkPattern :: Term -> Pattern
+mkPattern t = Pattern t mempty
 
 withComputedAttributes :: RewriteRule r -> ComputedAxiomAttributes -> RewriteRule r
 r@RewriteRule{lhs} `withComputedAttributes` computedAttributes =
@@ -232,7 +225,7 @@ definednessUnclear =
     testCase "con4 rewrite to f2 might become undefined" $ do
         let pcon4 =
                 [trm| kCell{}( kseq{}( inj{AnotherSort{}, SortKItem{}}( con4{}( \dv{SomeSort{}}("thing"), \dv{SomeSort{}}("thing") ) ), ConfigVar:SortK{}) ) |]
-        pcon4 `failsWith` DefinednessUnclear rule4 (Pattern pcon4 []) [UndefinedSymbol "f2"]
+        pcon4 `failsWith` DefinednessUnclear rule4 (mkPattern pcon4) [UndefinedSymbol "f2"]
 rewriteStuck =
     testCase "con3 app is stuck (no rules apply)" $ do
         let con3App =
@@ -253,23 +246,23 @@ rulePriority =
 
 rewritesTo :: Term -> (Text, Term) -> IO ()
 t1 `rewritesTo` (lbl, t2) =
-    unsafePerformIO (runNoLoggingT $ runRewriteT False def Nothing (rewriteStep [] [] $ Pattern t1 []))
-        @?= Right (RewriteFinished (Just lbl) Nothing $ Pattern t2 [])
+    unsafePerformIO (runNoLoggingT $ runRewriteT False def Nothing (rewriteStep [] [] $ mkPattern t1))
+        @?= Right (RewriteFinished (Just lbl) Nothing $ mkPattern t2)
 
 getsStuck :: Term -> IO ()
 getsStuck t1 =
-    unsafePerformIO (runNoLoggingT $ runRewriteT False def Nothing (rewriteStep [] [] $ Pattern t1 []))
-        @?= Right (RewriteStuck $ Pattern t1 [])
+    unsafePerformIO (runNoLoggingT $ runRewriteT False def Nothing (rewriteStep [] [] $ mkPattern t1))
+        @?= Right (RewriteStuck $ mkPattern t1)
 
 branchesTo :: Term -> [(Text, Term)] -> IO ()
 t `branchesTo` ts =
-    unsafePerformIO (runNoLoggingT $ runRewriteT False def Nothing (rewriteStep [] [] $ Pattern t []))
+    unsafePerformIO (runNoLoggingT $ runRewriteT False def Nothing (rewriteStep [] [] $ mkPattern t))
         @?= Right
-            (RewriteBranch (Pattern t []) $ NE.fromList $ map (\(lbl, t') -> (lbl, Nothing, Pattern t' [])) ts)
+            (RewriteBranch (mkPattern t) $ NE.fromList $ map (\(lbl, t') -> (lbl, Nothing, mkPattern t')) ts)
 
 failsWith :: Term -> RewriteFailed "Rewrite" -> IO ()
 failsWith t err =
-    unsafePerformIO (runNoLoggingT $ runRewriteT False def Nothing (rewriteStep [] [] $ Pattern t []))
+    unsafePerformIO (runNoLoggingT $ runRewriteT False def Nothing (rewriteStep [] [] $ mkPattern t))
         @?= Left err
 
 ----------------------------------------
@@ -277,7 +270,7 @@ failsWith t err =
 
 runRewrite :: Term -> IO (Natural, RewriteResult Term)
 runRewrite t = do
-    (counter, _, res) <- runNoLoggingT $ performRewrite False def Nothing Nothing [] [] $ Pattern t []
+    (counter, _, res) <- runNoLoggingT $ performRewrite False def Nothing Nothing [] [] $ mkPattern t
     pure (counter, fmap (.term) res)
 
 aborts :: RewriteFailed "Rewrite" -> Term -> IO ()
@@ -420,7 +413,7 @@ supportsDepthControl =
     rewritesToDepth :: MaxDepth -> Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
     rewritesToDepth (MaxDepth depth) (Steps n) t t' f = do
         (counter, _, res) <-
-            runNoLoggingT $ performRewrite False def Nothing (Just depth) [] [] $ Pattern t []
+            runNoLoggingT $ performRewrite False def Nothing (Just depth) [] [] $ mkPattern t
         (counter, fmap (.term) res) @?= (n, f t')
 
 supportsCutPoints :: TestTree
@@ -472,7 +465,7 @@ supportsCutPoints =
     rewritesToCutPoint :: Text -> Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
     rewritesToCutPoint lbl (Steps n) t t' f = do
         (counter, _, res) <-
-            runNoLoggingT $ performRewrite False def Nothing Nothing [lbl] [] $ Pattern t []
+            runNoLoggingT $ performRewrite False def Nothing Nothing [lbl] [] $ mkPattern t
         (counter, fmap (.term) res) @?= (n, f t')
 
 supportsTerminalRules :: TestTree
@@ -502,5 +495,5 @@ supportsTerminalRules =
     rewritesToTerminal :: Text -> Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
     rewritesToTerminal lbl (Steps n) t t' f = do
         (counter, _, res) <-
-            runNoLoggingT $ performRewrite False def Nothing Nothing [] [lbl] $ Pattern t []
+            runNoLoggingT $ performRewrite False def Nothing Nothing [] [lbl] $ mkPattern t
         (counter, fmap (.term) res) @?= (n, f t')

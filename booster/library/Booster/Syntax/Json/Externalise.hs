@@ -11,6 +11,7 @@ module Booster.Syntax.Json.Externalise (
 
 import Data.Foldable ()
 import Data.List (partition)
+import Data.Set qualified as Set
 import Data.Text.Encoding qualified as Text
 
 import Booster.Pattern.Base (externaliseKmapUnsafe)
@@ -28,7 +29,8 @@ externalisePattern ::
 externalisePattern Internal.Pattern{term = term, constraints} =
     -- need a sort for the predicates in external format
     let sort = externaliseSort $ sortOfTerm term
-        (substitutionItems, predicateItems) = partition isSubstitutionItem constraints
+        (substitutionItems, predicateItems) =
+            partition isSubstitutionItem $ Set.toList constraints
         substitution =
             if null substitutionItems
                 then Nothing
