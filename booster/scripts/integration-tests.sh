@@ -3,7 +3,7 @@ set -euxo pipefail
 
 K_VERSION=$(cat deps/k_release)
 PLUGIN_VERSION=$(cat deps/blockchain-k-plugin_release)
-export PATH="$(nix build github:runtimeverification/k/v$K_VERSION#k.openssl.procps --no-link --json | jq -r '.[].outputs | to_entries[].value')/bin:$PATH"
+export PATH="$(nix build github:runtimeverification/k/v$K_VERSION#k.openssl.procps --no-link  --print-build-logs --json | jq -r '.[].outputs | to_entries[].value')/bin:$PATH"
 cabal update
 cabal test llvm-integration
 
@@ -31,6 +31,9 @@ for dir in $(ls -d test-*); do
         SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time
     elif [ "$name" = "no-evaluator" ]; then
         SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name --time
+    elif [ "$name" = "foundry-bug-report" ]; then
+        SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time
+        SERVER="$KORE_RPC_BOOSTER --interim-simplification 100" ./runDirectoryTest.sh test-$name --time
     else
         SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time
     fi
