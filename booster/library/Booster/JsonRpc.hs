@@ -423,7 +423,7 @@ mkLogEquationTrace
                             , origin
                             , result =
                                 Success
-                                    { rewrittenTerm = Just $ execStateToKoreJson $ toExecState $ Pattern rewrittenTrm []
+                                    { rewrittenTerm = Just $ execStateToKoreJson $ toExecState $ Pattern rewrittenTrm mempty
                                     , substitution = Nothing
                                     , ruleId = fromMaybe "UNKNOWN" _ruleId
                                     }
@@ -488,7 +488,7 @@ mkLogEquationTrace
                             }
             _ -> Nothing
       where
-        originalTerm = Just $ execStateToKoreJson $ toExecState $ Pattern subjectTerm []
+        originalTerm = Just $ execStateToKoreJson $ toExecState $ Pattern subjectTerm mempty
         originalTermIndex = Nothing
         origin = Booster
         _ruleId = fmap getUniqueId uid
@@ -561,7 +561,7 @@ mkLogRewriteTrace
                     let final = singleton $ case failure of
                             ApplyEquations.IndexIsNone trm ->
                                 Simplification
-                                    { originalTerm = Just $ execStateToKoreJson $ toExecState $ Pattern trm []
+                                    { originalTerm = Just $ execStateToKoreJson $ toExecState $ Pattern trm mempty
                                     , originalTermIndex = Nothing
                                     , origin = Booster
                                     , result = Failure{reason = "No index found for term", _ruleId = Nothing}

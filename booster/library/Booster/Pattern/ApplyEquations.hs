@@ -174,8 +174,8 @@ countSteps = length . (.termStack) <$> getState
 pushTerm :: MonadLoggerIO io => Term -> EquationT io ()
 pushTerm t = EquationT . lift . lift . modify $ \s -> s{termStack = t : s.termStack}
 
-pushConstraints :: MonadLoggerIO io => [Predicate] -> EquationT io ()
-pushConstraints ps = EquationT . lift . lift . modify $ \s -> s{predicates = s.predicates <> Set.fromList ps}
+pushConstraints :: MonadLoggerIO io => Set Predicate -> EquationT io ()
+pushConstraints ps = EquationT . lift . lift . modify $ \s -> s{predicates = s.predicates <> ps}
 
 setChanged, resetChanged :: MonadLoggerIO io => EquationT io ()
 setChanged = EquationT . lift . lift . modify $ \s -> s{changed = True}
@@ -286,7 +286,7 @@ evaluatePattern' Pattern{term, constraints} = do
     traverse_ simplifyAssumedPredicate . predicates =<< getState
     -- this may yield additional new constraints, left unevaluated
     evaluatedConstraints <- predicates <$> getState
-    pure Pattern{constraints = Set.toList evaluatedConstraints, term = newTerm}
+    pure Pattern{constraints = evaluatedConstraints, term = newTerm}
   where
     -- evaluate the given predicate assuming all others
     simplifyAssumedPredicate p = do
@@ -294,7 +294,7 @@ evaluatePattern' Pattern{term, constraints} = do
         let otherPs = Set.delete p allPs
         EquationT $ lift $ lift $ modify $ \s -> s{predicates = otherPs}
         newP <- simplifyConstraint' p
-        pushConstraints [newP]
+        pushConstraints $ Set.singleton newP
 
 ----------------------------------------
 
@@ -564,7 +564,7 @@ applyEquation term rule = fmap (either id Success) $ runExceptT $ do
                             let ensured =
                                     concatMap
                                         (splitBoolPredicates . substituteInPredicate subst)
-                                        rule.ensures
+                                        (Set.toList rule.ensures)
                             mbEnsuredConditions <-
                                 runMaybeT $ catMaybes <$> mapM checkConstraint ensured
                             case mbEnsuredConditions of
@@ -572,7 +572,7 @@ applyEquation term rule = fmap (either id Success) $ runExceptT $ do
                                 Nothing -> throwE $ EnsuresFalse ensured
                                 -- pushes new ensured conditions and return result
                                 Just conditions ->
-                                    lift $ pushConstraints conditions
+                                    lift $ pushConstraints $ Set.fromList conditions
                             pure $ substituteInTerm subst rule.rhs
   where
     -- evaluate/simplify a predicate, cut the operation short when it

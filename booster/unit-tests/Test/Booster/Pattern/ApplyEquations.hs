@@ -123,22 +123,24 @@ test_simplifyPattern =
         "Performing simplifications"
         [ testCase "No simplification applies" $ do
             let subj = [trm| f1{}(f2{}(A:SomeSort{})) |]
-            simpl Pattern{term = subj, constraints = []} @?= Right Pattern{term = subj, constraints = []}
-            simpl Pattern{term = subj, constraints = []} @?= Right Pattern{term = subj, constraints = []}
+            simpl Pattern{term = subj, constraints = mempty}
+                @?= Right Pattern{term = subj, constraints = mempty}
+            simpl Pattern{term = subj, constraints = mempty}
+                @?= Right Pattern{term = subj, constraints = mempty}
         , -- con1(con2(f2(a))) => con2(f2(a))
           testCase "Simplification of constructors" $ do
             let subj = app con1 [app con2 [app f2 [a]]]
-            simpl Pattern{term = subj, constraints = []}
-                @?= Right Pattern{term = app con2 [app f2 [a]], constraints = []}
-            simpl Pattern{term = subj, constraints = []}
-                @?= Right Pattern{term = app con2 [app f2 [a]], constraints = []}
+            simpl Pattern{term = subj, constraints = mempty}
+                @?= Right Pattern{term = app con2 [app f2 [a]], constraints = mempty}
+            simpl Pattern{term = subj, constraints = mempty}
+                @?= Right Pattern{term = app con2 [app f2 [a]], constraints = mempty}
         , -- con3(f2(a), f2(a)) => inj{sub,some}(con4(f2(a), f2(a)))
           testCase "Simplification with argument match" $ do
-            let subj = Pattern{term = [trm| con3{}(f2{}(A:SomeSort{}), f2{}(A:SomeSort{})) |], constraints = []}
+            let subj = Pattern{term = [trm| con3{}(f2{}(A:SomeSort{}), f2{}(A:SomeSort{})) |], constraints = mempty}
                 result =
                     Pattern
                         { term = [trm| inj{AnotherSort{}, SomeSort{}}(con4{}(f2{}(A:SomeSort{}), f2{}(A:SomeSort{}))) |]
-                        , constraints = []
+                        , constraints = mempty
                         }
             simpl subj @?= Right result
         ]
@@ -280,8 +282,8 @@ equation ruleLabel lhs rhs priority =
     RewriteRule
         { lhs = lhs
         , rhs = rhs
-        , requires = []
-        , ensures = []
+        , requires = mempty
+        , ensures = mempty
         , attributes =
             AxiomAttributes
                 { location = Nothing

@@ -12,6 +12,7 @@ module Booster.JsonRpc.Utils (
     KoreRpcType (..),
     rpcTypeOf,
     typeString,
+    renderDiff, -- temporary hack
 ) where
 
 import Control.Applicative ((<|>))
