@@ -199,6 +199,33 @@ executables:
       - bytestring
       - containers
       - hs-backend-booster
+  tarball-compare:
+    source-dirs: tools/tarball-compare
+    main: Main
+    dependencies:
+      - aeson
+      - aeson-pretty
+      - base
+      - bytestring
+      - bz2
+      - clock
+      - containers
+      - directory
+      - extra
+      - filepath
+      - hs-backend-booster
+      - kore-rpc-types
+      - monad-logger
+      - optparse-applicative
+      - prettyprinter
+      - recursion-schemes
+      - tar
+      - text
+      - transformers
+      - vector
+      - zlib
+    ghc-options:
+      - -rtsopts
   kore-rpc-booster:
     source-dirs: tools/booster
     main: Server.hs

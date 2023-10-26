@@ -901,11 +901,11 @@ expandAlias alias currentArgs
                     Def.Pattern
                         { term = Util.substituteInTerm substitution term
                         , constraints =
-                            Util.substituteInPredicate substitution <$> constraints
+                            Set.map (Util.substituteInPredicate substitution) constraints
                         }
 
 removeTops :: Def.Pattern -> Def.Pattern
-removeTops p = p{Def.constraints = filter (/= Def.Top) p.constraints}
+removeTops p = p{Def.constraints = Set.delete Def.Top p.constraints}
 
 {- | Internalises simplification rules, for both term simplification
    (represented as a 'RewriteRule') and predicate simplification

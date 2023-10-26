@@ -273,7 +273,8 @@ applyRule pat rule = runRewriteRuleAppT $ do
     -- check ensures constraints (new) from rhs: stop and return `Trivial` if
     -- any are false, remove all that are trivially true, return the rest
     let ruleEnsures =
-            concatMap (splitBoolPredicates . substituteInPredicate subst) rule.ensures
+            concatMap (splitBoolPredicates . substituteInPredicate subst) $
+                Set.toList rule.ensures
         trivialIfBottom = RewriteRuleAppT $ pure Trivial
     newConstraints <-
         catMaybes <$> mapM (checkConstraint id trivialIfBottom) ruleEnsures
@@ -282,7 +283,9 @@ applyRule pat rule = runRewriteRuleAppT $ do
             Pattern
                 (substituteInTerm (refreshExistentials subst) rule.rhs)
                 -- adding new constraints that have not been trivially `Top`
-                (newConstraints <> map (substituteInPredicate subst) pat.constraints)
+                ( Set.fromList newConstraints
+                    <> Set.map (substituteInPredicate subst) pat.constraints
+                )
     return (rule, rewritten)
   where
     failRewrite = lift . throw
