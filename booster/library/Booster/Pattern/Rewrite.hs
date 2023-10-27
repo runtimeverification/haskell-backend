@@ -23,11 +23,9 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), ask)
 import Control.Monad.Trans.State.Strict (StateT (runStateT), get, modify)
-import Data.Either (fromRight, isRight)
 import Data.Hashable qualified as Hashable
 import Data.List.NonEmpty (NonEmpty (..), toList)
 import Data.List.NonEmpty qualified as NE
-import Data.List.NonEmpty qualified as NonEmpty
 import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromMaybe)
 import Data.Sequence (Seq, (|>))
@@ -40,11 +38,9 @@ import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
 import Booster.LLVM.Internal qualified as LLVM
 import Booster.Pattern.ApplyEquations (
-    Direction (..),
     EquationFailure (..),
     EquationTrace,
     evaluatePattern,
-    evaluateTerm,
     simplifyConstraint,
  )
 import Booster.Pattern.Base
@@ -491,59 +487,56 @@ showPattern title pat = hang 4 $ vsep [title, pretty pat.term]
 
                                 Receive pattern P (P /= _|_)
 
-                                             +
+                                             |
                                              |   +--------------------------------------------------------------------------------------------------+
 +----------------------------------------+   |   |                                                                                                  |
 |                                        v   v   v                                                                                                  |
 |                                                                                                                                                   |
-|         +---------------------------+  Apply rule  <-------------------------------------------------------------------------------------------+  |
+|         +----------------------------  Apply rule  <-------------------------------------------------------------------------------------------+  |
 |         |                                                                                                                                      |  |
-|         |                                    +                                                                                                 |  |
+|         |                                    |                                                                                                 |  |
 |         |                                    +-------------+                                                                                   |  |
 |         v                                                  v                                                                                   |  |
 |                                                                                                                                                |  |
-|  Rewrite aborted            +-------------------+  Rewrite finished  +------------------------+                                                |  |
+|  Rewrite aborted            +--------------------  Rewrite finished  -------------------------+                                                |  |
 |                             |                                                                 |                                                |  |
-|         +                                                   +                                 |                                                |  |
-|         |                                                   |                                 |                                                |  |
-|         v            Rule application                       v                                 v                                                |  |
-|                           unclear                                                                                                              |  |
-|  Return aborted    (simplify remainders)             Rewrite to P'  +--+                  Rewrite to PS +----------------+-------+             |  |
-|                             +                                          |                                                 |       |             |  |
-|                             |                           +              |                    +      +                     |       |             |  |
+|         |                   |                               |                                 |                                                |  |
+|         |                   |                               |                                 |                                                |  |
+|         v                   v                               v                                 v                                                |  |
+|                                                                                                                                                |  |
+|  Return aborted       No rules apply                 Rewrite to P'  ---+                  Rewrite to PS -----------------+-------+             |  |
+|                                                                        |                                                 |       |             |  |
+|                             |                           |              |                    |      |                     |       |             |  |
 |                             |                           |              |                    |      +----------+          |       |             |  |
-|              +----------------------------+             v              v                    v                 v          |       v             |  |
-|              |              |             |                                                                              |                     |  |
-|              v              v             v           P' == _|_    P' /= _|_           /\ PS == _|_      PS simplify to  |   PS simplify to  +-+  |
-|          Remainders     Already         Remainders                                                              []       |      single P'         |
-|          simplify       simplified      do not            +           + +                   +                            |                        |
-|              +              +           simplify          |           | |                   |                   +        |                        |
-|              |              |              +              |           | |                   |                   |        +-------+                |
-+<-------------+              |              |              |           | |                   |                   |                v                |
-|                             |    +---------+              |  +------------------------------+                   |                                 |
-|                             |    |                        |  |        | |                                       |          PS simplify to         |
-|                             v    v                        |  |        | |                                       |                PS'              |
-|                       No rules apply                      |  |        | |                                       |                                 |
-|                   (simplify whole pattern)                v  v        | |                                       |                 +               |
-|                             +                                         | +-----------------+                     |                 v               |
-|                             |                      Return vacuous P   |                   |                     |                                 |
-|              +----------------------------+                           |                   |                     |         Return branching        |
+|                             |                           v              v                    v                 v          |       v             |  |
+|                             |                                                                                            |                     |  |
+|                             |                         P' == _|_    P' /= _|_           /\ PS == _|_      PS simplify to  |   PS simplify to  --+  |
+|                             |                                                                                   []       |      single P'         |
+|              +--------------+-------------+               |           | |                   |                            |                        |
+|              |              |             |               |           | |                   |                   |        |                        |
+|              v              v             v               |           | |                   |                   |        +-------+                |
+|                                                           |           | |                   |                   |                v                |
+|          Does not     Simplified      Simplifies          |  +--------+-+-------------------+                   |                                 |
+|          simplify      already                            |  |        | |                                       |          PS simplify to         |
+|                                                           |  |        | |                                       |                PS'              |
+|              |              |             |               |  |        | |                                       |                                 |
+|              |              |             |               v  v        | |                                       |                 |               |
+|              |              |             |                           | +-----------------+                     |                 v               |
+|              |              |             |        Return vacuous P   |                   |                     |                                 |
+|              |              |             |                           |                   |                     |         Return branching        |
 |              |              |             |                           |                   |                     |                                 |
-|              v              v             v                           v                   v                     |                                 |
-|          Simplifies     Simplified    Does not                                                                  |                                 |
-|                          already      simplify                 Depth/rule bound       Unbounded  +------------------------------------------------+
-|              +              +             +                                                                     |
-|              |              |             |                           +                                         |
-|              |              |             |                           |                                         |
-|              |              |             |                           |                                         |
-+---------------              |  +----------+                           |                                         |
-                              |  |                                      |                                         |
-                              |  |                                      |                                         |
-                              v  v                                      v                                         |
-                                                                                                                  |
-                     Return stuck P                              Return simplified P'                             |
-                                                                                                                  |
-                             ^                                                                                    |
+|              +-------+      |             |                           v                   v                     |                                 |
+|                      v      v             |                                                                     |                                 |
+|                                           |                    Depth/rule bound       Unbounded  ---------------+---------------------------------+
+|                     Return stuck P        |                                                                     |
+|                                           |                           |                                         |
+|                            ^              |                           |                                         |
+|                            |              |                           |                                         |
++----------------------------+--------------+                           v                                         |
+                             |                                                                                    |
+                             |                                    Return simplified P'                            |
+                             |                                                                                    |
+                             |                                                                                    |
                              +------------------------------------------------------------------------------------+
 -}
 performRewrite ::
@@ -563,15 +556,7 @@ performRewrite ::
     io (Natural, Seq (RewriteTrace Pattern), RewriteResult Pattern)
 performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pat = do
     (rr, RewriteStepsState{counter, traces}) <-
-        flip
-            runStateT
-            RewriteStepsState
-                { counter = 0
-                , traces = mempty
-                , patternWasSimplified = False
-                , remaindersWereSimplified = False
-                }
-            $ doSteps pat
+        flip runStateT RewriteStepsState{counter = 0, traces = mempty} $ doSteps False pat
     pure (counter, traces, rr)
   where
     logDepth = logOther (LevelOther "Depth")
@@ -589,21 +574,9 @@ performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pa
         logRewrite $ pack $ renderDefault $ pretty t
         when doTracing $
             modify $
-                \RewriteStepsState{counter, traces, patternWasSimplified, remaindersWereSimplified} -> RewriteStepsState{counter, traces = traces |> t, patternWasSimplified, remaindersWereSimplified}
+                \RewriteStepsState{counter, traces} -> RewriteStepsState{counter, traces = traces |> t}
     incrementCounter =
-        modify $ \RewriteStepsState{counter, traces, patternWasSimplified, remaindersWereSimplified} -> RewriteStepsState{counter = counter + 1, traces, patternWasSimplified, remaindersWereSimplified}
-
-    setPatternWasSimplified =
-        modify $ \RewriteStepsState{counter, traces, remaindersWereSimplified} -> RewriteStepsState{counter, traces, patternWasSimplified = True, remaindersWereSimplified}
-
-    resetPatternWasSimplified =
-        modify $ \RewriteStepsState{counter, traces, remaindersWereSimplified} -> RewriteStepsState{counter, traces, patternWasSimplified = False, remaindersWereSimplified}
-
-    setRemaindersWereSimplified =
-        modify $ \RewriteStepsState{counter, traces, patternWasSimplified} -> RewriteStepsState{counter, traces, patternWasSimplified, remaindersWereSimplified = True}
-
-    resetRemaindersWereSimplified =
-        modify $ \RewriteStepsState{counter, traces, patternWasSimplified} -> RewriteStepsState{counter, traces, patternWasSimplified, remaindersWereSimplified = False}
+        modify $ \RewriteStepsState{counter, traces} -> RewriteStepsState{counter = counter + 1, traces}
 
     simplifyP :: Pattern -> StateT RewriteStepsState io (Maybe Pattern)
     simplifyP p =
@@ -674,39 +647,14 @@ performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pa
         RewriteAborted reason p ->
             maybe (RewriteTrivial orig) (RewriteAborted reason) <$> simplifyP p
 
-    {- Upon catching RuleApplicationUnclear:
-       * simplify the rule remainders
-       * substitute the simplified remainders in the original term
-       returns Nothing if failed to simplify any of the remainders
-    -}
-    simplifyAndSubstituteRuleRemainders ::
-        Term -> NonEmpty (Term, Term) -> StateT RewriteStepsState io (Maybe Term)
-    simplifyAndSubstituteRuleRemainders term remainders = do
-        simplifiedRemainders <-
-            mapM (evaluateTerm doTracing TopDown def mLlvmLibrary . snd) . NonEmpty.toList $ remainders
-        let remaindersMap =
-                map (\(a, b) -> (a, fromRight a b))
-                    . filter (isRight . snd)
-                    $ zip (map snd $ NonEmpty.toList remainders) (map fst simplifiedRemainders)
-        case remaindersMap of
-            [] ->
-                -- failed to simplify any of the remainders
-                pure Nothing
-            xs -> do
-                -- successfully simplifying some of the remainders:
-                -- substitute them and try applying the rule again
-                let ys = Map.fromList xs
-                pure . Just $ substituteTermsInTerm ys term
-
     logTraces =
         mapM_ (logSimplify . pack . renderDefault . pretty)
 
     doSteps ::
-        Pattern -> StateT RewriteStepsState io (RewriteResult Pattern)
-    doSteps pat' = do
-        RewriteStepsState{counter, patternWasSimplified, remaindersWereSimplified} <- get
+        Bool -> Pattern -> StateT RewriteStepsState io (RewriteResult Pattern)
+    doSteps wasSimplified pat' = do
+        RewriteStepsState{counter} <- get
         logDepth $ showCounter counter
-        let wasSimplified = patternWasSimplified
         if depthReached counter
             then do
                 let title =
@@ -719,9 +667,7 @@ performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pa
                         whenJust mlbl $ \lbl ->
                             rewriteTrace $ RewriteSingleStep lbl uniqueId pat' single
                         incrementCounter
-                        resetRemaindersWereSimplified
-                        resetPatternWasSimplified
-                        doSteps single
+                        doSteps False single
                     Right terminal@(RewriteTerminal lbl uniqueId single) -> do
                         rewriteTrace $ RewriteSingleStep lbl uniqueId pat' single
                         logRewrite $
@@ -743,9 +689,7 @@ performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pa
                                 whenJust mlbl $ \lbl ->
                                     rewriteTrace $ RewriteSingleStep lbl uniqueId pat' single
                                 incrementCounter
-                                resetRemaindersWereSimplified
-                                resetPatternWasSimplified
-                                doSteps single
+                                doSteps False single
                             RewriteBranch pat'' branches -> do
                                 rewriteTrace $ RewriteBranchingStep pat'' $ fmap (\(lbl, uid, _) -> (lbl, uid)) branches
                                 pure simplified
@@ -766,11 +710,7 @@ performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pa
                         rewriteTrace $ RewriteStepFailed $ NoApplicableRules pat'
                         if wasSimplified
                             then pure stuck
-                            else
-                                withSimplifiedPattern
-                                    pat'
-                                    "Retrying with simplified pattern"
-                                    (\p -> setPatternWasSimplified >> doSteps p)
+                            else withSimplified pat' "Retrying with simplified pattern" (doSteps True)
                     Right trivial@RewriteTrivial{} -> do
                         logRewrite $ "Simplified to bottom after " <> showCounter counter
                         pure trivial
@@ -779,32 +719,20 @@ performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pa
                         simplifyResult pat' aborted
                     -- if unification was unclear and the pattern was
                     -- unsimplified, simplify and retry rewriting once
-                    Left failure@(RuleApplicationUnclear _rule term remainders)
-                        | not remaindersWereSimplified -> do
-                            -- simplify remainders, substitute and rerun.
-                            -- If failed, will fallback to pattern-wide simplification (next clause)
-                            -- in the next recursive call
-                            simplifyAndSubstituteRuleRemainders term remainders >>= \case
-                                Just termAfterSubstitutingRemainders -> do
-                                    logRewrite "Retrying with simplified and substituted remainders"
-                                    setRemaindersWereSimplified
-                                    doSteps pat'{term = termAfterSubstitutingRemainders}
-                                Nothing -> setRemaindersWereSimplified >> doSteps pat'
+                    Left failure@RuleApplicationUnclear{}
                         | not wasSimplified -> do
                             rewriteTrace $ RewriteStepFailed failure
+                            -- simplify remainders, substitute and rerun.
                             -- If failed, do the pattern-wide simplfication and rerun again
-                            withSimplifiedPattern
-                                pat'
-                                "Retrying with simplified pattern"
-                                (\p -> setPatternWasSimplified >> doSteps p)
+                            withSimplified pat' "Retrying with simplified pattern" (doSteps True)
                     Left failure -> do
                         rewriteTrace $ RewriteStepFailed failure
                         let msg = "Aborted after " <> showCounter counter
                         if wasSimplified
                             then logRewrite msg >> pure (RewriteAborted failure pat')
-                            else withSimplifiedPattern pat' msg (pure . RewriteAborted failure)
+                            else withSimplified pat' msg (pure . RewriteAborted failure)
       where
-        withSimplifiedPattern p msg cont = do
+        withSimplified p msg cont = do
             simplifyP p >>= \case
                 Nothing -> do
                     logRewrite "Rewrite stuck after simplification."
@@ -813,10 +741,7 @@ performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pa
                     logRewrite msg
                     cont simplifiedPat
 
--- | State record for performRewrite and its sub-functions
 data RewriteStepsState = RewriteStepsState
     { counter :: !Natural
     , traces :: !(Seq (RewriteTrace Pattern))
-    , patternWasSimplified :: !Bool
-    , remaindersWereSimplified :: !Bool
     }
