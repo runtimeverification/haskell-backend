@@ -177,7 +177,7 @@ AliasHead :: {Alias}
 
 SymbolHead :: {Symbol}
 	    : Id SortVariables { Symbol $1 $2 }
-	
+
 SortVariables :: {[SortVariable]}
 	       : '{' SortVariableList '}' { reverse $2 }
                | '{' '}' { [] }
@@ -229,6 +229,11 @@ ApplicationPattern :: {ParsedPattern}
                       { mkAssoc True $5 $6 $7 }
                     | rightAssoc '{' '}' '(' ident SortsBrace NePatterns ')'
                       { mkAssoc False $5 $6 $7 }
+                    -- special cases for multi-or in definitions prior to Oct 2023
+                    | rightAssoc '{' '}' '(' or SortsBrace NePatterns ')'
+                      { mkAssoc False $5 $6 $7 }
+                    | leftAssoc '{' '}' '(' or SortsBrace NePatterns ')'
+                      { mkAssoc True $5 $6 $7 }
                     | top '{' Sort '}' '(' ')'
                       { embedParsedPattern $ TopF Top{topSort = $3} }
                     | bottom '{' Sort '}' '(' ')'
@@ -426,6 +431,8 @@ the result. Namely, \\and, \\or, \\implies, and \\iff. Designed to be passed to
 foldl1' or foldr1.
 -}
 mkApply :: Token -> [Sort] -> ParsedPattern -> ParsedPattern -> ParsedPattern
+mkApply tok@(Token _ TokenOr) [orSort] orFirst orSecond =
+    embedParsedPattern $ OrF Or{orSort, orChildren=[orFirst, orSecond]}
 mkApply tok@(Token _ (TokenIdent _)) sorts first second =
     embedParsedPattern $ ApplicationF Application
        { applicationSymbolOrAlias = SymbolOrAlias { symbolOrAliasConstructor = mkId tok
