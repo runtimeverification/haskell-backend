@@ -53,10 +53,12 @@ if [ ! -f "./$kore" ]; then
   [ ! -f "./$kore" ] && exit 3
 fi
 
+server_params="--server-port 0 "
+
 if [ -f "./$dylib" ]; then
-    server_params="--llvm-backend-library ./$dylib ${SERVER_OPTS:-""}"
+    server_params+="--llvm-backend-library ./$dylib ${SERVER_OPTS:-""}"
 else
-    server_params=${SERVER_OPTS:-""}
+    server_params+=${SERVER_OPTS:-""}
 fi
 
 MODULE=$(grep -o -e "^module [A-Z0-9-]*" ./$kore | tail -1 | sed -e "s/module //")
@@ -68,7 +70,18 @@ server_pid=$!
 trap 'kill -2 ${server_pid}; popd' ERR EXIT
 echo "Server PID ${server_pid}"
 
-sleep 5
+i=15
+while ! lsof -a -p${server_pid} -sTCP:LISTEN -iTCP && [[ $i -ge 0 ]]; do
+    echo "Waiting for server ($i attempts left)"
+    i=$((i-1))
+    sleep 1
+done
+
+# find server port via lsof
+server_port=$(lsof -a -p${server_pid} -sTCP:LISTEN -iTCP | grep ${server_pid} | sed -e 's/.* TCP \*:\([0-9]*\).*$/\1/')
+echo "Server listening on port ${server_port}"
+
+client="$client -p ${server_port}"
 
 if [ -d $dir ] && [ -f "${dir}/test.sh" ]; then
     echo "shell-scripted test, running $dir/testsh as-is"
