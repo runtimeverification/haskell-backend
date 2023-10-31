@@ -17,7 +17,7 @@ source-repository-package
 source-repository-package
     type: git
     location: https://github.com/runtimeverification/haskell-backend.git
-    tag: 03a6228f78d7f4805fee4b9d9c45208dcbe0c9fb
+    tag: 811e94fbcaef8550a6a709a9ce793f7166457911
     --sha256: 
     subdir: kore kore-rpc-types
 
