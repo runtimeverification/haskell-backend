@@ -92,8 +92,6 @@ import SMT (
  )
 import SMT qualified
 import SMT.SimpleSMT qualified as SimpleSMT
-import Control.Monad.Catch qualified as Exception
-import Control.Exception (IOException)
 
 {- | Attempt to evaluate the 'Predicate' argument with an optional side
  condition using an external SMT solver.
@@ -188,7 +186,7 @@ decidePredicate onUnknown sideCondition predicates =
             & runMaybeT
   where
     query :: MaybeT Simplifier Result
-    query = onErrorUnknown $ SMT.withSolver . evalTranslator $ do
+    query = SMT.withSolver . evalTranslator $ do
         tools <- Simplifier.askMetadataTools
         Morph.hoist SMT.liftSMT $ do
             predicates' <-
@@ -197,9 +195,6 @@ decidePredicate onUnknown sideCondition predicates =
                     predicates
             traverse_ SMT.assert predicates'
             SMT.check >>= maybe empty return
-
-    onErrorUnknown action =
-        action `Exception.catch` \(_ :: IOException) -> pure Unknown
 
     retry = retryWithScaledTimeout $ query <* debugRetrySolverQuery predicates
 
