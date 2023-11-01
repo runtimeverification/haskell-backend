@@ -19,7 +19,9 @@ import Control.Error (
     MaybeT (..),
     runMaybeT,
  )
+import Control.Exception (IOException)
 import Control.Lens qualified as Lens
+import Control.Monad.Catch qualified as Exception
 import Control.Monad.Counter qualified as Counter
 import Control.Monad.Morph qualified as Morph
 import Control.Monad.State.Strict qualified as State
@@ -92,8 +94,6 @@ import SMT (
  )
 import SMT qualified
 import SMT.SimpleSMT qualified as SimpleSMT
-import Control.Monad.Catch qualified as Exception
-import Control.Exception (IOException)
 
 {- | Attempt to evaluate the 'Predicate' argument with an optional side
  condition using an external SMT solver.
