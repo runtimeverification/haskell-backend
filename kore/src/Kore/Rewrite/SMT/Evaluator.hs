@@ -188,7 +188,7 @@ decidePredicate onUnknown sideCondition predicates =
             & runMaybeT
   where
     query :: MaybeT Simplifier Result
-    query = SMT.withSolver . evalTranslator $ do
+    query = onErrorUnknown $ SMT.withSolver . evalTranslator $ do
         tools <- Simplifier.askMetadataTools
         Morph.hoist SMT.liftSMT $ do
             predicates' <-
@@ -197,6 +197,9 @@ decidePredicate onUnknown sideCondition predicates =
                     predicates
             traverse_ SMT.assert predicates'
             SMT.check >>= maybe empty return
+
+    onErrorUnknown action =
+        action `Exception.catch` \(_ :: IOException) -> pure Unknown
 
     retry = retryWithScaledTimeout $ query <* debugRetrySolverQuery predicates
 
