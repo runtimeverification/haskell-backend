@@ -495,9 +495,11 @@ pattern SymbolApplication sym sorts args <- Term _ (SymbolApplicationF sym sorts
             , [arg] <- args =
                 Injection source target arg
             | Just (KMapMeta def) <- sym.attributes.collectionMetadata =
-                let (keyVals, rest) =
+                let result =
                         internaliseKmap def $ Term mempty $ SymbolApplicationF sym sorts args
-                 in KMap def keyVals rest
+                 in case result of
+                        ([], Just rest) -> rest -- eliminate useless nesting
+                        (keyVals, rest) -> KMap def keyVals rest
             | Just (KListMeta def) <- sym.attributes.collectionMetadata =
                 internaliseKList def $ Term mempty $ SymbolApplicationF sym sorts args
             | Just (KSetMeta def) <- sym.attributes.collectionMetadata =
