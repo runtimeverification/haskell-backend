@@ -9,8 +9,6 @@ exec kore-exec \
     --smt-retry-limit 3 \
     --smt-reset-interval 100 \
     --smt z3 \
-    --log \
-    /home/sguest/work/haskell-backend/evm-semantics/tests/specs/mcd/flipper-addu48u48-fail-rough-spec.debug-log \
     --log-format=oneline \
     --log-level \
     warning \

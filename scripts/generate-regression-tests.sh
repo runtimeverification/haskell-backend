@@ -146,12 +146,14 @@ kollect() {
          -e "s,/nix/store/[a-z0-9]*-k-[^/]*maven/include/kframework/,evm-semantics/,g" \
          -e "s,${EVM_SEMANTICS}/deps/k/k-distribution/target/release/k/include/kframework/,evm-semantics/,g" \
          -e "s,${EVM_SEMANTICS}/kevm-pyk/src/kevm_pyk/kproj/evm-semantics/,evm-semantics/,g" \
-         -e "s,${EVM_SEMANTICS}/kevm-pyk/src/kevm_pyk/kproj/plugin/,evm-semantics/plugin/,g" \
-         ./*.kore
+         -e "s,${EVM_SEMANTICS}/kevm-pyk/src/kevm_pyk/kproj/plugin/plugin/,evm-semantics/plugin/,g" \
+         -e "s,${EVM_SEMANTICS}/tests,evm-semantics/tests,g" \
+         ./*.kore "$script"
     $sed -i -e "s/result.kore/$script.out/g" \
-        -e "s/vdefinition.kore/$def/g" \
-        -e "s/spec.kore/$spec/g" \
-        "$script"
+         -e "s/vdefinition.kore/$def/g" \
+         -e "s/spec.kore/$spec/g" \
+         -e "/^\s*--log \\\/,+1d;/^\s*--log\s/d" \
+         "$script"
 
     cd ..
     mv "$tmp"/* "${EVM_SEMANTICS}"
