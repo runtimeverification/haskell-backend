@@ -11,6 +11,7 @@ module Test.Booster.Pattern.Rewrite (
 
 import Control.Exception (ErrorCall, catch)
 import Control.Monad.Logger.CallStack
+import Data.Bifunctor (second)
 import Data.List.NonEmpty qualified as NE
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -244,26 +245,29 @@ rulePriority =
                              )
                          ]
 
+runWith :: Term -> Either (RewriteFailed "Rewrite") (RewriteResult Pattern)
+runWith t =
+    second fst $
+        unsafePerformIO
+            (runNoLoggingT $ runRewriteT False def Nothing mempty (rewriteStep [] [] $ mkPattern t))
+
 rewritesTo :: Term -> (Text, Term) -> IO ()
 t1 `rewritesTo` (lbl, t2) =
-    unsafePerformIO (runNoLoggingT $ runRewriteT False def Nothing (rewriteStep [] [] $ mkPattern t1))
-        @?= Right (RewriteFinished (Just lbl) Nothing $ mkPattern t2)
+    runWith t1 @?= Right (RewriteFinished (Just lbl) Nothing $ mkPattern t2)
 
 getsStuck :: Term -> IO ()
 getsStuck t1 =
-    unsafePerformIO (runNoLoggingT $ runRewriteT False def Nothing (rewriteStep [] [] $ mkPattern t1))
-        @?= Right (RewriteStuck $ mkPattern t1)
+    runWith t1 @?= Right (RewriteStuck $ mkPattern t1)
 
 branchesTo :: Term -> [(Text, Term)] -> IO ()
 t `branchesTo` ts =
-    unsafePerformIO (runNoLoggingT $ runRewriteT False def Nothing (rewriteStep [] [] $ mkPattern t))
+    runWith t
         @?= Right
             (RewriteBranch (mkPattern t) $ NE.fromList $ map (\(lbl, t') -> (lbl, Nothing, mkPattern t')) ts)
 
 failsWith :: Term -> RewriteFailed "Rewrite" -> IO ()
 failsWith t err =
-    unsafePerformIO (runNoLoggingT $ runRewriteT False def Nothing (rewriteStep [] [] $ mkPattern t))
-        @?= Left err
+    runWith t @?= Left err
 
 ----------------------------------------
 -- tests for performRewrite (iterated rewrite in IO with logging)
