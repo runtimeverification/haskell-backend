@@ -51,9 +51,11 @@ git submodule update --init --recursive --depth 1 kevm-pyk/src/kevm_pyk/kproj/pl
 feature_shell "make poetry && poetry run -C kevm-pyk -- kevm-dist --verbose build plugin haskell --jobs 4"
 
 feature_shell "make test-prove-pyk PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 --timeout 7200 -vv --use-booster' | tee $SCRIPT_DIR/kevm-$KEVM_VERSION-$FEATURE_BRANCH_NAME.log"
+killall kore-rpc-booster
 
 if [ ! -e "$SCRIPT_DIR/kevm-$KEVM_VERSION-master-$MASTER_COMMIT.log" ]; then
   master_shell "make test-prove-pyk PYTEST_PARALLEL=$PYTEST_PARALLEL PYTEST_ARGS='--maxfail=0 --timeout 7200 -vv --use-booster' | tee $SCRIPT_DIR/kevm-$KEVM_VERSION-master-$MASTER_COMMIT.log"
+  killall kore-rpc-booster
 fi
 
 cd $SCRIPT_DIR
