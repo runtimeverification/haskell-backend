@@ -27,6 +27,9 @@ import Booster.Pattern.Index (TermIndex (..))
 import Booster.Syntax.Json.Internalise (trm)
 import Test.Booster.Fixture hiding (inj)
 
+fst3 :: (a, b, c) -> a
+fst3 (a, _, _) = a
+
 inj :: Symbol
 inj = injectionSymbol
 
@@ -87,7 +90,7 @@ test_evaluateFunction =
             eval BottomUp subj @?= Right result
         ]
   where
-    eval direction = unsafePerformIO . runNoLoggingT . (fst <$>) . evaluateTerm False direction funDef Nothing
+    eval direction = unsafePerformIO . runNoLoggingT . (fst3 <$>) . evaluateTerm False direction funDef Nothing
 
     isTooManyIterations (Left (TooManyIterations _n _ _)) = pure ()
     isTooManyIterations (Left err) = assertFailure $ "Unexpected error " <> show err
@@ -114,7 +117,7 @@ test_simplify =
             simpl BottomUp subj @?= Right result
         ]
   where
-    simpl direction = unsafePerformIO . runNoLoggingT . (fst <$>) . evaluateTerm False direction simplDef Nothing
+    simpl direction = unsafePerformIO . runNoLoggingT . (fst3 <$>) . evaluateTerm False direction simplDef Nothing
     a = var "A" someSort
 
 test_simplifyPattern :: TestTree
@@ -145,7 +148,7 @@ test_simplifyPattern =
             simpl subj @?= Right result
         ]
   where
-    simpl = unsafePerformIO . runNoLoggingT . (fst <$>) . evaluatePattern False simplDef Nothing
+    simpl = unsafePerformIO . runNoLoggingT . (fst3 <$>) . evaluatePattern False simplDef Nothing mempty
     a = var "A" someSort
 
 test_errors :: TestTree
@@ -159,7 +162,7 @@ test_errors =
                 loopTerms =
                     [f $ app con1 [a], f $ app con2 [a], f $ app con3 [a, a], f $ app con1 [a]]
             isLoop loopTerms . unsafePerformIO . runNoLoggingT $
-                fst <$> evaluateTerm False TopDown loopDef Nothing subj
+                fst3 <$> evaluateTerm False TopDown loopDef Nothing subj
         ]
   where
     isLoop ts (Left (EquationLoop ts')) = ts @?= ts'

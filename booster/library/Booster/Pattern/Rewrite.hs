@@ -22,7 +22,7 @@ import Control.Monad.Logger.CallStack
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), ask)
-import Control.Monad.Trans.State.Strict (StateT (runStateT), get, modify)
+import Control.Monad.Trans.State.Strict (StateT (runStateT), get, gets, modify)
 import Data.Hashable qualified as Hashable
 import Data.List.NonEmpty (NonEmpty (..), toList)
 import Data.List.NonEmpty qualified as NE
@@ -40,6 +40,7 @@ import Booster.LLVM.Internal qualified as LLVM
 import Booster.Pattern.ApplyEquations (
     EquationFailure (..),
     EquationTrace,
+    SimplifierCache,
     evaluatePattern,
     simplifyConstraint,
  )
@@ -50,7 +51,8 @@ import Booster.Pattern.Unify
 import Booster.Pattern.Util
 import Booster.Prettyprinter
 
-newtype RewriteT io err a = RewriteT {unRewriteT :: ReaderT RewriteConfig (ExceptT err io) a}
+newtype RewriteT io err a = RewriteT
+    {unRewriteT :: ReaderT RewriteConfig (StateT SimplifierCache (ExceptT err io)) a}
     deriving newtype (Functor, Applicative, Monad, MonadLogger, MonadIO, MonadLoggerIO)
 
 data RewriteConfig = RewriteConfig
@@ -59,14 +61,21 @@ data RewriteConfig = RewriteConfig
     , doTracing :: Bool
     }
 
-runRewriteT :: Bool -> KoreDefinition -> Maybe LLVM.API -> RewriteT io err a -> io (Either err a)
-runRewriteT doTracing def mLlvmLibrary =
+runRewriteT ::
+    Bool ->
+    KoreDefinition ->
+    Maybe LLVM.API ->
+    SimplifierCache ->
+    RewriteT io err a ->
+    io (Either err (a, SimplifierCache))
+runRewriteT doTracing def mLlvmLibrary cache =
     runExceptT
+        . flip runStateT cache
         . flip runReaderT RewriteConfig{definition = def, llvmApi = mLlvmLibrary, doTracing}
         . unRewriteT
 
 throw :: MonadLoggerIO io => err -> RewriteT io err a
-throw = RewriteT . lift . throwE
+throw = RewriteT . lift . lift . throwE
 
 getDefinition :: MonadLoggerIO io => RewriteT io err KoreDefinition
 getDefinition = RewriteT $ definition <$> ask
@@ -302,7 +311,7 @@ applyRule pat rule = runRewriteRuleAppT $ do
         RewriteRuleAppT (RewriteT io (RewriteFailed k)) (Maybe a)
     checkConstraint onUnclear onBottom p = do
         RewriteConfig{definition, llvmApi, doTracing} <- lift $ RewriteT ask
-        (simplified, _traces) <- simplifyConstraint doTracing definition llvmApi p
+        (simplified, _traces, _cache) <- simplifyConstraint doTracing definition llvmApi mempty p
         case simplified of
             Right Bottom -> onBottom
             Right Top -> pure Nothing
@@ -556,7 +565,7 @@ performRewrite ::
     io (Natural, Seq (RewriteTrace Pattern), RewriteResult Pattern)
 performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pat = do
     (rr, RewriteStepsState{counter, traces}) <-
-        flip runStateT RewriteStepsState{counter = 0, traces = mempty} $ doSteps False pat
+        flip runStateT rewriteStart $ doSteps False pat
     pure (counter, traces, rr)
   where
     logDepth = logOther (LevelOther "Depth")
@@ -574,13 +583,17 @@ performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pa
         logRewrite $ pack $ renderDefault $ pretty t
         when doTracing $
             modify $
-                \RewriteStepsState{counter, traces} -> RewriteStepsState{counter, traces = traces |> t}
+                \rss@RewriteStepsState{traces} -> rss{traces = traces |> t}
     incrementCounter =
-        modify $ \RewriteStepsState{counter, traces} -> RewriteStepsState{counter = counter + 1, traces}
+        modify $ \rss@RewriteStepsState{counter} -> rss{counter = counter + 1}
+
+    updateCache simplifierCache = modify $ \rss -> rss{simplifierCache}
 
     simplifyP :: Pattern -> StateT RewriteStepsState io (Maybe Pattern)
-    simplifyP p =
-        evaluatePattern doTracing def mLlvmLibrary p >>= \(res, traces) -> do
+    simplifyP p = do
+        cache <- gets (.simplifierCache)
+        evaluatePattern doTracing def mLlvmLibrary cache p >>= \(res, traces, newCache) -> do
+            updateCache newCache
             logTraces traces
             case res of
                 Right newPattern -> do
@@ -653,7 +666,7 @@ performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pa
     doSteps ::
         Bool -> Pattern -> StateT RewriteStepsState io (RewriteResult Pattern)
     doSteps wasSimplified pat' = do
-        RewriteStepsState{counter} <- get
+        RewriteStepsState{counter, simplifierCache} <- get
         logDepth $ showCounter counter
         if depthReached counter
             then do
@@ -662,20 +675,22 @@ performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pa
                 logRewrite $ pack $ renderDefault $ showPattern title pat'
                 (if wasSimplified then pure else simplifyResult pat') $ RewriteFinished Nothing Nothing pat'
             else
-                runRewriteT doTracing def mLlvmLibrary (rewriteStep cutLabels terminalLabels pat') >>= \case
-                    Right (RewriteFinished mlbl uniqueId single) -> do
+                runRewriteT doTracing def mLlvmLibrary simplifierCache (rewriteStep cutLabels terminalLabels pat') >>= \case
+                    Right (RewriteFinished mlbl uniqueId single, cache) -> do
                         whenJust mlbl $ \lbl ->
                             rewriteTrace $ RewriteSingleStep lbl uniqueId pat' single
+                        updateCache cache
                         incrementCounter
                         doSteps False single
-                    Right terminal@(RewriteTerminal lbl uniqueId single) -> do
+                    Right (terminal@(RewriteTerminal lbl uniqueId single), _cache) -> do
                         rewriteTrace $ RewriteSingleStep lbl uniqueId pat' single
                         logRewrite $
                             "Terminal rule after " <> showCounter (counter + 1)
                         incrementCounter
                         simplifyResult pat' terminal
-                    Right branching@RewriteBranch{} -> do
+                    Right (branching@RewriteBranch{}, cache) -> do
                         logRewrite $ "Stopped due to branching after " <> showCounter counter
+                        updateCache cache
                         simplified <- simplifyResult pat' branching
                         case simplified of
                             RewriteStuck{} -> do
@@ -694,7 +709,7 @@ performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pa
                                 rewriteTrace $ RewriteBranchingStep pat'' $ fmap (\(lbl, uid, _) -> (lbl, uid)) branches
                                 pure simplified
                             _other -> error "simplifyResult: Unexpected return value"
-                    Right cutPoint@(RewriteCutPoint lbl _ _ _) -> do
+                    Right (cutPoint@(RewriteCutPoint lbl _ _ _), _) -> do
                         simplified <- simplifyResult pat' cutPoint
                         case simplified of
                             RewriteCutPoint{} ->
@@ -705,16 +720,17 @@ performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pa
                                 logRewrite $ "Simplified to bottom after " <> showCounter counter
                             _other -> error "simplifyResult: Unexpected return value"
                         pure simplified
-                    Right stuck@RewriteStuck{} -> do
+                    Right (stuck@RewriteStuck{}, cache) -> do
                         logRewrite $ "Stopped after " <> showCounter counter
+                        updateCache cache
                         rewriteTrace $ RewriteStepFailed $ NoApplicableRules pat'
                         if wasSimplified
                             then pure stuck
                             else withSimplified pat' "Retrying with simplified pattern" (doSteps True)
-                    Right trivial@RewriteTrivial{} -> do
+                    Right (trivial@RewriteTrivial{}, _) -> do
                         logRewrite $ "Simplified to bottom after " <> showCounter counter
                         pure trivial
-                    Right aborted@RewriteAborted{} -> do
+                    Right (aborted@RewriteAborted{}, _) -> do
                         logRewrite $ "Aborted after " <> showCounter counter
                         simplifyResult pat' aborted
                     -- if unification was unclear and the pattern was
@@ -744,4 +760,8 @@ performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pa
 data RewriteStepsState = RewriteStepsState
     { counter :: !Natural
     , traces :: !(Seq (RewriteTrace Pattern))
+    , simplifierCache :: SimplifierCache
     }
+
+rewriteStart :: RewriteStepsState
+rewriteStart = RewriteStepsState{counter = 0, traces = mempty, simplifierCache = mempty}
