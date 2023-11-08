@@ -5,13 +5,16 @@ exec kore-exec \
     --module VERIFICATION \
     --strategy all \
     --max-counterexamples 1 \
-    --smt-timeout 99 \
-    --smt-retry-limit 1 \
+    --smt-timeout 125 \
+    --smt-retry-limit 3 \
     --smt-reset-interval 100 \
     --smt z3 \
+    --log-format=oneline \
     --log-level \
     warning \
     --enable-log-timestamps \
+    --log-entries \
+    DebugTransition \
     --prove test-flipper-addu48u48-fail-rough-spec.kore \
     --spec-module FLIPPER-ADDU48U48-FAIL-ROUGH-SPEC \
     --graph-search breadth-first \
