@@ -31,7 +31,7 @@ fi
 
 # Make sure the temp directory gets removed and kore-rpc-booster gets killed on script exit.
 trap "exit 1"           HUP INT PIPE QUIT TERM
-trap 'rm -rf "$TEMPD" && killall kore-rpc-booster'  EXIT
+trap 'rm -rf "$TEMPD" && killall kore-rpc-booster || echo "no zombie processes found"'  EXIT
 
 cd $TEMPD
 git clone --depth 1 --branch $KONTROL_VERSION https://github.com/runtimeverification/kontrol.git
@@ -63,11 +63,11 @@ master_shell() {
 feature_shell "poetry install && poetry run kevm-dist --verbose build plugin haskell foundry --jobs 4"
 
 feature_shell "make test-integration TEST_ARGS='--maxfail=0 --numprocesses=$PYTEST_PARALLEL --use-booster -vv' | tee $SCRIPT_DIR/kontrol-$KONTROL_VERSION-$FEATURE_BRANCH_NAME.log"
-killall kore-rpc-booster
+killall kore-rpc-booster || echo "no zombie processes found"
 
 if [ ! -e "$SCRIPT_DIR/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT.log" ]; then
   master_shell "make test-integration TEST_ARGS='--maxfail=0 --numprocesses=$PYTEST_PARALLEL --use-booster -vv' | tee $SCRIPT_DIR/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT.log"
-  killall kore-rpc-booster
+  killall kore-rpc-booster || echo "no zombie processes found"
 fi
 
 cd $SCRIPT_DIR
