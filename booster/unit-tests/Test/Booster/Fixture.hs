@@ -108,14 +108,48 @@ testKMapDefinition =
             , concatSymbolName = "Lbl'Unds'TestKMap'Unds'"
             }
 
-emptyKMap, concreteKMapWithOneItem, symbolicKMapWithOneItem :: Term
+kmapKeySort, kmapElementSort, kmapSort :: Sort
+kmapKeySort = SortApp testKMapDefinition.keySortName []
+kmapElementSort = SortApp testKMapDefinition.elementSortName []
+kmapSort = SortApp testKMapDefinition.mapSortName []
+
+emptyKMap
+    , concreteKMapWithOneItem
+    , concreteKMapWithTwoItems
+    , concreteKMapWithOneItemAndRest
+    , symbolicKMapWithOneItem
+    , symbolicKMapWithTwoItems
+    , concreteAndSymbolicKMapWithTwoItems ::
+        Term
 emptyKMap = KMap testKMapDefinition [] Nothing
 concreteKMapWithOneItem =
     KMap
         testKMapDefinition
         [
-            ( [trm| \dv{SomeSort{}}("key")|]
-            , [trm| \dv{SomeSort{}}("value")|]
+            ( [trm| \dv{SortTestKMapKey{}}("key") |]
+            , [trm| \dv{SortTestKMapItem{}}("value") |]
+            )
+        ]
+        Nothing
+concreteKMapWithOneItemAndRest =
+    KMap
+        testKMapDefinition
+        [
+            ( [trm| \dv{SortTestKMapKey{}}("key") |]
+            , [trm| \dv{SortTestKMapItem{}}("value") |]
+            )
+        ]
+        (Just [trm| REST:SortTestKMap{}|])
+concreteKMapWithTwoItems =
+    KMap
+        testKMapDefinition
+        [
+            ( [trm| \dv{SortTestKMapKey{}}("key") |]
+            , [trm| \dv{SortTestKMapItem{}}("value") |]
+            )
+        ,
+            ( [trm| \dv{SortTestKMapKey{}}("key2") |]
+            , [trm| \dv{SortTestKMapItem{}}("value2") |]
             )
         ]
         Nothing
@@ -123,8 +157,34 @@ symbolicKMapWithOneItem =
     KMap
         testKMapDefinition
         [
-            ( [trm| \dv{SomeSort{}}("key")|]
-            , [trm| A:SomeSort|]
+            ( [trm| \dv{SortTestKMapKey{}}("key") |]
+            , [trm| A:SortTestKMapItem{} |]
+            )
+        ]
+        Nothing
+symbolicKMapWithTwoItems =
+    KMap
+        testKMapDefinition
+        [
+            ( [trm| \dv{SortTestKMapKey{}}("key") |]
+            , [trm| A:SortTestKMapItem{} |]
+            )
+        ,
+            ( [trm| \dv{SortTestKMapKey{}}("key2") |]
+            , [trm| B:SortTestKMapItem{} |]
+            )
+        ]
+        Nothing
+concreteAndSymbolicKMapWithTwoItems =
+    KMap
+        testKMapDefinition
+        [
+            ( [trm| \dv{SortTestKMapKey{}}("key") |]
+            , [trm| \dv{SortTestKMapItem{}}("value") |]
+            )
+        ,
+            ( [trm| A:SortTestKMapKey{}|]
+            , [trm| \dv{SortTestKMapItem{}}("value2") |]
             )
         ]
         Nothing

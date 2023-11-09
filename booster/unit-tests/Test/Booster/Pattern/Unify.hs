@@ -32,6 +32,7 @@ test_unification =
         , sorts
         , injections
         , internalLists
+        , internalMaps
         ]
 
 injections :: TestTree
@@ -365,6 +366,77 @@ internalLists =
     lastElem = [trm| \dv{SomeSort{}}("last") |]
 
     klist = KList testKListDef
+
+internalMaps :: TestTree
+internalMaps =
+    testGroup
+        "Internal maps"
+        [ test
+            "Can unify an empty map with itself"
+            emptyKMap
+            emptyKMap
+            (success [])
+        , test
+            "Can unify a concrete 2 element map with itself"
+            concreteKMapWithTwoItems
+            concreteKMapWithTwoItems
+            (success [])
+        , test
+            "Can unify a concrete and symbolic map"
+            concreteKMapWithOneItem
+            symbolicKMapWithOneItem
+            (success [("A", kmapElementSort, [trm| \dv{SortTestKMapItem{}}("value")|])])
+        , test
+            "Can unify a concrete and symbolic map with two elements"
+            concreteKMapWithTwoItems
+            symbolicKMapWithTwoItems
+            ( success
+                [ ("A", kmapElementSort, [trm| \dv{SortTestKMapItem{}}("value")|])
+                , ("B", kmapElementSort, [trm| \dv{SortTestKMapItem{}}("value2")|])
+                ]
+            )
+        , test
+            "Can unify {\"key\" |-> \"value\", ...REST} with {A |-> \"value\"}"
+            concreteKMapWithOneItemAndRest
+            symbolicKMapWithOneItem
+            ( success
+                [("REST", kmapSort, emptyKMap), ("A", kmapElementSort, [trm| \dv{SortTestKMapItem{}}("value")|])]
+            )
+        , test
+            "Can unify {\"key\" |-> \"value\", A |-> \"value2\"} with {\"key\" |-> \"value\", ...REST}"
+            concreteAndSymbolicKMapWithTwoItems
+            concreteKMapWithOneItemAndRest
+            ( success
+                [
+                    ( "REST"
+                    , kmapSort
+                    , KMap
+                        testKMapDefinition
+                        [
+                            ( [trm| A:SortTestKMapKey{} |]
+                            , [trm| \dv{SortTestKMapItem{}}("value2") |]
+                            )
+                        ]
+                        Nothing
+                    )
+                ]
+            )
+        , test
+            "Empty and non-empty concrete map fail to unify"
+            emptyKMap
+            concreteKMapWithOneItem
+            (failed $ KeyNotFound [trm| \dv{SortTestKMapKey{}}("key")|] emptyKMap)
+        , test
+            "Concrete maps of different length fail to unify"
+            concreteKMapWithOneItem
+            concreteKMapWithTwoItems
+            (failed $ KeyNotFound [trm| \dv{SortTestKMapKey{}}("key2")|] concreteKMapWithOneItem)
+        , test
+            "Empty and symbolic non-empty map fail to unify"
+            emptyKMap
+            symbolicKMapWithOneItem
+            (failed $ KeyNotFound [trm| \dv{SortTestKMapKey{}}("key")|] emptyKMap)
+        ]
 
 ----------------------------------------
 
