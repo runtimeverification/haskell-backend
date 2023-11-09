@@ -180,19 +180,9 @@ respond stateVar =
                                 predicate = fromMaybe (KoreJson.KJTop tSort) mbPredicate
                                 substitution = fromMaybe (KoreJson.KJTop tSort) mbSubstitution
                                 result = KoreJson.KJAnd tSort [term, predicate, substitution]
-                            -- pure . Right . RpcTypes.Simplify $
-                            --     RpcTypes.SimplifyResult
-                            --         { state = addHeader result
-                            --         , logs = mkTraces patternTraces
-                            --         }
                             pure $ Right (addHeader result, patternTraces)
                         (Left ApplyEquations.SideConditionsFalse{}, patternTraces, _) -> do
                             let tSort = fromMaybe (error "unknown sort") $ sortOfJson req.state.term
-                            -- pure . Right . RpcTypes.Simplify $
-                            --     RpcTypes.SimplifyResult
-                            --         { state = addHeader $ KoreJson.KJBottom tSort
-                            --         , logs = mkTraces patternTraces
-                            --         }
                             pure $ Right (addHeader $ KoreJson.KJBottom tSort, patternTraces)
                         (Left (ApplyEquations.EquationLoop terms), _traces, _) ->
                             pure . Left . RpcError.backendError RpcError.Aborted $ map externaliseTerm terms -- FIXME
@@ -207,11 +197,6 @@ respond stateVar =
                                     fromMaybe (error "not a predicate") $
                                         sortOfJson req.state.term
                                 result = externalisePredicate predicateSort newPred
-                            -- pure . Right . RpcTypes.Simplify $
-                            --     RpcTypes.SimplifyResult
-                            --         { state = addHeader result
-                            --         , logs = mkTraces traces
-                            --         }
                             pure $ Right (addHeader result, traces)
                         (Left something, _traces, _) ->
                             pure . Left . RpcError.backendError RpcError.Aborted $ show something -- FIXME
