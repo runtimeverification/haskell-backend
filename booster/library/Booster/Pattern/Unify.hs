@@ -35,6 +35,7 @@ import Booster.Pattern.Util (
     sortOfTerm,
     substituteInTerm,
  )
+import Data.List (partition)
 
 -- | Result of a unification (a substitution or an indication of what went wrong)
 data UnificationResult
@@ -401,20 +402,32 @@ unify1
                 Empty ->
                     case (substituteInTerm currentSubst t1, substituteInTerm currentSubst t2) of
                         (KMap _ kvs (Just restVar@Var{}), KMap _ m Nothing)
-                            | allConstructorLike kvs && allConstructorLike m -> unifySimpleMapShape kvs restVar m
+                            | (cKvs, []) <- partitionConcreteKeys kvs -> unifySimpleMapShape cKvs restVar m
                         (KMap _ m Nothing, KMap _ kvs (Just restVar@Var{}))
-                            | allConstructorLike kvs && allConstructorLike m -> unifySimpleMapShape kvs restVar m
+                            | (cKvs, []) <- partitionConcreteKeys kvs -> unifySimpleMapShape cKvs restVar m
+                        (KMap _ kvs Nothing, KMap _ m Nothing)
+                            | allKeysConstructorLike kvs && allKeysConstructorLike m ->
+                                case (duplicateKeys kvs, duplicateKeys m) of
+                                    (Just duplicate, _) -> failWith $ DuplicateKeys duplicate $ KMap def1 kvs Nothing
+                                    (_, Just duplicate) -> failWith $ DuplicateKeys duplicate $ KMap def1 m Nothing
+                                    (Nothing, Nothing) -> case kvs `findAllKeysIn` m of
+                                        Left notFoundKeys -> failWith $ KeyNotFound (head notFoundKeys) $ KMap def1 m Nothing
+                                        Right (matched, []) -> forM_ matched $ uncurry enqueueRegularProblem
+                                        Right (_matched, rest) -> failWith $ KeyNotFound (fst $ head rest) $ KMap def1 kvs Nothing
                         _ -> addIndeterminate t1 t2
                 _ ->
                     -- defer unification until all regular terms have unified
                     enqueueMapProblem t1 t2
         | otherwise = failWith $ DifferentSorts t1 t2
       where
-        allConstructorLike :: [(Term, Term)] -> Bool
-        allConstructorLike = all (\(Term attrs _, _) -> attrs.isConstructorLike)
+        partitionConcreteKeys :: [(Term, Term)] -> ([(Term, Term)], [(Term, Term)])
+        partitionConcreteKeys = partition (\(Term attrs _, _) -> attrs.isConstructorLike)
 
-        findAllKeys :: [(Term, Term)] -> [(Term, Term)] -> Either [Term] ([(Term, Term)], [(Term, Term)])
-        findAllKeys kvs m =
+        allKeysConstructorLike :: [(Term, Term)] -> Bool
+        allKeysConstructorLike = all (\(Term attrs _, _) -> attrs.isConstructorLike)
+
+        findAllKeysIn :: [(Term, Term)] -> [(Term, Term)] -> Either [Term] ([(Term, Term)], [(Term, Term)])
+        findAllKeysIn kvs m =
             let searchMap = Map.fromList kvs
                 subjectMap = Map.fromList m
                 matchedMap = Map.intersectionWith (,) searchMap subjectMap
@@ -431,15 +444,17 @@ unify1
                     [] -> Nothing
                     (k, _) : _ -> Just k
 
-        unifySimpleMapShape kvs restVar m
-            | Just duplicate <- duplicateKeys kvs =
-                failWith $ DuplicateKeys duplicate $ KMap def1 kvs (Just restVar)
+        unifySimpleMapShape cKvs restVar m
+            | Just duplicate <- duplicateKeys cKvs =
+                failWith $ DuplicateKeys duplicate $ KMap def1 cKvs (Just restVar)
             | Just duplicate <- duplicateKeys m = failWith $ DuplicateKeys duplicate $ KMap def1 m Nothing
-            | otherwise = case findAllKeys kvs m of
-                Left notFoundKeys -> failWith $ KeyNotFound (head notFoundKeys) $ KMap def1 m Nothing
-                Right (matched, rest) -> do
-                    forM_ matched $ uncurry enqueueRegularProblem
-                    enqueueRegularProblem restVar $ KMap def1 rest Nothing
+            | otherwise = do
+                let (cM, sM) = partitionConcreteKeys m
+                case cKvs `findAllKeysIn` cM of
+                    Left notFoundKeys -> failWith $ KeyNotFound (head notFoundKeys) $ KMap def1 m Nothing
+                    Right (matched, rest) -> do
+                        forM_ matched $ uncurry enqueueRegularProblem
+                        enqueueRegularProblem restVar $ KMap def1 (rest ++ sM) Nothing
 -- could be unifying a map with a function which returns a map
 unify1
     t1@SymbolApplication{}
