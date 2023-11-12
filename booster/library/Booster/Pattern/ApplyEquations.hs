@@ -358,13 +358,17 @@ applyTerm TopDown pref = \t@(Term attributes _) ->
                         if isConcrete t && isJust config.llvmApi && attributes.canBeEvaluated
                             then do
                                 let result = simplifyTerm (fromJust config.llvmApi) config.definition t (sortOfTerm t)
-                                when (result /= t) setChanged
+                                when (result /= t) $ do
+                                    setChanged
+                                    traceRuleApplication t Nothing (Just "LLVM") Nothing $ Success result
                                 pure result
                             else apply t
                     toCache t simplified
                     pure simplified
                 Just cached -> do
-                    when (t /= cached) setChanged
+                    when (t /= cached) $ do
+                        setChanged
+                        traceRuleApplication t Nothing (Just "Cache") Nothing $ Success cached
                     pure cached
   where
     apply = \case
