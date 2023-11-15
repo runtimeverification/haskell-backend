@@ -31,27 +31,20 @@ import Codec.Archive.Tar.Check qualified as Tar
 import Codec.Compression.BZip qualified as BZ2
 import Codec.Compression.GZip qualified as GZip
 import Control.Monad (forM, forM_, unless, when)
-import Control.Monad.Trans.Except
 import Control.Monad.Trans.Writer
 import Data.ByteString.Lazy.Char8 qualified as BS
-import Data.Functor.Foldable (Corecursive (embed), cata)
 import Data.List.Extra as List
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromMaybe)
-import Data.Set qualified as Set
 import Data.Text.Encoding qualified as Text
-import Prettyprinter
 import System.Directory
 import System.Directory.Extra
 import System.Environment (getArgs)
 import System.FilePath
 
 import Booster.JsonRpc.Utils
-import Booster.Pattern.Base qualified as Internal
-import Booster.Prettyprinter
 import Booster.Syntax.Json (sortOfJson)
-import Booster.Syntax.Json.Internalise
 import Booster.Syntax.ParsedKore (internalise, parseKoreDefinition)
 import Kore.JsonRpc.Types
 import Kore.Syntax.Json.Types hiding (Left, Right)
@@ -294,61 +287,32 @@ checkDiff name BugReportDiff{booster, koreRpc} =
             . parseKoreDefinition (name <> "/definition.kore")
             . Text.decodeUtf8
             $ BS.toStrict booster.definition
-    internalised =
-        orientEquals
-            . either (error . show) id
-            . runExcept
-            . internaliseTermOrPredicate DisallowAlias IgnoreSubsorts Nothing bDef
 
-    orientEquals = \case
-        Internal.APredicate p -> Internal.APredicate $ orient p
-        Internal.TermAndPredicate p -> Internal.TermAndPredicate p{Internal.constraints = Set.map orient p.constraints}
-      where
-        orient :: Internal.Predicate -> Internal.Predicate
-        orient = cata $ \case
-            Internal.EqualsTermF t1 t2
-                | t1 > t2 -> Internal.EqualsTerm t2 t1
-            other -> embed other
-
-    patternsIn :: KoreRpcJson -> [Internal.TermOrPredicate]
-    patternsIn (RpcRequest (Execute r)) = [internalised r.state.term]
+    patternsIn :: KoreRpcJson -> [KorePattern]
+    patternsIn (RpcRequest (Execute r)) = [r.state.term]
     -- no need for patternsIn (RpcRequest (Implies r)) = map internalised [r.antecedent.term, r.consequent.term]
-    patternsIn (RpcRequest (Simplify r)) = [internalised r.state.term]
-    patternsIn (RpcResponse (Execute r)) = fromState r.state : maybe [] (List.sort . map fromState) r.nextStates
-    patternsIn (RpcResponse (Simplify r)) = [internalised r.state.term]
+    patternsIn (RpcRequest (Simplify r)) = [r.state.term]
+    patternsIn (RpcResponse (Execute r)) = fromState r.state : maybe [] (List.sortOn show . map fromState) r.nextStates
+    patternsIn (RpcResponse (Simplify r)) = [r.state.term]
     -- no need for patternsIn (RpcResponse (Implies r)) = [internalised r.implication.term]
-    patternsIn (RpcKoreJson state) = [internalised state.term]
+    patternsIn (RpcKoreJson state) = [state.term]
     patternsIn _other = []
 
-    fromState :: ExecuteState -> Internal.TermOrPredicate
+    fromState :: ExecuteState -> KorePattern
     fromState exState =
         case catMaybes [exState.substitution, exState.predicate] of
-            [] -> internalised exState.term.term
+            [] -> exState.term.term
             ps@(p : _) ->
-                internalised $
-                    KJAnd
-                        (fromMaybe (error "no sort") $ sortOfJson p.term)
-                        (exState.term.term : map (.term) ps)
+                KJAnd
+                    (fromMaybe (error "no sort") $ sortOfJson p.term)
+                    (exState.term.term : map (.term) ps)
 
     comparePatternsIn tipe key bsBooster bsKore = do
         let bPats = patternsIn $ decodeKoreRpc bsBooster
             kPats = patternsIn $ decodeKoreRpc bsKore
-        unless (bPats == kPats) $
-            msg ("Patterns in " <> tipe <> " " <> key <> " differ.")
+            diffs = catMaybes $ zipWith (diffBy bDef) bPats kPats
         if length bPats /= length kPats
             then msg "Different amount of patterns"
-            else do
-                let diffs = catMaybes $ zipWith pDiff bPats kPats
-                mapM_ msg diffs
-
-pDiff :: Internal.TermOrPredicate -> Internal.TermOrPredicate -> Maybe BS.ByteString
-pDiff p1 p2
-    | p1 == p2 = Nothing
-    | otherwise =
-        let asBS = BS.pack . renderDefault . prettyThing
-            bsP1 = asBS p1
-            bsP2 = asBS p2
-         in if bsP1 == bsP2 then Nothing else Just $ renderDiff bsP1 bsP2
-  where
-    prettyThing (Internal.APredicate p) = pretty p
-    prettyThing (Internal.TermAndPredicate p) = pretty p
+            else unless (null diffs) $ do
+                msg ("Patterns in " <> tipe <> " " <> key <> " differ.")
+                mapM_ (msg . BS.pack) diffs
