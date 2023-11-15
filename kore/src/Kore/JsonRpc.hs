@@ -646,11 +646,9 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
 
 handleDecidePredicateUnknown :: JsonRpcHandler
 handleDecidePredicateUnknown = JsonRpcHandler $ \(err :: DecidePredicateUnknown) ->
-    let mkPretty = Pretty.renderText . Pretty.layoutPretty Pretty.defaultLayoutOptions . Pretty.pretty
-     in logInfoN (mkPretty err)
-            >> pure
-                ( backendError SmtSolverError $
-                    PatternJson.fromPredicate
-                        (TermLike.SortActualSort $ TermLike.SortActual (TermLike.Id "SortBool" TermLike.AstLocationNone) [])
-                        (makeMultipleAndPredicate . toList $ predicates err)
-                )
+    pure
+        ( backendError SmtSolverError $
+            PatternJson.fromPredicate
+                (TermLike.SortActualSort $ TermLike.SortActual (TermLike.Id "SortBool" TermLike.AstLocationNone) [])
+                (makeMultipleAndPredicate . toList $ predicates err)
+        )
