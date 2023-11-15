@@ -631,15 +631,7 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
                 log (InfoJsonRpcProcessRequest (getReqId req) parsed)
                     >> respond serverState mainModule runSMT parsed
             )
-            [ JsonRpcHandler $ \(err :: DecidePredicateUnknown) ->
-                let mkPretty = Pretty.renderText . Pretty.layoutPretty Pretty.defaultLayoutOptions . Pretty.pretty
-                 in logInfoN (mkPretty err)
-                        >> pure
-                            ( backendError SmtSolverError $
-                                PatternJson.fromPredicate
-                                    (TermLike.SortActualSort $ TermLike.SortActual (TermLike.Id "SortBool" TermLike.AstLocationNone) [])
-                                    (makeMultipleAndPredicate . toList $ predicates err)
-                            )
+            [ handleDecidePredicateUnknown
             , handleErrorCall
             , handleSomeException
             ]
@@ -651,3 +643,14 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
 
     log :: MonadIO m => Log.Entry entry => entry -> m ()
     log = Log.logWith $ Log.hoistLogAction liftIO logAction
+
+handleDecidePredicateUnknown :: JsonRpcHandler
+handleDecidePredicateUnknown = JsonRpcHandler $ \(err :: DecidePredicateUnknown) ->
+    let mkPretty = Pretty.renderText . Pretty.layoutPretty Pretty.defaultLayoutOptions . Pretty.pretty
+     in logInfoN (mkPretty err)
+            >> pure
+                ( backendError SmtSolverError $
+                    PatternJson.fromPredicate
+                        (TermLike.SortActualSort $ TermLike.SortActual (TermLike.Id "SortBool" TermLike.AstLocationNone) [])
+                        (makeMultipleAndPredicate . toList $ predicates err)
+                )
