@@ -4,6 +4,11 @@ set -euxo pipefail
 K_VERSION=$(cat deps/k_release)
 PLUGIN_VERSION=$(cat deps/blockchain-k-plugin_release)
 export PATH="$(nix build github:runtimeverification/k/v$K_VERSION#k.openssl.procps --no-link  --print-build-logs --json | jq -r '.[].outputs | to_entries[].value')/bin:$PATH"
+
+if [ -f cabal.project.local ]; then
+    echo "[WARN] local cabal project configuration found"
+fi
+
 cabal update
 cabal test llvm-integration
 
@@ -20,21 +25,21 @@ for dir in $(ls -d test-*); do
     name=${dir##test-}
     echo "Running $name..."
     if [ "$name" = "a-to-f" ] || [ "$name" = "diamond" ]; then
-        SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name --time
-        SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name --time
-        SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time
+        SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name --time $@
+        SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name --time $@
+        SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time $@
     elif [ "$name" = "vacuous" ]; then
-        SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name
-        SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name
+        SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name $@
+        SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name $@
     elif [ "$name" = "substitutions" ]; then
-        SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name --time
-        SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time
+        SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name --time $@
+        SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time $@
     elif [ "$name" = "no-evaluator" ]; then
-        SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name --time
+        SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name --time $@
     elif [ "$name" = "foundry-bug-report" ]; then
-        SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time
-        SERVER="$KORE_RPC_BOOSTER --interim-simplification 100" ./runDirectoryTest.sh test-$name --time
+        SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time $@
+        SERVER="$KORE_RPC_BOOSTER --interim-simplification 100" ./runDirectoryTest.sh test-$name --time $@
     else
-        SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time
+        SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time $@
     fi
 done

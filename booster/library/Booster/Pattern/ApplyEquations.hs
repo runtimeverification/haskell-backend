@@ -536,7 +536,11 @@ traceRuleApplication ::
     EquationT io ()
 traceRuleApplication t loc lbl uid res = do
     let newTraceItem = EquationTrace t loc lbl uid res
-    logOther (LevelOther "Simplify") (pack . renderDefault . pretty $ newTraceItem)
+        prettyItem = pack . renderDefault . pretty $ newTraceItem
+    logOther (LevelOther "Simplify") prettyItem
+    case res of
+        Success{} -> logOther (LevelOther "SimplifySuccess") prettyItem
+        _ -> pure ()
     config <- getConfig
     when config.doTracing $
         EquationT . lift . lift . modify $
@@ -688,11 +692,11 @@ simplifyConstraint doTracing def mbApi cache p =
 
 -- version for internal nested evaluation
 simplifyConstraint' :: MonadLoggerIO io => Predicate -> EquationT io Predicate
--- We are assuming all predicates are of the form 'P ==Bool true' and
+-- We are assuming all predicates are of the form 'true \equals P' and
 -- evaluating them using simplifyBool if they are concrete.
 -- Non-concrete \equals predicates are simplified using evaluateTerm.
 simplifyConstraint' = \case
-    EqualsTerm t@(Term attributes _) TrueBool
+    EqualsTerm TrueBool t@(Term attributes _)
         | isConcrete t && attributes.canBeEvaluated -> do
             mbApi <- (.llvmApi) <$> getConfig
             case mbApi of
@@ -704,17 +708,17 @@ simplifyConstraint' = \case
                     evalBool t >>= prune
         | otherwise ->
             evalBool t >>= prune
-    EqualsTerm TrueBool t ->
-        -- although "true" is usually 2nd
-        simplifyConstraint' (EqualsTerm t TrueBool)
+    EqualsTerm t TrueBool ->
+        -- normalise to 'true' in first argument (like 'kore-rpc')
+        simplifyConstraint' (EqualsTerm TrueBool t)
     other ->
-        pure other -- should not occur, predicates should be '_ ==Bool true'
+        pure other -- should not occur, predicates should be 'true \equals _'
   where
     prune =
         pure . \case
             TrueBool -> Top
             FalseBool -> Bottom
-            other -> EqualsTerm other TrueBool
+            other -> EqualsTerm TrueBool other
 
     evalBool :: MonadLoggerIO io => Term -> EquationT io Term
     evalBool t = do

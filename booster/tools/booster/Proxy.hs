@@ -7,6 +7,7 @@ License     : BSD-3-Clause
 -}
 module Proxy (
     KoreServer (..),
+    ProxyConfig (..),
     serverError,
     respondEither,
 ) where
@@ -15,19 +16,24 @@ import Control.Concurrent.MVar qualified as MVar
 import Control.Monad (when)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Logger qualified as Log
-import Data.Aeson (ToJSON (..), encode)
+import Control.Monad.Trans.Except (runExcept)
+import Data.Aeson (ToJSON (..))
 import Data.Aeson.KeyMap qualified as Aeson
 import Data.Aeson.Types (Value (..))
 import Data.Bifunctor (second)
 import Data.Either (partitionEithers)
 import Data.List.NonEmpty qualified as NonEmpty
+import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromMaybe, isJust, isNothing, mapMaybe)
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Network.JSONRPC
 import System.Clock (Clock (Monotonic), TimeSpec, diffTimeSpec, getTime, toNanoSecs)
 
-import Booster.JsonRpc (execStateToKoreJson)
+import Booster.Definition.Base (KoreDefinition)
+import Booster.JsonRpc as Booster (ServerState (..), execStateToKoreJson, toExecState)
+import Booster.JsonRpc.Utils (diffBy)
+import Booster.Syntax.Json.Internalise
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
 import Kore.Internal.TermLike (TermLike, VariableName)
@@ -54,6 +60,12 @@ data KoreServer = KoreServer
     , loggerEnv :: Kore.Log.LoggerEnv IO
     }
 
+data ProxyConfig = ProxyConfig
+    { statsVar :: Maybe StatsVar
+    , forceFallback :: Maybe Depth
+    , boosterState :: MVar.MVar Booster.ServerState
+    }
+
 serverError :: String -> Value -> ErrorObj
 serverError detail = ErrorObj ("Server error: " <> detail) (-32032)
 
@@ -61,12 +73,11 @@ respondEither ::
     forall m.
     Log.MonadLogger m =>
     MonadIO m =>
-    Maybe StatsVar ->
-    Maybe Depth ->
+    ProxyConfig ->
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res)
-respondEither mbStatsVar forceFallback booster kore req = case req of
+respondEither ProxyConfig{statsVar, forceFallback, boosterState} booster kore req = case req of
     Execute execReq
         | isJust execReq.stepTimeout || isJust execReq.movingAverageStepTimeout ->
             loggedKore ExecuteM req
@@ -80,9 +91,14 @@ respondEither mbStatsVar forceFallback booster kore req = case req of
                         , logFallbacks = execReq.logFallbacks
                         , logTiming = execReq.logTiming
                         }
-             in liftIO (getTime Monotonic) >>= \start ->
-                    handleExecute logSettings execReq
-                        >>= traverse (postExecSimplify logSettings start execReq._module)
+             in liftIO (getTime Monotonic) >>= \start -> do
+                    bState <- liftIO $ MVar.readMVar boosterState
+                    let m = fromMaybe bState.defaultMain execReq._module
+                        def =
+                            fromMaybe (error $ "Module " <> show m <> " not found") $
+                                Map.lookup m bState.definitions
+                    handleExecute logSettings def execReq
+                        >>= traverse (postExecSimplify logSettings start execReq._module def)
     Implies _ ->
         loggedKore ImpliesM req
     Simplify simplifyReq ->
@@ -118,14 +134,17 @@ respondEither mbStatsVar forceFallback booster kore req = case req of
                 case koreResult of
                     Right (Simplify koreRes) -> do
                         logStats SimplifyM (boosterTime + koreTime, koreTime)
-                        when (koreRes.state /= boosterRes.state) $
-                            -- TODO pretty instance for KoreJson terms for logging
-                            Log.logOtherNS "proxy" (Log.LevelOther "Simplify") . Text.pack . unlines $
-                                [ "Booster simplification:"
-                                , show boosterRes.state
-                                , "to"
-                                , show koreRes.state
-                                ]
+                        when (koreRes.state /= boosterRes.state) $ do
+                            bState <- liftIO (MVar.readMVar boosterState)
+                            let m = fromMaybe bState.defaultMain simplifyReq._module
+                                def =
+                                    fromMaybe (error $ "Module " <> show m <> " not found") $
+                                        Map.lookup m bState.definitions
+                            Log.logOtherNS "proxy" (Log.LevelOther "Simplify") $
+                                let diff =
+                                        fromMaybe "<syntactic difference only>" $
+                                            diffBy def boosterRes.state.term koreRes.state.term
+                                 in Text.pack ("Kore simplification: Diff (< before - > after)\n" <> diff)
                         stop <- liftIO $ getTime Monotonic
                         let timing
                                 | Just start <- mbStart
@@ -144,9 +163,13 @@ respondEither mbStatsVar forceFallback booster kore req = case req of
                     koreError ->
                         -- can only be an error
                         pure koreError
-            Left ErrorObj{getErrMsg, getErrData = Object errObj} -> do
+            Left ErrorObj{getErrMsg, getErrData} -> do
                 -- in case of problems, log the problem and try with kore
-                let boosterError = maybe "???" fromString $ Aeson.lookup "error" errObj
+                let boosterError
+                        | Object errObj <- getErrData
+                        , Just err <- Aeson.lookup "error" errObj =
+                            fromString err
+                        | otherwise = fromString getErrData
                     fromString (String s) = s
                     fromString other = Text.pack (show other)
                 Log.logWarnNS "proxy" . Text.unwords $
@@ -163,7 +186,7 @@ respondEither mbStatsVar forceFallback booster kore req = case req of
         pure result
 
     logStats method (time, koreTime)
-        | Just v <- mbStatsVar = do
+        | Just v <- statsVar = do
             addStats v method time koreTime
             Log.logInfoNS "proxy" . Text.pack . unwords $
                 [ "Performed"
@@ -175,16 +198,18 @@ respondEither mbStatsVar forceFallback booster kore req = case req of
         | otherwise =
             pure ()
 
-    handleExecute :: LogSettings -> ExecuteRequest -> m (Either ErrorObj (API 'Res))
-    handleExecute logSettings = executionLoop logSettings forceFallback (0, 0.0, 0.0, Nothing)
+    handleExecute :: LogSettings -> KoreDefinition -> ExecuteRequest -> m (Either ErrorObj (API 'Res))
+    handleExecute logSettings def =
+        executionLoop logSettings forceFallback def (0, 0.0, 0.0, Nothing)
 
     executionLoop ::
         LogSettings ->
         Maybe Depth ->
+        KoreDefinition ->
         (Depth, Double, Double, Maybe [RPCLog.LogEntry]) ->
         ExecuteRequest ->
         m (Either ErrorObj (API 'Res))
-    executionLoop logSettings mforceSimplification (currentDepth@(Depth cDepth), !time, !koreTime, !rpcLogs) r = do
+    executionLoop logSettings mforceSimplification def (currentDepth@(Depth cDepth), !time, !koreTime, !rpcLogs) r = do
         Log.logInfoNS "proxy" . Text.pack $
             if currentDepth == 0
                 then "Starting execute request"
@@ -205,7 +230,7 @@ respondEither mbStatsVar forceFallback booster kore req = case req of
                 | boosterResult.reason == DepthBound && isJust mforceSimplification -> do
                     Log.logInfoNS "proxy" . Text.pack $
                         "Forced simplification at " <> show (currentDepth + boosterResult.depth)
-                    simplifyResult <- simplifyExecuteState logSettings r._module boosterResult.state
+                    simplifyResult <- simplifyExecuteState logSettings r._module def boosterResult.state
                     case simplifyResult of
                         Left logsOnly -> do
                             -- state was simplified to \bottom, return vacuous
@@ -221,6 +246,7 @@ respondEither mbStatsVar forceFallback booster kore req = case req of
                             executionLoop
                                 logSettings
                                 mforceSimplification
+                                def
                                 ( currentDepth + boosterResult.depth
                                 , time + bTime
                                 , koreTime
@@ -248,7 +274,7 @@ respondEither mbStatsVar forceFallback booster kore req = case req of
                                         }
                                 )
                     do
-                        when (isJust mbStatsVar) $
+                        when (isJust statsVar) $
                             Log.logInfoNS "proxy" . Text.pack $
                                 "Kore fall-back in " <> microsWithUnit kTime
                         case kResult of
@@ -279,6 +305,7 @@ respondEither mbStatsVar forceFallback booster kore req = case req of
                                         executionLoop
                                             logSettings
                                             mforceSimplification
+                                            def
                                             ( currentDepth + boosterResult.depth + koreResult.depth
                                             , time + bTime + kTime
                                             , koreTime + kTime
@@ -331,11 +358,13 @@ respondEither mbStatsVar forceFallback booster kore req = case req of
     simplifyExecuteState ::
         LogSettings ->
         Maybe Text ->
+        KoreDefinition ->
         ExecuteState ->
         m (Either (Maybe [RPCLog.LogEntry]) (ExecuteState, Maybe [RPCLog.LogEntry]))
     simplifyExecuteState
         LogSettings{logSuccessfulSimplifications, logFailedSimplifications, logTiming}
         mbModule
+        def
         s = do
             Log.logInfoNS "proxy" "Simplifying execution state"
             simplResult <-
@@ -347,26 +376,22 @@ respondEither mbStatsVar forceFallback booster kore req = case req of
                     | KoreJson.KJBottom _ <- simplified.state.term ->
                         pure (Left simplified.logs)
                     | otherwise -> do
-                        -- to convert back to a term/constraints form,
-                        -- we run a trivial execute request (in booster)
-                        -- We cannot call the booster internaliser without access to the server state
-                        -- This call would fail for a \bottom state
-                        let request =
-                                (emptyExecuteRequest simplified.state)
-                                    { _module = mbModule
-                                    , maxDepth = Just $ Depth 0
-                                    }
-                        Log.logInfoNS "proxy" "Making 0-step execute request to convert back to a term/constraints form"
-                        result <- booster $ Execute request
-                        case result of
-                            Right (Execute ExecuteResult{state = finalState}) ->
-                                -- return state converted by Booster and logs from simplification.
-                                -- The 0-step execute result won't have logs (no logs are requested)
-                                pure $ Right (finalState, simplified.logs)
-                            other -> do
+                        -- convert back to a term/constraints form by re-internalising
+                        let internalPattern =
+                                runExcept $
+                                    internalisePattern
+                                        DisallowAlias
+                                        IgnoreSubsorts
+                                        Nothing
+                                        def
+                                        simplified.state.term
+                        case internalPattern of
+                            Right p ->
+                                pure $ Right (Booster.toExecState p, simplified.logs)
+                            Left err -> do
                                 Log.logWarnNS "proxy" $
-                                    "Error in pseudo-execute step after simplification: "
-                                        <> either (Text.pack . show) (Text.pack . show . encode) other
+                                    "Error processing execute state simplification result: "
+                                        <> Text.pack (show err)
                                 pure $ Right (s, Nothing)
                 _other -> do
                     -- if we hit an error here, return the original
@@ -383,27 +408,9 @@ respondEither mbStatsVar forceFallback booster kore req = case req of
                     , logTiming
                     }
 
-            emptyExecuteRequest :: KoreJson.KoreJson -> ExecuteRequest
-            emptyExecuteRequest state =
-                ExecuteRequest
-                    { state
-                    , maxDepth = Nothing
-                    , _module = Nothing
-                    , cutPointRules = Nothing
-                    , terminalRules = Nothing
-                    , movingAverageStepTimeout = Nothing
-                    , stepTimeout = Nothing
-                    , logSuccessfulSimplifications = Nothing
-                    , logFailedSimplifications = Nothing
-                    , logSuccessfulRewrites = Nothing
-                    , logFailedRewrites = Nothing
-                    , logFallbacks = Nothing
-                    , logTiming = Nothing
-                    }
-
     postExecSimplify ::
-        LogSettings -> TimeSpec -> Maybe Text -> API 'Res -> m (API 'Res)
-    postExecSimplify logSettings start mbModule = \case
+        LogSettings -> TimeSpec -> Maybe Text -> KoreDefinition -> API 'Res -> m (API 'Res)
+    postExecSimplify logSettings start mbModule def = \case
         Execute res -> Execute <$> simplifyResult res
         other -> pure other
       where
@@ -419,7 +426,7 @@ respondEither mbStatsVar forceFallback booster kore req = case req of
         simplifyResult :: ExecuteResult -> m ExecuteResult
         simplifyResult res@ExecuteResult{reason, state, nextStates} = do
             Log.logInfoNS "proxy" . Text.pack $ "Simplifying state in " <> show reason <> " result"
-            simplified <- simplifyExecuteState logSettings mbModule state
+            simplified <- simplifyExecuteState logSettings mbModule def state
             case simplified of
                 Left logsOnly -> do
                     -- state simplified to \bottom, return vacuous
@@ -430,7 +437,7 @@ respondEither mbStatsVar forceFallback booster kore req = case req of
                     simplifiedNexts <-
                         maybe
                             (pure [])
-                            (mapM $ simplifyExecuteState logSettings mbModule)
+                            (mapM $ simplifyExecuteState logSettings mbModule def)
                             nextStates
                     stop <- liftIO $ getTime Monotonic
                     let (logsOnly, (filteredNexts, filteredNextLogs)) =
