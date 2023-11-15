@@ -12,22 +12,30 @@ module Booster.JsonRpc.Utils (
     KoreRpcType (..),
     rpcTypeOf,
     typeString,
-    renderDiff, -- temporary hack
+    diffBy,
 ) where
 
 import Control.Applicative ((<|>))
+import Control.Monad.Trans.Except
 import Data.Aeson as Json
 import Data.Aeson.Encode.Pretty (encodePretty')
 import Data.Aeson.Types (parseMaybe)
 import Data.ByteString.Lazy.Char8 qualified as BS
+import Data.Functor.Foldable (Corecursive (embed), cata)
 import Data.Maybe (fromMaybe)
+import Data.Set qualified as Set
 import Network.JSONRPC
+import Prettyprinter
 import System.Exit (ExitCode (..))
 import System.FilePath
 import System.IO.Extra (withTempDir)
 import System.IO.Unsafe (unsafePerformIO)
 import System.Process (readProcessWithExitCode)
 
+import Booster.Definition.Base qualified as Internal
+import Booster.Pattern.Base qualified as Internal
+import Booster.Prettyprinter
+import Booster.Syntax.Json.Internalise
 import Kore.JsonRpc.Types
 import Kore.Syntax.Json.Types hiding (Left, Right)
 
@@ -89,12 +97,12 @@ renderResult korefile1 korefile2 = \case
     JsonDiff rpcType first second ->
         BS.unlines
             [ BS.unwords ["Files", file1, "and", file2, "are different", typeString rpcType <> "s"]
-            , renderDiff first second
+            , BS.pack $ fromMaybe (error "Expected difference") $ renderDiff first second
             ]
     TextDiff first second ->
         BS.unlines
             [ BS.unwords ["Files", file1, "and", file2, "are different non-json files"]
-            , renderDiff first second
+            , BS.pack $ fromMaybe (error "Expected difference") $ renderDiff first second
             ]
   where
     file1 = BS.pack korefile1
@@ -205,7 +213,9 @@ rpcTypeOf = \case
 -------------------------------------------------------------------
 -- doing the actual diff when output is requested
 
-renderDiff :: BS.ByteString -> BS.ByteString -> BS.ByteString
+renderDiff :: BS.ByteString -> BS.ByteString -> Maybe String
+renderDiff first second
+    | first == second = Nothing
 renderDiff first second = unsafePerformIO . withTempDir $ \dir -> do
     let path1 = dir </> "diff_file1.txt"
         path2 = dir </> "diff_file2.txt"
@@ -213,6 +223,35 @@ renderDiff first second = unsafePerformIO . withTempDir $ \dir -> do
     BS.writeFile path2 second
     (result, str, _) <- readProcessWithExitCode "diff" ["-w", path1, path2] ""
     case result of
-        ExitSuccess -> error "Unexpected result: identical content"
-        ExitFailure 1 -> pure $ BS.pack str
+        ExitSuccess -> pure Nothing
+        ExitFailure 1 -> pure $ Just str
         ExitFailure n -> error $ "diff process exited with code " <> show n
+
+-------------------------------------------------------------------
+-- compute diff on internalised patterns (to normalise collections etc)
+-- This uses the `pretty` instance for a textual diff.
+diffBy :: Internal.KoreDefinition -> KorePattern -> KorePattern -> Maybe String
+diffBy def pat1 pat2 =
+    renderDiff (internalise pat1) (internalise pat2)
+  where
+    renderBS :: Internal.TermOrPredicate -> BS.ByteString
+    renderBS (Internal.APredicate p) = BS.pack . renderDefault $ pretty p
+    renderBS (Internal.TermAndPredicate p) = BS.pack . renderDefault $ pretty p
+    internalise =
+        either
+            (("Pattern could not be internalised: " <>) . Json.encode)
+            (renderBS . orientEquals)
+            . runExcept
+            . internaliseTermOrPredicate DisallowAlias IgnoreSubsorts Nothing def
+
+    orientEquals = \case
+        Internal.APredicate p ->
+            Internal.APredicate $ orient p
+        Internal.TermAndPredicate p ->
+            Internal.TermAndPredicate p{Internal.constraints = Set.map orient p.constraints}
+      where
+        orient :: Internal.Predicate -> Internal.Predicate
+        orient = cata $ \case
+            Internal.EqualsTermF t1 t2
+                | t1 > t2 -> Internal.EqualsTerm t2 t1
+            other -> embed other

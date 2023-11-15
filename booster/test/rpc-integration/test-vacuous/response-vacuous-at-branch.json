@@ -115,6 +115,15 @@
                                 "args": []
                             },
                             "first": {
+                                "tag": "DV",
+                                "sort": {
+                                    "tag": "SortApp",
+                                    "name": "SortBool",
+                                    "args": []
+                                },
+                                "value": "true"
+                            },
+                            "second": {
                                 "tag": "App",
                                 "name": "Lbl'UndsEqlsEqls'Int'Unds'",
                                 "sorts": [],
@@ -138,15 +147,6 @@
                                         "value": "42"
                                     }
                                 ]
-                            },
-                            "second": {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortBool",
-                                    "args": []
-                                },
-                                "value": "true"
                             }
                         }
                     ]
