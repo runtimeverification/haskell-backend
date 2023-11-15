@@ -570,6 +570,7 @@ performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pa
   where
     logDepth = logOther (LevelOther "Depth")
     logRewrite = logOther (LevelOther "Rewrite")
+    logRewriteSuccess = logOther (LevelOther "RewriteSuccess")
     logSimplify = logOther (LevelOther "Simplify")
 
     prettyText :: Pretty a => a -> Text
@@ -580,7 +581,12 @@ performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pa
     showCounter = (<> " steps.") . pack . show
 
     rewriteTrace t = do
-        logRewrite $ pack $ renderDefault $ pretty t
+        let prettyT = pack $ renderDefault $ pretty t
+        logRewrite prettyT
+        case t of
+            RewriteSingleStep{} -> logRewriteSuccess prettyT
+            RewriteBranchingStep{} -> logRewriteSuccess prettyT
+            _other -> pure ()
         when doTracing $
             modify $
                 \rss@RewriteStepsState{traces} -> rss{traces = traces |> t}

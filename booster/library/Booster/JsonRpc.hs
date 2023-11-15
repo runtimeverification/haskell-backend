@@ -12,6 +12,7 @@ module Booster.JsonRpc (
     runServer,
     RpcTypes.rpcJsonConfig,
     execStateToKoreJson,
+    toExecState,
 ) where
 
 import Control.Applicative ((<|>))
@@ -177,9 +178,9 @@ respond stateVar =
                         (Right newPattern, patternTraces, _) -> do
                             let (term, mbPredicate, mbSubstitution) = externalisePattern newPattern
                                 tSort = externaliseSort (sortOfPattern newPattern)
-                                predicate = fromMaybe (KoreJson.KJTop tSort) mbPredicate
-                                substitution = fromMaybe (KoreJson.KJTop tSort) mbSubstitution
-                                result = KoreJson.KJAnd tSort [term, predicate, substitution]
+                                result = case catMaybes [mbPredicate, mbSubstitution] of
+                                    [] -> term
+                                    ps -> KoreJson.KJAnd tSort $ term : ps
                             pure $ Right (addHeader result, patternTraces)
                         (Left ApplyEquations.SideConditionsFalse{}, patternTraces, _) -> do
                             let tSort = fromMaybe (error "unknown sort") $ sortOfJson req.state.term

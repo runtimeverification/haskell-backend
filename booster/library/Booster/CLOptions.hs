@@ -58,8 +58,8 @@ clOptionsParser =
                     <> short 'l'
                     <> help
                         ( "Log level: debug, info (default), warn, error, \
-                          \or a custom level from "
-                            <> show allowedLogLevels
+                          \or a custom level: "
+                            <> intercalate ", " (map fst allowedLogLevels)
                         )
                 )
             )
@@ -93,7 +93,7 @@ clOptionsParser =
         "warn" -> Right LevelWarn
         "error" -> Right LevelError
         other
-            | other `elem` allowedLogLevels -> Right (LevelOther $ pack other)
+            | other `elem` map fst allowedLogLevels -> Right (LevelOther $ pack other)
             | otherwise -> Left $ other <> ": Unsupported log level"
 
     readEventLogTracing :: String -> Either String CustomUserEventType
@@ -103,8 +103,16 @@ clOptionsParser =
             . fromKebab
 
 -- custom log levels that can be selected
-allowedLogLevels :: [String]
-allowedLogLevels = ["Rewrite", "Simplify", "Depth"]
+allowedLogLevels :: [(String, String)]
+allowedLogLevels =
+    [ ("Rewrite", "Log all rewriting in booster")
+    , ("RewriteKore", "Log all rewriting in kore-rpc fall-backs")
+    , ("RewriteSuccess", "Log successful rewrites (booster and kore-rpc)")
+    , ("Simplify", "Log all simplification/evaluation in booster")
+    , ("SimplifyKore", "Log all simplification in kore-rpc")
+    , ("SimplifySuccess", "Log successful simplifications (booster and kore-rpc)")
+    , ("Depth", "Log the current depth of the state")
+    ]
 
 -- Partition provided log levels into standard and custom ones, and
 -- select the lowest standard level. Default to 'LevelInfo' if no
