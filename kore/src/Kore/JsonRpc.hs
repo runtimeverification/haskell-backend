@@ -10,7 +10,7 @@ module Kore.JsonRpc (
 
 import Control.Concurrent.MVar qualified as MVar
 import Control.Monad.Except (runExceptT)
-import Control.Monad.Logger (logInfoN, runLoggingT)
+import Control.Monad.Logger (runLoggingT)
 import Data.Aeson.Types (ToJSON (..))
 import Data.Coerce (coerce)
 import Data.Conduit.Network (serverSettings)
@@ -40,7 +40,11 @@ import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
-import Kore.Internal.Predicate (getMultiAndPredicate, pattern PredicateTrue)
+import Kore.Internal.Predicate (
+    getMultiAndPredicate,
+    makeMultipleAndPredicate,
+    pattern PredicateTrue,
+ )
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike (TermLike)
 import Kore.Internal.TermLike qualified as TermLike
@@ -54,7 +58,7 @@ import Kore.JsonRpc.Server (
  )
 import Kore.JsonRpc.Types
 import Kore.JsonRpc.Types.Log
-import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown, srcLoc)
+import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown (..), srcLoc)
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
@@ -92,7 +96,6 @@ import Kore.Validate.PatternVerifier (Context (..))
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Log qualified
 import Prelude.Kore
-import Pretty qualified
 import SMT qualified
 import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 
@@ -627,9 +630,7 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
                 log (InfoJsonRpcProcessRequest (getReqId req) parsed)
                     >> respond serverState mainModule runSMT parsed
             )
-            [ JsonRpcHandler $ \(err :: DecidePredicateUnknown) ->
-                let mkPretty = Pretty.renderText . Pretty.layoutPretty Pretty.defaultLayoutOptions . Pretty.pretty
-                 in logInfoN (mkPretty err) >> pure (backendError SmtSolverError $ mkPretty err)
+            [ handleDecidePredicateUnknown
             , handleErrorCall
             , handleSomeException
             ]
@@ -641,3 +642,12 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
 
     log :: MonadIO m => Log.Entry entry => entry -> m ()
     log = Log.logWith $ Log.hoistLogAction liftIO logAction
+
+handleDecidePredicateUnknown :: JsonRpcHandler
+handleDecidePredicateUnknown = JsonRpcHandler $ \(err :: DecidePredicateUnknown) ->
+    pure
+        ( backendError SmtSolverError $
+            PatternJson.fromPredicate
+                (TermLike.SortActualSort $ TermLike.SortActual (TermLike.Id "SortBool" TermLike.AstLocationNone) [])
+                (makeMultipleAndPredicate . toList $ predicates err)
+        )
