@@ -10,7 +10,7 @@ module Kore.JsonRpc (
 
 import Control.Concurrent.MVar qualified as MVar
 import Control.Monad.Except (runExceptT)
-import Control.Monad.Logger (logInfoN, runLoggingT)
+import Control.Monad.Logger (runLoggingT)
 import Data.Aeson.Types (ToJSON (..))
 import Data.Coerce (coerce)
 import Data.Conduit.Network (serverSettings)
@@ -96,7 +96,6 @@ import Kore.Validate.PatternVerifier (Context (..))
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Log qualified
 import Prelude.Kore
-import Pretty qualified
 import SMT qualified
 import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 
