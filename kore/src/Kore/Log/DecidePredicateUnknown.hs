@@ -19,7 +19,6 @@ import Control.Exception (
     Exception (..),
     throw,
  )
-import Data.Limit (Limit (..))
 import Debug
 import Kore.Attribute.SourceLocation (
     SourceLocation (..),
@@ -69,27 +68,8 @@ instance Diff DecidePredicateUnknown where
     diffPrec = diffPrecEq
 
 instance Pretty DecidePredicateUnknown where
-    pretty DecidePredicateUnknown{smtLimit = SMT.RetryLimit limit, predicates} =
-        Pretty.vsep
-            ( [ "Failed to decide predicate:"
-              , Pretty.indent 4 (pretty predicate)
-              ]
-                ++ do
-                    sideCondition <- sideConditions
-                    [ "with side condition:"
-                        , Pretty.indent 4 (pretty sideCondition)
-                        ]
-                ++ [ "SMT limit set at:"
-                   , Pretty.indent
-                        4
-                        ( case limit of
-                            Limit n -> pretty n
-                            Unlimited -> "infinity"
-                        )
-                   ]
-            )
-      where
-        predicate :| sideConditions = predicates
+    pretty DecidePredicateUnknown{} =
+        Pretty.vsep ["Failed to decide predicate."]
 
 instance Entry DecidePredicateUnknown where
     entrySeverity DecidePredicateUnknown{action} =
