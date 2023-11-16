@@ -29,7 +29,6 @@ import Control.Monad.Logger.CallStack (
  )
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
-import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Reader (ReaderT (..), ask)
 import Control.Monad.Trans.State
 import Data.Bifunctor (second)
@@ -69,7 +68,7 @@ data EquationFailure
     = IndexIsNone Term
     | TooManyIterations Int Term Term
     | EquationLoop [Term]
-    | SideConditionsFalse [Predicate]
+    | SideConditionFalse Predicate
     | InternalError Text
     deriving stock (Eq, Show)
 
@@ -128,21 +127,22 @@ instance Pretty EquationTrace where
                 ]
                     ++ map pretty cs
                     ++ ["using " <> locationInfo]
-        ConditionFalse ->
+        ConditionFalse p ->
             vsep
                 [ "Simplifying term"
                 , prettyTerm
                 , "failed with false condition"
+                , pretty p
                 , "using " <> locationInfo
                 ]
-        EnsuresFalse ps ->
-            vsep $
+        EnsuresFalse p ->
+            vsep
                 [ "Simplifying term"
                 , prettyTerm
                 , "using " <> locationInfo
-                , "resulted in ensuring false conditions"
+                , "resulted in ensuring false condition"
+                , pretty p
                 ]
-                    <> map pretty ps
         MatchConstraintViolated constrained varName ->
             vsep
                 [ "Concreteness constraint violated: "
@@ -305,7 +305,7 @@ evaluatePattern' Pattern{term, constraints} = do
         allPs <- predicates <$> getState
         let otherPs = Set.delete p allPs
         EquationT $ lift $ lift $ modify $ \s -> s{predicates = otherPs}
-        newP <- simplifyConstraint' p
+        newP <- simplifyConstraint' True p
         pushConstraints $ Set.singleton newP
 
 ----------------------------------------
@@ -446,8 +446,8 @@ data ApplyEquationResult
     | FailedMatch MatchFailReason
     | IndeterminateMatch
     | IndeterminateCondition [Predicate]
-    | ConditionFalse
-    | EnsuresFalse [Predicate]
+    | ConditionFalse Predicate
+    | EnsuresFalse Predicate
     | RuleNotPreservingDefinedness
     | MatchConstraintViolated Constrained VarName
     deriving stock (Eq, Show)
@@ -468,8 +468,8 @@ handleFunctionEquation success continue abort = \case
     FailedMatch _ -> continue
     IndeterminateMatch -> abort
     IndeterminateCondition{} -> abort
-    ConditionFalse -> continue
-    EnsuresFalse ps -> throw $ SideConditionsFalse ps
+    ConditionFalse _ -> continue
+    EnsuresFalse p -> throw $ SideConditionFalse p
     RuleNotPreservingDefinedness -> abort
     MatchConstraintViolated{} -> continue
 
@@ -479,8 +479,8 @@ handleSimplificationEquation success continue _abort = \case
     FailedMatch _ -> continue
     IndeterminateMatch -> continue
     IndeterminateCondition{} -> continue
-    ConditionFalse -> continue
-    EnsuresFalse ps -> throw $ SideConditionsFalse ps
+    ConditionFalse _ -> continue
+    EnsuresFalse p -> throw $ SideConditionFalse p
     RuleNotPreservingDefinedness -> continue
     MatchConstraintViolated{} -> continue
 
@@ -580,39 +580,32 @@ applyEquation term rule = fmap (either id Success) $ runExceptT $ do
                     concatMap
                         (splitBoolPredicates . substituteInPredicate subst)
                         rule.requires
-            unclearConditions' <- runMaybeT $ catMaybes <$> mapM checkConstraint required
+            unclearConditions' <- catMaybes <$> mapM (checkConstraint ConditionFalse) required
 
             case unclearConditions' of
-                Nothing -> throwE ConditionFalse
-                Just unclearConditions ->
-                    if not $ null unclearConditions
-                        then throwE $ IndeterminateCondition unclearConditions
-                        else do
-                            -- check ensured conditions, filter any
-                            -- true ones, prune if any is false
-                            let ensured =
-                                    concatMap
-                                        (splitBoolPredicates . substituteInPredicate subst)
-                                        (Set.toList rule.ensures)
-                            mbEnsuredConditions <-
-                                runMaybeT $ catMaybes <$> mapM checkConstraint ensured
-                            case mbEnsuredConditions of
-                                -- throws if an ensured condition found to be false
-                                Nothing -> throwE $ EnsuresFalse ensured
-                                -- pushes new ensured conditions and return result
-                                Just conditions ->
-                                    lift $ pushConstraints $ Set.fromList conditions
-                            pure $ substituteInTerm subst rule.rhs
+                [] -> do
+                    -- check ensured conditions, filter any
+                    -- true ones, prune if any is false
+                    let ensured =
+                            concatMap
+                                (splitBoolPredicates . substituteInPredicate subst)
+                                (Set.toList rule.ensures)
+                    ensuredConditions <-
+                        -- throws if an ensured condition found to be false
+                        catMaybes <$> mapM (checkConstraint EnsuresFalse) ensured
+                    lift $ pushConstraints $ Set.fromList ensuredConditions
+                    pure $ substituteInTerm subst rule.rhs
+                unclearConditions -> throwE $ IndeterminateCondition unclearConditions
   where
     -- evaluate/simplify a predicate, cut the operation short when it
     -- is Bottom.
     checkConstraint ::
+        (Predicate -> ApplyEquationResult) ->
         Predicate ->
-        MaybeT (ExceptT ApplyEquationResult (EquationT io)) (Maybe Predicate)
-    checkConstraint p = do
-        mApi <- (.llvmApi) <$> lift (lift getConfig)
-        case simplifyPredicate mApi p of
-            Bottom -> fail "side condition was false"
+        ExceptT ApplyEquationResult (EquationT io) (Maybe Predicate)
+    checkConstraint whenBottom p =
+        lift (simplifyConstraint' False p) >>= \case
+            Bottom -> throwE $ whenBottom p
             Top -> pure Nothing
             _other -> pure $ Just p
 
@@ -688,15 +681,15 @@ simplifyConstraint ::
     Predicate ->
     io (Either EquationFailure Predicate, [EquationTrace], SimplifierCache)
 simplifyConstraint doTracing def mbApi cache p =
-    runEquationT doTracing def mbApi cache $ simplifyConstraint' p
+    runEquationT doTracing def mbApi cache $ simplifyConstraint' True p
 
 -- version for internal nested evaluation
-simplifyConstraint' :: MonadLoggerIO io => Predicate -> EquationT io Predicate
+simplifyConstraint' :: MonadLoggerIO io => Bool -> Predicate -> EquationT io Predicate
 -- We are assuming all predicates are of the form 'true \equals P' and
 -- evaluating them using simplifyBool if they are concrete.
 -- Non-concrete \equals predicates are simplified using evaluateTerm.
-simplifyConstraint' = \case
-    EqualsTerm TrueBool t@(Term attributes _)
+simplifyConstraint' recurse = \case
+    p@(EqualsTerm TrueBool t@(Term attributes _))
         | isConcrete t && attributes.canBeEvaluated -> do
             mbApi <- (.llvmApi) <$> getConfig
             case mbApi of
@@ -705,12 +698,12 @@ simplifyConstraint' = \case
                         then pure Top
                         else pure Bottom
                 Nothing ->
-                    evalBool t >>= prune
+                    if recurse then evalBool t >>= prune else pure p
         | otherwise ->
-            evalBool t >>= prune
+            if recurse then evalBool t >>= prune else pure p
     EqualsTerm t TrueBool ->
         -- normalise to 'true' in first argument (like 'kore-rpc')
-        simplifyConstraint' (EqualsTerm TrueBool t)
+        simplifyConstraint' recurse (EqualsTerm TrueBool t)
     other ->
         pure other -- should not occur, predicates should be 'true \equals _'
   where
