@@ -182,7 +182,7 @@ respond stateVar =
                                     [] -> term
                                     ps -> KoreJson.KJAnd tSort $ term : ps
                             pure $ Right (addHeader result, patternTraces)
-                        (Left ApplyEquations.SideConditionsFalse{}, patternTraces, _) -> do
+                        (Left ApplyEquations.SideConditionFalse{}, patternTraces, _) -> do
                             let tSort = fromMaybe (error "unknown sort") $ sortOfJson req.state.term
                             pure $ Right (addHeader $ KoreJson.KJBottom tSort, patternTraces)
                         (Left (ApplyEquations.EquationLoop terms), _traces, _) ->
@@ -441,7 +441,7 @@ mkLogEquationTrace
                             , origin
                             , result = Failure{reason = "Indeterminate side-condition", _ruleId}
                             }
-            ApplyEquations.ConditionFalse
+            ApplyEquations.ConditionFalse{}
                 | logFailedSimplifications ->
                     Just $
                         Simplification
@@ -573,7 +573,7 @@ mkLogRewriteTrace
                                     , origin = Booster
                                     , result = Failure{reason = "Internal error: " <> err, _ruleId = Nothing}
                                     }
-                            ApplyEquations.SideConditionsFalse _predicates ->
+                            ApplyEquations.SideConditionFalse _predicate ->
                                 Simplification
                                     { originalTerm = Nothing
                                     , originalTermIndex = Nothing

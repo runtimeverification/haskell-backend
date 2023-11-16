@@ -605,8 +605,8 @@ performRewrite doTracing def mLlvmLibrary mbMaxDepth cutLabels terminalLabels pa
                 Right newPattern -> do
                     rewriteTrace $ RewriteSimplified traces Nothing
                     pure $ Just newPattern
-                Left r@(SideConditionsFalse _ps) -> do
-                    logSimplify "Side conditions were found to be false, pruning"
+                Left r@(SideConditionFalse _p) -> do
+                    logSimplify "A side condition was found to be false, pruning"
                     rewriteTrace $ RewriteSimplified traces (Just r)
                     pure Nothing
                 -- NB any errors here might be caused by simplifying one
