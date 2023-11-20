@@ -1,0 +1,12 @@
+diff --git a/nix/build-support/stacklock2nix/default.nix b/nix/build-support/stacklock2nix/default.nix
+index b13f246..116ca11 100644
+--- a/nix/build-support/stacklock2nix/default.nix
++++ b/nix/build-support/stacklock2nix/default.nix
+@@ -380,6 +380,7 @@ let
+             url = haskPkgLock.git;
+             name = srcName;
+             rev = haskPkgLock.commit;
++            allRefs = true;
+           };
+           src =
+             if haskPkgLock ? "subdir" then
