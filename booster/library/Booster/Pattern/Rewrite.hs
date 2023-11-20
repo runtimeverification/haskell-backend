@@ -50,6 +50,7 @@ import Booster.Pattern.Simplify
 import Booster.Pattern.Unify
 import Booster.Pattern.Util
 import Booster.Prettyprinter
+import Data.Coerce (coerce)
 
 newtype RewriteT io err a = RewriteT
     {unRewriteT :: ReaderT RewriteConfig (StateT SimplifierCache (ExceptT err io)) a}
@@ -237,7 +238,7 @@ applyRule ::
     Pattern ->
     RewriteRule k ->
     RewriteT io (RewriteFailed k) (RewriteRuleAppResult (RewriteRule k, Pattern))
-applyRule pat rule = runRewriteRuleAppT $ do
+applyRule pat@Pattern{ceilConditions} rule = runRewriteRuleAppT $ do
     def <- lift getDefinition
     -- unify terms
     let unified = unifyTerms def rule.lhs pat.term
@@ -269,7 +270,7 @@ applyRule pat rule = runRewriteRuleAppT $ do
     -- apply substitution to rule requires constraints and simplify (one by one
     -- in isolation). Stop if false, abort rewrite if indeterminate.
     let ruleRequires =
-            concatMap (splitBoolPredicates . substituteInPredicate subst) rule.requires
+            concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) rule.requires
         failIfUnclear = RuleConditionUnclear rule
         notAppliedIfBottom = RewriteRuleAppT $ pure NotApplied
     unclearRequires <-
@@ -281,7 +282,7 @@ applyRule pat rule = runRewriteRuleAppT $ do
     -- check ensures constraints (new) from rhs: stop and return `Trivial` if
     -- any are false, remove all that are trivially true, return the rest
     let ruleEnsures =
-            concatMap (splitBoolPredicates . substituteInPredicate subst) $
+            concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) $
                 Set.toList rule.ensures
         trivialIfBottom = RewriteRuleAppT $ pure Trivial
     newConstraints <-
@@ -292,8 +293,9 @@ applyRule pat rule = runRewriteRuleAppT $ do
                 (substituteInTerm (refreshExistentials subst) rule.rhs)
                 -- adding new constraints that have not been trivially `Top`
                 ( Set.fromList newConstraints
-                    <> Set.map (substituteInPredicate subst) pat.constraints
+                    <> Set.map (coerce . substituteInTerm subst . coerce) pat.constraints
                 )
+                ceilConditions
     return (rule, rewritten)
   where
     failRewrite = lift . throw
@@ -313,8 +315,8 @@ applyRule pat rule = runRewriteRuleAppT $ do
         RewriteConfig{definition, llvmApi, doTracing} <- lift $ RewriteT ask
         (simplified, _traces, _cache) <- simplifyConstraint doTracing definition llvmApi mempty p
         case simplified of
-            Right Bottom -> onBottom
-            Right Top -> pure Nothing
+            Right (Predicate FalseBool) -> onBottom
+            Right (Predicate TrueBool) -> pure Nothing
             Right other -> pure $ Just $ onUnclear other
             Left _ -> pure $ Just $ onUnclear p
 

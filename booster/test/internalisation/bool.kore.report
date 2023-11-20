@@ -51,13 +51,3 @@ Function equations by term index:
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (929, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (928, 8)
 Simplifications by term index:
-Predicate simplifications by term index:
-- \equalsTerm: 8
-  - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (972, 8)
-  - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (974, 8)
-  - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (969, 8)
-  - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (967, 8)
-  - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (973, 8)
-  - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (968, 8)
-  - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (971, 8)
-  - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (966, 8)

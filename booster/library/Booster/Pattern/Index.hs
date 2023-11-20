@@ -132,17 +132,4 @@ termTopIndex = \case
 
 -- indexes predicates by the name of their top-level connective
 predicateTopIndex :: Predicate -> TermIndex
-predicateTopIndex = \case
-    AndPredicate{} -> TopSymbol "\\and"
-    Bottom -> TopSymbol "\\bottom"
-    Ceil{} -> TopSymbol "\\ceil"
-    EqualsTerm{} -> TopSymbol "\\equalsTerm"
-    EqualsPredicate{} -> TopSymbol "\\equalsPredicate"
-    Exists{} -> TopSymbol "\\exists"
-    Forall{} -> TopSymbol "\\forall"
-    Iff{} -> TopSymbol "\\iff"
-    Implies{} -> TopSymbol "\\implies"
-    In{} -> TopSymbol "\\in"
-    Not{} -> TopSymbol "\\not"
-    Or{} -> TopSymbol "\\or"
-    Top -> TopSymbol "\\top"
+predicateTopIndex (Predicate t) = termTopIndex t

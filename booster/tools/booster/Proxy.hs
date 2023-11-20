@@ -386,8 +386,8 @@ respondEither ProxyConfig{statsVar, forceFallback, boosterState} booster kore re
                                         def
                                         simplified.state.term
                         case internalPattern of
-                            Right p ->
-                                pure $ Right (Booster.toExecState p, simplified.logs)
+                            Right (p, sub) ->
+                                pure $ Right (Booster.toExecState p sub, simplified.logs)
                             Left err -> do
                                 Log.logWarnNS "proxy" $
                                     "Error processing execute state simplification result: "

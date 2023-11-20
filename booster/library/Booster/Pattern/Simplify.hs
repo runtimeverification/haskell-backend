@@ -9,13 +9,12 @@ module Booster.Pattern.Simplify (
 import Booster.Pattern.Base
 import Booster.Pattern.Util (isConcrete)
 
-{- | We want to break apart predicates of type `X #Equals Y1 andBool ... Yn` into
-`X #Equals Y1, ..., X #Equals  Yn` in the case when some of the `Y`s are abstract
-and thus the whole original expression could not be fed to the LLVM simplifyBool function
+{- | We want to break apart predicates of type `Y1 andBool ... Yn` apart, in case some of the `Y`s are abstract
+which prevents the original expression from being fed to the LLVM simplifyBool function
 -}
 splitBoolPredicates :: Predicate -> [Predicate]
-splitBoolPredicates = \case
-    p@(EqualsTerm l r) | isConcrete l && isConcrete r -> [p]
-    EqualsTerm (AndBool ls) r -> concatMap (splitBoolPredicates . flip EqualsTerm r) ls
-    EqualsTerm l (AndBool rs) -> concatMap (splitBoolPredicates . EqualsTerm l) rs
-    other -> [other]
+splitBoolPredicates p@(Predicate t)
+    | isConcrete t = [p]
+    | otherwise = case t of
+        AndBool ts -> concatMap (splitBoolPredicates . Predicate) ts
+        other -> [Predicate other]
