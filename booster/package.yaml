@@ -231,7 +231,9 @@ executables:
     main: Server.hs
     dependencies:
       - aeson
+      - aeson-pretty
       - base
+      - bytestring
       - casing
       - clock
       - conduit-extra
@@ -246,6 +248,7 @@ executables:
       - monad-logger
       - optparse-applicative
       - prettyprinter
+      - recursion-schemes
       - stm
       - text
       - transformers

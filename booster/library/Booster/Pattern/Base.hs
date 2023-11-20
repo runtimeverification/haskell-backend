@@ -3,7 +3,7 @@
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskellQuotes #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2022
@@ -37,10 +37,10 @@ import Data.ByteString.Char8 qualified as BS
 import Data.Data (Data)
 import Data.Either (fromRight)
 import Data.Functor.Foldable
-import Data.Functor.Foldable.TH (makeBaseFunctor)
 import Data.Hashable (Hashable)
 import Data.Hashable qualified as Hashable
 import Data.List as List (foldl1', sort)
+import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Set (Set, fromList, toList)
 import Data.Set qualified as Set
@@ -66,8 +66,12 @@ data Sort
     deriving stock (Eq, Ord, Show, Generic, Data, Lift)
     deriving anyclass (NFData, Hashable)
 
-pattern SortBool :: Sort
+pattern SortBool, SortInt, SortK, SortKItem, SortBytes :: Sort
 pattern SortBool = SortApp "SortBool" []
+pattern SortInt = SortApp "SortInt" []
+pattern SortK = SortApp "SortK" []
+pattern SortKItem = SortApp "SortKItem" []
+pattern SortBytes = SortApp "SortBytes" []
 
 -- | A variable for symbolic execution or for terms in a rule.
 data Variable = Variable
@@ -699,26 +703,103 @@ pattern DotDotDot :: Term
 pattern DotDotDot = DomainValue (SortApp "internalDummySort" []) "..."
 
 {- | A predicate describes constraints on terms. It will always evaluate
-   to 'Top' or 'Bottom'. Notice that 'Predicate's don't have a sort.
+   to 'TrueBool' or 'FalseBool'. Notice that 'Predicate's don't have a sort.
 -}
-data Predicate
-    = AndPredicate Predicate Predicate
-    | Bottom
-    | Ceil Term
-    | EqualsTerm Term Term
-    | EqualsPredicate Predicate Predicate
-    | Exists Variable Predicate
-    | Forall Variable Predicate
-    | Iff Predicate Predicate
-    | Implies Predicate Predicate
-    | In Term Term
-    | Not Predicate
-    | Or Predicate Predicate
-    | Top
+newtype Predicate = Predicate Term
     deriving stock (Eq, Ord, Show, Generic, Data)
     deriving anyclass (NFData)
 
-makeBaseFunctor ''Predicate
+newtype Ceil = Ceil Term
+    deriving stock (Eq, Ord, Show, Generic, Data)
+    deriving anyclass (NFData)
+
+pattern NotBool :: Term -> Term
+pattern NotBool t =
+    SymbolApplication
+        ( Symbol
+                "LblnotBool'Unds'"
+                []
+                [SortBool]
+                SortBool
+                (SymbolAttributes TotalFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias CanBeEvaluated Nothing)
+            )
+        []
+        [t]
+
+pattern EqualsInt, NEqualsInt, EqualsK, NEqualsK :: Term -> Term -> Term
+pattern EqualsInt a b =
+    SymbolApplication
+        ( Symbol
+                "Lbl'UndsEqlsEqls'Int'Unds'"
+                []
+                [SortInt, SortInt]
+                SortBool
+                (SymbolAttributes TotalFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias CanBeEvaluated Nothing)
+            )
+        []
+        [a, b]
+pattern NEqualsInt a b =
+    SymbolApplication
+        ( Symbol
+                "Lbl'UndsEqlsSlshEqls'Int'Unds'"
+                []
+                [SortInt, SortInt]
+                SortBool
+                (SymbolAttributes TotalFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias CanBeEvaluated Nothing)
+            )
+        []
+        [a, b]
+pattern EqualsK a b =
+    SymbolApplication
+        ( Symbol
+                "Lbl'UndsEqlsEqls'K'Unds'"
+                []
+                [SortK, SortK]
+                SortBool
+                (SymbolAttributes TotalFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias CanBeEvaluated Nothing)
+            )
+        []
+        [a, b]
+pattern NEqualsK a b =
+    SymbolApplication
+        ( Symbol
+                "Lbl'UndsEqlsSlshEqls'K'Unds'"
+                []
+                [SortK, SortK]
+                SortBool
+                (SymbolAttributes TotalFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias CanBeEvaluated Nothing)
+            )
+        []
+        [a, b]
+
+-- kseq{}(inj{<sort>, SortKItem{}}(<a>),dotk{}()
+pattern KSeq :: Sort -> Term -> Term
+pattern KSeq sort a =
+    SymbolApplication
+        ( Symbol
+                "kseq"
+                []
+                [SortKItem, SortK]
+                SortK
+                (SymbolAttributes Constructor IsNotIdem IsNotAssoc IsNotMacroOrAlias CanBeEvaluated Nothing)
+            )
+        []
+        [ Injection sort SortKItem a
+            , SymbolApplication
+                ( Symbol
+                        "dotk"
+                        []
+                        []
+                        SortK
+                        (SymbolAttributes Constructor IsNotIdem IsNotAssoc IsNotMacroOrAlias CanBeEvaluated Nothing)
+                    )
+                []
+                []
+            ]
+
+pattern TrueBool, FalseBool :: Term
+pattern TrueBool = DomainValue SortBool "true"
+pattern FalseBool = DomainValue SortBool "false"
 
 --------------------
 
@@ -726,13 +807,23 @@ makeBaseFunctor ''Predicate
 data Pattern = Pattern
     { term :: Term
     , constraints :: !(Set Predicate)
+    , ceilConditions :: ![Ceil]
     }
     deriving stock (Eq, Ord, Show, Generic, Data)
     deriving anyclass (NFData)
 
+pattern Pattern_ :: Term -> Pattern
+pattern Pattern_ t <- Pattern t _ _
+    where
+        Pattern_ t = Pattern t mempty mempty
+
+data InternalisedPredicate = IsPredicate Predicate | IsCeil Ceil | IsSubstitution Variable Term
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving anyclass (NFData)
+
 data TermOrPredicate -- = Either Predicate Pattern
-    = APredicate Predicate
-    | TermAndPredicate Pattern
+    = BoolOrCeilOrSubstitutionPredicate InternalisedPredicate
+    | TermAndPredicateAndSubstitution Pattern (Map Variable Term)
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData)
 
@@ -859,60 +950,16 @@ instance Pretty Variable where
             <> pretty var.variableSort
 
 instance Pretty Predicate where
-    pretty =
-        \case
-            AndPredicate p1 p2 ->
-                "\\andPredicate"
-                    <> KPretty.noParameters
-                    <> KPretty.argumentsP [p1, p2]
-            Bottom ->
-                "\\bottom"
-                    <> KPretty.noParameters
-                    <> KPretty.noArguments
-            Ceil t ->
-                "\\ceil"
-                    <> KPretty.noParameters
-                    <> KPretty.argumentsP [t]
-            EqualsTerm t1 t2 ->
-                "\\equalsTerm"
-                    <> KPretty.noParameters
-                    <> KPretty.argumentsP [t1, t2]
-            EqualsPredicate p1 p2 ->
-                "\\equalsPredicate"
-                    <> KPretty.noParameters
-                    <> KPretty.argumentsP [p1, p2]
-            Exists v p ->
-                "\\exists"
-                    <> KPretty.noParameters
-                    <> KPretty.arguments' [pretty v, pretty p]
-            Forall v p ->
-                "\\forall"
-                    <> KPretty.noParameters
-                    <> KPretty.arguments' [pretty v, pretty p]
-            Iff p1 p2 ->
-                "\\iff"
-                    <> KPretty.noParameters
-                    <> KPretty.argumentsP [p1, p2]
-            Implies p1 p2 ->
-                "\\implies"
-                    <> KPretty.noParameters
-                    <> KPretty.argumentsP [p1, p2]
-            In t1 t2 ->
-                "\\in"
-                    <> KPretty.noParameters
-                    <> KPretty.argumentsP [t1, t2]
-            Not p ->
-                "\\not"
-                    <> KPretty.noParameters
-                    <> KPretty.argumentsP [p]
-            Or p1 p2 ->
-                "\\or"
-                    <> KPretty.noParameters
-                    <> KPretty.argumentsP [p1, p2]
-            Top ->
-                "\\top"
-                    <> KPretty.noParameters
-                    <> KPretty.noArguments
+    pretty (Predicate t) =
+        "\\equalsTerm"
+            <> KPretty.noParameters
+            <> KPretty.argumentsP [t, DomainValue SortBool "true"]
+
+instance Pretty Ceil where
+    pretty (Ceil t) =
+        "\\ceil"
+            <> KPretty.noParameters
+            <> KPretty.argumentsP [t]
 
 instance Pretty Pattern where
     pretty patt =

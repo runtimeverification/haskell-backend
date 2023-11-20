@@ -5,7 +5,6 @@ License     : BSD-3-Clause
 module Booster.Pattern.Match (
     MatchResult (..),
     MatchFailReason (..),
-    PredicatesDoNotMatch (..),
     matchTerm,
     matchPredicate,
 ) where
@@ -14,8 +13,6 @@ import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.State
-import Control.Monad.Trans.Writer
-import Data.Bifunctor (second)
 import Data.Either.Extra
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -34,7 +31,6 @@ import Booster.Pattern.Util (
     isConcrete,
     isConstructorSymbol,
     isFunctionSymbol,
-    modifyVariablesInP,
     sortOfTerm,
     substituteInTerm,
  )
@@ -339,91 +335,16 @@ bindVariable var term = do
 
 ----------------------------------------
 
-{- | Match a predicate pattern (containing terms) to a predicate
-   subject.
+{- | Match a predicate pattern (containing boolean terms) to a predicate
+   subject, by matching the contained terms.
 
-  Since the result is a variable substitution and variables are terms,
-  this will ultimately fall back to matching terms. The predicate is
-  traversed, collecting a queue of term matching problems to run once
-  the predicate shapes are matched completely.
-
-  An additional error type is added for the case where the predicate
-  pattern does not match the subject syntactically.
-
-  This is kept simple because we don't expect to use is much; only
-  few simplifications on ML constructs are allowed and used.
+  This will probably not be used in the booster, as we only accept
+  predicates which are boolean terms compared to true or false.
 -}
 matchPredicate ::
     KoreDefinition ->
     Predicate ->
     Predicate ->
-    Either PredicatesDoNotMatch MatchResult
-matchPredicate def pat subj =
-    second runTermMatching $ matchPredicates (pat, subj)
-  where
-    runTermMatching :: Seq (Term, Term) -> MatchResult
-    runTermMatching =
-        fromEither
-            . runExcept
-            . fmap (MatchSuccess . mSubstitution)
-            . execStateT matching
-            . mkMatchState
-
-    -- produce initial state with given work queue
-    mkMatchState mQueue =
-        State{mSubstitution = Map.empty, mQueue, mSubsorts = Map.map snd def.sorts}
-
-    matchPredicates :: (Predicate, Predicate) -> Either PredicatesDoNotMatch (Seq (Term, Term))
-    matchPredicates = runExcept . execWriterT . collect
-
-    collect :: (Predicate, Predicate) -> WriterT (Seq (Term, Term)) (Except PredicatesDoNotMatch) ()
-    collect (pPattern, pSubject) = case (pPattern, pSubject) of
-        (AndPredicate p1 p2, AndPredicate s1 s2) ->
-            collect (p1, s1) >> collect (p2, s2)
-        (Bottom, Bottom) ->
-            pure ()
-        (Ceil p, Ceil s) ->
-            enqueue (p, s)
-        (EqualsTerm p1 p2, EqualsTerm s1 s2) ->
-            enqueue (p1, s1) >> enqueue (p2, s2)
-        (EqualsPredicate p1 p2, EqualsPredicate s1 s2) ->
-            collect (p1, s1) >> collect (p2, s2)
-        (Exists pv p, Exists sv s) -> do
-            -- forbid pv in the resulting substitution by injecting it here
-            enqueue (Var pv, Var sv)
-            let renamedS = modifyVariablesInP (renameVariable sv pv) s
-            collect (p, renamedS)
-        (Forall pv p, Forall sv s) -> do
-            -- forbid pv in the resulting substitution by injecting it here
-            enqueue (Var pv, Var sv)
-            let renamedS = modifyVariablesInP (renameVariable sv pv) s
-            collect (p, renamedS)
-        (Iff p1 p2, Iff s1 s2) ->
-            collect (p1, s1) >> collect (p2, s2)
-        (Implies p1 p2, Implies s1 s2) ->
-            collect (p1, s1) >> collect (p2, s2)
-        (In p1 p2, In s1 s2) ->
-            enqueue (p1, s1) >> enqueue (p2, s2)
-        (Not p, Not s) ->
-            collect (p, s)
-        (Or p1 p2, Or s1 s2) ->
-            collect (p1, s1) >> collect (p2, s2)
-        (Top, Top) ->
-            pure ()
-        _other -> noMatch
-      where
-        enqueue = tell . Seq.singleton
-        noMatch = lift $ throwE PredicatesDoNotMatch{pPattern, pSubject}
-
-        renameVariable :: Variable -> Variable -> Variable -> Variable
-        renameVariable before after target
-            | target == before = after
-            | target == after = error "variable name capture"
-            -- should never happen, equation variables will all be renamed
-            | otherwise = target
-
-data PredicatesDoNotMatch = PredicatesDoNotMatch
-    { pPattern :: Predicate
-    , pSubject :: Predicate
-    }
-    deriving (Eq, Show)
+    MatchResult
+matchPredicate def (Predicate pat) (Predicate subj) =
+    matchTerm def pat subj

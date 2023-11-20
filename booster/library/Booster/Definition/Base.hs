@@ -43,7 +43,6 @@ data KoreDefinition = KoreDefinition
     , rewriteTheory :: Theory (RewriteRule "Rewrite")
     , functionEquations :: Theory (RewriteRule "Function")
     , simplifications :: Theory (RewriteRule "Simplification")
-    , predicateSimplifications :: Theory PredicateEquation
     }
     deriving stock (Eq, Show, GHC.Generic)
     deriving anyclass (NFData)
@@ -65,7 +64,6 @@ emptyKoreDefinition attributes =
         , rewriteTheory = Map.empty
         , functionEquations = Map.empty
         , simplifications = Map.empty
-        , predicateSimplifications = Map.empty
         }
 
 data RewriteRule (tag :: k) = RewriteRule
@@ -84,17 +82,7 @@ data Alias = Alias
     { name :: AliasName
     , params :: [Sort]
     , args :: [Variable]
-    , rhs :: TermOrPredicate
-    }
-    deriving stock (Eq, Ord, Show, GHC.Generic)
-    deriving anyclass (NFData)
-
-data PredicateEquation = PredicateEquation
-    { target :: Predicate
-    , conditions :: [Predicate]
-    , rhs :: [Predicate]
-    , attributes :: AxiomAttributes
-    , computedAttributes :: ComputedAxiomAttributes
+    , rhs :: Pattern
     }
     deriving stock (Eq, Ord, Show, GHC.Generic)
     deriving anyclass (NFData)

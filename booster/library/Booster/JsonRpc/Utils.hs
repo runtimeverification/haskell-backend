@@ -21,9 +21,7 @@ import Data.Aeson as Json
 import Data.Aeson.Encode.Pretty (encodePretty')
 import Data.Aeson.Types (parseMaybe)
 import Data.ByteString.Lazy.Char8 qualified as BS
-import Data.Functor.Foldable (Corecursive (embed), cata)
 import Data.Maybe (fromMaybe)
-import Data.Set qualified as Set
 import Network.JSONRPC
 import Prettyprinter
 import System.Exit (ExitCode (..))
@@ -36,6 +34,7 @@ import Booster.Definition.Base qualified as Internal
 import Booster.Pattern.Base qualified as Internal
 import Booster.Prettyprinter
 import Booster.Syntax.Json.Internalise
+import Data.Map qualified as Map
 import Kore.JsonRpc.Types
 import Kore.Syntax.Json.Types hiding (Left, Right)
 
@@ -235,23 +234,15 @@ diffBy def pat1 pat2 =
     renderDiff (internalise pat1) (internalise pat2)
   where
     renderBS :: Internal.TermOrPredicate -> BS.ByteString
-    renderBS (Internal.APredicate p) = BS.pack . renderDefault $ pretty p
-    renderBS (Internal.TermAndPredicate p) = BS.pack . renderDefault $ pretty p
+    renderBS (Internal.BoolOrCeilOrSubstitutionPredicate (Internal.IsPredicate p)) = BS.pack . renderDefault $ pretty p
+    renderBS (Internal.BoolOrCeilOrSubstitutionPredicate (Internal.IsCeil c)) = BS.pack . renderDefault $ pretty c
+    renderBS (Internal.BoolOrCeilOrSubstitutionPredicate (Internal.IsSubstitution k v)) = BS.pack . renderDefault $ pretty k <+> "=" <+> pretty v
+    renderBS (Internal.TermAndPredicateAndSubstitution p m) =
+        BS.pack . renderDefault $
+            pretty p <+> vsep (map (\(k, v) -> pretty k <+> "=" <+> pretty v) (Map.toList m))
     internalise =
         either
             (("Pattern could not be internalised: " <>) . Json.encode)
-            (renderBS . orientEquals)
+            renderBS
             . runExcept
             . internaliseTermOrPredicate DisallowAlias IgnoreSubsorts Nothing def
-
-    orientEquals = \case
-        Internal.APredicate p ->
-            Internal.APredicate $ orient p
-        Internal.TermAndPredicate p ->
-            Internal.TermAndPredicate p{Internal.constraints = Set.map orient p.constraints}
-      where
-        orient :: Internal.Predicate -> Internal.Predicate
-        orient = cata $ \case
-            Internal.EqualsTermF t1 t2
-                | t1 > t2 -> Internal.EqualsTerm t2 t1
-            other -> embed other
