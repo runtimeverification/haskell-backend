@@ -11,11 +11,24 @@
     let
       perSystem = nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed;
       nixpkgsCleanFor = system: import nixpkgs { inherit system; };
+
+      # temporary fix for https://github.com/cdepillabout/stacklock2nix/issues/38
+      stacklock2nix-patched = system: (nixpkgsCleanFor system).stdenvNoCC.mkDerivation {
+        name = "stacklock2nix-patched";
+        src = stacklock2nix;
+        dontBuild = true;
+        patches = [ ./stacklock2nix.patch ];
+        installPhase = ''
+          mkdir $out
+          cp -r nix/* $out/
+        '';
+      };
+
       nixpkgsFor = system:
         import nixpkgs {
           inherit system;
           overlays =
-            [ stacklock2nix.overlay self.overlay haskell-backend.overlays.z3 ];
+            [ (import "${(stacklock2nix-patched system)}/overlay.nix") self.overlay haskell-backend.overlays.z3 ];
         };
       withZ3 = pkgs: pkg: exe:
         pkgs.stdenv.mkDerivation {
