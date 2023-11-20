@@ -314,14 +314,3 @@ Function equations by term index:
   - UNKNOWN
   - UNKNOWN
 Simplifications by term index:
-Predicate simplifications by term index:
-- \ceil: UNKNOWN
-- \equalsTerm: 8
-  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (944, 8)
-  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (946, 8)
-  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (941, 8)
-  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (939, 8)
-  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (945, 8)
-  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (940, 8)
-  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (943, 8)
-  - /nix/store/9dqw7zw0v1fv1ghrv5hc8r071qpgz46z-k-5.6.88-4c09d86ed218ee08d521c5780b0368dc5f330383-maven/include/kframework/builtin/domains.md :  (938, 8)

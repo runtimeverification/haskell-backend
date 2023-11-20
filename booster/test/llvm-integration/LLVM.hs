@@ -204,7 +204,6 @@ testDef =
         Map.empty -- no rules
         Map.empty -- no function equations
         Map.empty -- no simplifications
-        Map.empty -- no predicate simplifications
 
 {- To refresh the definition below, run this using the repl and fix up
    the remainder of the file if differences are shown.
@@ -221,7 +220,6 @@ displayTestDef = do
                 , aliases = Map.empty
                 , functionEquations = Map.empty
                 , simplifications = Map.empty
-                , predicateSimplifications = Map.empty
                 }
     -- compare to what we have
     if testDef == prunedDef
