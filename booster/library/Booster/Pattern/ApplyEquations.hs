@@ -1,5 +1,3 @@
-{-# LANGUAGE PatternSynonyms #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
@@ -55,6 +53,7 @@ import Booster.Pattern.Match
 import Booster.Pattern.Simplify
 import Booster.Pattern.Util
 import Booster.Prettyprinter (renderDefault)
+import Data.Coerce (coerce)
 
 newtype EquationT io a
     = EquationT (ReaderT EquationConfig (ExceptT EquationFailure (StateT EquationState io)) a)
@@ -290,7 +289,7 @@ evaluatePattern' ::
     MonadLoggerIO io =>
     Pattern ->
     EquationT io Pattern
-evaluatePattern' Pattern{term, constraints} = do
+evaluatePattern' Pattern{term, constraints, ceilConditions} = do
     pushConstraints constraints
     newTerm <- evaluateTerm' TopDown term
     -- after evaluating the term, evaluate all (existing and
@@ -298,7 +297,7 @@ evaluatePattern' Pattern{term, constraints} = do
     traverse_ simplifyAssumedPredicate . predicates =<< getState
     -- this may yield additional new constraints, left unevaluated
     evaluatedConstraints <- predicates <$> getState
-    pure Pattern{constraints = evaluatedConstraints, term = newTerm}
+    pure Pattern{constraints = evaluatedConstraints, term = newTerm, ceilConditions}
   where
     -- evaluate the given predicate assuming all others
     simplifyAssumedPredicate p = do
@@ -578,7 +577,7 @@ applyEquation term rule = fmap (either id Success) $ runExceptT $ do
             -- check required conditions, using substitution
             let required =
                     concatMap
-                        (splitBoolPredicates . substituteInPredicate subst)
+                        (splitBoolPredicates . coerce . substituteInTerm subst . coerce)
                         rule.requires
             unclearConditions' <- catMaybes <$> mapM (checkConstraint ConditionFalse) required
 
@@ -605,8 +604,8 @@ applyEquation term rule = fmap (either id Success) $ runExceptT $ do
         ExceptT ApplyEquationResult (EquationT io) (Maybe Predicate)
     checkConstraint whenBottom p =
         lift (simplifyConstraint' False p) >>= \case
-            Bottom -> throwE $ whenBottom p
-            Top -> pure Nothing
+            Predicate FalseBool -> throwE $ whenBottom p
+            Predicate TrueBool -> pure Nothing
             _other -> pure $ Just p
 
     allMustBeConcrete (AllConstrained Concrete) = True
@@ -655,14 +654,7 @@ applyEquation term rule = fmap (either id Success) $ runExceptT $ do
 
 --------------------------------------------------------------------
 
--- | Helper pattern for simplifyConstraint
-pattern TrueBool :: Term
-pattern TrueBool = DomainValue SortBool "true"
-
-pattern FalseBool :: Term
-pattern FalseBool = DomainValue SortBool "false"
-
-{- | Simplification for boolean predicates
+{- Simplification for boolean predicates
 
     This is used during rewriting to simplify side conditions of rules
     (to decide whether or not a rule can apply, not to retain the
@@ -689,30 +681,19 @@ simplifyConstraint' :: MonadLoggerIO io => Bool -> Predicate -> EquationT io Pre
 -- evaluating them using simplifyBool if they are concrete.
 -- Non-concrete \equals predicates are simplified using evaluateTerm.
 simplifyConstraint' recurse = \case
-    p@(EqualsTerm TrueBool t@(Term attributes _))
-        | isConcrete t && attributes.canBeEvaluated -> do
+    Predicate t@(Term TermAttributes{canBeEvaluated} _)
+        | isConcrete t && canBeEvaluated -> do
             mbApi <- (.llvmApi) <$> getConfig
             case mbApi of
                 Just api ->
                     if simplifyBool api t
-                        then pure Top
-                        else pure Bottom
+                        then pure $ Predicate TrueBool
+                        else pure $ Predicate FalseBool
                 Nothing ->
-                    if recurse then evalBool t >>= prune else pure p
+                    Predicate <$> if recurse then evalBool t else pure t
         | otherwise ->
-            if recurse then evalBool t >>= prune else pure p
-    EqualsTerm t TrueBool ->
-        -- normalise to 'true' in first argument (like 'kore-rpc')
-        simplifyConstraint' recurse (EqualsTerm TrueBool t)
-    other ->
-        pure other -- should not occur, predicates should be 'true \equals _'
+            Predicate <$> if recurse then evalBool t else pure t
   where
-    prune =
-        pure . \case
-            TrueBool -> Top
-            FalseBool -> Bottom
-            other -> EqualsTerm TrueBool other
-
     evalBool :: MonadLoggerIO io => Term -> EquationT io Term
     evalBool t = do
         prior <- getState -- save prior state so we can revert

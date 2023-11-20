@@ -47,7 +47,6 @@ data Summary = Summary
     , rewriteRules :: Map.Map TermIndex [SourceRef]
     , functionRules :: Map.Map TermIndex [SourceRef]
     , simplifications :: Map.Map TermIndex [SourceRef]
-    , predicateSimplifications :: Map.Map TermIndex [SourceRef]
     }
     deriving stock (Eq, Show, Generic)
     deriving anyclass (NFData)
@@ -80,7 +79,6 @@ mkSummary file def =
         , rewriteRules = Map.map sourceRefs def.rewriteTheory
         , functionRules = Map.map sourceRefs def.functionEquations
         , simplifications = Map.map sourceRefs def.simplifications
-        , predicateSimplifications = Map.map sourceRefs def.predicateSimplifications
         }
   where
     sourceRefs :: HasSourceRef x => Map.Map k [x] -> [SourceRef]
@@ -110,9 +108,6 @@ instance Pretty Summary where
                    )
                 <> ( "Simplifications by term index:"
                         : tableView prettyTermIndex pretty summary.simplifications
-                   )
-                <> ( "Predicate simplifications by term index:"
-                        : tableView prettyTermIndex pretty summary.predicateSimplifications
                    )
                 <> [mempty]
       where
@@ -163,7 +158,4 @@ instance HasSourceRef AxiomAttributes where
                 <|> fmap Located attribs.location
 
 instance HasSourceRef (RewriteRule a) where
-    sourceRef r = sourceRef r.attributes
-
-instance HasSourceRef PredicateEquation where
     sourceRef r = sourceRef r.attributes
