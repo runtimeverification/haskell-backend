@@ -56,6 +56,7 @@ import SMT (
     TimeOut (..),
     assert,
     check,
+    checkUsing,
     localTimeOut,
  )
 
@@ -93,7 +94,7 @@ declareSMTLemmas tools lemmas = do
         Just Unsat -> errorInconsistentDefinitions
         Just Unknown -> do
             SMT.localTimeOut quadrupleTimeOut $
-                SMT.check >>= \case
+                SMT.checkUsing (List [Atom "check-sat"]) >>= \case
                     Nothing -> pure ()
                     Just Sat -> pure ()
                     Just Unsat -> errorInconsistentDefinitions
