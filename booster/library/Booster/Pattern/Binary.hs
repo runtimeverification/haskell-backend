@@ -192,21 +192,21 @@ popStackSorts n =
         BSort s -> pure s
         _ -> fail "popping a non sort"
 
-lookupKoreDefinitionSymbol :: SymbolName -> DecodeM (Maybe Symbol)
+lookupKoreDefinitionSymbol :: SymbolName -> DecodeM (Either Symbol (Maybe Symbol))
 lookupKoreDefinitionSymbol name = DecodeM $ do
     (_, mDef) <- ask
     pure $ case mDef of
         -- return a symbol with dummy attributes if no definition is supplied.
         -- this should be used for testing ONLY!
         Nothing ->
-            Just $
+            Left $
                 Symbol
                     name
                     []
                     []
                     (SortApp "UNKNOWN" [])
                     (SymbolAttributes PartialFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias CannotBeEvaluated Nothing)
-        Just def -> Map.lookup name $ symbols def
+        Just def -> Right $ Map.lookup name $ symbols def
 
 {- | Successively decodes items from the given "block" of bytes,
   branching on the initial tag of the item.
@@ -299,12 +299,20 @@ decodeBlock mbSize = do
     mkSymbolApplication "inj" _ bs = argError "Injection" [BTerm undefined] bs
     mkSymbolApplication name sorts bs =
         lookupKoreDefinitionSymbol name >>= \case
-            Just symbol@Symbol{sortVars} -> do
+            -- testing case when we don't have a KoreDefinition
+            Left symbol@Symbol{sortVars} -> do
                 args <- forM bs $ \case
                     BTerm trm -> pure trm
                     _ -> fail "Expecting term"
                 pure $ BTerm $ SymbolApplication symbol (zipWith (const id) sortVars sorts) args
-            Nothing -> fail $ "Unknown symbol " <> show name
+            Right (Just symbol@Symbol{sortVars, argSorts}) -> do
+                args <- forM (zip argSorts bs) $ \case
+                    -- temporarily fix injections until https://github.com/runtimeverification/llvm-backend/issues/886 is closed
+                    (srt, BTerm (Injection from _to trm)) -> pure $ Injection from srt trm
+                    (srt, BTerm trm) -> if sortOfTerm trm /= srt then fail "Term has incorrect sort" else pure trm
+                    _ -> fail "Expecting term"
+                pure $ BTerm $ SymbolApplication symbol (zipWith (const id) sortVars sorts) args
+            Right Nothing -> fail $ "Unknown symbol " <> show name
 
     argError cons expectedArgs receivedArgs =
         fail $
