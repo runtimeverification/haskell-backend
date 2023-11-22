@@ -5,6 +5,8 @@ License     : BSD-3-Clause
 module Booster.Syntax.Json.Externalise (
     externalisePattern,
     externalisePredicate,
+    externaliseCeil,
+    externaliseSubstitution,
     externaliseSort,
     externaliseTerm,
 ) where

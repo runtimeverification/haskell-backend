@@ -13,6 +13,7 @@ module Booster.Pattern.ApplyEquations (
     isMatchFailure,
     isSuccess,
     simplifyConstraint,
+    simplifyConstraints,
     SimplifierCache,
 ) where
 
@@ -674,6 +675,17 @@ simplifyConstraint ::
     io (Either EquationFailure Predicate, [EquationTrace], SimplifierCache)
 simplifyConstraint doTracing def mbApi cache p =
     runEquationT doTracing def mbApi cache $ simplifyConstraint' True p
+
+simplifyConstraints ::
+    MonadLoggerIO io =>
+    Bool ->
+    KoreDefinition ->
+    Maybe LLVM.API ->
+    SimplifierCache ->
+    [Predicate] ->
+    io (Either EquationFailure [Predicate], [EquationTrace], SimplifierCache)
+simplifyConstraints doTracing def mbApi cache ps =
+    runEquationT doTracing def mbApi cache $ mapM (simplifyConstraint' True) ps
 
 -- version for internal nested evaluation
 simplifyConstraint' :: MonadLoggerIO io => Bool -> Predicate -> EquationT io Predicate
