@@ -43,10 +43,9 @@ import Booster.Definition.Base qualified as Definition (RewriteRule (..))
 import Booster.LLVM.Internal qualified as LLVM
 import Booster.Pattern.ApplyEquations qualified as ApplyEquations
 import Booster.Pattern.Base (
-    InternalisedPredicate (..),
     Pattern (..),
     Term,
-    TermOrPredicate (..),
+    TermOrPredicates (..),
     Variable,
  )
 import Booster.Pattern.Base qualified as Pattern
@@ -68,12 +67,14 @@ import Booster.Syntax.Json.Internalise (
 import Booster.Syntax.ParsedKore (parseKoreModule)
 import Booster.Syntax.ParsedKore.Base
 import Booster.Syntax.ParsedKore.Internalise (DefinitionError (..), addToDefinitions)
+import Data.Set qualified as Set
 import Kore.JsonRpc.Error qualified as RpcError
 import Kore.JsonRpc.Server
 import Kore.JsonRpc.Types qualified as RpcTypes
 import Kore.JsonRpc.Types.Log
 import Kore.Syntax.Json.Types (Id (..))
 import Kore.Syntax.Json.Types qualified as KoreJson
+import Kore.Syntax.Json.Types qualified as Syntax
 
 respond ::
     forall m.
@@ -197,20 +198,26 @@ respond stateVar =
                         (Left other, _traces, _) ->
                             pure . Left . RpcError.backendError RpcError.Aborted $ show other -- FIXME
                             -- predicate only
-                Right (BoolOrCeilOrSubstitutionPredicate (IsPredicate predicate)) -> do
-                    Log.logInfoNS "booster" "Simplifying a predicate"
-                    ApplyEquations.simplifyConstraint doTracing def mLlvmLibrary mempty predicate >>= \case
-                        (Right newPred, traces, _) -> do
-                            let predicateSort =
-                                    fromMaybe (error "not a predicate") $
-                                        sortOfJson req.state.term
-                                result = externalisePredicate predicateSort newPred
-                            pure $ Right (addHeader result, traces)
-                        (Left something, _traces, _) ->
-                            pure . Left . RpcError.backendError RpcError.Aborted $ show something -- FIXME
-                Right (BoolOrCeilOrSubstitutionPredicate _) ->
-                    pure . Left . RpcError.backendError RpcError.Aborted $
-                        ("cannot simplify ceil/substitution at the moment" :: String) -- FIXME
+                Right (BoolOrCeilOrSubstitutionPredicates predicates ceils substitutions)
+                    | null predicates && null ceils && null substitutions ->
+                        pure $
+                            Right
+                                (addHeader $ Syntax.KJTop (fromMaybe (error "not a predicate") $ sortOfJson req.state.term), [])
+                    | otherwise -> do
+                        Log.logInfoNS "booster" "Simplifying all predicates"
+                        ApplyEquations.simplifyConstraints doTracing def mLlvmLibrary mempty (Set.toList predicates) >>= \case
+                            (Right newPreds, traces, _) -> do
+                                let predicateSort =
+                                        fromMaybe (error "not a predicate") $
+                                            sortOfJson req.state.term
+                                    result =
+                                        map (externalisePredicate predicateSort) newPreds
+                                            <> map (externaliseCeil predicateSort) ceils
+                                            <> map (uncurry $ externaliseSubstitution predicateSort) (Map.toList substitutions)
+
+                                pure $ Right (addHeader $ Syntax.KJAnd predicateSort result, traces)
+                            (Left something, _traces, _) ->
+                                pure . Left . RpcError.backendError RpcError.Aborted $ show something -- FIXME
             stop <- liftIO $ getTime Monotonic
 
             let duration =
