@@ -57,7 +57,7 @@ import Booster.Definition.Attributes.Base qualified as Internal
 import Booster.Definition.Base (KoreDefinition (..), emptyKoreDefinition)
 import Booster.Pattern.Base (InternalisedPredicate (..))
 import Booster.Pattern.Base qualified as Internal
-import Booster.Pattern.Util (sortOfTerm)
+import Booster.Pattern.Util (partitionInternalised, sortOfTerm)
 import Booster.Prettyprinter (renderDefault)
 import Booster.Syntax.Json.Externalise (externaliseSort)
 import Booster.Syntax.ParsedKore.Parser (parsePattern)
@@ -101,18 +101,6 @@ internalisePattern allowAlias checkSubsorts sortVars definition p = do
             <$> mapM (internalisePredicate allowAlias checkSubsorts sortVars definition) predicates
     pure (Internal.Pattern{term, constraints, ceilConditions}, substitutions)
   where
-    partitionInternalised ::
-        [InternalisedPredicate] ->
-        (Set Internal.Predicate, [Internal.Ceil], Map Internal.Variable Internal.Term)
-    partitionInternalised =
-        foldr
-            ( \r (preds, ceils, subs) -> case r of
-                IsPredicate pr -> (Set.insert pr preds, ceils, subs)
-                IsCeil c -> (preds, c : ceils, subs)
-                IsSubstitution k v -> (preds, ceils, Map.insert k v subs)
-            )
-            mempty
-
     andTerm :: Syntax.KorePattern -> [Internal.Term] -> Except PatternError Internal.Term
     andTerm _ [] = error "BUG: andTerm called with empty term list"
     andTerm pat ts = do
@@ -132,11 +120,14 @@ internaliseTermOrPredicate ::
     Maybe [Syntax.Id] ->
     KoreDefinition ->
     Syntax.KorePattern ->
-    Except [PatternError] Internal.TermOrPredicate
+    Except [PatternError] Internal.TermOrPredicates
 internaliseTermOrPredicate allowAlias checkSubsorts sortVars definition syntaxPatt =
-    Internal.BoolOrCeilOrSubstitutionPredicate
-        <$> ( withExcept (: []) $ internalisePredicate allowAlias checkSubsorts sortVars definition syntaxPatt
-            )
+    ( withExcept (: []) $ do
+        (constraints, ceilConditions, substitutions) <-
+            partitionInternalised
+                <$> mapM (internalisePredicate allowAlias checkSubsorts sortVars definition) (explodeAnd syntaxPatt)
+        pure $ Internal.BoolOrCeilOrSubstitutionPredicates constraints ceilConditions substitutions
+    )
         <|> uncurry Internal.TermAndPredicateAndSubstitution
             <$> (withExcept (: []) $ internalisePattern allowAlias checkSubsorts sortVars definition syntaxPatt)
 

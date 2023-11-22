@@ -35,8 +35,10 @@ import Booster.Pattern.Base qualified as Internal
 import Booster.Prettyprinter
 import Booster.Syntax.Json.Internalise
 import Data.Map qualified as Map
+import Data.Set qualified as Set
 import Kore.JsonRpc.Types
 import Kore.Syntax.Json.Types hiding (Left, Right)
+import Prettyprinter qualified as Pretty
 
 diffJson :: BS.ByteString -> BS.ByteString -> DiffResult
 diffJson file1 file2 =
@@ -233,10 +235,17 @@ diffBy :: Internal.KoreDefinition -> KorePattern -> KorePattern -> Maybe String
 diffBy def pat1 pat2 =
     renderDiff (internalise pat1) (internalise pat2)
   where
-    renderBS :: Internal.TermOrPredicate -> BS.ByteString
-    renderBS (Internal.BoolOrCeilOrSubstitutionPredicate (Internal.IsPredicate p)) = BS.pack . renderDefault $ pretty p
-    renderBS (Internal.BoolOrCeilOrSubstitutionPredicate (Internal.IsCeil c)) = BS.pack . renderDefault $ pretty c
-    renderBS (Internal.BoolOrCeilOrSubstitutionPredicate (Internal.IsSubstitution k v)) = BS.pack . renderDefault $ pretty k <+> "=" <+> pretty v
+    renderBS :: Internal.TermOrPredicates -> BS.ByteString
+    renderBS (Internal.BoolOrCeilOrSubstitutionPredicates constraints ceils substitutions) =
+        BS.pack . renderDefault $
+            Pretty.vsep $
+                concat
+                    [ "Conditions:"
+                        : fmap (Pretty.indent 4 . pretty) (Set.toList constraints)
+                    , fmap (Pretty.indent 4 . pretty) ceils
+                    , "Substitutions:"
+                        : fmap (Pretty.indent 4) (map (\(k, v) -> pretty k <+> "=" <+> pretty v) (Map.toList substitutions))
+                    ]
     renderBS (Internal.TermAndPredicateAndSubstitution p m) =
         BS.pack . renderDefault $
             pretty p <+> vsep (map (\(k, v) -> pretty k <+> "=" <+> pretty v) (Map.toList m))
