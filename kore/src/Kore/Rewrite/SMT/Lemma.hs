@@ -55,7 +55,6 @@ import SMT (
     SExpr (..),
     TimeOut (..),
     assert,
-    check,
     checkUsing,
     localTimeOut,
  )
