@@ -88,18 +88,21 @@ declareSMTLemmas ::
 declareSMTLemmas tools lemmas = do
     declareSortsSymbols $ smtData tools
     mapM_ declareRule lemmas
-    SMT.check >>= \case
+    SMT.checkUsing checkSatTactic >>= \case
         Nothing -> pure ()
         Just Sat -> pure ()
         Just Unsat -> errorInconsistentDefinitions
         Just Unknown -> do
             SMT.localTimeOut quadrupleTimeOut $
-                SMT.checkUsing (List [Atom "check-sat"]) >>= \case
+                SMT.checkUsing checkSatTactic >>= \case
                     Nothing -> pure ()
                     Just Sat -> pure ()
                     Just Unsat -> errorInconsistentDefinitions
                     Just Unknown -> errorPossiblyInconsistentDefinitions
   where
+    checkSatTactic :: SExpr
+    checkSatTactic = List [Atom "check-sat"]
+
     quadrupleTimeOut :: SMT.TimeOut -> SMT.TimeOut
     quadrupleTimeOut (SMT.TimeOut Unlimited) = SMT.TimeOut Unlimited
     quadrupleTimeOut (SMT.TimeOut (Limit r)) = SMT.TimeOut (Limit (4 * r))
