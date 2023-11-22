@@ -872,7 +872,7 @@ internaliseRewriteRule partialDefinition exs aliasName aliasArgs right axAttribu
         unless (null substitution) $ throwE $ DefinitionPatternError ref SubstitutionNotAllowed
         pure $ removeTrueBools $ Util.modifyVariables f pat
 
-expandAlias :: Alias -> [Def.Term] -> Except DefinitionError Def.TermOrPredicate
+expandAlias :: Alias -> [Def.Term] -> Except DefinitionError Def.TermOrPredicates
 expandAlias alias currentArgs
     | length alias.args /= length currentArgs =
         throwE $
@@ -1265,7 +1265,7 @@ instance Pretty AxiomError where
                 runExcept (Attributes.readLocation rule.attributes)
 
 newtype TermOrPredicateError
-    = PatternExpected Def.TermOrPredicate
+    = PatternExpected Def.TermOrPredicates
     deriving stock (Eq, Show)
 
 symb :: QuasiQuoter

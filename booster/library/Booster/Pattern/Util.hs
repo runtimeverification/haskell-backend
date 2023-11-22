@@ -32,6 +32,7 @@ module Booster.Pattern.Util (
     abstractSymbolicConstructorArguments,
     cellSymbolStats,
     cellVariableStats,
+    partitionInternalised,
 ) where
 
 import Data.Bifunctor (bimap, first)
@@ -75,14 +76,14 @@ applySubst subst var@(SortVar n) =
 applySubst subst (SortApp n args) =
     SortApp n $ map (applySubst subst) args
 
-sortOfTermOrPredicate :: TermOrPredicate -> Maybe Sort
+sortOfTermOrPredicate :: TermOrPredicates -> Maybe Sort
 sortOfTermOrPredicate (TermAndPredicateAndSubstitution Pattern{term} _) = Just (sortOfTerm term)
-sortOfTermOrPredicate (BoolOrCeilOrSubstitutionPredicate _) = Nothing
+sortOfTermOrPredicate BoolOrCeilOrSubstitutionPredicates{} = Nothing
 
 sortOfPattern :: Pattern -> Sort
 sortOfPattern pat = sortOfTerm pat.term
 
-retractPattern :: TermOrPredicate -> Maybe Pattern
+retractPattern :: TermOrPredicates -> Maybe Pattern
 retractPattern (TermAndPredicateAndSubstitution patt _) = Just patt
 retractPattern _ = Nothing
 
@@ -376,3 +377,15 @@ cellVariableStats name = go
         KMap{} -> Map.empty
         KList{} -> Map.empty
         KSet{} -> Map.empty
+
+partitionInternalised ::
+    [InternalisedPredicate] ->
+    (Set Predicate, [Ceil], Map Variable Term)
+partitionInternalised =
+    foldr
+        ( \r (preds, ceils, subs) -> case r of
+            IsPredicate pr -> (Set.insert pr preds, ceils, subs)
+            IsCeil c -> (preds, c : ceils, subs)
+            IsSubstitution k v -> (preds, ceils, Map.insert k v subs)
+        )
+        mempty
