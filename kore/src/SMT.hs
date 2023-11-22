@@ -23,6 +23,7 @@ module SMT (
     declareDatatypes,
     assert,
     check,
+    checkUsing,
     getValue,
     ackCommand,
     loadFile,
@@ -209,6 +210,11 @@ assert = liftSMT . assertSMT
 check :: MonadSMT m => m (Maybe Result)
 check = liftSMT checkSMT
 {-# INLINE check #-}
+
+-- | Check if the current set of assertions is satisfiable, using the tactic provided
+checkUsing :: MonadSMT m => SExpr -> m (Maybe Result)
+checkUsing = liftSMT . checkSMTUsing
+{-# INLINE checkUsing #-}
 
 -- | Retrieve the given variables from the model (only valid if satisfiable)
 getValue :: MonadSMT m => [SExpr] -> m (Maybe [(SExpr, SExpr)])
@@ -637,6 +643,16 @@ checkSMT =
             result <-
                 traceProf ":solver:check" $
                     withSolver' solverSetup (\solver -> SimpleSMT.checkUsing solver (tactic . config $ solverSetup))
+            return (Just result)
+
+checkSMTUsing :: SExpr -> SMT (Maybe Result)
+checkSMTUsing tactic =
+    SMT $ \case
+        Nothing -> return Nothing
+        Just solverSetup -> do
+            result <-
+                traceProf ":solver:check" $
+                    withSolver' solverSetup (\solver -> SimpleSMT.checkUsing solver (Just tactic))
             return (Just result)
 
 getValueSMT :: [SExpr] -> SMT (Maybe [(SExpr, SExpr)])
