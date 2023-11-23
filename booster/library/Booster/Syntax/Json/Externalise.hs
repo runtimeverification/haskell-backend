@@ -17,6 +17,7 @@ import Data.Text.Encoding qualified as Text
 
 import Booster.Pattern.Base (externaliseKmapUnsafe)
 import Booster.Pattern.Base qualified as Internal
+import Booster.Pattern.Bool qualified as Internal
 import Booster.Pattern.Util (sortOfTerm)
 import Data.Map (Map)
 import Data.Map qualified as Map
