@@ -11,3 +11,4 @@ result*
 /test/rpc-integration/resources/*.dylib
 .DS_Store
 /*.code-workspace
+/scripts/logs
