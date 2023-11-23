@@ -142,10 +142,29 @@ This response has no additional fields.
 
 ##### `"reason": "aborted"`
 Execution reached a state that the server cannot handle.
-This response has no additional fields.
+The `unknown-predicate` field MAY contain a predicate that could not be decided by the server's constraint solver.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "state": {
+      "term": {"format":"KORE", "version":1, "term":{}},
+      "predicate": {"format":"KORE", "version":1, "term":{}},
+      "substitution": {"format":"KORE", "version":1, "term":{}},
+    },
+    "depth": 2,
+    "reason": "aborted",
+    "rule": "rule1",
+    "unknown-predicate": {"format":"KORE", "version":1, "term":{}}
+    "logs": []
+  }
+}
+```
 
 ##### `"reason": "cut-point-rule"`
-Execution was about to perform a rewrite with a rule whose label is one of the `cut-point-rules` labels/IDs of the request.  
+Execution was about to perform a rewrite with a rule whose label is one of the `cut-point-rules` labels/IDs of the request.
 An additional `rule` field indicates which of the `cut-point-rules` labels/IDs led to stopping.
 An additional `next-states` field contains the next state (which stems from the RHS of this rule) in a singleton list.
 
