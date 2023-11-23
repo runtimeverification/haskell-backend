@@ -49,9 +49,9 @@ import Booster.Definition.Base
 import Booster.LLVM
 import Booster.LLVM.Internal qualified as LLVM
 import Booster.Pattern.Base
+import Booster.Pattern.Bool
 import Booster.Pattern.Index
 import Booster.Pattern.Match
-import Booster.Pattern.Simplify
 import Booster.Pattern.Util
 import Booster.Prettyprinter (renderDefault)
 import Data.Coerce (coerce)
@@ -305,8 +305,8 @@ evaluatePattern' Pattern{term, constraints, ceilConditions} = do
         allPs <- predicates <$> getState
         let otherPs = Set.delete p allPs
         EquationT $ lift $ lift $ modify $ \s -> s{predicates = otherPs}
-        newP <- simplifyConstraint' True p
-        pushConstraints $ Set.singleton newP
+        newP <- simplifyConstraint' True $ coerce p
+        pushConstraints $ Set.singleton $ coerce newP
 
 ----------------------------------------
 
@@ -603,11 +603,11 @@ applyEquation term rule = fmap (either id Success) $ runExceptT $ do
         (Predicate -> ApplyEquationResult) ->
         Predicate ->
         ExceptT ApplyEquationResult (EquationT io) (Maybe Predicate)
-    checkConstraint whenBottom p =
+    checkConstraint whenBottom (Predicate p) =
         lift (simplifyConstraint' False p) >>= \case
-            Predicate FalseBool -> throwE $ whenBottom p
-            Predicate TrueBool -> pure Nothing
-            _other -> pure $ Just p
+            FalseBool -> throwE $ whenBottom $ coerce p
+            TrueBool -> pure Nothing
+            _other -> pure $ Just $ coerce p
 
     allMustBeConcrete (AllConstrained Concrete) = True
     allMustBeConcrete _ = False
@@ -673,8 +673,8 @@ simplifyConstraint ::
     SimplifierCache ->
     Predicate ->
     io (Either EquationFailure Predicate, [EquationTrace], SimplifierCache)
-simplifyConstraint doTracing def mbApi cache p =
-    runEquationT doTracing def mbApi cache $ simplifyConstraint' True p
+simplifyConstraint doTracing def mbApi cache (Predicate p) =
+    runEquationT doTracing def mbApi cache $ (coerce <$>) . simplifyConstraint' True $ p
 
 simplifyConstraints ::
     MonadLoggerIO io =>
@@ -685,26 +685,28 @@ simplifyConstraints ::
     [Predicate] ->
     io (Either EquationFailure [Predicate], [EquationTrace], SimplifierCache)
 simplifyConstraints doTracing def mbApi cache ps =
-    runEquationT doTracing def mbApi cache $ mapM (simplifyConstraint' True) ps
+    runEquationT doTracing def mbApi cache $ mapM ((coerce <$>) . simplifyConstraint' True . coerce) ps
 
 -- version for internal nested evaluation
-simplifyConstraint' :: MonadLoggerIO io => Bool -> Predicate -> EquationT io Predicate
+simplifyConstraint' :: MonadLoggerIO io => Bool -> Term -> EquationT io Term
 -- We are assuming all predicates are of the form 'true \equals P' and
 -- evaluating them using simplifyBool if they are concrete.
 -- Non-concrete \equals predicates are simplified using evaluateTerm.
-simplifyConstraint' recurse = \case
-    Predicate t@(Term TermAttributes{canBeEvaluated} _)
+simplifyConstraint' recurseIntoEvalBool = \case
+    t@(Term TermAttributes{canBeEvaluated} _)
         | isConcrete t && canBeEvaluated -> do
             mbApi <- (.llvmApi) <$> getConfig
             case mbApi of
                 Just api ->
-                    if simplifyBool api t
-                        then pure $ Predicate TrueBool
-                        else pure $ Predicate FalseBool
-                Nothing ->
-                    Predicate <$> if recurse then evalBool t else pure t
-        | otherwise ->
-            Predicate <$> if recurse then evalBool t else pure t
+                    pure $
+                        if simplifyBool api t
+                            then TrueBool
+                            else FalseBool
+                Nothing -> if recurseIntoEvalBool then evalBool t else pure t
+    NotBool x -> negateBool <$> recursion x
+    EqualsK (KSeq _ l) (KSeq _ r) -> evalEqualsK l r
+    NEqualsK (KSeq _ l) (KSeq _ r) -> negateBool <$> evalEqualsK l r
+    t -> if recurseIntoEvalBool then evalBool t else pure t
   where
     evalBool :: MonadLoggerIO io => Term -> EquationT io Term
     evalBool t = do
@@ -712,3 +714,46 @@ simplifyConstraint' recurse = \case
         result <- iterateEquations 100 TopDown PreferFunctions t
         EquationT $ lift $ lift $ put prior
         pure result
+
+    recursion = simplifyConstraint' recurseIntoEvalBool
+
+    evalEqualsK l@(SymbolApplication sL _ argsL) r@(SymbolApplication sR _ argsR)
+        | isConstructorSymbol sL && isConstructorSymbol sR =
+            if sL == sR
+                then foldAndBool <$> zipWithM evalEqualsK argsL argsR
+                else pure FalseBool
+        | otherwise =
+            (if recurseIntoEvalBool then evalBool else pure) $
+                EqualsK (KSeq (sortOfTerm l) l) (KSeq (sortOfTerm r) r)
+    evalEqualsK (SymbolApplication symbol _ _) DomainValue{}
+        | isConstructorSymbol symbol = pure FalseBool
+    evalEqualsK (SymbolApplication symbol _ _) Injection{}
+        | isConstructorSymbol symbol = pure FalseBool
+    evalEqualsK (SymbolApplication symbol _ _) KMap{}
+        | isConstructorSymbol symbol = pure FalseBool
+    evalEqualsK (SymbolApplication symbol _ _) KList{}
+        | isConstructorSymbol symbol = pure FalseBool
+    evalEqualsK (SymbolApplication symbol _ _) KSet{}
+        | isConstructorSymbol symbol = pure FalseBool
+    evalEqualsK DomainValue{} (SymbolApplication symbol _ _)
+        | isConstructorSymbol symbol = pure FalseBool
+    evalEqualsK Injection{} (SymbolApplication symbol _ _)
+        | isConstructorSymbol symbol = pure FalseBool
+    evalEqualsK KMap{} (SymbolApplication symbol _ _)
+        | isConstructorSymbol symbol = pure FalseBool
+    evalEqualsK KList{} (SymbolApplication symbol _ _)
+        | isConstructorSymbol symbol = pure FalseBool
+    evalEqualsK KSet{} (SymbolApplication symbol _ _)
+        | isConstructorSymbol symbol = pure FalseBool
+    evalEqualsK _ (SymbolApplication symbol _ _)
+        | isConstructorSymbol symbol = pure FalseBool
+    evalEqualsK (Injection s1L s2L l) (Injection s1R s2R r)
+        | s1L == s1R && s2L == s2R = evalEqualsK l r
+    evalEqualsK l@DomainValue{} r@DomainValue{} =
+        pure $ if l == r then TrueBool else FalseBool
+    evalEqualsK l r =
+        if l == r
+            then pure TrueBool
+            else
+                (if recurseIntoEvalBool then evalBool else pure) $
+                    EqualsK (KSeq (sortOfTerm l) l) (KSeq (sortOfTerm r) r)

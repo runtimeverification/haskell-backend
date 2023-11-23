@@ -692,10 +692,6 @@ injectionSymbol =
         }
 
 -- convenience patterns
-pattern AndBool :: [Term] -> Term
-pattern AndBool ts <-
-    SymbolApplication (Symbol "Lbl'Unds'andBool'Unds'" _ _ _ _) _ ts
-
 pattern DV :: Sort -> Symbol
 pattern DV sort <- Symbol "\\dv" _ _ sort _
 
@@ -712,65 +708,6 @@ newtype Predicate = Predicate Term
 newtype Ceil = Ceil Term
     deriving stock (Eq, Ord, Show, Generic, Data)
     deriving anyclass (NFData)
-
-pattern NotBool :: Term -> Term
-pattern NotBool t =
-    SymbolApplication
-        ( Symbol
-                "LblnotBool'Unds'"
-                []
-                [SortBool]
-                SortBool
-                (SymbolAttributes TotalFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias CanBeEvaluated Nothing)
-            )
-        []
-        [t]
-
-pattern EqualsInt, NEqualsInt, EqualsK, NEqualsK :: Term -> Term -> Term
-pattern EqualsInt a b =
-    SymbolApplication
-        ( Symbol
-                "Lbl'UndsEqlsEqls'Int'Unds'"
-                []
-                [SortInt, SortInt]
-                SortBool
-                (SymbolAttributes TotalFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias CanBeEvaluated Nothing)
-            )
-        []
-        [a, b]
-pattern NEqualsInt a b =
-    SymbolApplication
-        ( Symbol
-                "Lbl'UndsEqlsSlshEqls'Int'Unds'"
-                []
-                [SortInt, SortInt]
-                SortBool
-                (SymbolAttributes TotalFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias CanBeEvaluated Nothing)
-            )
-        []
-        [a, b]
-pattern EqualsK a b =
-    SymbolApplication
-        ( Symbol
-                "Lbl'UndsEqlsEqls'K'Unds'"
-                []
-                [SortK, SortK]
-                SortBool
-                (SymbolAttributes TotalFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias CanBeEvaluated Nothing)
-            )
-        []
-        [a, b]
-pattern NEqualsK a b =
-    SymbolApplication
-        ( Symbol
-                "Lbl'UndsEqlsSlshEqls'K'Unds'"
-                []
-                [SortK, SortK]
-                SortBool
-                (SymbolAttributes TotalFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias CanBeEvaluated Nothing)
-            )
-        []
-        [a, b]
 
 -- kseq{}(inj{<sort>, SortKItem{}}(<a>),dotk{}()
 pattern KSeq :: Sort -> Term -> Term
@@ -796,10 +733,6 @@ pattern KSeq sort a =
                 []
                 []
             ]
-
-pattern TrueBool, FalseBool :: Term
-pattern TrueBool = DomainValue SortBool "true"
-pattern FalseBool = DomainValue SortBool "false"
 
 --------------------
 
@@ -950,10 +883,7 @@ instance Pretty Variable where
             <> pretty var.variableSort
 
 instance Pretty Predicate where
-    pretty (Predicate t) =
-        "\\equalsTerm"
-            <> KPretty.noParameters
-            <> KPretty.argumentsP [t, DomainValue SortBool "true"]
+    pretty (Predicate t) = pretty t
 
 instance Pretty Ceil where
     pretty (Ceil t) =

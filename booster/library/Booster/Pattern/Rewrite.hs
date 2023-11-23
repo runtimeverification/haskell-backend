@@ -45,8 +45,8 @@ import Booster.Pattern.ApplyEquations (
     simplifyConstraint,
  )
 import Booster.Pattern.Base
+import Booster.Pattern.Bool
 import Booster.Pattern.Index (TermIndex (..), kCellTermIndex)
-import Booster.Pattern.Simplify
 import Booster.Pattern.Unify
 import Booster.Pattern.Util
 import Booster.Prettyprinter
