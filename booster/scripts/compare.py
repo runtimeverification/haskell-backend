@@ -14,7 +14,7 @@ if len(sys.argv) > 4:
 else:
     minchange = 0.035
 
-testname = re.compile(r'^src/.*\[(?P<name>.*)\]$')
+testname = re.compile(r'.*\[(?P<name>.*)\]$')
 
 def readName(input):
     r = testname.match(input)
@@ -27,23 +27,36 @@ def readData(file_name):
     data_lines = []
     with open(file_name, 'r') as file_data:
         for line in file_data:
-            data_line = [l for l in line.strip('\n').split(' ') if l != '']
-            if data_line[1] == 'call':
+            if ' call     ' in line:
+                data_line = [l for l in line.strip('\n').split(' ') if l != '']
                 time = float(data_line[0][:-1])
                 test = readName(data_line[2])
                 if time > 0.5:
                     data_lines.append((test, time))
     return data_lines
 
-def getKey(file_name):
-    return file_name.split('.')[-1]
+def longestCommonPrefix(my_str):
+    if not my_str:
+        return ''
+    prefix = my_str[0]
+    for word in my_str:
+        if len(prefix) > len(word):
+            prefix, word = word, prefix
+        while len(prefix) > 0:
+            if word[:len(prefix)] == prefix:
+                break
+            else:
+                prefix = prefix[:-1]
+    return prefix
+
+def getKeys(file_name1, file_name2):
+    prefix = longestCommonPrefix([file_name1, file_name2])
+    return file_name1[len(prefix):].rstrip(".log"), file_name2[len(prefix):].rstrip(".log")
 
 data_entries = {}
-key1 = getKey(logfile_1)
+key1, key2 = getKeys(logfile_1, logfile_2)
 data_entries[key1] = { test : time for (test, time) in readData(logfile_1) }
-key2 = getKey(logfile_2)
 data_entries[key2] = { test : time for (test, time) in readData(logfile_2) }
-
 common_passing_tests = [k1 for k1 in data_entries[key1] if k1 in data_entries[key2]]
 
 def filterEntries(test, t1, t2):
