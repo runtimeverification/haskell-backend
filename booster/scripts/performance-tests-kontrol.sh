@@ -5,11 +5,12 @@ set -euxo pipefail
 #  https://github.com/pypa/pip/issues/7883
 export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
 
-KONTROL_VERSION=${KONTROL_VERSION:-'v0.1.49'}
+KONTROL_VERSION=${KONTROL_VERSION:-'master'}
 
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 
 MASTER_COMMIT="$(git rev-parse origin/main)"
+MASTER_COMMIT_SHORT="$(git rev-parse --short origin/main)"
 
 FEATURE_BRANCH_NAME=${FEATURE_BRANCH_NAME:-"$(git rev-parse --abbrev-ref HEAD)"}
 FEATURE_BRANCH_NAME="${FEATURE_BRANCH_NAME//\//-}"
@@ -38,6 +39,13 @@ git clone --depth 1 --branch $KONTROL_VERSION https://github.com/runtimeverifica
 cd kontrol
 git submodule update --init --recursive --depth 1
 
+
+if [[ $KONTROL_VERSION == "master" ]]; then
+  KONTROL_VERSION=$(git name-rev --tags --name-only $(git rev-parse HEAD))
+else
+  KONTROL_VERSION="${KONTROL_VERSION//\//-}"
+fi
+
 KEVM_VERSION="v$(cat deps/kevm_release)"
 
 # poetry takes too long to clone kevm-pyk, so we just do a shallow clone locally and override pyproject.toml
@@ -53,24 +61,24 @@ sed -i'' -e "s|'forge', 'build'|'forge', 'build', '--no-auto-detect'|g" src/kont
 sed -i'' -e "s|'forge', 'build'|'forge', 'build', '--no-auto-detect'|g" src/tests/integration/test_foundry_prove.py
 
 feature_shell() {
-  GC_DONT_GC=1 nix develop github:runtimeverification/evm-semantics/$KEVM_VERSION --extra-experimental-features 'nix-command flakes' --override-input k-framework/booster-backend $SCRIPT_DIR/../ --command bash -c "$1"
+  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input kevm/k-framework/booster-backend $SCRIPT_DIR/../ --command bash -c "$1"
 }
 
 master_shell() {
-  GC_DONT_GC=1 nix develop github:runtimeverification/evm-semantics/$KEVM_VERSION --extra-experimental-features 'nix-command flakes' --override-input k-framework/booster-backend github:runtimeverification/hs-backend-booster/$MASTER_COMMIT --command bash -c "$1"
+  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input kevm/k-framework/booster-backend github:runtimeverification/hs-backend-booster/$MASTER_COMMIT --command bash -c "$1"
 }
 
-feature_shell "poetry install && poetry run kevm-dist --verbose build plugin haskell foundry --jobs 4"
+feature_shell "poetry install && poetry run kevm-dist --verbose build evm-semantics.plugin evm-semantics.haskell kontrol.foundry --jobs 4"
 
-feature_shell "make test-integration TEST_ARGS='--maxfail=0 --numprocesses=$PYTEST_PARALLEL --use-booster -vv' | tee $SCRIPT_DIR/kontrol-$KONTROL_VERSION-$FEATURE_BRANCH_NAME.log"
+mkdir -p $SCRIPT_DIR/logs
+
+feature_shell "make test-integration TEST_ARGS='--maxfail=0 --numprocesses=$PYTEST_PARALLEL --use-booster -vv' | tee $SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-$FEATURE_BRANCH_NAME.log"
 killall kore-rpc-booster || echo "no zombie processes found"
 
-if [ ! -e "$SCRIPT_DIR/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT.log" ]; then
-  master_shell "make test-integration TEST_ARGS='--maxfail=0 --numprocesses=$PYTEST_PARALLEL --use-booster -vv' | tee $SCRIPT_DIR/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT.log"
+if [ ! -e "$SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT.log" ]; then
+  master_shell "make test-integration TEST_ARGS='--maxfail=0 --numprocesses=$PYTEST_PARALLEL --use-booster -vv' | tee $SCRIPT_DIR/logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT.log"
   killall kore-rpc-booster || echo "no zombie processes found"
 fi
 
 cd $SCRIPT_DIR
-grep ' call  ' kontrol-$KONTROL_VERSION-$FEATURE_BRANCH_NAME.log > kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT.$FEATURE_BRANCH_NAME
-grep ' call  ' kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT.log > kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT.master
-python3 compare.py kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT.$FEATURE_BRANCH_NAME kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT.master > kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT-$FEATURE_BRANCH_NAME-compare
+python3 compare.py logs/kontrol-$KONTROL_VERSION-$FEATURE_BRANCH_NAME.log logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT.log > logs/kontrol-$KONTROL_VERSION-master-$MASTER_COMMIT_SHORT-$FEATURE_BRANCH_NAME-compare
