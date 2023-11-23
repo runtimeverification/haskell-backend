@@ -57,6 +57,7 @@ import Booster.Definition.Attributes.Base qualified as Internal
 import Booster.Definition.Base (KoreDefinition (..), emptyKoreDefinition)
 import Booster.Pattern.Base (InternalisedPredicate (..))
 import Booster.Pattern.Base qualified as Internal
+import Booster.Pattern.Bool qualified as Internal
 import Booster.Pattern.Util (partitionInternalised, sortOfTerm)
 import Booster.Prettyprinter (renderDefault)
 import Booster.Syntax.Json.Externalise (externaliseSort)
