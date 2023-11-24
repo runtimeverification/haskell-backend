@@ -134,6 +134,7 @@ data ExecuteResult = ExecuteResult
     , nextStates :: Maybe [ExecuteState]
     , rule :: Maybe Text
     , logs :: Maybe [LogEntry]
+    , unknownPredicate :: Maybe KoreJson
     }
     deriving stock (Generic, Show, Eq)
     deriving
