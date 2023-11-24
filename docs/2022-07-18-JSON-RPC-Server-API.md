@@ -156,7 +156,6 @@ The `unknown-predicate` field MAY contain a predicate that could not be decided 
     },
     "depth": 2,
     "reason": "aborted",
-    "rule": "rule1",
     "unknown-predicate": {"format":"KORE", "version":1, "term":{}}
     "logs": []
   }
