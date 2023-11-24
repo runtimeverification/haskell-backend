@@ -226,6 +226,7 @@ respond serverState moduleName runSMT =
                                         , rule = Nothing
                                         , nextStates = Nothing
                                         , logs = mkLogs mbDuration rules
+                                        , unknownPredicate = Nothing
                                         }
                     GraphTraversal.GotStuck
                         _n
@@ -241,6 +242,7 @@ respond serverState moduleName runSMT =
                                         , rule = Nothing
                                         , nextStates = Nothing
                                         , logs = mkLogs mbDuration rules
+                                        , unknownPredicate = Nothing
                                         }
                     GraphTraversal.GotStuck
                         _n
@@ -256,6 +258,7 @@ respond serverState moduleName runSMT =
                                         , rule = Nothing
                                         , nextStates = Nothing
                                         , logs = mkLogs mbDuration rules
+                                        , unknownPredicate = Nothing
                                         }
                     GraphTraversal.Stopped
                         [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRules = rules}]
@@ -271,6 +274,7 @@ respond serverState moduleName runSMT =
                                             , nextStates =
                                                 Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
                                             , logs = mkLogs mbDuration rules
+                                            , unknownPredicate = Nothing
                                             }
                             | Just rule <- containsLabelOrRuleId rules terminalRules ->
                                 Right $
@@ -282,6 +286,7 @@ respond serverState moduleName runSMT =
                                             , rule
                                             , nextStates = Nothing
                                             , logs = mkLogs mbDuration rules
+                                            , unknownPredicate = Nothing
                                             }
                             | otherwise ->
                                 Right $
@@ -294,6 +299,7 @@ respond serverState moduleName runSMT =
                                             , nextStates =
                                                 Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
                                             , logs = mkLogs mbDuration rules
+                                            , unknownPredicate = Nothing
                                             }
                     GraphTraversal.TimedOut
                         Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRules = rules}
@@ -307,6 +313,7 @@ respond serverState moduleName runSMT =
                                         , rule = Nothing
                                         , nextStates = Nothing
                                         , logs = mkLogs mbDuration rules
+                                        , unknownPredicate = Nothing
                                         }
                     -- these are programmer errors
                     result@GraphTraversal.Aborted{} ->
