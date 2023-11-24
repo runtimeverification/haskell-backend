@@ -544,7 +544,7 @@ helpText =
     \log [<severity>] [<format>]              configures logging; <severity> can be debug ... error; <format> can be standard or oneline;\n\
     \    \"[\"<entry>\"]\"                        [<entry>] is a list formed by types below;\n\
     \    <type> [<switch-timestamp>]          <type> can be stderr or 'file filename'; <switch-timestamp> can be (enable|disable)-log-timestamps;\n\
-    \debug[-type-]equation [eqId1] [eqId2] .. show debugging information for specific equations;\
+    \debug-[type-]equation [eqId1] [eqId2] .. show debugging information for specific equations;\
     \ [-type-] can be '-attempt-', '-apply-' or '-',\n\
     \exit                                     exits the repl\
     \\n\n\
