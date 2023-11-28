@@ -40,20 +40,20 @@ packages:
   original:
     hackage: monad-validate-1.2.0.1
 - completed:
-    commit: b2bade8ce62e5f3add32d87e98244ceb31790f9f
+    commit: 827252a324f651f361ac62de40dbf8888a089503
     git: https://github.com/runtimeverification/haskell-backend.git
     name: kore
     pantry-tree:
-      sha256: 96949eeb2f74b019e43ffac323ec5b2f41394cfcd4dd94f5001a75493c84292c
+      sha256: 30a502eda589be5af735b1b59760ce3e0235c0cae8961978a46b3564dd8db32b
       size: 44685
     subdir: kore
     version: 0.60.0.0
   original:
-    commit: b2bade8ce62e5f3add32d87e98244ceb31790f9f
+    commit: 827252a324f651f361ac62de40dbf8888a089503
     git: https://github.com/runtimeverification/haskell-backend.git
     subdir: kore
 - completed:
-    commit: b2bade8ce62e5f3add32d87e98244ceb31790f9f
+    commit: 827252a324f651f361ac62de40dbf8888a089503
     git: https://github.com/runtimeverification/haskell-backend.git
     name: kore-rpc-types
     pantry-tree:
@@ -62,7 +62,7 @@ packages:
     subdir: kore-rpc-types
     version: 0.60.0.0
   original:
-    commit: b2bade8ce62e5f3add32d87e98244ceb31790f9f
+    commit: 827252a324f651f361ac62de40dbf8888a089503
     git: https://github.com/runtimeverification/haskell-backend.git
     subdir: kore-rpc-types
 snapshots:
