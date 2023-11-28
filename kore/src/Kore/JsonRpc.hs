@@ -42,7 +42,6 @@ import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     getMultiAndPredicate,
-    makeMultipleAndPredicate,
     pattern PredicateTrue,
  )
 import Kore.Internal.Substitution qualified as Substitution
@@ -58,7 +57,7 @@ import Kore.JsonRpc.Server (
  )
 import Kore.JsonRpc.Types
 import Kore.JsonRpc.Types.Log
-import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown (..), srcLoc)
+import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown (..), externaliseDecidePredicateUnknown, srcLoc)
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
@@ -652,9 +651,4 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
 
 handleDecidePredicateUnknown :: JsonRpcHandler
 handleDecidePredicateUnknown = JsonRpcHandler $ \(err :: DecidePredicateUnknown) ->
-    pure
-        ( backendError SmtSolverError $
-            PatternJson.fromPredicate
-                (TermLike.SortActualSort $ TermLike.SortActual (TermLike.Id "SortBool" TermLike.AstLocationNone) [])
-                (makeMultipleAndPredicate . toList $ predicates err)
-        )
+    pure (backendError SmtSolverError $ externaliseDecidePredicateUnknown err)

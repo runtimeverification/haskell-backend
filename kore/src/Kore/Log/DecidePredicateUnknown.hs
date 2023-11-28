@@ -13,6 +13,7 @@ module Kore.Log.DecidePredicateUnknown (
     liftLoc,
     srcLoc,
     Loc,
+    externaliseDecidePredicateUnknown,
 ) where
 
 import Control.Exception (
@@ -27,7 +28,9 @@ import Kore.Internal.Predicate (
     Predicate,
  )
 import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Internal.Variable
+import Kore.Syntax.Json qualified as PatternJson
 import Language.Haskell.TH.Syntax (Exp, Loc (..), Q, qLocation)
 import Log
 import Prelude.Kore
@@ -114,3 +117,9 @@ throwDecidePredicateUnknown action smtLimit predicates' =
             throw DecidePredicateUnknown{action, smtLimit, predicates}
   where
     predicates = Predicate.mapVariables (pure toVariableName) <$> predicates'
+
+externaliseDecidePredicateUnknown :: DecidePredicateUnknown -> PatternJson.KoreJson
+externaliseDecidePredicateUnknown err =
+    PatternJson.fromPredicate
+        (TermLike.SortActualSort $ TermLike.SortActual (TermLike.Id "SortBool" TermLike.AstLocationNone) [])
+        (Predicate.makeMultipleAndPredicate . toList $ predicates err)
