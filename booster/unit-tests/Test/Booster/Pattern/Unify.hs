@@ -422,6 +422,26 @@ internalMaps =
                 ]
             )
         , test
+            "Can unify {\"f()\" |-> B} with {\"f()\" |-> \"value\", ...REST}"
+            functionKMapWithOneItem
+            functionKMapWithOneItemAndRest
+            ( success
+                [
+                    ( "REST"
+                    , kmapSort
+                    , KMap
+                        testKMapDefinition
+                        []
+                        Nothing
+                    )
+                ,
+                    ( "B"
+                    , SortApp "SortTestKMapItem" []
+                    , [trm| \dv{SortTestKMapItem{}}("value") |]
+                    )
+                ]
+            )
+        , test
             "Empty and non-empty concrete map fail to unify"
             emptyKMap
             concreteKMapWithOneItem
