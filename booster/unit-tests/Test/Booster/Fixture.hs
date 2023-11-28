@@ -122,7 +122,9 @@ emptyKMap
     , concreteKMapWithOneItemAndRest
     , symbolicKMapWithOneItem
     , symbolicKMapWithTwoItems
-    , concreteAndSymbolicKMapWithTwoItems ::
+    , concreteAndSymbolicKMapWithTwoItems
+    , functionKMapWithOneItemAndRest
+    , functionKMapWithOneItem ::
         Term
 emptyKMap = KMap testKMapDefinition [] Nothing
 concreteKMapWithOneItem =
@@ -188,6 +190,24 @@ concreteAndSymbolicKMapWithTwoItems =
         ,
             ( [trm| A:SortTestKMapKey{}|]
             , [trm| \dv{SortTestKMapItem{}}("value2") |]
+            )
+        ]
+        Nothing
+functionKMapWithOneItemAndRest =
+    KMap
+        testKMapDefinition
+        [
+            ( [trm| f1{}() |]
+            , [trm| \dv{SortTestKMapItem{}}("value") |]
+            )
+        ]
+        (Just [trm| REST:SortTestKMap{}|])
+functionKMapWithOneItem =
+    KMap
+        testKMapDefinition
+        [
+            ( [trm| f1{}() |]
+            , [trm| B:SortTestKMapItem{} |]
             )
         ]
         Nothing
