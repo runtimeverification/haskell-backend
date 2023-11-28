@@ -305,6 +305,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution = case rr of
                     , state = toExecState p originalSubstitution
                     , nextStates = Just $ map (\(_, _, p') -> toExecState p' originalSubstitution) $ toList nexts
                     , rule = Nothing
+                    , unknownPredicate = Nothing
                     }
     RewriteStuck p ->
         Right $
@@ -316,6 +317,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution = case rr of
                     , state = toExecState p originalSubstitution
                     , nextStates = Nothing
                     , rule = Nothing
+                    , unknownPredicate = Nothing
                     }
     RewriteTrivial p ->
         Right $
@@ -327,6 +329,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution = case rr of
                     , state = toExecState p originalSubstitution
                     , nextStates = Nothing
                     , rule = Nothing
+                    , unknownPredicate = Nothing
                     }
     RewriteCutPoint lbl _ p next ->
         Right $
@@ -338,6 +341,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution = case rr of
                     , state = toExecState p originalSubstitution
                     , nextStates = Just [toExecState next originalSubstitution]
                     , rule = Just lbl
+                    , unknownPredicate = Nothing
                     }
     RewriteTerminal lbl _ p ->
         Right $
@@ -349,6 +353,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution = case rr of
                     , state = toExecState p originalSubstitution
                     , nextStates = Nothing
                     , rule = Just lbl
+                    , unknownPredicate = Nothing
                     }
     RewriteFinished _ _ p ->
         Right $
@@ -360,6 +365,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution = case rr of
                     , state = toExecState p originalSubstitution
                     , nextStates = Nothing
                     , rule = Nothing
+                    , unknownPredicate = Nothing
                     }
     RewriteAborted failure p -> do
         Right $
@@ -377,6 +383,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution = case rr of
                     , state = toExecState p originalSubstitution
                     , nextStates = Nothing
                     , rule = Nothing
+                    , unknownPredicate = Nothing
                     }
   where
     logSuccessfulRewrites = fromMaybe False req.logSuccessfulRewrites
