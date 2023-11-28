@@ -57,7 +57,11 @@ import Kore.JsonRpc.Server (
  )
 import Kore.JsonRpc.Types
 import Kore.JsonRpc.Types.Log
-import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown (..), externaliseDecidePredicateUnknown, srcLoc)
+import Kore.Log.DecidePredicateUnknown (
+    DecidePredicateUnknown (..),
+    externaliseDecidePredicateUnknown,
+    srcLoc,
+ )
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
