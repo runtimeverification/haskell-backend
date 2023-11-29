@@ -8,6 +8,8 @@ extra-deps:
   - chronos-1.1.5
   - co-log-0.5.0.0
   - decision-diagrams-0.2.0.0
+  - smtlib-backends-0.3
+  - smtlib-backends-process-0.3
   - typerep-map-0.5.0.0
   - monad-validate-1.2.0.1
   - git: https://github.com/runtimeverification/haskell-backend.git

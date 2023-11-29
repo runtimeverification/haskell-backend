@@ -29,6 +29,7 @@ main = do
             , port
             , logLevels
             , llvmLibraryFile
+            , smtOptions
             , eventlogEnabledUserEvents
             , hijackEventlogFile
             } = options
@@ -56,10 +57,11 @@ main = do
             "Module " <> unpack mainModuleName <> " does not exist in the given definition."
     putStrLn "Starting RPC server"
     case llvmLibraryFile of
-        Nothing -> runServer port definitionMap mainModuleName Nothing (adjustLogLevels logLevels)
+        Nothing ->
+            runServer port definitionMap mainModuleName Nothing smtOptions (adjustLogLevels logLevels)
         Just fp -> withDLib fp $ \dl -> do
             api <- mkAPI dl
-            runServer port definitionMap mainModuleName (Just api) (adjustLogLevels logLevels)
+            runServer port definitionMap mainModuleName (Just api) smtOptions (adjustLogLevels logLevels)
   where
     clParser =
         info

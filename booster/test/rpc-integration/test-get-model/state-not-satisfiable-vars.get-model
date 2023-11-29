@@ -14,21 +14,20 @@
       "args": []
     },
     "first": {
-      "tag": "Not",
-      "sort": {
-        "tag": "SortApp",
-        "name": "SortBool",
-        "args": []
-      },
-      "arg": {
-        "tag": "EVar",
-        "name": "X",
-        "sort": {
-          "tag": "SortApp",
-          "name": "SortBool",
-          "args": []
+      "tag": "App",
+      "name": "LblnotBool'Unds'",
+      "sorts": [],
+      "args": [
+        {
+          "tag": "EVar",
+          "name": "X",
+          "sort": {
+            "tag": "SortApp",
+            "name": "SortBool",
+            "args": []
+          }
         }
-      }
+      ]
     },
     "second": {
       "tag": "EVar",

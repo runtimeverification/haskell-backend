@@ -59,6 +59,7 @@
               decision-diagrams = dontCheck hprev.decision-diagrams;
               fgl = dontCheck hprev.fgl;
               haskeline = dontCheck hprev.haskeline;
+              smtlib-backends-process = dontCheck hprev.smtlib-backends-process;
               hs-backend-booster = overrideCabal hprev.hs-backend-booster
                 (drv: {
                   doCheck = false;
