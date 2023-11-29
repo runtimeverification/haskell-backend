@@ -19,6 +19,7 @@ module Booster.Definition.Attributes.Base (
     ComputedAxiomAttributes (..),
     SymbolType (..),
     SymbolAttributes (..),
+    SMTType (..),
     SortAttributes (..),
     KCollectionTag (..),
     KCollectionSymbolNames (..),
@@ -46,6 +47,7 @@ module Booster.Definition.Attributes.Base (
 
 import Control.DeepSeq (NFData (..))
 import Data.ByteString (ByteString)
+import Data.Data (Data)
 import Data.Hashable (Hashable)
 import Data.Map (Map)
 import Data.String
@@ -53,11 +55,11 @@ import Data.Text (Text)
 import Data.Text.Encoding qualified as Text
 import Data.Word (Word8)
 import GHC.Generics (Generic)
+import Language.Haskell.TH.Syntax (Lift)
 import Prettyprinter as Pretty
 
+import Booster.SMT.Base (SExpr)
 import Booster.Util qualified as Util
-import Data.Data (Data)
-import Language.Haskell.TH.Syntax (Lift)
 
 data DefinitionAttributes = DefinitionAttributes
     {
@@ -88,6 +90,7 @@ data AxiomAttributes = AxiomAttributes
     , simplification :: Flag "isSimplification"
     , preserving :: Flag "preservingDefinedness" -- this will override the computed attribute
     , concreteness :: Concreteness
+    , smtLemma :: Flag "isSMTLemma"
     }
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData)
@@ -185,6 +188,12 @@ pattern CanBeEvaluated = Flag True
 pattern CannotBeEvaluated = Flag False
 {-# COMPLETE CanBeEvaluated, CannotBeEvaluated #-}
 
+data SMTType
+    = SMTLib ByteString
+    | SMTHook SExpr
+    deriving stock (Eq, Ord, Show, Generic, Data, Lift)
+    deriving anyclass (NFData, Hashable)
+
 data SymbolAttributes = SymbolAttributes
     { symbolType :: SymbolType
     , isIdem :: Flag "isIdem"
@@ -192,6 +201,7 @@ data SymbolAttributes = SymbolAttributes
     , isMacroOrAlias :: Flag "isMacroOrAlias"
     , hasEvaluators :: Flag "canBeEvaluated"
     , collectionMetadata :: Maybe KCollectionMetadata
+    , smt :: Maybe SMTType
     }
     deriving stock (Eq, Ord, Show, Generic, Data, Lift)
     deriving anyclass (NFData, Hashable)

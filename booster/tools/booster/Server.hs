@@ -84,8 +84,9 @@ main = do
                     { definitionFile
                     , mainModuleName
                     , port
-                    , logLevels
                     , llvmLibraryFile
+                    , logLevels
+                    , smtOptions
                     , eventlogEnabledUserEvents
                     }
             , koreSolverOptions
@@ -145,7 +146,13 @@ main = do
                     mLlvmLibrary <- maybe (pure Nothing) (fmap Just . mkAPI) mdl
                     boosterState <-
                         liftIO $
-                            newMVar Booster.ServerState{definitions, defaultMain = mainModuleName, mLlvmLibrary}
+                            newMVar
+                                Booster.ServerState
+                                    { definitions
+                                    , defaultMain = mainModuleName
+                                    , mLlvmLibrary
+                                    , mSMTOptions = smtOptions
+                                    }
                     statsVar <- if printStats then Just <$> Stats.newStats else pure Nothing
 
                     runLoggingT (Logger.logInfoNS "proxy" "Starting RPC server") monadLogger
