@@ -38,7 +38,14 @@ genSymbolUnknownSort :: Gen Symbol
 genSymbolUnknownSort =
     ( \name ->
         Symbol name [] [] (SortApp "UNKNOWN" []) $
-            SymbolAttributes PartialFunction IsNotIdem IsNotAssoc IsNotMacroOrAlias CannotBeEvaluated Nothing
+            SymbolAttributes
+                PartialFunction
+                IsNotIdem
+                IsNotAssoc
+                IsNotMacroOrAlias
+                CannotBeEvaluated
+                Nothing
+                Nothing
     )
         <$> Gen.utf8 (Range.linear 0 32) Gen.alphaNum
 

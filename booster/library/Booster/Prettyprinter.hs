@@ -9,6 +9,7 @@ module Booster.Prettyprinter (
     unparseToString,
     renderDefault,
     renderOneLineText,
+    renderText,
     layoutPrettyUnbounded,
     parametersU,
     parametersP,
@@ -72,8 +73,10 @@ renderDefault =
     RenderString.renderString
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
 
-renderOneLineText :: Doc ann -> Text
+renderText, renderOneLineText :: Doc ann -> Text
 renderOneLineText = RenderText.renderStrict . layoutPrettyUnbounded
+renderText =
+    RenderText.renderStrict . Pretty.layoutPretty Pretty.defaultLayoutOptions
 
 parametersU :: Unparse p => [p] -> Doc ann
 parametersU = parameters' . map unparse

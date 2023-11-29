@@ -1,6 +1,11 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Booster.CLOptions (CLOptions (..), clOptionsParser, adjustLogLevels, versionInfoParser) where
+module Booster.CLOptions (
+    CLOptions (..),
+    clOptionsParser,
+    adjustLogLevels,
+    versionInfoParser,
+) where
 
 import Booster.Trace (CustomUserEventType)
 import Booster.VersionInfo (VersionInfo (..), versionInfo)
@@ -12,13 +17,17 @@ import Options.Applicative
 import Text.Casing (fromHumps, fromKebab, toKebab, toPascal)
 import Text.Read (readMaybe)
 
+import Booster.SMT.Interface (SMTOptions (..))
+
 data CLOptions = CLOptions
     { definitionFile :: FilePath
     , mainModuleName :: Text
     , llvmLibraryFile :: Maybe FilePath
     , port :: Int
     , logLevels :: [LogLevel]
-    , eventlogEnabledUserEvents :: [CustomUserEventType]
+    , smtOptions :: Maybe SMTOptions
+    , -- developer options below
+      eventlogEnabledUserEvents :: [CustomUserEventType]
     , hijackEventlogFile :: Maybe FilePath
     }
     deriving (Show)
@@ -63,6 +72,8 @@ clOptionsParser =
                         )
                 )
             )
+        <*> parseSMTOptions
+        -- developer options below
         <*> many
             ( option
                 (eitherReader readEventLogTracing)
@@ -112,6 +123,7 @@ allowedLogLevels =
     , ("SimplifyKore", "Log all simplification in kore-rpc")
     , ("SimplifySuccess", "Log successful simplifications (booster and kore-rpc)")
     , ("Depth", "Log the current depth of the state")
+    , ("SMT", "Log the SMT-solver interactions")
     ]
 
 -- Partition provided log levels into standard and custom ones, and
@@ -122,6 +134,26 @@ adjustLogLevels ls = (standardLevel, customLevels)
   where
     (stds, customLevels) = partition (<= LevelError) ls
     standardLevel = if null stds then LevelInfo else minimum stds
+
+-- FIXME SMTOptions should later replace Options.SMT from kore-rpc,
+-- with fully-compatible option names
+parseSMTOptions :: Parser (Maybe SMTOptions)
+parseSMTOptions =
+    flag
+        (Just $ SMTOptions Nothing)
+        Nothing
+        ( long "no-smt"
+            <> help "Disable SMT solver sub-process"
+        )
+        <|> ( Just . SMTOptions
+                <$> optional
+                    ( strOption
+                        ( metavar "SMT_TRANSCRIPT_FILE"
+                            <> long "smt-transcript"
+                            <> help "Destination file for SMT transcript (should not exist prior)"
+                        )
+                    )
+            )
 
 versionInfoParser :: Parser (a -> a)
 versionInfoParser =

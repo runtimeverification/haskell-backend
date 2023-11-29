@@ -18,6 +18,7 @@ module Booster.JsonRpc (
 import Control.Applicative ((<|>))
 import Control.Concurrent (MVar, newMVar, putMVar, readMVar, takeMVar)
 import Control.Monad
+import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class
 import Control.Monad.Logger.CallStack (LogLevel (LevelError), MonadLoggerIO)
 import Control.Monad.Logger.CallStack qualified as Log
@@ -56,6 +57,8 @@ import Booster.Pattern.Rewrite (
     performRewrite,
  )
 import Booster.Pattern.Util (sortOfPattern)
+import Booster.SMT.Base qualified as SMT
+import Booster.SMT.Interface qualified as SMT
 import Booster.Syntax.Json (KoreJson (..), addHeader, sortOfJson)
 import Booster.Syntax.Json.Externalise
 import Booster.Syntax.Json.Internalise (
@@ -87,7 +90,7 @@ respond stateVar =
             | isJust req.stepTimeout -> pure $ Left $ RpcError.unsupportedOption ("step-timeout" :: String)
             | isJust req.movingAverageStepTimeout ->
                 pure $ Left $ RpcError.unsupportedOption ("moving-average-step-timeout" :: String)
-        RpcTypes.Execute req -> withContext req._module $ \(def, mLlvmLibrary) -> do
+        RpcTypes.Execute req -> withContext req._module $ \(def, mLlvmLibrary, mSMTOptions) -> do
             start <- liftIO $ getTime Monotonic
             -- internalise given constrained term
             let internalised = runExcept $ internalisePattern DisallowAlias CheckSubsorts Nothing def req.state.term
@@ -109,7 +112,9 @@ respond stateVar =
                                 , req.logFailedSimplifications
                                 , req.logFallbacks
                                 ]
-                    result <- performRewrite doTracing def mLlvmLibrary mbDepth cutPoints terminals pat
+                    solver <- traverse (SMT.initSolver def) mSMTOptions
+                    result <- performRewrite doTracing def mLlvmLibrary solver mbDepth cutPoints terminals pat
+                    whenJust solver SMT.closeSolver
                     stop <- liftIO $ getTime Monotonic
                     let duration =
                             if fromMaybe False req.logTiming
@@ -147,7 +152,7 @@ respond stateVar =
                                 Log.logInfo $
                                     "Added a new module. Now in scope: " <> Text.intercalate ", " (Map.keys newDefinitions)
                                 pure $ Right $ RpcTypes.AddModule $ RpcTypes.AddModuleResult $ getId newModule.name
-        RpcTypes.Simplify req -> withContext req._module $ \(def, mLlvmLibrary) -> do
+        RpcTypes.Simplify req -> withContext req._module $ \(def, mLlvmLibrary, _mSMTOptions) -> do
             start <- liftIO $ getTime Monotonic
             let internalised =
                     runExcept $ internaliseTermOrPredicate DisallowAlias CheckSubsorts Nothing def req.state.term
@@ -226,6 +231,93 @@ respond stateVar =
                     RpcTypes.Simplify
                         RpcTypes.SimplifyResult{state, logs = mkTraces duration traceData}
             pure $ second (uncurry mkSimplifyResponse) result
+        RpcTypes.GetModel req -> withContext req._module $ \case
+            (_, _, Nothing) -> do
+                Log.logErrorNS "booster" "get-model request, not supported without SMT solver"
+                pure $ Left RpcError.notImplemented
+            (def, _, Just smtOptions) -> do
+                let internalised =
+                        runExcept $
+                            internaliseTermOrPredicate DisallowAlias CheckSubsorts Nothing def req.state.term
+                case internalised of
+                    Left patternErrors -> do
+                        Log.logError $ "Error internalising cterm: " <> Text.pack (show patternErrors)
+                        pure $ Left $ RpcError.backendError RpcError.CouldNotVerifyPattern patternErrors
+                    -- various predicates obtained
+                    Right things -> do
+                        Log.logInfoNS "booster" "get-model request"
+                        -- term and predicates were sent. Only work on predicates
+                        (boolPs, suppliedSubst) <-
+                            case things of
+                                TermAndPredicateAndSubstitution pat substitution -> do
+                                    Log.logInfoNS -- FIXME warning?
+                                        "booster"
+                                        "get-model ignores supplied terms and only checks predicates"
+                                    pure (Set.toList pat.constraints, substitution)
+                                BoolOrCeilOrSubstitutionPredicates pSet ceils subst -> do
+                                    unless (null ceils) $
+                                        Log.logInfoNS -- FIXME warning?
+                                            "booster"
+                                            "get-model: ignoring supplied ceil predicates"
+                                    pure (Set.toList pSet, subst)
+
+                        smtResult <-
+                            if null boolPs && Map.null suppliedSubst
+                                then do
+                                    -- as per spec, no predicate, no answer
+                                    Log.logOtherNS
+                                        "booster"
+                                        (Log.LevelOther "SMT")
+                                        "No predicates or substitutions given, returning Unknown"
+                                    pure $ Left SMT.Unknown
+                                else do
+                                    solver <-
+                                        SMT.initSolver def smtOptions
+                                    smtResult <-
+                                        SMT.getModelFor solver boolPs suppliedSubst
+                                    SMT.closeSolver solver
+                                    pure smtResult
+                        Log.logOtherNS "booster" (Log.LevelOther "SMT") $
+                            "SMT result: " <> pack (either show (("Subst: " <>) . show . Map.size) smtResult)
+                        pure . Right . RpcTypes.GetModel $ case smtResult of
+                            Left SMT.Unsat ->
+                                RpcTypes.GetModelResult
+                                    { satisfiable = RpcTypes.Unsat
+                                    , substitution = Nothing
+                                    }
+                            Left SMT.Unknown ->
+                                RpcTypes.GetModelResult
+                                    { satisfiable = RpcTypes.Unknown
+                                    , substitution = Nothing
+                                    }
+                            Left other ->
+                                error $ "Unexpected result " <> show other <> "from getModelFor"
+                            Right subst ->
+                                let sort = fromMaybe (error "Unknown sort in input") $ sortOfJson req.state.term
+                                    substitution
+                                        | Map.null subst = Nothing
+                                        | [(var, term)] <- Map.assocs subst =
+                                            Just . addHeader $
+                                                KoreJson.KJEquals
+                                                    (externaliseSort var.variableSort)
+                                                    sort
+                                                    (externaliseTerm $ Pattern.Var var)
+                                                    (externaliseTerm term)
+                                        | otherwise =
+                                            Just . addHeader $
+                                                KoreJson.KJAnd
+                                                    sort
+                                                    [ KoreJson.KJEquals
+                                                        (externaliseSort var.variableSort)
+                                                        sort
+                                                        (externaliseTerm $ Pattern.Var var)
+                                                        (externaliseTerm term)
+                                                    | (var, term) <- Map.assocs subst
+                                                    ]
+                                 in RpcTypes.GetModelResult
+                                        { satisfiable = RpcTypes.Sat
+                                        , substitution
+                                        }
 
         -- this case is only reachable if the cancel appeared as part of a batch request
         RpcTypes.Cancel -> pure $ Left RpcError.cancelUnsupportedInBatchMode
@@ -234,25 +326,28 @@ respond stateVar =
   where
     withContext ::
         Maybe Text ->
-        ((KoreDefinition, Maybe LLVM.API) -> m (Either ErrorObj (RpcTypes.API 'RpcTypes.Res))) ->
+        ( (KoreDefinition, Maybe LLVM.API, Maybe SMT.SMTOptions) ->
+          m (Either ErrorObj (RpcTypes.API 'RpcTypes.Res))
+        ) ->
         m (Either ErrorObj (RpcTypes.API 'RpcTypes.Res))
     withContext mbMainModule action = do
         state <- liftIO $ readMVar stateVar
         let mainName = fromMaybe state.defaultMain mbMainModule
         case Map.lookup mainName state.definitions of
             Nothing -> pure $ Left $ RpcError.backendError RpcError.CouldNotFindModule mainName
-            Just d -> action (d, state.mLlvmLibrary)
+            Just d -> action (d, state.mLlvmLibrary, state.mSMTOptions)
 
 runServer ::
     Int ->
     Map Text KoreDefinition ->
     Text ->
     Maybe LLVM.API ->
+    Maybe SMT.SMTOptions ->
     (LogLevel, [LogLevel]) ->
     IO ()
-runServer port definitions defaultMain mLlvmLibrary (logLevel, customLevels) =
+runServer port definitions defaultMain mLlvmLibrary mSMTOptions (logLevel, customLevels) =
     do
-        stateVar <- newMVar ServerState{definitions, defaultMain, mLlvmLibrary}
+        stateVar <- newMVar ServerState{definitions, defaultMain, mLlvmLibrary, mSMTOptions}
         Log.runStderrLoggingT . Log.filterLogger levelFilter $
             jsonRpcServer
                 srvSettings
@@ -271,6 +366,8 @@ data ServerState = ServerState
     -- ^ default main module (initially from command line, could be changed later)
     , mLlvmLibrary :: Maybe LLVM.API
     -- ^ optional LLVM simplification library
+    , mSMTOptions :: Maybe SMT.SMTOptions
+    -- ^ (optional) SMT solver options
     }
 
 execStateToKoreJson :: RpcTypes.ExecuteState -> KoreJson.KoreJson

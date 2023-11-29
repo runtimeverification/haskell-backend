@@ -47,7 +47,8 @@ app :: Symbol -> [Term] -> Term
 app s = SymbolApplication s []
 
 asConstructor :: SymbolAttributes
-asConstructor = SymbolAttributes Constructor IsNotIdem IsNotAssoc IsNotMacroOrAlias CanBeEvaluated Nothing
+asConstructor =
+    SymbolAttributes Constructor IsNotIdem IsNotAssoc IsNotMacroOrAlias CanBeEvaluated Nothing Nothing
 
 con1 :: Symbol
 con1 =
