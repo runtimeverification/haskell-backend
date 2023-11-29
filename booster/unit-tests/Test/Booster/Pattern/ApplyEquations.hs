@@ -326,6 +326,7 @@ equation ruleLabel lhs rhs priority =
                 , preserving = Flag False
                 , concreteness = Unconstrained
                 , uniqueId = Nothing
+                , smtLemma = Flag False
                 }
         , computedAttributes = ComputedAxiomAttributes False []
         , existentials = mempty

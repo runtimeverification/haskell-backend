@@ -147,6 +147,7 @@ rule ruleLabel lhs rhs priority =
                 , preserving = Flag False
                 , concreteness = Unconstrained
                 , uniqueId = Nothing
+                , smtLemma = Flag False
                 }
         , computedAttributes = ComputedAxiomAttributes False []
         , existentials = mempty
@@ -246,7 +247,7 @@ runWith :: Term -> Either (RewriteFailed "Rewrite") (RewriteResult Pattern)
 runWith t =
     second fst $
         unsafePerformIO
-            (runNoLoggingT $ runRewriteT False def Nothing mempty (rewriteStep [] [] $ Pattern_ t))
+            (runNoLoggingT $ runRewriteT False def Nothing Nothing mempty (rewriteStep [] [] $ Pattern_ t))
 
 rewritesTo :: Term -> (Text, Term) -> IO ()
 t1 `rewritesTo` (lbl, t2) =
@@ -271,7 +272,8 @@ failsWith t err =
 
 runRewrite :: Term -> IO (Natural, RewriteResult Term)
 runRewrite t = do
-    (counter, _, res) <- runNoLoggingT $ performRewrite False def Nothing Nothing [] [] $ Pattern_ t
+    (counter, _, res) <-
+        runNoLoggingT $ performRewrite False def Nothing Nothing Nothing [] [] $ Pattern_ t
     pure (counter, fmap (.term) res)
 
 aborts :: RewriteFailed "Rewrite" -> Term -> IO ()
@@ -414,7 +416,7 @@ supportsDepthControl =
     rewritesToDepth :: MaxDepth -> Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
     rewritesToDepth (MaxDepth depth) (Steps n) t t' f = do
         (counter, _, res) <-
-            runNoLoggingT $ performRewrite False def Nothing (Just depth) [] [] $ Pattern_ t
+            runNoLoggingT $ performRewrite False def Nothing Nothing (Just depth) [] [] $ Pattern_ t
         (counter, fmap (.term) res) @?= (n, f t')
 
 supportsCutPoints :: TestTree
@@ -466,7 +468,7 @@ supportsCutPoints =
     rewritesToCutPoint :: Text -> Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
     rewritesToCutPoint lbl (Steps n) t t' f = do
         (counter, _, res) <-
-            runNoLoggingT $ performRewrite False def Nothing Nothing [lbl] [] $ Pattern_ t
+            runNoLoggingT $ performRewrite False def Nothing Nothing Nothing [lbl] [] $ Pattern_ t
         (counter, fmap (.term) res) @?= (n, f t')
 
 supportsTerminalRules :: TestTree
@@ -496,5 +498,6 @@ supportsTerminalRules =
     rewritesToTerminal :: Text -> Steps -> Term -> t -> (t -> RewriteResult Term) -> IO ()
     rewritesToTerminal lbl (Steps n) t t' f = do
         (counter, _, res) <-
-            runNoLoggingT $ performRewrite False def Nothing Nothing [] [lbl] $ Pattern_ t
+            runNoLoggingT $ do
+                performRewrite False def Nothing Nothing Nothing [] [lbl] $ Pattern_ t
         (counter, fmap (.term) res) @?= (n, f t')

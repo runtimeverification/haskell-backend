@@ -24,22 +24,32 @@ cd test/rpc-integration
 for dir in $(ls -d test-*); do
     name=${dir##test-}
     echo "Running $name..."
-    if [ "$name" = "a-to-f" ] || [ "$name" = "diamond" ]; then
-        SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name --time $@
-        SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name --time $@
-        SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time $@
-    elif [ "$name" = "vacuous" ]; then
-        SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name $@
-        SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name $@
-    elif [ "$name" = "substitutions" ]; then
-        SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name --time $@
-        SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time $@
-    elif [ "$name" = "no-evaluator" ]; then
-        SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name --time $@
-    elif [ "$name" = "foundry-bug-report" ]; then
-        SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time $@
-        SERVER="$KORE_RPC_BOOSTER --interim-simplification 100" ./runDirectoryTest.sh test-$name --time $@
-    else
-        SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time $@
-    fi
+    case "$name" in
+        "a-to-f" | "diamond")
+            SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
+            SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name $@
+            SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name $@
+            ;;
+        "substitutions" | "vacuous")
+            SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name $@
+            SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name $@
+            ;;
+        "get-model")
+            SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
+            SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name $@
+            ;;
+        "no-evaluator")
+            SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
+            ;;
+        "foundry-bug-report")
+            SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time $@
+            SERVER="$KORE_RPC_BOOSTER --interim-simplification 100" ./runDirectoryTest.sh test-$name --time $@
+            ;;
+        "imp")
+            SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time $@
+            ;;
+        *)
+            SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name $@
+            ;;
+    esac
 done

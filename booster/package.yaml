@@ -61,6 +61,7 @@ library:
   - aeson
   - aeson-pretty
   - array
+  - attoparsec
   - base
   - binary
   - bytestring
@@ -88,6 +89,8 @@ library:
   - recursion-schemes >= 5.2.2.3
   - regex-base
   - regex-pcre-builtin
+  - smtlib-backends
+  - smtlib-backends-process
   - stm
   - stm-conduit
   - syb
