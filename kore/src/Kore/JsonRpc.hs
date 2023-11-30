@@ -10,7 +10,7 @@ module Kore.JsonRpc (
 
 import Control.Concurrent.MVar qualified as MVar
 import Control.Monad.Except (runExceptT)
-import Control.Monad.Logger (logInfoN, runLoggingT)
+import Control.Monad.Logger (runLoggingT)
 import Data.Aeson.Types (ToJSON (..))
 import Data.Coerce (coerce)
 import Data.Conduit.Network (serverSettings)
@@ -40,7 +40,10 @@ import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
-import Kore.Internal.Predicate (getMultiAndPredicate, pattern PredicateTrue)
+import Kore.Internal.Predicate (
+    getMultiAndPredicate,
+    pattern PredicateTrue,
+ )
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike (TermLike)
 import Kore.Internal.TermLike qualified as TermLike
@@ -54,7 +57,11 @@ import Kore.JsonRpc.Server (
  )
 import Kore.JsonRpc.Types
 import Kore.JsonRpc.Types.Log
-import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown, srcLoc)
+import Kore.Log.DecidePredicateUnknown (
+    DecidePredicateUnknown (..),
+    externaliseDecidePredicateUnknown,
+    srcLoc,
+ )
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
@@ -92,7 +99,6 @@ import Kore.Validate.PatternVerifier (Context (..))
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Log qualified
 import Prelude.Kore
-import Pretty qualified
 import SMT qualified
 import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 
@@ -223,6 +229,7 @@ respond serverState moduleName runSMT =
                                         , rule = Nothing
                                         , nextStates = Nothing
                                         , logs = mkLogs mbDuration rules
+                                        , unknownPredicate = Nothing
                                         }
                     GraphTraversal.GotStuck
                         _n
@@ -238,6 +245,7 @@ respond serverState moduleName runSMT =
                                         , rule = Nothing
                                         , nextStates = Nothing
                                         , logs = mkLogs mbDuration rules
+                                        , unknownPredicate = Nothing
                                         }
                     GraphTraversal.GotStuck
                         _n
@@ -253,6 +261,7 @@ respond serverState moduleName runSMT =
                                         , rule = Nothing
                                         , nextStates = Nothing
                                         , logs = mkLogs mbDuration rules
+                                        , unknownPredicate = Nothing
                                         }
                     GraphTraversal.Stopped
                         [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRules = rules}]
@@ -268,6 +277,7 @@ respond serverState moduleName runSMT =
                                             , nextStates =
                                                 Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
                                             , logs = mkLogs mbDuration rules
+                                            , unknownPredicate = Nothing
                                             }
                             | Just rule <- containsLabelOrRuleId rules terminalRules ->
                                 Right $
@@ -279,6 +289,7 @@ respond serverState moduleName runSMT =
                                             , rule
                                             , nextStates = Nothing
                                             , logs = mkLogs mbDuration rules
+                                            , unknownPredicate = Nothing
                                             }
                             | otherwise ->
                                 Right $
@@ -291,6 +302,7 @@ respond serverState moduleName runSMT =
                                             , nextStates =
                                                 Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
                                             , logs = mkLogs mbDuration rules
+                                            , unknownPredicate = Nothing
                                             }
                     GraphTraversal.TimedOut
                         Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRules = rules}
@@ -304,6 +316,7 @@ respond serverState moduleName runSMT =
                                         , rule = Nothing
                                         , nextStates = Nothing
                                         , logs = mkLogs mbDuration rules
+                                        , unknownPredicate = Nothing
                                         }
                     -- these are programmer errors
                     result@GraphTraversal.Aborted{} ->
@@ -627,9 +640,7 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
                 log (InfoJsonRpcProcessRequest (getReqId req) parsed)
                     >> respond serverState mainModule runSMT parsed
             )
-            [ JsonRpcHandler $ \(err :: DecidePredicateUnknown) ->
-                let mkPretty = Pretty.renderText . Pretty.layoutPretty Pretty.defaultLayoutOptions . Pretty.pretty
-                 in logInfoN (mkPretty err) >> pure (backendError SmtSolverError $ mkPretty err)
+            [ handleDecidePredicateUnknown
             , handleErrorCall
             , handleSomeException
             ]
@@ -641,3 +652,7 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
 
     log :: MonadIO m => Log.Entry entry => entry -> m ()
     log = Log.logWith $ Log.hoistLogAction liftIO logAction
+
+handleDecidePredicateUnknown :: JsonRpcHandler
+handleDecidePredicateUnknown = JsonRpcHandler $ \(err :: DecidePredicateUnknown) ->
+    pure (backendError SmtSolverError $ externaliseDecidePredicateUnknown err)
