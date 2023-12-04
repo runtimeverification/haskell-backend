@@ -51,11 +51,11 @@
     },
     "stacklock2nix": {
       "locked": {
-        "lastModified": 1696895532,
-        "narHash": "sha256-QXQ7frsy7D8V81oE6HQBZhlL48Vr7iPR5fSZfNaTdg0=",
+        "lastModified": 1700633677,
+        "narHash": "sha256-ATrA3tZZYo9aj9IAZZNqyvtkz4Ub1Q3q5OgADwxImTA=",
         "owner": "cdepillabout",
         "repo": "stacklock2nix",
-        "rev": "10d531672cada2e02ac49b1b18293e7a94938a38",
+        "rev": "84694f48ddd8e49b96a02216ca2ab406fba25e65",
         "type": "github"
       },
       "original": {
