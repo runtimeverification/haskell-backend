@@ -301,7 +301,9 @@ internalisePredicate allowAlias checkSubsorts sortVars definition@KoreDefinition
                                     Internal.Predicate $
                                         Internal.NEqualsK (Internal.KSeq otherSort $ Internal.Var k) (Internal.KSeq otherSort v)
             _ -> notSupported
-    Syntax.KJAnd{} -> notSupported
+    Syntax.KJAnd{patterns = []} -> notSupported
+    Syntax.KJAnd{patterns = [p]} -> recursion p
+    Syntax.KJAnd{patterns = ps} -> foldPreds =<< mapM recursion ps
     Syntax.KJOr{} -> notSupported
     Syntax.KJImplies{} -> notSupported
     Syntax.KJIff{} -> notSupported
@@ -354,6 +356,22 @@ internalisePredicate allowAlias checkSubsorts sortVars definition@KoreDefinition
     recursion = internalisePredicate allowAlias checkSubsorts sortVars definition
 
     lookupInternalSort' = lookupInternalSort sortVars sorts pat
+
+    foldPreds [] = pure $ IsPredicate $ Internal.Predicate Internal.TrueBool
+    foldPreds [x] = pure x
+    foldPreds (ip : ips) = do
+        ip' <- foldPreds ips
+        case (ip, ip') of
+            (IsPredicate (Internal.Predicate p), IsPredicate (Internal.Predicate p')) -> pure $ IsPredicate $ Internal.Predicate $ p `Internal.AndBool` p'
+            (IsPredicate (Internal.Predicate p), IsSubstitution x t) -> pure $ IsPredicate $ Internal.Predicate $ p `Internal.AndBool` mkEq x t
+            (IsSubstitution x t, IsPredicate (Internal.Predicate p)) -> pure $ IsPredicate $ Internal.Predicate $ mkEq x t `Internal.AndBool` p
+            (IsSubstitution x t, IsSubstitution x' t') -> pure $ IsPredicate $ Internal.Predicate $ mkEq x t `Internal.AndBool` mkEq x' t'
+            _ -> notSupported
+
+    mkEq x t = case sortOfTerm t of
+        Internal.SortInt -> Internal.EqualsInt (Internal.Var x) t
+        Internal.SortBool -> Internal.EqualsBool (Internal.Var x) t
+        otherSort -> Internal.EqualsK (Internal.KSeq otherSort (Internal.Var x)) (Internal.KSeq otherSort t)
 
     -- Recursively check that two (internal) sorts are the same.
     -- Sort variables must be eliminated (instantiated) before checking.
