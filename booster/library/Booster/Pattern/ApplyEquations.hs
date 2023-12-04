@@ -745,8 +745,6 @@ simplifyConstraint' recurseIntoEvalBool = \case
         | isConstructorSymbol symbol = pure FalseBool
     evalEqualsK KSet{} (SymbolApplication symbol _ _)
         | isConstructorSymbol symbol = pure FalseBool
-    evalEqualsK _ (SymbolApplication symbol _ _)
-        | isConstructorSymbol symbol = pure FalseBool
     evalEqualsK (Injection s1L s2L l) (Injection s1R s2R r)
         | s1L == s1R && s2L == s2R = evalEqualsK l r
     evalEqualsK l@DomainValue{} r@DomainValue{} =
