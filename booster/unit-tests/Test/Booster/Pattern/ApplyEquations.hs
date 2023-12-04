@@ -1,4 +1,7 @@
 {-# LANGUAGE QuasiQuotes #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Use ++" #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2022
@@ -26,6 +29,7 @@ import Booster.Pattern.ApplyEquations
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
 import Booster.Pattern.Index (TermIndex (..))
+import Booster.Pattern.Util (sortOfTerm)
 import Booster.Syntax.Json.Internalise (trm)
 import Test.Booster.Fixture hiding (inj)
 
@@ -154,27 +158,63 @@ test_simplifyConstraint =
         "Performing Predicate simplifications"
         [ testGroup
             "==K simplification"
-            [ testCase "Same constructor, same variable" $
-                let subj =
-                        EqualsK (KSeq someSort [trm| con1{}(A:SomeSort{}) |]) (KSeq someSort [trm| con1{}(A:SomeSort{}) |])
-                 in simpl (Predicate subj) @?= Right (Predicate TrueBool)
-            , testCase "Same constructor, different variables" $
-                let subj =
-                        EqualsK (KSeq someSort [trm| con1{}(A:SomeSort{}) |]) (KSeq someSort [trm| con1{}(B:SomeSort{}) |])
-                 in simpl (Predicate subj)
-                        @?= Right
-                            (Predicate (EqualsK (KSeq someSort [trm| A:SomeSort{} |]) (KSeq someSort [trm| B:SomeSort{} |])))
-            , testCase "Different constructors, same variable" $
-                let subj =
-                        EqualsK (KSeq someSort [trm| con1{}(A:SomeSort{}) |]) (KSeq someSort [trm| con2{}(A:SomeSort{}) |])
-                 in simpl (Predicate subj) @?= Right (Predicate FalseBool)
-            , testCase "Different constructors, different variables" $
-                let subj =
-                        EqualsK (KSeq someSort [trm| con1{}(A:SomeSort{}) |]) (KSeq someSort [trm| con2{}(B:SomeSort{}) |])
-                 in simpl (Predicate subj) @?= Right (Predicate FalseBool)
-            ]
+            $ concat
+                [ testCaseEqualsK
+                    "Same constructor, same variable"
+                    [trm| con1{}(A:SomeSort{}) |]
+                    [trm| con1{}(A:SomeSort{}) |]
+                    (const TrueBool)
+                    (const TrueBool)
+                , testCaseEqualsK
+                    "Same constructor, different variables"
+                    [trm| con1{}(A:SomeSort{}) |]
+                    [trm| con1{}(B:SomeSort{}) |]
+                    (const (EqualsK (KSeq someSort [trm| A:SomeSort{} |]) (KSeq someSort [trm| B:SomeSort{} |])))
+                    (const (EqualsK (KSeq someSort [trm| B:SomeSort{} |]) (KSeq someSort [trm| A:SomeSort{} |])))
+                , testCaseEqualsK
+                    "Different constructors, same variable"
+                    [trm| con1{}(A:SomeSort{}) |]
+                    [trm| con2{}(A:SomeSort{}) |]
+                    (const FalseBool)
+                    (const FalseBool)
+                , testCaseEqualsK
+                    "Constructor with domain value"
+                    [trm| con1{}(A:SomeSort{}) |]
+                    [trm| \dv{SomeSort{}}("hey") |]
+                    (const FalseBool)
+                    (const FalseBool)
+                , testCaseEqualsK
+                    "Function with map, indeterminate"
+                    [trm| f3{}(A:SomeSort{}) |]
+                    (KMap testKMapDefinition [] Nothing)
+                    id
+                    id
+                , testCaseEqualsK
+                    "Constructor with function, indeterminate"
+                    [trm| con1{}(B:SomeSort{}) |]
+                    [trm| f2{}(A:SomeSort{}) |]
+                    id
+                    id
+                , testCaseEqualsK
+                    "Constructor with variable, indeterminate"
+                    [trm| con1{}(B:SomeSort{}) |]
+                    [trm| A:SomeSort{} |]
+                    id
+                    id
+                ]
         ]
   where
+    testCaseEqualsK name lhs rhs exp1 exp2 =
+        [ testCase name $
+            let subj =
+                    EqualsK (KSeq (sortOfTerm lhs) lhs) (KSeq (sortOfTerm rhs) rhs)
+             in simpl (Predicate subj) @?= Right (Predicate (exp1 subj))
+        , testCase (name <> " (flipped)") $
+            let subj =
+                    EqualsK (KSeq (sortOfTerm rhs) rhs) (KSeq (sortOfTerm lhs) lhs)
+             in simpl (Predicate subj) @?= Right (Predicate (exp2 subj))
+        ]
+
     simpl =
         unsafePerformIO
             . runNoLoggingT
