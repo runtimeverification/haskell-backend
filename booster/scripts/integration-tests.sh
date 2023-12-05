@@ -18,7 +18,7 @@ cabal build all
 KORE_RPC_BOOSTER=$(cabal exec which kore-rpc-booster)
 BOOSTER_DEV=$(cabal exec which booster-dev)
 KORE_RPC_DEV=$(cabal exec which kore-rpc-dev)
-export CLIENT=$(cabal exec which rpc-client)
+export CLIENT=$(cabal exec which kore-rpc-client)
 
 cd test/rpc-integration
 for dir in $(ls -d test-*); do
