@@ -1,5 +1,6 @@
-/.stack-work*
+.stack-work*
 /*.cabal
+/dev-tools/*.cabal
 *~
 /dist-newstyle
 /.direnv
