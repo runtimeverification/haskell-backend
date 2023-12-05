@@ -20,7 +20,7 @@
 #   SERVER:      path to RPC server executable
 #                  (default <top>/.build/booster/bin/booster)
 #   CLIENT:      path to RPC client executable
-#                  (default <top>/.build/booster/bin/rpc-client)
+#                  (default <top>/.build/booster/bin/kore-rpc-client)
 #   SERVER_OPTS: additional options to pass to the SERVER
 #                  (default: none)
 
@@ -35,7 +35,7 @@ dir=$(basename $directory)
 bindir=../../.build/booster/bin
 
 server=${SERVER:-$bindir/kore-rpc-booster}
-client=${CLIENT:-$bindir/rpc-client}
+client=${CLIENT:-$bindir/kore-rpc-client}
 
 kore=resources/${dir#test-}.kore
 kompile=resources/${dir#test-}.kompile

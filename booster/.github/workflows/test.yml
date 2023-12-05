@@ -171,13 +171,14 @@ jobs:
           path: |
             cabal-cache/packages
             cabal-cache/store
-          key: cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('cabal.project.freeze') }}
+          key: cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('dev-tools/package.yaml') }}-${{ hashFiles('cabal.project.freeze') }}
           restore-keys: |
+            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('dev-tools/package.yaml') }}-
             cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('package.yaml') }}-
             cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-
 
       - name: Unit Tests
-        run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "hpack && cabal update && cabal test unit-tests --enable-tests --test-show-details=direct"
+        run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "hpack . && hpack dev-tools && cabal --store-dir ./cabal-cache/store update && cabal --store-dir ./cabal-cache/store test unit-tests --enable-tests --test-show-details=direct"
 
       - name: Integration Tests
         if: ${{ matrix.os != 'macos-12' }}  ## takes long on public runner, already tested in MacM1

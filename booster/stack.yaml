@@ -2,6 +2,7 @@ resolver: lts-20.26
 
 packages:
 - .
+- dev-tools
 
 # Dependency packages to be pulled from upstream that are not in the resolver.
 extra-deps:
