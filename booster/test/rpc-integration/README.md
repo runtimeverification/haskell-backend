@@ -6,8 +6,8 @@ Each set of tests resides in a directory `test-NAME`, and relates to a kore defi
 
 Each test in `test-NAME` consists of a "file set":
 
-* `state-TESTNAME.SUFFIX` contains the state to rewrite from, in Kore JSON format. `SUFFIX` is either `execute`, `simplify`, or `send`, and the respective method will be used by the `rpc-client`.
-* `response-TESTNAME.json` contains the expected server response. The file is formatted for readability, in a way that the `rpc-client` application expects.
+* `state-TESTNAME.SUFFIX` contains the state to rewrite from, in Kore JSON format. `SUFFIX` is either `execute`, `simplify`, or `send`, and the respective method will be used by the `kore-rpc-client`.
+* `response-TESTNAME.json` contains the expected server response. The file is formatted for readability, in a way that the `kore-rpc-client` application expects.
 * (optionally) `params-TESTNAME.json` contains additional parameters (as a json object)
 
 ## How to run a test
@@ -23,10 +23,10 @@ To run a test from a test directory, do the following:
 $ booster test/rpc-integration/resources/a-to-f.kore --module TEST
 ```
 
-2) In another terminal, send requests with the respective state and parameters using the `rpc-client` tool. For example, if the state file ends in `execute`, send an `execute` request like this:
+2) In another terminal, send requests with the respective state and parameters using the `kore-rpc-client` tool. For example, if the state file ends in `execute`, send an `execute` request like this:
 
 ```
-rpc-client \
+kore-rpc-client \
     --execute state-zero-steps.execute \
     --param-file params-zero-steps.json \
     --expect response-zero-steps.json
@@ -34,7 +34,7 @@ rpc-client \
 
 NOTE: You may need to specify `--host 127.0.0.1` on Arch Linux.
 
-3) Repeat step 2 for all tests you want to run, using `rpc-client` modes indicated by the file suffixes (`execute`, `simplify`, `send`).
+3) Repeat step 2 for all tests you want to run, using `kore-rpc-client` modes indicated by the file suffixes (`execute`, `simplify`, `send`).
 
 4) Shut down the server in the other terminal (by pressing `^C`).
 
