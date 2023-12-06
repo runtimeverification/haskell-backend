@@ -110,11 +110,11 @@ atom = Atom . SMTId . BS.pack
 encodeDeclaration :: DeclareCommand -> BS.Builder
 encodeDeclaration =
     toBuilder . \case
-        Assert x -> List [atom "assert", x]
-        DeclareConst name sort -> List [atom "declare-const", Atom name, sortExpr sort]
+        Assert _ x -> List [atom "assert", x]
+        DeclareConst _ name sort -> List [atom "declare-const", Atom name, sortExpr sort]
         -- DeclareData ddcls -> not required (yet)
-        DeclareSort name arity -> List [atom "declare-sort", Atom name, atom (show arity)]
-        DeclareFunc name sorts sort ->
+        DeclareSort _ name arity -> List [atom "declare-sort", Atom name, atom (show arity)]
+        DeclareFunc _ name sorts sort ->
             List [atom "declare-fun", Atom name, List (map sortExpr sorts), sortExpr sort]
 
 sortExpr :: SMTSort -> SExpr

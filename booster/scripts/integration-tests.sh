@@ -43,7 +43,7 @@ for dir in $(ls -d test-*); do
             ;;
         "foundry-bug-report")
             SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time $@
-            SERVER="$KORE_RPC_BOOSTER --interim-simplification 100" ./runDirectoryTest.sh test-$name --time $@
+            SERVER=$KORE_RPC_BOOSTER SERVER_OPTS="--interim-simplification 100" ./runDirectoryTest.sh test-$name --time $@
             ;;
         "imp")
             SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time $@

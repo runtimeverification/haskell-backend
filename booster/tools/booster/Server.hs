@@ -29,6 +29,8 @@ import Data.InternedText (globalInternedTextCache)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe, isJust, mapMaybe)
 import Data.Set qualified as Set
+import Data.Text qualified as Text
+import Data.Text.Encoding qualified as Text (decodeUtf8)
 import Options.Applicative
 import System.Clock (
     Clock (..),
@@ -40,9 +42,11 @@ import System.IO (hPutStrLn, stderr)
 import Booster.CLOptions
 import Booster.JsonRpc qualified as Booster
 import Booster.LLVM.Internal (mkAPI, withDLib)
+import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
+import Booster.SMT.Interface (SMTOptions (..))
 import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
-import Data.Text qualified as Text
+import Data.Limit (Limit (..))
 import GlobalMain qualified
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.BugReport (BugReportOption (..), withBugReport)
@@ -68,10 +72,10 @@ import Kore.Log.DebugSolver qualified as Log
 import Kore.Log.Registry qualified as Log
 import Kore.Rewrite.SMT.Lemma (declareSMTLemmas)
 import Kore.Syntax.Definition (ModuleName (ModuleName), SentenceAxiom)
-import Options.SMT (KoreSolverOptions (..), parseKoreSolverOptions)
+import Options.SMT as KoreSMT (KoreSolverOptions (..), Solver (..))
 import Proxy (KoreServer (..), ProxyConfig (..))
 import Proxy qualified
-import SMT qualified
+import SMT qualified as KoreSMT
 import Stats qualified
 
 main :: IO ()
@@ -89,9 +93,7 @@ main = do
                     , smtOptions
                     , eventlogEnabledUserEvents
                     }
-            , koreSolverOptions
-            , proxyOptions = ProxyOptions{printStats, forceFallback}
-            , debugSolverOptions
+            , proxyOptions = ProxyOptions{printStats, forceFallback, boosterSMT}
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
         levelFilter :: Logger.LogSource -> LogLevel -> Bool
@@ -99,6 +101,7 @@ main = do
             lvl `elem` customLevels || lvl >= logLevel && lvl <= LevelError
         koreLogExtraLevels =
             Set.unions $ mapMaybe (`Map.lookup` koreExtraLogs) customLevels
+        koreSolverOptions = translateSMTOpts smtOptions
 
     Logger.runStderrLoggingT $ Logger.filterLogger levelFilter $ do
         liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
@@ -122,13 +125,13 @@ main = do
         monadLogger <- askLoggerIO
 
         let coLogLevel = fromMaybe Log.Info $ toSeverity logLevel
-
             koreLogOptions =
                 (defaultKoreLogOptions (ExeName "") startTime)
                     { Log.logLevel = coLogLevel
                     , Log.logEntries = koreLogExtraLevels
                     , Log.timestampsSwitch = TimestampsDisable
-                    , Log.debugSolverOptions = debugSolverOptions
+                    , Log.debugSolverOptions =
+                        Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
                     , Log.logType = LogSomeAction $ LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt
                     }
             srvSettings = serverSettings port "*"
@@ -138,9 +141,8 @@ main = do
                 mvarLogAction <- newMVar actualLogAction
                 let logAction = swappableLogger mvarLogAction
 
-                let defaultTactic = fromMaybe (SMT.List [SMT.Atom "check-sat-using", SMT.Atom "smt"]) koreSolverOptions.tactic
                 kore@KoreServer{runSMT} <-
-                    mkKoreServer Log.LoggerEnv{logAction} clOPts koreSolverOptions{tactic = Just defaultTactic}
+                    mkKoreServer Log.LoggerEnv{logAction} clOPts koreSolverOptions
 
                 withMDLib llvmLibraryFile $ \mdl -> do
                     mLlvmLibrary <- maybe (pure Nothing) (fmap Just . mkAPI) mdl
@@ -151,7 +153,7 @@ main = do
                                     { definitions
                                     , defaultMain = mainModuleName
                                     , mLlvmLibrary
-                                    , mSMTOptions = smtOptions
+                                    , mSMTOptions = if boosterSMT then smtOptions else Nothing
                                     }
                     statsVar <- if printStats then Just <$> Stats.newStats else pure Nothing
 
@@ -206,8 +208,6 @@ koreExtraLogs =
 data CLProxyOptions = CLProxyOptions
     { clOptions :: CLOptions
     , proxyOptions :: ProxyOptions
-    , koreSolverOptions :: !KoreSolverOptions
-    , debugSolverOptions :: !Log.DebugSolverOptions
     }
 
 data ProxyOptions = ProxyOptions
@@ -215,6 +215,8 @@ data ProxyOptions = ProxyOptions
     -- ^ print timing statistics per request and on shutdown
     , forceFallback :: Maybe Depth
     -- ^ force fallback every n-steps
+    , boosterSMT :: Bool
+    -- ^ whether to use an SMT solver in booster code (but keeping kore-rpc's SMT solver)
     }
 
 parserInfoModifiers :: InfoMod options
@@ -227,8 +229,6 @@ clProxyOptionsParser =
     CLProxyOptions
         <$> clOptionsParser
         <*> parseProxyOptions
-        <*> parseKoreSolverOptions
-        <*> Log.parseDebugSolverOptions
   where
     parseProxyOptions =
         ProxyOptions
@@ -245,6 +245,38 @@ clProxyOptionsParser =
                         <> showDefault
                     )
                 )
+            <*> flag
+                True
+                False
+                ( long "no-booster-smt"
+                    <> help "Disable SMT solver for booster code (but keep enabled for legacy code)"
+                )
+
+translateSMTOpts :: Maybe SMTOptions -> KoreSMT.KoreSolverOptions
+translateSMTOpts = \case
+    Just smtOpts ->
+        defaultKoreSolverOptions
+            { timeOut = KoreSMT.TimeOut . Limit . fromIntegral $ smtOpts.timeout
+            , retryLimit =
+                KoreSMT.RetryLimit . maybe Unlimited (Limit . fromIntegral) $ smtOpts.retryLimit
+            , tactic = fmap translateSExpr smtOpts.tactic
+            }
+    Nothing ->
+        defaultKoreSolverOptions{solver = KoreSMT.None}
+  where
+    defaultKoreSolverOptions =
+        KoreSMT.KoreSolverOptions
+            { timeOut = KoreSMT.TimeOut Unlimited
+            , retryLimit = KoreSMT.RetryLimit Unlimited
+            , rLimit = KoreSMT.RLimit Unlimited
+            , resetInterval = KoreSMT.ResetInterval 100
+            , prelude = KoreSMT.Prelude Nothing
+            , solver = KoreSMT.Z3
+            , tactic = Nothing
+            }
+    translateSExpr :: SMT.SExpr -> KoreSMT.SExpr
+    translateSExpr (SMT.Atom (SMT.SMTId x)) = KoreSMT.Atom (Text.decodeUtf8 x)
+    translateSExpr (SMT.List ss) = KoreSMT.List $ map translateSExpr ss
 
 mkKoreServer :: Log.LoggerEnv IO -> CLOptions -> KoreSolverOptions -> IO KoreServer
 mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainModuleName} koreSolverOptions =
@@ -273,14 +305,14 @@ mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainMo
                 , loggerEnv
                 }
   where
-    KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, tactic} = koreSolverOptions
+    KoreSMT.KoreSolverOptions{timeOut, retryLimit, tactic} = koreSolverOptions
+    smtConfig :: KoreSMT.Config
     smtConfig =
-        SMT.defaultConfig
-            { SMT.timeOut = timeOut
-            , SMT.rLimit = rLimit
-            , SMT.resetInterval = resetInterval
-            , SMT.prelude = prelude
-            , SMT.tactic = tactic
+        KoreSMT.defaultConfig
+            { KoreSMT.executable = KoreSMT.defaultConfig.executable -- hack to shut up GHC field warning
+            , KoreSMT.timeOut = timeOut
+            , KoreSMT.retryLimit = retryLimit
+            , KoreSMT.tactic = tactic
             }
 
     -- SMT solver with user declared lemmas
@@ -288,17 +320,17 @@ mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainMo
         forall a.
         SmtMetadataTools StepperAttributes ->
         [SentenceAxiom (TermLike VariableName)] ->
-        SMT.SMT a ->
+        KoreSMT.SMT a ->
         IO a
     runSMT metadataTools lemmas m =
         flip Log.runLoggerT logAction $
-            bracket (SMT.newSolver smtConfig) SMT.stopSolver $ \refSolverHandle -> do
-                let userInit = SMT.runWithSolver $ declareSMTLemmas metadataTools lemmas
+            bracket (KoreSMT.newSolver smtConfig) KoreSMT.stopSolver $ \refSolverHandle -> do
+                let userInit = KoreSMT.runWithSolver $ declareSMTLemmas metadataTools lemmas
                     solverSetup =
-                        SMT.SolverSetup
+                        KoreSMT.SolverSetup
                             { userInit
                             , refSolverHandle
                             , config = smtConfig
                             }
-                SMT.initSolver solverSetup
-                SMT.runWithSolver m solverSetup
+                KoreSMT.initSolver solverSetup
+                KoreSMT.runWithSolver m solverSetup
