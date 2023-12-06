@@ -445,7 +445,7 @@ respond serverState moduleName runSMT =
                                 then maybe (Just [timeLog]) (Just . (timeLog :)) simplLogs
                                 else simplLogs
                     pure $
-                        Right $
+                        Right
                             ( Simplify
                                 SimplifyResult
                                     { state =
