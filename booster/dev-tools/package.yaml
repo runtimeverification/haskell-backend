@@ -96,6 +96,19 @@ executables:
       - text
     ghc-options:
     - -rtsopts
+  pretty:
+    source-dirs: pretty
+    main: Pretty.hs
+    dependencies:
+      - base
+      - aeson
+      - bytestring
+      - hs-backend-booster
+      - prettyprinter
+      - text
+      - transformers
+    ghc-options:
+    - -rtsopts
   eventlog-parser:
     source-dirs: eventlog-parser
     main: EventlogParser.hs
