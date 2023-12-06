@@ -35,24 +35,24 @@ declTests :: TestTree
 declTests =
     testGroup
         "Tests for declarations"
-        [ testCase "declare-const" $ runsOK [Declare $ DeclareConst "x" smtInt]
-        , testCase "declare-fun(_)" $ runsOK [Declare $ DeclareFunc "f" [smtInt] smtInt]
-        , testCase "declare-fun(_, _)" $ runsOK [Declare $ DeclareFunc "g" [smtInt, smtInt] smtInt]
-        , testCase "declare simple sort" $ runsOK [Declare $ DeclareSort "SomeSort" 0]
-        , testCase "declare simple sort" $ runsOK [Declare $ DeclareSort "OtherSort" 1]
+        [ testCase "declare-const" $ runsOK [Declare $ DeclareConst "x" "x" smtInt]
+        , testCase "declare-fun(_)" $ runsOK [Declare $ DeclareFunc "f" "f" [smtInt] smtInt]
+        , testCase "declare-fun(_, _)" $ runsOK [Declare $ DeclareFunc "g" "g" [smtInt, smtInt] smtInt]
+        , testCase "declare simple sort" $ runsOK [Declare $ DeclareSort "" "SomeSort" 0]
+        , testCase "declare simple sort" $ runsOK [Declare $ DeclareSort "" "OtherSort" 1]
         , testCase "declare custom-sorted function" $
             let sortName = "CustomSort"
              in runsOK
-                    [ Declare $ DeclareSort sortName 1
-                    , Declare $ DeclareFunc "f" [SMTSort sortName [smtInt]] smtInt
+                    [ Declare $ DeclareSort "" sortName 1
+                    , Declare $ DeclareFunc "" "f" [SMTSort sortName [smtInt]] smtInt
                     ]
-        , testCase "declare assertion" $ runsOK [Declare $ Assert $ eq 0 0]
+        , testCase "declare assertion" $ runsOK [Declare $ Assert "0 = 0" $ eq 0 0]
         , testCase "declare a lemma with quantifiers" $
             let x = Atom "x"
                 y = Atom "y"
                 intSorted v = List [List [v, Atom "Int"]]
              in runsOK
-                    [ Declare . Assert $
+                    [ Declare . Assert "an additive inverse exists for all int" $
                         List
                             [ Atom "forall"
                             , intSorted x
@@ -129,13 +129,13 @@ checkTests =
         "Smoke tests for the runCheck function"
         [ test "Empty declarations" `returns` Sat $ []
         , test "Simple assertion" `returns` Sat $
-            [ DeclareConst "X" smtInt
-            , Assert $ eq (Atom "X") 42
+            [ DeclareConst "" "X" smtInt
+            , Assert "" $ eq (Atom "X") 42
             ]
         , test "Contradicting assertions" `returns` Unsat $
-            [ DeclareConst "X" smtInt
-            , Assert $ eq (Atom "X") 42
-            , Assert $ neq (Atom "X") 42
+            [ DeclareConst "" "X" smtInt
+            , Assert "" $ eq (Atom "X") 42
+            , Assert "" $ neq (Atom "X") 42
             ]
         ]
   where

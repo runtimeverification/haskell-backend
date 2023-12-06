@@ -48,12 +48,20 @@ data SMTCommand
     | Control ControlCommand
     deriving stock (Eq, Ord, Show)
 
+-- DeclareCommands carry a comment which is printed into the
+-- transcript (unless it is empty) to refer to the K world
 data DeclareCommand
-    = Assert SExpr
-    | DeclareConst SMTId SMTSort
-    | DeclareSort SMTId Int
-    | DeclareFunc SMTId [SMTSort] SMTSort
+    = Assert BS.ByteString SExpr
+    | DeclareConst BS.ByteString SMTId SMTSort
+    | DeclareSort BS.ByteString SMTId Int
+    | DeclareFunc BS.ByteString SMTId [SMTSort] SMTSort
     deriving stock (Eq, Ord, Show)
+
+getComment :: DeclareCommand -> BS.ByteString
+getComment (Assert c _) = c
+getComment (DeclareConst c _ _) = c
+getComment (DeclareSort c _ _) = c
+getComment (DeclareFunc c _ _ _) = c
 
 data ControlCommand
     = Push -- Int

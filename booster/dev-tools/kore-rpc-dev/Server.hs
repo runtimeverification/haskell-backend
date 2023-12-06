@@ -28,9 +28,11 @@ import Data.Conduit.Network (serverSettings)
 import Data.IORef (writeIORef)
 import Data.InternedText (globalInternedTextCache)
 import Data.Map qualified as Map
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Text.Encoding qualified as Text (decodeUtf8)
 import Network.JSONRPC
 import Options.Applicative
 import System.Clock (
@@ -41,7 +43,10 @@ import System.Exit
 import System.IO (hPutStrLn, stderr)
 
 import Booster.CLOptions
+import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
+import Booster.SMT.Interface (SMTOptions (..))
 import Booster.Trace
+import Data.Limit (Limit (..))
 import GlobalMain qualified
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.BugReport (BugReportOption (..), withBugReport)
@@ -64,10 +69,11 @@ import Kore.Log (
 import Kore.Log qualified
 import Kore.Log qualified as Log
 import Kore.Log.DebugSolver qualified as Log
+import Kore.Log.Registry qualified as Log
 import Kore.Rewrite.SMT.Lemma (declareSMTLemmas)
 import Kore.Syntax.Definition (ModuleName (ModuleName), SentenceAxiom)
-import Options.SMT (KoreSolverOptions (..), parseKoreSolverOptions)
-import SMT qualified
+import Options.SMT as KoreSMT (KoreSolverOptions (..), Solver (..))
+import SMT qualified as KoreSMT
 
 data KoreServer = KoreServer
     { serverState :: MVar.MVar Kore.ServerState
@@ -76,7 +82,7 @@ data KoreServer = KoreServer
         forall a.
         SmtMetadataTools StepperAttributes ->
         [SentenceAxiom (TermLike VariableName)] ->
-        SMT.SMT a ->
+        KoreSMT.SMT a ->
         IO a
     , loggerEnv :: Kore.Log.LoggerEnv IO
     }
@@ -129,15 +135,17 @@ main = do
                 clOPts@CLOptions
                     { port
                     , logLevels
+                    , smtOptions
                     , eventlogEnabledUserEvents
                     }
-            , koreSolverOptions
-            , debugSolverOptions
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
         levelFilter :: Logger.LogSource -> LogLevel -> Bool
         levelFilter _source lvl =
             lvl `elem` customLevels || lvl >= logLevel && lvl <= LevelError
+        koreLogExtraLevels =
+            Set.unions $ mapMaybe (`Map.lookup` koreExtraLogs) customLevels
+        koreSolverOptions = translateSMTOpts smtOptions
 
     Logger.runStderrLoggingT $ Logger.filterLogger levelFilter $ do
         liftIO $ forM_ eventlogEnabledUserEvents $ \t -> do
@@ -150,8 +158,10 @@ main = do
             koreLogOptions =
                 (defaultKoreLogOptions (ExeName "") startTime)
                     { Log.logLevel = coLogLevel
+                    , Log.logEntries = koreLogExtraLevels
                     , Log.timestampsSwitch = TimestampsDisable
-                    , Log.debugSolverOptions = debugSolverOptions
+                    , Log.debugSolverOptions =
+                        Log.DebugSolverOptions . fmap (<> ".kore") $ smtOptions >>= (.transcript)
                     , Log.logType = LogSomeAction $ LogAction $ \txt -> liftIO $ monadLogger defaultLoc "kore" logLevel $ toLogStr txt
                     }
             srvSettings = serverSettings port "*"
@@ -193,10 +203,18 @@ toSeverity LevelWarn = Just Log.Warning
 toSeverity LevelError = Just Log.Error
 toSeverity LevelOther{} = Nothing
 
-data CLProxyOptions = CLProxyOptions
+koreExtraLogs :: Map.Map LogLevel Log.EntryTypes
+koreExtraLogs =
+    Map.map (Set.fromList . mapMaybe (`Map.lookup` Log.textToType Log.registry)) $
+        Map.fromList
+            [ (LevelOther "SimplifyKore", ["DebugAttemptEquation", "DebugApplyEquation"])
+            , (LevelOther "RewriteKore", ["DebugAttemptedRewriteRules", "DebugAppliedRewriteRules"])
+            , (LevelOther "SimplifySuccess", ["DebugApplyEquation"])
+            , (LevelOther "RewriteSuccess", ["DebugAppliedRewriteRules"])
+            ]
+
+newtype CLProxyOptions = CLProxyOptions
     { clOptions :: CLOptions
-    , koreSolverOptions :: !KoreSolverOptions
-    , debugSolverOptions :: !Log.DebugSolverOptions
     }
 
 parserInfoModifiers :: InfoMod options
@@ -208,10 +226,34 @@ clProxyOptionsParser :: Parser CLProxyOptions
 clProxyOptionsParser =
     CLProxyOptions
         <$> clOptionsParser
-        <*> parseKoreSolverOptions
-        <*> Log.parseDebugSolverOptions
 
-mkKoreServer :: Log.LoggerEnv IO -> CLOptions -> KoreSolverOptions -> IO KoreServer
+translateSMTOpts :: Maybe SMTOptions -> KoreSMT.KoreSolverOptions
+translateSMTOpts = \case
+    Just smtOpts ->
+        defaultKoreSolverOptions
+            { timeOut = KoreSMT.TimeOut . Limit . fromIntegral $ smtOpts.timeout
+            , retryLimit =
+                KoreSMT.RetryLimit . maybe Unlimited (Limit . fromIntegral) $ smtOpts.retryLimit
+            , tactic = fmap translateSExpr smtOpts.tactic
+            }
+    Nothing ->
+        defaultKoreSolverOptions{solver = KoreSMT.None}
+  where
+    defaultKoreSolverOptions =
+        KoreSMT.KoreSolverOptions
+            { timeOut = KoreSMT.TimeOut Unlimited
+            , retryLimit = KoreSMT.RetryLimit Unlimited
+            , rLimit = KoreSMT.RLimit Unlimited
+            , resetInterval = KoreSMT.ResetInterval 100
+            , prelude = KoreSMT.Prelude Nothing
+            , solver = KoreSMT.Z3
+            , tactic = Nothing
+            }
+    translateSExpr :: SMT.SExpr -> KoreSMT.SExpr
+    translateSExpr (SMT.Atom (SMT.SMTId x)) = KoreSMT.Atom (Text.decodeUtf8 x)
+    translateSExpr (SMT.List ss) = KoreSMT.List $ map translateSExpr ss
+
+mkKoreServer :: Log.LoggerEnv IO -> CLOptions -> KoreSMT.KoreSolverOptions -> IO KoreServer
 mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainModuleName} koreSolverOptions =
     flip Log.runLoggerT logAction $ do
         sd@GlobalMain.SerializedDefinition{internedTextCache} <-
@@ -238,13 +280,14 @@ mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainMo
                 , loggerEnv
                 }
   where
-    KoreSolverOptions{timeOut, rLimit, resetInterval, prelude} = koreSolverOptions
+    KoreSMT.KoreSolverOptions{timeOut, retryLimit, tactic} = koreSolverOptions
+    smtConfig :: KoreSMT.Config
     smtConfig =
-        SMT.defaultConfig
-            { SMT.timeOut = timeOut
-            , SMT.rLimit = rLimit
-            , SMT.resetInterval = resetInterval
-            , SMT.prelude = prelude
+        KoreSMT.defaultConfig
+            { KoreSMT.executable = KoreSMT.defaultConfig.executable -- hack to shut up GHC field warning
+            , KoreSMT.timeOut = timeOut
+            , KoreSMT.retryLimit = retryLimit
+            , KoreSMT.tactic = tactic
             }
 
     -- SMT solver with user declared lemmas
@@ -252,17 +295,17 @@ mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainMo
         forall a.
         SmtMetadataTools StepperAttributes ->
         [SentenceAxiom (TermLike VariableName)] ->
-        SMT.SMT a ->
+        KoreSMT.SMT a ->
         IO a
     runSMT metadataTools lemmas m =
         flip Log.runLoggerT logAction $
-            bracket (SMT.newSolver smtConfig) SMT.stopSolver $ \refSolverHandle -> do
-                let userInit = SMT.runWithSolver $ declareSMTLemmas metadataTools lemmas
+            bracket (KoreSMT.newSolver smtConfig) KoreSMT.stopSolver $ \refSolverHandle -> do
+                let userInit = KoreSMT.runWithSolver $ declareSMTLemmas metadataTools lemmas
                     solverSetup =
-                        SMT.SolverSetup
+                        KoreSMT.SolverSetup
                             { userInit
                             , refSolverHandle
                             , config = smtConfig
                             }
-                SMT.initSolver solverSetup
-                SMT.runWithSolver m solverSetup
+                KoreSMT.initSolver solverSetup
+                KoreSMT.runWithSolver m solverSetup

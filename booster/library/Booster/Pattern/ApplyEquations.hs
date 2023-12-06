@@ -31,6 +31,7 @@ import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), ask)
 import Control.Monad.Trans.State
 import Data.Bifunctor (second)
+import Data.Coerce (coerce)
 import Data.Foldable (toList, traverse_)
 import Data.Functor.Foldable
 import Data.List (elemIndex)
@@ -54,7 +55,7 @@ import Booster.Pattern.Index
 import Booster.Pattern.Match
 import Booster.Pattern.Util
 import Booster.Prettyprinter (renderDefault)
-import Data.Coerce (coerce)
+import Booster.SMT.Interface qualified as SMT
 
 newtype EquationT io a
     = EquationT (ReaderT EquationConfig (ExceptT EquationFailure (StateT EquationState io)) a)
@@ -75,6 +76,7 @@ data EquationFailure
 data EquationConfig = EquationConfig
     { definition :: KoreDefinition
     , llvmApi :: Maybe LLVM.API
+    , smtSolver :: Maybe SMT.SMTContext
     , doTracing :: Bool
     }
 
@@ -211,14 +213,15 @@ runEquationT ::
     Bool ->
     KoreDefinition ->
     Maybe LLVM.API ->
+    Maybe SMT.SMTContext ->
     SimplifierCache ->
     EquationT io a ->
     io (Either EquationFailure a, [EquationTrace], SimplifierCache)
-runEquationT doTracing definition llvmApi sCache (EquationT m) = do
+runEquationT doTracing definition llvmApi smtSolver sCache (EquationT m) = do
     (res, endState) <-
         flip runStateT (startState sCache) $
             runExceptT $
-                runReaderT m EquationConfig{definition, llvmApi, doTracing}
+                runReaderT m EquationConfig{definition, llvmApi, smtSolver, doTracing}
     pure (res, toList endState.trace, endState.cache)
 
 iterateEquations ::
@@ -257,10 +260,11 @@ evaluateTerm ::
     Direction ->
     KoreDefinition ->
     Maybe LLVM.API ->
+    Maybe SMT.SMTContext ->
     Term ->
     io (Either EquationFailure Term, [EquationTrace], SimplifierCache)
-evaluateTerm doTracing direction def llvmApi =
-    runEquationT doTracing def llvmApi mempty
+evaluateTerm doTracing direction def llvmApi smtSolver =
+    runEquationT doTracing def llvmApi smtSolver mempty
         . evaluateTerm' direction
 
 -- version for internal nested evaluation
@@ -279,11 +283,12 @@ evaluatePattern ::
     Bool ->
     KoreDefinition ->
     Maybe LLVM.API ->
+    Maybe SMT.SMTContext ->
     SimplifierCache ->
     Pattern ->
     io (Either EquationFailure Pattern, [EquationTrace], SimplifierCache)
-evaluatePattern doTracing def mLlvmLibrary cache =
-    runEquationT doTracing def mLlvmLibrary cache . evaluatePattern'
+evaluatePattern doTracing def mLlvmLibrary smtSolver cache =
+    runEquationT doTracing def mLlvmLibrary smtSolver cache . evaluatePattern'
 
 -- version for internal nested evaluation
 evaluatePattern' ::
@@ -670,22 +675,25 @@ simplifyConstraint ::
     Bool ->
     KoreDefinition ->
     Maybe LLVM.API ->
+    Maybe SMT.SMTContext ->
     SimplifierCache ->
     Predicate ->
     io (Either EquationFailure Predicate, [EquationTrace], SimplifierCache)
-simplifyConstraint doTracing def mbApi cache (Predicate p) =
-    runEquationT doTracing def mbApi cache $ (coerce <$>) . simplifyConstraint' True $ p
+simplifyConstraint doTracing def mbApi mbSMT cache (Predicate p) =
+    runEquationT doTracing def mbApi mbSMT cache $ (coerce <$>) . simplifyConstraint' True $ p
 
 simplifyConstraints ::
     MonadLoggerIO io =>
     Bool ->
     KoreDefinition ->
     Maybe LLVM.API ->
+    Maybe SMT.SMTContext ->
     SimplifierCache ->
     [Predicate] ->
     io (Either EquationFailure [Predicate], [EquationTrace], SimplifierCache)
-simplifyConstraints doTracing def mbApi cache ps =
-    runEquationT doTracing def mbApi cache $ mapM ((coerce <$>) . simplifyConstraint' True . coerce) ps
+simplifyConstraints doTracing def mbApi mbSMT cache ps =
+    runEquationT doTracing def mbApi mbSMT cache $
+        mapM ((coerce <$>) . simplifyConstraint' True . coerce) ps
 
 -- version for internal nested evaluation
 simplifyConstraint' :: MonadLoggerIO io => Bool -> Term -> EquationT io Term
