@@ -47,37 +47,15 @@ There are several things you can do, to make the development via nix as seamless
 
 #### Nix shell
 
-To open the nix shell you will need nix version 2.4 or newer. Then use either `nix develop` (if you have flakes enabled) or use the old style `nix-shell` command.
+To open the nix shell, run `nix develop`. You will need nix version 2.4 or newer with nix flakes enabled.
 
-If you want to open a shell for a different version of ghc (currently supporting `ghc927`), use
-
-```bash
-nix develop .#ghc927
-```
-or
-
-```bash
-nix-shell --argstr ghc ghc927
-```
-
-You can open a dev shell which contains cabal with all the required libraries compiled with profiling via:
-
-```
-nix develop .#ghc925-prof
-```
 
 #### Nix-direnv
 
 Using a version of direnv that works with nix (https://github.com/nix-community/nix-direnv) allows seamless loading and unloading of the nix shell, which adds all the required packages such as `cabal`, `hpack`, `fourmolu`, etc. Use the above link to install `nix-direnv`, making sure to hook direnv into whichever shell you are using (https://direnv.net/docs/hook.html). You can use the default nix shell (currently GHC version 9.2.7) by running
 
 ```bash
-echo "use nix" > .envrc
-```
-
-If you want to use a different version of GHC for your shell, e.g. `ghc927`, use
-
-```bash
-echo "use flake .#ghc927" > .envrc
+echo "use flake ." > .envrc
 ```
 
 Finally, run `direnv allow` inside the repo folder to load up the nix shell.
@@ -101,11 +79,7 @@ To get HLS working in VSCode, install these two extensions:
 https://marketplace.visualstudio.com/items?itemName=arrterian.nix-env-selector
 https://marketplace.visualstudio.com/items?itemName=haskell.haskell
 
-The `nix-env-selector` extension may prompt for the workspace to be re-loaded. Once re-loaded, HLS should start working. In case you need to use a specific version of ghc for this extension, modify the `.vscode/settings.json` file here:
-
-```json
-  "nixEnvSelector.args": "--argstr ghc ghc927"
-```
+The `nix-env-selector` extension may prompt for the workspace to be re-loaded. Once re-loaded, HLS should start working. 
 
 ## Eventlog tracing
 
@@ -131,3 +105,11 @@ Besides compiling the backend with profiling mode, we can also enable a targeted
 2) Copy the tar file into `test/rpc-integration/`
 3) Run `./generateDirectoryTest.sh issue-123.tar.gz`. This will copy the definition files into `resources/` and rpc commands into `test-issue-123/`
 4) Run the test via `./runDirectoryTest test-issue-123`
+
+## Pretty printing KORE JSON
+
+There is a simple utility called pretty which can be used to pretty print a KORE JSON term from a bug report, which does not contain the original K definition:
+
+```
+cabal run pretty -- ../definition.kore <(jq '.result.state' XXX_response.json)
+```

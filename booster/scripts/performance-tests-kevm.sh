@@ -55,7 +55,7 @@ fi
 git submodule update --init --recursive --depth 1 kevm-pyk/src/kevm_pyk/kproj/plugin
 
 
-feature_shell "make poetry && poetry run -C kevm-pyk -- kevm-dist --verbose build evm-semantics.plugin evm-semantics.haskell --jobs 4"
+feature_shell "make poetry && poetry run -C kevm-pyk -- kdist --verbose build evm-semantics.plugin evm-semantics.haskell --jobs 4"
 
 mkdir -p $SCRIPT_DIR/logs
 
