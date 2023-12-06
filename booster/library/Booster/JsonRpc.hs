@@ -152,7 +152,7 @@ respond stateVar =
                                 Log.logInfo $
                                     "Added a new module. Now in scope: " <> Text.intercalate ", " (Map.keys newDefinitions)
                                 pure $ Right $ RpcTypes.AddModule $ RpcTypes.AddModuleResult $ getId newModule.name
-        RpcTypes.Simplify req -> withContext req._module $ \(def, mLlvmLibrary, _mSMTOptions) -> do
+        RpcTypes.Simplify req -> withContext req._module $ \(def, mLlvmLibrary, mSMTOptions) -> do
             start <- liftIO $ getTime Monotonic
             let internalised =
                     runExcept $ internaliseTermOrPredicate DisallowAlias CheckSubsorts Nothing def req.state.term
@@ -180,6 +180,9 @@ respond stateVar =
                         [ req.logSuccessfulSimplifications
                         , req.logFailedSimplifications
                         ]
+
+            solver <- traverse (SMT.initSolver def) mSMTOptions
+
             result <- case internalised of
                 Left patternErrors -> do
                     Log.logError $ "Error internalising cterm: " <> Text.pack (show patternErrors)
@@ -187,7 +190,7 @@ respond stateVar =
                 -- term and predicate (pattern)
                 Right (TermAndPredicateAndSubstitution pat substitution) -> do
                     Log.logInfoNS "booster" "Simplifying a pattern"
-                    ApplyEquations.evaluatePattern doTracing def mLlvmLibrary mempty pat >>= \case
+                    ApplyEquations.evaluatePattern doTracing def mLlvmLibrary solver mempty pat >>= \case
                         (Right newPattern, patternTraces, _) -> do
                             let (term, mbPredicate, mbSubstitution) = externalisePattern newPattern substitution
                                 tSort = externaliseSort (sortOfPattern newPattern)
@@ -210,7 +213,7 @@ respond stateVar =
                                 (addHeader $ Syntax.KJTop (fromMaybe (error "not a predicate") $ sortOfJson req.state.term), [])
                     | otherwise -> do
                         Log.logInfoNS "booster" "Simplifying all predicates"
-                        ApplyEquations.simplifyConstraints doTracing def mLlvmLibrary mempty (Set.toList predicates) >>= \case
+                        ApplyEquations.simplifyConstraints doTracing def mLlvmLibrary solver mempty (Set.toList predicates) >>= \case
                             (Right newPreds, traces, _) -> do
                                 let predicateSort =
                                         fromMaybe (error "not a predicate") $
@@ -223,6 +226,7 @@ respond stateVar =
                                 pure $ Right (addHeader $ Syntax.KJAnd predicateSort result, traces)
                             (Left something, _traces, _) ->
                                 pure . Left . RpcError.backendError RpcError.Aborted $ show something -- FIXME
+            whenJust solver SMT.closeSolver
             stop <- liftIO $ getTime Monotonic
 
             let duration =
