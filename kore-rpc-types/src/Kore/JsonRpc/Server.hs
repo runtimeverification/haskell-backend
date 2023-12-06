@@ -14,10 +14,10 @@ module Kore.JsonRpc.Server (
     JsonRpcHandler (..),
 ) where
 
-import Control.Concurrent (forkIO, throwTo)
+import Control.Concurrent (forkIO, newMVar, putMVar, readMVar, throwTo)
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Exception (Exception (fromException), catch, mask, throw)
-import Control.Monad (forM_, forever)
+import Control.Monad (forM_, forever, (>=>))
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Logger (MonadLoggerIO)
 import Control.Monad.Logger qualified as Log
@@ -79,11 +79,13 @@ jsonRpcServer ::
     (MonadLoggerIO m, MonadUnliftIO m, FromRequestCancellable q, ToJSON r) =>
     -- | Connection settings
     ServerSettings ->
+    -- | Init session state
+    state ->
     -- | Action to perform on connecting client thread
-    (Request -> Respond q (Log.LoggingT IO) r) ->
+    (Request -> state -> Respond q (Log.LoggingT IO) (r, Maybe state)) ->
     [JsonRpcHandler] ->
     m a
-jsonRpcServer serverSettings respond handlers =
+jsonRpcServer serverSettings initState respond handlers =
     runGeneralTCPServer serverSettings $ \cl ->
         runJSONRPCT
             -- we have to ensure that the returned messages contain no newlines
@@ -93,17 +95,19 @@ jsonRpcServer serverSettings respond handlers =
             False
             (appSink cl)
             (appSource cl)
-            (srv respond handlers)
+            (srv initState respond handlers)
 
 data JsonRpcHandler = forall e. Exception e => JsonRpcHandler (e -> Log.LoggingT IO ErrorObj)
 
 srv ::
-    forall m q r.
+    forall m q r state.
     (MonadLoggerIO m, FromRequestCancellable q, ToJSON r) =>
-    (Request -> Respond q (Log.LoggingT IO) r) ->
+    state ->
+    (Request -> state -> Respond q (Log.LoggingT IO) (r, Maybe state)) ->
     [JsonRpcHandler] ->
     JSONRPCT m ()
-srv respond handlers = do
+srv initState respond handlers = do
+    state <- liftIO $ newMVar initState
     reqQueue <- liftIO $ atomically newTChan
     let mainLoop tid =
             let loop =
@@ -121,7 +125,7 @@ srv respond handlers = do
                             liftIO $ atomically $ writeTChan reqQueue req
                             loop
              in loop
-    spawnWorker reqQueue >>= mainLoop
+    spawnWorker state reqQueue >>= mainLoop
   where
     isRequest = \case
         Request{} -> True
@@ -138,7 +142,7 @@ srv respond handlers = do
 
     cancelError = ErrorObj "Request cancelled" (-32000) Null
 
-    spawnWorker reqQueue = do
+    spawnWorker stateMVar reqQueue = do
         rpcSession <- ask
         logger <- Log.askLoggerIO
         let withLog :: Log.LoggingT IO a -> IO a
@@ -148,7 +152,20 @@ srv respond handlers = do
             sendResponses r = flip runReaderT rpcSession $ sendBatchResponse r
 
             respondTo :: Request -> Log.LoggingT IO (Maybe Response)
-            respondTo req = buildResponse (respond req) req
+            respondTo req = do
+                state <- liftIO $ readMVar stateMVar
+                buildResponse
+                    ( respond req state
+                        >=> ( \case
+                                Left err -> pure $ Left err
+                                Right (res, Nothing) -> pure $ Right res
+                                Right (res, Just newState) ->
+                                    do
+                                        liftIO $ putMVar stateMVar newState
+                                        pure $ Right res
+                            )
+                    )
+                    req
 
             cancelReq :: ErrorObj -> BatchRequest -> Log.LoggingT IO ()
             cancelReq err = \case

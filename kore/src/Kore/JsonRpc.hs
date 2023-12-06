@@ -8,7 +8,6 @@ module Kore.JsonRpc (
     module Kore.JsonRpc,
 ) where
 
-import Control.Concurrent.MVar qualified as MVar
 import Control.Monad.Except (runExceptT)
 import Control.Monad.Logger (runLoggingT)
 import Data.Aeson.Types (ToJSON (..))
@@ -105,7 +104,7 @@ import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 respond ::
     forall m.
     MonadIO m =>
-    MVar.MVar ServerState ->
+    ServerState ->
     ModuleName ->
     ( forall a.
       SmtMetadataTools StepperAttributes ->
@@ -113,7 +112,7 @@ respond ::
       SMT.SMT a ->
       IO a
     ) ->
-    Respond (API 'Req) m (API 'Res)
+    Respond (API 'Req) m (API 'Res, Maybe ServerState)
 respond serverState moduleName runSMT =
     \case
         Execute
@@ -158,7 +157,7 @@ respond serverState moduleName runSMT =
                                         Just $
                                             fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
                                     else Nothing
-                        pure $ buildResult duration (TermLike.termLikeSort verifiedPattern) traversalResult
+                        pure $ (,Nothing) <$> buildResult duration (TermLike.termLikeSort verifiedPattern) traversalResult
               where
                 toStopLabels :: Maybe [Text] -> Maybe [Text] -> Exec.StopLabels
                 toStopLabels cpRs tRs =
@@ -376,7 +375,7 @@ respond serverState moduleName runSMT =
                             if (fromMaybe False logTiming)
                                 then maybe (Just [timeLog]) (Just . (timeLog :)) simplLogs
                                 else simplLogs
-                    pure $ buildResult allLogs sort result
+                    pure $ (,Nothing) <$> buildResult allLogs sort result
           where
             verify = do
                 antVerified <-
@@ -447,7 +446,7 @@ respond serverState moduleName runSMT =
                                 else simplLogs
                     pure $
                         Right $
-                            Simplify
+                            ( Simplify
                                 SimplifyResult
                                     { state =
                                         PatternJson.fromTermLike $
@@ -455,13 +454,15 @@ respond serverState moduleName runSMT =
                                                 OrPattern.toTermLike sort result
                                     , logs = allLogs
                                     }
+                            , Nothing
+                            )
         AddModule AddModuleRequest{_module} ->
             case parseKoreModule "<add-module>" _module of
                 Left err -> pure $ Left $ backendError CouldNotParsePattern err
                 Right parsedModule@Module{moduleName = name} -> do
-                    LoadedDefinition{indexedModules, definedNames, kFileLocations} <-
-                        liftIO $ loadedDefinition <$> MVar.readMVar serverState
-                    let verified =
+                    let LoadedDefinition{indexedModules, definedNames, kFileLocations} =
+                            loadedDefinition serverState
+                        verified =
                             verifyAndIndexDefinitionWithBase
                                 (indexedModules, definedNames)
                                 Builtin.koreVerifiers
@@ -480,29 +481,28 @@ respond serverState moduleName runSMT =
                                             $ Exec.makeSerializedModule mainModule
                                     internedTextCache <- liftIO $ readIORef globalInternedTextCache
 
-                                    liftIO . MVar.modifyMVar_ serverState $
-                                        \ServerState{serializedModules} -> do
-                                            let serializedDefinition =
-                                                    SerializedDefinition
-                                                        { serializedModule = serializedModule'
-                                                        , locations = kFileLocations
-                                                        , internedTextCache
-                                                        , lemmas
-                                                        }
-                                                loadedDefinition =
-                                                    LoadedDefinition
-                                                        { indexedModules = indexedModules'
-                                                        , definedNames = definedNames'
-                                                        , kFileLocations
-                                                        }
-                                            pure
-                                                ServerState
-                                                    { serializedModules =
-                                                        Map.insert (coerce name) serializedDefinition serializedModules
-                                                    , loadedDefinition
-                                                    }
+                                    let ServerState{serializedModules} = serverState
+                                        serializedDefinition =
+                                            SerializedDefinition
+                                                { serializedModule = serializedModule'
+                                                , locations = kFileLocations
+                                                , internedTextCache
+                                                , lemmas
+                                                }
+                                        loadedDefinition =
+                                            LoadedDefinition
+                                                { indexedModules = indexedModules'
+                                                , definedNames = definedNames'
+                                                , kFileLocations
+                                                }
+                                        newServerState =
+                                            ServerState
+                                                { serializedModules =
+                                                    Map.insert (coerce name) serializedDefinition serializedModules
+                                                , loadedDefinition
+                                                }
 
-                                    pure . Right . AddModule $ AddModuleResult (getModuleName name)
+                                    pure $ Right (AddModule $ AddModuleResult (getModuleName name), Just newServerState)
         GetModel GetModelRequest{state, _module} ->
             withMainModule (coerce _module) $ \serializedModule lemmas ->
                 case verifyIn serializedModule state of
@@ -525,7 +525,7 @@ respond serverState moduleName runSMT =
                                         . SMT.Evaluator.getModelFor tools
                                         $ NonEmpty.fromList preds
 
-                        pure . Right . GetModel $
+                        pure . Right . (,Nothing) . GetModel $
                             case result of
                                 Left False ->
                                     GetModelResult
@@ -550,7 +550,7 @@ respond serverState moduleName runSMT =
   where
     withMainModule module' act = do
         let mainModule = fromMaybe moduleName module'
-        ServerState{serializedModules} <- liftIO $ MVar.readMVar serverState
+            ServerState{serializedModules} = serverState
         case Map.lookup mainModule serializedModules of
             Nothing -> pure $ Left $ backendError CouldNotFindModule mainModule
             Just (SerializedDefinition{serializedModule, lemmas}) ->
@@ -622,7 +622,7 @@ data ServerState = ServerState
 
 runServer ::
     Int ->
-    MVar.MVar ServerState ->
+    ServerState ->
     ModuleName ->
     ( forall a.
       SmtMetadataTools StepperAttributes ->
@@ -632,11 +632,12 @@ runServer ::
     ) ->
     Log.LoggerEnv IO ->
     IO ()
-runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
+runServer port initServerState mainModule runSMT Log.LoggerEnv{logAction} = do
     flip runLoggingT logFun $
         jsonRpcServer
             srvSettings
-            ( \req parsed ->
+            initServerState
+            ( \req serverState parsed ->
                 log (InfoJsonRpcProcessRequest (getReqId req) parsed)
                     >> respond serverState mainModule runSMT parsed
             )

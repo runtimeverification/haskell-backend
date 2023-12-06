@@ -2,7 +2,6 @@
 
 module Main (main) where
 
-import Control.Concurrent.MVar as MVar
 import Control.Exception (AsyncException (..))
 import Control.Monad.Catch (
     bracket,
@@ -175,18 +174,16 @@ koreRpcServerRun GlobalMain.LocalOptions{execOptions} = do
     lift $ writeIORef globalInternedTextCache internedTextCache
 
     loadedDefinition <- GlobalMain.loadDefinitions [definitionFileName]
-    serverState <-
-        lift $
-            MVar.newMVar
-                ServerState
-                    { serializedModules = Map.singleton mainModuleName sd
-                    , loadedDefinition
-                    }
+    let initServerState =
+            ServerState
+                { serializedModules = Map.singleton mainModuleName sd
+                , loadedDefinition
+                }
     GlobalMain.clockSomethingIO "Executing" $
         -- wrap the call to runServer in the logger monad
         Log.LoggerT $
             ReaderT $
-                \loggerEnv -> runServer port serverState mainModuleName (runSMT loggerEnv) loggerEnv
+                \loggerEnv -> runServer port initServerState mainModuleName (runSMT loggerEnv) loggerEnv
 
     pure ExitSuccess
   where
