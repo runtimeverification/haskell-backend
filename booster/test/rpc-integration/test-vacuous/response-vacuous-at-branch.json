@@ -3,151 +3,94 @@
     "id": 1,
     "result": {
         "reason": "vacuous",
-        "depth": 1,
+        "depth": 0,
         "state": {
             "term": {
                 "format": "KORE",
                 "version": 1,
                 "term": {
-                    "tag": "And",
-                    "sort": {
-                        "tag": "SortApp",
-                        "name": "SortGeneratedTopCell",
-                        "args": []
-                    },
-                    "patterns": [
+                    "tag": "App",
+                    "name": "Lbl'-LT-'generatedTop'-GT-'",
+                    "sorts": [],
+                    "args": [
                         {
                             "tag": "App",
-                            "name": "Lbl'-LT-'generatedTop'-GT-'",
+                            "name": "Lbl'-LT-'k'-GT-'",
                             "sorts": [],
                             "args": [
                                 {
                                     "tag": "App",
-                                    "name": "Lbl'-LT-'k'-GT-'",
+                                    "name": "kseq",
                                     "sorts": [],
                                     "args": [
                                         {
                                             "tag": "App",
-                                            "name": "kseq",
-                                            "sorts": [],
-                                            "args": [
+                                            "name": "inj",
+                                            "sorts": [
                                                 {
-                                                    "tag": "App",
-                                                    "name": "inj",
-                                                    "sorts": [
-                                                        {
-                                                            "tag": "SortApp",
-                                                            "name": "SortState",
-                                                            "args": []
-                                                        },
-                                                        {
-                                                            "tag": "SortApp",
-                                                            "name": "SortKItem",
-                                                            "args": []
-                                                        }
-                                                    ],
-                                                    "args": [
-                                                        {
-                                                            "tag": "DV",
-                                                            "sort": {
-                                                                "tag": "SortApp",
-                                                                "name": "SortState",
-                                                                "args": []
-                                                            },
-                                                            "value": "a"
-                                                        }
-                                                    ]
+                                                    "tag": "SortApp",
+                                                    "name": "SortState",
+                                                    "args": []
                                                 },
                                                 {
-                                                    "tag": "App",
-                                                    "name": "dotk",
-                                                    "sorts": [],
+                                                    "tag": "SortApp",
+                                                    "name": "SortKItem",
                                                     "args": []
                                                 }
+                                            ],
+                                            "args": [
+                                                {
+                                                    "tag": "DV",
+                                                    "sort": {
+                                                        "tag": "SortApp",
+                                                        "name": "SortState",
+                                                        "args": []
+                                                    },
+                                                    "value": "init"
+                                                }
                                             ]
-                                        }
-                                    ]
-                                },
-                                {
-                                    "tag": "App",
-                                    "name": "Lbl'-LT-'int'-GT-'",
-                                    "sorts": [],
-                                    "args": [
+                                        },
                                         {
-                                            "tag": "DV",
-                                            "sort": {
-                                                "tag": "SortApp",
-                                                "name": "SortInt",
-                                                "args": []
-                                            },
-                                            "value": "0"
-                                        }
-                                    ]
-                                },
-                                {
-                                    "tag": "App",
-                                    "name": "Lbl'-LT-'generatedCounter'-GT-'",
-                                    "sorts": [],
-                                    "args": [
-                                        {
-                                            "tag": "DV",
-                                            "sort": {
-                                                "tag": "SortApp",
-                                                "name": "SortInt",
-                                                "args": []
-                                            },
-                                            "value": "0"
+                                            "tag": "App",
+                                            "name": "dotk",
+                                            "sorts": [],
+                                            "args": []
                                         }
                                     ]
                                 }
                             ]
                         },
                         {
-                            "tag": "Equals",
-                            "argSort": {
-                                "tag": "SortApp",
-                                "name": "SortBool",
-                                "args": []
-                            },
-                            "sort": {
-                                "tag": "SortApp",
-                                "name": "SortGeneratedTopCell",
-                                "args": []
-                            },
-                            "first": {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortBool",
-                                    "args": []
-                                },
-                                "value": "true"
-                            },
-                            "second": {
-                                "tag": "App",
-                                "name": "Lbl'UndsEqlsEqls'Int'Unds'",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "0"
+                            "tag": "App",
+                            "name": "Lbl'-LT-'int'-GT-'",
+                            "sorts": [],
+                            "args": [
+                                {
+                                    "tag": "DV",
+                                    "sort": {
+                                        "tag": "SortApp",
+                                        "name": "SortInt",
+                                        "args": []
                                     },
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "42"
-                                    }
-                                ]
-                            }
+                                    "value": "0"
+                                }
+                            ]
+                        },
+                        {
+                            "tag": "App",
+                            "name": "Lbl'-LT-'generatedCounter'-GT-'",
+                            "sorts": [],
+                            "args": [
+                                {
+                                    "tag": "DV",
+                                    "sort": {
+                                        "tag": "SortApp",
+                                        "name": "SortInt",
+                                        "args": []
+                                    },
+                                    "value": "0"
+                                }
+                            ]
                         }
                     ]
                 }

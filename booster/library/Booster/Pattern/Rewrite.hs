@@ -22,7 +22,7 @@ import Control.Monad.Logger.CallStack
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), ask)
-import Control.Monad.Trans.State.Strict (StateT (runStateT), get, gets, modify)
+import Control.Monad.Trans.State.Strict (StateT (runStateT), get, modify)
 import Data.Hashable qualified as Hashable
 import Data.List.NonEmpty (NonEmpty (..), toList)
 import Data.List.NonEmpty qualified as NE
@@ -313,6 +313,12 @@ applyRule pat@Pattern{ceilConditions} rule = runRewriteRuleAppT $ do
     newConstraints <-
         catMaybes <$> mapM (checkConstraint id trivialIfBottom) ruleEnsures
 
+    -- check all new constraints together with the known side constraints
+    whenJust mbSolver $ \solver ->
+        (lift $ SMT.checkPredicates solver prior mempty (Set.fromList newConstraints)) >>= \case
+            Just False -> RewriteRuleAppT $ pure Trivial
+            _other -> pure ()
+
     let rewritten =
             Pattern
                 (substituteInTerm (refreshExistentials subst) rule.rhs)
@@ -337,8 +343,9 @@ applyRule pat@Pattern{ceilConditions} rule = runRewriteRuleAppT $ do
         Predicate ->
         RewriteRuleAppT (RewriteT io (RewriteFailed k)) (Maybe a)
     checkConstraint onUnclear onBottom p = do
-        RewriteConfig{definition, llvmApi, doTracing} <- lift $ RewriteT ask
-        (simplified, _traces, _cache) <- simplifyConstraint doTracing definition llvmApi mempty p
+        RewriteConfig{definition, llvmApi, smtSolver, doTracing} <- lift $ RewriteT ask
+        (simplified, _traces, _cache) <-
+            simplifyConstraint doTracing definition llvmApi smtSolver mempty p
         case simplified of
             Right (Predicate FalseBool) -> onBottom
             Right (Predicate TrueBool) -> pure Nothing
@@ -625,8 +632,10 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
 
     simplifyP :: Pattern -> StateT RewriteStepsState io (Maybe Pattern)
     simplifyP p = do
-        cache <- gets (.simplifierCache)
-        evaluatePattern doTracing def mLlvmLibrary cache p >>= \(res, traces, newCache) -> do
+        st <- get
+        let cache = st.simplifierCache
+            smt = st.smtSolver
+        evaluatePattern doTracing def mLlvmLibrary smt cache p >>= \(res, traces, newCache) -> do
             updateCache newCache
             logTraces traces
             case res of

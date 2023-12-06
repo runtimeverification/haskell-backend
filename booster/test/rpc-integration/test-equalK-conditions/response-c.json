@@ -2,9 +2,8 @@
     "jsonrpc": "2.0",
     "id": 1,
     "result": {
-        "reason": "terminal-rule",
+        "reason": "stuck",
         "depth": 1,
-        "rule": "TEST.symbolic-subst",
         "state": {
             "term": {
                 "format": "KORE",
@@ -41,13 +40,10 @@
                                             ],
                                             "args": [
                                                 {
-                                                    "tag": "DV",
-                                                    "sort": {
-                                                        "tag": "SortApp",
-                                                        "name": "SortState",
-                                                        "args": []
-                                                    },
-                                                    "value": "a"
+                                                    "tag": "App",
+                                                    "name": "LblSt4'LParRParUnds'TEST'Unds'State",
+                                                    "sorts": [],
+                                                    "args": []
                                                 }
                                             ]
                                         },
@@ -58,38 +54,6 @@
                                             "args": []
                                         }
                                     ]
-                                }
-                            ]
-                        },
-                        {
-                            "tag": "App",
-                            "name": "Lbl'-LT-'int'-GT-'",
-                            "sorts": [],
-                            "args": [
-                                {
-                                    "tag": "EVar",
-                                    "name": "Y",
-                                    "sort": {
-                                        "tag": "SortApp",
-                                        "name": "SortInt",
-                                        "args": []
-                                    }
-                                }
-                            ]
-                        },
-                        {
-                            "tag": "App",
-                            "name": "Lbl'-LT-'jnt'-GT-'",
-                            "sorts": [],
-                            "args": [
-                                {
-                                    "tag": "EVar",
-                                    "name": "Y",
-                                    "sort": {
-                                        "tag": "SortApp",
-                                        "name": "SortInt",
-                                        "args": []
-                                    }
                                 }
                             ]
                         },
@@ -110,41 +74,6 @@
                             ]
                         }
                     ]
-                }
-            },
-            "substitution": {
-                "format": "KORE",
-                "version": 1,
-                "term": {
-                    "tag": "Equals",
-                    "argSort": {
-                        "tag": "SortApp",
-                        "name": "SortInt",
-                        "args": []
-                    },
-                    "sort": {
-                        "tag": "SortApp",
-                        "name": "SortGeneratedTopCell",
-                        "args": []
-                    },
-                    "first": {
-                        "tag": "EVar",
-                        "name": "X",
-                        "sort": {
-                            "tag": "SortApp",
-                            "name": "SortInt",
-                            "args": []
-                        }
-                    },
-                    "second": {
-                        "tag": "EVar",
-                        "name": "Y",
-                        "sort": {
-                            "tag": "SortApp",
-                            "name": "SortInt",
-                            "args": []
-                        }
-                    }
                 }
             }
         }

@@ -10,6 +10,7 @@ module Booster.CLOptions (
 import Booster.Trace (CustomUserEventType)
 import Booster.VersionInfo (VersionInfo (..), versionInfo)
 import Control.Monad.Logger (LogLevel (..))
+import Data.ByteString.Char8 qualified as BS (pack)
 import Data.List (intercalate, partition)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
@@ -17,7 +18,8 @@ import Options.Applicative
 import Text.Casing (fromHumps, fromKebab, toKebab, toPascal)
 import Text.Read (readMaybe)
 
-import Booster.SMT.Interface (SMTOptions (..))
+import Booster.SMT.Interface (SMTOptions (..), defaultSMTOptions)
+import Booster.SMT.LowLevelCodec qualified as SMT (parseSExpr)
 
 data CLOptions = CLOptions
     { definitionFile :: FilePath
@@ -135,25 +137,67 @@ adjustLogLevels ls = (standardLevel, customLevels)
     (stds, customLevels) = partition (<= LevelError) ls
     standardLevel = if null stds then LevelInfo else minimum stds
 
--- FIXME SMTOptions should later replace Options.SMT from kore-rpc,
--- with fully-compatible option names
+-- SMTOptions aligned with Options.SMT from kore-rpc, with
+-- fully-compatible option names in the parser
 parseSMTOptions :: Parser (Maybe SMTOptions)
 parseSMTOptions =
     flag
-        (Just $ SMTOptions Nothing)
+        (Just defaultSMTOptions)
         Nothing
         ( long "no-smt"
             <> help "Disable SMT solver sub-process"
         )
-        <|> ( Just . SMTOptions
+        <|> fmap
+            Just
+            ( SMTOptions
                 <$> optional
                     ( strOption
-                        ( metavar "SMT_TRANSCRIPT_FILE"
-                            <> long "smt-transcript"
+                        ( metavar "PATH"
+                            <> long "solver-transcript"
                             <> help "Destination file for SMT transcript (should not exist prior)"
                         )
                     )
+                <*> option
+                    nonnegativeInt
+                    ( metavar "TIMEOUT"
+                        <> long "smt-timeout"
+                        <> help "Timeout for SMT requests, in milliseconds (0 for Nothing)."
+                        <> value smtDefaults.timeout
+                        <> showDefault
+                    )
+                <*> optional
+                    ( option
+                        nonnegativeInt
+                        ( metavar "COUNT"
+                            <> long "smt-retry-limit"
+                            <> help "Optional Retry-limit for SMT requests - with scaling timeout."
+                            <> value (fromMaybe 0 smtDefaults.retryLimit)
+                            <> showDefault
+                        )
+                    )
+                <*> optional
+                    ( option
+                        readTactic
+                        ( metavar "TACTIC"
+                            <> long "smt-tactic"
+                            <> help
+                                "Optional Z3 tactic to use when checking satisfiability. \
+                                \Example: '(check-sat-using smt)' (i.e., plain 'check-sat')"
+                        )
+                    )
             )
+  where
+    smtDefaults = defaultSMTOptions
+
+    nonnegativeInt :: ReadM Int
+    nonnegativeInt =
+        auto >>= \case
+            i
+                | i < 0 -> readerError "must be a non-negative integer."
+                | otherwise -> pure i
+
+    readTactic =
+        either (readerError . ("Invalid s-expression. " <>)) pure . SMT.parseSExpr . BS.pack =<< str
 
 versionInfoParser :: Parser (a -> a)
 versionInfoParser =
