@@ -261,79 +261,86 @@ respondEither ProxyConfig{statsVar, forceFallback, boosterState} booster kore re
                 | boosterResult.reason `elem` [Aborted, Stuck, Branching] -> do
                     Log.logInfoNS "proxy" . Text.pack $
                         "Booster " <> show boosterResult.reason <> " at " <> show boosterResult.depth
-                    -- re-execute with kore-rpc (no need to simplify first, kore-rpc will do that)
-                    Log.logInfoNS "proxy" . Text.pack $ "Falling back to Kore "
-                    -- attempt to do one step in the old backend
-                    (kResult, kTime) <-
-                        Stats.timed $
-                            kore
-                                ( Execute
-                                    r
-                                        { state = execStateToKoreJson boosterResult.state
-                                        , maxDepth = Just $ Depth 1
-                                        }
-                                )
-                    do
-                        when (isJust statsVar) $
-                            Log.logInfoNS "proxy" . Text.pack $
-                                "Kore fall-back in " <> microsWithUnit kTime
-                        case kResult of
-                            Right (Execute koreResult) -> do
-                                let
-                                    fallbackLog =
-                                        if fromMaybe False logSettings.logFallbacks
-                                            then Just [mkFallbackLogEntry boosterResult koreResult]
-                                            else Nothing
-                                case koreResult.reason of
-                                    DepthBound -> do
-                                        -- if we made one step, add the number of
-                                        -- steps we have taken to the counter and
-                                        -- attempt with booster again
-                                        when (koreResult.depth == 0) $ error "Expected kore-rpc to take at least one step"
-                                        Log.logInfoNS "proxy" $
-                                            Text.pack $
-                                                "kore depth-bound, continuing... (currently at "
-                                                    <> show (currentDepth + boosterResult.depth + koreResult.depth)
-                                                    <> ")"
-                                        let accumulatedLogs =
-                                                combineLogs
-                                                    [ rpcLogs
-                                                    , boosterResult.logs
-                                                    , koreResult.logs
-                                                    , fallbackLog
-                                                    ]
-                                        executionLoop
-                                            logSettings
-                                            mforceSimplification
-                                            def
-                                            ( currentDepth + boosterResult.depth + koreResult.depth
-                                            , time + bTime + kTime
-                                            , koreTime + kTime
-                                            , accumulatedLogs
-                                            )
-                                            r{ExecuteRequest.state = execStateToKoreJson koreResult.state}
-                                    _ -> do
-                                        -- otherwise we have hit a different
-                                        -- HaltReason, at which point we should
-                                        -- return, setting the correct depth
-                                        Log.logInfoNS "proxy" . Text.pack $
-                                            "Kore " <> show koreResult.reason <> " at " <> show koreResult.depth
-                                        logStats ExecuteM (time + bTime + kTime, koreTime + kTime)
-                                        pure $
-                                            Right $
-                                                Execute
-                                                    koreResult
-                                                        { depth = currentDepth + boosterResult.depth + koreResult.depth
-                                                        , logs =
-                                                            combineLogs
-                                                                [ rpcLogs
-                                                                , boosterResult.logs
-                                                                , koreResult.logs
-                                                                , fallbackLog
-                                                                ]
-                                                        }
-                            -- can only be an error at this point
-                            res -> pure res
+                    -- simplify Booster's state with Kore's simplifier
+                    Log.logInfoNS "proxy" . Text.pack $ "Simplifying booster state and falling back to Kore "
+                    simplifyResult <- simplifyExecuteState logSettings r._module def boosterResult.state
+                    case simplifyResult of
+                        Left logsOnly -> do
+                            -- state was simplified to \bottom, return vacuous
+                            Log.logInfoNS "proxy" "Vacuous state after simplification"
+                            pure . Right . Execute $ makeVacuous logsOnly boosterResult
+                        Right (simplifiedBoosterState, boosterStateSimplificationLogs) -> do
+                            -- attempt to do one step in the old backend
+                            (kResult, kTime) <-
+                                Stats.timed $
+                                    kore
+                                        ( Execute
+                                            r
+                                                { state = execStateToKoreJson simplifiedBoosterState
+                                                , maxDepth = Just $ Depth 1
+                                                }
+                                        )
+                            when (isJust statsVar) $
+                                Log.logInfoNS "proxy" . Text.pack $
+                                    "Kore fall-back in " <> microsWithUnit kTime
+                            case kResult of
+                                Right (Execute koreResult) -> do
+                                    let
+                                        fallbackLog =
+                                            if fromMaybe False logSettings.logFallbacks
+                                                then Just [mkFallbackLogEntry boosterResult koreResult]
+                                                else Nothing
+                                    case koreResult.reason of
+                                        DepthBound -> do
+                                            -- if we made one step, add the number of
+                                            -- steps we have taken to the counter and
+                                            -- attempt with booster again
+                                            when (koreResult.depth == 0) $ error "Expected kore-rpc to take at least one step"
+                                            Log.logInfoNS "proxy" $
+                                                Text.pack $
+                                                    "kore depth-bound, continuing... (currently at "
+                                                        <> show (currentDepth + boosterResult.depth + koreResult.depth)
+                                                        <> ")"
+                                            let accumulatedLogs =
+                                                    combineLogs
+                                                        [ rpcLogs
+                                                        , boosterResult.logs
+                                                        , boosterStateSimplificationLogs
+                                                        , koreResult.logs
+                                                        , fallbackLog
+                                                        ]
+                                            executionLoop
+                                                logSettings
+                                                mforceSimplification
+                                                def
+                                                ( currentDepth + boosterResult.depth + koreResult.depth
+                                                , time + bTime + kTime
+                                                , koreTime + kTime
+                                                , accumulatedLogs
+                                                )
+                                                r{ExecuteRequest.state = execStateToKoreJson koreResult.state}
+                                        _ -> do
+                                            -- otherwise we have hit a different
+                                            -- HaltReason, at which point we should
+                                            -- return, setting the correct depth
+                                            Log.logInfoNS "proxy" . Text.pack $
+                                                "Kore " <> show koreResult.reason <> " at " <> show koreResult.depth
+                                            logStats ExecuteM (time + bTime + kTime, koreTime + kTime)
+                                            pure $
+                                                Right $
+                                                    Execute
+                                                        koreResult
+                                                            { depth = currentDepth + boosterResult.depth + koreResult.depth
+                                                            , logs =
+                                                                combineLogs
+                                                                    [ rpcLogs
+                                                                    , boosterResult.logs
+                                                                    , koreResult.logs
+                                                                    , fallbackLog
+                                                                    ]
+                                                            }
+                                -- can only be an error at this point
+                                res -> pure res
                 | otherwise -> do
                     -- we were successful with the booster, thus we
                     -- return the booster result with the updated
