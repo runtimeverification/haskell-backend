@@ -261,6 +261,11 @@ unify1
             if isSubsort
                 then bindVariable var term2
                 else failWith $ DifferentSorts term1 term2
+-- term1 is an injection. We could unify, but it would not be a matching substitution: indeterminate
+unify1
+    inj@Injection{}
+    v@Var{} =
+        addIndeterminate inj v
 -- term2 variable (not target), term1 not a variable: swap arguments (won't recurse)
 unify1
     term1
@@ -575,7 +580,7 @@ bindVariable var term = do
                     | otherwise ->
                         -- the term in the binding could be _equivalent_
                         -- (not necessarily syntactically equal) to term'
-                        failWith $ VariableConflict var oldTerm term
+                        addIndeterminate oldTerm term
                 Nothing -> do
                     let
                         -- apply existing substitutions to term
