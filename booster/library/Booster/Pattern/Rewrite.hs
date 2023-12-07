@@ -257,9 +257,10 @@ applyRule pat@Pattern{ceilConditions} rule = runRewriteRuleAppT $ do
 
     -- check it is a "matching" substitution (substitutes variables
     -- from the subject term only). Fail the entire rewrite if not.
-    unless (Map.keysSet subst == freeVariables rule.lhs) $
+    unless (Map.keysSet subst == freeVariables rule.lhs) $ do
+        let violatingItems = Map.restrictKeys subst (Map.keysSet subst `Set.difference` freeVariables rule.lhs)
         failRewrite $
-            UnificationIsNotMatch rule pat.term subst
+            UnificationIsNotMatch rule pat.term violatingItems
 
     -- Also fail the whole rewrite if a rule applies but may introduce
     -- an undefined term.
