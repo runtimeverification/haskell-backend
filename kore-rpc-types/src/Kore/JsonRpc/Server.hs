@@ -14,7 +14,7 @@ module Kore.JsonRpc.Server (
     JsonRpcHandler (..),
 ) where
 
-import Control.Concurrent (forkIO, newMVar, putMVar, readMVar, throwTo)
+import Control.Concurrent (forkIO, newMVar, readMVar, swapMVar, throwTo)
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Exception (Exception (fromException), catch, mask, throw)
 import Control.Monad (forM_, forever, (>=>))
@@ -161,7 +161,7 @@ srv initState respond handlers = do
                                 Right (res, Nothing) -> pure $ Right res
                                 Right (res, Just newState) ->
                                     do
-                                        liftIO $ putMVar stateMVar newState
+                                        _ <- liftIO $ swapMVar stateMVar newState
                                         pure $ Right res
                             )
                     )
