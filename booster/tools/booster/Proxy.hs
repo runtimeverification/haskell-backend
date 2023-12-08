@@ -14,6 +14,7 @@ module Proxy (
 
 import Control.Concurrent.MVar qualified as MVar
 import Control.Monad (when)
+import Control.Monad.Catch (MonadCatch (..), catch)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Logger qualified as Log
 import Control.Monad.Trans.Except (runExcept)
@@ -43,6 +44,7 @@ import Kore.JsonRpc.Types qualified as ExecuteRequest (ExecuteRequest (..))
 import Kore.JsonRpc.Types qualified as SimplifyRequest (SimplifyRequest (..))
 import Kore.JsonRpc.Types.Log qualified as RPCLog
 import Kore.Log qualified
+import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown, externaliseDecidePredicateUnknown)
 import Kore.Syntax.Definition (SentenceAxiom)
 import Kore.Syntax.Json.Types qualified as KoreJson
 import SMT qualified
@@ -72,7 +74,7 @@ serverError detail = ErrorObj ("Server error: " <> detail) (-32032)
 respondEither ::
     forall m.
     Log.MonadLogger m =>
-    MonadIO m =>
+    (MonadIO m, MonadCatch m) =>
     ProxyConfig ->
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res) ->
@@ -418,7 +420,13 @@ respondEither ProxyConfig{statsVar, forceFallback, boosterState} booster kore re
     postExecSimplify ::
         LogSettings -> TimeSpec -> Maybe Text -> KoreDefinition -> API 'Res -> m (API 'Res)
     postExecSimplify logSettings start mbModule def = \case
-        Execute res -> Execute <$> simplifyResult res
+        Execute res ->
+            Execute
+                <$> ( simplifyResult res
+                        `catch` ( \(err :: DecidePredicateUnknown) ->
+                                    pure res{reason = Aborted, unknownPredicate = Just . externaliseDecidePredicateUnknown $ err}
+                                )
+                    )
         other -> pure other
       where
         -- timeLog :: TimeDiff -> Maybe [LogEntry]
