@@ -180,7 +180,7 @@ main = do
                         jsonRpcServer
                             srvSettings
                             (const $ respond koreRespond)
-                            [handleErrorCall, handleSomeException]
+                            [Kore.handleDecidePredicateUnknown, handleErrorCall, handleSomeException]
                     interruptHandler _ = do
                         when (logLevel >= LevelInfo) $
                             hPutStrLn stderr "[Info#proxy] Server shutting down"
