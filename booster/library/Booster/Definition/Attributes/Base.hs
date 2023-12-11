@@ -102,14 +102,13 @@ data ComputedAxiomAttributes = ComputedAxiomAttributes
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData)
 
-data NotPreservesDefinednessReason = UndefinedSymbol ByteString | UndefinedPredicate
+newtype NotPreservesDefinednessReason = UndefinedSymbol ByteString
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData)
 
 instance Pretty NotPreservesDefinednessReason where
     pretty = \case
         UndefinedSymbol name -> "non-total symbol " <> (pretty $ Text.decodeUtf8 $ Util.decodeLabel' name)
-        UndefinedPredicate -> "undefined predicate"
 
 type Label = Text
 

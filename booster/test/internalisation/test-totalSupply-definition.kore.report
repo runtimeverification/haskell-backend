@@ -1979,6 +1979,7 @@ Symbols: 1720
   - dotk
   - inj
   - kseq
+Partial function symbols: 628
 Axioms: 352
 Axioms preserving definedness: 296
 Axioms containing AC symbols: 0
@@ -5829,3 +5830,15 @@ Simplifications by term index:
   - evm-semantics/tests/specs/lemmas.k :  (290, 10)
   - evm-semantics/tests/specs/lemmas.k :  (291, 10)
   - evm-semantics/tests/specs/lemmas.k :  (48, 10)
+Ceils:
+- LblMap:lookup: #Ceil( Map:lookup(Eq#@VarM:SortMap{}, Eq#@VarK:SortKItem{}) ) => _in_keys(_)_MAP_Bool_KItem_Map(Eq#@VarK:SortKItem{}, Eq#@VarM:SortMap{})
+- Lbl_%Int_: #Ceil( _%Int_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _=/=Int_(Eq#@VarI2:SortInt{}, "0")
+- Lbl_/Int_: #Ceil( _/Int_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _=/=Int_(Eq#@VarI2:SortInt{}, "0")
+- Lbl_<<Int_: #Ceil( _<<Int_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _>=Int_(Eq#@VarI2:SortInt{}, "0")
+- Lbl_>>Int_: #Ceil( _>>Int_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _>=Int_(Eq#@VarI2:SortInt{}, "0")
+- Lbl_AccountCellMap_: #Ceil( _AccountCellMap_(AccountCellMapItem(Eq#@VarK0:SortAcctIDCell{}, Eq#@VarK1:SortAccountCell{}), Eq#@VarRest:SortAccountCellMap{}) ) => notBool_(AccountCellMap:in_keys(Eq#@VarK0:SortAcctIDCell{}, Eq#@VarRest:SortAccountCellMap{}))
+- Lbl_Map_: #Ceil( _Map_(_|->_(Eq#@VarK0:SortKItem{}, Eq#@VarK1:SortKItem{}), Eq#@VarRest:SortMap{}) ) => notBool_(_in_keys(_)_MAP_Bool_KItem_Map(Eq#@VarK0:SortKItem{}, Eq#@VarRest:SortMap{}))
+- Lbl_MessageCellMap_: #Ceil( _MessageCellMap_(MessageCellMapItem(Eq#@VarK0:SortMsgIDCell{}, Eq#@VarK1:SortMessageCell{}), Eq#@VarRest:SortMessageCellMap{}) ) => notBool_(MessageCellMap:in_keys(Eq#@VarK0:SortMsgIDCell{}, Eq#@VarRest:SortMessageCellMap{}))
+- Lbl_modInt_: #Ceil( _modInt_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _=/=Int_(Eq#@VarI2:SortInt{}, "0")
+- LblpadLeftBytes(_,_,_)_BYTES-HOOKED_Bytes_Bytes_Int_Int: #Ceil( padLeftBytes(_,_,_)_BYTES-HOOKED_Bytes_Bytes_Int_Int(Eq#Var_Gen0:SortBytes{}, Eq#VarLEN:SortInt{}, Eq#VarVAL:SortInt{}) ) => _andBool_(_andBool_(_<=Int_("0", Eq#VarLEN:SortInt{}), _<=Int_("0", Eq#VarVAL:SortInt{})), _<Int_(Eq#VarVAL:SortInt{}, "256"))
+- LblpadRightBytes(_,_,_)_BYTES-HOOKED_Bytes_Bytes_Int_Int: #Ceil( padRightBytes(_,_,_)_BYTES-HOOKED_Bytes_Bytes_Int_Int(Eq#Var_Gen0:SortBytes{}, Eq#VarLEN:SortInt{}, Eq#VarVAL:SortInt{}) ) => _andBool_(_andBool_(_<=Int_("0", Eq#VarLEN:SortInt{}), _<=Int_("0", Eq#VarVAL:SortInt{})), _<Int_(Eq#VarVAL:SortInt{}, "256"))
