@@ -48,12 +48,13 @@ import Booster.Definition.Attributes.Reader as Attributes (
     readLocation,
  )
 import Booster.Definition.Base as Def
-import Booster.Definition.Util (HasSourceRef (..), SourceRef)
-import Booster.Pattern.Base (Variable (..))
+import Booster.Pattern.Base (Predicate (Predicate), Variable (..))
 import Booster.Pattern.Base qualified as Def
 import Booster.Pattern.Base qualified as Def.Symbol (Symbol (..))
+import Booster.Pattern.Bool (foldAndBool)
 import Booster.Pattern.Bool qualified as Def
 import Booster.Pattern.Index as Idx
+import Booster.Pattern.Util (partitionInternalised)
 import Booster.Pattern.Util qualified as Util
 import Booster.Prettyprinter hiding (attributes)
 import Booster.Syntax.Json.Internalise
@@ -173,6 +174,7 @@ mergeDefs k1 k2
                 <*> pure (mergeTheories rewriteTheory k1 k2)
                 <*> pure (mergeTheories functionEquations k1 k2)
                 <*> pure (mergeTheories simplifications k1 k2)
+                <*> pure (mergeTheories ceils k1 k2)
   where
     mergeTheories ::
         forall r.
@@ -226,6 +228,7 @@ addModule
                     , rewriteTheory = currentRewriteTheory
                     , functionEquations = currentFctEqs
                     , simplifications = currentSimpls
+                    , ceils = currentCeils
                     }
                 )
         ) =
@@ -284,6 +287,7 @@ addModule
                             , rewriteTheory = currentRewriteTheory -- no rules yet
                             , functionEquations = Map.empty
                             , simplifications = Map.empty
+                            , ceils = Map.empty
                             }
 
             let internaliseAlias ::
@@ -339,12 +343,16 @@ addModule
                 subsortPairs = mapMaybe retractSubsortRule newAxioms
                 newFunctionEquations = mapMaybe retractFunctionRule newAxioms
                 newSimplifications = mapMaybe retractSimplificationRule newAxioms
+                newCeils = mapMaybe retractCeilRule newAxioms
             let rewriteTheory =
                     addToTheoryWith (Idx.kCellTermIndex . (.lhs)) newRewriteRules currentRewriteTheory
                 functionEquations =
                     addToTheoryWith (Idx.termTopIndex . (.lhs)) newFunctionEquations currentFctEqs
                 simplifications =
                     addToTheoryWith (Idx.termTopIndex . (.lhs)) newSimplifications currentSimpls
+                ceils =
+                    addToTheoryWith (Idx.termTopIndex . (.lhs)) newCeils currentCeils
+                -- addToTheoryWith (Idx.termTopIndex . (\InternalCeil t -> t) . (.lhs)) newCeils currentCeils
                 sorts = subsortClosure sorts' subsortPairs
             pure $
                 defWithAliases.partial
@@ -352,6 +360,7 @@ addModule
                     , rewriteTheory
                     , functionEquations
                     , simplifications
+                    , ceils
                     }
       where
         -- Uses 'getKey' to construct a finite mapping from the list,
@@ -483,6 +492,8 @@ data AxiomResult
       FunctionAxiom (RewriteRule "Function")
     | -- | Simplification
       SimplificationAxiom (RewriteRule "Simplification")
+    | -- | Ceil rule
+      CeilAxiom (RewriteRule "Ceil")
 
 -- retract helpers
 retractRewriteRule :: AxiomResult -> Maybe (RewriteRule "Rewrite")
@@ -501,6 +512,10 @@ retractSimplificationRule :: AxiomResult -> Maybe (RewriteRule "Simplification")
 retractSimplificationRule (SimplificationAxiom r) = Just r
 retractSimplificationRule _ = Nothing
 
+retractCeilRule :: AxiomResult -> Maybe (RewriteRule "Ceil")
+retractCeilRule (CeilAxiom r) = Just r
+retractCeilRule _ = Nothing
+
 -- helper type to carry relevant extracted data from a pattern (what
 -- is passed to the internalising function later)
 data AxiomData
@@ -518,6 +533,11 @@ data AxiomData
         Syntax.KorePattern -- requires
         Syntax.KorePattern -- LHS
         Syntax.KorePattern -- And(RHS, ensures)
+        [Syntax.Id] -- sort variables
+        AxiomAttributes
+    | CeilAxiom'
+        Syntax.KorePattern -- LHS
+        Syntax.KorePattern -- RHS
         [Syntax.Id] -- sort variables
         AxiomAttributes
 
@@ -609,6 +629,10 @@ classifyAxiom parsedAx@ParsedAxiom{axiom, sortVars, attributes} =
                     <$> withExcept DefinitionAttributeError (mkAttributes parsedAx)
             | otherwise ->
                 throwE $ DefinitionAxiomError $ MalformedEquation parsedAx
+        -- ceil
+        Syntax.KJImplies _ _ (Syntax.KJEquals _sort _ Syntax.KJCeil{arg} rhs) ->
+            Just . CeilAxiom' arg rhs sortVars
+                <$> withExcept DefinitionAttributeError (mkAttributes parsedAx)
         -- implies with the LHS not a symbol application, tagged as simplification. Ignoring
         Syntax.KJImplies _ _ (Syntax.KJEquals _sort _ _ Syntax.KJAnd{})
             | hasAttribute "simplification" -> pure Nothing
@@ -742,6 +766,14 @@ internaliseAxiom (Partial partialDefinition) parsedAxiom =
                     rhs
                     sortVars
                     attribs
+        CeilAxiom' lhs rhs sortVars attribs ->
+            Just
+                <$> internaliseCeil
+                    partialDefinition
+                    lhs
+                    rhs
+                    sortVars
+                    attribs
 
 orFailWith :: Maybe a -> e -> Except e a
 mbX `orFailWith` err = maybe (throwE err) pure mbX
@@ -772,6 +804,10 @@ internaliseRewriteRuleNoAlias partialDefinition exs left right axAttributes = do
                     [ UndefinedSymbol s.name
                     | s <- Util.filterTermSymbols (not . Util.isDefinedSymbol) rhs.term
                     ]
+        -- <> [ UndefinedSymbol s.name
+        --    | c <- Set.toList lhs.constraints
+        --    , s <- Util.filterTermSymbols (not . Util.isDefinedSymbol) $ coerce c
+        --    ]
         containsAcSymbols =
             Util.checkTermSymbols Util.checkSymbolIsAc lhs.term
         computedAttributes =
@@ -964,6 +1000,65 @@ internaliseSimpleEquation partialDef precond left right sortVars attrs
             throwE $
                 DefinitionPatternError (sourceRef attrs) SubstitutionNotAllowed
         pure $ removeTrueBools $ Util.modifyVariables (Util.modifyVarName ("Eq#" <>)) pat
+
+internaliseCeil ::
+    KoreDefinition -> -- context
+    Syntax.KorePattern -> -- LHS of ceil
+    Syntax.KorePattern -> -- RHS
+    [Syntax.Id] -> -- sort variables
+    AxiomAttributes ->
+    Except DefinitionError AxiomResult
+internaliseCeil partialDef left right sortVars attrs = do
+    -- this ensures that `left` is a _term_ (invariant guarded by classifyAxiom)
+    lhs <- internalisePattern' left
+    rhs_preds <- internalisePredicate' right
+    let
+        computedAttributes =
+            ComputedAxiomAttributes
+                { containsAcSymbols =
+                    any (Util.checkTermSymbols Util.checkSymbolIsAc) $ lhs.term : rhs_preds
+                , notPreservesDefinednessReasons = mempty
+                }
+        attributes =
+            attrs{concreteness = Util.modifyVarNameConcreteness ("Eq#" <>) attrs.concreteness}
+    pure $
+        CeilAxiom
+            RewriteRule
+                { lhs = uninternaliseCollections lhs.term
+                , rhs = foldAndBool rhs_preds
+                , requires = mempty
+                , ensures = mempty
+                , attributes
+                , computedAttributes
+                , existentials = Set.empty
+                }
+  where
+    uninternaliseCollections (Def.KMap def keyVals rest) = Def.externaliseKmapUnsafe def keyVals rest
+    uninternaliseCollections (Def.KList def heads rest) = Def.externaliseKList def heads rest
+    uninternaliseCollections (Def.KSet def elems rest) = Def.externaliseKSet def elems rest
+    uninternaliseCollections other = other
+
+    internalisePattern' t = do
+        (pat, substitution) <-
+            withExcept (DefinitionPatternError (sourceRef attrs)) $
+                internalisePattern AllowAlias IgnoreSubsorts (Just sortVars) partialDef t
+        unless (null substitution) $
+            throwE $
+                DefinitionPatternError (sourceRef attrs) SubstitutionNotAllowed
+        pure $ removeTrueBools $ Util.modifyVariables (Util.modifyVarName ("Eq#" <>)) pat
+
+    internalisePredicate' p = do
+        let predicates = explodeAnd p
+        (constraints, _ceilConditions, substitutions) <-
+            withExcept (DefinitionPatternError (sourceRef attrs)) $
+                partitionInternalised
+                    <$> mapM (internalisePredicate AllowAlias IgnoreSubsorts (Just sortVars) partialDef) predicates
+        unless (null substitutions) $
+            throwE $
+                DefinitionPatternError (sourceRef attrs) SubstitutionNotAllowed
+        pure $
+            map (Util.modifyVariablesInT (Util.modifyVarName ("Eq#" <>)) . coerce) $
+                Set.toList constraints
 
 {- | Internalises a function rule from its components that were matched
   before.

@@ -45,4 +45,4 @@ test_internaliseKore = do
             runExcept $ do
                 parsedDef <- except $ parseKoreDefinition file contents
                 koreDef <- except (first show $ internalise Nothing parsedDef)
-                pure . prettySummary . mkSummary file $ koreDef
+                pure $ prettySummary False $ mkSummary file koreDef []

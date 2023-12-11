@@ -19,6 +19,7 @@ module Booster.Pattern.Bool (
     pattern NEqualsInt,
     pattern EqualsK,
     pattern NEqualsK,
+    pattern SetIn,
 ) where
 
 import Data.ByteString.Char8 (ByteString)
@@ -42,6 +43,8 @@ import Booster.Pattern.Base (
     pattern SortBool,
     pattern SortInt,
     pattern SortK,
+    pattern SortKItem,
+    pattern SortSet,
     pattern SymbolApplication,
  )
 import Booster.Pattern.Util (isConcrete)
@@ -84,7 +87,7 @@ pattern NotBool t =
         []
         [t]
 
-pattern EqualsInt, EqualsBool, NEqualsInt, EqualsK, NEqualsK :: Term -> Term -> Term
+pattern EqualsInt, EqualsBool, NEqualsInt, EqualsK, NEqualsK, SetIn :: Term -> Term -> Term
 pattern EqualsInt a b =
     SymbolApplication
         ( Symbol
@@ -126,6 +129,25 @@ pattern EqualsK a b =
                 [SortK, SortK]
                 SortBool
                 (TotalFunctionWithSMT "=")
+            )
+        []
+        [a, b]
+pattern SetIn a b =
+    SymbolApplication
+        ( Symbol
+                "LblSet'Coln'in"
+                []
+                [SortKItem, SortSet]
+                SortBool
+                ( SymbolAttributes
+                        TotalFunction
+                        IsNotIdem
+                        IsNotAssoc
+                        IsNotMacroOrAlias
+                        CanBeEvaluated
+                        Nothing
+                        Nothing
+                    )
             )
         []
         [a, b]
