@@ -10,6 +10,7 @@ Symbols: 9
   - Lbl_==Bool_
   - Lbl_=/=Bool_
   - LblnotBool_
+Partial function symbols: 0
 Axioms: 0
 Axioms preserving definedness: 0
 Axioms containing AC symbols: 0
@@ -51,3 +52,4 @@ Function equations by term index:
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (929, 8)
   - /nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md :  (928, 8)
 Simplifications by term index:
+Ceils:

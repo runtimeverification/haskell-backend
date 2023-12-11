@@ -30,18 +30,17 @@ import Booster.Definition.Attributes.Base (
  )
 import Booster.Prettyprinter qualified as KPretty
 
+import Booster.Util (decodeLabel')
 import Control.DeepSeq (NFData (..))
 import Data.Bifunctor (second)
 import Data.ByteString.Char8 (ByteString)
 import Data.ByteString.Char8 qualified as BS
 import Data.Data (Data)
-import Data.Either (fromRight)
 import Data.Functor.Foldable
 import Data.Hashable (Hashable)
 import Data.Hashable qualified as Hashable
 import Data.List as List (foldl1', sort)
 import Data.Map (Map)
-import Data.Map qualified as Map
 import Data.Set (Set, fromList, toList)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
@@ -66,11 +65,13 @@ data Sort
     deriving stock (Eq, Ord, Show, Generic, Data, Lift)
     deriving anyclass (NFData, Hashable)
 
-pattern SortBool, SortInt, SortK, SortKItem, SortBytes :: Sort
+pattern SortBool, SortInt, SortK, SortKItem, SortBytes, SortSet, SortMap :: Sort
 pattern SortBool = SortApp "SortBool" []
 pattern SortInt = SortApp "SortInt" []
 pattern SortK = SortApp "SortK" []
 pattern SortKItem = SortApp "SortKItem" []
+pattern SortSet = SortApp "SortSet" []
+pattern SortMap = SortApp "SortMap" []
 pattern SortBytes = SortApp "SortBytes" []
 
 -- | A variable for symbolic execution or for terms in a rule.
@@ -231,7 +232,7 @@ kmapElementSymbol def =
         , resultSort = SortApp def.mapSortName []
         , attributes =
             SymbolAttributes
-                { symbolType = PartialFunction
+                { symbolType = TotalFunction
                 , isIdem = IsNotIdem
                 , isAssoc = IsNotAssoc
                 , isMacroOrAlias = IsNotMacroOrAlias
@@ -764,71 +765,6 @@ data TermOrPredicates -- = Either Predicate Pattern
     | TermAndPredicateAndSubstitution Pattern (Map Variable Term)
     deriving stock (Eq, Ord, Show, Generic)
     deriving anyclass (NFData)
-
--- | Un-escapes special characters in symbol names
-decodeLabel :: ByteString -> Either String ByteString
-decodeLabel str
-    | BS.null str = Right str
-    | "'" `BS.isPrefixOf` str =
-        let (encoded, rest) = BS.span (/= '\'') (BS.tail str)
-         in (<>) <$> decode encoded <*> decodeLabel (BS.drop 1 rest)
-    | otherwise =
-        let (notEncoded, rest) = BS.span (/= '\'') str
-         in (notEncoded <>) <$> decodeLabel rest
-  where
-    decode :: ByteString -> Either String ByteString
-    decode s
-        | BS.null s = Right s
-        | BS.length code < 4 = Left $ "Bad character code  " <> show code
-        | otherwise =
-            maybe
-                (Left $ "Unknown character code  " <> show code)
-                (\c -> (c <>) <$> decode rest)
-                (Map.lookup code decodeMap)
-      where
-        (code, rest) = BS.splitAt 4 s
-
-decodeMap :: Map.Map ByteString ByteString
-decodeMap =
-    Map.fromList
-        [ ("Spce", " ")
-        , ("Bang", "!")
-        , ("Quot", "\"")
-        , ("Hash", "#")
-        , ("Dolr", "$")
-        , ("Perc", "%")
-        , ("And-", "&")
-        , ("Apos", "'")
-        , ("LPar", "(")
-        , ("RPar", ")")
-        , ("Star", "*")
-        , ("Plus", "+")
-        , ("Comm", ",")
-        , ("Hyph", "-")
-        , ("Stop", ".")
-        , ("Slsh", "/")
-        , ("Coln", ":")
-        , ("SCln", ";")
-        , ("-LT-", "<")
-        , ("Eqls", "=")
-        , ("-GT-", ">")
-        , ("Ques", "?")
-        , ("-AT-", "@")
-        , ("LSqB", "[")
-        , ("RSqB", "]")
-        , ("Bash", "\\")
-        , ("Xor-", "^")
-        , ("Unds", "_")
-        , ("BQuo", "`")
-        , ("LBra", "{")
-        , ("Pipe", "|")
-        , ("RBra", "}")
-        , ("Tild", "~")
-        ]
-
-decodeLabel' :: ByteString -> ByteString
-decodeLabel' orig =
-    fromRight orig (decodeLabel orig)
 
 -- used for printing the string as it appears (with codepoints)
 prettyBS :: ByteString -> Pretty.Doc a
