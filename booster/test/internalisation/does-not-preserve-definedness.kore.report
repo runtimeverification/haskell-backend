@@ -106,6 +106,7 @@ Symbols: 85
   - dotk
   - inj
   - kseq
+Partial function symbols: 32
 Axioms: 1
 Axioms preserving definedness: 0
 Axioms containing AC symbols: 0
@@ -212,3 +213,5 @@ Function equations by term index:
   - UNKNOWN
   - UNKNOWN
 Simplifications by term index:
+Ceils:
+- Lbl_Map_: #Ceil( _Map_(_|->_(Eq#@VarK0:SortKItem{}, Eq#@VarK1:SortKItem{}), Eq#@VarRest:SortMap{}) ) => notBool_(_in_keys(_)_MAP_Bool_KItem_Map(Eq#@VarK0:SortKItem{}, Eq#@VarRest:SortMap{}))

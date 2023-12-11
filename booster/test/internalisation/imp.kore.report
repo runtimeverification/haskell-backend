@@ -217,6 +217,7 @@ Symbols: 183
   - dotk
   - inj
   - kseq
+Partial function symbols: 60
 Axioms: 38
 Axioms preserving definedness: 35
 Axioms containing AC symbols: 0
@@ -537,3 +538,10 @@ Simplifications by term index:
 - Lbl_modInt_: 2
   - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1242, 5)
   - /home/jost/work/RV/code/k/k-distribution/target/release/k/include/kframework/builtin/domains.md :  (1162, 8)
+Ceils:
+- Lbl_%Int_: #Ceil( _%Int_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _=/=Int_(Eq#@VarI2:SortInt{}, "0")
+- Lbl_/Int_: #Ceil( _/Int_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _=/=Int_(Eq#@VarI2:SortInt{}, "0")
+- Lbl_<<Int_: #Ceil( _<<Int_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _>=Int_(Eq#@VarI2:SortInt{}, "0")
+- Lbl_>>Int_: #Ceil( _>>Int_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _>=Int_(Eq#@VarI2:SortInt{}, "0")
+- Lbl_Map_: #Ceil( _Map_(_|->_(Eq#@VarK0:SortKItem{}, Eq#@VarK1:SortKItem{}), Eq#@VarRest:SortMap{}) ) => notBool_(_in_keys(_)_MAP_Bool_KItem_Map(Eq#@VarK0:SortKItem{}, Eq#@VarRest:SortMap{}))
+- Lbl_modInt_: #Ceil( _modInt_(Eq#@VarI1:SortInt{}, Eq#@VarI2:SortInt{}) ) => _=/=Int_(Eq#@VarI2:SortInt{}, "0")

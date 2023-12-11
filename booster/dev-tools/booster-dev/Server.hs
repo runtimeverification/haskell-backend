@@ -7,6 +7,7 @@ module Main (main) where
 import Control.DeepSeq (force)
 import Control.Exception (catch, evaluate, throwIO)
 import Control.Monad (forM_, when)
+import Control.Monad.Logger (runNoLoggingT)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromJust, isJust, isNothing)
 import Data.Text (unpack)
@@ -15,6 +16,7 @@ import System.Directory (removeFile)
 import System.IO.Error (isDoesNotExistError)
 
 import Booster.CLOptions
+import Booster.Definition.Ceil (computeCeilsDefinition)
 import Booster.JsonRpc (runServer)
 import Booster.LLVM.Internal (mkAPI, withDLib)
 import Booster.Syntax.ParsedKore (loadDefinition)
@@ -48,21 +50,24 @@ main = do
             <> definitionFile
             <> ", main module "
             <> show mainModuleName
-    definitionMap <-
-        loadDefinition definitionFile
-            >>= evaluate . force . either (error . show) id
-    -- ensure the (default) main module is present in the definition
-    when (isNothing $ Map.lookup mainModuleName definitionMap) $
-        error $
-            "Module " <> unpack mainModuleName <> " does not exist in the given definition."
-    putStrLn "Starting RPC server"
-    case llvmLibraryFile of
-        Nothing ->
-            runServer port definitionMap mainModuleName Nothing smtOptions (adjustLogLevels logLevels)
+    withLlvmLib llvmLibraryFile $ \mLlvmLibrary -> do
+        definitionMap <-
+            loadDefinition definitionFile
+                >>= mapM (mapM ((fst <$>) . runNoLoggingT . computeCeilsDefinition mLlvmLibrary))
+                >>= evaluate . force . either (error . show) id
+        -- ensure the (default) main module is present in the definition
+        when (isNothing $ Map.lookup mainModuleName definitionMap) $
+            error $
+                "Module " <> unpack mainModuleName <> " does not exist in the given definition."
+        putStrLn "Starting RPC server"
+        runServer port definitionMap mainModuleName mLlvmLibrary smtOptions (adjustLogLevels logLevels)
+  where
+    withLlvmLib libFile m = case libFile of
+        Nothing -> m Nothing
         Just fp -> withDLib fp $ \dl -> do
             api <- mkAPI dl
-            runServer port definitionMap mainModuleName (Just api) smtOptions (adjustLogLevels logLevels)
-  where
+            m $ Just api
+
     clParser =
         info
             (clOptionsParser <**> versionInfoParser <**> helper)

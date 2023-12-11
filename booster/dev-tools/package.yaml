@@ -64,6 +64,7 @@ executables:
     - optparse-applicative
     - text
     - directory
+    - monad-logger
     ghc-options:
     - -rtsopts
     - -eventlog
@@ -79,6 +80,7 @@ executables:
       - directory
       - filepath
       - hs-backend-booster
+      - monad-logger
       - prettyprinter
       - text
       - transformers
