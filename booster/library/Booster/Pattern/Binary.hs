@@ -18,6 +18,7 @@ import Booster.Definition.Base
 import Booster.Pattern.Base
 import Booster.Pattern.Bool (pattern TrueBool)
 import Booster.Pattern.Util (sortOfTerm)
+import Booster.Prettyprinter (renderDefault)
 import Control.Monad (forM_, unless)
 import Control.Monad.Extra (forM)
 import Control.Monad.Trans.Class (MonadTrans (..))
@@ -34,6 +35,7 @@ import Data.Map qualified as Map
 import Data.Set qualified as Set
 import Data.Word (Word64)
 import GHC.Word (Word8)
+import Prettyprinter (pretty)
 import Text.Printf
 
 -- | tags indicating the next element in a block, see @'decodeBlock'@
@@ -316,9 +318,15 @@ decodeBlock mbSize = do
                 pure $ BTerm $ SymbolApplication symbol (zipWith (const id) sortVars sorts) args
             Right (Just symbol@Symbol{sortVars, argSorts}) -> do
                 args <- forM (zip argSorts bs) $ \case
-                    -- temporarily fix injections until https://github.com/runtimeverification/llvm-backend/issues/886 is closed
-                    (srt, BTerm (Injection from _to trm)) -> pure $ Injection from srt trm
-                    (srt, BTerm trm) -> if sortOfTerm trm /= srt then fail "Term has incorrect sort" else pure trm
+                    (srt, BTerm trm) ->
+                        if sortOfTerm trm /= srt
+                            then
+                                fail $
+                                    "Term has incorrect sort. Expecting "
+                                        <> renderDefault (pretty srt)
+                                        <> " but got "
+                                        <> renderDefault (pretty $ sortOfTerm trm)
+                            else pure trm
                     _ -> fail "Expecting term"
                 pure $ BTerm $ SymbolApplication symbol (zipWith (const id) sortVars sorts) args
             Right Nothing -> fail $ "Unknown symbol " <> show name
