@@ -37,11 +37,11 @@ data JsonRpcBackendError
     = CouldNotParsePattern
     | CouldNotVerifyPattern
     | CouldNotFindModule
-    | DuplicateModule
     | ImplicationCheckError
     | SmtSolverError
     | Aborted
     | MultipleStates
+    | DuplicateModule
     deriving stock (Enum, Show)
 
 backendError :: ToJSON a => JsonRpcBackendError -> a -> ErrorObj
