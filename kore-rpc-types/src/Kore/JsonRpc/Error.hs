@@ -37,6 +37,7 @@ data JsonRpcBackendError
     = CouldNotParsePattern
     | CouldNotVerifyPattern
     | CouldNotFindModule
+    | DuplicateModule
     | ImplicationCheckError
     | SmtSolverError
     | Aborted
