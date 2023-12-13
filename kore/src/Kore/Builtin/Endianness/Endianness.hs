@@ -5,7 +5,6 @@ License     : BSD-3-Clause
 module Kore.Builtin.Endianness.Endianness (
     Endianness (..),
     toApplication,
-    toSymbol,
 ) where
 
 import Data.Functor.Const

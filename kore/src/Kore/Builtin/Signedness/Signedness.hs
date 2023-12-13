@@ -5,7 +5,6 @@ License     : BSD-3-Clause
 module Kore.Builtin.Signedness.Signedness (
     Signedness (..),
     toApplication,
-    toSymbol,
 ) where
 
 import Data.Functor.Const
