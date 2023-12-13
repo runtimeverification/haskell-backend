@@ -40,7 +40,6 @@ import Data.Functor.Foldable
 import Data.Hashable (Hashable)
 import Data.Hashable qualified as Hashable
 import Data.List as List (foldl1', sort)
-import Data.Map (Map)
 import Data.Set (Set, fromList, toList)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
@@ -755,16 +754,6 @@ pattern Pattern_ :: Term -> Pattern
 pattern Pattern_ t <- Pattern t _ _
     where
         Pattern_ t = Pattern t mempty mempty
-
-data InternalisedPredicate = IsPredicate Predicate | IsCeil Ceil | IsSubstitution Variable Term
-    deriving stock (Eq, Ord, Show, Generic)
-    deriving anyclass (NFData)
-
-data TermOrPredicates -- = Either Predicate Pattern
-    = BoolOrCeilOrSubstitutionPredicates !(Set Predicate) ![Ceil] (Map Variable Term)
-    | TermAndPredicateAndSubstitution Pattern (Map Variable Term)
-    deriving stock (Eq, Ord, Show, Generic)
-    deriving anyclass (NFData)
 
 -- used for printing the string as it appears (with codepoints)
 prettyBS :: ByteString -> Pretty.Doc a
