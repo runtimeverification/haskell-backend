@@ -484,7 +484,7 @@ respond serverState moduleName runSMT =
                         liftIO $ MVar.putMVar serverState st
                         pure . AddModule $ AddModuleResult (getModuleName moduleHash)
                     Nothing -> do
-                        (newIndexedModulesHash, newDefinedNamesHash) <-
+                        (newIndexedModules, newDefinedNames) <-
                             withExceptT (backendError CouldNotVerifyPattern) $
                                 liftEither $
                                     verifyAndIndexDefinitionWithBase
@@ -492,73 +492,33 @@ respond serverState moduleName runSMT =
                                         Builtin.koreVerifiers
                                         (Definition (def @Attributes) [parsedModule{moduleName = moduleHash}])
 
-                        mainModuleHash <-
+                        newModule <-
                             liftEither $
                                 maybe (Left $ backendError CouldNotFindModule moduleHash) Right $
-                                    Map.lookup (coerce moduleHash) newIndexedModulesHash
+                                    Map.lookup (coerce moduleHash) newIndexedModules
 
-                        let metadataToolsHash = MetadataTools.build mainModuleHash
-                            lemmasHash = getSMTLemmas mainModuleHash
-                        serializedModuleHash <-
+                        let metadataTools = MetadataTools.build newModule
+                            lemmas = getSMTLemmas newModule
+                        serializedModule <-
                             liftIO
-                                . runSMT metadataToolsHash lemmasHash
-                                $ Exec.makeSerializedModule mainModuleHash
+                                . runSMT metadataTools lemmas
+                                $ Exec.makeSerializedModule newModule
                         internedTextCacheHash <- liftIO $ readIORef globalInternedTextCache
 
-                        let serializedDefinitionHash =
+                        let serializedDefinition =
                                 SerializedDefinition
-                                    { serializedModule = serializedModuleHash
+                                    { serializedModule = serializedModule
                                     , locations = kFileLocations
                                     , internedTextCache = internedTextCacheHash
-                                    , lemmas = lemmasHash
+                                    , lemmas = lemmas
                                     }
-
-                        (newIndexedModules, newDefinedNames, newSerializedModules) <-
-                            if nameAsId
-                                then do
-                                    (newIndexedModulesName, newDefinedNamesName) <-
-                                        withExceptT (backendError CouldNotVerifyPattern) $
-                                            liftEither $
-                                                verifyAndIndexDefinitionWithBase
-                                                    (newIndexedModulesHash, newDefinedNamesHash)
-                                                    Builtin.koreVerifiers
-                                                    (Definition (def @Attributes) [parsedModule])
-
-                                    mainModule <-
-                                        liftEither $
-                                            maybe (Left $ backendError CouldNotFindModule name) Right $
-                                                Map.lookup (coerce name) newIndexedModulesName
-
-                                    let metadataTools = MetadataTools.build mainModule
-                                        lemmas = getSMTLemmas mainModule
-                                    serializedModule' <-
-                                        liftIO
-                                            . runSMT metadataTools lemmas
-                                            $ Exec.makeSerializedModule mainModule
-                                    internedTextCache <- liftIO $ readIORef globalInternedTextCache
-
-                                    let serializedDefinition =
-                                            SerializedDefinition
-                                                { serializedModule = serializedModule'
-                                                , locations = kFileLocations
-                                                , internedTextCache
-                                                , lemmas
-                                                }
-                                    pure
-                                        ( newIndexedModulesName
-                                        , newDefinedNamesName
-                                        , Map.fromList [(coerce moduleHash, serializedDefinitionHash), (coerce name, serializedDefinition)]
-                                        )
-                                else
-                                    pure
-                                        ( newIndexedModulesHash
-                                        , newDefinedNamesHash
-                                        , Map.fromList [(coerce moduleHash, serializedDefinitionHash)]
-                                        )
-
-                        let loadedDefinition =
+                            newSerializedModules = Map.fromList $
+                                if nameAsId
+                                then [(coerce moduleHash, serializedDefinition), (coerce name, serializedDefinition)]
+                                else [(coerce moduleHash, serializedDefinition)] 
+                            loadedDefinition =
                                 LoadedDefinition
-                                    { indexedModules = newIndexedModules
+                                    { indexedModules = (if nameAsId then Map.insert (coerce name) newModule else id) newIndexedModules
                                     , definedNames = newDefinedNames
                                     , kFileLocations
                                     }
