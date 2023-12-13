@@ -577,6 +577,7 @@ bindVariable var term = do
             case Map.lookup var currentSubst of
                 Just oldTerm
                     | oldTerm == term -> pure () -- already bound
+                    | DomainValue{} <- oldTerm, DomainValue{} <- term -> enqueueRegularProblem oldTerm term
                     | otherwise ->
                         -- the term in the binding could be _equivalent_
                         -- (not necessarily syntactically equal) to term'
