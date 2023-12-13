@@ -177,7 +177,7 @@ AliasHead :: {Alias}
 
 SymbolHead :: {Symbol}
 	    : Id SortVariables { Symbol $1 $2 }
-	
+
 SortVariables :: {[SortVariable]}
 	       : '{' SortVariableList '}' { reverse $2 }
                | '{' '}' { [] }
@@ -227,34 +227,23 @@ StringLiteral :: {StringLiteral}
 ApplicationPattern :: {ParsedPattern}
 		    : leftAssoc '{' '}' '(' ident SortsBrace NePatterns ')'
                       { mkAssoc True $5 $6 $7 }
-		    | leftAssoc '{' '}' '(' and SortsBrace NePatterns ')'
-                      { mkAssoc True $5 $6 $7 }
-		    | leftAssoc '{' '}' '(' or SortsBrace NePatterns ')'
-                      { mkAssoc True $5 $6 $7 }
-		    | leftAssoc '{' '}' '(' implies SortsBrace NePatterns ')'
-                      { mkAssoc True $5 $6 $7 }
-		    | leftAssoc '{' '}' '(' iff SortsBrace NePatterns ')'
-                      { mkAssoc True $5 $6 $7 }
                     | rightAssoc '{' '}' '(' ident SortsBrace NePatterns ')'
                       { mkAssoc False $5 $6 $7 }
-                    | rightAssoc '{' '}' '(' and SortsBrace NePatterns ')'
-                      { mkAssoc False $5 $6 $7 }
+                    -- special cases for multi-or in definitions prior to Oct 2023
                     | rightAssoc '{' '}' '(' or SortsBrace NePatterns ')'
                       { mkAssoc False $5 $6 $7 }
-                    | rightAssoc '{' '}' '(' implies SortsBrace NePatterns ')'
-                      { mkAssoc False $5 $6 $7 }
-                    | rightAssoc '{' '}' '(' iff SortsBrace NePatterns ')'
-                      { mkAssoc False $5 $6 $7 }
+                    | leftAssoc '{' '}' '(' or SortsBrace NePatterns ')'
+                      { mkAssoc True $5 $6 $7 }
                     | top '{' Sort '}' '(' ')'
                       { embedParsedPattern $ TopF Top{topSort = $3} }
                     | bottom '{' Sort '}' '(' ')'
                       { embedParsedPattern $ BottomF Bottom{bottomSort = $3} }
                     | not '{' Sort '}' '(' Pattern ')'
                       { embedParsedPattern $ NotF Not{notSort = $3, notChild = $6} }
-                    | and '{' Sort '}' '(' Pattern ',' Pattern ')'
-                      { embedParsedPattern $ AndF And{andSort = $3, andFirst = $6, andSecond = $8} }
-                    | or '{' Sort '}' '(' Pattern ',' Pattern ')'
-                      { embedParsedPattern $ OrF Or{orSort = $3, orFirst = $6, orSecond = $8} }
+                    | and '{' Sort '}' Patterns
+                      { mkAnd $3 $5 }
+                    | or '{' Sort '}' Patterns
+                      { mkOr $3 $5 }
                     | implies '{' Sort '}' '(' Pattern ',' Pattern ')'
                       { embedParsedPattern $ ImpliesF Implies{impliesSort = $3, impliesFirst = $6, impliesSecond = $8} }
                     | iff '{' Sort '}' '(' Pattern ',' Pattern ')'
@@ -425,6 +414,16 @@ mkAssoc :: Bool -> Token -> [Sort] -> [ParsedPattern] -> ParsedPattern
 mkAssoc True id sorts ps = foldl1' (mkApply id sorts) ps
 mkAssoc False id sorts ps = foldr1 (mkApply id sorts) ps
 
+mkAnd :: Sort -> [ParsedPattern] -> ParsedPattern
+mkAnd s [] = embedParsedPattern $ TopF Top{topSort = s}
+mkAnd s [p] = p
+mkAnd s ps = embedParsedPattern $ AndF And{andSort = s, andChildren = ps}
+
+mkOr :: Sort -> [ParsedPattern] -> ParsedPattern
+mkOr s [] = embedParsedPattern $ BottomF Bottom{bottomSort = s}
+mkOr s [p] = p
+mkOr s ps = embedParsedPattern $ OrF Or{orSort = s, orChildren = ps}
+
 {- | Helper function to expand a \\left-assoc or \\right-assoc directive for
 a particular type of pattern. Only implemented for Application patterns and
 built-in patterns with one sort parameter and two children of the same sort as
@@ -432,14 +431,8 @@ the result. Namely, \\and, \\or, \\implies, and \\iff. Designed to be passed to
 foldl1' or foldr1.
 -}
 mkApply :: Token -> [Sort] -> ParsedPattern -> ParsedPattern -> ParsedPattern
-mkApply tok@(Token _ TokenAnd) [andSort] andFirst andSecond =
-    embedParsedPattern $ AndF And{andSort, andFirst, andSecond}
 mkApply tok@(Token _ TokenOr) [orSort] orFirst orSecond =
-    embedParsedPattern $ OrF Or{orSort, orFirst, orSecond}
-mkApply tok@(Token _ TokenImplies) [impliesSort] impliesFirst impliesSecond =
-    embedParsedPattern $ ImpliesF Implies{impliesSort, impliesFirst, impliesSecond}
-mkApply tok@(Token _ TokenIff) [iffSort] iffFirst iffSecond =
-    embedParsedPattern $ IffF Iff{iffSort, iffFirst, iffSecond}
+    embedParsedPattern $ OrF Or{orSort, orChildren=[orFirst, orSecond]}
 mkApply tok@(Token _ (TokenIdent _)) sorts first second =
     embedParsedPattern $ ApplicationF Application
        { applicationSymbolOrAlias = SymbolOrAlias { symbolOrAliasConstructor = mkId tok

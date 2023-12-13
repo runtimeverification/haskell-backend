@@ -4,6 +4,7 @@ License     : BSD-3-Clause
 -}
 module Kore.JsonRpc.Types (
     module Kore.JsonRpc.Types,
+    module Kore.JsonRpc.Types.Depth,
 ) where
 
 import Control.Exception (Exception)
@@ -19,17 +20,13 @@ import Deriving.Aeson (
     StripPrefix,
  )
 import GHC.Generics (Generic)
+import Kore.JsonRpc.Types.Depth (Depth (..))
 import Kore.JsonRpc.Types.Log (LogEntry)
 import Kore.Syntax.Json.Types (KoreJson)
 import Network.JSONRPC (
     FromRequest (..),
  )
-import Numeric.Natural
 import Prettyprinter qualified as Pretty
-
-newtype Depth = Depth {getNat :: Natural}
-    deriving stock (Show, Eq)
-    deriving newtype (FromJSON, ToJSON, Num)
 
 data ExecuteRequest = ExecuteRequest
     { state :: !KoreJson
@@ -43,6 +40,8 @@ data ExecuteRequest = ExecuteRequest
     , logFailedRewrites :: !(Maybe Bool)
     , logSuccessfulSimplifications :: !(Maybe Bool)
     , logFailedSimplifications :: !(Maybe Bool)
+    , logFallbacks :: !(Maybe Bool)
+    , logTiming :: !(Maybe Bool)
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -55,6 +54,7 @@ data ImpliesRequest = ImpliesRequest
     , _module :: !(Maybe Text)
     , logSuccessfulSimplifications :: !(Maybe Bool)
     , logFailedSimplifications :: !(Maybe Bool)
+    , logTiming :: !(Maybe Bool)
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -66,6 +66,7 @@ data SimplifyRequest = SimplifyRequest
     , _module :: !(Maybe Text)
     , logSuccessfulSimplifications :: !(Maybe Bool)
     , logFailedSimplifications :: !(Maybe Bool)
+    , logTiming :: !(Maybe Bool)
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -133,6 +134,7 @@ data ExecuteResult = ExecuteResult
     , nextStates :: Maybe [ExecuteState]
     , rule :: Maybe Text
     , logs :: Maybe [LogEntry]
+    , unknownPredicate :: Maybe KoreJson
     }
     deriving stock (Generic, Show, Eq)
     deriving
@@ -167,6 +169,12 @@ data SimplifyResult = SimplifyResult
     deriving
         (FromJSON, ToJSON)
         via CustomJSON '[OmitNothingFields, FieldLabelModifier '[CamelToKebab]] SimplifyResult
+
+data AddModuleResult = AddModuleResult {_module :: !Text}
+    deriving stock (Generic, Show, Eq)
+    deriving
+        (FromJSON, ToJSON)
+        via CustomJSON '[FieldLabelModifier '[StripPrefix "_"]] AddModuleResult
 
 data GetModelResult = GetModelResult
     { satisfiable :: SatResult
@@ -204,7 +212,7 @@ type family APIPayload (api :: APIMethod) (r :: ReqOrRes) where
     APIPayload 'SimplifyM 'Req = SimplifyRequest
     APIPayload 'SimplifyM 'Res = SimplifyResult
     APIPayload 'AddModuleM 'Req = AddModuleRequest
-    APIPayload 'AddModuleM 'Res = ()
+    APIPayload 'AddModuleM 'Res = AddModuleResult
     APIPayload 'GetModelM 'Req = GetModelRequest
     APIPayload 'GetModelM 'Res = GetModelResult
 

@@ -25,52 +25,58 @@ import Pretty qualified
 -}
 data Or sort child = Or
     { orSort :: !sort
-    , orFirst :: !child
-    , orSecond :: !child
+    , orChildren :: ![child]
     }
     deriving stock (Eq, Ord, Show)
     deriving stock (Functor, Foldable, Traversable)
     deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
-    deriving anyclass (Debug, Diff)
+
+instance (Debug sort, Debug child) => Debug (Or sort child)
+
+instance
+    ( Debug sort
+    , Diff sort
+    , Debug child
+    , Diff child
+    ) =>
+    Diff (Or sort child)
 
 instance Pretty child => Pretty (Or Sort child) where
-    pretty Or{orSort, orFirst, orSecond} =
+    pretty Or{orSort, orChildren} =
         "\\or"
             <> parameters [orSort]
-            <> arguments' (pretty <$> [orFirst, orSecond])
+            <> arguments' (pretty <$> orChildren)
 
 instance Unparse child => Unparse (Or Sort child) where
-    unparse Or{orSort, orFirst, orSecond} =
+    unparse Or{orSort, orChildren} =
         "\\or"
             <> parameters [orSort]
-            <> arguments [orFirst, orSecond]
+            <> arguments orChildren
 
-    unparse2 Or{orFirst, orSecond} =
+    unparse2 Or{orChildren} =
         Pretty.parens
             ( Pretty.fillSep
                 [ "\\or"
-                , unparse2 orFirst
-                , unparse2 orSecond
+                , arguments2 orChildren
                 ]
             )
 
 instance Pretty child => Pretty (Or () child) where
-    pretty Or{orFirst, orSecond} =
+    pretty Or{orChildren} =
         "\\or"
-            <> arguments' (pretty <$> [orFirst, orSecond])
+            <> arguments' (pretty <$> orChildren)
 instance Unparse child => Unparse (Or () child) where
-    unparse Or{orFirst, orSecond} =
+    unparse Or{orChildren} =
         "\\or"
-            <> arguments [orFirst, orSecond]
+            <> arguments orChildren
 
-    unparse2 Or{orFirst, orSecond} =
+    unparse2 Or{orChildren} =
         Pretty.parens
             ( Pretty.fillSep
                 [ "\\or"
-                , unparse2 orFirst
-                , unparse2 orSecond
+                , arguments2 orChildren
                 ]
             )
 
@@ -79,8 +85,7 @@ instance Ord variable => Synthetic (FreeVariables variable) (Or sort) where
     {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Or Sort) where
-    synthetic Or{orSort, orFirst, orSecond} =
+    synthetic Or{orSort, orChildren} =
         orSort
-            & seq (sameSort orSort orFirst)
-                . seq (sameSort orSort orSecond)
+            & seq (map (sameSort orSort) orChildren)
     {-# INLINE synthetic #-}

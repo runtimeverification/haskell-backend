@@ -24,7 +24,8 @@ import Kore.Attribute.Synthetic (
     Synthesize,
     synthesize,
  )
-import Kore.Syntax.And
+import Kore.Syntax.BinaryAnd
+import Kore.Syntax.BinaryOr
 import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
 import Kore.Syntax.Equals
@@ -35,7 +36,6 @@ import Kore.Syntax.Iff
 import Kore.Syntax.Implies
 import Kore.Syntax.In
 import Kore.Syntax.Not
-import Kore.Syntax.Or
 import Kore.Syntax.Top
 import Kore.Syntax.Variable
 import Prelude.Kore
@@ -83,15 +83,15 @@ synthesizeFrom = synthesize . into @(f v (p v))
 
 fromAnd ::
     forall a f v p.
-    SynthesizeFrom (And ()) a f v p p =>
+    SynthesizeFrom (BinaryAnd ()) a f v p p =>
     p v ->
     p v ->
     p v
 fromAnd andFirst andSecond =
-    synthesizeFrom And{andFirst, andSecond, andSort = ()}
+    synthesizeFrom BinaryAnd{andFirst, andSecond, andSort = ()}
 
-fromOr :: forall a f v p. SynthesizeFrom (Or ()) a f v p p => p v -> p v -> p v
-fromOr orFirst orSecond = synthesizeFrom Or{orFirst, orSecond, orSort = ()}
+fromOr :: forall a f v p. SynthesizeFrom (BinaryOr ()) a f v p p => p v -> p v -> p v
+fromOr orFirst orSecond = synthesizeFrom BinaryOr{orFirst, orSecond, orSort = ()}
 
 fromNot :: forall a f v p. SynthesizeFrom (Not ()) a f v p p => p v -> p v
 fromNot notChild = synthesizeFrom Not{notChild, notSort = ()}

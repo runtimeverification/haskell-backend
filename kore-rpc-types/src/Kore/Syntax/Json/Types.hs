@@ -9,6 +9,8 @@ module Kore.Syntax.Json.Types (
 ) where
 
 import Data.Aeson as Json
+import Data.Aeson.Key qualified as Key
+import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Aeson.Types qualified as Json
 import Data.Char (isAlpha, isDigit)
 import Data.Foldable ()
@@ -16,6 +18,7 @@ import Data.List (nub)
 import Data.List.NonEmpty qualified as NE
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Vector qualified as Vector
 import GHC.Generics (Generic)
 
 ------------------------------------------------------------
@@ -106,13 +109,11 @@ data KorePattern
         }
     | KJAnd
         { sort :: Sort
-        , first :: KorePattern
-        , second :: KorePattern
+        , patterns :: [KorePattern]
         }
     | KJOr
         { sort :: Sort
-        , first :: KorePattern
-        , second :: KorePattern
+        , patterns :: [KorePattern]
         }
     | KJImplies
         { sort :: Sort
@@ -217,7 +218,7 @@ instance ToJSON KorePattern where
     toJSON = genericToJSON codecOptions
 
 instance FromJSON KorePattern where
-    parseJSON v = genericParseJSON codecOptions v >>= lexicalCheck
+    parseJSON v = modifyAndOr v >>= genericParseJSON codecOptions >>= lexicalCheck
 
 codecOptions :: Json.Options
 codecOptions =
@@ -240,6 +241,26 @@ codecOptions =
 newtype Id = Id {getId :: Text}
     deriving stock (Eq, Show, Ord, Generic)
     deriving newtype (ToJSON, FromJSON)
+
+modifyAndOr :: Json.Value -> Json.Parser Json.Value
+modifyAndOr (Object v) = do
+    tag :: String <- v .: "tag"
+    case tag of
+        "And" -> flattenAndOr v
+        "Or" -> flattenAndOr v
+        _ -> return (Object v)
+modifyAndOr v = return v
+
+flattenAndOr :: Json.Object -> Json.Parser Json.Value
+flattenAndOr v = do
+    if KeyMap.member (Key.fromString "patterns") v
+        then return (Json.Object v)
+        else do
+            first :: Json.Value <- v .: "first"
+            second :: Json.Value <- v .: "second"
+            tag :: Json.Value <- v .: "tag"
+            sort :: Json.Value <- v .: "sort"
+            return $ Json.object ["tag" .= tag, "sort" .= sort, "patterns" .= Vector.fromList [first, second]]
 
 {- | Performs a (shallow, top-level, no recursion) lexical check of
  identifiers contained in the given node. For details see the check

@@ -86,7 +86,9 @@ import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
     mkElementConfigVariable,
  )
+import Kore.Syntax.And
 import Kore.Syntax.Definition
+import Kore.Syntax.Or
 import Kore.Syntax.PatternF qualified as Syntax
 import Log (LogAction (..), LoggerT, SomeEntry (..))
 import Prelude.Kore
@@ -133,6 +135,9 @@ couple = Gen.list (Range.linear 0 3)
 
 couple1 :: MonadGen m => m a -> m [a]
 couple1 = Gen.list (Range.linear 1 3)
+
+couple2 :: MonadGen m => m a -> m [a]
+couple2 = Gen.list (Range.linear 2 4)
 
 genericIdGen :: MonadGen m => m Char -> m Char -> m Text
 genericIdGen firstChar nextChar = do
@@ -280,6 +285,15 @@ unaryOperatorGen ::
 unaryOperatorGen constructor childGen patternSort =
     constructor patternSort <$> Gen.small (childGen patternSort)
 
+andOrGen ::
+    (Sort -> [child] -> b child) ->
+    (Sort -> Gen child) ->
+    Sort ->
+    Gen (b child)
+andOrGen constructor childGen patternSort =
+    constructor patternSort
+        <$> couple2 (Gen.small (childGen patternSort))
+
 binaryOperatorGen ::
     (Sort -> child -> child -> b child) ->
     (Sort -> Gen child) ->
@@ -327,7 +341,7 @@ topBottomGen :: (Sort -> t child) -> Sort -> Gen (t child)
 topBottomGen constructor = pure . constructor
 
 andGen :: (Sort -> Gen child) -> Sort -> Gen (And Sort child)
-andGen = binaryOperatorGen And
+andGen = andOrGen And
 
 applicationGen ::
     (Sort -> Gen child) ->
@@ -427,7 +441,7 @@ notGen :: (Sort -> Gen child) -> Sort -> Gen (Not Sort child)
 notGen = unaryOperatorGen Not
 
 orGen :: (Sort -> Gen child) -> Sort -> Gen (Or Sort child)
-orGen = binaryOperatorGen Or
+orGen = andOrGen Or
 
 rewritesGen :: (Sort -> Gen child) -> Sort -> Gen (Rewrites Sort child)
 rewritesGen = binaryOperatorGen Rewrites

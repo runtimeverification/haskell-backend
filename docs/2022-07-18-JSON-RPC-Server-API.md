@@ -38,6 +38,7 @@ The server runs over sockets and can be interacted with by sending JSON RPC mess
     "log-failed-rewrites": true,
     "log-successful-simplifications": true,
     "log-failed-simplifications": true
+    "log-timing": true
   }
 }
 ```
@@ -141,7 +142,25 @@ This response has no additional fields.
 
 ##### `"reason": "aborted"`
 Execution reached a state that the server cannot handle.
-This response has no additional fields.
+The `unknown-predicate` field MAY contain a predicate that could not be decided by the server's constraint solver.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "state": {
+      "term": {"format":"KORE", "version":1, "term":{}},
+      "predicate": {"format":"KORE", "version":1, "term":{}},
+      "substitution": {"format":"KORE", "version":1, "term":{}},
+    },
+    "depth": 2,
+    "reason": "aborted",
+    "unknown-predicate": {"format":"KORE", "version":1, "term":{}}
+    "logs": []
+  }
+}
+```
 
 ##### `"reason": "cut-point-rule"`
 Execution was about to perform a rewrite with a rule whose label is one of the `cut-point-rules` labels/IDs of the request.  
@@ -292,8 +311,31 @@ where `original-term`, `original-term-index`, `substitution` and `rewritten-term
   }
 }
 ```
-
 where `rewritten-term` is optional and `origin` is one of `kore-rpc`, `booster` or `llvm`.
+
+When `log-timing` is set to `true`, the response to `execute`, `simplify` and `implies` requests will contain information about the wall-clock time spent in different components (`kore-rpc`, `booster`, `proxy`) or overall (without qualifying `component`) while processing the request.
+
+```json
+{
+  "tag": "processing-time",
+  "time": 69.12
+},
+{
+  "tag": "processing-time",
+  "component": "kore-rpc",
+  "time": 12.34
+},
+{
+  "tag": "processing-time",
+  "component": "booster",
+  "time": 56.78
+}
+```
+The number in the `time` field  of an entry represents time in seconds.
+
+When no component is given, the time (`69.12` in the example) is the overall wall-clock time spent processing the request, including the given component timings (which are optional). There should be at most one log object without `component` in the list of `logs`. In contrast, log entries with `component` may be repeated (in case there were several entries into the component).
+
+Not all backends support logging processing time, and some won't have the different components featured as `origin` here.
 
 ## Implies
 
@@ -461,16 +503,19 @@ Other errors, for instance, using an unknown sort or symbol, will be reported wi
 
 ### Correct Response:
 
-Responds with an empty array if successful. The module `MODULE-NAME` can now be used in subsequent
-requests to the server by passing `"module": "MODULE-NAME"`.
+Responds with the name of the added module if successful.
 
 ```json
 {
   "jsonrpc": "2.0",
   "id": 1,
-  "result": []
+  "result": {
+    "module": "MODULE-NAME"
+  }
 }
 ```
+
+Module `MODULE-NAME` can now be used in subsequent requests to the server by passing `"module": "MODULE-NAME"`.
 
 ## Get-model
 

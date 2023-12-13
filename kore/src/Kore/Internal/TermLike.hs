@@ -157,7 +157,7 @@ module Kore.Internal.TermLike (
     Attribute.freeVariables,
     module Kore.Internal.Inj,
     module Kore.Internal.InternalBytes,
-    module Kore.Syntax.And,
+    module Kore.Syntax.BinaryAnd,
     module Kore.Syntax.Application,
     module Kore.Syntax.Bottom,
     module Kore.Syntax.Ceil,
@@ -174,7 +174,7 @@ module Kore.Internal.TermLike (
     module Kore.Syntax.Next,
     module Kore.Syntax.Not,
     module Kore.Syntax.Nu,
-    module Kore.Syntax.Or,
+    module Kore.Syntax.BinaryOr,
     module Kore.Syntax.Rewrites,
     module Kore.Syntax.StringLiteral,
     module Kore.Syntax.Top,
@@ -255,8 +255,9 @@ import Kore.Internal.TermLike.TermLike
 import Kore.Internal.Variable
 import Kore.Sort
 import Kore.Substitute
-import Kore.Syntax.And
 import Kore.Syntax.Application
+import Kore.Syntax.BinaryAnd
+import Kore.Syntax.BinaryOr
 import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
 import Kore.Syntax.Definition hiding (
@@ -279,7 +280,6 @@ import Kore.Syntax.Mu
 import Kore.Syntax.Next
 import Kore.Syntax.Not
 import Kore.Syntax.Nu
-import Kore.Syntax.Or
 import Kore.Syntax.Rewrites
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
@@ -790,7 +790,7 @@ mkAnd ::
 mkAnd t1 t2 = updateCallStack $ checkSortsAgree mkAndWorker t1 t2
   where
     mkAndWorker andFirst andSecond andSort =
-        synthesize (AndF And{andSort, andFirst, andSecond})
+        synthesize (AndF BinaryAnd{andSort, andFirst, andSecond})
 
 {- | Force the 'TermLike's to conform to their 'Sort's.
 
@@ -1263,7 +1263,7 @@ mkOr ::
 mkOr t1 t2 = updateCallStack $ checkSortsAgree mkOrWorker t1 t2
   where
     mkOrWorker orFirst orSecond orSort =
-        synthesize (OrF Or{orSort, orFirst, orSecond})
+        synthesize (OrF BinaryOr{orSort, orFirst, orSecond})
 
 -- | Construct a 'Rewrites' pattern.
 mkRewrites ::
@@ -1602,7 +1602,7 @@ pattern SetVar_ :: SetVariable variable -> TermLike variable
 pattern StringLiteral_ :: Text -> TermLike variable
 
 pattern And_ andSort andFirst andSecond <-
-    (Recursive.project -> _ :< AndF And{andSort, andFirst, andSecond})
+    (Recursive.project -> _ :< AndF BinaryAnd{andSort, andFirst, andSecond})
 
 pattern ApplyAlias_ applicationSymbolOrAlias applicationChildren <-
     ( Recursive.project ->
@@ -1744,7 +1744,7 @@ pattern Nu_ nuVariable nuChild <-
         )
 
 pattern Or_ orSort orFirst orSecond <-
-    (Recursive.project -> _ :< OrF Or{orSort, orFirst, orSecond})
+    (Recursive.project -> _ :< OrF BinaryOr{orSort, orFirst, orSecond})
 
 pattern Rewrites_ rewritesSort rewritesFirst rewritesSecond <-
     ( Recursive.project ->

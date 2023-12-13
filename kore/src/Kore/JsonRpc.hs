@@ -10,7 +10,7 @@ module Kore.JsonRpc (
 
 import Control.Concurrent.MVar qualified as MVar
 import Control.Monad.Except (runExceptT)
-import Control.Monad.Logger (logInfoN, runLoggingT)
+import Control.Monad.Logger (runLoggingT)
 import Data.Aeson.Types (ToJSON (..))
 import Data.Coerce (coerce)
 import Data.Conduit.Network (serverSettings)
@@ -40,7 +40,10 @@ import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
-import Kore.Internal.Predicate (getMultiAndPredicate, pattern PredicateTrue)
+import Kore.Internal.Predicate (
+    getMultiAndPredicate,
+    pattern PredicateTrue,
+ )
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike (TermLike)
 import Kore.Internal.TermLike qualified as TermLike
@@ -54,7 +57,11 @@ import Kore.JsonRpc.Server (
  )
 import Kore.JsonRpc.Types
 import Kore.JsonRpc.Types.Log
-import Kore.Log.DecidePredicateUnknown (DecidePredicateUnknown, srcLoc)
+import Kore.Log.DecidePredicateUnknown (
+    DecidePredicateUnknown (..),
+    externaliseDecidePredicateUnknown,
+    srcLoc,
+ )
 import Kore.Log.InfoExecDepth (ExecDepth (..))
 import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
@@ -92,8 +99,8 @@ import Kore.Validate.PatternVerifier (Context (..))
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
 import Log qualified
 import Prelude.Kore
-import Pretty qualified
 import SMT qualified
+import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 
 respond ::
     forall m.
@@ -120,7 +127,9 @@ respond serverState moduleName runSMT =
                 , stepTimeout
                 , logSuccessfulRewrites
                 , logSuccessfulSimplifications
-                } -> withMainModule (coerce _module) $ \serializedModule lemmas ->
+                , logTiming
+                } -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
+                start <- liftIO $ getTime Monotonic
                 case verifyIn serializedModule state of
                     Left err -> pure $ Left $ backendError CouldNotVerifyPattern err
                     Right verifiedPattern -> do
@@ -142,7 +151,14 @@ respond serverState moduleName runSMT =
                                         verifiedPattern
                                 )
 
-                        pure $ buildResult (TermLike.termLikeSort verifiedPattern) traversalResult
+                        stop <- liftIO $ getTime Monotonic
+                        let duration =
+                                if (fromMaybe False logTiming)
+                                    then
+                                        Just $
+                                            fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
+                                    else Nothing
+                        pure $ buildResult duration (TermLike.termLikeSort verifiedPattern) traversalResult
               where
                 toStopLabels :: Maybe [Text] -> Maybe [Text] -> Exec.StopLabels
                 toStopLabels cpRs tRs =
@@ -159,24 +175,26 @@ respond serverState moduleName runSMT =
                                 Set.fromList $
                                     concat [[Left ruleLabel, Right ruleId] | Exec.RuleTrace{ruleId, ruleLabel} <- toList rules]
                          in either unLabel getUniqueId <$> Set.lookupMin (requestSet `Set.intersection` ruleSet)
-                mkLogs rules
-                    | fromMaybe False logSuccessfulRewrites || fromMaybe False logSuccessfulSimplifications =
-                        Just $
-                            concat
-                                [ [ Simplification
-                                    { originalTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm originalTerm
-                                    , originalTermIndex = Nothing
-                                    , result =
-                                        Success
-                                            { rewrittenTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm $ Pattern.term rewrittenTerm
-                                            , substitution = Nothing
-                                            , ruleId = fromMaybe "UNKNOWN" $ getUniqueId equationId
-                                            }
-                                    , origin = KoreRpc
-                                    }
-                                  | fromMaybe False logSuccessfulSimplifications
-                                  , SimplifierTrace{originalTerm, rewrittenTerm, equationId} <- toList simplifications
-                                  ]
+                mkLogs mbDuration rules
+                    | isJust mbDuration
+                        || fromMaybe False logSuccessfulRewrites
+                        || fromMaybe False logSuccessfulSimplifications =
+                        Just . concat $
+                            maybe [] (\t -> [ProcessingTime (Just KoreRpc) t]) mbDuration
+                                : [ [ Simplification
+                                        { originalTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm originalTerm
+                                        , originalTermIndex = Nothing
+                                        , result =
+                                            Success
+                                                { rewrittenTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm $ Pattern.term rewrittenTerm
+                                                , substitution = Nothing
+                                                , ruleId = fromMaybe "UNKNOWN" $ getUniqueId equationId
+                                                }
+                                        , origin = KoreRpc
+                                        }
+                                    | fromMaybe False logSuccessfulSimplifications
+                                    , SimplifierTrace{originalTerm, rewrittenTerm, equationId} <- toList simplifications
+                                    ]
                                     ++ [ Rewrite
                                         { result =
                                             Success
@@ -188,15 +206,16 @@ respond serverState moduleName runSMT =
                                         }
                                        | fromMaybe False logSuccessfulRewrites
                                        ]
-                                | Exec.RuleTrace{simplifications, ruleId} <- toList rules
-                                ]
+                                  | Exec.RuleTrace{simplifications, ruleId} <- toList rules
+                                  ]
                     | otherwise = Nothing
 
                 buildResult ::
+                    Maybe Double ->
                     TermLike.Sort ->
                     GraphTraversal.TraversalResult (Exec.RpcExecState TermLike.VariableName) ->
                     Either ErrorObj (API 'Res)
-                buildResult sort = \case
+                buildResult mbDuration sort = \case
                     GraphTraversal.Ended
                         [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result, rpcRules = rules}] ->
                             -- Actually not "ended" but out of instructions.
@@ -209,7 +228,8 @@ respond serverState moduleName runSMT =
                                         , reason = if Just (Depth depth) == maxDepth then DepthBound else Stuck
                                         , rule = Nothing
                                         , nextStates = Nothing
-                                        , logs = mkLogs rules
+                                        , logs = mkLogs mbDuration rules
+                                        , unknownPredicate = Nothing
                                         }
                     GraphTraversal.GotStuck
                         _n
@@ -224,7 +244,8 @@ respond serverState moduleName runSMT =
                                         , reason = Stuck
                                         , rule = Nothing
                                         , nextStates = Nothing
-                                        , logs = mkLogs rules
+                                        , logs = mkLogs mbDuration rules
+                                        , unknownPredicate = Nothing
                                         }
                     GraphTraversal.GotStuck
                         _n
@@ -239,7 +260,8 @@ respond serverState moduleName runSMT =
                                         , reason = Vacuous
                                         , rule = Nothing
                                         , nextStates = Nothing
-                                        , logs = mkLogs rules
+                                        , logs = mkLogs mbDuration rules
+                                        , unknownPredicate = Nothing
                                         }
                     GraphTraversal.Stopped
                         [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRules = rules}]
@@ -254,7 +276,8 @@ respond serverState moduleName runSMT =
                                             , rule
                                             , nextStates =
                                                 Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
-                                            , logs = mkLogs rules
+                                            , logs = mkLogs mbDuration rules
+                                            , unknownPredicate = Nothing
                                             }
                             | Just rule <- containsLabelOrRuleId rules terminalRules ->
                                 Right $
@@ -265,7 +288,8 @@ respond serverState moduleName runSMT =
                                             , reason = TerminalRule
                                             , rule
                                             , nextStates = Nothing
-                                            , logs = mkLogs rules
+                                            , logs = mkLogs mbDuration rules
+                                            , unknownPredicate = Nothing
                                             }
                             | otherwise ->
                                 Right $
@@ -277,7 +301,8 @@ respond serverState moduleName runSMT =
                                             , rule = Nothing
                                             , nextStates =
                                                 Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
-                                            , logs = mkLogs rules
+                                            , logs = mkLogs mbDuration rules
+                                            , unknownPredicate = Nothing
                                             }
                     GraphTraversal.TimedOut
                         Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRules = rules}
@@ -290,7 +315,8 @@ respond serverState moduleName runSMT =
                                         , reason = Timeout
                                         , rule = Nothing
                                         , nextStates = Nothing
-                                        , logs = mkLogs rules
+                                        , logs = mkLogs mbDuration rules
+                                        , unknownPredicate = Nothing
                                         }
                     -- these are programmer errors
                     result@GraphTraversal.Aborted{} ->
@@ -317,7 +343,8 @@ respond serverState moduleName runSMT =
                     p = fromMaybe (Pattern.bottomOf sort) $ extractProgramState s
 
         -- Step StepRequest{} -> pure $ Right $ Step $ StepResult []
-        Implies ImpliesRequest{antecedent, consequent, _module, logSuccessfulSimplifications} -> withMainModule (coerce _module) $ \serializedModule lemmas ->
+        Implies ImpliesRequest{antecedent, consequent, _module, logSuccessfulSimplifications, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
+            start <- liftIO $ getTime Monotonic
             case PatternVerifier.runPatternVerifier (verifierContext serializedModule) verify of
                 Left err ->
                     pure $ Left $ backendError CouldNotVerifyPattern $ toJSON err
@@ -339,7 +366,17 @@ respond serverState moduleName runSMT =
                                 leftPatt
                                 rightPatt
                                 existentialVars
-                    pure $ buildResult (mkSimplifierLogs logSuccessfulSimplifications logs) sort result
+                    let simplLogs = mkSimplifierLogs logSuccessfulSimplifications logs
+                    stop <- liftIO $ getTime Monotonic
+                    let timeLog =
+                            ProcessingTime
+                                (Just KoreRpc)
+                                (fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9)
+                        allLogs =
+                            if (fromMaybe False logTiming)
+                                then maybe (Just [timeLog]) (Just . (timeLog :)) simplLogs
+                                else simplLogs
+                    pure $ buildResult allLogs sort result
           where
             verify = do
                 antVerified <-
@@ -382,7 +419,8 @@ respond serverState moduleName runSMT =
                                  in ImpliesResult jsonTerm False (Just jsonCond) logs
                             Claim.NotImpliedStuck Nothing ->
                                 ImpliesResult jsonTerm False (Just . renderCond sort $ Condition.bottom) logs
-        Simplify SimplifyRequest{state, _module, logSuccessfulSimplifications} -> withMainModule (coerce _module) $ \serializedModule lemmas ->
+        Simplify SimplifyRequest{state, _module, logSuccessfulSimplifications, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
+            start <- liftIO $ getTime Monotonic
             case verifyIn serializedModule state of
                 Left err ->
                     pure $ Left $ backendError CouldNotVerifyPattern err
@@ -397,6 +435,16 @@ respond serverState moduleName runSMT =
                             . evalInSimplifierContext (fromMaybe False logSuccessfulSimplifications) serializedModule
                             $ SMT.Evaluator.filterMultiOr $srcLoc =<< Pattern.simplify patt
 
+                    let simplLogs = mkSimplifierLogs logSuccessfulSimplifications logs
+                    stop <- liftIO $ getTime Monotonic
+                    let timeLog =
+                            ProcessingTime
+                                (Just KoreRpc)
+                                (fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9)
+                        allLogs =
+                            if (fromMaybe False logTiming)
+                                then maybe (Just [timeLog]) (Just . (timeLog :)) simplLogs
+                                else simplLogs
                     pure $
                         Right $
                             Simplify
@@ -405,7 +453,7 @@ respond serverState moduleName runSMT =
                                         PatternJson.fromTermLike $
                                             TermLike.mapVariables getRewritingVariable $
                                                 OrPattern.toTermLike sort result
-                                    , logs = mkSimplifierLogs logSuccessfulSimplifications logs
+                                    , logs = allLogs
                                     }
         AddModule AddModuleRequest{_module} ->
             case parseKoreModule "<add-module>" _module of
@@ -454,7 +502,7 @@ respond serverState moduleName runSMT =
                                                     , loadedDefinition
                                                     }
 
-                                    pure . Right $ AddModule ()
+                                    pure . Right . AddModule $ AddModuleResult (getModuleName name)
         GetModel GetModelRequest{state, _module} ->
             withMainModule (coerce _module) $ \serializedModule lemmas ->
                 case verifyIn serializedModule state of
@@ -592,9 +640,7 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
                 log (InfoJsonRpcProcessRequest (getReqId req) parsed)
                     >> respond serverState mainModule runSMT parsed
             )
-            [ JsonRpcHandler $ \(err :: DecidePredicateUnknown) ->
-                let mkPretty = Pretty.renderText . Pretty.layoutPretty Pretty.defaultLayoutOptions . Pretty.pretty
-                 in logInfoN (mkPretty err) >> pure (backendError SmtSolverError $ mkPretty err)
+            [ handleDecidePredicateUnknown
             , handleErrorCall
             , handleSomeException
             ]
@@ -606,3 +652,7 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
 
     log :: MonadIO m => Log.Entry entry => entry -> m ()
     log = Log.logWith $ Log.hoistLogAction liftIO logAction
+
+handleDecidePredicateUnknown :: JsonRpcHandler
+handleDecidePredicateUnknown = JsonRpcHandler $ \(err :: DecidePredicateUnknown) ->
+    pure (backendError SmtSolverError $ externaliseDecidePredicateUnknown err)

@@ -564,7 +564,7 @@ rpcExec
                     _ -> True
                 )
                 rs of
-                (s : ss) -> GraphTraversal.Branch prior $ fmap fst (s :| ss)
+                (s1 : s2 : ss) -> GraphTraversal.Branch prior $ fmap fst (s1 :| (s2 : ss))
                 --  either empty or single result
                 other -> toTransitionResult prior other
 

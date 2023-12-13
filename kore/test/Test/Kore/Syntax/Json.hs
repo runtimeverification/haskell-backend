@@ -58,8 +58,8 @@ genKorePattern =
             name <- (Gen.element [('\\' -:), id] <*> genId)
             pure KJApp{name, sorts, args}
         , KJNot <$> genSort <*> genKorePattern
-        , KJAnd <$> genSort <*> genKorePattern <*> genKorePattern
-        , KJOr <$> genSort <*> genKorePattern <*> genKorePattern
+        , KJAnd <$> genSort <*> between 2 10 genKorePattern
+        , KJOr <$> genSort <*> between 2 10 genKorePattern
         , KJImplies <$> genSort <*> genKorePattern <*> genKorePattern
         , KJIff <$> genSort <*> genKorePattern <*> genKorePattern
         , KJForall <$> genSort <*> genId <*> genSort <*> genKorePattern

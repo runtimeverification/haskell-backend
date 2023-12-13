@@ -156,7 +156,7 @@ translatePredicateWith tools sideCondition translateTerm predicate =
                     <|> translateUninterpretedPredicate translateTerm SMT.tBool pat
             Predicate.InF _ -> translateUninterpretedPredicate translateTerm SMT.tBool pat
 
-    translatePredicateAnd And{andFirst, andSecond} =
+    translatePredicateAnd BinaryAnd{andFirst, andSecond} =
         SMT.and
             <$> translatePredicatePattern andFirst
             <*> translatePredicatePattern andSecond
@@ -202,7 +202,7 @@ translatePredicateWith tools sideCondition translateTerm predicate =
     translatePredicateNot Not{notChild} =
         SMT.not <$> translatePredicatePattern notChild
 
-    translatePredicateOr Or{orFirst, orSecond} =
+    translatePredicateOr BinaryOr{orFirst, orSecond} =
         SMT.or
             <$> translatePredicatePattern orFirst
             <*> translatePredicatePattern orSecond

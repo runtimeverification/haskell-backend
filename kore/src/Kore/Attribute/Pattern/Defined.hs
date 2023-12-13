@@ -34,7 +34,7 @@ newtype Defined = Defined {isDefined :: Bool}
 alwaysDefined :: a -> Defined
 alwaysDefined = const (Defined True)
 
-instance Synthetic Defined (And sort) where
+instance Synthetic Defined (BinaryAnd sort) where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}
 
@@ -112,7 +112,7 @@ instance Synthetic Defined (Nu sort) where
     {-# INLINE synthetic #-}
 
 -- | An 'Or' pattern is 'Defined' if any of its subterms is 'Defined'.
-instance Synthetic Defined (Or sort) where
+instance Synthetic Defined (BinaryOr sort) where
     synthetic = Defined . getAny . foldMap (Any . isDefined)
     {-# INLINE synthetic #-}
 

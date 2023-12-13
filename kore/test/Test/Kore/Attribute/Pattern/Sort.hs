@@ -20,9 +20,9 @@ test_instance_Synthetic :: [TestTree]
 test_instance_Synthetic =
     [ testGroup
         "AndF"
-        [ success $ AndF (And sort sort sort)
-        , failure $ AndF (And sort sort0 sort)
-        , failure $ AndF (And sort sort sort0)
+        [ success $ AndF (BinaryAnd sort sort sort)
+        , failure $ AndF (BinaryAnd sort sort0 sort)
+        , failure $ AndF (BinaryAnd sort sort sort0)
         ]
     , testGroup
         "ApplySymbolF"
@@ -84,9 +84,9 @@ test_instance_Synthetic =
         ]
     , testGroup
         "OrF"
-        [ success $ OrF (Or sort sort sort)
-        , failure $ OrF (Or sort sort0 sort)
-        , failure $ OrF (Or sort sort sort0)
+        [ success $ OrF (BinaryOr sort sort sort)
+        , failure $ OrF (BinaryOr sort sort0 sort)
+        , failure $ OrF (BinaryOr sort sort sort0)
         ]
     , testGroup
         "RewritesF"

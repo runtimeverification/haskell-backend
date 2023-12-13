@@ -76,6 +76,7 @@ common library
   build-depends: stm-conduit >= 4.0
   build-depends: text >=1.2
   build-depends: unliftio >= 0.2
+  build-depends: vector >= 0.12.3.1
 
 library
   import: haskell
@@ -84,6 +85,7 @@ library
     Kore.JsonRpc.Error
     Kore.JsonRpc.Types
     Kore.JsonRpc.Types.Log
+    Kore.JsonRpc.Types.Depth
     Kore.JsonRpc.Server
     Kore.Syntax.Json.Types
   hs-source-dirs:
