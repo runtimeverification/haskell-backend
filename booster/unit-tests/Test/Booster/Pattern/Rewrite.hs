@@ -125,11 +125,9 @@ rule4 =
         42
         `withComputedAttributes` ComputedAxiomAttributes False [UndefinedSymbol "f2"]
 
-kCell, kseq :: Symbol
+kCell :: Symbol
 kCell =
     [symb| symbol Lbl'-LT-'k'-GT-'{}(SortK{}) : SortKCell{} [constructor{}()] |]
-kseq =
-    [symb| symbol kseq{}(SortKItem{}, SortK{}) : SortK{} [constructor{}()] |]
 
 rule :: Maybe Text -> Pattern -> Pattern -> Priority -> RewriteRule "Rewrite"
 rule ruleLabel lhs rhs priority =

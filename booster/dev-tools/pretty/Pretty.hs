@@ -35,7 +35,7 @@ main = do
     case eitherDecode fileContent of
         Left err -> putStrLn $ "Error: " ++ err
         Right KoreJson{term} -> do
-            let (trm, _subst) =
+            let (trm, _subst, _unsupported) =
                     either (error . show) id $
                         runExcept $
                             internalisePattern DisallowAlias CheckSubsorts Nothing internalDef term

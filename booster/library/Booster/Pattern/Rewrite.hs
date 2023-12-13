@@ -610,7 +610,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
     logSimplify = logOther (LevelOther "Simplify")
 
     prettyText :: Pretty a => a -> Text
-    prettyText = pack . renderDefault . pretty
+    prettyText = renderText . pretty
 
     depthReached n = maybe False (n >=) mbMaxDepth
 
@@ -650,8 +650,16 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                 -- NB any errors here might be caused by simplifying one
                 -- of the constraints, so we cannot use partial results
                 -- and have to return the original on errors.
-                Left r@(TooManyIterations n _start _result) -> do
+                Left r@(TooManyIterations n start result) -> do
                     logWarn $ "Simplification unable to finish in " <> prettyText n <> " steps."
+                    logOtherNS
+                        "booster"
+                        (LevelOther "ErrorDetails")
+                        ( Text.unlines
+                            [ "Start term: " <> prettyText start
+                            , "End term: " <> prettyText result
+                            ]
+                        )
                     -- could output term before and after at debug or custom log level
                     rewriteTrace $ RewriteSimplified traces (Just r)
                     pure $ Just p

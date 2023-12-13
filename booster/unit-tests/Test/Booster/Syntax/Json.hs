@@ -1,5 +1,6 @@
 module Test.Booster.Syntax.Json (
     -- Tasty wrappers
+    test_prettyPattern,
     test_JsonRoundTrips,
     test_Unit_tests_for_json_failure_modes,
     test_headerFailures,
@@ -178,6 +179,13 @@ writeExamples withMultiThings dir basename n
 
 ----------------------------------------
 -- Tests
+
+-- pretty-printer tests
+test_prettyPattern :: TestTree
+test_prettyPattern =
+    testProperty "Can pretty-print any KorePattern" . property $ do
+        korePattern <- forAll genAllKorePatterns
+        diff (T.length $ prettyPattern korePattern) (>=) 0
 
 -- Tasty interface, whole group only
 test_JsonRoundTrips :: [TestTree]
