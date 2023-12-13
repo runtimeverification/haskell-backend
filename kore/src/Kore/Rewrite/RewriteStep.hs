@@ -412,20 +412,27 @@ See also: 'applyRewriteRule'
 applyRewriteRulesParallel ::
     -- | Rewrite rules
     [RewriteRule RewritingVariableName] ->
+    -- | If set, assume that @initial@ and its every sub-term is defined,
+    --   see @enumerateSubtermsNeedingCeil@ for details
+    Bool ->
     -- | Configuration being rewritten
     Pattern RewritingVariableName ->
     Simplifier (Results (RulePattern RewritingVariableName))
 applyRewriteRulesParallel
     (map getRewriteRule -> rules)
+    assumeInitialDefined
     initial =
         do
             let sideCondition =
                     SideCondition.cacheSimplifiedFunctions
                         (Pattern.toTermLike initial)
-            -- @enumerateSubtermsNeedingCei@l will compute all subterms that may need a @#Ceil@ predicate.
-            -- When falling back to Kore from Booster, everything must be defined, and these @#Ceil@s will evaluate to @#Top@.
-            -- However, it is difficult to convey this information from Booster to Kore; hence we conjure it up here.
-            let subtermsNeedingCeil = enumerateSubtermsNeedingCeil sideCondition (Pattern.toTermLike initial)
+            let subtermsNeedingCeil =
+                    if assumeInitialDefined
+                        then -- @enumerateSubtermsNeedingCei@l will compute all subterms that may need a @#Ceil@ predicate.
+                        -- When falling back to Kore from Booster, everything must be defined, and these @#Ceil@s will evaluate to @#Top@.
+                        -- However, it is difficult to convey this information from Booster to Kore; hence we conjure it up here.
+                            enumerateSubtermsNeedingCeil sideCondition (Pattern.toTermLike initial)
+                        else mempty -- otherwise assume nothing
                 sideConditionWithDefinedSubterms = SideCondition.addTermsAsDefined subtermsNeedingCeil sideCondition
             results <- applyRulesParallel sideConditionWithDefinedSubterms rules initial
             assertFunctionLikeResults (term initial) results

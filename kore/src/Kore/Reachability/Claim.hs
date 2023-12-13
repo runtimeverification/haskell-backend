@@ -978,7 +978,7 @@ derivePar' ::
     claim ->
     Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
 derivePar' lensRulePattern mkRule =
-    deriveWith lensRulePattern mkRule Step.applyRewriteRulesParallel
+    deriveWith lensRulePattern mkRule (\rules -> Step.applyRewriteRulesParallel rules False)
 
 type Deriver monad =
     [RewriteRule RewritingVariableName] ->

@@ -57,7 +57,9 @@ import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator (
 import Kore.Rewrite.Strategy hiding (
     transitionRule,
  )
-import Kore.Rewrite.Strategy qualified as Strategy
+import Kore.Rewrite.Transition qualified as Strategy (
+    TransitionT,
+ )
 import Kore.Simplify.Pattern qualified as Pattern (
     simplifyTopConfiguration,
  )
@@ -162,6 +164,8 @@ data Prim
 data ExecutionMode = All | Any
     deriving stock (Show)
 
+-- data AssumeCeilMode = AssumeCeil
+
 -- | @TransitionRule@ is the general type of transition rules over 'Prim'.
 type TransitionRule monad rule state =
     Prim -> state -> Strategy.TransitionT rule monad state
@@ -169,12 +173,13 @@ type TransitionRule monad rule state =
 -- | Transition rule for primitive strategies in 'Prim'.
 transitionRule ::
     [[RewriteRule RewritingVariableName]] ->
+    Bool ->
     ExecutionMode ->
     TransitionRule
         Simplifier
         (RewriteRule RewritingVariableName, Seq SimplifierTrace)
         (ProgramState (Pattern RewritingVariableName))
-transitionRule rewriteGroups = transitionRuleWorker
+transitionRule rewriteGroups assumeInitialDefined = transitionRuleWorker
   where
     transitionRuleWorker _ Simplify Bottom = pure Bottom
     transitionRuleWorker _ _ Bottom = empty
@@ -209,7 +214,7 @@ transitionRule rewriteGroups = transitionRuleWorker
       where
         transitionRewrite' applied rewrites
             | Just config' <- retractRemaining applied =
-                Step.applyRewriteRulesParallel rewrites config'
+                Step.applyRewriteRulesParallel rewrites assumeInitialDefined config'
                     & lift
                     >>= deriveResults
                     >>= simplifyRemainder

@@ -374,7 +374,7 @@ exec
         transit =
             GraphTraversal.simpleTransition
                 ( trackExecDepth . profTransitionRule $
-                    transitionRule (groupRewritesByPriority rewriteRules) execMode
+                    transitionRule (groupRewritesByPriority rewriteRules) False execMode
                 )
                 toTransitionResult
 
@@ -515,7 +515,7 @@ rpcExec
         transit =
             GraphTraversal.transitionWithRule
                 ( withRpcExecState . trackExecDepth . profTransitionRule $
-                    transitionRule (groupRewritesByPriority rewriteRules) All
+                    transitionRule (groupRewritesByPriority rewriteRules) True All
                 )
                 toTransitionResult
 
@@ -714,7 +714,7 @@ search
                         breadthLimit
                         -- search relies on exploring
                         -- the entire space of states.
-                        ( transitionRule rewriteGroups All
+                        ( transitionRule rewriteGroups False All
                             & profTransitionRule
                         )
                         (limitedExecutionStrategy depthLimit)
