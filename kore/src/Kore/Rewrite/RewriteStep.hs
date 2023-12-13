@@ -77,6 +77,9 @@ import Kore.Rewrite.Step (
     assertFunctionLikeResults,
     unifyRules,
  )
+import Kore.Simplify.Ceil (
+    enumerateSubtermsNeedingCeil,
+ )
 import Kore.Simplify.Simplify (
     Simplifier,
     simplifyCondition,
@@ -419,7 +422,12 @@ applyRewriteRulesParallel
             let sideCondition =
                     SideCondition.cacheSimplifiedFunctions
                         (Pattern.toTermLike initial)
-            results <- applyRulesParallel sideCondition rules initial
+            -- @enumerateSubtermsNeedingCei@l will compute all subterms that may need a @#Ceil@ predicate.
+            -- When falling back to Kore from Booster, everything must be defined, and these @#Ceil@s will evaluate to @#Top@.
+            -- However, it is difficult to convey this information from Booster to Kore; hence we conjure it up here.
+            let subtermsNeedingCeil = enumerateSubtermsNeedingCeil sideCondition (Pattern.toTermLike initial)
+                sideConditionWithDefinedSubterms = SideCondition.addTermsAsDefined subtermsNeedingCeil sideCondition
+            results <- applyRulesParallel sideConditionWithDefinedSubterms rules initial
             assertFunctionLikeResults (term initial) results
             return results
 
