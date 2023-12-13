@@ -512,10 +512,11 @@ respond serverState moduleName runSMT =
                                     , internedTextCache = internedTextCacheHash
                                     , lemmas = lemmas
                                     }
-                            newSerializedModules = Map.fromList $
-                                if nameAsId
-                                then [(coerce moduleHash, serializedDefinition), (coerce name, serializedDefinition)]
-                                else [(coerce moduleHash, serializedDefinition)] 
+                            newSerializedModules =
+                                Map.fromList $
+                                    if nameAsId
+                                        then [(coerce moduleHash, serializedDefinition), (coerce name, serializedDefinition)]
+                                        else [(coerce moduleHash, serializedDefinition)]
                             loadedDefinition =
                                 LoadedDefinition
                                     { indexedModules = (if nameAsId then Map.insert (coerce name) newModule else id) newIndexedModules
