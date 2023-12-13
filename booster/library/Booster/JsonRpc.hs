@@ -36,6 +36,7 @@ import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
 import GHC.Records
 import Numeric.Natural
+import Prettyprinter (pretty)
 import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 
 import Booster.Definition.Attributes.Base (getUniqueId, uniqueId)
@@ -46,7 +47,6 @@ import Booster.Pattern.ApplyEquations qualified as ApplyEquations
 import Booster.Pattern.Base (
     Pattern (..),
     Term,
-    TermOrPredicates (..),
     Variable,
  )
 import Booster.Pattern.Base qualified as Pattern
@@ -57,11 +57,14 @@ import Booster.Pattern.Rewrite (
     performRewrite,
  )
 import Booster.Pattern.Util (sortOfPattern)
+import Booster.Prettyprinter (renderText)
 import Booster.SMT.Base qualified as SMT
 import Booster.SMT.Interface qualified as SMT
-import Booster.Syntax.Json (KoreJson (..), addHeader, sortOfJson)
+import Booster.Syntax.Json (KoreJson (..), addHeader, prettyPattern, sortOfJson)
 import Booster.Syntax.Json.Externalise
 import Booster.Syntax.Json.Internalise (
+    InternalisedPredicates (..),
+    TermOrPredicates (..),
     internalisePattern,
     internaliseTermOrPredicate,
     pattern CheckSubsorts,
@@ -99,7 +102,15 @@ respond stateVar =
                 Left patternError -> do
                     Log.logDebug $ "Error internalising cterm" <> Text.pack (show patternError)
                     pure $ Left $ RpcError.backendError RpcError.CouldNotVerifyPattern patternError
-                Right (pat, substitution) -> do
+                Right (pat, substitution, unsupported) -> do
+                    unless (null unsupported) $ do
+                        Log.logWarnNS
+                            "booster"
+                            "Execute: ignoring unsupported predicate parts"
+                        Log.logOtherNS
+                            "booster"
+                            (Log.LevelOther "ErrorDetails")
+                            (Text.unlines $ map prettyPattern unsupported)
                     let cutPoints = fromMaybe [] req.cutPointRules
                         terminals = fromMaybe [] req.terminalRules
                         mbDepth = fmap RpcTypes.getNat req.maxDepth
@@ -122,7 +133,7 @@ respond stateVar =
                                     Just $
                                         fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
                                 else Nothing
-                    pure $ execResponse duration req result substitution
+                    pure $ execResponse duration req result substitution unsupported
         RpcTypes.AddModule req -> do
             -- block other request executions while modifying the server state
             state <- liftIO $ takeMVar stateVar
@@ -185,16 +196,29 @@ respond stateVar =
 
             result <- case internalised of
                 Left patternErrors -> do
-                    Log.logError $ "Error internalising cterm: " <> Text.pack (show patternErrors)
+                    Log.logErrorNS "booster" $
+                        "Error internalising cterm: " <> Text.pack (show patternErrors)
+                    Log.logOtherNS
+                        "booster"
+                        (Log.LevelOther "ErrorDetails")
+                        (prettyPattern req.state.term)
                     pure $ Left $ RpcError.backendError RpcError.CouldNotVerifyPattern patternErrors
                 -- term and predicate (pattern)
-                Right (TermAndPredicateAndSubstitution pat substitution) -> do
+                Right (TermAndPredicates pat substitution unsupported) -> do
                     Log.logInfoNS "booster" "Simplifying a pattern"
+                    unless (null unsupported) $ do
+                        Log.logWarnNS
+                            "booster"
+                            "Simplify: ignoring unsupported predicates in input"
+                        Log.logOtherNS
+                            "booster"
+                            (Log.LevelOther "ErrorDetails")
+                            (Text.unlines $ map prettyPattern unsupported)
                     ApplyEquations.evaluatePattern doTracing def mLlvmLibrary solver mempty pat >>= \case
                         (Right newPattern, patternTraces, _) -> do
                             let (term, mbPredicate, mbSubstitution) = externalisePattern newPattern substitution
                                 tSort = externaliseSort (sortOfPattern newPattern)
-                                result = case catMaybes [mbPredicate, mbSubstitution] of
+                                result = case catMaybes (mbPredicate : mbSubstitution : map Just unsupported) of
                                     [] -> term
                                     ps -> KoreJson.KJAnd tSort $ term : ps
                             pure $ Right (addHeader result, patternTraces)
@@ -206,26 +230,42 @@ respond stateVar =
                         (Left other, _traces, _) ->
                             pure . Left . RpcError.backendError RpcError.Aborted $ show other -- FIXME
                             -- predicate only
-                Right (BoolOrCeilOrSubstitutionPredicates predicates ceils substitutions)
-                    | null predicates && null ceils && null substitutions ->
+                Right (Predicates ps)
+                    | null ps.boolPredicates && null ps.ceilPredicates && null ps.substitution && null ps.unsupported ->
                         pure $
                             Right
                                 (addHeader $ Syntax.KJTop (fromMaybe (error "not a predicate") $ sortOfJson req.state.term), [])
                     | otherwise -> do
-                        Log.logInfoNS "booster" "Simplifying all predicates"
-                        ApplyEquations.simplifyConstraints doTracing def mLlvmLibrary solver mempty (Set.toList predicates) >>= \case
-                            (Right newPreds, traces, _) -> do
-                                let predicateSort =
-                                        fromMaybe (error "not a predicate") $
-                                            sortOfJson req.state.term
-                                    result =
-                                        map (externalisePredicate predicateSort) newPreds
-                                            <> map (externaliseCeil predicateSort) ceils
-                                            <> map (uncurry $ externaliseSubstitution predicateSort) (Map.toList substitutions)
+                        Log.logInfoNS "booster" "Simplifying predicates"
+                        unless (null ps.unsupported) $ do
+                            Log.logWarnNS
+                                "booster"
+                                "Simplify: ignoring unsupported predicates in input"
+                            Log.logOtherNS
+                                "booster"
+                                (Log.LevelOther "ErrorDetails")
+                                (Text.unlines $ map prettyPattern ps.unsupported)
+                        ApplyEquations.simplifyConstraints
+                            doTracing
+                            def
+                            mLlvmLibrary
+                            solver
+                            mempty
+                            (Set.toList ps.boolPredicates)
+                            >>= \case
+                                (Right newPreds, traces, _) -> do
+                                    let predicateSort =
+                                            fromMaybe (error "not a predicate") $
+                                                sortOfJson req.state.term
+                                        result =
+                                            map (externalisePredicate predicateSort) newPreds
+                                                <> map (externaliseCeil predicateSort) (Set.toList ps.ceilPredicates)
+                                                <> map (uncurry $ externaliseSubstitution predicateSort) (Map.toList ps.substitution)
+                                                <> ps.unsupported
 
-                                pure $ Right (addHeader $ Syntax.KJAnd predicateSort result, traces)
-                            (Left something, _traces, _) ->
-                                pure . Left . RpcError.backendError RpcError.Aborted $ show something -- FIXME
+                                    pure $ Right (addHeader $ Syntax.KJAnd predicateSort result, traces)
+                                (Left something, _traces, _) ->
+                                    pure . Left . RpcError.backendError RpcError.Aborted $ show something
             whenJust solver SMT.closeSolver
             stop <- liftIO $ getTime Monotonic
 
@@ -245,7 +285,12 @@ respond stateVar =
                             internaliseTermOrPredicate DisallowAlias CheckSubsorts Nothing def req.state.term
                 case internalised of
                     Left patternErrors -> do
-                        Log.logError $ "Error internalising cterm: " <> Text.pack (show patternErrors)
+                        Log.logErrorNS "booster" $
+                            "Error internalising cterm: " <> Text.pack (show patternErrors)
+                        Log.logOtherNS
+                            "booster"
+                            (Log.LevelOther "ErrorDetails")
+                            (prettyPattern req.state.term)
                         pure $ Left $ RpcError.backendError RpcError.CouldNotVerifyPattern patternErrors
                     -- various predicates obtained
                     Right things -> do
@@ -253,17 +298,38 @@ respond stateVar =
                         -- term and predicates were sent. Only work on predicates
                         (boolPs, suppliedSubst) <-
                             case things of
-                                TermAndPredicateAndSubstitution pat substitution -> do
-                                    Log.logInfoNS -- FIXME warning?
+                                TermAndPredicates pat substitution unsupported -> do
+                                    Log.logWarnNS
                                         "booster"
                                         "get-model ignores supplied terms and only checks predicates"
-                                    pure (Set.toList pat.constraints, substitution)
-                                BoolOrCeilOrSubstitutionPredicates pSet ceils subst -> do
-                                    unless (null ceils) $
-                                        Log.logInfoNS -- FIXME warning?
+                                    Log.logOtherNS
+                                        "booster"
+                                        (Log.LevelOther "ErrorDetails")
+                                        (renderText $ pretty pat.term)
+                                    unless (null unsupported) $ do
+                                        Log.logWarnNS
                                             "booster"
-                                            "get-model: ignoring supplied ceil predicates"
-                                    pure (Set.toList pSet, subst)
+                                            " get-model: ignoring unsupported predicates"
+                                        Log.logOtherNS
+                                            "booster"
+                                            (Log.LevelOther "ErrorDetails")
+                                            (Text.unlines $ map prettyPattern unsupported)
+                                    pure (Set.toList pat.constraints, substitution)
+                                Predicates ps -> do
+                                    unless (null ps.ceilPredicates && null ps.unsupported) $ do
+                                        Log.logWarnNS
+                                            "booster"
+                                            "get-model: ignoring supplied ceils and unsupported predicates"
+                                        Log.logOtherNS
+                                            "booster"
+                                            (Log.LevelOther "ErrorDetails")
+                                            ( Text.unlines $
+                                                map
+                                                    (renderText . ("#Ceil:" <>) . pretty)
+                                                    (Set.toList ps.ceilPredicates)
+                                                    <> map prettyPattern ps.unsupported
+                                            )
+                                    pure (Set.toList ps.boolPredicates, ps.substitution)
 
                         smtResult <-
                             if null boolPs && Map.null suppliedSubst
@@ -394,8 +460,9 @@ execResponse ::
     RpcTypes.ExecuteRequest ->
     (Natural, Seq (RewriteTrace Pattern), RewriteResult Pattern) ->
     Map Variable Term ->
+    [Syntax.KorePattern] ->
     Either ErrorObj (RpcTypes.API 'RpcTypes.Res)
-execResponse mbDuration req (d, traces, rr) originalSubstitution = case rr of
+execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = case rr of
     RewriteBranch p nexts ->
         Right $
             RpcTypes.Execute
@@ -403,8 +470,9 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution = case rr of
                     { reason = RpcTypes.Branching
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution
-                    , nextStates = Just $ map (\(_, _, p') -> toExecState p' originalSubstitution) $ toList nexts
+                    , state = toExecState p originalSubstitution unsupported
+                    , nextStates =
+                        Just $ map (\(_, _, p') -> toExecState p' originalSubstitution unsupported) $ toList nexts
                     , rule = Nothing
                     , unknownPredicate = Nothing
                     }
@@ -415,7 +483,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution = case rr of
                     { reason = RpcTypes.Stuck
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution
+                    , state = toExecState p originalSubstitution unsupported
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -427,7 +495,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution = case rr of
                     { reason = RpcTypes.Vacuous
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution
+                    , state = toExecState p originalSubstitution unsupported
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -439,8 +507,8 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution = case rr of
                     { reason = RpcTypes.CutPointRule
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution
-                    , nextStates = Just [toExecState next originalSubstitution]
+                    , state = toExecState p originalSubstitution unsupported
+                    , nextStates = Just [toExecState next originalSubstitution unsupported]
                     , rule = Just lbl
                     , unknownPredicate = Nothing
                     }
@@ -451,7 +519,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution = case rr of
                     { reason = RpcTypes.TerminalRule
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution
+                    , state = toExecState p originalSubstitution unsupported
                     , nextStates = Nothing
                     , rule = Just lbl
                     , unknownPredicate = Nothing
@@ -463,7 +531,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution = case rr of
                     { reason = RpcTypes.DepthBound
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution
+                    , state = toExecState p originalSubstitution unsupported
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -481,7 +549,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution = case rr of
                                     (logSuccessfulSimplifications, logFailedSimplifications)
                                     (RewriteStepFailed failure)
                          in logs <|> abortRewriteLog
-                    , state = toExecState p originalSubstitution
+                    , state = toExecState p originalSubstitution unsupported
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -511,15 +579,20 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution = case rr of
                 (Just t, Nothing) -> Just [t]
                 (Just t, Just xs) -> Just (t : xs)
 
-toExecState :: Pattern -> Map Variable Term -> RpcTypes.ExecuteState
-toExecState pat sub =
+toExecState :: Pattern -> Map Variable Term -> [Syntax.KorePattern] -> RpcTypes.ExecuteState
+toExecState pat sub unsupported =
     RpcTypes.ExecuteState
         { term = addHeader t
-        , predicate = fmap addHeader p
-        , substitution = fmap addHeader s
+        , predicate = addHeader <$> addUnsupported p
+        , substitution = addHeader <$> s
         }
   where
     (t, p, s) = externalisePattern pat sub
+    termSort = fromMaybe (error "unknown sort") $ sortOfJson t
+    allUnsupported = Syntax.KJAnd termSort unsupported
+    addUnsupported
+        | null unsupported = id
+        | otherwise = maybe (Just allUnsupported) (Just . Syntax.KJAnd termSort . (: unsupported))
 
 mkLogEquationTrace :: (Bool, Bool) -> ApplyEquations.EquationTrace -> Maybe LogEntry
 mkLogEquationTrace
@@ -535,7 +608,8 @@ mkLogEquationTrace
                             , origin
                             , result =
                                 Success
-                                    { rewrittenTerm = Just $ execStateToKoreJson $ toExecState (Pattern.Pattern_ rewrittenTrm) mempty
+                                    { rewrittenTerm =
+                                        Just $ execStateToKoreJson $ toExecState (Pattern.Pattern_ rewrittenTrm) mempty mempty
                                     , substitution = Nothing
                                     , ruleId = fromMaybe "UNKNOWN" _ruleId
                                     }
@@ -600,7 +674,7 @@ mkLogEquationTrace
                             }
             _ -> Nothing
       where
-        originalTerm = Just $ execStateToKoreJson $ toExecState (Pattern.Pattern_ subjectTerm) mempty
+        originalTerm = Just $ execStateToKoreJson $ toExecState (Pattern.Pattern_ subjectTerm) mempty mempty
         originalTermIndex = Nothing
         origin = Booster
         _ruleId = fmap getUniqueId uid
@@ -621,7 +695,7 @@ mkLogRewriteTrace
                             Rewrite
                                 { result =
                                     Success
-                                        { rewrittenTerm = Just $ execStateToKoreJson $ toExecState res mempty
+                                        { rewrittenTerm = Just $ execStateToKoreJson $ toExecState res mempty mempty
                                         , substitution = Nothing
                                         , ruleId = maybe "UNKNOWN" getUniqueId uid
                                         }
@@ -673,7 +747,7 @@ mkLogRewriteTrace
                     let final = singleton $ case failure of
                             ApplyEquations.IndexIsNone trm ->
                                 Simplification
-                                    { originalTerm = Just $ execStateToKoreJson $ toExecState (Pattern.Pattern_ trm) mempty
+                                    { originalTerm = Just $ execStateToKoreJson $ toExecState (Pattern.Pattern_ trm) mempty mempty
                                     , originalTermIndex = Nothing
                                     , origin = Booster
                                     , result = Failure{reason = "No index found for term", _ruleId = Nothing}
