@@ -11,6 +11,7 @@ module Kore.JsonRpc (
 import Control.Concurrent.MVar qualified as MVar
 import Control.Monad.Except (MonadError (throwError), liftEither, runExceptT, withExceptT)
 import Control.Monad.Logger (runLoggingT)
+import Control.Monad.Trans.Except (catchE)
 import Crypto.Hash (SHA256 (..), hashWith)
 import Data.Aeson.Types (ToJSON (..))
 import Data.Coerce (coerce)
@@ -464,107 +465,112 @@ respond serverState moduleName runSMT =
                 withExceptT (backendError CouldNotParsePattern) $
                     liftEither $
                         parseKoreModule "<add-module>" _module
-            LoadedDefinition{indexedModules, definedNames, kFileLocations} <-
-                liftIO $ loadedDefinition <$> MVar.readMVar serverState
+            st@ServerState
+                { serializedModules
+                , loadedDefinition = LoadedDefinition{indexedModules, definedNames, kFileLocations}
+                } <-
+                liftIO $ MVar.takeMVar serverState
             let moduleHash = ModuleName . fromString . ('m' :) . show . hashWith SHA256 $ encodeUtf8 _module
 
-            when (nameAsId && isJust (Map.lookup (coerce name) indexedModules)) $
-                throwError $
-                    backendError DuplicateModule name
+            -- put the original state back if we fail at any point
+            flip catchE (\e -> liftIO (MVar.putMVar serverState st) >> throwError e) $ do
+                when (nameAsId && isJust (Map.lookup (coerce name) indexedModules)) $
+                    throwError $
+                        backendError DuplicateModule name
 
-            case Map.lookup (coerce moduleHash) indexedModules of
-                Just{} ->
-                    -- the module already exists so we don't need to add it again
-                    pure . AddModule $ AddModuleResult (getModuleName moduleHash)
-                Nothing -> do
-                    (newIndexedModulesHash, newDefinedNamesHash) <-
-                        withExceptT (backendError CouldNotVerifyPattern) $
+                case Map.lookup (coerce moduleHash) indexedModules of
+                    Just{} -> do
+                        -- the module already exists so we don't need to add it again
+                        liftIO $ MVar.putMVar serverState st
+                        pure . AddModule $ AddModuleResult (getModuleName moduleHash)
+                    Nothing -> do
+                        (newIndexedModulesHash, newDefinedNamesHash) <-
+                            withExceptT (backendError CouldNotVerifyPattern) $
+                                liftEither $
+                                    verifyAndIndexDefinitionWithBase
+                                        (indexedModules, definedNames)
+                                        Builtin.koreVerifiers
+                                        (Definition (def @Attributes) [parsedModule{moduleName = moduleHash}])
+
+                        mainModuleHash <-
                             liftEither $
-                                verifyAndIndexDefinitionWithBase
-                                    (indexedModules, definedNames)
-                                    Builtin.koreVerifiers
-                                    (Definition (def @Attributes) [parsedModule{moduleName = moduleHash}])
+                                maybe (Left $ backendError CouldNotFindModule moduleHash) Right $
+                                    Map.lookup (coerce moduleHash) newIndexedModulesHash
 
-                    mainModuleHash <-
-                        liftEither $
-                            maybe (Left $ backendError CouldNotFindModule moduleHash) Right $
-                                Map.lookup (coerce moduleHash) newIndexedModulesHash
+                        let metadataToolsHash = MetadataTools.build mainModuleHash
+                            lemmasHash = getSMTLemmas mainModuleHash
+                        serializedModuleHash <-
+                            liftIO
+                                . runSMT metadataToolsHash lemmasHash
+                                $ Exec.makeSerializedModule mainModuleHash
+                        internedTextCacheHash <- liftIO $ readIORef globalInternedTextCache
 
-                    let metadataToolsHash = MetadataTools.build mainModuleHash
-                        lemmasHash = getSMTLemmas mainModuleHash
-                    serializedModuleHash <-
-                        liftIO
-                            . runSMT metadataToolsHash lemmasHash
-                            $ Exec.makeSerializedModule mainModuleHash
-                    internedTextCacheHash <- liftIO $ readIORef globalInternedTextCache
-
-                    let serializedDefinitionHash =
-                            SerializedDefinition
-                                { serializedModule = serializedModuleHash
-                                , locations = kFileLocations
-                                , internedTextCache = internedTextCacheHash
-                                , lemmas = lemmasHash
-                                }
-
-                    (newIndexedModules, newDefinedNames, newSerializedModules) <-
-                        if nameAsId
-                            then do
-                                (newIndexedModulesName, newDefinedNamesName) <-
-                                    withExceptT (backendError CouldNotVerifyPattern) $
-                                        liftEither $
-                                            verifyAndIndexDefinitionWithBase
-                                                (newIndexedModulesHash, newDefinedNamesHash)
-                                                Builtin.koreVerifiers
-                                                (Definition (def @Attributes) [parsedModule])
-
-                                mainModule <-
-                                    liftEither $
-                                        maybe (Left $ backendError CouldNotFindModule name) Right $
-                                            Map.lookup (coerce name) newIndexedModulesName
-
-                                let metadataTools = MetadataTools.build mainModule
-                                    lemmas = getSMTLemmas mainModule
-                                serializedModule' <-
-                                    liftIO
-                                        . runSMT metadataTools lemmas
-                                        $ Exec.makeSerializedModule mainModule
-                                internedTextCache <- liftIO $ readIORef globalInternedTextCache
-
-                                let serializedDefinition =
-                                        SerializedDefinition
-                                            { serializedModule = serializedModule'
-                                            , locations = kFileLocations
-                                            , internedTextCache
-                                            , lemmas
-                                            }
-                                pure
-                                    ( newIndexedModulesName
-                                    , newDefinedNamesName
-                                    , Map.fromList [(coerce moduleHash, serializedDefinitionHash), (coerce name, serializedDefinition)]
-                                    )
-                            else
-                                pure
-                                    ( newIndexedModulesHash
-                                    , newDefinedNamesHash
-                                    , Map.fromList [(coerce moduleHash, serializedDefinitionHash)]
-                                    )
-
-                    liftIO . MVar.modifyMVar_ serverState $
-                        \ServerState{serializedModules} -> do
-                            let loadedDefinition =
-                                    LoadedDefinition
-                                        { indexedModules = newIndexedModules
-                                        , definedNames = newDefinedNames
-                                        , kFileLocations
-                                        }
-                            pure
-                                ServerState
-                                    { serializedModules =
-                                        serializedModules `Map.union` newSerializedModules
-                                    , loadedDefinition
+                        let serializedDefinitionHash =
+                                SerializedDefinition
+                                    { serializedModule = serializedModuleHash
+                                    , locations = kFileLocations
+                                    , internedTextCache = internedTextCacheHash
+                                    , lemmas = lemmasHash
                                     }
 
-                    pure . AddModule $ AddModuleResult (getModuleName moduleHash)
+                        (newIndexedModules, newDefinedNames, newSerializedModules) <-
+                            if nameAsId
+                                then do
+                                    (newIndexedModulesName, newDefinedNamesName) <-
+                                        withExceptT (backendError CouldNotVerifyPattern) $
+                                            liftEither $
+                                                verifyAndIndexDefinitionWithBase
+                                                    (newIndexedModulesHash, newDefinedNamesHash)
+                                                    Builtin.koreVerifiers
+                                                    (Definition (def @Attributes) [parsedModule])
+
+                                    mainModule <-
+                                        liftEither $
+                                            maybe (Left $ backendError CouldNotFindModule name) Right $
+                                                Map.lookup (coerce name) newIndexedModulesName
+
+                                    let metadataTools = MetadataTools.build mainModule
+                                        lemmas = getSMTLemmas mainModule
+                                    serializedModule' <-
+                                        liftIO
+                                            . runSMT metadataTools lemmas
+                                            $ Exec.makeSerializedModule mainModule
+                                    internedTextCache <- liftIO $ readIORef globalInternedTextCache
+
+                                    let serializedDefinition =
+                                            SerializedDefinition
+                                                { serializedModule = serializedModule'
+                                                , locations = kFileLocations
+                                                , internedTextCache
+                                                , lemmas
+                                                }
+                                    pure
+                                        ( newIndexedModulesName
+                                        , newDefinedNamesName
+                                        , Map.fromList [(coerce moduleHash, serializedDefinitionHash), (coerce name, serializedDefinition)]
+                                        )
+                                else
+                                    pure
+                                        ( newIndexedModulesHash
+                                        , newDefinedNamesHash
+                                        , Map.fromList [(coerce moduleHash, serializedDefinitionHash)]
+                                        )
+
+                        let loadedDefinition =
+                                LoadedDefinition
+                                    { indexedModules = newIndexedModules
+                                    , definedNames = newDefinedNames
+                                    , kFileLocations
+                                    }
+
+                        liftIO . MVar.putMVar serverState $
+                            ServerState
+                                { serializedModules =
+                                    serializedModules `Map.union` newSerializedModules
+                                , loadedDefinition
+                                }
+
+                        pure . AddModule $ AddModuleResult (getModuleName moduleHash)
         GetModel GetModelRequest{state, _module} ->
             withMainModule (coerce _module) $ \serializedModule lemmas ->
                 case verifyIn serializedModule state of
