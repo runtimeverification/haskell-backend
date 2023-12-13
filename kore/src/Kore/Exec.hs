@@ -159,6 +159,7 @@ import Kore.Rewrite
 import Kore.Rewrite.Axiom.Identifier (
     AxiomIdentifier,
  )
+import Kore.Rewrite.RewriteStep qualified as Step
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.Rule (
     extractRewriteAxioms,
@@ -374,7 +375,7 @@ exec
         transit =
             GraphTraversal.simpleTransition
                 ( trackExecDepth . profTransitionRule $
-                    transitionRule (groupRewritesByPriority rewriteRules) False execMode
+                    transitionRule (groupRewritesByPriority rewriteRules) Step.DisableAssumeInitialDefined execMode
                 )
                 toTransitionResult
 
@@ -515,7 +516,7 @@ rpcExec
         transit =
             GraphTraversal.transitionWithRule
                 ( withRpcExecState . trackExecDepth . profTransitionRule $
-                    transitionRule (groupRewritesByPriority rewriteRules) True All
+                    transitionRule (groupRewritesByPriority rewriteRules) Step.EnableAssumeInitialDefined All
                 )
                 toTransitionResult
 
@@ -714,7 +715,7 @@ search
                         breadthLimit
                         -- search relies on exploring
                         -- the entire space of states.
-                        ( transitionRule rewriteGroups False All
+                        ( transitionRule rewriteGroups Step.DisableAssumeInitialDefined All
                             & profTransitionRule
                         )
                         (limitedExecutionStrategy depthLimit)

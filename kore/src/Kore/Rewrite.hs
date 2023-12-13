@@ -164,8 +164,6 @@ data Prim
 data ExecutionMode = All | Any
     deriving stock (Show)
 
--- data AssumeCeilMode = AssumeCeil
-
 -- | @TransitionRule@ is the general type of transition rules over 'Prim'.
 type TransitionRule monad rule state =
     Prim -> state -> Strategy.TransitionT rule monad state
@@ -173,7 +171,7 @@ type TransitionRule monad rule state =
 -- | Transition rule for primitive strategies in 'Prim'.
 transitionRule ::
     [[RewriteRule RewritingVariableName]] ->
-    Bool ->
+    Step.EnableAssumeInitialDefined ->
     ExecutionMode ->
     TransitionRule
         Simplifier
