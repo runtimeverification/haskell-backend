@@ -36,7 +36,7 @@ data ExecuteRequest = ExecuteRequest
     , terminalRules :: !(Maybe [Text])
     , movingAverageStepTimeout :: !(Maybe Bool)
     , stepTimeout :: !(Maybe Int)
-    , enableAssumeInitialDefined :: !(Maybe Bool)
+    , assumeStateDefined :: !(Maybe Bool)
     , logSuccessfulRewrites :: !(Maybe Bool)
     , logFailedRewrites :: !(Maybe Bool)
     , logSuccessfulSimplifications :: !(Maybe Bool)

@@ -125,7 +125,7 @@ respond serverState moduleName runSMT =
                 , cutPointRules
                 , terminalRules
                 , movingAverageStepTimeout
-                , enableAssumeInitialDefined
+                , assumeStateDefined
                 , stepTimeout
                 , logSuccessfulRewrites
                 , logSuccessfulSimplifications
@@ -147,7 +147,7 @@ respond serverState moduleName runSMT =
                                             then EnableMovingAverage
                                             else DisableMovingAverage
                                         )
-                                        ( if fromMaybe False enableAssumeInitialDefined
+                                        ( if fromMaybe False assumeStateDefined
                                             then EnableAssumeInitialDefined
                                             else DisableAssumeInitialDefined
                                         )
