@@ -831,14 +831,14 @@ isDefined sideCondition@SideCondition{definedTerms} term =
                             & HashSet.map TermLike.mkInternalMap
                  in isSymbolicSingleton internalMap
                         || subMaps
-                        `isNonEmptySubset` definedTerms
+                            `isNonEmptySubset` definedTerms
             TermLike.InternalSet_ internalSet ->
                 let subSets =
                         generateNormalizedAcs internalSet
                             & HashSet.map TermLike.mkInternalSet
                  in isSymbolicSingleton internalSet
                         || subSets
-                        `isNonEmptySubset` definedTerms
+                            `isNonEmptySubset` definedTerms
             _ -> False
 
     isNonEmptySubset subset set
