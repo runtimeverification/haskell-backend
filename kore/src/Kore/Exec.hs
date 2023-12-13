@@ -451,6 +451,7 @@ rpcExec ::
     Limit Natural ->
     Maybe StepTimeout ->
     EnableMovingAverage ->
+    Step.EnableAssumeInitialDefined ->
     -- | whether tracing is enabled
     Bool ->
     -- | The main module
@@ -464,6 +465,7 @@ rpcExec
     depthLimit
     stepTimeout
     enableMA
+    assumeInitialDefined
     tracingEnabled
     SerializedModule
         { sortGraph
@@ -516,7 +518,7 @@ rpcExec
         transit =
             GraphTraversal.transitionWithRule
                 ( withRpcExecState . trackExecDepth . profTransitionRule $
-                    transitionRule (groupRewritesByPriority rewriteRules) Step.EnableAssumeInitialDefined All
+                    transitionRule (groupRewritesByPriority rewriteRules) assumeInitialDefined All
                 )
                 toTransitionResult
 
