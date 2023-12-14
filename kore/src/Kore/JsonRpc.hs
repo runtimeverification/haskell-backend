@@ -478,10 +478,11 @@ respond serverState moduleName runSMT =
                     ( nameAsId
                         && isJust (Map.lookup (coerce name) indexedModules)
                         && isNothing (Map.lookup (coerce moduleHash) indexedModules)
-                    ) $
+                    )
+                    $
                     -- if a module with the same name already exists, but it's contents are different to the current module, throw an error
-                    throwError $
-                        backendError DuplicateModule name
+                    throwError
+                    $ backendError DuplicateModule name
 
                 case Map.lookup (coerce moduleHash) indexedModules of
                     Just{} -> do
