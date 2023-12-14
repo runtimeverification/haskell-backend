@@ -369,13 +369,8 @@ makeSimplifiedCeil
 
 {- | This returns a set of all subterms that need a Ceil
 
-When the term's ceil implies the ceils of its subterms, this also adds
-the subterms' simplified ceils to the result. This is needed because the
-SMT solver can't infer a subterm's ceil from a term's ceil, so we
-have to provide that information.
-
 As an example, if we call @enumerateSubtermsNeedingCeil@ for @f(g(x))@,
- the return value will be @{ceil(f(g(x))), ceil(g(x)))}@.
+ the return value will be @{f(g(x)), g(x)}@.
 -}
 enumerateSubtermsNeedingCeil ::
     SideCondition RewritingVariableName ->
