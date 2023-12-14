@@ -8,6 +8,7 @@ module Kore.Simplify.Ceil (
     makeEvaluate,
     makeEvaluateTerm,
     Ceil (..),
+    enumerateSubtermsNeedingCeil,
 ) where
 
 import Control.Error (
@@ -19,6 +20,10 @@ import Control.Monad.Reader (
  )
 import Control.Monad.Reader qualified as Reader
 import Data.Functor.Foldable qualified as Recursive
+import Data.HashSet (
+    HashSet,
+ )
+import Data.HashSet qualified as HashSet
 import Kore.Attribute.Symbol qualified as Attribute.Symbol (
     isNotBottom,
  )
@@ -358,6 +363,60 @@ makeSimplifiedCeil
             Predicate.markSimplifiedMaybeConditional maybeCurrentCondition
                 . makeCeilPredicate
                 $ termLike
+
+        ~unexpectedError =
+            error ("Unexpected term type: " ++ unparseToString termLike)
+
+{- | This returns a set of all subterms that need a Ceil
+
+As an example, if we call @enumerateSubtermsNeedingCeil@ for @f(g(x))@,
+ the return value will be @{f(g(x)), g(x)}@.
+-}
+enumerateSubtermsNeedingCeil ::
+    SideCondition RewritingVariableName ->
+    TermLike RewritingVariableName ->
+    HashSet (TermLike RewritingVariableName)
+enumerateSubtermsNeedingCeil
+    _
+    termLike@(Recursive.project -> _ :< termLikeF) =
+        if needsChildCeils
+            then HashSet.singleton termLike <> HashSet.fromList (toList termLikeF)
+            else HashSet.singleton termLike
+      where
+        needsChildCeils = case termLikeF of
+            ApplyAliasF _ -> False
+            EndiannessF _ -> True
+            SignednessF _ -> True
+            AndF _ -> True
+            ApplySymbolF _ -> True
+            InjF _ -> True
+            CeilF _ -> unexpectedError
+            EqualsF _ -> unexpectedError
+            ExistsF _ -> False
+            IffF _ -> False
+            ImpliesF _ -> False
+            InF _ -> False
+            NotF _ -> False
+            BottomF _ -> unexpectedError
+            DomainValueF _ -> True
+            FloorF _ -> False
+            ForallF _ -> False
+            InhabitantF _ -> False
+            MuF _ -> False
+            NuF _ -> False
+            NextF _ -> True
+            OrF _ -> False
+            RewritesF _ -> False
+            TopF _ -> unexpectedError
+            StringLiteralF _ -> unexpectedError
+            InternalBoolF _ -> unexpectedError
+            InternalBytesF _ -> unexpectedError
+            InternalIntF _ -> unexpectedError
+            InternalListF _ -> True
+            InternalMapF _ -> True
+            InternalSetF _ -> True
+            InternalStringF _ -> unexpectedError
+            VariableF _ -> False
 
         ~unexpectedError =
             error ("Unexpected term type: " ++ unparseToString termLike)

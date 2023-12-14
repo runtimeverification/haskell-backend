@@ -76,6 +76,7 @@ import Kore.Rewrite (
     extractProgramState,
  )
 import Kore.Rewrite.ClaimPattern qualified as ClaimPattern
+import Kore.Rewrite.RewriteStep (EnableAssumeInitialDefined (..))
 import Kore.Rewrite.RewritingVariable (
     getRewritingTerm,
     getRewritingVariable,
@@ -128,6 +129,7 @@ respond serverState moduleName runSMT =
                 , cutPointRules
                 , terminalRules
                 , movingAverageStepTimeout
+                , assumeStateDefined
                 , stepTimeout
                 , logSuccessfulRewrites
                 , logSuccessfulSimplifications
@@ -148,6 +150,10 @@ respond serverState moduleName runSMT =
                                         ( if fromMaybe False movingAverageStepTimeout
                                             then EnableMovingAverage
                                             else DisableMovingAverage
+                                        )
+                                        ( if fromMaybe False assumeStateDefined
+                                            then EnableAssumeInitialDefined
+                                            else DisableAssumeInitialDefined
                                         )
                                         tracingEnabled
                                         serializedModule

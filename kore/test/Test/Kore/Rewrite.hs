@@ -38,6 +38,7 @@ import Kore.Rewrite hiding (
     Start,
  )
 import Kore.Rewrite qualified as Step
+import Kore.Rewrite.RewriteStep qualified as Step
 import Kore.Rewrite.RewritingVariable
 import Kore.Rewrite.RulePattern (
     RewriteRule (RewriteRule),
@@ -402,7 +403,7 @@ runStepWorker
                 simplifier Mock.env $
                     Strategy.runStrategy
                         breadthLimit
-                        (transitionRule groupedRewrites execStrategy)
+                        (transitionRule groupedRewrites Step.DisableAssumeInitialDefined execStrategy)
                         limitedDepth
                         (Step.Start $ mkRewritingPattern configuration)
             let finalResult =

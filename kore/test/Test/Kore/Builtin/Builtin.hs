@@ -321,6 +321,7 @@ runStepResult ::
 runStepResult configuration axiom =
     Step.applyRewriteRulesParallel
         [axiom]
+        Step.DisableAssumeInitialDefined
         configuration
         & runSimplifier testEnv
 
