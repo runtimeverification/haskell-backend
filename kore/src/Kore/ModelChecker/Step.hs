@@ -216,6 +216,7 @@ transitionRule
             results <-
                 Step.applyRewriteRulesParallel
                     rules
+                    Step.DisableAssumeInitialDefined
                     config
                     & lift . lift
             let mapRules =
