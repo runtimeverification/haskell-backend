@@ -223,7 +223,7 @@ respond stateVar =
                                     ps -> KoreJson.KJAnd tSort $ term : ps
                             pure $ Right (addHeader result, patternTraces)
                         (Left ApplyEquations.SideConditionFalse{}, patternTraces, _) -> do
-                            let tSort = fromMaybe (error "unknown sort") $ sortOfJson req.state.term
+                            let tSort = externaliseSort $ sortOfPattern pat
                             pure $ Right (addHeader $ KoreJson.KJBottom tSort, patternTraces)
                         (Left (ApplyEquations.EquationLoop terms), _traces, _) ->
                             pure . Left . RpcError.backendError RpcError.Aborted $ map externaliseTerm terms -- FIXME
@@ -589,7 +589,7 @@ toExecState pat sub unsupported =
         }
   where
     (t, p, s) = externalisePattern pat sub
-    termSort = fromMaybe (error "unknown sort") $ sortOfJson t
+    termSort = externaliseSort $ sortOfPattern pat
     allUnsupported = Syntax.KJAnd termSort unsupported
     addUnsupported
         | null unsupported = id
