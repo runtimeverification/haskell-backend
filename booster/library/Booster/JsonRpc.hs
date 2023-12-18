@@ -245,6 +245,7 @@ respond stateVar =
                                 "booster"
                                 (Log.LevelOther "ErrorDetails")
                                 (Text.unlines $ map prettyPattern ps.unsupported)
+                        Log.logOtherNS "booster" (Log.LevelOther "Simplify") $ renderText (pretty ps)
                         ApplyEquations.simplifyConstraints
                             doTracing
                             def
