@@ -53,47 +53,66 @@ import Booster.Syntax.Json qualified as Syntax
 main :: IO ()
 main = do
     Options{common, runOptions} <- execParser parseOptions
-    case runOptions of
-        RunTarball tarFile keepGoing ->
-            runTarball common tarFile keepGoing
-        RunSingle mode optionFile options processingOptions -> do
-            let ProcessingOptions{postProcessing, prettify, time, dryRun} = processingOptions
-            request <- withLogLevel common.logLevel $ do
-                logInfo_ "Preparing request data"
-                request <- prepareRequestData mode optionFile options
-                when dryRun $ do
-                    logInfo_ "Dry-run mode, just showing request instead of sending"
-                    let write :: BS.ByteString -> LoggingT IO ()
-                        write
-                            | Just (Expect True file) <- postProcessing = \contents -> do
-                                logInfo_ ("Writing request to file " <> file)
-                                liftIO $ BS.writeFile file contents
-                            | otherwise = liftIO . BS.putStrLn
-                        reformat = Json.encodePretty' rpcJsonConfig . Json.decode @Json.Value
-                    write $ if not prettify then request else reformat request
-                    liftIO exitSuccess
-                pure request
-            -- runTCPClient operates on IO directly, therefore repeating runStderrLogging
-            retryTCPClient 2 10 common.host (show common.port) $ \s ->
-                cancelIfInterrupted s $ do
-                    withLogLevel common.logLevel $
-                        makeRequest
-                            time
-                            (getModeFile mode)
-                            s
-                            request
-                            (postProcess prettify postProcessing)
-                    shutdown s ShutdownReceive
+    if common.dryRun
+        then handleRunOptions common Nothing runOptions
+        else
+            retryTCPClient
+                2
+                10
+                common.host
+                (show common.port)
+                ( \s ->
+                    cancelIfInterrupted s $
+                        handleRunOptions common (Just s) runOptions
+                )
+                `catch` (withLogLevel common.logLevel . noServerError common)
+
+handleRunOptions :: CommonOptions -> Maybe Socket -> [RunOptions] -> IO ()
+handleRunOptions common@CommonOptions{dryRun} s = \case
+    [] -> case s of
+        Just sock -> shutdown sock ShutdownReceive
+        Nothing -> pure ()
+    (RunTarball tarFile keepGoing : xs) -> do
+        runTarball common s tarFile keepGoing
+        handleRunOptions common s xs
+    (RunSingle mode optionFile options processingOptions : xs) -> do
+        let ProcessingOptions{postProcessing, prettify, time} = processingOptions
+        request <- withLogLevel common.logLevel $ do
+            logInfo_ "Preparing request data"
+            request <- prepareRequestData mode optionFile options
+            when dryRun $ do
+                logInfo_ "Dry-run mode, just showing request instead of sending"
+                let write :: BS.ByteString -> LoggingT IO ()
+                    write
+                        | Just (Expect True file) <- postProcessing = \contents -> do
+                            logInfo_ ("Writing request to file " <> file)
+                            liftIO $ BS.writeFile file contents
+                        | otherwise = liftIO . BS.putStrLn
+                    reformat = Json.encodePretty' rpcJsonConfig . Json.decode @Json.Value
+                write $ if not prettify then request else reformat request
+            -- liftIO exitSuccess
+            pure request
+
+        withLogLevel common.logLevel $
+            void $
+                makeRequest
+                    time
+                    (getModeFile mode)
+                    s
+                    request
+                    (postProcess prettify postProcessing)
+        handleRunOptions common s xs
 
 makeRequest ::
     MonadLoggerIO m =>
     Bool ->
     String ->
-    Socket ->
+    Maybe Socket ->
     BS.ByteString ->
     (BS.ByteString -> m a) ->
-    m a
-makeRequest time name s request handleResponse = do
+    m (Maybe a)
+makeRequest _ _ Nothing _ _ = pure Nothing
+makeRequest time name (Just s) request handleResponse = do
     start <- liftIO $ getTime Monotonic
     logInfo_ $ "Sending request " <> name <> "..."
     logDebug_ $ "Request JSON: " <> BS.unpack request
@@ -107,13 +126,16 @@ makeRequest time name s request handleResponse = do
     when time $ do
         logInfo_ $ "Saving timing for " <> name
         liftIO $ writeFile (name <> ".time") timeStr
-    handleResponse response
+    Just <$> handleResponse response
   where
     bufSize :: Int64
     bufSize = 1024
     readResponse :: IO BS.ByteString
     readResponse = do
         part <- recv s bufSize
+        when (BS.length part == 0) $ do
+            putStrLn "[Error] Empty response from server. Did the server crash?"
+            exitWith (ExitFailure 3)
         if '\n' `BS.elem` part
             then pure part
             else do
@@ -171,7 +193,7 @@ withLogLevel lvl = runStderrLoggingT . filterLogger (const (>= lvl))
 
 data Options = Options
     { common :: CommonOptions
-    , runOptions :: RunOptions
+    , runOptions :: [RunOptions]
     }
     deriving stock (Show)
 
@@ -179,6 +201,7 @@ data CommonOptions = CommonOptions
     { host :: String
     , port :: Int
     , logLevel :: LogLevel
+    , dryRun :: Bool
     }
     deriving stock (Show)
 
@@ -199,7 +222,6 @@ data ProcessingOptions = ProcessingOptions
     { postProcessing :: Maybe PostProcessing
     , prettify :: Bool
     , time :: Bool
-    , dryRun :: Bool
     }
     deriving stock (Show)
 
@@ -265,6 +287,7 @@ parseCommonOptions =
                 <> help "Log level, one of [Error, Warn, Info, Debug]"
                 <> showDefault
             )
+        <*> switch (long "dry-run" <> help "Do not send anything, just output the request")
   where
     readLogLevel :: ReadM LogLevel
     readLogLevel =
@@ -286,7 +309,7 @@ parseOptions =
     parseOptions' =
         Options
             <$> parseCommonOptions
-            <*> parseMode
+            <*> some parseMode
 
 parseProcessingOptions :: Parser ProcessingOptions
 parseProcessingOptions =
@@ -294,12 +317,10 @@ parseProcessingOptions =
         <$> optional parsePostProcessing
         <*> prettifyOpt
         <*> timeOpt
-        <*> dryRunOpt
   where
     flagOpt name desc = switch $ long name <> help desc
     prettifyOpt = flagOpt "prettify" "format JSON before printing"
     timeOpt = flagOpt "time" "record the timing information between sending a request and receiving a response"
-    dryRunOpt = flagOpt "dry-run" "Do not send anything, just output the request"
 
 parsePostProcessing :: Parser PostProcessing
 parsePostProcessing =
@@ -415,8 +436,9 @@ parseMode =
 ----------------------------------------
 -- Running all requests contained in the `rpc_*` directory of a tarball
 
-runTarball :: CommonOptions -> FilePath -> Bool -> IO ()
-runTarball common tarFile keepGoing = do
+runTarball :: CommonOptions -> Maybe Socket -> FilePath -> Bool -> IO ()
+runTarball _ Nothing _ _ = pure ()
+runTarball common (Just sock) tarFile keepGoing = do
     -- unpack tar files, determining type from extension(s)
     let unpackTar
             | ".tar" == takeExtension tarFile = Tar.read
@@ -429,8 +451,7 @@ runTarball common tarFile keepGoing = do
     let checked = Tar.checkSecurity containedFiles
     -- probe server connection before doing anything, display
     -- instructions unless server was found.
-    retryTCPClient 2 10 common.host (show common.port) (runAllRequests checked)
-        `catch` (withLogLevel common.logLevel . noServerError)
+    runAllRequests checked sock
   where
     runAllRequests ::
         Tar.Entries (Either Tar.FormatError Tar.FileNameError) -> Socket -> IO ()
@@ -472,13 +493,14 @@ runTarball common tarFile keepGoing = do
             (dir, "") -- directory
                 | Tar.Directory <- Tar.entryContent entry
                 , "rpc_" `isPrefixOf` dir -> do
-                    createDirectory dir -- create rpc dir so we can unpack files there
+                    createDirectoryIfMissing False dir -- create rpc dir so we can unpack files there
                     acc -- no additional file to return
                 | otherwise ->
                     acc -- skip other directories and top-level files
             (dir, file)
                 | "rpc_" `isPrefixOf` dir
                 , ".json" `isSuffixOf` file
+                , not ("." `isPrefixOf` file)
                 , Tar.NormalFile bs _size <- Tar.entryContent entry -> do
                     -- unpack json files into tmp directory
                     let newPath = dir </> file
@@ -489,32 +511,6 @@ runTarball common tarFile keepGoing = do
                 | otherwise ->
                     -- skip anything else
                     acc
-
-    noServerError :: MonadLoggerIO m => IOException -> m ()
-    noServerError e@IOError{ioe_type = NoSuchThing} = do
-        -- show instructions how to run the server
-        logError_ $ "Could not connect to RPC server on port " <> show common.port
-        logError_ $ show e
-        logError_ $
-            unlines
-                [ ""
-                , "To run the required RPC server, you need to"
-                , "1) extract `definition.kore` and `server_instance.json` from the tarball;"
-                , "2) look up the module name `<MODULE>` in `server_instance.json`;"
-                , "3) and then run the server using"
-                , "   $ kore-rpc definition.kore --module <MODULE> --server-port " <> show common.port
-                , ""
-                , "If you want to use `kore-rpc-booster, you should also compile an LLVM backend library"
-                , "by 1) extracting the `llvm_definition/` directory from the tarball;"
-                , "   2) running the llvm backend compiler on the unpacked files:"
-                , "      $ llvm-kompile llvm_definition/definition.kore llvm_definition/dt c -- -o interpreter`"
-                , "This will generate `interpreter.[so|dylib]` and you can run"
-                , "  `kore-rpc-booster definition.kore --main-module <MODULE> --llvm-backend-library interpreter.so`"
-                ]
-        liftIO $ exitWith (ExitFailure 1)
-    noServerError otherError = do
-        logError_ $ show otherError
-        liftIO $ exitWith (ExitFailure 1)
 
     -- Runs one request, checking that a response is available for
     -- comparison. Returns Nothing if successful (identical
@@ -530,12 +526,39 @@ runTarball common tarFile keepGoing = do
             request <- liftIO . BS.readFile $ tmpDir </> basename <> "_request.json"
             expected <- liftIO . BS.readFile $ tmpDir </> basename <> "_response.json"
 
-            actual <- makeRequest False basename skt request pure
+            makeRequest False basename (Just skt) request pure >>= \case
+                Nothing -> pure Nothing -- should not be reachable
+                Just actual -> do
+                    let diff = diffJson expected actual
+                    if isIdentical diff
+                        then pure Nothing
+                        else pure . Just $ renderResult "expected response" "actual response" diff
 
-            let diff = diffJson expected actual
-            if isIdentical diff
-                then pure Nothing
-                else pure . Just $ renderResult "expected response" "actual response" diff
+noServerError :: MonadLoggerIO m => CommonOptions -> IOException -> m ()
+noServerError common e@IOError{ioe_type = NoSuchThing} = do
+    -- show instructions how to run the server
+    logError_ $ "Could not connect to RPC server on port " <> show common.port
+    logError_ $ show e
+    logError_ $
+        unlines
+            [ ""
+            , "To run the required RPC server, you need to"
+            , "1) extract `definition.kore` and `server_instance.json` from the tarball;"
+            , "2) look up the module name `<MODULE>` in `server_instance.json`;"
+            , "3) and then run the server using"
+            , "   $ kore-rpc definition.kore --module <MODULE> --server-port " <> show common.port
+            , ""
+            , "If you want to use `kore-rpc-booster, you should also compile an LLVM backend library"
+            , "by 1) extracting the `llvm_definition/` directory from the tarball;"
+            , "   2) running the llvm backend compiler on the unpacked files:"
+            , "      $ llvm-kompile llvm_definition/definition.kore llvm_definition/dt c -- -o interpreter`"
+            , "This will generate `interpreter.[so|dylib]` and you can run"
+            , "  `kore-rpc-booster definition.kore --main-module <MODULE> --llvm-backend-library interpreter.so`"
+            ]
+    liftIO $ exitWith (ExitFailure 1)
+noServerError _ otherError = do
+    logError_ $ show otherError
+    liftIO $ exitWith (ExitFailure 1)
 
 ----------------------------------------
 prepareRequestData ::

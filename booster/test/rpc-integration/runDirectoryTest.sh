@@ -88,6 +88,8 @@ if [ -d $dir ] && [ -f "${dir}/test.sh" ]; then
     . ./${dir}/test.sh
 elif [ -d $dir ]; then
     echo "Directory test"
+    command=""
+    pretty_command=""
     for test in $( ls $dir/state-*.{execute,send,simplify,add-module,get-model} 2>/dev/null ); do
         tmp=${test#$dir/state-}
         testname=${tmp%.*}
@@ -99,18 +101,20 @@ elif [ -d $dir ]; then
         else
             params=""
         fi
-        # call rpc-client
+        # build rpc-client call
         if [ $(basename $server) == "booster-dev" ] && [ -f "$dir/response-${testname}.booster-dev" ]; then
-            echo "$client $mode $test $params --expect $dir/response-${testname}.booster-dev $*"
-            $client $mode $test $params --expect $dir/response-${testname}.booster-dev $*
+            command+=" $mode $test $params --expect $dir/response-${testname}.booster-dev"
+            pretty_command+=" \ \n  $mode $test $params --expect $dir/response-${testname}.booster-dev"
         elif [ $(basename $server) == "kore-rpc-dev" ] && [ -f "$dir/response-${testname}.kore-rpc-dev" ]; then
-            echo "$client $mode $test $params --expect $dir/response-${testname}.kore-rpc-dev $*"
-            $client $mode $test $params --expect $dir/response-${testname}.kore-rpc-dev $*
+            command+=" $mode $test $params --expect $dir/response-${testname}.kore-rpc-dev"
+            pretty_command+=" \ \n  $mode $test $params --expect $dir/response-${testname}.kore-rpc-dev"
         else
-            echo "$client $mode $test $params --expect $dir/response-${testname}.json $*"
-            $client $mode $test $params --expect $dir/response-${testname}.json $*
+            command+=" $mode $test $params --expect $dir/response-${testname}.json"
+            pretty_command+=" \ \n  $mode $test $params --expect $dir/response-${testname}.json"
         fi
     done
+    echo -e "$client $pretty_command $*"
+    $client $command $*
 else
     echo "$dir is a file, running a tarball test"
     $client run-tarball $dir
