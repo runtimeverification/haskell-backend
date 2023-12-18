@@ -138,12 +138,12 @@ respondEither ProxyConfig{statsVar, forceFallback, boosterState} booster kore re
                         logStats SimplifyM (boosterTime + koreTime, koreTime)
                         when (koreRes.state /= boosterRes.state) $ do
                             bState <- liftIO (MVar.readMVar boosterState)
-                            let m = fromMaybe bState.defaultMain simplifyReq._module
-                                def =
-                                    fromMaybe (error $ "Module " <> show m <> " not found") $
-                                        Map.lookup m bState.definitions
-                            Log.logOtherNS "proxy" (Log.LevelOther "Simplify") $
-                                let diff =
+                            Log.logOtherNS "proxy" (Log.LevelOther "Aborts") $
+                                let m = fromMaybe bState.defaultMain simplifyReq._module
+                                    def =
+                                        fromMaybe (error $ "Module " <> show m <> " not found") $
+                                            Map.lookup m bState.definitions
+                                    diff =
                                         fromMaybe "<syntactic difference only>" $
                                             diffBy def boosterRes.state.term koreRes.state.term
                                  in Text.pack ("Kore simplification: Diff (< before - > after)\n" <> diff)
@@ -282,7 +282,7 @@ respondEither ProxyConfig{statsVar, forceFallback, boosterState} booster kore re
                                                 , maxDepth = Just $ Depth 1
                                                 }
                                         )
-                            when (isJust statsVar) $
+                            when (isJust statsVar) $ do
                                 Log.logInfoNS "proxy" . Text.pack $
                                     "Kore fall-back in " <> microsWithUnit kTime
                             case kResult of
@@ -292,6 +292,18 @@ respondEither ProxyConfig{statsVar, forceFallback, boosterState} booster kore re
                                             if fromMaybe False logSettings.logFallbacks
                                                 then Just [mkFallbackLogEntry boosterResult koreResult]
                                                 else Nothing
+                                    case (boosterResult.reason, koreResult.reason) of
+                                        (Aborted, res) ->
+                                            Log.logOtherNS "proxy" (Log.LevelOther "Aborts") $
+                                                "Booster aborted, kore yields " <> Text.pack (show res)
+                                        (bRes, kRes)
+                                            | bRes /= kRes ->
+                                                Log.logOtherNS "proxy" (Log.LevelOther "Aborts") $
+                                                    "Booster and kore disagree: " <> Text.pack (show (bRes, kRes))
+                                            | otherwise ->
+                                                Log.logOtherNS "proxy" (Log.LevelOther "Aborts") $
+                                                    "kore confirms result " <> Text.pack (show bRes)
+
                                     case koreResult.reason of
                                         DepthBound -> do
                                             -- if we made one step, add the number of
