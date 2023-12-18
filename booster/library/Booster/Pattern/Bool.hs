@@ -9,6 +9,7 @@ module Booster.Pattern.Bool (
     isBottom,
     negateBool,
     splitBoolPredicates,
+    splitAndBools,
     -- patterns
     pattern TrueBool,
     pattern FalseBool,
@@ -190,4 +191,12 @@ splitBoolPredicates p@(Predicate t)
     | isConcrete t = [p]
     | otherwise = case t of
         AndBool l r -> concatMap (splitBoolPredicates . Predicate) [l, r]
-        other -> [Predicate other]
+        _other -> [p]
+
+{- | Break apart a predicate composed of top-level Y1 andBool ... Yn
+(not considering whether any of the subterms is concrete).
+-}
+splitAndBools :: Predicate -> [Predicate]
+splitAndBools p@(Predicate t)
+    | AndBool l r <- t = concatMap (splitAndBools . Predicate) [l, r]
+    | otherwise = [p]

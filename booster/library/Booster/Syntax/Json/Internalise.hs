@@ -57,7 +57,8 @@ import Data.Text as Text (Text, intercalate, pack, unpack)
 import Data.Text.Encoding (decodeLatin1)
 import Language.Haskell.TH (ExpQ, Lit (..), appE, litE, mkName, varE)
 import Language.Haskell.TH.Quote
-import Prettyprinter (pretty)
+import Prettyprinter (Pretty (..), pretty)
+import Prettyprinter qualified as Pretty
 
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Attributes.Base qualified as Internal
@@ -103,6 +104,14 @@ data InternalisedPredicates = InternalisedPredicates
     , unsupported :: [Syntax.KorePattern]
     }
     deriving stock (Eq, Show)
+
+instance Pretty InternalisedPredicates where
+    pretty ps =
+        Pretty.vsep $
+            ("Bool predicates: " : map pretty (Set.toList ps.boolPredicates))
+                <> ("Ceil predicates: " : map pretty (Set.toList ps.ceilPredicates))
+                <> ("Substitution: " : map pretty (Map.assocs ps.substitution))
+                <> ("Unsupported predicates: " : map (pretty . show) ps.unsupported)
 
 data TermOrPredicates -- = Either Predicate Pattern
     = Predicates InternalisedPredicates
