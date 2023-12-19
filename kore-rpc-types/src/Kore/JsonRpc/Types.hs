@@ -76,12 +76,11 @@ data SimplifyRequest = SimplifyRequest
 
 data AddModuleRequest = AddModuleRequest
     { _module :: Text
-    , nameAsId :: !(Maybe Bool)
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (FromJSON, ToJSON)
-        via CustomJSON '[FieldLabelModifier '[CamelToKebab, StripPrefix "_"]] AddModuleRequest
+        via CustomJSON '[FieldLabelModifier '[StripPrefix "_"]] AddModuleRequest
 
 data GetModelRequest = GetModelRequest
     { state :: KoreJson
