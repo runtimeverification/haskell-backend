@@ -24,7 +24,7 @@ import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Logger (MonadLoggerIO)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Writer (runWriterT, tell)
-import Data.ByteString.Char8 (isPrefixOf, stripPrefix)
+import Data.ByteString.Char8 (isPrefixOf)
 import Data.Coerce (coerce)
 import Data.Foldable (toList)
 import Data.Map qualified as Map
@@ -156,7 +156,7 @@ computeCeil (AndTerm l r) = concatMapM computeCeil [l, r]
 computeCeil (Injection _ _ t) = computeCeil t
 computeCeil (KMap _ keyVals rest) = do
     recArgs <- concatMapM computeCeil $ concat [[k, v] | (k, v) <- keyVals] <> maybeToList rest
-    symbols <- (.definition.symbols) <$> getConfig
+    symbols <- mkInKeysMap . (.definition.symbols) <$> getConfig
     pure $
         [Left $ Predicate $ mkNeq a b | a <- map fst keyVals, b <- map fst keyVals, a /= b]
             <> [ Left $ Predicate $ NotBool (mkInKeys symbols a rest') | a <- map fst keyVals, rest' <- maybeToList rest
@@ -183,33 +183,26 @@ mkNeq a b
     | sortOfTerm a == SortInt = NEqualsInt a b
     | otherwise = NEqualsK (KSeq (sortOfTerm a) a) (KSeq (sortOfTerm b) b)
 
-mkInKeys :: Map.Map SymbolName Symbol -> Term -> Term -> Term
-mkInKeys symbols k m
-    | sortOfTerm k == SortKItem && sortOfTerm m == SortMap =
-        SymbolApplication
-            ( Symbol
-                "Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map"
-                []
-                [SortKItem, SortMap]
-                SortBool
-                ( Booster.Definition.Attributes.Base.SymbolAttributes
-                    Booster.Definition.Attributes.Base.TotalFunction
-                    Booster.Definition.Attributes.Base.IsNotIdem
-                    Booster.Definition.Attributes.Base.IsNotAssoc
-                    Booster.Definition.Attributes.Base.IsNotMacroOrAlias
-                    Booster.Definition.Attributes.Base.CanBeEvaluated
-                    Nothing
-                    Nothing
-                )
-            )
-            []
-            [k, m]
-    | otherwise = case sortOfTerm m of
-        SortVar{} -> error "maformed map sort"
-        SortApp nm _ ->
-            case stripPrefix "Sort" nm of
-                Nothing -> error "maformed map sort"
-                Just mapName -> case Map.lookup ("Lbl" <> mapName <> "'Coln'in'Unds'keys") symbols of
-                    Just inKeysSymbol ->
-                        SymbolApplication inKeysSymbol [] [k, m]
-                    Nothing -> error "in_keys for this map sort does not exist"
+mkInKeysMap :: Map.Map SymbolName Symbol -> Map.Map (Sort, Sort) Symbol
+mkInKeysMap symbols =
+    Map.fromList
+        [ (sorts, sym)
+        | sym@Symbol{argSorts, attributes = SymbolAttributes{hook}} <- Map.elems symbols
+        , hook == Just "MAP.in_keys"
+        , sorts <- mTuple argSorts
+        ]
+  where
+    mTuple [x, y] = [(x, y)]
+    mTuple _ = []
+
+mkInKeys :: Map.Map (Sort, Sort) Symbol -> Term -> Term -> Term
+mkInKeys inKeysSymbols k m =
+    case Map.lookup (sortOfTerm k, sortOfTerm m) inKeysSymbols of
+        Just inKeysSymbol -> SymbolApplication inKeysSymbol [] [k, m]
+        Nothing ->
+            error $
+                "in_keys for key sort '"
+                    <> show (pretty $ sortOfTerm k)
+                    <> "' and map sort '"
+                    <> show (pretty $ sortOfTerm m)
+                    <> "' does not exist."
