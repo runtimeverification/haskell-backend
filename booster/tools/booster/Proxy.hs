@@ -66,6 +66,8 @@ data ProxyConfig = ProxyConfig
     { statsVar :: Maybe StatsVar
     , forceFallback :: Maybe Depth
     , boosterState :: MVar.MVar Booster.ServerState
+    , fallbackReasons :: [HaltReason]
+    , simplifyAtEnd :: Bool
     }
 
 serverError :: String -> Value -> ErrorObj
@@ -79,7 +81,7 @@ respondEither ::
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res) ->
     Respond (API 'Req) m (API 'Res)
-respondEither ProxyConfig{statsVar, forceFallback, boosterState} booster kore req = case req of
+respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case req of
     Execute execReq
         | isJust execReq.stepTimeout || isJust execReq.movingAverageStepTimeout ->
             loggedKore ExecuteM req
@@ -202,22 +204,21 @@ respondEither ProxyConfig{statsVar, forceFallback, boosterState} booster kore re
 
     handleExecute :: LogSettings -> KoreDefinition -> ExecuteRequest -> m (Either ErrorObj (API 'Res))
     handleExecute logSettings def =
-        executionLoop logSettings forceFallback def (0, 0.0, 0.0, Nothing)
+        executionLoop logSettings def (0, 0.0, 0.0, Nothing)
 
     executionLoop ::
         LogSettings ->
-        Maybe Depth ->
         KoreDefinition ->
         (Depth, Double, Double, Maybe [RPCLog.LogEntry]) ->
         ExecuteRequest ->
         m (Either ErrorObj (API 'Res))
-    executionLoop logSettings mforceSimplification def (currentDepth@(Depth cDepth), !time, !koreTime, !rpcLogs) r = do
+    executionLoop logSettings def (currentDepth@(Depth cDepth), !time, !koreTime, !rpcLogs) r = do
         Log.logInfoNS "proxy" . Text.pack $
             if currentDepth == 0
                 then "Starting execute request"
                 else "Iterating execute request at " <> show currentDepth
         -- calculate depth limit, considering possible forced Kore simplification
-        let mbDepthLimit = case (mforceSimplification, r.maxDepth) of
+        let mbDepthLimit = case (cfg.forceFallback, r.maxDepth) of
                 (Just (Depth forceDepth), Just (Depth maxDepth)) ->
                     if cDepth + forceDepth < maxDepth
                         then Just $ Depth forceDepth
@@ -229,7 +230,7 @@ respondEither ProxyConfig{statsVar, forceFallback, boosterState} booster kore re
         case bResult of
             Right (Execute boosterResult)
                 -- the execution reached the depth bound due to a forced Kore simplification
-                | boosterResult.reason == DepthBound && isJust mforceSimplification -> do
+                | boosterResult.reason == DepthBound && isJust cfg.forceFallback -> do
                     Log.logInfoNS "proxy" . Text.pack $
                         "Forced simplification at " <> show (currentDepth + boosterResult.depth)
                     simplifyResult <- simplifyExecuteState logSettings r._module def boosterResult.state
@@ -247,7 +248,6 @@ respondEither ProxyConfig{statsVar, forceFallback, boosterState} booster kore re
                                         ]
                             executionLoop
                                 logSettings
-                                mforceSimplification
                                 def
                                 ( currentDepth + boosterResult.depth
                                 , time + bTime
@@ -255,12 +255,9 @@ respondEither ProxyConfig{statsVar, forceFallback, boosterState} booster kore re
                                 , accumulatedLogs
                                 )
                                 r{ExecuteRequest.state = execStateToKoreJson simplifiedBoosterState}
-                -- if the new backend aborts, branches or gets stuck, revert to the old one
-                --
-                -- if we are stuck in the new backend we try to re-run
-                -- in the old one to work around any potential
-                -- unification bugs.
-                | boosterResult.reason `elem` [Aborted, Stuck, Branching] -> do
+                -- if we stop for a reason in fallbackReasons (default [Aborted, Stuck, Branching],
+                -- revert to the old backend to re-confirm and possibly proceed
+                | boosterResult.reason `elem` cfg.fallbackReasons -> do
                     Log.logInfoNS "proxy" . Text.pack $
                         "Booster " <> show boosterResult.reason <> " at " <> show boosterResult.depth
                     -- simplify Booster's state with Kore's simplifier
@@ -325,7 +322,6 @@ respondEither ProxyConfig{statsVar, forceFallback, boosterState} booster kore re
                                                         ]
                                             executionLoop
                                                 logSettings
-                                                mforceSimplification
                                                 def
                                                 ( currentDepth + boosterResult.depth + koreResult.depth
                                                 , time + bTime + kTime
@@ -431,15 +427,17 @@ respondEither ProxyConfig{statsVar, forceFallback, boosterState} booster kore re
 
     postExecSimplify ::
         LogSettings -> TimeSpec -> Maybe Text -> KoreDefinition -> API 'Res -> m (API 'Res)
-    postExecSimplify logSettings start mbModule def = \case
-        Execute res ->
-            Execute
-                <$> ( simplifyResult res
-                        `catch` ( \(err :: DecidePredicateUnknown) ->
-                                    pure res{reason = Aborted, unknownPredicate = Just . externaliseDecidePredicateUnknown $ err}
-                                )
-                    )
-        other -> pure other
+    postExecSimplify logSettings start mbModule def
+        | not cfg.simplifyAtEnd = pure
+        | otherwise = \case
+            Execute res ->
+                Execute
+                    <$> ( simplifyResult res
+                            `catch` ( \(err :: DecidePredicateUnknown) ->
+                                        pure res{reason = Aborted, unknownPredicate = Just . externaliseDecidePredicateUnknown $ err}
+                                    )
+                        )
+            other -> pure other
       where
         -- timeLog :: TimeDiff -> Maybe [LogEntry]
         timeLog stop

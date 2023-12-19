@@ -27,6 +27,8 @@ import Control.Monad.Logger qualified as Logger
 import Data.Conduit.Network (serverSettings)
 import Data.IORef (writeIORef)
 import Data.InternedText (globalInternedTextCache)
+import Data.List (intercalate)
+import Data.List.Extra (splitOn)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe, isJust, mapMaybe)
 import Data.Set qualified as Set
@@ -56,9 +58,9 @@ import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
 import Kore.Internal.TermLike (TermLike, VariableName)
 import Kore.JsonRpc (ServerState (..))
 import Kore.JsonRpc qualified as Kore
-import Kore.JsonRpc.Error
+import Kore.JsonRpc.Error hiding (Aborted)
 import Kore.JsonRpc.Server
-import Kore.JsonRpc.Types (API, ReqOrRes (Req, Res))
+import Kore.JsonRpc.Types (API, HaltReason (..), ReqOrRes (Req, Res))
 import Kore.JsonRpc.Types.Depth (Depth (..))
 import Kore.Log (
     ExeName (..),
@@ -95,7 +97,14 @@ main = do
                     , smtOptions
                     , eventlogEnabledUserEvents
                     }
-            , proxyOptions = ProxyOptions{printStats, forceFallback, boosterSMT}
+            , proxyOptions =
+                ProxyOptions
+                    { printStats
+                    , forceFallback
+                    , boosterSMT
+                    , fallbackReasons
+                    , simplifyAtEnd
+                    }
             } = options
         (logLevel, customLevels) = adjustLogLevels logLevels
         levelFilter :: Logger.LogSource -> LogLevel -> Bool
@@ -167,7 +176,14 @@ main = do
                     koreRespond = Kore.respond kore.serverState (ModuleName kore.mainModule) runSMT
                     boosterRespond = Booster.respond boosterState
 
-                    proxyConfig = ProxyConfig{statsVar, forceFallback, boosterState}
+                    proxyConfig =
+                        ProxyConfig
+                            { statsVar
+                            , forceFallback
+                            , boosterState
+                            , fallbackReasons
+                            , simplifyAtEnd
+                            }
                     server =
                         jsonRpcServer
                             srvSettings
@@ -221,6 +237,10 @@ data ProxyOptions = ProxyOptions
     -- ^ force fallback every n-steps
     , boosterSMT :: Bool
     -- ^ whether to use an SMT solver in booster code (but keeping kore-rpc's SMT solver)
+    , fallbackReasons :: [HaltReason]
+    -- ^ halt reasons to re-execute (fallback) to double-check the result
+    , simplifyAtEnd :: Bool
+    -- ^ whether to run a post-exec simplification
     }
 
 parserInfoModifiers :: InfoMod options
@@ -255,6 +275,27 @@ clProxyOptionsParser =
                 ( long "no-booster-smt"
                     <> help "Disable SMT solver for booster code (but keep enabled for legacy code)"
                 )
+            <*> option
+                (eitherReader $ mapM reasonReader . splitOn ",")
+                ( long "fallback-on"
+                    <> metavar "REASON1,REASON2..."
+                    <> value [Branching, Stuck, Aborted]
+                    <> help "Halt reasons for which requests should be re-executed with kore-rpc"
+                    <> showDefaultWith (intercalate "," . map show)
+                )
+            <*> flag
+                True
+                False
+                ( long "no-post-exec-simplify"
+                    <> help "disable post-exec simplification"
+                )
+
+    reasonReader :: String -> Either String HaltReason
+    reasonReader = \case
+        "Branching" -> Right Branching
+        "Stuck" -> Right Stuck
+        "Aborted" -> Right Aborted
+        other -> Left $ "Reason `" <> other <> "' not supported"
 
 translateSMTOpts :: Maybe SMTOptions -> KoreSMT.KoreSolverOptions
 translateSMTOpts = \case
