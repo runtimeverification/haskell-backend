@@ -721,7 +721,6 @@ simplifyConstraint' recurseIntoEvalBool = \case
                             then TrueBool
                             else FalseBool
                 Nothing -> if recurseIntoEvalBool then evalBool t else pure t
-    t@(NotBool _) -> evalBool t -- always evaluate under notBool
     EqualsK (KSeq _ l) (KSeq _ r) -> evalEqualsK l r
     NEqualsK (KSeq _ l) (KSeq _ r) -> negateBool <$> evalEqualsK l r
     t -> if recurseIntoEvalBool then evalBool t else pure t
