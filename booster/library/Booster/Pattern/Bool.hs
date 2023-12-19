@@ -61,6 +61,7 @@ pattern TotalFunctionWithSMT hook =
         CanBeEvaluated
         Nothing
         (Just (SMTHook (Atom (SMTId hook))))
+        Nothing
 
 pattern AndBool :: Term -> Term -> Term
 pattern AndBool l r =
@@ -146,6 +147,7 @@ pattern SetIn a b =
                         IsNotAssoc
                         IsNotMacroOrAlias
                         CanBeEvaluated
+                        Nothing
                         Nothing
                         Nothing
                     )

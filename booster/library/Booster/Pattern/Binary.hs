@@ -216,6 +216,7 @@ lookupKoreDefinitionSymbol name = DecodeM $ do
                         CannotBeEvaluated
                         Nothing
                         Nothing
+                        Nothing
                     )
         Just def -> Right $ Map.lookup name $ symbols def
 

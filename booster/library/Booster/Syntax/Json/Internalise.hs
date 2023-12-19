@@ -241,6 +241,7 @@ internaliseTermRaw qq allowAlias checkSubsorts sortVars definition@KoreDefinitio
                                     , hasEvaluators = Flag False
                                     , collectionMetadata = Nothing
                                     , smt = Nothing
+                                    , hook = Nothing
                                     }
                     else
                         maybe (throwE $ UnknownSymbol name symPatt) pure $
