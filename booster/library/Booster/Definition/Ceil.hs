@@ -108,12 +108,7 @@ computeCeilRule mllvm def r@RewriteRule.RewriteRule{lhs, requires, rhs, attribut
                         , ceils = requiresCeils <> rhsCeils
                         , newRule =
                             if null requiresCeils && null rhsCeils
-                                then
-                                    Just
-                                        r
-                                            { RewriteRule.attributes = attributes{preserving = Flag True}
-                                            , RewriteRule.computedAttributes = computedAttributes{notPreservesDefinednessReasons = []}
-                                            }
+                                then Just r{RewriteRule.attributes = attributes{preserving = Flag True}}
                                 else -- we could add a case when ceils are fully resolved into predicates, which we would then
                                 -- add to the requires clause of a rule
                                     Nothing
