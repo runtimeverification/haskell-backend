@@ -288,6 +288,12 @@ decodeBlock mbSize = do
             False -> m >> whileNotEnded m
 
     mkSymbolApplication :: ByteString -> [Sort] -> [Block] -> DecodeM Block
+    -- automatically transform `rawTerm(inj{SortX, KItem}(X))` to X:SortX
+    -- see https://github.com/runtimeverification/llvm-backend/issues/916
+    mkSymbolApplication "rawTerm" [] [BTerm t]
+        | Injection sort SortKItem t' <- t
+        , sort == sortOfTerm t' =
+            pure $ BTerm t'
     mkSymbolApplication "\\and" _ [BTerm t1, BTerm t2] = pure $ BTerm $ AndTerm t1 t2
     mkSymbolApplication "\\and" _ bs =
         argError "AndTerm" [BTerm undefined, BTerm undefined] bs
