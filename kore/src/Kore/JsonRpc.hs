@@ -439,7 +439,7 @@ respond serverState moduleName runSMT =
                         liftIO
                             . runSMT (Exec.metadataTools serializedModule) lemmas
                             . evalInSimplifierContext (fromMaybe False logSuccessfulSimplifications) serializedModule
-                            $ SMT.Evaluator.filterMultiOr $srcLoc =<< Pattern.simplifyAssumingDefinedness patt
+                            $ SMT.Evaluator.filterMultiOr $srcLoc =<< Pattern.simplifyTopConfigurationDefined patt
 
                     let simplLogs = mkSimplifierLogs logSuccessfulSimplifications logs
                     stop <- liftIO $ getTime Monotonic
