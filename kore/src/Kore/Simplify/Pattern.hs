@@ -6,6 +6,7 @@ module Kore.Simplify.Pattern (
     simplifyTopConfiguration,
     simplifyTopConfigurationDefined,
     simplify,
+    simplifyAssumingDefinedness,
     makeEvaluate,
 ) where
 
@@ -31,6 +32,7 @@ import Kore.Internal.SideCondition (
  )
 import Kore.Internal.SideCondition qualified as SideCondition (
     addConditionWithReplacements,
+    addTermsAsDefined,
     assumeDefined,
     top,
  )
@@ -42,6 +44,9 @@ import Kore.Internal.TermLike (
  )
 import Kore.Rewrite.RewritingVariable (
     RewritingVariableName,
+ )
+import Kore.Simplify.Ceil (
+    enumerateSubtermsNeedingCeil,
  )
 import Kore.Simplify.Simplify (
     Simplifier,
@@ -101,6 +106,13 @@ simplify ::
     Pattern RewritingVariableName ->
     Simplifier (OrPattern RewritingVariableName)
 simplify = makeEvaluate SideCondition.top
+
+simplifyAssumingDefinedness ::
+    Pattern RewritingVariableName ->
+    Simplifier (OrPattern RewritingVariableName)
+simplifyAssumingDefinedness pat =
+    let subtermsNeedingCeil = enumerateSubtermsNeedingCeil SideCondition.top (Pattern.toTermLike pat)
+     in makeEvaluate (SideCondition.addTermsAsDefined subtermsNeedingCeil SideCondition.top) pat
 
 {- | Simplifies a 'Pattern' with a custom 'SideCondition'.
 This should only be used when it's certain that the
