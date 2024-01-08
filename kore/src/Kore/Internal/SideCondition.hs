@@ -11,6 +11,7 @@ module Kore.Internal.SideCondition (
     fromConditionWithReplacements,
     fromPredicateWithReplacements,
     addConditionWithReplacements,
+    addTermsAsDefined,
     mapVariables,
     top,
     topTODO,
@@ -279,6 +280,18 @@ addAssumptions predicates sideCondition =
     sideCondition
         { assumedTrue =
             predicates <> assumedTrue sideCondition
+        }
+
+-- | Assume a set of terms is defined in the context of a 'SideCondition'.
+addTermsAsDefined ::
+    Ord variable =>
+    HashSet (TermLike variable) ->
+    SideCondition variable ->
+    SideCondition variable
+addTermsAsDefined terms sideCondition =
+    sideCondition
+        { definedTerms =
+            terms <> definedTerms sideCondition
         }
 
 areIncludedIn ::
@@ -817,13 +830,15 @@ isDefined sideCondition@SideCondition{definedTerms} term =
                         generateNormalizedAcs internalMap
                             & HashSet.map TermLike.mkInternalMap
                  in isSymbolicSingleton internalMap
-                        || subMaps `isNonEmptySubset` definedTerms
+                        || subMaps
+                            `isNonEmptySubset` definedTerms
             TermLike.InternalSet_ internalSet ->
                 let subSets =
                         generateNormalizedAcs internalSet
                             & HashSet.map TermLike.mkInternalSet
                  in isSymbolicSingleton internalSet
-                        || subSets `isNonEmptySubset` definedTerms
+                        || subSets
+                            `isNonEmptySubset` definedTerms
             _ -> False
 
     isNonEmptySubset subset set

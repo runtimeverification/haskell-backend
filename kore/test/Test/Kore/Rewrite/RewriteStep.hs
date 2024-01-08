@@ -1199,6 +1199,7 @@ applyRewriteRulesParallel ::
 applyRewriteRulesParallel initial rules =
     Step.applyRewriteRulesParallel
         rules
+        Step.DisableAssumeInitialDefined
         (simplifiedPattern initial)
         & runSimplifierSMT Mock.env
 
