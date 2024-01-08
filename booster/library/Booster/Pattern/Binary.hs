@@ -1,5 +1,9 @@
 {-# LANGUAGE PatternSynonyms #-}
 
+{- |
+Copyright   : (c) Runtime Verification, 2023
+License     : BSD-3-Clause
+-}
 module Booster.Pattern.Binary (
     Version (..),
     Block (..),
@@ -13,12 +17,6 @@ module Booster.Pattern.Binary (
     decodeSingleBlock,
 ) where
 
-import Booster.Definition.Attributes.Base
-import Booster.Definition.Base
-import Booster.Pattern.Base
-import Booster.Pattern.Bool (pattern TrueBool)
-import Booster.Pattern.Util (sortOfTerm)
-import Booster.Prettyprinter (renderDefault)
 import Control.Monad (forM_, unless)
 import Control.Monad.Extra (forM)
 import Control.Monad.Trans.Class (MonadTrans (..))
@@ -37,6 +35,13 @@ import Data.Word (Word64)
 import GHC.Word (Word8)
 import Prettyprinter (pretty)
 import Text.Printf
+
+import Booster.Definition.Attributes.Base
+import Booster.Definition.Base
+import Booster.Pattern.Base
+import Booster.Pattern.Bool (pattern TrueBool)
+import Booster.Pattern.Util (sortOfTerm)
+import Booster.Prettyprinter (renderDefault)
 
 -- | tags indicating the next element in a block, see @'decodeBlock'@
 pattern
