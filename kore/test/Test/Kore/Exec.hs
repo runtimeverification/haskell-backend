@@ -76,6 +76,7 @@ import Kore.Rewrite.AntiLeft (
     AntiLeft (AntiLeft),
  )
 import Kore.Rewrite.AntiLeft qualified as AntiLeft.DoNotUse
+import Kore.Rewrite.RewriteStep qualified as Step
 import Kore.Rewrite.Rule
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
@@ -1217,6 +1218,7 @@ rpcExecTest cutPointLs terminalLs depthLimit verifiedModule initial =
             depthLimit
             Nothing
             DisableMovingAverage
+            Step.DisableAssumeInitialDefined
             False
             serializedModule
             (StopLabels cutPointLs terminalLs)

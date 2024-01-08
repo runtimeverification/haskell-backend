@@ -10,6 +10,7 @@ module Kore.Rewrite.RewriteStep (
     withoutUnification,
     applyRewriteRulesSequence,
     applyClaimsSequence,
+    EnableAssumeInitialDefined (..),
 ) where
 
 import Control.Monad.State.Strict qualified as State
@@ -76,6 +77,9 @@ import Kore.Rewrite.Step (
     applyRemainder,
     assertFunctionLikeResults,
     unifyRules,
+ )
+import Kore.Simplify.Ceil (
+    enumerateSubtermsNeedingCeil,
  )
 import Kore.Simplify.Simplify (
     Simplifier,
@@ -379,6 +383,14 @@ applyWithFinalizer sideCondition finalize rules initial = do
     locations = from @_ @SourceLocation . extract
 {-# INLINE applyWithFinalizer #-}
 
+{- Wether to enable assuming definedness of the current
+   configuration in @applyRewriteRulesParallel@
+ -}
+data EnableAssumeInitialDefined
+    = DisableAssumeInitialDefined
+    | EnableAssumeInitialDefined
+    deriving stock (Show)
+
 {- | Apply the given rules to the initial configuration in parallel.
 
 See also: 'applyRewriteRule'
@@ -409,17 +421,29 @@ See also: 'applyRewriteRule'
 applyRewriteRulesParallel ::
     -- | Rewrite rules
     [RewriteRule RewritingVariableName] ->
+    -- | If set, assume that @initial@ and its every sub-term is defined,
+    --   see @enumerateSubtermsNeedingCeil@ for details
+    EnableAssumeInitialDefined ->
     -- | Configuration being rewritten
     Pattern RewritingVariableName ->
     Simplifier (Results (RulePattern RewritingVariableName))
 applyRewriteRulesParallel
     (map getRewriteRule -> rules)
+    assumeInitialDefined
     initial =
         do
             let sideCondition =
                     SideCondition.cacheSimplifiedFunctions
                         (Pattern.toTermLike initial)
-            results <- applyRulesParallel sideCondition rules initial
+            let subtermsNeedingCeil =
+                    case assumeInitialDefined of
+                        -- @enumerateSubtermsNeedingCei@l will compute all subterms that may need a @#Ceil@ predicate.
+                        -- When falling back to Kore from Booster, everything must be defined, and these @#Ceil@s will evaluate to @#Top@.
+                        -- However, it is difficult to convey this information from Booster to Kore; hence we conjure it up here.
+                        EnableAssumeInitialDefined -> enumerateSubtermsNeedingCeil sideCondition (Pattern.toTermLike initial)
+                        DisableAssumeInitialDefined -> mempty
+                sideConditionWithDefinedSubterms = SideCondition.addTermsAsDefined subtermsNeedingCeil sideCondition
+            results <- applyRulesParallel sideConditionWithDefinedSubterms rules initial
             assertFunctionLikeResults (term initial) results
             return results
 
