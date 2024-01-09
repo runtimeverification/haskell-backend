@@ -15,6 +15,7 @@ module Test.Kore.Builtin.Krypto (
 ) where
 
 import Control.Lens qualified as Lens
+import Data.ByteString.Char8 qualified as BS
 import Data.Generics.Sum.Constructors
 import Data.Proxy
 import Data.Text (
@@ -23,6 +24,7 @@ import Data.Text (
 import Data.Text qualified as Text
 import GHC.TypeLits qualified as TypeLits
 import Kore.Attribute.Symbol qualified as Attribute
+import Kore.Builtin.InternalBytes qualified as InternalBytes
 import Kore.Builtin.Krypto qualified as Krypto
 import Kore.Builtin.String qualified as String
 import Kore.Internal.OrPattern qualified as OrPattern
@@ -70,13 +72,13 @@ test_ecdsaRecover =
   where
     test messageHash v r s result =
         testCase (Text.unpack name) $ do
-            let expect = String.asPattern stringSort result
+            let expect = InternalBytes.asPattern bytesSort (BS.pack result)
             actual <-
                 ecdsaRecoverKrypto
-                    (String.asInternal stringSort messageHash)
+                    (InternalBytes.asInternal bytesSort (BS.pack messageHash))
                     (Test.Int.asInternal v)
-                    (String.asInternal stringSort r)
-                    (String.asInternal stringSort s)
+                    (InternalBytes.asInternal bytesSort (BS.pack r))
+                    (InternalBytes.asInternal bytesSort (BS.pack s))
                     & evaluate "KRYPTO.ecdsaRecover"
             assertEqual "" expect actual
       where
@@ -102,13 +104,13 @@ test_secp256k1EcdsaRecover =
   where
     test messageHash v r s result =
         testCase (Text.unpack name) $ do
-            let expect = String.asPattern stringSort result
+            let expect = InternalBytes.asPattern bytesSort (BS.pack result)
             actual <-
                 ecdsaRecoverKrypto
-                    (String.asInternal stringSort messageHash)
+                    (InternalBytes.asInternal bytesSort (BS.pack messageHash))
                     (Test.Int.asInternal v)
-                    (String.asInternal stringSort r)
-                    (String.asInternal stringSort s)
+                    (InternalBytes.asInternal bytesSort (BS.pack r))
+                    (InternalBytes.asInternal bytesSort (BS.pack s))
                     & evaluate "SECP256K1.ecdsaRecover"
             assertEqual "" expect actual
       where
@@ -131,7 +133,7 @@ test_keccak256 =
         testCase (show input) $ do
             let expect = String.asPattern stringSort result
             actual <-
-                keccak256Krypto (String.asInternal stringSort input)
+                keccak256Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
                     & evaluate "KRYPTO.keccak256"
             assertEqual "" expect actual
 
@@ -150,7 +152,7 @@ test_hashKeccak256 =
         testCase (show input) $ do
             let expect = String.asPattern stringSort result
             actual <-
-                keccak256Krypto (String.asInternal stringSort input)
+                keccak256Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
                     & evaluate "HASH.keccak256"
             assertEqual "" expect actual
 
@@ -169,7 +171,7 @@ test_sha256 =
         testCase (show input) $ do
             let expect = String.asPattern stringSort result
             actual <-
-                sha256Krypto (String.asInternal stringSort input)
+                sha256Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
                     & evaluate "KRYPTO.sha256"
             assertEqual "" expect actual
 
@@ -188,7 +190,7 @@ test_hashSha256 =
         testCase (show input) $ do
             let expect = String.asPattern stringSort result
             actual <-
-                sha256Krypto (String.asInternal stringSort input)
+                sha256Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
                     & evaluate "HASH.sha256"
             assertEqual "" expect actual
 
@@ -207,7 +209,7 @@ test_sha3256 =
         testCase (show input) $ do
             let expect = String.asPattern stringSort result
             actual <-
-                sha3256Krypto (String.asInternal stringSort input)
+                sha3256Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
                     & evaluate "KRYPTO.sha3256"
             assertEqual "" expect actual
 
@@ -226,7 +228,7 @@ test_hashSha3_256 =
         testCase (show input) $ do
             let expect = String.asPattern stringSort result
             actual <-
-                sha3256Krypto (String.asInternal stringSort input)
+                sha3256Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
                     & evaluate "HASH.sha3_256"
             assertEqual "" expect actual
 
@@ -251,7 +253,7 @@ test_ripemd160 =
         testCase (show input) $ do
             let expect = String.asPattern stringSort result
             actual <-
-                ripemd160Krypto (String.asInternal stringSort input)
+                ripemd160Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
                     & evaluate "KRYPTO.ripemd160"
             assertEqual "" expect actual
 
@@ -276,7 +278,7 @@ test_hashRipemd160 =
         testCase (show input) $ do
             let expect = String.asPattern stringSort result
             actual <-
-                ripemd160Krypto (String.asInternal stringSort input)
+                ripemd160Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
                     & evaluate "HASH.ripemd160"
             assertEqual "" expect actual
 
