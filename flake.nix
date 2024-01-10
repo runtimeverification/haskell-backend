@@ -85,6 +85,7 @@
                 supportedGhcVersions = [ "928" ];
               })
               final.z3
+              final.secp256k1
             ];
           all-cabal-hashes = final.fetchurl {
             url =
