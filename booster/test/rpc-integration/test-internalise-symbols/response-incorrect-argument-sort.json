@@ -1,0 +1,22 @@
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "error": {
+        "code": 2,
+        "data": {
+            "context": [
+                {
+                    "tag": "EVar",
+                    "name": "X",
+                    "sort": {
+                        "tag": "SortApp",
+                        "name": "SortBool",
+                        "args": []
+                    }
+                }
+            ],
+            "error": "Incorrect sort: expected SortInt{} but got SortBool{}"
+        },
+        "message": "Could not verify pattern"
+    }
+}
