@@ -1,0 +1,21 @@
+{
+      "format": "KORE",
+      "version": 1,
+      "term": 
+        {
+          "tag": "App",
+          "name": "Lbl'-LT-'int'-GT-'",
+          "sorts": [],
+          "args": [
+            {
+              "tag": "EVar",
+              "name": "X",
+              "sort": {
+                "tag": "SortApp",
+                "name": "SortBool",
+                "args": []
+              }
+            }
+          ]
+        }
+    }

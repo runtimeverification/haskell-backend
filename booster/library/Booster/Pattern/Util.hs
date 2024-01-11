@@ -3,7 +3,7 @@ Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
 -}
 module Booster.Pattern.Util (
-    applySubst,
+    substituteInSort,
     sortOfTerm,
     sortOfPattern,
     substituteInTerm,
@@ -58,7 +58,7 @@ import Booster.Pattern.Base
 sortOfTerm :: Term -> Sort
 sortOfTerm (AndTerm _ child) = sortOfTerm child
 sortOfTerm (SymbolApplication symbol sorts _) =
-    applySubst (Map.fromList $ zip symbol.sortVars sorts) symbol.resultSort
+    substituteInSort (Map.fromList $ zip symbol.sortVars sorts) symbol.resultSort
 sortOfTerm (DomainValue sort _) = sort
 sortOfTerm (Var Variable{variableSort}) = variableSort
 sortOfTerm (Injection _ sort _) = sort
@@ -66,11 +66,11 @@ sortOfTerm (KMap def _ _) = SortApp def.mapSortName []
 sortOfTerm (KList def _ _) = SortApp def.listSortName []
 sortOfTerm (KSet def _ _) = SortApp def.listSortName []
 
-applySubst :: Map VarName Sort -> Sort -> Sort
-applySubst subst var@(SortVar n) =
+substituteInSort :: Map VarName Sort -> Sort -> Sort
+substituteInSort subst var@(SortVar n) =
     fromMaybe var $ Map.lookup n subst
-applySubst subst (SortApp n args) =
-    SortApp n $ map (applySubst subst) args
+substituteInSort subst (SortApp n args) =
+    SortApp n $ map (substituteInSort subst) args
 
 sortOfPattern :: Pattern -> Sort
 sortOfPattern pat = sortOfTerm pat.term
