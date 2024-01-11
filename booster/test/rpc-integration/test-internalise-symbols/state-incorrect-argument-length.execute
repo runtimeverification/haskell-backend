@@ -62,22 +62,6 @@
           },
           {
             "tag": "App",
-            "name": "Lbl'-LT-'int'-GT-'",
-            "sorts": [],
-            "args": [
-              {
-                "tag": "EVar",
-                "name": "X",
-                "sort": {
-                  "tag": "SortApp",
-                  "name": "SortInt",
-                  "args": []
-                }
-              }
-            ]
-          },
-          {
-            "tag": "App",
             "name": "Lbl'-LT-'generatedCounter'-GT-'",
             "sorts": [],
             "args": [
