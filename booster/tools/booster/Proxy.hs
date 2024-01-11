@@ -277,6 +277,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                             r
                                                 { state = execStateToKoreJson simplifiedBoosterState
                                                 , maxDepth = Just $ Depth 1
+                                                , assumeStateDefined = Just True
                                                 }
                                         )
                             when (isJust statsVar) $ do
