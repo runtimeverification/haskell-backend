@@ -1,0 +1,15 @@
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "error": {
+        "code": 2,
+        "data": {
+            "context": [
+                "symbol or alias 'inj' (<unknown location>)",
+                "symbol or alias 'Lbl'Hash'if'UndsHash'then'UndsHash'else'UndsHash'fi'Unds'K-EQUAL-SYNTAX'Unds'Sort'Unds'Bool'Unds'Sort'Unds'Sort' (<unknown location>)"
+            ],
+            "error": "Expected 3 operands, but got 2."
+        },
+        "message": "Could not verify pattern"
+    }
+}

@@ -36,10 +36,8 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), ask)
 import Control.Monad.Trans.State
-import Data.Bifunctor (second)
 import Data.Coerce (coerce)
 import Data.Foldable (toList, traverse_)
-import Data.Functor.Foldable
 import Data.List (elemIndex)
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -51,6 +49,7 @@ import Data.Text (Text, pack)
 import Data.Text qualified as Text
 import Prettyprinter
 
+import Booster.Builtin as Builtin
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
 import Booster.LLVM
@@ -306,7 +305,7 @@ evaluatePattern' ::
     EquationT io Pattern
 evaluatePattern' Pattern{term, constraints, ceilConditions} = do
     pushConstraints constraints
-    newTerm <- evaluateTerm' TopDown term
+    newTerm <- evaluateTerm' BottomUp term
     -- after evaluating the term, evaluate all (existing and
     -- newly-acquired) constraints, once
     traverse_ simplifyAssumedPredicate . predicates =<< getState
@@ -336,47 +335,28 @@ applyTerm ::
     EquationPreference ->
     Term ->
     EquationT io Term
-applyTerm BottomUp pref =
-    cataA $ \case
-        DomainValueF s val ->
-            pure $ DomainValue s val
-        VarF var ->
-            pure $ Var var
-        InjectionF src trg t ->
-            Injection src trg <$> t -- no injection simplification
-        AndTermF arg1 arg2 ->
-            AndTerm <$> arg1 <*> arg2 -- no \and simplification
-        SymbolApplicationF sym sorts args -> do
-            t <- SymbolApplication sym sorts <$> sequence args
-            applyAtTop pref t
-        KMapF def keyVals rest ->
-            KMap def <$> mapM (uncurry $ liftM2 (,)) keyVals <*> sequence rest
-        KListF def heads rest ->
-            KList def
-                <$> sequence heads
-                <*> mapM (uncurry (liftM2 (,)) . second sequence) rest
-        KSetF def heads rest ->
-            KSet def
-                <$> sequence heads
-                <*> sequence rest
--- FIXME rewrite Bottom-up evaluation without cata, traversing top-down but processing in pre-order (apply below)
-applyTerm TopDown pref = \t@(Term attributes _) ->
-    if attributes.isEvaluated
-        then pure t
-        else
+applyTerm direction pref trm = do
+    config <- getConfig -- avoid re-reading config at every node
+    descend config trm
+  where
+    -- descend :: EquationConfig -> Term -> EquationT io Term
+    descend config t@(Term attributes _)
+        | attributes.isEvaluated = pure t
+        | otherwise =
             fromCache t >>= \case
                 Nothing -> do
-                    config <- getConfig
-                    -- All fully concrete values go to the LLVM backend (top-down only)
                     simplified <-
                         if isConcrete t && isJust config.llvmApi && attributes.canBeEvaluated
                             then do
+                                -- LLVM simplification proceeds top-down and cuts the descent
+                                -- FIXME run this in IO
                                 let result = simplifyTerm (fromJust config.llvmApi) config.definition t (sortOfTerm t)
                                 when (result /= t) $ do
                                     setChanged
                                     traceRuleApplication t Nothing (Just "LLVM") Nothing $ Success result
                                 pure result
-                            else apply t
+                            else -- use equations
+                                apply config t
                     toCache t simplified
                     pure simplified
                 Just cached -> do
@@ -384,76 +364,117 @@ applyTerm TopDown pref = \t@(Term attributes _) ->
                         setChanged
                         traceRuleApplication t Nothing (Just "Cache") Nothing $ Success cached
                     pure cached
-  where
-    apply = \case
+
+    -- Bottom-up evaluation traverses AST nodes in post-order but finds work top-down
+    -- Top-down evaluation traverses AST nodes in pre-order
+    apply config = \case
         dv@DomainValue{} ->
             pure dv
         v@Var{} ->
             pure v
         Injection src trg t ->
-            Injection src trg <$> applyTerm TopDown pref t -- no injection simplification
+            Injection src trg <$> descend config t -- no injection simplification
         AndTerm arg1 arg2 ->
             AndTerm -- no \and simplification
-                <$> applyTerm TopDown pref arg1
-                <*> applyTerm TopDown pref arg2
-        app@(SymbolApplication sym sorts args) -> do
-            -- try to apply equations
-            t <- applyAtTop pref app
-            if t /= app
-                then do
-                    case t of
-                        SymbolApplication sym' sorts' args' ->
-                            SymbolApplication sym' sorts'
-                                <$> mapM (applyTerm TopDown pref) args'
-                        _otherwise ->
-                            applyTerm TopDown pref t -- won't loop
-                else
-                    SymbolApplication sym sorts
-                        <$> mapM (applyTerm TopDown pref) args
+                <$> descend config arg1
+                <*> descend config arg2
+        app@(SymbolApplication sym sorts args)
+            | direction == BottomUp -> do
+                -- evaluate arguments first
+                args' <- mapM (descend config) args
+                -- then try to apply equations
+                applyAtTop pref $ SymbolApplication sym sorts args'
+            | otherwise {- direction == TopDown -} -> do
+                -- try to apply equations
+                t <- applyAtTop pref app
+                -- then recurse into arguments or re-evaluate (avoiding a loop)
+                if t /= app
+                    then do
+                        case t of
+                            SymbolApplication sym' sorts' args' ->
+                                SymbolApplication sym' sorts'
+                                    <$> mapM (descend config) args'
+                            _otherwise ->
+                                descend config t -- won't loop
+                    else
+                        SymbolApplication sym sorts
+                            <$> mapM (descend config) args
+        -- maps, lists, and sets, are not currently evaluated because
+        -- the matcher does not provide matches on collections.
         KMap def keyVals rest ->
             KMap def
-                <$> mapM (\(k, v) -> (,) <$> applyTerm TopDown pref k <*> applyTerm TopDown pref v) keyVals
-                <*> maybe (pure Nothing) ((Just <$>) . applyTerm TopDown pref) rest
+                <$> mapM (\(k, v) -> (,) <$> descend config k <*> descend config v) keyVals
+                <*> maybe (pure Nothing) ((Just <$>) . descend config) rest
         KList def heads rest ->
             KList def
-                <$> mapM (applyTerm TopDown pref) heads
+                <$> mapM (descend config) heads
                 <*> maybe
                     (pure Nothing)
                     ( (Just <$>)
                         . \(mid, tails) ->
                             (,)
-                                <$> applyTerm TopDown pref mid
-                                <*> mapM (applyTerm TopDown pref) tails
+                                <$> descend config mid
+                                <*> mapM (descend config) tails
                     )
                     rest
         KSet def keyVals rest ->
             KSet def
-                <$> mapM (applyTerm TopDown pref) keyVals
-                <*> maybe (pure Nothing) ((Just <$>) . applyTerm TopDown pref) rest
+                <$> mapM (descend config) keyVals
+                <*> maybe (pure Nothing) ((Just <$>) . descend config) rest
 
 {- | Try to apply function equations and simplifications to the given
    top-level term, in priority order and per group.
 -}
 applyAtTop ::
+    forall io.
     MonadLoggerIO io =>
     EquationPreference ->
     Term ->
     EquationT io Term
 applyAtTop pref term = do
-    def <- (.definition) <$> getConfig
-    case pref of
-        PreferFunctions -> do
-            -- when applying equations, we want to catch DoesNotPreserveDefinedness/incosistentmatch/etc
-            -- to do with functions, so as not to abort the entire simplification run
-            fromFunctions <- applyEquations def.functionEquations handleFunctionEquation term
-            if fromFunctions == term
-                then applyEquations def.simplifications handleSimplificationEquation term
-                else pure fromFunctions
-        PreferSimplifications -> do
-            simplified <- applyEquations def.simplifications handleSimplificationEquation term
-            if simplified == term
-                then applyEquations def.functionEquations handleFunctionEquation term
-                else pure simplified
+    -- always try built-in (hooked) functions first, then equations
+    fromMaybeM tryEquations tryBuiltins
+  where
+    tryBuiltins :: EquationT io (Maybe Term)
+    tryBuiltins = do
+        case term of
+            SymbolApplication sym _sorts args
+                | Just hook <- flip Map.lookup Builtin.hooks =<< sym.attributes.hook -> do
+                    logOther (LevelOther "Simplify") $
+                        "Calling hooked function "
+                            <> fromJust sym.attributes.hook
+                            <> " for "
+                            <> renderText (pretty term)
+                    either (throw . InternalError) checkChanged
+                        . runExcept
+                        $ hook args
+            _other -> pure Nothing
+
+    -- for the (unlikely) case that a built-in reproduces itself, we
+    -- cannot blindly set the changed flag when we have applied a hook
+    checkChanged :: Maybe Term -> EquationT io (Maybe Term)
+    checkChanged Nothing =
+        logOther (LevelOther "Simplify") "Hook returned no result" >> pure Nothing
+    checkChanged (Just t) = do
+        logOther (LevelOther "Simplify") . renderText $
+            "Hook returned " <> pretty t
+        unless (t == term) setChanged
+        pure (Just t)
+
+    tryEquations :: EquationT io Term
+    tryEquations = do
+        def <- (.definition) <$> getConfig
+        case pref of
+            PreferFunctions -> do
+                fromFunctions <- applyEquations def.functionEquations handleFunctionEquation term
+                if fromFunctions == term
+                    then applyEquations def.simplifications handleSimplificationEquation term
+                    else pure fromFunctions
+            PreferSimplifications -> do
+                simplified <- applyEquations def.simplifications handleSimplificationEquation term
+                if simplified == term
+                    then applyEquations def.functionEquations handleFunctionEquation term
+                    else pure simplified
 
 data ApplyEquationResult
     = Success Term
@@ -728,7 +749,7 @@ simplifyConstraint' recurseIntoEvalBool = \case
     evalBool :: MonadLoggerIO io => Term -> EquationT io Term
     evalBool t = do
         prior <- getState -- save prior state so we can revert
-        result <- iterateEquations 100 TopDown PreferFunctions t
+        result <- iterateEquations 100 BottomUp PreferFunctions t
         EquationT $ lift $ lift $ put prior
         pure result
 
