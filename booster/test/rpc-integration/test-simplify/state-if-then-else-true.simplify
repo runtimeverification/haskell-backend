@@ -1,0 +1,62 @@
+{
+    "format": "KORE",
+    "version": 1,
+    "term": {
+        "tag": "App",
+        "name": "inj",
+        "sorts": [
+            {
+                "tag": "SortApp",
+                "name": "SortInt",
+                "args": []
+            },
+            {
+                "tag": "SortApp",
+                "name": "SortKItem",
+                "args": []
+            }
+        ],
+        "args": [
+            {
+                "tag": "App",
+                "name": "Lbl'Hash'if'UndsHash'then'UndsHash'else'UndsHash'fi'Unds'K-EQUAL-SYNTAX'Unds'Sort'Unds'Bool'Unds'Sort'Unds'Sort",
+                "sorts": [
+                    {
+                        "tag": "SortApp",
+                        "name": "SortInt",
+                        "args": []
+                    }
+                ],
+                "args": [
+                    {
+                        "tag": "DV",
+                        "sort": {
+                            "tag": "SortApp",
+                            "name": "SortBool",
+                            "args": []
+                        },
+                        "value": "true"
+                    },
+                    {
+                        "tag": "DV",
+                        "sort": {
+                            "tag": "SortApp",
+                            "name": "SortInt",
+                            "args": []
+                        },
+                        "value": "1"
+                    },
+                    {
+                        "tag": "DV",
+                        "sort": {
+                            "tag": "SortApp",
+                            "name": "SortInt",
+                            "args": []
+                        },
+                        "value": "0"
+                    }
+                ]
+            }
+        ]
+    }
+}

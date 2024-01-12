@@ -1,4 +1,4 @@
 echo "kompiling simplify.k"
-kompile --backend haskell simplify.k
+kompile --backend haskell simplify.k --syntax-module SIMPLIFY
 cp simplify-kompiled/definition.kore simplify.kore
 rm -r simplify-kompiled
