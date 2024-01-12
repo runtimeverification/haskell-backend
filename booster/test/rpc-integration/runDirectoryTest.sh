@@ -31,6 +31,8 @@ set -eu
 pushd $(dirname $0)
 shift
 
+# mangle kore client arguments
+
 dir=$(basename $directory)
 bindir=../../.build/booster/bin
 
@@ -103,18 +105,18 @@ elif [ -d $dir ]; then
         fi
         # build rpc-client call
         if [ $(basename $server) == "booster-dev" ] && [ -f "$dir/response-${testname}.booster-dev" ]; then
-            command+=" $mode $test $params --expect $dir/response-${testname}.booster-dev"
-            pretty_command+=" \ \n  $mode $test $params --expect $dir/response-${testname}.booster-dev"
+            command+=" $mode $test $params --expect $dir/response-${testname}.booster-dev $*"
+            pretty_command+=" \ \n  $mode $test $params --expect $dir/response-${testname}.booster-dev $*"
         elif [ $(basename $server) == "kore-rpc-dev" ] && [ -f "$dir/response-${testname}.kore-rpc-dev" ]; then
-            command+=" $mode $test $params --expect $dir/response-${testname}.kore-rpc-dev"
-            pretty_command+=" \ \n  $mode $test $params --expect $dir/response-${testname}.kore-rpc-dev"
+            command+=" $mode $test $params --expect $dir/response-${testname}.kore-rpc-dev $*"
+            pretty_command+=" \ \n  $mode $test $params --expect $dir/response-${testname}.kore-rpc-dev $*"
         else
-            command+=" $mode $test $params --expect $dir/response-${testname}.json"
-            pretty_command+=" \ \n  $mode $test $params --expect $dir/response-${testname}.json"
+            command+=" $mode $test $params --expect $dir/response-${testname}.json $*"
+            pretty_command+=" \ \n  $mode $test $params --expect $dir/response-${testname}.json $*"
         fi
     done
-    echo -e "$client $pretty_command $*"
-    $client $command $*
+    echo -e "$client $pretty_command"
+    $client $command
 else
     echo "$dir is a file, running a tarball test"
     $client run-tarball $dir

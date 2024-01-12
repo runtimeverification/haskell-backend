@@ -1,0 +1,16 @@
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "error": {
+        "code": 2,
+        "data": {
+            "context": [
+                "symbol or alias 'inj' (<unknown location>)",
+                "symbol or alias 'Lbl'Hash'if'UndsHash'then'UndsHash'else'UndsHash'fi'Unds'K-EQUAL-SYNTAX'Unds'Sort'Unds'Bool'Unds'Sort'Unds'Sort' (<unknown location>)",
+                "(resources/simplify.kore 86:139, <unknown location>)"
+            ],
+            "error": "Expecting sort SortBool{} but got SortInt{}."
+        },
+        "message": "Could not verify pattern"
+    }
+}
