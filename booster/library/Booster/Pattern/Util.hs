@@ -29,8 +29,12 @@ module Booster.Pattern.Util (
     abstractSymbolicConstructorArguments,
     cellSymbolStats,
     cellVariableStats,
+    stripVarOriginPrefix,
+    incrementNameCounter,
 ) where
 
+import Control.Applicative ((<|>))
+import Data.Attoparsec.ByteString.Char8 qualified as A
 import Data.Bifunctor (bimap, first)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
@@ -113,10 +117,30 @@ modifyVariablesInT f = cata $ \case
 modifyVarName :: (VarName -> VarName) -> Variable -> Variable
 modifyVarName f v = v{variableName = f v.variableName}
 
+{- | Strip variable provenance prefixes introduced
+in "Syntax.ParsedKore.Internalize.internationalization"
+-}
+stripVarOriginPrefix :: VarName -> VarName
+stripVarOriginPrefix name =
+    let noRule = BS.stripPrefix "Rule#" name
+        noEx = BS.stripPrefix "Ex#" name
+     in fromMaybe name $ noRule <|> noEx
+
 freshenVar :: Variable -> Set Variable -> Variable
 freshenVar v@Variable{variableName = vn} vs
-    | v `Set.member` vs = freshenVar v{variableName = vn <> "'"} vs
+    | v `Set.member` vs = freshenVar v{variableName = incrementNameCounter vn} vs
     | otherwise = v
+
+incrementNameCounter :: VarName -> VarName
+incrementNameCounter vname =
+    let (name, counter) = BS.spanEnd A.isDigit_w8 vname
+        parsedCounter = A.parseOnly @Int A.decimal counter
+        newCounter = case parsedCounter of
+            Right ok -> ok + 1
+            Left _err -> 0
+        -- convert the incremented counter back into a bytestring
+        unparsedNewCounter = BS.pack . map (fromIntegral . ord) . show $ newCounter
+     in name <> unparsedNewCounter
 
 {- | Abstract a term into a variable, making sure the variable name is disjoint from the given set of variables.
      Return the resulting singleton substitution.
