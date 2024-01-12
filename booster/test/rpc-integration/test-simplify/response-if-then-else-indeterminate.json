@@ -1,0 +1,91 @@
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+        "state": {
+            "format": "KORE",
+            "version": 1,
+            "term": {
+                "tag": "App",
+                "name": "inj",
+                "sorts": [
+                    {
+                        "tag": "SortApp",
+                        "name": "SortInt",
+                        "args": []
+                    },
+                    {
+                        "tag": "SortApp",
+                        "name": "SortKItem",
+                        "args": []
+                    }
+                ],
+                "args": [
+                    {
+                        "tag": "App",
+                        "name": "Lbl'Hash'if'UndsHash'then'UndsHash'else'UndsHash'fi'Unds'K-EQUAL-SYNTAX'Unds'Sort'Unds'Bool'Unds'Sort'Unds'Sort",
+                        "sorts": [
+                            {
+                                "tag": "SortApp",
+                                "name": "SortInt",
+                                "args": []
+                            }
+                        ],
+                        "args": [
+                            {
+                                "tag": "App",
+                                "name": "Lbl'UndsEqlsEqls'Int'Unds'",
+                                "sorts": [],
+                                "args": [
+                                    {
+                                        "tag": "DV",
+                                        "sort": {
+                                            "tag": "SortApp",
+                                            "name": "SortInt",
+                                            "args": []
+                                        },
+                                        "value": "123"
+                                    },
+                                    {
+                                        "tag": "App",
+                                        "name": "Lblf'LParUndsRParUnds'SIMPLIFY'Unds'Int'Unds'Int",
+                                        "sorts": [],
+                                        "args": [
+                                            {
+                                                "tag": "DV",
+                                                "sort": {
+                                                    "tag": "SortApp",
+                                                    "name": "SortInt",
+                                                    "args": []
+                                                },
+                                                "value": "124"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "tag": "DV",
+                                "sort": {
+                                    "tag": "SortApp",
+                                    "name": "SortInt",
+                                    "args": []
+                                },
+                                "value": "1"
+                            },
+                            {
+                                "tag": "DV",
+                                "sort": {
+                                    "tag": "SortApp",
+                                    "name": "SortInt",
+                                    "args": []
+                                },
+                                "value": "0"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

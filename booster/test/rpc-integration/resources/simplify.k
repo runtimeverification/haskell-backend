@@ -1,6 +1,7 @@
 module SIMPLIFY
   imports INT
   imports ID-SYNTAX
+  imports K-EQUAL
 
   syntax Int ::= f ( Int ) [function, no-evaluators] // a non-concrete value
 
