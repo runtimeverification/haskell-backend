@@ -320,23 +320,31 @@ applyRule pat@Pattern{ceilConditions} rule = runRewriteRuleAppT $ do
             Just False -> RewriteRuleAppT $ pure Trivial
             _other -> pure ()
 
+    -- existential variables may be present in rule.rhs and rule.ensures,
+    -- need to strip prefixes and freshen their names with respect to variables already
+    -- present in the input pattern and in the unification substitution
+    let varsFromInput = freeVariables pat.term <> (Set.unions $ Set.map (freeVariables . coerce) pat.constraints)
+        varsFromSubst = Set.unions . map freeVariables . Map.elems $ subst
+        forbiddenVars = varsFromInput <> varsFromSubst
+        existentialSubst =
+            Map.fromSet
+                (\v -> Var $ freshenVar v{variableName = stripVarOriginPrefix v.variableName} forbiddenVars)
+                rule.existentials
+
+    -- modify the substitution to include the existentials
+    let substWithExistentials = subst `Map.union` existentialSubst
+
     let rewritten =
             Pattern
-                (substituteInTerm (refreshExistentials subst) rule.rhs)
-                -- adding new constraints that have not been trivially `Top`
-                ( Set.fromList newConstraints
-                    <> Set.map (coerce . substituteInTerm subst . coerce) pat.constraints
+                (substituteInTerm substWithExistentials rule.rhs)
+                -- adding new constraints that have not been trivially `Top`, substituting the Ex# variables
+                ( pat.constraints
+                    <> (Set.fromList $ map (coerce . substituteInTerm existentialSubst . coerce) newConstraints)
                 )
                 ceilConditions
     return (rule, rewritten)
   where
     failRewrite = lift . throw
-
-    refreshExistentials subst
-        | Set.null (rule.existentials `Set.intersection` Map.keysSet subst) = subst
-        | otherwise =
-            let substVars = Map.keysSet subst
-             in subst `Map.union` Map.fromSet (\v -> Var $ freshenVar v substVars) rule.existentials
 
     checkConstraint ::
         (Predicate -> a) ->

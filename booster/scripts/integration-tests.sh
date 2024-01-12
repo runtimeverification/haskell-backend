@@ -38,6 +38,10 @@ for dir in $(ls -d test-*); do
             SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
             SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name $@
             ;;
+        "questionmark-vars")
+            SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
+            SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name $@
+            ;;
         "no-evaluator")
             SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
             ;;
