@@ -45,9 +45,12 @@ for dir in $(ls -d test-*); do
         "compute-ceil" | "no-evaluator")
             SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
             ;;
+        "simplify")
+            SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
+            ;;
         "foundry-bug-report")
             SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time $@
-            SERVER=$KORE_RPC_BOOSTER SERVER_OPTS="--interim-simplification 100" ./runDirectoryTest.sh test-$name --time $@
+            SERVER=$KORE_RPC_BOOSTER SERVER_OPTS="--interim-simplification 100" ./runDirectoryTest.sh test-$name $@
             ;;
         "imp")
             SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name --time $@
