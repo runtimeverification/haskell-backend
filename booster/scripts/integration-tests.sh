@@ -42,7 +42,7 @@ for dir in $(ls -d test-*); do
             SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
             SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name $@
             ;;
-        "no-evaluator")
+        "compute-ceil" | "no-evaluator")
             SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
             ;;
         "foundry-bug-report")
