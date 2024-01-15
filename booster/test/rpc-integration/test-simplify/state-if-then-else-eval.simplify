@@ -30,26 +30,26 @@
                 "args": [
                     {
                         "tag": "App",
-                        "name": "Lbl'UndsEqlsEqls'Int'Unds'",
+                        "name": "Lbl'Unds'impliesBool'Unds'",
                         "sorts": [],
                         "args": [
                             {
                                 "tag": "DV",
                                 "sort": {
                                     "tag": "SortApp",
-                                    "name": "SortInt",
+                                    "name": "SortBool",
                                     "args": []
                                 },
-                                "value": "123"
+                                "value": "false"
                             },
                             {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
+                                "tag": "EVar",
+                                "sort": {
+                                    "tag": "SortApp",
+                                    "name": "SortBool",
+                                    "args": []
                                         },
-                                        "value": "123"
+                                "name": "X"
                             }
                         ]
                     },

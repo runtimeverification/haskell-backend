@@ -3,13 +3,98 @@
     "id": 1,
     "error": {
         "code": 2,
-        "data": {
-            "context": [
-                "symbol or alias 'inj' (<unknown location>)",
-                "symbol or alias 'Lbl'Hash'if'UndsHash'then'UndsHash'else'UndsHash'fi'Unds'K-EQUAL-SYNTAX'Unds'Sort'Unds'Bool'Unds'Sort'Unds'Sort' (<unknown location>)"
-            ],
-            "error": "Expected 3 operands, but got 2."
-        },
+        "data": [
+            {
+                "context": [
+                    {
+                        "tag": "App",
+                        "name": "inj",
+                        "sorts": [
+                            {
+                                "tag": "SortApp",
+                                "name": "SortInt",
+                                "args": []
+                            },
+                            {
+                                "tag": "SortApp",
+                                "name": "SortKItem",
+                                "args": []
+                            }
+                        ],
+                        "args": [
+                            {
+                                "tag": "App",
+                                "name": "Lbl'Hash'if'UndsHash'then'UndsHash'else'UndsHash'fi'Unds'K-EQUAL-SYNTAX'Unds'Sort'Unds'Bool'Unds'Sort'Unds'Sort",
+                                "sorts": [
+                                    {
+                                        "tag": "SortApp",
+                                        "name": "SortInt",
+                                        "args": []
+                                    }
+                                ],
+                                "args": [
+                                    {
+                                        "tag": "DV",
+                                        "sort": {
+                                            "tag": "SortApp",
+                                            "name": "SortBool",
+                                            "args": []
+                                        },
+                                        "value": "true"
+                                    },
+                                    {
+                                        "tag": "DV",
+                                        "sort": {
+                                            "tag": "SortApp",
+                                            "name": "SortInt",
+                                            "args": []
+                                        },
+                                        "value": "0"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "error": "Expected a predicate but found a term"
+            },
+            {
+                "context": [
+                    {
+                        "tag": "App",
+                        "name": "Lbl'Hash'if'UndsHash'then'UndsHash'else'UndsHash'fi'Unds'K-EQUAL-SYNTAX'Unds'Sort'Unds'Bool'Unds'Sort'Unds'Sort",
+                        "sorts": [
+                            {
+                                "tag": "SortApp",
+                                "name": "SortInt",
+                                "args": []
+                            }
+                        ],
+                        "args": [
+                            {
+                                "tag": "DV",
+                                "sort": {
+                                    "tag": "SortApp",
+                                    "name": "SortBool",
+                                    "args": []
+                                },
+                                "value": "true"
+                            },
+                            {
+                                "tag": "DV",
+                                "sort": {
+                                    "tag": "SortApp",
+                                    "name": "SortInt",
+                                    "args": []
+                                },
+                                "value": "0"
+                            }
+                        ]
+                    }
+                ],
+                "error": "Inconsistent pattern. Symbol 'Lbl'Hash'if'UndsHash'then'UndsHash'else'UndsHash'fi'Unds'K-EQUAL-SYNTAX'Unds'Sort'Unds'Bool'Unds'Sort'Unds'Sort' expected 3 arguments but got 2"
+            }
+        ],
         "message": "Could not verify pattern"
     }
 }
