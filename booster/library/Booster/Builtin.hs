@@ -43,6 +43,8 @@ builtinsKEQUAL :: Map Text BuiltinFunction
 builtinsKEQUAL =
     Map.fromList
         [ "KEQUAL.ite" ~~> iteHook
+        , "KEQUAL.eq" ~~> equalsKHook
+        , "KEQUAL.ne" ~~> nequalsKHook
         ]
 
 iteHook :: BuiltinFunction
@@ -61,6 +63,53 @@ iteHook args
             _other -> pure Nothing
     | otherwise =
         throwE . renderText $ "KEQUAL.ite: wrong arity " <> pretty (length args)
+
+equalsKHook :: BuiltinFunction
+equalsKHook args
+    | [KSeq _ l, KSeq _ r] <- args = pure $ evalEqualsK l r
+    | otherwise =
+        throwE . renderText $ "KEQUAL.eq: wrong arity " <> pretty (length args)
+
+nequalsKHook :: BuiltinFunction
+nequalsKHook args
+    | [KSeq _ l, KSeq _ r] <- args = pure $ negateBool <$> evalEqualsK l r
+    | otherwise =
+        throwE . renderText $ "KEQUAL.ne: wrong arity " <> pretty (length args)
+
+evalEqualsK :: Term -> Term -> Maybe Term
+evalEqualsK (SymbolApplication sL _ argsL) (SymbolApplication sR _ argsR)
+    | isConstructorSymbol sL && isConstructorSymbol sR =
+        if sL == sR
+            then foldAndBool <$> zipWithM evalEqualsK argsL argsR
+            else pure FalseBool
+evalEqualsK (SymbolApplication symbol _ _) DomainValue{}
+    | isConstructorSymbol symbol = pure FalseBool
+evalEqualsK (SymbolApplication symbol _ _) Injection{}
+    | isConstructorSymbol symbol = pure FalseBool
+evalEqualsK (SymbolApplication symbol _ _) KMap{}
+    | isConstructorSymbol symbol = pure FalseBool
+evalEqualsK (SymbolApplication symbol _ _) KList{}
+    | isConstructorSymbol symbol = pure FalseBool
+evalEqualsK (SymbolApplication symbol _ _) KSet{}
+    | isConstructorSymbol symbol = pure FalseBool
+evalEqualsK DomainValue{} (SymbolApplication symbol _ _)
+    | isConstructorSymbol symbol = pure FalseBool
+evalEqualsK Injection{} (SymbolApplication symbol _ _)
+    | isConstructorSymbol symbol = pure FalseBool
+evalEqualsK KMap{} (SymbolApplication symbol _ _)
+    | isConstructorSymbol symbol = pure FalseBool
+evalEqualsK KList{} (SymbolApplication symbol _ _)
+    | isConstructorSymbol symbol = pure FalseBool
+evalEqualsK KSet{} (SymbolApplication symbol _ _)
+    | isConstructorSymbol symbol = pure FalseBool
+evalEqualsK (Injection s1L s2L l) (Injection s1R s2R r)
+    | s1L == s1R && s2L == s2R = evalEqualsK l r
+evalEqualsK l@DomainValue{} r@DomainValue{} =
+    pure $ if l == r then TrueBool else FalseBool
+evalEqualsK l r =
+    if l == r
+        then pure TrueBool
+        else fail "cannot evaluate" -- i.e., result is Nothing
 
 -- check for simple (parameter-less) sorts
 shouldHaveSort :: Term -> SortName -> Except Text ()

@@ -24,6 +24,7 @@ module Booster.Pattern.Bool (
 ) where
 
 import Data.ByteString.Char8 (ByteString)
+import Data.Text (Text)
 
 import Booster.Definition.Attributes.Base (
     SMTType (SMTHook),
@@ -62,6 +63,18 @@ pattern TotalFunctionWithSMT hook =
         Nothing
         (Just (SMTHook (Atom (SMTId hook))))
         Nothing
+
+pattern HookedFunctionWithSMT :: Text -> ByteString -> SymbolAttributes
+pattern HookedFunctionWithSMT hook smt =
+    SymbolAttributes
+        TotalFunction
+        IsNotIdem
+        IsNotAssoc
+        IsNotMacroOrAlias
+        CanBeEvaluated
+        Nothing
+        (Just (SMTHook (Atom (SMTId smt))))
+        (Just hook)
 
 pattern AndBool :: Term -> Term -> Term
 pattern AndBool l r =
@@ -130,7 +143,7 @@ pattern EqualsK a b =
                 []
                 [SortK, SortK]
                 SortBool
-                (TotalFunctionWithSMT "=")
+                (HookedFunctionWithSMT "KEQUAL.eq" "=")
             )
         []
         [a, b]
@@ -161,7 +174,7 @@ pattern NEqualsK a b =
                 []
                 [SortK, SortK]
                 SortBool
-                (TotalFunctionWithSMT "distinct")
+                (HookedFunctionWithSMT "KEQUAL.ne" "distinct")
             )
         []
         [a, b]

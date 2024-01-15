@@ -742,9 +742,8 @@ simplifyConstraint' recurseIntoEvalBool = \case
                             then TrueBool
                             else FalseBool
                 Nothing -> if recurseIntoEvalBool then evalBool t else pure t
-    EqualsK (KSeq _ l) (KSeq _ r) -> evalEqualsK l r
-    NEqualsK (KSeq _ l) (KSeq _ r) -> negateBool <$> evalEqualsK l r
-    t -> if recurseIntoEvalBool then evalBool t else pure t
+        | otherwise ->
+            if recurseIntoEvalBool then evalBool t else pure t
   where
     evalBool :: MonadLoggerIO io => Term -> EquationT io Term
     evalBool t = do
@@ -752,42 +751,3 @@ simplifyConstraint' recurseIntoEvalBool = \case
         result <- iterateEquations 100 BottomUp PreferFunctions t
         EquationT $ lift $ lift $ put prior
         pure result
-
-    evalEqualsK l@(SymbolApplication sL _ argsL) r@(SymbolApplication sR _ argsR)
-        | isConstructorSymbol sL && isConstructorSymbol sR =
-            if sL == sR
-                then foldAndBool <$> zipWithM evalEqualsK argsL argsR
-                else pure FalseBool
-        | otherwise =
-            (if recurseIntoEvalBool then evalBool else pure) $
-                EqualsK (KSeq (sortOfTerm l) l) (KSeq (sortOfTerm r) r)
-    evalEqualsK (SymbolApplication symbol _ _) DomainValue{}
-        | isConstructorSymbol symbol = pure FalseBool
-    evalEqualsK (SymbolApplication symbol _ _) Injection{}
-        | isConstructorSymbol symbol = pure FalseBool
-    evalEqualsK (SymbolApplication symbol _ _) KMap{}
-        | isConstructorSymbol symbol = pure FalseBool
-    evalEqualsK (SymbolApplication symbol _ _) KList{}
-        | isConstructorSymbol symbol = pure FalseBool
-    evalEqualsK (SymbolApplication symbol _ _) KSet{}
-        | isConstructorSymbol symbol = pure FalseBool
-    evalEqualsK DomainValue{} (SymbolApplication symbol _ _)
-        | isConstructorSymbol symbol = pure FalseBool
-    evalEqualsK Injection{} (SymbolApplication symbol _ _)
-        | isConstructorSymbol symbol = pure FalseBool
-    evalEqualsK KMap{} (SymbolApplication symbol _ _)
-        | isConstructorSymbol symbol = pure FalseBool
-    evalEqualsK KList{} (SymbolApplication symbol _ _)
-        | isConstructorSymbol symbol = pure FalseBool
-    evalEqualsK KSet{} (SymbolApplication symbol _ _)
-        | isConstructorSymbol symbol = pure FalseBool
-    evalEqualsK (Injection s1L s2L l) (Injection s1R s2R r)
-        | s1L == s1R && s2L == s2R = evalEqualsK l r
-    evalEqualsK l@DomainValue{} r@DomainValue{} =
-        pure $ if l == r then TrueBool else FalseBool
-    evalEqualsK l r =
-        if l == r
-            then pure TrueBool
-            else
-                (if recurseIntoEvalBool then evalBool else pure) $
-                    EqualsK (KSeq (sortOfTerm l) l) (KSeq (sortOfTerm r) r)
