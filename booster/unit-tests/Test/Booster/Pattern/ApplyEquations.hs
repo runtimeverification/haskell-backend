@@ -172,8 +172,8 @@ test_simplifyConstraint =
                     "Same constructor, different variables"
                     [trm| con1{}(A:SomeSort{}) |]
                     [trm| con1{}(B:SomeSort{}) |]
-                    (const (EqualsK (KSeq someSort [trm| A:SomeSort{} |]) (KSeq someSort [trm| B:SomeSort{} |])))
-                    (const (EqualsK (KSeq someSort [trm| B:SomeSort{} |]) (KSeq someSort [trm| A:SomeSort{} |])))
+                    id
+                    id
                 , testCaseEqualsK
                     "Different constructors, same variable"
                     [trm| con1{}(A:SomeSort{}) |]
