@@ -79,7 +79,7 @@ To get HLS working in VSCode, install these two extensions:
 https://marketplace.visualstudio.com/items?itemName=arrterian.nix-env-selector
 https://marketplace.visualstudio.com/items?itemName=haskell.haskell
 
-The `nix-env-selector` extension may prompt for the workspace to be re-loaded. Once re-loaded, HLS should start working. 
+The `nix-env-selector` extension may prompt for the workspace to be re-loaded. Once re-loaded, HLS should start working.
 
 ## Eventlog tracing
 
