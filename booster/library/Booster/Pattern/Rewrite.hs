@@ -328,7 +328,7 @@ applyRule pat@Pattern{ceilConditions} rule = runRewriteRuleAppT $ do
         forbiddenVars = varsFromInput <> varsFromSubst
         existentialSubst =
             Map.fromSet
-                (\v -> Var $ freshenVar v{variableName = stripVarOriginPrefix v.variableName} forbiddenVars)
+                (\v -> Var $ freshenVar v{variableName = stripMarker v.variableName} forbiddenVars)
                 rule.existentials
 
     -- modify the substitution to include the existentials

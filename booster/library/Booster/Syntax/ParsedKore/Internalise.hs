@@ -786,14 +786,15 @@ internaliseRewriteRuleNoAlias ::
     Except DefinitionError (RewriteRule k)
 internaliseRewriteRuleNoAlias partialDefinition exs left right axAttributes = do
     let ref = sourceRef axAttributes
-    -- prefix all variables in lhs and rhs with "Rule#" and "Ex#" to avoid
-    -- name clashes with patterns from the user
+    -- mark all variables in lhs as rule-variables
+    -- and in rhs as either rule- or existential-variables
+    -- to avoid name clashes with patterns from the user;
     -- filter out literal `Top` constraints
-    lhs <- internalisePattern' ref (Util.modifyVarName ("Rule#" <>)) left
+    lhs <- internalisePattern' ref (Util.modifyVarName Util.markAsRuleVar) left
     existentials' <- fmap Set.fromList $ withExcept (DefinitionPatternError ref) $ mapM mkVar exs
     let renameVariable v
-            | v `Set.member` existentials' = Util.modifyVarName ("Ex#" <>) v
-            | otherwise = Util.modifyVarName ("Rule#" <>) v
+            | v `Set.member` existentials' = Util.modifyVarName Util.markAsExVar v
+            | otherwise = Util.modifyVarName Util.markAsRuleVar v
     rhs <- internalisePattern' ref renameVariable right
     let notPreservesDefinednessReasons =
             -- users can override the definedness computation by an explicit attribute
@@ -803,15 +804,11 @@ internaliseRewriteRuleNoAlias partialDefinition exs left right axAttributes = do
                     [ UndefinedSymbol s.name
                     | s <- Util.filterTermSymbols (not . Util.isDefinedSymbol) rhs.term
                     ]
-        -- <> [ UndefinedSymbol s.name
-        --    | c <- Set.toList lhs.constraints
-        --    , s <- Util.filterTermSymbols (not . Util.isDefinedSymbol) $ coerce c
-        --    ]
         containsAcSymbols =
             Util.checkTermSymbols Util.checkSymbolIsAc lhs.term
         computedAttributes =
             ComputedAxiomAttributes{notPreservesDefinednessReasons, containsAcSymbols}
-        existentials = Set.map (Util.modifyVarName ("Ex#" <>)) existentials'
+        existentials = Set.map (Util.modifyVarName Util.markAsExVar) existentials'
     return
         RewriteRule
             { lhs = lhs.term
@@ -866,13 +863,13 @@ internaliseRewriteRule partialDefinition exs aliasName aliasArgs right axAttribu
     -- name clashes with patterns from the user
     -- filter out literal `Top` constraints
     lhs <-
-        fmap (removeTrueBools . Util.modifyVariables (Util.modifyVarName ("Rule#" <>))) $
+        fmap (removeTrueBools . Util.modifyVariables (Util.modifyVarName Util.markAsRuleVar)) $
             retractPattern result
                 `orFailWith` DefinitionTermOrPredicateError ref (PatternExpected result)
     existentials' <- fmap Set.fromList $ withExcept (DefinitionPatternError ref) $ mapM mkVar exs
     let renameVariable v
-            | v `Set.member` existentials' = Util.modifyVarName ("Ex#" <>) v
-            | otherwise = Util.modifyVarName ("Rule#" <>) v
+            | v `Set.member` existentials' = Util.modifyVarName Util.markAsExVar v
+            | otherwise = Util.modifyVarName Util.markAsRuleVar v
     rhs <- internalisePattern' ref renameVariable right
 
     let notPreservesDefinednessReasons =
@@ -887,9 +884,11 @@ internaliseRewriteRule partialDefinition exs aliasName aliasArgs right axAttribu
             Util.checkTermSymbols Util.checkSymbolIsAc lhs.term
         computedAttributes =
             ComputedAxiomAttributes{notPreservesDefinednessReasons, containsAcSymbols}
-        existentials = Set.map (Util.modifyVarName ("Ex#" <>)) existentials'
+        existentials = Set.map (Util.modifyVarName Util.markAsExVar) existentials'
         attributes =
-            axAttributes{concreteness = Util.modifyVarNameConcreteness ("Rule#" <>) axAttributes.concreteness}
+            axAttributes
+                { concreteness = Util.modifyVarNameConcreteness Util.markAsRuleVar axAttributes.concreteness
+                }
     return
         RewriteRule
             { lhs = lhs.term
