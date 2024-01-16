@@ -29,7 +29,9 @@ module Booster.Pattern.Util (
     abstractSymbolicConstructorArguments,
     cellSymbolStats,
     cellVariableStats,
-    stripVarOriginPrefix,
+    stripMarker,
+    markAsExVar,
+    markAsRuleVar,
     incrementNameCounter,
 ) where
 
@@ -117,11 +119,17 @@ modifyVariablesInT f = cata $ \case
 modifyVarName :: (VarName -> VarName) -> Variable -> Variable
 modifyVarName f v = v{variableName = f v.variableName}
 
-{- | Strip variable provenance prefixes introduced
-in "Syntax.ParsedKore.Internalize.internationalization"
+markAsRuleVar :: VarName -> VarName
+markAsRuleVar = ("Rule#" <>)
+
+markAsExVar :: VarName -> VarName
+markAsExVar = ("Ex#" <>)
+
+{- | Strip variable provenance prefixes introduced using "markAsRuleVar" and "markAsExVar"
+in "Syntax.ParsedKore.Internalize"
 -}
-stripVarOriginPrefix :: VarName -> VarName
-stripVarOriginPrefix name =
+stripMarker :: VarName -> VarName
+stripMarker name =
     let noRule = BS.stripPrefix "Rule#" name
         noEx = BS.stripPrefix "Ex#" name
      in fromMaybe name $ noRule <|> noEx
