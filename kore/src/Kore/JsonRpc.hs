@@ -480,14 +480,22 @@ respond serverState moduleName runSMT =
 
             -- put the original state back if we fail at any point
             flip catchE (\e -> liftIO (MVar.putMVar serverState st) >> throwError e) $ do
-                when
-                    ( nameAsId
-                        && isJust (Map.lookup (coerce name) indexedModules)
-                    )
-                    $
-                    -- if a module with the same name already exists,throw an error
-                    throwError
-                    $ backendError DuplicateModule name
+                when nameAsId $
+                    case (Map.lookup (coerce name) indexedModules, Map.lookup (coerce moduleHash) indexedModules) of
+                        (Just{}, Nothing) ->
+                            -- another module with the same name already exists
+                            throwError $ backendError DuplicateModuleName name
+                        (Just nmMod, Just idMod)
+                            | nmMod /= idMod ->
+                                -- this module has previously been added and different
+                                -- module with the same name also already exists
+                                throwError $ backendError DuplicateModuleName name
+                            | otherwise ->
+                                -- this module has previously been added with name-as-id: true
+                                -- we can allow this, since the contents of the named module
+                                -- are the same
+                                pure ()
+                        _ -> pure ()
 
                 case (Map.lookup (coerce moduleHash) indexedModules, Map.lookup (coerce moduleHash) serializedModules) of
                     (Just foundIdxModule, Just foundSerModule) -> do
