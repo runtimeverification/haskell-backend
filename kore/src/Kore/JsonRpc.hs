@@ -483,19 +483,28 @@ respond serverState moduleName runSMT =
                 when
                     ( nameAsId
                         && isJust (Map.lookup (coerce name) indexedModules)
-                        && isNothing (Map.lookup (coerce moduleHash) indexedModules)
                     )
                     $
-                    -- if a module with the same name already exists, but it's contents are different to the current module, throw an error
+                    -- if a module with the same name already exists,throw an error
                     throwError
                     $ backendError DuplicateModule name
 
-                case Map.lookup (coerce moduleHash) indexedModules of
-                    Just{} -> do
-                        -- the module already exists so we don't need to add it again
-                        liftIO $ MVar.putMVar serverState st
+                case (Map.lookup (coerce moduleHash) indexedModules, Map.lookup (coerce moduleHash) serializedModules) of
+                    (Just foundIdxModule, Just foundSerModule) -> do
+                        liftIO $ MVar.putMVar serverState $ if nameAsId 
+                            then -- the module already exists, but re-adding with name because name-as-id is true
+                                ServerState
+                                    { serializedModules =
+                                        Map.insert (coerce name) foundSerModule serializedModules
+                                    , loadedDefinition = LoadedDefinition{
+                                        indexedModules = Map.insert (coerce name) foundIdxModule indexedModules, 
+                                        definedNames, 
+                                        kFileLocations}
+                                    }
+                            else -- the module already exists so we don't need to add it again
+                                st
                         pure . AddModule $ AddModuleResult (getModuleName moduleHash)
-                    Nothing -> do
+                    _ -> do
                         (newIndexedModules, newDefinedNames) <-
                             withExceptT (backendError CouldNotVerifyPattern) $
                                 liftEither $
