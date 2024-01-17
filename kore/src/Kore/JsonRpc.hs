@@ -491,18 +491,23 @@ respond serverState moduleName runSMT =
 
                 case (Map.lookup (coerce moduleHash) indexedModules, Map.lookup (coerce moduleHash) serializedModules) of
                     (Just foundIdxModule, Just foundSerModule) -> do
-                        liftIO $ MVar.putMVar serverState $ if nameAsId 
-                            then -- the module already exists, but re-adding with name because name-as-id is true
-                                ServerState
-                                    { serializedModules =
-                                        Map.insert (coerce name) foundSerModule serializedModules
-                                    , loadedDefinition = LoadedDefinition{
-                                        indexedModules = Map.insert (coerce name) foundIdxModule indexedModules, 
-                                        definedNames, 
-                                        kFileLocations}
-                                    }
-                            else -- the module already exists so we don't need to add it again
-                                st
+                        liftIO $
+                            MVar.putMVar serverState $
+                                if nameAsId
+                                    then -- the module already exists, but re-adding with name because name-as-id is true
+
+                                        ServerState
+                                            { serializedModules =
+                                                Map.insert (coerce name) foundSerModule serializedModules
+                                            , loadedDefinition =
+                                                LoadedDefinition
+                                                    { indexedModules = Map.insert (coerce name) foundIdxModule indexedModules
+                                                    , definedNames
+                                                    , kFileLocations
+                                                    }
+                                            }
+                                    else -- the module already exists so we don't need to add it again
+                                        st
                         pure . AddModule $ AddModuleResult (getModuleName moduleHash)
                     _ -> do
                         (newIndexedModules, newDefinedNames) <-
