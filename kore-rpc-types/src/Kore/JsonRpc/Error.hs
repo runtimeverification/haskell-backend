@@ -41,7 +41,7 @@ data JsonRpcBackendError
     | SmtSolverError
     | Aborted
     | MultipleStates
-    | DuplicateModule
+    | DuplicateModuleName
     deriving stock (Enum, Show)
 
 backendError :: ToJSON a => JsonRpcBackendError -> a -> ErrorObj

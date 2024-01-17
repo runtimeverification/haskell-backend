@@ -508,7 +508,7 @@ If the textual KORE in `module` is syntactically wrong, the response will use th
 }
 ```
 
-If the same module is added twice with `name-as-id: true`, the second request will fail with a `Duplicate module` error
+If two dfferent modules with the same name and `name-as-id: true` are sent, the second request will fail with a `Duplicate module name` error
 
 ```json
 {
@@ -516,12 +516,13 @@ If the same module is added twice with `name-as-id: true`, the second request wi
   "id": 1,
   "error": {
     "code": 8,
-    "message": "Duplicate module"
+    "message": "Duplicate module name"
   }
 }
 ```
 
-However, if the same module is sent twice with `name-as-id: false` or without `name-as-id`, the second request is idempotent and will succeed.
+However, if the modules are sent twice with `name-as-id: false` or without `name-as-id`, the second request will succeed. 
+THe request will also succeed in case the same module is sent multiple times, irrespective of the value of `name-as-id`.
 
 
 Other errors, for instance, using an unknown sort or symbol, will be reported with the error code
