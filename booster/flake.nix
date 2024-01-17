@@ -115,6 +115,7 @@
             pkgs.jq
             pkgs.nix
             pkgs.z3
+            pkgs.lsof
           ];
         };
       });
