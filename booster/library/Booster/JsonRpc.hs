@@ -56,7 +56,7 @@ import Booster.Pattern.Rewrite (
     RewriteTrace (..),
     performRewrite,
  )
-import Booster.Pattern.Util (sortOfPattern)
+import Booster.Pattern.Util (sortOfPattern, substituteInPredicate, substituteInTerm)
 import Booster.Prettyprinter (renderText)
 import Booster.SMT.Base qualified as SMT
 import Booster.SMT.Interface qualified as SMT
@@ -123,8 +123,16 @@ respond stateVar =
                                 , req.logFailedSimplifications
                                 , req.logFallbacks
                                 ]
+                    -- apply the given substitution before doing anything else
+                    let substPat =
+                            Pattern
+                                { term = substituteInTerm substitution pat.term
+                                , constraints = Set.map (substituteInPredicate substitution) pat.constraints
+                                , ceilConditions = pat.ceilConditions
+                                }
+
                     solver <- traverse (SMT.initSolver def) mSMTOptions
-                    result <- performRewrite doTracing def mLlvmLibrary solver mbDepth cutPoints terminals pat
+                    result <- performRewrite doTracing def mLlvmLibrary solver mbDepth cutPoints terminals substPat
                     whenJust solver SMT.closeSolver
                     stop <- liftIO $ getTime Monotonic
                     let duration =
@@ -214,7 +222,14 @@ respond stateVar =
                             "booster"
                             (Log.LevelOther "ErrorDetails")
                             (Text.unlines $ map prettyPattern unsupported)
-                    ApplyEquations.evaluatePattern doTracing def mLlvmLibrary solver mempty pat >>= \case
+                    -- apply the given substitution before doing anything else
+                    let substPat =
+                            Pattern
+                                { term = substituteInTerm substitution pat.term
+                                , constraints = Set.map (substituteInPredicate substitution) pat.constraints
+                                , ceilConditions = pat.ceilConditions
+                                }
+                    ApplyEquations.evaluatePattern doTracing def mLlvmLibrary solver mempty substPat >>= \case
                         (Right newPattern, patternTraces, _) -> do
                             let (term, mbPredicate, mbSubstitution) = externalisePattern newPattern substitution
                                 tSort = externaliseSort (sortOfPattern newPattern)
@@ -246,13 +261,14 @@ respond stateVar =
                                 (Log.LevelOther "ErrorDetails")
                                 (Text.unlines $ map prettyPattern ps.unsupported)
                         Log.logOtherNS "booster" (Log.LevelOther "Simplify") $ renderText (pretty ps)
+                        let predicates = map (substituteInPredicate ps.substitution) $ Set.toList ps.boolPredicates
                         ApplyEquations.simplifyConstraints
                             doTracing
                             def
                             mLlvmLibrary
                             solver
                             mempty
-                            (Set.toList ps.boolPredicates)
+                            predicates
                             >>= \case
                                 (Right newPreds, traces, _) -> do
                                     let predicateSort =
