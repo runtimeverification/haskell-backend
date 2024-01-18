@@ -366,6 +366,7 @@ applyRule pat@Pattern{ceilConditions} rule = runRewriteRuleAppT $ do
             Right (Predicate FalseBool) -> onBottom
             Right (Predicate TrueBool) -> pure Nothing
             Right other -> pure $ Just $ onUnclear other
+            Left UndefinedTerm{} -> onBottom
             Left _ -> pure $ Just $ onUnclear p
 
 {- | Reason why a rewrite did not produce a result. Contains additional
@@ -661,6 +662,10 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                     pure $ Just newPattern
                 Left r@(SideConditionFalse _p) -> do
                     logSimplify "A side condition was found to be false, pruning"
+                    rewriteTrace $ RewriteSimplified traces (Just r)
+                    pure Nothing
+                Left r@UndefinedTerm{} -> do
+                    logSimplify "Term is undefined, pruning"
                     rewriteTrace $ RewriteSimplified traces (Just r)
                     pure Nothing
                 -- NB any errors here might be caused by simplifying one

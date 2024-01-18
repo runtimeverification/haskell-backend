@@ -810,6 +810,13 @@ mkLogRewriteTrace
                                     , origin = Booster
                                     , result = Failure{reason = "Side conditions false", _ruleId = Nothing}
                                     }
+                            ApplyEquations.UndefinedTerm _t _err ->
+                                Simplification
+                                    { originalTerm = Nothing
+                                    , originalTermIndex = Nothing
+                                    , origin = Booster
+                                    , result = Failure{reason = "Undefined term found", _ruleId = Nothing}
+                                    }
                     (<> final) <$> mapM (mkLogEquationTrace equationLogOpts) equationTraces
                 | otherwise -> Just []
             _ -> Nothing
