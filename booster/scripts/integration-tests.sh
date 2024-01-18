@@ -38,6 +38,10 @@ for dir in $(ls -d test-*); do
             SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
             SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name $@
             ;;
+        "condition-filtering")
+            SERVER=$KORE_RPC_BOOSTER ./runDirectoryTest.sh test-$name $@
+            SERVER=$BOOSTER_DEV SERVER_OPTS="--no-smt" ./runDirectoryTest.sh test-$name $@
+            ;;
         "questionmark-vars")
             SERVER=$BOOSTER_DEV ./runDirectoryTest.sh test-$name $@
             SERVER=$KORE_RPC_DEV ./runDirectoryTest.sh test-$name $@
