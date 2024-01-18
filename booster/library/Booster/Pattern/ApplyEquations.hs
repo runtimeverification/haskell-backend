@@ -37,6 +37,7 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), ask)
 import Control.Monad.Trans.State
+import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
 import Data.Foldable (toList, traverse_)
 import Data.List (elemIndex, partition)
@@ -84,6 +85,7 @@ data EquationFailure
     | TooManyRecursions [Term]
     | SideConditionFalse Predicate
     | InternalError Text
+    | UndefinedTerm Term LLVM.LlvmError
     deriving stock (Eq, Show)
 
 instance Pretty EquationFailure where
@@ -106,6 +108,13 @@ instance Pretty EquationFailure where
             vsep
                 [ "A side condition was found to be false during evaluation (pruning)"
                 , pretty p
+                ]
+        UndefinedTerm t (LLVM.LlvmError err) ->
+            vsep
+                [ "Term"
+                , pretty t
+                , "is undefined: "
+                , pretty (BS.unpack err)
                 ]
         InternalError msg ->
             "Internal error during evaluation: " <> pretty msg
@@ -409,14 +418,16 @@ applyTerm direction pref trm = do
                 Nothing -> do
                     simplified <-
                         if isConcrete t && isJust config.llvmApi && attributes.canBeEvaluated
-                            then do
-                                -- LLVM simplification proceeds top-down and cuts the descent
-                                -- FIXME run this in IO
-                                let result = simplifyTerm (fromJust config.llvmApi) config.definition t (sortOfTerm t)
-                                when (result /= t) $ do
-                                    setChanged
-                                    traceRuleApplication t Nothing (Just "LLVM") Nothing $ Success result
-                                pure result
+                            then -- LLVM simplification proceeds top-down and cuts the descent
+
+                                simplifyTerm (fromJust config.llvmApi) config.definition t (sortOfTerm t)
+                                    >>= \case
+                                        Left e -> throw $ UndefinedTerm t e
+                                        Right result -> do
+                                            when (result /= t) $ do
+                                                setChanged
+                                                traceRuleApplication t Nothing (Just "LLVM") Nothing $ Success result
+                                            pure result
                             else -- use equations
                                 apply config t
                     toCache t simplified
@@ -712,15 +723,19 @@ applyEquation term rule = fmap (either id Success) $ runExceptT $ do
     checkConstraint whenBottom (Predicate p) = do
         logOther (LevelOther "Simplify") $
             "Recursive simplification of predicate: " <> pack (renderDefault (pretty p))
-        let fallBackToUnsimplified :: EquationFailure -> EquationT io Term
-            fallBackToUnsimplified e = do
-                logOther (LevelOther "Simplify") . pack . renderDefault $
-                    "Aborting recursive simplification:" <> pretty e
-                pure p
+        let fallBackToUnsimplifiedOrBottom :: EquationFailure -> EquationT io Term
+            fallBackToUnsimplifiedOrBottom = \case
+                e@UndefinedTerm{} -> do
+                    logOther (LevelOther "Simplify") . pack . renderDefault $ pretty e
+                    pure FalseBool
+                e -> do
+                    logOther (LevelOther "Simplify") . pack . renderDefault $
+                        "Aborting recursive simplification:" <> pretty e
+                    pure p
         -- exceptions need to be handled differently in the recursion,
         -- falling back to the unsimplified constraint instead of aborting.
         simplified <-
-            lift $ simplifyConstraint' True p `catch_` fallBackToUnsimplified
+            lift $ simplifyConstraint' True p `catch_` fallBackToUnsimplifiedOrBottom
         case simplified of
             FalseBool -> throwE . whenBottom $ coerce p
             TrueBool -> pure Nothing
@@ -819,10 +834,14 @@ simplifyConstraint' recurseIntoEvalBool = \case
             mbApi <- (.llvmApi) <$> getConfig
             case mbApi of
                 Just api ->
-                    pure $
-                        if simplifyBool api t
-                            then TrueBool
-                            else FalseBool
+                    simplifyBool api t >>= \case
+                        Left e ->
+                            throw $ UndefinedTerm t e
+                        Right res ->
+                            pure $
+                                if res
+                                    then TrueBool
+                                    else FalseBool
                 Nothing -> if recurseIntoEvalBool then evalBool t else pure t
         | otherwise ->
             if recurseIntoEvalBool then evalBool t else pure t

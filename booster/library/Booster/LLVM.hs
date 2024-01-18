@@ -5,7 +5,6 @@ import Data.Binary.Get
 import Data.ByteString (fromStrict)
 import Data.Map qualified as Map
 import Data.Set qualified as Set
-import System.IO.Unsafe (unsafePerformIO)
 
 import Booster.Definition.Base
 import Booster.LLVM.Internal qualified as Internal
@@ -13,9 +12,10 @@ import Booster.Pattern.Base
 import Booster.Pattern.Binary
 import Booster.Pattern.Util
 import Booster.Trace qualified as Trace
+import Data.ByteString.Char8 qualified as BS
 
-simplifyBool :: Internal.API -> Term -> Bool
-simplifyBool api trm = unsafePerformIO $ Internal.runLLVM api $ do
+simplifyBool :: MonadIO io => Internal.API -> Term -> io (Either Internal.LlvmError Bool)
+simplifyBool api trm = liftIO $ Internal.runLLVM api $ do
     kore <- Internal.ask
     trmPtr <- Trace.timeIO "LLVM.simplifyBool.marshallTerm" (Internal.marshallTerm trm)
 
@@ -23,29 +23,35 @@ simplifyBool api trm = unsafePerformIO $ Internal.runLLVM api $ do
 
     liftIO $ kore.simplifyBool trmPtr
 
-simplifyTerm :: Internal.API -> KoreDefinition -> Term -> Sort -> Term
-simplifyTerm api def trm sort = unsafePerformIO $ Internal.runLLVM api $ do
+simplifyTerm ::
+    MonadIO io => Internal.API -> KoreDefinition -> Term -> Sort -> io (Either Internal.LlvmError Term)
+simplifyTerm api def trm sort = liftIO $ Internal.runLLVM api $ do
     kore <- Internal.ask
     trmPtr <- Trace.timeIO "LLVM.simplifyTerm.marshallTerm" $ Internal.marshallTerm trm
     sortPtr <- Trace.timeIO "LLVM.simplifyTerm.marshallSort" $ Internal.marshallSort sort
-    binary <- liftIO $ kore.simplify trmPtr sortPtr
+    mbinary <- liftIO $ kore.simplify trmPtr sortPtr
     liftIO kore.collect
     Trace.traceIO $ Internal.LlvmVar (Internal.somePtr trmPtr) trm
-    -- strip away the custom injection added by the LLVM backend
-    Trace.timeIO "LLVM.simplifyTerm.decodeTerm" $ case runGet (decodeTerm def) (fromStrict binary) of
-        result
-            | sortOfTerm result == sort ->
-                pure result
-            | newSort@(SortApp name _) <- sortOfTerm result
-            , Set.member name subsorts ->
-                pure $ Injection newSort sort result
-            | otherwise -> do
-                liftIO . putStrLn $
-                    "[Error] LLVM simplification returned sort  "
-                        <> show (sortOfTerm result)
-                        <> ". Expected sort "
-                        <> show sort
-                pure trm
+    case mbinary of
+        Left err -> pure $ Left err
+        Right binary -> do
+            -- strip away the custom injection added by the LLVM backend
+            Trace.timeIO "LLVM.simplifyTerm.decodeTerm" $ case runGet (decodeTerm def) (fromStrict binary) of
+                result
+                    | sortOfTerm result == sort ->
+                        pure $ Right result
+                    | newSort@(SortApp name _) <- sortOfTerm result
+                    , Set.member name subsorts ->
+                        pure $ Right $ Injection newSort sort result
+                    | otherwise -> do
+                        pure $
+                            Left $
+                                Internal.LlvmError $
+                                    BS.pack $
+                                        "LLVM simplification returned sort  "
+                                            <> show (sortOfTerm result)
+                                            <> ". Expected sort "
+                                            <> show sort
   where
     sortName (SortApp name _) = name
     sortName (SortVar name) = name

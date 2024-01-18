@@ -12,29 +12,60 @@
 extern "C" {
 #endif
 
+/**
+ * Error Handling
+ * ==============
+ *
+ * Some API functions in these bindings can bubble up internal errors from the
+ * LLVM backend to avoid crashing the host process.
+ *
+ * These functions take an initial parameter of type `kore_error *`; if that
+ * parameter is `NULL` then any C++ exceptions thrown by the backend will
+ * simply be rethrown and the host process will crash with the relevant error
+ * message.
+ *
+ * If the input is not NULL, then the object will have call-specific information
+ * filled in that can be accessed using the getter functions in this section.
+ */
+
+typedef struct kore_error kore_error;
+
+/**
+ * Create an empty error object. Initially, the created object will report
+ * success (not failure), and will return `NULL` if its message is accessed.
+ */
+kore_error *kore_error_new(void);
+
+/**
+ * Return true if no error occurred when this object was passed to an API call.
+ */
+bool kore_error_is_success(kore_error const *);
+
+/**
+ * Return any error-specific message that has been added to this object. The
+ * returned string is a reference to the error's internal state and should not
+ * be freed separately. If no error has occurred (i.e. is_success returns true),
+ * then return NULL.
+ */
+char const *kore_error_message(kore_error const *);
+
+/**
+ * Deallocate an error and its associated message.
+ */
+void kore_error_free(kore_error *);
+
 /*
- * Memory management in KLLVM-C
- * ============================
+ * Binary KORE Outputs
+ * ===================
  *
- * The underlying C++ AST library manages Pattern and Sort objects differently;
- * Patterns have a *unique* ownership model, while Sorts are *shared*. This
- * means that a composite pattern object owns its arguments, and will delete
- * them when it is destructed. Conversely, the same sort object could be an
- * argument to two different composite sorts, and would only be destroyed when
- * both of those owners are (via reference-counting from std::shared_ptr).
+ * All API functions in these bindings that return binary KORE data do so with a
+ * pair of output parameters:
  *
- * These differences are exposed in the C API essentially unmodified; functions
- * that take an opaque pattern object will modify the opaque holder such that it
- * is not usable after the call (i.e. the underlying unique_ptr has been
- * moved-from). This is not true for the analogous functions on sorts. The C API
- * reflects this difference by const-qualification of pointer arguments.
+ *   char   ** data_out
+ *   size_t  * size_out
  *
- * Note that these different models *do not* apply to the opaque holder objects
- * allocated by the C *_new functions; the holder should be deallocated with the
- * corresponding *_free function when it is no longer required. Doing so will
- * handle calling the appropriate destructor of the held object (e.g. freeing a
- * kore_pattern will destroy the underlying object held by the
- * std::unique_ptr<KOREPattern> inside it).
+ * The returned binary data in *data_out has length *size_out, and should be
+ * freed with free(*data_out) when it is no longer required.
  */
 
 /* Opaque types */
@@ -48,7 +79,14 @@ typedef struct block block;
 
 char *kore_pattern_dump(kore_pattern const *);
 
+char *kore_pattern_pretty_print(kore_pattern const *);
+
+void kore_pattern_serialize(kore_pattern const *, char **, size_t *);
+
 void kore_pattern_free(kore_pattern const *);
+
+kore_pattern *kore_pattern_parse(char const *);
+kore_pattern *kore_pattern_parse_file(char const *);
 
 kore_pattern *kore_pattern_new_token(char const *, kore_sort const *);
 kore_pattern *
@@ -57,11 +95,14 @@ kore_pattern_new_token_with_len(char const *, size_t, kore_sort const *);
 kore_pattern *kore_pattern_new_injection(
     kore_pattern const *, kore_sort const *, kore_sort const *);
 
-kore_pattern *kore_pattern_make_interpreter_input(kore_pattern const *);
+kore_pattern *
+kore_pattern_make_interpreter_input(kore_pattern const *, kore_sort const *);
 
 kore_pattern *kore_composite_pattern_new(char const *);
 kore_pattern *kore_composite_pattern_from_symbol(kore_symbol *);
 void kore_composite_pattern_add_argument(kore_pattern *, kore_pattern const *);
+
+kore_pattern *kore_pattern_desugar_associative(kore_pattern const *);
 
 kore_pattern *kore_string_pattern_new(char const *);
 kore_pattern *kore_string_pattern_new_with_len(char const *, size_t);
@@ -69,21 +110,23 @@ kore_pattern *kore_string_pattern_new_with_len(char const *, size_t);
 block *kore_pattern_construct(kore_pattern const *);
 char *kore_block_dump(block *);
 
+kore_pattern *kore_pattern_from_block(block *);
+
 /* 
  * Expects the argument term to be of the form:
  *   sym{}(BOOL)
  */
 bool kore_block_get_bool(block *);
 
-bool kore_simplify_bool(kore_pattern const *);
+bool kore_simplify_bool(kore_error *, kore_pattern const *);
 
-/*
- * The two final parameters here are outputs: the serialized binary data and the
- * number of serialized bytes, respectively. The binary data should be freed
- * with `free()`.
- */
 void kore_simplify(
-    kore_pattern const *pattern, kore_sort const *sort, char **, size_t *);
+    kore_error *err, kore_pattern const *pattern, kore_sort const *sort,
+    char **, size_t *);
+
+void kore_simplify_binary(
+    kore_error *, char *, size_t, kore_sort const *, char **, size_t *);
+
 
 /* KORESort */
 
