@@ -2,8 +2,8 @@
     "jsonrpc": "2.0",
     "id": 1,
     "result": {
-        "reason": "vacuous",
-        "depth": 0,
+        "reason": "depth-bound",
+        "depth": 1,
         "state": {
             "term": {
                 "format": "KORE",
@@ -40,13 +40,10 @@
                                             ],
                                             "args": [
                                                 {
-                                                    "tag": "DV",
-                                                    "sort": {
-                                                        "tag": "SortApp",
-                                                        "name": "SortState",
-                                                        "args": []
-                                                    },
-                                                    "value": "symbolic-subst"
+                                                    "tag": "App",
+                                                    "name": "LblS3",
+                                                    "sorts": [],
+                                                    "args": []
                                                 }
                                             ]
                                         },
@@ -62,7 +59,7 @@
                         },
                         {
                             "tag": "App",
-                            "name": "Lbl'-LT-'int'-GT-'",
+                            "name": "Lbl'-LT-'x'-GT-'",
                             "sorts": [],
                             "args": [
                                 {
@@ -73,38 +70,6 @@
                                         "name": "SortInt",
                                         "args": []
                                     }
-                                }
-                            ]
-                        },
-                        {
-                            "tag": "App",
-                            "name": "Lbl'-LT-'jnt'-GT-'",
-                            "sorts": [],
-                            "args": [
-                                {
-                                    "tag": "App",
-                                    "name": "Lbl'UndsPlus'Int'Unds'",
-                                    "sorts": [],
-                                    "args": [
-                                        {
-                                            "tag": "EVar",
-                                            "name": "X",
-                                            "sort": {
-                                                "tag": "SortApp",
-                                                "name": "SortInt",
-                                                "args": []
-                                            }
-                                        },
-                                        {
-                                            "tag": "DV",
-                                            "sort": {
-                                                "tag": "SortApp",
-                                                "name": "SortInt",
-                                                "args": []
-                                            },
-                                            "value": "1"
-                                        }
-                                    ]
                                 }
                             ]
                         },
@@ -127,14 +92,14 @@
                     ]
                 }
             },
-            "substitution": {
+            "predicate": {
                 "format": "KORE",
                 "version": 1,
                 "term": {
                     "tag": "Equals",
                     "argSort": {
                         "tag": "SortApp",
-                        "name": "SortInt",
+                        "name": "SortBool",
                         "args": []
                     },
                     "sort": {
@@ -143,17 +108,17 @@
                         "args": []
                     },
                     "first": {
-                        "tag": "EVar",
-                        "name": "Y",
+                        "tag": "DV",
                         "sort": {
                             "tag": "SortApp",
-                            "name": "SortInt",
+                            "name": "SortBool",
                             "args": []
-                        }
+                        },
+                        "value": "true"
                     },
                     "second": {
                         "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
+                        "name": "Lblp",
                         "sorts": [],
                         "args": [
                             {
@@ -164,15 +129,6 @@
                                     "name": "SortInt",
                                     "args": []
                                 }
-                            },
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "1"
                             }
                         ]
                     }
