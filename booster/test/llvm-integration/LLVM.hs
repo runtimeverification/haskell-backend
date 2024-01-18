@@ -104,15 +104,18 @@ boolsRemainProp
         Internal.API -> Property
 boolsRemainProp api = property $ do
     b <- forAll Gen.bool
-    LLVM.simplifyBool api (boolTerm b) === b
+    res <- LLVM.simplifyBool api (boolTerm b)
+    res === Right b
 compareNumbersProp api = property $ do
     x <- anInt64
     y <- anInt64
-    LLVM.simplifyBool api (x `equal` y) === (x == y)
+    res <- LLVM.simplifyBool api (x `equal` y)
+    res === Right (x == y)
 simplifyComparisonProp api = property $ do
     x <- anInt64
     y <- anInt64
-    LLVM.simplifyTerm api testDef (x `equal` y) boolSort === boolTerm (x == y)
+    res <- LLVM.simplifyTerm api testDef (x `equal` y) boolSort
+    res === Right (boolTerm (x == y))
 
 anInt64 :: PropertyT IO Int64
 anInt64 = forAll $ Gen.integral (Range.constantBounded :: Range Int64)
@@ -121,9 +124,11 @@ byteArrayProp :: Internal.API -> Property
 byteArrayProp api = property $ do
     i <- forAll $ Gen.int (Range.linear 0 1024)
     let ba = BS.pack $ take i $ cycle ['\255', '\254' .. '\0']
-    LLVM.simplifyTerm api testDef (bytesTerm ba) bytesSort === bytesTerm ba
+    res <- LLVM.simplifyTerm api testDef (bytesTerm ba) bytesSort
+    res === Right (bytesTerm ba)
     ba' <- forAll $ Gen.bytes $ Range.linear 0 1024
-    LLVM.simplifyTerm api testDef (bytesTerm ba') bytesSort === bytesTerm ba'
+    res' <- LLVM.simplifyTerm api testDef (bytesTerm ba') bytesSort
+    res' === Right (bytesTerm ba')
 
 -- Round-trip test passing syntactic strings through the simplifier
 -- and back. latin-1 characters should be left as they are (treated as
@@ -132,9 +137,9 @@ latin1Prop :: Internal.API -> Property
 latin1Prop api = property $ do
     txt <- forAll $ Gen.text (Range.linear 0 123) Gen.latin1
     let stringDV = fromSyntacticString txt
-        simplified = LLVM.simplifyTerm api testDef stringDV stringSort
-    stringDV === simplified
-    txt === toSyntacticString simplified
+    simplified <- LLVM.simplifyTerm api testDef stringDV stringSort
+    Right stringDV === simplified
+    Right txt === (toSyntacticString <$> simplified)
   where
     fromSyntacticString :: Text -> Term
     fromSyntacticString =
@@ -156,7 +161,8 @@ mapKItemInjProp :: Internal.API -> Property
 mapKItemInjProp api = property $ do
     let k = wrapIntTerm 1
     let v = wrapIntTerm 2
-    LLVM.simplifyTerm api testDef (update k v) (SortApp "SortMapValToVal" []) === singleton k v
+    res <- LLVM.simplifyTerm api testDef (update k v) (SortApp "SortMapValToVal" [])
+    res === Right (singleton k v)
   where
     update k v =
         SymbolApplication

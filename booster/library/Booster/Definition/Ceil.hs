@@ -132,9 +132,12 @@ computeCeilRule mllvm def r@RewriteRule.RewriteRule{lhs, requires, rhs, attribut
 
     simplifyCeil api p@(Left (Predicate t@(Term TermAttributes{canBeEvaluated} _)))
         | isConcrete t && canBeEvaluated = do
-            if simplifyBool api t
-                then pure Nothing
-                else error "ceil simplified to bottom"
+            simplifyBool api t >>= \case
+                Left{} -> pure $ Just p
+                Right res ->
+                    if res
+                        then pure Nothing
+                        else error "ceil simplified to bottom"
         | otherwise = pure $ Just p
     simplifyCeil _ other = pure $ Just other
 

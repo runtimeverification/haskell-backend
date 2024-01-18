@@ -20,6 +20,7 @@ module Booster.LLVM.Internal (
     LlvmCall (..),
     LlvmCallArg (..),
     LlvmVar (..),
+    LlvmError (..),
 ) where
 
 import Booster.LLVM.TH (dynamicBindings)
@@ -56,12 +57,14 @@ import System.Posix.DynamicLinker qualified as Linker
 data KorePattern
 data KoreSort
 data KoreSymbol
+data KoreError
 data Block
 type SizeT = CSize
 
 type KorePatternPtr = ForeignPtr KorePattern
 type KoreSymbolPtr = ForeignPtr KoreSymbol
 type KoreSortPtr = ForeignPtr KoreSort
+type KoreErrorPtr = ForeignPtr KoreError
 
 $(dynamicBindings "./cbits/kllvm-c.h")
 
@@ -95,12 +98,19 @@ data KorePatternAPI = KorePatternAPI
     , dump :: KorePatternPtr -> IO String
     }
 
+-- data KoreErrorAPI = KoreErrorAPI
+--     { new :: IO KoreErrorPtr
+--     , isSuccess :: KoreErrorPtr -> IO Bool
+--     , message :: KoreErrorPtr -> IO ByteString
+--     }
+newtype LlvmError = LlvmError ByteString deriving (Show, Eq)
+
 data API = API
     { patt :: KorePatternAPI
     , symbol :: KoreSymbolAPI
     , sort :: KoreSortAPI
-    , simplifyBool :: KorePatternPtr -> IO Bool
-    , simplify :: KorePatternPtr -> KoreSortPtr -> IO ByteString
+    , simplifyBool :: KorePatternPtr -> IO (Either LlvmError Bool)
+    , simplify :: KorePatternPtr -> KoreSortPtr -> IO (Either LlvmError ByteString)
     , collect :: IO ()
     }
 
@@ -309,6 +319,11 @@ mkAPI dlib = flip runReaderT dlib $ do
 
     let sort = KoreSortAPI{new = newSort, addArgument = addArgumentSort, dump = dumpSort, cache = sortCache}
 
+    freeError <- {-# SCC "LLVM.error.free" #-} koreErrorFreeFunPtr
+    newError <- {-# SCC "LLVM.error.new" #-} (>>= newForeignPtr freeError) <$> koreErrorNew
+    isSuccess <- {-# SCC "LLVM.error.isSuccess" #-} (>=> pure . (== 1)) <$> koreErrorIsSuccess
+    errorMessage <- {-# SCC "LLVM.error.message" #-} (>=> BS.packCString) <$> koreErrorMessage
+
     initialize <- kllvmInit
     liftIO initialize
     collect <- kllvmFreeAllMemory
@@ -323,33 +338,47 @@ mkAPI dlib = flip runReaderT dlib $ do
                         , args = [LlvmCallArgPtr $ somePtr p]
                         , ret = Nothing
                         }
-                withForeignPtr p $ fmap (== 1) <$> simplifyBool'
+                err <- newError
+                withForeignPtr err $ \errPtr ->
+                    withForeignPtr p $ \pPtr -> do
+                        res <- simplifyBool' errPtr pPtr
+                        success <- isSuccess errPtr
+                        if success
+                            then pure $ Right $ res == 1
+                            else do
+                                Left . LlvmError <$> errorMessage errPtr
 
     simplify' <- koreSimplify
     let simplify pat srt =
             {-# SCC "LLVM.simplify" #-}
-            liftIO $
-                withForeignPtr pat $ \patPtr ->
-                    withForeignPtr srt $ \sortPtr ->
-                        alloca $ \lenPtr ->
-                            alloca $ \strPtr -> do
-                                simplify' patPtr sortPtr strPtr lenPtr
-                                Trace.traceIO $
-                                    LlvmCall
-                                        { call = "kore_simplify"
-                                        , args =
-                                            [ LlvmCallArgPtr $ somePtr patPtr
-                                            , LlvmCallArgPtr $ somePtr sortPtr
-                                            , LlvmCallArgPtr $ somePtr strPtr
-                                            , LlvmCallArgPtr $ somePtr lenPtr
-                                            ]
-                                        , ret = Nothing
-                                        }
-                                len <- fromIntegral <$> peek lenPtr
-                                cstr <- peek strPtr
-                                result <- BS.packCStringLen (cstr, len)
-                                Foreign.free cstr
-                                pure result
+            liftIO $ do
+                err <- newError
+                withForeignPtr err $ \errPtr ->
+                    withForeignPtr pat $ \patPtr ->
+                        withForeignPtr srt $ \sortPtr ->
+                            alloca $ \lenPtr ->
+                                alloca $ \strPtr -> do
+                                    simplify' errPtr patPtr sortPtr strPtr lenPtr
+                                    Trace.traceIO $
+                                        LlvmCall
+                                            { call = "kore_simplify"
+                                            , args =
+                                                [ LlvmCallArgPtr $ somePtr patPtr
+                                                , LlvmCallArgPtr $ somePtr sortPtr
+                                                , LlvmCallArgPtr $ somePtr strPtr
+                                                , LlvmCallArgPtr $ somePtr lenPtr
+                                                ]
+                                            , ret = Nothing
+                                            }
+                                    success <- isSuccess errPtr
+                                    if success
+                                        then do
+                                            len <- fromIntegral <$> peek lenPtr
+                                            cstr <- peek strPtr
+                                            result <- BS.packCStringLen (cstr, len)
+                                            Foreign.free cstr
+                                            pure $ Right result
+                                        else Left . LlvmError <$> errorMessage errPtr
 
     pure API{patt, symbol, sort, simplifyBool, simplify, collect}
   where
