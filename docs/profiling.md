@@ -90,6 +90,24 @@ The profiling information can also be useful when hunting for other bugs, such a
 |---|---|---|---|
 | `-xc` | `-prof -fprof-auto` | Causes the runtime to print out the current cost-centre stack whenever an exception is raised. Useful for debugging the location of exceptions, such as `Prelude.head: empty list` error. | stderr |
 
+That said, a profiling build is significantly slower than a regular
+one. Sometimes, more light-weight methods with a regular build can
+already provide enough leads for code inspection.
+
+* It is always helpful to isolate a single operation that exhibits the
+  problem at hand. This can be a rewrite step or an expected
+  simplification. One can use either the RPC interface or a custom
+  claim `runLemma(expression) => doneLemma(expected-simplification)`
+  (see `evm-semantics` for examples).
+* Using `--log-entries <selection-of-debug-log-entries>`, one can
+  observe where the system is spending time during execution of a
+  request, and most of the time whether and why rules won't apply.
+* Running the program with the `+RTS` option `-Sstderr` (prints GC
+  statistics after every GC) in combination with the `--log-entries`
+  will allow for locating memory-hungry steps in the processing
+  pipeline.
+* When analysing memory issues, it is also helpful to limit the heap
+  size using `+RTS` option `-M <size>`, e.g., `+RTS -M15G -Sstderr`.
 
 ## Costs and disadvantages of profiling
 
