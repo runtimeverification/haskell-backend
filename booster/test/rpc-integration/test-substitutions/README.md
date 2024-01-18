@@ -24,9 +24,11 @@ is not simplified using `kore-rpc`.
 
 ## Substitution in input
 
+NB: Booster applies the given substitution before performing any action.
+
 * `state-symbolic-two-substitutions.execute`
   - starts from `symbolic-subst`
-  - with an additional constraint `Y = 1 +Int X`
+  - with an additional constraint `Y = 1 +Int X` (internalised as a substitution)
   - leading to a contradictory constraint `X = 1 +Int X` after
     rewriting and adding `Y =Int X` from the `ensures`-clause
     - `kore-rpc-booster` returns `vacuous` after 1 step
@@ -40,6 +42,6 @@ is not simplified using `kore-rpc`.
 * `state-symbolic-bottom-predicate.execute`
   - starts from `symbolic-subst`
   - with an equation that is instantly false: `X = 1 +Int X`
-  - leading to a vacuous state in `kore-rpc-booster` (nonetheless rewritten once)
+  - leading to a vacuous state in `kore-rpc-booster` after rewriting once,
   - while `kore-rpc-dev` returns `stuck` instantly after 0 steps,
     returning the exact input as `state`.

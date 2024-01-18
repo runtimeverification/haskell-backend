@@ -24,6 +24,7 @@ import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), ask)
 import Control.Monad.Trans.State.Strict (StateT (runStateT), get, modify)
 import Data.Hashable qualified as Hashable
+import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..), toList)
 import Data.List.NonEmpty qualified as NE
 import Data.Map qualified as Map
@@ -276,11 +277,17 @@ applyRule pat@Pattern{ceilConditions} rule = runRewriteRuleAppT $ do
     let ruleRequires =
             concatMap (splitBoolPredicates . coerce . substituteInTerm subst . coerce) rule.requires
         notAppliedIfBottom = RewriteRuleAppT $ pure NotApplied
+    -- filter out any predicates known to be _syntactically_ present in the known prior
+    let prior = pat.constraints
+        (knownTrue, toCheck) = partition (`Set.member` prior) ruleRequires
+    unless (null knownTrue) $
+        logOtherNS "booster" (LevelOther "Simplify") . renderText $
+            vsep ("Known true side conditions (won't check):" : map pretty knownTrue)
+
     unclearRequires <-
-        catMaybes <$> mapM (checkConstraint id notAppliedIfBottom) ruleRequires
+        catMaybes <$> mapM (checkConstraint id notAppliedIfBottom) toCheck
 
     -- check unclear requires-clauses in the context of known constraints (prior)
-    let prior = pat.constraints
     mbSolver <- lift $ RewriteT $ (.smtSolver) <$> ask
 
     case mbSolver of
