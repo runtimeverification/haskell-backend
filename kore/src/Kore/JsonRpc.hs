@@ -468,7 +468,7 @@ respond serverState moduleName runSMT =
         AddModule AddModuleRequest{_module, nameAsId = nameAsId'} -> runExceptT $ do
             let nameAsId = fromMaybe False nameAsId'
             parsedModule@Module{moduleName = name} <-
-                withExceptT (backendError CouldNotParsePattern) $
+                withExceptT (backendError InvalidModule) $
                     liftEither $
                         parseKoreModule "<add-module>" _module
             st@ServerState

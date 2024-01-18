@@ -739,3 +739,11 @@ Error returned when the SMT solver crashes or is unable to discharge a goal.
 ## 7 Multiple states
 
 The two errors above indicate that the execute endpoint ended up in an erroneous/inconsistent state and the returned error message is should be included in the bug report.
+
+# 8 Invalid module
+
+The module could not be parsed or is invalid (e.g. contains new symbols)
+
+# 9 Duplicate module name
+
+A module with the same name is already loaded on the server
