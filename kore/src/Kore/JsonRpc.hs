@@ -519,7 +519,7 @@ respond serverState moduleName runSMT =
                         pure . AddModule $ AddModuleResult (getModuleName moduleHash)
                     _ -> do
                         (newIndexedModules, newDefinedNames) <-
-                            withExceptT (backendError CouldNotVerifyPattern) $
+                            withExceptT (backendError InvalidModule) $
                                 liftEither $
                                     verifyAndIndexDefinitionWithBase
                                         (indexedModules, definedNames)
