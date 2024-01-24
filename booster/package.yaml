@@ -70,6 +70,7 @@ library:
   - conduit
   - conduit-extra
   - containers
+  - cryptonite
   - deepseq
   - deriving-aeson
   - exceptions
@@ -158,6 +159,8 @@ executables:
       - transformers
     ghc-options:
     - -rtsopts
+    - -threaded
+    - -with-rtsopts=-N
 
 tests:
   unit-tests:
