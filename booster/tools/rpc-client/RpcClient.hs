@@ -49,6 +49,7 @@ import System.Time.Extra (Seconds, sleep)
 import Booster.JsonRpc (rpcJsonConfig)
 import Booster.JsonRpc.Utils (diffJson, isIdentical, renderResult)
 import Booster.Syntax.Json qualified as Syntax
+import Data.Text.IO qualified as Text
 
 main :: IO ()
 main = do
@@ -574,11 +575,16 @@ prepareRequestData (Exec file) mbOptFile opts =
 prepareRequestData (Simpl file) mbOptFile opts =
     liftIO $ prepareOneTermRequest "simplify" file mbOptFile opts
 prepareRequestData (AddModule file) mbOptFile opts = do
-    unless (isNothing mbOptFile) $
-        logWarn_ "Add-module mode, ignoring given option file"
-    unless (null opts) $
-        logWarn_ "Raw mode, ignoring given request options"
-    moduleText <- liftIO $ readFile file
+    moduleText <- liftIO $ Text.readFile file
+    paramsFromFile <-
+        liftIO $
+            maybe
+                (pure JsonKeyMap.empty)
+                ( BS.readFile
+                    >=> either error (pure . getObject) . Json.eitherDecode @Json.Value
+                )
+                mbOptFile
+    let params = paramsFromFile <> object opts
     pure . Json.encode $
         object
             [ "jsonrpc" ~> "2.0"
@@ -586,7 +592,7 @@ prepareRequestData (AddModule file) mbOptFile opts = do
             , "method" ~> "add-module"
             ]
             +: "params"
-            ~> Json.Object (object ["module" ~> moduleText])
+            ~> Json.Object (params +: "module" ~> Json.String moduleText)
 prepareRequestData (GetModel file) mbOptFile opts =
     liftIO $ prepareOneTermRequest "get-model" file mbOptFile opts
 prepareRequestData (Check _file1 _file2) _mbOptFile _opts = do
