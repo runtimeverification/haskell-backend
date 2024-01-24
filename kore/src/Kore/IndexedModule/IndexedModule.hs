@@ -133,7 +133,7 @@ data IndexedModuleSyntax pat declAtts = IndexedModuleSyntax
         !(Set.Set Id)
     -- ^ set of hooked identifiers
     }
-    deriving stock (Generic, Show, Functor, Foldable, Traversable)
+    deriving stock (Generic, Show, Eq, Functor, Foldable, Traversable)
 
 -- TODO (thomas.tuegel): Consider splitting IndexedModule into separate sort,
 -- symbol, and axiom indices.
@@ -157,7 +157,7 @@ data IndexedModule pat declAtts axiomAtts = IndexedModule
     -- ^ map from builtin domain (symbol and sort) identifiers to the hooked
     -- identifiers
     }
-    deriving stock (Generic, Show, Functor, Foldable, Traversable)
+    deriving stock (Generic, Show, Eq, Functor, Foldable, Traversable)
 
 recursiveIndexedModuleSortDescriptions ::
     forall pat declAtts axiomAtts.
