@@ -96,7 +96,7 @@ newtype DebugFinalPatterns = DebugFinalPatterns [Pattern VariableName]
 data RewriteResult = RewriteResult
     { ruleId :: UniqueId
     , substitution :: Substitution VariableName
-    , results :: [Pattern VariableName]
+    , result :: Pattern VariableName
     }
     deriving stock (Show)
 
@@ -150,11 +150,11 @@ instance ToJSON DebugFinalPatterns where
             ]
 
 instance ToJSON RewriteResult where
-    toJSON RewriteResult{ruleId, substitution, results} =
+    toJSON RewriteResult{ruleId, substitution, result} =
         object
             [ "rule-id" .= maybe Null toJSON (getUniqueId ruleId)
             , "substitution" .= encodeSubstitution substitution
-            , "results" .= map encodePattern results
+            , "result" .= encodePattern result
             ]
 
 instance ToJSON DebugRewriteTrace where
@@ -243,7 +243,7 @@ debugRewriteTrace initial Result.Results{results = (toList -> results), remainde
         RewriteResult
             { ruleId = from @_ @UniqueId $ extract appliedRule
             , substitution = mapSubstitutionVariables $ Conditional.substitution appliedRule
-            , results = multiOrToList result
+            , result = getRewritingPattern result
             }
 
 rewriteTraceLogger ::

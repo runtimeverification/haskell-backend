@@ -51,7 +51,7 @@ import Prelude.Kore
 -- | The result of applying a single rule.
 data Result rule config = Result
     { appliedRule :: !rule
-    , result :: !(MultiOr config)
+    , result ::  config
     }
     deriving stock (Eq, Foldable, GHC.Generic, Ord, Show)
 
@@ -61,21 +61,17 @@ mapRule f r@Result{appliedRule} = r{appliedRule = f appliedRule}
 
 -- | Apply a function to the 'result' of a 'Result'.
 mapResult ::
-    Ord config2 =>
-    TopBottom config2 =>
     (config1 -> config2) ->
     Result rule config1 ->
     Result rule config2
-mapResult f = Lens.over (field @"result") (MultiOr.map f)
+mapResult f = Lens.over (field @"result") f
 
 traverseResult ::
-    Ord config2 =>
-    TopBottom config2 =>
     Applicative f =>
     (config1 -> f config2) ->
     Result rule config1 ->
     f (Result rule config2)
-traverseResult f = Lens.traverseOf (field @"result") (MultiOr.traverse f)
+traverseResult f = Lens.traverseOf (field @"result") f
 
 {- | The results of applying many rules.
 
@@ -122,16 +118,16 @@ remainder config = mempty{remainders = MultiOr.singleton config}
 
 -- | Gather all the final configurations from the 'Results'.
 gatherResults ::
-    Ord config =>
+    (Ord config, TopBottom config) =>
     Results rule config ->
     MultiOr config
-gatherResults = foldMap result . results
+gatherResults = from . map result . toList . results
 
 -- | Distribute the 'Result' over a transition rule.
 transitionResult :: Result rule config -> TransitionT rule m config
 transitionResult Result{appliedRule, result} = do
     Transition.addRule appliedRule
-    asum (return <$> toList result)
+    return result
 
 -- | Distribute the 'Results' over a transition rule.
 transitionResults :: Results rule config -> TransitionT rule m config

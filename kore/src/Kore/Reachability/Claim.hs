@@ -1036,7 +1036,7 @@ deriveResults ::
         simplifier
         (ApplyResult (Pattern RewritingVariableName))
 -- TODO (thomas.tuegel): Remove claim argument.
-deriveResults sort fromAppliedRule Results{results, remainders} =
+deriveResults _sort fromAppliedRule Results{results, remainders} =
     addResults <|> addRemainders
   where
     addResults = asum (addResult <$> results)
@@ -1044,9 +1044,7 @@ deriveResults sort fromAppliedRule Results{results, remainders} =
 
     addResult Result{appliedRule, result} = do
         addRule appliedRule
-        case toList result of
-            [] -> addRewritten (Pattern.bottomOf sort)
-            configs -> asum (addRewritten <$> configs)
+        addRewritten result
 
     addRewritten = pure . ApplyRewritten
     addRemainder = pure . ApplyRemainder

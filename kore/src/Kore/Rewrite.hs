@@ -41,7 +41,7 @@ import Generics.SOP qualified as SOP
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Debug
 import Kore.Internal.Pattern (
-    Pattern,
+    Pattern, Conditional,
  )
 import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Rewrite.Result qualified as Result
@@ -226,20 +226,22 @@ transitionRule rewriteGroups assumeInitialDefined = transitionRuleWorker
         deriveResults results
 
 deriveResults ::
-    Comonad w =>
-    Result.Results (w (RulePattern variable)) a ->
-    TransitionT (RewriteRule variable, Seq SimplifierTrace) Simplifier (ProgramState a)
+    Result.Results
+        (Conditional
+           RewritingVariableName (RulePattern RewritingVariableName))
+        a ->
+    TransitionT (RewriteRule RewritingVariableName, Seq SimplifierTrace) Simplifier (ProgramState a)
 deriveResults Result.Results{results, remainders} =
-    if (null results || all (\Result.Result{result} -> null result) results) && null remainders
+    if null results && null remainders
         then pure Bottom
         else addResults results <|> addRemainders remainders
   where
     addResults results' = asum (addResult <$> results')
     addResult Result.Result{appliedRule, result} = do
-        (_, rules :: Seq SimplifierTrace) <- lift get
+        (_, simplifyRules :: Seq SimplifierTrace) <- lift get
         lift $ modify $ \(cache, _rules) -> (cache, mempty)
-        addRule (RewriteRule $ extract appliedRule, rules)
-        asum (pure . Rewritten <$> toList result)
+        addRule (RewriteRule $ extract appliedRule, simplifyRules)
+        pure . Rewritten $ result
     addRemainders remainders' =
         asum (pure . Remaining <$> toList remainders')
 
