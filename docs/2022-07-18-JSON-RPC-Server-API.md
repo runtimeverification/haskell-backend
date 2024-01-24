@@ -469,6 +469,11 @@ Same as for execute
 
 ## Add-module
 
+* Allows extending the current rule-set of the RPC server by sending textual KORE definition of a module to the server.
+* The server computes the SHA256 hash of the unparsed module string and saves the internalised module under this key, returning this ID in the response
+* The optional `name-as-id` parameter allows the user to refer to the module by the name as well as the hashed ID.
+* The IDs and original names are not disjoint for ease of implementation. the `m` pre-pended to the hash is necessary to make the name a valid kore identifier. 
+
 ### Request
 
 ```json
@@ -477,12 +482,14 @@ Same as for execute
   "id": 1,
   "method": "add-module",
   "params": {
-    "module": "module MODULE-NAME endmodule []"
+    "module": "module MODULE-NAME endmodule []",
+    "name-as-id": true
   }
 }
 ```
 
-* `module` is a module represented in textual KORE format. The module may import modules that have been loaded or added earlier.
+* `module` is a module represented in textual KORE format. The module may import modules that have been loaded or added earlier
+* `name-as-id` is an optional argument which adds the module to the module map under the module name as well as the its ID. 
 
 ### Error Response:
 
@@ -501,6 +508,23 @@ If the textual KORE in `module` is syntactically wrong, the response will use th
 }
 ```
 
+If two dfferent modules with the same name and `name-as-id: true` are sent, the second request will fail with a `Duplicate module name` error
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "code": 8,
+    "message": "Duplicate module name"
+  }
+}
+```
+
+However, if the modules are sent twice with `name-as-id: false` or without `name-as-id`, the second request will succeed. 
+THe request will also succeed in case the same module is sent multiple times, irrespective of the value of `name-as-id`.
+
+
 Other errors, for instance, using an unknown sort or symbol, will be reported with the error code
 `Could not verify pattern` and a more specific error message in the `data` field.
 
@@ -513,12 +537,12 @@ Responds with the name of the added module if successful.
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
-    "module": "MODULE-NAME"
+    "module": "`m<sha256_of_given_module>"
   }
 }
 ```
 
-Module `MODULE-NAME` can now be used in subsequent requests to the server by passing `"module": "MODULE-NAME"`.
+The module ID `m<sha256_of_given_module>` can now be used in subsequent requests to the server by passing `"module": "m<sha256_of_given_module>"`.
 
 ## Get-model
 
@@ -715,3 +739,11 @@ Error returned when the SMT solver crashes or is unable to discharge a goal.
 ## 7 Multiple states
 
 The two errors above indicate that the execute endpoint ended up in an erroneous/inconsistent state and the returned error message is should be included in the bug report.
+
+# 8 Invalid module
+
+The module could not be parsed or is invalid (e.g. contains new symbols)
+
+# 9 Duplicate module name
+
+A module with the same name is already loaded on the server

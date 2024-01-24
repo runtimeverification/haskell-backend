@@ -243,6 +243,13 @@ with subprocess.Popen(f"{SERVER} {def_path} --module TEST --server-port {PORT} -
             debug(resp)
             checkGolden(resp, resp_add_golden_path)
 
+            name = "add-module-agian"
+            info(f"- test '{name}'...")
+            s.sendall(req_add)
+            resp = recv_all(s)
+            debug(resp)
+            checkGolden(resp, resp_add_golden_path)
+
             name = "execute-success"
             info(f"- test '{name}'...")
             s.sendall(req_execute)

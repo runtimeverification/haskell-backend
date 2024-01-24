@@ -161,6 +161,7 @@ withBugReport exeName bugReportOption act =
                     optionalWriteBugReport tmpDir
                 | otherwise -> do
                     let message = displayException someException
+                    hPutStrLn stderr message
                     writeFile (tmpDir </> "error" <.> "log") message
                     alwaysWriteBugReport tmpDir
             ExitCaseAbort -> alwaysWriteBugReport tmpDir
