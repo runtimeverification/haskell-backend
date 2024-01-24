@@ -1284,7 +1284,6 @@ data DefinitionError
     | DefinitionAliasError Text AliasError
     | DefinitionAxiomError AxiomError
     | DefinitionTermOrPredicateError SourceRef TermOrPredicateError
-    | AddModuleError Text
     | ElemSymbolMalformed Def.Symbol
     | ElemSymbolNotFound Def.SymbolName
     deriving stock (Eq, Show)
@@ -1318,8 +1317,6 @@ instance Pretty DefinitionError where
             "Bad rewrite rule " <> pretty err
         DefinitionTermOrPredicateError ref (PatternExpected p) ->
             "Expected a pattern in " <> pretty ref <> " but found a predicate: " <> pretty (show p)
-        AddModuleError msg ->
-            pretty $ "Add-module error: " <> msg
         ElemSymbolMalformed sym ->
             pretty $ "Element{} symbol is malformed: " <> show sym
         ElemSymbolNotFound sym ->
