@@ -51,7 +51,7 @@ import Prelude.Kore
 -- | The result of applying a single rule.
 data Result rule config = Result
     { appliedRule :: !rule
-    , result ::  config
+    , result :: config
     }
     deriving stock (Eq, Foldable, GHC.Generic, Ord, Show)
 

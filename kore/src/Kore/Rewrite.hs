@@ -41,7 +41,8 @@ import Generics.SOP qualified as SOP
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Debug
 import Kore.Internal.Pattern (
-    Pattern, Conditional,
+    Conditional,
+    Pattern,
  )
 import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Rewrite.Result qualified as Result
@@ -227,8 +228,10 @@ transitionRule rewriteGroups assumeInitialDefined = transitionRuleWorker
 
 deriveResults ::
     Result.Results
-        (Conditional
-           RewritingVariableName (RulePattern RewritingVariableName))
+        ( Conditional
+            RewritingVariableName
+            (RulePattern RewritingVariableName)
+        )
         a ->
     TransitionT (RewriteRule RewritingVariableName, Seq SimplifierTrace) Simplifier (ProgramState a)
 deriveResults Result.Results{results, remainders} =
