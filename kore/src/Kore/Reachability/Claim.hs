@@ -1035,7 +1035,6 @@ deriveResults ::
         (AppliedRule claim)
         simplifier
         (ApplyResult (Pattern RewritingVariableName))
--- TODO (thomas.tuegel): Remove claim argument.
 deriveResults _sort fromAppliedRule Results{results, remainders} =
     addResults <|> addRemainders
   where
