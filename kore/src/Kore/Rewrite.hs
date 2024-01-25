@@ -66,6 +66,7 @@ import Kore.Simplify.Pattern qualified as Pattern (
  )
 import Kore.Simplify.Simplify as Simplifier
 import Kore.TopBottom (
+    TopBottom,
     isBottom,
  )
 import Kore.Unparser (
@@ -227,24 +228,27 @@ transitionRule rewriteGroups assumeInitialDefined = transitionRuleWorker
         deriveResults results
 
 deriveResults ::
+    TopBottom a =>
     Result.Results
         ( Conditional
-            RewritingVariableName
-            (RulePattern RewritingVariableName)
+            var
+            (RulePattern var)
         )
         a ->
-    TransitionT (RewriteRule RewritingVariableName, Seq SimplifierTrace) Simplifier (ProgramState a)
+    TransitionT (RewriteRule var, Seq SimplifierTrace) Simplifier (ProgramState a)
 deriveResults Result.Results{results, remainders} =
-    if null results && null remainders
+    if (null results || all (\Result.Result{result} -> isBottom result) results) && null remainders
         then pure Bottom
         else addResults results <|> addRemainders remainders
   where
     addResults results' = asum (addResult <$> results')
-    addResult Result.Result{appliedRule, result} = do
-        (_, simplifyRules :: Seq SimplifierTrace) <- lift get
-        lift $ modify $ \(cache, _rules) -> (cache, mempty)
-        addRule (RewriteRule $ extract appliedRule, simplifyRules)
-        pure . Rewritten $ result
+    addResult Result.Result{appliedRule, result}
+        | isBottom result = empty
+        | otherwise = do
+            (_, simplifyRules :: Seq SimplifierTrace) <- lift get
+            lift $ modify $ \(cache, _rules) -> (cache, mempty)
+            addRule (RewriteRule $ extract appliedRule, simplifyRules)
+            pure $ Rewritten result
     addRemainders remainders' =
         asum (pure . Remaining <$> toList remainders')
 

@@ -439,15 +439,6 @@ applyRewriteRulesParallel
                         DisableAssumeInitialDefined -> mempty
                 sideConditionWithDefinedSubterms = SideCondition.addTermsAsDefined subtermsNeedingCeil sideCondition
             results <- applyRulesParallel sideConditionWithDefinedSubterms rules initial
-            -- applyWithFinalizer
-            --     sideConditionWithDefinedSubterms
-            --     ( finalizeRulesParallel
-            --         sideConditionWithDefinedSubterms
-            --         RewriteRule
-            --         (finalizeAppliedRule sideConditionWithDefinedSubterms)
-            --     )
-            --     rules
-            --     initial
             assertFunctionLikeResults (term initial) results
             return results
 
