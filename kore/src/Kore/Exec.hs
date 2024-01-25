@@ -110,7 +110,7 @@ import Kore.Internal.Pattern (
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
     fromPredicate,
-    makeMultipleOrPredicate,
+    makeMultipleOrPredicate, Predicate,
  )
 import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition qualified as SideCondition
@@ -228,6 +228,9 @@ import SMT (
 import System.Exit (
     ExitCode (..),
  )
+import Kore.Internal.Substitution (Substitution)
+import Kore.Internal.Substitution qualified as Substitution
+import Data.Bifunctor (bimap)
 
 -- | Semantic rule used during execution.
 type Rewrite = RewriteRule RewritingVariableName
@@ -364,12 +367,12 @@ exec
         transit ::
             GraphTraversal.TState
                 Prim
-                (ExecDepth, ProgramState (Pattern RewritingVariableName)) ->
+                (ExecDepth, ProgramState (Predicate RewritingVariableName, Substitution RewritingVariableName) (Pattern RewritingVariableName)) ->
             Simplifier
                 ( GraphTraversal.TransitionResult
                     ( GraphTraversal.TState
                         Prim
-                        (ExecDepth, ProgramState (Pattern RewritingVariableName))
+                        (ExecDepth, ProgramState (Predicate RewritingVariableName, Substitution RewritingVariableName) (Pattern RewritingVariableName))
                     )
                 )
         transit =
@@ -380,21 +383,21 @@ exec
                 toTransitionResult
 
         toTransitionResult ::
-            (ExecDepth, ProgramState p) ->
-            [(ExecDepth, ProgramState p)] ->
+            (ExecDepth, ProgramState d p) ->
+            [(ExecDepth, ProgramState d p)] ->
             ( GraphTraversal.TransitionResult
-                (ExecDepth, ProgramState p)
+                (ExecDepth, ProgramState d p)
             )
         toTransitionResult prior [] =
             case snd prior of
                 Start _ -> GraphTraversal.Stop prior []
-                Rewritten _ -> GraphTraversal.Stop prior []
+                Rewritten _ _ -> GraphTraversal.Stop prior []
                 Remaining _ -> GraphTraversal.Stuck prior
                 Kore.Rewrite.Bottom -> GraphTraversal.Stuck prior
         toTransitionResult _prior [next] =
             case snd next of
                 Start _ -> GraphTraversal.Continuing next
-                Rewritten _ -> GraphTraversal.Continuing next
+                Rewritten _ _ -> GraphTraversal.Continuing next
                 Remaining _ -> GraphTraversal.Stuck next
                 Kore.Rewrite.Bottom -> GraphTraversal.Stuck next
         toTransitionResult prior (s : ss) =
@@ -415,7 +418,7 @@ data RuleTrace = RuleTrace
 
 -- | Type for json-rpc execution state, for readability
 data RpcExecState v = RpcExecState
-    { rpcProgState :: ProgramState (Pattern v)
+    { rpcProgState :: ProgramState (Predicate v, Substitution v) (Pattern v)
     -- ^ program state
     , rpcRules :: Seq RuleTrace
     -- ^ rule label/ids we have applied so far
@@ -436,7 +439,7 @@ stateGetRewritingPattern ::
     RpcExecState RewritingVariableName ->
     RpcExecState VariableName
 stateGetRewritingPattern state@RpcExecState{rpcProgState} =
-    state{rpcProgState = fmap getRewritingPattern rpcProgState}
+    state{rpcProgState = bimap (bimap (Predicate.mapVariables getRewritingVariable) (Substitution.mapVariables getRewritingVariable)) getRewritingPattern rpcProgState}
 
 {- | Version of @kore-exec@ suitable for the JSON RPC server. Cannot
   execute across branches, supports a depth limit and rule labels to
@@ -525,7 +528,7 @@ rpcExec
         -- The rule label is carried around unmodified in the
         -- transition, and adjusted in `toTransitionResult`
         withRpcExecState ::
-            TransitionRule m r (ExecDepth, ProgramState (Pattern v)) ->
+            TransitionRule m r (ExecDepth, ProgramState (Predicate v, Substitution v) (Pattern v)) ->
             TransitionRule m r (RpcExecState v)
         withRpcExecState transition =
             \prim RpcExecState{rpcProgState, rpcRules, rpcDepth} ->
@@ -543,7 +546,7 @@ rpcExec
                 Kore.Rewrite.Bottom -> GraphTraversal.Vacuous prior
                 -- returns `Final` to signal that no instructions were left.
                 Start _ -> GraphTraversal.Final prior
-                Rewritten _ -> GraphTraversal.Final prior
+                Rewritten _ _ -> GraphTraversal.Final prior
         toTransitionResult prior@RpcExecState{rpcRules = priorRules} [(next, rules)]
             | (_ : _) <- mapMaybe (isCutPoint . fst) (toList rules) =
                 GraphTraversal.Stop
@@ -557,7 +560,7 @@ rpcExec
             let next' = setTraces rules priorRules next
              in case nextPState of
                     Start _ -> GraphTraversal.Continuing next'
-                    Rewritten _ -> GraphTraversal.Continuing next'
+                    Rewritten _ _ -> GraphTraversal.Continuing next'
                     Remaining _ -> GraphTraversal.Stuck next'
                     Kore.Rewrite.Bottom -> GraphTraversal.Vacuous prior
         toTransitionResult prior rs =
@@ -603,8 +606,8 @@ rpcExec
 
 -- | Modify a 'TransitionRule' to track the depth of the execution graph.
 trackExecDepth ::
-    TransitionRule monad rule (ProgramState p) ->
-    TransitionRule monad rule (ExecDepth, ProgramState p)
+    TransitionRule monad rule (ProgramState d p) ->
+    TransitionRule monad rule (ExecDepth, ProgramState d p)
 trackExecDepth transit prim (execDepth, execState) = do
     execState' <- transit prim execState
     let execDepth' = (if didRewrite execState' then succ else id) execDepth
@@ -613,7 +616,7 @@ trackExecDepth transit prim (execDepth, execState) = do
     -- The new state can become Bottom by simplification after rewriting,
     -- or it remains Rewritten. If it is Remaining, it was not rewritten.
     didRewrite Kore.Rewrite.Bottom = prim == Rewrite
-    didRewrite (Rewritten _) = prim == Rewrite
+    didRewrite (Rewritten _ _) = prim == Rewrite
     didRewrite _ = False
 
 -- | Add profiling markers to a 'TransitionRule'.

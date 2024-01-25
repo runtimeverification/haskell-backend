@@ -44,7 +44,7 @@ import Kore.Simplify.Simplify (
     InternalVariable,
  )
 import Kore.TopBottom (
-    TopBottom,
+    TopBottom, isBottom,
  )
 import Prelude.Kore
 
@@ -125,9 +125,11 @@ gatherResults = from . map result . toList . results
 
 -- | Distribute the 'Result' over a transition rule.
 transitionResult :: Result rule config -> TransitionT rule m config
-transitionResult Result{appliedRule, result} = do
-    Transition.addRule appliedRule
-    return result
+transitionResult Result{appliedRule, result} 
+    | isBottom result = empty
+    | otherwise = do
+        Transition.addRule appliedRule
+        return result
 
 -- | Distribute the 'Results' over a transition rule.
 transitionResults :: Results rule config -> TransitionT rule m config
