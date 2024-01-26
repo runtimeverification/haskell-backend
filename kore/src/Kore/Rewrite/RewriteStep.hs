@@ -31,12 +31,6 @@ import Kore.Attribute.UniqueId (
 import Kore.Internal.Condition qualified as Condition
 import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.MultiOr qualified as MultiOr
-import Kore.Internal.OrCondition (
-    OrCondition,
- )
-import Kore.Internal.OrPattern (
-    OrPattern,
- )
 import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.SideCondition (SideCondition)
@@ -101,9 +95,6 @@ The rule's 'ensures' clause is applied to the conditions and normalized. The
 substitution is applied to the right-hand side of the rule to produce the final
 configurations.
 
-Because the rule is known to apply, @finalizeAppliedRule@ always returns exactly
-one branch.
-
 See also: 'applyInitialConditions'
 -}
 finalizeAppliedRule ::
@@ -112,31 +103,34 @@ finalizeAppliedRule ::
     -- | Applied rule
     RulePattern RewritingVariableName ->
     -- | Conditions of applied rule
-    OrCondition RewritingVariableName ->
-    LogicT Simplifier (OrPattern RewritingVariableName)
+    Condition RewritingVariableName ->
+    LogicT Simplifier (Pattern RewritingVariableName)
 finalizeAppliedRule
     sideCondition
     renamedRule
-    appliedConditions =
-        MultiOr.gather $
-            finalizeAppliedRuleWorker =<< Logic.scatter appliedConditions
+    appliedCondition = do
+        let avoidVars = freeVariables appliedCondition <> freeVariables ruleRHS
+            finalPattern =
+                Rule.topExistsToImplicitForall avoidVars ruleRHS
+
+        -- `constructConfiguration` may simplify the configuration to bottom
+        -- we want to "catch" this and return a #bottom Pattern
+        catchSimplifiesToBottom (termLikeSort $ term finalPattern)
+            =<< Logic.gather
+                ( -- Combine the initial conditions, the unification conditions, and the
+                  -- axiom ensures clause. The axiom requires clause is included by
+                  -- unifyRule.
+                  constructConfiguration
+                    sideCondition
+                    appliedCondition
+                    finalPattern
+                )
       where
         ruleRHS = Rule.rhs renamedRule
 
-        finalizeAppliedRuleWorker ::
-            Condition RewritingVariableName ->
-            LogicT Simplifier (Pattern RewritingVariableName)
-        finalizeAppliedRuleWorker appliedCondition = do
-            -- Combine the initial conditions, the unification conditions, and the
-            -- axiom ensures clause. The axiom requires clause is included by
-            -- unifyRule.
-            let avoidVars = freeVariables appliedCondition <> freeVariables ruleRHS
-                finalPattern =
-                    Rule.topExistsToImplicitForall avoidVars ruleRHS
-            constructConfiguration
-                sideCondition
-                appliedCondition
-                finalPattern
+        catchSimplifiesToBottom srt = \case
+            [] -> return $ pure $ mkBottom srt
+            xs -> Logic.scatter xs
 
 {- | Combine all the conditions to apply rule and construct the result.
 
@@ -191,27 +185,29 @@ finalizeAppliedClaim ::
     -- | Applied rule
     ClaimPattern ->
     -- | Conditions of applied rule
-    OrCondition RewritingVariableName ->
-    LogicT Simplifier (OrPattern RewritingVariableName)
-finalizeAppliedClaim sideCondition renamedRule appliedConditions =
-    MultiOr.gather $
-        finalizeAppliedRuleWorker =<< Logic.scatter appliedConditions
+    Condition RewritingVariableName ->
+    LogicT Simplifier (Pattern RewritingVariableName)
+finalizeAppliedClaim sideCondition renamedRule appliedCondition =
+    -- `constructConfiguration` may simplify the configuration to bottom
+    -- we want to "catch" this and return a #bottom Pattern
+    catchSimplifiesToBottom (Claim.getClaimPatternSort renamedRule)
+        =<< Logic.gather
+            ( Claim.assertRefreshed renamedRule $ do
+                finalPattern <- Logic.scatter right
+                -- Combine the initial conditions, the unification conditions, and
+                -- the axiom ensures clause. The axiom requires clause is included
+                -- by unifyRule.
+                constructConfiguration
+                    sideCondition
+                    appliedCondition
+                    finalPattern
+            )
   where
     ClaimPattern{right} = renamedRule
 
-    finalizeAppliedRuleWorker ::
-        Condition RewritingVariableName ->
-        LogicT Simplifier (Pattern RewritingVariableName)
-    finalizeAppliedRuleWorker appliedCondition =
-        Claim.assertRefreshed renamedRule $ do
-            finalPattern <- Logic.scatter right
-            -- Combine the initial conditions, the unification conditions, and
-            -- the axiom ensures clause. The axiom requires clause is included
-            -- by unifyRule.
-            constructConfiguration
-                sideCondition
-                appliedCondition
-                finalPattern
+    catchSimplifiesToBottom srt = \case
+        [] -> return $ pure $ mkBottom srt
+        xs -> Logic.scatter xs
 
 type UnifyingRuleWithRepresentation representation rule =
     ( Rule.UnifyingRule representation
@@ -225,8 +221,8 @@ type UnifyingRuleWithRepresentation representation rule =
 
 type FinalizeApplied rule =
     rule ->
-    OrCondition RewritingVariableName ->
-    LogicT Simplifier (OrPattern RewritingVariableName)
+    Condition RewritingVariableName ->
+    LogicT Simplifier (Pattern RewritingVariableName)
 
 finalizeRule ::
     UnifyingRuleWithRepresentation representation rule =>
@@ -257,8 +253,7 @@ finalizeRule
             checkSubstitutionCoverage initial (toRule <$> unifiedRule)
             let renamedRule = Conditional.term unifiedRule
             final <- finalizeApplied renamedRule applied
-            let result =
-                    OrPattern.map (resetResultPattern initialVariables) final
+            let result = resetResultPattern initialVariables final
             return Step.Result{appliedRule = unifiedRule, result}
 
 -- | Finalizes a list of applied rules into 'Results'.
