@@ -342,7 +342,7 @@ exec
             infoExecDepth (maximum (ExecDepth 0 : depths))
             let finalConfigs' =
                     MultiOr.make $
-                        mapMaybe extractProgramState finalConfigs
+                        mapMaybe (fst . extractProgramState) finalConfigs
             debugFinalPatterns finalConfigs'
             exitCode <- getExitCode verifiedModule finalConfigs'
             let finalTerm =
@@ -727,7 +727,7 @@ search
             executionGraph <-
                 runStrategy' (Start initialPattern)
             let match target config1 config2 = do
-                    extracted <- hoistMaybe $ extractProgramState config2
+                    extracted <- hoistMaybe $ fst $ extractProgramState config2
                     Search.matchWith target config1 extracted
             solutionsLists <-
                 searchGraph

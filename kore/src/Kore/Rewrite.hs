@@ -41,12 +41,8 @@ import Generics.SOP qualified as SOP
 import Kore.Attribute.Axiom qualified as Attribute
 import Kore.Debug
 import Kore.Internal.Pattern (
-    Conditional,
-<<<<<<< HEAD
-    Pattern, predicate, substitution,
-=======
+    Conditional (predicate, substitution),
     Pattern,
->>>>>>> origin/master
  )
 import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Rewrite.Result qualified as Result
@@ -70,12 +66,8 @@ import Kore.Simplify.Pattern qualified as Pattern (
  )
 import Kore.Simplify.Simplify as Simplifier
 import Kore.TopBottom (
-<<<<<<< HEAD
-    isBottom, TopBottom,
-=======
     TopBottom,
     isBottom,
->>>>>>> origin/master
  )
 import Kore.Unparser (
     Unparse (..),
@@ -135,11 +127,11 @@ instance Unparse a => Pretty (ProgramState b a) where
             ]
     pretty Bottom = "\\bottom"
 
-extractProgramState :: ProgramState b a -> Maybe a
-extractProgramState (Rewritten _ a) = Just a
-extractProgramState (Remaining a) = Just a
-extractProgramState (Start a) = Just a
-extractProgramState Bottom = Nothing
+extractProgramState :: ProgramState b a -> (Maybe a, Maybe b)
+extractProgramState (Rewritten b a) = (Just a, Just b)
+extractProgramState (Remaining a) = (Just a, Nothing)
+extractProgramState (Start a) = (Just a, Nothing)
+extractProgramState Bottom = (Nothing, Nothing)
 
 retractRemaining :: ProgramState b a -> Maybe a
 retractRemaining (Remaining a) = Just a
@@ -253,7 +245,7 @@ deriveResults ::
             (RulePattern var)
         )
         a ->
-    TransitionT (RewriteRule var, Seq SimplifierTrace) Simplifier (ProgramState a)
+    TransitionT (RewriteRule var, Seq SimplifierTrace) Simplifier (ProgramState (Predicate var, Substitution var) a)
 deriveResults Result.Results{results, remainders} =
     if (null results || all (\Result.Result{result} -> isBottom result) results) && null remainders
         then pure Bottom
@@ -266,7 +258,7 @@ deriveResults Result.Results{results, remainders} =
             (_, simplifyRules :: Seq SimplifierTrace) <- lift get
             lift $ modify $ \(cache, _rules) -> (cache, mempty)
             addRule (RewriteRule $ extract appliedRule, simplifyRules)
-            pure $ Rewritten result
+            pure $ Rewritten (predicate appliedRule, substitution appliedRule)  result
     addRemainders remainders' =
         asum (pure . Remaining <$> toList remainders')
 

@@ -107,8 +107,9 @@ instance FromRequest (API 'Req) where
 
 data ExecuteState = ExecuteState
     { term :: KoreJson
-    , substitution :: Maybe KoreJson
     , predicate :: Maybe KoreJson
+    , ruleSubstitution :: Maybe KoreJson
+    , rulePredicate :: Maybe KoreJson
     }
     deriving stock (Generic, Show, Eq)
     deriving
