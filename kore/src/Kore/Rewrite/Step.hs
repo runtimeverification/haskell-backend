@@ -51,9 +51,6 @@ import Kore.Internal.Conditional (
  )
 import Kore.Internal.Conditional qualified as Conditional
 import Kore.Internal.MultiOr qualified as MultiOr
-import Kore.Internal.OrCondition (
-    OrCondition,
- )
 import Kore.Internal.Pattern (
     Pattern,
  )
@@ -87,7 +84,6 @@ import Kore.Simplify.Simplify (
     liftSimplifier,
  )
 import Kore.Simplify.Simplify qualified as Simplifier
-import Kore.TopBottom qualified as TopBottom
 import Kore.Unification.NewUnifier (
     NewUnifier,
  )
@@ -292,9 +288,7 @@ applyInitialConditions ::
     Condition RewritingVariableName ->
     -- | Unification conditions
     Condition RewritingVariableName ->
-    LogicT Simplifier (OrCondition RewritingVariableName)
--- TODO(virgil): This should take advantage of the LogicT and not return
--- an OrCondition.
+    LogicT Simplifier (Condition RewritingVariableName)
 applyInitialConditions sideCondition initial unification = do
     -- Combine the initial conditions and the unification conditions. The axiom
     -- requires clause is already included in the unification conditions, and
@@ -310,8 +304,7 @@ applyInitialConditions sideCondition initial unification = do
     -- If 'evaluated' is \bottom, the rule is considered to not apply and
     -- no result is returned. If the result is \bottom after this check,
     -- then the rule is considered to apply with a \bottom result.
-    TopBottom.guardAgainstBottom evaluated
-    return evaluated
+    Logic.scatter evaluated
 
 -- | Apply the remainder predicate to the given initial configuration.
 applyRemainder ::

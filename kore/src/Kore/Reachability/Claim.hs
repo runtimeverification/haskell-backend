@@ -119,7 +119,6 @@ import Kore.Internal.Symbol (
  )
 import Kore.Internal.TermLike (
     Not (..),
-    Sort,
     TermLike,
     freeVariables,
     isFunctionPattern,
@@ -297,14 +296,13 @@ deriveSeqClaim lensClaimPattern mkClaim claims claim =
                 fmap (snd . Step.refreshRule mempty) $
                     Lens.forOf (field @"left") claimPattern $
                         \config -> Compose $ do
-                            let claimPatSort = ClaimPattern.getClaimPatternSort claimPattern
                             results <-
                                 Step.applyClaimsSequence
                                     mkClaim
                                     config
                                     (Lens.view lensClaimPattern <$> claims)
                                     & lift
-                            deriveResults claimPatSort fromAppliedRule results
+                            deriveResults fromAppliedRule results
   where
     fromAppliedRule =
         AppliedClaim
@@ -1005,9 +1003,8 @@ deriveWith lensClaimPattern mkRule takeStep rewrites claim =
                 fmap (snd . Step.refreshRule mempty) $
                     Lens.forOf (field @"left") claimPattern $
                         \config -> Compose $ do
-                            let claimPatSort = ClaimPattern.getClaimPatternSort claimPattern
                             results <- takeStep rewrites config & lift
-                            deriveResults claimPatSort fromAppliedRule results
+                            deriveResults fromAppliedRule results
   where
     fromAppliedRule =
         AppliedAxiom
@@ -1028,15 +1025,13 @@ deriveSeq' lensRulePattern mkRule =
 
 deriveResults ::
     Step.UnifyingRuleVariable representation ~ RewritingVariableName =>
-    Sort ->
     (Step.UnifiedRule representation -> AppliedRule claim) ->
     Step.Results representation ->
     Strategy.TransitionT
         (AppliedRule claim)
         simplifier
         (ApplyResult (Pattern RewritingVariableName))
--- TODO (thomas.tuegel): Remove claim argument.
-deriveResults sort fromAppliedRule Results{results, remainders} =
+deriveResults fromAppliedRule Results{results, remainders} =
     addResults <|> addRemainders
   where
     addResults = asum (addResult <$> results)
@@ -1044,9 +1039,7 @@ deriveResults sort fromAppliedRule Results{results, remainders} =
 
     addResult Result{appliedRule, result} = do
         addRule appliedRule
-        case toList result of
-            [] -> addRewritten (Pattern.bottomOf sort)
-            configs -> asum (addRewritten <$> configs)
+        addRewritten result
 
     addRewritten = pure . ApplyRewritten
     addRemainder = pure . ApplyRemainder
