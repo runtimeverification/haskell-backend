@@ -266,7 +266,7 @@ parseCommonOptions =
             ( long "host"
                 <> short 'h'
                 <> metavar "HOST"
-                <> value "localhost"
+                <> value "127.0.0.1"
                 <> help "server host to connect to"
                 <> showDefault
             )
