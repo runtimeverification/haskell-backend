@@ -43,6 +43,7 @@ import Control.Monad (
 import Control.Monad.Catch (throwM)
 import Control.Monad.Trans.Maybe (runMaybeT)
 import Control.Monad.Validate
+import Data.Bifunctor (bimap)
 import Data.Coerce (
     coerce,
  )
@@ -109,11 +110,14 @@ import Kore.Internal.Pattern (
  )
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
+    Predicate,
     fromPredicate,
-    makeMultipleOrPredicate, Predicate,
+    makeMultipleOrPredicate,
  )
 import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition qualified as SideCondition
+import Kore.Internal.Substitution (Substitution)
+import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
 import Kore.Log.DebugRewriteTrace (
     debugFinalPatterns,
@@ -228,9 +232,6 @@ import SMT (
 import System.Exit (
     ExitCode (..),
  )
-import Kore.Internal.Substitution (Substitution)
-import Kore.Internal.Substitution qualified as Substitution
-import Data.Bifunctor (bimap)
 
 -- | Semantic rule used during execution.
 type Rewrite = RewriteRule RewritingVariableName
@@ -367,12 +368,20 @@ exec
         transit ::
             GraphTraversal.TState
                 Prim
-                (ExecDepth, ProgramState (Predicate RewritingVariableName, Substitution RewritingVariableName) (Pattern RewritingVariableName)) ->
+                ( ExecDepth
+                , ProgramState
+                    (Predicate RewritingVariableName, Substitution RewritingVariableName)
+                    (Pattern RewritingVariableName)
+                ) ->
             Simplifier
                 ( GraphTraversal.TransitionResult
                     ( GraphTraversal.TState
                         Prim
-                        (ExecDepth, ProgramState (Predicate RewritingVariableName, Substitution RewritingVariableName) (Pattern RewritingVariableName))
+                        ( ExecDepth
+                        , ProgramState
+                            (Predicate RewritingVariableName, Substitution RewritingVariableName)
+                            (Pattern RewritingVariableName)
+                        )
                     )
                 )
         transit =
@@ -439,7 +448,14 @@ stateGetRewritingPattern ::
     RpcExecState RewritingVariableName ->
     RpcExecState VariableName
 stateGetRewritingPattern state@RpcExecState{rpcProgState} =
-    state{rpcProgState = bimap (bimap (Predicate.mapVariables getRewritingVariable) (Substitution.mapVariables getRewritingVariable)) getRewritingPattern rpcProgState}
+    state
+        { rpcProgState =
+            bimap
+                ( bimap (Predicate.mapVariables getRewritingVariable) (Substitution.mapVariables getRewritingVariable)
+                )
+                getRewritingPattern
+                rpcProgState
+        }
 
 {- | Version of @kore-exec@ suitable for the JSON RPC server. Cannot
   execute across branches, supports a depth limit and rule labels to

@@ -45,9 +45,11 @@ import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
+    Predicate,
     getMultiAndPredicate,
-    pattern PredicateTrue, Predicate,
+    pattern PredicateTrue,
  )
+import Kore.Internal.Substitution (Substitution)
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike (TermLike)
 import Kore.Internal.TermLike qualified as TermLike
@@ -106,7 +108,6 @@ import Log qualified
 import Prelude.Kore
 import SMT qualified
 import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
-import Kore.Internal.Substitution (Substitution)
 
 respond ::
     forall m.
@@ -337,13 +338,16 @@ respond serverState moduleName runSMT =
 
                 patternToExecState ::
                     TermLike.Sort ->
-                    ProgramState (Predicate TermLike.VariableName, Substitution TermLike.VariableName) (Pattern TermLike.VariableName) ->
+                    ProgramState
+                        (Predicate TermLike.VariableName, Substitution TermLike.VariableName)
+                        (Pattern TermLike.VariableName) ->
                     ExecuteState
                 patternToExecState sort s =
                     ExecuteState
                         { term =
                             PatternJson.fromTermLike $ Pattern.term p
-                        , ruleSubstitution, rulePredicate
+                        , ruleSubstitution
+                        , rulePredicate
                         , predicate =
                             case Pattern.predicate p of
                                 PredicateTrue -> Nothing
@@ -354,7 +358,7 @@ respond serverState moduleName runSMT =
                         (Nothing, _) -> (Pattern.bottomOf sort, Nothing, Nothing)
                         (Just p', Nothing) -> (p', Nothing, Nothing)
                         (Just p', Just (pr, sub)) -> (p', Just $ PatternJson.fromPredicate sort pr, PatternJson.fromSubstitution sort sub)
-                        
+
         -- Step StepRequest{} -> pure $ Right $ Step $ StepResult []
         Implies ImpliesRequest{antecedent, consequent, _module, logSuccessfulSimplifications, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
             start <- liftIO $ getTime Monotonic
