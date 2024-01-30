@@ -160,7 +160,6 @@ executables:
     ghc-options:
     - -rtsopts
     - -threaded
-    - -with-rtsopts=-N
 
 tests:
   unit-tests:
