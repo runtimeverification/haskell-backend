@@ -619,19 +619,21 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
 
     logs =
         let traceLogs =
-                concat . catMaybes . toList $
-                    fmap
+                fmap concat
+                    . mapM
                         ( mkLogRewriteTrace
                             (logSuccessfulRewrites, logFailedRewrites)
                             (logSuccessfulSimplifications, logFailedSimplifications)
                         )
-                        traces
+                    $ toList traces
             timingLog =
                 fmap (ProcessingTime $ Just Booster) mbDuration
          in case (timingLog, traceLogs) of
-                (Nothing, []) -> Nothing
-                (Nothing, xs@(_ : _)) -> Just xs
-                (Just t, xs) -> Just (t : xs)
+                (Nothing, Nothing) -> Nothing
+                (Nothing, Just []) -> Nothing
+                (Nothing, Just xs@(_ : _)) -> Just xs
+                (Just t, Nothing) -> Just [t]
+                (Just t, Just xs) -> Just (t : xs)
 
 toExecState :: Pattern -> Map Variable Term -> [Syntax.KorePattern] -> RpcTypes.ExecuteState
 toExecState pat sub unsupported =
