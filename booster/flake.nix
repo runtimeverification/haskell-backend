@@ -124,7 +124,7 @@
         (nixpkgsFor system).booster-backend.devShell.overrideAttrs (old: {
           shellHook = ''
             ${old.shellHook}
-            hpack && cd dev-tools && hpack
+            hpack && hpack dev-tools
           '';
         }));
     };
