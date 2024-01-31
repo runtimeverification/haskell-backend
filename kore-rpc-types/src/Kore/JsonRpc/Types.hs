@@ -110,6 +110,7 @@ data ExecuteState = ExecuteState
     , predicate :: Maybe KoreJson
     , ruleSubstitution :: Maybe KoreJson
     , rulePredicate :: Maybe KoreJson
+    , ruleId :: Maybe Text
     }
     deriving stock (Generic, Show, Eq)
     deriving

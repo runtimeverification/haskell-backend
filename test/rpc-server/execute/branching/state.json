@@ -8,46 +8,69 @@
     "args": [
       {
         "tag": "App",
-        "name": "Lbl'-LT-'k'-GT-'",
+        "name": "Lbl'-LT-'T'-GT-'",
         "sorts": [],
         "args": [
           {
             "tag": "App",
-            "name": "kseq",
+            "name": "Lbl'-LT-'k'-GT-'",
             "sorts": [],
             "args": [
               {
                 "tag": "App",
-                "name": "inj",
-                "sorts": [
-                  {
-                    "tag": "SortApp",
-                    "name": "SortState",
-                    "args": []
-                  },
-                  {
-                    "tag": "SortApp",
-                    "name": "SortKItem",
-                    "args": []
-                  }
-                ],
+                "name": "kseq",
+                "sorts": [],
                 "args": [
                   {
-                    "tag": "DV",
-                    "sort": {
-                      "tag": "SortApp",
-                      "name": "SortState",
-                      "args": []
-                    },
-                    "value": "a"
+                    "tag": "App",
+                    "name": "inj",
+                    "sorts": [
+                      {
+                        "tag": "SortApp",
+                        "name": "SortState",
+                        "args": []
+                      },
+                      {
+                        "tag": "SortApp",
+                        "name": "SortKItem",
+                        "args": []
+                      }
+                    ],
+                    "args": [
+                      {
+                        "tag": "DV",
+                        "sort": {
+                          "tag": "SortApp",
+                          "name": "SortState",
+                          "args": []
+                        },
+                        "value": "a"
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "App",
+                    "name": "dotk",
+                    "sorts": [],
+                    "args": []
                   }
                 ]
-              },
+              }
+            ]
+          },
+          {
+            "tag": "App",
+            "name": "Lbl'-LT-'val'-GT-'",
+            "sorts": [],
+            "args": [
               {
-                "tag": "App",
-                "name": "dotk",
-                "sorts": [],
-                "args": []
+                "tag": "EVar",
+                "name": "X",
+                "sort": {
+                    "tag": "SortApp",
+                    "name": "SortInt",
+                    "args": []
+                }
               }
             ]
           }

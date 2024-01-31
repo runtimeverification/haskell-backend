@@ -367,12 +367,12 @@ exec
         transit ::
             GraphTraversal.TState
                 Prim
-                (ExecDepth, ProgramState (Predicate RewritingVariableName, Substitution RewritingVariableName) (Pattern RewritingVariableName)) ->
+                (ExecDepth, ProgramState (Predicate RewritingVariableName, Substitution RewritingVariableName, UniqueId) (Pattern RewritingVariableName)) ->
             Simplifier
                 ( GraphTraversal.TransitionResult
                     ( GraphTraversal.TState
                         Prim
-                        (ExecDepth, ProgramState (Predicate RewritingVariableName, Substitution RewritingVariableName) (Pattern RewritingVariableName))
+                        (ExecDepth, ProgramState (Predicate RewritingVariableName, Substitution RewritingVariableName, UniqueId) (Pattern RewritingVariableName))
                     )
                 )
         transit =
@@ -418,7 +418,7 @@ data RuleTrace = RuleTrace
 
 -- | Type for json-rpc execution state, for readability
 data RpcExecState v = RpcExecState
-    { rpcProgState :: ProgramState (Predicate v, Substitution v) (Pattern v)
+    { rpcProgState :: ProgramState (Predicate v, Substitution v, UniqueId) (Pattern v)
     -- ^ program state
     , rpcRules :: Seq RuleTrace
     -- ^ rule label/ids we have applied so far
@@ -439,7 +439,7 @@ stateGetRewritingPattern ::
     RpcExecState RewritingVariableName ->
     RpcExecState VariableName
 stateGetRewritingPattern state@RpcExecState{rpcProgState} =
-    state{rpcProgState = bimap (bimap (Predicate.mapVariables getRewritingVariable) (Substitution.mapVariables getRewritingVariable)) getRewritingPattern rpcProgState}
+    state{rpcProgState = bimap (\(p, s, l) -> (Predicate.mapVariables getRewritingVariable p, Substitution.mapVariables getRewritingVariable s, l)) getRewritingPattern rpcProgState}
 
 {- | Version of @kore-exec@ suitable for the JSON RPC server. Cannot
   execute across branches, supports a depth limit and rule labels to
@@ -528,7 +528,7 @@ rpcExec
         -- The rule label is carried around unmodified in the
         -- transition, and adjusted in `toTransitionResult`
         withRpcExecState ::
-            TransitionRule m r (ExecDepth, ProgramState (Predicate v, Substitution v) (Pattern v)) ->
+            TransitionRule m r (ExecDepth, ProgramState (Predicate v, Substitution v, UniqueId) (Pattern v)) ->
             TransitionRule m r (RpcExecState v)
         withRpcExecState transition =
             \prim RpcExecState{rpcProgState, rpcRules, rpcDepth} ->

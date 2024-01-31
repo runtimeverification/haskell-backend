@@ -107,6 +107,7 @@ import Prelude.Kore
 import SMT qualified
 import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 import Kore.Internal.Substitution (Substitution)
+import Kore.TopBottom (TopBottom(isTop))
 
 respond ::
     forall m.
@@ -337,23 +338,23 @@ respond serverState moduleName runSMT =
 
                 patternToExecState ::
                     TermLike.Sort ->
-                    ProgramState (Predicate TermLike.VariableName, Substitution TermLike.VariableName) (Pattern TermLike.VariableName) ->
+                    ProgramState (Predicate TermLike.VariableName, Substitution TermLike.VariableName, UniqueId) (Pattern TermLike.VariableName) ->
                     ExecuteState
                 patternToExecState sort s =
                     ExecuteState
                         { term =
                             PatternJson.fromTermLike $ Pattern.term p
-                        , ruleSubstitution, rulePredicate
+                        , ruleSubstitution, rulePredicate, ruleId
                         , predicate =
                             case Pattern.predicate p of
                                 PredicateTrue -> Nothing
                                 pr -> Just $ PatternJson.fromPredicate sort pr
                         }
                   where
-                    (p, rulePredicate, ruleSubstitution) = case extractProgramState s of
-                        (Nothing, _) -> (Pattern.bottomOf sort, Nothing, Nothing)
-                        (Just p', Nothing) -> (p', Nothing, Nothing)
-                        (Just p', Just (pr, sub)) -> (p', Just $ PatternJson.fromPredicate sort pr, PatternJson.fromSubstitution sort sub)
+                    (p, rulePredicate, ruleSubstitution, ruleId) = case extractProgramState s of
+                        (Nothing, _) -> (Pattern.bottomOf sort, Nothing, Nothing, Nothing)
+                        (Just p', Nothing) -> (p', Nothing, Nothing, Nothing)
+                        (Just p', Just (pr, sub, UniqueId rid)) -> (p', if isTop pr then Nothing else Just $ PatternJson.fromPredicate sort pr, PatternJson.fromSubstitution sort sub, rid)
                         
         -- Step StepRequest{} -> pure $ Right $ Step $ StepResult []
         Implies ImpliesRequest{antecedent, consequent, _module, logSuccessfulSimplifications, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
