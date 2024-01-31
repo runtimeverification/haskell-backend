@@ -23,6 +23,9 @@
 #                  (default <top>/.build/booster/bin/kore-rpc-client)
 #   SERVER_OPTS: additional options to pass to the SERVER
 #                  (default: none)
+#   CONNECTION_ATTEMPTS: attempts to establish a connection with the server
+#                        after sleepeng for 1 second
+#                          (default: 15)
 
 directory=${1?"Please provide a test directory in a single argument"}
 
@@ -38,6 +41,7 @@ bindir=../../.build/booster/bin
 
 server=${SERVER:-$bindir/kore-rpc-booster}
 client=${CLIENT:-$bindir/kore-rpc-client}
+connection_attempts=${CONNECTION_ATTEMPTS:-15}
 
 kore=resources/${dir#test-}.kore
 kompile=resources/${dir#test-}.kompile
@@ -72,7 +76,7 @@ server_pid=$!
 trap 'kill -2 ${server_pid}; popd' ERR EXIT
 echo "Server PID ${server_pid}"
 
-i=15
+i=$connection_attempts
 while ! lsof -a -p${server_pid} -sTCP:LISTEN -iTCP && [[ $i -ge 0 ]]; do
     echo "Waiting for server ($i attempts left)"
     i=$((i-1))
