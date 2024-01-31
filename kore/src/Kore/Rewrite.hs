@@ -25,6 +25,7 @@ import Control.Monad (
     foldM,
  )
 import Control.Monad.State (get, modify)
+import Data.Bifunctor (Bifunctor (..))
 import Data.Limit (
     Limit (..),
  )
@@ -39,11 +40,14 @@ import Data.Stream.Infinite qualified as Stream
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Axiom qualified as Attribute
+import Kore.Attribute.UniqueId (UniqueId)
 import Kore.Debug
 import Kore.Internal.Pattern (
     Conditional (predicate, substitution),
     Pattern,
  )
+import Kore.Internal.Predicate (Predicate)
+import Kore.Internal.Substitution (Substitution)
 import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Rewrite.Result qualified as Result
 import Kore.Rewrite.RewriteStep qualified as Step
@@ -80,13 +84,9 @@ import Pretty (
     Pretty,
  )
 import Pretty qualified
-import Kore.Internal.Predicate (Predicate)
-import Kore.Internal.Substitution (Substitution)
-import Data.Bifunctor (Bifunctor(..))
-import Kore.Attribute.UniqueId (UniqueId)
 
 -- | The program's state during symbolic execution.
-data ProgramState b a 
+data ProgramState b a
     = -- | The beginning of an execution step.
       Start !a
     | -- | The configuration was rewritten after applying
@@ -189,7 +189,10 @@ transitionRule ::
     TransitionRule
         Simplifier
         (RewriteRule RewritingVariableName, Seq SimplifierTrace)
-        (ProgramState (Predicate RewritingVariableName, Substitution RewritingVariableName, UniqueId) (Pattern RewritingVariableName))
+        ( ProgramState
+            (Predicate RewritingVariableName, Substitution RewritingVariableName, UniqueId)
+            (Pattern RewritingVariableName)
+        )
 transitionRule rewriteGroups assumeInitialDefined = transitionRuleWorker
   where
     transitionRuleWorker _ Simplify Bottom = pure Bottom
@@ -246,7 +249,10 @@ deriveResults ::
             (RulePattern var)
         )
         a ->
-    TransitionT (RewriteRule var, Seq SimplifierTrace) Simplifier (ProgramState (Predicate var, Substitution var, UniqueId) a)
+    TransitionT
+        (RewriteRule var, Seq SimplifierTrace)
+        Simplifier
+        (ProgramState (Predicate var, Substitution var, UniqueId) a)
 deriveResults Result.Results{results, remainders} =
     if (null results || all (\Result.Result{result} -> isBottom result) results) && null remainders
         then pure Bottom
@@ -259,7 +265,8 @@ deriveResults Result.Results{results, remainders} =
             (_, simplifyRules :: Seq SimplifierTrace) <- lift get
             lift $ modify $ \(cache, _rules) -> (cache, mempty)
             addRule (RewriteRule $ extract appliedRule, simplifyRules)
-            pure $ Rewritten (predicate appliedRule, substitution appliedRule, from $ extract appliedRule)  result
+            pure $
+                Rewritten (predicate appliedRule, substitution appliedRule, from $ extract appliedRule) result
     addRemainders remainders' =
         asum (pure . Remaining <$> toList remainders')
 

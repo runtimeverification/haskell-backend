@@ -45,9 +45,11 @@ import Kore.Internal.OrPattern qualified as OrPattern
 import Kore.Internal.Pattern (Pattern)
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
+    Predicate,
     getMultiAndPredicate,
-    pattern PredicateTrue, Predicate,
+    pattern PredicateTrue,
  )
+import Kore.Internal.Substitution (Substitution)
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike (TermLike)
 import Kore.Internal.TermLike qualified as TermLike
@@ -99,6 +101,7 @@ import Kore.Syntax.Module (Module (..), ModuleName (..))
 import Kore.Syntax.Sentence (
     SentenceAxiom,
  )
+import Kore.TopBottom (TopBottom (isTop))
 import Kore.Validate.DefinitionVerifier (verifyAndIndexDefinitionWithBase)
 import Kore.Validate.PatternVerifier (Context (..))
 import Kore.Validate.PatternVerifier qualified as PatternVerifier
@@ -106,8 +109,6 @@ import Log qualified
 import Prelude.Kore
 import SMT qualified
 import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
-import Kore.Internal.Substitution (Substitution)
-import Kore.TopBottom (TopBottom(isTop))
 
 respond ::
     forall m.
@@ -338,13 +339,17 @@ respond serverState moduleName runSMT =
 
                 patternToExecState ::
                     TermLike.Sort ->
-                    ProgramState (Predicate TermLike.VariableName, Substitution TermLike.VariableName, UniqueId) (Pattern TermLike.VariableName) ->
+                    ProgramState
+                        (Predicate TermLike.VariableName, Substitution TermLike.VariableName, UniqueId)
+                        (Pattern TermLike.VariableName) ->
                     ExecuteState
                 patternToExecState sort s =
                     ExecuteState
                         { term =
                             PatternJson.fromTermLike $ Pattern.term p
-                        , ruleSubstitution, rulePredicate, ruleId
+                        , ruleSubstitution
+                        , rulePredicate
+                        , ruleId
                         , predicate =
                             case Pattern.predicate p of
                                 PredicateTrue -> Nothing
@@ -354,8 +359,13 @@ respond serverState moduleName runSMT =
                     (p, rulePredicate, ruleSubstitution, ruleId) = case extractProgramState s of
                         (Nothing, _) -> (Pattern.bottomOf sort, Nothing, Nothing, Nothing)
                         (Just p', Nothing) -> (p', Nothing, Nothing, Nothing)
-                        (Just p', Just (pr, sub, UniqueId rid)) -> (p', if isTop pr then Nothing else Just $ PatternJson.fromPredicate sort pr, PatternJson.fromSubstitution sort sub, rid)
-                        
+                        (Just p', Just (pr, sub, UniqueId rid)) ->
+                            ( p'
+                            , if isTop pr then Nothing else Just $ PatternJson.fromPredicate sort pr
+                            , PatternJson.fromSubstitution sort sub
+                            , rid
+                            )
+
         -- Step StepRequest{} -> pure $ Right $ Step $ StepResult []
         Implies ImpliesRequest{antecedent, consequent, _module, logSuccessfulSimplifications, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
             start <- liftIO $ getTime Monotonic
