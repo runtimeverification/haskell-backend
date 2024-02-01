@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2022
 License     : BSD-3-Clause
@@ -41,6 +43,7 @@ import Control.Monad.Trans.Reader (ReaderT (..), ask)
 import Control.Monad.Trans.State
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
+import Data.Data (Data)
 import Data.Foldable (toList, traverse_)
 import Data.List (elemIndex, partition)
 import Data.Map (Map)
@@ -89,7 +92,7 @@ data EquationFailure
     | SideConditionFalse Predicate
     | InternalError Text
     | UndefinedTerm Term LLVM.LlvmError
-    deriving stock (Eq, Show)
+    deriving stock (Eq, Show, Data)
 
 instance Pretty EquationFailure where
     pretty = \case
