@@ -53,6 +53,7 @@ import Booster.Pattern.Unify
 import Booster.Pattern.Util
 import Booster.Prettyprinter
 import Booster.SMT.Interface qualified as SMT
+import Booster.Util (constructorName)
 import Data.Coerce (coerce)
 
 newtype RewriteT io err a = RewriteT
@@ -712,7 +713,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                     emitRewriteTrace $ RewriteSimplified traces (Just r)
                     pure $ Just p
                 Left other -> do
-                    logError . pack $ "Simplification error during rewrite: " <> show other
+                    logError $ "Simplification error during rewrite: " <> (Text.pack . constructorName $ other)
                     emitRewriteTrace $ RewriteSimplified traces (Just other)
                     pure $ Just p
 
