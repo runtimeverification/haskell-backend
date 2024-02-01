@@ -330,7 +330,7 @@ respond stateVar =
                 mkSimplifyResponse state traceData =
                     RpcTypes.Simplify
                         RpcTypes.SimplifyResult{state, logs = mkTraces duration traceData}
-            pure $ second (uncurry mkSimplifyResponse) result
+            pure $ second (uncurry mkSimplifyResponse) (fmap (second (map ApplyEquations.eraseStates)) result)
         RpcTypes.GetModel req -> withContext req._module $ \case
             (_, _, Nothing) -> do
                 Log.logErrorNS "booster" "get-model request, not supported without SMT solver"
@@ -514,7 +514,7 @@ execStateToKoreJson RpcTypes.ExecuteState{term = t, substitution, predicate} =
 execResponse ::
     Maybe Double ->
     RpcTypes.ExecuteRequest ->
-    (Natural, Seq (RewriteTrace Pattern), RewriteResult Pattern) ->
+    (Natural, Seq (RewriteTrace ()), RewriteResult Pattern) ->
     Map Variable Term ->
     [Syntax.KorePattern] ->
     Either ErrorObj (RpcTypes.API 'RpcTypes.Res)
@@ -619,21 +619,19 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
 
     logs =
         let traceLogs =
-                fmap concat
-                    . mapM
+                concat . catMaybes . toList $
+                    fmap
                         ( mkLogRewriteTrace
                             (logSuccessfulRewrites, logFailedRewrites)
                             (logSuccessfulSimplifications, logFailedSimplifications)
                         )
-                    $ toList traces
+                        traces
             timingLog =
                 fmap (ProcessingTime $ Just Booster) mbDuration
          in case (timingLog, traceLogs) of
-                (Nothing, Nothing) -> Nothing
-                (Nothing, Just []) -> Nothing
-                (Nothing, Just xs@(_ : _)) -> Just xs
-                (Just t, Nothing) -> Just [t]
-                (Just t, Just xs) -> Just (t : xs)
+                (Nothing, []) -> Nothing
+                (Nothing, xs@(_ : _)) -> Just xs
+                (Just t, xs) -> Just (t : xs)
 
 toExecState :: Pattern -> Map Variable Term -> [Syntax.KorePattern] -> RpcTypes.ExecuteState
 toExecState pat sub unsupported =
@@ -650,13 +648,12 @@ toExecState pat sub unsupported =
         | null unsupported = id
         | otherwise = maybe (Just allUnsupported) (Just . Syntax.KJAnd termSort . (: unsupported))
 
-mkLogEquationTrace :: (Bool, Bool) -> ApplyEquations.EquationTrace -> Maybe LogEntry
+mkLogEquationTrace :: (Bool, Bool) -> ApplyEquations.EquationTrace () -> Maybe LogEntry
 mkLogEquationTrace
-    (logSuccessfulSimplifications, logFailedSimplifications)
-    ApplyEquations.EquationTrace{subjectTerm, ruleId = uid, result} =
-        case result of
-            ApplyEquations.Success rewrittenTrm
-                | logSuccessfulSimplifications ->
+    (logSuccessfulSimplifications, logFailedSimplifications) = \case
+        ApplyEquations.EquationApplied _subjectTerm metadata _rewritten ->
+            if logSuccessfulSimplifications
+                then
                     Just $
                         Simplification
                             { originalTerm
@@ -664,94 +661,116 @@ mkLogEquationTrace
                             , origin
                             , result =
                                 Success
-                                    { rewrittenTerm =
-                                        Just $ execStateToKoreJson $ toExecState (Pattern.Pattern_ rewrittenTrm) mempty mempty
+                                    { rewrittenTerm = Nothing
                                     , substitution = Nothing
                                     , ruleId = fromMaybe "UNKNOWN" _ruleId
                                     }
                             }
-            ApplyEquations.FailedMatch _failReason
-                | logFailedSimplifications ->
-                    Just $
-                        Simplification
-                            { originalTerm
-                            , originalTermIndex
-                            , origin
-                            , result = Failure{reason = "Failed match", _ruleId}
-                            }
-            ApplyEquations.IndeterminateMatch
-                | logFailedSimplifications ->
-                    Just $
-                        Simplification
-                            { originalTerm
-                            , originalTermIndex
-                            , origin
-                            , result = Failure{reason = "Indeterminate match", _ruleId}
-                            }
-            ApplyEquations.IndeterminateCondition _failedConditions
-                | logFailedSimplifications ->
-                    Just $
-                        Simplification
-                            { originalTerm
-                            , originalTermIndex
-                            , origin
-                            , result = Failure{reason = "Indeterminate side-condition", _ruleId}
-                            }
-            ApplyEquations.ConditionFalse{}
-                | logFailedSimplifications ->
-                    Just $
-                        Simplification
-                            { originalTerm
-                            , originalTermIndex
-                            , origin
-                            , result = Failure{reason = "Side-condition is false", _ruleId}
-                            }
-            ApplyEquations.RuleNotPreservingDefinedness
-                | logFailedSimplifications ->
-                    Just $
-                        Simplification
-                            { originalTerm
-                            , originalTermIndex
-                            , origin
-                            , result = Failure{reason = "The equation does not preserve definedness", _ruleId}
-                            }
-            ApplyEquations.MatchConstraintViolated _ varName
-                | logFailedSimplifications ->
-                    Just $
-                        Simplification
-                            { originalTerm
-                            , originalTermIndex
-                            , origin
-                            , result =
-                                Failure
-                                    { reason = "Symbolic/concrete constraint violated for variable: " <> Text.decodeUtf8 varName
-                                    , _ruleId
-                                    }
-                            }
-            _ -> Nothing
-      where
-        originalTerm = Just $ execStateToKoreJson $ toExecState (Pattern.Pattern_ subjectTerm) mempty mempty
-        originalTermIndex = Nothing
-        origin = Booster
-        _ruleId = fmap getUniqueId uid
+                else Nothing
+          where
+            originalTerm = Nothing
+            originalTermIndex = Nothing
+            origin = Booster
+            _ruleId = fmap getUniqueId metadata.ruleId
+        ApplyEquations.EquationNotApplied _subjectTerm metadata result ->
+            case result of
+                ApplyEquations.Success rewrittenTrm
+                    | logSuccessfulSimplifications ->
+                        Just $
+                            Simplification
+                                { originalTerm
+                                , originalTermIndex
+                                , origin
+                                , result =
+                                    Success
+                                        { rewrittenTerm =
+                                            Just $ execStateToKoreJson $ toExecState (Pattern.Pattern_ rewrittenTrm) mempty mempty
+                                        , substitution = Nothing
+                                        , ruleId = fromMaybe "UNKNOWN" _ruleId
+                                        }
+                                }
+                ApplyEquations.FailedMatch _failReason
+                    | logFailedSimplifications ->
+                        Just $
+                            Simplification
+                                { originalTerm
+                                , originalTermIndex
+                                , origin
+                                , result = Failure{reason = "Failed match", _ruleId}
+                                }
+                ApplyEquations.IndeterminateMatch
+                    | logFailedSimplifications ->
+                        Just $
+                            Simplification
+                                { originalTerm
+                                , originalTermIndex
+                                , origin
+                                , result = Failure{reason = "Indeterminate match", _ruleId}
+                                }
+                ApplyEquations.IndeterminateCondition _failedConditions
+                    | logFailedSimplifications ->
+                        Just $
+                            Simplification
+                                { originalTerm
+                                , originalTermIndex
+                                , origin
+                                , result = Failure{reason = "Indeterminate side-condition", _ruleId}
+                                }
+                ApplyEquations.ConditionFalse{}
+                    | logFailedSimplifications ->
+                        Just $
+                            Simplification
+                                { originalTerm
+                                , originalTermIndex
+                                , origin
+                                , result = Failure{reason = "Side-condition is false", _ruleId}
+                                }
+                ApplyEquations.RuleNotPreservingDefinedness
+                    | logFailedSimplifications ->
+                        Just $
+                            Simplification
+                                { originalTerm
+                                , originalTermIndex
+                                , origin
+                                , result = Failure{reason = "The equation does not preserve definedness", _ruleId}
+                                }
+                ApplyEquations.MatchConstraintViolated _ varName
+                    | logFailedSimplifications ->
+                        Just $
+                            Simplification
+                                { originalTerm
+                                , originalTermIndex
+                                , origin
+                                , result =
+                                    Failure
+                                        { reason = "Symbolic/concrete constraint violated for variable: " <> Text.decodeUtf8 varName
+                                        , _ruleId
+                                        }
+                                }
+                _ -> Nothing
+          where
+            originalTerm = Nothing
+            originalTermIndex = Nothing
+            origin = Booster
+            _ruleId = fmap getUniqueId metadata.ruleId
 
 mkLogRewriteTrace ::
     (Bool, Bool) ->
     (Bool, Bool) ->
-    RewriteTrace Pattern ->
+    RewriteTrace () ->
     Maybe [LogEntry]
 mkLogRewriteTrace
     (logSuccessfulRewrites, logFailedRewrites)
     equationLogOpts@(logSuccessfulSimplifications, logFailedSimplifications) =
         \case
-            RewriteSingleStep _ uid _ res
+            RewriteSingleStep _ uid _ _res
                 | logSuccessfulRewrites ->
                     Just $
                         singleton $
                             Rewrite
                                 { result =
                                     Success
-                                        { rewrittenTerm = Just $ execStateToKoreJson $ toExecState res mempty mempty
+                                        { rewrittenTerm = Nothing
                                         , substitution = Nothing
                                         , ruleId = maybe "UNKNOWN" getUniqueId uid
                                         }
