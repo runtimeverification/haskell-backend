@@ -201,7 +201,7 @@ data SymbolAttributes = SymbolAttributes
     , hasEvaluators :: Flag "canBeEvaluated"
     , collectionMetadata :: Maybe KCollectionMetadata
     , smt :: Maybe SMTType
-    , hook :: Maybe Text
+    , hook :: Maybe ByteString
     }
     deriving stock (Eq, Ord, Show, Generic, Data, Lift)
     deriving anyclass (NFData, Hashable)

@@ -51,6 +51,7 @@ import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text, pack)
 import Data.Text qualified as Text
+import Data.Text.Encoding qualified as Text
 import Prettyprinter
 
 import Booster.Builtin as Builtin
@@ -541,7 +542,7 @@ applyAtTop pref term = do
                 | Just hook <- flip Map.lookup Builtin.hooks =<< sym.attributes.hook -> do
                     logOther (LevelOther "Simplify") $
                         "Calling hooked function "
-                            <> fromJust sym.attributes.hook
+                            <> (Text.decodeUtf8 $ fromJust sym.attributes.hook)
                             <> " for "
                             <> renderText (pretty term)
                     either (throw . InternalError) checkChanged
