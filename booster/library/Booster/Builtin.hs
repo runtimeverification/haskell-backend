@@ -13,6 +13,7 @@ module Booster.Builtin (
 
 import Control.Monad
 import Control.Monad.Trans.Except
+import Data.ByteString.Char8 (ByteString)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text (Text)
@@ -27,19 +28,19 @@ import Booster.Prettyprinter
 -- partial (returning a Maybe type)
 type BuiltinFunction = [Term] -> Except Text (Maybe Term)
 
-hooks :: Map Text BuiltinFunction
+hooks :: Map ByteString BuiltinFunction
 hooks =
     Map.unions
         [ builtinsKEQUAL
         ]
 
 ------------------------------------------------------------
-(~~>) :: Text -> BuiltinFunction -> (Text, BuiltinFunction)
+(~~>) :: ByteString -> BuiltinFunction -> (ByteString, BuiltinFunction)
 (~~>) = (,)
 
 ------------------------------------------------------------
 -- KEQUAL hooks
-builtinsKEQUAL :: Map Text BuiltinFunction
+builtinsKEQUAL :: Map ByteString BuiltinFunction
 builtinsKEQUAL =
     Map.fromList
         [ "KEQUAL.ite" ~~> iteHook

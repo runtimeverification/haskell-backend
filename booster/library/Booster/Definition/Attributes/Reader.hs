@@ -179,6 +179,9 @@ instance HasAttributes ParsedSymbol where
                         pure . Just . SMTLib $ encodeUtf8 txt
                     (Nothing, Nothing) ->
                         pure Nothing
+            hook = do
+                hooked <- attributes .:? "hook"
+                pure (encodeUtf8 <$> hooked)
 
         SymbolAttributes
             <$> symbolType
@@ -188,7 +191,7 @@ instance HasAttributes ParsedSymbol where
             <*> hasConcreteEvaluators
             <*> pure Nothing
             <*> smt
-            <*> (attributes .:? "hook")
+            <*> hook
 
 instance HasAttributes ParsedSort where
     type Attributes ParsedSort = SortAttributes
