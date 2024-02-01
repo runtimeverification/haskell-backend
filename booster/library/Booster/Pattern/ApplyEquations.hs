@@ -13,6 +13,8 @@ module Booster.Pattern.ApplyEquations (
     EquationPreference (..),
     EquationFailure (..),
     EquationTrace (..),
+    eraseStates,
+    EquationMetadata (..),
     ApplyEquationResult (..),
     applyEquations,
     handleSimplificationEquation,
@@ -131,23 +133,47 @@ data EquationState = EquationState
     , recursionStack :: [Term]
     , changed :: Bool
     , predicates :: Set Predicate
-    , trace :: Seq EquationTrace
+    , trace :: Seq (EquationTrace Term)
     , cache :: SimplifierCache
     }
 
 type SimplifierCache = Map Term Term
 
-data EquationTrace = EquationTrace
-    { subjectTerm :: Term
-    , location :: Maybe Location
+data EquationMetadata = EquationMetadata
+    { location :: Maybe Location
     , label :: Maybe Label
     , ruleId :: Maybe UniqueId
-    , result :: ApplyEquationResult
     }
     deriving stock (Eq, Show)
 
-instance Pretty EquationTrace where
-    pretty EquationTrace{subjectTerm, location, label, result} = case result of
+-- TODO: refactor ApplyEquationResult into EquationNonApplicableReason or something
+data EquationTrace term
+    = EquationApplied term EquationMetadata term
+    | EquationNotApplied term EquationMetadata ApplyEquationResult
+    deriving stock (Eq, Show)
+
+{- | For the given equation trace, construct a new one,
+     removing the heavy-weight information (the states),
+     but keeping the meta-data (rule labels).
+-}
+eraseStates :: EquationTrace Term -> EquationTrace ()
+eraseStates = \case
+    EquationApplied _ metadata _ -> EquationApplied () metadata ()
+    EquationNotApplied _ metadata failureInfo -> EquationNotApplied () metadata failureInfo
+
+instance Pretty (EquationTrace Term) where
+    pretty (EquationApplied subjectTerm metadata rewritten) =
+        vsep
+            [ "Simplifying term"
+            , prettyTerm
+            , "to"
+            , pretty rewritten
+            , "using " <> locationInfo
+            ]
+      where
+        locationInfo = pretty metadata.location <> " - " <> pretty metadata.label
+        prettyTerm = pretty subjectTerm
+    pretty (EquationNotApplied subjectTerm metadata result) = case result of
         Success rewritten ->
             vsep
                 [ "Simplifying term"
@@ -201,14 +227,14 @@ instance Pretty EquationTrace where
                 , prettyTerm
                 ]
       where
-        locationInfo = pretty location <> " - " <> pretty label
+        locationInfo = pretty metadata.location <> " - " <> pretty metadata.label
         prettyTerm = pretty subjectTerm
 
-isMatchFailure, isSuccess :: EquationTrace -> Bool
-isMatchFailure EquationTrace{result = FailedMatch{}} = True
-isMatchFailure EquationTrace{result = IndeterminateMatch{}} = True
+isMatchFailure, isSuccess :: EquationTrace Term -> Bool
+isMatchFailure (EquationNotApplied _ _ FailedMatch{}) = True
+isMatchFailure (EquationNotApplied _ _ IndeterminateMatch{}) = True
 isMatchFailure _ = False
-isSuccess EquationTrace{result = Success{}} = True
+isSuccess EquationApplied{} = True
 isSuccess _ = False
 
 startState :: Map Term Term -> EquationState
@@ -286,7 +312,7 @@ runEquationT ::
     Maybe SMT.SMTContext ->
     SimplifierCache ->
     EquationT io a ->
-    io (Either EquationFailure a, [EquationTrace], SimplifierCache)
+    io (Either EquationFailure a, [EquationTrace Term], SimplifierCache)
 runEquationT doTracing definition llvmApi smtSolver sCache (EquationT m) = do
     (res, endState) <-
         flip runStateT (startState sCache) $
@@ -341,7 +367,7 @@ evaluateTerm ::
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
     Term ->
-    io (Either EquationFailure Term, [EquationTrace], SimplifierCache)
+    io (Either EquationFailure Term, [EquationTrace Term], SimplifierCache)
 evaluateTerm doTracing direction def llvmApi smtSolver =
     runEquationT doTracing def llvmApi smtSolver mempty
         . evaluateTerm' direction
@@ -365,7 +391,7 @@ evaluatePattern ::
     Maybe SMT.SMTContext ->
     SimplifierCache ->
     Pattern ->
-    io (Either EquationFailure Pattern, [EquationTrace], SimplifierCache)
+    io (Either EquationFailure Pattern, [EquationTrace Term], SimplifierCache)
 evaluatePattern doTracing def mLlvmLibrary smtSolver cache =
     runEquationT doTracing def mLlvmLibrary smtSolver cache . evaluatePattern'
 
@@ -426,7 +452,7 @@ applyTerm direction pref trm = do
                                         Right result -> do
                                             when (result /= t) $ do
                                                 setChanged
-                                                traceRuleApplication t Nothing (Just "LLVM") Nothing $ Success result
+                                                emitEquationTrace t Nothing (Just "LLVM") Nothing $ Success result
                                             pure result
                             else -- use equations
                                 apply config t
@@ -435,7 +461,7 @@ applyTerm direction pref trm = do
                 Just cached -> do
                     when (t /= cached) $ do
                         setChanged
-                        traceRuleApplication t Nothing (Just "Cache") Nothing $ Success cached
+                        emitEquationTrace t Nothing (Just "Cache") Nothing $ Success cached
                     pure cached
 
     -- Bottom-up evaluation traverses AST nodes in post-order but finds work top-down
@@ -631,10 +657,14 @@ applyEquations theory handler term = do
         pure term -- nothing to do, term stays the same
     processEquations (eq : rest) = do
         res <- applyEquation term eq
-        traceRuleApplication term eq.attributes.location eq.attributes.ruleLabel eq.attributes.uniqueId res
+        emitEquationTrace term eq.attributes.location eq.attributes.ruleLabel eq.attributes.uniqueId res
         handler (\t -> setChanged >> pure t) (processEquations rest) (pure term) res
 
-traceRuleApplication ::
+{- | Trace application or failure to apply an equation
+     * log into stderr
+     * accumulate the trace into the state
+-}
+emitEquationTrace ::
     MonadLoggerIO io =>
     Term ->
     Maybe Location ->
@@ -642,8 +672,11 @@ traceRuleApplication ::
     Maybe UniqueId ->
     ApplyEquationResult ->
     EquationT io ()
-traceRuleApplication t loc lbl uid res = do
-    let newTraceItem = EquationTrace t loc lbl uid res
+emitEquationTrace t loc lbl uid res = do
+    let newTraceItem =
+            case res of
+                Success rewritten -> EquationApplied t (EquationMetadata loc lbl uid) rewritten
+                failure -> EquationNotApplied t (EquationMetadata loc lbl uid) failure
         prettyItem = pack . renderDefault . pretty $ newTraceItem
     logOther (LevelOther "Simplify") prettyItem
     case res of
@@ -805,7 +838,7 @@ simplifyConstraint ::
     Maybe SMT.SMTContext ->
     SimplifierCache ->
     Predicate ->
-    io (Either EquationFailure Predicate, [EquationTrace], SimplifierCache)
+    io (Either EquationFailure Predicate, [EquationTrace Term], SimplifierCache)
 simplifyConstraint doTracing def mbApi mbSMT cache (Predicate p) =
     runEquationT doTracing def mbApi mbSMT cache $ (coerce <$>) . simplifyConstraint' True $ p
 
@@ -817,7 +850,7 @@ simplifyConstraints ::
     Maybe SMT.SMTContext ->
     SimplifierCache ->
     [Predicate] ->
-    io (Either EquationFailure [Predicate], [EquationTrace], SimplifierCache)
+    io (Either EquationFailure [Predicate], [EquationTrace Term], SimplifierCache)
 simplifyConstraints doTracing def mbApi mbSMT cache ps =
     runEquationT doTracing def mbApi mbSMT cache $
         concatMap splitAndBools

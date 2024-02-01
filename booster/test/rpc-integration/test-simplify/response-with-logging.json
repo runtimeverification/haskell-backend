@@ -76,42 +76,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "App",
-                                "name": "Lblf'LParUndsRParUnds'SIMPLIFY'Unds'Int'Unds'Int",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "34"
-                                    }
-                                ]
-                            },
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "56"
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Failed match",
@@ -121,42 +85,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "App",
-                                "name": "Lblf'LParUndsRParUnds'SIMPLIFY'Unds'Int'Unds'Int",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "34"
-                                    }
-                                ]
-                            },
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "56"
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Failed match",
@@ -166,42 +94,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "App",
-                                "name": "Lblf'LParUndsRParUnds'SIMPLIFY'Unds'Int'Unds'Int",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "34"
-                                    }
-                                ]
-                            },
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "56"
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Failed match",
@@ -211,42 +103,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "App",
-                                "name": "Lblf'LParUndsRParUnds'SIMPLIFY'Unds'Int'Unds'Int",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "34"
-                                    }
-                                ]
-                            },
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "56"
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Failed match",
@@ -256,42 +112,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "App",
-                                "name": "Lblf'LParUndsRParUnds'SIMPLIFY'Unds'Int'Unds'Int",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "34"
-                                    }
-                                ]
-                            },
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "56"
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Indeterminate match",
@@ -301,42 +121,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "App",
-                                "name": "Lblf'LParUndsRParUnds'SIMPLIFY'Unds'Int'Unds'Int",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "34"
-                                    }
-                                ]
-                            },
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "56"
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Indeterminate match",
@@ -346,42 +130,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "App",
-                                "name": "Lblf'LParUndsRParUnds'SIMPLIFY'Unds'Int'Unds'Int",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "34"
-                                    }
-                                ]
-                            },
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "56"
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Symbolic/concrete constraint violated for variable: Eq#VarB",
@@ -391,58 +139,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "12"
-                            },
-                            {
-                                "tag": "App",
-                                "name": "Lbl'UndsPlus'Int'Unds'",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "App",
-                                        "name": "Lblf'LParUndsRParUnds'SIMPLIFY'Unds'Int'Unds'Int",
-                                        "sorts": [],
-                                        "args": [
-                                            {
-                                                "tag": "DV",
-                                                "sort": {
-                                                    "tag": "SortApp",
-                                                    "name": "SortInt",
-                                                    "args": []
-                                                },
-                                                "value": "34"
-                                            }
-                                        ]
-                                    },
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "56"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Indeterminate match",
@@ -452,147 +148,14 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "12"
-                            },
-                            {
-                                "tag": "App",
-                                "name": "Lbl'UndsPlus'Int'Unds'",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "App",
-                                        "name": "Lblf'LParUndsRParUnds'SIMPLIFY'Unds'Int'Unds'Int",
-                                        "sorts": [],
-                                        "args": [
-                                            {
-                                                "tag": "DV",
-                                                "sort": {
-                                                    "tag": "SortApp",
-                                                    "name": "SortInt",
-                                                    "args": []
-                                                },
-                                                "value": "34"
-                                            }
-                                        ]
-                                    },
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "56"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "success",
-                    "rewritten-term": {
-                        "format": "KORE",
-                        "version": 1,
-                        "term": {
-                            "tag": "App",
-                            "name": "Lbl'UndsPlus'Int'Unds'",
-                            "sorts": [],
-                            "args": [
-                                {
-                                    "tag": "App",
-                                    "name": "Lblf'LParUndsRParUnds'SIMPLIFY'Unds'Int'Unds'Int",
-                                    "sorts": [],
-                                    "args": [
-                                        {
-                                            "tag": "DV",
-                                            "sort": {
-                                                "tag": "SortApp",
-                                                "name": "SortInt",
-                                                "args": []
-                                            },
-                                            "value": "34"
-                                        }
-                                    ]
-                                },
-                                {
-                                    "tag": "App",
-                                    "name": "Lbl'UndsPlus'Int'Unds'",
-                                    "sorts": [],
-                                    "args": [
-                                        {
-                                            "tag": "DV",
-                                            "sort": {
-                                                "tag": "SortApp",
-                                                "name": "SortInt",
-                                                "args": []
-                                            },
-                                            "value": "12"
-                                        },
-                                        {
-                                            "tag": "DV",
-                                            "sort": {
-                                                "tag": "SortApp",
-                                                "name": "SortInt",
-                                                "args": []
-                                            },
-                                            "value": "56"
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    },
                     "rule-id": "268b9a7c15e96c6d7eca16bc9022dc880f06a15ca8018eb1854b9836fc3e965c"
                 }
             },
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "12"
-                            },
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "56"
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Failed match",
@@ -602,35 +165,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "12"
-                            },
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "56"
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Failed match",
@@ -640,35 +174,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "12"
-                            },
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "56"
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Failed match",
@@ -678,35 +183,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "12"
-                            },
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "56"
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Failed match",
@@ -716,35 +192,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "12"
-                            },
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "56"
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Failed match",
@@ -754,35 +201,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "12"
-                            },
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "56"
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Failed match",
@@ -792,35 +210,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "12"
-                            },
-                            {
-                                "tag": "DV",
-                                "sort": {
-                                    "tag": "SortApp",
-                                    "name": "SortInt",
-                                    "args": []
-                                },
-                                "value": "56"
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Symbolic/concrete constraint violated for variable: Eq#VarB",
@@ -830,58 +219,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "App",
-                                "name": "Lblf'LParUndsRParUnds'SIMPLIFY'Unds'Int'Unds'Int",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "34"
-                                    }
-                                ]
-                            },
-                            {
-                                "tag": "App",
-                                "name": "Lbl'UndsPlus'Int'Unds'",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "12"
-                                    },
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "56"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Indeterminate match",
@@ -891,58 +228,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "App",
-                                "name": "Lblf'LParUndsRParUnds'SIMPLIFY'Unds'Int'Unds'Int",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "34"
-                                    }
-                                ]
-                            },
-                            {
-                                "tag": "App",
-                                "name": "Lbl'UndsPlus'Int'Unds'",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "12"
-                                    },
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "56"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Symbolic/concrete constraint violated for variable: Eq#VarB",
@@ -952,58 +237,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "App",
-                                "name": "Lblf'LParUndsRParUnds'SIMPLIFY'Unds'Int'Unds'Int",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "34"
-                                    }
-                                ]
-                            },
-                            {
-                                "tag": "App",
-                                "name": "Lbl'UndsPlus'Int'Unds'",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "12"
-                                    },
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "56"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Symbolic/concrete constraint violated for variable: Eq#VarC",
@@ -1013,58 +246,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "App",
-                                "name": "Lblf'LParUndsRParUnds'SIMPLIFY'Unds'Int'Unds'Int",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "34"
-                                    }
-                                ]
-                            },
-                            {
-                                "tag": "App",
-                                "name": "Lbl'UndsPlus'Int'Unds'",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "12"
-                                    },
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "56"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Indeterminate match",
@@ -1074,58 +255,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "App",
-                                "name": "Lblf'LParUndsRParUnds'SIMPLIFY'Unds'Int'Unds'Int",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "34"
-                                    }
-                                ]
-                            },
-                            {
-                                "tag": "App",
-                                "name": "Lbl'UndsPlus'Int'Unds'",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "12"
-                                    },
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "56"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Indeterminate match",
@@ -1135,58 +264,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "App",
-                                "name": "Lblf'LParUndsRParUnds'SIMPLIFY'Unds'Int'Unds'Int",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "34"
-                                    }
-                                ]
-                            },
-                            {
-                                "tag": "App",
-                                "name": "Lbl'UndsPlus'Int'Unds'",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "12"
-                                    },
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "56"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Indeterminate match",
@@ -1196,58 +273,6 @@
             {
                 "tag": "simplification",
                 "origin": "booster",
-                "original-term": {
-                    "format": "KORE",
-                    "version": 1,
-                    "term": {
-                        "tag": "App",
-                        "name": "Lbl'UndsPlus'Int'Unds'",
-                        "sorts": [],
-                        "args": [
-                            {
-                                "tag": "App",
-                                "name": "Lblf'LParUndsRParUnds'SIMPLIFY'Unds'Int'Unds'Int",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "34"
-                                    }
-                                ]
-                            },
-                            {
-                                "tag": "App",
-                                "name": "Lbl'UndsPlus'Int'Unds'",
-                                "sorts": [],
-                                "args": [
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "12"
-                                    },
-                                    {
-                                        "tag": "DV",
-                                        "sort": {
-                                            "tag": "SortApp",
-                                            "name": "SortInt",
-                                            "args": []
-                                        },
-                                        "value": "56"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                },
                 "result": {
                     "tag": "failure",
                     "reason": "Symbolic/concrete constraint violated for variable: Eq#VarI",
