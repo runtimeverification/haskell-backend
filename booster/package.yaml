@@ -207,3 +207,22 @@ tests:
       - process
       - text
       - transformers
+
+  predicates-integration:
+    source-dirs: test/predicates-integration
+    main: Main.hs
+    dependencies:
+      - base
+      - bytestring
+      - containers
+      - filepath
+      - tasty
+      - tasty-golden
+      - tasty-hunit
+      - tasty-test-reporter
+      - hspec-hedgehog
+      - hs-backend-booster
+      - kore-rpc-types
+      - process
+      - text
+      - transformers
