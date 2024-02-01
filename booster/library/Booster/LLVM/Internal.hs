@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
@@ -40,6 +41,7 @@ import Data.ByteString.Builder
 import Data.ByteString.Char8 (ByteString, pack)
 import Data.ByteString.Char8 qualified as BS
 import Data.ByteString.Lazy qualified as BL
+import Data.Data (Data)
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HM
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
@@ -103,7 +105,7 @@ data KorePatternAPI = KorePatternAPI
 --     , isSuccess :: KoreErrorPtr -> IO Bool
 --     , message :: KoreErrorPtr -> IO ByteString
 --     }
-newtype LlvmError = LlvmError ByteString deriving (Show, Eq)
+newtype LlvmError = LlvmError ByteString deriving (Show, Eq, Data)
 
 data API = API
     { patt :: KorePatternAPI

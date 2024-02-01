@@ -1,12 +1,17 @@
 module Booster.Util (
     decodeLabel,
     decodeLabel',
+    constructorName,
 ) where
 
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as BS
+import Data.Data
 import Data.Either (fromRight)
 import Data.Map qualified as Map
+
+constructorName :: Data a => a -> String
+constructorName x = showConstr (toConstr x)
 
 -- | Un-escapes special characters in symbol names
 decodeLabel :: ByteString -> Either String ByteString
