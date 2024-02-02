@@ -354,6 +354,7 @@ respond serverState moduleName runSMT =
                         ExecuteState
                             { term
                             , predicate
+                            , substitution
                             , ruleSubstitution
                             , rulePredicate
                             , ruleId
@@ -362,6 +363,7 @@ respond serverState moduleName runSMT =
                         ExecuteState
                             { term
                             , predicate
+                            , substitution
                             , ruleSubstitution = Nothing
                             , rulePredicate = Nothing
                             , ruleId = Nothing
@@ -372,6 +374,8 @@ respond serverState moduleName runSMT =
                         case Pattern.predicate p of
                             PredicateTrue -> Nothing
                             pr -> Just $ PatternJson.fromPredicate sort pr
+                    substitution =
+                        PatternJson.fromSubstitution sort $ Pattern.substitution p
                     (p, rulePredicate, ruleSubstitution, ruleId) = case extractProgramState s of
                         (Nothing, _) -> (Pattern.bottomOf sort, Nothing, Nothing, Nothing)
                         (Just p', Nothing) -> (getRewritingPattern p', Nothing, Nothing, Nothing)
