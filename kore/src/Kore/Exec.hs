@@ -43,7 +43,6 @@ import Control.Monad (
 import Control.Monad.Catch (throwM)
 import Control.Monad.Trans.Maybe (runMaybeT)
 import Control.Monad.Validate
-import Data.Bifunctor (bimap)
 import Data.Coerce (
     coerce,
  )
@@ -110,14 +109,11 @@ import Kore.Internal.Pattern (
  )
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
-    Predicate,
     fromPredicate,
     makeMultipleOrPredicate,
  )
 import Kore.Internal.Predicate qualified as Predicate
 import Kore.Internal.SideCondition qualified as SideCondition
-import Kore.Internal.Substitution (Substitution)
-import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike
 import Kore.Log.DebugRewriteTrace (
     debugFinalPatterns,
@@ -232,7 +228,6 @@ import SMT (
 import System.Exit (
     ExitCode (..),
  )
-import Kore.Internal.Substitution (Substitution)
 
 -- | Semantic rule used during execution.
 type Rewrite = RewriteRule RewritingVariableName
@@ -371,7 +366,7 @@ exec
                 Prim
                 ( ExecDepth
                 , ProgramState
-                    (Predicate RewritingVariableName, Substitution RewritingVariableName, UniqueId)
+                    (RuleInfo RewritingVariableName)
                     (Pattern RewritingVariableName)
                 ) ->
             Simplifier
@@ -380,7 +375,7 @@ exec
                         Prim
                         ( ExecDepth
                         , ProgramState
-                            (Predicate RewritingVariableName, Substitution RewritingVariableName, UniqueId)
+                            (RuleInfo RewritingVariableName)
                             (Pattern RewritingVariableName)
                         )
                     )
@@ -428,7 +423,7 @@ data RuleTrace = RuleTrace
 
 -- | Type for json-rpc execution state, for readability
 data RpcExecState v = RpcExecState
-    { rpcProgState :: ProgramState (Predicate v, Substitution v, UniqueId) (Pattern v)
+    { rpcProgState :: ProgramState (RuleInfo v) (Pattern v)
     -- ^ program state
     , rpcRules :: Seq RuleTrace
     -- ^ rule label/ids we have applied so far
@@ -486,17 +481,17 @@ rpcExec
     (mkRewritingTerm -> initialTerm) =
         simplifierRun $
             GraphTraversal.graphTraversal
-                    GraphTraversal.GraphTraversalCancel
-                    stepTimeout
-                    enableMA
-                    Strategy.LeafOrBranching
-                    Strategy.DepthFirst
-                    (Limit 2) -- breadth limit 2 because we never go beyond a branch
-                    transit
-                    (const Nothing)
-                    Limit.Unlimited
-                    execStrategy
-                    (startState initialTerm)
+                GraphTraversal.GraphTraversalCancel
+                stepTimeout
+                enableMA
+                Strategy.LeafOrBranching
+                Strategy.DepthFirst
+                (Limit 2) -- breadth limit 2 because we never go beyond a branch
+                transit
+                (const Nothing)
+                Limit.Unlimited
+                execStrategy
+                (startState initialTerm)
       where
         simplifierRun
             | tracingEnabled =
@@ -531,7 +526,7 @@ rpcExec
         -- The rule label is carried around unmodified in the
         -- transition, and adjusted in `toTransitionResult`
         withRpcExecState ::
-            TransitionRule m r (ExecDepth, ProgramState (Predicate v, Substitution v, UniqueId) (Pattern v)) ->
+            TransitionRule m r (ExecDepth, ProgramState (RuleInfo v) (Pattern v)) ->
             TransitionRule m r (RpcExecState v)
         withRpcExecState transition =
             \prim RpcExecState{rpcProgState, rpcRules, rpcDepth} ->

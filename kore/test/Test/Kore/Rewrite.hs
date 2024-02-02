@@ -26,13 +26,11 @@ import Kore.Internal.Pattern (
  )
 import Kore.Internal.Pattern qualified as Pattern
 import Kore.Internal.Predicate (
-    Predicate,
     makeAndPredicate,
     makeCeilPredicate,
     makeEqualsPredicate,
     makeNotPredicate,
  )
-import Kore.Internal.Substitution (Substitution)
 import Kore.Internal.TermLike (
     TermLike,
     mkElemVar,
@@ -382,10 +380,7 @@ runStepWorker ::
     result
         ~ Strategy.ExecutionGraph
             ( ProgramState
-                ( Predicate RewritingVariableName
-                , Substitution RewritingVariableName
-                , Attribute.UniqueId
-                )
+                (RuleInfo RewritingVariableName)
                 (Pattern RewritingVariableName)
             )
             (RewriteRule RewritingVariableName, Strategy.Seq SimplifierTrace) =>

@@ -9,6 +9,7 @@ Strategy-based interface to rule application (step-wise execution).
 module Kore.Rewrite (
     ExecutionMode (..),
     ProgramState (..),
+    RuleInfo (..),
     Prim (..),
     TransitionRule,
     executionStrategy,
@@ -25,7 +26,7 @@ import Control.Monad (
     foldM,
  )
 import Control.Monad.State (get, modify)
-import Data.Bifunctor (Bifunctor (..))
+import Data.Bifunctor
 import Data.Limit (
     Limit (..),
  )
@@ -84,6 +85,16 @@ import Pretty (
     Pretty,
  )
 import Pretty qualified
+
+data RuleInfo a = RuleInfo
+    { rulePredicate :: Predicate a
+    , ruleSubstitution :: Substitution a
+    , ruleId :: UniqueId
+    }
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
 
 -- | The program's state during symbolic execution.
 data ProgramState b a
@@ -190,7 +201,7 @@ transitionRule ::
         Simplifier
         (RewriteRule RewritingVariableName, Seq SimplifierTrace)
         ( ProgramState
-            (Predicate RewritingVariableName, Substitution RewritingVariableName, UniqueId)
+            (RuleInfo RewritingVariableName)
             (Pattern RewritingVariableName)
         )
 transitionRule rewriteGroups assumeInitialDefined = transitionRuleWorker
@@ -252,7 +263,7 @@ deriveResults ::
     TransitionT
         (RewriteRule var, Seq SimplifierTrace)
         Simplifier
-        (ProgramState (Predicate var, Substitution var, UniqueId) a)
+        (ProgramState (RuleInfo var) a)
 deriveResults Result.Results{results, remainders} =
     if (null results || all (\Result.Result{result} -> isBottom result) results) && null remainders
         then pure Bottom
@@ -266,7 +277,9 @@ deriveResults Result.Results{results, remainders} =
             lift $ modify $ \(cache, _rules) -> (cache, mempty)
             addRule (RewriteRule $ extract appliedRule, simplifyRules)
             pure $
-                Rewritten (predicate appliedRule, substitution appliedRule, from $ extract appliedRule) result
+                Rewritten
+                    (RuleInfo (predicate appliedRule) (substitution appliedRule) $ from $ extract appliedRule)
+                    result
     addRemainders remainders' =
         asum (pure . Remaining <$> toList remainders')
 
