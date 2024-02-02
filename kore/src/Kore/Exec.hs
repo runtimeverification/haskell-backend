@@ -232,6 +232,7 @@ import SMT (
 import System.Exit (
     ExitCode (..),
  )
+import Kore.Internal.Substitution (Substitution)
 
 -- | Semantic rule used during execution.
 type Rewrite = RewriteRule RewritingVariableName
@@ -444,20 +445,6 @@ startState t =
         , rpcDepth = ExecDepth 0
         }
 
-stateGetRewritingPattern ::
-    RpcExecState RewritingVariableName ->
-    RpcExecState VariableName
-stateGetRewritingPattern state@RpcExecState{rpcProgState} =
-    state
-        { rpcProgState =
-            bimap
-                ( \(p, s, l) ->
-                    (Predicate.mapVariables getRewritingVariable p, Substitution.mapVariables getRewritingVariable s, l)
-                )
-                getRewritingPattern
-                rpcProgState
-        }
-
 {- | Version of @kore-exec@ suitable for the JSON RPC server. Cannot
   execute across branches, supports a depth limit and rule labels to
   stop on (distinguished as cut-points for LHS or terminal-rules for
@@ -480,7 +467,7 @@ rpcExec ::
     StopLabels ->
     -- | The input pattern
     TermLike VariableName ->
-    SMT (GraphTraversal.TraversalResult (RpcExecState VariableName))
+    SMT (GraphTraversal.TraversalResult (RpcExecState RewritingVariableName))
 rpcExec
     depthLimit
     stepTimeout
@@ -498,8 +485,7 @@ rpcExec
     StopLabels{cutPointLabels, terminalLabels}
     (mkRewritingTerm -> initialTerm) =
         simplifierRun $
-            fmap stateGetRewritingPattern
-                <$> GraphTraversal.graphTraversal
+            GraphTraversal.graphTraversal
                     GraphTraversal.GraphTraversalCancel
                     stepTimeout
                     enableMA
