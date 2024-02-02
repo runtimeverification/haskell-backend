@@ -243,7 +243,7 @@ respond serverState moduleName runSMT =
                             Right $
                                 Execute $
                                     ExecuteResult
-                                        { state = patternToExecState sort result
+                                        { state = patternToExecState False sort result
                                         , depth = Depth depth
                                         , reason = if Just (Depth depth) == maxDepth then DepthBound else Stuck
                                         , rule = Nothing
@@ -259,7 +259,7 @@ respond serverState moduleName runSMT =
                             Right $
                                 Execute $
                                     ExecuteResult
-                                        { state = patternToExecState sort result
+                                        { state = patternToExecState False sort result
                                         , depth = Depth depth
                                         , reason = Stuck
                                         , rule = Nothing
@@ -275,7 +275,7 @@ respond serverState moduleName runSMT =
                             Right $
                                 Execute $
                                     ExecuteResult
-                                        { state = patternToExecState sort result
+                                        { state = patternToExecState False sort result
                                         , depth = Depth depth
                                         , reason = Vacuous
                                         , rule = Nothing
@@ -290,12 +290,12 @@ respond serverState moduleName runSMT =
                                 Right $
                                     Execute $
                                         ExecuteResult
-                                            { state = patternToExecState sort rpcProgState
+                                            { state = patternToExecState False sort rpcProgState
                                             , depth = Depth depth
                                             , reason = CutPointRule
                                             , rule
                                             , nextStates =
-                                                Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
+                                                Just $ map (patternToExecState False sort . Exec.rpcProgState) nexts
                                             , logs = mkLogs mbDuration rules
                                             , unknownPredicate = Nothing
                                             }
@@ -303,7 +303,7 @@ respond serverState moduleName runSMT =
                                 Right $
                                     Execute $
                                         ExecuteResult
-                                            { state = patternToExecState sort rpcProgState
+                                            { state = patternToExecState False sort rpcProgState
                                             , depth = Depth depth
                                             , reason = TerminalRule
                                             , rule
@@ -315,12 +315,12 @@ respond serverState moduleName runSMT =
                                 Right $
                                     Execute $
                                         ExecuteResult
-                                            { state = patternToExecState sort rpcProgState
+                                            { state = patternToExecState False sort rpcProgState
                                             , depth = Depth depth
                                             , reason = Branching
                                             , rule = Nothing
                                             , nextStates =
-                                                Just $ map (patternToExecState sort . Exec.rpcProgState) nexts
+                                                Just $ map (patternToExecState True sort . Exec.rpcProgState) nexts
                                             , logs = mkLogs mbDuration rules
                                             , unknownPredicate = Nothing
                                             }
@@ -330,7 +330,7 @@ respond serverState moduleName runSMT =
                             Right $
                                 Execute $
                                     ExecuteResult
-                                        { state = patternToExecState sort rpcProgState
+                                        { state = patternToExecState False sort rpcProgState
                                         , depth = Depth depth
                                         , reason = Timeout
                                         , rule = Nothing
@@ -345,27 +345,41 @@ respond serverState moduleName runSMT =
                         Left $ backendError MultipleStates $ show other
 
                 patternToExecState ::
+                    Bool ->
                     TermLike.Sort ->
                     ProgramState (RuleInfo RewritingVariableName) (Pattern RewritingVariableName) ->
                     ExecuteState
-                patternToExecState sort s =
-                    ExecuteState
-                        { term =
-                            PatternJson.fromTermLike $ Pattern.term p
-                        , ruleSubstitution
-                        , rulePredicate
-                        , ruleId
-                        , predicate =
-                            case Pattern.predicate p of
-                                PredicateTrue -> Nothing
-                                pr -> Just $ PatternJson.fromPredicate sort pr
-                        }
+                patternToExecState includeRuleInfo sort s
+                    | includeRuleInfo =
+                        ExecuteState
+                            { term
+                            , predicate
+                            , substitution
+                            , rulePredicate
+                            , ruleId
+                            }
+                    | otherwise =
+                        ExecuteState
+                            { term
+                            , predicate
+                            , substitution = Nothing
+                            , rulePredicate = Nothing
+                            , ruleId = Nothing
+                            }
                   where
-                    (p, rulePredicate, ruleSubstitution, ruleId) = case extractProgramState s of
+                    term = PatternJson.fromTermLike $ Pattern.term p
+                    predicate =
+                        case Pattern.predicate p of
+                            PredicateTrue -> Nothing
+                            pr -> Just $ PatternJson.fromPredicate sort pr
+                    (p, rulePredicate, substitution, ruleId) = case extractProgramState s of
                         (Nothing, _) -> (Pattern.bottomOf sort, Nothing, Nothing, Nothing)
                         (Just p', Nothing) -> (getRewritingPattern p', Nothing, Nothing, Nothing)
                         (Just p', Just (RuleInfo{rulePredicate = pr, ruleSubstitution = sub, ruleId = UniqueId rid})) ->
                             let subUnwrapped = Substitution.unwrap sub
+                                -- any substitutions which are not RuleVariable <var> -> <term> have been added to the substitution list
+                                -- via an equation in the requires clause, e.g. X ==Int 0
+                                -- hence, we want to copy these into the rule-condition
                                 predsFromSub = filter ((isSomeConfigVariable ||| isSomeEquationVariable) . assignedVariable) subUnwrapped
                                 pr' = Predicate.fromPredicate sort $ Predicate.mapVariables getRewritingVariable pr
                                 finalPr =

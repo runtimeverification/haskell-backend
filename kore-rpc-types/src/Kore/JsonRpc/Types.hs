@@ -108,7 +108,7 @@ instance FromRequest (API 'Req) where
 data ExecuteState = ExecuteState
     { term :: KoreJson
     , predicate :: Maybe KoreJson
-    , ruleSubstitution :: Maybe KoreJson
+    , substitution :: Maybe KoreJson
     , rulePredicate :: Maybe KoreJson
     , ruleId :: Maybe Text
     }
