@@ -232,7 +232,6 @@ import SMT (
 import System.Exit (
     ExitCode (..),
  )
-import Kore.Internal.Substitution (Substitution)
 
 -- | Semantic rule used during execution.
 type Rewrite = RewriteRule RewritingVariableName
@@ -486,17 +485,17 @@ rpcExec
     (mkRewritingTerm -> initialTerm) =
         simplifierRun $
             GraphTraversal.graphTraversal
-                    GraphTraversal.GraphTraversalCancel
-                    stepTimeout
-                    enableMA
-                    Strategy.LeafOrBranching
-                    Strategy.DepthFirst
-                    (Limit 2) -- breadth limit 2 because we never go beyond a branch
-                    transit
-                    (const Nothing)
-                    Limit.Unlimited
-                    execStrategy
-                    (startState initialTerm)
+                GraphTraversal.GraphTraversalCancel
+                stepTimeout
+                enableMA
+                Strategy.LeafOrBranching
+                Strategy.DepthFirst
+                (Limit 2) -- breadth limit 2 because we never go beyond a branch
+                transit
+                (const Nothing)
+                Limit.Unlimited
+                execStrategy
+                (startState initialTerm)
       where
         simplifierRun
             | tracingEnabled =

@@ -49,7 +49,8 @@ import Kore.Internal.Predicate (
     getMultiAndPredicate,
     pattern PredicateTrue,
  )
-import Kore.Internal.Substitution (Substitution)
+import Kore.Internal.Predicate qualified as Predicate
+import Kore.Internal.Substitution (Assignment, Substitution, assignedVariable)
 import Kore.Internal.Substitution qualified as Substitution
 import Kore.Internal.TermLike (TermLike)
 import Kore.Internal.TermLike qualified as TermLike
@@ -80,10 +81,14 @@ import Kore.Rewrite (
 import Kore.Rewrite.ClaimPattern qualified as ClaimPattern
 import Kore.Rewrite.RewriteStep (EnableAssumeInitialDefined (..))
 import Kore.Rewrite.RewritingVariable (
+    RewritingVariableName,
+    getRewritingPattern,
     getRewritingTerm,
     getRewritingVariable,
+    isSomeConfigVariable,
+    isSomeEquationVariable,
     mkRewritingPattern,
-    mkRewritingTerm, RewritingVariableName, getRewritingPattern, isSomeConfigVariable, isSomeEquationVariable,
+    mkRewritingTerm,
  )
 import Kore.Rewrite.SMT.Evaluator qualified as SMT.Evaluator
 import Kore.Rewrite.SMT.Lemma (getSMTLemmas)
@@ -96,11 +101,13 @@ import Kore.Simplify.Pattern qualified as Pattern
 import Kore.Simplify.Simplify (Simplifier, SimplifierTrace (..))
 import Kore.Syntax (VariableName)
 import Kore.Syntax.Definition (Definition (..))
+import Kore.Syntax.Json qualified
 import Kore.Syntax.Json qualified as PatternJson
 import Kore.Syntax.Module (Module (..), ModuleName (..))
 import Kore.Syntax.Sentence (
     SentenceAxiom,
  )
+import Kore.Syntax.Variable qualified as SomeVariable
 import Kore.TopBottom (TopBottom (isTop))
 import Kore.Validate.DefinitionVerifier (verifyAndIndexDefinitionWithBase)
 import Kore.Validate.PatternVerifier (Context (..))
@@ -109,10 +116,6 @@ import Log qualified
 import Prelude.Kore
 import SMT qualified
 import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
-import Kore.Internal.Substitution (Substitution, Assignment, assignedVariable)
-import Kore.Internal.Predicate qualified as Predicate
-import qualified Kore.Syntax.Json
-import qualified Kore.Syntax.Variable as SomeVariable
 
 respond ::
     forall m.
@@ -343,7 +346,9 @@ respond serverState moduleName runSMT =
 
                 patternToExecState ::
                     TermLike.Sort ->
-                    ProgramState (Predicate RewritingVariableName, Substitution RewritingVariableName) (Pattern RewritingVariableName) ->
+                    ProgramState
+                        (Predicate RewritingVariableName, Substitution RewritingVariableName)
+                        (Pattern RewritingVariableName) ->
                     ExecuteState
                 patternToExecState sort s =
                     ExecuteState
@@ -361,22 +366,23 @@ respond serverState moduleName runSMT =
                     (p, rulePredicate, ruleSubstitution) = case extractProgramState s of
                         (Nothing, _) -> (Pattern.bottomOf sort, Nothing, Nothing)
                         (Just p', Nothing) -> (getRewritingPattern p', Nothing, Nothing)
-                        (Just p', Just (pr, sub)) -> 
-                                    let subUnwrapped = Substitution.unwrap sub 
-                                        predsFromSub = filter ((isSomeConfigVariable ||| isSomeEquationVariable) . assignedVariable) subUnwrapped
-                                        pr' = Predicate.fromPredicate sort $ Predicate.mapVariables getRewritingVariable pr
-                                        finalPr = foldl TermLike.mkAnd pr' $ map toEquals predsFromSub
-                                    in
-
-                                        (getRewritingPattern p', Just $ Kore.Syntax.Json.fromTermLike finalPr, PatternJson.fromSubstitution sort $ Substitution.mapVariables getRewritingVariable sub)
-
+                        (Just p', Just (pr, sub)) ->
+                            let subUnwrapped = Substitution.unwrap sub
+                                predsFromSub = filter ((isSomeConfigVariable ||| isSomeEquationVariable) . assignedVariable) subUnwrapped
+                                pr' = Predicate.fromPredicate sort $ Predicate.mapVariables getRewritingVariable pr
+                                finalPr = foldl TermLike.mkAnd pr' $ map toEquals predsFromSub
+                             in ( getRewritingPattern p'
+                                , Just $ Kore.Syntax.Json.fromTermLike finalPr
+                                , PatternJson.fromSubstitution sort $ Substitution.mapVariables getRewritingVariable sub
+                                )
 
                     toEquals :: Assignment RewritingVariableName -> TermLike VariableName
-                    toEquals (Substitution.Assignment v t) = TermLike.mkEquals sort (TermLike.mkVar $ SomeVariable.mapSomeVariable getRewritingVariable v) $ TermLike.mapVariables getRewritingVariable t
+                    toEquals (Substitution.Assignment v t) =
+                        TermLike.mkEquals sort (TermLike.mkVar $ SomeVariable.mapSomeVariable getRewritingVariable v) $
+                            TermLike.mapVariables getRewritingVariable t
 
                     a ||| b = \v -> a v || b v
 
-                        
         -- Step StepRequest{} -> pure $ Right $ Step $ StepResult []
         Implies ImpliesRequest{antecedent, consequent, _module, logSuccessfulSimplifications, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
             start <- liftIO $ getTime Monotonic
