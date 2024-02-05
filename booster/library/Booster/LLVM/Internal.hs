@@ -24,13 +24,7 @@ module Booster.LLVM.Internal (
     LlvmError (..),
 ) where
 
-import Booster.LLVM.TH (dynamicBindings)
-import Booster.Pattern.Base
-import Booster.Pattern.Binary hiding (Block)
-import Booster.Pattern.Util (sortOfTerm)
-import Booster.Prettyprinter qualified as KPretty
-import Booster.Trace
-import Booster.Trace qualified as Trace
+import Control.Concurrent.MVar (MVar, newMVar, withMVar)
 import Control.Monad (foldM, forM_, void, (>=>))
 import Control.Monad.Catch (MonadCatch, MonadMask, MonadThrow)
 import Control.Monad.IO.Class (MonadIO (..))
@@ -55,6 +49,14 @@ import Foreign.Storable (peek)
 import GHC.Generics (Generic)
 import Prettyprinter (Pretty (..))
 import System.Posix.DynamicLinker qualified as Linker
+
+import Booster.LLVM.TH (dynamicBindings)
+import Booster.Pattern.Base
+import Booster.Pattern.Binary hiding (Block)
+import Booster.Pattern.Util (sortOfTerm)
+import Booster.Prettyprinter qualified as KPretty
+import Booster.Trace
+import Booster.Trace qualified as Trace
 
 data KorePattern
 data KoreSort
@@ -114,6 +116,7 @@ data API = API
     , simplifyBool :: KorePatternPtr -> IO (Either LlvmError Bool)
     , simplify :: KorePatternPtr -> KoreSortPtr -> IO (Either LlvmError ByteString)
     , collect :: IO ()
+    , mutex :: MVar ()
     }
 
 newtype LLVM a = LLVM (ReaderT API IO a)
@@ -181,7 +184,8 @@ withDLib :: FilePath -> (Linker.DL -> IO a) -> IO a
 withDLib dlib = Linker.withDL dlib [Linker.RTLD_LAZY]
 
 runLLVM :: API -> LLVM a -> IO a
-runLLVM api (LLVM m) = runReaderT m api
+runLLVM api (LLVM m) =
+    withMVar api.mutex $ const $ runReaderT m api
 
 mkAPI :: Linker.DL -> IO API
 mkAPI dlib = flip runReaderT dlib $ do
@@ -382,7 +386,8 @@ mkAPI dlib = flip runReaderT dlib $ do
                                             pure $ Right result
                                         else Left . LlvmError <$> errorMessage errPtr
 
-    pure API{patt, symbol, sort, simplifyBool, simplify, collect}
+    mutex <- liftIO $ newMVar ()
+    pure API{patt, symbol, sort, simplifyBool, simplify, collect, mutex}
   where
     traceCall call args retTy retPtr = do
         Trace.traceIO $ LlvmCall{ret = Just (retTy, somePtr retPtr), call, args}

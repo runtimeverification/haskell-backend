@@ -13,8 +13,7 @@ import Booster.Definition.Attributes.Base
 import Booster.Pattern.ApplyEquations
 import Booster.Pattern.Base
 
-import Booster.LLVM (simplifyBool)
-import Booster.LLVM.Internal qualified as LLVM
+import Booster.LLVM as LLVM (API, simplifyBool)
 import Booster.Pattern.Bool
 import Booster.Pattern.Util (isConcrete, sortOfTerm)
 import Control.DeepSeq (NFData)

@@ -37,7 +37,7 @@ import Prettyprinter
 
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
-import Booster.LLVM.Internal qualified as LLVM
+import Booster.LLVM as LLVM (API)
 import Booster.Pattern.ApplyEquations (
     EquationFailure (..),
     EquationTrace,

@@ -205,8 +205,14 @@ tests:
       - hs-backend-booster
       - kore-rpc-types
       - process
+      - tasty
+      - tasty-hspec
       - text
       - transformers
+    ghc-options:
+    - -rtsopts
+    - -threaded
+    - -with-rtsopts=-N
 
   predicates-integration:
     source-dirs: test/predicates-integration
