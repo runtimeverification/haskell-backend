@@ -1,4 +1,9 @@
-module Booster.LLVM (simplifyBool, simplifyTerm) where
+module Booster.LLVM (
+    simplifyBool,
+    simplifyTerm,
+    Internal.API,
+    Internal.LlvmError (..),
+) where
 
 import Control.Monad.IO.Class (MonadIO (..))
 import Data.Binary.Get
