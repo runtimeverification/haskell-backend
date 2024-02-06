@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2022
@@ -15,6 +16,8 @@ module Booster.Pattern.ApplyEquations (
     EquationPreference (..),
     EquationFailure (..),
     EquationTrace (..),
+    pattern CollectEquationTraces,
+    pattern NoCollectEquationTraces,
     eraseStates,
     EquationMetadata (..),
     ApplyEquationResult (..),
@@ -60,6 +63,7 @@ import Prettyprinter
 import Booster.Builtin as Builtin
 import Booster.Definition.Attributes.Base
 import Booster.Definition.Base
+import Booster.GlobalState qualified as GlobalState
 import Booster.LLVM qualified as LLVM
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
@@ -68,6 +72,7 @@ import Booster.Pattern.Match
 import Booster.Pattern.Util
 import Booster.Prettyprinter (renderDefault, renderText)
 import Booster.SMT.Interface qualified as SMT
+import Booster.Util (Bound (..), Flag (..))
 
 newtype EquationT io a
     = EquationT (ReaderT EquationConfig (ExceptT EquationFailure (StateT EquationState io)) a)
@@ -128,8 +133,16 @@ data EquationConfig = EquationConfig
     { definition :: KoreDefinition
     , llvmApi :: Maybe LLVM.API
     , smtSolver :: Maybe SMT.SMTContext
-    , doTracing :: Bool
+    , doTracing :: Flag "CollectEquationTraces"
+    , maxRecursion :: Bound "Recursion"
+    , maxIterations :: Bound "Iterations"
     }
+
+pattern CollectEquationTraces :: Flag "CollectEquationTraces"
+pattern CollectEquationTraces = Flag True
+
+pattern NoCollectEquationTraces :: Flag "CollectEquationTraces"
+pattern NoCollectEquationTraces = Flag False
 
 data EquationState = EquationState
     { termStack :: [Term]
@@ -276,11 +289,11 @@ resetChanged = eqState . modify $ \s -> s{changed = False}
 getChanged :: MonadLoggerIO io => EquationT io Bool
 getChanged = eqState $ gets (.changed)
 
-pushRecursion :: MonadLoggerIO io => Term -> EquationT io Int
+pushRecursion :: MonadLoggerIO io => Term -> EquationT io (Bound "Recursion")
 pushRecursion t = eqState $ do
     stk <- gets (.recursionStack)
     modify $ \s -> s{recursionStack = t : stk}
-    pure (1 + length stk)
+    pure (coerce $ 1 + length stk)
 
 popRecursion :: MonadLoggerIO io => EquationT io ()
 popRecursion = do
@@ -309,7 +322,7 @@ data EquationPreference = PreferFunctions | PreferSimplifications
 
 runEquationT ::
     MonadLoggerIO io =>
-    Bool ->
+    Flag "CollectEquationTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
@@ -317,37 +330,46 @@ runEquationT ::
     EquationT io a ->
     io (Either EquationFailure a, [EquationTrace Term], SimplifierCache)
 runEquationT doTracing definition llvmApi smtSolver sCache (EquationT m) = do
+    globalEquationOptions <- liftIO GlobalState.readGlobalEquationOptions
     (res, endState) <-
         flip runStateT (startState sCache) $
             runExceptT $
-                runReaderT m EquationConfig{definition, llvmApi, smtSolver, doTracing}
+                runReaderT
+                    m
+                    EquationConfig
+                        { definition
+                        , llvmApi
+                        , smtSolver
+                        , doTracing
+                        , maxIterations = globalEquationOptions.maxIterations
+                        , maxRecursion = globalEquationOptions.maxRecursion
+                        }
     pure (res, toList endState.trace, endState.cache)
 
 iterateEquations ::
     MonadLoggerIO io =>
-    Int ->
-    Int ->
     Direction ->
     EquationPreference ->
     Term ->
     EquationT io Term
-iterateEquations maxRecursion maxIterations direction preference startTerm = do
+iterateEquations direction preference startTerm = do
     logOther (LevelOther "Simplify") $ "Evaluating " <> renderText (pretty startTerm)
     result <- pushRecursion startTerm >>= checkCounter >> go startTerm <* popRecursion
     logOther (LevelOther "Simplify") $ "Result: " <> renderText (pretty result)
     pure result
   where
-    checkCounter counter
-        | counter > maxRecursion =
+    checkCounter counter = do
+        config <- getConfig
+        when (counter > config.maxRecursion) $
             throw . TooManyRecursions . (.recursionStack) =<< getState
-        | otherwise = pure ()
 
     go :: MonadLoggerIO io => Term -> EquationT io Term
     go currentTerm
         | (getAttributes currentTerm).isEvaluated = pure currentTerm
         | otherwise = do
+            config <- getConfig
             currentCount <- countSteps
-            when (currentCount > maxIterations) $
+            when (coerce currentCount > config.maxIterations) $
                 throw $
                     TooManyIterations currentCount startTerm currentTerm
             pushTerm currentTerm
@@ -364,7 +386,7 @@ iterateEquations maxRecursion maxIterations direction preference startTerm = do
 -- | Evaluate and simplify a term.
 evaluateTerm ::
     MonadLoggerIO io =>
-    Bool ->
+    Flag "CollectEquationTraces" ->
     Direction ->
     KoreDefinition ->
     Maybe LLVM.API ->
@@ -381,14 +403,14 @@ evaluateTerm' ::
     Direction ->
     Term ->
     EquationT io Term
-evaluateTerm' direction = iterateEquations 5 100 direction PreferFunctions
+evaluateTerm' direction = iterateEquations direction PreferFunctions
 
 {- | Simplify a Pattern, processing its constraints independently.
      Returns either the first failure or the new pattern if no failure was encountered
 -}
 evaluatePattern ::
     MonadLoggerIO io =>
-    Bool ->
+    Flag "CollectEquationTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
@@ -686,7 +708,7 @@ emitEquationTrace t loc lbl uid res = do
         Success{} -> logOther (LevelOther "SimplifySuccess") prettyItem
         _ -> pure ()
     config <- getConfig
-    when config.doTracing $
+    when (coerce config.doTracing) $
         eqState . modify $
             \s -> s{trace = s.trace :|> newTraceItem}
 
@@ -835,7 +857,7 @@ applyEquation term rule = fmap (either id Success) $ runExceptT $ do
 -}
 simplifyConstraint ::
     MonadLoggerIO io =>
-    Bool ->
+    Flag "CollectEquationTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
@@ -847,7 +869,7 @@ simplifyConstraint doTracing def mbApi mbSMT cache (Predicate p) =
 
 simplifyConstraints ::
     MonadLoggerIO io =>
-    Bool ->
+    Flag "CollectEquationTraces" ->
     KoreDefinition ->
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
@@ -886,6 +908,6 @@ simplifyConstraint' recurseIntoEvalBool = \case
     evalBool t = do
         prior <- getState -- save prior state so we can revert
         eqState $ put prior{termStack = [], changed = False}
-        result <- iterateEquations 5 100 BottomUp PreferFunctions t
+        result <- iterateEquations BottomUp PreferFunctions t
         eqState $ put prior
         pure result

@@ -44,6 +44,7 @@ import System.IO (hPutStrLn, stderr)
 
 import Booster.CLOptions
 import Booster.Definition.Ceil (computeCeilsDefinition)
+import Booster.GlobalState
 import Booster.JsonRpc qualified as Booster
 import Booster.LLVM.Internal (mkAPI, withDLib)
 import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
@@ -95,6 +96,7 @@ main = do
                     , llvmLibraryFile
                     , logLevels
                     , smtOptions
+                    , equationOptions
                     , eventlogEnabledUserEvents
                     }
             , proxyOptions =
@@ -169,6 +171,8 @@ main = do
                                 , mSMTOptions = if boosterSMT then smtOptions else Nothing
                                 }
                 statsVar <- if printStats then Just <$> Stats.newStats else pure Nothing
+
+                writeGlobalEquationOptions equationOptions
 
                 runLoggingT (Logger.logInfoNS "proxy" "Starting RPC server") monadLogger
 
@@ -354,8 +358,9 @@ mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainMo
     smtConfig :: KoreSMT.Config
     smtConfig =
         KoreSMT.defaultConfig
-            { KoreSMT.executable = KoreSMT.defaultConfig.executable -- hack to shut up GHC field warning
-            , KoreSMT.timeOut = timeOut
+            { KoreSMT.executable = KoreSMT.defaultConfig.executable
+            , -- hack to shut up GHC field warning
+              KoreSMT.timeOut = timeOut
             , KoreSMT.retryLimit = retryLimit
             , KoreSMT.tactic = tactic
             }
