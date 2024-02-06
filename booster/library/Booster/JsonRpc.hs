@@ -25,6 +25,7 @@ import Control.Monad.Logger.CallStack qualified as Log
 import Control.Monad.Trans.Except (catchE, except, runExcept, runExceptT, throwE, withExceptT)
 import Crypto.Hash (SHA256 (..), hashWith)
 import Data.Bifunctor (second)
+import Data.Coerce (coerce)
 import Data.Conduit.Network (serverSettings)
 import Data.Foldable
 import Data.List (singleton)
@@ -75,7 +76,7 @@ import Booster.Syntax.ParsedKore (parseKoreModule)
 import Booster.Syntax.ParsedKore.Base hiding (ParsedModule)
 import Booster.Syntax.ParsedKore.Base qualified as ParsedModule (ParsedModule (..))
 import Booster.Syntax.ParsedKore.Internalise (addToDefinitions)
-import Booster.Util (constructorName)
+import Booster.Util (Flag (..), constructorName)
 import Data.Aeson (ToJSON (toJSON))
 import Data.Set qualified as Set
 import Kore.JsonRpc.Error qualified as RpcError
@@ -119,14 +120,15 @@ respond stateVar =
                         terminals = fromMaybe [] req.terminalRules
                         mbDepth = fmap RpcTypes.getNat req.maxDepth
                         doTracing =
-                            any
-                                (fromMaybe False)
-                                [ req.logSuccessfulRewrites
-                                , req.logFailedRewrites
-                                , req.logSuccessfulSimplifications
-                                , req.logFailedSimplifications
-                                , req.logFallbacks
-                                ]
+                            Flag $
+                                any
+                                    (fromMaybe False)
+                                    [ req.logSuccessfulRewrites
+                                    , req.logFailedRewrites
+                                    , req.logSuccessfulSimplifications
+                                    , req.logFailedSimplifications
+                                    , req.logFallbacks
+                                    ]
                     -- apply the given substitution before doing anything else
                     let substPat =
                             Pattern
@@ -136,7 +138,8 @@ respond stateVar =
                                 }
 
                     solver <- traverse (SMT.initSolver def) mSMTOptions
-                    result <- performRewrite doTracing def mLlvmLibrary solver mbDepth cutPoints terminals substPat
+                    result <-
+                        performRewrite doTracing def mLlvmLibrary solver mbDepth cutPoints terminals substPat
                     whenJust solver SMT.closeSolver
                     stop <- liftIO $ getTime Monotonic
                     let duration =
@@ -216,7 +219,7 @@ respond stateVar =
             let internalised =
                     runExcept $ internaliseTermOrPredicate DisallowAlias CheckSubsorts Nothing def req.state.term
             let mkEquationTraces
-                    | doTracing =
+                    | coerce doTracing =
                         Just
                             . mapMaybe
                                 ( mkLogEquationTrace
@@ -234,11 +237,12 @@ respond stateVar =
                     | otherwise =
                         mkEquationTraces traceData
                 doTracing =
-                    any
-                        (fromMaybe False)
-                        [ req.logSuccessfulSimplifications
-                        , req.logFailedSimplifications
-                        ]
+                    Flag $
+                        any
+                            (fromMaybe False)
+                            [ req.logSuccessfulSimplifications
+                            , req.logFailedSimplifications
+                            ]
 
             solver <- traverse (SMT.initSolver def) mSMTOptions
 

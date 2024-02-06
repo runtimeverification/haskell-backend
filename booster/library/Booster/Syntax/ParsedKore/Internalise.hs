@@ -59,6 +59,7 @@ import Booster.Prettyprinter hiding (attributes)
 import Booster.Syntax.Json.Internalise
 import Booster.Syntax.ParsedKore.Base
 import Booster.Syntax.ParsedKore.Parser (ParsedSentence (SentenceSymbol), parseSentence)
+import Booster.Util (Flag (..))
 import Kore.Syntax.Json.Types (Id, Sort)
 import Kore.Syntax.Json.Types qualified as Syntax
 
