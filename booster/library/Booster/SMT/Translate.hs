@@ -40,6 +40,7 @@ import Booster.Pattern.Util (sortOfTerm)
 import Booster.Prettyprinter qualified as Pretty
 import Booster.SMT.Base as SMT
 import Booster.SMT.LowLevelCodec as SMT
+import Booster.Util (Flag (..))
 
 data TranslationState = TranslationState
     { mappings :: Map Term SMTId

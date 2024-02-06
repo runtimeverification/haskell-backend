@@ -51,7 +51,6 @@ import Data.Set qualified as Set
 
 import Booster.Definition.Attributes.Base (
     Concreteness (..),
-    Flag (..),
     KCollectionMetadata (..),
     KListDefinition (..),
     KMapDefinition (..),
@@ -59,6 +58,7 @@ import Booster.Definition.Attributes.Base (
     SymbolType (..),
  )
 import Booster.Pattern.Base
+import Booster.Util (Flag (..))
 
 -- | Returns the sort of a term
 sortOfTerm :: Term -> Sort
