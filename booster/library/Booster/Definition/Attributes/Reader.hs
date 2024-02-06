@@ -34,6 +34,7 @@ import Text.Regex.PCRE
 import Booster.Definition.Attributes.Base
 import Booster.SMT.LowLevelCodec as SMT (parseSExpr)
 import Booster.Syntax.ParsedKore.Base
+import Booster.Util (Flag (..))
 import Kore.Syntax.Json.Types (Id (..))
 
 {- | A class describing all attributes we want to extract from parsed

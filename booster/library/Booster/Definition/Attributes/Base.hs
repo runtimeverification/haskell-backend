@@ -33,7 +33,6 @@ module Booster.Definition.Attributes.Base (
     Position (..),
     FileSource (..),
     Priority (..),
-    Flag (..),
     pattern IsIdem,
     pattern IsNotIdem,
     pattern IsAssoc,
@@ -59,6 +58,7 @@ import Language.Haskell.TH.Syntax (Lift)
 import Prettyprinter as Pretty
 
 import Booster.SMT.Base (SExpr)
+import Booster.Util (Flag (..))
 import Booster.Util qualified as Util
 
 data DefinitionAttributes = DefinitionAttributes
@@ -160,10 +160,6 @@ data SymbolType
     | TotalFunction
     | Constructor
     | SortInjection
-    deriving stock (Eq, Ord, Show, Generic, Data, Lift)
-    deriving anyclass (NFData, Hashable)
-
-newtype Flag (name :: k) = Flag Bool
     deriving stock (Eq, Ord, Show, Generic, Data, Lift)
     deriving anyclass (NFData, Hashable)
 

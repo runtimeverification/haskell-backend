@@ -1,14 +1,33 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE PolyKinds #-}
+
 module Booster.Util (
     decodeLabel,
     decodeLabel',
+    Flag (..),
+    Bound (..),
     constructorName,
 ) where
 
+import Control.DeepSeq (NFData (..))
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 qualified as BS
 import Data.Data
 import Data.Either (fromRight)
+import Data.Hashable (Hashable)
 import Data.Map qualified as Map
+import GHC.Generics (Generic)
+import Language.Haskell.TH.Syntax (Lift)
+
+newtype Flag (name :: k) = Flag Bool
+    deriving stock (Eq, Ord, Show, Generic, Data, Lift)
+    deriving anyclass (NFData, Hashable)
+
+newtype Bound (name :: k) = Bound Int
+    deriving stock (Eq, Ord, Show, Generic, Data, Lift)
+    deriving newtype (Num)
+    deriving anyclass (NFData, Hashable)
 
 constructorName :: Data a => a -> String
 constructorName x = showConstr (toConstr x)

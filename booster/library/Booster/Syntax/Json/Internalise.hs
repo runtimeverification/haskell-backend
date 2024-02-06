@@ -69,6 +69,7 @@ import Booster.Pattern.Util (freeVariables, sortOfTerm, substituteInSort)
 import Booster.Prettyprinter (renderDefault)
 import Booster.Syntax.Json.Externalise (externaliseSort)
 import Booster.Syntax.ParsedKore.Parser (parsePattern)
+import Booster.Util (Flag (..))
 import Kore.Syntax.Json.Types qualified as Syntax
 
 pattern IsQQ, IsNotQQ :: Flag "qq"

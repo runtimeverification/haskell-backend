@@ -17,6 +17,7 @@ import System.IO.Error (isDoesNotExistError)
 
 import Booster.CLOptions
 import Booster.Definition.Ceil (computeCeilsDefinition)
+import Booster.GlobalState
 import Booster.JsonRpc (runServer)
 import Booster.LLVM.Internal (mkAPI, withDLib)
 import Booster.Syntax.ParsedKore (loadDefinition)
@@ -32,6 +33,7 @@ main = do
             , logLevels
             , llvmLibraryFile
             , smtOptions
+            , equationOptions
             , eventlogEnabledUserEvents
             , hijackEventlogFile
             } = options
@@ -59,6 +61,9 @@ main = do
         when (isNothing $ Map.lookup mainModuleName definitionMap) $
             error $
                 "Module " <> unpack mainModuleName <> " does not exist in the given definition."
+
+        writeGlobalEquationOptions equationOptions
+
         putStrLn "Starting RPC server"
         runServer port definitionMap mainModuleName mLlvmLibrary smtOptions (adjustLogLevels logLevels)
   where
