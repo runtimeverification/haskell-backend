@@ -112,7 +112,7 @@ char *kore_block_dump(block *);
 
 kore_pattern *kore_pattern_from_block(block *);
 
-/* 
+/*
  * Expects the argument term to be of the form:
  *   sym{}(BOOL)
  */
@@ -154,6 +154,10 @@ void kore_symbol_add_formal_argument(kore_symbol *, kore_sort const *);
 
 void kllvm_init(void);
 void kllvm_free_all_memory(void);
+
+/* Sort-specific functions */
+
+bool kllvm_mutable_bytes_enabled(void);
 
 #ifdef __cplusplus
 }
