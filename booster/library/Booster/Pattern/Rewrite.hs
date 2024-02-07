@@ -124,8 +124,6 @@ rewriteStep cutLabels terminalLabels pat = do
                     then idxRules
                     else Map.unionWith (<>) idxRules anyRules
 
-    when (null rules) $ throw (NoRulesForTerm pat.term)
-
     -- process one priority group at a time (descending priority),
     -- until a result is obtained or the entire rewrite fails.
     processGroups pat rules
@@ -387,9 +385,7 @@ applyRule pat@Pattern{ceilConditions} rule = runRewriteRuleAppT $ do
    information for logging what happened during the rewrite.
 -}
 data RewriteFailed k
-    = -- | No rules have been found
-      NoRulesForTerm Term
-    | -- | All rules have been tried unsuccessfully (rewrite is stuck)
+    = -- | All rules have been tried unsuccessfully (rewrite is stuck)
       NoApplicableRules Pattern
     | -- | It is uncertain whether or not a rule LHS unifies with the term
       RuleApplicationUnclear (RewriteRule k) Term (NonEmpty (Term, Term))
@@ -406,8 +402,6 @@ data RewriteFailed k
     deriving stock (Eq, Show)
 
 instance Pretty (RewriteFailed k) where
-    pretty (NoRulesForTerm term) =
-        "No rules for term " <> pretty term
     pretty (NoApplicableRules pat) =
         "No rules applicable for the pattern " <> pretty pat
     pretty (RuleApplicationUnclear rule term remainder) =
