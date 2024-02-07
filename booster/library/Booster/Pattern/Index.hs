@@ -71,7 +71,7 @@ kCellTermIndex :: Term -> TermIndex
 kCellTermIndex config =
     case lookForKCell config of
         Just (SymbolApplication _ _ children) ->
-            maybe None getTermIndex (lookForTopTerm (getFirstKCellElem children))
+            maybe Anything getTermIndex (lookForTopTerm (getFirstKCellElem children))
         _ -> Anything
   where
     getTermIndex :: Term -> TermIndex

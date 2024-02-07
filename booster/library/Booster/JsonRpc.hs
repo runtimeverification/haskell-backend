@@ -788,7 +788,6 @@ mkLogRewriteTrace
                         singleton $
                             Rewrite
                                 { result = case reason of
-                                    NoRulesForTerm{} -> Failure{reason = "No rules found", _ruleId = Nothing}
                                     NoApplicableRules{} -> Failure{reason = "No applicable rules found", _ruleId = Nothing}
                                     TermIndexIsNone{} -> Failure{reason = "Term index is None for term", _ruleId = Nothing}
                                     RuleApplicationUnclear r _ _ ->
