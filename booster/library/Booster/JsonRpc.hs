@@ -644,6 +644,9 @@ toExecState pat sub unsupported =
         { term = addHeader t
         , predicate = addHeader <$> addUnsupported p
         , substitution = addHeader <$> s
+        , ruleSubstitution = Nothing
+        , rulePredicate = Nothing
+        , ruleId = Nothing
         }
   where
     (t, p, s) = externalisePattern pat sub
