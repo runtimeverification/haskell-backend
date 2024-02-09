@@ -1,7 +1,7 @@
 {
   description = "K Kore Language Haskell Backend";
   inputs = {
-    nixpkgs.url = "nixpkgs/nixos-23.05";
+    nixpkgs.url = "github:nixos/nixpkgs";
     stacklock2nix.url = "github:cdepillabout/stacklock2nix";
     z3 = {
       url = "github:Z3Prover/z3/z3-4.12.1";
