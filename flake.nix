@@ -123,7 +123,7 @@
         in pkgs.haskell-backend.pkgSet.shellFor {
           packages = pkgs.haskell-backend.localPkgsSelector;
           nativeBuildInputs =
-            [ pkgs.haskell.packages.ghc928.cabal-install pkgs.z3 ];
+            [ pkgs.haskell.packages.ghc928.cabal-install pkgs.z3 pkgs.libffi ];
         };
       });
 
