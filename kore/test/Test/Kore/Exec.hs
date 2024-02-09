@@ -77,6 +77,7 @@ import Kore.Rewrite.AntiLeft (
  )
 import Kore.Rewrite.AntiLeft qualified as AntiLeft.DoNotUse
 import Kore.Rewrite.RewriteStep qualified as Step
+import Kore.Rewrite.RewritingVariable (RewritingVariableName)
 import Kore.Rewrite.Rule
 import Kore.Rewrite.RulePattern (
     RewriteRule (..),
@@ -1211,7 +1212,7 @@ rpcExecTest ::
     Limit Natural ->
     VerifiedModule Attribute.StepperAttributes ->
     TermLike VariableName ->
-    SMT (TraversalResult (RpcExecState VariableName))
+    SMT (TraversalResult (RpcExecState RewritingVariableName))
 rpcExecTest cutPointLs terminalLs depthLimit verifiedModule initial =
     makeSerializedModule verifiedModule >>= \serializedModule ->
         rpcExec

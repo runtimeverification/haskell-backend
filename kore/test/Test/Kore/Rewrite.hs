@@ -5,6 +5,7 @@ module Test.Kore.Rewrite (
 
 import Control.Exception qualified as Exception
 import Control.Lens qualified as Lens
+import Data.Bifunctor (bimap)
 import Data.Generics.Product
 import Data.Generics.Wrapped (
     _Unwrapped,
@@ -85,7 +86,7 @@ test_stepStrategy =
                             strategy'
                             aPatt
                             [simpleRewrite Mock.a Mock.b]
-                    assertEqual "" (Step.Rewritten bPatt) actual
+                    assertEqual "" (Step.Rewritten () bPatt) actual
          in [ mkTest "strategy all" All
             , mkTest "strategy any" Any
             ]
@@ -359,7 +360,7 @@ runStep ::
     -- | left-hand-side of unification
     Pattern VariableName ->
     [RewriteRule RewritingVariableName] ->
-    IO [ProgramState (Pattern VariableName)]
+    IO [ProgramState () (Pattern VariableName)]
 runStep = runStepWorker testRunSimplifier
 
 runStepSMT ::
@@ -372,13 +373,16 @@ runStepSMT ::
     -- | left-hand-side of unification
     Pattern VariableName ->
     [RewriteRule RewritingVariableName] ->
-    IO [ProgramState (Pattern VariableName)]
+    IO [ProgramState () (Pattern VariableName)]
 runStepSMT = runStepWorker runSimplifierSMT
 
 runStepWorker ::
     result
         ~ Strategy.ExecutionGraph
-            (ProgramState (Pattern RewritingVariableName))
+            ( ProgramState
+                (RuleInfo RewritingVariableName)
+                (Pattern RewritingVariableName)
+            )
             (RewriteRule RewritingVariableName, Strategy.Seq SimplifierTrace) =>
     (Env -> Simplifier result -> IO result) ->
     -- | depth limit
@@ -390,7 +394,7 @@ runStepWorker ::
     -- | left-hand-side of unification
     Pattern VariableName ->
     [RewriteRule RewritingVariableName] ->
-    IO [ProgramState (Pattern VariableName)]
+    IO [ProgramState () (Pattern VariableName)]
 runStepWorker
     simplifier
     depthLimit
@@ -407,7 +411,7 @@ runStepWorker
                         limitedDepth
                         (Step.Start $ mkRewritingPattern configuration)
             let finalResult =
-                    fmap getRewritingPattern
+                    bimap (const ()) getRewritingPattern
                         <$> Strategy.pickFinal result
             return finalResult
       where

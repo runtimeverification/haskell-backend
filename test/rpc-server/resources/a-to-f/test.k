@@ -1,4 +1,6 @@
 module TEST
+  imports INT
+  imports BOOL
 
   syntax State ::= "a" [token]
                  | "b" [token]
@@ -7,10 +9,13 @@ module TEST
                  | "e" [token]
                  | "f" [token]
 
-  configuration <k> $PGM:State </k>
+  configuration <T>
+                  <k> $PGM:State </k>
+                  <val> 0 </val>
+                </T>
 
-  rule [AB]: a => b
-  rule [AC]: a => c
+  rule [AB]: <k> a => b ... </k> <val> V </val> requires V ==Int 0
+  rule [AC]: <k> a => c ... </k> <val> V </val> requires notBool (V ==Int 0)
   rule [CD]: c => d
   rule [DE]: d => e
   rule [EF]: e => f

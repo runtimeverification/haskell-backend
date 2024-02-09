@@ -339,7 +339,7 @@ exec
             infoExecDepth (maximum (ExecDepth 0 : depths))
             let finalConfigs' =
                     MultiOr.make $
-                        mapMaybe extractProgramState finalConfigs
+                        mapMaybe (fst . extractProgramState) finalConfigs
             debugFinalPatterns finalConfigs'
             exitCode <- getExitCode verifiedModule finalConfigs'
             let finalTerm =
@@ -364,12 +364,20 @@ exec
         transit ::
             GraphTraversal.TState
                 Prim
-                (ExecDepth, ProgramState (Pattern RewritingVariableName)) ->
+                ( ExecDepth
+                , ProgramState
+                    (RuleInfo RewritingVariableName)
+                    (Pattern RewritingVariableName)
+                ) ->
             Simplifier
                 ( GraphTraversal.TransitionResult
                     ( GraphTraversal.TState
                         Prim
-                        (ExecDepth, ProgramState (Pattern RewritingVariableName))
+                        ( ExecDepth
+                        , ProgramState
+                            (RuleInfo RewritingVariableName)
+                            (Pattern RewritingVariableName)
+                        )
                     )
                 )
         transit =
@@ -380,21 +388,21 @@ exec
                 toTransitionResult
 
         toTransitionResult ::
-            (ExecDepth, ProgramState p) ->
-            [(ExecDepth, ProgramState p)] ->
+            (ExecDepth, ProgramState d p) ->
+            [(ExecDepth, ProgramState d p)] ->
             ( GraphTraversal.TransitionResult
-                (ExecDepth, ProgramState p)
+                (ExecDepth, ProgramState d p)
             )
         toTransitionResult prior [] =
             case snd prior of
                 Start _ -> GraphTraversal.Stop prior []
-                Rewritten _ -> GraphTraversal.Stop prior []
+                Rewritten _ _ -> GraphTraversal.Stop prior []
                 Remaining _ -> GraphTraversal.Stuck prior
                 Kore.Rewrite.Bottom -> GraphTraversal.Stuck prior
         toTransitionResult _prior [next] =
             case snd next of
                 Start _ -> GraphTraversal.Continuing next
-                Rewritten _ -> GraphTraversal.Continuing next
+                Rewritten _ _ -> GraphTraversal.Continuing next
                 Remaining _ -> GraphTraversal.Stuck next
                 Kore.Rewrite.Bottom -> GraphTraversal.Stuck next
         toTransitionResult prior (s : ss) =
@@ -415,7 +423,7 @@ data RuleTrace = RuleTrace
 
 -- | Type for json-rpc execution state, for readability
 data RpcExecState v = RpcExecState
-    { rpcProgState :: ProgramState (Pattern v)
+    { rpcProgState :: ProgramState (RuleInfo v) (Pattern v)
     -- ^ program state
     , rpcRules :: Seq RuleTrace
     -- ^ rule label/ids we have applied so far
@@ -431,12 +439,6 @@ startState t =
         , rpcRules = mempty
         , rpcDepth = ExecDepth 0
         }
-
-stateGetRewritingPattern ::
-    RpcExecState RewritingVariableName ->
-    RpcExecState VariableName
-stateGetRewritingPattern state@RpcExecState{rpcProgState} =
-    state{rpcProgState = fmap getRewritingPattern rpcProgState}
 
 {- | Version of @kore-exec@ suitable for the JSON RPC server. Cannot
   execute across branches, supports a depth limit and rule labels to
@@ -460,7 +462,7 @@ rpcExec ::
     StopLabels ->
     -- | The input pattern
     TermLike VariableName ->
-    SMT (GraphTraversal.TraversalResult (RpcExecState VariableName))
+    SMT (GraphTraversal.TraversalResult (RpcExecState RewritingVariableName))
 rpcExec
     depthLimit
     stepTimeout
@@ -478,19 +480,18 @@ rpcExec
     StopLabels{cutPointLabels, terminalLabels}
     (mkRewritingTerm -> initialTerm) =
         simplifierRun $
-            fmap stateGetRewritingPattern
-                <$> GraphTraversal.graphTraversal
-                    GraphTraversal.GraphTraversalCancel
-                    stepTimeout
-                    enableMA
-                    Strategy.LeafOrBranching
-                    Strategy.DepthFirst
-                    (Limit 2) -- breadth limit 2 because we never go beyond a branch
-                    transit
-                    (const Nothing)
-                    Limit.Unlimited
-                    execStrategy
-                    (startState initialTerm)
+            GraphTraversal.graphTraversal
+                GraphTraversal.GraphTraversalCancel
+                stepTimeout
+                enableMA
+                Strategy.LeafOrBranching
+                Strategy.DepthFirst
+                (Limit 2) -- breadth limit 2 because we never go beyond a branch
+                transit
+                (const Nothing)
+                Limit.Unlimited
+                execStrategy
+                (startState initialTerm)
       where
         simplifierRun
             | tracingEnabled =
@@ -525,7 +526,7 @@ rpcExec
         -- The rule label is carried around unmodified in the
         -- transition, and adjusted in `toTransitionResult`
         withRpcExecState ::
-            TransitionRule m r (ExecDepth, ProgramState (Pattern v)) ->
+            TransitionRule m r (ExecDepth, ProgramState (RuleInfo v) (Pattern v)) ->
             TransitionRule m r (RpcExecState v)
         withRpcExecState transition =
             \prim RpcExecState{rpcProgState, rpcRules, rpcDepth} ->
@@ -543,7 +544,7 @@ rpcExec
                 Kore.Rewrite.Bottom -> GraphTraversal.Vacuous prior
                 -- returns `Final` to signal that no instructions were left.
                 Start _ -> GraphTraversal.Final prior
-                Rewritten _ -> GraphTraversal.Final prior
+                Rewritten _ _ -> GraphTraversal.Final prior
         toTransitionResult prior@RpcExecState{rpcRules = priorRules} [(next, rules)]
             | (_ : _) <- mapMaybe (isCutPoint . fst) (toList rules) =
                 GraphTraversal.Stop
@@ -557,7 +558,7 @@ rpcExec
             let next' = setTraces rules priorRules next
              in case nextPState of
                     Start _ -> GraphTraversal.Continuing next'
-                    Rewritten _ -> GraphTraversal.Continuing next'
+                    Rewritten _ _ -> GraphTraversal.Continuing next'
                     Remaining _ -> GraphTraversal.Stuck next'
                     Kore.Rewrite.Bottom -> GraphTraversal.Vacuous prior
         toTransitionResult prior rs =
@@ -603,8 +604,8 @@ rpcExec
 
 -- | Modify a 'TransitionRule' to track the depth of the execution graph.
 trackExecDepth ::
-    TransitionRule monad rule (ProgramState p) ->
-    TransitionRule monad rule (ExecDepth, ProgramState p)
+    TransitionRule monad rule (ProgramState d p) ->
+    TransitionRule monad rule (ExecDepth, ProgramState d p)
 trackExecDepth transit prim (execDepth, execState) = do
     execState' <- transit prim execState
     let execDepth' = (if didRewrite execState' then succ else id) execDepth
@@ -613,7 +614,7 @@ trackExecDepth transit prim (execDepth, execState) = do
     -- The new state can become Bottom by simplification after rewriting,
     -- or it remains Rewritten. If it is Remaining, it was not rewritten.
     didRewrite Kore.Rewrite.Bottom = prim == Rewrite
-    didRewrite (Rewritten _) = prim == Rewrite
+    didRewrite (Rewritten _ _) = prim == Rewrite
     didRewrite _ = False
 
 -- | Add profiling markers to a 'TransitionRule'.
@@ -724,7 +725,7 @@ search
             executionGraph <-
                 runStrategy' (Start initialPattern)
             let match target config1 config2 = do
-                    extracted <- hoistMaybe $ extractProgramState config2
+                    extracted <- hoistMaybe $ fst $ extractProgramState config2
                     Search.matchWith target config1 extracted
             solutionsLists <-
                 searchGraph

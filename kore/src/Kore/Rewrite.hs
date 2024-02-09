@@ -9,6 +9,7 @@ Strategy-based interface to rule application (step-wise execution).
 module Kore.Rewrite (
     ExecutionMode (..),
     ProgramState (..),
+    RuleInfo (..),
     Prim (..),
     TransitionRule,
     executionStrategy,
@@ -25,6 +26,7 @@ import Control.Monad (
     foldM,
  )
 import Control.Monad.State (get, modify)
+import Data.Bifunctor
 import Data.Limit (
     Limit (..),
  )
@@ -39,11 +41,14 @@ import Data.Stream.Infinite qualified as Stream
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Axiom qualified as Attribute
+import Kore.Attribute.UniqueId (UniqueId)
 import Kore.Debug
 import Kore.Internal.Pattern (
-    Conditional,
+    Conditional (predicate, substitution),
     Pattern,
  )
+import Kore.Internal.Predicate (Predicate)
+import Kore.Internal.Substitution (Substitution)
 import Kore.Log.DecidePredicateUnknown (srcLoc)
 import Kore.Rewrite.Result qualified as Result
 import Kore.Rewrite.RewriteStep qualified as Step
@@ -81,13 +86,23 @@ import Pretty (
  )
 import Pretty qualified
 
+data RuleInfo a = RuleInfo
+    { rulePredicate :: Predicate a
+    , ruleSubstitution :: Substitution a
+    , ruleId :: UniqueId
+    }
+    deriving stock (Eq, Ord, Show)
+    deriving stock (GHC.Generic)
+    deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
+    deriving anyclass (Debug, Diff)
+
 -- | The program's state during symbolic execution.
-data ProgramState a
+data ProgramState b a
     = -- | The beginning of an execution step.
       Start !a
     | -- | The configuration was rewritten after applying
       -- the rewrite rules.
-      Rewritten !a
+      Rewritten !b !a
     | -- | The configuration is a remainder resulting
       -- from rewrite rule application.
       Remaining !a
@@ -99,13 +114,20 @@ data ProgramState a
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
 
-instance Unparse a => Pretty (ProgramState a) where
+instance Bifunctor ProgramState where
+    bimap f g = \case
+        Start a -> Start $ g a
+        Rewritten b a -> Rewritten (f b) (g a)
+        Remaining a -> Remaining $ g a
+        Bottom -> Bottom
+
+instance Unparse a => Pretty (ProgramState b a) where
     pretty (Start a) =
         Pretty.vsep
             [ "start:"
             , Pretty.indent 4 $ unparse a
             ]
-    pretty (Rewritten a) =
+    pretty (Rewritten _ a) =
         Pretty.vsep
             [ "rewritten:"
             , Pretty.indent 4 $ unparse a
@@ -117,13 +139,13 @@ instance Unparse a => Pretty (ProgramState a) where
             ]
     pretty Bottom = "\\bottom"
 
-extractProgramState :: ProgramState a -> Maybe a
-extractProgramState (Rewritten a) = Just a
-extractProgramState (Remaining a) = Just a
-extractProgramState (Start a) = Just a
-extractProgramState Bottom = Nothing
+extractProgramState :: ProgramState b a -> (Maybe a, Maybe b)
+extractProgramState (Rewritten b a) = (Just a, Just b)
+extractProgramState (Remaining a) = (Just a, Nothing)
+extractProgramState (Start a) = (Just a, Nothing)
+extractProgramState Bottom = (Nothing, Nothing)
 
-retractRemaining :: ProgramState a -> Maybe a
+retractRemaining :: ProgramState b a -> Maybe a
 retractRemaining (Remaining a) = Just a
 retractRemaining _ = Nothing
 
@@ -178,16 +200,19 @@ transitionRule ::
     TransitionRule
         Simplifier
         (RewriteRule RewritingVariableName, Seq SimplifierTrace)
-        (ProgramState (Pattern RewritingVariableName))
+        ( ProgramState
+            (RuleInfo RewritingVariableName)
+            (Pattern RewritingVariableName)
+        )
 transitionRule rewriteGroups assumeInitialDefined = transitionRuleWorker
   where
     transitionRuleWorker _ Simplify Bottom = pure Bottom
     transitionRuleWorker _ _ Bottom = empty
-    transitionRuleWorker _ Begin (Rewritten a) = pure $ Start a
+    transitionRuleWorker _ Begin (Rewritten _ a) = pure $ Start a
     transitionRuleWorker _ Begin (Remaining _) = empty
     transitionRuleWorker _ Begin state@(Start _) = pure state
-    transitionRuleWorker _ Simplify (Rewritten patt) =
-        transitionSimplify Rewritten patt
+    transitionRuleWorker _ Simplify (Rewritten x patt) =
+        transitionSimplify (Rewritten x) patt
     transitionRuleWorker _ Simplify (Remaining patt) =
         transitionSimplify Remaining patt
     transitionRuleWorker _ Simplify (Start patt) =
@@ -196,7 +221,7 @@ transitionRule rewriteGroups assumeInitialDefined = transitionRuleWorker
         transitionRewrite mode patt
     transitionRuleWorker mode Rewrite (Start patt) =
         transitionRewrite mode patt
-    transitionRuleWorker _ Rewrite state@(Rewritten _) =
+    transitionRuleWorker _ Rewrite state@(Rewritten _ _) =
         pure state
 
     transitionSimplify prim config = do
@@ -235,7 +260,10 @@ deriveResults ::
             (RulePattern var)
         )
         a ->
-    TransitionT (RewriteRule var, Seq SimplifierTrace) Simplifier (ProgramState a)
+    TransitionT
+        (RewriteRule var, Seq SimplifierTrace)
+        Simplifier
+        (ProgramState (RuleInfo var) a)
 deriveResults Result.Results{results, remainders} =
     if (null results || all (\Result.Result{result} -> isBottom result) results) && null remainders
         then pure Bottom
@@ -248,7 +276,10 @@ deriveResults Result.Results{results, remainders} =
             (_, simplifyRules :: Seq SimplifierTrace) <- lift get
             lift $ modify $ \(cache, _rules) -> (cache, mempty)
             addRule (RewriteRule $ extract appliedRule, simplifyRules)
-            pure $ Rewritten result
+            pure $
+                Rewritten
+                    (RuleInfo (predicate appliedRule) (substitution appliedRule) $ from $ extract appliedRule)
+                    result
     addRemainders remainders' =
         asum (pure . Remaining <$> toList remainders')
 
