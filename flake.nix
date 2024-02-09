@@ -1,7 +1,7 @@
 {
   description = "K Kore Language Haskell Backend";
   inputs = {
-    rv-utils.url = "github:runtimeverification/rv-nix-tools/f3e8bab938db9800044a94b94e59c5eba25977bc";
+    rv-utils.url = "github:runtimeverification/rv-nix-tools";
     nixpkgs.follows = "rv-utils/nixpkgs";
 
     stacklock2nix.url = "github:cdepillabout/stacklock2nix";
@@ -10,7 +10,7 @@
       flake = false;
     };
   };
-  outputs = { self, nixpkgs, stacklock2nix, z3 }:
+  outputs = { self, nixpkgs, stacklock2nix, z3, rv-utils }:
     let
       perSystem = nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed;
       nixpkgsCleanFor = system: import nixpkgs { inherit system; };
@@ -73,7 +73,7 @@
           additionalDevShellNativeBuildInputs = stacklockHaskellPkgSet:
             with final; [
               haskell.packages.ghc928.cabal-install
-              haskellPackages.fourmolu_0_12_0_0
+              haskellPackages.fourmolu_0_14_1_0
               (let
                 ghc-lib-parser = haskellPackages.ghc-lib-parser_9_4_5_20230430;
                 ghc-lib-parser-ex =
@@ -118,7 +118,7 @@
           mkShell {
             nativeBuildInputs = [
               (haskell.lib.justStaticExecutables
-                haskellPackages.fourmolu_0_12_0_0)
+                haskellPackages.fourmolu_0_14_1_0)
             ];
           };
         cabal = let pkgs = nixpkgsFor system;
