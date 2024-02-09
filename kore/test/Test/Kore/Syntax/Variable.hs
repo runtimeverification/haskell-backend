@@ -29,16 +29,16 @@ test_isSetVariable =
         "element variable"
         (False, mkSomeVariable $ mkElementVariable (testId "x") testSort)
     ]
-  where
-    test ::
-        HasCallStack =>
-        TestName ->
-        (Bool, SomeVariable VariableName) ->
-        TestTree
-    test name (expect, input) =
-        testCase name $ do
-            let actual = isSetVariable input
-            assertEqual "" expect actual
+    where
+        test ::
+            HasCallStack =>
+            TestName ->
+            (Bool, SomeVariable VariableName) ->
+            TestTree
+        test name (expect, input) =
+            testCase name $ do
+                let actual = isSetVariable input
+                assertEqual "" expect actual
 
 test_isElementVariable :: [TestTree]
 test_isElementVariable =
@@ -49,16 +49,16 @@ test_isElementVariable =
         "element variable"
         (True, mkSomeVariable $ mkElementVariable (testId "x") testSort)
     ]
-  where
-    test ::
-        HasCallStack =>
-        TestName ->
-        (Bool, SomeVariable VariableName) ->
-        TestTree
-    test name (expect, input) =
-        testCase name $ do
-            let actual = isElementVariable input
-            assertEqual "" expect actual
+    where
+        test ::
+            HasCallStack =>
+            TestName ->
+            (Bool, SomeVariable VariableName) ->
+            TestTree
+        test name (expect, input) =
+            testCase name $ do
+                let actual = isElementVariable input
+                assertEqual "" expect actual
 
 hprop_instance_Injection_SomeVariableName_ElementVariableName :: Property
 hprop_instance_Injection_SomeVariableName_ElementVariableName =

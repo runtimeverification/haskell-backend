@@ -94,7 +94,7 @@ defaultTraceProf ::
     prof a
 defaultTraceProf name =
     bracket_ open close
-  where
-    open = traceEvent (Text.cons 'O' name)
-    close = traceEvent (Text.cons 'C' name)
+    where
+        open = traceEvent (Text.cons 'O' name)
+        close = traceEvent (Text.cons 'C' name)
 {-# INLINE defaultTraceProf #-}

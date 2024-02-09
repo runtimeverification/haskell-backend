@@ -58,17 +58,17 @@ signednessVerifier ::
     ApplicationVerifier Verified.Pattern
 signednessVerifier ctor =
     ApplicationVerifier worker
-  where
-    worker application = do
-        -- TODO (thomas.tuegel): Move the checks into the symbol verifiers.
-        unless (null arguments) (koreFail "expected zero arguments")
-        let Attribute.Symbol.SymbolKywd{isSymbolKywd} =
-                Attribute.Symbol.symbolKywd $ symbolAttributes symbol
-        unless isSymbolKywd (koreFail "expected symbol'Kywd'{}() attribute")
-        return (SignednessF . Const $ ctor symbol)
-      where
-        arguments = applicationChildren application
-        symbol = applicationSymbolOrAlias application
+    where
+        worker application = do
+            -- TODO (thomas.tuegel): Move the checks into the symbol verifiers.
+            unless (null arguments) (koreFail "expected zero arguments")
+            let Attribute.Symbol.SymbolKywd{isSymbolKywd} =
+                    Attribute.Symbol.symbolKywd $ symbolAttributes symbol
+            unless isSymbolKywd (koreFail "expected symbol'Kywd'{}() attribute")
+            return (SignednessF . Const $ ctor symbol)
+            where
+                arguments = applicationChildren application
+                symbol = applicationSymbolOrAlias application
 
 signedVerifier :: ApplicationVerifier Verified.Pattern
 signedVerifier = signednessVerifier Signed
@@ -104,5 +104,5 @@ unifyEquals unifyData
             "Cannot unify distinct constructors."
             term1
             term2
-  where
-    UnifyEqualsSignedness{sign1, sign2, term1, term2} = unifyData
+    where
+        UnifyEqualsSignedness{sign1, sign2, term1, term2} = unifyData

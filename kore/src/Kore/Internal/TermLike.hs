@@ -312,10 +312,10 @@ refreshVariables ::
     TermLike variable
 refreshVariables (Attribute.FreeVariables.toNames -> avoid) term =
     rename renamed term
-  where
-    renamed = Fresh.refreshVariablesSet avoid originalFreeVariables
-    originalFreeVariables =
-        Attribute.FreeVariables.toSet (Attribute.freeVariables term)
+    where
+        renamed = Fresh.refreshVariablesSet avoid originalFreeVariables
+        originalFreeVariables =
+            Attribute.FreeVariables.toSet (Attribute.freeVariables term)
 
 -- | Is the 'TermLike' a function pattern?
 isFunctionPattern :: TermLike variable -> Bool
@@ -488,17 +488,18 @@ forgetSimplifiedIgnorePredicates term@(Recursive.project -> (_ :< termF)) =
         InternalSetF internalSet ->
             Recursive.embed (newAttrs :< InternalSetF (recursiveCall internalSet))
         _ -> term
-  where
-    newAttrs =
-        synthetic $
-            Cofree.headF . Recursive.project
+    where
+        newAttrs =
+            synthetic
+                $ Cofree.headF
+                . Recursive.project
                 <$> termF
-    recursiveCall ::
-        Functor f =>
-        f (TermLike variable) ->
-        f (TermLike variable)
-    recursiveCall =
-        fmap forgetSimplifiedIgnorePredicates
+        recursiveCall ::
+            Functor f =>
+            f (TermLike variable) ->
+            f (TermLike variable)
+        recursiveCall =
+            fmap forgetSimplifiedIgnorePredicates
 
 simplifiedAttribute :: TermLike variable -> Attribute.Simplified
 simplifiedAttribute = attributeSimplifiedAttribute . extractAttributes
@@ -513,25 +514,25 @@ assertConstructorLikeKeys ::
 assertConstructorLikeKeys keys a
     | any (not . Attribute.isConstructorLike) keys =
         let simplifiableKeys =
-                filter (not . Attribute.isConstructorLike) $
-                    Prelude.Kore.toList keys
-         in (error . show . Pretty.vsep) $
-                [ "Internal error: expected constructor-like patterns,\
-                  \ an internal invariant has been violated.\
-                  \ Please report this error."
-                , Pretty.indent 2 "Non-constructor-like patterns:"
-                ]
-                    <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
+                filter (not . Attribute.isConstructorLike)
+                    $ Prelude.Kore.toList keys
+         in (error . show . Pretty.vsep)
+                $ [ "Internal error: expected constructor-like patterns,\
+                    \ an internal invariant has been violated.\
+                    \ Please report this error."
+                  , Pretty.indent 2 "Non-constructor-like patterns:"
+                  ]
+                <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
     | any (not . isSimplifiedAnyCondition) keys =
         let simplifiableKeys =
                 filter (not . isSimplifiedAnyCondition) $ Prelude.Kore.toList keys
-         in (error . show . Pretty.vsep) $
-                [ "Internal error: expected fully simplified patterns,\
-                  \ an internal invariant has been violated.\
-                  \ Please report this error."
-                , Pretty.indent 2 "Unsimplified patterns:"
-                ]
-                    <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
+         in (error . show . Pretty.vsep)
+                $ [ "Internal error: expected fully simplified patterns,\
+                    \ an internal invariant has been violated.\
+                    \ Please report this error."
+                  , Pretty.indent 2 "Unsimplified patterns:"
+                  ]
+                <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
     | otherwise = a
 
 {- | Mark a 'TermLike' as fully simplified at the current level.
@@ -590,16 +591,16 @@ setSimplified
             ( setAttributeSimplified mergedSimplified attrs
                 :< termLikeF
             )
-      where
-        childSimplified = simplifiedFromChildren termLikeF
-        mergedSimplified = case (childSimplified, simplified) of
-            (Attribute.NotSimplified, Attribute.NotSimplified) ->
-                Attribute.NotSimplified
-            (Attribute.NotSimplified, _) ->
-                cannotSimplifyNotSimplifiedError termLikeF
-            (_, Attribute.NotSimplified) ->
-                Attribute.NotSimplified
-            _ -> childSimplified <> simplified
+        where
+            childSimplified = simplifiedFromChildren termLikeF
+            mergedSimplified = case (childSimplified, simplified) of
+                (Attribute.NotSimplified, Attribute.NotSimplified) ->
+                    Attribute.NotSimplified
+                (Attribute.NotSimplified, _) ->
+                    cannotSimplifyNotSimplifiedError termLikeF
+                (_, Attribute.NotSimplified) ->
+                    Attribute.NotSimplified
+                _ -> childSimplified <> simplified
 
 {- | Marks a term as being simplified as long as the side condition stays
 unchanged.
@@ -629,9 +630,9 @@ simplifiedFromChildren termLikeF =
     case mergedSimplified of
         Attribute.NotSimplified -> Attribute.NotSimplified
         _ -> mergedSimplified `Attribute.simplifiedTo` Attribute.fullySimplified
-  where
-    mergedSimplified =
-        foldMap (attributeSimplifiedAttribute . extractAttributes) termLikeF
+    where
+        mergedSimplified =
+            foldMap (attributeSimplifiedAttribute . extractAttributes) termLikeF
 
 checkedSimplifiedFromChildren ::
     (HasCallStack, InternalVariable variable) =>
@@ -656,8 +657,8 @@ sameTermLikeSort ::
 sameTermLikeSort expectedSort term
     | expectedSort == termSort = term
     | otherwise = illSorted expectedSort term
-  where
-    termSort = termLikeSort term
+    where
+        termSort = termLikeSort term
 
 {- | Attempts to modify the pattern to have the given sort, ignoring the
 previous sort and without assuming that the pattern's sorts are consistent.
@@ -669,16 +670,16 @@ fullyOverrideSort ::
     TermLike variable ->
     TermLike variable
 fullyOverrideSort forcedSort = Recursive.apo overrideSortWorker
-  where
-    overrideSortWorker ::
-        TermLike variable ->
-        Base
-            (TermLike variable)
-            (Either (TermLike variable) (TermLike variable))
-    overrideSortWorker original@(Recursive.project -> attrs :< _) =
-        (:<)
-            (attrs{termSort = forcedSort})
-            (forceSortPredicate forcedSort original)
+    where
+        overrideSortWorker ::
+            TermLike variable ->
+            Base
+                (TermLike variable)
+                (Either (TermLike variable) (TermLike variable))
+        overrideSortWorker original@(Recursive.project -> attrs :< _) =
+            (:<)
+                (attrs{termSort = forcedSort})
+                (forceSortPredicate forcedSort original)
 
 illSorted ::
     (InternalVariable variable, HasCallStack) =>
@@ -711,45 +712,45 @@ forceSortPredicate
             BottomF bottom' -> BottomF bottom'{bottomSort = forcedSort}
             TopF top' -> TopF top'{topSort = forcedSort}
             CeilF ceil' -> CeilF (Left <$> ceil'')
-              where
-                ceil'' = ceil'{ceilResultSort = forcedSort}
+                where
+                    ceil'' = ceil'{ceilResultSort = forcedSort}
             FloorF floor' -> FloorF (Left <$> floor'')
-              where
-                floor'' = floor'{floorResultSort = forcedSort}
+                where
+                    floor'' = floor'{floorResultSort = forcedSort}
             EqualsF equals' -> EqualsF (Left <$> equals'')
-              where
-                equals'' = equals'{equalsResultSort = forcedSort}
+                where
+                    equals'' = equals'{equalsResultSort = forcedSort}
             InF in' -> InF (Left <$> in'')
-              where
-                in'' = in'{inResultSort = forcedSort}
+                where
+                    in'' = in'{inResultSort = forcedSort}
             -- Connectives: Force sort and recurse.
             AndF and' -> AndF (Right <$> and'')
-              where
-                and'' = and'{andSort = forcedSort}
+                where
+                    and'' = and'{andSort = forcedSort}
             OrF or' -> OrF (Right <$> or'')
-              where
-                or'' = or'{orSort = forcedSort}
+                where
+                    or'' = or'{orSort = forcedSort}
             IffF iff' -> IffF (Right <$> iff'')
-              where
-                iff'' = iff'{iffSort = forcedSort}
+                where
+                    iff'' = iff'{iffSort = forcedSort}
             ImpliesF implies' -> ImpliesF (Right <$> implies'')
-              where
-                implies'' = implies'{impliesSort = forcedSort}
+                where
+                    implies'' = implies'{impliesSort = forcedSort}
             NotF not' -> NotF (Right <$> not'')
-              where
-                not'' = not'{notSort = forcedSort}
+                where
+                    not'' = not'{notSort = forcedSort}
             NextF next' -> NextF (Right <$> next'')
-              where
-                next'' = next'{nextSort = forcedSort}
+                where
+                    next'' = next'{nextSort = forcedSort}
             RewritesF rewrites' -> RewritesF (Right <$> rewrites'')
-              where
-                rewrites'' = rewrites'{rewritesSort = forcedSort}
+                where
+                    rewrites'' = rewrites'{rewritesSort = forcedSort}
             ExistsF exists' -> ExistsF (Right <$> exists'')
-              where
-                exists'' = exists'{existsSort = forcedSort}
+                where
+                    exists'' = exists'{existsSort = forcedSort}
             ForallF forall' -> ForallF (Right <$> forall'')
-              where
-                forall'' = forall'{forallSort = forcedSort}
+                where
+                    forall'' = forall'{forallSort = forcedSort}
             -- Rigid: These patterns should never have sort _PREDICATE{}.
             MuF _ -> illSorted forcedSort original
             NuF _ -> illSorted forcedSort original
@@ -776,9 +777,9 @@ checkSortsAgree ::
     TermLike variable ->
     a
 checkSortsAgree withPatterns t1 t2 = withPatterns t1 t2 (sameSort s1 s2)
-  where
-    s1 = termLikeSort t1
-    s2 = termLikeSort t2
+    where
+        s1 = termLikeSort t1
+        s2 = termLikeSort t2
 
 -- | Construct an 'And' pattern.
 mkAnd ::
@@ -788,9 +789,9 @@ mkAnd ::
     TermLike variable ->
     TermLike variable
 mkAnd t1 t2 = updateCallStack $ checkSortsAgree mkAndWorker t1 t2
-  where
-    mkAndWorker andFirst andSecond andSort =
-        synthesize (AndF BinaryAnd{andSort, andFirst, andSecond})
+    where
+        mkAndWorker andFirst andSecond andSort =
+            synthesize (AndF BinaryAnd{andSort, andFirst, andSecond})
 
 {- | Force the 'TermLike's to conform to their 'Sort's.
 
@@ -805,18 +806,18 @@ sameTermLikeSorts ::
     [TermLike variable]
 sameTermLikeSorts operandSorts children =
     alignWith forceTheseSorts operandSorts children
-  where
-    forceTheseSorts (This _) =
-        (error . show . Pretty.vsep) ("Too few arguments:" : expected)
-    forceTheseSorts (That _) =
-        (error . show . Pretty.vsep) ("Too many arguments:" : expected)
-    forceTheseSorts (These sort termLike) = sameTermLikeSort sort termLike
-    expected =
-        [ "Expected:"
-        , Pretty.indent 4 (Unparser.arguments operandSorts)
-        , "but found:"
-        , Pretty.indent 4 (Unparser.arguments children)
-        ]
+    where
+        forceTheseSorts (This _) =
+            (error . show . Pretty.vsep) ("Too few arguments:" : expected)
+        forceTheseSorts (That _) =
+            (error . show . Pretty.vsep) ("Too many arguments:" : expected)
+        forceTheseSorts (These sort termLike) = sameTermLikeSort sort termLike
+        expected =
+            [ "Expected:"
+            , Pretty.indent 4 (Unparser.arguments operandSorts)
+            , "but found:"
+            , Pretty.indent 4 (Unparser.arguments children)
+            ]
 
 {- | Construct an 'Application' pattern.
 
@@ -836,13 +837,13 @@ mkApplyAlias ::
     TermLike variable
 mkApplyAlias alias children =
     updateCallStack $ synthesize (ApplyAliasF application)
-  where
-    application =
-        Application
-            { applicationSymbolOrAlias = alias
-            , applicationChildren = sameTermLikeSorts operandSorts children
-            }
-    operandSorts = applicationSortsOperands (aliasSorts alias)
+    where
+        application =
+            Application
+                { applicationSymbolOrAlias = alias
+                , applicationChildren = sameTermLikeSorts operandSorts children
+                }
+        operandSorts = applicationSortsOperands (aliasSorts alias)
 
 {- | Construct an 'Application' pattern.
 
@@ -861,8 +862,8 @@ mkApplySymbol ::
     [TermLike variable] ->
     TermLike variable
 mkApplySymbol symbol children =
-    updateCallStack $
-        synthesize (ApplySymbolF (symbolApplication symbol children))
+    updateCallStack
+        $ synthesize (ApplySymbolF (symbolApplication symbol children))
 
 symbolApplication ::
     HasCallStack =>
@@ -877,8 +878,8 @@ symbolApplication symbol children =
         { applicationSymbolOrAlias = symbol
         , applicationChildren = sameTermLikeSorts operandSorts children
         }
-  where
-    operandSorts = applicationSortsOperands (symbolSorts symbol)
+    where
+        operandSorts = applicationSortsOperands (symbolSorts symbol)
 
 {- | Construct an 'Application' pattern from a 'Alias' declaration.
 
@@ -898,44 +899,44 @@ applyAlias ::
     TermLike variable
 applyAlias sentence params children =
     updateCallStack $ mkApplyAlias internal children'
-  where
-    SentenceAlias{sentenceAliasAlias = external} = sentence
-    Syntax.Alias{aliasConstructor} = external
-    Syntax.Alias{aliasParams} = external
-    internal =
-        Alias
-            { aliasConstructor
-            , aliasParams = params
-            , aliasSorts =
-                symbolOrAliasSorts params sentence
-                    & assertRight
-            , aliasLeft =
-                applicationChildren
-                    . sentenceAliasLeftPattern
-                    $ sentence
-            , aliasRight = sentenceAliasRightPattern sentence
-            }
-    substitution = sortSubstitution aliasParams params
-    childSorts = substituteSortVariables substitution <$> sentenceAliasSorts
-      where
-        SentenceAlias{sentenceAliasSorts} = sentence
-    children' = alignWith forceChildSort childSorts children
-      where
-        forceChildSort =
-            \case
-                These sort pattern' -> sameTermLikeSort sort pattern'
-                This _ ->
-                    (error . show . Pretty.vsep)
-                        ("Too few parameters:" : expected)
-                That _ ->
-                    (error . show . Pretty.vsep)
-                        ("Too many parameters:" : expected)
-        expected =
-            [ "Expected:"
-            , Pretty.indent 4 (Unparser.arguments childSorts)
-            , "but found:"
-            , Pretty.indent 4 (Unparser.arguments children)
-            ]
+    where
+        SentenceAlias{sentenceAliasAlias = external} = sentence
+        Syntax.Alias{aliasConstructor} = external
+        Syntax.Alias{aliasParams} = external
+        internal =
+            Alias
+                { aliasConstructor
+                , aliasParams = params
+                , aliasSorts =
+                    symbolOrAliasSorts params sentence
+                        & assertRight
+                , aliasLeft =
+                    applicationChildren
+                        . sentenceAliasLeftPattern
+                        $ sentence
+                , aliasRight = sentenceAliasRightPattern sentence
+                }
+        substitution = sortSubstitution aliasParams params
+        childSorts = substituteSortVariables substitution <$> sentenceAliasSorts
+            where
+                SentenceAlias{sentenceAliasSorts} = sentence
+        children' = alignWith forceChildSort childSorts children
+            where
+                forceChildSort =
+                    \case
+                        These sort pattern' -> sameTermLikeSort sort pattern'
+                        This _ ->
+                            (error . show . Pretty.vsep)
+                                ("Too few parameters:" : expected)
+                        That _ ->
+                            (error . show . Pretty.vsep)
+                                ("Too many parameters:" : expected)
+                expected =
+                    [ "Expected:"
+                    , Pretty.indent 4 (Unparser.arguments childSorts)
+                    , "but found:"
+                    , Pretty.indent 4 (Unparser.arguments children)
+                    ]
 
 {- | Construct an 'Application' pattern from a 'Alias' declaration.
 
@@ -969,18 +970,18 @@ applySymbol ::
     TermLike variable
 applySymbol sentence params children =
     updateCallStack $ mkApplySymbol internal children
-  where
-    SentenceSymbol{sentenceSymbolSymbol = external} = sentence
-    Syntax.Symbol{symbolConstructor} = external
-    internal =
-        Symbol
-            { symbolConstructor
-            , symbolParams = params
-            , symbolAttributes = Default.def
-            , symbolSorts =
-                symbolOrAliasSorts params sentence
-                    & assertRight
-            }
+    where
+        SentenceSymbol{sentenceSymbolSymbol = external} = sentence
+        Syntax.Symbol{symbolConstructor} = external
+        internal =
+            Symbol
+                { symbolConstructor
+                , symbolParams = params
+                , symbolAttributes = Default.def
+                , symbolSorts =
+                    symbolOrAliasSorts params sentence
+                        & assertRight
+                }
 
 {- | Construct an 'Application' pattern from a 'Symbol' declaration.
 
@@ -1013,10 +1014,10 @@ mkCeil ::
     TermLike variable ->
     TermLike variable
 mkCeil ceilResultSort ceilChild =
-    updateCallStack $
-        synthesize (CeilF Ceil{ceilOperandSort, ceilResultSort, ceilChild})
-  where
-    ceilOperandSort = termLikeSort ceilChild
+    updateCallStack
+        $ synthesize (CeilF Ceil{ceilOperandSort, ceilResultSort, ceilChild})
+    where
+        ceilOperandSort = termLikeSort ceilChild
 
 -- | Construct an internal bool pattern.
 mkInternalBool ::
@@ -1084,17 +1085,17 @@ mkEquals ::
     TermLike variable
 mkEquals equalsResultSort t1 =
     updateCallStack . checkSortsAgree mkEqualsWorker t1
-  where
-    mkEqualsWorker equalsFirst equalsSecond equalsOperandSort =
-        synthesize (EqualsF equals)
-      where
-        equals =
-            Equals
-                { equalsOperandSort
-                , equalsResultSort
-                , equalsFirst
-                , equalsSecond
-                }
+    where
+        mkEqualsWorker equalsFirst equalsSecond equalsOperandSort =
+            synthesize (EqualsF equals)
+            where
+                equals =
+                    Equals
+                        { equalsOperandSort
+                        , equalsResultSort
+                        , equalsFirst
+                        , equalsSecond
+                        }
 
 -- | Construct an 'Exists' pattern.
 mkExists ::
@@ -1104,10 +1105,10 @@ mkExists ::
     TermLike variable ->
     TermLike variable
 mkExists existsVariable existsChild =
-    updateCallStack $
-        synthesize (ExistsF Exists{existsSort, existsVariable, existsChild})
-  where
-    existsSort = termLikeSort existsChild
+    updateCallStack
+        $ synthesize (ExistsF Exists{existsSort, existsVariable, existsChild})
+    where
+        existsSort = termLikeSort existsChild
 
 -- | Construct a sequence of 'Exists' patterns over several variables.
 mkExistsN ::
@@ -1127,10 +1128,10 @@ mkFloor ::
     TermLike variable ->
     TermLike variable
 mkFloor floorResultSort floorChild =
-    updateCallStack $
-        synthesize (FloorF Floor{floorOperandSort, floorResultSort, floorChild})
-  where
-    floorOperandSort = termLikeSort floorChild
+    updateCallStack
+        $ synthesize (FloorF Floor{floorOperandSort, floorResultSort, floorChild})
+    where
+        floorOperandSort = termLikeSort floorChild
 
 -- | Construct a 'Forall' pattern.
 mkForall ::
@@ -1140,10 +1141,10 @@ mkForall ::
     TermLike variable ->
     TermLike variable
 mkForall forallVariable forallChild =
-    updateCallStack $
-        synthesize (ForallF Forall{forallSort, forallVariable, forallChild})
-  where
-    forallSort = termLikeSort forallChild
+    updateCallStack
+        $ synthesize (ForallF Forall{forallSort, forallVariable, forallChild})
+    where
+        forallSort = termLikeSort forallChild
 
 -- | Construct a sequence of 'Forall' patterns over several variables.
 mkForallN ::
@@ -1163,9 +1164,9 @@ mkIff ::
     TermLike variable ->
     TermLike variable
 mkIff t1 t2 = updateCallStack $ checkSortsAgree mkIffWorker t1 t2
-  where
-    mkIffWorker iffFirst iffSecond iffSort =
-        synthesize (IffF Iff{iffSort, iffFirst, iffSecond})
+    where
+        mkIffWorker iffFirst iffSecond iffSort =
+            synthesize (IffF Iff{iffSort, iffFirst, iffSecond})
 
 -- | Construct an 'Implies' pattern.
 mkImplies ::
@@ -1175,11 +1176,11 @@ mkImplies ::
     TermLike variable ->
     TermLike variable
 mkImplies t1 t2 = updateCallStack $ checkSortsAgree mkImpliesWorker t1 t2
-  where
-    mkImpliesWorker impliesFirst impliesSecond impliesSort =
-        synthesize (ImpliesF implies')
-      where
-        implies' = Implies{impliesSort, impliesFirst, impliesSecond}
+    where
+        mkImpliesWorker impliesFirst impliesSecond impliesSort =
+            synthesize (ImpliesF implies')
+            where
+                implies' = Implies{impliesSort, impliesFirst, impliesSecond}
 
 {- | Construct a 'In' pattern in the given sort.
 
@@ -1193,17 +1194,17 @@ mkIn ::
     TermLike variable ->
     TermLike variable
 mkIn inResultSort t1 t2 = updateCallStack $ checkSortsAgree mkInWorker t1 t2
-  where
-    mkInWorker inContainedChild inContainingChild inOperandSort =
-        synthesize (InF in')
-      where
-        in' =
-            In
-                { inOperandSort
-                , inResultSort
-                , inContainedChild
-                , inContainingChild
-                }
+    where
+        mkInWorker inContainedChild inContainingChild inOperandSort =
+            synthesize (InF in')
+            where
+                in' =
+                    In
+                        { inOperandSort
+                        , inResultSort
+                        , inContainedChild
+                        , inContainingChild
+                        }
 
 -- | Construct a 'Mu' pattern.
 mkMu ::
@@ -1213,10 +1214,10 @@ mkMu ::
     TermLike variable ->
     TermLike variable
 mkMu muVar = updateCallStack . checkSortsAgree mkMuWorker (mkSetVar muVar)
-  where
-    mkMuWorker (SetVar_ muVar') muChild _ =
-        synthesize (MuF Mu{muVariable = muVar', muChild})
-    mkMuWorker _ _ _ = error "Unreachable code"
+    where
+        mkMuWorker (SetVar_ muVar') muChild _ =
+            synthesize (MuF Mu{muVariable = muVar', muChild})
+        mkMuWorker _ _ _ = error "Unreachable code"
 
 -- | Construct a 'Next' pattern.
 mkNext ::
@@ -1226,8 +1227,8 @@ mkNext ::
     TermLike variable
 mkNext nextChild =
     updateCallStack $ synthesize (NextF Next{nextSort, nextChild})
-  where
-    nextSort = termLikeSort nextChild
+    where
+        nextSort = termLikeSort nextChild
 
 -- | Construct a 'Not' pattern.
 mkNot ::
@@ -1237,8 +1238,8 @@ mkNot ::
     TermLike variable
 mkNot notChild =
     updateCallStack $ synthesize (NotF Not{notSort, notChild})
-  where
-    notSort = termLikeSort notChild
+    where
+        notSort = termLikeSort notChild
 
 -- | Construct a 'Nu' pattern.
 mkNu ::
@@ -1248,10 +1249,10 @@ mkNu ::
     TermLike variable ->
     TermLike variable
 mkNu nuVar = updateCallStack . checkSortsAgree mkNuWorker (mkSetVar nuVar)
-  where
-    mkNuWorker (SetVar_ nuVar') nuChild _ =
-        synthesize (NuF Nu{nuVariable = nuVar', nuChild})
-    mkNuWorker _ _ _ = error "Unreachable code"
+    where
+        mkNuWorker (SetVar_ nuVar') nuChild _ =
+            synthesize (NuF Nu{nuVariable = nuVar', nuChild})
+        mkNuWorker _ _ _ = error "Unreachable code"
 
 -- | Construct an 'Or' pattern.
 mkOr ::
@@ -1261,9 +1262,9 @@ mkOr ::
     TermLike variable ->
     TermLike variable
 mkOr t1 t2 = updateCallStack $ checkSortsAgree mkOrWorker t1 t2
-  where
-    mkOrWorker orFirst orSecond orSort =
-        synthesize (OrF BinaryOr{orSort, orFirst, orSecond})
+    where
+        mkOrWorker orFirst orSecond orSort =
+            synthesize (OrF BinaryOr{orSort, orFirst, orSecond})
 
 -- | Construct a 'Rewrites' pattern.
 mkRewrites ::
@@ -1273,11 +1274,11 @@ mkRewrites ::
     TermLike variable ->
     TermLike variable
 mkRewrites t1 t2 = updateCallStack $ checkSortsAgree mkRewritesWorker t1 t2
-  where
-    mkRewritesWorker rewritesFirst rewritesSecond rewritesSort =
-        synthesize (RewritesF rewrites')
-      where
-        rewrites' = Rewrites{rewritesSort, rewritesFirst, rewritesSecond}
+    where
+        mkRewritesWorker rewritesFirst rewritesSecond rewritesSort =
+            synthesize (RewritesF rewrites')
+            where
+                rewrites' = Rewrites{rewritesSort, rewritesFirst, rewritesSecond}
 
 {- | Construct a 'Top' pattern in the given sort.
 
@@ -1324,8 +1325,11 @@ mkInternalBytes ::
     ByteString ->
     TermLike variable
 mkInternalBytes sort value =
-    updateCallStack . synthesize . InternalBytesF . Const $
-        InternalBytes
+    updateCallStack
+        . synthesize
+        . InternalBytesF
+        . Const
+        $ InternalBytes
             { internalBytesSort = sort
             , internalBytesValue = ByteString.toShort value
             }
@@ -1447,8 +1451,8 @@ mkAlias aliasConstructor aliasParams resultSort' arguments right =
         , sentenceAliasRightPattern = right
         , sentenceAliasAttributes = Attributes []
         }
-  where
-    argumentSorts = variableSort <$> arguments
+    where
+        argumentSorts = variableSort <$> arguments
 
 {- | Construct an alias declaration with no parameters.
 
@@ -1807,8 +1811,8 @@ refreshBinder
                     , binderChild = binderChild'
                     }
             & fromMaybe binder
-      where
-        Binder{binderVariable, binderChild} = binder
+        where
+            Binder{binderVariable, binderChild} = binder
 
 refreshSetBinder ::
     InternalVariable variable =>
@@ -1878,8 +1882,8 @@ applyModality modality term =
             mkApplyAlias (wEF sort) [term]
         WAF ->
             mkApplyAlias (wAF sort) [term]
-  where
-    sort = termLikeSort term
+    where
+        sort = termLikeSort term
 
 containsSymbolWithId :: String -> TermLike variable -> Bool
 containsSymbolWithId symId term

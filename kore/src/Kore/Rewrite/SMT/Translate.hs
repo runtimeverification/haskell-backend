@@ -127,120 +127,120 @@ translatePredicateWith ::
     Translator variable m SExpr
 translatePredicateWith tools sideCondition translateTerm predicate =
     translatePredicatePattern predicate
-  where
-    translatePredicatePattern :: p -> Translator variable m SExpr
-    translatePredicatePattern pat =
-        case Cofree.tailF (Recursive.project pat) of
-            -- Logical connectives: translate as connectives
-            Predicate.AndF and' -> translatePredicateAnd and'
-            Predicate.BottomF _ -> return (SMT.bool False)
-            Predicate.EqualsF eq ->
-                -- Equality of predicates and builtins can be translated to
-                -- equality in the SMT solver, but other patterns must remain
-                -- uninterpreted.
-                translatePredicateEquals eq
-                    <|> translateUninterpretedPredicate translateTerm SMT.tBool pat
-            Predicate.IffF iff -> translatePredicateIff iff
-            Predicate.ImpliesF implies -> translatePredicateImplies implies
-            Predicate.NotF not' -> translatePredicateNot not'
-            Predicate.OrF or' -> translatePredicateOr or'
-            Predicate.TopF _ -> return (SMT.bool True)
-            -- Uninterpreted: translate as variables
-            Predicate.CeilF _ -> translateUninterpretedPredicate translateTerm SMT.tBool pat
-            Predicate.ExistsF exists' ->
-                translatePredicateExists exists'
-                    <|> translateUninterpretedPredicate translateTerm SMT.tBool pat
-            Predicate.FloorF _ -> translateUninterpretedPredicate translateTerm SMT.tBool pat
-            Predicate.ForallF forall' ->
-                translatePredicateForall forall'
-                    <|> translateUninterpretedPredicate translateTerm SMT.tBool pat
-            Predicate.InF _ -> translateUninterpretedPredicate translateTerm SMT.tBool pat
+    where
+        translatePredicatePattern :: p -> Translator variable m SExpr
+        translatePredicatePattern pat =
+            case Cofree.tailF (Recursive.project pat) of
+                -- Logical connectives: translate as connectives
+                Predicate.AndF and' -> translatePredicateAnd and'
+                Predicate.BottomF _ -> return (SMT.bool False)
+                Predicate.EqualsF eq ->
+                    -- Equality of predicates and builtins can be translated to
+                    -- equality in the SMT solver, but other patterns must remain
+                    -- uninterpreted.
+                    translatePredicateEquals eq
+                        <|> translateUninterpretedPredicate translateTerm SMT.tBool pat
+                Predicate.IffF iff -> translatePredicateIff iff
+                Predicate.ImpliesF implies -> translatePredicateImplies implies
+                Predicate.NotF not' -> translatePredicateNot not'
+                Predicate.OrF or' -> translatePredicateOr or'
+                Predicate.TopF _ -> return (SMT.bool True)
+                -- Uninterpreted: translate as variables
+                Predicate.CeilF _ -> translateUninterpretedPredicate translateTerm SMT.tBool pat
+                Predicate.ExistsF exists' ->
+                    translatePredicateExists exists'
+                        <|> translateUninterpretedPredicate translateTerm SMT.tBool pat
+                Predicate.FloorF _ -> translateUninterpretedPredicate translateTerm SMT.tBool pat
+                Predicate.ForallF forall' ->
+                    translatePredicateForall forall'
+                        <|> translateUninterpretedPredicate translateTerm SMT.tBool pat
+                Predicate.InF _ -> translateUninterpretedPredicate translateTerm SMT.tBool pat
 
-    translatePredicateAnd BinaryAnd{andFirst, andSecond} =
-        SMT.and
-            <$> translatePredicatePattern andFirst
-            <*> translatePredicatePattern andSecond
+        translatePredicateAnd BinaryAnd{andFirst, andSecond} =
+            SMT.and
+                <$> translatePredicatePattern andFirst
+                <*> translatePredicatePattern andSecond
 
-    translatePredicateEquals
-        Equals
-            { equalsFirst
-            , equalsSecond
-            } =
-            SMT.eq
-                <$> translatePredicateEqualsChild equalsFirst
-                <*> translatePredicateEqualsChild equalsSecond
-          where
-            translatePredicateEqualsChild child =
-                -- Attempt to translate patterns in builtin sorts, or failing that,
-                -- as predicates.
-                (<|>)
-                    ( translatePattern
-                        tools
-                        sideCondition
-                        translateTerm
-                        (termLikeSort child)
-                        child
-                    )
-                    ( either
-                        (const empty)
-                        translatePredicatePattern
-                        (makePredicate child)
-                    )
+        translatePredicateEquals
+            Equals
+                { equalsFirst
+                , equalsSecond
+                } =
+                SMT.eq
+                    <$> translatePredicateEqualsChild equalsFirst
+                    <*> translatePredicateEqualsChild equalsSecond
+                where
+                    translatePredicateEqualsChild child =
+                        -- Attempt to translate patterns in builtin sorts, or failing that,
+                        -- as predicates.
+                        (<|>)
+                            ( translatePattern
+                                tools
+                                sideCondition
+                                translateTerm
+                                (termLikeSort child)
+                                child
+                            )
+                            ( either
+                                (const empty)
+                                translatePredicatePattern
+                                (makePredicate child)
+                            )
 
-    translatePredicateIff Iff{iffFirst, iffSecond} =
-        iff
-            <$> translatePredicatePattern iffFirst
-            <*> translatePredicatePattern iffSecond
-      where
-        iff a b = SMT.and (SMT.implies a b) (SMT.implies b a)
+        translatePredicateIff Iff{iffFirst, iffSecond} =
+            iff
+                <$> translatePredicatePattern iffFirst
+                <*> translatePredicatePattern iffSecond
+            where
+                iff a b = SMT.and (SMT.implies a b) (SMT.implies b a)
 
-    translatePredicateImplies Implies{impliesFirst, impliesSecond} =
-        SMT.implies
-            <$> translatePredicatePattern impliesFirst
-            <*> translatePredicatePattern impliesSecond
+        translatePredicateImplies Implies{impliesFirst, impliesSecond} =
+            SMT.implies
+                <$> translatePredicatePattern impliesFirst
+                <*> translatePredicatePattern impliesSecond
 
-    translatePredicateNot Not{notChild} =
-        SMT.not <$> translatePredicatePattern notChild
+        translatePredicateNot Not{notChild} =
+            SMT.not <$> translatePredicatePattern notChild
 
-    translatePredicateOr BinaryOr{orFirst, orSecond} =
-        SMT.or
-            <$> translatePredicatePattern orFirst
-            <*> translatePredicatePattern orSecond
+        translatePredicateOr BinaryOr{orFirst, orSecond} =
+            SMT.or
+                <$> translatePredicatePattern orFirst
+                <*> translatePredicatePattern orSecond
 
-    translatePredicateExists ::
-        Exists () variable p -> Translator variable m SExpr
-    translatePredicateExists Exists{existsVariable, existsChild} =
-        translateQuantifier SMT.existsQ existsVariable existsChild
+        translatePredicateExists ::
+            Exists () variable p -> Translator variable m SExpr
+        translatePredicateExists Exists{existsVariable, existsChild} =
+            translateQuantifier SMT.existsQ existsVariable existsChild
 
-    translatePredicateForall ::
-        Forall () variable p -> Translator variable m SExpr
-    translatePredicateForall Forall{forallVariable, forallChild} =
-        translateQuantifier SMT.forallQ forallVariable forallChild
+        translatePredicateForall ::
+            Forall () variable p -> Translator variable m SExpr
+        translatePredicateForall Forall{forallVariable, forallChild} =
+            translateQuantifier SMT.forallQ forallVariable forallChild
 
-    translateQuantifier ::
-        ([SExpr] -> SExpr -> SExpr) ->
-        ElementVariable variable ->
-        p ->
-        Translator variable m SExpr
-    translateQuantifier quantifier var predTerm = do
-        smtSort <- translateVariableSort
-        oldVar <- State.gets (Map.lookup var . quantifiedVars)
-        smtVar <- translateTerm smtSort (QuantifiedVariable var)
-        smtPred <- translatePredicatePattern predTerm
-        field @"quantifiedVars"
-            Lens.%= maybe (Map.delete var) (Map.insert var) oldVar
-        return $ quantifier [SMT.List [smtVar, smtSort]] smtPred
-      where
-        Variable{variableSort} = var
-        translateVariableSort :: Translator variable m SExpr
-        translateVariableSort =
-            case getHook of
-                Just builtinSort
-                    | builtinSort == Builtin.Bool.sort -> pure SMT.tBool
-                    | builtinSort == Builtin.Int.sort -> pure SMT.tInt
-                _ -> translateSort tools variableSort & maybeToTranslator
-        Attribute.Sort{hook = Hook{getHook}} =
-            sortAttributes tools variableSort
+        translateQuantifier ::
+            ([SExpr] -> SExpr -> SExpr) ->
+            ElementVariable variable ->
+            p ->
+            Translator variable m SExpr
+        translateQuantifier quantifier var predTerm = do
+            smtSort <- translateVariableSort
+            oldVar <- State.gets (Map.lookup var . quantifiedVars)
+            smtVar <- translateTerm smtSort (QuantifiedVariable var)
+            smtPred <- translatePredicatePattern predTerm
+            field @"quantifiedVars"
+                Lens.%= maybe (Map.delete var) (Map.insert var) oldVar
+            return $ quantifier [SMT.List [smtVar, smtSort]] smtPred
+            where
+                Variable{variableSort} = var
+                translateVariableSort :: Translator variable m SExpr
+                translateVariableSort =
+                    case getHook of
+                        Just builtinSort
+                            | builtinSort == Builtin.Bool.sort -> pure SMT.tBool
+                            | builtinSort == Builtin.Int.sort -> pure SMT.tInt
+                        _ -> translateSort tools variableSort & maybeToTranslator
+                Attribute.Sort{hook = Hook{getHook}} =
+                    sortAttributes tools variableSort
 
 {- | Attempt to translate an arbitrary ML pattern for the solver.
  It should only be used in the 'Predicate' translator or in
@@ -268,90 +268,90 @@ translatePattern tools sideCondition translateTerm sort pat =
             ApplySymbolF app ->
                 translateApplication (translateSort tools sort) pat app
             _ -> empty
-  where
-    Attribute.Sort{hook = Hook{getHook}} =
-        sortAttributes tools sort
+    where
+        Attribute.Sort{hook = Hook{getHook}} =
+            sortAttributes tools sort
 
-    translateInt :: TermLike variable -> Translator variable monad SExpr
-    translateInt pat'
-        | SideCondition.isDefined sideCondition pat' =
-            withDefinednessAssumption $
+        translateInt :: TermLike variable -> Translator variable monad SExpr
+        translateInt pat'
+            | SideCondition.isDefined sideCondition pat' =
+                withDefinednessAssumption
+                    $ translateIntWorker pat'
+            | otherwise =
                 translateIntWorker pat'
-        | otherwise =
-            translateIntWorker pat'
 
-    translateIntWorker :: TermLike variable -> Translator variable monad SExpr
-    translateIntWorker pat' =
-        case Cofree.tailF (Recursive.project pat') of
-            VariableF _ -> translateUninterpreted translateTerm SMT.tInt pat'
-            InternalIntF (Const InternalInt{internalIntValue}) ->
-                return $ SMT.int internalIntValue
-            ApplySymbolF app ->
-                translateApplication (Just SMT.tInt) pat' app
-            _ -> empty
-    translateBool :: TermLike variable -> Translator variable monad SExpr
-    translateBool pat'
-        | SideCondition.isDefined sideCondition pat' =
-            withDefinednessAssumption $
+        translateIntWorker :: TermLike variable -> Translator variable monad SExpr
+        translateIntWorker pat' =
+            case Cofree.tailF (Recursive.project pat') of
+                VariableF _ -> translateUninterpreted translateTerm SMT.tInt pat'
+                InternalIntF (Const InternalInt{internalIntValue}) ->
+                    return $ SMT.int internalIntValue
+                ApplySymbolF app ->
+                    translateApplication (Just SMT.tInt) pat' app
+                _ -> empty
+        translateBool :: TermLike variable -> Translator variable monad SExpr
+        translateBool pat'
+            | SideCondition.isDefined sideCondition pat' =
+                withDefinednessAssumption
+                    $ translateBoolWorker pat'
+            | otherwise =
                 translateBoolWorker pat'
-        | otherwise =
-            translateBoolWorker pat'
 
-    translateBoolWorker :: TermLike variable -> Translator variable monad SExpr
-    translateBoolWorker pat' =
-        case Cofree.tailF (Recursive.project pat') of
-            TermLike.VariableF _ -> translateUninterpreted translateTerm SMT.tBool pat'
-            TermLike.InternalBoolF (Const InternalBool{internalBoolValue}) ->
-                return $ SMT.bool internalBoolValue
-            TermLike.NotF Not{notChild} ->
-                -- \not is equivalent to BOOL.not for total patterns.
-                -- The following is safe because non-total patterns
-                -- will fail to translate.
-                SMT.not <$> translateBool notChild
-            TermLike.ApplySymbolF app ->
-                translateApplication (Just SMT.tBool) pat' app
-            _ -> empty
+        translateBoolWorker :: TermLike variable -> Translator variable monad SExpr
+        translateBoolWorker pat' =
+            case Cofree.tailF (Recursive.project pat') of
+                TermLike.VariableF _ -> translateUninterpreted translateTerm SMT.tBool pat'
+                TermLike.InternalBoolF (Const InternalBool{internalBoolValue}) ->
+                    return $ SMT.bool internalBoolValue
+                TermLike.NotF Not{notChild} ->
+                    -- \not is equivalent to BOOL.not for total patterns.
+                    -- The following is safe because non-total patterns
+                    -- will fail to translate.
+                    SMT.not <$> translateBool notChild
+                TermLike.ApplySymbolF app ->
+                    translateApplication (Just SMT.tBool) pat' app
+                _ -> empty
 
-    translateApplication ::
-        Maybe SExpr ->
-        TermLike variable ->
-        Application Symbol (TermLike variable) ->
-        Translator variable monad SExpr
-    translateApplication
-        maybeSort
-        original
-        Application
-            { applicationSymbolOrAlias
-            , applicationChildren
-            } =
-            -- TODO: This would send interpreted symbols to the solver
-            -- even if they may not be defined. We should only send symbols
-            -- we know to be defined.
-            translateInterpretedApplication
-                <|> translateUninterpreted'
-          where
-            guardLocalTotalPattern
-                | isTotalPattern original = return ()
-                | otherwise = do
-                    TranslatorEnv{assumeDefined} <- ask
-                    Monad.guard (assumeDefined && isFunctionPattern original)
-            translateInterpretedApplication = do
-                let translated = translateSymbol tools applicationSymbolOrAlias
-                sexpr <- maybe warnAndDiscard return translated
-                children <-
-                    zipWithM
-                        (translatePattern tools sideCondition translateTerm)
-                        applicationChildrenSorts
-                        applicationChildren
-                return $ shortenSExpr (applySExpr sexpr children)
-            applicationChildrenSorts = termLikeSort <$> applicationChildren
-            warnAndDiscard =
-                warnSymbolSMTRepresentation applicationSymbolOrAlias
-                    >> empty
-            translateUninterpreted' = do
-                guardLocalTotalPattern
-                sort' <- maybeToTranslator maybeSort
-                translateUninterpreted translateTerm sort' original
+        translateApplication ::
+            Maybe SExpr ->
+            TermLike variable ->
+            Application Symbol (TermLike variable) ->
+            Translator variable monad SExpr
+        translateApplication
+            maybeSort
+            original
+            Application
+                { applicationSymbolOrAlias
+                , applicationChildren
+                } =
+                -- TODO: This would send interpreted symbols to the solver
+                -- even if they may not be defined. We should only send symbols
+                -- we know to be defined.
+                translateInterpretedApplication
+                    <|> translateUninterpreted'
+                where
+                    guardLocalTotalPattern
+                        | isTotalPattern original = return ()
+                        | otherwise = do
+                            TranslatorEnv{assumeDefined} <- ask
+                            Monad.guard (assumeDefined && isFunctionPattern original)
+                    translateInterpretedApplication = do
+                        let translated = translateSymbol tools applicationSymbolOrAlias
+                        sexpr <- maybe warnAndDiscard return translated
+                        children <-
+                            zipWithM
+                                (translatePattern tools sideCondition translateTerm)
+                                applicationChildrenSorts
+                                applicationChildren
+                        return $ shortenSExpr (applySExpr sexpr children)
+                    applicationChildrenSorts = termLikeSort <$> applicationChildren
+                    warnAndDiscard =
+                        warnSymbolSMTRepresentation applicationSymbolOrAlias
+                            >> empty
+                    translateUninterpreted' = do
+                        guardLocalTotalPattern
+                        sort' <- maybeToTranslator maybeSort
+                        translateUninterpreted translateTerm sort' original
 
 translateUninterpreted ::
     TranslateTerm variable m ->
@@ -399,10 +399,10 @@ translateSMTDependentAtom
     quantifiedVars
     SMTDependentAtom{smtName = funName, boundVars} =
         maybe empty (return . SimpleSMT.fun funName) boundEncodings
-      where
-        boundEncodings =
-            for boundVars $
-                \name -> SMT.Atom . smtName <$> Map.lookup name quantifiedVars
+        where
+            boundEncodings =
+                for boundVars
+                    $ \name -> SMT.Atom . smtName <$> Map.lookup name quantifiedVars
 
 -- ----------------------------------------------------------------
 -- Translator
@@ -459,18 +459,18 @@ instance MonadSimplify m => MonadSimplify (Translator variable m)
 evalTranslator :: Monad m => Translator p m a -> MaybeT m a
 evalTranslator (Translator translator) =
     Morph.hoist (evalCounterT . evalRST def def) translator
-  where
-    evalRST env state rwst = do
-        (result, _) <- evalRWST rwst env state
-        return result
+    where
+        evalRST env state rwst = do
+            (result, _) <- evalRWST rwst env state
+            return result
 
 runTranslator :: Monad m => Translator p m a -> MaybeT m (a, TranslatorState p)
 runTranslator = evalTranslator . includeState
-  where
-    includeState comp = do
-        comp' <- comp
-        state <- State.get
-        pure (comp', state)
+    where
+        includeState comp = do
+            comp' <- comp
+            state <- State.get
+            pure (comp', state)
 
 maybeToTranslator :: Monad m => Maybe a -> Translator p m a
 maybeToTranslator = Translator . hoistMaybe
@@ -498,97 +498,102 @@ backTranslateWith
     tools@MetadataTools{smtData = AST.Declarations{symbols}}
     priorState =
         runExcept . backTranslate
-      where
-        reverseMap :: Map SExpr (TermLike variable)
-        reverseMap =
-            Map.empty
-                <> Map.map TermLike.mkElemVar (invert $ freeVars priorState)
-                <> invert (Map.map (Atom . smtName) $ terms priorState)
-                <> mkPredicateMap (predicates priorState)
+        where
+            reverseMap :: Map SExpr (TermLike variable)
+            reverseMap =
+                Map.empty
+                    <> Map.map TermLike.mkElemVar (invert $ freeVars priorState)
+                    <> invert (Map.map (Atom . smtName) $ terms priorState)
+                    <> mkPredicateMap (predicates priorState)
 
-        invert :: (Show k, Show a, Ord a) => Map k a -> Map a k
-        invert =
-            Map.fromListWithKey (\k x y -> error $ show (k, x, y))
-                . map swap
-                . Map.toList
+            invert :: (Show k, Show a, Ord a) => Map k a -> Map a k
+            invert =
+                Map.fromListWithKey (\k x y -> error $ show (k, x, y))
+                    . map swap
+                    . Map.toList
 
-        backTranslate :: SExpr -> Except String (TermLike variable)
-        backTranslate s@(Atom t)
-            | isVarName t =
-                maybe (throwError $ "backtranslate: unbound atom" <> show t) pure $
-                    Map.lookup s reverseMap
-            -- Bool values are translated back to _terms_ not predicates
-            | t == "true" =
-                pure . TermLike.mkInternalBool $
-                    InternalBool (simpleSort "SortBool") True
-            | t == "false" =
-                pure . TermLike.mkInternalBool $
-                    InternalBool (simpleSort "SortBool") False
-            | Text.all isDigit t =
-                pure . TermLike.mkInternalInt $
-                    InternalInt (simpleSort "SortInt") $
-                        read (Text.unpack t)
-            | otherwise =
-                throwError $ "unable to translate atom " <> show t
-        backTranslate (List xs)
-            | null xs =
-                throwError "backtranslate: empty list"
-            -- everything is translated back using symbol declarations,
-            -- not ML connectives (translating terms not predicates)
-            | (fct@Atom{} : rest) <- xs
-            , Just koreSym <- Map.lookup fct reverseMetadata = do
-                args <- mapM backTranslate rest
-                pure $ TermLike.mkApplySymbol koreSym args
-            | otherwise =
-                throwError "backTranslate.List-case: implement me!"
+            backTranslate :: SExpr -> Except String (TermLike variable)
+            backTranslate s@(Atom t)
+                | isVarName t =
+                    maybe (throwError $ "backtranslate: unbound atom" <> show t) pure
+                        $ Map.lookup s reverseMap
+                -- Bool values are translated back to _terms_ not predicates
+                | t == "true" =
+                    pure
+                        . TermLike.mkInternalBool
+                        $ InternalBool (simpleSort "SortBool") True
+                | t == "false" =
+                    pure
+                        . TermLike.mkInternalBool
+                        $ InternalBool (simpleSort "SortBool") False
+                | Text.all isDigit t =
+                    pure
+                        . TermLike.mkInternalInt
+                        $ InternalInt (simpleSort "SortInt")
+                        $ read (Text.unpack t)
+                | otherwise =
+                    throwError $ "unable to translate atom " <> show t
+            backTranslate (List xs)
+                | null xs =
+                    throwError "backtranslate: empty list"
+                -- everything is translated back using symbol declarations,
+                -- not ML connectives (translating terms not predicates)
+                | (fct@Atom{} : rest) <- xs
+                , Just koreSym <- Map.lookup fct reverseMetadata = do
+                    args <- mapM backTranslate rest
+                    pure $ TermLike.mkApplySymbol koreSym args
+                | otherwise =
+                    throwError "backTranslate.List-case: implement me!"
 
-        -- FIXME unable to recover non-standard sort names (case where Int < OtherSort)
-        simpleSort name = SortActualSort $ SortActual (Id name AstLocationNone) []
+            -- FIXME unable to recover non-standard sort names (case where Int < OtherSort)
+            simpleSort name = SortActualSort $ SortActual (Id name AstLocationNone) []
 
-        isVarName :: Text -> Bool
-        isVarName t =
-            Text.head t == '<'
-                && Text.last t == '>'
-                && Text.all isDigit (Text.init $ Text.tail t)
+            isVarName :: Text -> Bool
+            isVarName t =
+                Text.head t
+                    == '<'
+                    && Text.last t
+                    == '>'
+                    && Text.all isDigit (Text.init $ Text.tail t)
 
-        -- Reverse map of symbol metadata (collisions forbidden).
-        -- We omit symbols that have an smt-hook (they should never
-        -- occur in a result)
-        reverseMetadata :: Map.Map SExpr Symbol
-        reverseMetadata =
-            Map.map symbolFrom
-                . invert
-                . Map.map AST.symbolData
-                $ Map.filter (not . isBuiltin . AST.symbolDeclaration) symbols
+            -- Reverse map of symbol metadata (collisions forbidden).
+            -- We omit symbols that have an smt-hook (they should never
+            -- occur in a result)
+            reverseMetadata :: Map.Map SExpr Symbol
+            reverseMetadata =
+                Map.map symbolFrom
+                    . invert
+                    . Map.map AST.symbolData
+                    $ Map.filter (not . isBuiltin . AST.symbolDeclaration) symbols
 
-        isBuiltin :: AST.KoreSymbolDeclaration a b -> Bool
-        isBuiltin AST.SymbolBuiltin{} = True
-        isBuiltin _other = False
+            isBuiltin :: AST.KoreSymbolDeclaration a b -> Bool
+            isBuiltin AST.SymbolBuiltin{} = True
+            isBuiltin _other = False
 
-        symbolFrom :: Id -> Symbol
-        symbolFrom name =
-            Symbol
-                name
-                [] -- FIXME cannot recover the sort parameters
-                (Tools.applicationSorts tools $ SymbolOrAlias name [])
-                (Tools.symbolAttributes tools name)
+            symbolFrom :: Id -> Symbol
+            symbolFrom name =
+                Symbol
+                    name
+                    [] -- FIXME cannot recover the sort parameters
+                    (Tools.applicationSorts tools $ SymbolOrAlias name [])
+                    (Tools.symbolAttributes tools name)
 
-        -- TODO do we actually need the predicate map at all?
-        mkPredicateMap =
-            Map.mapKeys fst
-                . Map.mapWithKey (\(_, s) -> Predicate.fromPredicate (backTranslateSort s))
-                . invert
-                . Map.map (\SMTDependentAtom{smtName, smtType} -> (Atom smtName, smtType))
+            -- TODO do we actually need the predicate map at all?
+            mkPredicateMap =
+                Map.mapKeys fst
+                    . Map.mapWithKey (\(_, s) -> Predicate.fromPredicate (backTranslateSort s))
+                    . invert
+                    . Map.map (\SMTDependentAtom{smtName, smtType} -> (Atom smtName, smtType))
 
-        backTranslateSort :: SExpr -> Sort
-        backTranslateSort (Atom "Int") =
-            simpleSort "SortInt"
-        backTranslateSort (Atom "Bool") =
-            simpleSort "SortBool"
-        backTranslateSort (Atom t) = error $ "backTranslateSort: Atom " <> show t
-        backTranslateSort (List [Atom "Int"]) =
-            simpleSort "SortInt"
-        backTranslateSort (List [Atom "Bool"]) =
-            simpleSort "SortBool"
-        backTranslateSort (List _) =
-            error "reverse the translateSort function" -- FIXME
+            backTranslateSort :: SExpr -> Sort
+            backTranslateSort (Atom "Int") =
+                simpleSort "SortInt"
+            backTranslateSort (Atom "Bool") =
+                simpleSort "SortBool"
+            backTranslateSort (Atom t) = error $ "backTranslateSort: Atom " <> show t
+            backTranslateSort (List [Atom "Int"]) =
+                simpleSort "SortInt"
+            backTranslateSort (List [Atom "Bool"]) =
+                simpleSort "SortBool"
+            backTranslateSort (List _) =
+                error "reverse the translateSort function" -- FIXME

@@ -97,17 +97,17 @@ test_unprovenNodes =
         )
         `equals_` [1]
     ]
-  where
-    goal :: MockInteger -> ExecutionGraph
-    goal n = emptyExecutionGraph (ClaimState.Claimed n)
+    where
+        goal :: MockInteger -> ExecutionGraph
+        goal n = emptyExecutionGraph (ClaimState.Claimed n)
 
-    subgoal ::
-        Gr.Node ->
-        (Gr.Node, ClaimState.ClaimState MockInteger) ->
-        ExecutionGraph ->
-        ExecutionGraph
-    subgoal parent node@(child, _) =
-        insEdge (parent, child) . insNode node
+        subgoal ::
+            Gr.Node ->
+            (Gr.Node, ClaimState.ClaimState MockInteger) ->
+            ExecutionGraph ->
+            ExecutionGraph
+        subgoal parent node@(child, _) =
+            insEdge (parent, child) . insNode node
 
 test_transitionRule_Begin :: [TestTree]
 test_transitionRule_Begin =
@@ -115,11 +115,11 @@ test_transitionRule_Begin =
     , unmodifiedAB run (ClaimState.Claimed (MockClaim (A, B)))
     , unmodifiedAB run (ClaimState.Remaining (MockClaim (A, B)))
     ]
-  where
-    run _ = runTransitionRule [] [] Prim.Begin
-    done :: MockClaimState -> TestTree
-    done state =
-        testCase "null when done" $ run [] state >>= assertBool "" . null
+    where
+        run _ = runTransitionRule [] [] Prim.Begin
+        done :: MockClaimState -> TestTree
+        done state =
+            testCase "null when done" $ run [] state >>= assertBool "" . null
 
 test_transitionRule_CheckImplication :: [TestTree]
 test_transitionRule_CheckImplication =
@@ -128,11 +128,12 @@ test_transitionRule_CheckImplication =
     , ClaimState.Claimed (MockClaim (B, B))
         `becomes` (ClaimState.Proven, mempty)
     ]
-  where
-    run _rs = runTransitionRule [] [] Prim.CheckImplication
-    initial `becomes` final =
-        testCase "becomes" $
-            run [] initial >>= assertEqual "" [final]
+    where
+        run _rs = runTransitionRule [] [] Prim.CheckImplication
+        initial `becomes` final =
+            testCase "becomes"
+                $ run [] initial
+                >>= assertEqual "" [final]
 
 test_transitionRule_ApplyClaims :: [TestTree]
 test_transitionRule_ApplyClaims =
@@ -151,10 +152,10 @@ test_transitionRule_ApplyClaims =
                   , (ClaimState.Remaining (MockClaim (Bot, C)), mempty)
                   ]
     ]
-  where
-    run rules =
-        runTransitionRule (map (MockClaim . unRule) rules) [] Prim.ApplyClaims
-    derives = derivesFrom run $ ClaimState.Claimed (MockClaim (A, C))
+    where
+        run rules =
+            runTransitionRule (map (MockClaim . unRule) rules) [] Prim.ApplyClaims
+        derives = derivesFrom run $ ClaimState.Claimed (MockClaim (A, C))
 
 test_transitionRule_ApplyAxioms :: [TestTree]
 test_transitionRule_ApplyAxioms =
@@ -173,10 +174,10 @@ test_transitionRule_ApplyAxioms =
                   , (ClaimState.Remaining (MockClaim (Bot, C)), mempty)
                   ]
     ]
-  where
-    run rules = runTransitionRule [] [rules] Prim.ApplyAxioms
-    axiom = AppliedAxiom . Rule
-    derives = derivesFrom run $ ClaimState.Remaining (MockClaim (A, C))
+    where
+        run rules = runTransitionRule [] [rules] Prim.ApplyAxioms
+        axiom = AppliedAxiom . Rule
+        derives = derivesFrom run $ ClaimState.Remaining (MockClaim (A, C))
 
 unmodifiedAB ::
     (Diff a, Diff b, Debug a, Debug b, Monoid b) =>
@@ -184,8 +185,9 @@ unmodifiedAB ::
     a ->
     TestTree
 unmodifiedAB run state =
-    testCase "unmodified" $
-        run [Rule (A, B)] state >>= assertEqual "" [(state, mempty)]
+    testCase "unmodified"
+        $ run [Rule (A, B)] state
+        >>= assertEqual "" [(state, mempty)]
 
 derivesFrom ::
     HasCallStack =>
@@ -198,8 +200,9 @@ derivesFrom ::
     [(MockClaimState, Seq MockAppliedRule)] ->
     TestTree
 derivesFrom run state rules result =
-    testCase "derives" $
-        run rules state >>= assertEqual "" result
+    testCase "derives"
+        $ run rules state
+        >>= assertEqual "" result
 
 test_runStrategy :: [TestTree]
 test_runStrategy =
@@ -219,42 +222,46 @@ test_runStrategy =
         $ [MockClaim (C, B)]
     , differentLengthPaths `proves` MockClaim (A, F)
     ]
-  where
-    run ::
-        [MockRule] ->
-        MockRule ->
-        IO (Strategy.ExecutionGraph MockClaimState MockAppliedRule)
-    run axioms goal =
-        testRunSimplifier Mock.env $
-            Strategy.runStrategy
-                Unlimited
-                ( Claim.transitionRule Claim.EnabledStuckCheck Claim.AllowedVacuous [MockClaim (unRule goal)] [axioms]
-                )
-                (toList Claim.strategy)
-                (ClaimState.Claimed . MockClaim . unRule $ goal)
-    disproves ::
-        HasCallStack =>
-        -- Axioms
-        [MockRule] ->
-        -- Proof goal
-        MockClaim ->
-        -- Unproven goals
-        [MockClaim] ->
-        TestTree
-    disproves axioms (MockClaim goal) unproven =
-        testCase (show axioms ++ " disproves " ++ show goal) $
-            run axioms (Rule goal) >>= assertEqual "" unproven . unprovenNodes
+    where
+        run ::
+            [MockRule] ->
+            MockRule ->
+            IO (Strategy.ExecutionGraph MockClaimState MockAppliedRule)
+        run axioms goal =
+            testRunSimplifier Mock.env
+                $ Strategy.runStrategy
+                    Unlimited
+                    ( Claim.transitionRule Claim.EnabledStuckCheck Claim.AllowedVacuous [MockClaim (unRule goal)] [axioms]
+                    )
+                    (toList Claim.strategy)
+                    (ClaimState.Claimed . MockClaim . unRule $ goal)
+        disproves ::
+            HasCallStack =>
+            -- Axioms
+            [MockRule] ->
+            -- Proof goal
+            MockClaim ->
+            -- Unproven goals
+            [MockClaim] ->
+            TestTree
+        disproves axioms (MockClaim goal) unproven =
+            testCase (show axioms ++ " disproves " ++ show goal)
+                $ run axioms (Rule goal)
+                >>= assertEqual "" unproven
+                . unprovenNodes
 
-    proves ::
-        HasCallStack =>
-        -- Axioms
-        [MockRule] ->
-        -- Proof goal
-        MockClaim ->
-        TestTree
-    proves axioms (MockClaim goal) =
-        testCase (show axioms ++ " proves " ++ show goal) $
-            run axioms (Rule goal) >>= assertBool "" . proven
+        proves ::
+            HasCallStack =>
+            -- Axioms
+            [MockRule] ->
+            -- Proof goal
+            MockClaim ->
+            TestTree
+        proves axioms (MockClaim goal) =
+            testCase (show axioms ++ " proves " ++ show goal)
+                $ run axioms (Rule goal)
+                >>= assertBool ""
+                . proven
 
 -- * Definitions
 
@@ -335,8 +342,8 @@ instance Claim MockClaim where
         | src' == Bot = return $ Claim.Implied claim
         | src == NotDef = return $ Claim.Implied claim
         | otherwise = return $ Claim.NotImplied (MockClaim (src', dst))
-      where
-        src' = difference src dst
+        where
+            src' = difference src dst
 
     simplify = return
 
@@ -353,18 +360,18 @@ derivePar ::
     Transition.TransitionT MockAppliedRule m (ApplyResult MockClaim)
 derivePar mkAppliedRule rules (MockClaim (src, dst)) =
     goals <|> goalRemainder
-  where
-    goal (Rule rule@(_, to)) = do
-        Transition.addRule (mkAppliedRule (MockClaim rule))
-        (pure . ApplyRewritten . MockClaim) (to, dst)
-    goalRemainder = do
-        let r = foldl' difference src (fst . unRule <$> applied)
-        (pure . ApplyRemainder . MockClaim) (r, dst)
-    applyRule rule@(Rule (fromMockClaim, _))
-        | fromMockClaim `matches` src = Just rule
-        | otherwise = Nothing
-    applied = mapMaybe applyRule rules
-    goals = asum (goal <$> applied)
+    where
+        goal (Rule rule@(_, to)) = do
+            Transition.addRule (mkAppliedRule (MockClaim rule))
+            (pure . ApplyRewritten . MockClaim) (to, dst)
+        goalRemainder = do
+            let r = foldl' difference src (fst . unRule <$> applied)
+            (pure . ApplyRemainder . MockClaim) (r, dst)
+        applyRule rule@(Rule (fromMockClaim, _))
+            | fromMockClaim `matches` src = Just rule
+            | otherwise = Nothing
+        applied = mapMaybe applyRule rules
+        goals = asum (goal <$> applied)
 
 runTransitionRule ::
     [MockClaim] ->
@@ -406,9 +413,10 @@ unprovenNodes ::
     Strategy.ExecutionGraph (ClaimState.ClaimState a) (AppliedRule MockClaim) ->
     [a]
 unprovenNodes executionGraph =
-    toList . MultiOr.make $
-        mapMaybe ClaimState.extractUnproven $
-            Strategy.pickFinal executionGraph
+    toList
+        . MultiOr.make
+        $ mapMaybe ClaimState.extractUnproven
+        $ Strategy.pickFinal executionGraph
 
 -- | Does the 'Strategy.ExecutionGraph' indicate a successful proof?
 proven ::

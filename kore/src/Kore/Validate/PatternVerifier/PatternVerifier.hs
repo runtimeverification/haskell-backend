@@ -151,8 +151,8 @@ lookupAlias symbolOrAlias = do
     let resolveAlias' = resolveAlias indexedModule aliasConstructor
     (_, decl) <- resolveAlias' `catchError` const empty
     aliasSorts <-
-        Trans.lift $
-            applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
+        Trans.lift
+            $ applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
     let aliasLeft = leftDefinition decl
         aliasRight = sentenceAliasRightPattern decl
     return
@@ -163,13 +163,13 @@ lookupAlias symbolOrAlias = do
             , aliasLeft
             , aliasRight
             }
-  where
-    aliasConstructor = symbolOrAliasConstructor symbolOrAlias
-    aliasParams = symbolOrAliasParams symbolOrAlias
-    leftDefinition def =
-        applicationChildren
-            . sentenceAliasLeftPattern
-            $ def
+    where
+        aliasConstructor = symbolOrAliasConstructor symbolOrAlias
+        aliasParams = symbolOrAliasParams symbolOrAlias
+        leftDefinition def =
+            applicationChildren
+                . sentenceAliasLeftPattern
+                $ def
 
 lookupSymbol :: SymbolOrAlias -> MaybeT PatternVerifier Internal.Symbol
 lookupSymbol symbolOrAlias = do
@@ -177,8 +177,8 @@ lookupSymbol symbolOrAlias = do
     let resolveSymbol' = resolveSymbol indexedModule symbolConstructor
     (symbolAttributes, decl) <- resolveSymbol' `catchError` const empty
     symbolSorts <-
-        Trans.lift $
-            applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
+        Trans.lift
+            $ applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
     let symbol =
             Internal.Symbol
                 { symbolConstructor
@@ -187,9 +187,9 @@ lookupSymbol symbolOrAlias = do
                 , symbolSorts
                 }
     return symbol
-  where
-    symbolConstructor = symbolOrAliasConstructor symbolOrAlias
-    symbolParams = symbolOrAliasParams symbolOrAlias
+    where
+        symbolConstructor = symbolOrAliasConstructor symbolOrAlias
+        symbolParams = symbolOrAliasParams symbolOrAlias
 
 lookupDeclaredVariable ::
     SomeVariableName VariableName ->
@@ -197,12 +197,13 @@ lookupDeclaredVariable ::
 lookupDeclaredVariable varId = do
     variables <- Reader.asks (getDeclaredVariables . declaredVariables)
     maybe errorUnquantified return $ Map.lookup varId variables
-  where
-    errorUnquantified :: PatternVerifier (SomeVariable VariableName)
-    errorUnquantified =
-        koreFailWithLocations [varId] $
-            Pretty.renderText . Pretty.layoutOneLine $
-                Pretty.hsep
+    where
+        errorUnquantified :: PatternVerifier (SomeVariable VariableName)
+        errorUnquantified =
+            koreFailWithLocations [varId]
+                $ Pretty.renderText
+                . Pretty.layoutOneLine
+                $ Pretty.hsep
                     [ "Unquantified variable:"
                     , unparse varId
                     ]
@@ -212,8 +213,8 @@ addDeclaredVariable ::
     DeclaredVariables ->
     DeclaredVariables
 addDeclaredVariable variable (getDeclaredVariables -> variables) =
-    DeclaredVariables $
-        Map.insert
+    DeclaredVariables
+        $ Map.insert
             (variableName variable)
             variable
             variables
@@ -231,14 +232,15 @@ newDeclaredVariable declared variable = do
     case Map.lookup name declaredVariables of
         Just variable' -> alreadyDeclared variable'
         Nothing -> return (addDeclaredVariable variable declared)
-  where
-    name = variableName variable
-    alreadyDeclared ::
-        SomeVariable VariableName -> PatternVerifier DeclaredVariables
-    alreadyDeclared variable' =
-        koreFailWithLocations [variable', variable] $
-            Pretty.renderText . Pretty.layoutOneLine $
-                Pretty.hsep
+    where
+        name = variableName variable
+        alreadyDeclared ::
+            SomeVariable VariableName -> PatternVerifier DeclaredVariables
+        alreadyDeclared variable' =
+            koreFailWithLocations [variable', variable]
+                $ Pretty.renderText
+                . Pretty.layoutOneLine
+                $ Pretty.hsep
                     [ "Variable"
                     , unparse name
                     , "was already declared."
@@ -287,12 +289,13 @@ assertSameSort expectedSort actualSort =
     koreFailWithLocationsWhen
         (expectedSort /= actualSort)
         [expectedSort, actualSort]
-        $ Pretty.renderText . Pretty.layoutCompact
+        $ Pretty.renderText
+        . Pretty.layoutCompact
         $ "Expecting sort"
-            <+> unparse expectedSort
-            <+> "but got"
-            <+> unparse actualSort
-                <> Pretty.dot
+        <+> unparse expectedSort
+        <+> "but got"
+        <+> unparse actualSort
+        <> Pretty.dot
 
 assertExpectedSort ::
     Maybe Sort ->

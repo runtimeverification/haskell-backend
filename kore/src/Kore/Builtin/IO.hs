@@ -82,19 +82,19 @@ evalLogString _ sort [InternalString_ InternalString{internalStringValue}] = do
     tools <- askMetadataTools
     infoUserLog internalStringValue
     return $ Pattern.fromTermLike $ TermLike.mkApplySymbol (dotk tools) []
-  where
-    dotk tools =
-        Symbol
-            { symbolConstructor = ident
-            , symbolParams = []
-            , symbolSorts =
-                ApplicationSorts
-                    { applicationSortsOperands = []
-                    , applicationSortsResult = sort
-                    }
-            , symbolAttributes = Tools.symbolAttributes tools ident
-            }
-    ident = implicitId "dotk"
+    where
+        dotk tools =
+            Symbol
+                { symbolConstructor = ident
+                , symbolParams = []
+                , symbolSorts =
+                    ApplicationSorts
+                        { applicationSortsOperands = []
+                        , applicationSortsResult = sort
+                        }
+                , symbolAttributes = Tools.symbolAttributes tools ident
+                }
+        ident = implicitId "dotk"
 evalLogString _ _ [_] = empty
 evalLogString _ _ (_ : _ : _) = Builtin.wrongArity logStringKey
 

@@ -192,24 +192,24 @@ instance Default KoreLogFormat where
 parseKoreLogType :: Parser KoreLogType
 parseKoreLogType =
     LogFileText <$> Options.strOption info
-  where
-    info =
-        mempty
-            <> Options.long "log"
-            <> Options.help "Name of the log file"
+    where
+        info =
+            mempty
+                <> Options.long "log"
+                <> Options.help "Name of the log file"
 
 parseKoreLogFormat :: Parser KoreLogFormat
 parseKoreLogFormat = option formatReader info
-  where
-    formatReader = Options.maybeReader $ \case
-        "standard" -> Just Standard
-        "oneline" -> Just OneLine
-        _ -> Nothing
-    info =
-        mempty
-            <> Options.long "log-format"
-            <> Options.help "Log format: standard, oneline"
-            <> Options.value def
+    where
+        formatReader = Options.maybeReader $ \case
+            "standard" -> Just Standard
+            "oneline" -> Just OneLine
+            _ -> Nothing
+        info =
+            mempty
+                <> Options.long "log-format"
+                <> Options.help "Log format: standard, oneline"
+                <> Options.value def
 
 type EntryTypes = Set SomeTypeRep
 
@@ -223,19 +223,19 @@ instance Default TimestampsSwitch where
 parseTimestampsSwitch :: Parser TimestampsSwitch
 parseTimestampsSwitch =
     parseTimestampsEnable <|> parseTimestampsDisable
-  where
-    parseTimestampsEnable =
-        let info =
-                mempty
-                    <> Options.long "enable-log-timestamps"
-                    <> Options.help "Enable log timestamps"
-         in Options.flag' TimestampsEnable info
-    parseTimestampsDisable =
-        let info =
-                mempty
-                    <> Options.long "disable-log-timestamps"
-                    <> Options.help "Disable log timestamps"
-         in Options.flag' TimestampsDisable info
+    where
+        parseTimestampsEnable =
+            let info =
+                    mempty
+                        <> Options.long "enable-log-timestamps"
+                        <> Options.help "Enable log timestamps"
+             in Options.flag' TimestampsEnable info
+        parseTimestampsDisable =
+            let info =
+                    mempty
+                        <> Options.long "disable-log-timestamps"
+                        <> Options.help "Disable log timestamps"
+             in Options.flag' TimestampsDisable info
 
 -- | Parse 'KoreLogOptions'.
 parseKoreLogOptions :: ExeName -> TimeSpec -> Parser KoreLogOptions
@@ -263,43 +263,43 @@ parseKoreLogOptions exeName startTime =
 parseEntryTypes :: Parser EntryTypes
 parseEntryTypes =
     option parseCommaSeparatedEntries info
-  where
-    info =
-        mempty
-            <> Options.long "log-entries"
-            <> Options.helpDoc (Just allEntryTypes)
+    where
+        info =
+            mempty
+                <> Options.long "log-entries"
+                <> Options.helpDoc (Just allEntryTypes)
 
-    allEntryTypes :: OptPretty.Doc
-    allEntryTypes =
-        OptPretty.vsep
-            [ "Log entries: comma-separated list logs entries to enable"
-            , "Available entry types:"
-            , (OptPretty.indent 4 . OptPretty.vsep)
-                (OptPretty.text <$> getEntryTypesAsText)
-            ]
+        allEntryTypes :: OptPretty.Doc
+        allEntryTypes =
+            OptPretty.vsep
+                [ "Log entries: comma-separated list logs entries to enable"
+                , "Available entry types:"
+                , (OptPretty.indent 4 . OptPretty.vsep)
+                    (OptPretty.text <$> getEntryTypesAsText)
+                ]
 
 parseCommaSeparatedEntries :: Options.ReadM EntryTypes
 parseCommaSeparatedEntries =
     Options.maybeReader $ Parser.parseMaybe parseEntryTypes' . Text.pack
-  where
-    parseEntryTypes' :: Parser.Parsec String Text EntryTypes
-    parseEntryTypes' = Set.fromList <$> Parser.sepEndBy parseSomeTypeRep comma
+    where
+        parseEntryTypes' :: Parser.Parsec String Text EntryTypes
+        parseEntryTypes' = Set.fromList <$> Parser.sepEndBy parseSomeTypeRep comma
 
-    comma = void (Parser.char ',')
+        comma = void (Parser.char ',')
 
-    parseSomeTypeRep :: Parser.Parsec String Text SomeTypeRep
-    parseSomeTypeRep =
-        Parser.takeWhile1P (Just "SomeTypeRep") (flip notElem [',', ' '])
-            >>= parseEntryType
+        parseSomeTypeRep :: Parser.Parsec String Text SomeTypeRep
+        parseSomeTypeRep =
+            Parser.takeWhile1P (Just "SomeTypeRep") (flip notElem [',', ' '])
+                >>= parseEntryType
 
 parseSeverity :: Parser Severity
 parseSeverity =
     option (Options.maybeReader readSeverity) info
-  where
-    info =
-        mempty
-            <> Options.long "log-level"
-            <> Options.help "Log level: debug, info, warning, error, or critical"
+    where
+        info =
+            mempty
+                <> Options.long "log-level"
+                <> Options.help "Log level: debug, info, warning, error, or critical"
 
 readSeverity :: String -> Maybe Severity
 readSeverity =
@@ -322,23 +322,23 @@ parseWarningSwitch =
 parseErrorEntries :: Parser EntryTypes
 parseErrorEntries =
     option parseCommaSeparatedEntries info
-  where
-    info =
-        mempty
-            <> Options.long "error-entries"
-            <> Options.helpDoc (Just nonErrorEntryTypes)
+    where
+        info =
+            mempty
+                <> Options.long "error-entries"
+                <> Options.helpDoc (Just nonErrorEntryTypes)
 
-    nonErrorEntryTypes :: OptPretty.Doc
-    nonErrorEntryTypes =
-        OptPretty.vsep
-            [ "Turn arbitrary log entries into errors"
-            , "Available entry types:"
-            , (OptPretty.indent 4 . OptPretty.vsep)
-                (OptPretty.text <$> getNoErrEntryTypesAsText)
-                {- The user can still give error entries as arguments, but it's
-                    useless, so we don't list them here
-                -}
-            ]
+        nonErrorEntryTypes :: OptPretty.Doc
+        nonErrorEntryTypes =
+            OptPretty.vsep
+                [ "Turn arbitrary log entries into errors"
+                , "Available entry types:"
+                , (OptPretty.indent 4 . OptPretty.vsep)
+                    (OptPretty.text <$> getNoErrEntryTypesAsText)
+                    {- The user can still give error entries as arguments, but it's
+                        useless, so we don't list them here
+                    -}
+                ]
 
 -- | Caller of the logging function
 newtype ExeName = ExeName {getExeName :: String}
@@ -369,11 +369,11 @@ instance HasSelected DebugApplyEquationOptions where
 parseDebugApplyEquationOptions :: Parser DebugApplyEquationOptions
 parseDebugApplyEquationOptions =
     mconcat <$> many parse
-  where
-    parse =
-        fmap (DebugApplyEquationOptions . HashSet.singleton) $
-            Options.strOption $
-                mconcat
+    where
+        parse =
+            fmap (DebugApplyEquationOptions . HashSet.singleton)
+                $ Options.strOption
+                $ mconcat
                     [ Options.metavar "EQUATION_IDENTIFIER"
                     , Options.long "debug-apply-equation"
                     , Options.help
@@ -409,11 +409,11 @@ instance HasSelected DebugAttemptEquationOptions where
 parseDebugAttemptEquationOptions :: Parser DebugAttemptEquationOptions
 parseDebugAttemptEquationOptions =
     mconcat <$> many parse
-  where
-    parse =
-        fmap (DebugAttemptEquationOptions . HashSet.singleton) $
-            Options.strOption $
-                mconcat
+    where
+        parse =
+            fmap (DebugAttemptEquationOptions . HashSet.singleton)
+                $ Options.strOption
+                $ mconcat
                     [ Options.metavar "EQUATION_IDENTIFIER"
                     , Options.long "debug-attempt-equation"
                     , Options.help
@@ -437,12 +437,12 @@ selectDebugAttemptEquation options entry
     | Just equation <- getEquation =
         any (flip HashSet.member $ selected options) (Equation.identifiers equation)
     | otherwise = False
-  where
-    getEquation = do
-        debugAttemptEquation <- fromEntry entry
-        case debugAttemptEquation of
-            DebugAttemptEquation equation _ -> pure equation
-            DebugAttemptEquationResult equation _ -> pure equation
+    where
+        getEquation = do
+            debugAttemptEquation <- fromEntry entry
+            case debugAttemptEquation of
+                DebugAttemptEquation equation _ -> pure equation
+                DebugAttemptEquationResult equation _ -> pure equation
 
 newtype DebugEquationOptions = DebugEquationOptions (HashSet Text)
     deriving stock (Eq, Show)
@@ -457,11 +457,11 @@ instance HasSelected DebugEquationOptions where
 parseDebugEquationOptions :: Parser DebugEquationOptions
 parseDebugEquationOptions =
     mconcat <$> many parse
-  where
-    parse =
-        fmap (DebugEquationOptions . HashSet.singleton) $
-            Options.strOption $
-                mconcat
+    where
+        parse =
+            fmap (DebugEquationOptions . HashSet.singleton)
+                $ Options.strOption
+                $ mconcat
                     [ Options.metavar "EQUATION_IDENTIFIER"
                     , Options.long "debug-equation"
                     , Options.help
@@ -499,11 +499,11 @@ instance HasSelected DebugAttemptRewriteOptions where
 parseDebugAttemptRewriteOptions :: Parser DebugAttemptRewriteOptions
 parseDebugAttemptRewriteOptions =
     mconcat <$> many parse
-  where
-    parse =
-        fmap (DebugAttemptRewriteOptions . HashSet.singleton) $
-            Options.strOption $
-                mconcat
+    where
+        parse =
+            fmap (DebugAttemptRewriteOptions . HashSet.singleton)
+                $ Options.strOption
+                $ mconcat
                     [ Options.metavar "REWRITE_RULE_IDENTIFIER"
                     , Options.long "debug-attempt-rewrite"
                     , Options.help
@@ -526,10 +526,10 @@ selectDebugAttemptRewrite ::
 selectDebugAttemptRewrite options entry
     | Just label <- getLabel = HashSet.member label (selected options)
     | otherwise = False
-  where
-    getLabel = do
-        DebugAttemptedRewriteRules _ ruleLabel _ <- fromEntry entry
-        ruleLabel
+    where
+        getLabel = do
+            DebugAttemptedRewriteRules _ ruleLabel _ <- fromEntry entry
+            ruleLabel
 
 newtype DebugApplyRewriteOptions = DebugApplyRewriteOptions (HashSet Text)
     deriving stock (Eq, Show)
@@ -544,11 +544,11 @@ instance HasSelected DebugApplyRewriteOptions where
 parseDebugApplyRewriteOptions :: Parser DebugApplyRewriteOptions
 parseDebugApplyRewriteOptions =
     mconcat <$> many parse
-  where
-    parse =
-        fmap (DebugApplyRewriteOptions . HashSet.singleton) $
-            Options.strOption $
-                mconcat
+    where
+        parse =
+            fmap (DebugApplyRewriteOptions . HashSet.singleton)
+                $ Options.strOption
+                $ mconcat
                     [ Options.metavar "REWRITE_RULE_IDENTIFIER"
                     , Options.long "debug-apply-rewrite"
                     , Options.help
@@ -569,10 +569,10 @@ selectDebugApplyRewrite ::
 selectDebugApplyRewrite options entry
     | Just label <- getLabel = HashSet.member label (selected options)
     | otherwise = False
-  where
-    getLabel = do
-        DebugAppliedLabeledRewriteRule _ mLabel _ <- fromEntry entry
-        mLabel
+    where
+        getLabel = do
+            DebugAppliedLabeledRewriteRule _ mLabel _ <- fromEntry entry
+            mLabel
 
 newtype DebugRewriteOptions = DebugRewriteOptions (HashSet Text)
     deriving stock (Eq, Show)
@@ -587,11 +587,11 @@ instance HasSelected DebugRewriteOptions where
 parseDebugRewriteOptions :: Parser DebugRewriteOptions
 parseDebugRewriteOptions =
     mconcat <$> many parse
-  where
-    parse =
-        fmap (DebugRewriteOptions . HashSet.singleton) $
-            Options.strOption $
-                mconcat
+    where
+        parse =
+            fmap (DebugRewriteOptions . HashSet.singleton)
+                $ Options.strOption
+                $ mconcat
                     [ Options.metavar "REWRITE_RULE_IDENTIFIER"
                     , Options.long "debug-rewrite"
                     , Options.help
@@ -665,49 +665,49 @@ unparseKoreLogOptions
             , debugApplyRewriteOptionsFlag debugApplyRewriteOptions
             , debugRewriteOptionsFlag debugRewriteOptions
             ]
-      where
-        koreLogTypeFlag LogStdErr = []
-        koreLogTypeFlag (LogFileText file) = ["--log", file]
-        koreLogTypeFlag (LogSomeAction _) = []
+        where
+            koreLogTypeFlag LogStdErr = []
+            koreLogTypeFlag (LogFileText file) = ["--log", file]
+            koreLogTypeFlag (LogSomeAction _) = []
 
-        koreLogFormatFlag Standard = []
-        koreLogFormatFlag OneLine = ["--log-format=oneline"]
+            koreLogFormatFlag Standard = []
+            koreLogFormatFlag OneLine = ["--log-format=oneline"]
 
-        timestampsSwitchFlag TimestampsEnable = ["--enable-log-timestamps"]
-        timestampsSwitchFlag TimestampsDisable = ["--disable-log-timestamps"]
+            timestampsSwitchFlag TimestampsEnable = ["--enable-log-timestamps"]
+            timestampsSwitchFlag TimestampsDisable = ["--disable-log-timestamps"]
 
-        logEntriesFlag entries
-            | Set.null entries = []
-            | otherwise =
-                [ "--log-entries"
-                , intercalate "," (fmap show (toList entries))
-                ]
+            logEntriesFlag entries
+                | Set.null entries = []
+                | otherwise =
+                    [ "--log-entries"
+                    , intercalate "," (fmap show (toList entries))
+                    ]
 
-        debugSolverOptionsFlag (DebugSolverOptions Nothing) = []
-        debugSolverOptionsFlag (DebugSolverOptions (Just file)) =
-            ["--solver-transcript", file]
+            debugSolverOptionsFlag (DebugSolverOptions Nothing) = []
+            debugSolverOptionsFlag (DebugSolverOptions (Just file)) =
+                ["--solver-transcript", file]
 
-        logSQLiteOptionsFlag (LogSQLiteOptions Nothing) = []
-        logSQLiteOptionsFlag (LogSQLiteOptions (Just file)) =
-            ["--sqlog", file]
+            logSQLiteOptionsFlag (LogSQLiteOptions Nothing) = []
+            logSQLiteOptionsFlag (LogSQLiteOptions (Just file)) =
+                ["--sqlog", file]
 
-        debugApplyEquationOptionsFlag (DebugApplyEquationOptions set) =
-            concatMap (("--debug-apply-equation" :) . (: []) . Text.unpack) (toList set)
+            debugApplyEquationOptionsFlag (DebugApplyEquationOptions set) =
+                concatMap (("--debug-apply-equation" :) . (: []) . Text.unpack) (toList set)
 
-        debugAttemptEquationOptionsFlag (DebugAttemptEquationOptions set) =
-            concatMap (("--debug-attempt-equation" :) . (: []) . Text.unpack) (toList set)
+            debugAttemptEquationOptionsFlag (DebugAttemptEquationOptions set) =
+                concatMap (("--debug-attempt-equation" :) . (: []) . Text.unpack) (toList set)
 
-        debugEquationOptionsFlag (DebugEquationOptions set) =
-            concatMap (("--debug-equation" :) . (: []) . Text.unpack) (toList set)
+            debugEquationOptionsFlag (DebugEquationOptions set) =
+                concatMap (("--debug-equation" :) . (: []) . Text.unpack) (toList set)
 
-        debugAttemptRewriteOptionsFlag (DebugAttemptRewriteOptions set) =
-            concatMap (("--debug-attempt-rewrite" :) . (: []) . Text.unpack) (toList set)
+            debugAttemptRewriteOptionsFlag (DebugAttemptRewriteOptions set) =
+                concatMap (("--debug-attempt-rewrite" :) . (: []) . Text.unpack) (toList set)
 
-        debugApplyRewriteOptionsFlag (DebugApplyRewriteOptions set) =
-            concatMap (("--debug-apply-rewrite" :) . (: []) . Text.unpack) (toList set)
+            debugApplyRewriteOptionsFlag (DebugApplyRewriteOptions set) =
+                concatMap (("--debug-apply-rewrite" :) . (: []) . Text.unpack) (toList set)
 
-        debugRewriteOptionsFlag (DebugRewriteOptions set) =
-            concatMap (("--debug-rewrite" :) . (: []) . Text.unpack) (toList set)
+            debugRewriteOptionsFlag (DebugRewriteOptions set) =
+                concatMap (("--debug-rewrite" :) . (: []) . Text.unpack) (toList set)
 
 newtype UndefinedLabels = UndefinedLabels {unUndefinedLabels :: Map Text [Text]}
     deriving stock (Eq, Show)
@@ -723,11 +723,11 @@ instance Pretty DebugOptionsValidationError => Show DebugOptionsValidationError 
 
 instance Pretty DebugOptionsValidationError where
     pretty (DebugOptionsValidationError labels) =
-        Pretty.vsep $
-            ["Rule labels for the following debug options are not defined:"]
-                <> Map.foldMapWithKey
-                    (\k v -> [Pretty.hsep [pretty (k <> ":"), pretty . Text.intercalate ", " $ v]])
-                    (unUndefinedLabels labels)
+        Pretty.vsep
+            $ ["Rule labels for the following debug options are not defined:"]
+            <> Map.foldMapWithKey
+                (\k v -> [Pretty.hsep [pretty (k <> ":"), pretty . Text.intercalate ", " $ v]])
+                (unUndefinedLabels labels)
 
 validateDebugOptions ::
     Map
@@ -738,8 +738,8 @@ validateDebugOptions ::
     Validate UndefinedLabels ()
 validateDebugOptions equations rewrites KoreLogOptions{..} = do
     let eqDefinedLabels =
-            HashSet.fromList $
-                mapMaybe
+            HashSet.fromList
+                $ mapMaybe
                     (Attribute.unLabel . Attribute.label . Equation.attributes)
                     (concat (Map.elems equations))
         rwDefinedLabels = HashSet.fromList $ mapMaybe (Attribute.unLabel . from . getRewriteRule) rewrites
@@ -755,8 +755,8 @@ validateDebugOptions equations rewrites KoreLogOptions{..} = do
             ]
     for_ equationLabels $ validateOption eqDefinedLabels
     for_ rewriteRuleLabels $ validateOption rwDefinedLabels
-  where
-    validateOption definedLabels (opt, value) = do
-        let undefinedLabels = HashSet.difference value definedLabels
-        unless (HashSet.null undefinedLabels) $
-            dispute (UndefinedLabels $ Map.singleton opt (HashSet.toList undefinedLabels))
+    where
+        validateOption definedLabels (opt, value) = do
+            let undefinedLabels = HashSet.difference value definedLabels
+            unless (HashSet.null undefinedLabels)
+                $ dispute (UndefinedLabels $ Map.singleton opt (HashSet.toList undefinedLabels))

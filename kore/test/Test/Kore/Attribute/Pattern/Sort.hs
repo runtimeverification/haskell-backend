@@ -123,25 +123,25 @@ test_instance_Synthetic =
         , failure $ NuF (Nu Mock.setX sort0)
         ]
     ]
-  where
-    sort = Mock.testSort
-    sort0 = Mock.testSort0
-    sigma = Mock.sigmaSymbol
-    expected = sort
-    success ::
-        HasCallStack =>
-        TermLikeF VariableName Sort ->
-        TestTree
-    success termLikeF =
-        testCase "Sorts match" $ do
-            let actual = synthetic termLikeF
-            assertEqual "" expected actual
-    failure ::
-        HasCallStack =>
-        TermLikeF VariableName Sort ->
-        TestTree
-    failure termLikeF =
-        testCase "Sorts mismatch" $ do
-            let ~original = synthetic termLikeF
-            actual <- Exception.try (Exception.evaluate original)
-            assertEqual "" (Left $ SortMismatch sort sort0) actual
+    where
+        sort = Mock.testSort
+        sort0 = Mock.testSort0
+        sigma = Mock.sigmaSymbol
+        expected = sort
+        success ::
+            HasCallStack =>
+            TermLikeF VariableName Sort ->
+            TestTree
+        success termLikeF =
+            testCase "Sorts match" $ do
+                let actual = synthetic termLikeF
+                assertEqual "" expected actual
+        failure ::
+            HasCallStack =>
+            TermLikeF VariableName Sort ->
+            TestTree
+        failure termLikeF =
+            testCase "Sorts mismatch" $ do
+                let ~original = synthetic termLikeF
+                actual <- Exception.try (Exception.evaluate original)
+                assertEqual "" (Left $ SortMismatch sort sort0) actual

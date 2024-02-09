@@ -102,6 +102,6 @@ instance ParseAttributes Smtlib where
             sExpr <- parseSExpr syntax
             unless (isNothing getSmtlib) failDuplicate'
             return Smtlib{getSmtlib = Just sExpr}
-      where
-        withApplication' = withApplication smtlibId
-        failDuplicate' = failDuplicate smtlibId
+        where
+            withApplication' = withApplication smtlibId
+            failDuplicate' = failDuplicate smtlibId

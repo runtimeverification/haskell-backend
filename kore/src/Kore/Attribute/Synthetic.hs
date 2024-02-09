@@ -85,8 +85,8 @@ resynthesizeAux ::
     t
 resynthesizeAux synth =
     Recursive.fold worker
-  where
-    worker (_ :< ft) = synthesizeAux synth ft
+    where
+        worker (_ :< ft) = synthesizeAux synth ft
 {-# INLINE resynthesizeAux #-}
 
 type Synthesize a f t =
@@ -117,6 +117,6 @@ synthesizeAux ::
     s
 synthesizeAux synth fs =
     Recursive.embed (synth fa :< fs)
-  where
-    fa = Cofree.headF . Recursive.project <$> fs
+    where
+        fa = Cofree.headF . Recursive.project <$> fs
 {-# INLINE synthesizeAux #-}

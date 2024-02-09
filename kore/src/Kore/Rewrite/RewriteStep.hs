@@ -125,12 +125,12 @@ finalizeAppliedRule
                     appliedCondition
                     finalPattern
                 )
-      where
-        ruleRHS = Rule.rhs renamedRule
+        where
+            ruleRHS = Rule.rhs renamedRule
 
-        catchSimplifiesToBottom srt = \case
-            [] -> return $ pure $ mkBottom srt
-            xs -> Logic.scatter xs
+            catchSimplifiesToBottom srt = \case
+                [] -> return $ pure $ mkBottom srt
+                xs -> Logic.scatter xs
 
 {- | Combine all the conditions to apply rule and construct the result.
 
@@ -202,12 +202,12 @@ finalizeAppliedClaim sideCondition renamedRule appliedCondition =
                     appliedCondition
                     finalPattern
             )
-  where
-    ClaimPattern{right} = renamedRule
+    where
+        ClaimPattern{right} = renamedRule
 
-    catchSimplifiesToBottom srt = \case
-        [] -> return $ pure $ mkBottom srt
-        xs -> Logic.scatter xs
+        catchSimplifiesToBottom srt = \case
+            [] -> return $ pure $ mkBottom srt
+            xs -> Logic.scatter xs
 
 type UnifyingRuleWithRepresentation representation rule =
     ( Rule.UnifyingRule representation
@@ -329,27 +329,27 @@ finalizeSequence
                     { results = Seq.fromList $ fold results
                     , remainders
                     }
-      where
-        initialTerm = Conditional.term initial
-        finalizeRuleSequence' unifiedRule = do
-            remainder <- State.get
-            let remainderPattern = Conditional.withCondition initialTerm remainder
-            results <-
-                finalizeRule
-                    sideCondition
-                    toRule
-                    finalizeApplied
-                    initialVariables
-                    remainderPattern
-                    unifiedRule
-                    & Monad.Trans.lift
-            let unification = Conditional.withoutTerm unifiedRule
-                remainder' =
-                    Condition.fromPredicate $
-                        Remainder.remainder' $
-                            MultiOr.singleton unification
-            State.put (remainder `Conditional.andCondition` remainder')
-            return results
+        where
+            initialTerm = Conditional.term initial
+            finalizeRuleSequence' unifiedRule = do
+                remainder <- State.get
+                let remainderPattern = Conditional.withCondition initialTerm remainder
+                results <-
+                    finalizeRule
+                        sideCondition
+                        toRule
+                        finalizeApplied
+                        initialVariables
+                        remainderPattern
+                        unifiedRule
+                        & Monad.Trans.lift
+                let unification = Conditional.withoutTerm unifiedRule
+                    remainder' =
+                        Condition.fromPredicate
+                            $ Remainder.remainder'
+                            $ MultiOr.singleton unification
+                State.put (remainder `Conditional.andCondition` remainder')
+                return results
 
 applyWithFinalizer ::
     forall rule.
@@ -374,8 +374,8 @@ applyWithFinalizer sideCondition finalize rules initial = do
     finalizedResults <- finalize initialVariables initial results
     debugRewriteTrace initial finalizedResults
     return finalizedResults
-  where
-    locations = from @_ @SourceLocation . extract
+    where
+        locations = from @_ @SourceLocation . extract
 {-# INLINE applyWithFinalizer #-}
 
 {- Wether to enable assuming definedness of the current

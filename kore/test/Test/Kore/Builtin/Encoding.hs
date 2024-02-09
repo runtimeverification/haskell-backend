@@ -40,18 +40,18 @@ test_parseBase16 =
     , invalid "0"
     , invalid "fg"
     ]
-  where
-    valid :: HasCallStack => String -> [Word8] -> TestTree
-    valid (Text.pack -> input) (ByteString.pack -> expect) =
-        testCase ("parseBase16 " <> show input) $
-            either unexpected expected $
-                Parsec.parse parseBase16 "<test>" input
-      where
-        unexpected = error . Parsec.errorBundlePretty
-        expected = assertEqual "" expect
+    where
+        valid :: HasCallStack => String -> [Word8] -> TestTree
+        valid (Text.pack -> input) (ByteString.pack -> expect) =
+            testCase ("parseBase16 " <> show input)
+                $ either unexpected expected
+                $ Parsec.parse parseBase16 "<test>" input
+            where
+                unexpected = error . Parsec.errorBundlePretty
+                expected = assertEqual "" expect
 
-    invalid :: HasCallStack => String -> TestTree
-    invalid (Text.pack -> input) =
-        testCase ("parseBase16 " <> show input) $ do
-            let result = Parsec.parse parseBase16 "<test>" input
-            assertBool "expected parse error" (isLeft result)
+        invalid :: HasCallStack => String -> TestTree
+        invalid (Text.pack -> input) =
+            testCase ("parseBase16 " <> show input) $ do
+                let result = Parsec.parse parseBase16 "<test>" input
+                assertBool "expected parse error" (isLeft result)

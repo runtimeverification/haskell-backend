@@ -60,6 +60,6 @@ instance Synthetic Sort (Mu variable) where
     synthetic Mu{muVariable, muChild} =
         muSort
             & seq (sameSort muSort muChild)
-      where
-        Variable{variableSort = muSort} = muVariable
+        where
+            Variable{variableSort = muSort} = muVariable
     {-# INLINE synthetic #-}

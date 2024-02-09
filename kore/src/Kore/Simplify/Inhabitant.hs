@@ -27,6 +27,6 @@ simplify ::
     Inhabitant (OrPattern RewritingVariableName) ->
     OrPattern RewritingVariableName
 simplify Inhabitant{inhSort} =
-    OrPattern.fromTermLike $
-        TermLike.markSimplified $
-            mkInhabitant inhSort
+    OrPattern.fromTermLike
+        $ TermLike.markSimplified
+        $ mkInhabitant inhSort

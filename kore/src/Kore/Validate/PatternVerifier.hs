@@ -91,26 +91,26 @@ verifyAliasLeftPattern alias aliasSorts leftPattern = do
     declaredVariables <- uniqueDeclaredVariables verified
     let verifiedLeftPattern = leftPattern{applicationChildren = verified}
     return (declaredVariables, verifiedLeftPattern)
-  where
-    symbolOrAlias = applicationSymbolOrAlias leftPattern
-    declaredHead =
-        SymbolOrAlias
-            { symbolOrAliasConstructor = aliasConstructor alias
-            , symbolOrAliasParams = SortVariableSort <$> aliasParams alias
-            }
-    aliasDeclarationMismatch =
-        (show . Pretty.vsep)
-            [ "Alias left-hand side:"
-            , Pretty.indent 4 $ unparse symbolOrAlias
-            , "does not match declaration:"
-            , Pretty.indent 4 $ unparse alias
-            ]
-    expectVariable ::
-        SomeVariable VariableName ->
-        PatternVerifier (SomeVariable VariableName)
-    expectVariable var = do
-        verifyVariableDeclaration var
-        return var
+    where
+        symbolOrAlias = applicationSymbolOrAlias leftPattern
+        declaredHead =
+            SymbolOrAlias
+                { symbolOrAliasConstructor = aliasConstructor alias
+                , symbolOrAliasParams = SortVariableSort <$> aliasParams alias
+                }
+        aliasDeclarationMismatch =
+            (show . Pretty.vsep)
+                [ "Alias left-hand side:"
+                , Pretty.indent 4 $ unparse symbolOrAlias
+                , "does not match declaration:"
+                , Pretty.indent 4 $ unparse alias
+                ]
+        expectVariable ::
+            SomeVariable VariableName ->
+            PatternVerifier (SomeVariable VariableName)
+        expectVariable var = do
+            verifyVariableDeclaration var
+            return var
 
 {- | Verify that a Kore pattern is well-formed.
 
@@ -363,9 +363,9 @@ verifyPatternsWithSorts getChildSort sorts operands = do
         )
         sorts
         operands
-  where
-    declaredOperandCount = length sorts
-    actualOperandCount = length operands
+    where
+        declaredOperandCount = length sorts
+        actualOperandCount = length operands
 
 verifyApplyAlias ::
     Application SymbolOrAlias (PatternVerifier Verified.Pattern) ->
@@ -379,35 +379,35 @@ verifyApplyAlias application =
         leftVariables <- getLeftVariables (Internal.aliasConstructor alias)
         traverse_ ensureChildIsDeclaredVarType $ zip leftVariables children
         verifyApplicationChildren Internal.termLikeSort verified sorts
-  where
-    Application
-        { applicationSymbolOrAlias = symbolOrAlias
-        , applicationChildren = children
-        } = application
+    where
+        Application
+            { applicationSymbolOrAlias = symbolOrAlias
+            , applicationChildren = children
+            } = application
 
-    getLeftVariables :: Id -> PatternVerifier [SomeVariable VariableName]
-    getLeftVariables aliasId = do
-        indexedModule <- Reader.asks indexedModule
-        alias <- resolveAlias indexedModule aliasId
-        pure . applicationChildren . sentenceAliasLeftPattern . snd $ alias
+        getLeftVariables :: Id -> PatternVerifier [SomeVariable VariableName]
+        getLeftVariables aliasId = do
+            indexedModule <- Reader.asks indexedModule
+            alias <- resolveAlias indexedModule aliasId
+            pure . applicationChildren . sentenceAliasLeftPattern . snd $ alias
 
-    -- If an alias was defined using an element variable, it can only take an
-    -- argument that is an element variable.
-    -- If it was defined using a set variable, we can use it with any argument.
-    -- Otherwise, it is a verification error.
-    ensureChildIsDeclaredVarType ::
-        (SomeVariable VariableName, PatternVerifier Verified.Pattern) ->
-        PatternVerifier ()
-    ensureChildIsDeclaredVarType (var, mpat)
-        | isElementVariable var = do
-            pat <- mpat
-            case pat of
-                Internal.ElemVar_ _ -> pure ()
-                _ ->
-                    koreFail
-                        "The alias was declared with an element variable, but its\
-                        \ argument is not an element variable."
-        | otherwise = pure ()
+        -- If an alias was defined using an element variable, it can only take an
+        -- argument that is an element variable.
+        -- If it was defined using a set variable, we can use it with any argument.
+        -- Otherwise, it is a verification error.
+        ensureChildIsDeclaredVarType ::
+            (SomeVariable VariableName, PatternVerifier Verified.Pattern) ->
+            PatternVerifier ()
+        ensureChildIsDeclaredVarType (var, mpat)
+            | isElementVariable var = do
+                pat <- mpat
+                case pat of
+                    Internal.ElemVar_ _ -> pure ()
+                    _ ->
+                        koreFail
+                            "The alias was declared with an element variable, but its\
+                            \ argument is not an element variable."
+            | otherwise = pure ()
 
 verifyApplySymbol ::
     (child -> Sort) ->
@@ -417,13 +417,13 @@ verifyApplySymbol getChildSort application =
     lookupSymbol symbolOrAlias >>= \symbol -> Trans.lift $ do
         let Attribute.Symbol{macro, aliasKywd} = Internal.symbolAttributes symbol
         isRpcRequest' <- Reader.asks isRpcRequest
-        when (isRpcRequest' && (isMacro macro || isAliasKywd aliasKywd)) $
-            koreFail "A symbol cannot be an alias or a macro"
+        when (isRpcRequest' && (isMacro macro || isAliasKywd aliasKywd))
+            $ koreFail "A symbol cannot be an alias or a macro"
         let verified = application{applicationSymbolOrAlias = symbol}
             sorts = Internal.symbolSorts symbol
         verifyApplicationChildren getChildSort verified sorts
-  where
-    Application{applicationSymbolOrAlias = symbolOrAlias} = application
+    where
+        Application{applicationSymbolOrAlias = symbolOrAlias} = application
 
 verifyApplicationChildren ::
     (child -> Sort) ->
@@ -434,9 +434,9 @@ verifyApplicationChildren getChildSort application sorts = do
     let operandSorts = applicationSortsOperands sorts
     verifiedChildren <- verifyChildren operandSorts children
     return application{applicationChildren = verifiedChildren}
-  where
-    verifyChildren = verifyPatternsWithSorts getChildSort
-    Application{applicationChildren = children} = application
+    where
+        verifyChildren = verifyPatternsWithSorts getChildSort
+        Application{applicationChildren = children} = application
 
 verifyApplication ::
     Application SymbolOrAlias (PatternVerifier Verified.Pattern) ->
@@ -444,14 +444,14 @@ verifyApplication ::
 verifyApplication application = do
     result <- verifyApplyAlias' <|> verifyApplySymbol' & runMaybeT
     maybe (koreFail . noHead $ symbolOrAlias) return result
-  where
-    symbolOrAlias = applicationSymbolOrAlias application
-    verifyApplyAlias' =
-        Internal.ApplyAliasF
-            <$> verifyApplyAlias application
-    verifyApplySymbol' =
-        Internal.ApplySymbolF
-            <$> verifyApplySymbol Internal.termLikeSort application
+    where
+        symbolOrAlias = applicationSymbolOrAlias application
+        verifyApplyAlias' =
+            Internal.ApplyAliasF
+                <$> verifyApplyAlias application
+        verifyApplySymbol' =
+            Internal.ApplySymbolF
+                <$> verifyApplySymbol Internal.termLikeSort application
 
 verifyBinder ::
     Traversable binder =>
@@ -488,15 +488,15 @@ verifyMu ::
     Mu VariableName (PatternVerifier Verified.Pattern) ->
     PatternVerifier (Mu VariableName Verified.Pattern)
 verifyMu = verifyBinder muSort (inject . muVariable)
-  where
-    muSort = variableSort . muVariable
+    where
+        muSort = variableSort . muVariable
 
 verifyNu ::
     Nu VariableName (PatternVerifier Verified.Pattern) ->
     PatternVerifier (Nu VariableName Verified.Pattern)
 verifyNu = verifyBinder nuSort (inject . nuVariable)
-  where
-    nuSort = variableSort . nuVariable
+    where
+        nuSort = variableSort . nuVariable
 
 verifyVariable ::
     SomeVariable VariableName ->
@@ -509,9 +509,9 @@ verifyVariable var = do
         [var, declaredVariable]
         "The declared sort is different."
     return (Const var)
-  where
-    varName = variableName var
-    varSort = variableSort var
+    where
+        varName = variableName var
+        varSort = variableSort var
 
 verifyDomainValue ::
     DomainValue Sort (PatternVerifier Verified.Pattern) ->
@@ -542,11 +542,11 @@ verifySortHasDomainValues patternSort = do
         )
         [patternSort]
         sortNeedsDomainValueAttributeMessage
-  where
-    dvSortId = case patternSort of
-        SortVariableSort _ ->
-            error "Unimplemented: domain values with variable sorts"
-        SortActualSort SortActual{sortActualName} -> sortActualName
+    where
+        dvSortId = case patternSort of
+            SortVariableSort _ ->
+                error "Unimplemented: domain values with variable sorts"
+            SortActualSort SortActual{sortActualName} -> sortActualName
 
 verifyStringLiteral ::
     Const StringLiteral (PatternVerifier Verified.Pattern) ->
@@ -561,8 +561,8 @@ verifyVariableDeclaration variable = do
         lookupSortDeclaration
         declaredSortVariables
         varSort
-  where
-    varSort = variableSort variable
+    where
+        varSort = variableSort variable
 
 verifyFreeVariables ::
     ParsedPattern ->
@@ -586,18 +586,18 @@ checkVariable ::
     Map.Map (SomeVariableName VariableName) (SomeVariable VariableName) ->
     PatternVerifier VerifySuccess
 checkVariable var vars =
-    maybe verifySuccess inconsistent $
-        Map.lookup (variableName var) vars
-  where
-    inconsistent v =
-        koreFailWithLocations [v, var] $
-            Pretty.renderText $
-                Pretty.layoutCompact $
-                    "Inconsistent free variable usage:"
-                        <+> unparse v
-                        <+> "and"
-                        <+> unparse var
-                            <> Pretty.dot
+    maybe verifySuccess inconsistent
+        $ Map.lookup (variableName var) vars
+    where
+        inconsistent v =
+            koreFailWithLocations [v, var]
+                $ Pretty.renderText
+                $ Pretty.layoutCompact
+                $ "Inconsistent free variable usage:"
+                <+> unparse v
+                <+> "and"
+                <+> unparse var
+                <> Pretty.dot
 
 patternNameForContext :: PatternF VariableName p -> Text
 patternNameForContext (AndF _) = "\\and"
@@ -638,8 +638,8 @@ patternNameForContext (VariableF (Const someVariable)) =
         [ variableClass
         , Pretty.squotes (unparse $ variableName someVariable)
         ]
-  where
-    variableClass =
-        case variableName someVariable of
-            SomeVariableNameElement _ -> "element variable"
-            SomeVariableNameSet _ -> "set variable"
+    where
+        variableClass =
+            case variableName someVariable of
+                SomeVariableNameElement _ -> "element variable"
+                SomeVariableNameSet _ -> "set variable"

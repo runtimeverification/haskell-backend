@@ -350,43 +350,43 @@ replInterpreter0 printAux printKore replCmd = do
         FailStop -> do
             warnProductivity
             liftIO . exitWith $ ExitFailure 2
-  where
-    warnProductivity = do
-        Config{kFileLocations} <- ask
-        warnIfLowProductivity kFileLocations
+    where
+        warnProductivity = do
+            Config{kFileLocations} <- ask
+            warnIfLowProductivity kFileLocations
 
-    -- Extracts the Writer out of the RWST monad using the current state
-    -- and updates the state, returning the writer output along with the
-    -- monadic result.
-    evaluateCommand ::
-        ReplM ReplStatus ->
-        ReaderT Config (StateT ReplState Simplifier) (ReplOutput, ReplStatus)
-    evaluateCommand c = do
-        st <- get
-        config <- Reader.ask
-        (ext, st', w) <-
-            Monad.Trans.lift $
-                Monad.Trans.lift $
-                    runRWST c config st
-        put st'
-        pure (w, ext)
+        -- Extracts the Writer out of the RWST monad using the current state
+        -- and updates the state, returning the writer output along with the
+        -- monadic result.
+        evaluateCommand ::
+            ReplM ReplStatus ->
+            ReaderT Config (StateT ReplState Simplifier) (ReplOutput, ReplStatus)
+        evaluateCommand c = do
+            st <- get
+            config <- Reader.ask
+            (ext, st', w) <-
+                Monad.Trans.lift
+                    $ Monad.Trans.lift
+                    $ runRWST c config st
+            put st'
+            pure (w, ext)
 
 setStepTimeout :: Maybe StepTimeout -> ReplM ()
 setStepTimeout = assign (field @"stepTimeout")
 
 showStepTime :: ReplM ()
 showStepTime = modifying (field @"stepTime") toggle
-  where
-    toggle = \case
-        EnableStepTime -> DisableStepTime
-        DisableStepTime -> EnableStepTime
+    where
+        toggle = \case
+            EnableStepTime -> DisableStepTime
+            DisableStepTime -> EnableStepTime
 
 toggleMovingAverage :: ReplM ()
 toggleMovingAverage = modifying (field @"enableMovingAverage") toggle
-  where
-    toggle = \case
-        EnableMovingAverage -> DisableMovingAverage
-        DisableMovingAverage -> EnableMovingAverage
+    where
+        toggle = \case
+            EnableMovingAverage -> DisableMovingAverage
+            DisableMovingAverage -> EnableMovingAverage
 
 showUsageMessage :: String
 showUsageMessage = "Could not parse command, try using 'help'."
@@ -420,9 +420,9 @@ exit = do
     if isCompleted (Map.elems proofs)
         then return SuccessStop
         else return FailStop
-  where
-    isCompleted :: [GraphProofStatus] -> Bool
-    isCompleted = all (\x -> x == Completed || x == TrustedClaim)
+    where
+        isCompleted :: [GraphProofStatus] -> Bool
+        isCompleted = all (\x -> x == Completed || x == TrustedClaim)
 
 help :: MonadWriter ReplOutput m => m ()
 help = putStrLn' helpText
@@ -481,23 +481,23 @@ prove indexOrName = do
         printNotFound
         startProving
         claim'
-  where
-    startProving :: SomeClaim -> m ()
-    startProving claim
-        | isTrusted claim =
-            putStrLn' $
-                "Cannot switch to proving claim "
+    where
+        startProving :: SomeClaim -> m ()
+        startProving claim
+            | isTrusted claim =
+                putStrLn'
+                    $ "Cannot switch to proving claim "
                     <> showIndexOrName indexOrName
                     <> ". Claim is trusted."
-        | otherwise = do
-            claimIndex <-
-                either
-                    (return . return)
-                    (getClaimIndexByName . unRuleName)
-                    indexOrName
-            switchToProof claim $ fromJust claimIndex
-            putStrLn' $
-                "Switched to proving claim "
+            | otherwise = do
+                claimIndex <-
+                    either
+                        (return . return)
+                        (getClaimIndexByName . unRuleName)
+                        indexOrName
+                switchToProof claim $ fromJust claimIndex
+                putStrLn'
+                    $ "Switched to proving claim "
                     <> showIndexOrName indexOrName
 
 showClaimSwitch :: Either ClaimIndex RuleName -> String
@@ -531,18 +531,18 @@ showGraph view mfile out = do
     installed <- liftIO Graph.isGraphvizInstalled
     if installed
         then
-            liftIO $
-                maybe
+            liftIO
+                $ maybe
                     (showDotGraphCatchException processedGraph)
                     (saveDotGraph processedGraph format)
                     mfile
         else putStrLn' "Graphviz is not installed."
-  where
-    showOriginalGraph graph = do
-        putStrLn'
-            "Could not process execution graph for visualization.\
-            \ Will default to showing the full graph."
-        return $ Graph.emap IndividualLabel graph
+    where
+        showOriginalGraph graph = do
+            putStrLn'
+                "Could not process execution graph for visualization.\
+                \ Will default to showing the full graph."
+            return $ Graph.emap IndividualLabel graph
 
 -- | Executes 'n' prove steps, or until branching occurs.
 proveSteps ::
@@ -580,10 +580,10 @@ withTime act =
         DisableStepTime -> act
         EnableStepTime -> do
             (time, result) <- timeAction act
-            putStrLn' $
-                "Step(s) took "
-                    <> show (time `div` 1000)
-                    <> " milliseconds"
+            putStrLn'
+                $ "Step(s) took "
+                <> show (time `div` 1000)
+                <> " milliseconds"
             pure result
 
 -- | Loads a script from a file.
@@ -733,21 +733,21 @@ omitCell =
     \case
         Nothing -> showCells
         Just str -> addOrRemove str
-  where
-    showCells :: ReplM ()
-    showCells = do
-        omit <- Lens.use (field @"omit")
-        if Set.null omit
-            then putStrLn' "Omit list is currently empty."
-            else traverse_ putStrLn' omit
+    where
+        showCells :: ReplM ()
+        showCells = do
+            omit <- Lens.use (field @"omit")
+            if Set.null omit
+                then putStrLn' "Omit list is currently empty."
+                else traverse_ putStrLn' omit
 
-    addOrRemove :: String -> ReplM ()
-    addOrRemove str = field @"omit" %= toggle str
+        addOrRemove :: String -> ReplM ()
+        addOrRemove str = field @"omit" %= toggle str
 
-    toggle :: String -> Set String -> Set String
-    toggle x xs
-        | x `Set.member` xs = x `Set.delete` xs
-        | otherwise = x `Set.insert` xs
+        toggle :: String -> Set String -> Set String
+        toggle x xs
+            | x `Set.member` xs = x `Set.delete` xs
+            | otherwise = x `Set.insert` xs
 
 {- | Shows all leaf nodes identifiers which are either stuck or can be
  evaluated further.
@@ -758,9 +758,9 @@ showLeafs = do
     case Map.foldMapWithKey showPair leafsByType of
         "" -> putStrLn' "No leafs found, proof is complete."
         xs -> putStrLn' xs
-  where
-    showPair :: NodeState -> [Graph.Node] -> String
-    showPair ns xs = show ns <> ": " <> show xs
+    where
+        showPair :: NodeState -> [Graph.Node] -> String
+        showPair ns xs = show ns <> ": " <> show xs
 
 proofStatus :: ReplM ()
 proofStatus = do
@@ -772,40 +772,40 @@ allProofs = do
     graphs <- Lens.use (field @"graphs")
     claims <- Lens.use (field @"claims")
     let cindexes = ClaimIndex <$> [0 .. length claims - 1]
-    return $
-        Map.union
+    return
+        $ Map.union
             (fmap inProgressProofs graphs)
             (notStartedProofs graphs (Map.fromList $ zip cindexes claims))
-  where
-    inProgressProofs ::
-        ExecutionGraph ->
-        GraphProofStatus
-    inProgressProofs =
-        findProofStatus
-            . sortLeafsByType
-            . Strategy.graph
+    where
+        inProgressProofs ::
+            ExecutionGraph ->
+            GraphProofStatus
+        inProgressProofs =
+            findProofStatus
+                . sortLeafsByType
+                . Strategy.graph
 
-    notStartedProofs ::
-        Map.Map ClaimIndex ExecutionGraph ->
-        Map.Map ClaimIndex SomeClaim ->
-        Map.Map ClaimIndex GraphProofStatus
-    notStartedProofs gphs cls =
-        notStartedOrTrusted <$> cls `Map.difference` gphs
+        notStartedProofs ::
+            Map.Map ClaimIndex ExecutionGraph ->
+            Map.Map ClaimIndex SomeClaim ->
+            Map.Map ClaimIndex GraphProofStatus
+        notStartedProofs gphs cls =
+            notStartedOrTrusted <$> cls `Map.difference` gphs
 
-    notStartedOrTrusted :: SomeClaim -> GraphProofStatus
-    notStartedOrTrusted cl =
-        if isTrusted cl
-            then TrustedClaim
-            else NotStarted
+        notStartedOrTrusted :: SomeClaim -> GraphProofStatus
+        notStartedOrTrusted cl =
+            if isTrusted cl
+                then TrustedClaim
+                else NotStarted
 
-    findProofStatus :: Map.Map NodeState [Graph.Node] -> GraphProofStatus
-    findProofStatus m =
-        case Map.lookup StuckNode m of
-            Nothing ->
-                case Map.lookup UnevaluatedNode m of
-                    Nothing -> Completed
-                    Just ns -> InProgress ns
-            Just ns -> StuckProof ns
+        findProofStatus :: Map.Map NodeState [Graph.Node] -> GraphProofStatus
+        findProofStatus m =
+            case Map.lookup StuckNode m of
+                Nothing ->
+                    case Map.lookup UnevaluatedNode m of
+                        Nothing -> Completed
+                        Just ns -> InProgress ns
+                Just ns -> StuckProof ns
 
 showRule ::
     MonadState ReplState m =>
@@ -832,27 +832,28 @@ showRules (ReplNode node1, ReplNode node2) = do
         [] -> putStrLn' noPath
         [singleNode] ->
             getRuleFor (singleNode & fst & ReplNode & Just)
-                >>= putStrLn' . maybe "Invalid node!" showRuleIdentifier
+                >>= putStrLn'
+                . maybe "Invalid node!" showRuleIdentifier
         (_ : labeledNodes) -> do
             let mapPath = Map.fromList labeledNodes
             putStrLn' $ Map.foldrWithKey acc "Rules applied:" mapPath
-  where
-    noPath =
-        "There is no path between "
-            <> show node1
-            <> " and "
-            <> show node2
-            <> "."
-    acc node rules result =
-        result
-            <> "\n  to reach node "
-            <> show node
-            <> " the following rules were applied:"
-            <> case toList rules of
-                [] -> " Implication checking."
-                rules' -> foldr oneStepRuleIndexes "" rules'
-    oneStepRuleIndexes rule result =
-        result <> " " <> showRuleIdentifier rule
+    where
+        noPath =
+            "There is no path between "
+                <> show node1
+                <> " and "
+                <> show node2
+                <> "."
+        acc node rules result =
+            result
+                <> "\n  to reach node "
+                <> show node
+                <> " the following rules were applied:"
+                <> case toList rules of
+                    [] -> " Implication checking."
+                    rules' -> foldr oneStepRuleIndexes "" rules'
+        oneStepRuleIndexes rule result =
+            result <> " " <> showRuleIdentifier rule
 
 showRuleIdentifier ::
     From rule AttrLabel.Label =>
@@ -863,8 +864,8 @@ showRuleIdentifier rule =
     fromMaybe
         (showAxiomOrClaim ruleIndex)
         (showAxiomOrClaimName ruleIndex (getNameText rule))
-  where
-    ruleIndex = getInternalIdentifier rule
+    where
+        ruleIndex = getInternalIdentifier rule
 
 -- | Shows the previous branching point.
 showPrecBranch ::
@@ -877,15 +878,15 @@ showPrecBranch maybeNode = do
     case node' of
         Nothing -> putStrLn' "Invalid node!"
         Just node -> putStrLn' . show $ loop (loopCond graph) (unReplNode node)
-  where
-    -- "Left n" means continue looping with value being n
-    -- "Right n" means "stop and return n"
-    loopCond gph n
-        | isNotBranch gph n && isNotRoot gph n = Left $ head (Graph.pre gph n)
-        | otherwise = Right n
+    where
+        -- "Left n" means continue looping with value being n
+        -- "Right n" means "stop and return n"
+        loopCond gph n
+            | isNotBranch gph n && isNotRoot gph n = Left $ head (Graph.pre gph n)
+            | otherwise = Right n
 
-    isNotBranch gph n = Graph.outdeg gph n <= 1
-    isNotRoot gph n = not . null . Graph.pre gph $ n
+        isNotBranch gph n = Graph.outdeg gph n <= 1
+        isNotRoot gph n = not . null . Graph.pre gph $ n
 
 -- | Shows the next node(s) for the selected node.
 showChildren ::
@@ -911,20 +912,20 @@ label =
     \case
         Nothing -> showLabels
         Just lbl -> gotoLabel lbl
-  where
-    showLabels :: m ()
-    showLabels = do
-        lbls <- getLabels
-        putStrLn' $ Map.foldrWithKey acc "Labels: " lbls
+    where
+        showLabels :: m ()
+        showLabels = do
+            lbls <- getLabels
+            putStrLn' $ Map.foldrWithKey acc "Labels: " lbls
 
-    gotoLabel :: String -> m ()
-    gotoLabel l = do
-        lbls <- getLabels
-        selectNode $ fromMaybe (ReplNode $ -1) (Map.lookup l lbls)
+        gotoLabel :: String -> m ()
+        gotoLabel l = do
+            lbls <- getLabels
+            selectNode $ fromMaybe (ReplNode $ -1) (Map.lookup l lbls)
 
-    acc :: String -> ReplNode -> String -> String
-    acc key node res =
-        res <> "\n  " <> key <> ": " <> show (unReplNode node)
+        acc :: String -> ReplNode -> String -> String
+        acc key node res =
+            res <> "\n  " <> key <> ": " <> show (unReplNode node)
 
 -- | Adds label for selected node.
 labelAdd ::
@@ -982,10 +983,10 @@ runInterpreterWithOutput ::
 runInterpreterWithOutput printAux printKore cmd config =
     get
         >>= ( \st ->
-                lift $
-                    execStateReader config st $
-                        runInputT defaultSettings $
-                            replInterpreter0 printAux printKore cmd
+                lift
+                    $ execStateReader config st
+                    $ runInputT defaultSettings
+                    $ replInterpreter0 printAux printKore cmd
             )
         >>= put
 
@@ -1035,96 +1036,97 @@ tryAxiomClaimWorker mode ref = do
                             showUnificationFailure axiomOrClaim node
                         IfPossible ->
                             tryForceAxiomOrClaim axiomOrClaim node
-  where
-    notEqualClaimTypes :: Either Axiom SomeClaim -> SomeClaim -> Bool
-    notEqualClaimTypes axiomOrClaim' claim' =
-        not (either (const True) (equalClaimTypes claim') axiomOrClaim')
+    where
+        notEqualClaimTypes :: Either Axiom SomeClaim -> SomeClaim -> Bool
+        notEqualClaimTypes axiomOrClaim' claim' =
+            not (either (const True) (equalClaimTypes claim') axiomOrClaim')
 
-    equalClaimTypes :: SomeClaim -> SomeClaim -> Bool
-    equalClaimTypes =
-        isSameType `on` castToReachability
+        equalClaimTypes :: SomeClaim -> SomeClaim -> Bool
+        equalClaimTypes =
+            isSameType `on` castToReachability
 
-    castToReachability :: SomeClaim -> Maybe SomeClaim
-    castToReachability = Typeable.cast
+        castToReachability :: SomeClaim -> Maybe SomeClaim
+        castToReachability = Typeable.cast
 
-    isSomeClaim :: SomeClaim -> Bool
-    isSomeClaim = isJust . castToReachability
+        isSomeClaim :: SomeClaim -> Bool
+        isSomeClaim = isJust . castToReachability
 
-    isSameType ::
-        Maybe SomeClaim ->
-        Maybe SomeClaim ->
-        Bool
-    isSameType (Just (OnePath _)) (Just (OnePath _)) = True
-    isSameType (Just (AllPath _)) (Just (AllPath _)) = True
-    isSameType _ _ = False
+        isSameType ::
+            Maybe SomeClaim ->
+            Maybe SomeClaim ->
+            Bool
+        isSameType (Just (OnePath _)) (Just (OnePath _)) = True
+        isSameType (Just (AllPath _)) (Just (AllPath _)) = True
+        isSameType _ _ = False
 
-    showUnificationFailure ::
-        Either Axiom SomeClaim ->
-        ReplNode ->
-        ReplM ()
-    showUnificationFailure axiomOrClaim' node = do
-        let first = extractLeftPattern axiomOrClaim'
-        maybeSecond <- getClaimStateAt (Just node)
-        case maybeSecond of
-            Nothing -> putStrLn' "Unexpected error getting current config."
-            Just (_, second) ->
-                claimState
-                    ClaimStateTransformer
-                        { provenValue = putStrLn' "Cannot unify bottom"
-                        , claimedTransformer = patternUnifier
-                        , remainingTransformer = patternUnifier
-                        , rewrittenTransformer = patternUnifier
-                        , stuckTransformer = patternUnifier
-                        }
-                    (getConfiguration <$> second)
-              where
-                patternUnifier :: Pattern RewritingVariableName -> ReplM ()
-                patternUnifier
-                    (Pattern.splitTerm -> (secondTerm, secondCondition)) =
-                        runUnifier' sideCondition first secondTerm
-                      where
-                        sideCondition =
-                            SideCondition.fromConditionWithReplacements
-                                secondCondition
+        showUnificationFailure ::
+            Either Axiom SomeClaim ->
+            ReplNode ->
+            ReplM ()
+        showUnificationFailure axiomOrClaim' node = do
+            let first = extractLeftPattern axiomOrClaim'
+            maybeSecond <- getClaimStateAt (Just node)
+            case maybeSecond of
+                Nothing -> putStrLn' "Unexpected error getting current config."
+                Just (_, second) ->
+                    claimState
+                        ClaimStateTransformer
+                            { provenValue = putStrLn' "Cannot unify bottom"
+                            , claimedTransformer = patternUnifier
+                            , remainingTransformer = patternUnifier
+                            , rewrittenTransformer = patternUnifier
+                            , stuckTransformer = patternUnifier
+                            }
+                        (getConfiguration <$> second)
+                    where
+                        patternUnifier :: Pattern RewritingVariableName -> ReplM ()
+                        patternUnifier
+                            (Pattern.splitTerm -> (secondTerm, secondCondition)) =
+                                runUnifier' sideCondition first secondTerm
+                                where
+                                    sideCondition =
+                                        SideCondition.fromConditionWithReplacements
+                                            secondCondition
 
-    tryForceAxiomOrClaim ::
-        Either Axiom SomeClaim ->
-        ReplNode ->
-        ReplM ()
-    tryForceAxiomOrClaim axiomOrClaim node = do
-        (graph, result) <-
-            tryApplyAxiomOrClaim axiomOrClaim node
-        case result of
-            DoesNotApply ->
-                showUnificationFailure axiomOrClaim node
-            GetsProven -> do
-                updateExecutionGraph graph
-                putStrLn'
-                    "The proof was proven without applying any rewrite rules."
-            OneResult nextNode -> do
-                updateExecutionGraph graph
-                field @"node" .= nextNode
-            MultipleResults ->
-                updateExecutionGraph graph
+        tryForceAxiomOrClaim ::
+            Either Axiom SomeClaim ->
+            ReplNode ->
+            ReplM ()
+        tryForceAxiomOrClaim axiomOrClaim node = do
+            (graph, result) <-
+                tryApplyAxiomOrClaim axiomOrClaim node
+            case result of
+                DoesNotApply ->
+                    showUnificationFailure axiomOrClaim node
+                GetsProven -> do
+                    updateExecutionGraph graph
+                    putStrLn'
+                        "The proof was proven without applying any rewrite rules."
+                OneResult nextNode -> do
+                    updateExecutionGraph graph
+                    field @"node" .= nextNode
+                MultipleResults ->
+                    updateExecutionGraph graph
 
-    runUnifier' ::
-        SideCondition RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        ReplM ()
-    runUnifier' sideCondition first second =
-        runUnifier sideCondition first' second
-            >>= tell . formatUnificationMessage
-      where
-        first' = TermLike.refreshVariables (freeVariables second) first
+        runUnifier' ::
+            SideCondition RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            ReplM ()
+        runUnifier' sideCondition first second =
+            runUnifier sideCondition first' second
+                >>= tell
+                . formatUnificationMessage
+            where
+                first' = TermLike.refreshVariables (freeVariables second) first
 
-    extractLeftPattern ::
-        Either Axiom SomeClaim ->
-        TermLike RewritingVariableName
-    extractLeftPattern =
-        either
-            (RulePattern.left . coerce)
-            (Pattern.toTermLike . getConfiguration)
+        extractLeftPattern ::
+            Either Axiom SomeClaim ->
+            TermLike RewritingVariableName
+        extractLeftPattern =
+            either
+                (RulePattern.left . coerce)
+                (Pattern.toTermLike . getConfiguration)
 
 -- | Removes specified node and all its child nodes.
 clear ::
@@ -1144,29 +1146,29 @@ clear maybeNode = do
             | isDirectDescendentOfBranching node graph ->
                 putStrLn' "Cannot clear a direct descendant of a branching node."
             | otherwise -> clear0 node graph
-  where
-    clear0 :: ReplNode -> InnerGraph -> m ()
-    clear0 rnode graph = do
-        let node = unReplNode rnode
-        let nodesToBeRemoved = collect (next graph) node
-            graph' = Graph.delNodes nodesToBeRemoved graph
-        updateInnerGraph graph'
-        field @"node" .= ReplNode (prevNode graph' node)
-        putStrLn' $ "Removed " <> show (length nodesToBeRemoved) <> " node(s)."
+    where
+        clear0 :: ReplNode -> InnerGraph -> m ()
+        clear0 rnode graph = do
+            let node = unReplNode rnode
+            let nodesToBeRemoved = collect (next graph) node
+                graph' = Graph.delNodes nodesToBeRemoved graph
+            updateInnerGraph graph'
+            field @"node" .= ReplNode (prevNode graph' node)
+            putStrLn' $ "Removed " <> show (length nodesToBeRemoved) <> " node(s)."
 
-    next :: InnerGraph -> Graph.Node -> [Graph.Node]
-    next gr n = fst <$> Graph.lsuc gr n
+        next :: InnerGraph -> Graph.Node -> [Graph.Node]
+        next gr n = fst <$> Graph.lsuc gr n
 
-    collect :: (a -> [a]) -> a -> [a]
-    collect f x = x : [z | y <- f x, z <- collect f y]
+        collect :: (a -> [a]) -> a -> [a]
+        collect f x = x : [z | y <- f x, z <- collect f y]
 
-    prevNode :: InnerGraph -> Graph.Node -> Graph.Node
-    prevNode graph = fromMaybe 0 . headMay . fmap fst . Graph.lpre graph
+        prevNode :: InnerGraph -> Graph.Node -> Graph.Node
+        prevNode graph = fromMaybe 0 . headMay . fmap fst . Graph.lpre graph
 
-    isDirectDescendentOfBranching :: ReplNode -> InnerGraph -> Bool
-    isDirectDescendentOfBranching (ReplNode node) graph =
-        let childrenOfParent = (Graph.suc graph <=< Graph.pre graph) node
-         in length childrenOfParent /= 1
+        isDirectDescendentOfBranching :: ReplNode -> InnerGraph -> Bool
+        isDirectDescendentOfBranching (ReplNode node) graph =
+            let childrenOfParent = (Graph.suc graph <=< Graph.pre graph) node
+             in length childrenOfParent /= 1
 
 -- | Save this sessions' commands to the specified file and tell "Done." after that.
 saveSession ::
@@ -1178,8 +1180,8 @@ saveSession ::
     FilePath ->
     m ()
 saveSession path = saveSessionWithMessage notifySuccess path
-  where
-    notifySuccess = putStrLn' "Done."
+    where
+        notifySuccess = putStrLn' "Done."
 
 -- | Save this sessions' commands to the specified file and tell a message after that.
 saveSessionWithMessage ::
@@ -1192,14 +1194,14 @@ saveSessionWithMessage ::
     m ()
 saveSessionWithMessage notifySuccess path =
     withExistingDirectory path saveToFile
-  where
-    saveToFile :: FilePath -> m ()
-    saveToFile file = do
-        content <- seqUnlines <$> Lens.use (field @"commands")
-        liftIO $ writeFile file content
-        notifySuccess
-    seqUnlines :: Seq String -> String
-    seqUnlines = unlines . toList
+    where
+        saveToFile :: FilePath -> m ()
+        saveToFile file = do
+            content <- seqUnlines <$> Lens.use (field @"commands")
+            liftIO $ writeFile file content
+            notifySuccess
+        seqUnlines :: Seq String -> String
+        seqUnlines = unlines . toList
 
 savePartialProof ::
     Maybe Natural ->
@@ -1221,38 +1223,39 @@ savePartialProof maybeNatural file = do
                     createNewDefinition
                         mainModuleName
                         (makeModuleName file)
-                        $ currentGoal : newTrustedClaims
+                        $ currentGoal
+                        : newTrustedClaims
             saveUnparsedDefinitionToFile (unparse newDefinition)
             putStrLn' "Done."
-  where
-    saveUnparsedDefinitionToFile ::
-        Pretty.Doc ann ->
-        ReplM ()
-    saveUnparsedDefinitionToFile definition =
-        liftIO $
-            withFile
-                (file <.> "kore")
-                WriteMode
-                (`Pretty.hPutDoc` definition)
+    where
+        saveUnparsedDefinitionToFile ::
+            Pretty.Doc ann ->
+            ReplM ()
+        saveUnparsedDefinitionToFile definition =
+            liftIO
+                $ withFile
+                    (file <.> "kore")
+                    WriteMode
+                    (`Pretty.hPutDoc` definition)
 
-    maybeNode :: Maybe ReplNode
-    maybeNode =
-        ReplNode . fromIntegral . naturalToInteger <$> maybeNatural
+        maybeNode :: Maybe ReplNode
+        maybeNode =
+            ReplNode . fromIntegral . naturalToInteger <$> maybeNatural
 
-    removeIfRoot ::
-        ReplNode ->
-        ClaimIndex ->
-        [SomeClaim] ->
-        [SomeClaim]
-    removeIfRoot (ReplNode node) (ClaimIndex index) claims
-        | index >= 0 && index < length claims
-        , node == 0 =
-            take index claims
-                <> drop (index + 1) claims
-        | otherwise = claims
+        removeIfRoot ::
+            ReplNode ->
+            ClaimIndex ->
+            [SomeClaim] ->
+            [SomeClaim]
+        removeIfRoot (ReplNode node) (ClaimIndex index) claims
+            | index >= 0 && index < length claims
+            , node == 0 =
+                take index claims
+                    <> drop (index + 1) claims
+            | otherwise = claims
 
-    makeModuleName :: FilePath -> String
-    makeModuleName name = upper name <> "-SPEC"
+        makeModuleName :: FilePath -> String
+        makeModuleName name = upper name <> "-SPEC"
 
 {- | Pipe result of the command to the specified program.
 
@@ -1282,23 +1285,23 @@ pipe cmd file args = do
                 config
             pipeOut <- liftIO $ readIORef pipeOutRef
             tell pipeOut
-  where
-    createProcess' exec =
-        liftIO $
-            createProcess
-                (proc exec args)
-                    { std_in = CreatePipe
-                    , std_out = CreatePipe
-                    }
-    runExternalProcess :: forall n. MonadIO n => IORef ReplOutput -> String -> String -> InputT n ()
-    runExternalProcess pipeOut exec str = liftIO $ do
-        (Just hIn, Just hOut, _, _) <- createProcess' exec
-        hPutStr hIn str
-            `catch` \(X.SomeException e) -> hPutStrLn stderr (displayException e)
-        output <- hGetContents hOut
-        modifyIORef pipeOut (appReplOut . AuxOut $ output)
-    justPrint :: forall n. MonadIO n => IORef ReplOutput -> String -> InputT n ()
-    justPrint outRef = liftIO . modifyIORef outRef . appReplOut . AuxOut
+    where
+        createProcess' exec =
+            liftIO
+                $ createProcess
+                    (proc exec args)
+                        { std_in = CreatePipe
+                        , std_out = CreatePipe
+                        }
+        runExternalProcess :: forall n. MonadIO n => IORef ReplOutput -> String -> String -> InputT n ()
+        runExternalProcess pipeOut exec str = liftIO $ do
+            (Just hIn, Just hOut, _, _) <- createProcess' exec
+            hPutStr hIn str
+                `catch` \(X.SomeException e) -> hPutStrLn stderr (displayException e)
+            output <- hGetContents hOut
+            modifyIORef pipeOut (appReplOut . AuxOut $ output)
+        justPrint :: forall n. MonadIO n => IORef ReplOutput -> String -> InputT n ()
+        justPrint outRef = liftIO . modifyIORef outRef . appReplOut . AuxOut
 
 -- | Appends output of a command to a file.
 appendTo ::
@@ -1354,18 +1357,18 @@ tryAlias replAlias@ReplAlias{name} printAux printKore = do
             (cont, st') <- get >>= runInterpreter parsedCommand config
             put st'
             return cont
-  where
-    runInterpreter ::
-        ReplCommand ->
-        Config ->
-        ReplState ->
-        ReplM (ReplStatus, ReplState)
-    runInterpreter cmd config st =
-        lift $
-            (`runStateT` st) $
-                flip runReaderT config $
-                    runInputT defaultSettings $
-                        replInterpreter0 printAux printKore cmd
+    where
+        runInterpreter ::
+            ReplCommand ->
+            Config ->
+            ReplState ->
+            ReplM (ReplStatus, ReplState)
+        runInterpreter cmd config st =
+            lift
+                $ (`runStateT` st)
+                $ flip runReaderT config
+                $ runInputT defaultSettings
+                $ replInterpreter0 printAux printKore cmd
 
 {- | Performs n proof steps, picking the next node unless branching occurs.
  Returns 'Left' while it has to continue looping, and 'Right' when done
@@ -1438,34 +1441,34 @@ prettyClaimStateComponent transformation omitList =
                     <> makeKoreReplOutput (prettyComponent goal)
             , provenValue = makeAuxReplOutput "Proven."
             }
-  where
-    -- Sort variable used to unparse configurations.
-    -- This is only used for unparsing \bottom.
-    dummySort = SortVariableSort (SortVariable "R")
-    prettyComponent =
-        unparseToString
-            . OrPattern.toTermLike dummySort
-            . MultiOr.map (fmap hide . getRewritingPattern)
-            . transformation
-    hide ::
-        TermLike VariableName ->
-        TermLike VariableName
-    hide =
-        Recursive.unfold $ \termLike ->
-            case Recursive.project termLike of
-                ann :< TermLike.ApplySymbolF app
-                    | shouldBeExcluded (applicationSymbolOrAlias app) ->
-                        -- Do not display children
-                        ann :< TermLike.ApplySymbolF (withoutChildren app)
-                projected -> projected
+    where
+        -- Sort variable used to unparse configurations.
+        -- This is only used for unparsing \bottom.
+        dummySort = SortVariableSort (SortVariable "R")
+        prettyComponent =
+            unparseToString
+                . OrPattern.toTermLike dummySort
+                . MultiOr.map (fmap hide . getRewritingPattern)
+                . transformation
+        hide ::
+            TermLike VariableName ->
+            TermLike VariableName
+        hide =
+            Recursive.unfold $ \termLike ->
+                case Recursive.project termLike of
+                    ann :< TermLike.ApplySymbolF app
+                        | shouldBeExcluded (applicationSymbolOrAlias app) ->
+                            -- Do not display children
+                            ann :< TermLike.ApplySymbolF (withoutChildren app)
+                    projected -> projected
 
-    withoutChildren app = app{applicationChildren = []}
+        withoutChildren app = app{applicationChildren = []}
 
-    shouldBeExcluded =
-        (`elem` omitList)
-            . Text.unpack
-            . Id.getId
-            . TermLike.symbolConstructor
+        shouldBeExcluded =
+            (`elem` omitList)
+                . Text.unpack
+                . Id.getId
+                . TermLike.symbolConstructor
 
 putStrLn' :: MonadWriter ReplOutput m => String -> m ()
 putStrLn' = tell . makeAuxReplOutput
@@ -1503,8 +1506,8 @@ showDotGraphCatchException gr =
     catch (showDotGraph gr) $ \(e :: GraphvizException) ->
         case e of
             GVProgramExc _ ->
-                hPrint stderr $
-                    Pretty.vsep
+                hPrint stderr
+                    $ Pretty.vsep
                         [ "Encountered the following exception:\n"
                         , Pretty.indent 4 $ fromString $ displayException e
                         , "Please note that the 'graph' command is not\
@@ -1523,16 +1526,16 @@ saveDotGraph ::
     IO ()
 saveDotGraph gr format file =
     withExistingDirectory file saveGraphImg
-  where
-    saveGraphImg :: FilePath -> IO ()
-    saveGraphImg path =
-        void $
-            Graph.addExtension
-                ( Graph.runGraphviz
-                    (Graph.graphToDot (graphParams gr) gr)
-                )
-                format
-                path
+    where
+        saveGraphImg :: FilePath -> IO ()
+        saveGraphImg path =
+            void
+                $ Graph.addExtension
+                    ( Graph.runGraphviz
+                        (Graph.graphToDot (graphParams gr) gr)
+                    )
+                    format
+                    path
 
 graphParams ::
     From axiom AttrLabel.Label =>
@@ -1551,38 +1554,38 @@ graphParams gr =
             , Graph.Attr.Style [dottedOrSolidEdge l]
             ]
         , Graph.fmtNode = \(_, ps) ->
-            [ Graph.Attr.Color $
-                case ps of
+            [ Graph.Attr.Color
+                $ case ps of
                     Proven -> toColorList green
                     Stuck _ -> toColorList red
                     _ -> []
             ]
         }
-  where
-    nrOfNodes :: Natural -> Text.Lazy.Text
-    nrOfNodes quantity
-        | quantity < 1 = ""
-        | otherwise = "(" <> Text.Lazy.pack (show quantity) <> " nodes omitted)"
-    dottedOrSolidEdge lbl =
-        eitherEdgeLabel
-            (const $ Graph.Attr.SItem Graph.Attr.Dotted mempty)
-            (const $ Graph.Attr.SItem Graph.Attr.Solid mempty)
-            lbl
-    ruleIndex resultNode lbl =
-        let appliedRule = lbl & toList & headMay
-            labelWithoutRule
-                | isRemaining resultNode = "Remaining"
-                | otherwise = "CheckImplication"
-         in maybe
+    where
+        nrOfNodes :: Natural -> Text.Lazy.Text
+        nrOfNodes quantity
+            | quantity < 1 = ""
+            | otherwise = "(" <> Text.Lazy.pack (show quantity) <> " nodes omitted)"
+        dottedOrSolidEdge lbl =
+            eitherEdgeLabel
+                (const $ Graph.Attr.SItem Graph.Attr.Dotted mempty)
+                (const $ Graph.Attr.SItem Graph.Attr.Solid mempty)
+                lbl
+        ruleIndex resultNode lbl =
+            let appliedRule = lbl & toList & headMay
                 labelWithoutRule
-                (Text.Lazy.pack . showRuleIdentifier)
-                appliedRule
-    toColorList col = [Graph.Attr.WC col (Just 1.0)]
-    green = Graph.Attr.RGB 0 200 0
-    red = Graph.Attr.RGB 200 0 0
-    isRemaining n =
-        let (_, _, state, _) = Graph.context gr n
-         in ClaimState.isRemaining state
+                    | isRemaining resultNode = "Remaining"
+                    | otherwise = "CheckImplication"
+             in maybe
+                    labelWithoutRule
+                    (Text.Lazy.pack . showRuleIdentifier)
+                    appliedRule
+        toColorList col = [Graph.Attr.WC col (Just 1.0)]
+        green = Graph.Attr.RGB 0 200 0
+        red = Graph.Attr.RGB 200 0 0
+        isRemaining n =
+            let (_, _, state, _) = Graph.context gr n
+             in ClaimState.isRemaining state
 
 showAliasError :: AliasError -> String
 showAliasError =
@@ -1635,86 +1638,89 @@ parseEvalScript file scriptModeOutput = do
             let result = runParser scriptParser file (Text.pack contents)
             either parseFailed executeScript result
         else lift . liftIO . hPutStrLn stderr $ "Cannot find " <> file
-  where
-    parseFailed err =
-        lift . liftIO . hPutStrLn stderr $
-            "\nCouldn't parse repl script file."
+    where
+        parseFailed err =
+            lift
+                . liftIO
+                . hPutStrLn stderr
+                $ "\nCouldn't parse repl script file."
                 <> "\nParser error at: "
                 <> (err & toReplScriptParseErrors & errorBundlePretty)
 
-    toReplScriptParseErrors errorBundle =
-        errorBundle
-            { bundleErrors =
-                mapParseError (ReplScriptParseError . unReplParseError)
-                    <$> bundleErrors errorBundle
-            }
+        toReplScriptParseErrors errorBundle =
+            errorBundle
+                { bundleErrors =
+                    mapParseError (ReplScriptParseError . unReplParseError)
+                        <$> bundleErrors errorBundle
+                }
 
-    executeScript ::
-        [ReplCommand] ->
-        t Simplifier ()
-    executeScript cmds = do
-        config <- ask
-        get >>= executeCommands config >>= put
-      where
-        executeCommands config st =
-            lift $
-                execStateReader config st $
-                    for_ cmds $
-                        if scriptModeOutput == EnableOutput
+        executeScript ::
+            [ReplCommand] ->
+            t Simplifier ()
+        executeScript cmds = do
+            config <- ask
+            get >>= executeCommands config >>= put
+            where
+                executeCommands config st =
+                    lift
+                        $ execStateReader config st
+                        $ for_ cmds
+                        $ if scriptModeOutput == EnableOutput
                             then executeCommandWithOutput
                             else executeCommand
 
-        executeCommand ::
-            ReplCommand ->
-            ReaderT Config (StateT ReplState Simplifier) ReplStatus
-        executeCommand command =
-            runInputT defaultSettings $
-                replInterpreter0
-                    (PrintAuxOutput $ \_ -> return ())
-                    (PrintKoreOutput $ \_ -> return ())
-                    command
+                executeCommand ::
+                    ReplCommand ->
+                    ReaderT Config (StateT ReplState Simplifier) ReplStatus
+                executeCommand command =
+                    runInputT defaultSettings
+                        $ replInterpreter0
+                            (PrintAuxOutput $ \_ -> return ())
+                            (PrintKoreOutput $ \_ -> return ())
+                            command
 
-        executeCommandWithOutput ::
-            ReplCommand ->
-            ReaderT Config (StateT ReplState Simplifier) ReplStatus
-        executeCommandWithOutput command = do
-            node <- Lens.use (field @"node")
-            liftIO $ putStr $ "Kore (" <> show (unReplNode node) <> ")> "
-            liftIO $ print command
-            runInputT defaultSettings $
-                replInterpreter0
-                    (PrintAuxOutput printIfNotEmpty)
-                    (PrintKoreOutput printIfNotEmpty)
-                    command
+                executeCommandWithOutput ::
+                    ReplCommand ->
+                    ReaderT Config (StateT ReplState Simplifier) ReplStatus
+                executeCommandWithOutput command = do
+                    node <- Lens.use (field @"node")
+                    liftIO $ putStr $ "Kore (" <> show (unReplNode node) <> ")> "
+                    liftIO $ print command
+                    runInputT defaultSettings
+                        $ replInterpreter0
+                            (PrintAuxOutput printIfNotEmpty)
+                            (PrintKoreOutput printIfNotEmpty)
+                            command
 
 formatUnificationMessage ::
     Maybe (NonEmpty (Condition RewritingVariableName)) ->
     ReplOutput
 formatUnificationMessage docOrCondition =
     maybe mempty prettyUnifiers docOrCondition
-  where
-    prettyUnifiers =
-        ReplOutput
-            . (:) (AuxOut "Succeeded with unifiers:\n")
-            . List.intersperse (AuxOut . show $ Pretty.indent 2 "and")
-            . map (KoreOut . show . Pretty.indent 4 . unparseUnifier)
-            . toList
-    unparseUnifier c =
-        unparse
-            . Pattern.toTermLike
-            $ TermLike.mkTop (TermLike.mkSortVariable "UNKNOWN") <$ c
+    where
+        prettyUnifiers =
+            ReplOutput
+                . (:) (AuxOut "Succeeded with unifiers:\n")
+                . List.intersperse (AuxOut . show $ Pretty.indent 2 "and")
+                . map (KoreOut . show . Pretty.indent 4 . unparseUnifier)
+                . toList
+        unparseUnifier c =
+            unparse
+                . Pattern.toTermLike
+                $ TermLike.mkTop (TermLike.mkSortVariable "UNKNOWN")
+                <$ c
 
 showProofStatus :: Map.Map ClaimIndex GraphProofStatus -> String
 showProofStatus m =
     Map.foldrWithKey acc "Current proof status: " m
-  where
-    acc :: ClaimIndex -> GraphProofStatus -> String -> String
-    acc key elm res =
-        res
-            <> "\n  claim "
-            <> (show . unClaimIndex) key
-            <> ": "
-            <> show elm
+    where
+        acc :: ClaimIndex -> GraphProofStatus -> String -> String
+        acc key elm res =
+            res
+                <> "\n  claim "
+                <> (show . unClaimIndex) key
+                <> ": "
+                <> show elm
 
 showCurrentClaimIndex :: ClaimIndex -> String
 showCurrentClaimIndex ci =
@@ -1737,5 +1743,6 @@ withExistingDirectory path action =
     ifM
         (doesParentDirectoryExist path)
         (action path)
-        $ liftIO . hPutStrLn stderr
+        $ liftIO
+        . hPutStrLn stderr
         $ "Directory does not exist."

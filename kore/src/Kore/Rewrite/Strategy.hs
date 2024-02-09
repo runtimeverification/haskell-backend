@@ -124,17 +124,17 @@ insChildNode ::
     m Graph.Node
 insChildNode configNode =
     State.state insChildNodeWorker
-  where
-    ChildNode{config} = configNode
-    ChildNode{parents} = configNode
-    insChildNodeWorker graph =
-        let node' = (succ . snd) (Graph.nodeRange graph)
-            lnode = (node', config)
-            ledges = do
-                (edge, node) <- parents
-                return (node, node', edge)
-            graph' = Graph.insEdges ledges $ Graph.insNode lnode graph
-         in (node', graph')
+    where
+        ChildNode{config} = configNode
+        ChildNode{parents} = configNode
+        insChildNodeWorker graph =
+            let node' = (succ . snd) (Graph.nodeRange graph)
+                lnode = (node', config)
+                ledges = do
+                    (edge, node) <- parents
+                    return (node, node', edge)
+                graph' = Graph.insEdges ledges $ Graph.insNode lnode graph
+             in (node', graph')
 
 {- | Perform a single step in the execution starting from the selected node in
  the graph and returning the resulting graph. Note that this does *NOT* do
@@ -170,19 +170,19 @@ executionHistoryStep transit step exe@ExecutionGraph{graph} node
                             (traverse_ insChildNode nodes)
                             graph
                 pure $ exe{graph = graph'}
-  where
-    nodeIsNotLeaf :: Bool
-    nodeIsNotLeaf = Graph.outdeg graph node > 0
+    where
+        nodeIsNotLeaf :: Bool
+        nodeIsNotLeaf = Graph.outdeg graph node > 0
 
-    mkChildNode ::
-        -- Child node identifier and configuration
-        (config, Seq rule) ->
-        ChildNode config rule
-    mkChildNode (config, rules) =
-        ChildNode
-            { config
-            , parents = [(rules, node)]
-            }
+        mkChildNode ::
+            -- Child node identifier and configuration
+            (config, Seq rule) ->
+            ChildNode config rule
+        mkChildNode (config, rules) =
+            ChildNode
+                { config
+                , parents = [(rules, node)]
+                }
 
 {- | Create a default/empty execution graph for the provided configuration. Note
  that the ID of the root node is NOT a hash but rather just '0'.
@@ -271,17 +271,17 @@ constructExecutionGraph ::
 constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 =
     unfoldM_ mkQueue transit' (instrs0, root execGraph)
         & flip State.execStateT execGraph
-  where
-    execGraph = emptyExecutionGraph config0
-    dropStrategy = snd
+    where
+        execGraph = emptyExecutionGraph config0
+        dropStrategy = snd
 
-    mkQueue = \as ->
-        unfoldSearchOrder searchOrder0 as
-            >=> applyBreadthLimit breadthLimit dropStrategy
+        mkQueue = \as ->
+            unfoldSearchOrder searchOrder0 as
+                >=> applyBreadthLimit breadthLimit dropStrategy
 
-    transit' =
-        updateGraph $ \instr config ->
-            mapTransitionT lift $ transit instr config
+        transit' =
+            updateGraph $ \instr config ->
+                mapTransitionT lift $ transit instr config
 
 {- | Unfold the function from the initial vertex.
 
@@ -302,11 +302,11 @@ unfoldM_ ::
     m ()
 unfoldM_ mkQueue next = \a ->
     mkQueue [a] Seq.empty >>= worker
-  where
-    worker Seq.Empty = return ()
-    worker (a Seq.:<| as) = do
-        as' <- next a
-        mkQueue as' as >>= worker
+    where
+        worker Seq.Empty = return ()
+        worker (a Seq.:<| as) = do
+            as' <- next a
+            mkQueue as' as >>= worker
 
 unfoldBreadthFirst :: Applicative f => [a] -> Seq a -> f (Seq a)
 unfoldBreadthFirst as' as = pure (as <> Seq.fromList as')
@@ -334,8 +334,8 @@ applyBreadthLimit breadthLimit transf as
     | exceedsLimit as =
         Exception.throwM (LimitExceeded (transf <$> as))
     | otherwise = pure as
-  where
-    exceedsLimit = not . withinLimit breadthLimit . fromIntegral . Seq.length
+    where
+        exceedsLimit = not . withinLimit breadthLimit . fromIntegral . Seq.length
 
 {- | Turn a transition rule into an unfolding function.
 
@@ -418,14 +418,14 @@ The step-wise execution history is the list of configurations at each time step.
 history :: ExecutionGraph config rule -> [[config]]
 history ExecutionGraph{root, graph} =
     List.unfoldr history1 [root]
-  where
-    history1 [] = Nothing
-    history1 nodes = Just (labs, concatMap (Graph.suc graph) nodes)
-      where
-        -- Node labels at this level. Using fromJust is safe because these
-        -- nodes were just retrieved from the graph; if they have suddenly
-        -- disappeared, something has gone tragically wrong.
-        labs = fromJust . Graph.lab graph <$> nodes
+    where
+        history1 [] = Nothing
+        history1 nodes = Just (labs, concatMap (Graph.suc graph) nodes)
+            where
+                -- Node labels at this level. Using fromJust is safe because these
+                -- nodes were just retrieved from the graph; if they have suddenly
+                -- disappeared, something has gone tragically wrong.
+                labs = fromJust . Graph.lab graph <$> nodes
 
 {- | Pick the longest-running branch from a 'Tree'.
 
@@ -437,17 +437,17 @@ pickLongest exeGraph = head $ last $ history exeGraph
 -- | Return all 'stuck' configurations, i.e. all leaves of the 'Tree'.
 pickFinal :: ExecutionGraph config rule -> [config]
 pickFinal ExecutionGraph{graph} =
-    map (fromJust . Graph.lab graph) $
-        filter isFinal $
-            Graph.nodes graph
-  where
-    isFinal = (0 ==) . Graph.outdeg graph
+    map (fromJust . Graph.lab graph)
+        $ filter isFinal
+        $ Graph.nodes graph
+    where
+        isFinal = (0 ==) . Graph.outdeg graph
 
 -- | Return all configurations reachable in one step.
 pickOne :: ExecutionGraph config rule -> [config]
 pickOne ExecutionGraph{root, graph} =
-    map (fromJust . Graph.lab graph) $
-        Graph.neighbors graph root
+    map (fromJust . Graph.lab graph)
+        $ Graph.neighbors graph root
 
 -- | Return all reachable configurations.
 pickStar :: ExecutionGraph config rule -> [config]
@@ -456,6 +456,6 @@ pickStar ExecutionGraph{graph} = map snd $ Graph.labNodes graph
 -- | Return all configurations reachable after at least one step.
 pickPlus :: ExecutionGraph config rule -> [config]
 pickPlus ExecutionGraph{root, graph} =
-    map snd $
-        filter ((/= root) . fst) $
-            Graph.labNodes graph
+    map snd
+        $ filter ((/= root) . fst)
+        $ Graph.labNodes graph

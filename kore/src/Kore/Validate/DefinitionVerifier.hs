@@ -140,8 +140,8 @@ verifyAndIndexDefinitionWithBase
             verifyAttributes (definitionAttributes definition)
 
             return (index, names)
-      where
-        modulesByName = Map.fromList . map (\m -> (moduleName m, m))
+        where
+            modulesByName = Map.fromList . map (\m -> (moduleName m, m))
 
 sortModuleClaims ::
     VerifiedModule declAtts ->
@@ -149,4 +149,4 @@ sortModuleClaims ::
 sortModuleClaims verifiedModule =
     verifiedModule
         & field @"indexedModuleClaims"
-            %~ sortOn (Attribute.sourceLocation . fst)
+        %~ sortOn (Attribute.sourceLocation . fst)

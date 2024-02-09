@@ -49,12 +49,12 @@ instance FreshPartialOrd V where
     maxBoundName v = v{counter = Just Sup}
     nextName v1 v2 =
         Just $ Lens.set (field @"counter") counter' v1
-      where
-        counter' =
-            case Lens.view (field @"counter") v2 of
-                Nothing -> Just (Element 0)
-                Just (Element a) -> Just (Element (succ a))
-                Just Sup -> illegalVariableCounter
+        where
+            counter' =
+                case Lens.view (field @"counter") v2 of
+                    Nothing -> Just (Element 0)
+                    Just (Element a) -> Just (Element (succ a))
+                    Just Sup -> illegalVariableCounter
 
 instance FreshName V
 

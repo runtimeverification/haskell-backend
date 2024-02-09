@@ -29,9 +29,9 @@ import Test.Tasty.HUnit (testCase, (@?=))
 patternsFrom :: FilePath -> IO [ParsedPattern]
 patternsFrom path = do
     contents <- T.readFile path
-    pure $
-        either (const []) getPatterns $
-            parseKoreDefinition path contents
+    pure
+        $ either (const []) getPatterns
+        $ parseKoreDefinition path contents
 
 getPatterns :: ParsedDefinition -> [ParsedPattern]
 getPatterns =
@@ -75,11 +75,11 @@ jsonArray bss =
 toJsonGolden :: FilePath -> FilePath -> TestTree
 toJsonGolden jsonFile koreFile =
     goldenVsString testName jsonFile encodeFile
-  where
-    testName = unwords ["Converting", takeFileName koreFile, "to JSON"]
-    encodeFile = do
-        ps <- patternsFrom koreFile
-        pure . jsonArray $ map encodePattern ps
+    where
+        testName = unwords ["Converting", takeFileName koreFile, "to JSON"]
+        encodeFile = do
+            ps <- patternsFrom koreFile
+            pure . jsonArray $ map encodePattern ps
 
 ----------------------------------------
 -- set up tests for all golden json files
@@ -108,23 +108,23 @@ makeGold = do
 -}
 comparePatternsFrom :: FilePath -> TestTree
 comparePatternsFrom jsonFile =
-    testCase ("Comparing results from " <> baseName) $
-        do
+    testCase ("Comparing results from " <> baseName)
+        $ do
             fromJson <- parseJson jsonFile
             fromKore <- map fromPattern <$> patternsFrom koreFile
             fromJson @?= fromKore
-  where
-    baseName = takeBaseName jsonFile
-    koreFile = koreLocation </> baseName <.> "kore"
-    parseJson =
-        fmap (either (error . show) (map term))
-            . Json.eitherDecodeFileStrict @[KoreJson]
+    where
+        baseName = takeBaseName jsonFile
+        koreFile = koreLocation </> baseName <.> "kore"
+        parseJson =
+            fmap (either (error . show) (map term))
+                . Json.eitherDecodeFileStrict @[KoreJson]
 
 test_ParserKoreFiles :: IO TestTree
 test_ParserKoreFiles = do
     jsonFiles <- findByExtension [".json"] jsonLocation
-    pure $
-        testGroup
+    pure
+        $ testGroup
             "JSON <-> textual kore conversion tests"
             [ testGroup
                 ("Encode to golden JSON files in " <> jsonLocation)

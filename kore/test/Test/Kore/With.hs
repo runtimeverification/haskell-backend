@@ -455,9 +455,9 @@ instance With Attribute.Constructors Attribute.Constructors.ConstructorLike wher
     with
         (Attribute.Constructors (Just constructors))
         constructorLike =
-            Attribute.Constructors $
-                Just $
-                    nonEmptyAppend constructorLike constructors
+            Attribute.Constructors
+                $ Just
+                $ nonEmptyAppend constructorLike constructors
 
 instance With Attribute.Constructors.ConstructorLike Kore.Sort where
     with

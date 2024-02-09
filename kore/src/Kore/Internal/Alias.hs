@@ -76,12 +76,12 @@ instance
 instance Synthetic Sort (Application (Alias patternType)) where
     synthetic application =
         resultSort & deepseq (matchSorts operandSorts children)
-      where
-        Application{applicationSymbolOrAlias = alias} = application
-        Application{applicationChildren = children} = application
-        Alias{aliasSorts} = alias
-        resultSort = applicationSortsResult aliasSorts
-        operandSorts = applicationSortsOperands aliasSorts
+        where
+            Application{applicationSymbolOrAlias = alias} = application
+            Application{applicationChildren = children} = application
+            Alias{aliasSorts} = alias
+            resultSort = applicationSortsResult aliasSorts
+            operandSorts = applicationSortsOperands aliasSorts
 
 instance AstWithLocation (Alias patternType) where
     locationFromAst = locationFromAst . aliasConstructor

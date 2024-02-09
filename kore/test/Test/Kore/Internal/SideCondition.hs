@@ -292,26 +292,28 @@ test_assumeDefined =
             actual = assumeDefined testMap
         assertEqual "" expected actual
     ]
-  where
-    testCollection input expectedTerms expectedCollections = do
-        let testMap = collectionToMapTerm input
-            testSet = collectionToSetTerm input
-            expectedMaps = collectionToMapTerm <$> expectedCollections
-            expectedSets = collectionToSetTerm <$> expectedCollections
-            mapExpected =
-                expectedTerms <> expectedMaps
-                    & HashSet.fromList
-                    & fromDefinedTerms
-                    & Just
-            setExpected =
-                expectedTerms <> expectedSets
-                    & HashSet.fromList
-                    & fromDefinedTerms
-                    & Just
-            mapActual = assumeDefined testMap
-            setActual = assumeDefined testSet
-        assertEqual "Map" mapExpected mapActual
-        assertEqual "Set" setExpected setActual
+    where
+        testCollection input expectedTerms expectedCollections = do
+            let testMap = collectionToMapTerm input
+                testSet = collectionToSetTerm input
+                expectedMaps = collectionToMapTerm <$> expectedCollections
+                expectedSets = collectionToSetTerm <$> expectedCollections
+                mapExpected =
+                    expectedTerms
+                        <> expectedMaps
+                        & HashSet.fromList
+                        & fromDefinedTerms
+                        & Just
+                setExpected =
+                    expectedTerms
+                        <> expectedSets
+                        & HashSet.fromList
+                        & fromDefinedTerms
+                        & Just
+                mapActual = assumeDefined testMap
+                setActual = assumeDefined testSet
+            assertEqual "Map" mapExpected mapActual
+            assertEqual "Set" setExpected setActual
 
 test_isDefined :: [TestTree]
 test_isDefined =
@@ -459,26 +461,26 @@ test_isDefined =
             actual = isDefined definedMap testTerm
         assertBool "" actual
     ]
-  where
-    testCollection input maybeAssumeDefined expectedIsDefined = do
-        let testMap = collectionToMapTerm input
-            testSet = collectionToSetTerm input
-            -- The tests assume that the defined part is
-            -- well constructed (is not \\bottom)
-            sideConditionMap =
-                maybe
-                    top
-                    (fromJust . assumeDefined . collectionToMapTerm)
-                    maybeAssumeDefined
-            sideConditionSet =
-                maybe
-                    top
-                    (fromJust . assumeDefined . collectionToSetTerm)
-                    maybeAssumeDefined
-            mapActual = isDefined sideConditionMap testMap
-            setActual = isDefined sideConditionSet testSet
-        assertEqual "Map" expectedIsDefined mapActual
-        assertEqual "Set" expectedIsDefined setActual
+    where
+        testCollection input maybeAssumeDefined expectedIsDefined = do
+            let testMap = collectionToMapTerm input
+                testSet = collectionToSetTerm input
+                -- The tests assume that the defined part is
+                -- well constructed (is not \\bottom)
+                sideConditionMap =
+                    maybe
+                        top
+                        (fromJust . assumeDefined . collectionToMapTerm)
+                        maybeAssumeDefined
+                sideConditionSet =
+                    maybe
+                        top
+                        (fromJust . assumeDefined . collectionToSetTerm)
+                        maybeAssumeDefined
+                mapActual = isDefined sideConditionMap testMap
+                setActual = isDefined sideConditionSet testSet
+            assertEqual "Map" expectedIsDefined mapActual
+            assertEqual "Set" expectedIsDefined setActual
 
 test_generateNormalizedAcs :: [TestTree]
 test_generateNormalizedAcs =
@@ -698,22 +700,22 @@ test_generateNormalizedAcs =
             --     []
             testCollection collection expected
     ]
-  where
-    testCollection input expected = do
-        let testMap = collectionToMap input
-            testSet = collectionToSet input
-            expectedMaps =
-                HashSet.fromList $
-                    collectionToMap
+    where
+        testCollection input expected = do
+            let testMap = collectionToMap input
+                testSet = collectionToSet input
+                expectedMaps =
+                    HashSet.fromList
+                        $ collectionToMap
                         <$> expected
-            expectedSets =
-                HashSet.fromList $
-                    collectionToSet
+                expectedSets =
+                    HashSet.fromList
+                        $ collectionToSet
                         <$> expected
-            actualMaps = generateNormalizedAcs testMap
-            actualSets = generateNormalizedAcs testSet
-        assertEqual "Maps" expectedMaps actualMaps
-        assertEqual "Sets" expectedSets actualSets
+                actualMaps = generateNormalizedAcs testMap
+                actualSets = generateNormalizedAcs testSet
+            assertEqual "Maps" expectedMaps actualMaps
+            assertEqual "Sets" expectedSets actualSets
 
 test_cacheSimplifiedFunctions :: [TestTree]
 test_cacheSimplifiedFunctions =
@@ -774,11 +776,11 @@ collectionToMap ::
     InternalMap Key (TermLike VariableName)
 collectionToMap Collection{elements, opaqueVars} =
     Mock.framedInternalMap elements mapOpaqueVars
-  where
-    mapOpaqueVars = mkElemVar . mkTestMapVar <$> opaqueVars
-    mkTestMapVar int =
-        let counter = Just (Element int)
-         in Mock.MockElementVariable (testId "xMap") counter Mock.mapSort
+    where
+        mapOpaqueVars = mkElemVar . mkTestMapVar <$> opaqueVars
+        mkTestMapVar int =
+            let counter = Just (Element int)
+             in Mock.MockElementVariable (testId "xMap") counter Mock.mapSort
 
 collectionToSetTerm ::
     Collection VariableName ->
@@ -790,12 +792,12 @@ collectionToSet ::
     InternalSet Key (TermLike VariableName)
 collectionToSet Collection{elements, opaqueVars} =
     Mock.framedInternalSet setElements setOpaqueVars
-  where
-    setElements = fst <$> elements
-    setOpaqueVars = mkElemVar . mkTestSetVar <$> opaqueVars
-    mkTestSetVar int =
-        let counter = Just (Element int)
-         in Mock.MockElementVariable (testId "xSet") counter Mock.setSort
+    where
+        setElements = fst <$> elements
+        setOpaqueVars = mkElemVar . mkTestSetVar <$> opaqueVars
+        mkTestSetVar int =
+            let counter = Just (Element int)
+             in Mock.MockElementVariable (testId "xSet") counter Mock.setSort
 
 data Collection variable = Collection
     { elements :: [(TermLike variable, TermLike variable)]

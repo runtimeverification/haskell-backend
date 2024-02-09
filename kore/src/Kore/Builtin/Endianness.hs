@@ -58,17 +58,17 @@ endiannessVerifier ::
     ApplicationVerifier Verified.Pattern
 endiannessVerifier ctor =
     ApplicationVerifier worker
-  where
-    worker application = do
-        -- TODO (thomas.tuegel): Move the checks into the symbol verifiers.
-        unless (null arguments) (koreFail "expected zero arguments")
-        let Attribute.Symbol.SymbolKywd{isSymbolKywd} =
-                Attribute.Symbol.symbolKywd $ symbolAttributes symbol
-        unless isSymbolKywd (koreFail "expected symbol'Kywd'{}() attribute")
-        return (EndiannessF . Const $ ctor symbol)
-      where
-        arguments = applicationChildren application
-        symbol = applicationSymbolOrAlias application
+    where
+        worker application = do
+            -- TODO (thomas.tuegel): Move the checks into the symbol verifiers.
+            unless (null arguments) (koreFail "expected zero arguments")
+            let Attribute.Symbol.SymbolKywd{isSymbolKywd} =
+                    Attribute.Symbol.symbolKywd $ symbolAttributes symbol
+            unless isSymbolKywd (koreFail "expected symbol'Kywd'{}() attribute")
+            return (EndiannessF . Const $ ctor symbol)
+            where
+                arguments = applicationChildren application
+                symbol = applicationSymbolOrAlias application
 
 littleEndianVerifier :: ApplicationVerifier Verified.Pattern
 littleEndianVerifier = endiannessVerifier LittleEndian
@@ -104,5 +104,5 @@ unifyEquals unifyData
             "Cannot unify distinct constructors."
             term1
             term2
-  where
-    UnifyEqualsEndianness{end1, end2, term1, term2} = unifyData
+    where
+        UnifyEqualsEndianness{end1, end2, term1, term2} = unifyData

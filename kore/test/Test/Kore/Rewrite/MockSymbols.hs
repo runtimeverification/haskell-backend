@@ -747,8 +747,8 @@ mkRuleElementVariable ::
 mkRuleElementVariable base counter variableSort =
     Variable
         { variableName =
-            ElementVariableName $
-                mkRuleVariable VariableName{base, counter}
+            ElementVariableName
+                $ mkRuleVariable VariableName{base, counter}
         , variableSort
         }
 mkConfigElementVariable ::
@@ -756,8 +756,8 @@ mkConfigElementVariable ::
 mkConfigElementVariable base counter variableSort =
     Variable
         { variableName =
-            ElementVariableName $
-                mkConfigVariable VariableName{base, counter}
+            ElementVariableName
+                $ mkConfigVariable VariableName{base, counter}
         , variableSort
         }
 mkEquationElementVariable ::
@@ -765,8 +765,8 @@ mkEquationElementVariable ::
 mkEquationElementVariable base counter variableSort =
     Variable
         { variableName =
-            ElementVariableName $
-                mkEquationVariable VariableName{base, counter}
+            ElementVariableName
+                $ mkEquationVariable VariableName{base, counter}
         , variableSort
         }
 
@@ -787,8 +787,8 @@ mkRuleSetVariable ::
 mkRuleSetVariable base counter variableSort =
     Variable
         { variableName =
-            SetVariableName $
-                mkRuleVariable VariableName{base, counter}
+            SetVariableName
+                $ mkRuleVariable VariableName{base, counter}
         , variableSort
         }
 
@@ -797,8 +797,8 @@ mkConfigSetVariable ::
 mkConfigSetVariable base counter variableSort =
     Variable
         { variableName =
-            SetVariableName $
-                mkConfigVariable VariableName{base, counter}
+            SetVariableName
+                $ mkConfigVariable VariableName{base, counter}
         , variableSort
         }
 
@@ -1006,12 +1006,12 @@ makeSomeVariable name variableSort =
         { variableSort
         , variableName
         }
-  where
-    variableName =
-        injectVariableName VariableName{base = testId name, counter = mempty}
-    injectVariableName
-        | Text.head name == '@' = inject . SetVariableName
-        | otherwise = inject . ElementVariableName
+    where
+        variableName =
+            injectVariableName VariableName{base = testId name, counter = mempty}
+        injectVariableName
+            | Text.head name == '@' = inject . SetVariableName
+            | otherwise = inject . ElementVariableName
 
 makeSomeConfigVariable :: Text -> Sort -> SomeVariable RewritingVariableName
 makeSomeConfigVariable name variableSort =
@@ -1019,13 +1019,13 @@ makeSomeConfigVariable name variableSort =
         { variableSort
         , variableName
         }
-  where
-    variableName =
-        injectVariableName $
-            mkConfigVariable VariableName{base = testId name, counter = mempty}
-    injectVariableName
-        | Text.head name == '@' = inject . SetVariableName
-        | otherwise = inject . ElementVariableName
+    where
+        variableName =
+            injectVariableName
+                $ mkConfigVariable VariableName{base = testId name, counter = mempty}
+        injectVariableName
+            | Text.head name == '@' = inject . SetVariableName
+            | otherwise = inject . ElementVariableName
 
 makeTestSomeVariable :: Text -> SomeVariable VariableName
 makeTestSomeVariable = (`makeSomeVariable` testSort)
@@ -1406,11 +1406,11 @@ sortInjection injTo termLike =
             , injChild = termLike
             , injAttributes
             }
-  where
-    injFrom = Internal.termLikeSort termLike
-    Symbol{symbolConstructor = injConstructor} = symbol'
-    Symbol{symbolAttributes = injAttributes} = symbol'
-    symbol' = sortInjectionSymbol injFrom injTo
+    where
+        injFrom = Internal.termLikeSort termLike
+        Symbol{symbolConstructor = injConstructor} = symbol'
+        Symbol{symbolAttributes = injAttributes} = symbol'
+        symbol' = sortInjectionSymbol injFrom injTo
 
 sortInjection10 ::
     InternalVariable variable =>
@@ -1861,8 +1861,8 @@ zeroarySmtSort sortId =
                     , arity = 0
                     }
         }
-  where
-    encodedId = SMT.encode (SMT.encodable sortId)
+    where
+        encodedId = SMT.encode (SMT.encodable sortId)
 
 builtinZeroarySmtSort :: SMT.SExpr -> SMT.UnresolvedSort
 builtinZeroarySmtSort sExpr =
@@ -2176,13 +2176,17 @@ framedInternalMap elements opaque =
                     , opaque
                     }
         }
-  where
-    asConcrete element@(key, value) =
-        (,) <$> retractKey key <*> pure value
-            & maybe (Left element) Right
-    (abstractElements, HashMap.fromList -> concreteElements) =
-        asConcrete . Bifunctor.second MapValue <$> elements
-            & partitionEithers
+    where
+        asConcrete element@(key, value) =
+            (,)
+                <$> retractKey key
+                <*> pure value
+                & maybe (Left element) Right
+        (abstractElements, HashMap.fromList -> concreteElements) =
+            asConcrete
+                . Bifunctor.second MapValue
+                <$> elements
+                & partitionEithers
 
 builtinList ::
     InternalVariable variable =>
@@ -2240,15 +2244,16 @@ framedInternalSet elements opaque =
                     , opaque
                     }
         }
-  where
-    asConcrete key =
-        do
-            Monad.guard (isConstructorLike key)
-            (,) <$> retractKey key <*> pure SetValue
-            & maybe (Left (key, SetValue)) Right
-    (abstractElements, HashMap.fromList -> concreteElements) =
-        asConcrete <$> elements
-            & partitionEithers
+    where
+        asConcrete key =
+            do
+                Monad.guard (isConstructorLike key)
+                (,) <$> retractKey key <*> pure SetValue
+                & maybe (Left (key, SetValue)) Right
+        (abstractElements, HashMap.fromList -> concreteElements) =
+            asConcrete
+                <$> elements
+                & partitionEithers
 
 builtinInt ::
     Integer ->
@@ -2346,34 +2351,35 @@ generatorSetup =
         , maybeStringBuiltinSort = Just stringSort
         , metadataTools = Test.Kore.Rewrite.MockSymbols.metadataTools
         }
-  where
-    doesNotHaveArguments Symbol{symbolParams} = null symbolParams
+    where
+        doesNotHaveArguments Symbol{symbolParams} = null symbolParams
 
 -- | ensure that test data can be generated using the above setup
 test_canGenerateConsistentTerms :: TestTree
 test_canGenerateConsistentTerms =
-    testGroup "can generate consistent terms for all given sorts" $
-        map mkTest testSorts
-  where
-    testSorts = ConsistentKore.allSorts generatorSetup
-    sizes = map Range.Size [1 .. 10]
+    testGroup "can generate consistent terms for all given sorts"
+        $ map mkTest testSorts
+    where
+        testSorts = ConsistentKore.allSorts generatorSetup
+        sizes = map Range.Size [1 .. 10]
 
-    mkTest :: Sort -> TestTree
-    mkTest sort@(SortActualSort SortActual{sortActualName = InternedId{getInternedId}}) =
-        testGroup
-            (show getInternedId)
-            [ testProperty (show size) . withTests 1 . property $ do
-                r <-
-                    forAll . Gen.resize size $
-                        ConsistentKore.runKoreGen
-                            generatorSetup
-                            (ConsistentKore.termLikeGenWithSort sort)
-                -- just test that this works
-                Hedgehog.diff 0 (<) (length $ show r)
-            | size <- sizes
-            ]
-    mkTest SortVariableSort{} =
-        error "Found a sort variable in the generator setup"
+        mkTest :: Sort -> TestTree
+        mkTest sort@(SortActualSort SortActual{sortActualName = InternedId{getInternedId}}) =
+            testGroup
+                (show getInternedId)
+                [ testProperty (show size) . withTests 1 . property $ do
+                    r <-
+                        forAll
+                            . Gen.resize size
+                            $ ConsistentKore.runKoreGen
+                                generatorSetup
+                                (ConsistentKore.termLikeGenWithSort sort)
+                    -- just test that this works
+                    Hedgehog.diff 0 (<) (length $ show r)
+                | size <- sizes
+                ]
+        mkTest SortVariableSort{} =
+            error "Found a sort variable in the generator setup"
 
 builtinSimplifiers :: Map Id Text
 builtinSimplifiers =
@@ -2480,5 +2486,5 @@ verifiedModuleContext =
             , indexedModuleHookedIdentifiers = mempty
             }
         & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
-  where
-    ConsistentKore.Setup{allSymbols} = generatorSetup
+    where
+        ConsistentKore.Setup{allSymbols} = generatorSetup

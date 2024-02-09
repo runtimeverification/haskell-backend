@@ -127,13 +127,13 @@ instance Pretty ClaimPattern where
             , "right:"
             , Pretty.indent 4 (unparse $ OrPattern.toTermLike sort right)
             ]
-      where
-        ClaimPattern
-            { left
-            , right
-            , existentials
-            } = claimPattern'
-        sort = getClaimPatternSort claimPattern'
+        where
+            ClaimPattern
+                { left
+                , right
+                , existentials
+                } = claimPattern'
+            sort = getClaimPatternSort claimPattern'
 
 instance TopBottom ClaimPattern where
     isTop _ = False
@@ -157,17 +157,17 @@ freeVariablesRight claimPattern'@(ClaimPattern _ _ _ _) =
             existentials
             (OrPattern.toTermLike sort right)
         )
-  where
-    ClaimPattern{right, existentials} = claimPattern'
-    sort = getClaimPatternSort claimPattern'
+    where
+        ClaimPattern{right, existentials} = claimPattern'
+        sort = getClaimPatternSort claimPattern'
 
 freeVariablesLeft ::
     ClaimPattern ->
     FreeVariables RewritingVariableName
 freeVariablesLeft claimPattern'@(ClaimPattern _ _ _ _) =
     freeVariables left
-  where
-    ClaimPattern{left} = claimPattern'
+    where
+        ClaimPattern{left} = claimPattern'
 
 instance HasFreeVariables ClaimPattern RewritingVariableName where
     freeVariables claimPattern'@(ClaimPattern _ _ _ _) =
@@ -180,12 +180,12 @@ instance Substitute ClaimPattern where
     type VariableNameType ClaimPattern = RewritingVariableName
 
     substitute subst claimPattern'@(ClaimPattern _ _ _ _) =
-        substituteRight subst $
-            claimPattern'
+        substituteRight subst
+            $ claimPattern'
                 { left = substitute subst left
                 }
-      where
-        ClaimPattern{left} = claimPattern'
+        where
+            ClaimPattern{left} = claimPattern'
 
     rename = substitute . fmap mkVar
     {-# INLINE rename #-}
@@ -230,20 +230,20 @@ claimPatternToTerm modality representation@(ClaimPattern _ _ _ _) =
     TermLike.mkImplies
         (TermLike.mkAnd leftCondition leftTerm)
         (TermLike.applyModality modality rightPattern)
-  where
-    ClaimPattern{left, right, existentials} = representation
-    leftTerm =
-        Pattern.term left
-            & getRewritingTerm
-    sort = TermLike.termLikeSort leftTerm
-    leftCondition =
-        Pattern.withoutTerm left
-            & Pattern.fromCondition sort
-            & Pattern.toTermLike
-            & getRewritingTerm
-    rightPattern =
-        TermLike.mkExistsN existentials (OrPattern.toTermLike sort right)
-            & getRewritingTerm
+    where
+        ClaimPattern{left, right, existentials} = representation
+        leftTerm =
+            Pattern.term left
+                & getRewritingTerm
+        sort = TermLike.termLikeSort leftTerm
+        leftCondition =
+            Pattern.withoutTerm left
+                & Pattern.fromCondition sort
+                & Pattern.toTermLike
+                & getRewritingTerm
+        rightPattern =
+            TermLike.mkExistsN existentials (OrPattern.toTermLike sort right)
+                & getRewritingTerm
 
 substituteRight ::
     Map
@@ -255,12 +255,12 @@ substituteRight subst0 claimPattern'@ClaimPattern{right, existentials} =
     claimPattern'
         { right = substitute subst right
         }
-  where
-    subst =
-        foldr
-            (Map.delete . inject . TermLike.variableName)
-            subst0
-            existentials
+    where
+        subst =
+            foldr
+                (Map.delete . inject . TermLike.variableName)
+                subst0
+                existentials
 
 renameExistentials ::
     HasCallStack =>
@@ -274,15 +274,15 @@ renameExistentials subst0 claimPattern'@ClaimPattern{right, existentials} =
         { right = substitute subst right
         , existentials = renameVariable <$> existentials
         }
-  where
-    renameVariable ::
-        ElementVariable RewritingVariableName ->
-        ElementVariable RewritingVariableName
-    renameVariable var =
-        let name = SomeVariableNameElement . variableName $ var
-         in maybe var TermLike.expectElementVariable $
-                Map.lookup name subst0
-    subst = TermLike.mkVar <$> subst0
+    where
+        renameVariable ::
+            ElementVariable RewritingVariableName ->
+            ElementVariable RewritingVariableName
+        renameVariable var =
+            let name = SomeVariableNameElement . variableName $ var
+             in maybe var TermLike.expectElementVariable
+                    $ Map.lookup name subst0
+        subst = TermLike.mkVar <$> subst0
 
 {- | Applies a substitution to a claim and checks that
  it was fully applied, i.e. there is no substitution
@@ -301,10 +301,10 @@ applySubstitution substitution claim =
                 ( "Substituted variables not removed from the rule, cannot throw "
                     ++ "substitution away."
                 )
-  where
-    subst = Substitution.toMap substitution
-    finalClaim = substitute subst claim
-    substitutedVariables = Substitution.variables substitution
+    where
+        subst = Substitution.toMap substitution
+        finalClaim = substitute subst claim
+        substitutedVariables = Substitution.variables substitution
 
 -- | Is the rule free of the given variables?
 isFreeOf ::
@@ -312,9 +312,9 @@ isFreeOf ::
     Set.Set (SomeVariable RewritingVariableName) ->
     Bool
 isFreeOf rule =
-    Set.disjoint $
-        FreeVariables.toSet $
-            freeVariables rule
+    Set.disjoint
+        $ FreeVariables.toSet
+        $ freeVariables rule
 
 -- TODO(Ana): move this to Internal.TermLike?
 
@@ -332,8 +332,8 @@ forgetSimplified claimPattern'@(ClaimPattern _ _ _ _) =
         { left = Pattern.forgetSimplified left
         , right = OrPattern.forgetSimplified right
         }
-  where
-    ClaimPattern{left, right} = claimPattern'
+    where
+        ClaimPattern{left, right} = claimPattern'
 
 {- | Ensure that the 'ClaimPattern''s bound variables are fresh.
 
@@ -355,13 +355,13 @@ instance UnifyingRule ClaimPattern where
 
     matchingPattern claim@(ClaimPattern _ _ _ _) =
         Pattern.term left
-      where
-        ClaimPattern{left} = claim
+        where
+            ClaimPattern{left} = claim
 
     precondition claim@(ClaimPattern _ _ _ _) =
         Condition.toPredicate . Pattern.withoutTerm $ left
-      where
-        ClaimPattern{left} = claim
+        where
+            ClaimPattern{left} = claim
 
     refreshRule stale claim@(ClaimPattern _ _ _ _) =
         do
@@ -378,18 +378,18 @@ instance UnifyingRule ClaimPattern where
             -- Renaming the bound variables is invisible from outside.
             pure (renaming, refreshedClaim)
             & flip evalState (FreeVariables.toNames stale)
-      where
-        refreshVariables' variables = do
-            staleNames <- State.get
-            let renaming = refreshVariablesSet staleNames variables
-                staleNames' = Set.mapMonotonic variableName variables
-                staleNames'' =
-                    Map.elems renaming
-                        & foldMap FreeVariables.freeVariable
-                        & FreeVariables.toNames
-            State.put (staleNames <> staleNames' <> staleNames'')
-            pure renaming
-        ClaimPattern{existentials} = claim
+        where
+            refreshVariables' variables = do
+                staleNames <- State.get
+                let renaming = refreshVariablesSet staleNames variables
+                    staleNames' = Set.mapMonotonic variableName variables
+                    staleNames'' =
+                        Map.elems renaming
+                            & foldMap FreeVariables.freeVariable
+                            & FreeVariables.toNames
+                State.put (staleNames <> staleNames' <> staleNames'')
+                pure renaming
+            ClaimPattern{existentials} = claim
 
 mkGoal :: ClaimPattern -> ClaimPattern
 mkGoal claimPattern'@(ClaimPattern _ _ _ _) =
@@ -404,8 +404,8 @@ mkGoal claimPattern'@(ClaimPattern _ _ _ _) =
             TermLike.mapElementVariable resetConfigVariable
                 <$> existentials
         }
-  where
-    ClaimPattern{left, right, existentials} = claimPattern'
+    where
+        ClaimPattern{left, right, existentials} = claimPattern'
 
 parseRightHandSide ::
     forall variable.
@@ -419,14 +419,14 @@ parseRightHandSide term =
      in OrPattern.map
             (flip Pattern.andCondition condition)
             (parseOrPatternFromTermLike term')
-  where
-    parseOrPatternFromTermLike ::
-        TermLike variable ->
-        OrPattern variable
-    parseOrPatternFromTermLike (TermLike.Or_ _ term1 term2) =
-        parseOrPatternFromTermLike term1
-            <> parseOrPatternFromTermLike term2
-    parseOrPatternFromTermLike term' =
-        OrPattern.fromPattern
-            . parsePatternFromTermLike
-            $ term'
+    where
+        parseOrPatternFromTermLike ::
+            TermLike variable ->
+            OrPattern variable
+        parseOrPatternFromTermLike (TermLike.Or_ _ term1 term2) =
+            parseOrPatternFromTermLike term1
+                <> parseOrPatternFromTermLike term2
+        parseOrPatternFromTermLike term' =
+            OrPattern.fromPattern
+                . parsePatternFromTermLike
+                $ term'

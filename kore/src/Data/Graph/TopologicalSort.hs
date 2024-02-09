@@ -53,7 +53,7 @@ topologicalSort edges =
                 (Map.toList edges)
             )
         )
-  where
-    extractSortedNode :: SCC node -> Either (TopologicalSortCycles node) node
-    extractSortedNode (AcyclicSCC n) = Right n
-    extractSortedNode (CyclicSCC nodes) = Left (TopologicalSortCycles nodes)
+    where
+        extractSortedNode :: SCC node -> Either (TopologicalSortCycles node) node
+        extractSortedNode (AcyclicSCC n) = Right n
+        extractSortedNode (CyclicSCC nodes) = Left (TopologicalSortCycles nodes)

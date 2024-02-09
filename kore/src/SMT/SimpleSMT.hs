@@ -308,11 +308,11 @@ instance Exception.Exception SolverException where
             , Just $ Pretty.indent 4 $ prettyException someException
             , (Pretty.<+>) "Solver exit code:" . prettyExitCode <$> exitCode
             ]
-      where
-        prettyException =
-            Pretty.vsep . map fromString . lines . Exception.displayException
-        prettyExitCode ExitSuccess = "0"
-        prettyExitCode (ExitFailure code) = Pretty.pretty code
+        where
+            prettyException =
+                Pretty.vsep . map fromString . lines . Exception.displayException
+            prettyExitCode ExitSuccess = "0"
+            prettyExitCode (ExitFailure code) = Pretty.pretty code
 
 throwSolverException :: ProcessHandle -> SomeException -> IO a
 throwSolverException solverHandle someException
@@ -347,18 +347,18 @@ newSolver exe opts logger = do
     void $ forkIO (X.handle ignoreExceptions redirectErrorsToLogger)
 
     setOption solver ":print-success" "true"
-    Monad.when featureProduceAssertions $
-        setOption solver ":produce-assertions" "true"
+    Monad.when featureProduceAssertions
+        $ setOption solver ":produce-assertions" "true"
 
     return solverHandle
-  where
-    ignoreExceptions X.SomeException{} = return ()
-    solverProcess =
-        (proc exe opts)
-            { std_in = CreatePipe
-            , std_out = CreatePipe
-            , std_err = CreatePipe
-            }
+    where
+        ignoreExceptions X.SomeException{} = return ()
+        solverProcess =
+            (proc exe opts)
+                { std_in = CreatePipe
+                , std_out = CreatePipe
+                , std_err = CreatePipe
+                }
 
 logMessageWith ::
     HasCallStack =>
@@ -368,8 +368,8 @@ logMessageWith ::
     IO ()
 logMessageWith severity Solver{logger} a =
     logger Colog.<& Log.toEntry message
-  where
-    message = Log.LogMessage a severity callStack
+    where
+        message = Log.LogMessage a severity callStack
 
 debug :: HasCallStack => Solver -> Text -> IO ()
 debug = logMessageWith Log.Debug
@@ -393,18 +393,18 @@ recv Solver{solverHandle = SolverHandle{hOut, hProc}, logger} =
         let resp = Text.unlines (reverse responseLines)
         logDebugSolverRecvWith logger resp
         readSExpr resp
-  where
-    readResponse :: Int -> [Text] -> IO [Text]
-    readResponse 0 lines'
-        -- If we closed all parentheses ("0" above) and we have read at least
-        -- one line, then we finished reading the entire z3 response so we return.
-        | Prelude.not (Prelude.null lines') = return lines'
-    readResponse open lines' = do
-        line <- Text.hGetLine hOut
-        readResponse (open + deltaOpen line) (line : lines')
+    where
+        readResponse :: Int -> [Text] -> IO [Text]
+        readResponse 0 lines'
+            -- If we closed all parentheses ("0" above) and we have read at least
+            -- one line, then we finished reading the entire z3 response so we return.
+            | Prelude.not (Prelude.null lines') = return lines'
+        readResponse open lines' = do
+            line <- Text.hGetLine hOut
+            readResponse (open + deltaOpen line) (line : lines')
 
-    deltaOpen :: Text -> Int
-    deltaOpen line = Text.count "(" line - Text.count ")" line
+        deltaOpen :: Text -> Int
+        deltaOpen line = Text.count "(" line - Text.count ")" line
 
 command :: Solver -> Maybe SExpr -> SExpr -> IO SExpr
 command solver comment cmd =
@@ -420,9 +420,9 @@ stop solver@Solver{solverHandle = SolverHandle{hIn, hOut, hErr, hProc}} =
         cleanupProcess (Just hIn, Just hOut, Just hErr, hProc)
             & X.handle handler
         return ec
-  where
-    handler :: X.IOException -> IO ()
-    handler = debug solver . Text.pack . show
+    where
+        handler :: X.IOException -> IO ()
+        handler = debug solver . Text.pack . show
 
 -- | Load the contents of a file.
 loadFile :: Solver -> FilePath -> IO ()
@@ -441,8 +441,8 @@ ackCommand solver comment cmd =
         case res of
             Atom "success" -> return ()
             _ ->
-                fail $
-                    unlines
+                fail
+                    $ unlines
                         [ "Unexpected result from the SMT solver:"
                         , "  Command: " ++ showSExpr cmd
                         , "  Expected: success"
@@ -470,8 +470,8 @@ simpleCommandMaybe solver c =
             Atom "success" -> return True
             Atom "unsupported" -> return False
             _ ->
-                fail $
-                    unlines
+                fail
+                    $ unlines
                         [ "Unexpected result from the SMT solver:"
                         , "  Command: " ++ showSExpr cmd
                         , "  Expected: success or unsupported"
@@ -539,8 +539,8 @@ declareSort
     solver
     SortDeclaration{name, arity} =
         do
-            ackCommand solver Nothing $
-                fun "declare-sort" [name, (Atom . Text.pack . show) arity]
+            ackCommand solver Nothing
+                $ fun "declare-sort" [name, (Atom . Text.pack . show) arity]
             pure name
 
 -- | Declare a set of ADTs
@@ -551,77 +551,77 @@ declareDatatypes ::
 declareDatatypes solver datatypes = do
     mapM_ declareDatatypeSort datatypes
     mapM_ addSortConstructors datatypes
-  where
-    declareDatatypeSort :: SmtDataTypeDeclaration -> IO SExpr
-    declareDatatypeSort DataTypeDeclaration{name, typeArguments} =
-        declareSort
-            solver
-            SortDeclaration{name, arity = length typeArguments}
+    where
+        declareDatatypeSort :: SmtDataTypeDeclaration -> IO SExpr
+        declareDatatypeSort DataTypeDeclaration{name, typeArguments} =
+            declareSort
+                solver
+                SortDeclaration{name, arity = length typeArguments}
 
-    addSortConstructors :: SmtDataTypeDeclaration -> IO ()
-    addSortConstructors
-        d@DataTypeDeclaration{constructors} =
-            do
-                declareConstructors d constructors
-                assert solver (noJunkAxiom d constructors)
-                return ()
+        addSortConstructors :: SmtDataTypeDeclaration -> IO ()
+        addSortConstructors
+            d@DataTypeDeclaration{constructors} =
+                do
+                    declareConstructors d constructors
+                    assert solver (noJunkAxiom d constructors)
+                    return ()
 
-    declareConstructors :: SmtDataTypeDeclaration -> [SmtConstructor] -> IO ()
-    declareConstructors
-        DataTypeDeclaration{name, typeArguments = []}
-        constructors =
-            mapM_ (declareConstructor name) constructors
-    declareConstructors declaration constructors =
-        (error . unlines)
-            [ "Not implemented."
-            , "declaration = " ++ show declaration
-            , "constructors = " ++ show constructors
-            ]
+        declareConstructors :: SmtDataTypeDeclaration -> [SmtConstructor] -> IO ()
+        declareConstructors
+            DataTypeDeclaration{name, typeArguments = []}
+            constructors =
+                mapM_ (declareConstructor name) constructors
+        declareConstructors declaration constructors =
+            (error . unlines)
+                [ "Not implemented."
+                , "declaration = " ++ show declaration
+                , "constructors = " ++ show constructors
+                ]
 
-    declareConstructor :: SExpr -> SmtConstructor -> IO SExpr
-    declareConstructor sort Constructor{name = symbol, arguments} =
-        declareFun
-            solver
-            FunctionDeclaration
-                { name = Atom symbol
-                , inputSorts = map argType arguments
-                , resultSort = sort
-                }
-            Nothing
+        declareConstructor :: SExpr -> SmtConstructor -> IO SExpr
+        declareConstructor sort Constructor{name = symbol, arguments} =
+            declareFun
+                solver
+                FunctionDeclaration
+                    { name = Atom symbol
+                    , inputSorts = map argType arguments
+                    , resultSort = sort
+                    }
+                Nothing
 
-    noJunkAxiom :: SmtDataTypeDeclaration -> [SmtConstructor] -> SExpr
-    noJunkAxiom
-        DataTypeDeclaration{name, typeArguments = []}
-        constructors =
-            forallQ
-                -- TODO(virgil): make sure that "x" is not used in any constructors
-                -- or sorts.
-                [List [Atom "x", name]]
-                (orMany (map (builtWithConstructor "x") constructors))
-    noJunkAxiom declaration constructors =
-        (error . unlines)
-            [ "Not implemented."
-            , "declaration = " ++ show declaration
-            , "constructors = " ++ show constructors
-            ]
+        noJunkAxiom :: SmtDataTypeDeclaration -> [SmtConstructor] -> SExpr
+        noJunkAxiom
+            DataTypeDeclaration{name, typeArguments = []}
+            constructors =
+                forallQ
+                    -- TODO(virgil): make sure that "x" is not used in any constructors
+                    -- or sorts.
+                    [List [Atom "x", name]]
+                    (orMany (map (builtWithConstructor "x") constructors))
+        noJunkAxiom declaration constructors =
+            (error . unlines)
+                [ "Not implemented."
+                , "declaration = " ++ show declaration
+                , "constructors = " ++ show constructors
+                ]
 
-    builtWithConstructor :: Text -> SmtConstructor -> SExpr
-    builtWithConstructor
-        variable
-        Constructor{name, arguments = []} =
-            eq (Atom variable) (Atom name)
-    builtWithConstructor
-        variable
-        Constructor{name, arguments} =
-            existsQ
-                (map mkQuantifier arguments)
-                (eq (Atom variable) (fun name (map mkArg arguments)))
-          where
-            mkArg :: SmtConstructorArgument -> SExpr
-            mkArg ConstructorArgument{name = argName} = argName
-            mkQuantifier :: SmtConstructorArgument -> SExpr
-            mkQuantifier c@ConstructorArgument{argType} =
-                List [mkArg c, argType]
+        builtWithConstructor :: Text -> SmtConstructor -> SExpr
+        builtWithConstructor
+            variable
+            Constructor{name, arguments = []} =
+                eq (Atom variable) (Atom name)
+        builtWithConstructor
+            variable
+            Constructor{name, arguments} =
+                existsQ
+                    (map mkQuantifier arguments)
+                    (eq (Atom variable) (fun name (map mkArg arguments)))
+                where
+                    mkArg :: SmtConstructorArgument -> SExpr
+                    mkArg ConstructorArgument{name = argName} = argName
+                    mkQuantifier :: SmtConstructorArgument -> SExpr
+                    mkQuantifier c@ConstructorArgument{argType} =
+                        List [mkArg c, argType]
 
 -- TODO(virgil): Currently using the code below to declare datatypes crashes
 -- z3 when testing that things can't be built out of them, e.g. things like
@@ -701,8 +701,8 @@ defineFun ::
     SExpr ->
     IO SExpr
 defineFun solver f as t e = do
-    ackCommand solver Nothing $
-        fun
+    ackCommand solver Nothing
+        $ fun
             "define-fun"
             [Atom f, List [List [const x, a] | (x, a) <- as], t, e]
     return (const f)
@@ -732,8 +732,8 @@ checkUsing solver tactic = do
             return Unknown
         Atom "sat" -> return Sat
         _ ->
-            fail $
-                unlines
+            fail
+                $ unlines
                     [ "Unexpected result from the SMT solver:"
                     , "  Expected: unsat, unknown, or sat"
                     , "  Result: " ++ showSExpr res
@@ -758,14 +758,14 @@ sexprToVal expr =
             , Int b <- sexprToVal y ->
                 Real (a % b)
         _ -> Other expr
-  where
-    binLit cs = do
-        ds <- mapM binDigit cs
-        return $ sum $ zipWith (*) (reverse ds) powers2
-    powers2 = 1 : map (2 *) powers2
-    binDigit '0' = Just 0
-    binDigit '1' = Just 1
-    binDigit _ = Nothing
+    where
+        binLit cs = do
+            ds <- mapM binDigit cs
+            return $ sum $ zipWith (*) (reverse ds) powers2
+        powers2 = 1 : map (2 *) powers2
+        binDigit '0' = Just 0
+        binDigit '1' = Just 1
+        binDigit _ = Nothing
 
 {- | Get the values of some s-expressions.
  Only valid after a 'Sat' result.
@@ -778,24 +778,24 @@ getExprs solver vals =
         case res of
             List xs -> mapM getAns xs
             _ ->
-                fail $
-                    unlines
+                fail
+                    $ unlines
                         [ "Unexpected response from the SMT solver:"
                         , "  Command: " ++ showSExpr cmd
                         , "  Expected: a list"
                         , "  Result: " ++ showSExpr res
                         ]
-  where
-    getAns expr =
-        case expr of
-            List [e, v] -> return (e, sexprToVal v)
-            _ ->
-                fail $
-                    unlines
-                        [ "Unexpected response from the SMT solver:"
-                        , "  Expected: (expr val)"
-                        , "  Result: " ++ showSExpr expr
-                        ]
+    where
+        getAns expr =
+            case expr of
+                List [e, v] -> return (e, sexprToVal v)
+                _ ->
+                    fail
+                        $ unlines
+                            [ "Unexpected response from the SMT solver:"
+                            , "  Expected: (expr val)"
+                            , "  Result: " ++ showSExpr expr
+                            ]
 
 {- | Get the values of some constants in the current model.
  A special case of 'getExprs'.
@@ -826,19 +826,19 @@ getUnsatCore s =
         case res of
             List xs -> mapM fromAtom xs
             _ -> unexpected "a list of atoms" res
-  where
-    fromAtom x =
-        case x of
-            Atom a -> return a
-            _ -> unexpected "an atom" x
+    where
+        fromAtom x =
+            case x of
+                Atom a -> return a
+                _ -> unexpected "an atom" x
 
-    unexpected x e =
-        fail $
-            unlines
-                [ "Unexpected response from the SMT Solver:"
-                , "  Expected: " ++ x
-                , "  Result: " ++ showSExpr e
-                ]
+        unexpected x e =
+            fail
+                $ unlines
+                    [ "Unexpected response from the SMT Solver:"
+                    , "  Expected: " ++ x
+                    , "  Result: " ++ showSExpr e
+                    ]
 
 --------------------------------------------------------------------------------
 
@@ -902,8 +902,8 @@ real :: Rational -> SExpr
 real x
     | toRational y == x = Atom (Text.pack $ showFFloat Nothing y "")
     | otherwise = realDiv (int (numerator x)) (int (denominator x))
-  where
-    y = fromRational x :: Double
+    where
+        y = fromRational x :: Double
 
 {- | A bit vector represented in binary.
 
@@ -917,10 +917,10 @@ bvBin ::
     Integer ->
     SExpr
 bvBin w v = const ("#b" <> bits)
-  where
-    bits =
-        (Text.pack . reverse)
-            [if testBit v n then '1' else '0' | n <- [0 .. w - 1]]
+    where
+        bits =
+            (Text.pack . reverse)
+                [if testBit v n then '1' else '0' | n <- [0 .. w - 1]]
 
 {- | A bit vector represented in hex.
 
@@ -939,9 +939,9 @@ bvHex ::
 bvHex w v
     | v >= 0 = const (Text.pack $ "#x" ++ padding ++ hex)
     | otherwise = bvHex w (2 ^ w + v)
-  where
-    hex = showHex v ""
-    padding = replicate (Prelude.div (w + 3) 4 - length hex) '0'
+    where
+        hex = showHex v ""
+        padding = replicate (Prelude.div (w + 3) 4 - length hex) '0'
 
 {- | Render a value as an expression.  Bit-vectors are rendered in hex,
  if their width is a multiple of 4, and in binary otherwise.

@@ -111,12 +111,12 @@ test_debug =
     , N B `yields` "N B"
     , Rn{unRn = A} `yields` "Rn { unRn = A }"
     ]
-  where
-    yields input = Terse.equals_ (render $ debug input)
-    render = Pretty.renderString . layout
-    layout =
-        Pretty.layoutSmart
-            Pretty.LayoutOptions{layoutPageWidth = Pretty.Unbounded}
+    where
+        yields input = Terse.equals_ (render $ debug input)
+        render = Pretty.renderString . layout
+        layout =
+            Pretty.layoutSmart
+                Pretty.LayoutOptions{layoutPageWidth = Pretty.Unbounded}
 
 test_debugPrec :: [TestTree]
 test_debugPrec =
@@ -143,12 +143,12 @@ test_debugPrec =
     , N B `yields` "(N B)"
     , Rn{unRn = A} `yields` "Rn { unRn = A }"
     ]
-  where
-    yields input = Terse.equals_ (render $ debugPrec input 10)
-    render = Pretty.renderString . layout
-    layout =
-        Pretty.layoutSmart
-            Pretty.LayoutOptions{layoutPageWidth = Pretty.Unbounded}
+    where
+        yields input = Terse.equals_ (render $ debugPrec input 10)
+        render = Pretty.renderString . layout
+        layout =
+            Pretty.layoutSmart
+                Pretty.LayoutOptions{layoutPageWidth = Pretty.Unbounded}
 
 test_Debug :: [TestTree]
 test_Debug =
@@ -181,22 +181,22 @@ test_Debug =
         `yields` "Nothing"
         $ "Maybe - Nothing"
     ]
-  where
-    yields ::
-        (HasCallStack, Debug a) =>
-        a ->
-        String ->
-        TestName ->
-        TestTree
-    yields input = Terse.equals (show $ debug input)
+    where
+        yields ::
+            (HasCallStack, Debug a) =>
+            a ->
+            String ->
+            TestName ->
+            TestTree
+        yields input = Terse.equals (show $ debug input)
 
 test_diff :: [TestTree]
 test_diff =
     [ test (SA A, SA A) Nothing
     , test (SA A, SB B) $ Just "{- was: SA A -} SB B"
     , test (N (SA A), N (SB B)) $ Just "N {- was: (SA A) -} (SB B)"
-    , test (Rn{unRn = SA A}, Rn{unRn = SB B}) $
-        Just "Rn { unRn = {- was: SA A -} SB B }"
+    , test (Rn{unRn = SA A}, Rn{unRn = SB B})
+        $ Just "Rn { unRn = {- was: SA A -} SB B }"
     , test ("A" :: String, "B") $ Just "{- was: \"A\" -} \"B\""
     , test ('A', 'B') $ Just "{- was: 'A' -} 'B'"
     , test (0 :: Integer, 1) $ Just "{- was: 0 -} 1"
@@ -204,8 +204,8 @@ test_diff =
     , test ([True], []) $ Just "{- was: [ True ] -} []"
     , test ([], [True]) $ Just "{- was: [] -} [ True ]"
     , test ([True], [True, False]) $ Just "_ : {- was: [] -} [ False ]"
-    , test ([True, True], [True, False, True]) $
-        Just "_ : ({- was: True -} False : {- was: [] -} [ True ])"
+    , test ([True, True], [True, False, True])
+        $ Just "_ : ({- was: True -} False : {- was: [] -} [ True ])"
     , test
         ( R3{fieldA = True, fieldB = True, fieldC = True}
         , R3{fieldA = False, fieldB = False, fieldC = True}
@@ -218,9 +218,9 @@ test_diff =
         $ Just "R3 { fieldA = _, fieldB = {- was: True -} False, fieldC = {- was: True -} False }"
     , test (True ::: False, True ::: True) $ Just "_ ::: {- was: False -} True"
     ]
-  where
-    test (a, b) = Terse.equals_ (render <$> diff a b)
-    render = Pretty.renderString . layout
-    layout =
-        Pretty.layoutSmart
-            Pretty.LayoutOptions{layoutPageWidth = Pretty.Unbounded}
+    where
+        test (a, b) = Terse.equals_ (render <$> diff a b)
+        render = Pretty.renderString . layout
+        layout =
+            Pretty.layoutSmart
+                Pretty.LayoutOptions{layoutPageWidth = Pretty.Unbounded}

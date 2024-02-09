@@ -56,14 +56,14 @@ instance Functor simplifier => Profunctor (CeilSimplifier simplifier) where
 instance Monad simplifier => Choice (CeilSimplifier simplifier) where
     left' (CeilSimplifier simpl) =
         CeilSimplifier (return . Left <=< simpl <=< traverse chooseLeft)
-      where
-        chooseLeft = either return (const empty)
+        where
+            chooseLeft = either return (const empty)
     {-# INLINE left' #-}
 
     right' (CeilSimplifier simpl) =
         CeilSimplifier (return . Right <=< simpl <=< traverse chooseRight)
-      where
-        chooseRight = either (const empty) return
+        where
+            chooseRight = either (const empty) return
     {-# INLINE right' #-}
 
 instance

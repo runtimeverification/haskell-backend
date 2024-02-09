@@ -27,10 +27,10 @@ test_Self =
         recalled <- recall key
         assertEqual "expected recorded result" (Just result) recalled
     ]
-  where
-    key =
-        Application
-            { applicationSymbolOrAlias = Mock.fSymbol
-            , applicationChildren = [Mock.a]
-            }
-    result = Mock.b
+    where
+        key =
+            Application
+                { applicationSymbolOrAlias = Mock.fSymbol
+                , applicationChildren = [Mock.a]
+                }
+        result = Mock.b

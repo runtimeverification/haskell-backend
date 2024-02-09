@@ -34,22 +34,22 @@ instance NFData Unit
 
 instance ParseAttributes Unit where
     parseAttribute = withApplication' parseApplication
-      where
-        parseApplication params args Unit{getUnit}
-            | Just _ <- getUnit = failDuplicate'
-            | otherwise = do
-                getZeroParams params
-                arg <- getOneArgument args
-                symbol <- getSymbolOrAlias arg
-                return Unit{getUnit = Just symbol}
-        withApplication' = withApplication unitId
-        failDuplicate' = failDuplicate unitId
+        where
+            parseApplication params args Unit{getUnit}
+                | Just _ <- getUnit = failDuplicate'
+                | otherwise = do
+                    getZeroParams params
+                    arg <- getOneArgument args
+                    symbol <- getSymbolOrAlias arg
+                    return Unit{getUnit = Just symbol}
+            withApplication' = withApplication unitId
+            failDuplicate' = failDuplicate unitId
 
 instance From Unit Attributes where
     from =
         maybe def toAttribute . getUnit
-      where
-        toAttribute = from @AttributePattern . unitAttribute
+        where
+            toAttribute = from @AttributePattern . unitAttribute
 
 -- | Kore identifier representing the @unit@ attribute symbol.
 unitId :: Id

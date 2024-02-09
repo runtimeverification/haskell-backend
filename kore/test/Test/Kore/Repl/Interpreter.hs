@@ -111,23 +111,25 @@ runSequentially :: [(String, IO ())] -> [TestTree]
 runSequentially tests
     | null tests = []
     | otherwise = foldr before [testCase (withNum 0 lastName) lastTest] $ init tests
-  where
-    (lastName, lastTest) = last tests
-    total = length tests
-    withNum n s = show (total - n) <> " - " <> s
+    where
+        (lastName, lastTest) = last tests
+        total = length tests
+        withNum n s = show (total - n) <> " - " <> s
 
-    before :: (String, IO ()) -> [TestTree] -> [TestTree]
-    (name, t) `before` [] =
-        [testCase (withNum total name) t]
-    (name, t) `before` (next : rest) =
-        let name' = withNum (length rest + 1) name
-         in testCase name' t
-                : after_ AllFinish (T.EQ (Field NF) (StringLit name')) next
-                : rest
+        before :: (String, IO ()) -> [TestTree] -> [TestTree]
+        (name, t) `before` [] =
+            [testCase (withNum total name) t]
+        (name, t) `before` (next : rest) =
+            let name' = withNum (length rest + 1) name
+             in testCase name' t
+                    : after_ AllFinish (T.EQ (Field NF) (StringLit name')) next
+                    : rest
 
 test_replInterpreter :: TestTree
 test_replInterpreter =
-    testGroup "Interpreter interaction" . runSequentially $
+    testGroup "Interpreter interaction"
+        . runSequentially
+        $
         -- we need to sequentialise these tests, `runInputT` in
         -- `runWithState` is not thread-safe
         [ showUsage `tests` "Showing the usage message"
@@ -166,8 +168,8 @@ test_replInterpreter =
             `tests` "Starting to prove the second claim\
                     \ referenced by name"
         ]
-  where
-    x `tests` name = (name, x)
+    where
+        x `tests` name = (name, x)
 
 showUsage :: IO ()
 showUsage =
@@ -536,7 +538,7 @@ showCurrentClaim =
             equalsOutput
                 output
                 $ makeAuxReplOutput (showCurrentClaimIndex expectedCindex)
-                    <> (makeKoreReplOutput . unparseToString $ zeroToTen)
+                <> (makeKoreReplOutput . unparseToString $ zeroToTen)
             continue `equals` Continue
 
 showClaim1 :: IO ()
@@ -670,33 +672,36 @@ proveSecondClaimByName =
 add1 :: Axiom
 add1 =
     mkNamedAxiom n plusOne "add1Axiom"
-  where
-    one = Int.asInternal intSort 1
-    n = mkElemVar $ ruleElementVariableFromId "x" intSort
-    plusOne = n `addInt` one
+    where
+        one = Int.asInternal intSort 1
+        n = mkElemVar $ ruleElementVariableFromId "x" intSort
+        plusOne = n `addInt` one
 
 zeroToTen :: SomeClaim
 zeroToTen =
-    OnePath . OnePathClaim $
-        claimWithName zero ten "0to10Claim"
-  where
-    zero = Int.asInternal intSort 0
-    ten = Int.asInternal intSort 10
+    OnePath
+        . OnePathClaim
+        $ claimWithName zero ten "0to10Claim"
+    where
+        zero = Int.asInternal intSort 0
+        ten = Int.asInternal intSort 10
 
 emptyClaim :: SomeClaim
 emptyClaim =
-    OnePath . OnePathClaim $
-        claimWithName
+    OnePath
+        . OnePathClaim
+        $ claimWithName
             (mkBottom kSort)
             (mkBottom kSort)
             "emptyClaim"
 
 zeroToZero :: SomeClaim
 zeroToZero =
-    AllPath . AllPathClaim $
-        claimWithName zero zero "0to0Claim"
-  where
-    zero = Int.asInternal intSort 0
+    AllPath
+        . AllPathClaim
+        $ claimWithName zero zero "0to0Claim"
+    where
+        zero = Int.asInternal intSort 0
 
 mkNamedAxiom ::
     TermLike RewritingVariableName ->
@@ -708,8 +713,8 @@ mkNamedAxiom left right name =
         & Lens.set (field @"attributes" . typed @Attribute.Label) label
         & RewriteRule
         & coerce
-  where
-    label = Attribute.Label . pure $ pack name
+    where
+        label = Attribute.Label . pure $ pack name
 
 claimWithName ::
     TermLike RewritingVariableName ->
@@ -724,8 +729,8 @@ claimWithName leftTerm rightTerm name =
                 & OrPattern.fromPattern
      in mkClaimPattern left right []
             & Lens.set (field @"attributes" . typed @Attribute.Label) label
-  where
-    label = Attribute.Label . pure $ pack name
+    where
+        label = Attribute.Label . pure $ pack name
 
 mkAxiom ::
     TermLike RewritingVariableName ->
@@ -767,22 +772,22 @@ runWithState command axioms claims claim stateTransformer = do
                 . flip runReaderT config
                 . runInputT defaultSettings
     ((c, s), logEntries) <-
-        runLogger $
-            replInterpreter0
+        runLogger
+            $ replInterpreter0
                 (modifyAuxOutput output)
                 (modifyKoreOutput output)
                 command
 
     output' <- readIORef output
     return $ Result output' c s logEntries
-  where
-    liftSimplifier = SMT.runNoSMT . Kore.runSimplifier testEnv
+    where
+        liftSimplifier = SMT.runNoSMT . Kore.runSimplifier testEnv
 
-    modifyAuxOutput :: IORef ReplOutput -> PrintAuxOutput
-    modifyAuxOutput ref = PrintAuxOutput $ \s -> liftIO $ modifyIORef ref (appReplOut . AuxOut $ s)
+        modifyAuxOutput :: IORef ReplOutput -> PrintAuxOutput
+        modifyAuxOutput ref = PrintAuxOutput $ \s -> liftIO $ modifyIORef ref (appReplOut . AuxOut $ s)
 
-    modifyKoreOutput :: IORef ReplOutput -> PrintKoreOutput
-    modifyKoreOutput ref = PrintKoreOutput $ \s -> liftIO $ modifyIORef ref (appReplOut . KoreOut $ s)
+        modifyKoreOutput :: IORef ReplOutput -> PrintKoreOutput
+        modifyKoreOutput ref = PrintKoreOutput $ \s -> liftIO $ modifyIORef ref (appReplOut . KoreOut $ s)
 
 data Result = Result
     { output :: ReplOutput
@@ -803,8 +808,8 @@ hasCurrentNode st n = do
     node st `equals` n
     graphNode <- evalStateT (getTargetNode justNode) st
     graphNode `equals` justNode
-  where
-    justNode = Just n
+    where
+        justNode = Just n
 
 hasAlias :: ReplState -> AliasDefinition -> IO ()
 hasAlias st alias@AliasDefinition{name} =
@@ -849,8 +854,8 @@ mkState startTime axioms claims claim =
         , stepTime = DisableStepTime
         , enableMovingAverage = DisableMovingAverage
         }
-  where
-    graph' = emptyExecutionGraph claim
+    where
+        graph' = emptyExecutionGraph claim
 
 mkConfig ::
     MVar (Log.LogAction IO Log.SomeEntry) ->
@@ -868,26 +873,26 @@ mkConfig logger claims' ma =
         , kompiledDir = KompiledDir ""
         , korePrintCommand = KorePrintCommand "kore-print"
         }
-  where
-    stepper0 ::
-        Maybe StepTimeout ->
-        EnableMovingAverage ->
-        [Axiom] ->
-        ExecutionGraph ->
-        ReplNode ->
-        Simplifier (Maybe ExecutionGraph)
-    stepper0 _ enableMA axioms' graph (ReplNode node) =
-        proveClaimStep
-            Nothing
-            Nothing
-            ma
-            enableMA
-            EnabledStuckCheck
-            DisallowedVacuous
-            claims'
-            axioms'
-            graph
-            node
+    where
+        stepper0 ::
+            Maybe StepTimeout ->
+            EnableMovingAverage ->
+            [Axiom] ->
+            ExecutionGraph ->
+            ReplNode ->
+            Simplifier (Maybe ExecutionGraph)
+        stepper0 _ enableMA axioms' graph (ReplNode node) =
+            proveClaimStep
+                Nothing
+                Nothing
+                ma
+                enableMA
+                EnabledStuckCheck
+                DisallowedVacuous
+                claims'
+                axioms'
+                graph
+                node
 
 formatUnifiers ::
     NonEmpty (Condition RewritingVariableName) ->

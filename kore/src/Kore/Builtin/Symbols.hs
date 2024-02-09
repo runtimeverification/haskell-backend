@@ -84,18 +84,18 @@ lookupSymbolUnit tools builtinSort =
         , symbolAttributes
         , symbolSorts
         }
-  where
-    unit = Attribute.unit (MetadataTools.sortAttributes tools builtinSort)
-    symbolOrAlias =
-        Attribute.Sort.getUnit unit
-            & fromMaybe missingUnitAttribute
-    symbolConstructor = symbolOrAliasConstructor symbolOrAlias
-    symbolParams = symbolOrAliasParams symbolOrAlias
-    symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
-    symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
-    ~missingUnitAttribute =
-        verifierBug $
-            "missing 'unit' attribute of sort '"
+    where
+        unit = Attribute.unit (MetadataTools.sortAttributes tools builtinSort)
+        symbolOrAlias =
+            Attribute.Sort.getUnit unit
+                & fromMaybe missingUnitAttribute
+        symbolConstructor = symbolOrAliasConstructor symbolOrAlias
+        symbolParams = symbolOrAliasParams symbolOrAlias
+        symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
+        symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
+        ~missingUnitAttribute =
+            verifierBug
+                $ "missing 'unit' attribute of sort '"
                 ++ unparseToString builtinSort
                 ++ "'"
 
@@ -120,18 +120,18 @@ lookupSymbolElement tools builtinSort =
         , symbolAttributes
         , symbolSorts
         }
-  where
-    element = Attribute.element (MetadataTools.sortAttributes tools builtinSort)
-    symbolOrAlias =
-        Attribute.Sort.getElement element
-            & fromMaybe missingElementAttribute
-    symbolConstructor = symbolOrAliasConstructor symbolOrAlias
-    symbolParams = symbolOrAliasParams symbolOrAlias
-    symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
-    symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
-    ~missingElementAttribute =
-        verifierBug $
-            "missing 'element' attribute of sort '"
+    where
+        element = Attribute.element (MetadataTools.sortAttributes tools builtinSort)
+        symbolOrAlias =
+            Attribute.Sort.getElement element
+                & fromMaybe missingElementAttribute
+        symbolConstructor = symbolOrAliasConstructor symbolOrAlias
+        symbolParams = symbolOrAliasParams symbolOrAlias
+        symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
+        symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
+        ~missingElementAttribute =
+            verifierBug
+                $ "missing 'element' attribute of sort '"
                 ++ unparseToString builtinSort
                 ++ "'"
 
@@ -156,18 +156,18 @@ lookupSymbolConcat tools builtinSort =
         , symbolAttributes
         , symbolSorts
         }
-  where
-    concat' = Attribute.concat (MetadataTools.sortAttributes tools builtinSort)
-    symbolOrAlias =
-        Attribute.Sort.getConcat concat'
-            & fromMaybe missingConcatAttribute
-    symbolConstructor = symbolOrAliasConstructor symbolOrAlias
-    symbolParams = symbolOrAliasParams symbolOrAlias
-    symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
-    symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
-    ~missingConcatAttribute =
-        verifierBug $
-            "missing 'concat' attribute of sort '"
+    where
+        concat' = Attribute.concat (MetadataTools.sortAttributes tools builtinSort)
+        symbolOrAlias =
+            Attribute.Sort.getConcat concat'
+                & fromMaybe missingConcatAttribute
+        symbolConstructor = symbolOrAliasConstructor symbolOrAlias
+        symbolParams = symbolOrAliasParams symbolOrAlias
+        symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
+        symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
+        ~missingConcatAttribute =
+            verifierBug
+                $ "missing 'concat' attribute of sort '"
                 ++ unparseToString builtinSort
                 ++ "'"
 

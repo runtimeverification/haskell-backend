@@ -334,31 +334,31 @@ test_normalize =
                 }
         ]
     ]
-  where
-    test ::
-        HasCallStack =>
-        TestName ->
-        -- Test input
-        Map (SomeVariable VariableName) (TermLike VariableName) ->
-        -- Expected output
-        Normalization VariableName ->
-        TestTree
-    test testName input normalization =
-        testCase testName $ do
-            let actual = normalize input
-            let expect = normalization
-            assertEqual "" (Just expect) actual
+    where
+        test ::
+            HasCallStack =>
+            TestName ->
+            -- Test input
+            Map (SomeVariable VariableName) (TermLike VariableName) ->
+            -- Expected output
+            Normalization VariableName ->
+            TestTree
+        test testName input normalization =
+            testCase testName $ do
+                let actual = normalize input
+                let expect = normalization
+                assertEqual "" (Just expect) actual
 
-    testBottom ::
-        HasCallStack =>
-        TestName ->
-        -- Test input
-        Map (SomeVariable VariableName) (TermLike VariableName) ->
-        TestTree
-    testBottom testName input =
-        testCase testName $ do
-            let actual = normalize input
-            assertEqual "" Nothing actual
+        testBottom ::
+            HasCallStack =>
+            TestName ->
+            -- Test input
+            Map (SomeVariable VariableName) (TermLike VariableName) ->
+            TestTree
+        testBottom testName input =
+            testCase testName $ do
+                let actual = normalize input
+                assertEqual "" Nothing actual
 
 x, y, z, xs, ys :: SomeVariable VariableName
 x = inject Mock.x

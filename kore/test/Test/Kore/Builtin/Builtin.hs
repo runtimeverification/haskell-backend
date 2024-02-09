@@ -158,8 +158,8 @@ testSymbolWithoutSolver eval title symbol args expected =
     testCase title $ do
         actual <- runNoSMT eval'
         assertEqual "" expected actual
-  where
-    eval' = eval $ mkApplySymbol symbol args
+    where
+        eval' = eval $ mkApplySymbol symbol args
 
 expectHook :: Internal.Symbol -> Text
 expectHook =
@@ -202,13 +202,13 @@ verifyPattern ::
     TermLike VariableName ->
     Either (Error VerifyError) (TermLike VariableName)
 verifyPattern expectedSort termLike =
-    runPatternVerifier context $
-        verifyStandalonePattern expectedSort parsedPattern
-  where
-    context =
-        PatternVerifier.verifiedModuleContext (indexedModuleSyntax verifiedModule)
-            & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
-    parsedPattern = externalize termLike
+    runPatternVerifier context
+        $ verifyStandalonePattern expectedSort parsedPattern
+    where
+        context =
+            PatternVerifier.verifiedModuleContext (indexedModuleSyntax verifiedModule)
+                & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
+        parsedPattern = externalize termLike
 
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build verifiedModule
@@ -260,15 +260,15 @@ evaluateTerm ::
     TermLike RewritingVariableName ->
     SMT (OrPattern RewritingVariableName)
 evaluateTerm termLike =
-    runSimplifier testEnv $
-        Pattern.simplify (Pattern.fromTermLike termLike)
+    runSimplifier testEnv
+        $ Pattern.simplify (Pattern.fromTermLike termLike)
 
 evaluatePredicate ::
     Predicate RewritingVariableName ->
     SMT (OrPattern RewritingVariableName)
 evaluatePredicate predicate =
-    runSimplifier testEnv $
-        Pattern.simplify
+    runSimplifier testEnv
+        $ Pattern.simplify
             ( Pattern.fromCondition kSort
                 . Condition.fromPredicate
                 $ predicate
@@ -347,16 +347,16 @@ unifyEq eqKey term1 term2 =
         & evalEnvUnifierT
         & runSimplifierBranch testEnv
         & runNoSMT
-  where
-    unify Nothing = empty
-    unify (Just unifyData) =
-        Builtin.unifyEq
-            termUnification
-            unifyData
-            & lift
+    where
+        unify Nothing = empty
+        unify (Just unifyData) =
+            Builtin.unifyEq
+                termUnification
+                unifyData
+                & lift
 
-    matched =
-        Builtin.matchUnifyEq eqKey term1 term2
+        matched =
+            Builtin.matchUnifyEq eqKey term1 term2
 
 simplifyCondition' ::
     Condition RewritingVariableName ->

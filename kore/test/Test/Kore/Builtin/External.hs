@@ -55,63 +55,63 @@ externalize ::
     TermLike variable ->
     Syntax.Pattern variable Attribute.Null
 externalize = Recursive.futu externalize1
-  where
-    externalize1 ::
-        TermLike variable -> FutuPattern variable (TermLike variable)
-    externalize1 termLike =
-        -- TODO (thomas.tuegel): Make all these cases into classes.
-        case termLikeF of
-            AndF BinaryAnd{andSort, andFirst, andSecond} -> mkPurePattern Syntax.AndF And{andSort, andChildren = [andFirst, andSecond]}
-            ApplyAliasF applyAliasF -> mkApp $ mapHead Alias.toSymbolOrAlias applyAliasF
-            ApplySymbolF applySymbolF -> mkApp $ mapHead Symbol.toSymbolOrAlias applySymbolF
-            BottomF bottomF -> mkPurePattern Syntax.BottomF bottomF
-            CeilF ceilF -> mkPurePattern Syntax.CeilF ceilF
-            DomainValueF domainValueF -> mkPurePattern Syntax.DomainValueF domainValueF
-            EqualsF equalsF -> mkPurePattern Syntax.EqualsF equalsF
-            ExistsF existsF -> mkPurePattern Syntax.ExistsF existsF
-            FloorF floorF -> mkPurePattern Syntax.FloorF floorF
-            ForallF forallF -> mkPurePattern Syntax.ForallF forallF
-            IffF iffF -> mkPurePattern Syntax.IffF iffF
-            ImpliesF impliesF -> mkPurePattern Syntax.ImpliesF impliesF
-            InF inF -> mkPurePattern Syntax.InF inF
-            MuF muF -> mkPurePattern Syntax.MuF muF
-            NextF nextF -> mkPurePattern Syntax.NextF nextF
-            NotF notF -> mkPurePattern Syntax.NotF notF
-            NuF nuF -> mkPurePattern Syntax.NuF nuF
-            OrF BinaryOr{orSort, orFirst, orSecond} -> mkPurePattern Syntax.OrF Or{orSort, orChildren = [orFirst, orSecond]}
-            RewritesF rewritesF -> mkPurePattern Syntax.RewritesF rewritesF
-            StringLiteralF stringLiteralF -> mkPurePattern Syntax.StringLiteralF stringLiteralF
-            TopF topF -> mkPurePattern Syntax.TopF topF
-            VariableF variableF -> mkPurePattern Syntax.VariableF variableF
-            InhabitantF inhabitantF -> mkPurePattern Syntax.InhabitantF inhabitantF
-            EndiannessF endiannessF ->
-                mkApp $
-                    mapHead Symbol.toSymbolOrAlias $
-                        Endianness.toApplication $
-                            getConst endiannessF
-            SignednessF signednessF ->
-                mkApp $
-                    mapHead Symbol.toSymbolOrAlias $
-                        Signedness.toApplication $
-                            getConst signednessF
-            -- Internals
-            InternalBoolF (Const internalBool) -> externalizeBool internalBool
-            InternalIntF (Const internalInt) -> externalizeInt internalInt
-            InternalBytesF (Const internalBytes) -> externalizeBytes internalBytes
-            InternalStringF (Const internalString) -> externalizeString internalString
-            InternalListF internalList -> externalizeList internalList
-            InternalSetF internalSet ->
-                either externalize1 id $
-                    externalizeSet internalSet
-            InternalMapF internalMap ->
-                either externalize1 id $
-                    externalizeMap internalMap
-            -- Inj
-            InjF inj -> mkApp $ mapHead Symbol.toSymbolOrAlias (Inj.toApplication inj)
-      where
-        _ :< termLikeF = Recursive.project termLike
-        mkPurePattern pattF = (Attribute.Null :<) . pattF . fmap Pure
-        mkApp = mkPurePattern Syntax.ApplicationF
+    where
+        externalize1 ::
+            TermLike variable -> FutuPattern variable (TermLike variable)
+        externalize1 termLike =
+            -- TODO (thomas.tuegel): Make all these cases into classes.
+            case termLikeF of
+                AndF BinaryAnd{andSort, andFirst, andSecond} -> mkPurePattern Syntax.AndF And{andSort, andChildren = [andFirst, andSecond]}
+                ApplyAliasF applyAliasF -> mkApp $ mapHead Alias.toSymbolOrAlias applyAliasF
+                ApplySymbolF applySymbolF -> mkApp $ mapHead Symbol.toSymbolOrAlias applySymbolF
+                BottomF bottomF -> mkPurePattern Syntax.BottomF bottomF
+                CeilF ceilF -> mkPurePattern Syntax.CeilF ceilF
+                DomainValueF domainValueF -> mkPurePattern Syntax.DomainValueF domainValueF
+                EqualsF equalsF -> mkPurePattern Syntax.EqualsF equalsF
+                ExistsF existsF -> mkPurePattern Syntax.ExistsF existsF
+                FloorF floorF -> mkPurePattern Syntax.FloorF floorF
+                ForallF forallF -> mkPurePattern Syntax.ForallF forallF
+                IffF iffF -> mkPurePattern Syntax.IffF iffF
+                ImpliesF impliesF -> mkPurePattern Syntax.ImpliesF impliesF
+                InF inF -> mkPurePattern Syntax.InF inF
+                MuF muF -> mkPurePattern Syntax.MuF muF
+                NextF nextF -> mkPurePattern Syntax.NextF nextF
+                NotF notF -> mkPurePattern Syntax.NotF notF
+                NuF nuF -> mkPurePattern Syntax.NuF nuF
+                OrF BinaryOr{orSort, orFirst, orSecond} -> mkPurePattern Syntax.OrF Or{orSort, orChildren = [orFirst, orSecond]}
+                RewritesF rewritesF -> mkPurePattern Syntax.RewritesF rewritesF
+                StringLiteralF stringLiteralF -> mkPurePattern Syntax.StringLiteralF stringLiteralF
+                TopF topF -> mkPurePattern Syntax.TopF topF
+                VariableF variableF -> mkPurePattern Syntax.VariableF variableF
+                InhabitantF inhabitantF -> mkPurePattern Syntax.InhabitantF inhabitantF
+                EndiannessF endiannessF ->
+                    mkApp
+                        $ mapHead Symbol.toSymbolOrAlias
+                        $ Endianness.toApplication
+                        $ getConst endiannessF
+                SignednessF signednessF ->
+                    mkApp
+                        $ mapHead Symbol.toSymbolOrAlias
+                        $ Signedness.toApplication
+                        $ getConst signednessF
+                -- Internals
+                InternalBoolF (Const internalBool) -> externalizeBool internalBool
+                InternalIntF (Const internalInt) -> externalizeInt internalInt
+                InternalBytesF (Const internalBytes) -> externalizeBytes internalBytes
+                InternalStringF (Const internalString) -> externalizeString internalString
+                InternalListF internalList -> externalizeList internalList
+                InternalSetF internalSet ->
+                    either externalize1 id
+                        $ externalizeSet internalSet
+                InternalMapF internalMap ->
+                    either externalize1 id
+                        $ externalizeMap internalMap
+                -- Inj
+                InjF inj -> mkApp $ mapHead Symbol.toSymbolOrAlias (Inj.toApplication inj)
+            where
+                _ :< termLikeF = Recursive.project termLike
+                mkPurePattern pattF = (Attribute.Null :<) . pattF . fmap Pure
+                mkApp = mkPurePattern Syntax.ApplicationF
 
 -- | Externalizes a 'Domain.InternalAc'
 externalizeAc ::
@@ -126,26 +126,27 @@ externalizeAc ::
 externalizeAc
     (UnitSymbol unitSymbol)
     (ConcatSymbol concatSymbol) = worker
-      where
-        worker [] [] [] = Right unit
-          where
-            unit =
-                (Attribute.Null :<) . Syntax.ApplicationF $
-                    Application (Symbol.toSymbolOrAlias unitSymbol) []
-        worker concreteElements symbolicElements opaqueTerms =
-            case foldr1 concat' operands of
-                Free patternF -> Right patternF
-                Pure termLike -> Left termLike
-          where
-            operands =
-                map Free symbolicElements
-                    <> map Pure opaqueTerms
-                    <> map Free concreteElements
-            concat' operand pat =
-                Free $
-                    (Attribute.Null :<) $
-                        Syntax.ApplicationF $
-                            Application
+        where
+            worker [] [] [] = Right unit
+                where
+                    unit =
+                        (Attribute.Null :<)
+                            . Syntax.ApplicationF
+                            $ Application (Symbol.toSymbolOrAlias unitSymbol) []
+            worker concreteElements symbolicElements opaqueTerms =
+                case foldr1 concat' operands of
+                    Free patternF -> Right patternF
+                    Pure termLike -> Left termLike
+                where
+                    operands =
+                        map Free symbolicElements
+                            <> map Pure opaqueTerms
+                            <> map Free concreteElements
+                    concat' operand pat =
+                        Free
+                            $ (Attribute.Null :<)
+                            $ Syntax.ApplicationF
+                            $ Application
                                 (Symbol.toSymbolOrAlias concatSymbol)
                                 [operand, pat]
 
@@ -163,31 +164,31 @@ externalizeMap builtin =
         (map concreteElement (HashMap.toList concreteElements))
         (element . unwrapElement <$> elementsWithVariables)
         (filter (not . isEmptyMap) opaque)
-  where
-    InternalAc{builtinAcChild} = builtin
-    InternalAc{builtinAcUnit = unitSymbol} = builtin
-    InternalAc{builtinAcElement = elementSymbol} = builtin
-    InternalAc{builtinAcConcat = concatSymbol} = builtin
+    where
+        InternalAc{builtinAcChild} = builtin
+        InternalAc{builtinAcUnit = unitSymbol} = builtin
+        InternalAc{builtinAcElement = elementSymbol} = builtin
+        InternalAc{builtinAcConcat = concatSymbol} = builtin
 
-    normalizedAc = unwrapAc builtinAcChild
+        normalizedAc = unwrapAc builtinAcChild
 
-    NormalizedAc{elementsWithVariables} = normalizedAc
-    NormalizedAc{concreteElements} = normalizedAc
-    NormalizedAc{opaque} = normalizedAc
+        NormalizedAc{elementsWithVariables} = normalizedAc
+        NormalizedAc{concreteElements} = normalizedAc
+        NormalizedAc{opaque} = normalizedAc
 
-    concreteElement (key, mapValue) = element (into key, mapValue)
+        concreteElement (key, mapValue) = element (into key, mapValue)
 
-    element (key, MapValue value) =
-        (Attribute.Null :<)
-            . Syntax.ApplicationF
-            . fmap Pure
-            . mapHead toSymbolOrAlias
-            $ symbolApplication elementSymbol [key, value]
+        element (key, MapValue value) =
+            (Attribute.Null :<)
+                . Syntax.ApplicationF
+                . fmap Pure
+                . mapHead toSymbolOrAlias
+                $ symbolApplication elementSymbol [key, value]
 
-    isEmptyMap (InternalMap_ InternalAc{builtinAcChild = wrappedChild}) =
-        unwrapAc wrappedChild == emptyNormalizedAc
-    isEmptyMap (App_ symbol _) = unitSymbol == symbol
-    isEmptyMap _ = False
+        isEmptyMap (InternalMap_ InternalAc{builtinAcChild = wrappedChild}) =
+            unwrapAc wrappedChild == emptyNormalizedAc
+        isEmptyMap (App_ symbol _) = unitSymbol == symbol
+        isEmptyMap _ = False
 
 -- | Externalizes a 'Domain.InternalSet'
 externalizeSet ::
@@ -203,31 +204,31 @@ externalizeSet builtin =
         (map concreteElement (HashMap.toList concreteElements))
         (element . unwrapElement <$> elementsWithVariables)
         (filter (not . isEmptySet) opaque)
-  where
-    InternalAc{builtinAcChild} = builtin
-    InternalAc{builtinAcUnit = unitSymbol} = builtin
-    InternalAc{builtinAcElement = elementSymbol} = builtin
-    InternalAc{builtinAcConcat = concatSymbol} = builtin
+    where
+        InternalAc{builtinAcChild} = builtin
+        InternalAc{builtinAcUnit = unitSymbol} = builtin
+        InternalAc{builtinAcElement = elementSymbol} = builtin
+        InternalAc{builtinAcConcat = concatSymbol} = builtin
 
-    normalizedAc = unwrapAc builtinAcChild
+        normalizedAc = unwrapAc builtinAcChild
 
-    NormalizedAc{elementsWithVariables} = normalizedAc
-    NormalizedAc{concreteElements} = normalizedAc
-    NormalizedAc{opaque} = normalizedAc
+        NormalizedAc{elementsWithVariables} = normalizedAc
+        NormalizedAc{concreteElements} = normalizedAc
+        NormalizedAc{opaque} = normalizedAc
 
-    concreteElement (key, value) = element (from @Key key, value)
+        concreteElement (key, value) = element (from @Key key, value)
 
-    element (key, SetValue) =
-        (Attribute.Null :<)
-            . Syntax.ApplicationF
-            . fmap Pure
-            . mapHead toSymbolOrAlias
-            $ symbolApplication elementSymbol [key]
+        element (key, SetValue) =
+            (Attribute.Null :<)
+                . Syntax.ApplicationF
+                . fmap Pure
+                . mapHead toSymbolOrAlias
+                $ symbolApplication elementSymbol [key]
 
-    isEmptySet (InternalSet_ InternalAc{builtinAcChild = wrappedChild}) =
-        unwrapAc wrappedChild == emptyNormalizedAc
-    isEmptySet (App_ symbol _) = unitSymbol == symbol
-    isEmptySet _ = False
+        isEmptySet (InternalSet_ InternalAc{builtinAcChild = wrappedChild}) =
+            unwrapAc wrappedChild == emptyNormalizedAc
+        isEmptySet (App_ symbol _) = unitSymbol == symbol
+        isEmptySet _ = False
 
 externalizeList ::
     InternalVariable variable =>
@@ -236,28 +237,28 @@ externalizeList ::
 externalizeList builtin
     | Seq.null list = unit
     | otherwise = foldr1 concat' (element <$> list)
-  where
-    InternalList{internalListChild = list} = builtin
-    InternalList{internalListUnit = unitSymbol} = builtin
-    InternalList{internalListElement = elementSymbol} = builtin
-    InternalList{internalListConcat = concatSymbol} = builtin
+    where
+        InternalList{internalListChild = list} = builtin
+        InternalList{internalListUnit = unitSymbol} = builtin
+        InternalList{internalListElement = elementSymbol} = builtin
+        InternalList{internalListConcat = concatSymbol} = builtin
 
-    unit =
-        (Attribute.Null :<)
-            . Syntax.ApplicationF
-            . fmap Pure
-            . mapHead toSymbolOrAlias
-            $ symbolApplication unitSymbol []
-    element elem' =
-        (Attribute.Null :<)
-            . Syntax.ApplicationF
-            . fmap Pure
-            . mapHead toSymbolOrAlias
-            $ symbolApplication elementSymbol [elem']
-    concat' list1 list2 =
-        (Attribute.Null :<) $
-            Syntax.ApplicationF $
-                Application (toSymbolOrAlias concatSymbol) [Free list1, Free list2]
+        unit =
+            (Attribute.Null :<)
+                . Syntax.ApplicationF
+                . fmap Pure
+                . mapHead toSymbolOrAlias
+                $ symbolApplication unitSymbol []
+        element elem' =
+            (Attribute.Null :<)
+                . Syntax.ApplicationF
+                . fmap Pure
+                . mapHead toSymbolOrAlias
+                $ symbolApplication elementSymbol [elem']
+        concat' list1 list2 =
+            (Attribute.Null :<)
+                $ Syntax.ApplicationF
+                $ Application (toSymbolOrAlias concatSymbol) [Free list1, Free list2]
 
 {- | Render a 'Bool' as a domain value pattern of the given sort.
 
@@ -276,15 +277,18 @@ externalizeBool builtin =
                 { domainValueSort = internalBoolSort
                 , domainValueChild
                 }
-  where
-    InternalBool{internalBoolSort} = builtin
-    InternalBool{internalBoolValue = bool} = builtin
-    literal
-        | bool = "true"
-        | otherwise = "false"
-    domainValueChild =
-        Free . (:<) Attribute.Null . Syntax.StringLiteralF . Const $
-            StringLiteral literal
+    where
+        InternalBool{internalBoolSort} = builtin
+        InternalBool{internalBoolValue = bool} = builtin
+        literal
+            | bool = "true"
+            | otherwise = "false"
+        domainValueChild =
+            Free
+                . (:<) Attribute.Null
+                . Syntax.StringLiteralF
+                . Const
+                $ StringLiteral literal
 
 {- | Render an 'String' as a domain value pattern of the given sort.
 
@@ -303,12 +307,15 @@ externalizeString builtin =
                 { domainValueSort = internalStringSort
                 , domainValueChild
                 }
-  where
-    InternalString{internalStringSort} = builtin
-    InternalString{internalStringValue} = builtin
-    domainValueChild =
-        Free . (:<) Attribute.Null . Syntax.StringLiteralF . Const $
-            StringLiteral internalStringValue
+    where
+        InternalString{internalStringSort} = builtin
+        InternalString{internalStringValue} = builtin
+        domainValueChild =
+            Free
+                . (:<) Attribute.Null
+                . Syntax.StringLiteralF
+                . Const
+                $ StringLiteral internalStringValue
 
 {- | Render a 'Bytes' as a domain value pattern of the given sort.
 
@@ -327,12 +334,15 @@ externalizeBytes builtin =
                 { domainValueSort = internalBytesSort
                 , domainValueChild
                 }
-  where
-    InternalBytes{internalBytesSort} = builtin
-    InternalBytes{internalBytesValue} = builtin
-    domainValueChild =
-        Free . (:<) Attribute.Null . Syntax.StringLiteralF . Const $
-            StringLiteral (Encoding.decode8Bit $ ByteString.fromShort internalBytesValue)
+    where
+        InternalBytes{internalBytesSort} = builtin
+        InternalBytes{internalBytesValue} = builtin
+        domainValueChild =
+            Free
+                . (:<) Attribute.Null
+                . Syntax.StringLiteralF
+                . Const
+                $ StringLiteral (Encoding.decode8Bit $ ByteString.fromShort internalBytesValue)
 
 {- | Render an 'Integer' as a domain value pattern of the given sort.
 
@@ -351,9 +361,12 @@ externalizeInt builtin =
                 { domainValueSort = internalIntSort
                 , domainValueChild
                 }
-  where
-    InternalInt{internalIntSort} = builtin
-    InternalInt{internalIntValue} = builtin
-    domainValueChild =
-        Free . (:<) Attribute.Null . Syntax.StringLiteralF . Const $
-            StringLiteral (Text.pack $ show internalIntValue)
+    where
+        InternalInt{internalIntSort} = builtin
+        InternalInt{internalIntValue} = builtin
+        domainValueChild =
+            Free
+                . (:<) Attribute.Null
+                . Syntax.StringLiteralF
+                . Const
+                $ StringLiteral (Text.pack $ show internalIntValue)

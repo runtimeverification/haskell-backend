@@ -260,21 +260,21 @@ proveClaims
                     , provenClaims
                     , unexplored
                     }
-      where
-        unproven :: ToProve SomeClaim
-        stillProven :: [SomeClaim]
-        (unproven, stillProven) =
-            (ToProve newToProve, newAlreadyProven)
-          where
-            (newToProve, newAlreadyProven) =
-                partitionEithers (map lookupEither toProve)
-            lookupEither ::
-                (SomeClaim, Limit Natural) ->
-                Either (SomeClaim, Limit Natural) SomeClaim
-            lookupEither claim@(rule, _) =
-                if unparseToText2 rule `elem` alreadyProven
-                    then Right rule
-                    else Left claim
+        where
+            unproven :: ToProve SomeClaim
+            stillProven :: [SomeClaim]
+            (unproven, stillProven) =
+                (ToProve newToProve, newAlreadyProven)
+                where
+                    (newToProve, newAlreadyProven) =
+                        partitionEithers (map lookupEither toProve)
+                    lookupEither ::
+                        (SomeClaim, Limit Natural) ->
+                        Either (SomeClaim, Limit Natural) SomeClaim
+                    lookupEither claim@(rule, _) =
+                        if unparseToText2 rule `elem` alreadyProven
+                            then Right rule
+                            else Left claim
 
 proveClaimsWorker ::
     Maybe MinDepth ->
@@ -306,39 +306,40 @@ proveClaimsWorker
     axioms
     (ToProve toProve) =
         traverse_ verifyWorker toProve
-      where
-        verifyWorker ::
-            (SomeClaim, Limit Natural) ->
-            VerifierT (StateT ProvenClaims Simplifier) ()
-        verifyWorker unprovenClaim@(claim, _) =
-            traceExceptT D_OnePath_verifyClaim [debugArg "rule" claim] $ do
-                debugBeginClaim claim
-                debugInitialClaim (from claim) $ case claim of
-                    OnePath onePathClaim -> from $ getOnePathClaim onePathClaim
-                    AllPath allPathClaim -> from $ getAllPathClaim allPathClaim
-                result <-
-                    lift . lift $
-                        proveClaim
-                            maybeMinDepth
-                            stepTimeout
-                            enableMA
-                            stuckCheck
-                            allowVacuous
-                            breadthLimit
-                            searchOrder
-                            maxCounterexamples
-                            finalNodeType
-                            specClaims
-                            axioms
-                            unprovenClaim
-                either
-                    -- throw stuck claims, ending the traversal
-                    Monad.Except.throwError
-                    (const $ addProvenClaim claim)
-                    result
+        where
+            verifyWorker ::
+                (SomeClaim, Limit Natural) ->
+                VerifierT (StateT ProvenClaims Simplifier) ()
+            verifyWorker unprovenClaim@(claim, _) =
+                traceExceptT D_OnePath_verifyClaim [debugArg "rule" claim] $ do
+                    debugBeginClaim claim
+                    debugInitialClaim (from claim) $ case claim of
+                        OnePath onePathClaim -> from $ getOnePathClaim onePathClaim
+                        AllPath allPathClaim -> from $ getAllPathClaim allPathClaim
+                    result <-
+                        lift
+                            . lift
+                            $ proveClaim
+                                maybeMinDepth
+                                stepTimeout
+                                enableMA
+                                stuckCheck
+                                allowVacuous
+                                breadthLimit
+                                searchOrder
+                                maxCounterexamples
+                                finalNodeType
+                                specClaims
+                                axioms
+                                unprovenClaim
+                    either
+                        -- throw stuck claims, ending the traversal
+                        Monad.Except.throwError
+                        (const $ addProvenClaim claim)
+                        result
 
-        addProvenClaim claim =
-            State.modify' (mappend (MultiAnd.singleton claim))
+            addProvenClaim claim =
+                State.modify' (mappend (MultiAnd.singleton claim))
 
 proveClaim ::
     Maybe MinDepth ->
@@ -413,65 +414,65 @@ proveClaim
                 pure $ Right ()
             GraphTraversal.TimedOut _ rs ->
                 returnUnprovenClaims (length rs) rs
-      where
-        -------------------------------
-        -- brought in from Claim.hs to remove Strategy type
-        infinite :: [Step Prim]
-        ~infinite = stepNoClaims : repeat stepWithClaims
+        where
+            -------------------------------
+            -- brought in from Claim.hs to remove Strategy type
+            infinite :: [Step Prim]
+            ~infinite = stepNoClaims : repeat stepWithClaims
 
-        withMinDepth :: MinDepth -> [Step Prim]
-        withMinDepth d =
-            noCheckSteps <> repeat stepWithClaims
-          where
-            noCheckSteps =
-                [Begin, Simplify, ApplyAxioms, Simplify]
-                    : replicate
-                        (getMinDepth d - 1)
-                        [Begin, Simplify, ApplyAxioms, ApplyClaims, Simplify]
+            withMinDepth :: MinDepth -> [Step Prim]
+            withMinDepth d =
+                noCheckSteps <> repeat stepWithClaims
+                where
+                    noCheckSteps =
+                        [Begin, Simplify, ApplyAxioms, Simplify]
+                            : replicate
+                                (getMinDepth d - 1)
+                                [Begin, Simplify, ApplyAxioms, ApplyClaims, Simplify]
 
-        stepNoClaims =
-            [Begin, Simplify, CheckImplication, ApplyAxioms, Simplify]
-        stepWithClaims =
-            [Begin, Simplify, CheckImplication, ApplyClaims, ApplyAxioms, Simplify]
-        -------------------------------
+            stepNoClaims =
+                [Begin, Simplify, CheckImplication, ApplyAxioms, Simplify]
+            stepWithClaims =
+                [Begin, Simplify, CheckImplication, ApplyClaims, ApplyAxioms, Simplify]
+            -------------------------------
 
-        transition ::
-            (GraphTraversal.TState Prim (ProofDepth, ClaimState SomeClaim)) ->
-            Simplifier
-                ( GraphTraversal.TransitionResult
-                    (GraphTraversal.TState Prim (ProofDepth, ClaimState SomeClaim))
-                )
-        transition =
-            GraphTraversal.simpleTransition
-                (trackProofDepth $ transitionRule' stuckCheck allowVacuous specClaims axioms)
-                toTransitionResultWithDepth
+            transition ::
+                (GraphTraversal.TState Prim (ProofDepth, ClaimState SomeClaim)) ->
+                Simplifier
+                    ( GraphTraversal.TransitionResult
+                        (GraphTraversal.TState Prim (ProofDepth, ClaimState SomeClaim))
+                    )
+            transition =
+                GraphTraversal.simpleTransition
+                    (trackProofDepth $ transitionRule' stuckCheck allowVacuous specClaims axioms)
+                    toTransitionResultWithDepth
 
-        -- result interpretation for GraphTraversal.simpleTransition
-        toTransitionResultWithDepth ::
-            (ProofDepth, ClaimState c) ->
-            [(ProofDepth, ClaimState c)] ->
-            GraphTraversal.TransitionResult (ProofDepth, ClaimState c)
-        toTransitionResultWithDepth prior = \case
-            []
-                | isJust (extractStuck $ snd prior) -> GraphTraversal.Stuck prior
-                | isJust (extractUnproven $ snd prior) -> GraphTraversal.Stop prior []
-                | otherwise -> GraphTraversal.Final prior
-            [c@(_, ClaimState.Claimed{})] -> GraphTraversal.Continuing c
-            [c@(_, ClaimState.Rewritten{})] -> GraphTraversal.Continuing c
-            [c@(_, ClaimState.Remaining{})] -> GraphTraversal.Continuing c
-            [c@(_, ClaimState.Stuck{})] -> GraphTraversal.Stuck c
-            [(_, ClaimState.Proven)] -> GraphTraversal.Final prior
-            multiple@(_ : _) ->
-                -- prune proven states to avoid unnecessary branching
-                case filter (isJust . extractUnproven . snd) multiple of
-                    [] -> GraphTraversal.Final prior -- all proven
-                    [single] -> GraphTraversal.Continuing single
-                    (c : cs) -> GraphTraversal.Branch prior (c :| cs)
+            -- result interpretation for GraphTraversal.simpleTransition
+            toTransitionResultWithDepth ::
+                (ProofDepth, ClaimState c) ->
+                [(ProofDepth, ClaimState c)] ->
+                GraphTraversal.TransitionResult (ProofDepth, ClaimState c)
+            toTransitionResultWithDepth prior = \case
+                []
+                    | isJust (extractStuck $ snd prior) -> GraphTraversal.Stuck prior
+                    | isJust (extractUnproven $ snd prior) -> GraphTraversal.Stop prior []
+                    | otherwise -> GraphTraversal.Final prior
+                [c@(_, ClaimState.Claimed{})] -> GraphTraversal.Continuing c
+                [c@(_, ClaimState.Rewritten{})] -> GraphTraversal.Continuing c
+                [c@(_, ClaimState.Remaining{})] -> GraphTraversal.Continuing c
+                [c@(_, ClaimState.Stuck{})] -> GraphTraversal.Stuck c
+                [(_, ClaimState.Proven)] -> GraphTraversal.Final prior
+                multiple@(_ : _) ->
+                    -- prune proven states to avoid unnecessary branching
+                    case filter (isJust . extractUnproven . snd) multiple of
+                        [] -> GraphTraversal.Final prior -- all proven
+                        [single] -> GraphTraversal.Continuing single
+                        (c : cs) -> GraphTraversal.Branch prior (c :| cs)
 
-        unparseConfig =
-            fmap (unparseToString . getConfiguration)
-                . extractUnproven
-                . snd
+            unparseConfig =
+                fmap (unparseToString . getConfiguration)
+                    . extractUnproven
+                    . snd
 
 {- | Attempts to perform a single proof step, starting at the configuration
  in the execution graph designated by the provided node. Re-constructs the
@@ -504,58 +505,58 @@ proveClaimStep
     axioms
     executionGraph
     node =
-        withTimeout $
-            executionHistoryStep
+        withTimeout
+            $ executionHistoryStep
                 transitionRule''
                 strategy'
                 executionGraph
                 node
-      where
-        -- TODO(Ana): The kore-repl doesn't support --min-depth <n> yet.
-        -- If requested, add a state layer which keeps track of
-        -- the depth, which should compare it to the minDepth and
-        -- decide the appropriate strategy for the next step.
-        -- We should also add a command for toggling this feature on and
-        -- off.
-        strategy' :: Step Prim
-        strategy'
-            | isRoot = reachabilityFirstStep
-            | otherwise = reachabilityNextStep
+        where
+            -- TODO(Ana): The kore-repl doesn't support --min-depth <n> yet.
+            -- If requested, add a state layer which keeps track of
+            -- the depth, which should compare it to the minDepth and
+            -- decide the appropriate strategy for the next step.
+            -- We should also add a command for toggling this feature on and
+            -- off.
+            strategy' :: Step Prim
+            strategy'
+                | isRoot = reachabilityFirstStep
+                | otherwise = reachabilityNextStep
 
-        ExecutionGraph{root} = executionGraph
+            ExecutionGraph{root} = executionGraph
 
-        isRoot :: Bool
-        isRoot = node == root
+            isRoot :: Bool
+            isRoot = node == root
 
-        transitionRule'' prim state
-            | isRoot =
-                transitionRule'
-                    stuckCheck
-                    allowVacuous
-                    claims
-                    axioms
-                    prim
-                    (Lens.over lensClaimPattern mkGoal <$> state)
-            | otherwise =
-                transitionRule' stuckCheck allowVacuous claims axioms prim state
+            transitionRule'' prim state
+                | isRoot =
+                    transitionRule'
+                        stuckCheck
+                        allowVacuous
+                        claims
+                        axioms
+                        prim
+                        (Lens.over lensClaimPattern mkGoal <$> state)
+                | otherwise =
+                    transitionRule' stuckCheck allowVacuous claims axioms prim state
 
-        withTimeout execStep =
-            getTimeoutMode stepTimeout enableMA ma >>= \case
-                Nothing -> do
-                    (time, newExecGraph) <- timeAction execStep
-                    updateStepMovingAverage ma time
-                    pure $ Just newExecGraph
-                Just timeoutMode -> do
-                    let warnThread =
-                            liftIO $
-                                threadDelay (getTimeout timeoutMode)
+            withTimeout execStep =
+                getTimeoutMode stepTimeout enableMA ma >>= \case
+                    Nothing -> do
+                        (time, newExecGraph) <- timeAction execStep
+                        updateStepMovingAverage ma time
+                        pure $ Just newExecGraph
+                    Just timeoutMode -> do
+                        let warnThread =
+                                liftIO
+                                    $ threadDelay (getTimeout timeoutMode)
                                     $> timeoutMode
-                    race warnThread (timeAction execStep) >>= \case
-                        Right (time, newExecGraph) -> do
-                            updateStepMovingAverage ma time
-                            pure $ Just newExecGraph
-                        Left (ManualTimeout t) -> warnStepManualTimeout t $> Nothing
-                        Left (MovingAverage t) -> warnStepMATimeout t $> Nothing
+                        race warnThread (timeAction execStep) >>= \case
+                            Right (time, newExecGraph) -> do
+                                updateStepMovingAverage ma time
+                                pure $ Just newExecGraph
+                            Left (ManualTimeout t) -> warnStepManualTimeout t $> Nothing
+                            Left (MovingAverage t) -> warnStepMATimeout t $> Nothing
 
 transitionRule' ::
     StuckCheck ->
@@ -577,8 +578,8 @@ transitionRule' stuckCheck allowVacuous claims axioms = \prim proofState ->
         )
         prim
         proofState
-  where
-    axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
+    where
+        axiomGroups = groupSortOn Attribute.Axiom.getPriorityOfAxiom axioms
 
 withWarnings ::
     CommonTransitionRule Simplifier ->
@@ -610,10 +611,10 @@ profTransitionRule rule prim proofState =
         Prim.CheckImplication -> tracing ":transit:check-implies"
         Prim.Simplify -> tracing ":transit:simplify"
         _ -> rule prim proofState
-  where
-    tracing name =
-        lift (traceProf name (runTransitionT (rule prim proofState)))
-            >>= Transition.scatter
+    where
+        tracing name =
+            lift (traceProf name (runTransitionT (rule prim proofState)))
+                >>= Transition.scatter
 
 logTransitionRule ::
     CommonTransitionRule Simplifier ->
@@ -629,18 +630,20 @@ checkStuckConfiguration rule prim proofState = do
     for_ (extractStuck proofState) $ \rule' -> do
         let resultPatternPredicate = predicate (getConfiguration rule')
             multiAndPredicate = getMultiAndPredicate resultPatternPredicate
-        when (any isNot_Ceil_ multiAndPredicate) $
-            error . show . Pretty.vsep $
-                [ "Found '\\not(\\ceil(_))' in stuck configuration:"
-                , Pretty.pretty rule'
-                , "Please file a bug report:\
-                  \ https://github.com/runtimeverification/haskell-backend/issues"
-                ]
+        when (any isNot_Ceil_ multiAndPredicate)
+            $ error
+            . show
+            . Pretty.vsep
+            $ [ "Found '\\not(\\ceil(_))' in stuck configuration:"
+              , Pretty.pretty rule'
+              , "Please file a bug report:\
+                \ https://github.com/runtimeverification/haskell-backend/issues"
+              ]
     return proofState'
-  where
-    isNot_Ceil_ :: Predicate variable -> Bool
-    isNot_Ceil_ (PredicateNot (PredicateCeil _)) = True
-    isNot_Ceil_ _ = False
+    where
+        isNot_Ceil_ :: Predicate variable -> Bool
+        isNot_Ceil_ (PredicateNot (PredicateCeil _)) = True
+        isNot_Ceil_ _ = False
 
 -- | Modify a 'TransitionRule' to track the depth of a proof.
 trackProofDepth ::
@@ -651,19 +654,19 @@ trackProofDepth rule prim (!proofDepth, proofState) = do
     proofState' <- rule prim proofState
     let proofDepth' = (if didRewrite proofState' then succ else id) proofDepth
     pure (proofDepth', proofState')
-  where
-    didRewrite proofState' =
-        isApply prim
-            && ClaimState.isRewritable proofState
-            && isRewritten proofState'
+    where
+        didRewrite proofState' =
+            isApply prim
+                && ClaimState.isRewritable proofState
+                && isRewritten proofState'
 
-    isApply Prim.ApplyClaims = True
-    isApply Prim.ApplyAxioms = True
-    isApply _ = False
+        isApply Prim.ApplyClaims = True
+        isApply Prim.ApplyAxioms = True
+        isApply _ = False
 
-    isRewritten (ClaimState.Rewritten _) = True
-    isRewritten ClaimState.Proven = True
-    isRewritten _ = False
+        isRewritten (ClaimState.Rewritten _) = True
+        isRewritten ClaimState.Proven = True
+        isRewritten _ = False
 
 debugClaimStateBracket ::
     forall monad rule.
@@ -728,10 +731,10 @@ withConfiguration ::
     CommonTransitionRule Simplifier
 withConfiguration transit prim proofState =
     handle' (transit prim proofState)
-  where
-    config = extractUnproven proofState & fmap getConfiguration
-    handle' = maybe id handleConfig config
-    handleConfig config' =
-        handleAll $
-            throwM
+    where
+        config = extractUnproven proofState & fmap getConfiguration
+        handle' = maybe id handleConfig config
+        handleConfig config' =
+            handleAll
+                $ throwM
                 . WithConfiguration (getRewritingPattern config')

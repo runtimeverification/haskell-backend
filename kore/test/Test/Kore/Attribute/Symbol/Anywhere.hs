@@ -18,51 +18,51 @@ parseAnywhere = parseAttributes
 
 test_anywhere :: TestTree
 test_anywhere =
-    testCase "[anywhere{}()] :: Anywhere" $
-        expectSuccess Anywhere{isAnywhere = True} $
-            parseAnywhere $
-                Attributes [anywhereAttribute]
+    testCase "[anywhere{}()] :: Anywhere"
+        $ expectSuccess Anywhere{isAnywhere = True}
+        $ parseAnywhere
+        $ Attributes [anywhereAttribute]
 
 test_Attributes :: TestTree
 test_Attributes =
-    testCase "[anywhere{}()] :: Attributes" $
-        expectSuccess attrs $
-            parseAttributes attrs
-  where
-    attrs = Attributes [anywhereAttribute]
+    testCase "[anywhere{}()] :: Attributes"
+        $ expectSuccess attrs
+        $ parseAttributes attrs
+    where
+        attrs = Attributes [anywhereAttribute]
 
 test_duplicate :: TestTree
 test_duplicate =
-    testCase "[anywhere{}(), anywhere{}()]" $
-        expectFailure $
-            parseAnywhere $
-                Attributes [anywhereAttribute, anywhereAttribute]
+    testCase "[anywhere{}(), anywhere{}()]"
+        $ expectFailure
+        $ parseAnywhere
+        $ Attributes [anywhereAttribute, anywhereAttribute]
 
 test_arguments :: TestTree
 test_arguments =
-    testCase "[anywhere{}(\"illegal\")]" $
-        expectFailure $
-            parseAnywhere $
-                Attributes [illegalAttribute]
-  where
-    illegalAttribute =
-        attributePattern anywhereSymbol [attributeString "illegal"]
+    testCase "[anywhere{}(\"illegal\")]"
+        $ expectFailure
+        $ parseAnywhere
+        $ Attributes [illegalAttribute]
+    where
+        illegalAttribute =
+            attributePattern anywhereSymbol [attributeString "illegal"]
 
 test_parameters :: TestTree
 test_parameters =
-    testCase "[anywhere{illegal}()]" $
-        expectFailure $
-            parseAnywhere $
-                Attributes [illegalAttribute]
-  where
-    illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias =
-                    SymbolOrAlias
-                        { symbolOrAliasConstructor = anywhereId
-                        , symbolOrAliasParams =
-                            [SortVariableSort (SortVariable "illegal")]
-                        }
-                , applicationChildren = []
-                }
+    testCase "[anywhere{illegal}()]"
+        $ expectFailure
+        $ parseAnywhere
+        $ Attributes [illegalAttribute]
+    where
+        illegalAttribute =
+            (asAttributePattern . ApplicationF)
+                Application
+                    { applicationSymbolOrAlias =
+                        SymbolOrAlias
+                            { symbolOrAliasConstructor = anywhereId
+                            , symbolOrAliasParams =
+                                [SortVariableSort (SortVariable "illegal")]
+                            }
+                    , applicationChildren = []
+                    }

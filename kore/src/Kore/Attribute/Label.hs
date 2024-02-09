@@ -49,16 +49,16 @@ labelAttribute label = attributePattern labelSymbol [attributeString label]
 
 instance ParseAttributes Label where
     parseAttribute = withApplication' parseApplication
-      where
-        parseApplication params args Label{unLabel}
-            | Just _ <- unLabel = failDuplicate'
-            | otherwise = do
-                Parser.getZeroParams params
-                arg1 <- Parser.getOneArgument args
-                StringLiteral str <- Parser.getStringLiteral arg1
-                return Label{unLabel = Just str}
-        withApplication' = Parser.withApplication labelId
-        failDuplicate' = Parser.failDuplicate labelId
+        where
+            parseApplication params args Label{unLabel}
+                | Just _ <- unLabel = failDuplicate'
+                | otherwise = do
+                    Parser.getZeroParams params
+                    arg1 <- Parser.getOneArgument args
+                    StringLiteral str <- Parser.getStringLiteral arg1
+                    return Label{unLabel = Just str}
+            withApplication' = Parser.withApplication labelId
+            failDuplicate' = Parser.failDuplicate labelId
 
 instance From Label Attributes where
     from = maybe def (from @AttributePattern . labelAttribute) . unLabel

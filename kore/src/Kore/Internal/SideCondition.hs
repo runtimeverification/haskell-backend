@@ -185,11 +185,11 @@ instance Ord variable => HasFreeVariables (SideCondition variable) variable wher
     freeVariables sideCondition@(SideCondition _ _ _ _ _) =
         freeVariables assumedTrue
             <> foldMap freeVariables definedTerms
-      where
-        SideCondition
-            { assumedTrue
-            , definedTerms
-            } = sideCondition
+        where
+            SideCondition
+                { assumedTrue
+                , definedTerms
+                } = sideCondition
 
 instance InternalVariable variable => Pretty (SideCondition variable) where
     pretty
@@ -213,14 +213,14 @@ instance InternalVariable variable => Pretty (SideCondition variable) where
                 , ["Assumed to be defined:"]
                 , unparse <$> HashSet.toList definedTerms
                 ]
-          where
-            acc showFunc result key value =
-                result
-                    <> [ Pretty.indent 4 "Key:"
-                       , Pretty.indent 6 $ showFunc key
-                       , Pretty.indent 4 "Value:"
-                       , Pretty.indent 6 $ showFunc value
-                       ]
+            where
+                acc showFunc result key value =
+                    result
+                        <> [ Pretty.indent 4 "Key:"
+                           , Pretty.indent 6 $ showFunc key
+                           , Pretty.indent 4 "Value:"
+                           , Pretty.indent 6 $ showFunc value
+                           ]
 
 instance From (SideCondition variable) (MultiAnd (Predicate variable)) where
     from condition@(SideCondition _ _ _ _ _) = assumedTrue condition
@@ -338,12 +338,12 @@ addConditionWithReplacements
                     , definedTerms
                     , simplifiedFunctions
                     }
-      where
-        SideCondition
-            { assumedTrue = oldCondition
-            , definedTerms
-            , simplifiedFunctions
-            } = sideCondition
+        where
+            SideCondition
+                { assumedTrue = oldCondition
+                , definedTerms
+                , simplifiedFunctions
+                } = sideCondition
 
 {- | Smart constructor for creating a 'SideCondition' by just constructing
  the replacement table from a conjunction of predicates.
@@ -412,15 +412,15 @@ toPredicate condition@(SideCondition _ _ _ _ _) =
     Predicate.makeAndPredicate
         assumedTruePredicate
         definedPredicate
-  where
-    SideCondition{assumedTrue, definedTerms} = condition
-    assumedTruePredicate = Predicate.fromMultiAnd assumedTrue
-    definedPredicate =
-        definedTerms
-            & HashSet.toList
-            & fmap Predicate.makeCeilPredicate
-            & MultiAnd.make
-            & Predicate.fromMultiAnd
+    where
+        SideCondition{assumedTrue, definedTerms} = condition
+        assumedTruePredicate = Predicate.fromMultiAnd assumedTrue
+        definedPredicate =
+            definedTerms
+                & HashSet.toList
+                & fmap Predicate.makeCeilPredicate
+                & MultiAnd.make
+                & Predicate.fromMultiAnd
 
 mapVariables ::
     (InternalVariable variable1, InternalVariable variable2) =>
@@ -445,14 +445,14 @@ mapVariables adj condition@(SideCondition _ _ _ _ _) =
             , definedTerms = definedTerms'
             , simplifiedFunctions = simplifiedFunctions'
             }
-  where
-    SideCondition
-        { assumedTrue
-        , replacementsTermLike
-        , replacementsPredicate
-        , definedTerms
-        , simplifiedFunctions
-        } = condition
+    where
+        SideCondition
+            { assumedTrue
+            , replacementsTermLike
+            , replacementsPredicate
+            , definedTerms
+            , simplifiedFunctions
+            } = condition
 
 -- | Utility function for mapping on the keys and values of a 'HashMap'.
 mapKeysAndValues ::
@@ -461,9 +461,9 @@ mapKeysAndValues ::
     HashMap a a ->
     HashMap b b
 mapKeysAndValues f hashMap =
-    HashMap.fromList $
-        Bifunctor.bimap f f
-            <$> HashMap.toList hashMap
+    HashMap.fromList
+        $ Bifunctor.bimap f f
+        <$> HashMap.toList hashMap
 
 fromDefinedTerms ::
     InternalVariable variable =>
@@ -546,144 +546,144 @@ simplifyConjunctionByAssumption ::
         , Assumptions variable
         )
 simplifyConjunctionByAssumption (toList -> andPredicates) =
-    (fmap . Bifunctor.first) MultiAnd.make $
-        flip runStateT (Assumptions HashMap.empty HashMap.empty) $
-            for (sortBySize andPredicates) $
-                \original -> do
-                    result <- applyAssumptions original
-                    assume result
-                    return result
-  where
-    -- Sorting by size ensures that every clause is considered before any clause
-    -- which could contain it, because the containing clause is necessarily
-    -- larger.
-    sortBySize :: [Predicate variable] -> [Predicate variable]
-    sortBySize = sortOn predSize
+    (fmap . Bifunctor.first) MultiAnd.make
+        $ flip runStateT (Assumptions HashMap.empty HashMap.empty)
+        $ for (sortBySize andPredicates)
+        $ \original -> do
+            result <- applyAssumptions original
+            assume result
+            return result
+    where
+        -- Sorting by size ensures that every clause is considered before any clause
+        -- which could contain it, because the containing clause is necessarily
+        -- larger.
+        sortBySize :: [Predicate variable] -> [Predicate variable]
+        sortBySize = sortOn predSize
 
-    size :: TermLike variable -> Int
-    size =
-        Recursive.fold $ \(_ :< termLikeF) -> 1 + sum termLikeF
+        size :: TermLike variable -> Int
+        size =
+            Recursive.fold $ \(_ :< termLikeF) -> 1 + sum termLikeF
 
-    predSize :: Predicate variable -> Int
-    predSize =
-        Recursive.fold $ \(_ :< predF) ->
-            case predF of
-                Predicate.CeilF ceil_ -> 1 + sum (size <$> ceil_)
-                Predicate.EqualsF equals_ -> 1 + sum (size <$> equals_)
-                Predicate.FloorF floor_ -> 1 + sum (size <$> floor_)
-                Predicate.InF in_ -> 1 + sum (size <$> in_)
-                _ -> 1 + sum predF
+        predSize :: Predicate variable -> Int
+        predSize =
+            Recursive.fold $ \(_ :< predF) ->
+                case predF of
+                    Predicate.CeilF ceil_ -> 1 + sum (size <$> ceil_)
+                    Predicate.EqualsF equals_ -> 1 + sum (size <$> equals_)
+                    Predicate.FloorF floor_ -> 1 + sum (size <$> floor_)
+                    Predicate.InF in_ -> 1 + sum (size <$> in_)
+                    _ -> 1 + sum predF
 
-    assume ::
-        Predicate variable ->
-        StateT (Assumptions variable) Changed ()
-    assume predicate =
-        State.modify' (assumeEqualTerms . assumePredicate)
-      where
-        assumePredicate =
-            case predicate of
-                PredicateNot notChild ->
-                    -- Infer that the predicate is \bottom.
-                    Lens.over (field @"predicateMap") $
-                        HashMap.insert notChild makeFalsePredicate
-                _ ->
-                    -- Infer that the predicate is \top.
-                    Lens.over (field @"predicateMap") $
-                        HashMap.insert predicate makeTruePredicate
-        assumeEqualTerms =
-            case predicate of
-                PredicateEquals t1 t2 ->
-                    case retractLocalFunction (Predicate.makeEqualsPredicate t1 t2) of
-                        Just (Pair t1' t2') ->
-                            Lens.over (field @"termLikeMap") $
-                                HashMap.insert t1' t2'
+        assume ::
+            Predicate variable ->
+            StateT (Assumptions variable) Changed ()
+        assume predicate =
+            State.modify' (assumeEqualTerms . assumePredicate)
+            where
+                assumePredicate =
+                    case predicate of
+                        PredicateNot notChild ->
+                            -- Infer that the predicate is \bottom.
+                            Lens.over (field @"predicateMap")
+                                $ HashMap.insert notChild makeFalsePredicate
+                        _ ->
+                            -- Infer that the predicate is \top.
+                            Lens.over (field @"predicateMap")
+                                $ HashMap.insert predicate makeTruePredicate
+                assumeEqualTerms =
+                    case predicate of
+                        PredicateEquals t1 t2 ->
+                            case retractLocalFunction (Predicate.makeEqualsPredicate t1 t2) of
+                                Just (Pair t1' t2') ->
+                                    Lens.over (field @"termLikeMap")
+                                        $ HashMap.insert t1' t2'
+                                _ -> id
                         _ -> id
-                _ -> id
 
-    applyAssumptions ::
-        Predicate variable ->
-        StateT (Assumptions variable) Changed (Predicate variable)
-    applyAssumptions replaceIn = do
-        assumptions <- State.get
-        lift (applyAssumptionsWorker assumptions replaceIn)
+        applyAssumptions ::
+            Predicate variable ->
+            StateT (Assumptions variable) Changed (Predicate variable)
+        applyAssumptions replaceIn = do
+            assumptions <- State.get
+            lift (applyAssumptionsWorker assumptions replaceIn)
 
-    applyAssumptionsWorker ::
-        Assumptions variable ->
-        Predicate variable ->
-        Changed (Predicate variable)
-    applyAssumptionsWorker assumptions original
-        | Just result <- HashMap.lookup original (predicateMap assumptions) = Changed result
-        | HashMap.null (termLikeMap assumptions')
-        , HashMap.null (predicateMap assumptions') =
-            Unchanged original
-        | otherwise =
-            case replaceIn of
-                Predicate.CeilF ceil_ ->
-                    Predicate.CeilF <$> traverse applyTermAssumptions ceil_
-                Predicate.FloorF floor_ ->
-                    Predicate.FloorF <$> traverse applyTermAssumptions floor_
-                Predicate.EqualsF equals_ ->
-                    Predicate.EqualsF <$> traverse applyTermAssumptions equals_
-                Predicate.InF in_ ->
-                    Predicate.InF <$> traverse applyTermAssumptions in_
-                _ -> traverse applyPredicateAssumptions replaceIn
-                & getChanged
-                -- The next line ensures that if the result is Unchanged, any allocation
-                -- performed while computing that result is collected.
-                & maybe (Unchanged original) (Changed . synthesize)
-      where
-        _ :< replaceIn = Recursive.project original
+        applyAssumptionsWorker ::
+            Assumptions variable ->
+            Predicate variable ->
+            Changed (Predicate variable)
+        applyAssumptionsWorker assumptions original
+            | Just result <- HashMap.lookup original (predicateMap assumptions) = Changed result
+            | HashMap.null (termLikeMap assumptions')
+            , HashMap.null (predicateMap assumptions') =
+                Unchanged original
+            | otherwise =
+                case replaceIn of
+                    Predicate.CeilF ceil_ ->
+                        Predicate.CeilF <$> traverse applyTermAssumptions ceil_
+                    Predicate.FloorF floor_ ->
+                        Predicate.FloorF <$> traverse applyTermAssumptions floor_
+                    Predicate.EqualsF equals_ ->
+                        Predicate.EqualsF <$> traverse applyTermAssumptions equals_
+                    Predicate.InF in_ ->
+                        Predicate.InF <$> traverse applyTermAssumptions in_
+                    _ -> traverse applyPredicateAssumptions replaceIn
+                    & getChanged
+                    -- The next line ensures that if the result is Unchanged, any allocation
+                    -- performed while computing that result is collected.
+                    & maybe (Unchanged original) (Changed . synthesize)
+            where
+                _ :< replaceIn = Recursive.project original
 
-        applyTermAssumptions =
-            applyAssumptionsWorkerTerm (termLikeMap assumptions')
-        applyPredicateAssumptions = applyAssumptionsWorker assumptions'
+                applyTermAssumptions =
+                    applyAssumptionsWorkerTerm (termLikeMap assumptions')
+                applyPredicateAssumptions = applyAssumptionsWorker assumptions'
 
-        assumptions'
-            | PredicateExists var _ <- original = restrictAssumptions (inject var)
-            | PredicateForall var _ <- original = restrictAssumptions (inject var)
-            | otherwise = assumptions
+                assumptions'
+                    | PredicateExists var _ <- original = restrictAssumptions (inject var)
+                    | PredicateForall var _ <- original = restrictAssumptions (inject var)
+                    | otherwise = assumptions
 
-        restrictAssumptions Variable{variableName} =
-            Lens.over
-                (field @"termLikeMap")
-                (HashMap.filterWithKey (\term _ -> wouldNotCaptureTerm term))
-                $ Lens.over
-                    (field @"predicateMap")
-                    (HashMap.filterWithKey (\predicate _ -> wouldNotCapture predicate))
-                    assumptions
-          where
-            wouldNotCapture = not . Predicate.hasFreeVariable variableName
-            wouldNotCaptureTerm = not . TermLike.hasFreeVariable variableName
+                restrictAssumptions Variable{variableName} =
+                    Lens.over
+                        (field @"termLikeMap")
+                        (HashMap.filterWithKey (\term _ -> wouldNotCaptureTerm term))
+                        $ Lens.over
+                            (field @"predicateMap")
+                            (HashMap.filterWithKey (\predicate _ -> wouldNotCapture predicate))
+                            assumptions
+                    where
+                        wouldNotCapture = not . Predicate.hasFreeVariable variableName
+                        wouldNotCaptureTerm = not . TermLike.hasFreeVariable variableName
 
-    applyAssumptionsWorkerTerm ::
-        HashMap (TermLike variable) (TermLike variable) ->
-        TermLike variable ->
-        Changed (TermLike variable)
-    applyAssumptionsWorkerTerm assumptions original
-        | Just result <- HashMap.lookup original assumptions = Changed result
-        | HashMap.null assumptions' = Unchanged original
-        | otherwise =
-            traverse (applyAssumptionsWorkerTerm assumptions') replaceIn
-                & getChanged
-                -- The next line ensures that if the result is Unchanged, any allocation
-                -- performed while computing that result is collected.
-                & maybe (Unchanged original) (Changed . synthesize)
-      where
-        _ :< replaceIn = Recursive.project original
+        applyAssumptionsWorkerTerm ::
+            HashMap (TermLike variable) (TermLike variable) ->
+            TermLike variable ->
+            Changed (TermLike variable)
+        applyAssumptionsWorkerTerm assumptions original
+            | Just result <- HashMap.lookup original assumptions = Changed result
+            | HashMap.null assumptions' = Unchanged original
+            | otherwise =
+                traverse (applyAssumptionsWorkerTerm assumptions') replaceIn
+                    & getChanged
+                    -- The next line ensures that if the result is Unchanged, any allocation
+                    -- performed while computing that result is collected.
+                    & maybe (Unchanged original) (Changed . synthesize)
+            where
+                _ :< replaceIn = Recursive.project original
 
-        assumptions'
-            | Exists_ _ var _ <- original = restrictAssumptions (inject var)
-            | Forall_ _ var _ <- original = restrictAssumptions (inject var)
-            | Mu_ var _ <- original = restrictAssumptions (inject var)
-            | Nu_ var _ <- original = restrictAssumptions (inject var)
-            | otherwise = assumptions
+                assumptions'
+                    | Exists_ _ var _ <- original = restrictAssumptions (inject var)
+                    | Forall_ _ var _ <- original = restrictAssumptions (inject var)
+                    | Mu_ var _ <- original = restrictAssumptions (inject var)
+                    | Nu_ var _ <- original = restrictAssumptions (inject var)
+                    | otherwise = assumptions
 
-        restrictAssumptions Variable{variableName} =
-            HashMap.filterWithKey
-                (\termLike _ -> wouldNotCapture termLike)
-                assumptions
-          where
-            wouldNotCapture = not . TermLike.hasFreeVariable variableName
+                restrictAssumptions Variable{variableName} =
+                    HashMap.filterWithKey
+                        (\termLike _ -> wouldNotCapture termLike)
+                        assumptions
+                    where
+                        wouldNotCapture = not . TermLike.hasFreeVariable variableName
 
 {- | Get a local function definition from a 'TermLike'.
 A local function definition is a predicate that we can use to evaluate a
@@ -704,23 +704,23 @@ retractLocalFunction =
     \case
         PredicateEquals term1 term2 -> go term1 term2 <|> go term2 term1
         _ -> Nothing
-  where
-    go term1@(App_ symbol1 _) term2
-        | isFunction symbol1 =
-            -- TODO (thomas.tuegel): Add tests.
-            case term2 of
-                App_ symbol2 _
-                    | isConstructor symbol2 -> Just (Pair term1 term2)
-                Inj_ _ -> Just (Pair term1 term2)
-                InternalInt_ _ -> Just (Pair term1 term2)
-                InternalBytes_ _ _ -> Just (Pair term1 term2)
-                InternalString_ _ -> Just (Pair term1 term2)
-                InternalBool_ _ -> Just (Pair term1 term2)
-                InternalList_ _ -> Just (Pair term1 term2)
-                InternalMap_ _ -> Just (Pair term1 term2)
-                InternalSet_ _ -> Just (Pair term1 term2)
-                _ -> Nothing
-    go _ _ = Nothing
+    where
+        go term1@(App_ symbol1 _) term2
+            | isFunction symbol1 =
+                -- TODO (thomas.tuegel): Add tests.
+                case term2 of
+                    App_ symbol2 _
+                        | isConstructor symbol2 -> Just (Pair term1 term2)
+                    Inj_ _ -> Just (Pair term1 term2)
+                    InternalInt_ _ -> Just (Pair term1 term2)
+                    InternalBytes_ _ _ -> Just (Pair term1 term2)
+                    InternalString_ _ -> Just (Pair term1 term2)
+                    InternalBool_ _ -> Just (Pair term1 term2)
+                    InternalList_ _ -> Just (Pair term1 term2)
+                    InternalMap_ _ -> Just (Pair term1 term2)
+                    InternalSet_ _ -> Just (Pair term1 term2)
+                    _ -> Nothing
+        go _ _ = Nothing
 
 {- | Assumes a 'TermLike' to be defined. If not always defined,
 it will be stored in the `SideCondition` together with any subterms
@@ -739,72 +739,72 @@ assumeDefined =
     fmap fromDefinedTerms
         . getPartial
         . assumeDefinedWorker
-  where
-    assumeDefinedWorker ::
-        TermLike variable ->
-        Partial (HashSet (TermLike variable))
-    assumeDefinedWorker term' =
-        case term' of
-            TermLike.And_ _ child1 child2 ->
-                let result1 = assumeDefinedWorker child1
-                    result2 = assumeDefinedWorker child2
-                 in asSet term' <> result1 <> result2
-            TermLike.App_ symbol children ->
-                checkTotal symbol term'
-                    <> foldMap assumeDefinedWorker children
-            TermLike.Ceil_ _ _ child ->
-                asSet term' <> assumeDefinedWorker child
-            TermLike.InternalList_ internalList ->
-                asSet term'
-                    <> foldMap assumeDefinedWorker (internalListChild internalList)
-            TermLike.InternalMap_ internalMap ->
-                let definedElems =
-                        getDefinedElementsOfAc internalMap
-                    definedMaps =
-                        generateNormalizedAcs internalMap
-                            & HashSet.map TermLike.mkInternalMap
-                            & Defined
-                 in foldMap assumeDefinedWorker definedElems
-                        <> definedMaps
-            TermLike.InternalSet_ internalSet ->
-                let definedElems =
-                        getDefinedElementsOfAc internalSet
-                    definedSets =
-                        generateNormalizedAcs internalSet
-                            & HashSet.map TermLike.mkInternalSet
-                            & Defined
-                 in foldMap assumeDefinedWorker definedElems
-                        <> definedSets
-            TermLike.Forall_ _ _ child ->
-                asSet term' <> assumeDefinedWorker child
-            TermLike.In_ _ _ child1 child2 ->
-                let result1 = assumeDefinedWorker child1
-                    result2 = assumeDefinedWorker child2
-                 in asSet term' <> result1 <> result2
-            TermLike.Bottom_ _ -> Bottom
-            _ -> asSet term'
-    asSet newTerm
-        | isDefinedInternal newTerm = Defined HashSet.empty
-        | otherwise = Defined $ HashSet.singleton newTerm
-    checkTotal symbol newTerm
-        | isTotal symbol = Defined HashSet.empty
-        | otherwise = asSet newTerm
+    where
+        assumeDefinedWorker ::
+            TermLike variable ->
+            Partial (HashSet (TermLike variable))
+        assumeDefinedWorker term' =
+            case term' of
+                TermLike.And_ _ child1 child2 ->
+                    let result1 = assumeDefinedWorker child1
+                        result2 = assumeDefinedWorker child2
+                     in asSet term' <> result1 <> result2
+                TermLike.App_ symbol children ->
+                    checkTotal symbol term'
+                        <> foldMap assumeDefinedWorker children
+                TermLike.Ceil_ _ _ child ->
+                    asSet term' <> assumeDefinedWorker child
+                TermLike.InternalList_ internalList ->
+                    asSet term'
+                        <> foldMap assumeDefinedWorker (internalListChild internalList)
+                TermLike.InternalMap_ internalMap ->
+                    let definedElems =
+                            getDefinedElementsOfAc internalMap
+                        definedMaps =
+                            generateNormalizedAcs internalMap
+                                & HashSet.map TermLike.mkInternalMap
+                                & Defined
+                     in foldMap assumeDefinedWorker definedElems
+                            <> definedMaps
+                TermLike.InternalSet_ internalSet ->
+                    let definedElems =
+                            getDefinedElementsOfAc internalSet
+                        definedSets =
+                            generateNormalizedAcs internalSet
+                                & HashSet.map TermLike.mkInternalSet
+                                & Defined
+                     in foldMap assumeDefinedWorker definedElems
+                            <> definedSets
+                TermLike.Forall_ _ _ child ->
+                    asSet term' <> assumeDefinedWorker child
+                TermLike.In_ _ _ child1 child2 ->
+                    let result1 = assumeDefinedWorker child1
+                        result2 = assumeDefinedWorker child2
+                     in asSet term' <> result1 <> result2
+                TermLike.Bottom_ _ -> Bottom
+                _ -> asSet term'
+        asSet newTerm
+            | isDefinedInternal newTerm = Defined HashSet.empty
+            | otherwise = Defined $ HashSet.singleton newTerm
+        checkTotal symbol newTerm
+            | isTotal symbol = Defined HashSet.empty
+            | otherwise = asSet newTerm
 
-    getDefinedElementsOfAc ::
-        forall normalized.
-        AcWrapper normalized =>
-        Foldable (Value normalized) =>
-        InternalAc Key normalized (TermLike variable) ->
-        HashSet (TermLike variable)
-    getDefinedElementsOfAc (builtinAcChild -> normalizedAc) =
-        let symbolicKeys = getSymbolicKeysOfAc normalizedAc
-            values =
-                getSymbolicValuesOfAc normalizedAc
-                    <> getConcreteValuesOfAc normalizedAc
-                    & foldMap toList
-            opaqueElems = opaque (unwrapAc normalizedAc)
-         in HashSet.fromList $
-                symbolicKeys
+        getDefinedElementsOfAc ::
+            forall normalized.
+            AcWrapper normalized =>
+            Foldable (Value normalized) =>
+            InternalAc Key normalized (TermLike variable) ->
+            HashSet (TermLike variable)
+        getDefinedElementsOfAc (builtinAcChild -> normalizedAc) =
+            let symbolicKeys = getSymbolicKeysOfAc normalizedAc
+                values =
+                    getSymbolicValuesOfAc normalizedAc
+                        <> getConcreteValuesOfAc normalizedAc
+                        & foldMap toList
+                opaqueElems = opaque (unwrapAc normalizedAc)
+             in HashSet.fromList
+                    $ symbolicKeys
                     <> opaqueElems
                     <> values
 
@@ -822,57 +822,57 @@ isDefined sideCondition@SideCondition{definedTerms} term =
         || isTotalSymbol term
         || HashSet.member term definedTerms
         || isDefinedAc
-  where
-    isDefinedAc =
-        case term of
-            TermLike.InternalMap_ internalMap ->
-                let subMaps =
-                        generateNormalizedAcs internalMap
-                            & HashSet.map TermLike.mkInternalMap
-                 in isSymbolicSingleton internalMap
-                        || subMaps
+    where
+        isDefinedAc =
+            case term of
+                TermLike.InternalMap_ internalMap ->
+                    let subMaps =
+                            generateNormalizedAcs internalMap
+                                & HashSet.map TermLike.mkInternalMap
+                     in isSymbolicSingleton internalMap
+                            || subMaps
                             `isNonEmptySubset` definedTerms
-            TermLike.InternalSet_ internalSet ->
-                let subSets =
-                        generateNormalizedAcs internalSet
-                            & HashSet.map TermLike.mkInternalSet
-                 in isSymbolicSingleton internalSet
-                        || subSets
+                TermLike.InternalSet_ internalSet ->
+                    let subSets =
+                            generateNormalizedAcs internalSet
+                                & HashSet.map TermLike.mkInternalSet
+                     in isSymbolicSingleton internalSet
+                            || subSets
                             `isNonEmptySubset` definedTerms
-            _ -> False
+                _ -> False
 
-    isNonEmptySubset subset set
-        | null subset = False
-        | otherwise = all (`HashSet.member` set) subset
+        isNonEmptySubset subset set
+            | null subset = False
+            | otherwise = all (`HashSet.member` set) subset
 
-    isTotalSymbol (App_ symbol children)
-        | isTotal symbol =
-            all (isDefined sideCondition) children
-    isTotalSymbol _ = False
+        isTotalSymbol (App_ symbol children)
+            | isTotal symbol =
+                all (isDefined sideCondition) children
+        isTotalSymbol _ = False
 
-    isSymbolicSingleton ::
-        AcWrapper normalized =>
-        Foldable (Value normalized) =>
-        InternalAc Key normalized (TermLike variable) ->
-        Bool
-    isSymbolicSingleton InternalAc{builtinAcChild}
-        | numberOfElements == 1 =
-            all (isDefined sideCondition) symbolicKeys
-                && all (isDefined sideCondition) opaqueElems
-                && all (isDefined sideCondition) values
-        | otherwise = False
-      where
-        symbolicKeys = getSymbolicKeysOfAc builtinAcChild
-        concreteKeys = getConcreteKeysOfAc builtinAcChild
-        opaqueElems = opaque . unwrapAc $ builtinAcChild
-        values =
-            getSymbolicValuesOfAc builtinAcChild
-                <> getConcreteValuesOfAc builtinAcChild
-                & foldMap toList
-        numberOfElements =
-            length symbolicKeys
-                + length concreteKeys
-                + length opaqueElems
+        isSymbolicSingleton ::
+            AcWrapper normalized =>
+            Foldable (Value normalized) =>
+            InternalAc Key normalized (TermLike variable) ->
+            Bool
+        isSymbolicSingleton InternalAc{builtinAcChild}
+            | numberOfElements == 1 =
+                all (isDefined sideCondition) symbolicKeys
+                    && all (isDefined sideCondition) opaqueElems
+                    && all (isDefined sideCondition) values
+            | otherwise = False
+            where
+                symbolicKeys = getSymbolicKeysOfAc builtinAcChild
+                concreteKeys = getConcreteKeysOfAc builtinAcChild
+                opaqueElems = opaque . unwrapAc $ builtinAcChild
+                values =
+                    getSymbolicValuesOfAc builtinAcChild
+                        <> getConcreteValuesOfAc builtinAcChild
+                        & foldMap toList
+                numberOfElements =
+                    length symbolicKeys
+                        + length concreteKeys
+                        + length opaqueElems
 
 {- | Generates the minimal set of defined collections
 from which definedness of any sub collection can be inferred.
@@ -903,82 +903,82 @@ generateNormalizedAcs internalAc =
             ]
                 & fold
                 & HashSet.filter (not . alwaysDefined)
-  where
-    alwaysDefined InternalAc{builtinAcChild = normalized} =
-        all isConstructorLike children && null opaques
-      where
-        children =
-            fst . unwrapElement <$> elementsWithVariables (unwrapAc normalized)
-        opaques =
-            opaque (unwrapAc normalized)
-    InternalAc
-        { builtinAcChild
-        , builtinAcSort
-        , builtinAcUnit
-        , builtinAcConcat
-        , builtinAcElement
-        } = internalAc
-    ~PairWiseElements
-        { symbolicPairs
-        , concretePairs
-        , opaquePairs
-        , symbolicConcretePairs
-        , symbolicOpaquePairs
-        , concreteOpaquePairs
-        } = generatePairWiseElements builtinAcChild
-    symbolicToAc (AcPair symbolic1 symbolic2) =
-        let symbolicAc =
-                emptyNormalizedAc
-                    { elementsWithVariables = [symbolic1, symbolic2]
-                    }
-                    & wrapAc
-         in toInternalAc symbolicAc
-    concreteToAc (AcPair concrete1 concrete2) =
-        let concreteAc =
-                emptyNormalizedAc
-                    { concreteElements = [concrete1, concrete2] & HashMap.fromList
-                    }
-                    & wrapAc
-         in toInternalAc concreteAc
-    opaqueToAc (AcPair opaque1 opaque2) =
-        let opaqueAc =
-                emptyNormalizedAc
-                    { opaque = [opaque1, opaque2]
-                    }
-                    & wrapAc
-         in toInternalAc opaqueAc
-    symbolicConcreteToAc (symbolic, concrete) =
-        let symbolicConcreteAc =
-                emptyNormalizedAc
-                    { elementsWithVariables = [symbolic]
-                    , concreteElements = [concrete] & HashMap.fromList
-                    }
-                    & wrapAc
-         in toInternalAc symbolicConcreteAc
-    symbolicOpaqueToAc (symbolic, opaque') =
-        let symbolicOpaqueAc =
-                emptyNormalizedAc
-                    { elementsWithVariables = [symbolic]
-                    , opaque = [opaque']
-                    }
-                    & wrapAc
-         in toInternalAc symbolicOpaqueAc
-    concreteOpaqueToAc (concrete, opaque') =
-        let concreteOpaqueAc =
-                emptyNormalizedAc
-                    { concreteElements = [concrete] & HashMap.fromList
-                    , opaque = [opaque']
-                    }
-                    & wrapAc
-         in toInternalAc concreteOpaqueAc
-    toInternalAc normalized =
+    where
+        alwaysDefined InternalAc{builtinAcChild = normalized} =
+            all isConstructorLike children && null opaques
+            where
+                children =
+                    fst . unwrapElement <$> elementsWithVariables (unwrapAc normalized)
+                opaques =
+                    opaque (unwrapAc normalized)
         InternalAc
-            { builtinAcChild = normalized
-            , builtinAcUnit
-            , builtinAcElement
+            { builtinAcChild
             , builtinAcSort
+            , builtinAcUnit
             , builtinAcConcat
-            }
+            , builtinAcElement
+            } = internalAc
+        ~PairWiseElements
+            { symbolicPairs
+            , concretePairs
+            , opaquePairs
+            , symbolicConcretePairs
+            , symbolicOpaquePairs
+            , concreteOpaquePairs
+            } = generatePairWiseElements builtinAcChild
+        symbolicToAc (AcPair symbolic1 symbolic2) =
+            let symbolicAc =
+                    emptyNormalizedAc
+                        { elementsWithVariables = [symbolic1, symbolic2]
+                        }
+                        & wrapAc
+             in toInternalAc symbolicAc
+        concreteToAc (AcPair concrete1 concrete2) =
+            let concreteAc =
+                    emptyNormalizedAc
+                        { concreteElements = [concrete1, concrete2] & HashMap.fromList
+                        }
+                        & wrapAc
+             in toInternalAc concreteAc
+        opaqueToAc (AcPair opaque1 opaque2) =
+            let opaqueAc =
+                    emptyNormalizedAc
+                        { opaque = [opaque1, opaque2]
+                        }
+                        & wrapAc
+             in toInternalAc opaqueAc
+        symbolicConcreteToAc (symbolic, concrete) =
+            let symbolicConcreteAc =
+                    emptyNormalizedAc
+                        { elementsWithVariables = [symbolic]
+                        , concreteElements = [concrete] & HashMap.fromList
+                        }
+                        & wrapAc
+             in toInternalAc symbolicConcreteAc
+        symbolicOpaqueToAc (symbolic, opaque') =
+            let symbolicOpaqueAc =
+                    emptyNormalizedAc
+                        { elementsWithVariables = [symbolic]
+                        , opaque = [opaque']
+                        }
+                        & wrapAc
+             in toInternalAc symbolicOpaqueAc
+        concreteOpaqueToAc (concrete, opaque') =
+            let concreteOpaqueAc =
+                    emptyNormalizedAc
+                        { concreteElements = [concrete] & HashMap.fromList
+                        , opaque = [opaque']
+                        }
+                        & wrapAc
+             in toInternalAc concreteOpaqueAc
+        toInternalAc normalized =
+            InternalAc
+                { builtinAcChild = normalized
+                , builtinAcUnit
+                , builtinAcElement
+                , builtinAcSort
+                , builtinAcConcat
+                }
 
 {- | Checks if a term is defined by only looking at the attributes.
  Should not be used outside this module.
@@ -1009,83 +1009,83 @@ cacheSimplifiedFunctions ::
 cacheSimplifiedFunctions =
     fromSimplifiedFunctions
         . extractSimplifiedFunctions
-  where
-    extractSimplifiedFunctions ::
-        TermLike variable ->
-        HashSet (Application Symbol (TermLike variable))
-    extractSimplifiedFunctions (Recursive.project -> _ :< termF) =
-        case termF of
-            TermLike.ApplySymbolF symbolApp ->
-                let symbol = TermLike.applicationSymbolOrAlias symbolApp
-                    children = TermLike.applicationChildren symbolApp
-                    childrenSet = foldMap extractSimplifiedFunctions children
-                 in if isFunction symbol && not (isConstructor symbol)
-                        then HashSet.singleton symbolApp <> childrenSet
-                        else childrenSet
-            TermLike.AndF and' ->
-                foldMap extractSimplifiedFunctions and'
-            TermLike.ApplyAliasF aliasApp ->
-                foldMap extractSimplifiedFunctions aliasApp
-            TermLike.BottomF bottom ->
-                foldMap extractSimplifiedFunctions bottom
-            TermLike.CeilF ceil ->
-                foldMap extractSimplifiedFunctions ceil
-            TermLike.DomainValueF dv ->
-                foldMap extractSimplifiedFunctions dv
-            TermLike.EqualsF equals ->
-                foldMap extractSimplifiedFunctions equals
-            TermLike.ExistsF exists ->
-                foldMap extractSimplifiedFunctions exists
-            TermLike.FloorF floor' ->
-                foldMap extractSimplifiedFunctions floor'
-            TermLike.ForallF forall' ->
-                foldMap extractSimplifiedFunctions forall'
-            TermLike.IffF iff ->
-                foldMap extractSimplifiedFunctions iff
-            TermLike.ImpliesF implies ->
-                foldMap extractSimplifiedFunctions implies
-            TermLike.InF in' ->
-                foldMap extractSimplifiedFunctions in'
-            TermLike.MuF mu ->
-                foldMap extractSimplifiedFunctions mu
-            TermLike.NextF next ->
-                foldMap extractSimplifiedFunctions next
-            TermLike.NotF not' ->
-                foldMap extractSimplifiedFunctions not'
-            TermLike.NuF nu ->
-                foldMap extractSimplifiedFunctions nu
-            TermLike.OrF or' ->
-                foldMap extractSimplifiedFunctions or'
-            TermLike.RewritesF rewrites ->
-                foldMap extractSimplifiedFunctions rewrites
-            TermLike.TopF top' ->
-                foldMap extractSimplifiedFunctions top'
-            TermLike.InhabitantF inh ->
-                foldMap extractSimplifiedFunctions inh
-            TermLike.StringLiteralF stringLit ->
-                foldMap extractSimplifiedFunctions stringLit
-            TermLike.InternalBoolF bool ->
-                foldMap extractSimplifiedFunctions bool
-            TermLike.InternalBytesF bytes ->
-                foldMap extractSimplifiedFunctions bytes
-            TermLike.InternalIntF int ->
-                foldMap extractSimplifiedFunctions int
-            TermLike.InternalStringF string ->
-                foldMap extractSimplifiedFunctions string
-            TermLike.InternalListF list ->
-                foldMap extractSimplifiedFunctions list
-            TermLike.InternalMapF map' ->
-                foldMap extractSimplifiedFunctions map'
-            TermLike.InternalSetF set ->
-                foldMap extractSimplifiedFunctions set
-            TermLike.VariableF var ->
-                foldMap extractSimplifiedFunctions var
-            TermLike.EndiannessF end ->
-                foldMap extractSimplifiedFunctions end
-            TermLike.SignednessF sign ->
-                foldMap extractSimplifiedFunctions sign
-            TermLike.InjF inj ->
-                foldMap extractSimplifiedFunctions inj
+    where
+        extractSimplifiedFunctions ::
+            TermLike variable ->
+            HashSet (Application Symbol (TermLike variable))
+        extractSimplifiedFunctions (Recursive.project -> _ :< termF) =
+            case termF of
+                TermLike.ApplySymbolF symbolApp ->
+                    let symbol = TermLike.applicationSymbolOrAlias symbolApp
+                        children = TermLike.applicationChildren symbolApp
+                        childrenSet = foldMap extractSimplifiedFunctions children
+                     in if isFunction symbol && not (isConstructor symbol)
+                            then HashSet.singleton symbolApp <> childrenSet
+                            else childrenSet
+                TermLike.AndF and' ->
+                    foldMap extractSimplifiedFunctions and'
+                TermLike.ApplyAliasF aliasApp ->
+                    foldMap extractSimplifiedFunctions aliasApp
+                TermLike.BottomF bottom ->
+                    foldMap extractSimplifiedFunctions bottom
+                TermLike.CeilF ceil ->
+                    foldMap extractSimplifiedFunctions ceil
+                TermLike.DomainValueF dv ->
+                    foldMap extractSimplifiedFunctions dv
+                TermLike.EqualsF equals ->
+                    foldMap extractSimplifiedFunctions equals
+                TermLike.ExistsF exists ->
+                    foldMap extractSimplifiedFunctions exists
+                TermLike.FloorF floor' ->
+                    foldMap extractSimplifiedFunctions floor'
+                TermLike.ForallF forall' ->
+                    foldMap extractSimplifiedFunctions forall'
+                TermLike.IffF iff ->
+                    foldMap extractSimplifiedFunctions iff
+                TermLike.ImpliesF implies ->
+                    foldMap extractSimplifiedFunctions implies
+                TermLike.InF in' ->
+                    foldMap extractSimplifiedFunctions in'
+                TermLike.MuF mu ->
+                    foldMap extractSimplifiedFunctions mu
+                TermLike.NextF next ->
+                    foldMap extractSimplifiedFunctions next
+                TermLike.NotF not' ->
+                    foldMap extractSimplifiedFunctions not'
+                TermLike.NuF nu ->
+                    foldMap extractSimplifiedFunctions nu
+                TermLike.OrF or' ->
+                    foldMap extractSimplifiedFunctions or'
+                TermLike.RewritesF rewrites ->
+                    foldMap extractSimplifiedFunctions rewrites
+                TermLike.TopF top' ->
+                    foldMap extractSimplifiedFunctions top'
+                TermLike.InhabitantF inh ->
+                    foldMap extractSimplifiedFunctions inh
+                TermLike.StringLiteralF stringLit ->
+                    foldMap extractSimplifiedFunctions stringLit
+                TermLike.InternalBoolF bool ->
+                    foldMap extractSimplifiedFunctions bool
+                TermLike.InternalBytesF bytes ->
+                    foldMap extractSimplifiedFunctions bytes
+                TermLike.InternalIntF int ->
+                    foldMap extractSimplifiedFunctions int
+                TermLike.InternalStringF string ->
+                    foldMap extractSimplifiedFunctions string
+                TermLike.InternalListF list ->
+                    foldMap extractSimplifiedFunctions list
+                TermLike.InternalMapF map' ->
+                    foldMap extractSimplifiedFunctions map'
+                TermLike.InternalSetF set ->
+                    foldMap extractSimplifiedFunctions set
+                TermLike.VariableF var ->
+                    foldMap extractSimplifiedFunctions var
+                TermLike.EndiannessF end ->
+                    foldMap extractSimplifiedFunctions end
+                TermLike.SignednessF sign ->
+                    foldMap extractSimplifiedFunctions sign
+                TermLike.InjF inj ->
+                    foldMap extractSimplifiedFunctions inj
 
 {- | Decides whether a function can be further simplified or not.
  See also 'cacheSimplifiedFunctions'.

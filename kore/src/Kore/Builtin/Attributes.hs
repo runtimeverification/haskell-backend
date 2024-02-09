@@ -38,5 +38,5 @@ isConstructorModulo_ symbol =
         , Set.isSymbolElement
         , Set.isSymbolUnit
         ]
-  where
-    apply pattHead f = f pattHead
+    where
+        apply pattHead f = f pattHead

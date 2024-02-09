@@ -116,11 +116,11 @@ newMapCeilSimplifier =
                     -- At present, we wouldn't apply such an axiom, anyway.
                     & Predicate.markSimplifiedMaybeConditional Nothing
                     & makeForallPredicate variable
-              where
-                (variable, element') =
-                    generalizeMapElement
-                        (TermLike.freeVariables termLike)
-                        element
+                where
+                    (variable, element') =
+                        generalizeMapElement
+                            (TermLike.freeVariables termLike)
+                            element
         runCeilSimplifier
             ( newBuiltinAssocCommCeilSimplifier
                 TermLike.mkInternalMap
@@ -142,16 +142,17 @@ generalizeMapElement ::
     (ElementVariable variable, MapElement (TermLike variable))
 generalizeMapElement freeVariables' element =
     (variable, element')
-  where
-    (key, MapValue value) = unwrapElement element
-    element' = wrapElement (key, MapValue $ TermLike.mkElemVar variable)
-    avoiding =
-        TermLike.freeVariables key <> freeVariables'
-            & FreeVariables.toNames
-    x =
-        TermLike.mkElementVariable (generatedId "x") (termLikeSort value)
-            & (fmap . fmap) (fromVariableName @variable)
-    variable = refreshElementVariable avoiding x & fromMaybe x
+    where
+        (key, MapValue value) = unwrapElement element
+        element' = wrapElement (key, MapValue $ TermLike.mkElemVar variable)
+        avoiding =
+            TermLike.freeVariables key
+                <> freeVariables'
+                & FreeVariables.toNames
+        x =
+            TermLike.mkElementVariable (generatedId "x") (termLikeSort value)
+                & (fmap . fmap) (fromVariableName @variable)
+        variable = refreshElementVariable avoiding x & fromMaybe x
 
 newBuiltinAssocCommCeilSimplifier ::
     forall normalized.
@@ -187,11 +188,11 @@ newBuiltinAssocCommCeilSimplifier mkBuiltin mkNotMember =
                     <> definedValues
                     <> definedSubCollections
         return (MultiOr.singleton conditions)
-  where
-    defineValue ::
-        Value normalized (TermLike RewritingVariableName) ->
-        (MultiAnd (Predicate RewritingVariableName))
-    defineValue = foldMap (MultiAnd.singleton . fromCeil_)
+    where
+        defineValue ::
+            Value normalized (TermLike RewritingVariableName) ->
+            (MultiAnd (Predicate RewritingVariableName))
+        defineValue = foldMap (MultiAnd.singleton . fromCeil_)
 
 definePairWiseElements ::
     forall normalized.
@@ -209,7 +210,8 @@ definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
     definedKeyPairs <-
         traverse
             distinctKey
-            ( symbolicKeyPairs <> symbolicConcreteKeyPairs
+            ( symbolicKeyPairs
+                <> symbolicConcreteKeyPairs
                 & HashSet.toList
             )
             & fmap MultiAnd.make
@@ -219,77 +221,78 @@ definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
                 (symbolicOpaquePairs <> concreteOpaquePairs')
         definedOpaquePairs =
             foldMap defineOpaquePair opaquePairs
-    return . fold $
-        [ definedKeyPairs
-        , definedElementOpaquePairs
-        , definedOpaquePairs
-        ]
-  where
-    PairWiseElements
-        { symbolicPairs
-        , opaquePairs
-        , symbolicConcretePairs
-        , symbolicOpaquePairs
-        , concreteOpaquePairs
-        } = pairWiseElements
-    symbolicKeyPairs =
-        HashSet.map
-            ( Bifunctor.bimap
-                (fst . unwrapElement)
-                (fst . unwrapElement)
-                . acPairToPair
-            )
-            symbolicPairs
-    symbolicConcreteKeyPairs =
-        HashSet.map
-            ( Bifunctor.bimap
-                (fst . unwrapElement)
-                (from @Key @(TermLike _) . fst)
-            )
-            symbolicConcretePairs
-    concreteOpaquePairs' =
-        HashSet.map
-            ( Bifunctor.first
-                wrapConcreteElement
-            )
-            concreteOpaquePairs
+    return
+        . fold
+        $ [ definedKeyPairs
+          , definedElementOpaquePairs
+          , definedOpaquePairs
+          ]
+    where
+        PairWiseElements
+            { symbolicPairs
+            , opaquePairs
+            , symbolicConcretePairs
+            , symbolicOpaquePairs
+            , concreteOpaquePairs
+            } = pairWiseElements
+        symbolicKeyPairs =
+            HashSet.map
+                ( Bifunctor.bimap
+                    (fst . unwrapElement)
+                    (fst . unwrapElement)
+                    . acPairToPair
+                )
+                symbolicPairs
+        symbolicConcreteKeyPairs =
+            HashSet.map
+                ( Bifunctor.bimap
+                    (fst . unwrapElement)
+                    (from @Key @(TermLike _) . fst)
+                )
+                symbolicConcretePairs
+        concreteOpaquePairs' =
+            HashSet.map
+                ( Bifunctor.first
+                    wrapConcreteElement
+                )
+                concreteOpaquePairs
 
-    distinctKey ::
-        ( TermLike RewritingVariableName
-        , TermLike RewritingVariableName
-        ) ->
-        MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) (Predicate RewritingVariableName)
-    distinctKey (t1, t2) = do
-        return (fromNot (fromEquals_ tMin tMax))
-      where
-        -- Stabilize the order of terms under Equals.
-        (tMin, tMax) = minMax t1 t2
+        distinctKey ::
+            ( TermLike RewritingVariableName
+            , TermLike RewritingVariableName
+            ) ->
+            MaybeT (ReaderT (SideCondition RewritingVariableName) Simplifier) (Predicate RewritingVariableName)
+        distinctKey (t1, t2) = do
+            return (fromNot (fromEquals_ tMin tMax))
+            where
+                -- Stabilize the order of terms under Equals.
+                (tMin, tMax) = minMax t1 t2
 
-    notMember ::
-        ( Element normalized (TermLike RewritingVariableName)
-        , TermLike RewritingVariableName
-        ) ->
-        MultiAnd (Predicate RewritingVariableName)
-    notMember (element, termLike) =
-        mkNotMember element termLike
-            & MultiAnd.singleton
+        notMember ::
+            ( Element normalized (TermLike RewritingVariableName)
+            , TermLike RewritingVariableName
+            ) ->
+            MultiAnd (Predicate RewritingVariableName)
+        notMember (element, termLike) =
+            mkNotMember element termLike
+                & MultiAnd.singleton
 
-    defineOpaquePair ::
-        AcPair (TermLike RewritingVariableName) ->
-        MultiAnd (Predicate RewritingVariableName)
-    defineOpaquePair (AcPair opaque1 opaque2) =
-        internalAc
-            { builtinAcChild =
-                wrapAc
-                    emptyNormalizedAc{opaque = [opaque1, opaque2]}
-            }
-            & mkBuiltin
-            & makeCeilPredicate
-            -- TODO (thomas.tuegel): Do not mark this simplified.
-            -- Marking here may prevent user-defined axioms from applying.
-            -- At present, we wouldn't apply such an axiom, anyway.
-            & Predicate.markSimplifiedMaybeConditional Nothing
-            & MultiAnd.singleton
+        defineOpaquePair ::
+            AcPair (TermLike RewritingVariableName) ->
+            MultiAnd (Predicate RewritingVariableName)
+        defineOpaquePair (AcPair opaque1 opaque2) =
+            internalAc
+                { builtinAcChild =
+                    wrapAc
+                        emptyNormalizedAc{opaque = [opaque1, opaque2]}
+                }
+                & mkBuiltin
+                & makeCeilPredicate
+                -- TODO (thomas.tuegel): Do not mark this simplified.
+                -- Marking here may prevent user-defined axioms from applying.
+                -- At present, we wouldn't apply such an axiom, anyway.
+                & Predicate.markSimplifiedMaybeConditional Nothing
+                & MultiAnd.singleton
 
 fromElement ::
     AcWrapper normalized =>
@@ -303,5 +306,5 @@ fromElement element
             }
     | otherwise =
         emptyNormalizedAc{elementsWithVariables = [element]}
-  where
-    (symbolicKey, value) = unwrapElement element
+    where
+        (symbolicKey, value) = unwrapElement element

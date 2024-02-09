@@ -180,16 +180,16 @@ unifyRule sideCondition initial rule = do
     debugAppliedLabeledRewriteRule initial maybeLabel location
     ruleMarker "Success"
     return (rule `Conditional.withCondition` unification')
-  where
-    location = from @_ @SourceLocation rule
+    where
+        location = from @_ @SourceLocation rule
 
-    locString =
-        Pretty.renderString
-            . Pretty.layoutCompact
-            . Pretty.pretty
-            $ location
+        locString =
+            Pretty.renderString
+                . Pretty.layoutCompact
+                . Pretty.pretty
+                $ location
 
-    ruleMarker tag = marker tag locString
+        ruleMarker tag = marker tag locString
 
 marker :: MonadIO m => String -> String -> m ()
 marker tag extra =
@@ -207,15 +207,15 @@ wouldNarrowWith ::
     Set (SomeVariableName variable)
 wouldNarrowWith unified =
     Set.difference leftAxiomVariables substitutionVariables
-  where
-    leftAxiomVariables =
-        TermLike.freeVariables leftAxiom
-            & FreeVariables.toNames
-      where
-        Conditional{term = axiom} = unified
-        leftAxiom = matchingPattern axiom
-    Conditional{substitution} = unified
-    substitutionVariables = Map.keysSet (Substitution.toMap substitution)
+    where
+        leftAxiomVariables =
+            TermLike.freeVariables leftAxiom
+                & FreeVariables.toNames
+            where
+                Conditional{term = axiom} = unified
+                leftAxiom = matchingPattern axiom
+        Conditional{substitution} = unified
+        substitutionVariables = Map.keysSet (Substitution.toMap substitution)
 
 -- | Errors if configuration or matching pattern are not function-like
 assertFunctionLikeResults ::
@@ -250,28 +250,32 @@ checkFunctionLike unifiedRules pat
     | TermLike.isFunctionPattern pat =
         traverse_ checkFunctionLikeRule unifiedRules
     | otherwise =
-        Left . show . Pretty.vsep $
-            [ "Expected function-like term, but found:"
-            , Pretty.indent 4 (unparse pat)
-            ]
-  where
-    checkFunctionLikeRule ::
-        UnifiedRule rule ->
-        Either String ()
-    checkFunctionLikeRule Conditional{term, substitution}
-        | all (TermLike.isFunctionPattern . Substitution.assignedTerm) $
-            Substitution.unwrap substitution =
-            return ()
-        | otherwise =
-            Left . show . Pretty.vsep $
-                [ "Expected function-like unification solution, but found:"
-                , Pretty.indent 4 (unparse conditional)
-                ]
-      where
-        conditional =
-            TermLike.mkTop (TermLike.termLikeSort left)
-                `Pattern.withCondition` Condition.fromSubstitution substitution
-        left = matchingPattern term
+        Left
+            . show
+            . Pretty.vsep
+            $ [ "Expected function-like term, but found:"
+              , Pretty.indent 4 (unparse pat)
+              ]
+    where
+        checkFunctionLikeRule ::
+            UnifiedRule rule ->
+            Either String ()
+        checkFunctionLikeRule Conditional{term, substitution}
+            | all (TermLike.isFunctionPattern . Substitution.assignedTerm)
+                $ Substitution.unwrap substitution =
+                return ()
+            | otherwise =
+                Left
+                    . show
+                    . Pretty.vsep
+                    $ [ "Expected function-like unification solution, but found:"
+                      , Pretty.indent 4 (unparse conditional)
+                      ]
+            where
+                conditional =
+                    TermLike.mkTop (TermLike.termLikeSort left)
+                        `Pattern.withCondition` Condition.fromSubstitution substitution
+                left = matchingPattern term
 
 {- | Apply the initial conditions to the results of rule unification.
 

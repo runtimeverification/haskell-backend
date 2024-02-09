@@ -20,18 +20,18 @@ parseTotal = parseAttributes
 
 test_total :: TestTree
 test_total =
-    testCase "[total{}()] :: Total" $
-        expectSuccess Total{isDeclaredTotal = True} $
-            parseTotal $
-                Attributes [totalAttribute]
+    testCase "[total{}()] :: Total"
+        $ expectSuccess Total{isDeclaredTotal = True}
+        $ parseTotal
+        $ Attributes [totalAttribute]
 
 test_Attributes :: TestTree
 test_Attributes =
-    testCase "[total{}()] :: Attributes" $
-        expectSuccess attrs $
-            parseAttributes attrs
-  where
-    attrs = Attributes [totalAttribute]
+    testCase "[total{}()] :: Attributes"
+        $ expectSuccess attrs
+        $ parseAttributes attrs
+    where
+        attrs = Attributes [totalAttribute]
 
 {- TODO: Uncomment the test after frontend will be fixed
    Now duplicate total attributes are allowed because frontend
@@ -47,29 +47,29 @@ test_Attributes =
 
 test_arguments :: TestTree
 test_arguments =
-    testCase "[total{}(\"illegal\")]" $
-        expectFailure $
-            parseTotal $
-                Attributes [illegalAttribute]
-  where
-    illegalAttribute =
-        attributePattern totalSymbol [attributeString "illegal"]
+    testCase "[total{}(\"illegal\")]"
+        $ expectFailure
+        $ parseTotal
+        $ Attributes [illegalAttribute]
+    where
+        illegalAttribute =
+            attributePattern totalSymbol [attributeString "illegal"]
 
 test_parameters :: TestTree
 test_parameters =
-    testCase "[total{illegal}()]" $
-        expectFailure $
-            parseTotal $
-                Attributes [illegalAttribute]
-  where
-    illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias =
-                    SymbolOrAlias
-                        { symbolOrAliasConstructor = totalId
-                        , symbolOrAliasParams =
-                            [SortVariableSort (SortVariable "illegal")]
-                        }
-                , applicationChildren = []
-                }
+    testCase "[total{illegal}()]"
+        $ expectFailure
+        $ parseTotal
+        $ Attributes [illegalAttribute]
+    where
+        illegalAttribute =
+            (asAttributePattern . ApplicationF)
+                Application
+                    { applicationSymbolOrAlias =
+                        SymbolOrAlias
+                            { symbolOrAliasConstructor = totalId
+                            , symbolOrAliasParams =
+                                [SortVariableSort (SortVariable "illegal")]
+                            }
+                    , applicationChildren = []
+                    }

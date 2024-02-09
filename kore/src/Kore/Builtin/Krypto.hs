@@ -189,14 +189,14 @@ evalHashFunction ::
     BuiltinAndAxiomSimplifier
 evalHashFunction context algorithm =
     Builtin.functionEvaluator evalHashFunctionWorker
-  where
-    evalHashFunctionWorker :: Builtin.Function
-    evalHashFunctionWorker _ resultSort [input] = do
-        bytes <- InternalBytes.expectBuiltinBytes input
-        let digest = hashWith algorithm bytes
-            result = fromString (show digest)
-        return (String.asPattern resultSort result)
-    evalHashFunctionWorker _ _ _ = Builtin.wrongArity context
+    where
+        evalHashFunctionWorker :: Builtin.Function
+        evalHashFunctionWorker _ resultSort [input] = do
+            bytes <- InternalBytes.expectBuiltinBytes input
+            let digest = hashWith algorithm bytes
+                result = fromString (show digest)
+            return (String.asPattern resultSort result)
+        evalHashFunctionWorker _ _ _ = Builtin.wrongArity context
 
 {- | A function evaluator for builtin hash function hooks.
 
@@ -212,14 +212,14 @@ evalHashFunctionRaw ::
     BuiltinAndAxiomSimplifier
 evalHashFunctionRaw context algorithm =
     Builtin.functionEvaluator evalHashFunctionWorker
-  where
-    evalHashFunctionWorker :: Builtin.Function
-    evalHashFunctionWorker _ resultSort [input] = do
-        bytes <- InternalBytes.expectBuiltinBytes input
-        let digest = hashWith algorithm bytes
-            result = decode8Bit digest
-        return (String.asPattern resultSort result)
-    evalHashFunctionWorker _ _ _ = Builtin.wrongArity context
+    where
+        evalHashFunctionWorker :: Builtin.Function
+        evalHashFunctionWorker _ resultSort [input] = do
+            bytes <- InternalBytes.expectBuiltinBytes input
+            let digest = hashWith algorithm bytes
+                result = decode8Bit digest
+            return (String.asPattern resultSort result)
+        evalHashFunctionWorker _ _ _ = Builtin.wrongArity context
 
 evalKeccak :: BuiltinAndAxiomSimplifier
 evalKeccak = evalHashFunction keccak256Key Keccak_256
@@ -243,13 +243,13 @@ secp256k1Ctx = unsafePerformIO $ Secp256k1.contextCreate Secp256k1.sign
 evalECDSAPubKey :: BuiltinAndAxiomSimplifier
 evalECDSAPubKey =
     Builtin.functionEvaluator evalWorker
-  where
-    evalWorker :: Builtin.Function
-    evalWorker _ resultSort [input] = do
-        sec_key <- InternalBytes.expectBuiltinBytes input
-        return $
-            String.asPattern resultSort $
-                if ByteString.length sec_key /= 32
+    where
+        evalWorker :: Builtin.Function
+        evalWorker _ resultSort [input] = do
+            sec_key <- InternalBytes.expectBuiltinBytes input
+            return
+                $ String.asPattern resultSort
+                $ if ByteString.length sec_key /= 32
                     then ""
                     else unsafePerformIO $ Secp256k1.unsafeUseByteString sec_key $ \(sec_key_ptr, _) -> allocaBytes 64 $ \pub_key_ptr -> do
                         createdKeySuccessfully <-
@@ -266,31 +266,31 @@ evalECDSAPubKey =
                                     else do
                                         final_len <- peek len_ptr
                                         toBase16 . ByteString.tail <$> Secp256k1.packByteString (out_ptr, final_len)
-    evalWorker _ _ _ = Builtin.wrongArity ecdsaPubKey
+        evalWorker _ _ _ = Builtin.wrongArity ecdsaPubKey
 
 evalECDSARecover :: BuiltinAndAxiomSimplifier
 evalECDSARecover =
     Builtin.functionEvaluator eval0
-  where
-    eval0 :: Builtin.Function
-    eval0 _ resultSort [messageHash0, v0, r0, s0] = do
-        messageHash <-
-            bstring2Integer <$> InternalBytes.expectBuiltinBytes messageHash0
-        v <- Int.expectBuiltinInt "" v0
-        r <-
-            bstring2Integer <$> InternalBytes.expectBuiltinBytes r0
-        s <-
-            bstring2Integer <$> InternalBytes.expectBuiltinBytes s0
-        pad 64 0 (signatureToKey messageHash r s v)
-            & InternalBytes.asPattern resultSort
-            & return
-    eval0 _ _ _ = Builtin.wrongArity ecdsaRecoverKey
+    where
+        eval0 :: Builtin.Function
+        eval0 _ resultSort [messageHash0, v0, r0, s0] = do
+            messageHash <-
+                bstring2Integer <$> InternalBytes.expectBuiltinBytes messageHash0
+            v <- Int.expectBuiltinInt "" v0
+            r <-
+                bstring2Integer <$> InternalBytes.expectBuiltinBytes r0
+            s <-
+                bstring2Integer <$> InternalBytes.expectBuiltinBytes s0
+            pad 64 0 (signatureToKey messageHash r s v)
+                & InternalBytes.asPattern resultSort
+                & return
+        eval0 _ _ _ = Builtin.wrongArity ecdsaRecoverKey
 
 pad :: Int -> Word8 -> ByteString -> ByteString
 pad n w s = ByteString.append s padding
-  where
-    padding =
-        ByteString.replicate (n - ByteString.length s) w
+    where
+        padding =
+            ByteString.replicate (n - ByteString.length s) w
 
 signatureToKey ::
     Integer ->
@@ -299,13 +299,13 @@ signatureToKey ::
     Integer ->
     ByteString
 signatureToKey messageHash r s v =
-    assert (27 <= v && v <= 34) $
-        ByteString.drop 1 $
-            encodePoint compressed $
-                recoverPublicKey recId (r, s) messageHash
-  where
-    recId = v - 27
-    compressed = v >= 31
+    assert (27 <= v && v <= 34)
+        $ ByteString.drop 1
+        $ encodePoint compressed
+        $ recoverPublicKey recId (r, s) messageHash
+    where
+        recId = v - 27
+        compressed = v >= 31
 
 recoverPublicKey ::
     Integer ->
@@ -313,41 +313,41 @@ recoverPublicKey ::
     Integer ->
     Point
 recoverPublicKey recId (r, s) e =
-    assert (recId >= 0) $
-        assert (r >= 0) $
-            assert (s >= 0) $
-                assert (pt_x <= p) $
-                    assert (pointMul p256k1 n pt == PointO) $
-                        pointAddTwoMuls
-                            p256k1
-                            (mulMod n (invMod n r) s)
-                            pt
-                            (mulMod n (invMod n r) (n - e `mod` n))
-                            (ecc_g curveParams)
-  where
-    p256k1 = getCurveByName SEC_p256k1
-    CurvePrime p curveParams =
-        case p256k1 of
-            CurveFP curvePrime@(CurvePrime _ _) -> curvePrime
-            _ -> error "Expected CurveFP!"
+    assert (recId >= 0)
+        $ assert (r >= 0)
+        $ assert (s >= 0)
+        $ assert (pt_x <= p)
+        $ assert (pointMul p256k1 n pt == PointO)
+        $ pointAddTwoMuls
+            p256k1
+            (mulMod n (invMod n r) s)
+            pt
+            (mulMod n (invMod n r) (n - e `mod` n))
+            (ecc_g curveParams)
+    where
+        p256k1 = getCurveByName SEC_p256k1
+        CurvePrime p curveParams =
+            case p256k1 of
+                CurveFP curvePrime@(CurvePrime _ _) -> curvePrime
+                _ -> error "Expected CurveFP!"
 
-    n = ecc_n curveParams
+        n = ecc_n curveParams
 
-    i = recId `div` 2
+        i = recId `div` 2
 
-    pt_x = r + i * n
+        pt_x = r + i * n
 
-    pt = decompressPt pt_x (recId .&. 1 == 1)
+        pt = decompressPt pt_x (recId .&. 1 == 1)
 
-    decompressPt x signBit = Point x (if signBit /= even y then y else p - y)
-      where
-        y =
-            sqrtMod
-                p
-                ( powMod p x 3
-                    + mulMod p (ecc_a curveParams) x
-                    + ecc_b curveParams
-                )
+        decompressPt x signBit = Point x (if signBit /= even y then y else p - y)
+            where
+                y =
+                    sqrtMod
+                        p
+                        ( powMod p x 3
+                            + mulMod p (ecc_a curveParams) x
+                            + ecc_b curveParams
+                        )
 
 invMod ::
     Integer ->
@@ -414,9 +414,9 @@ bstring2Integer =
 integer2ByteString :: Integer -> ByteString
 integer2ByteString =
     ByteString.reverse . ByteString.unfoldr integer2ByteStringWorker
-  where
-    integer2ByteStringWorker i
-        | i == 0 = Nothing
-        | otherwise = Just (fromIntegral r, q)
-      where
-        (q, r) = divMod i 256
+    where
+        integer2ByteStringWorker i
+            | i == 0 = Nothing
+            | otherwise = Just (fromIntegral r, q)
+            where
+                (q, r) = divMod i 256

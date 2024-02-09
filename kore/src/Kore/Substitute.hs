@@ -101,5 +101,5 @@ refreshElementBinder avoiding binder =
                 , binderChild = binderChild'
                 }
         & fromMaybe binder
-  where
-    Binder{binderVariable, binderChild} = binder
+    where
+        Binder{binderVariable, binderChild} = binder

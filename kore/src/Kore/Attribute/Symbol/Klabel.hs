@@ -53,18 +53,18 @@ klabelAttribute name =
 
 instance ParseAttributes Klabel where
     parseAttribute = withApplication' parseApplication
-      where
-        parseApplication params args Klabel{getKlabel} = do
-            Parser.getZeroParams params
-            arg <- Parser.getOneArgument args
-            StringLiteral name <- Parser.getStringLiteral arg
-            unless (isNothing getKlabel) failDuplicate'
-            return Klabel{getKlabel = Just name}
-        withApplication' = Parser.withApplication klabelId
-        failDuplicate' = Parser.failDuplicate klabelId
+        where
+            parseApplication params args Klabel{getKlabel} = do
+                Parser.getZeroParams params
+                arg <- Parser.getOneArgument args
+                StringLiteral name <- Parser.getStringLiteral arg
+                unless (isNothing getKlabel) failDuplicate'
+                return Klabel{getKlabel = Just name}
+            withApplication' = Parser.withApplication klabelId
+            failDuplicate' = Parser.failDuplicate klabelId
 
 instance From Klabel Attributes where
     from =
         maybe def toAttribute . getKlabel
-      where
-        toAttribute = from @AttributePattern . klabelAttribute
+        where
+            toAttribute = from @AttributePattern . klabelAttribute

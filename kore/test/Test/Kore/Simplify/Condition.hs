@@ -78,38 +78,38 @@ test_simplify_local_functions =
     , test "contradiction: \"one\" = f(x) ∧ \"two\" = f(x)" fString (Left strOne) (Left strTwo)
     , test "contradiction: f(x) = \"one\" ∧ \"two\" = f(x)" fString (Right strOne) (Left strTwo)
     ]
-  where
-    f = Mock.f (mkElemVar Mock.xConfig)
-    fInt = Mock.fInt (mkElemVar Mock.xConfigInt)
-    fBool = Mock.fBool (mkElemVar Mock.xConfigBool)
-    fString = Mock.fString (mkElemVar Mock.xConfigString)
-    defined = makeCeilPredicate f & Condition.fromPredicate
+    where
+        f = Mock.f (mkElemVar Mock.xConfig)
+        fInt = Mock.fInt (mkElemVar Mock.xConfigInt)
+        fBool = Mock.fBool (mkElemVar Mock.xConfigBool)
+        fString = Mock.fString (mkElemVar Mock.xConfigString)
+        defined = makeCeilPredicate f & Condition.fromPredicate
 
-    a = Mock.a
-    b = Mock.b
+        a = Mock.a
+        b = Mock.b
 
-    injA = Mock.sortInjection10 Mock.a
-    injB = Mock.sortInjection10 Mock.b
+        injA = Mock.sortInjection10 Mock.a
+        injB = Mock.sortInjection10 Mock.b
 
-    int2 = Mock.builtinInt 2
-    int3 = Mock.builtinInt 3
+        int2 = Mock.builtinInt 2
+        int3 = Mock.builtinInt 3
 
-    boolTrue = Mock.builtinBool True
-    boolFalse = Mock.builtinBool False
+        boolTrue = Mock.builtinBool True
+        boolFalse = Mock.builtinBool False
 
-    strOne = Mock.builtinString "one"
-    strTwo = Mock.builtinString "two"
+        strOne = Mock.builtinString "one"
+        strTwo = Mock.builtinString "two"
 
-    mkLocalDefn func (Left t) = makeEqualsPredicate t func
-    mkLocalDefn func (Right t) = makeEqualsPredicate func t
+        mkLocalDefn func (Left t) = makeEqualsPredicate t func
+        mkLocalDefn func (Right t) = makeEqualsPredicate func t
 
-    test name func eitherC1 eitherC2 =
-        testCase name $ do
-            let equals1 = mkLocalDefn func eitherC1 & Condition.fromPredicate
-                equals2 = mkLocalDefn func eitherC2 & Condition.fromPredicate
-                condition = defined <> equals1 <> defined <> equals2
-            actual <- simplify condition
-            assertBool "Expected \\bottom" $ isBottom actual
+        test name func eitherC1 eitherC2 =
+            testCase name $ do
+                let equals1 = mkLocalDefn func eitherC1 & Condition.fromPredicate
+                    equals2 = mkLocalDefn func eitherC2 & Condition.fromPredicate
+                    condition = defined <> equals1 <> defined <> equals2
+                actual <- simplify condition
+                assertBool "Expected \\bottom" $ isBottom actual
 
 test_predicateSimplification :: [TestTree]
 test_predicateSimplification =
@@ -371,13 +371,13 @@ conditionRunSimplifier ::
     Condition RewritingVariableName ->
     IO (OrCondition RewritingVariableName)
 conditionRunSimplifier axiomEquations predicate =
-    fmap MultiOr.make $
-        Test.testRunSimplifierBranch env $
-            simplifier SideCondition.top predicate
-  where
-    env = Mock.env{axiomEquations}
-    ConditionSimplifier simplifier =
-        Condition.create SubstitutionSimplifier.substitutionSimplifier
+    fmap MultiOr.make
+        $ Test.testRunSimplifierBranch env
+        $ simplifier SideCondition.top predicate
+    where
+        env = Mock.env{axiomEquations}
+        ConditionSimplifier simplifier =
+            Condition.create SubstitutionSimplifier.substitutionSimplifier
 
 simplifyPredicates ::
     MultiAnd (Predicate RewritingVariableName) ->

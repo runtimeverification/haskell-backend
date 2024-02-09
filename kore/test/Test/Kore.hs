@@ -155,9 +155,9 @@ objectIdGen =
     genericIdGen
         (Gen.element idFirstChars)
         (Gen.element $ idFirstChars ++ idOtherChars)
-  where
-    idFirstChars = ['A' .. 'Z'] <> ['a' .. 'z']
-    idOtherChars = ['0' .. '9'] <> ['\'', '-']
+    where
+        idFirstChars = ['A' .. 'Z'] <> ['a' .. 'z']
+        idOtherChars = ['0' .. '9'] <> ['\'', '-']
 
 setVarIdGen :: MonadGen m => m Id
 setVarIdGen = testId <$> fmap ("@" <>) objectIdGen
@@ -208,23 +208,23 @@ sortGen :: Gen Sort
 sortGen = do
     Context{sorts} <- Reader.ask
     maybe randomSort Gen.element sorts
-  where
-    randomSort :: Gen Sort
-    randomSort = do
-        Context{objectSortVariables} <- Reader.ask
-        sortGenWorker objectSortVariables
+    where
+        randomSort :: Gen Sort
+        randomSort = do
+            Context{objectSortVariables} <- Reader.ask
+            sortGenWorker objectSortVariables
 
-    sortGenWorker :: [SortVariable] -> Gen Sort
-    sortGenWorker =
-        \case
-            [] -> actualSort
-            sortVariables ->
-                Gen.choice
-                    [ SortVariableSort <$> Gen.element sortVariables
-                    , actualSort
-                    ]
-      where
-        actualSort = SortActualSort <$> sortActualGen
+        sortGenWorker :: [SortVariable] -> Gen Sort
+        sortGenWorker =
+            \case
+                [] -> actualSort
+                sortVariables ->
+                    Gen.choice
+                        [ SortVariableSort <$> Gen.element sortVariables
+                        , actualSort
+                        ]
+            where
+                actualSort = SortActualSort <$> sortActualGen
 
 moduleNameGen :: MonadGen m => m ModuleName
 moduleNameGen = ModuleName <$> objectIdGen
@@ -242,12 +242,12 @@ variableGen' patternSort variables genId =
                 [ Gen.element variables'
                 , freshVariable
                 ]
-  where
-    bySort Variable{variableSort} = variableSort == patternSort
-    freshVariable = do
-        (base, counter) <- parseVariableCounter <$> genId
-        let variableName = VariableName{base, counter}
-        pure Variable{variableName, variableSort = patternSort}
+    where
+        bySort Variable{variableSort} = variableSort == patternSort
+        freshVariable = do
+            (base, counter) <- parseVariableCounter <$> genId
+            let variableName = VariableName{base, counter}
+            pure Variable{variableName, variableSort = patternSort}
 
 elementVariableGen :: Sort -> Gen (ElementVariable VariableName)
 elementVariableGen patternSort = do
@@ -353,40 +353,40 @@ applicationGen childGen sort = do
         Nothing -> randomApplication
         Just allowedSymbols ->
             applicationFromList (filter (hasResultSort sort) allowedSymbols)
-  where
-    randomApplication =
-        Application
-            <$> Gen.small symbolOrAliasGen
-            <*> couple (Gen.small (childGen =<< sortGen))
+    where
+        randomApplication =
+            Application
+                <$> Gen.small symbolOrAliasGen
+                <*> couple (Gen.small (childGen =<< sortGen))
 
-    applicationFromList [] = randomApplication
-    applicationFromList symbols = do
-        Internal.Symbol
-            { symbolConstructor
-            , symbolParams
-            , symbolSorts = ApplicationSorts{applicationSortsOperands}
-            } <-
-            Gen.element symbols
-        case symbolParams of
-            [] -> do
-                children <- mapM childGen applicationSortsOperands
-                return
-                    Application
-                        { applicationSymbolOrAlias =
-                            SymbolOrAlias
-                                { symbolOrAliasConstructor = symbolConstructor
-                                , symbolOrAliasParams = []
-                                }
-                        , applicationChildren = children
-                        }
-            _ -> randomApplication
+        applicationFromList [] = randomApplication
+        applicationFromList symbols = do
+            Internal.Symbol
+                { symbolConstructor
+                , symbolParams
+                , symbolSorts = ApplicationSorts{applicationSortsOperands}
+                } <-
+                Gen.element symbols
+            case symbolParams of
+                [] -> do
+                    children <- mapM childGen applicationSortsOperands
+                    return
+                        Application
+                            { applicationSymbolOrAlias =
+                                SymbolOrAlias
+                                    { symbolOrAliasConstructor = symbolConstructor
+                                    , symbolOrAliasParams = []
+                                    }
+                            , applicationChildren = children
+                            }
+                _ -> randomApplication
 
-    hasResultSort
-        expectedSort
-        Internal.Symbol
-            { symbolSorts = ApplicationSorts{applicationSortsResult}
-            } =
-            expectedSort == applicationSortsResult
+        hasResultSort
+            expectedSort
+            Internal.Symbol
+                { symbolSorts = ApplicationSorts{applicationSortsResult}
+                } =
+                expectedSort == applicationSortsResult
 
 bottomGen :: Sort -> Gen (Bottom Sort child)
 bottomGen = topBottomGen Bottom
@@ -404,8 +404,8 @@ genDomainValue childGen domainValueSort =
 genInternalInt :: Sort -> Gen InternalInt
 genInternalInt builtinIntSort =
     InternalInt builtinIntSort <$> genInteger
-  where
-    genInteger = Gen.integral (Range.linear (-1024) 1024)
+    where
+        genInteger = Gen.integral (Range.linear (-1024) 1024)
 
 genInternalBool :: Sort -> Gen InternalBool
 genInternalBool builtinBoolSort =
@@ -479,52 +479,59 @@ korePatternGen =
 korePatternChildGen :: Sort -> Gen ParsedPattern
 korePatternChildGen patternSort' =
     Gen.sized korePatternChildGenWorker
-  where
-    korePatternChildGenWorker n
-        | n <= 1 =
-            case () of
-                ()
-                    | patternSort' == stringMetaSort ->
-                        korePatternGenStringLiteral
-                    | otherwise ->
-                        Gen.choice [korePatternGenVariable, korePatternGenDomainValue]
-        | otherwise =
-            case () of
-                () ->
-                    Gen.frequency
-                        [ (15, korePatternGenLevel)
-                        , (1, korePatternGenNext)
-                        , (1, korePatternGenRewrites)
-                        ]
+    where
+        korePatternChildGenWorker n
+            | n <= 1 =
+                case () of
+                    ()
+                        | patternSort' == stringMetaSort ->
+                            korePatternGenStringLiteral
+                        | otherwise ->
+                            Gen.choice [korePatternGenVariable, korePatternGenDomainValue]
+            | otherwise =
+                case () of
+                    () ->
+                        Gen.frequency
+                            [ (15, korePatternGenLevel)
+                            , (1, korePatternGenNext)
+                            , (1, korePatternGenRewrites)
+                            ]
 
-    korePatternGenLevel :: Gen ParsedPattern
-    korePatternGenLevel =
-        embedParsedPattern <$> patternGen korePatternChildGen patternSort'
+        korePatternGenLevel :: Gen ParsedPattern
+        korePatternGenLevel =
+            embedParsedPattern <$> patternGen korePatternChildGen patternSort'
 
-    korePatternGenStringLiteral :: Gen ParsedPattern
-    korePatternGenStringLiteral =
-        embedParsedPattern . Syntax.StringLiteralF . Const
-            <$> stringLiteralGen
+        korePatternGenStringLiteral :: Gen ParsedPattern
+        korePatternGenStringLiteral =
+            embedParsedPattern
+                . Syntax.StringLiteralF
+                . Const
+                <$> stringLiteralGen
 
-    korePatternGenDomainValue :: Gen ParsedPattern
-    korePatternGenDomainValue =
-        embedParsedPattern . Syntax.DomainValueF
-            <$> genDomainValue korePatternChildGen patternSort'
+        korePatternGenDomainValue :: Gen ParsedPattern
+        korePatternGenDomainValue =
+            embedParsedPattern
+                . Syntax.DomainValueF
+                <$> genDomainValue korePatternChildGen patternSort'
 
-    korePatternGenNext :: Gen ParsedPattern
-    korePatternGenNext =
-        embedParsedPattern . Syntax.NextF
-            <$> nextGen korePatternChildGen patternSort'
+        korePatternGenNext :: Gen ParsedPattern
+        korePatternGenNext =
+            embedParsedPattern
+                . Syntax.NextF
+                <$> nextGen korePatternChildGen patternSort'
 
-    korePatternGenRewrites :: Gen ParsedPattern
-    korePatternGenRewrites =
-        embedParsedPattern . Syntax.RewritesF
-            <$> rewritesGen korePatternChildGen patternSort'
+        korePatternGenRewrites :: Gen ParsedPattern
+        korePatternGenRewrites =
+            embedParsedPattern
+                . Syntax.RewritesF
+                <$> rewritesGen korePatternChildGen patternSort'
 
-    korePatternGenVariable :: Gen ParsedPattern
-    korePatternGenVariable =
-        embedParsedPattern . Syntax.VariableF . Const
-            <$> unifiedVariableGen patternSort'
+        korePatternGenVariable :: Gen ParsedPattern
+        korePatternGenVariable =
+            embedParsedPattern
+                . Syntax.VariableF
+                . Const
+                <$> unifiedVariableGen patternSort'
 
 korePatternUnifiedGen :: Gen ParsedPattern
 korePatternUnifiedGen = korePatternChildGen =<< sortGen
@@ -560,91 +567,91 @@ predicateChildGen childGen quantifierSort patternSort' =
         , predicateChildGenNot
         , predicateChildGenOr
         ]
-  where
-    go = predicateChildGen childGen quantifierSort
-    quantifierSortGen = case quantifierSort of
-        Nothing -> sortGen
-        Just qSort -> pure qSort
-    predicateChildGenAnd =
-        Predicate.makeAndPredicate
-            <$> go patternSort'
-            <*> go patternSort'
-    predicateChildGenOr =
-        Predicate.makeOrPredicate
-            <$> go patternSort'
-            <*> go patternSort'
-    predicateChildGenIff =
-        Predicate.makeIffPredicate
-            <$> go patternSort'
-            <*> go patternSort'
-    predicateChildGenImplies =
-        Predicate.makeImpliesPredicate
-            <$> go patternSort'
-            <*> go patternSort'
-    predicateChildGenCeil = Predicate.makeCeilPredicate <$> childGen
-    predicateChildGenFloor = Predicate.makeFloorPredicate <$> childGen
-    predicateChildGenEquals =
-        Predicate.makeEqualsPredicate <$> childGen <*> childGen
-    predicateChildGenIn =
-        Predicate.makeInPredicate <$> childGen <*> childGen
-    predicateChildGenNot =
-        Predicate.makeNotPredicate
-            <$> go patternSort'
-    predicateChildGenExists = do
-        varSort <- quantifierSortGen
-        var <- elementVariableGen varSort
-        child <-
-            Reader.local
-                (addVariable (inject var))
-                (go patternSort')
-        return (Predicate.makeExistsPredicate var child)
-    predicateChildGenForall = do
-        varSort <- quantifierSortGen
-        var <- elementVariableGen varSort
-        child <-
-            Reader.local
-                (addVariable (inject var))
-                (go patternSort')
-        return (Predicate.makeForallPredicate var child)
+    where
+        go = predicateChildGen childGen quantifierSort
+        quantifierSortGen = case quantifierSort of
+            Nothing -> sortGen
+            Just qSort -> pure qSort
+        predicateChildGenAnd =
+            Predicate.makeAndPredicate
+                <$> go patternSort'
+                <*> go patternSort'
+        predicateChildGenOr =
+            Predicate.makeOrPredicate
+                <$> go patternSort'
+                <*> go patternSort'
+        predicateChildGenIff =
+            Predicate.makeIffPredicate
+                <$> go patternSort'
+                <*> go patternSort'
+        predicateChildGenImplies =
+            Predicate.makeImpliesPredicate
+                <$> go patternSort'
+                <*> go patternSort'
+        predicateChildGenCeil = Predicate.makeCeilPredicate <$> childGen
+        predicateChildGenFloor = Predicate.makeFloorPredicate <$> childGen
+        predicateChildGenEquals =
+            Predicate.makeEqualsPredicate <$> childGen <*> childGen
+        predicateChildGenIn =
+            Predicate.makeInPredicate <$> childGen <*> childGen
+        predicateChildGenNot =
+            Predicate.makeNotPredicate
+                <$> go patternSort'
+        predicateChildGenExists = do
+            varSort <- quantifierSortGen
+            var <- elementVariableGen varSort
+            child <-
+                Reader.local
+                    (addVariable (inject var))
+                    (go patternSort')
+            return (Predicate.makeExistsPredicate var child)
+        predicateChildGenForall = do
+            varSort <- quantifierSortGen
+            var <- elementVariableGen varSort
+            child <-
+                Reader.local
+                    (addVariable (inject var))
+                    (go patternSort')
+            return (Predicate.makeForallPredicate var child)
 
 sentenceAliasGen ::
     (Sort -> Gen patternType) ->
     Gen (SentenceAlias patternType)
 sentenceAliasGen patGen =
     Gen.small sentenceAliasGenWorker
-  where
-    sentenceAliasGenWorker = do
-        sentenceAliasAlias <- aliasGen
-        let Alias{aliasParams} = sentenceAliasAlias
-        Reader.local (addSortVariables aliasParams) $ do
-            sentenceAliasSorts <- couple sortGen
-            sentenceAliasResultSort <- sortGen
-            variables <- traverse unifiedVariableGen sentenceAliasSorts
-            let Alias{aliasConstructor} = sentenceAliasAlias
-                sentenceAliasLeftPattern =
-                    Application
-                        { applicationSymbolOrAlias =
-                            SymbolOrAlias
-                                { symbolOrAliasConstructor = aliasConstructor
-                                , symbolOrAliasParams =
-                                    SortVariableSort <$> aliasParams
-                                }
-                        , applicationChildren = variables
+    where
+        sentenceAliasGenWorker = do
+            sentenceAliasAlias <- aliasGen
+            let Alias{aliasParams} = sentenceAliasAlias
+            Reader.local (addSortVariables aliasParams) $ do
+                sentenceAliasSorts <- couple sortGen
+                sentenceAliasResultSort <- sortGen
+                variables <- traverse unifiedVariableGen sentenceAliasSorts
+                let Alias{aliasConstructor} = sentenceAliasAlias
+                    sentenceAliasLeftPattern =
+                        Application
+                            { applicationSymbolOrAlias =
+                                SymbolOrAlias
+                                    { symbolOrAliasConstructor = aliasConstructor
+                                    , symbolOrAliasParams =
+                                        SortVariableSort <$> aliasParams
+                                    }
+                            , applicationChildren = variables
+                            }
+                sentenceAliasRightPattern <-
+                    Reader.local
+                        (addVariables variables)
+                        (patGen sentenceAliasResultSort)
+                sentenceAliasAttributes <- attributesGen
+                return
+                    SentenceAlias
+                        { sentenceAliasAlias
+                        , sentenceAliasSorts
+                        , sentenceAliasResultSort
+                        , sentenceAliasLeftPattern
+                        , sentenceAliasRightPattern
+                        , sentenceAliasAttributes
                         }
-            sentenceAliasRightPattern <-
-                Reader.local
-                    (addVariables variables)
-                    (patGen sentenceAliasResultSort)
-            sentenceAliasAttributes <- attributesGen
-            return
-                SentenceAlias
-                    { sentenceAliasAlias
-                    , sentenceAliasSorts
-                    , sentenceAliasResultSort
-                    , sentenceAliasLeftPattern
-                    , sentenceAliasRightPattern
-                    , sentenceAliasAttributes
-                    }
 
 sentenceSymbolGen :: Gen SentenceSymbol
 sentenceSymbolGen = do
@@ -706,7 +713,8 @@ koreSentenceGen =
         , SentenceImportSentence
             <$> sentenceImportGen
         , SentenceAxiomSentence <$> sentenceAxiomGen korePatternUnifiedGen
-        , SentenceClaimSentence . SentenceClaim
+        , SentenceClaimSentence
+            . SentenceClaim
             <$> sentenceAxiomGen korePatternUnifiedGen
         , SentenceSortSentence <$> sentenceSortGen
         , SentenceHookSentence . SentenceHookedSort <$> sentenceSortGen

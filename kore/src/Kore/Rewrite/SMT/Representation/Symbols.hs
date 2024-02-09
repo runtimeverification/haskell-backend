@@ -64,37 +64,37 @@ buildRepresentations indexedModule =
     listToDeclarations builtinDeclarations
         `AST.mergePreferFirst` listToDeclarations constructorDeclarations
         `AST.mergePreferFirst` listToDeclarations smtlibDeclarations
-  where
-    listToDeclarations ::
-        [(Id, AST.UnresolvedSymbol)] ->
-        AST.UnresolvedDeclarations
-    listToDeclarations list =
-        AST.Declarations
-            { sorts = Map.empty
-            , symbols = Map.fromList list
-            }
+    where
+        listToDeclarations ::
+            [(Id, AST.UnresolvedSymbol)] ->
+            AST.UnresolvedDeclarations
+        listToDeclarations list =
+            AST.Declarations
+                { sorts = Map.empty
+                , symbols = Map.fromList list
+                }
 
-    extractDefinitionsFromSentences ::
-        ( (Attribute.Symbol, Verified.SentenceSymbol) ->
-          Maybe (Id, AST.UnresolvedSymbol)
-        ) ->
-        [(Id, AST.UnresolvedSymbol)]
-    extractDefinitionsFromSentences definitionExtractor =
-        mapMaybe
-            definitionExtractor
-            (Map.elems $ recursiveIndexedModuleSymbolSentences indexedModule)
+        extractDefinitionsFromSentences ::
+            ( (Attribute.Symbol, Verified.SentenceSymbol) ->
+              Maybe (Id, AST.UnresolvedSymbol)
+            ) ->
+            [(Id, AST.UnresolvedSymbol)]
+        extractDefinitionsFromSentences definitionExtractor =
+            mapMaybe
+                definitionExtractor
+                (Map.elems $ recursiveIndexedModuleSymbolSentences indexedModule)
 
-    builtinDeclarations :: [(Id, AST.UnresolvedSymbol)]
-    builtinDeclarations =
-        extractDefinitionsFromSentences builtinDeclaration
+        builtinDeclarations :: [(Id, AST.UnresolvedSymbol)]
+        builtinDeclarations =
+            extractDefinitionsFromSentences builtinDeclaration
 
-    smtlibDeclarations :: [(Id, AST.UnresolvedSymbol)]
-    smtlibDeclarations =
-        extractDefinitionsFromSentences smtlibDeclaration
+        smtlibDeclarations :: [(Id, AST.UnresolvedSymbol)]
+        smtlibDeclarations =
+            extractDefinitionsFromSentences smtlibDeclaration
 
-    constructorDeclarations :: [(Id, AST.UnresolvedSymbol)]
-    constructorDeclarations =
-        extractDefinitionsFromSentences constructorDeclaration
+        constructorDeclarations :: [(Id, AST.UnresolvedSymbol)]
+        constructorDeclarations =
+            extractDefinitionsFromSentences constructorDeclaration
 
 builtinDeclaration ::
     (Attribute.Symbol, Verified.SentenceSymbol) ->
@@ -120,12 +120,12 @@ builtinDeclaration
                                 , sortDependencies =
                                     AST.SortReference
                                         <$> sentenceSymbolResultSort
-                                            : sentenceSymbolSorts
+                                        : sentenceSymbolSorts
                                 }
                     }
                 )
-      where
-        Attribute.Smthook{getSmthook} = Attribute.Symbol.smthook attributes
+        where
+            Attribute.Smthook{getSmthook} = Attribute.Symbol.smthook attributes
 
 smtlibDeclaration ::
     (Attribute.Symbol, Verified.SentenceSymbol) ->
@@ -154,8 +154,8 @@ smtlibDeclaration
                                 }
                     }
                 )
-      where
-        Attribute.Smtlib{getSmtlib} = Attribute.Symbol.smtlib attributes
+        where
+            Attribute.Smtlib{getSmtlib} = Attribute.Symbol.smtlib attributes
 
 constructorDeclaration ::
     (Attribute.Symbol, Verified.SentenceSymbol) ->
@@ -181,14 +181,14 @@ constructorDeclaration
                                     , sortDependencies =
                                         AST.SortReference
                                             <$> sentenceSymbolResultSort
-                                                : sentenceSymbolSorts
+                                            : sentenceSymbolSorts
                                     }
                         }
                     )
             else Nothing
-      where
-        Attribute.Constructor{isConstructor} =
-            Attribute.Symbol.constructor attributes
-        Attribute.Total{isDeclaredTotal} =
-            Attribute.Symbol.total attributes
-        encodedName = AST.encodable symbolConstructor
+        where
+            Attribute.Constructor{isConstructor} =
+                Attribute.Symbol.constructor attributes
+            Attribute.Total{isDeclaredTotal} =
+                Attribute.Symbol.total attributes
+            encodedName = AST.encodable symbolConstructor

@@ -322,221 +322,221 @@ sortVisibilityTests =
             (SupportingSentences [])
         )
     ]
-  where
-    sort =
-        SortActualSort
-            SortActual
-                { sortActualName = testId "sort1"
-                , sortActualSorts = []
-                }
-    sortDeclaration =
-        asSentence
-            SentenceSort
-                { sentenceSortName = testId "sort1"
-                , sentenceSortParameters = []
-                , sentenceSortAttributes = Attributes []
-                }
-    anotherSort =
-        SortActualSort
-            SortActual
-                { sortActualName = testId "sort3"
-                , sortActualSorts = []
-                }
-    anotherSortDeclaration =
-        asSentence
-            SentenceSort
-                { sentenceSortName = testId "sort3"
-                , sentenceSortParameters = []
-                , sentenceSortAttributes = Attributes []
-                }
-    topSortPattern = mkTop sort
-    metaTopSortPattern = mkTop stringMetaSort
-    sortReferenceInSort =
-        SortActualSort
-            SortActual
-                { sortActualName = testId "sort2"
-                , sortActualSorts = [sort]
-                }
-    sortReferenceInSortSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    externalize $ mkTop sortReferenceInSort
-                , sentenceAxiomAttributes = Attributes []
-                }
-    sortReferenceInSortSupportingSentences =
-        [ asSentence
-            SentenceSort
-                { sentenceSortName = testId "sort2"
-                , sentenceSortParameters = [SortVariable (testId "x")]
-                , sentenceSortAttributes = Attributes []
-                }
-        ]
-    sortReferenceInTopPatternSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    externalize topSortPattern
-                , sentenceAxiomAttributes = Attributes []
-                }
-    metaSortReferenceInTopPatternSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    externalize metaTopSortPattern
-                , sentenceAxiomAttributes = Attributes []
-                }
-    sortReferenceInExistsPatternSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    externalize $
-                        mkExists existsVariable (mkElemVar existsVariable)
-                , sentenceAxiomAttributes = Attributes []
-                }
-      where
-        existsVariable = mkElementVariable (testId "var") sort
-    sortReferenceInAndPatternSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    externalize $ mkAnd (mkTop sort) (mkTop sort)
-                , sentenceAxiomAttributes = Attributes []
-                }
-    sortReferenceInNextPatternSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    externalize $ mkNext (mkTop sort)
-                , sentenceAxiomAttributes = Attributes []
-                }
-    sortReferenceInPatternInPatternSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    externalize $
-                        mkNext $
-                            mkEquals
+    where
+        sort =
+            SortActualSort
+                SortActual
+                    { sortActualName = testId "sort1"
+                    , sortActualSorts = []
+                    }
+        sortDeclaration =
+            asSentence
+                SentenceSort
+                    { sentenceSortName = testId "sort1"
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    }
+        anotherSort =
+            SortActualSort
+                SortActual
+                    { sortActualName = testId "sort3"
+                    , sortActualSorts = []
+                    }
+        anotherSortDeclaration =
+            asSentence
+                SentenceSort
+                    { sentenceSortName = testId "sort3"
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes = Attributes []
+                    }
+        topSortPattern = mkTop sort
+        metaTopSortPattern = mkTop stringMetaSort
+        sortReferenceInSort =
+            SortActualSort
+                SortActual
+                    { sortActualName = testId "sort2"
+                    , sortActualSorts = [sort]
+                    }
+        sortReferenceInSortSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        externalize $ mkTop sortReferenceInSort
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+        sortReferenceInSortSupportingSentences =
+            [ asSentence
+                SentenceSort
+                    { sentenceSortName = testId "sort2"
+                    , sentenceSortParameters = [SortVariable (testId "x")]
+                    , sentenceSortAttributes = Attributes []
+                    }
+            ]
+        sortReferenceInTopPatternSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        externalize topSortPattern
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+        metaSortReferenceInTopPatternSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        externalize metaTopSortPattern
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+        sortReferenceInExistsPatternSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        externalize
+                            $ mkExists existsVariable (mkElemVar existsVariable)
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+            where
+                existsVariable = mkElementVariable (testId "var") sort
+        sortReferenceInAndPatternSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        externalize $ mkAnd (mkTop sort) (mkTop sort)
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+        sortReferenceInNextPatternSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        externalize $ mkNext (mkTop sort)
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+        sortReferenceInPatternInPatternSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        externalize
+                            $ mkNext
+                            $ mkEquals
                                 anotherSort
                                 (mkTop sort)
                                 (mkTop sort)
-                , sentenceAxiomAttributes = Attributes []
-                }
-    sortReferenceInPatternInPatternSupportingSentences =
-        [anotherSortDeclaration]
-    sortReferenceInSentenceSymbolResultSortSentence =
-        asSentence
-            SentenceSymbol
-                { sentenceSymbolSymbol =
-                    Symbol
-                        { symbolConstructor = testId "symbol1"
-                        , symbolParams = []
-                        }
-                , sentenceSymbolSorts = []
-                , sentenceSymbolResultSort = sort
-                , sentenceSymbolAttributes = Attributes []
-                }
-    sortReferenceInSentenceSymbolSortsSentence =
-        asSentence
-            SentenceSymbol
-                { sentenceSymbolSymbol =
-                    Symbol
-                        { symbolConstructor = testId "symbol1"
-                        , symbolParams = []
-                        }
-                , sentenceSymbolSorts = [sort]
-                , sentenceSymbolResultSort = anotherSort
-                , sentenceSymbolAttributes = Attributes []
-                }
-    sortReferenceInSentenceSymbolSortsSupportSentences =
-        [anotherSortDeclaration]
-    sortReferenceInSentenceAliasResultSortSentence =
-        asSentence
-            SentenceAlias
-                { sentenceAliasAlias =
-                    Alias
-                        { aliasConstructor = testId "alias1"
-                        , aliasParams = []
-                        }
-                , sentenceAliasSorts = []
-                , sentenceAliasResultSort = sort
-                , sentenceAliasLeftPattern =
-                    Application
-                        { applicationSymbolOrAlias =
-                            SymbolOrAlias
-                                { symbolOrAliasConstructor = testId "alias1"
-                                , symbolOrAliasParams = []
-                                }
-                        , applicationChildren = []
-                        }
-                , sentenceAliasRightPattern =
-                    externalize $ mkTop sort :: ParsedPattern
-                , sentenceAliasAttributes = Attributes []
-                }
-    sortReferenceInSentenceAliasSortsSentence =
-        asSentence
-            SentenceAlias
-                { sentenceAliasAlias =
-                    Alias
-                        { aliasConstructor = testId "alias1"
-                        , aliasParams = []
-                        }
-                , sentenceAliasSorts = [sort]
-                , sentenceAliasResultSort = anotherSort
-                , sentenceAliasLeftPattern =
-                    Application
-                        { applicationSymbolOrAlias =
-                            SymbolOrAlias
-                                { symbolOrAliasConstructor = testId "alias1"
-                                , symbolOrAliasParams = []
-                                }
-                        , applicationChildren =
-                            [ mkSomeVariable $ mkElementVariable (testId "x") sort
-                            ]
-                        }
-                , sentenceAliasRightPattern =
-                    externalize $ mkTop anotherSort :: ParsedPattern
-                , sentenceAliasAttributes = Attributes []
-                }
-    sortReferenceInSentenceAliasSortsSupportSentences =
-        [anotherSortDeclaration]
-    sortReferenceInSymbolOrAliasSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    externalize $
-                        mkApplySymbol
-                            Internal.Symbol
-                                { symbolConstructor = testId "symbol2"
-                                , symbolParams = [sort]
-                                , symbolAttributes = Attribute.defaultSymbolAttributes
-                                , symbolSorts = applicationSorts [] sort
-                                }
-                            []
-                , sentenceAxiomAttributes = Attributes []
-                }
-    sortReferenceInSymbolOrAliasSupportSentences =
-        [ asSentence
-            SentenceSymbol
-                { sentenceSymbolSymbol =
-                    Symbol
-                        { symbolConstructor = testId "symbol2"
-                        , symbolParams = [SortVariable (testId "sv1")]
-                        }
-                , sentenceSymbolSorts = []
-                , sentenceSymbolResultSort =
-                    SortVariableSort (SortVariable (testId "sv1"))
-                , sentenceSymbolAttributes = Attributes []
-                }
-        ]
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+        sortReferenceInPatternInPatternSupportingSentences =
+            [anotherSortDeclaration]
+        sortReferenceInSentenceSymbolResultSortSentence =
+            asSentence
+                SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = testId "symbol1"
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts = []
+                    , sentenceSymbolResultSort = sort
+                    , sentenceSymbolAttributes = Attributes []
+                    }
+        sortReferenceInSentenceSymbolSortsSentence =
+            asSentence
+                SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = testId "symbol1"
+                            , symbolParams = []
+                            }
+                    , sentenceSymbolSorts = [sort]
+                    , sentenceSymbolResultSort = anotherSort
+                    , sentenceSymbolAttributes = Attributes []
+                    }
+        sortReferenceInSentenceSymbolSortsSupportSentences =
+            [anotherSortDeclaration]
+        sortReferenceInSentenceAliasResultSortSentence =
+            asSentence
+                SentenceAlias
+                    { sentenceAliasAlias =
+                        Alias
+                            { aliasConstructor = testId "alias1"
+                            , aliasParams = []
+                            }
+                    , sentenceAliasSorts = []
+                    , sentenceAliasResultSort = sort
+                    , sentenceAliasLeftPattern =
+                        Application
+                            { applicationSymbolOrAlias =
+                                SymbolOrAlias
+                                    { symbolOrAliasConstructor = testId "alias1"
+                                    , symbolOrAliasParams = []
+                                    }
+                            , applicationChildren = []
+                            }
+                    , sentenceAliasRightPattern =
+                        externalize $ mkTop sort :: ParsedPattern
+                    , sentenceAliasAttributes = Attributes []
+                    }
+        sortReferenceInSentenceAliasSortsSentence =
+            asSentence
+                SentenceAlias
+                    { sentenceAliasAlias =
+                        Alias
+                            { aliasConstructor = testId "alias1"
+                            , aliasParams = []
+                            }
+                    , sentenceAliasSorts = [sort]
+                    , sentenceAliasResultSort = anotherSort
+                    , sentenceAliasLeftPattern =
+                        Application
+                            { applicationSymbolOrAlias =
+                                SymbolOrAlias
+                                    { symbolOrAliasConstructor = testId "alias1"
+                                    , symbolOrAliasParams = []
+                                    }
+                            , applicationChildren =
+                                [ mkSomeVariable $ mkElementVariable (testId "x") sort
+                                ]
+                            }
+                    , sentenceAliasRightPattern =
+                        externalize $ mkTop anotherSort :: ParsedPattern
+                    , sentenceAliasAttributes = Attributes []
+                    }
+        sortReferenceInSentenceAliasSortsSupportSentences =
+            [anotherSortDeclaration]
+        sortReferenceInSymbolOrAliasSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        externalize
+                            $ mkApplySymbol
+                                Internal.Symbol
+                                    { symbolConstructor = testId "symbol2"
+                                    , symbolParams = [sort]
+                                    , symbolAttributes = Attribute.defaultSymbolAttributes
+                                    , symbolSorts = applicationSorts [] sort
+                                    }
+                                []
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+        sortReferenceInSymbolOrAliasSupportSentences =
+            [ asSentence
+                SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = testId "symbol2"
+                            , symbolParams = [SortVariable (testId "sv1")]
+                            }
+                    , sentenceSymbolSorts = []
+                    , sentenceSymbolResultSort =
+                        SortVariableSort (SortVariable (testId "sv1"))
+                    , sentenceSymbolAttributes = Attributes []
+                    }
+            ]
 
 symbolVisibilityTests :: [TestTree]
 symbolVisibilityTests =
@@ -611,130 +611,130 @@ symbolVisibilityTests =
         (UsingSentence metaSymbolReferenceInAxiomSentence)
         (SupportingSentences [])
     ]
-  where
-    symbolPattern =
-        mkApplySymbol
-            Internal.Symbol
-                { symbolConstructor = testId "symbol1"
-                , symbolParams = [defaultSort]
-                , symbolAttributes = Attribute.defaultSymbolAttributes
-                , symbolSorts = applicationSorts [] defaultSort
-                }
-            []
-    symbolDeclaration =
-        asSentence
-            SentenceSymbol
-                { sentenceSymbolSymbol =
-                    Symbol
-                        { symbolConstructor = testId "symbol1"
-                        , symbolParams = [SortVariable (testId "sv1")]
-                        }
-                , sentenceSymbolSorts = []
-                , sentenceSymbolResultSort =
-                    SortVariableSort (SortVariable (testId "sv1"))
-                , sentenceSymbolAttributes = Attributes []
-                }
-    defaultSymbolSupportSentences = [defaultSortDeclaration]
-    metaSymbolPattern =
-        mkApplySymbol
-            Internal.Symbol
-                { symbolConstructor = testId "#symbol1"
-                , symbolParams = [stringMetaSort]
-                , symbolAttributes = Attribute.defaultSymbolAttributes
-                , symbolSorts = applicationSorts [] stringMetaSort
-                }
-            []
-    metaSymbolDeclaration =
-        asSentence
-            SentenceSymbol
-                { sentenceSymbolSymbol =
-                    Symbol
-                        { symbolConstructor = testId "#symbol1"
-                        , symbolParams = [SortVariable (testId "#sv1")]
-                        }
-                , sentenceSymbolSorts = []
-                , sentenceSymbolResultSort =
-                    SortVariableSort (SortVariable (testId "#sv1"))
-                , sentenceSymbolAttributes = Attributes []
-                }
-    symbolReferenceInAxiomSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    externalize symbolPattern
-                , sentenceAxiomAttributes = Attributes []
-                }
-    metaSymbolReferenceInAxiomSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    externalize metaSymbolPattern
-                , sentenceAxiomAttributes = Attributes []
-                }
-    symbolReferenceInAndPatternSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    mkAnd symbolPattern (mkTop $ termLikeSort symbolPattern)
-                        & externalize
-                , sentenceAxiomAttributes = Attributes []
-                }
-    symbolReferenceInExistsPatternSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    mkExists
-                        (mkElementVariable (testId "var") defaultSort)
-                        symbolPattern
-                        & externalize
-                , sentenceAxiomAttributes = Attributes []
-                }
-    symbolReferenceInNextPatternSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    externalize $ mkNext symbolPattern
-                , sentenceAxiomAttributes = Attributes []
-                }
-    symbolReferenceInSymbolOrAliasSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    externalize $
-                        mkApplySymbol
-                            Internal.Symbol
-                                { symbolConstructor = testId "symbol2"
-                                , symbolParams = [defaultSort]
-                                , symbolAttributes = Attribute.defaultSymbolAttributes
-                                , symbolSorts =
-                                    applicationSorts
-                                        [termLikeSort symbolPattern]
-                                        defaultSort
-                                }
-                            [symbolPattern]
-                , sentenceAxiomAttributes = Attributes []
-                }
-    symbolReferenceInSymbolOrAliasSupportSentences =
-        asSentence
-            SentenceSymbol
-                { sentenceSymbolSymbol =
-                    Symbol
-                        { symbolConstructor = testId "symbol2"
-                        , symbolParams = [SortVariable (testId "sv1")]
-                        }
-                , sentenceSymbolSorts =
-                    [SortVariableSort (SortVariable (testId "sv1"))]
-                , sentenceSymbolResultSort =
-                    SortVariableSort (SortVariable (testId "sv1"))
-                , sentenceSymbolAttributes = Attributes []
-                }
-            : defaultSymbolSupportSentences
+    where
+        symbolPattern =
+            mkApplySymbol
+                Internal.Symbol
+                    { symbolConstructor = testId "symbol1"
+                    , symbolParams = [defaultSort]
+                    , symbolAttributes = Attribute.defaultSymbolAttributes
+                    , symbolSorts = applicationSorts [] defaultSort
+                    }
+                []
+        symbolDeclaration =
+            asSentence
+                SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = testId "symbol1"
+                            , symbolParams = [SortVariable (testId "sv1")]
+                            }
+                    , sentenceSymbolSorts = []
+                    , sentenceSymbolResultSort =
+                        SortVariableSort (SortVariable (testId "sv1"))
+                    , sentenceSymbolAttributes = Attributes []
+                    }
+        defaultSymbolSupportSentences = [defaultSortDeclaration]
+        metaSymbolPattern =
+            mkApplySymbol
+                Internal.Symbol
+                    { symbolConstructor = testId "#symbol1"
+                    , symbolParams = [stringMetaSort]
+                    , symbolAttributes = Attribute.defaultSymbolAttributes
+                    , symbolSorts = applicationSorts [] stringMetaSort
+                    }
+                []
+        metaSymbolDeclaration =
+            asSentence
+                SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = testId "#symbol1"
+                            , symbolParams = [SortVariable (testId "#sv1")]
+                            }
+                    , sentenceSymbolSorts = []
+                    , sentenceSymbolResultSort =
+                        SortVariableSort (SortVariable (testId "#sv1"))
+                    , sentenceSymbolAttributes = Attributes []
+                    }
+        symbolReferenceInAxiomSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        externalize symbolPattern
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+        metaSymbolReferenceInAxiomSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        externalize metaSymbolPattern
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+        symbolReferenceInAndPatternSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        mkAnd symbolPattern (mkTop $ termLikeSort symbolPattern)
+                            & externalize
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+        symbolReferenceInExistsPatternSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        mkExists
+                            (mkElementVariable (testId "var") defaultSort)
+                            symbolPattern
+                            & externalize
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+        symbolReferenceInNextPatternSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        externalize $ mkNext symbolPattern
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+        symbolReferenceInSymbolOrAliasSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        externalize
+                            $ mkApplySymbol
+                                Internal.Symbol
+                                    { symbolConstructor = testId "symbol2"
+                                    , symbolParams = [defaultSort]
+                                    , symbolAttributes = Attribute.defaultSymbolAttributes
+                                    , symbolSorts =
+                                        applicationSorts
+                                            [termLikeSort symbolPattern]
+                                            defaultSort
+                                    }
+                                [symbolPattern]
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+        symbolReferenceInSymbolOrAliasSupportSentences =
+            asSentence
+                SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = testId "symbol2"
+                            , symbolParams = [SortVariable (testId "sv1")]
+                            }
+                    , sentenceSymbolSorts =
+                        [SortVariableSort (SortVariable (testId "sv1"))]
+                    , sentenceSymbolResultSort =
+                        SortVariableSort (SortVariable (testId "sv1"))
+                    , sentenceSymbolAttributes = Attributes []
+                    }
+                : defaultSymbolSupportSentences
 
 aliasVisibilityTests :: [TestTree]
 aliasVisibilityTests =
@@ -809,178 +809,178 @@ aliasVisibilityTests =
         (UsingSentence metaAliasReferenceInAxiomSentence)
         (SupportingSentences [])
     ]
-  where
-    aliasPattern =
-        mkApplyAlias
-            Internal.Alias
-                { aliasConstructor = testId "alias1"
-                , aliasParams = [defaultSort]
-                , aliasSorts = applicationSorts [] defaultSort
-                , aliasLeft = []
-                , aliasRight = mkTop defaultSort
-                }
-            []
-    aliasDeclaration =
-        let aliasConstructor = testId "alias1"
-            aliasParams = [SortVariable (testId "sv1")]
-            sentenceAliasResultSort :: Sort
-            sentenceAliasResultSort =
-                SortVariableSort (SortVariable (testId "sv1"))
-         in SentenceAliasSentence
-                SentenceAlias
-                    { sentenceAliasAlias = Alias{aliasConstructor, aliasParams}
-                    , sentenceAliasSorts = []
-                    , sentenceAliasResultSort
-                    , sentenceAliasLeftPattern =
-                        Application
-                            { applicationSymbolOrAlias =
-                                SymbolOrAlias
-                                    { symbolOrAliasConstructor = aliasConstructor
-                                    , symbolOrAliasParams =
-                                        SortVariableSort <$> aliasParams
-                                    }
-                            , applicationChildren = []
-                            }
-                    , sentenceAliasRightPattern =
-                        externalize $ mkTop sentenceAliasResultSort
-                    , sentenceAliasAttributes = Attributes []
+    where
+        aliasPattern =
+            mkApplyAlias
+                Internal.Alias
+                    { aliasConstructor = testId "alias1"
+                    , aliasParams = [defaultSort]
+                    , aliasSorts = applicationSorts [] defaultSort
+                    , aliasLeft = []
+                    , aliasRight = mkTop defaultSort
                     }
-    defaultAliasSupportSentences = [defaultSortDeclaration]
-    metaAliasPattern =
-        mkApplyAlias
-            Internal.Alias
-                { aliasConstructor = testId "#alias1"
-                , aliasParams = [stringMetaSort]
-                , aliasSorts = applicationSorts [] stringMetaSort
-                , aliasLeft = []
-                , aliasRight = mkTop stringMetaSort
-                }
-            []
-    metaAliasDeclaration =
-        let aliasConstructor = testId "#alias1"
-            aliasParams = [SortVariable (testId "#sv1")]
-            symbolOrAliasParams = SortVariableSort <$> aliasParams
-            sentenceAliasResultSort :: Sort
-            sentenceAliasResultSort =
-                SortVariableSort (SortVariable (testId "#sv1"))
-         in SentenceAliasSentence
-                SentenceAlias
-                    { sentenceAliasAlias = Alias{aliasConstructor, aliasParams}
-                    , sentenceAliasSorts = []
-                    , sentenceAliasResultSort
-                    , sentenceAliasLeftPattern =
-                        Application
-                            { applicationSymbolOrAlias =
-                                SymbolOrAlias
-                                    { symbolOrAliasConstructor = aliasConstructor
-                                    , symbolOrAliasParams
-                                    }
-                            , applicationChildren = []
-                            }
-                    , sentenceAliasRightPattern =
-                        externalize $ mkTop sentenceAliasResultSort
-                    , sentenceAliasAttributes = Attributes []
-                    }
-    aliasReferenceInAxiomSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    externalize aliasPattern
-                , sentenceAxiomAttributes = Attributes []
-                }
-    metaAliasReferenceInAxiomSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    externalize metaAliasPattern
-                , sentenceAxiomAttributes = Attributes []
-                }
-    aliasReferenceInAndPatternSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    mkAnd aliasPattern (mkTop $ termLikeSort aliasPattern)
-                        & externalize
-                , sentenceAxiomAttributes = Attributes []
-                }
-    aliasReferenceInExistsPatternSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    mkExists
-                        (mkElementVariable (testId "var") defaultSort)
-                        aliasPattern
-                        & externalize
-                , sentenceAxiomAttributes = Attributes []
-                }
-    aliasReferenceInNextPatternSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    externalize $ mkNext aliasPattern
-                , sentenceAxiomAttributes = Attributes []
-                }
-    aliasReferenceInAliasOrAliasSentence =
-        SentenceAxiomSentence
-            SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    externalize $
-                        mkApplyAlias
-                            Internal.Alias
-                                { aliasConstructor = testId "alias2"
-                                , aliasParams = [defaultSort]
-                                , aliasSorts =
-                                    applicationSorts
-                                        [termLikeSort aliasPattern]
-                                        defaultSort
-                                , aliasLeft = []
-                                , aliasRight =
-                                    mkTop $ termLikeSort aliasPattern
+                []
+        aliasDeclaration =
+            let aliasConstructor = testId "alias1"
+                aliasParams = [SortVariable (testId "sv1")]
+                sentenceAliasResultSort :: Sort
+                sentenceAliasResultSort =
+                    SortVariableSort (SortVariable (testId "sv1"))
+             in SentenceAliasSentence
+                    SentenceAlias
+                        { sentenceAliasAlias = Alias{aliasConstructor, aliasParams}
+                        , sentenceAliasSorts = []
+                        , sentenceAliasResultSort
+                        , sentenceAliasLeftPattern =
+                            Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = aliasConstructor
+                                        , symbolOrAliasParams =
+                                            SortVariableSort <$> aliasParams
+                                        }
+                                , applicationChildren = []
                                 }
-                            [aliasPattern]
-                , sentenceAxiomAttributes = Attributes []
-                }
-    aliasReferenceInAliasOrAliasSupportSentences :: [ParsedSentence]
-    aliasReferenceInAliasOrAliasSupportSentences =
-        let aliasConstructor :: Id
-            aliasConstructor = testId "alias2" :: Id
-            aliasParams = [SortVariable (testId "sv1")]
-            sentenceAliasResultSort :: Sort
-            sentenceAliasResultSort =
-                SortVariableSort (SortVariable (testId "sv1"))
-         in SentenceAliasSentence
-                SentenceAlias
-                    { sentenceAliasAlias = Alias{aliasConstructor, aliasParams}
-                    , sentenceAliasSorts =
-                        [SortVariableSort (SortVariable (testId "sv1"))]
-                    , sentenceAliasResultSort
-                    , sentenceAliasLeftPattern =
-                        Application
-                            { applicationSymbolOrAlias =
-                                SymbolOrAlias
-                                    { symbolOrAliasConstructor = testId "alias2"
-                                    , symbolOrAliasParams =
-                                        [ SortVariableSort
-                                            (SortVariable (testId "sv1"))
-                                        ]
-                                    }
-                            , applicationChildren =
-                                [ mkSomeVariable $
-                                    mkSetVariable (testId "@x") $
-                                        SortVariableSort (SortVariable (testId "sv1"))
-                                ]
-                            }
-                    , sentenceAliasRightPattern =
-                        externalize $ mkTop sentenceAliasResultSort
-                    , sentenceAliasAttributes = Attributes []
+                        , sentenceAliasRightPattern =
+                            externalize $ mkTop sentenceAliasResultSort
+                        , sentenceAliasAttributes = Attributes []
+                        }
+        defaultAliasSupportSentences = [defaultSortDeclaration]
+        metaAliasPattern =
+            mkApplyAlias
+                Internal.Alias
+                    { aliasConstructor = testId "#alias1"
+                    , aliasParams = [stringMetaSort]
+                    , aliasSorts = applicationSorts [] stringMetaSort
+                    , aliasLeft = []
+                    , aliasRight = mkTop stringMetaSort
                     }
-                : defaultAliasSupportSentences
+                []
+        metaAliasDeclaration =
+            let aliasConstructor = testId "#alias1"
+                aliasParams = [SortVariable (testId "#sv1")]
+                symbolOrAliasParams = SortVariableSort <$> aliasParams
+                sentenceAliasResultSort :: Sort
+                sentenceAliasResultSort =
+                    SortVariableSort (SortVariable (testId "#sv1"))
+             in SentenceAliasSentence
+                    SentenceAlias
+                        { sentenceAliasAlias = Alias{aliasConstructor, aliasParams}
+                        , sentenceAliasSorts = []
+                        , sentenceAliasResultSort
+                        , sentenceAliasLeftPattern =
+                            Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = aliasConstructor
+                                        , symbolOrAliasParams
+                                        }
+                                , applicationChildren = []
+                                }
+                        , sentenceAliasRightPattern =
+                            externalize $ mkTop sentenceAliasResultSort
+                        , sentenceAliasAttributes = Attributes []
+                        }
+        aliasReferenceInAxiomSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        externalize aliasPattern
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+        metaAliasReferenceInAxiomSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        externalize metaAliasPattern
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+        aliasReferenceInAndPatternSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        mkAnd aliasPattern (mkTop $ termLikeSort aliasPattern)
+                            & externalize
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+        aliasReferenceInExistsPatternSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        mkExists
+                            (mkElementVariable (testId "var") defaultSort)
+                            aliasPattern
+                            & externalize
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+        aliasReferenceInNextPatternSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        externalize $ mkNext aliasPattern
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+        aliasReferenceInAliasOrAliasSentence =
+            SentenceAxiomSentence
+                SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        externalize
+                            $ mkApplyAlias
+                                Internal.Alias
+                                    { aliasConstructor = testId "alias2"
+                                    , aliasParams = [defaultSort]
+                                    , aliasSorts =
+                                        applicationSorts
+                                            [termLikeSort aliasPattern]
+                                            defaultSort
+                                    , aliasLeft = []
+                                    , aliasRight =
+                                        mkTop $ termLikeSort aliasPattern
+                                    }
+                                [aliasPattern]
+                    , sentenceAxiomAttributes = Attributes []
+                    }
+        aliasReferenceInAliasOrAliasSupportSentences :: [ParsedSentence]
+        aliasReferenceInAliasOrAliasSupportSentences =
+            let aliasConstructor :: Id
+                aliasConstructor = testId "alias2" :: Id
+                aliasParams = [SortVariable (testId "sv1")]
+                sentenceAliasResultSort :: Sort
+                sentenceAliasResultSort =
+                    SortVariableSort (SortVariable (testId "sv1"))
+             in SentenceAliasSentence
+                    SentenceAlias
+                        { sentenceAliasAlias = Alias{aliasConstructor, aliasParams}
+                        , sentenceAliasSorts =
+                            [SortVariableSort (SortVariable (testId "sv1"))]
+                        , sentenceAliasResultSort
+                        , sentenceAliasLeftPattern =
+                            Application
+                                { applicationSymbolOrAlias =
+                                    SymbolOrAlias
+                                        { symbolOrAliasConstructor = testId "alias2"
+                                        , symbolOrAliasParams =
+                                            [ SortVariableSort
+                                                (SortVariable (testId "sv1"))
+                                            ]
+                                        }
+                                , applicationChildren =
+                                    [ mkSomeVariable
+                                        $ mkSetVariable (testId "@x")
+                                        $ SortVariableSort (SortVariable (testId "sv1"))
+                                    ]
+                                }
+                        , sentenceAliasRightPattern =
+                            externalize $ mkTop sentenceAliasResultSort
+                        , sentenceAliasAttributes = Attributes []
+                        }
+                    : defaultAliasSupportSentences
 
 defaultSort :: Sort
 defaultSort =
@@ -1284,73 +1284,73 @@ nameDuplicationTests =
             (aliasDeclarationModule (ModuleName "M1") (AliasName "name"))
             (aliasDeclarationModule (ModuleName "M2") (AliasName "name"))
         ]
-  where
-    sortDeclarationModule modName (SortName sortName) =
-        Module
-            { moduleName = modName
-            , moduleSentences =
-                [ asSentence
-                    SentenceSort
-                        { sentenceSortName = testId sortName
-                        , sentenceSortParameters = []
-                        , sentenceSortAttributes = Attributes []
-                        }
-                ]
-            , moduleAttributes = Attributes []
-            }
-    symbolDeclarationModule modName (SymbolName symbolName) =
-        Module
-            { moduleName = modName
-            , moduleSentences =
-                [ asSentence
-                    SentenceSymbol
-                        { sentenceSymbolSymbol =
-                            Symbol
-                                { symbolConstructor = testId symbolName
-                                , symbolParams = [SortVariable (testId "sv1")]
-                                }
-                        , sentenceSymbolSorts = []
-                        , sentenceSymbolResultSort =
-                            SortVariableSort (SortVariable (testId "sv1"))
-                        , sentenceSymbolAttributes = Attributes []
-                        }
-                ]
-            , moduleAttributes = Attributes []
-            }
-    aliasDeclarationModule modName (AliasName aliasName) =
-        let sv1 = SortVariable (testId "sv1") :: SortVariable
-            aliasConstructor = testId aliasName :: Id
-         in Module
+    where
+        sortDeclarationModule modName (SortName sortName) =
+            Module
                 { moduleName = modName
                 , moduleSentences =
-                    [ SentenceAliasSentence
-                        SentenceAlias
-                            { sentenceAliasAlias =
-                                Alias
-                                    { aliasConstructor
-                                    , aliasParams = [sv1]
-                                    }
-                            , sentenceAliasSorts = []
-                            , sentenceAliasResultSort = SortVariableSort sv1
-                            , sentenceAliasLeftPattern =
-                                Application
-                                    { applicationSymbolOrAlias =
-                                        SymbolOrAlias
-                                            { symbolOrAliasConstructor =
-                                                aliasConstructor
-                                            , symbolOrAliasParams =
-                                                [SortVariableSort sv1]
-                                            }
-                                    , applicationChildren = []
-                                    }
-                            , sentenceAliasRightPattern =
-                                externalize $
-                                    mkTop (SortVariableSort sv1)
-                            , sentenceAliasAttributes = Attributes []
+                    [ asSentence
+                        SentenceSort
+                            { sentenceSortName = testId sortName
+                            , sentenceSortParameters = []
+                            , sentenceSortAttributes = Attributes []
                             }
                     ]
                 , moduleAttributes = Attributes []
                 }
+        symbolDeclarationModule modName (SymbolName symbolName) =
+            Module
+                { moduleName = modName
+                , moduleSentences =
+                    [ asSentence
+                        SentenceSymbol
+                            { sentenceSymbolSymbol =
+                                Symbol
+                                    { symbolConstructor = testId symbolName
+                                    , symbolParams = [SortVariable (testId "sv1")]
+                                    }
+                            , sentenceSymbolSorts = []
+                            , sentenceSymbolResultSort =
+                                SortVariableSort (SortVariable (testId "sv1"))
+                            , sentenceSymbolAttributes = Attributes []
+                            }
+                    ]
+                , moduleAttributes = Attributes []
+                }
+        aliasDeclarationModule modName (AliasName aliasName) =
+            let sv1 = SortVariable (testId "sv1") :: SortVariable
+                aliasConstructor = testId aliasName :: Id
+             in Module
+                    { moduleName = modName
+                    , moduleSentences =
+                        [ SentenceAliasSentence
+                            SentenceAlias
+                                { sentenceAliasAlias =
+                                    Alias
+                                        { aliasConstructor
+                                        , aliasParams = [sv1]
+                                        }
+                                , sentenceAliasSorts = []
+                                , sentenceAliasResultSort = SortVariableSort sv1
+                                , sentenceAliasLeftPattern =
+                                    Application
+                                        { applicationSymbolOrAlias =
+                                            SymbolOrAlias
+                                                { symbolOrAliasConstructor =
+                                                    aliasConstructor
+                                                , symbolOrAliasParams =
+                                                    [SortVariableSort sv1]
+                                                }
+                                        , applicationChildren = []
+                                        }
+                                , sentenceAliasRightPattern =
+                                    externalize
+                                        $ mkTop (SortVariableSort sv1)
+                                , sentenceAliasAttributes = Attributes []
+                                }
+                        ]
+                    , moduleAttributes = Attributes []
+                    }
 
 duplicatedNameFailureTest ::
     String ->

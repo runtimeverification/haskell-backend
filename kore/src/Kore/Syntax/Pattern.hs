@@ -107,20 +107,20 @@ newtype
 
 instance Eq variable => Eq (Pattern variable annotation) where
     (==) = eqWorker
-      where
-        eqWorker
-            (Recursive.project -> _ :< pat1)
-            (Recursive.project -> _ :< pat2) =
-                pat1 == pat2
+        where
+            eqWorker
+                (Recursive.project -> _ :< pat1)
+                (Recursive.project -> _ :< pat2) =
+                    pat1 == pat2
     {-# INLINE (==) #-}
 
 instance Ord variable => Ord (Pattern variable annotation) where
     compare = compareWorker
-      where
-        compareWorker
-            (Recursive.project -> _ :< pat1)
-            (Recursive.project -> _ :< pat2) =
-                compare pat1 pat2
+        where
+            compareWorker
+                (Recursive.project -> _ :< pat1)
+                (Recursive.project -> _ :< pat2) =
+                    compare pat1 pat2
     {-# INLINE compare #-}
 
 instance Hashable variable => Hashable (Pattern variable annotation) where
@@ -201,36 +201,36 @@ instance Corecursive (Pattern variable annotation) where
     {-# INLINE embed #-}
 
     ana coalg = Pattern . ana0
-      where
-        ana0 =
-            Recursive.ana (Compose . Identity . coalg)
+        where
+            ana0 =
+                Recursive.ana (Compose . Identity . coalg)
     {-# INLINE ana #-}
 
     apo coalg = Pattern . apo0
-      where
-        apo0 =
-            Recursive.apo
-                ( \a ->
-                    (Compose . Identity)
-                        (Bifunctor.first getPattern <$> coalg a)
-                )
+        where
+            apo0 =
+                Recursive.apo
+                    ( \a ->
+                        (Compose . Identity)
+                            (Bifunctor.first getPattern <$> coalg a)
+                    )
     {-# INLINE apo #-}
 
     postpro post coalg = Pattern . postpro0
-      where
-        postpro0 =
-            Recursive.postpro
-                (\(Compose (Identity base)) -> (Compose . Identity) (post base))
-                (Compose . Identity . coalg)
+        where
+            postpro0 =
+                Recursive.postpro
+                    (\(Compose (Identity base)) -> (Compose . Identity) (post base))
+                    (Compose . Identity . coalg)
     {-# INLINE postpro #-}
 
     gpostpro dist post coalg = Pattern . gpostpro0
-      where
-        gpostpro0 =
-            Recursive.gpostpro
-                (Compose . Identity . dist . (<$>) (runIdentity . getCompose))
-                (\(Compose (Identity base)) -> (Compose . Identity) (post base))
-                (Compose . Identity . coalg)
+        where
+            gpostpro0 =
+                Recursive.gpostpro
+                    (Compose . Identity . dist . (<$>) (runIdentity . getCompose))
+                    (\(Compose (Identity base)) -> (Compose . Identity) (post base))
+                    (Compose . Identity . coalg)
     {-# INLINE gpostpro #-}
 
 -- This instance implements all class functions for the Pattern newtype
@@ -463,18 +463,18 @@ traverseVariables ::
     m (Pattern variable2 annotation)
 traverseVariables adj =
     Recursive.fold traverseVariablesWorker
-  where
-    traverseF = PatternF.traverseVariables adj
+    where
+        traverseF = PatternF.traverseVariables adj
 
-    traverseVariablesWorker ::
-        Base
-            (Pattern variable1 annotation)
-            (m (Pattern variable2 annotation)) ->
-        m (Pattern variable2 annotation)
-    traverseVariablesWorker (a :< pat) =
-        reannotate <$> (traverseF =<< sequence pat)
-      where
-        reannotate pat' = Recursive.embed (a :< pat')
+        traverseVariablesWorker ::
+            Base
+                (Pattern variable1 annotation)
+                (m (Pattern variable2 annotation)) ->
+            m (Pattern variable2 annotation)
+        traverseVariablesWorker (a :< pat) =
+            reannotate <$> (traverseF =<< sequence pat)
+            where
+                reannotate pat' = Recursive.embed (a :< pat')
 
 {- | Use the provided mapping to replace all variables in a 'Pattern'.
 
@@ -490,9 +490,9 @@ mapVariables ::
     Pattern variable2 annotation
 mapVariables adj =
     Recursive.ana (mapVariablesWorker . Recursive.project)
-  where
-    mapF = PatternF.mapVariables adj
-    mapVariablesWorker (a :< pat) = a :< mapF pat
+    where
+        mapF = PatternF.mapVariables adj
+        mapVariablesWorker (a :< pat) = a :< mapF pat
 
 {- | Construct a @ConcretePattern@ from a 'Pattern'.
 

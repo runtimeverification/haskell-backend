@@ -71,15 +71,15 @@ extracted =
 test_extracted_smtlib :: [TestTree]
 test_extracted_smtlib =
     map test extracted
-  where
-    test arg =
-        testCase caseName $
-            assertBool "expected successful parse" $
-                isRightAndJust $
-                    parseSmtlib attrs
-      where
-        attrs = Attributes [smtlibAttribute arg]
-        caseName = "[smtlib{}(\"" ++ Text.unpack arg ++ "\")]"
+    where
+        test arg =
+            testCase caseName
+                $ assertBool "expected successful parse"
+                $ isRightAndJust
+                $ parseSmtlib attrs
+            where
+                attrs = Attributes [smtlibAttribute arg]
+                caseName = "[smtlib{}(\"" ++ Text.unpack arg ++ "\")]"
 
 parseSmtlib :: Attributes -> Parser Smtlib
 parseSmtlib = parseAttributes
@@ -97,25 +97,25 @@ isRightAndJust =
 test_extracted_smthook :: [TestTree]
 test_extracted_smthook =
     map test extracted
-  where
-    test arg =
-        testCase caseName $
-            assertBool "expected successful parse" $
-                isSmthookRightAndJust $
-                    parseSmthook attrs
-      where
-        attrs = Attributes [smthookAttribute arg]
-        caseName = "[smt-hook{}(\"" ++ Text.unpack arg ++ "\")]"
+    where
+        test arg =
+            testCase caseName
+                $ assertBool "expected successful parse"
+                $ isSmthookRightAndJust
+                $ parseSmthook attrs
+            where
+                attrs = Attributes [smthookAttribute arg]
+                caseName = "[smt-hook{}(\"" ++ Text.unpack arg ++ "\")]"
 
 test_fill_SExpr_templates :: TestTree
 test_fill_SExpr_templates =
-    testCase "applySExpr atom [1, 2] == applySExpr (atom #1 #2) [1, 2]" $
-        assertBool "" $
-            (==) left right
-  where
-    left = applySExpr (Atom "atom") arguments
-    right = applySExpr (List [Atom "atom", Atom "#1", Atom "#2"]) arguments
-    arguments = [Atom "1", Atom "2"]
+    testCase "applySExpr atom [1, 2] == applySExpr (atom #1 #2) [1, 2]"
+        $ assertBool ""
+        $ (==) left right
+    where
+        left = applySExpr (Atom "atom") arguments
+        right = applySExpr (List [Atom "atom", Atom "#1", Atom "#2"]) arguments
+        arguments = [Atom "1", Atom "2"]
 
 parseSmthook :: Attributes -> Parser Smthook
 parseSmthook = parseAttributes

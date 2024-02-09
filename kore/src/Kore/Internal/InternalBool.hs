@@ -38,19 +38,19 @@ instance Unparse InternalBool where
         "\\dv"
             <> parameters [internalBoolSort]
             <> Pretty.parens (Pretty.dquotes value)
-      where
-        value
-            | internalBoolValue = "true"
-            | otherwise = "false"
+        where
+            value
+                | internalBoolValue = "true"
+                | otherwise = "false"
 
     unparse2 InternalBool{internalBoolSort, internalBoolValue} =
         "\\dv2"
             <> parameters2 [internalBoolSort]
             <> arguments' [Pretty.dquotes value]
-      where
-        value
-            | internalBoolValue = "true"
-            | otherwise = "false"
+        where
+            value
+                | internalBoolValue = "true"
+                | otherwise = "false"
 
 instance Synthetic Sort (Const InternalBool) where
     synthetic (Const InternalBool{internalBoolSort}) = internalBoolSort

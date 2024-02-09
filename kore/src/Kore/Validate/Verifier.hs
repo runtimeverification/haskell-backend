@@ -104,16 +104,16 @@ runVerifier
                     verifierContext
                     verifierState
             return (a, verifiedModules verifierState')
-      where
-        verifierState =
-            VerifierState{verifiedModules = alreadyVerifiedModules}
-        verifierContext =
-            VerifierContext
-                { implicitModule
-                , modules
-                , importing = []
-                , builtinVerifiers
-                }
+        where
+            verifierState =
+                VerifierState{verifiedModules = alreadyVerifiedModules}
+            verifierContext =
+                VerifierContext
+                    { implicitModule
+                    , modules
+                    , importing = []
+                    , builtinVerifiers
+                    }
 
 -- | Find the named 'VerifiedModule' in the cache, if present.
 lookupVerifiedModule :: ModuleName -> Verifier (Maybe VerifiedModule')
@@ -126,9 +126,9 @@ It is an error if the module is missing.
 lookupParsedModule :: ModuleName -> Verifier ParsedModule
 lookupParsedModule name =
     Reader.asks (Map.lookup name . modules) >>= maybe notFound return
-  where
-    notFound =
-        koreFail ("Module " ++ getModuleNameForError name ++ " not found.")
+    where
+        notFound =
+            koreFail ("Module " ++ getModuleNameForError name ++ " not found.")
 
 {- | Add the 'ModuleName' to the import stack.
 

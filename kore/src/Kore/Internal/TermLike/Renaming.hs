@@ -69,26 +69,26 @@ renameFreeVariables ::
     m (VariableNameMap variable1 variable2)
 renameFreeVariables adj =
     Monad.foldM worker mempty . FreeVariables.toSet
-  where
-    adj' = fmap mkVariableNameMap adj
-    mkVariableNameMap rename variable1 = do
-        variable2 <- rename variable1
-        pure (Map.singleton variable1 variable2)
-    worker ::
-        VariableNameMap variable1 variable2 ->
-        SomeVariable variable1 ->
-        m (VariableNameMap variable1 variable2)
-    worker renaming Variable{variableName = someVariableName1} = do
-        let idx :: SomeVariableName ()
-            (variable1, idx) = splitL someVariableName1
-        renaming1 <- index adj' idx variable1
-        let renaming' =
-                tabulate renamer
-              where
-                renamer idx'
-                    | idx' == idx = renaming1
-                    | otherwise = mempty
-        pure (renaming <> renaming')
+    where
+        adj' = fmap mkVariableNameMap adj
+        mkVariableNameMap rename variable1 = do
+            variable2 <- rename variable1
+            pure (Map.singleton variable1 variable2)
+        worker ::
+            VariableNameMap variable1 variable2 ->
+            SomeVariable variable1 ->
+            m (VariableNameMap variable1 variable2)
+        worker renaming Variable{variableName = someVariableName1} = do
+            let idx :: SomeVariableName ()
+                (variable1, idx) = splitL someVariableName1
+            renaming1 <- index adj' idx variable1
+            let renaming' =
+                    tabulate renamer
+                    where
+                        renamer idx'
+                            | idx' == idx = renaming1
+                            | otherwise = mempty
+            pure (renaming <> renaming')
 {-# INLINE renameFreeVariables #-}
 
 askSomeVariableName ::

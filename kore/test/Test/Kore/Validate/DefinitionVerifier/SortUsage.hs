@@ -104,8 +104,8 @@ test_sortUsage =
                 (SortName "mySort")
                 []
                 [Attribute.HasDomainValues.hasDomainValuesAttribute]
-            , SentenceSymbolSentence $
-                sentenceSymbolWithAttributes
+            , SentenceSymbolSentence
+                $ sentenceSymbolWithAttributes
                     (SymbolName "a")
                     []
                     (simpleSort (SortName "mySort"))
@@ -117,8 +117,8 @@ test_sortUsage =
         ( simpleDefinitionFromSentences
             (ModuleName "MODULE")
             [ simpleSortSentence (SortName "mySort")
-            , SentenceSymbolSentence $
-                sentenceSymbolWithAttributes
+            , SentenceSymbolSentence
+                $ sentenceSymbolWithAttributes
                     (SymbolName "a")
                     []
                     (simpleSort (SortName "mySort"))
@@ -302,8 +302,8 @@ test_sortUsage =
         )
         (NamePrefix "internal")
     ]
-  where
-    additionalSortName = SortName "additionalSort1"
+    where
+        additionalSortName = SortName "additionalSort1"
 
 newtype CommonDescription = CommonDescription String
 
@@ -354,18 +354,18 @@ testsForObjectSort
                                 ]
                    )
             )
-      where
-        testConfigurationToFlaggedTests configuration =
-            flaggedObjectTestsForSort
-                configuration
-                sort
-                (SortActualThatIsDeclared additionalSortActual)
-                namePrefix
-        additionalSortActualName = SortName (rawNamePrefix <> "_declaredSort")
-        additionalSortActual = simpleSortActual additionalSortActualName
-        additionalSortSentence = simpleSortSentence additionalSortActualName
-        addAdditionalSortSentence =
-            addSentenceToTestConfiguration additionalSortSentence
+        where
+            testConfigurationToFlaggedTests configuration =
+                flaggedObjectTestsForSort
+                    configuration
+                    sort
+                    (SortActualThatIsDeclared additionalSortActual)
+                    namePrefix
+            additionalSortActualName = SortName (rawNamePrefix <> "_declaredSort")
+            additionalSortActual = simpleSortActual additionalSortActualName
+            additionalSortSentence = simpleSortSentence additionalSortActualName
+            addAdditionalSortSentence =
+                addSentenceToTestConfiguration additionalSortSentence
 
 addSentenceToTestConfiguration ::
     ParsedSentence ->
@@ -396,13 +396,13 @@ successTestsForMetaSort
         testGroup
             commonDescription
             [expectSuccessFlaggedTests successConfiguration flaggedTests]
-      where
-        flaggedTests =
-            flaggedMetaTestsForSort
-                testConfiguration
-                sort
-                additionalSortActual
-                namePrefix
+        where
+            flaggedTests =
+                flaggedMetaTestsForSort
+                    testConfiguration
+                    sort
+                    additionalSortActual
+                    namePrefix
 successTestsForMetaSort
     (CommonDescription commonDescription)
     SuccessConfigurationSkipAll
@@ -436,13 +436,13 @@ failureTestsForMetaSort
                 errorStack
                 flaggedTests
             ]
-      where
-        flaggedTests =
-            flaggedMetaTestsForSort
-                testConfiguration
-                sort
-                additionalSortActual
-                namePrefix
+        where
+            flaggedTests =
+                flaggedMetaTestsForSort
+                    testConfiguration
+                    sort
+                    additionalSortActual
+                    namePrefix
 failureTestsForMetaSort
     (CommonDescription commonDescription)
     FailureConfigurationSkipAll
@@ -512,9 +512,9 @@ flaggedObjectTestsForSort
                 additionalSortActual
                 sortVariables
                 namePrefix
-      where
-        sortVariables =
-            testConfigurationAdditionalSortVariables testConfiguration
+        where
+            sortVariables =
+                testConfigurationAdditionalSortVariables testConfiguration
 
 flaggedMetaTestsForSort ::
     TestConfiguration ->
@@ -552,18 +552,18 @@ applyOneTestConfiguration testConfiguration flaggedTestData =
         Just SkipTest -> Nothing
         Just (AdditionalSentences moreSentences) ->
             Just (testDataFunction (additionalSentences ++ moreSentences))
-  where
-    additionalSentences = testConfigurationAdditionalSentences testConfiguration
-    testDataFunction = flaggedTestDataTestData flaggedTestData
-    currentConfiguration =
-        snd
-            <$> List.find
-                testHasFlags
-                (testConfigurationCaseBasedConfiguration testConfiguration)
-    testHasFlags configurationWithFlags =
-        any
-            (`elem` flaggedTestDataFlags flaggedTestData)
-            (fst configurationWithFlags)
+    where
+        additionalSentences = testConfigurationAdditionalSentences testConfiguration
+        testDataFunction = flaggedTestDataTestData flaggedTestData
+        currentConfiguration =
+            snd
+                <$> List.find
+                    testHasFlags
+                    (testConfigurationCaseBasedConfiguration testConfiguration)
+        testHasFlags configurationWithFlags =
+            any
+                (`elem` flaggedTestDataFlags flaggedTestData)
+                (fst configurationWithFlags)
 
 newtype TestedSort = TestedSort Sort
 newtype SortActualThatIsDeclared
@@ -757,16 +757,16 @@ unfilteredTestExamplesForSort
                     }
             }
         ]
-      where
-        rawAliasName = identifierPrefix <> "_alias"
-        aliasName = AliasName rawAliasName
-        rawVariableName = identifierPrefix <> "_variable"
-        variableName = rawVariableName
-        sortVariableName1 = identifierPrefix <> "_sortVariable"
-        additionalSortRawName = getId (sortActualName additionalSortActual)
-        additionalSortName = SortName additionalSortRawName
-        additionalSort = SortActualSort additionalSortActual
-        defaultErrorMessage = "Replace this with a real error message."
+        where
+            rawAliasName = identifierPrefix <> "_alias"
+            aliasName = AliasName rawAliasName
+            rawVariableName = identifierPrefix <> "_variable"
+            variableName = rawVariableName
+            sortVariableName1 = identifierPrefix <> "_sortVariable"
+            additionalSortRawName = getId (sortActualName additionalSortActual)
+            additionalSortName = SortName additionalSortRawName
+            additionalSort = SortActualSort additionalSortActual
+            defaultErrorMessage = "Replace this with a real error message."
 
 unfilteredTestExamplesForObjectSort ::
     TestedSort ->
@@ -822,17 +822,17 @@ unfilteredTestExamplesForObjectSort
                     }
             }
         ]
-      where
-        sortVariableName1 = namePrefix <> "_sortVariable"
-        sortVariableName2 = namePrefix <> "_sortVariable2"
-        additionalSortRawName = getId (sortActualName additionalSortActual)
-        differentAdditionalSortRawName = additionalSortRawName <> "1"
-        differentAdditionalSortName = SortName differentAdditionalSortRawName
-        defaultErrorMessage = "Replace this with a real error message."
-        resultSort =
-            SortActualSort
-                SortActual
-                    { sortActualName = testId differentAdditionalSortRawName
-                    , sortActualSorts =
-                        [objectVariableSort sortVariableName1]
-                    }
+        where
+            sortVariableName1 = namePrefix <> "_sortVariable"
+            sortVariableName2 = namePrefix <> "_sortVariable2"
+            additionalSortRawName = getId (sortActualName additionalSortActual)
+            differentAdditionalSortRawName = additionalSortRawName <> "1"
+            differentAdditionalSortName = SortName differentAdditionalSortRawName
+            defaultErrorMessage = "Replace this with a real error message."
+            resultSort =
+                SortActualSort
+                    SortActual
+                        { sortActualName = testId differentAdditionalSortRawName
+                        , sortActualSorts =
+                            [objectVariableSort sortVariableName1]
+                        }

@@ -58,28 +58,28 @@ test_simplify =
             (ceila <> ceilb)
         ]
     ]
-  where
-    a = OrPattern.fromTermLike Mock.a
-    b = OrPattern.fromTermLike Mock.b
-    ceila =
-        makeCeilPredicate (Mock.f Mock.a)
-            & Condition.fromPredicate
-    ceilb =
-        makeCeilPredicate (Mock.f Mock.b)
-            & Condition.fromPredicate
-    bottom = OrPattern.fromPatterns [Pattern.bottomOf Mock.listSort]
-    becomes ::
-        HasCallStack =>
-        TestName ->
-        InternalList (OrPattern RewritingVariableName) ->
-        [Pattern RewritingVariableName] ->
-        TestTree
-    becomes name origin expect =
-        testCase name $
-            assertEqual
-                ""
-                (OrPattern.fromPatterns expect)
-                (evaluate origin)
+    where
+        a = OrPattern.fromTermLike Mock.a
+        b = OrPattern.fromTermLike Mock.b
+        ceila =
+            makeCeilPredicate (Mock.f Mock.a)
+                & Condition.fromPredicate
+        ceilb =
+            makeCeilPredicate (Mock.f Mock.b)
+                & Condition.fromPredicate
+        bottom = OrPattern.fromPatterns [Pattern.bottomOf Mock.listSort]
+        becomes ::
+            HasCallStack =>
+            TestName ->
+            InternalList (OrPattern RewritingVariableName) ->
+            [Pattern RewritingVariableName] ->
+            TestTree
+        becomes name origin expect =
+            testCase name
+                $ assertEqual
+                    ""
+                    (OrPattern.fromPatterns expect)
+                    (evaluate origin)
 
 mkList :: [child] -> InternalList child
 mkList children =

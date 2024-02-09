@@ -71,67 +71,71 @@ test_FreeVarInRHS =
             ]
         )
     ]
-  where
-    sortVariableR = SortVariable (testId "R")
-    sortR = SortVariableSort sortVariableR
-    x = mkSetVariable (testId "x") sortR
-    sentenceAlias =
-        sentenceAliasWithSortArgument
-            (AliasName weakExistsFinally)
-            sortR
-            sortR
-            [sortVariableR]
-            (externalize $ mkSetVar x)
-            & Lens.over
-                (field @"sentenceAliasLeftPattern")
-                (setField @"applicationChildren" [inject x])
-            & asSentence
+    where
+        sortVariableR = SortVariable (testId "R")
+        sortR = SortVariableSort sortVariableR
+        x = mkSetVariable (testId "x") sortR
+        sentenceAlias =
+            sentenceAliasWithSortArgument
+                (AliasName weakExistsFinally)
+                sortR
+                sortR
+                [sortVariableR]
+                (externalize $ mkSetVar x)
+                & Lens.over
+                    (field @"sentenceAliasLeftPattern")
+                    (setField @"applicationChildren" [inject x])
+                & asSentence
 
 patternToSentence :: Pattern VariableName Null -> ParsedSentence
 patternToSentence patt =
-    SentenceClaimSentence $
-        SentenceClaim $
-            SentenceAxiom [] patt (Attributes [])
+    SentenceClaimSentence
+        $ SentenceClaim
+        $ SentenceAxiom [] patt (Attributes [])
 
 patternFreeVarInRHS :: Pattern VariableName Null
 patternFreeVarInRHS =
-    externalize . getAxiomPattern . from $
-        OnePathClaim rulePatternFreeVarInRHS
-  where
-    rulePatternFreeVarInRHS :: ClaimPattern
-    rulePatternFreeVarInRHS =
-        ClaimPattern
-            { left =
-                Pattern.fromTermAndPredicate
-                    (mkTop Mock.testSort)
-                    makeTruePredicate
-            , existentials = []
-            , right =
-                Pattern.fromTermAndPredicate
-                    (mkElemVar (ruleElementVariableFromId "x" Mock.testSort))
-                    makeTruePredicate
-                    & OrPattern.fromPattern
-            , attributes = Default.def
-            }
+    externalize
+        . getAxiomPattern
+        . from
+        $ OnePathClaim rulePatternFreeVarInRHS
+    where
+        rulePatternFreeVarInRHS :: ClaimPattern
+        rulePatternFreeVarInRHS =
+            ClaimPattern
+                { left =
+                    Pattern.fromTermAndPredicate
+                        (mkTop Mock.testSort)
+                        makeTruePredicate
+                , existentials = []
+                , right =
+                    Pattern.fromTermAndPredicate
+                        (mkElemVar (ruleElementVariableFromId "x" Mock.testSort))
+                        makeTruePredicate
+                        & OrPattern.fromPattern
+                , attributes = Default.def
+                }
 
 patternNoFreeVarInRHS :: Pattern VariableName Null
 patternNoFreeVarInRHS =
-    externalize . getAxiomPattern . from $
-        OnePathClaim rulePatternNoFreeVarInRHS
-  where
-    rulePatternNoFreeVarInRHS :: ClaimPattern
-    rulePatternNoFreeVarInRHS =
-        ClaimPattern
-            { left =
-                Pattern.fromTermAndPredicate
-                    (mkTop Mock.testSort)
-                    makeTruePredicate
-            , existentials =
-                [ruleElementVariableFromId "x" Mock.testSort]
-            , right =
-                Pattern.fromTermAndPredicate
-                    (mkElemVar (ruleElementVariableFromId "x" Mock.testSort))
-                    makeTruePredicate
-                    & OrPattern.fromPattern
-            , attributes = Default.def
-            }
+    externalize
+        . getAxiomPattern
+        . from
+        $ OnePathClaim rulePatternNoFreeVarInRHS
+    where
+        rulePatternNoFreeVarInRHS :: ClaimPattern
+        rulePatternNoFreeVarInRHS =
+            ClaimPattern
+                { left =
+                    Pattern.fromTermAndPredicate
+                        (mkTop Mock.testSort)
+                        makeTruePredicate
+                , existentials =
+                    [ruleElementVariableFromId "x" Mock.testSort]
+                , right =
+                    Pattern.fromTermAndPredicate
+                        (mkElemVar (ruleElementVariableFromId "x" Mock.testSort))
+                        makeTruePredicate
+                        & OrPattern.fromPattern
+                , attributes = Default.def
+                }

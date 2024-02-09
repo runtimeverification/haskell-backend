@@ -85,13 +85,13 @@ instance Synthetic ConstructorLike (Application Symbol) where
             ConstructorLike . Just $ SortInjectionHead
         | otherwise =
             ConstructorLike Nothing
-      where
-        symbol = applicationSymbolOrAlias application
-        children = applicationChildren application
-        childrenAreConstructorLike =
-            ConstructorLike Nothing `notElem` children
-        childrenAreNotSortInjections =
-            (ConstructorLike . Just $ SortInjectionHead) `notElem` children
+        where
+            symbol = applicationSymbolOrAlias application
+            children = applicationChildren application
+            childrenAreConstructorLike =
+                ConstructorLike Nothing `notElem` children
+            childrenAreNotSortInjections =
+                (ConstructorLike . Just $ SortInjectionHead) `notElem` children
 
 instance Synthetic ConstructorLike (Application (Alias patternType)) where
     synthetic = const (ConstructorLike Nothing)
@@ -112,8 +112,8 @@ instance Synthetic ConstructorLike (DomainValue sort) where
             ConstructorLike . Just $ ConstructorLikeHead
         | otherwise =
             ConstructorLike Nothing
-      where
-        child = domainValueChild domainValue
+        where
+            child = domainValueChild domainValue
 
 instance Synthetic ConstructorLike (Equals sort) where
     synthetic = const (ConstructorLike Nothing)

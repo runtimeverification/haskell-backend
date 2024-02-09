@@ -81,29 +81,29 @@ functionAxiomUnification symbol args right requires =
     case args of
         [] -> (mkEquation (mkApplySymbol symbol []) right){requires}
         _ -> (mkEquation left right){requires, argument}
-  where
-    ~left = mkApplySymbol symbol variables
-    sorts = fmap termLikeSort args
-    ~variables = generateVariables (wordToNatural (fromIntegral (length args))) sorts
-    generateVariables ~n sorts' =
-        -- lazy argument to prevent arithmetic underflow
-        fmap makeElementVariable (zip [0 .. n - 1] sorts')
-    argument =
-        Just $
-            foldr1 makeAndPredicate $
-                fmap (uncurry makeInPredicate) $
-                    zip variables args
-    makeElementVariable (num, sort) =
-        mkElementVariable' (testId "funcVar") num sort
-            & mkElemVar
-    mkElementVariable' base counter variableSort =
-        Variable
-            { variableName =
-                ElementVariableName $
-                    mkRuleVariable $
-                        VariableName{base, counter = Just (Element counter)}
-            , variableSort
-            }
+    where
+        ~left = mkApplySymbol symbol variables
+        sorts = fmap termLikeSort args
+        ~variables = generateVariables (wordToNatural (fromIntegral (length args))) sorts
+        generateVariables ~n sorts' =
+            -- lazy argument to prevent arithmetic underflow
+            fmap makeElementVariable (zip [0 .. n - 1] sorts')
+        argument =
+            Just
+                $ foldr1 makeAndPredicate
+                $ fmap (uncurry makeInPredicate)
+                $ zip variables args
+        makeElementVariable (num, sort) =
+            mkElementVariable' (testId "funcVar") num sort
+                & mkElemVar
+        mkElementVariable' base counter variableSort =
+            Variable
+                { variableName =
+                    ElementVariableName
+                        $ mkRuleVariable
+                        $ VariableName{base, counter = Just (Element counter)}
+                , variableSort
+                }
 
 functionAxiomUnification_ ::
     Symbol ->

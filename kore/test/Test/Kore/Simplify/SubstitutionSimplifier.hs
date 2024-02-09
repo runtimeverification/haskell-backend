@@ -213,62 +213,63 @@ test_SubstitutionSimplifier =
             ]
         ]
     ]
-  where
-    test ::
-        HasCallStack =>
-        TestName ->
-        -- Test input
-        [ ( SomeVariable RewritingVariableName
-          , TermLike RewritingVariableName
-          )
-        ] ->
-        -- Expected normalized, denormalized outputs
-        [Normalization RewritingVariableName] ->
-        TestTree
-    test
-        testName
-        (Substitution.wrap . Substitution.mkUnwrappedSubstitution -> input)
-        results =
-            testGroup
-                testName
-                [ testCase "simplification" $ do
-                    let SubstitutionSimplifier{simplifySubstitution} =
-                            Simplification.substitutionSimplifier
-                    actual <-
-                        testRunSimplifier Mock.env $
-                            simplifySubstitution SideCondition.top input
-                    let expect = Condition.fromNormalizationSimplified <$> results
-                        actualConditions = OrCondition.toConditions actual
-                        actualSubstitutions =
-                            Condition.substitution <$> actualConditions
-                    assertEqual
-                        ""
-                        expect
-                        actualConditions
-                    assertBool
-                        "Expected normalized substitutions"
-                        (all Substitution.isNormalized actualSubstitutions)
-                , testCase "unification" $ do
-                    let SubstitutionSimplifier{simplifySubstitution} =
-                            Unification.substitutionSimplifier
-                    actual <-
-                        testRunSimplifier Mock.env . runUnifierT $
-                            simplifySubstitution SideCondition.top input
-                    let expect = Condition.fromNormalizationSimplified <$> results
-                        actualConditions = OrCondition.toConditions <$> actual
-                        actualSubstitutions =
-                            (fmap . fmap) Condition.substitution actualConditions
-                        allNormalized = (all . all) Substitution.isNormalized
-                        expectSorted =
-                            expect <$ actualConditions
-                    assertEqual
-                        ""
-                        expectSorted
-                        actualConditions
-                    assertBool
-                        "Expected normalized substitutions"
-                        (allNormalized actualSubstitutions)
-                ]
+    where
+        test ::
+            HasCallStack =>
+            TestName ->
+            -- Test input
+            [ ( SomeVariable RewritingVariableName
+              , TermLike RewritingVariableName
+              )
+            ] ->
+            -- Expected normalized, denormalized outputs
+            [Normalization RewritingVariableName] ->
+            TestTree
+        test
+            testName
+            (Substitution.wrap . Substitution.mkUnwrappedSubstitution -> input)
+            results =
+                testGroup
+                    testName
+                    [ testCase "simplification" $ do
+                        let SubstitutionSimplifier{simplifySubstitution} =
+                                Simplification.substitutionSimplifier
+                        actual <-
+                            testRunSimplifier Mock.env
+                                $ simplifySubstitution SideCondition.top input
+                        let expect = Condition.fromNormalizationSimplified <$> results
+                            actualConditions = OrCondition.toConditions actual
+                            actualSubstitutions =
+                                Condition.substitution <$> actualConditions
+                        assertEqual
+                            ""
+                            expect
+                            actualConditions
+                        assertBool
+                            "Expected normalized substitutions"
+                            (all Substitution.isNormalized actualSubstitutions)
+                    , testCase "unification" $ do
+                        let SubstitutionSimplifier{simplifySubstitution} =
+                                Unification.substitutionSimplifier
+                        actual <-
+                            testRunSimplifier Mock.env
+                                . runUnifierT
+                                $ simplifySubstitution SideCondition.top input
+                        let expect = Condition.fromNormalizationSimplified <$> results
+                            actualConditions = OrCondition.toConditions <$> actual
+                            actualSubstitutions =
+                                (fmap . fmap) Condition.substitution actualConditions
+                            allNormalized = (all . all) Substitution.isNormalized
+                            expectSorted =
+                                expect <$ actualConditions
+                        assertEqual
+                            ""
+                            expectSorted
+                            actualConditions
+                        assertBool
+                            "Expected normalized substitutions"
+                            (allNormalized actualSubstitutions)
+                    ]
 
 x, y, z, xs, ys :: SomeVariable RewritingVariableName
 x = inject Mock.xConfig

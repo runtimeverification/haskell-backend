@@ -116,9 +116,9 @@ internalize ::
     TermLike variable
 internalize tools =
     Recursive.fold (internalize1 . Recursive.embed)
-  where
-    internalize1 =
-        List.internalize tools
-            . Map.internalize tools
-            . Set.internalize tools
-            . InternalBytes.internalize
+    where
+        internalize1 =
+            List.internalize tools
+                . Map.internalize tools
+                . Set.internalize tools
+                . InternalBytes.internalize

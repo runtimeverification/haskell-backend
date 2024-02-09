@@ -72,81 +72,81 @@ parseKoreSolverOptions =
         <*> parsePrelude
         <*> parseSolver
         <*> parseTactic
-  where
-    parseTimeOut =
-        option
-            readTimeOut
-            ( metavar "SMT_TIMEOUT"
-                <> long "smt-timeout"
-                <> help "Timeout for calls to the SMT solver, in milliseconds"
-                <> value defaultTimeOut
-            )
-
-    parseRetryLimit =
-        option
-            readRetryLimit
-            ( metavar "SMT_RETRY_LIMIT"
-                <> long "smt-retry-limit"
-                <> help "Limit how many times an SMT query can be retried (with scaling timeouts)"
-                <> value defaultRetryLimit
-            )
-
-    parseRLimit =
-        option
-            readRLimit
-            ( metavar "SMT_RLIMIT"
-                <> long "smt-rlimit"
-                <> help "Resource limit for calls to the SMT solver"
-                <> value defaultRLimit
-            )
-
-    parseResetInterval =
-        option
-            readResetInterval
-            ( metavar "SMT_RESET_INTERVAL"
-                <> long "smt-reset-interval"
-                <> help "Reset the solver after this number of queries"
-                <> value defaultResetInterval
-            )
-
-    parsePrelude =
-        Prelude
-            <$> optional
-                ( strOption
-                    ( metavar "SMT_PRELUDE"
-                        <> long "smt-prelude"
-                        <> help "Path to the SMT prelude file"
-                    )
+    where
+        parseTimeOut =
+            option
+                readTimeOut
+                ( metavar "SMT_TIMEOUT"
+                    <> long "smt-timeout"
+                    <> help "Timeout for calls to the SMT solver, in milliseconds"
+                    <> value defaultTimeOut
                 )
 
-    parseTactic =
-        option
-            readTactic
-            ( metavar "SMT_TACTIC"
-                <> long "smt-tactic"
-                <> help "Z3 tactic to use when checking satisfiability. Example: (check-sat-using smt)"
-                <> value defaultTactic
-            )
+        parseRetryLimit =
+            option
+                readRetryLimit
+                ( metavar "SMT_RETRY_LIMIT"
+                    <> long "smt-retry-limit"
+                    <> help "Limit how many times an SMT query can be retried (with scaling timeouts)"
+                    <> value defaultRetryLimit
+                )
 
-    SMT.Config
-        { timeOut = defaultTimeOut
-        , retryLimit = defaultRetryLimit
-        , rLimit = defaultRLimit
-        , resetInterval = defaultResetInterval
-        , tactic = defaultTactic
-        } =
-            SMT.defaultConfig
+        parseRLimit =
+            option
+                readRLimit
+                ( metavar "SMT_RLIMIT"
+                    <> long "smt-rlimit"
+                    <> help "Resource limit for calls to the SMT solver"
+                    <> value defaultRLimit
+                )
 
-    readTimeOut = readPositiveIntegral (SMT.TimeOut . Limit) "smt-timeout"
-    readRetryLimit = readPositiveIntegral (SMT.RetryLimit . Limit) "smt-retry-limit"
-    readRLimit = readPositiveIntegral (SMT.RLimit . Limit) "smt-rlimit"
-    readResetInterval =
-        readPositiveIntegral SMT.ResetInterval "smt-reset-interval"
-    readTactic = do
-        tacticStr <- str
-        case SMT.readSExpr @Maybe (Text.pack tacticStr) of
-            Nothing -> readerError . unwords $ ["smt-tactic", "must be a valid s-expression."]
-            Just sexpr -> pure . Just $ sexpr
+        parseResetInterval =
+            option
+                readResetInterval
+                ( metavar "SMT_RESET_INTERVAL"
+                    <> long "smt-reset-interval"
+                    <> help "Reset the solver after this number of queries"
+                    <> value defaultResetInterval
+                )
+
+        parsePrelude =
+            Prelude
+                <$> optional
+                    ( strOption
+                        ( metavar "SMT_PRELUDE"
+                            <> long "smt-prelude"
+                            <> help "Path to the SMT prelude file"
+                        )
+                    )
+
+        parseTactic =
+            option
+                readTactic
+                ( metavar "SMT_TACTIC"
+                    <> long "smt-tactic"
+                    <> help "Z3 tactic to use when checking satisfiability. Example: (check-sat-using smt)"
+                    <> value defaultTactic
+                )
+
+        SMT.Config
+            { timeOut = defaultTimeOut
+            , retryLimit = defaultRetryLimit
+            , rLimit = defaultRLimit
+            , resetInterval = defaultResetInterval
+            , tactic = defaultTactic
+            } =
+                SMT.defaultConfig
+
+        readTimeOut = readPositiveIntegral (SMT.TimeOut . Limit) "smt-timeout"
+        readRetryLimit = readPositiveIntegral (SMT.RetryLimit . Limit) "smt-retry-limit"
+        readRLimit = readPositiveIntegral (SMT.RLimit . Limit) "smt-rlimit"
+        readResetInterval =
+            readPositiveIntegral SMT.ResetInterval "smt-reset-interval"
+        readTactic = do
+            tacticStr <- str
+            case SMT.readSExpr @Maybe (Text.pack tacticStr) of
+                Nothing -> readerError . unwords $ ["smt-tactic", "must be a valid s-expression."]
+                Just sexpr -> pure . Just $ sexpr
 
 unparseKoreSolverOptions :: KoreSolverOptions -> [String]
 unparseKoreSolverOptions
@@ -166,8 +166,8 @@ unparseKoreSolverOptions
                 <$> maybeLimit Nothing Just unwrappedRetryLimit
             , (\limit -> unwords ["--smt-rlimit", show limit])
                 <$> maybeLimit Nothing Just unwrappedRLimit
-            , pure $
-                unwords
+            , pure
+                $ unwords
                     [ "--smt-reset-interval"
                     , show . getResetInterval $ resetInterval
                     ]
@@ -184,15 +184,15 @@ data Solver = Z3 | None
 
 parseSolver :: Parser Solver
 parseSolver =
-    option (snd <$> readSum longName options) $
-        metavar "SOLVER"
-            <> long longName
-            <> help ("SMT solver for checking constraints: " <> knownOptions)
-            <> value Z3
-  where
-    longName = "smt"
-    knownOptions = intercalate ", " (map fst options)
-    options = [(map Char.toLower $ show s, s) | s <- [minBound .. maxBound]]
+    option (snd <$> readSum longName options)
+        $ metavar "SOLVER"
+        <> long longName
+        <> help ("SMT solver for checking constraints: " <> knownOptions)
+        <> value Z3
+    where
+        longName = "smt"
+        knownOptions = intercalate ", " (map fst options)
+        options = [(map Char.toLower $ show s, s) | s <- [minBound .. maxBound]]
 
 unparseSolver :: Solver -> String
 unparseSolver Z3 = "z3"
@@ -204,10 +204,10 @@ readSum longName options = do
     case lookup opt options of
         Just val -> pure (opt, val)
         _ -> readerError (unknown opt ++ known)
-  where
-    knownOptions = intercalate ", " (map fst options)
-    unknown opt = "Unknown " ++ longName ++ " '" ++ opt ++ "'. "
-    known = "Known " ++ longName ++ "s are: " ++ knownOptions ++ "."
+    where
+        knownOptions = intercalate ", " (map fst options)
+        unknown opt = "Unknown " ++ longName ++ " '" ++ opt ++ "'. "
+        known = "Known " ++ longName ++ "s are: " ++ knownOptions ++ "."
 
 defaultSmtPreludeFilePath :: FilePath
 defaultSmtPreludeFilePath = "prelude.smt2"
@@ -216,8 +216,8 @@ writeKoreSolverFiles :: KoreSolverOptions -> FilePath -> IO ()
 writeKoreSolverFiles
     KoreSolverOptions{prelude = Prelude unwrappedPrelude}
     reportFile =
-        for_ unwrappedPrelude $
-            flip copyFile (reportFile </> defaultSmtPreludeFilePath)
+        for_ unwrappedPrelude
+            $ flip copyFile (reportFile </> defaultSmtPreludeFilePath)
 
 -- | Ensure that the SMT prelude file exists, if specified.
 ensureSmtPreludeExists :: KoreSolverOptions -> IO ()

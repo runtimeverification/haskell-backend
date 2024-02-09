@@ -50,14 +50,14 @@ test_patternVerifierHook =
                     $ externalize original
         assertEqual (message actual) expect actual
     ]
-  where
-    Verifiers{patternVerifierHook} = verifiers
-    original = mkApplySymbol (injSymbol intSort kItemSort) [Int.asInternal 0]
-    expect = inj kItemSort (Int.asInternal 0)
-    message actual =
-        (show . Pretty.vsep)
-            [ "Expected:"
-            , (Pretty.indent 4 . unparse) expect
-            , "but found:"
-            , (Pretty.indent 4 . unparse) actual
-            ]
+    where
+        Verifiers{patternVerifierHook} = verifiers
+        original = mkApplySymbol (injSymbol intSort kItemSort) [Int.asInternal 0]
+        expect = inj kItemSort (Int.asInternal 0)
+        message actual =
+            (show . Pretty.vsep)
+                [ "Expected:"
+                , (Pretty.indent 4 . unparse) expect
+                , "but found:"
+                , (Pretty.indent 4 . unparse) actual
+                ]

@@ -133,9 +133,8 @@ axiomPatternsUnitTests =
                         , definitionModules = [moduleTest]
                         }
            in testCase "definition containing I1:AInt => I2:AInt"
-              -- TODO(traiansf): such checks should be made during verification
-              $
-                assertErrorIO
+                -- TODO(traiansf): such checks should be made during verification
+                $ assertErrorIO
                     (assertSubstring "" "Unsupported pattern type in axiom")
                     ( evaluate
                         . force
@@ -143,11 +142,11 @@ axiomPatternsUnitTests =
                         . indexedModuleAxioms
                         $ extractIndexedModule "TEST" indexedDefinition
                     )
-        , testCase "(I1:AInt => I2:AInt)::KItem" $
-            assertErrorIO
+        , testCase "(I1:AInt => I2:AInt)::KItem"
+            $ assertErrorIO
                 (assertSubstring "" "Unsupported pattern type in axiom")
-                ( evaluate $
-                    force
+                ( evaluate
+                    $ force
                         ( fromSentenceAxiom
                             ( def
                             , mkAxiom_
@@ -180,47 +179,47 @@ axiomPatternsIntegrationTests =
                 )
             )
         ]
-  where
-    left =
-        applyTCell
-            ( applyKCell
-                ( applyKSeq
-                    ( applyInj
-                        sortKItem
-                        ( applyLeqAExp
-                            (applyInj sortAExp varI1)
-                            (applyInj sortAExp varI2)
+    where
+        left =
+            applyTCell
+                ( applyKCell
+                    ( applyKSeq
+                        ( applyInj
+                            sortKItem
+                            ( applyLeqAExp
+                                (applyInj sortAExp varI1)
+                                (applyInj sortAExp varI2)
+                            )
                         )
+                        varKRemainder
                     )
-                    varKRemainder
                 )
-            )
-            varStateCell
-    right =
-        applyTCell
-            ( applyKCell
-                ( applyKSeq
-                    ( applyInj
-                        sortKItem
-                        (applyLeqAInt varI1 varI2)
+                varStateCell
+        right =
+            applyTCell
+                ( applyKCell
+                    ( applyKSeq
+                        ( applyInj
+                            sortKItem
+                            (applyLeqAInt varI1 varI2)
+                        )
+                        varKRemainder
                     )
-                    varKRemainder
                 )
-            )
-            varStateCell
-    rule =
-        RulePattern
-            { left
-            , antiLeft = Nothing
-            , requires = Predicate.makeTruePredicate
-            , rhs =
-                RHS
-                    { existentials = []
-                    , right
-                    , ensures = Predicate.makeTruePredicate
-                    }
-            , attributes = def
-            }
+                varStateCell
+        rule =
+            RulePattern
+                { left
+                , antiLeft = Nothing
+                , requires = Predicate.makeTruePredicate
+                , rhs =
+                    RHS
+                        { existentials = []
+                        , right
+                        , ensures = Predicate.makeTruePredicate
+                        }
+                , attributes = def
+                }
 
 test_rewritePatternToRewriteRuleAndBack :: TestTree
 test_rewritePatternToRewriteRuleAndBack =
@@ -234,17 +233,17 @@ test_rewritePatternToRewriteRuleAndBack =
               initialPattern =
                 Rewrites Mock.testSort initialLhs initialRhs
               finalTerm = mkRewrites initialLhs initialRhs
-           in testCase "RewriteRule without antileft" $
-                assertEqual
+           in testCase "RewriteRule without antileft"
+                $ assertEqual
                     ""
                     finalTerm
                     (perhapsFinalPattern def initialPattern)
         ]
-  where
-    perhapsFinalPattern attribute initialPattern =
-        rewriteRuleToTerm $
-            fromRight (error "Expected simple rewrite rule") $
-                simpleRewriteTermToRule attribute initialPattern
+    where
+        perhapsFinalPattern attribute initialPattern =
+            rewriteRuleToTerm
+                $ fromRight (error "Expected simple rewrite rule")
+                $ simpleRewriteTermToRule attribute initialPattern
 
 test_patternToAxiomPatternAndBack :: TestTree
 test_patternToAxiomPatternAndBack =
@@ -255,23 +254,23 @@ test_patternToAxiomPatternAndBack =
                 mkImplies
                     leftP
                     (mkApplyAlias op [mkElemVar Mock.x])
-           in testCase "implication axioms:" $
-                assertEqual
+           in testCase "implication axioms:"
+                $ assertEqual
                     ""
                     (Right initialPattern)
                     (perhapsFinalPattern def initialPattern)
         ]
-  where
-    perhapsFinalPattern attribute initialPattern =
-        axiomPatternToTerm
-            <$> termToAxiomPattern attribute initialPattern
+    where
+        perhapsFinalPattern attribute initialPattern =
+            axiomPatternToTerm
+                <$> termToAxiomPattern attribute initialPattern
 
 leftP, rightP, initialRhs :: TermLike VariableName
 leftP = mkElemVar Mock.x
 rightP = mkExists Mock.y (mkElemVar Mock.y)
 initialRhs = mkAnd (Predicate.fromPredicate sort ensuresP) rightP
-  where
-    sort = termLikeSort rightP
+    where
+        sort = termLikeSort rightP
 
 requiresP, ensuresP :: Predicate.Predicate VariableName
 requiresP = Predicate.makeCeilPredicate (mkElemVar Mock.z)
@@ -292,20 +291,20 @@ sortBExp = simpleSort (SortName "BExp")
 applyAliasLHS :: TermLike VariableName
 applyAliasLHS =
     mkApplyAlias ruleLHS []
-  where
-    ruleLHS =
-        Alias
-            { aliasConstructor = testId "RuleLHS"
-            , aliasParams = []
-            , aliasSorts =
-                ApplicationSorts
-                    { applicationSortsOperands = []
-                    , applicationSortsResult = sortAInt
-                    }
-            , aliasLeft = []
-            , aliasRight =
-                mkAnd (mkTop sortAInt) varI1
-            }
+    where
+        ruleLHS =
+            Alias
+                { aliasConstructor = testId "RuleLHS"
+                , aliasParams = []
+                , aliasSorts =
+                    ApplicationSorts
+                        { applicationSortsOperands = []
+                        , applicationSortsResult = sortAInt
+                        }
+                , aliasLeft = []
+                , aliasRight =
+                    mkAnd (mkTop sortAInt) varI1
+                }
 
 applyInj ::
     -- | destination sort
@@ -315,8 +314,8 @@ applyInj ::
     TermLike VariableName
 applyInj sortTo child =
     applySymbol symbolInj [sortFrom, sortTo] [child]
-  where
-    TermAttributes{termSort = sortFrom} = extractAttributes child
+    where
+        TermAttributes{termSort = sortFrom} = extractAttributes child
 
 sortK, sortKItem, sortKCell, sortStateCell, sortTCell :: Sort
 sortK = simpleSort (SortName "K")
@@ -328,26 +327,26 @@ sortTCell = simpleSort (SortName "TCell")
 sortSentenceAInt :: Verified.Sentence
 sortSentenceAInt =
     asSentence sentence
-  where
-    sentence :: SentenceSort
-    sentence =
-        SentenceSort
-            { sentenceSortName = testId "AInt"
-            , sentenceSortParameters = []
-            , sentenceSortAttributes = Attributes []
-            }
+    where
+        sentence :: SentenceSort
+        sentence =
+            SentenceSort
+                { sentenceSortName = testId "AInt"
+                , sentenceSortParameters = []
+                , sentenceSortAttributes = Attributes []
+                }
 
 sortSentenceKItem :: Verified.Sentence
 sortSentenceKItem =
     asSentence sentence
-  where
-    sentence :: SentenceSort
-    sentence =
-        SentenceSort
-            { sentenceSortName = testId "KItem"
-            , sentenceSortParameters = []
-            , sentenceSortAttributes = Attributes []
-            }
+    where
+        sentence :: SentenceSort
+        sentence =
+            SentenceSort
+                { sentenceSortName = testId "KItem"
+                , sentenceSortParameters = []
+                , sentenceSortAttributes = Attributes []
+                }
 
 symbolSentenceInj :: Sentence (TermLike VariableName)
 symbolSentenceInj = asSentence symbolInj
@@ -441,8 +440,8 @@ mkRewriteAxiomPattern lhs rhs requires =
         patternSort
         (mkAnd (fromMaybe mkTop requires patternSort) lhs)
         (mkAnd (mkTop patternSort) rhs)
-  where
-    patternSort = termLikeSort lhs
+    where
+        patternSort = termLikeSort lhs
 
 mkAliasAxiomPattern ::
     -- | left-hand side
@@ -455,5 +454,5 @@ mkAliasAxiomPattern aliasLhs rhs =
         patternSort
         aliasLhs
         (mkAnd (mkTop patternSort) rhs)
-  where
-    patternSort = termLikeSort aliasLhs
+    where
+        patternSort = termLikeSort aliasLhs

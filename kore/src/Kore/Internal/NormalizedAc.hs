@@ -140,25 +140,25 @@ unparsedChildren elementSymbol keyUnparser childUnparser wrapped =
     (elementUnparser <$> elementsWithVariables)
         ++ (concreteElementUnparser <$> HashMap.toList concreteElements)
         ++ (child . childUnparser <$> opaque)
-  where
-    unwrapped :: NormalizedAc normalized key child
-    -- Matching needed only for getting compiler notifications when
-    -- the NormalizedAc field count changes.
-    unwrapped@(NormalizedAc _ _ _) = unwrapAc wrapped
+    where
+        unwrapped :: NormalizedAc normalized key child
+        -- Matching needed only for getting compiler notifications when
+        -- the NormalizedAc field count changes.
+        unwrapped@(NormalizedAc _ _ _) = unwrapAc wrapped
 
-    NormalizedAc{elementsWithVariables} = unwrapped
-    NormalizedAc{concreteElements} = unwrapped
-    NormalizedAc{opaque} = unwrapped
-    element = (<>) ("/* element: */" <+> unparse elementSymbol)
-    concreteElement = (<>) ("/* concrete element: */" <+> unparse elementSymbol)
-    child = (<+>) "/* opaque child: */"
+        NormalizedAc{elementsWithVariables} = unwrapped
+        NormalizedAc{concreteElements} = unwrapped
+        NormalizedAc{opaque} = unwrapped
+        element = (<>) ("/* element: */" <+> unparse elementSymbol)
+        concreteElement = (<>) ("/* concrete element: */" <+> unparse elementSymbol)
+        child = (<+>) "/* opaque child: */"
 
-    elementUnparser :: Element normalized child -> Pretty.Doc ann
-    elementUnparser = element . unparseElement childUnparser
+        elementUnparser :: Element normalized child -> Pretty.Doc ann
+        elementUnparser = element . unparseElement childUnparser
 
-    concreteElementUnparser :: (key, Value normalized child) -> Pretty.Doc ann
-    concreteElementUnparser =
-        concreteElement . unparseConcreteElement keyUnparser childUnparser
+        concreteElementUnparser :: (key, Value normalized child) -> Pretty.Doc ann
+        concreteElementUnparser =
+            concreteElement . unparseConcreteElement keyUnparser childUnparser
 
 {- | Internal representation for associative-commutative domain values.
 
@@ -223,8 +223,8 @@ lookupSymbolicKeyOfAc
     child
     NormalizedAc{elementsWithVariables} =
         snd <$> find (\(key, _) -> child == key) elements
-      where
-        elements = unwrapElement <$> elementsWithVariables
+        where
+            elements = unwrapElement <$> elementsWithVariables
 
 removeSymbolicKeyOfAc ::
     AcWrapper normalized =>
@@ -238,12 +238,13 @@ removeSymbolicKeyOfAc
     normalized@NormalizedAc{elementsWithVariables} =
         normalized
             { elementsWithVariables =
-                fmap wrapElement . HashMap.toList $
-                    HashMap.delete child unwrappedMap
+                fmap wrapElement
+                    . HashMap.toList
+                    $ HashMap.delete child unwrappedMap
             }
-      where
-        unwrappedMap =
-            HashMap.fromList $ fmap unwrapElement elementsWithVariables
+        where
+            unwrappedMap =
+                HashMap.fromList $ fmap unwrapElement elementsWithVariables
 
 isConcreteKeyOfAc ::
     AcWrapper normalized =>
@@ -337,10 +338,10 @@ instance
             `hashWithSalt` elementsWithVariables
             `hashWithSalt` HashMap.toList concreteElements
             `hashWithSalt` opaque
-      where
-        NormalizedAc{elementsWithVariables} = normalized
-        NormalizedAc{concreteElements} = normalized
-        NormalizedAc{opaque} = normalized
+        where
+            NormalizedAc{elementsWithVariables} = normalized
+            NormalizedAc{concreteElements} = normalized
+            NormalizedAc{opaque} = normalized
 
 instance
     ( NFData key
@@ -424,8 +425,8 @@ instance
     where
     hashWithSalt salt builtin =
         hashWithSalt salt builtinAcChild
-      where
-        InternalAc{builtinAcChild} = builtin
+        where
+            InternalAc{builtinAcChild} = builtin
 
 instance
     NFData (normalized key child) =>
@@ -446,13 +447,13 @@ unparseInternalAc ::
     InternalAc key normalized child ->
     Pretty.Doc ann
 unparseInternalAc keyUnparser childUnparser builtinAc =
-    unparseConcat' (unparse builtinAcUnit) (unparse builtinAcConcat) $
-        unparsedChildren builtinAcElement keyUnparser childUnparser builtinAcChild
-  where
-    InternalAc{builtinAcChild} = builtinAc
-    InternalAc{builtinAcUnit} = builtinAc
-    InternalAc{builtinAcElement} = builtinAc
-    InternalAc{builtinAcConcat} = builtinAc
+    unparseConcat' (unparse builtinAcUnit) (unparse builtinAcConcat)
+        $ unparsedChildren builtinAcElement keyUnparser childUnparser builtinAcChild
+    where
+        InternalAc{builtinAcChild} = builtinAc
+        InternalAc{builtinAcUnit} = builtinAc
+        InternalAc{builtinAcElement} = builtinAc
+        InternalAc{builtinAcConcat} = builtinAc
 
 normalizedAcDefined ::
     (Foldable (Element collection), Foldable (Value collection)) =>
@@ -477,8 +478,8 @@ normalizedAcDefined ac@(NormalizedAc _ _ _) =
             }
                 | HashMap.null concreteElements -> sameAsChildren
         _ -> Defined False
-  where
-    sameAsChildren = fold ac
+    where
+        sameAsChildren = fold ac
 
 normalizedAcTotal ::
     (Foldable (Element collection), Foldable (Value collection)) =>
@@ -503,8 +504,8 @@ normalizedAcTotal ac@(NormalizedAc _ _ _) =
             }
                 | HashMap.null concreteElements -> sameAsChildren
         _ -> Total False
-  where
-    sameAsChildren = fold ac
+    where
+        sameAsChildren = fold ac
 
 normalizedAcConstructorLike ::
     ( HasConstructorLike key
@@ -521,10 +522,10 @@ normalizedAcConstructorLike ac@(NormalizedAc _ _ _) =
             }
                 | all pairIsConstructorLike concreteElementsList ->
                     ConstructorLike . Just $ ConstructorLikeHead
-              where
-                concreteElementsList = HashMap.toList concreteElements
-                pairIsConstructorLike (key, value) =
-                    assertConstructorLike "" key $ isConstructorLike value
+                where
+                    concreteElementsList = HashMap.toList concreteElements
+                    pairIsConstructorLike (key, value) =
+                        assertConstructorLike "" key $ isConstructorLike value
         _ -> ConstructorLike Nothing
 
 {- | A representation for associative-commutative collections
@@ -597,21 +598,23 @@ generatePairWiseElements (unwrapAc -> normalized) =
         , concreteOpaquePairs =
             pairWiseElemsOfDifferentTypes concreteElems opaqueElems
         }
-  where
-    symbolicElems = elementsWithVariables normalized
-    concreteElems = HashMap.toList . concreteElements $ normalized
-    opaqueElems = opaque normalized
-    -- Pre-sorting the elements cuts comparisons from quadratic to
-    -- linearithmic, and reduces allocations by about half.
-    pairWiseElemsOfSameTypeDistinct (List.sort -> elems) =
-        [AcPair_ x y | x : ys <- List.tails elems, y <- ys]
-            & HashSet.fromList
-    -- Without assuming unique elements, we additionally pay to drop any
-    -- duplicates. If there are many of these, then we can `groupBy` after
-    -- sorting, or build a `Set`, to bring this down to linearithmic.
-    pairWiseElemsOfSameType (List.sort -> elems) =
-        [AcPair_ x y | x : ys <- List.tails elems, y <- dropWhile (== x) ys]
-            & HashSet.fromList
-    pairWiseElemsOfDifferentTypes elems1 elems2 =
-        (,) <$> elems1 <*> elems2
-            & HashSet.fromList
+    where
+        symbolicElems = elementsWithVariables normalized
+        concreteElems = HashMap.toList . concreteElements $ normalized
+        opaqueElems = opaque normalized
+        -- Pre-sorting the elements cuts comparisons from quadratic to
+        -- linearithmic, and reduces allocations by about half.
+        pairWiseElemsOfSameTypeDistinct (List.sort -> elems) =
+            [AcPair_ x y | x : ys <- List.tails elems, y <- ys]
+                & HashSet.fromList
+        -- Without assuming unique elements, we additionally pay to drop any
+        -- duplicates. If there are many of these, then we can `groupBy` after
+        -- sorting, or build a `Set`, to bring this down to linearithmic.
+        pairWiseElemsOfSameType (List.sort -> elems) =
+            [AcPair_ x y | x : ys <- List.tails elems, y <- dropWhile (== x) ys]
+                & HashSet.fromList
+        pairWiseElemsOfDifferentTypes elems1 elems2 =
+            (,)
+                <$> elems1
+                <*> elems2
+                & HashSet.fromList

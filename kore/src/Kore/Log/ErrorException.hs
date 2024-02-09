@@ -38,13 +38,13 @@ instance Pretty ErrorException where
             [ Just $ prettyException someException
             , pleaseFileBugReport
             ]
-      where
-        pleaseFileBugReport = do
-            _ <- fromException someException :: Maybe AssertionFailed
-            (pure . hsep)
-                [ "Please file a bug report:"
-                , "https://github.com/runtimeverification/haskell-backend/issues"
-                ]
+        where
+            pleaseFileBugReport = do
+                _ <- fromException someException :: Maybe AssertionFailed
+                (pure . hsep)
+                    [ "Please file a bug report:"
+                    , "https://github.com/runtimeverification/haskell-backend/issues"
+                    ]
 
 instance Entry ErrorException where
     entrySeverity _ = Error

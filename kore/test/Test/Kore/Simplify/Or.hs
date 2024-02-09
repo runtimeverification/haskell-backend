@@ -87,19 +87,19 @@ test_simplify =
             (simplify $ binaryOr orPattern1 orPattern2)
             (simplifyEvaluated orPattern1 orPattern2)
         ]
-  where
-    orPattern1 :: OrPattern.OrPattern RewritingVariableName
-    orPattern1 = wrapInOrPattern (tM, pM, sM)
+    where
+        orPattern1 :: OrPattern.OrPattern RewritingVariableName
+        orPattern1 = wrapInOrPattern (tM, pM, sM)
 
-    orPattern2 :: OrPattern.OrPattern RewritingVariableName
-    orPattern2 = wrapInOrPattern (tm, pm, sm)
+        orPattern2 :: OrPattern.OrPattern RewritingVariableName
+        orPattern2 = wrapInOrPattern (tm, pm, sm)
 
-    binaryOr ::
-        OrPattern.OrPattern RewritingVariableName ->
-        OrPattern.OrPattern RewritingVariableName ->
-        BinaryOr Sort (OrPattern.OrPattern RewritingVariableName)
-    binaryOr orFirst orSecond =
-        BinaryOr{orSort = Mock.testSort, orFirst, orSecond}
+        binaryOr ::
+            OrPattern.OrPattern RewritingVariableName ->
+            OrPattern.OrPattern RewritingVariableName ->
+            BinaryOr Sort (OrPattern.OrPattern RewritingVariableName)
+        binaryOr orFirst orSecond =
+            BinaryOr{orSort = Mock.testSort, orFirst, orSecond}
 
 -- * Part 3: The values and functions relevant to this test
 
@@ -141,8 +141,8 @@ testVar :: Text -> ElementVariable RewritingVariableName
 testVar ident =
     Variable
         { variableName =
-            ElementVariableName $
-                mkConfigVariable
+            ElementVariableName
+                $ mkConfigVariable
                     VariableName
                         { base = testId ident
                         , counter = mempty
@@ -173,14 +173,14 @@ sT = mempty
 
 sm :: Substitution RewritingVariableName
 sm =
-    Substitution.wrap $
-        Substitution.mkUnwrappedSubstitution
+    Substitution.wrap
+        $ Substitution.mkUnwrappedSubstitution
             [(inject Mock.xConfig, Mock.a)] -- I'd rather these were meaningful
 
 sM :: Substitution RewritingVariableName
 sM =
-    Substitution.wrap $
-        Substitution.mkUnwrappedSubstitution
+    Substitution.wrap
+        $ Substitution.mkUnwrappedSubstitution
             [(inject Mock.yConfig, Mock.b)] -- I'd rather these were meaningful
 
 test_valueProperties :: TestTree
@@ -227,8 +227,8 @@ becomes
                 , Unparser.unparse $ OrPattern.toTermLike termSort expected
                 ]
             )
-      where
-        termSort = fromMaybe (mkSortVariable "_") (getSortIfNotBottom expected)
+        where
+            termSort = fromMaybe (mkSortVariable "_") (getSortIfNotBottom expected)
 
 simplifiesTo ::
     HasCallStack =>
@@ -257,8 +257,8 @@ prettyOr ::
     Pretty.Doc a
 prettyOr orFirst orSecond =
     Unparser.unparse BinaryOr{orSort, orFirst, orSecond}
-  where
-    orSort = termLikeSort (Pattern.term orFirst)
+    where
+        orSort = termLikeSort (Pattern.term orFirst)
 
 stateIntention :: [Pretty.Doc ann] -> String
 stateIntention actualAndSoOn =

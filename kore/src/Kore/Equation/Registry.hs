@@ -58,27 +58,27 @@ extractEquations ::
 extractEquations =
     foldl' moduleWorker Map.empty
         . indexedModulesInScope
-  where
-    moduleWorker ::
-        Map AxiomIdentifier [Equation VariableName] ->
-        VerifiedModule StepperAttributes ->
-        Map AxiomIdentifier [Equation VariableName]
-    moduleWorker axioms imod =
-        foldl' sentenceWorker axioms sentences
-      where
-        sentences = indexedModuleAxioms imod
-    sentenceWorker ::
-        Map AxiomIdentifier [Equation VariableName] ->
-        (Attribute.Axiom Symbol VariableName, Verified.SentenceAxiom) ->
-        Map AxiomIdentifier [Equation VariableName]
-    sentenceWorker axioms sentence =
-        foldl' insertAxiom axioms (identifyEquation sentence)
-    insertAxiom ::
-        Map AxiomIdentifier [Equation VariableName] ->
-        (AxiomIdentifier, Equation VariableName) ->
-        Map AxiomIdentifier [Equation VariableName]
-    insertAxiom axioms (name, patt) =
-        Map.alter (Just . (patt :) . fromMaybe []) name axioms
+    where
+        moduleWorker ::
+            Map AxiomIdentifier [Equation VariableName] ->
+            VerifiedModule StepperAttributes ->
+            Map AxiomIdentifier [Equation VariableName]
+        moduleWorker axioms imod =
+            foldl' sentenceWorker axioms sentences
+            where
+                sentences = indexedModuleAxioms imod
+        sentenceWorker ::
+            Map AxiomIdentifier [Equation VariableName] ->
+            (Attribute.Axiom Symbol VariableName, Verified.SentenceAxiom) ->
+            Map AxiomIdentifier [Equation VariableName]
+        sentenceWorker axioms sentence =
+            foldl' insertAxiom axioms (identifyEquation sentence)
+        insertAxiom ::
+            Map AxiomIdentifier [Equation VariableName] ->
+            (AxiomIdentifier, Equation VariableName) ->
+            Map AxiomIdentifier [Equation VariableName]
+        insertAxiom axioms (name, patt) =
+            Map.alter (Just . (patt :) . fromMaybe []) name axioms
 
 identifyEquation ::
     ( Attribute.Axiom Symbol VariableName
@@ -107,14 +107,14 @@ partitionEquations equations =
         { functionRules
         , simplificationRules
         }
-  where
-    equations' =
-        equations
-            & filter (not . ignoreEquation)
-    (simplificationRules, functionRules) =
-        partition Equation.isSimplificationRule
-            . sortOn Equation.equationPriority
-            $ equations'
+    where
+        equations' =
+            equations
+                & filter (not . ignoreEquation)
+        (simplificationRules, functionRules) =
+            partition Equation.isSimplificationRule
+                . sortOn Equation.equationPriority
+                $ equations'
 
 {- | Should we ignore the 'Equation' for evaluation or simplification?
 
@@ -133,10 +133,10 @@ ignoreEquation Equation{attributes}
     | isNonExecutable = True
     | Just _ <- getOverload = False
     | otherwise = False
-  where
-    Assoc{isAssoc} = Attribute.assoc attributes
-    Comm{isComm} = Attribute.comm attributes
-    Unit{isUnit} = Attribute.unit attributes
-    Idem{isIdem} = Attribute.idem attributes
-    Overload{getOverload} = Attribute.overload attributes
-    NonExecutable{isNonExecutable} = Attribute.nonExecutable attributes
+    where
+        Assoc{isAssoc} = Attribute.assoc attributes
+        Comm{isComm} = Attribute.comm attributes
+        Unit{isUnit} = Attribute.unit attributes
+        Idem{isIdem} = Attribute.idem attributes
+        Overload{getOverload} = Attribute.overload attributes
+        NonExecutable{isNonExecutable} = Attribute.nonExecutable attributes

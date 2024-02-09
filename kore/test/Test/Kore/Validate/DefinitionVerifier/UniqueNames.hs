@@ -264,5 +264,5 @@ test_uniqueNames =
             ]
         )
     ]
-  where
-    stringSortName = SortName (getId stringMetaSortId)
+    where
+        stringSortName = SortName (getId stringMetaSortId)

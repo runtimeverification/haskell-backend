@@ -114,15 +114,15 @@ test_symbolOrAliasSorts =
             )
         )
     ]
-  where
-    simpleSortActual = sortActual "sa" []
-    sortVariable' = sortVariable "sv"
-    anotherSortVariable' = sortVariable "asv"
-    sortVariableSort' = sortVariableSort "sv"
-    complexSortActualParam = sortActual "sa" [sortVariableSort']
-    complexSortActualSort = sortActual "sa" [simpleSortActual]
-    success name expect actual =
-        testCase name $ assertEqual "Expecting success" (Right expect) actual
+    where
+        simpleSortActual = sortActual "sa" []
+        sortVariable' = sortVariable "sv"
+        anotherSortVariable' = sortVariable "asv"
+        sortVariableSort' = sortVariableSort "sv"
+        complexSortActualParam = sortActual "sa" [sortVariableSort']
+        complexSortActualSort = sortActual "sa" [simpleSortActual]
+        success name expect actual =
+            testCase name $ assertEqual "Expecting success" (Right expect) actual
 
 symbolSentence ::
     [SortVariable] ->

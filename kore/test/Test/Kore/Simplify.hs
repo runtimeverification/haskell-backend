@@ -78,8 +78,8 @@ import Test.SMT qualified as Test
 
 runSimplifierSMT :: Env -> Simplifier a -> IO a
 runSimplifierSMT env = Test.runSMT userInit . Kore.runSimplifier env
-  where
-    userInit = declareSortsSymbols Mock.smtDeclarations
+    where
+        userInit = declareSortsSymbols Mock.smtDeclarations
 
 testRunSimplifier :: Env -> Simplifier a -> IO a
 testRunSimplifier env = Test.runNoSMT . Kore.runSimplifier env
@@ -93,24 +93,24 @@ testRunSimplifierBranch env = Test.runNoSMT . Kore.runSimplifierBranch env
 simplifiedTerm :: Hashable variable => TermLike variable -> TermLike variable
 simplifiedTerm =
     Recursive.unfold (simplifiedWorker . Recursive.project)
-  where
-    simplifiedWorker (attrs :< patt) =
-        TermLike.setAttributeSimplified Attribute.fullySimplified attrs
-            :< patt
+    where
+        simplifiedWorker (attrs :< patt) =
+            TermLike.setAttributeSimplified Attribute.fullySimplified attrs
+                :< patt
 
 simplifiedPredicate :: Hashable variable => Predicate variable -> Predicate variable
 simplifiedPredicate =
     Recursive.unfold (simplifiedWorker . Recursive.project)
-  where
-    simplifiedWorker (attrs :< patt) =
-        Attribute.PPattern.setSimplified Attribute.fullySimplified attrs
-            :< ( case patt of
-                    CeilF ceil' -> CeilF (simplifiedTerm <$> ceil')
-                    FloorF floor' -> FloorF (simplifiedTerm <$> floor')
-                    EqualsF equals' -> EqualsF (simplifiedTerm <$> equals')
-                    InF in' -> InF (simplifiedTerm <$> in')
-                    _ -> patt
-               )
+    where
+        simplifiedWorker (attrs :< patt) =
+            Attribute.PPattern.setSimplified Attribute.fullySimplified attrs
+                :< ( case patt of
+                        CeilF ceil' -> CeilF (simplifiedTerm <$> ceil')
+                        FloorF floor' -> FloorF (simplifiedTerm <$> floor')
+                        EqualsF equals' -> EqualsF (simplifiedTerm <$> equals')
+                        InF in' -> InF (simplifiedTerm <$> in')
+                        _ -> patt
+                   )
 
 simplifiedSubstitution ::
     InternalVariable variable =>
@@ -138,8 +138,8 @@ simplifiedPattern ::
     Pattern variable
 simplifiedPattern patt =
     simplifiedTerm term `Pattern.withCondition` simplifiedCondition condition
-  where
-    (term, condition) = Pattern.splitTerm patt
+    where
+        (term, condition) = Pattern.splitTerm patt
 
 simplifiedOrPattern ::
     InternalVariable variable =>

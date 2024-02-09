@@ -64,10 +64,10 @@ type Cache = HashMap CacheKey (TermLike Concrete)
 simple :: MonadState Cache state => Self state
 simple =
     Self{recall, record}
-  where
-    recall application = State.gets $ HashMap.lookup application
-    record application result =
-        State.modify' $ HashMap.insert application result
+    where
+        recall application = State.gets $ HashMap.lookup application
+        record application result =
+            State.modify' $ HashMap.insert application result
 
 -- | Transform a memoizer using the provided morphism.
 liftSelf ::

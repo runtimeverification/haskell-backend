@@ -31,5 +31,5 @@ readPositiveIntegral ctor optionName = do
     readInt <- auto
     when (readInt <= 0) err
     return . ctor $ readInt
-  where
-    err = readerError . unwords $ [optionName, "must be a positive integer."]
+    where
+        err = readerError . unwords $ [optionName, "must be a positive integer."]

@@ -116,60 +116,60 @@ buildRepresentations indexedModule sortConstructors =
         `AST.mergePreferFirst` listToDeclarations
             (sortsWithConstructors builtinAndSmtLibSorts simpleSortIDs)
         `AST.mergePreferFirst` listToDeclarations simpleSortDeclarations
-  where
-    listToDeclarations ::
-        [(Id, AST.UnresolvedSort)] -> AST.UnresolvedDeclarations
-    listToDeclarations list =
-        AST.Declarations
-            { sorts = Map.fromList list
-            , symbols = Map.empty
-            }
+    where
+        listToDeclarations ::
+            [(Id, AST.UnresolvedSort)] -> AST.UnresolvedDeclarations
+        listToDeclarations list =
+            AST.Declarations
+                { sorts = Map.fromList list
+                , symbols = Map.empty
+                }
 
-    builtinAndSmtLibDeclarations :: AST.UnresolvedDeclarations
-    builtinAndSmtLibDeclarations =
-        listToDeclarations builtinSortDeclarations
-            `AST.mergePreferFirst` listToDeclarations smtlibSortDeclarations
+        builtinAndSmtLibDeclarations :: AST.UnresolvedDeclarations
+        builtinAndSmtLibDeclarations =
+            listToDeclarations builtinSortDeclarations
+                `AST.mergePreferFirst` listToDeclarations smtlibSortDeclarations
 
-    builtinAndSmtLibSorts :: Set.Set Id
-    builtinAndSmtLibSorts = Map.keysSet sorts
-      where
-        AST.Declarations{sorts} = builtinAndSmtLibDeclarations
+        builtinAndSmtLibSorts :: Set.Set Id
+        builtinAndSmtLibSorts = Map.keysSet sorts
+            where
+                AST.Declarations{sorts} = builtinAndSmtLibDeclarations
 
-    sortsWithConstructors ::
-        Set.Set Id ->
-        [Id] ->
-        [(Id, AST.UnresolvedSort)]
-    sortsWithConstructors blacklist whitelist =
-        mapMaybe
-            (sortWithConstructor sortConstructors)
-            (filter (`Set.notMember` blacklist) whitelist)
+        sortsWithConstructors ::
+            Set.Set Id ->
+            [Id] ->
+            [(Id, AST.UnresolvedSort)]
+        sortsWithConstructors blacklist whitelist =
+            mapMaybe
+                (sortWithConstructor sortConstructors)
+                (filter (`Set.notMember` blacklist) whitelist)
 
-    builtinSortDeclarations :: [(Id, AST.UnresolvedSort)]
-    builtinSortDeclarations =
-        extractDefinitionsFromSentences builtinSortDeclaration
+        builtinSortDeclarations :: [(Id, AST.UnresolvedSort)]
+        builtinSortDeclarations =
+            extractDefinitionsFromSentences builtinSortDeclaration
 
-    smtlibSortDeclarations :: [(Id, AST.UnresolvedSort)]
-    smtlibSortDeclarations =
-        extractDefinitionsFromSentences smtlibSortDeclaration
+        smtlibSortDeclarations :: [(Id, AST.UnresolvedSort)]
+        smtlibSortDeclarations =
+            extractDefinitionsFromSentences smtlibSortDeclaration
 
-    simpleSortIDs :: [Id]
-    simpleSortIDs = map fst simpleSortDeclarations
+        simpleSortIDs :: [Id]
+        simpleSortIDs = map fst simpleSortDeclarations
 
-    simpleSortDeclarations :: [(Id, AST.UnresolvedSort)]
-    simpleSortDeclarations =
-        extractDefinitionsFromSentences simpleSortDeclaration
+        simpleSortDeclarations :: [(Id, AST.UnresolvedSort)]
+        simpleSortDeclarations =
+            extractDefinitionsFromSentences simpleSortDeclaration
 
-    extractDefinitionsFromSentences ::
-        ( ( Attribute.Sort
-          , Verified.SentenceSort
-          ) ->
-          Maybe (Id, AST.UnresolvedSort)
-        ) ->
-        [(Id, AST.UnresolvedSort)]
-    extractDefinitionsFromSentences definitionExtractor =
-        mapMaybe
-            definitionExtractor
-            (Map.elems $ recursiveIndexedModuleSortDescriptions indexedModule)
+        extractDefinitionsFromSentences ::
+            ( ( Attribute.Sort
+              , Verified.SentenceSort
+              ) ->
+              Maybe (Id, AST.UnresolvedSort)
+            ) ->
+            [(Id, AST.UnresolvedSort)]
+        extractDefinitionsFromSentences definitionExtractor =
+            mapMaybe
+                definitionExtractor
+                (Map.elems $ recursiveIndexedModuleSortDescriptions indexedModule)
 
 builtinSortDeclaration ::
     ( Attribute.Sort
@@ -193,8 +193,8 @@ builtinSortDeclaration
                             (AST.AlreadyEncoded smtRepresentation)
                     }
                 )
-      where
-        Hook{getHook} = Attribute.Sort.hook attributes
+        where
+            Hook{getHook} = Attribute.Sort.hook attributes
 
 smtlibSortDeclaration ::
     ( Attribute.Sort
@@ -217,8 +217,8 @@ smtlibSortDeclaration
                                 }
                     }
                 )
-      where
-        Smtlib{getSmtlib} = Attribute.Sort.smtlib attributes
+        where
+            Smtlib{getSmtlib} = Attribute.Sort.smtlib attributes
 
 applyToArgs ::
     SMT.SExpr ->
@@ -254,8 +254,8 @@ simpleSortDeclaration
                             }
                 }
             )
-      where
-        encodedName = AST.encodable sentenceSortName
+        where
+            encodedName = AST.encodable sentenceSortName
 simpleSortDeclaration _ = Nothing
 
 sortSmtFromSortArgs ::
@@ -301,12 +301,12 @@ sortWithConstructor sortConstructors sortId = do
                         }
             }
         )
-  where
-    encodedName = AST.encodable sortId
-    constructorFromLike
-        (Attribute.Constructors.ConstructorLikeConstructor c) =
-            Just c
-    constructorFromLike _ = Nothing
+    where
+        encodedName = AST.encodable sortId
+        constructorFromLike
+            (Attribute.Constructors.ConstructorLikeConstructor c) =
+                Just c
+        constructorFromLike _ = Nothing
 
 buildConstructor ::
     Attribute.Constructors.Constructor ->
@@ -324,8 +324,8 @@ buildConstructor
                     { name = AST.SymbolReference symbolConstructor
                     , arguments = args
                     }
-      where
-        encodedName = getId symbolConstructor
+        where
+            encodedName = getId symbolConstructor
 buildConstructor _ = Nothing
 
 buildConstructorArgument ::
@@ -340,9 +340,10 @@ buildConstructorArgument
         Just
             SMT.ConstructorArgument
                 { name =
-                    AST.Encodable $
-                        SMT.Atom $
-                            constructorName <> (Text.pack . show) index
+                    AST.Encodable
+                        $ SMT.Atom
+                        $ constructorName
+                        <> (Text.pack . show) index
                 , argType = AST.SortReference sort
                 }
 buildConstructorArgument _ _ _ = Nothing

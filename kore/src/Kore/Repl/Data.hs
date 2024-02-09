@@ -257,14 +257,14 @@ generalLogOptionsTransformer
             , Log.logFormat = logFormat
             , Log.timestampsSwitch = timestampsSwitch
             }
-      where
-        GeneralLogOptions
-            { logLevel
-            , logType
-            , logFormat
-            , logEntries
-            , timestampsSwitch
-            } = logOptions
+        where
+            GeneralLogOptions
+                { logLevel
+                , logType
+                , logFormat
+                , logEntries
+                , timestampsSwitch
+                } = logOptions
 
 debugAttemptEquationTransformer ::
     Log.DebugAttemptEquationOptions ->
@@ -592,17 +592,17 @@ entriesForHelp =
         column2
         column3
         & unlines
-  where
-    entries :: [String]
-    entries =
-        Log.entryTypeReps
-            & fmap show
-            & sort
-            & (<> ["", ""])
-    align entry = entry <> replicate (40 - length entry) ' '
-    columnLength = length entries `div` 3
-    (column1And2, column3) = splitAt (2 * columnLength) entries
-    (column1, column2) = splitAt columnLength column1And2
+    where
+        entries :: [String]
+        entries =
+            Log.entryTypeReps
+                & fmap show
+                & sort
+                & (<> ["", ""])
+        align entry = entry <> replicate (40 - length entry) ' '
+        columnLength = length entries `div` 3
+        (column1And2, column3) = splitAt (2 * columnLength) entries
+        (column1, column2) = splitAt columnLength column1And2
 
 {- | Determines whether the command needs to be stored or not. Commands that
  affect the outcome of the proof are stored.
@@ -747,14 +747,14 @@ runUnifierWithoutExplanation ::
     Simplifier (Maybe (NonEmpty a))
 runUnifierWithoutExplanation unifier =
     failEmptyList <$> unificationResults
-  where
-    unificationResults :: Simplifier [a]
-    unificationResults = runUnifier unifier
-    failEmptyList :: [a] -> Maybe (NonEmpty a)
-    failEmptyList results =
-        case results of
-            [] -> Nothing
-            r : rs -> Just (r :| rs)
+    where
+        unificationResults :: Simplifier [a]
+        unificationResults = runUnifier unifier
+        failEmptyList :: [a] -> Maybe (NonEmpty a)
+        failEmptyList results =
+            case results of
+                [] -> Nothing
+                r : rs -> Just (r :| rs)
 
 data TryApplyRuleResult
     = DoesNotApply

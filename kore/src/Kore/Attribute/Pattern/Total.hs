@@ -46,10 +46,10 @@ instance Synthetic Total (Bottom sort) where
 instance Synthetic Total (Application Internal.Symbol) where
     synthetic application =
         totalSymbol <> fold children
-      where
-        totalSymbol = Total (Internal.isNotBottom symbol)
-        children = applicationChildren application
-        symbol = applicationSymbolOrAlias application
+        where
+            totalSymbol = Total (Internal.isNotBottom symbol)
+            children = applicationChildren application
+            symbol = applicationSymbolOrAlias application
 
 instance Synthetic Total (Application (Internal.Alias patternType)) where
     synthetic = const (Total False)

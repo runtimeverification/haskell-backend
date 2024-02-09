@@ -69,36 +69,36 @@ test_ifte =
             checkThen condition thenBranch elseBranch
         ]
     ]
-  where
-    check ::
-        HasCallStack =>
-        (Debug a, Diff a) =>
-        Transition Integer a ->
-        Transition Integer a ->
-        Assertion
-    check = on (assertEqual "") runTransition
+    where
+        check ::
+            HasCallStack =>
+            (Debug a, Diff a) =>
+            Transition Integer a ->
+            Transition Integer a ->
+            Assertion
+        check = on (assertEqual "") runTransition
 
-    checkThen ::
-        HasCallStack =>
-        Transition Integer a ->
-        (a -> Transition Integer Bool) ->
-        Transition Integer Bool ->
-        Assertion
-    checkThen condition thenBranch elseBranch =
-        let expect = condition >>= thenBranch
-            actual = ifte condition thenBranch elseBranch
-         in check expect actual
+        checkThen ::
+            HasCallStack =>
+            Transition Integer a ->
+            (a -> Transition Integer Bool) ->
+            Transition Integer Bool ->
+            Assertion
+        checkThen condition thenBranch elseBranch =
+            let expect = condition >>= thenBranch
+                actual = ifte condition thenBranch elseBranch
+             in check expect actual
 
-    checkElse ::
-        HasCallStack =>
-        Transition Integer a ->
-        (a -> Transition Integer Bool) ->
-        Transition Integer Bool ->
-        Assertion
-    checkElse condition thenBranch elseBranch =
-        let expect = elseBranch
-            actual = ifte condition thenBranch elseBranch
-         in check expect actual
+        checkElse ::
+            HasCallStack =>
+            Transition Integer a ->
+            (a -> Transition Integer Bool) ->
+            Transition Integer Bool ->
+            Assertion
+        checkElse condition thenBranch elseBranch =
+            let expect = elseBranch
+                actual = ifte condition thenBranch elseBranch
+             in check expect actual
 
 test_record :: [TestTree]
 test_record =
@@ -138,22 +138,22 @@ test_record =
             transit = addRules [2, 3]
         checkWith before expect transit
     ]
-  where
-    check ::
-        HasCallStack =>
-        [[Integer]] ->
-        Transition Integer a ->
-        Assertion
-    check = checkWith (return ())
+    where
+        check ::
+            HasCallStack =>
+            [[Integer]] ->
+            Transition Integer a ->
+            Assertion
+        check = checkWith (return ())
 
-    -- Allows running some Transition action before the recorded action.
-    checkWith ::
-        HasCallStack =>
-        Transition Integer a ->
-        [[Integer]] ->
-        Transition Integer b ->
-        Assertion
-    checkWith before expected transition =
-        let branchResults = runTransition $ before >> record transition
-            branchRecords = map (toList . snd . fst) branchResults
-         in assertEqual "" expected branchRecords
+        -- Allows running some Transition action before the recorded action.
+        checkWith ::
+            HasCallStack =>
+            Transition Integer a ->
+            [[Integer]] ->
+            Transition Integer b ->
+            Assertion
+        checkWith before expected transition =
+            let branchResults = runTransition $ before >> record transition
+                branchRecords = map (toList . snd . fst) branchResults
+             in assertEqual "" expected branchRecords

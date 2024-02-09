@@ -20,83 +20,83 @@ parseHasDomainValues = parseAttributes
 
 test_HasDomainValues :: TestTree
 test_HasDomainValues =
-    testCase "[hasDomainValues{}()] :: HasDomainValues" $
-        expectSuccess HasDomainValues{getHasDomainValues = True} $
-            parseHasDomainValues $
-                Attributes [hasDomainValuesAttribute]
+    testCase "[hasDomainValues{}()] :: HasDomainValues"
+        $ expectSuccess HasDomainValues{getHasDomainValues = True}
+        $ parseHasDomainValues
+        $ Attributes [hasDomainValuesAttribute]
 
 test_Attributes :: TestTree
 test_Attributes =
-    testCase "[hasDomainValues{}()] :: Attributes" $
-        expectSuccess attrs $
-            parseAttributes attrs
-  where
-    attrs = Attributes [hasDomainValuesAttribute]
+    testCase "[hasDomainValues{}()] :: Attributes"
+        $ expectSuccess attrs
+        $ parseAttributes attrs
+    where
+        attrs = Attributes [hasDomainValuesAttribute]
 
 test_duplicate :: TestTree
 test_duplicate =
-    testCase "[hasDomainValues{}(_), hasDomainValues{}(_)]" $
-        expectFailure $
-            parseHasDomainValues $
-                Attributes [hasDomainValuesAttribute, hasDomainValuesAttribute]
+    testCase "[hasDomainValues{}(_), hasDomainValues{}(_)]"
+        $ expectFailure
+        $ parseHasDomainValues
+        $ Attributes [hasDomainValuesAttribute, hasDomainValuesAttribute]
 
 test_arity :: TestTree
 test_arity =
-    testCase "[hasDomainValues{}(hasDomainValues{}(), hasDomainValues{}())]" $
-        expectFailure $
-            parseHasDomainValues $
-                Attributes [illegalAttribute]
-  where
-    illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias = hasDomainValuesSymbol
-                , applicationChildren =
-                    [ (asAttributePattern . ApplicationF)
-                        Application
-                            { applicationSymbolOrAlias = hasDomainValuesSymbol
-                            , applicationChildren = []
-                            }
-                    , (asAttributePattern . ApplicationF)
-                        Application
-                            { applicationSymbolOrAlias = hasDomainValuesSymbol
-                            , applicationChildren = []
-                            }
-                    ]
-                }
+    testCase "[hasDomainValues{}(hasDomainValues{}(), hasDomainValues{}())]"
+        $ expectFailure
+        $ parseHasDomainValues
+        $ Attributes [illegalAttribute]
+    where
+        illegalAttribute =
+            (asAttributePattern . ApplicationF)
+                Application
+                    { applicationSymbolOrAlias = hasDomainValuesSymbol
+                    , applicationChildren =
+                        [ (asAttributePattern . ApplicationF)
+                            Application
+                                { applicationSymbolOrAlias = hasDomainValuesSymbol
+                                , applicationChildren = []
+                                }
+                        , (asAttributePattern . ApplicationF)
+                            Application
+                                { applicationSymbolOrAlias = hasDomainValuesSymbol
+                                , applicationChildren = []
+                                }
+                        ]
+                    }
 
 test_arguments :: TestTree
 test_arguments =
-    testCase "[hasDomainValues{}(\"illegal\")]" $
-        expectFailure $
-            parseHasDomainValues $
-                Attributes [illegalAttribute]
-  where
-    illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias = hasDomainValuesSymbol
-                , applicationChildren =
-                    [ (asAttributePattern . StringLiteralF . Const)
-                        (StringLiteral "illegal")
-                    ]
-                }
+    testCase "[hasDomainValues{}(\"illegal\")]"
+        $ expectFailure
+        $ parseHasDomainValues
+        $ Attributes [illegalAttribute]
+    where
+        illegalAttribute =
+            (asAttributePattern . ApplicationF)
+                Application
+                    { applicationSymbolOrAlias = hasDomainValuesSymbol
+                    , applicationChildren =
+                        [ (asAttributePattern . StringLiteralF . Const)
+                            (StringLiteral "illegal")
+                        ]
+                    }
 
 test_parameters :: TestTree
 test_parameters =
-    testCase "[hasDomainValues{illegal}()]" $
-        expectFailure $
-            parseHasDomainValues $
-                Attributes [illegalAttribute]
-  where
-    illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias =
-                    SymbolOrAlias
-                        { symbolOrAliasConstructor = hasDomainValuesId
-                        , symbolOrAliasParams =
-                            [SortVariableSort (SortVariable "illegal")]
-                        }
-                , applicationChildren = []
-                }
+    testCase "[hasDomainValues{illegal}()]"
+        $ expectFailure
+        $ parseHasDomainValues
+        $ Attributes [illegalAttribute]
+    where
+        illegalAttribute =
+            (asAttributePattern . ApplicationF)
+                Application
+                    { applicationSymbolOrAlias =
+                        SymbolOrAlias
+                            { symbolOrAliasConstructor = hasDomainValuesId
+                            , symbolOrAliasParams =
+                                [SortVariableSort (SortVariable "illegal")]
+                            }
+                    , applicationChildren = []
+                    }

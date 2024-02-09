@@ -124,8 +124,8 @@ makeEvaluateNot Not{notChild} =
             & Pattern.fromCondition (termLikeSort term)
             & MultiOr.singleton
         )
-  where
-    (term, condition) = Conditional.splitTerm notChild
+    where
+        (term, condition) = Conditional.splitTerm notChild
 
 {- | Given a not's @Internal.Condition@ argument, simplifies the @not@.
 
@@ -149,10 +149,10 @@ makeEvaluatePredicate
         Conditional
             { term = ()
             , predicate =
-                Predicate.markSimplified $
-                    makeNotPredicate $
-                        makeAndPredicate predicate $
-                            Substitution.toPredicate substitution
+                Predicate.markSimplified
+                    $ makeNotPredicate
+                    $ makeAndPredicate predicate
+                    $ Substitution.toPredicate substitution
             , substitution = mempty
             }
 
@@ -175,8 +175,8 @@ makeTermNot term
     | isBottom term = MultiOr.singleton (mkTop sort)
     | isTop term = MultiOr.singleton (mkBottom sort)
     | otherwise = MultiOr.singleton $ TermLike.markSimplified $ mkNot term
-  where
-    sort = TermLike.termLikeSort term
+    where
+        sort = TermLike.termLikeSort term
 
 -- | Distribute 'Not' over 'MultiOr' using de Morgan's identity.
 distributeNot ::
@@ -185,8 +185,8 @@ distributeNot ::
     MultiAnd (Not sort child)
 distributeNot notOr@Not{notChild} =
     MultiAnd.make $ worker <$> toList notChild
-  where
-    worker child = notOr{notChild = child}
+    where
+        worker child = notOr{notChild = child}
 
 -- | Distribute 'MultiAnd' over 'MultiOr' and 'scatter' into 'LogicT'.
 scatterAnd ::

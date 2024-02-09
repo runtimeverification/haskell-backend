@@ -96,12 +96,12 @@ equalInjectiveHeadsAndEquals
                     (markSimplified . mkApplySymbol firstHead)
                         (Pattern.term <$> children)
             return (Pattern.withCondition term merged)
-      where
-        UnifyEqualInjectiveHeads
-            { firstHead
-            , firstChildren
-            , secondChildren
-            } = unifyData
+        where
+            UnifyEqualInjectiveHeads
+                { firstHead
+                , firstChildren
+                , secondChildren
+                } = unifyData
 
 data DifferentConstructors = DifferentConstructors
     { term1, term2 :: !(TermLike RewritingVariableName)
@@ -155,5 +155,5 @@ constructorAndEqualsAssumesDifferentHeads
             \sort injections."
             term1
             term2
-      where
-        DifferentConstructors{term1, term2} = unifyData
+        where
+            DifferentConstructors{term1, term2} = unifyData

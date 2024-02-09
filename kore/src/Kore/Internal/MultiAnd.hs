@@ -162,15 +162,15 @@ make ::
     f child ->
     MultiAnd child
 make ~patts = foldr go mempty patts
-  where
-    go element ~mand =
-        case patternToMaybeBool element of
-            Just False -> MultiAndBottom element
-            Just True -> mand
-            Nothing -> case mand of
-                MultiAnd es -> MultiAnd $ Set.insert element es
-                MultiAndTop -> MultiAnd $ Set.singleton element
-                bottom -> bottom
+    where
+        go element ~mand =
+            case patternToMaybeBool element of
+                Just False -> MultiAndBottom element
+                Just True -> mand
+                Nothing -> case mand of
+                    MultiAnd es -> MultiAnd $ Set.insert element es
+                    MultiAndTop -> MultiAnd $ Set.singleton element
+                    bottom -> bottom
 
 fromTermLike ::
     InternalVariable variable =>

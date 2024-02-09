@@ -54,9 +54,9 @@ instance ParseAttributes SortInjection where
             Parser.getZeroArguments args
             when isSortInjection failDuplicate'
             return SortInjection{isSortInjection = True}
-      where
-        withApplication' = Parser.withApplication sortInjectionId
-        failDuplicate' = Parser.failDuplicate sortInjectionId
+        where
+            withApplication' = Parser.withApplication sortInjectionId
+            failDuplicate' = Parser.failDuplicate sortInjectionId
 
 instance From SortInjection Attributes where
     from SortInjection{isSortInjection} =

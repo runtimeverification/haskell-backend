@@ -33,7 +33,7 @@ parseKFileAttributes (Attributes attrs) =
         Left err -> errorParse $ printError err
         Right sourceLocation ->
             return sourceLocation
-  where
-    parser = foldlM (flip parseDefinitionLocation) Default.def attrs
-    parseDefinitionLocation source =
-        typed @SourceLocation (parseAttribute source)
+    where
+        parser = foldlM (flip parseDefinitionLocation) Default.def attrs
+        parseDefinitionLocation source =
+            typed @SourceLocation (parseAttribute source)

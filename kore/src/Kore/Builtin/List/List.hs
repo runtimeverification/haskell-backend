@@ -116,8 +116,8 @@ internalize tools termLike@(App_ symbol args)
             [InternalList_ list1, InternalList_ list2] ->
                 asInternal' (on (<>) internalListChild list1 list2)
             _ -> termLike
-  where
-    asInternal' = asInternal tools (termLikeSort termLike)
+    where
+        asInternal' = asInternal tools (termLikeSort termLike)
 internalize _ termLike = termLike
 
 -- | Find the symbol hooked to @LIST.get@ in an indexed module.

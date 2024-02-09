@@ -105,12 +105,12 @@ instance
 instance Synthetic Sort (Application Symbol) where
     synthetic application =
         resultSort & deepseq (matchSorts operandSorts children)
-      where
-        Application{applicationSymbolOrAlias = symbol} = application
-        Application{applicationChildren = children} = application
-        Symbol{symbolSorts} = symbol
-        resultSort = applicationSortsResult symbolSorts
-        operandSorts = applicationSortsOperands symbolSorts
+        where
+            Application{applicationSymbolOrAlias = symbol} = application
+            Application{applicationChildren = children} = application
+            Symbol{symbolSorts} = symbol
+            resultSort = applicationSortsResult symbolSorts
+            operandSorts = applicationSortsOperands symbolSorts
 
 instance SQL.Column Symbol where
     defineColumn = SQL.defineTextColumn

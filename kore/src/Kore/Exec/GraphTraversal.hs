@@ -106,19 +106,19 @@ instance Pretty a => Pretty (TransitionResult a) where
         Vacuous a -> single "Vacuous" a
         Final a -> single "Final" a
         Stop a as -> multi "Stop" "node" a "successors" as
-      where
-        single :: Doc x -> a -> Doc x
-        single lbl a =
-            Pretty.vsep [lbl, Pretty.indent 4 $ Pretty.pretty a]
+        where
+            single :: Doc x -> a -> Doc x
+            single lbl a =
+                Pretty.vsep [lbl, Pretty.indent 4 $ Pretty.pretty a]
 
-        multi :: Doc x -> Doc x -> a -> Doc x -> [a] -> Doc x
-        multi lbl lbl1 a lbl2 as =
-            Pretty.vsep $
-                [ lbl
-                , Pretty.indent 2 $ "- " <> lbl1
-                , Pretty.indent 4 $ Pretty.pretty a
-                , Pretty.indent 2 $ "- " <> lbl2
-                ]
+            multi :: Doc x -> Doc x -> a -> Doc x -> [a] -> Doc x
+            multi lbl lbl1 a lbl2 as =
+                Pretty.vsep
+                    $ [ lbl
+                      , Pretty.indent 2 $ "- " <> lbl1
+                      , Pretty.indent 4 $ Pretty.pretty a
+                      , Pretty.indent 2 $ "- " <> lbl2
+                      ]
                     <> map (Pretty.indent 4 . Pretty.pretty) as
 
 isStuckOrVacuous, isFinal, isStop, isBranch :: TransitionResult a -> Bool
@@ -256,126 +256,129 @@ graphTraversal
             >>= either
                 (pure . const (GotStuck 0 [IsStuck start]))
                 (\q -> evalStateT (worker ma q >>= checkLeftUnproven) [])
-      where
-        enqueue' = unfoldSearchOrder direction
+        where
+            enqueue' = unfoldSearchOrder direction
 
-        enqueue ::
-            [TState instr config] ->
-            Seq (TState instr config) ->
-            Simplifier
-                ( Either
-                    (LimitExceeded (TState instr config))
-                    (Seq (TState instr config))
-                )
-        enqueue as q = do
-            newQ <- enqueue' as q
-            pure $
-                if exceedsLimit newQ
-                    then Left (LimitExceeded newQ)
-                    else Right newQ
-
-        exceedsLimit :: Seq a -> Bool
-        exceedsLimit =
-            not . withinLimit breadthLimit . fromIntegral . Seq.length
-
-        -- when stopping at branches, turn a 'Branch' result into a 'Stopped'
-        branchStop :: TransitionResult (TState i c) -> TransitionResult (TState i c)
-        branchStop result
-            | isBranch result =
-                case stopOn of
-                    Leaf -> result
-                    LeafOrBranching ->
-                        Stop (fromJust $ extractState result) (extractNext result)
-            | otherwise = result
-
-        worker ::
-            MVar StepMovingAverage ->
-            Seq (TState instr config) ->
-            StateT
-                [TransitionResult (TState instr config)]
+            enqueue ::
+                [TState instr config] ->
+                Seq (TState instr config) ->
                 Simplifier
-                (TraversalResult (TState instr config))
-        worker _ Seq.Empty = Ended . reverse <$> gets (mapMaybe extractState)
-        worker ma (a :<| as) = do
-            result <- lift $ withTimeout ma a as $ step a as
-            case result of
-                Continue nextQ -> worker ma nextQ
-                Output oneResult nextQ -> do
-                    modify (oneResult :)
-                    if not (isStuckOrVacuous oneResult)
-                        then worker ma nextQ
-                        else do
-                            stuck <- gets (filter isStuckOrVacuous)
-                            if maxCounterExamples <= Limit (fromIntegral (length stuck))
-                                then
-                                    pure $
-                                        GotStuck (Seq.length nextQ) (mapMaybe extractStuckOrVacuous stuck)
-                                else worker ma nextQ
-                Abort _lastState queue -> do
-                    pure $ Aborted $ toList queue
-                Timeout lastState queue -> pure $ TimedOut lastState $ toList queue
+                    ( Either
+                        (LimitExceeded (TState instr config))
+                        (Seq (TState instr config))
+                    )
+            enqueue as q = do
+                newQ <- enqueue' as q
+                pure
+                    $ if exceedsLimit newQ
+                        then Left (LimitExceeded newQ)
+                        else Right newQ
 
-        withTimeout ma stepState stepQueue execStep =
-            getTimeoutMode timeout enableMA ma >>= \case
-                Nothing -> execStep
-                Just timeoutMode ->
-                    case graphTraversalTimeoutMode of
-                        GraphTraversalWarn -> do
-                            let warnThread = do
-                                    liftIO . threadDelay $ getTimeout timeoutMode
-                                    uninterruptibleMask_ $ do
-                                        case timeoutMode of
-                                            ManualTimeout t -> warnStepManualTimeout t
-                                            MovingAverage t -> warnStepMATimeout t
-                                        whenJust (unparseConfig $ currentState stepState) $
-                                            \config ->
-                                                liftIO . hPutStrLn stderr $
-                                                    "// Last configuration:\n" <> config
-                            withAsync warnThread (const $ timeAction execStep)
-                                >>= \(time, stepResult) -> do
-                                    updateStepMovingAverage ma time
-                                    pure stepResult
-                        GraphTraversalCancel -> do
-                            let warnThread =
-                                    liftIO $
-                                        threadDelay $
-                                            getTimeout timeoutMode
-                            race warnThread (timeAction execStep) >>= \case
-                                Right (time, stepResult) -> do
-                                    updateStepMovingAverage ma time
-                                    pure stepResult
-                                Left _ -> pure $ Timeout stepState stepQueue
+            exceedsLimit :: Seq a -> Bool
+            exceedsLimit =
+                not . withinLimit breadthLimit . fromIntegral . Seq.length
 
-        step ::
-            (TState instr config) ->
-            Seq (TState instr config) ->
-            Simplifier (StepResult (TState instr config))
-        step a q = do
-            next <- branchStop <$> transit a
-            if (isStuckOrVacuous next || isFinal next || isStop next)
-                then pure (Output next q)
-                else
-                    let abort (LimitExceeded queue) = Abort next queue
-                     in either abort Continue <$> enqueue (extractNext next) q
+            -- when stopping at branches, turn a 'Branch' result into a 'Stopped'
+            branchStop :: TransitionResult (TState i c) -> TransitionResult (TState i c)
+            branchStop result
+                | isBranch result =
+                    case stopOn of
+                        Leaf -> result
+                        LeafOrBranching ->
+                            Stop (fromJust $ extractState result) (extractNext result)
+                | otherwise = result
 
-        checkLeftUnproven ::
-            TraversalResult (TState instr config) ->
-            StateT
-                [TransitionResult (TState instr config)]
-                Simplifier
-                (TraversalResult config)
-        checkLeftUnproven = \case
-            result@(Ended{}) -> do
-                collected <- gets reverse
-                -- we collect a maximum of 'maxCounterExamples' Stuck states
-                let stuck = map (fmap currentState) $ filter isStuckOrVacuous collected
-                -- Other states may be unfinished but not stuck (Stop)
-                -- Only provide the requested amount of states (maxCounterExamples)
-                let unproven =
-                        takeWithin maxCounterExamples . map (fmap currentState) $
-                            filter isStop collected
-                pure $
-                    if
+            worker ::
+                MVar StepMovingAverage ->
+                Seq (TState instr config) ->
+                StateT
+                    [TransitionResult (TState instr config)]
+                    Simplifier
+                    (TraversalResult (TState instr config))
+            worker _ Seq.Empty = Ended . reverse <$> gets (mapMaybe extractState)
+            worker ma (a :<| as) = do
+                result <- lift $ withTimeout ma a as $ step a as
+                case result of
+                    Continue nextQ -> worker ma nextQ
+                    Output oneResult nextQ -> do
+                        modify (oneResult :)
+                        if not (isStuckOrVacuous oneResult)
+                            then worker ma nextQ
+                            else do
+                                stuck <- gets (filter isStuckOrVacuous)
+                                if maxCounterExamples <= Limit (fromIntegral (length stuck))
+                                    then
+                                        pure
+                                            $ GotStuck (Seq.length nextQ) (mapMaybe extractStuckOrVacuous stuck)
+                                    else worker ma nextQ
+                    Abort _lastState queue -> do
+                        pure $ Aborted $ toList queue
+                    Timeout lastState queue -> pure $ TimedOut lastState $ toList queue
+
+            withTimeout ma stepState stepQueue execStep =
+                getTimeoutMode timeout enableMA ma >>= \case
+                    Nothing -> execStep
+                    Just timeoutMode ->
+                        case graphTraversalTimeoutMode of
+                            GraphTraversalWarn -> do
+                                let warnThread = do
+                                        liftIO . threadDelay $ getTimeout timeoutMode
+                                        uninterruptibleMask_ $ do
+                                            case timeoutMode of
+                                                ManualTimeout t -> warnStepManualTimeout t
+                                                MovingAverage t -> warnStepMATimeout t
+                                            whenJust (unparseConfig $ currentState stepState)
+                                                $ \config ->
+                                                    liftIO
+                                                        . hPutStrLn stderr
+                                                        $ "// Last configuration:\n"
+                                                        <> config
+                                withAsync warnThread (const $ timeAction execStep)
+                                    >>= \(time, stepResult) -> do
+                                        updateStepMovingAverage ma time
+                                        pure stepResult
+                            GraphTraversalCancel -> do
+                                let warnThread =
+                                        liftIO
+                                            $ threadDelay
+                                            $ getTimeout timeoutMode
+                                race warnThread (timeAction execStep) >>= \case
+                                    Right (time, stepResult) -> do
+                                        updateStepMovingAverage ma time
+                                        pure stepResult
+                                    Left _ -> pure $ Timeout stepState stepQueue
+
+            step ::
+                (TState instr config) ->
+                Seq (TState instr config) ->
+                Simplifier (StepResult (TState instr config))
+            step a q = do
+                next <- branchStop <$> transit a
+                if (isStuckOrVacuous next || isFinal next || isStop next)
+                    then pure (Output next q)
+                    else
+                        let abort (LimitExceeded queue) = Abort next queue
+                         in either abort Continue <$> enqueue (extractNext next) q
+
+            checkLeftUnproven ::
+                TraversalResult (TState instr config) ->
+                StateT
+                    [TransitionResult (TState instr config)]
+                    Simplifier
+                    (TraversalResult config)
+            checkLeftUnproven = \case
+                result@(Ended{}) -> do
+                    collected <- gets reverse
+                    -- we collect a maximum of 'maxCounterExamples' Stuck states
+                    let stuck = map (fmap currentState) $ filter isStuckOrVacuous collected
+                    -- Other states may be unfinished but not stuck (Stop)
+                    -- Only provide the requested amount of states (maxCounterExamples)
+                    let unproven =
+                            takeWithin maxCounterExamples
+                                . map (fmap currentState)
+                                $ filter isStop collected
+                    pure
+                        $ if
                             | (not $ null stuck) ->
                                 GotStuck 0 (mapMaybe extractStuckOrVacuous stuck)
                             | not $ null unproven ->
@@ -383,7 +386,7 @@ graphTraversal
                                     (mapMaybe extractState unproven)
                                     (concatMap extractNext unproven)
                             | otherwise -> fmap currentState result
-            other -> pure $ fmap currentState other
+                other -> pure $ fmap currentState other
 
 {- | Used to select whether the step should be canceled
  when the timeout is reached or not.
@@ -451,24 +454,30 @@ instance (Debug a, Diff a) => Diff (TraversalResult a)
 instance Pretty a => Pretty (TraversalResult a) where
     pretty = \case
         GotStuck n as ->
-            Pretty.hang 4 . Pretty.vsep $
-                ("Got stuck with queue of " <> Pretty.pretty n)
-                    : map Pretty.pretty as
+            Pretty.hang 4
+                . Pretty.vsep
+                $ ("Got stuck with queue of " <> Pretty.pretty n)
+                : map Pretty.pretty as
         Aborted as ->
-            Pretty.hang 4 . Pretty.vsep $
-                "Aborted with queue of "
-                    : map Pretty.pretty as
+            Pretty.hang 4
+                . Pretty.vsep
+                $ "Aborted with queue of "
+                : map Pretty.pretty as
         Ended as ->
-            Pretty.hang 4 . Pretty.vsep $
-                "Ended" : map Pretty.pretty as
+            Pretty.hang 4
+                . Pretty.vsep
+                $ "Ended"
+                : map Pretty.pretty as
         Stopped as qu ->
-            Pretty.hang 4 . Pretty.vsep $
-                ("Stopped" : map Pretty.pretty as)
-                    <> ("Queue" : map Pretty.pretty qu)
+            Pretty.hang 4
+                . Pretty.vsep
+                $ ("Stopped" : map Pretty.pretty as)
+                <> ("Queue" : map Pretty.pretty qu)
         TimedOut as qu ->
-            Pretty.hang 4 . Pretty.vsep $
-                ("Timed out" <> Pretty.pretty as)
-                    : ("Queue" : map Pretty.pretty qu)
+            Pretty.hang 4
+                . Pretty.vsep
+                $ ("Timed out" <> Pretty.pretty as)
+                : ("Queue" : map Pretty.pretty qu)
 instance Functor TraversalResult where
     fmap f = \case
         GotStuck n rs -> GotStuck n (map (fmap f) rs)
@@ -494,17 +503,17 @@ simpleTransition ::
     TState instr config ->
     m (TransitionResult (TState instr config))
 simpleTransition apply mapToResult = tt
-  where
-    tt :: TState instr config -> m (TransitionResult (TState instr config))
-    tt TState{nextSteps, currentState = config} =
-        case nextSteps of
-            [] ->
-                pure $ fmap (TState []) $ mapToResult config []
-            [] : iss ->
-                tt $ TState iss config
-            is : iss ->
-                (fmap (TState iss) . mapToResult config . map fst)
-                    <$> runTransitionT (foldM (flip apply) config is)
+    where
+        tt :: TState instr config -> m (TransitionResult (TState instr config))
+        tt TState{nextSteps, currentState = config} =
+            case nextSteps of
+                [] ->
+                    pure $ fmap (TState []) $ mapToResult config []
+                [] : iss ->
+                    tt $ TState iss config
+                is : iss ->
+                    (fmap (TState iss) . mapToResult config . map fst)
+                        <$> runTransitionT (foldM (flip apply) config is)
 
 {- | Construct a transit function for the traversal from its primitive
  steps @prim@ and an interpretation of resulting next states _and
@@ -531,14 +540,14 @@ transitionWithRule ::
     TState instr config ->
     m (TransitionResult (TState instr config))
 transitionWithRule apply mapToResult = tt
-  where
-    tt :: TState instr config -> m (TransitionResult (TState instr config))
-    tt TState{nextSteps, currentState = config} =
-        case nextSteps of
-            [] ->
-                pure $ fmap (TState []) $ mapToResult config []
-            [] : iss ->
-                tt $ TState iss config
-            is : iss ->
-                (fmap (TState iss) . mapToResult config)
-                    <$> runTransitionT (foldM (flip apply) config is)
+    where
+        tt :: TState instr config -> m (TransitionResult (TState instr config))
+        tt TState{nextSteps, currentState = config} =
+            case nextSteps of
+                [] ->
+                    pure $ fmap (TState []) $ mapToResult config []
+                [] : iss ->
+                    tt $ TState iss config
+                is : iss ->
+                    (fmap (TState iss) . mapToResult config)
+                        <$> runTransitionT (foldM (flip apply) config is)

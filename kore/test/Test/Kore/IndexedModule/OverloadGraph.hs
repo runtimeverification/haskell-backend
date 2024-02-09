@@ -71,8 +71,8 @@ test_isOverloaded =
     , test "overloaded, highest" (isOverloaded' symbolD)
     , test "not overloaded" (not (isOverloaded' symbolE))
     ]
-  where
-    test name cond = testCase name (assertBool "" cond)
+    where
+        test name cond = testCase name (assertBool "" cond)
 
 test_isOverloading :: [TestTree]
 test_isOverloading =
@@ -87,8 +87,8 @@ test_isOverloading =
         "not overloading, symbol not overloaded"
         (not (isOverloading' symbolD symbolE))
     ]
-  where
-    test name cond = testCase name (assertBool "" cond)
+    where
+        test name cond = testCase name (assertBool "" cond)
 
 test_commonOverloads :: [TestTree]
 test_commonOverloads =
@@ -105,67 +105,67 @@ test_commonOverloads =
         []
         (commonOverloads' symbolA symbolE)
     ]
-  where
-    test name expected actual =
-        testCase
-            name
-            (assertEqual "" (Set.fromList expected) (Set.fromList actual))
+    where
+        test name expected actual =
+            testCase
+                name
+                (assertEqual "" (Set.fromList expected) (Set.fromList actual))
 
 test_fromIndexedModule :: TestTree
 test_fromIndexedModule =
-    testCase "fromIndexedModule = fromSubsorts" $
-        assertEqual
+    testCase "fromIndexedModule = fromSubsorts"
+        $ assertEqual
             ""
             overloadGraph
             (fromIndexedModule verifiedModule)
-  where
-    verifiedModules =
-        assertRight $ verifyAndIndexDefinition Builtin.koreVerifiers definition
+    where
+        verifiedModules =
+            assertRight $ verifyAndIndexDefinition Builtin.koreVerifiers definition
 
-    verifiedModule =
-        fromMaybe
-            (error $ "Missing module: " ++ show testModuleName)
-            (Map.lookup testModuleName verifiedModules)
+        verifiedModule =
+            fromMaybe
+                (error $ "Missing module: " ++ show testModuleName)
+                (Map.lookup testModuleName verifiedModules)
 
-    definition =
-        Definition
-            { definitionAttributes = Attributes []
-            , definitionModules = [overloadsModule]
-            }
+        definition =
+            Definition
+                { definitionAttributes = Attributes []
+                , definitionModules = [overloadsModule]
+                }
 
-    overloadsModule =
-        Module
-            { moduleName = testModuleName
-            , moduleSentences =
-                [ Definition.sortDecl Mock.testSort
-                , Definition.symbolDecl symbolA
-                , Definition.symbolDecl symbolB
-                , Definition.symbolDecl symbolC
-                , Definition.symbolDecl symbolD
-                , Definition.symbolDecl symbolE
-                , overloadAxiom symbolD symbolC
-                , overloadAxiom symbolD symbolB
-                , overloadAxiom symbolD symbolA
-                , overloadAxiom symbolC symbolA
-                , overloadAxiom symbolB symbolA
-                ]
-            , moduleAttributes = Attributes []
-            }
+        overloadsModule =
+            Module
+                { moduleName = testModuleName
+                , moduleSentences =
+                    [ Definition.sortDecl Mock.testSort
+                    , Definition.symbolDecl symbolA
+                    , Definition.symbolDecl symbolB
+                    , Definition.symbolDecl symbolC
+                    , Definition.symbolDecl symbolD
+                    , Definition.symbolDecl symbolE
+                    , overloadAxiom symbolD symbolC
+                    , overloadAxiom symbolD symbolB
+                    , overloadAxiom symbolD symbolA
+                    , overloadAxiom symbolC symbolA
+                    , overloadAxiom symbolB symbolA
+                    ]
+                , moduleAttributes = Attributes []
+                }
 
-    testModuleName = "OVERLOADS"
+        testModuleName = "OVERLOADS"
 
-    overloadAxiom :: Symbol -> Symbol -> ParsedSentence
-    overloadAxiom
-        (toSymbolOrAlias -> overloading)
-        (toSymbolOrAlias -> overloaded) =
-            SentenceAxiomSentence
-                SentenceAxiom
-                    { sentenceAxiomParameters = [sortVariable "R"]
-                    , sentenceAxiomPattern = externalize (mkTop sortVarR)
-                    , sentenceAxiomAttributes =
-                        Attributes
-                            [overloadAttribute overloading overloaded]
-                    }
+        overloadAxiom :: Symbol -> Symbol -> ParsedSentence
+        overloadAxiom
+            (toSymbolOrAlias -> overloading)
+            (toSymbolOrAlias -> overloaded) =
+                SentenceAxiomSentence
+                    SentenceAxiom
+                        { sentenceAxiomParameters = [sortVariable "R"]
+                        , sentenceAxiomPattern = externalize (mkTop sortVarR)
+                        , sentenceAxiomAttributes =
+                            Attributes
+                                [overloadAttribute overloading overloaded]
+                        }
 
-    sortVarR :: Sort
-    sortVarR = sortVariableSort "R"
+        sortVarR :: Sort
+        sortVarR = sortVariableSort "R"

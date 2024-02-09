@@ -200,25 +200,25 @@ instance ClaimExtractor OnePathClaim where
                                     attributes
                             (right', existentials') =
                                 ClaimPattern.termToExistentials rhs'
-                        pure $
-                            OnePathClaim $
-                                ClaimPattern.refreshExistentials
-                                    ClaimPattern
-                                        { ClaimPattern.left =
-                                            Pattern.fromTermAndPredicate
-                                                lhs
-                                                (Predicate.wrapPredicate requires)
-                                                & Pattern.mapVariables (pure mkRuleVariable)
-                                        , ClaimPattern.right = parseRightHandSide right'
-                                        , ClaimPattern.existentials = existentials'
-                                        , ClaimPattern.attributes = attributes'
-                                        }
-                  where
-                    aliasId = (getId . aliasConstructor) alias
+                        pure
+                            $ OnePathClaim
+                            $ ClaimPattern.refreshExistentials
+                                ClaimPattern
+                                    { ClaimPattern.left =
+                                        Pattern.fromTermAndPredicate
+                                            lhs
+                                            (Predicate.wrapPredicate requires)
+                                            & Pattern.mapVariables (pure mkRuleVariable)
+                                    , ClaimPattern.right = parseRightHandSide right'
+                                    , ClaimPattern.existentials = existentials'
+                                    , ClaimPattern.attributes = attributes'
+                                    }
+                    where
+                        aliasId = (getId . aliasConstructor) alias
             _ -> Nothing
-      where
-        termLike =
-            (Syntax.sentenceAxiomPattern . Syntax.getSentenceClaim) sentence
+        where
+            termLike =
+                (Syntax.sentenceAxiomPattern . Syntax.getSentenceClaim) sentence
 
 deriveSeqAxiomOnePath ::
     [Rule OnePathClaim] ->
@@ -230,9 +230,9 @@ deriveSeqAxiomOnePath ::
 deriveSeqAxiomOnePath rules =
     deriveSeq' _Unwrapped OnePathRewriteRule rewrites
         >=> simplifyRemainder
-  where
-    rewrites = unRuleOnePath <$> rules
-    simplifyRemainder applied =
-        case applied of
-            ApplyRemainder claim -> ApplyRemainder <$> simplify claim
-            _ -> return applied
+    where
+        rewrites = unRuleOnePath <$> rules
+        simplifyRemainder applied =
+            case applied of
+                ApplyRemainder claim -> ApplyRemainder <$> simplify claim
+                _ -> return applied

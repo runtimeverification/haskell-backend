@@ -33,8 +33,8 @@ verifySort _ declaredSortVariables (SortVariableSort variable) =
             [variableId]
             ("Sort variable " <> getId variableId <> " not declared.")
         verifySuccess
-  where
-    variableId = getSortVariable variable
+    where
+        variableId = getSortVariable variable
 verifySort findSortDescription declaredSortVariables (SortActualSort sort) =
     do
         withLocationAndContext
@@ -56,10 +56,10 @@ verifySort findSortDescription declaredSortVariables (SortActualSort sort) =
                 <> " with non-empty Parameter sorts."
             )
         verifySuccess
-  where
-    sortIsMeta = False
-    sortName = sortActualName sort
-    sortId = getId sortName
+    where
+        sortIsMeta = False
+        sortName = sortActualName sort
+        sortId = getId sortName
 
 verifySortMatchesDeclaration ::
     MonadError (Error VerifyError) m =>
@@ -86,6 +86,6 @@ verifySortMatchesDeclaration
                 (verifySort findSortDescription declaredSortVariables)
                 (sortActualSorts sort)
             verifySuccess
-      where
-        actualSortCount = length (sortActualSorts sort)
-        declaredSortCount = length (sentenceSortParameters sortDescription)
+        where
+            actualSortCount = length (sortActualSorts sort)
+            declaredSortCount = length (sentenceSortParameters sortDescription)

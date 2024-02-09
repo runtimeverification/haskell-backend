@@ -134,10 +134,10 @@ unequals_ actual unexpected =
 has :: forall a. HasCallStack => a -> [(a -> Bool, Bool)] -> String -> TestTree
 has value tuples name =
     testCase name (traverse_ checkOne tuples)
-  where
-    checkOne :: (a -> Bool, Bool) -> Assertion
-    checkOne (predicate, expected) =
-        assertEqual "" expected (predicate value)
+    where
+        checkOne :: (a -> Bool, Bool) -> Assertion
+        checkOne (predicate, expected) =
+            assertEqual "" expected (predicate value)
 
 {- |
  > 1 `has_` [(isPositive, True), (isEven, False) ]
@@ -157,10 +157,10 @@ gives ::
     TestTree
 gives predicate tuples name =
     testCase name (traverse_ checkOne tuples)
-  where
-    checkOne :: (a, Bool) -> Assertion
-    checkOne (value, expected) =
-        assertEqual "" expected (predicate value)
+    where
+        checkOne :: (a, Bool) -> Assertion
+        checkOne (value, expected) =
+            assertEqual "" expected (predicate value)
 
 {- |
  > isOdd `gives_` [ (1, True), (2, False) ]
@@ -215,9 +215,9 @@ throws_ = throws_from_expected
 -}
 actual_predicate_name :: HasCallStack => a -> (a -> Bool) -> String -> TestTree
 actual_predicate_name actual predicate name =
-    testCase name $
-        assertEqual "" True $
-            predicate actual
+    testCase name
+        $ assertEqual "" True
+        $ predicate actual
 
 {- |
  > actual_predicate 3 isOdd
@@ -298,11 +298,11 @@ throws_from_expected_name_intention ~lazyValue expected name intention =
     testCase name $ do
         catch (evaluate lazyValue >> missingThrow) messageChecker
         return ()
-  where
-    missingThrow =
-        assertFailure $ "No `error` was raised for " <> name <> "."
+    where
+        missingThrow =
+            assertFailure $ "No `error` was raised for " <> name <> "."
 
-    messageChecker (ErrorCall msg) = assertEqual intention msg expected
+        messageChecker (ErrorCall msg) = assertEqual intention msg expected
 
 throws_from_expected_name ::
     HasCallStack =>

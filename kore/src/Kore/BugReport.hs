@@ -83,21 +83,22 @@ data BugReportOption
 parseBugReportOption :: Parser BugReportOption
 parseBugReportOption =
     parseBugReportEnable <|> parseBugReportDisable
-  where
-    parseBugReportEnable =
-        BugReportEnable . BugReport
-            <$> strOption
-                ( metavar "REPORT_FILE"
-                    <> long "bug-report"
-                    <> help "Generate reproducible example of bug at REPORT_FILE.tar.gz"
+    where
+        parseBugReportEnable =
+            BugReportEnable
+                . BugReport
+                <$> strOption
+                    ( metavar "REPORT_FILE"
+                        <> long "bug-report"
+                        <> help "Generate reproducible example of bug at REPORT_FILE.tar.gz"
+                    )
+        parseBugReportDisable =
+            flag
+                BugReportOnError
+                BugReportDisable
+                ( long "no-bug-report"
+                    <> help "Disables the creation of a bug report."
                 )
-    parseBugReportDisable =
-        flag
-            BugReportOnError
-            BugReportDisable
-            ( long "no-bug-report"
-                <> help "Disables the creation of a bug report."
-            )
 
 -- | Create a @.tar.gz@ archive containing the bug report.
 writeBugReportArchive ::
@@ -115,7 +116,9 @@ writeBugReportArchive base tar = do
             removeFile sessionCommands
     contents <- listDirectory base
     let filename = tar <.> "tar" <.> "gz"
-    ByteString.Lazy.writeFile filename . GZip.compress . Tar.write
+    ByteString.Lazy.writeFile filename
+        . GZip.compress
+        . Tar.write
         =<< Tar.pack base contents
     (hPutStrLn stderr . unwords) ["Created bug report:", filename]
 
@@ -139,42 +142,42 @@ withBugReport exeName bugReportOption act =
                 act
         pure exitCode
         & handleAll handler
-  where
-    handler _ = pure (ExitFailure 1)
-    acquireTempDirectory = do
-        tmp <- getCanonicalTemporaryDirectory
-        createTempDirectory tmp (getExeName exeName)
-    releaseTempDirectory tmpDir exitCase = do
-        case exitCase of
-            ExitCaseSuccess _ -> optionalWriteBugReport tmpDir
-            ExitCaseException someException
-                | Just ExitSuccess == fromException someException ->
-                    {- User exits the repl after the proof was finished -}
-                    optionalWriteBugReport tmpDir
-                | Just UserInterrupt == fromException someException ->
-                    optionalWriteBugReport tmpDir
-                | Just (DebugOptionsValidationError _) <- fromException someException ->
-                    optionalWriteBugReport tmpDir
-                | Just (ioe :: IOException) <- fromException someException
-                , NoSuchThing <- ioe_type ioe -> do
-                    hPutStrLn stderr $ displayException someException
-                    optionalWriteBugReport tmpDir
-                | otherwise -> do
-                    let message = displayException someException
-                    hPutStrLn stderr message
-                    writeFile (tmpDir </> "error" <.> "log") message
-                    alwaysWriteBugReport tmpDir
-            ExitCaseAbort -> alwaysWriteBugReport tmpDir
-        removePathForcibly tmpDir
-    alwaysWriteBugReport tmpDir =
-        case bugReportOption of
-            BugReportEnable bugReport ->
-                writeBugReportArchive tmpDir (toReport bugReport)
-            BugReportOnError ->
-                writeBugReportArchive tmpDir (getExeName exeName)
-            BugReportDisable -> pure ()
-    optionalWriteBugReport tmpDir =
-        case bugReportOption of
-            BugReportEnable bugReport ->
-                writeBugReportArchive tmpDir (toReport bugReport)
-            _ -> pure ()
+    where
+        handler _ = pure (ExitFailure 1)
+        acquireTempDirectory = do
+            tmp <- getCanonicalTemporaryDirectory
+            createTempDirectory tmp (getExeName exeName)
+        releaseTempDirectory tmpDir exitCase = do
+            case exitCase of
+                ExitCaseSuccess _ -> optionalWriteBugReport tmpDir
+                ExitCaseException someException
+                    | Just ExitSuccess == fromException someException ->
+                        {- User exits the repl after the proof was finished -}
+                        optionalWriteBugReport tmpDir
+                    | Just UserInterrupt == fromException someException ->
+                        optionalWriteBugReport tmpDir
+                    | Just (DebugOptionsValidationError _) <- fromException someException ->
+                        optionalWriteBugReport tmpDir
+                    | Just (ioe :: IOException) <- fromException someException
+                    , NoSuchThing <- ioe_type ioe -> do
+                        hPutStrLn stderr $ displayException someException
+                        optionalWriteBugReport tmpDir
+                    | otherwise -> do
+                        let message = displayException someException
+                        hPutStrLn stderr message
+                        writeFile (tmpDir </> "error" <.> "log") message
+                        alwaysWriteBugReport tmpDir
+                ExitCaseAbort -> alwaysWriteBugReport tmpDir
+            removePathForcibly tmpDir
+        alwaysWriteBugReport tmpDir =
+            case bugReportOption of
+                BugReportEnable bugReport ->
+                    writeBugReportArchive tmpDir (toReport bugReport)
+                BugReportOnError ->
+                    writeBugReportArchive tmpDir (getExeName exeName)
+                BugReportDisable -> pure ()
+        optionalWriteBugReport tmpDir =
+            case bugReportOption of
+                BugReportEnable bugReport ->
+                    writeBugReportArchive tmpDir (toReport bugReport)
+                _ -> pure ()

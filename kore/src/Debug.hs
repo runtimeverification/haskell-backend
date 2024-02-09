@@ -140,8 +140,8 @@ encloseSep ldelim rdelim sep =
     \case
         [] -> ldelim <> rdelim
         (doc : docs) ->
-            mconcat $
-                concat
+            mconcat
+                $ concat
                     [ [ldelim <+> doc]
                     , map ((Pretty.line' <> sep) <+>) docs
                     , [Pretty.line, rdelim]
@@ -191,8 +191,8 @@ debugPrecGeneric ::
     Doc ann
 debugPrecGeneric a =
     debugPrecAux constructors (debugSOP (SOP.from a))
-  where
-    constructors = SOP.constructorInfo . SOP.datatypeInfo $ Proxy @a
+    where
+        constructors = SOP.constructorInfo . SOP.datatypeInfo $ Proxy @a
 
 debugPrecAux ::
     forall xss ann.
@@ -220,12 +220,12 @@ debugConstr (SOP.Constructor name) args =
         parens (precOut >= precConstr && (not . null) args')
             . Pretty.nest 4
             $ Pretty.sep (name' : args')
-  where
-    name' = parens needsParens (Pretty.pretty name)
-      where
-        initial = head name
-        needsParens = (not . Char.isLetter) initial && initial /= '('
-    args' = map ($ precConstr) (SOP.hcollapse args)
+    where
+        name' = parens needsParens (Pretty.pretty name)
+            where
+                initial = head name
+                needsParens = (not . Char.isLetter) initial && initial /= '('
+        args' = map ($ precConstr) (SOP.hcollapse args)
 debugConstr (SOP.Infix name _ precInfix) (K x :* K y :* Nil) =
     K $ \precOut ->
         parens (precOut >= precInfix)
@@ -241,14 +241,14 @@ debugConstr (SOP.Record name fields) args =
                 , Pretty.line
                 , encloseSep Pretty.lbrace Pretty.rbrace Pretty.comma args'
                 ]
-  where
-    args' = SOP.hcollapse $ SOP.hzipWith debugField fields args
+    where
+        args' = SOP.hcollapse $ SOP.hzipWith debugField fields args
 
-    debugField :: FieldInfo x -> K (Int -> Doc ann) x -> K (Doc ann) x
-    debugField (FieldInfo fieldName) (K arg) =
-        K $
-            Pretty.nest 4 $
-                Pretty.sep
+        debugField :: FieldInfo x -> K (Int -> Doc ann) x -> K (Doc ann) x
+        debugField (FieldInfo fieldName) (K arg) =
+            K
+                $ Pretty.nest 4
+                $ Pretty.sep
                     [ Pretty.pretty fieldName Pretty.<+> "="
                     , arg 0
                     ]
@@ -260,9 +260,9 @@ debugSOP ::
     SOP (K (Int -> Doc ann)) xss
 debugSOP (SOP sop) =
     SOP $ SOP.hcmap pAllDebug (SOP.hcmap pDebug (SOP.mapIK debugPrecBrief)) sop
-  where
-    pDebug = Proxy :: Proxy Debug
-    pAllDebug = Proxy :: Proxy (All Debug)
+    where
+        pDebug = Proxy :: Proxy Debug
+        pAllDebug = Proxy :: Proxy (All Debug)
 
 instance Debug a => Debug [a] where
     debugPrec as _ =
@@ -326,8 +326,8 @@ instance (Debug a, Debug (f b)) => Debug (CofreeF f a b) where
 constructorInfoCofreeF :: NP ConstructorInfo '[ '[x, y]]
 constructorInfoCofreeF =
     constrInfo :* Nil
-  where
-    constrInfo = SOP.Infix ":<" SOP.RightAssociative 5
+    where
+        constrInfo = SOP.Infix ":<" SOP.RightAssociative 5
 
 fromCofreeF :: CofreeF f a b -> SOP I '[ '[a, f b]]
 fromCofreeF (a :< fb) = SOP (Z (I a :* I fb :* Nil))
@@ -389,8 +389,10 @@ instance Debug GHC.SrcLoc
 -- | Prints a typed hole for the function.
 instance (Typeable a, Typeable b) => Debug (a -> b) where
     debugPrec f = \precOut ->
-        parens (precOut > 0) $
-            "_" <+> "::" <+> (Pretty.pretty . show) (typeOf f)
+        parens (precOut > 0)
+            $ "_"
+            <+> "::"
+            <+> (Pretty.pretty . show) (typeOf f)
 
 instance Debug a => Debug (Hashed a) where
     debugPrec h precOut =
@@ -472,8 +474,8 @@ diffPrecGeneric ::
     Maybe (Int -> Doc ann)
 diffPrecGeneric a b =
     diffPrecSOP constructors (a, SOP.from a) (b, SOP.from b)
-  where
-    constructors = SOP.constructorInfo . SOP.datatypeInfo $ Proxy @a
+    where
+        constructors = SOP.constructorInfo . SOP.datatypeInfo $ Proxy @a
 
 diffPrecSOP ::
     forall a xss ann.
@@ -484,52 +486,52 @@ diffPrecSOP ::
     Maybe (Int -> Doc ann)
 diffPrecSOP constructors (a, SOP aNS) (b, SOP bNS) =
     diffNS constructors aNS bNS
-  where
-    diffNS ::
-        forall xss'.
-        All2 Diff xss' =>
-        NP ConstructorInfo xss' ->
-        NS (NP I) xss' ->
-        NS (NP I) xss' ->
-        Maybe (Int -> Doc ann)
-    diffNS (c :* _) (Z aNP) (Z bNP) = diffNP c aNP bNP
-    diffNS (_ :* cs) (S aNS') (S bNS') = diffNS cs aNS' bNS'
-    diffNS _ _ _ =
-        Just $ \precOut ->
-            Pretty.sep
-                [ "{- was:"
-                , debugPrec a precOut
-                , "-}"
-                , debugPrec b precOut
-                ]
+    where
+        diffNS ::
+            forall xss'.
+            All2 Diff xss' =>
+            NP ConstructorInfo xss' ->
+            NS (NP I) xss' ->
+            NS (NP I) xss' ->
+            Maybe (Int -> Doc ann)
+        diffNS (c :* _) (Z aNP) (Z bNP) = diffNP c aNP bNP
+        diffNS (_ :* cs) (S aNS') (S bNS') = diffNS cs aNS' bNS'
+        diffNS _ _ _ =
+            Just $ \precOut ->
+                Pretty.sep
+                    [ "{- was:"
+                    , debugPrec a precOut
+                    , "-}"
+                    , debugPrec b precOut
+                    ]
 
-    diffNP ::
-        forall xs.
-        All Diff xs =>
-        ConstructorInfo xs ->
-        NP I xs ->
-        NP I xs ->
-        Maybe (Int -> Doc ann)
-    diffNP c aNP bNP
-        | anyNP (isJust . SOP.unK) cNP =
-            Just $ SOP.unK $ debugConstr c (SOP.hmap (SOP.mapKK maybeHole) cNP)
-        | otherwise =
-            Nothing
-      where
-        cNP = diffNP' aNP bNP
-        maybeHole = fromMaybe (const "_")
+        diffNP ::
+            forall xs.
+            All Diff xs =>
+            ConstructorInfo xs ->
+            NP I xs ->
+            NP I xs ->
+            Maybe (Int -> Doc ann)
+        diffNP c aNP bNP
+            | anyNP (isJust . SOP.unK) cNP =
+                Just $ SOP.unK $ debugConstr c (SOP.hmap (SOP.mapKK maybeHole) cNP)
+            | otherwise =
+                Nothing
+            where
+                cNP = diffNP' aNP bNP
+                maybeHole = fromMaybe (const "_")
 
-    anyNP :: forall f xs. (forall x. f x -> Bool) -> NP f xs -> Bool
-    anyNP query (fx :* fxs) = query fx || anyNP query fxs
-    anyNP _ Nil = False
+        anyNP :: forall f xs. (forall x. f x -> Bool) -> NP f xs -> Bool
+        anyNP query (fx :* fxs) = query fx || anyNP query fxs
+        anyNP _ Nil = False
 
-    diffNP' ::
-        forall xs.
-        All Diff xs =>
-        NP I xs ->
-        NP I xs ->
-        NP (K (Maybe (Int -> Doc ann))) xs
-    diffNP' = SOP.hczipWith (Proxy @Diff) (SOP.mapIIK diffPrec)
+        diffNP' ::
+            forall xs.
+            All Diff xs =>
+            NP I xs ->
+            NP I xs ->
+            NP (K (Maybe (Int -> Doc ann))) xs
+        diffNP' = SOP.hczipWith (Proxy @Diff) (SOP.mapIIK diffPrec)
 
 instance Diff Bool where
     diffPrec = diffPrecEq
@@ -606,11 +608,11 @@ instance
 
 instance (Debug a, Diff a) => Diff (Seq a) where
     diffPrec as bs =
-        fmap wrapFromList $
-            diffPrec (toList as) (toList bs)
-      where
-        wrapFromList diff' precOut =
-            parens (precOut >= 10) $ "Data.Sequence.fromList" <+> diff' 10
+        fmap wrapFromList
+            $ diffPrec (toList as) (toList bs)
+        where
+            wrapFromList diff' precOut =
+                parens (precOut >= 10) $ "Data.Sequence.fromList" <+> diff' 10
 
 instance
     (Debug key, Debug value, Diff key, Diff value) =>
@@ -618,9 +620,9 @@ instance
     where
     diffPrec as bs =
         fmap wrapFromList $ diffPrec (Map.toList as) (Map.toList bs)
-      where
-        wrapFromList diff' precOut =
-            parens (precOut >= 10) $ "Data.Map.Strict.fromList" <+> diff' 10
+        where
+            wrapFromList diff' precOut =
+                parens (precOut >= 10) $ "Data.Map.Strict.fromList" <+> diff' 10
 
 instance
     (Debug key, Debug value, Diff key, Diff value) =>
@@ -628,25 +630,25 @@ instance
     where
     diffPrec as bs =
         fmap wrapFromList $ diffPrec (HashMap.toList as) (HashMap.toList bs)
-      where
-        wrapFromList diff' precOut =
-            parens (precOut >= 10) $ "Data.HashMap.Strict.fromList" <+> diff' 10
+        where
+            wrapFromList diff' precOut =
+                parens (precOut >= 10) $ "Data.HashMap.Strict.fromList" <+> diff' 10
 
 instance (Debug a, Debug b, Diff a, Diff b) => Diff (a, b)
 
 instance (Debug a, Diff a) => Diff (Set a) where
     diffPrec as bs =
         fmap wrapFromList $ diffPrec (Set.toList as) (Set.toList bs)
-      where
-        wrapFromList diff' precOut =
-            parens (precOut >= 10) $ "Data.Set.fromList" <+> diff' 10
+        where
+            wrapFromList diff' precOut =
+                parens (precOut >= 10) $ "Data.Set.fromList" <+> diff' 10
 
 instance (Debug a, Diff a) => Diff (HashSet a) where
     diffPrec as bs =
         fmap wrapFromList $ diffPrec (HashSet.toList as) (HashSet.toList bs)
-      where
-        wrapFromList diff' precOut =
-            parens (precOut >= 10) $ "Data.HashSet.fromList" <+> diff' 10
+        where
+            wrapFromList diff' precOut =
+                parens (precOut >= 10) $ "Data.HashSet.fromList" <+> diff' 10
 
 instance Diff ExitCode
 
@@ -659,9 +661,9 @@ instance Diff (a -> b) where
 instance (Debug a, Diff a) => Diff (Hashed a) where
     diffPrec ha hb =
         fmap wrapFromList $ diffPrec (unhashed ha) (unhashed hb)
-      where
-        wrapFromList diff' precOut =
-            parens (precOut >= 10) $ "Data.Hashable.hashed" <+> diff' 10
+        where
+            wrapFromList diff' precOut =
+                parens (precOut >= 10) $ "Data.Hashable.hashed" <+> diff' 10
 
 formatExceptionInfo :: (HasCallStack, Monad m) => Text -> m ()
 formatExceptionInfo message = do

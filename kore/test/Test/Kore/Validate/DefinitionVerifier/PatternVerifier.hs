@@ -143,8 +143,8 @@ test_patternVerifier =
             Mu
                 { muVariable = objectSetVariable'
                 , muChild =
-                    externalize $
-                        Internal.mkSetVar anotherSetVariable
+                    externalize
+                        $ Internal.mkSetVar anotherSetVariable
                 }
         )
         (NamePrefix "dummy")
@@ -175,8 +175,8 @@ test_patternVerifier =
             Nu
                 { nuVariable = objectSetVariable'
                 , nuChild =
-                    externalize $
-                        Internal.mkSetVar anotherSetVariable
+                    externalize
+                        $ Internal.mkSetVar anotherSetVariable
                 }
         )
         (NamePrefix "dummy")
@@ -210,8 +210,8 @@ test_patternVerifier =
                 { existsSort = objectSort
                 , existsVariable = objectVariable'
                 , existsChild =
-                    embedParsedPattern $
-                        simpleExistsPattern
+                    embedParsedPattern
+                        $ simpleExistsPattern
                             objectVariableSortVariable
                             objectSortVariableSort
                 }
@@ -472,8 +472,8 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = intSort
                 , domainValueChild =
-                    externalize $
-                        Internal.mkStringLiteral "abcd" -- Not a decimal integer
+                    externalize
+                        $ Internal.mkStringLiteral "abcd" -- Not a decimal integer
                 }
         )
         (NamePrefix "dummy")
@@ -488,8 +488,8 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = intSort
                 , domainValueChild =
-                    externalize $
-                        Internal.mkStringLiteral "-256"
+                    externalize
+                        $ Internal.mkStringLiteral "-256"
                 }
         )
         (NamePrefix "dummy")
@@ -504,8 +504,8 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = intSort
                 , domainValueChild =
-                    externalize $
-                        Internal.mkStringLiteral "1024"
+                    externalize
+                        $ Internal.mkStringLiteral "1024"
                 }
         )
         (NamePrefix "dummy")
@@ -520,8 +520,8 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = intSort
                 , domainValueChild =
-                    externalize $
-                        Internal.mkStringLiteral "+128"
+                    externalize
+                        $ Internal.mkStringLiteral "+128"
                 }
         )
         (NamePrefix "dummy")
@@ -550,8 +550,8 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = boolSort
                 , domainValueChild =
-                    externalize $
-                        Internal.mkStringLiteral "untrue" -- Not a BOOL.Bool
+                    externalize
+                        $ Internal.mkStringLiteral "untrue" -- Not a BOOL.Bool
                 }
         )
         (NamePrefix "dummy")
@@ -566,8 +566,8 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = boolSort
                 , domainValueChild =
-                    externalize $
-                        Internal.mkStringLiteral "true"
+                    externalize
+                        $ Internal.mkStringLiteral "true"
                 }
         )
         (NamePrefix "dummy")
@@ -582,8 +582,8 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = boolSort
                 , domainValueChild =
-                    externalize $
-                        Internal.mkStringLiteral "false"
+                    externalize
+                        $ Internal.mkStringLiteral "false"
                 }
         )
         (NamePrefix "dummy")
@@ -606,8 +606,8 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = intSort
                 , domainValueChild =
-                    externalize $
-                        Internal.mkStringLiteral "1" -- Not a decimal integer
+                    externalize
+                        $ Internal.mkStringLiteral "1" -- Not a decimal integer
                 }
         )
         (NamePrefix "dummy")
@@ -617,136 +617,136 @@ test_patternVerifier =
         [asSentence intSortSentenceWithoutDv]
         NeedsInternalDefinitions
     ]
-  where
-    objectSortName = SortName "ObjectSort"
-    objectSort :: Sort
-    objectSort = simpleSort objectSortName
-    objectVariableName = "ObjectVariable"
-    objectVariable' = variable objectVariableName objectSort
-    objectSetVariable' = setVariable objectVariableName objectSort
-    objectSortSentence = simpleSortSentence objectSortName
-    anotherSortName = SortName "anotherSort"
-    anotherSort :: Sort
-    anotherSort = simpleSort anotherSortName
-    anotherVariable = variable objectVariableName anotherSort
-    anotherSetVariable = setVariable objectVariableName anotherSort
-    anotherSortSentence = simpleSortSentence anotherSortName
-    anotherObjectSortName2 = SortName "anotherSort2"
-    anotherObjectSort2 :: Sort
-    anotherObjectSort2 = simpleSort anotherObjectSortName2
-    anotherObjectSortSentence2 = simpleSortSentence anotherObjectSortName2
-    objectSymbolName = SymbolName "ObjectSymbol"
-    objectSymbolSentence =
-        objectSymbolSentenceWithArguments
-            objectSymbolName
-            objectSort
-            [anotherObjectSort2]
-    objectAliasName = AliasName "ObjectAlias"
-    objectAliasNameAsSymbol = SymbolName "ObjectAlias"
-    objectAliasSentence =
-        objectAliasSentenceWithArguments
-            objectAliasName
-            objectSort
-            [inject $ mkElementVariable (testId "x") anotherObjectSort2]
-    objectSortVariable = sortVariable "ObjectSortVariable"
-    objectSortVariableSort :: Sort
-    objectSortVariableSort = sortVariableSort "ObjectSortVariable"
-    objectVariableSortVariable =
-        variable objectVariableName objectSortVariableSort
-    objectSetVariableSortVariable =
-        setVariable objectVariableName objectSortVariableSort
-    oneSortSymbolRawName = "ObjectSymbol"
-    oneSortSymbolSentence :: ParsedSentence
-    oneSortSymbolSentence =
-        asSentence
-            SentenceSymbol
-                { sentenceSymbolSymbol =
-                    Symbol
-                        { symbolConstructor = testId oneSortSymbolRawName
-                        , symbolParams = [objectSortVariable]
-                        }
-                , sentenceSymbolSorts = [anotherObjectSort2]
-                , sentenceSymbolResultSort = objectSort
-                , sentenceSymbolAttributes = Attributes []
-                }
-    intSortName = SortName "Int"
-    intSort :: Sort
-    intSort = simpleSort intSortName
-    intSortSentence :: ParsedSentenceHook
-    intSortSentence =
-        SentenceHookedSort
-            SentenceSort
-                { sentenceSortName = testId name
-                , sentenceSortParameters = []
-                , sentenceSortAttributes =
-                    Attributes
-                        [ Attribute.Hook.hookAttribute "INT.Int"
-                        , Attribute.HasDomainValues.hasDomainValuesAttribute
-                        ]
-                }
-      where
-        SortName name = intSortName
-    intSortSentenceWithoutDv =
-        SentenceHookedSort
-            SentenceSort
-                { sentenceSortName = testId name
-                , sentenceSortParameters = []
-                , sentenceSortAttributes =
-                    Attributes [Attribute.Hook.hookAttribute "INT.Int"]
-                }
-      where
-        SortName name = intSortName
-    boolSortName = SortName "Int"
-    boolSort :: Sort
-    boolSort = simpleSort boolSortName
-    boolSortSentence :: ParsedSentenceHook
-    boolSortSentence =
-        SentenceHookedSort
-            SentenceSort
-                { sentenceSortName = testId name
-                , sentenceSortParameters = []
-                , sentenceSortAttributes =
-                    Attributes
-                        [ Attribute.Hook.hookAttribute "BOOL.Bool"
-                        , Attribute.HasDomainValues.hasDomainValuesAttribute
-                        ]
-                }
-      where
-        SortName name = boolSortName
+    where
+        objectSortName = SortName "ObjectSort"
+        objectSort :: Sort
+        objectSort = simpleSort objectSortName
+        objectVariableName = "ObjectVariable"
+        objectVariable' = variable objectVariableName objectSort
+        objectSetVariable' = setVariable objectVariableName objectSort
+        objectSortSentence = simpleSortSentence objectSortName
+        anotherSortName = SortName "anotherSort"
+        anotherSort :: Sort
+        anotherSort = simpleSort anotherSortName
+        anotherVariable = variable objectVariableName anotherSort
+        anotherSetVariable = setVariable objectVariableName anotherSort
+        anotherSortSentence = simpleSortSentence anotherSortName
+        anotherObjectSortName2 = SortName "anotherSort2"
+        anotherObjectSort2 :: Sort
+        anotherObjectSort2 = simpleSort anotherObjectSortName2
+        anotherObjectSortSentence2 = simpleSortSentence anotherObjectSortName2
+        objectSymbolName = SymbolName "ObjectSymbol"
+        objectSymbolSentence =
+            objectSymbolSentenceWithArguments
+                objectSymbolName
+                objectSort
+                [anotherObjectSort2]
+        objectAliasName = AliasName "ObjectAlias"
+        objectAliasNameAsSymbol = SymbolName "ObjectAlias"
+        objectAliasSentence =
+            objectAliasSentenceWithArguments
+                objectAliasName
+                objectSort
+                [inject $ mkElementVariable (testId "x") anotherObjectSort2]
+        objectSortVariable = sortVariable "ObjectSortVariable"
+        objectSortVariableSort :: Sort
+        objectSortVariableSort = sortVariableSort "ObjectSortVariable"
+        objectVariableSortVariable =
+            variable objectVariableName objectSortVariableSort
+        objectSetVariableSortVariable =
+            setVariable objectVariableName objectSortVariableSort
+        oneSortSymbolRawName = "ObjectSymbol"
+        oneSortSymbolSentence :: ParsedSentence
+        oneSortSymbolSentence =
+            asSentence
+                SentenceSymbol
+                    { sentenceSymbolSymbol =
+                        Symbol
+                            { symbolConstructor = testId oneSortSymbolRawName
+                            , symbolParams = [objectSortVariable]
+                            }
+                    , sentenceSymbolSorts = [anotherObjectSort2]
+                    , sentenceSymbolResultSort = objectSort
+                    , sentenceSymbolAttributes = Attributes []
+                    }
+        intSortName = SortName "Int"
+        intSort :: Sort
+        intSort = simpleSort intSortName
+        intSortSentence :: ParsedSentenceHook
+        intSortSentence =
+            SentenceHookedSort
+                SentenceSort
+                    { sentenceSortName = testId name
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes =
+                        Attributes
+                            [ Attribute.Hook.hookAttribute "INT.Int"
+                            , Attribute.HasDomainValues.hasDomainValuesAttribute
+                            ]
+                    }
+            where
+                SortName name = intSortName
+        intSortSentenceWithoutDv =
+            SentenceHookedSort
+                SentenceSort
+                    { sentenceSortName = testId name
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes =
+                        Attributes [Attribute.Hook.hookAttribute "INT.Int"]
+                    }
+            where
+                SortName name = intSortName
+        boolSortName = SortName "Int"
+        boolSort :: Sort
+        boolSort = simpleSort boolSortName
+        boolSortSentence :: ParsedSentenceHook
+        boolSortSentence =
+            SentenceHookedSort
+                SentenceSort
+                    { sentenceSortName = testId name
+                    , sentenceSortParameters = []
+                    , sentenceSortAttributes =
+                        Attributes
+                            [ Attribute.Hook.hookAttribute "BOOL.Bool"
+                            , Attribute.HasDomainValues.hasDomainValuesAttribute
+                            ]
+                    }
+            where
+                SortName name = boolSortName
 
 test_verifyBinder :: [TestTree]
 test_verifyBinder =
     [ testVerifyExists
     , testVerifyForall
     ]
-  where
-    context = PatternVerifier.verifiedModuleContext $ indexedModuleSyntax Builtin.verifiedModule
-    testVerifyBinder name expect =
-        testCase name $ do
-            let original = externalize expect
-                verifier = verifyStandalonePattern Nothing original
-                actual = assertRight $ runPatternVerifier context verifier
-            assertEqual "" expect actual
-            on (assertEqual "") Internal.extractAttributes expect actual
-    testVerifyExists =
-        testVerifyBinder "verifyExists" expect
-      where
-        x = Internal.mkElementVariable "x" Builtin.intSort
-        expect = Internal.mkExists x (Internal.mkElemVar x)
-    testVerifyForall =
-        testVerifyBinder "verifyForall" expect
-      where
-        x = Internal.mkElementVariable "x" Builtin.intSort
-        expect = Internal.mkForall x (Internal.mkElemVar x)
+    where
+        context = PatternVerifier.verifiedModuleContext $ indexedModuleSyntax Builtin.verifiedModule
+        testVerifyBinder name expect =
+            testCase name $ do
+                let original = externalize expect
+                    verifier = verifyStandalonePattern Nothing original
+                    actual = assertRight $ runPatternVerifier context verifier
+                assertEqual "" expect actual
+                on (assertEqual "") Internal.extractAttributes expect actual
+        testVerifyExists =
+            testVerifyBinder "verifyExists" expect
+            where
+                x = Internal.mkElementVariable "x" Builtin.intSort
+                expect = Internal.mkExists x (Internal.mkElemVar x)
+        testVerifyForall =
+            testVerifyBinder "verifyForall" expect
+            where
+                x = Internal.mkElementVariable "x" Builtin.intSort
+                expect = Internal.mkForall x (Internal.mkElemVar x)
 
 dummyVariableAndSentences ::
     NamePrefix -> (ElementVariable VariableName, [ParsedSentence])
 dummyVariableAndSentences (NamePrefix namePrefix) =
     (dummyVariable, [simpleSortSentence dummySortName])
-  where
-    dummySortName = SortName (namePrefix <> "_OtherSort")
-    dummySort' = simpleSort dummySortName
-    dummyVariable = variable (namePrefix <> "_OtherVariable") dummySort'
+    where
+        dummySortName = SortName (namePrefix <> "_OtherSort")
+        dummySort' = simpleSort dummySortName
+        dummyVariable = variable (namePrefix <> "_OtherVariable") dummySort'
 
 successTestsForObjectPattern ::
     HasCallStack =>
@@ -769,28 +769,28 @@ successTestsForObjectPattern
     sentences
     patternRestrict =
         successTestDataGroup description testData
-      where
-        (dummyVariable, dummySortSentences) =
-            dummyVariableAndSentences namePrefix
-        testData =
-            genericPatternInAllContexts
-                testedPattern
-                namePrefix
-                testedSort
-                sortVariables
-                sortVariables
-                anotherSort
-                (VariableOfDeclaredSort dummyVariable)
-                (dummySortSentences ++ sentences)
-                patternRestrict
-                ++ objectPatternInAllContexts
+        where
+            (dummyVariable, dummySortSentences) =
+                dummyVariableAndSentences namePrefix
+            testData =
+                genericPatternInAllContexts
                     testedPattern
                     namePrefix
                     testedSort
                     sortVariables
+                    sortVariables
                     anotherSort
+                    (VariableOfDeclaredSort dummyVariable)
                     (dummySortSentences ++ sentences)
                     patternRestrict
+                    ++ objectPatternInAllContexts
+                        testedPattern
+                        namePrefix
+                        testedSort
+                        sortVariables
+                        anotherSort
+                        (dummySortSentences ++ sentences)
+                        patternRestrict
 
 failureTestsForObjectPattern ::
     HasCallStack =>
@@ -821,31 +821,31 @@ failureTestsForObjectPattern
             errorMessage
             errorStackSuffix
             testData
-      where
-        dummySortName = SortName (rawNamePrefix <> "_OtherSort")
-        dummySort' = simpleSort dummySortName
-        dummyVariable =
-            variable (rawNamePrefix <> "_OtherVariable") dummySort'
-        dummySortSentence = simpleSortSentence dummySortName
-        testData =
-            genericPatternInAllContexts
-                testedPattern
-                namePrefix
-                testedSort
-                sortVariables
-                sortVariables
-                anotherSort
-                (VariableOfDeclaredSort dummyVariable)
-                (dummySortSentence : sentences)
-                patternRestrict
-                ++ objectPatternInAllContexts
+        where
+            dummySortName = SortName (rawNamePrefix <> "_OtherSort")
+            dummySort' = simpleSort dummySortName
+            dummyVariable =
+                variable (rawNamePrefix <> "_OtherVariable") dummySort'
+            dummySortSentence = simpleSortSentence dummySortName
+            testData =
+                genericPatternInAllContexts
                     testedPattern
                     namePrefix
                     testedSort
                     sortVariables
+                    sortVariables
                     anotherSort
+                    (VariableOfDeclaredSort dummyVariable)
                     (dummySortSentence : sentences)
                     patternRestrict
+                    ++ objectPatternInAllContexts
+                        testedPattern
+                        namePrefix
+                        testedSort
+                        sortVariables
+                        anotherSort
+                        (dummySortSentence : sentences)
+                        patternRestrict
 
 genericPatternInAllContexts ::
     PatternF VariableName ParsedPattern ->
@@ -876,39 +876,39 @@ genericPatternInAllContexts
             (DeclaredSort anotherSort)
             sentences
             patternRestrict
-      where
-        patternExpansion =
-            genericPatternInPatterns
-                testedPattern
-                anotherPattern
-                (OperandSort testedSort)
-                (Helpers.ResultSort anotherSort)
-                dummyVariable
-                (symbolFromSort testedSort)
-                (aliasFromSort testedSort)
-                patternRestrict
-        anotherPattern =
-            ExistsF
-                Exists
-                    { existsSort = testedSort
-                    , existsVariable = anotherVariable
-                    , existsChild =
-                        externalize $ Internal.mkElemVar anotherVariable
+        where
+            patternExpansion =
+                genericPatternInPatterns
+                    testedPattern
+                    anotherPattern
+                    (OperandSort testedSort)
+                    (Helpers.ResultSort anotherSort)
+                    dummyVariable
+                    (symbolFromSort testedSort)
+                    (aliasFromSort testedSort)
+                    patternRestrict
+            anotherPattern =
+                ExistsF
+                    Exists
+                        { existsSort = testedSort
+                        , existsVariable = anotherVariable
+                        , existsChild =
+                            externalize $ Internal.mkElemVar anotherVariable
+                        }
+            anotherVariable =
+                mkElementVariable (testId (namePrefix <> "_anotherVar")) testedSort
+            rawSymbolName = namePrefix <> "_anotherSymbol"
+            rawAliasName = namePrefix <> "_anotherAlias"
+            symbolFromSort sort =
+                SymbolOrAlias
+                    { symbolOrAliasConstructor = testId rawSymbolName
+                    , symbolOrAliasParams = [sort]
                     }
-        anotherVariable =
-            mkElementVariable (testId (namePrefix <> "_anotherVar")) testedSort
-        rawSymbolName = namePrefix <> "_anotherSymbol"
-        rawAliasName = namePrefix <> "_anotherAlias"
-        symbolFromSort sort =
-            SymbolOrAlias
-                { symbolOrAliasConstructor = testId rawSymbolName
-                , symbolOrAliasParams = [sort]
-                }
-        aliasFromSort sort =
-            SymbolOrAlias
-                { symbolOrAliasConstructor = testId rawAliasName
-                , symbolOrAliasParams = [sort]
-                }
+            aliasFromSort sort =
+                SymbolOrAlias
+                    { symbolOrAliasConstructor = testId rawAliasName
+                    , symbolOrAliasParams = [sort]
+                    }
 
 objectPatternInAllContexts ::
     PatternF VariableName ParsedPattern ->
@@ -931,23 +931,23 @@ objectPatternInAllContexts
             sortVariables
             sortVariables
             (DeclaredSort anotherSort)
-      where
-        patternExpansion =
-            objectPatternInPatterns
-                testedPattern
-                anotherPattern
-                (OperandSort testedSort)
-        anotherPattern =
-            ExistsF
-                Exists
-                    { existsSort = testedSort
-                    , existsVariable = anotherVariable
-                    , existsChild =
-                        externalize $
-                            Internal.mkElemVar anotherVariable
-                    }
-        anotherVariable =
-            mkElementVariable (testId (namePrefix <> "_anotherVar")) testedSort
+        where
+            patternExpansion =
+                objectPatternInPatterns
+                    testedPattern
+                    anotherPattern
+                    (OperandSort testedSort)
+            anotherPattern =
+                ExistsF
+                    Exists
+                        { existsSort = testedSort
+                        , existsVariable = anotherVariable
+                        , existsChild =
+                            externalize
+                                $ Internal.mkElemVar anotherVariable
+                        }
+            anotherVariable =
+                mkElementVariable (testId (namePrefix <> "_anotherVar")) testedSort
 
 patternsInAllContexts ::
     [TestPattern] ->
@@ -968,58 +968,58 @@ patternsInAllContexts
     patternRestrict =
         map (\context -> context (List.head patterns)) contextExpansion
             ++ map (List.head contextExpansion) patterns
-      where
-        contextExpansion =
-            testsForUnifiedPatternInTopLevelContext
-                (NamePrefix (namePrefix <> "_piac"))
-                (DeclaredSort anotherSort)
-                sortVariables
-                objectSortVariables
-                ( symbolSentence
-                    : aliasSentence
-                    : sentences
-                )
-                patternRestrict
-        rawSymbolName = namePrefix <> "_anotherSymbol"
-        rawAliasName = namePrefix <> "_anotherAlias"
-        rawSortVariableName = namePrefix <> "_sortVariable"
-        symbolAliasSort = sortVariableSort rawSortVariableName
-        symbolSentence =
-            SentenceSymbolSentence
-                SentenceSymbol
-                    { sentenceSymbolSymbol =
-                        Symbol
-                            { symbolConstructor = testId rawSymbolName
-                            , symbolParams = [SortVariable (testId rawSortVariableName)]
-                            }
-                    , sentenceSymbolSorts = [symbolAliasSort]
-                    , sentenceSymbolResultSort = anotherSort
-                    , sentenceSymbolAttributes = Attributes []
-                    }
-        aliasSentence :: ParsedSentence
-        aliasSentence =
-            let aliasConstructor = testId rawAliasName
-                aliasParams = [SortVariable (testId rawSortVariableName)]
-             in SentenceAliasSentence
-                    SentenceAlias
-                        { sentenceAliasAlias = Alias{aliasConstructor, aliasParams}
-                        , sentenceAliasSorts = [symbolAliasSort]
-                        , sentenceAliasResultSort = anotherSort
-                        , sentenceAliasLeftPattern =
-                            Application
-                                { applicationSymbolOrAlias =
-                                    SymbolOrAlias
-                                        { symbolOrAliasConstructor = aliasConstructor
-                                        , symbolOrAliasParams =
-                                            SortVariableSort <$> aliasParams
-                                        }
-                                , applicationChildren =
-                                    [inject $ mkSetVariable (testId "x") symbolAliasSort]
+        where
+            contextExpansion =
+                testsForUnifiedPatternInTopLevelContext
+                    (NamePrefix (namePrefix <> "_piac"))
+                    (DeclaredSort anotherSort)
+                    sortVariables
+                    objectSortVariables
+                    ( symbolSentence
+                        : aliasSentence
+                        : sentences
+                    )
+                    patternRestrict
+            rawSymbolName = namePrefix <> "_anotherSymbol"
+            rawAliasName = namePrefix <> "_anotherAlias"
+            rawSortVariableName = namePrefix <> "_sortVariable"
+            symbolAliasSort = sortVariableSort rawSortVariableName
+            symbolSentence =
+                SentenceSymbolSentence
+                    SentenceSymbol
+                        { sentenceSymbolSymbol =
+                            Symbol
+                                { symbolConstructor = testId rawSymbolName
+                                , symbolParams = [SortVariable (testId rawSortVariableName)]
                                 }
-                        , sentenceAliasRightPattern =
-                            externalize $ Internal.mkTop anotherSort
-                        , sentenceAliasAttributes = Attributes []
+                        , sentenceSymbolSorts = [symbolAliasSort]
+                        , sentenceSymbolResultSort = anotherSort
+                        , sentenceSymbolAttributes = Attributes []
                         }
+            aliasSentence :: ParsedSentence
+            aliasSentence =
+                let aliasConstructor = testId rawAliasName
+                    aliasParams = [SortVariable (testId rawSortVariableName)]
+                 in SentenceAliasSentence
+                        SentenceAlias
+                            { sentenceAliasAlias = Alias{aliasConstructor, aliasParams}
+                            , sentenceAliasSorts = [symbolAliasSort]
+                            , sentenceAliasResultSort = anotherSort
+                            , sentenceAliasLeftPattern =
+                                Application
+                                    { applicationSymbolOrAlias =
+                                        SymbolOrAlias
+                                            { symbolOrAliasConstructor = aliasConstructor
+                                            , symbolOrAliasParams =
+                                                SortVariableSort <$> aliasParams
+                                            }
+                                    , applicationChildren =
+                                        [inject $ mkSetVariable (testId "x") symbolAliasSort]
+                                    }
+                            , sentenceAliasRightPattern =
+                                externalize $ Internal.mkTop anotherSort
+                            , sentenceAliasAttributes = Attributes []
+                            }
 
 genericPatternInPatterns ::
     PatternF VariableName ParsedPattern ->
@@ -1113,8 +1113,10 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
             ErrorStack
                 [ "\\exists '"
                     ++ getIdForError
-                        ( base . unElementVariableName . variableName $
-                            quantifiedVariable
+                        ( base
+                            . unElementVariableName
+                            . variableName
+                            $ quantifiedVariable
                         )
                     ++ "' (<test data>)"
                 ]
@@ -1132,15 +1134,17 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
             ErrorStack
                 [ "\\forall '"
                     ++ getIdForError
-                        ( base . unElementVariableName . variableName $
-                            quantifiedVariable
+                        ( base
+                            . unElementVariableName
+                            . variableName
+                            $ quantifiedVariable
                         )
                     ++ "' (<test data>)"
                 ]
         }
     ]
-  where
-    testedKorePattern = embedParsedPattern testedPattern
+    where
+        testedKorePattern = embedParsedPattern testedPattern
 
 patternInUnquantifiedGenericPatterns ::
     PatternF VariableName ParsedPattern ->
@@ -1318,9 +1322,9 @@ patternInUnquantifiedGenericPatterns
             , testPatternErrorStack = ErrorStack ["\\or (<test data>)"]
             }
         ]
-      where
-        anotherUnifiedPattern = embedParsedPattern anotherPattern
-        testedUnifiedPattern = embedParsedPattern testedPattern
+        where
+            anotherUnifiedPattern = embedParsedPattern anotherPattern
+            testedUnifiedPattern = embedParsedPattern testedPattern
 
 patternInUnquantifiedObjectPatterns ::
     PatternF VariableName ParsedPattern ->
@@ -1364,9 +1368,9 @@ patternInUnquantifiedObjectPatterns
             , testPatternErrorStack = ErrorStack ["\\rewrites (<test data>)"]
             }
         ]
-      where
-        anotherUnifiedPattern = embedParsedPattern anotherPattern
-        testedUnifiedPattern = embedParsedPattern testedPattern
+        where
+            anotherUnifiedPattern = embedParsedPattern anotherPattern
+            testedUnifiedPattern = embedParsedPattern testedPattern
 
 testsForUnifiedPatternInTopLevelContext ::
     NamePrefix ->

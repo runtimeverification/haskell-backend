@@ -529,9 +529,9 @@ instance
                     else synthetic (termSimplified <$> base)
             , termConstructorLike = constructorLikeAttr
             }
-      where
-        constructorLikeAttr :: Attribute.ConstructorLike
-        constructorLikeAttr = synthetic (termConstructorLike <$> base)
+        where
+            constructorLikeAttr :: Attribute.ConstructorLike
+            constructorLikeAttr = synthetic (termConstructorLike <$> base)
 
 instance Attribute.HasConstructorLike (TermAttributes variable) where
     extractConstructorLike
@@ -563,8 +563,8 @@ isAttributeSimplified ::
     TermAttributes variable ->
     Bool
 isAttributeSimplified sideCondition patt@TermAttributes{termSimplified} =
-    assertSimplifiedConsistency patt $
-        Attribute.isSimplified sideCondition termSimplified
+    assertSimplifiedConsistency patt
+        $ Attribute.isSimplified sideCondition termSimplified
 
 {- Checks whether the pattern is simplified relative to some side condition.
 -}
@@ -573,8 +573,8 @@ isAttributeSimplifiedSomeCondition ::
     TermAttributes variable ->
     Bool
 isAttributeSimplifiedSomeCondition patt@TermAttributes{termSimplified} =
-    assertSimplifiedConsistency patt $
-        Attribute.isSimplifiedSomeCondition termSimplified
+    assertSimplifiedConsistency patt
+        $ Attribute.isSimplifiedSomeCondition termSimplified
 
 {- Checks whether the pattern is simplified relative to any side condition.
 -}
@@ -583,8 +583,8 @@ isAttributeSimplifiedAnyCondition ::
     TermAttributes variable ->
     Bool
 isAttributeSimplifiedAnyCondition patt@TermAttributes{termSimplified} =
-    assertSimplifiedConsistency patt $
-        Attribute.isSimplifiedAnyCondition termSimplified
+    assertSimplifiedConsistency patt
+        $ Attribute.isSimplifiedAnyCondition termSimplified
 
 assertSimplifiedConsistency :: HasCallStack => TermAttributes variable -> a -> a
 assertSimplifiedConsistency
@@ -715,48 +715,48 @@ instance (Unparse variable, Ord variable) => Unparse (TermLike variable) where
                         ]
                 | otherwise ->
                     Pretty.sep [attributeRepresentation, unparse termLikeF]
-              where
-                TermAttributes{termCreated} = attrs
+                where
+                    TermAttributes{termCreated} = attrs
 
-                attributeRepresentation = case attrs of
-                    (TermAttributes _ _ _ _ _ _ _ _) ->
-                        Pretty.surround
-                            (Pretty.hsep $ map Pretty.pretty representation)
-                            "/* "
-                            " */"
-                  where
-                    representation =
-                        addTotalRepresentation $
-                            addFunctionRepresentation $
-                                addDefinedRepresentation $
-                                    addSimplifiedRepresentation $
-                                        addConstructorLikeRepresentation []
-                addTotalRepresentation
-                    | Attribute.isTotal $ termTotal attrs = ("T" :)
-                    | otherwise = id
-                addFunctionRepresentation
-                    | Attribute.isFunction $ termFunction attrs = ("Fn" :)
-                    | otherwise = id
-                addDefinedRepresentation
-                    | Attribute.isDefined $ termDefined attrs = ("D" :)
-                    | otherwise = id
-                addSimplifiedRepresentation =
-                    case simplifiedTag of
-                        Just result -> (result :)
-                        Nothing -> id
-                  where
-                    simplifiedTag =
-                        Attribute.Simplified.unparseTag
-                            (attributeSimplifiedAttribute attrs)
-                addConstructorLikeRepresentation =
-                    case constructorLike of
-                        Just Attribute.ConstructorLikeHead -> ("Cl" :)
-                        Just Attribute.SortInjectionHead -> ("Cli" :)
-                        Nothing -> id
-                  where
-                    constructorLike =
-                        Attribute.getConstructorLike
-                            (constructorLikeAttribute attrs)
+                    attributeRepresentation = case attrs of
+                        (TermAttributes _ _ _ _ _ _ _ _) ->
+                            Pretty.surround
+                                (Pretty.hsep $ map Pretty.pretty representation)
+                                "/* "
+                                " */"
+                        where
+                            representation =
+                                addTotalRepresentation
+                                    $ addFunctionRepresentation
+                                    $ addDefinedRepresentation
+                                    $ addSimplifiedRepresentation
+                                    $ addConstructorLikeRepresentation []
+                    addTotalRepresentation
+                        | Attribute.isTotal $ termTotal attrs = ("T" :)
+                        | otherwise = id
+                    addFunctionRepresentation
+                        | Attribute.isFunction $ termFunction attrs = ("Fn" :)
+                        | otherwise = id
+                    addDefinedRepresentation
+                        | Attribute.isDefined $ termDefined attrs = ("D" :)
+                        | otherwise = id
+                    addSimplifiedRepresentation =
+                        case simplifiedTag of
+                            Just result -> (result :)
+                            Nothing -> id
+                        where
+                            simplifiedTag =
+                                Attribute.Simplified.unparseTag
+                                    (attributeSimplifiedAttribute attrs)
+                    addConstructorLikeRepresentation =
+                        case constructorLike of
+                            Just Attribute.ConstructorLikeHead -> ("Cl" :)
+                            Just Attribute.SortInjectionHead -> ("Cli" :)
+                            Nothing -> id
+                        where
+                            constructorLike =
+                                Attribute.getConstructorLike
+                                    (constructorLikeAttribute attrs)
 
     unparse2 term =
         case Recursive.project term of
@@ -795,16 +795,16 @@ instance InternalVariable variable => Binding (TermLike variable) where
             VariableF (Const unifiedVariable) ->
                 mkVar <$> traversal unifiedVariable
             _ -> pure termLike
-      where
-        _ :< termLikeF = Recursive.project termLike
+        where
+            _ :< termLikeF = Recursive.project termLike
 
     traverseSetBinder traversal termLike =
         case termLikeF of
             MuF mu -> synthesize . MuF <$> muBinder traversal mu
             NuF nu -> synthesize . NuF <$> nuBinder traversal nu
             _ -> pure termLike
-      where
-        _ :< termLikeF = Recursive.project termLike
+        where
+            _ :< termLikeF = Recursive.project termLike
 
     traverseElementBinder traversal termLike =
         case termLikeF of
@@ -813,8 +813,8 @@ instance InternalVariable variable => Binding (TermLike variable) where
             ForallF forall ->
                 synthesize . ForallF <$> forallBinder traversal forall
             _ -> pure termLike
-      where
-        _ :< termLikeF = Recursive.project termLike
+        where
+            _ :< termLikeF = Recursive.project termLike
 
 instance Attribute.HasConstructorLike (TermLike variable) where
     extractConstructorLike (Recursive.project -> attrs :< _) =
@@ -830,24 +830,24 @@ instance From (TermLike Concrete) (TermLike variable) where
 
 vacuousVariables :: forall variable. TermLike Concrete -> TermLike variable
 vacuousVariables (TermLike__ attrs hsh termLikeF) = TermLike__ attrs' hsh (vacuousVariablesF termLikeF)
-  where
-    !attrs' = attrs{termFreeVariables = FreeVariables.emptyFreeVariables}
+    where
+        !attrs' = attrs{termFreeVariables = FreeVariables.emptyFreeVariables}
 
 vacuousVariablesF ::
     forall variable. TermLikeF Concrete (TermLike Concrete) -> TermLikeF variable (TermLike variable)
 vacuousVariablesF = runIdentity . traverseVariablesF adjuster . fmap vacuousVariables
-  where
-    adjuster = AdjSomeVariableName (ElementVariableName absurd) (SetVariableName absurd)
+    where
+        adjuster = AdjSomeVariableName (ElementVariableName absurd) (SetVariableName absurd)
 
 instance (Hashable variable, Ord variable) => From Key (TermLike variable) where
     from = Recursive.unfold worker
-      where
-        worker :: Key -> CofreeF (TermLikeF variable) (TermAttributes variable) Key
-        worker key =
-            attrs' :< from @(KeyF _) keyF
-          where
-            attrs :< keyF = Recursive.project key
-            attrs' = fromKeyAttributes attrs
+        where
+            worker :: Key -> CofreeF (TermLikeF variable) (TermAttributes variable) Key
+            worker key =
+                attrs' :< from @(KeyF _) keyF
+                where
+                    attrs :< keyF = Recursive.project key
+                    attrs' = fromKeyAttributes attrs
 
 instance InternalVariable variable => Substitute (TermLike variable) where
     type TermType (TermLike variable) = TermLike variable
@@ -858,104 +858,106 @@ instance InternalVariable variable => Substitute (TermLike variable) where
     {-# INLINE rename #-}
 
     substitute = substituteWorker . Map.map Left
-      where
-        extractFreeVariables ::
-            TermLike variable -> Set (SomeVariableName variable)
-        extractFreeVariables = FreeVariables.toNames . freeVariables
+        where
+            extractFreeVariables ::
+                TermLike variable -> Set (SomeVariableName variable)
+            extractFreeVariables = FreeVariables.toNames . freeVariables
 
-        getTargetFreeVariables ::
-            Either (TermLike variable) (SomeVariable variable) ->
-            Set (SomeVariableName variable)
-        getTargetFreeVariables =
-            either extractFreeVariables (Set.singleton . variableName)
+            getTargetFreeVariables ::
+                Either (TermLike variable) (SomeVariable variable) ->
+                Set (SomeVariableName variable)
+            getTargetFreeVariables =
+                either extractFreeVariables (Set.singleton . variableName)
 
-        renaming ::
-            -- Original variable
-            SomeVariable variable ->
-            -- Renamed variable
-            Maybe (SomeVariable variable) ->
-            -- Substitution
-            Map
-                (SomeVariableName variable)
-                (Either (TermLike variable) (SomeVariable variable)) ->
-            Map
-                (SomeVariableName variable)
-                (Either (TermLike variable) (SomeVariable variable))
-        renaming Variable{variableName} =
-            maybe id (Map.insert variableName . Right)
+            renaming ::
+                -- Original variable
+                SomeVariable variable ->
+                -- Renamed variable
+                Maybe (SomeVariable variable) ->
+                -- Substitution
+                Map
+                    (SomeVariableName variable)
+                    (Either (TermLike variable) (SomeVariable variable)) ->
+                Map
+                    (SomeVariableName variable)
+                    (Either (TermLike variable) (SomeVariable variable))
+            renaming Variable{variableName} =
+                maybe id (Map.insert variableName . Right)
 
-        substituteWorker ::
-            Map
-                (SomeVariableName variable)
-                (Either (TermLike variable) (SomeVariable variable)) ->
-            TermLike variable ->
-            TermLike variable
-        substituteWorker subst termLike =
-            substituteNone <|> substituteBinder <|> substituteVariable
-                & fromMaybe substituteDefault
-          where
-            substituteNone :: Maybe (TermLike variable)
-            substituteNone
-                | Map.null subst' = pure termLike
-                | otherwise = empty
+            substituteWorker ::
+                Map
+                    (SomeVariableName variable)
+                    (Either (TermLike variable) (SomeVariable variable)) ->
+                TermLike variable ->
+                TermLike variable
+            substituteWorker subst termLike =
+                substituteNone
+                    <|> substituteBinder
+                    <|> substituteVariable
+                    & fromMaybe substituteDefault
+                where
+                    substituteNone :: Maybe (TermLike variable)
+                    substituteNone
+                        | Map.null subst' = pure termLike
+                        | otherwise = empty
 
-            substituteBinder :: Maybe (TermLike variable)
-            substituteBinder =
-                runIdentity <$> matchWith traverseBinder worker termLike
-              where
-                worker ::
-                    Binder (SomeVariable variable) (TermLike variable) ->
-                    Identity (Binder (SomeVariable variable) (TermLike variable))
-                worker Binder{binderVariable, binderChild} = do
-                    let binderVariable' = avoidCapture binderVariable
-                        -- Rename the freshened bound variable in the subterms.
-                        subst'' = renaming binderVariable binderVariable' subst'
-                    return
-                        Binder
-                            { binderVariable = fromMaybe binderVariable binderVariable'
-                            , binderChild = substituteWorker subst'' binderChild
-                            }
+                    substituteBinder :: Maybe (TermLike variable)
+                    substituteBinder =
+                        runIdentity <$> matchWith traverseBinder worker termLike
+                        where
+                            worker ::
+                                Binder (SomeVariable variable) (TermLike variable) ->
+                                Identity (Binder (SomeVariable variable) (TermLike variable))
+                            worker Binder{binderVariable, binderChild} = do
+                                let binderVariable' = avoidCapture binderVariable
+                                    -- Rename the freshened bound variable in the subterms.
+                                    subst'' = renaming binderVariable binderVariable' subst'
+                                return
+                                    Binder
+                                        { binderVariable = fromMaybe binderVariable binderVariable'
+                                        , binderChild = substituteWorker subst'' binderChild
+                                        }
 
-            substituteVariable :: Maybe (TermLike variable)
-            substituteVariable =
-                either id id <$> matchWith traverseVariable worker termLike
-              where
-                worker ::
-                    SomeVariable variable ->
-                    Either (TermLike variable) (SomeVariable variable)
-                worker Variable{variableName} =
-                    -- If the variable is not substituted or renamed, return the
-                    -- original pattern.
-                    fromMaybe
-                        (Left termLike)
-                        -- If the variable is renamed, 'Map.lookup' returns a
-                        -- 'Right' which @traverseVariable@ embeds into
-                        -- @patternType@. If the variable is substituted,
-                        -- 'Map.lookup' returns a 'Left' which is used directly as
-                        -- the result, exiting early from @traverseVariable@.
-                        (Map.lookup variableName subst')
+                    substituteVariable :: Maybe (TermLike variable)
+                    substituteVariable =
+                        either id id <$> matchWith traverseVariable worker termLike
+                        where
+                            worker ::
+                                SomeVariable variable ->
+                                Either (TermLike variable) (SomeVariable variable)
+                            worker Variable{variableName} =
+                                -- If the variable is not substituted or renamed, return the
+                                -- original pattern.
+                                fromMaybe
+                                    (Left termLike)
+                                    -- If the variable is renamed, 'Map.lookup' returns a
+                                    -- 'Right' which @traverseVariable@ embeds into
+                                    -- @patternType@. If the variable is substituted,
+                                    -- 'Map.lookup' returns a 'Left' which is used directly as
+                                    -- the result, exiting early from @traverseVariable@.
+                                    (Map.lookup variableName subst')
 
-            substituteDefault =
-                synthesize termLikeHead'
-              where
-                _ :< termLikeHead = Recursive.project termLike
-                termLikeHead' = substituteWorker subst' <$> termLikeHead
+                    substituteDefault =
+                        synthesize termLikeHead'
+                        where
+                            _ :< termLikeHead = Recursive.project termLike
+                            termLikeHead' = substituteWorker subst' <$> termLikeHead
 
-            freeVars = extractFreeVariables termLike
+                    freeVars = extractFreeVariables termLike
 
-            subst' = Map.intersection subst (Map.fromSet id freeVars)
+                    subst' = Map.intersection subst (Map.fromSet id freeVars)
 
-            originalVariables = Set.difference freeVars (Map.keysSet subst')
+                    originalVariables = Set.difference freeVars (Map.keysSet subst')
 
-            freeVariables' = Set.union originalVariables targetFreeVariables
-              where
-                targetFreeVariables =
-                    foldl'
-                        Set.union
-                        Set.empty
-                        (getTargetFreeVariables <$> subst')
+                    freeVariables' = Set.union originalVariables targetFreeVariables
+                        where
+                            targetFreeVariables =
+                                foldl'
+                                    Set.union
+                                    Set.empty
+                                    (getTargetFreeVariables <$> subst')
 
-            avoidCapture = refreshVariable freeVariables'
+                    avoidCapture = refreshVariable freeVariables'
 
 fromKeyAttributes ::
     Ord variable =>
@@ -984,51 +986,51 @@ toKeyAttributes attrs@(TermAttributes _ _ _ _ _ _ _ _)
     , Attribute.isConstructorLike termConstructorLike =
         Just $ KeyAttributes termSort
     | otherwise = Nothing
-  where
-    TermAttributes
-        { termSort
-        , termFreeVariables
-        , termTotal
-        , termFunction
-        , termDefined
-        , termConstructorLike
-        , termSimplified
-        } = attrs
+    where
+        TermAttributes
+            { termSort
+            , termFreeVariables
+            , termTotal
+            , termFunction
+            , termDefined
+            , termConstructorLike
+            , termSimplified
+            } = attrs
 
 -- | Ensure that a 'TermLike' is a concrete, constructor-like term.
 retractKey :: TermLike variable -> Maybe Key
 retractKey =
     Recursive.fold worker
-  where
-    worker (attrs :< termLikeF) = do
-        Monad.guard (Attribute.isConstructorLike attrs)
-        attrs' <- toKeyAttributes attrs
-        keyF <-
-            case termLikeF of
-                InternalBoolF internalBool ->
-                    sequence (Key.InternalBoolF internalBool)
-                InternalBytesF internalBytes ->
-                    sequence (Key.InternalBytesF internalBytes)
-                InternalIntF internalInt ->
-                    sequence (Key.InternalIntF internalInt)
-                InternalStringF internalString ->
-                    sequence (Key.InternalStringF internalString)
-                DomainValueF domainValue ->
-                    sequence (Key.DomainValueF domainValue)
-                InjF inj ->
-                    sequence (Key.InjF inj)
-                ApplySymbolF application ->
-                    sequence (Key.ApplySymbolF application)
-                InternalListF internalList ->
-                    sequence (Key.InternalListF internalList)
-                InternalMapF internalMap ->
-                    sequence (Key.InternalMapF internalMap)
-                InternalSetF internalSet ->
-                    sequence (Key.InternalSetF internalSet)
-                StringLiteralF stringLiteral ->
-                    sequence (Key.StringLiteralF stringLiteral)
-                _ -> empty
-        pure (Recursive.embed (attrs' :< keyF))
+    where
+        worker (attrs :< termLikeF) = do
+            Monad.guard (Attribute.isConstructorLike attrs)
+            attrs' <- toKeyAttributes attrs
+            keyF <-
+                case termLikeF of
+                    InternalBoolF internalBool ->
+                        sequence (Key.InternalBoolF internalBool)
+                    InternalBytesF internalBytes ->
+                        sequence (Key.InternalBytesF internalBytes)
+                    InternalIntF internalInt ->
+                        sequence (Key.InternalIntF internalInt)
+                    InternalStringF internalString ->
+                        sequence (Key.InternalStringF internalString)
+                    DomainValueF domainValue ->
+                        sequence (Key.DomainValueF domainValue)
+                    InjF inj ->
+                        sequence (Key.InjF inj)
+                    ApplySymbolF application ->
+                        sequence (Key.ApplySymbolF application)
+                    InternalListF internalList ->
+                        sequence (Key.InternalListF internalList)
+                    InternalMapF internalMap ->
+                        sequence (Key.InternalMapF internalMap)
+                    InternalSetF internalSet ->
+                        sequence (Key.InternalSetF internalSet)
+                    StringLiteralF stringLiteral ->
+                        sequence (Key.StringLiteralF stringLiteral)
+                    _ -> empty
+            pure (Recursive.embed (attrs' :< keyF))
 
 instance
     ( AstWithLocation variable
@@ -1135,23 +1137,23 @@ traverseVariablesF adj =
         EndiannessF endianness -> pure (EndiannessF endianness)
         SignednessF signedness -> pure (SignednessF signedness)
         InjF inj -> pure (InjF inj)
-  where
-    trElemVar = traverse $ traverseElementVariableName adj
-    trSetVar = traverse $ traverseSetVariableName adj
-    traverseConstVariable (Const variable) =
-        Const <$> traverseSomeVariable adj variable
-    traverseVariablesExists Exists{existsSort, existsVariable, existsChild} =
-        Exists existsSort
-            <$> trElemVar existsVariable
-            <*> pure existsChild
-    traverseVariablesForall Forall{forallSort, forallVariable, forallChild} =
-        Forall forallSort
-            <$> trElemVar forallVariable
-            <*> pure forallChild
-    traverseVariablesMu Mu{muVariable, muChild} =
-        Mu <$> trSetVar muVariable <*> pure muChild
-    traverseVariablesNu Nu{nuVariable, nuChild} =
-        Nu <$> trSetVar nuVariable <*> pure nuChild
+    where
+        trElemVar = traverse $ traverseElementVariableName adj
+        trSetVar = traverse $ traverseSetVariableName adj
+        traverseConstVariable (Const variable) =
+            Const <$> traverseSomeVariable adj variable
+        traverseVariablesExists Exists{existsSort, existsVariable, existsChild} =
+            Exists existsSort
+                <$> trElemVar existsVariable
+                <*> pure existsChild
+        traverseVariablesForall Forall{forallSort, forallVariable, forallChild} =
+            Forall forallSort
+                <$> trElemVar forallVariable
+                <*> pure forallChild
+        traverseVariablesMu Mu{muVariable, muChild} =
+            Mu <$> trSetVar muVariable <*> pure muChild
+        traverseVariablesNu Nu{nuVariable, nuChild} =
+            Nu <$> trSetVar nuVariable <*> pure nuChild
 
 extractAttributes :: TermLike variable -> TermAttributes variable
 extractAttributes (Recursive.project -> attrs :< _) = attrs
@@ -1202,42 +1204,42 @@ traverseVariables adj termLike =
         adj
         (Attribute.freeVariables @_ @variable1 termLike)
         >>= Reader.runReaderT (Recursive.fold worker termLike)
-  where
-    adjReader = (.) lift <$> adj
-    trElemVar = traverse $ traverseElementVariableName adjReader
-    trSetVar = traverse $ traverseSetVariableName adjReader
-    traverseExists avoiding =
-        existsBinder (renameElementBinder trElemVar avoiding)
-    traverseForall avoiding =
-        forallBinder (renameElementBinder trElemVar avoiding)
-    traverseMu avoiding =
-        muBinder (renameSetBinder trSetVar avoiding)
-    traverseNu avoiding =
-        nuBinder (renameSetBinder trSetVar avoiding)
+    where
+        adjReader = (.) lift <$> adj
+        trElemVar = traverse $ traverseElementVariableName adjReader
+        trSetVar = traverse $ traverseSetVariableName adjReader
+        traverseExists avoiding =
+            existsBinder (renameElementBinder trElemVar avoiding)
+        traverseForall avoiding =
+            forallBinder (renameElementBinder trElemVar avoiding)
+        traverseMu avoiding =
+            muBinder (renameSetBinder trSetVar avoiding)
+        traverseNu avoiding =
+            nuBinder (renameSetBinder trSetVar avoiding)
 
-    worker ::
-        Base
-            (TermLike variable1)
-            (RenamingT variable1 variable2 m (TermLike variable2)) ->
-        RenamingT variable1 variable2 m (TermLike variable2)
-    worker (attrs :< termLikeF) = do
-        ~attrs' <- traverseAttributeVariables askSomeVariableName attrs
-        let ~avoiding = freeVariables attrs'
-        termLikeF' <- case termLikeF of
-            VariableF (Const unifiedVariable) -> do
-                unifiedVariable' <- askSomeVariable unifiedVariable
-                (pure . VariableF) (Const unifiedVariable')
-            ExistsF exists -> ExistsF <$> traverseExists avoiding exists
-            ForallF forall -> ForallF <$> traverseForall avoiding forall
-            MuF mu -> MuF <$> traverseMu avoiding mu
-            NuF nu -> NuF <$> traverseNu avoiding nu
-            _ ->
-                sequence termLikeF
-                    >>=
-                    -- traverseVariablesF will not actually call the traversals
-                    -- because all the cases with variables are handled above.
-                    traverseVariablesF askSomeVariableName
-        (pure . Recursive.embed) (attrs' :< termLikeF')
+        worker ::
+            Base
+                (TermLike variable1)
+                (RenamingT variable1 variable2 m (TermLike variable2)) ->
+            RenamingT variable1 variable2 m (TermLike variable2)
+        worker (attrs :< termLikeF) = do
+            ~attrs' <- traverseAttributeVariables askSomeVariableName attrs
+            let ~avoiding = freeVariables attrs'
+            termLikeF' <- case termLikeF of
+                VariableF (Const unifiedVariable) -> do
+                    unifiedVariable' <- askSomeVariable unifiedVariable
+                    (pure . VariableF) (Const unifiedVariable')
+                ExistsF exists -> ExistsF <$> traverseExists avoiding exists
+                ForallF forall -> ForallF <$> traverseForall avoiding forall
+                MuF mu -> MuF <$> traverseMu avoiding mu
+                NuF nu -> NuF <$> traverseNu avoiding nu
+                _ ->
+                    sequence termLikeF
+                        >>=
+                        -- traverseVariablesF will not actually call the traversals
+                        -- because all the cases with variables are handled above.
+                        traverseVariablesF askSomeVariableName
+            (pure . Recursive.embed) (attrs' :< termLikeF')
 
 updateCallStack ::
     forall variable.
@@ -1245,14 +1247,14 @@ updateCallStack ::
     TermLike variable ->
     TermLike variable
 updateCallStack = Lens.set created callstack
-  where
-    created = termLikeAttributes . Lens.Product.field @"termCreated"
-    callstack =
-        Attribute.Created
-            . Just
-            . GHC.popCallStack
-            . GHC.popCallStack
-            $ GHC.callStack
+    where
+        created = termLikeAttributes . Lens.Product.field @"termCreated"
+        callstack =
+            Attribute.Created
+                . Just
+                . GHC.popCallStack
+                . GHC.popCallStack
+                $ GHC.callStack
 
 {- | A 'Lens'' for editing attributes of a 'TermLike'. This is more efficient
  than using 'project' followed by 'embed', because it avoids recomputing
@@ -1277,8 +1279,8 @@ mkVar = updateCallStack . synthesize . VariableF . Const
 
 depth :: TermLike variable -> Int
 depth = Recursive.fold levelDepth
-  where
-    levelDepth (_ :< termF) = 1 + foldl' max 0 termF
+    where
+        levelDepth (_ :< termF) = 1 + foldl' max 0 termF
 
 instance
     (Hashable variable, Ord variable) =>
@@ -1293,150 +1295,151 @@ uninternalize ::
     TermLike variable ->
     Pattern.Pattern variable (TermAttributes variable)
 uninternalize = Pattern.Pattern . Recursive.cata go
-  where
-    go ::
-        CofreeF
-            (TermLikeF variable)
-            (TermAttributes variable)
-            (Cofree (PatternF.PatternF variable) (TermAttributes variable)) ->
-        Cofree (PatternF.PatternF variable) (TermAttributes variable)
-    go (attr :< trmLikePat) = case trmLikePat of
-        AndF BinaryAnd{andSort, andFirst, andSecond} -> wrap $ PatternF.AndF And{andSort, andChildren = [andFirst, andSecond]}
-        ApplySymbolF application ->
-            wrap $
-                PatternF.ApplicationF $
-                    first Symbol.toSymbolOrAlias application
-        ApplyAliasF application ->
-            wrap $
-                PatternF.ApplicationF $
-                    first Alias.toSymbolOrAlias application
-        BottomF bottom -> wrap $ PatternF.BottomF bottom
-        CeilF ceil -> wrap $ PatternF.CeilF ceil
-        DomainValueF domainValue -> wrap $ PatternF.DomainValueF domainValue
-        EqualsF equals -> wrap $ PatternF.EqualsF equals
-        ExistsF exists -> wrap $ PatternF.ExistsF exists
-        FloorF floor' -> wrap $ PatternF.FloorF floor'
-        ForallF forall' -> wrap $ PatternF.ForallF forall'
-        IffF iff -> wrap $ PatternF.IffF iff
-        ImpliesF implies -> wrap $ PatternF.ImpliesF implies
-        InF in' -> wrap $ PatternF.InF in'
-        MuF mu -> wrap $ PatternF.MuF mu
-        NextF next -> wrap $ PatternF.NextF next
-        NotF not' -> wrap $ PatternF.NotF not'
-        NuF nu -> wrap $ PatternF.NuF nu
-        OrF BinaryOr{orSort, orFirst, orSecond} -> wrap $ PatternF.OrF Or{orSort, orChildren = [orFirst, orSecond]}
-        RewritesF rewrites -> wrap $ PatternF.RewritesF rewrites
-        TopF top -> wrap $ PatternF.TopF top
-        InhabitantF inhabitant -> wrap $ PatternF.InhabitantF inhabitant
-        StringLiteralF stringLiteral -> wrap $ PatternF.StringLiteralF stringLiteral
-        InternalBoolF (Const (InternalBool boolSort boolValue)) ->
-            uninternalizeInternalValue boolSort $
-                if boolValue then "true" else "false"
-        InternalBytesF (Const (InternalBytes bytesSort bytesValue)) ->
-            uninternalizeInternalValue bytesSort $
-                Encoding.decode8Bit $
-                    ByteString.fromShort bytesValue
-        InternalIntF (Const (InternalInt intSort intValue)) ->
-            uninternalizeInternalValue intSort $
-                Text.pack $
-                    show intValue
-        InternalStringF (Const (InternalString stringSort stringValue)) ->
-            uninternalizeInternalValue stringSort stringValue
-        InternalListF internalList -> uninternalizeInternalList internalList
-        InternalMapF internalMap -> uninternalizeInternalAc internalMap
-        InternalSetF internalSet -> uninternalizeInternalAc internalSet
-        VariableF variable -> wrap $ PatternF.VariableF variable
-        EndiannessF (Const endianness) ->
-            wrap $
-                PatternF.ApplicationF $
-                    first Symbol.toSymbolOrAlias $
-                        Endianness.toApplication endianness
-        SignednessF (Const signedness) ->
-            wrap $
-                PatternF.ApplicationF $
-                    first Symbol.toSymbolOrAlias $
-                        Signedness.toApplication signedness
-        InjF inj ->
-            wrap $
-                PatternF.ApplicationF $
-                    first Symbol.toSymbolOrAlias $
-                        Inj.toApplication inj
-      where
-        wrap x = CofreeT $ Identity $ attr :< x
-        uninternalizeInternalValue sort strVal =
-            wrap $
-                PatternF.DomainValueF $
-                    DomainValue sort $
-                        wrap $
-                            PatternF.StringLiteralF $
-                                Const $
-                                    StringLiteral strVal
-
-        -- The uninternalized lists and ac types are all of the following form:
-        -- If the structure has no elements, we simply get the application of the unit symbol with no arguments
-        -- If the structure has exactly one child, we just get the child.
-        -- This child will be an application of internalElement symbol to its arguments
-        -- For multiple children we will get a right associative tree of Applications, namely
-        --   ApplicationF (Application concatSymbol [
-        --       x1,
-        --       ApplicationF (Application concatSymbol [
-        --           x2,
-        --           ...ApplicationF (Application concatSymbol [xn-1, x_n]...
-        --         ])
-        --    ])
-        foldApplication unitSymbol concatSymbol = foldAux
-          where
-            foldAux = \case
-                [] ->
-                    wrap $
-                        PatternF.ApplicationF $
-                            Application (Symbol.toSymbolOrAlias unitSymbol) []
-                [x] -> x
-                (x : xs) ->
-                    wrap $
-                        PatternF.ApplicationF $
-                            Application (Symbol.toSymbolOrAlias concatSymbol) [x, foldAux xs]
-
-        uninternalizeInternalList InternalList{internalListUnit, internalListConcat, internalListElement, internalListChild} =
-            foldApplication internalListUnit internalListConcat children
-          where
-            uniternalizeListElement e =
-                wrap $
-                    PatternF.ApplicationF $
-                        Application (Symbol.toSymbolOrAlias internalListElement) [e]
-            children = map uniternalizeListElement $ toList internalListChild
-
-        uninternalizeInternalAc ::
-            forall normalized.
-            AcWrapper normalized =>
-            InternalAc Key normalized (Cofree (PatternF.PatternF variable) (TermAttributes variable)) ->
+    where
+        go ::
+            CofreeF
+                (TermLikeF variable)
+                (TermAttributes variable)
+                (Cofree (PatternF.PatternF variable) (TermAttributes variable)) ->
             Cofree (PatternF.PatternF variable) (TermAttributes variable)
-        uninternalizeInternalAc InternalAc{builtinAcUnit, builtinAcConcat, builtinAcElement, builtinAcChild} =
-            foldApplication builtinAcUnit builtinAcConcat children
-          where
-            NormalizedAc{elementsWithVariables, concreteElements, opaque} = unwrapAc builtinAcChild
-
-            uninternalizeAcElement =
+        go (attr :< trmLikePat) = case trmLikePat of
+            AndF BinaryAnd{andSort, andFirst, andSecond} -> wrap $ PatternF.AndF And{andSort, andChildren = [andFirst, andSecond]}
+            ApplySymbolF application ->
                 wrap
-                    . PatternF.ApplicationF
-                    . Application (Symbol.toSymbolOrAlias builtinAcElement)
+                    $ PatternF.ApplicationF
+                    $ first Symbol.toSymbolOrAlias application
+            ApplyAliasF application ->
+                wrap
+                    $ PatternF.ApplicationF
+                    $ first Alias.toSymbolOrAlias application
+            BottomF bottom -> wrap $ PatternF.BottomF bottom
+            CeilF ceil -> wrap $ PatternF.CeilF ceil
+            DomainValueF domainValue -> wrap $ PatternF.DomainValueF domainValue
+            EqualsF equals -> wrap $ PatternF.EqualsF equals
+            ExistsF exists -> wrap $ PatternF.ExistsF exists
+            FloorF floor' -> wrap $ PatternF.FloorF floor'
+            ForallF forall' -> wrap $ PatternF.ForallF forall'
+            IffF iff -> wrap $ PatternF.IffF iff
+            ImpliesF implies -> wrap $ PatternF.ImpliesF implies
+            InF in' -> wrap $ PatternF.InF in'
+            MuF mu -> wrap $ PatternF.MuF mu
+            NextF next -> wrap $ PatternF.NextF next
+            NotF not' -> wrap $ PatternF.NotF not'
+            NuF nu -> wrap $ PatternF.NuF nu
+            OrF BinaryOr{orSort, orFirst, orSecond} -> wrap $ PatternF.OrF Or{orSort, orChildren = [orFirst, orSecond]}
+            RewritesF rewrites -> wrap $ PatternF.RewritesF rewrites
+            TopF top -> wrap $ PatternF.TopF top
+            InhabitantF inhabitant -> wrap $ PatternF.InhabitantF inhabitant
+            StringLiteralF stringLiteral -> wrap $ PatternF.StringLiteralF stringLiteral
+            InternalBoolF (Const (InternalBool boolSort boolValue)) ->
+                uninternalizeInternalValue boolSort
+                    $ if boolValue then "true" else "false"
+            InternalBytesF (Const (InternalBytes bytesSort bytesValue)) ->
+                uninternalizeInternalValue bytesSort
+                    $ Encoding.decode8Bit
+                    $ ByteString.fromShort bytesValue
+            InternalIntF (Const (InternalInt intSort intValue)) ->
+                uninternalizeInternalValue intSort
+                    $ Text.pack
+                    $ show intValue
+            InternalStringF (Const (InternalString stringSort stringValue)) ->
+                uninternalizeInternalValue stringSort stringValue
+            InternalListF internalList -> uninternalizeInternalList internalList
+            InternalMapF internalMap -> uninternalizeInternalAc internalMap
+            InternalSetF internalSet -> uninternalizeInternalAc internalSet
+            VariableF variable -> wrap $ PatternF.VariableF variable
+            EndiannessF (Const endianness) ->
+                wrap
+                    $ PatternF.ApplicationF
+                    $ first Symbol.toSymbolOrAlias
+                    $ Endianness.toApplication endianness
+            SignednessF (Const signedness) ->
+                wrap
+                    $ PatternF.ApplicationF
+                    $ first Symbol.toSymbolOrAlias
+                    $ Signedness.toApplication signedness
+            InjF inj ->
+                wrap
+                    $ PatternF.ApplicationF
+                    $ first Symbol.toSymbolOrAlias
+                    $ Inj.toApplication inj
+            where
+                wrap x = CofreeT $ Identity $ attr :< x
+                uninternalizeInternalValue sort strVal =
+                    wrap
+                        $ PatternF.DomainValueF
+                        $ DomainValue sort
+                        $ wrap
+                        $ PatternF.StringLiteralF
+                        $ Const
+                        $ StringLiteral strVal
 
-            uninternalizedElementsWithVariables =
-                map
-                    ( uninternalizeAcElement
-                        . elementToApplicationArgs
-                    )
-                    elementsWithVariables
+                -- The uninternalized lists and ac types are all of the following form:
+                -- If the structure has no elements, we simply get the application of the unit symbol with no arguments
+                -- If the structure has exactly one child, we just get the child.
+                -- This child will be an application of internalElement symbol to its arguments
+                -- For multiple children we will get a right associative tree of Applications, namely
+                --   ApplicationF (Application concatSymbol [
+                --       x1,
+                --       ApplicationF (Application concatSymbol [
+                --           x2,
+                --           ...ApplicationF (Application concatSymbol [xn-1, x_n]...
+                --         ])
+                --    ])
+                foldApplication unitSymbol concatSymbol = foldAux
+                    where
+                        foldAux = \case
+                            [] ->
+                                wrap
+                                    $ PatternF.ApplicationF
+                                    $ Application (Symbol.toSymbolOrAlias unitSymbol) []
+                            [x] -> x
+                            (x : xs) ->
+                                wrap
+                                    $ PatternF.ApplicationF
+                                    $ Application (Symbol.toSymbolOrAlias concatSymbol) [x, foldAux xs]
 
-            uninternalizedConcreteElements =
-                map
-                    ( \(k, v) ->
-                        uninternalizeAcElement $
-                            uninternalizeKey k : concreteElementToApplicationArgs v
-                    )
-                    $ HashMap.toList concreteElements
+                uninternalizeInternalList InternalList{internalListUnit, internalListConcat, internalListElement, internalListChild} =
+                    foldApplication internalListUnit internalListConcat children
+                    where
+                        uniternalizeListElement e =
+                            wrap
+                                $ PatternF.ApplicationF
+                                $ Application (Symbol.toSymbolOrAlias internalListElement) [e]
+                        children = map uniternalizeListElement $ toList internalListChild
 
-            uninternalizeKey = Pattern.getPattern . uninternalize . from
+                uninternalizeInternalAc ::
+                    forall normalized.
+                    AcWrapper normalized =>
+                    InternalAc Key normalized (Cofree (PatternF.PatternF variable) (TermAttributes variable)) ->
+                    Cofree (PatternF.PatternF variable) (TermAttributes variable)
+                uninternalizeInternalAc InternalAc{builtinAcUnit, builtinAcConcat, builtinAcElement, builtinAcChild} =
+                    foldApplication builtinAcUnit builtinAcConcat children
+                    where
+                        NormalizedAc{elementsWithVariables, concreteElements, opaque} = unwrapAc builtinAcChild
 
-            children =
-                uninternalizedElementsWithVariables ++ uninternalizedConcreteElements ++ opaque
+                        uninternalizeAcElement =
+                            wrap
+                                . PatternF.ApplicationF
+                                . Application (Symbol.toSymbolOrAlias builtinAcElement)
+
+                        uninternalizedElementsWithVariables =
+                            map
+                                ( uninternalizeAcElement
+                                    . elementToApplicationArgs
+                                )
+                                elementsWithVariables
+
+                        uninternalizedConcreteElements =
+                            map
+                                ( \(k, v) ->
+                                    uninternalizeAcElement
+                                        $ uninternalizeKey k
+                                        : concreteElementToApplicationArgs v
+                                )
+                                $ HashMap.toList concreteElements
+
+                        uninternalizeKey = Pattern.getPattern . uninternalize . from
+
+                        children =
+                            uninternalizedElementsWithVariables ++ uninternalizedConcreteElements ++ opaque

@@ -99,73 +99,75 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition original = d
     (isFullySimplified, result) <- foldM simplifyingCondition (False, normOriginal) [1 .. limit]
     unless isFullySimplified $ warnUnsimplifiedCondition limit original result
     return result
-  where
-    limit :: Int
-    limit = 10
+    where
+        limit :: Int
+        limit = 10
 
-    simplifyingCondition ::
-        (Bool, Conditional RewritingVariableName any) ->
-        Int ->
-        LogicT simplifier (Bool, Conditional RewritingVariableName any)
-    simplifyingCondition result@(True, _) _ = return result
-    simplifyingCondition (_, input) _ = do
-        output <- worker input
-        return (fullySimplified output, extract output)
+        simplifyingCondition ::
+            (Bool, Conditional RewritingVariableName any) ->
+            Int ->
+            LogicT simplifier (Bool, Conditional RewritingVariableName any)
+        simplifyingCondition result@(True, _) _ = return result
+        simplifyingCondition (_, input) _ = do
+            output <- worker input
+            return (fullySimplified output, extract output)
 
-    worker Conditional{term, predicate, substitution} = do
-        let substitution' = Substitution.toMap substitution
-            predicate' = substitute substitution' predicate
+        worker Conditional{term, predicate, substitution} = do
+            let substitution' = Substitution.toMap substitution
+                predicate' = substitute substitution' predicate
 
-        simplified <-
-            simplifyPredicate predicate'
-                >>= Logic.scatter
-                >>= mapLogicT liftSimplifier . simplifyPredicates sideCondition . prepareForResimplification
-        TopBottom.guardAgainstBottom simplified
-        let merged = simplified <> Condition.fromSubstitution substitution
-        normalized <- normalize merged
-        -- Check for full simplification *after* normalization. Simplification
-        -- may have produced irrelevant substitutions that become relevant after
-        -- normalization.
-        let simplifiedPattern =
-                Lens.traverseOf
-                    (field @"predicate")
-                    simplifyConjunctions
-                    normalized{term}
-        return simplifiedPattern
+            simplified <-
+                simplifyPredicate predicate'
+                    >>= Logic.scatter
+                    >>= mapLogicT liftSimplifier
+                    . simplifyPredicates sideCondition
+                    . prepareForResimplification
+            TopBottom.guardAgainstBottom simplified
+            let merged = simplified <> Condition.fromSubstitution substitution
+            normalized <- normalize merged
+            -- Check for full simplification *after* normalization. Simplification
+            -- may have produced irrelevant substitutions that become relevant after
+            -- normalization.
+            let simplifiedPattern =
+                    Lens.traverseOf
+                        (field @"predicate")
+                        simplifyConjunctions
+                        normalized{term}
+            return simplifiedPattern
 
-    simplifyPredicate predicate =
-        Predicate.simplify sideCondition predicate & liftSimplifier
+        simplifyPredicate predicate =
+            Predicate.simplify sideCondition predicate & liftSimplifier
 
-    prepareForResimplification predicates
-        -- If the 'MultiAnd' is singular, we should avoid resimplification.
-        | length predicates <= 1 =
-            predicates
-        | otherwise =
-            MultiAnd.map forgetSimplified predicates
-      where
-        forgetSimplified p
-            | Predicate.isSimplifiedAnyCondition p =
-                Predicate.forgetSimplifiedSafe p
-            | otherwise = p
+        prepareForResimplification predicates
+            -- If the 'MultiAnd' is singular, we should avoid resimplification.
+            | length predicates <= 1 =
+                predicates
+            | otherwise =
+                MultiAnd.map forgetSimplified predicates
+            where
+                forgetSimplified p
+                    | Predicate.isSimplifiedAnyCondition p =
+                        Predicate.forgetSimplifiedSafe p
+                    | otherwise = p
 
-    -- TODO(Ana): this should also check if the predicate is simplified
-    fullySimplified (Unchanged Conditional{predicate, substitution}) =
-        Predicate.isFreeOf predicate variables
-      where
-        variables = Substitution.variables substitution
-    fullySimplified (Changed _) = False
+        -- TODO(Ana): this should also check if the predicate is simplified
+        fullySimplified (Unchanged Conditional{predicate, substitution}) =
+            Predicate.isFreeOf predicate variables
+            where
+                variables = Substitution.variables substitution
+        fullySimplified (Changed _) = False
 
-    normalize ::
-        forall any'.
-        Conditional RewritingVariableName any' ->
-        LogicT simplifier (Conditional RewritingVariableName any')
-    normalize conditional@Conditional{substitution} = do
-        let conditional' = conditional{substitution = mempty}
-        predicates' <-
-            simplifySubstitution sideCondition substitution
-                & lift
-        predicate' <- scatter predicates'
-        return $ Conditional.andCondition conditional' predicate'
+        normalize ::
+            forall any'.
+            Conditional RewritingVariableName any' ->
+            LogicT simplifier (Conditional RewritingVariableName any')
+        normalize conditional@Conditional{substitution} = do
+            let conditional' = conditional{substitution = mempty}
+            predicates' <-
+                simplifySubstitution sideCondition substitution
+                    & lift
+            predicate' <- scatter predicates'
+            return $ Conditional.andCondition conditional' predicate'
 {-# SPECIALIZE simplify ::
     forall any.
     HasCallStack =>
@@ -187,16 +189,18 @@ simplifyPredicates ::
 simplifyPredicates sideCondition original = do
     let predicates =
             SideCondition.simplifyConjunctionByAssumption original
-                & fst . extract
+                & fst
+                . extract
     simplifiedPredicates <- do
         let eliminatedExists =
                 map
-                    ( simplifyPredicateExistElim $
+                    ( simplifyPredicateExistElim
+                        $
                         -- TODO (sam): this is quite conservative and we may not need to
                         -- avoid names here, but there doesn't seem to be a negative
                         -- impact on performance, so best leave this in for now.
                         freeVariableNames original
-                            <> freeVariableNames sideCondition
+                        <> freeVariableNames sideCondition
                     )
                     $ toList predicates
         simplifyPredicatesWithAssumptions
@@ -219,8 +223,8 @@ simplifyPredicateExistElim avoid predicate = case predicateF of
         let existsF'@Exists.Exists{existsChild} = Exists.refreshExists avoid existsF
          in simplifyPredicateExistElim (avoid <> freeVariableNames existsF') existsChild
     _ -> predicate
-  where
-    _ :< predicateF = Recursive.project predicate
+    where
+        _ :< predicateF = Recursive.project predicate
 
 {- | Simplify a conjunction of predicates by simplifying each one
 under the assumption that the others are true.
@@ -238,31 +242,31 @@ simplifyPredicatesWithAssumptions sideCondition predicates@(_ : rest) = do
                 & scanr (<>) MultiAnd.top
     traverse_ simplifyWithAssumptions (zip predicates unsimplifieds)
         & flip State.execStateT MultiAnd.top
-  where
-    simplifyWithAssumptions ::
-        ( Predicate RewritingVariableName
-        , MultiAnd (Predicate RewritingVariableName)
-        ) ->
-        StateT
-            (MultiAnd (Predicate RewritingVariableName))
-            (LogicT Simplifier)
-            ()
-    simplifyWithAssumptions (predicate, unsimplifiedSideCond) = do
-        sideCondition' <- getSideCondition unsimplifiedSideCond
-        result <- simplifyPredicate sideCondition' predicate
-        putSimplifiedResult result
+    where
+        simplifyWithAssumptions ::
+            ( Predicate RewritingVariableName
+            , MultiAnd (Predicate RewritingVariableName)
+            ) ->
+            StateT
+                (MultiAnd (Predicate RewritingVariableName))
+                (LogicT Simplifier)
+                ()
+        simplifyWithAssumptions (predicate, unsimplifiedSideCond) = do
+            sideCondition' <- getSideCondition unsimplifiedSideCond
+            result <- simplifyPredicate sideCondition' predicate
+            putSimplifiedResult result
 
-    getSideCondition unsimplifiedSideCond = do
-        simplifiedSideCond <- State.get
-        SideCondition.addAssumptions
-            (simplifiedSideCond <> unsimplifiedSideCond)
-            sideCondition
-            & return
+        getSideCondition unsimplifiedSideCond = do
+            simplifiedSideCond <- State.get
+            SideCondition.addAssumptions
+                (simplifiedSideCond <> unsimplifiedSideCond)
+                sideCondition
+                & return
 
-    putSimplifiedResult result = State.modify' (<> result)
+        putSimplifiedResult result = State.modify' (<> result)
 
-    simplifyPredicate sideCondition' predicate =
-        liftSimplifier (Predicate.simplify sideCondition' predicate) >>= Logic.scatter & lift
+        simplifyPredicate sideCondition' predicate =
+            liftSimplifier (Predicate.simplify sideCondition' predicate) >>= Logic.scatter & lift
 
 mkCondition ::
     InternalVariable variable =>

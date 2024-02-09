@@ -69,22 +69,23 @@ test_ecdsaRecover =
         "{:\168JZ\211\159\223\228\&6\211\205\GS\165@@\190w#\SOe\209q4p\249XlE\180\217\139"
         "\214q\EOT\230[a\252\161\252s\167Auf|\DC1\241l\ETX\DEL\168\228\DC4I\145\137\223\157hpj\202n\SUB\ESCN\160+p/\DLE\RS\182\t\196\205)d\212y\NULG\160dX\186\138\SUB\EM\EOT\n\177\254\r"
     ]
-  where
-    test messageHash v r s result =
-        testCase (Text.unpack name) $ do
-            let expect = InternalBytes.asPattern bytesSort (BS.pack result)
-            actual <-
-                ecdsaRecoverKrypto
-                    (InternalBytes.asInternal bytesSort (BS.pack messageHash))
-                    (Test.Int.asInternal v)
-                    (InternalBytes.asInternal bytesSort (BS.pack r))
-                    (InternalBytes.asInternal bytesSort (BS.pack s))
-                    & evaluate "KRYPTO.ecdsaRecover"
-            assertEqual "" expect actual
-      where
-        Just name =
-            Attribute.getHook . Attribute.hook $
-                symbolAttributes ecdsaRecoverSymbol
+    where
+        test messageHash v r s result =
+            testCase (Text.unpack name) $ do
+                let expect = InternalBytes.asPattern bytesSort (BS.pack result)
+                actual <-
+                    ecdsaRecoverKrypto
+                        (InternalBytes.asInternal bytesSort (BS.pack messageHash))
+                        (Test.Int.asInternal v)
+                        (InternalBytes.asInternal bytesSort (BS.pack r))
+                        (InternalBytes.asInternal bytesSort (BS.pack s))
+                        & evaluate "KRYPTO.ecdsaRecover"
+                assertEqual "" expect actual
+            where
+                Just name =
+                    Attribute.getHook
+                        . Attribute.hook
+                        $ symbolAttributes ecdsaRecoverSymbol
 
 test_secp256k1EcdsaRecover :: [TestTree]
 test_secp256k1EcdsaRecover =
@@ -101,22 +102,23 @@ test_secp256k1EcdsaRecover =
         "{:\168JZ\211\159\223\228\&6\211\205\GS\165@@\190w#\SOe\209q4p\249XlE\180\217\139"
         "\214q\EOT\230[a\252\161\252s\167Auf|\DC1\241l\ETX\DEL\168\228\DC4I\145\137\223\157hpj\202n\SUB\ESCN\160+p/\DLE\RS\182\t\196\205)d\212y\NULG\160dX\186\138\SUB\EM\EOT\n\177\254\r"
     ]
-  where
-    test messageHash v r s result =
-        testCase (Text.unpack name) $ do
-            let expect = InternalBytes.asPattern bytesSort (BS.pack result)
-            actual <-
-                ecdsaRecoverKrypto
-                    (InternalBytes.asInternal bytesSort (BS.pack messageHash))
-                    (Test.Int.asInternal v)
-                    (InternalBytes.asInternal bytesSort (BS.pack r))
-                    (InternalBytes.asInternal bytesSort (BS.pack s))
-                    & evaluate "SECP256K1.ecdsaRecover"
-            assertEqual "" expect actual
-      where
-        Just name =
-            Attribute.getHook . Attribute.hook $
-                symbolAttributes ecdsaRecoverSymbol
+    where
+        test messageHash v r s result =
+            testCase (Text.unpack name) $ do
+                let expect = InternalBytes.asPattern bytesSort (BS.pack result)
+                actual <-
+                    ecdsaRecoverKrypto
+                        (InternalBytes.asInternal bytesSort (BS.pack messageHash))
+                        (Test.Int.asInternal v)
+                        (InternalBytes.asInternal bytesSort (BS.pack r))
+                        (InternalBytes.asInternal bytesSort (BS.pack s))
+                        & evaluate "SECP256K1.ecdsaRecover"
+                assertEqual "" expect actual
+            where
+                Just name =
+                    Attribute.getHook
+                        . Attribute.hook
+                        $ symbolAttributes ecdsaRecoverSymbol
 
 test_keccak256 :: [TestTree]
 test_keccak256 =
@@ -128,14 +130,14 @@ test_keccak256 =
         "testing"
         "5f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b02"
     ]
-  where
-    test input result =
-        testCase (show input) $ do
-            let expect = String.asPattern stringSort result
-            actual <-
-                keccak256Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
-                    & evaluate "KRYPTO.keccak256"
-            assertEqual "" expect actual
+    where
+        test input result =
+            testCase (show input) $ do
+                let expect = String.asPattern stringSort result
+                actual <-
+                    keccak256Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
+                        & evaluate "KRYPTO.keccak256"
+                assertEqual "" expect actual
 
 test_hashKeccak256 :: [TestTree]
 test_hashKeccak256 =
@@ -147,14 +149,14 @@ test_hashKeccak256 =
         "testing"
         "5f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b02"
     ]
-  where
-    test input result =
-        testCase (show input) $ do
-            let expect = String.asPattern stringSort result
-            actual <-
-                keccak256Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
-                    & evaluate "HASH.keccak256"
-            assertEqual "" expect actual
+    where
+        test input result =
+            testCase (show input) $ do
+                let expect = String.asPattern stringSort result
+                actual <-
+                    keccak256Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
+                        & evaluate "HASH.keccak256"
+                assertEqual "" expect actual
 
 test_sha256 :: [TestTree]
 test_sha256 =
@@ -166,14 +168,14 @@ test_sha256 =
         "\xd3"
         "28969cdfa74a12c82f3bad960b0b000aca2ac329deea5c2328ebc6f2ba9802c1"
     ]
-  where
-    test input result =
-        testCase (show input) $ do
-            let expect = String.asPattern stringSort result
-            actual <-
-                sha256Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
-                    & evaluate "KRYPTO.sha256"
-            assertEqual "" expect actual
+    where
+        test input result =
+            testCase (show input) $ do
+                let expect = String.asPattern stringSort result
+                actual <-
+                    sha256Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
+                        & evaluate "KRYPTO.sha256"
+                assertEqual "" expect actual
 
 test_hashSha256 :: [TestTree]
 test_hashSha256 =
@@ -185,14 +187,14 @@ test_hashSha256 =
         "\xd3"
         "28969cdfa74a12c82f3bad960b0b000aca2ac329deea5c2328ebc6f2ba9802c1"
     ]
-  where
-    test input result =
-        testCase (show input) $ do
-            let expect = String.asPattern stringSort result
-            actual <-
-                sha256Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
-                    & evaluate "HASH.sha256"
-            assertEqual "" expect actual
+    where
+        test input result =
+            testCase (show input) $ do
+                let expect = String.asPattern stringSort result
+                actual <-
+                    sha256Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
+                        & evaluate "HASH.sha256"
+                assertEqual "" expect actual
 
 test_sha3256 :: [TestTree]
 test_sha3256 =
@@ -204,14 +206,14 @@ test_sha3256 =
         "\xe9"
         "f0d04dd1e6cfc29a4460d521796852f25d9ef8d28b44ee91ff5b759d72c1e6d6"
     ]
-  where
-    test input result =
-        testCase (show input) $ do
-            let expect = String.asPattern stringSort result
-            actual <-
-                sha3256Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
-                    & evaluate "KRYPTO.sha3256"
-            assertEqual "" expect actual
+    where
+        test input result =
+            testCase (show input) $ do
+                let expect = String.asPattern stringSort result
+                actual <-
+                    sha3256Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
+                        & evaluate "KRYPTO.sha3256"
+                assertEqual "" expect actual
 
 test_hashSha3_256 :: [TestTree]
 test_hashSha3_256 =
@@ -223,14 +225,14 @@ test_hashSha3_256 =
         "\xe9"
         "f0d04dd1e6cfc29a4460d521796852f25d9ef8d28b44ee91ff5b759d72c1e6d6"
     ]
-  where
-    test input result =
-        testCase (show input) $ do
-            let expect = String.asPattern stringSort result
-            actual <-
-                sha3256Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
-                    & evaluate "HASH.sha3_256"
-            assertEqual "" expect actual
+    where
+        test input result =
+            testCase (show input) $ do
+                let expect = String.asPattern stringSort result
+                actual <-
+                    sha3256Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
+                        & evaluate "HASH.sha3_256"
+                assertEqual "" expect actual
 
 test_ripemd160 :: [TestTree]
 test_ripemd160 =
@@ -248,14 +250,14 @@ test_ripemd160 =
         "message digest"
         "5d0689ef49d2fae572b881b123a85ffa21595f36"
     ]
-  where
-    test input result =
-        testCase (show input) $ do
-            let expect = String.asPattern stringSort result
-            actual <-
-                ripemd160Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
-                    & evaluate "KRYPTO.ripemd160"
-            assertEqual "" expect actual
+    where
+        test input result =
+            testCase (show input) $ do
+                let expect = String.asPattern stringSort result
+                actual <-
+                    ripemd160Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
+                        & evaluate "KRYPTO.ripemd160"
+                assertEqual "" expect actual
 
 test_hashRipemd160 :: [TestTree]
 test_hashRipemd160 =
@@ -273,14 +275,14 @@ test_hashRipemd160 =
         "message digest"
         "5d0689ef49d2fae572b881b123a85ffa21595f36"
     ]
-  where
-    test input result =
-        testCase (show input) $ do
-            let expect = String.asPattern stringSort result
-            actual <-
-                ripemd160Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
-                    & evaluate "HASH.ripemd160"
-            assertEqual "" expect actual
+    where
+        test input result =
+            testCase (show input) $ do
+                let expect = String.asPattern stringSort result
+                actual <-
+                    ripemd160Krypto (InternalBytes.asInternal bytesSort (BS.pack input))
+                        & evaluate "HASH.ripemd160"
+                assertEqual "" expect actual
 
 evaluate ::
     Text ->
@@ -309,5 +311,5 @@ expectConstructor ::
 expectConstructor s =
     Lens.preview (_Ctor' @ctor) s
         & maybe failure return
-  where
-    failure = assertFailure ("Expected " ++ TypeLits.symbolVal (Proxy @ctor))
+    where
+        failure = assertFailure ("Expected " ++ TypeLits.symbolVal (Proxy @ctor))

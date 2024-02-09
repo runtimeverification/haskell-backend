@@ -108,78 +108,78 @@ evaluateApplication
                     & lift
             for_ canMemoize (recordOrPattern results)
             let unexpectedBottomResult = Symbol.isTotal symbol && isBottom results
-            when unexpectedBottomResult $
-                lift $
-                    errorBottomTotalFunction termLike
+            when unexpectedBottomResult
+                $ lift
+                $ errorBottomTotalFunction termLike
             return results
-      where
-        finishT :: ExceptT r Simplifier r -> Simplifier r
-        finishT = exceptT return return
+        where
+            finishT :: ExceptT r Simplifier r -> Simplifier r
+            finishT = exceptT return return
 
-        Application{applicationSymbolOrAlias = symbol} = application
+            Application{applicationSymbolOrAlias = symbol} = application
 
-        termLike = synthesize (ApplySymbolF application)
+            termLike = synthesize (ApplySymbolF application)
 
-        unevaluated ::
-            Monad m =>
-            Maybe SideCondition.Representation ->
-            m (OrPattern RewritingVariableName)
-        unevaluated maybeSideCondition =
-            return $
-                OrPattern.fromPattern $
-                    Pattern.withCondition
+            unevaluated ::
+                Monad m =>
+                Maybe SideCondition.Representation ->
+                m (OrPattern RewritingVariableName)
+            unevaluated maybeSideCondition =
+                return
+                    $ OrPattern.fromPattern
+                    $ Pattern.withCondition
                         (markSimplifiedIfChildren maybeSideCondition termLike)
                         childrenCondition
 
-        markSimplifiedIfChildren ::
-            Maybe SideCondition.Representation ->
-            TermLike RewritingVariableName ->
-            TermLike RewritingVariableName
-        markSimplifiedIfChildren Nothing =
-            TermLike.setSimplified
-                (foldMap TermLike.simplifiedAttribute application)
-        markSimplifiedIfChildren (Just condition) =
-            TermLike.setSimplified
-                ( foldMap TermLike.simplifiedAttribute application
-                    <> Attribute.Simplified.simplifiedConditionally condition
-                )
+            markSimplifiedIfChildren ::
+                Maybe SideCondition.Representation ->
+                TermLike RewritingVariableName ->
+                TermLike RewritingVariableName
+            markSimplifiedIfChildren Nothing =
+                TermLike.setSimplified
+                    (foldMap TermLike.simplifiedAttribute application)
+            markSimplifiedIfChildren (Just condition) =
+                TermLike.setSimplified
+                    ( foldMap TermLike.simplifiedAttribute application
+                        <> Attribute.Simplified.simplifiedConditionally condition
+                    )
 
-        canMemoize
-            | Symbol.isMemo symbol
-            , ( isTop childrenCondition
-                    && isTop (SideCondition.toPredicate sideCondition)
-              )
-                || all TermLike.isConstructorLike application =
-                traverse asConcrete application
-            | otherwise =
-                Nothing
+            canMemoize
+                | Symbol.isMemo symbol
+                , ( isTop childrenCondition
+                        && isTop (SideCondition.toPredicate sideCondition)
+                  )
+                    || all TermLike.isConstructorLike application =
+                    traverse asConcrete application
+                | otherwise =
+                    Nothing
 
-        recallOrPattern key = do
-            Memo.Self{recall} <- askMemo
-            maybeTermLike <- recall key
-            let maybeOrPattern =
-                    OrPattern.fromTermLike . fromConcrete <$> maybeTermLike
-            for_ maybeOrPattern throwE
+            recallOrPattern key = do
+                Memo.Self{recall} <- askMemo
+                maybeTermLike <- recall key
+                let maybeOrPattern =
+                        OrPattern.fromTermLike . fromConcrete <$> maybeTermLike
+                for_ maybeOrPattern throwE
 
-        recordOrPattern orPattern key
-            | [result] <- OrPattern.toPatterns orPattern
-            , Just term <- asConcrete (Pattern.term result)
-            , -- If the pattern and predicate are concrete, then we expect the predicate
-              -- to be fully-evaluated, so it must be Top. It may not be fully-evaluated
-              -- due to some uninterpreted function or an unsolved unification problem;
-              -- these are not errors, but they are unusual enough that we don't want to
-              -- deal with them here.
-              isTop (Pattern.predicate result)
-            , -- We already checked that childrenCondition has no substitutions, so we
-              -- don't expect the result to have any substitutions either. As with the
-              -- predicate, it might be possible to have a substitution in some cases,
-              -- but they are unusual enough that we don't need to deal with them here.
-              isTop (Pattern.substitution result) =
-                do
-                    Memo.Self{record} <- askMemo
-                    record key term
-            | otherwise =
-                return ()
+            recordOrPattern orPattern key
+                | [result] <- OrPattern.toPatterns orPattern
+                , Just term <- asConcrete (Pattern.term result)
+                , -- If the pattern and predicate are concrete, then we expect the predicate
+                  -- to be fully-evaluated, so it must be Top. It may not be fully-evaluated
+                  -- due to some uninterpreted function or an unsolved unification problem;
+                  -- these are not errors, but they are unusual enough that we don't want to
+                  -- deal with them here.
+                  isTop (Pattern.predicate result)
+                , -- We already checked that childrenCondition has no substitutions, so we
+                  -- don't expect the result to have any substitutions either. As with the
+                  -- predicate, it might be possible to have a substitution in some cases,
+                  -- but they are unusual enough that we don't need to deal with them here.
+                  isTop (Pattern.substitution result) =
+                    do
+                        Memo.Self{record} <- askMemo
+                        record key term
+                | otherwise =
+                    return ()
 
 {- | Evaluates axioms on patterns.
 
@@ -225,8 +225,8 @@ evaluatePattern
                                             }
                                     )
                         _ -> return result
-                    liftSimplifier $
-                        mergeWithConditionAndSubstitution
+                    liftSimplifier
+                        $ mergeWithConditionAndSubstitution
                             sideCondition
                             childrenCondition
                             flattened
@@ -237,27 +237,27 @@ evaluatePattern
                         defaultValue (Just c)
                     AttemptedAxiom.Applied attemptResults ->
                         return $ MultiOr.merge results remainders
-                      where
-                        AttemptedAxiomResults{results, remainders} =
-                            attemptResults
-      where
-        unchangedPatt =
-            Conditional
-                { term = termLike
-                , predicate = predicate
-                , substitution = substitution
-                }
-          where
-            Conditional{term = (), predicate, substitution} = childrenCondition
+                        where
+                            AttemptedAxiomResults{results, remainders} =
+                                attemptResults
+        where
+            unchangedPatt =
+                Conditional
+                    { term = termLike
+                    , predicate = predicate
+                    , substitution = substitution
+                    }
+                where
+                    Conditional{term = (), predicate, substitution} = childrenCondition
 
-        simplifyIfNeeded ::
-            Pattern RewritingVariableName ->
-            simplifier (OrPattern RewritingVariableName)
-        simplifyIfNeeded toSimplify
-            | toSimplify == unchangedPatt =
-                return (OrPattern.fromPattern unchangedPatt)
-            | otherwise =
-                liftSimplifier $ simplifyPattern sideCondition toSimplify
+            simplifyIfNeeded ::
+                Pattern RewritingVariableName ->
+                simplifier (OrPattern RewritingVariableName)
+            simplifyIfNeeded toSimplify
+                | toSimplify == unchangedPatt =
+                    return (OrPattern.fromPattern unchangedPatt)
+                | otherwise =
+                    liftSimplifier $ simplifyPattern sideCondition toSimplify
 {-# SPECIALIZE evaluatePattern ::
     SideCondition RewritingVariableName ->
     Condition RewritingVariableName ->
@@ -351,17 +351,17 @@ lookupAxiomSimplifier termLike = do
             Axiom.Identifier.Variable -> getEvaluator axiomIdentifier
             Axiom.Identifier.DV -> getEvaluator axiomIdentifier
             Axiom.Identifier.Other -> getEvaluator axiomIdentifier
-  where
-    getHook :: Symbol -> Maybe Text
-    getHook = Attribute.getHook . Attribute.hook . symbolAttributes
+    where
+        getHook :: Symbol -> Maybe Text
+        getHook = Attribute.getHook . Attribute.hook . symbolAttributes
 
-    combineEvaluatorsWithFallBack ::
-        (Maybe BuiltinAndAxiomSimplifier, Maybe BuiltinAndAxiomSimplifier) ->
-        Maybe BuiltinAndAxiomSimplifier
-    combineEvaluatorsWithFallBack = \case
-        (Nothing, eval2) -> eval2
-        (eval1, Nothing) -> eval1
-        (Just eval1, Just eval2) -> Just $ simplifierWithFallback eval1 eval2
+        combineEvaluatorsWithFallBack ::
+            (Maybe BuiltinAndAxiomSimplifier, Maybe BuiltinAndAxiomSimplifier) ->
+            Maybe BuiltinAndAxiomSimplifier
+        combineEvaluatorsWithFallBack = \case
+            (Nothing, eval2) -> eval2
+            (eval1, Nothing) -> eval1
+            (Just eval1, Just eval2) -> Just $ simplifierWithFallback eval1 eval2
 {-# SPECIALIZE lookupAxiomSimplifier ::
     TermLike RewritingVariableName ->
     MaybeT Simplifier BuiltinAndAxiomSimplifier
@@ -385,8 +385,8 @@ criticalMissingHook symbol hookName =
         , "and include the text of this message."
         , "Workaround: Give rules for" <+> unparse symbol
         ]
-  where
-    attribute = Attribute.hookAttribute hookName
+    where
+        attribute = Attribute.hookAttribute hookName
 
 evaluateSortInjection ::
     InternalVariable variable =>
@@ -403,18 +403,18 @@ evaluateSortInjection ap
                      in assert (toSort' == fromSort) resultApp
             _ -> ap
     | otherwise = ap
-  where
-    apHead = applicationSymbolOrAlias ap
-    ~(fromSort, _) = sortInjectionSorts apHead
-    ~apChild = sortInjectionChild ap
-    updateSortInjectionSource head1 fromSort1 children =
-        Application
-            { applicationSymbolOrAlias =
-                Symbol.coerceSortInjection head1 fromSort1 toSort1
-            , applicationChildren = children
-            }
-      where
-        ~(_, toSort1) = sortInjectionSorts head1
+    where
+        apHead = applicationSymbolOrAlias ap
+        ~(fromSort, _) = sortInjectionSorts apHead
+        ~apChild = sortInjectionChild ap
+        updateSortInjectionSource head1 fromSort1 children =
+            Application
+                { applicationSymbolOrAlias =
+                    Symbol.coerceSortInjection head1 fromSort1 toSort1
+                , applicationChildren = children
+                }
+            where
+                ~(_, toSort1) = sortInjectionSorts head1
 
 sortInjectionChild :: Unparse a => Application Symbol a -> a
 sortInjectionChild application =
@@ -465,8 +465,8 @@ mergeWithConditionAndSubstitution
             evaluatedRemainders <- OrPattern.observeAllT $ do
                 remainder <- Logic.scatter remainders
                 simplifyCondition sideCondition (Pattern.andCondition remainder toMerge)
-            return $
-                AttemptedAxiom.Applied
+            return
+                $ AttemptedAxiom.Applied
                     AttemptedAxiomResults
                         { results = evaluatedResults
                         , remainders = evaluatedRemainders

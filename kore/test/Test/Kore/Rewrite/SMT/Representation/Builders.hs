@@ -72,8 +72,8 @@ unresolvedSort identifier =
                     , arity = 0
                     }
         }
-  where
-    encodable = AST.encodable identifier
+    where
+        encodable = AST.encodable identifier
 
 unresolvedDataMap :: Kore.Id -> (Kore.Id, AST.UnresolvedSort)
 unresolvedDataMap identifier = (identifier, unresolvedData identifier)
@@ -90,8 +90,8 @@ unresolvedData identifier =
                     , constructors = []
                     }
         }
-  where
-    encodable = AST.encodable identifier
+    where
+        encodable = AST.encodable identifier
 
 unresolvedSortConstructor :: Kore.Id -> AST.UnresolvedConstructor
 unresolvedSortConstructor identifier =
@@ -143,8 +143,8 @@ unresolvedConstructorSymbol identifier resultSort argumentSorts =
                         AST.SortReference <$> resultSort : argumentSorts
                     }
         }
-  where
-    encodable = AST.encodable identifier
+    where
+        encodable = AST.encodable identifier
 
 unresolvedSmtlibSymbolMap ::
     Kore.Id ->

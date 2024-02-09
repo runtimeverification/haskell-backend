@@ -47,17 +47,17 @@ class Binding binding where
             (Binder (SomeVariableType binding) binding)
     traverseBinder traversal binding =
         fromMaybe (pure binding) (matchElem <|> matchSet)
-      where
-        matchSet = matchWith traverseSetBinder traversalSet binding
-        matchElem = matchWith traverseElementBinder traversalElem binding
-        traversalSet =
-            fmap (field @"binderVariable" %~ expectSetVariable)
-                . traversal
-                . (field @"binderVariable" %~ inject)
-        traversalElem =
-            fmap (field @"binderVariable" %~ expectElementVariable)
-                . traversal
-                . (field @"binderVariable" %~ inject)
+        where
+            matchSet = matchWith traverseSetBinder traversalSet binding
+            matchElem = matchWith traverseElementBinder traversalElem binding
+            traversalSet =
+                fmap (field @"binderVariable" %~ expectSetVariable)
+                    . traversal
+                    . (field @"binderVariable" %~ inject)
+            traversalElem =
+                fmap (field @"binderVariable" %~ expectElementVariable)
+                    . traversal
+                    . (field @"binderVariable" %~ inject)
 
     -- | Traverse the element variable binder at the top of a pattern.
     traverseElementBinder ::
@@ -130,14 +130,14 @@ muBinder ::
         (Binder (SetVariable variable2) child2)
 muBinder mapping mu =
     finish <$> mapping binder
-  where
-    binder =
-        Binder{binderVariable = muVariable, binderChild}
-      where
-        Mu{muVariable} = mu
-        Mu{muChild = binderChild} = mu
-    finish Binder{binderVariable, binderChild} =
-        mu{muVariable = binderVariable, muChild = binderChild}
+    where
+        binder =
+            Binder{binderVariable = muVariable, binderChild}
+            where
+                Mu{muVariable} = mu
+                Mu{muChild = binderChild} = mu
+        finish Binder{binderVariable, binderChild} =
+            mu{muVariable = binderVariable, muChild = binderChild}
 
 {- | A 'Lens.Lens' to view a 'Nu' as a 'Binder'.
 
@@ -153,11 +153,11 @@ nuBinder ::
         (Binder (SetVariable variable2) child2)
 nuBinder mapping nu =
     finish <$> mapping binder
-  where
-    binder =
-        Binder{binderVariable = nuVariable, binderChild}
-      where
-        Nu{nuVariable} = nu
-        Nu{nuChild = binderChild} = nu
-    finish Binder{binderVariable, binderChild} =
-        nu{nuVariable = binderVariable, nuChild = binderChild}
+    where
+        binder =
+            Binder{binderVariable = nuVariable, binderChild}
+            where
+                Nu{nuVariable} = nu
+                Nu{nuChild = binderChild} = nu
+        finish Binder{binderVariable, binderChild} =
+            nu{nuVariable = binderVariable, nuChild = binderChild}

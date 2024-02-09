@@ -67,10 +67,10 @@ test_make =
             actual = MultiAnd.make input
         assertEqual "" expect (toList actual)
     ]
-  where
-    x, y :: ElementVariable RewritingVariableName
-    x = Mock.xConfig
-    y = Mock.yConfig
+    where
+        x, y :: ElementVariable RewritingVariableName
+        x = Mock.xConfig
+        y = Mock.yConfig
 
 hasPatterns :: MultiAnd TestTopBottom -> [TestTopBottom] -> TestTree
 hasPatterns actual expected =

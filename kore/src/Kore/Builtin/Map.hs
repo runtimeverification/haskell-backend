@@ -151,23 +151,23 @@ verifiers =
 sortDeclVerifiers :: Builtin.SortDeclVerifiers
 sortDeclVerifiers =
     HashMap.fromList [(sort, verifySortDecl)]
-  where
-    verifySortDecl indexedModule sentenceSort attrs = do
-        Builtin.verifySortDecl indexedModule sentenceSort attrs
-        unitId <- Builtin.getUnitId attrs
-        Builtin.assertSymbolHook syntax unitId Map.unitKey
-        Builtin.assertSymbolResultSort syntax unitId expectedSort
-        elementId <- Builtin.getElementId attrs
-        Builtin.assertSymbolHook syntax elementId Map.elementKey
-        Builtin.assertSymbolResultSort syntax elementId expectedSort
-        concatId <- Builtin.getConcatId attrs
-        Builtin.assertSymbolHook syntax concatId Map.concatKey
-        Builtin.assertSymbolResultSort syntax concatId expectedSort
-        return ()
-      where
-        SentenceSort{sentenceSortName} = sentenceSort
-        expectedSort = TermLike.mkSort sentenceSortName
-        syntax = indexedModuleSyntax indexedModule
+    where
+        verifySortDecl indexedModule sentenceSort attrs = do
+            Builtin.verifySortDecl indexedModule sentenceSort attrs
+            unitId <- Builtin.getUnitId attrs
+            Builtin.assertSymbolHook syntax unitId Map.unitKey
+            Builtin.assertSymbolResultSort syntax unitId expectedSort
+            elementId <- Builtin.getElementId attrs
+            Builtin.assertSymbolHook syntax elementId Map.elementKey
+            Builtin.assertSymbolResultSort syntax elementId expectedSort
+            concatId <- Builtin.getConcatId attrs
+            Builtin.assertSymbolHook syntax concatId Map.concatKey
+            Builtin.assertSymbolResultSort syntax concatId expectedSort
+            return ()
+            where
+                SentenceSort{sentenceSortName} = sentenceSort
+                expectedSort = TermLike.mkSort sentenceSortName
+                syntax = indexedModuleSyntax indexedModule
 
 {- | Verify that hooked symbol declarations are well-formed.
 
@@ -300,8 +300,8 @@ evalLookup _ resultSort [_map, _key] = do
             (return . maybeBottom)
                 (getMapValue <$> HashMap.lookup _key _map)
     emptyMap <|> bothConcrete
-  where
-    maybeBottom = maybe (Pattern.bottomOf resultSort) Pattern.fromTermLike
+    where
+        maybeBottom = maybe (Pattern.bottomOf resultSort) Pattern.fromTermLike
 evalLookup _ _ _ = Builtin.wrongArity Map.lookupKey
 
 evalLookupOrDefault :: Builtin.Function
@@ -360,43 +360,43 @@ evalUpdate _ _ _ = Builtin.wrongArity Map.updateKey
 evalInKeys :: Builtin.Function
 evalInKeys sideCondition resultSort arguments@[_key, _map] =
     emptyMap <|> concreteMap <|> symbolicMap
-  where
-    mkCeilUnlessDefined termLike
-        | SideCondition.isDefined sideCondition termLike = Condition.top
-        | otherwise =
-            Condition.fromPredicate (makeCeilPredicate termLike)
+    where
+        mkCeilUnlessDefined termLike
+            | SideCondition.isDefined sideCondition termLike = Condition.top
+            | otherwise =
+                Condition.fromPredicate (makeCeilPredicate termLike)
 
-    returnPattern = return . flip Pattern.andCondition conditions
-    conditions = foldMap mkCeilUnlessDefined arguments
+        returnPattern = return . flip Pattern.andCondition conditions
+        conditions = foldMap mkCeilUnlessDefined arguments
 
-    -- The empty map contains no keys.
-    emptyMap = do
-        _map <- expectConcreteBuiltinMap Map.in_keysKey _map
-        Monad.guard (HashMap.null _map)
-        Bool.asPattern resultSort False & returnPattern
+        -- The empty map contains no keys.
+        emptyMap = do
+            _map <- expectConcreteBuiltinMap Map.in_keysKey _map
+            Monad.guard (HashMap.null _map)
+            Bool.asPattern resultSort False & returnPattern
 
-    -- When the map is concrete, decide if a concrete key is present or absent.
-    concreteMap = do
-        _map <- expectConcreteBuiltinMap Map.in_keysKey _map
-        _key <- hoistMaybe $ retractKey _key
-        HashMap.member _key _map
-            & Bool.asPattern resultSort
-            & returnPattern
+        -- When the map is concrete, decide if a concrete key is present or absent.
+        concreteMap = do
+            _map <- expectConcreteBuiltinMap Map.in_keysKey _map
+            _key <- hoistMaybe $ retractKey _key
+            HashMap.member _key _map
+                & Bool.asPattern resultSort
+                & returnPattern
 
-    -- When the map is symbolic, decide if a key is present.
-    symbolicMap = do
-        _map <- expectBuiltinMap Map.in_keysKey _map
-        let inKeys =
-                (or . catMaybes)
-                    -- The key may be concrete or symbolic.
-                    [ do
-                        _key <- retractKey _key
-                        pure (isConcreteKeyOfAc _key _map)
-                    , pure (isSymbolicKeyOfAc _key _map)
-                    ]
-        Monad.guard inKeys
-        -- We cannot decide if the key is absent because the Map is symbolic.
-        Bool.asPattern resultSort True & returnPattern
+        -- When the map is symbolic, decide if a key is present.
+        symbolicMap = do
+            _map <- expectBuiltinMap Map.in_keysKey _map
+            let inKeys =
+                    (or . catMaybes)
+                        -- The key may be concrete or symbolic.
+                        [ do
+                            _key <- retractKey _key
+                            pure (isConcreteKeyOfAc _key _map)
+                        , pure (isSymbolicKeyOfAc _key _map)
+                        ]
+            Monad.guard inKeys
+            -- We cannot decide if the key is absent because the Map is symbolic.
+            Bool.asPattern resultSort True & returnPattern
 evalInKeys _ _ _ = Builtin.wrongArity Map.in_keysKey
 
 evalInclusion :: Builtin.Function
@@ -524,8 +524,8 @@ internalize tools termLike
                     singleOpaqueTerm
                 | otherwise -> Ac.asInternal tools sort' termNormalized
     | otherwise = termLike
-  where
-    sort' = termLikeSort termLike
+    where
+        sort' = termLikeSort termLike
 
 data NormAcData = NormAcData
     { normalized1, normalized2 :: !(InternalMap Key (TermLike RewritingVariableName))
@@ -547,33 +547,34 @@ matchUnifyEquals tools first second
     | Just True <- isMapSort tools sort1 =
         worker first second True <|> worker second first False
     | otherwise = Nothing
-  where
-    sort1 = termLikeSort first
+    where
+        sort1 = termLikeSort first
 
-    normalizedOrBottom ::
-        TermLike RewritingVariableName ->
-        Ac.NormalizedOrBottom NormalizedMap RewritingVariableName
-    normalizedOrBottom = Ac.toNormalized
+        normalizedOrBottom ::
+            TermLike RewritingVariableName ->
+            Ac.NormalizedOrBottom NormalizedMap RewritingVariableName
+        normalizedOrBottom = Ac.toNormalized
 
-    worker a b isFirstMatched
-        | InternalMap_ normalized1 <- a
-        , InternalMap_ normalized2 <- b =
-            NormAc . NormAcData normalized1 normalized2 term1 term2
-                <$> Ac.matchUnifyEqualsNormalizedAc
-                    tools
-                    normalized1
-                    normalized2
-        | otherwise = case normalizedOrBottom a of
-            Ac.Bottom -> Just $ ReturnBottom term1 term2
-            Ac.Normalized normalized1 ->
-                let a' = Ac.asInternal tools sort1 normalized1
-                 in case normalizedOrBottom b of
-                        Ac.Bottom -> Just $ ReturnBottom term1 term2
-                        Ac.Normalized normalized2 ->
-                            let b' = Ac.asInternal tools sort1 normalized2
-                             in worker a' b' isFirstMatched
-      where
-        (term1, term2) = if isFirstMatched then (a, b) else (b, a)
+        worker a b isFirstMatched
+            | InternalMap_ normalized1 <- a
+            , InternalMap_ normalized2 <- b =
+                NormAc
+                    . NormAcData normalized1 normalized2 term1 term2
+                    <$> Ac.matchUnifyEqualsNormalizedAc
+                        tools
+                        normalized1
+                        normalized2
+            | otherwise = case normalizedOrBottom a of
+                Ac.Bottom -> Just $ ReturnBottom term1 term2
+                Ac.Normalized normalized1 ->
+                    let a' = Ac.asInternal tools sort1 normalized1
+                     in case normalizedOrBottom b of
+                            Ac.Bottom -> Just $ ReturnBottom term1 term2
+                            Ac.Normalized normalized2 ->
+                                let b' = Ac.asInternal tools sort1 normalized2
+                                 in worker a' b' isFirstMatched
+            where
+                (term1, term2) = if isFirstMatched then (a, b) else (b, a)
 
 {- | Simplify the conjunction or equality of two concrete Map domain values.
 
@@ -603,8 +604,8 @@ unifyEquals unifyEqualsChildren tools unifyData =
                 normalized1
                 normalized2
                 acData
-          where
-            NormAcData{normalized1, normalized2, term1, term2, acData} = unifyData'
+            where
+                NormAcData{normalized1, normalized2, term1, term2, acData} = unifyData'
 
 data InKeys term = InKeys
     { symbol :: !Symbol
@@ -702,12 +703,12 @@ matchUnifyNotInKeys first second
                 -- otherwise
                 _ -> Nothing
     | otherwise = Nothing
-  where
-    normalizedOrBottom ::
-        InternalVariable variable =>
-        TermLike variable ->
-        Ac.NormalizedOrBottom NormalizedMap variable
-    normalizedOrBottom = Ac.toNormalized
+    where
+        normalizedOrBottom ::
+            InternalVariable variable =>
+            TermLike variable ->
+            Ac.NormalizedOrBottom NormalizedMap variable
+        normalizedOrBottom = Ac.toNormalized
 {-# INLINE matchUnifyNotInKeys #-}
 
 unifyNotInKeys ::
@@ -740,38 +741,38 @@ unifyNotInKeys resultSort unifyChildren unifyData =
                         fmap Pattern.withoutTerm (keyConditions <> opaqueConditions)
                             <> [definedKey, definedMap]
                 return $ collectConditions conditions
-          where
-            UnifyNotInKeys
-                { inKeys
-                , concreteKeys
-                , mapKeys
-                , opaqueElements
-                , term
-                } = unifyData'
-            InKeys{keyTerm, mapTerm} = inKeys
-  where
-    defineTerm ::
-        TermLike RewritingVariableName ->
-        unifier (Condition RewritingVariableName)
-    defineTerm term =
-        liftSimplifier (makeEvaluateTermCeil SideCondition.topTODO term)
-            >>= Unify.scatter
+            where
+                UnifyNotInKeys
+                    { inKeys
+                    , concreteKeys
+                    , mapKeys
+                    , opaqueElements
+                    , term
+                    } = unifyData'
+                InKeys{keyTerm, mapTerm} = inKeys
+    where
+        defineTerm ::
+            TermLike RewritingVariableName ->
+            unifier (Condition RewritingVariableName)
+        defineTerm term =
+            liftSimplifier (makeEvaluateTermCeil SideCondition.topTODO term)
+                >>= Unify.scatter
 
-    eraseTerm =
-        Pattern.fromCondition resultSort . Pattern.withoutTerm
+        eraseTerm =
+            Pattern.fromCondition resultSort . Pattern.withoutTerm
 
-    unifyAndNegate t1 t2 =
-        do
-            -- Erasing the unified term is valid here because
-            -- the terms are all wrapped in \ceil below.
-            unificationSolutions <-
-                fmap eraseTerm <$> Unify.gather (unifyChildren t1 t2)
-            liftSimplifier $
-                (notSimplifier SideCondition.top)
-                    Not
-                        { notSort = resultSort
-                        , notChild = OrPattern.fromPatterns unificationSolutions
-                        }
-            >>= Unify.scatter
+        unifyAndNegate t1 t2 =
+            do
+                -- Erasing the unified term is valid here because
+                -- the terms are all wrapped in \ceil below.
+                unificationSolutions <-
+                    fmap eraseTerm <$> Unify.gather (unifyChildren t1 t2)
+                liftSimplifier
+                    $ (notSimplifier SideCondition.top)
+                        Not
+                            { notSort = resultSort
+                            , notChild = OrPattern.fromPatterns unificationSolutions
+                            }
+                >>= Unify.scatter
 
-    collectConditions terms = fold terms & Pattern.fromCondition resultSort
+        collectConditions terms = fold terms & Pattern.fromCondition resultSort

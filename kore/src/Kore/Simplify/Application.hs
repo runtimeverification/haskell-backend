@@ -68,16 +68,16 @@ simplify sideCondition application = do
             Logic.scatter childrenCrossProduct
         lift $ makeAndEvaluateApplications sideCondition symbol result
     return (OrPattern.flatten evaluated)
-  where
-    Application
-        { applicationSymbolOrAlias = symbol
-        } =
-            application
+    where
+        Application
+            { applicationSymbolOrAlias = symbol
+            } =
+                application
 
-    -- The "Propagation Or" inference rule together with
-    -- "Propagation Bottom" for the case when a child or is empty.
-    childrenCrossProduct =
-        MultiOr.distributeApplication application
+        -- The "Propagation Or" inference rule together with
+        -- "Propagation Bottom" for the case when a child or is empty.
+        childrenCrossProduct =
+            MultiOr.distributeApplication application
 
 makeAndEvaluateApplications ::
     SideCondition RewritingVariableName ->

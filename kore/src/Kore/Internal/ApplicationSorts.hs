@@ -61,10 +61,10 @@ symbolOrAliasSorts params sentence = do
             { applicationSortsOperands = operandSorts
             , applicationSortsResult = fullReturnSort
             }
-  where
-    paramVariables = getSentenceSymbolOrAliasSortParams sentence
-    parametrizedArgumentSorts = getSentenceSymbolOrAliasArgumentSorts sentence
-    parametrizedReturnSort = getSentenceSymbolOrAliasResultSort sentence
+    where
+        paramVariables = getSentenceSymbolOrAliasSortParams sentence
+        parametrizedArgumentSorts = getSentenceSymbolOrAliasArgumentSorts sentence
+        parametrizedReturnSort = getSentenceSymbolOrAliasResultSort sentence
 
 substituteSortVariables ::
     MonadError (Error e) m =>
@@ -74,13 +74,13 @@ substituteSortVariables ::
 substituteSortVariables variableToSort (SortVariableSort variable) =
     Map.lookup variable variableToSort
         & maybe missingSortVariable return
-  where
-    missingSortVariable =
-        koreFail
-            ( "Sort variable not found: '"
-                ++ getIdForError (getSortVariable variable)
-                ++ "'."
-            )
+    where
+        missingSortVariable =
+            koreFail
+                ( "Sort variable not found: '"
+                    ++ getIdForError (getSortVariable variable)
+                    ++ "'."
+                )
 substituteSortVariables
     variableToSort
     (SortActualSort sort@SortActual{sortActualSorts = sortList}) =
@@ -99,6 +99,6 @@ pairVariablesToSorts variables sorts
     | variablesLength > sortsLength =
         koreFail "Application uses less sorts than the declaration."
     | otherwise = return (zip variables sorts)
-  where
-    variablesLength = length variables
-    sortsLength = length sorts
+    where
+        variablesLength = length variables
+        sortsLength = length sorts

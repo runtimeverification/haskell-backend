@@ -139,9 +139,9 @@ hasSimplifiedChildren sideCondition patt =
     TermLike.isSimplified sideCondition term
         && all (Predicate.isSimplified sideCondition) clauses
         && Substitution.isSimplified sideCondition substitution
-  where
-    Conditional{term, predicate, substitution} = patt
-    clauses = Predicate.toMultiAnd predicate
+    where
+        Conditional{term, predicate, substitution} = patt
+        clauses = Predicate.toMultiAnd predicate
 
 {- | Similar to 'hasSimplifiedChildren', only that it ignores the conditions
 used to simplify the children.
@@ -154,24 +154,24 @@ hasSimplifiedChildrenIgnoreConditions patt =
     TermLike.isSimplifiedSomeCondition term
         && all Predicate.isSimplifiedSomeCondition clauses
         && Substitution.isSimplifiedSomeCondition substitution
-  where
-    Conditional{term, predicate, substitution} = patt
-    clauses = Predicate.toMultiAnd predicate
+    where
+        Conditional{term, predicate, substitution} = patt
+        clauses = Predicate.toMultiAnd predicate
 
 forgetSimplified ::
     InternalVariable variable => Pattern variable -> Pattern variable
 forgetSimplified patt =
     TermLike.forgetSimplified term
         `withCondition` Condition.forgetSimplified condition
-  where
-    (term, condition) = Conditional.splitTerm patt
+    where
+        (term, condition) = Conditional.splitTerm patt
 markSimplified ::
     InternalVariable variable => Pattern variable -> Pattern variable
 markSimplified patt =
     TermLike.markSimplified term
         `withCondition` Condition.markSimplified condition
-  where
-    (term, condition) = Conditional.splitTerm patt
+    where
+        (term, condition) = Conditional.splitTerm patt
 simplifiedAttribute :: Pattern variable -> Attribute.Simplified
 simplifiedAttribute (splitTerm -> (t, p)) =
     TermLike.simplifiedAttribute t <> Condition.simplifiedAttribute p
@@ -212,20 +212,20 @@ toTermLike Conditional{term, predicate, substitution} =
     simpleAnd
         (simpleAnd term predicate)
         (Substitution.toPredicate substitution)
-  where
-    simpleAnd ::
-        TermLike variable ->
-        Predicate variable ->
-        TermLike variable
-    simpleAnd pattern' predicate'
-        | isTop predicate' = pattern'
-        | isBottom predicate' = mkBottom sort
-        | isTop pattern' = predicateTermLike
-        | isBottom pattern' = pattern'
-        | otherwise = mkAnd pattern' predicateTermLike
-      where
-        predicateTermLike = Predicate.fromPredicate sort predicate'
-        sort = termLikeSort pattern'
+    where
+        simpleAnd ::
+            TermLike variable ->
+            Predicate variable ->
+            TermLike variable
+        simpleAnd pattern' predicate'
+            | isTop predicate' = pattern'
+            | isBottom predicate' = mkBottom sort
+            | isTop pattern' = predicateTermLike
+            | isBottom pattern' = pattern'
+            | otherwise = mkAnd pattern' predicateTermLike
+            where
+                predicateTermLike = Predicate.fromPredicate sort predicate'
+                sort = termLikeSort pattern'
 
 {- | An 'Pattern' where the 'term' is 'Bottom' of the given 'Sort'.
 
@@ -284,27 +284,27 @@ parsePatternFromTermLike original
         fromTermLike original
     | otherwise =
         fromTermAndPredicate (andTerms actualTerms) (andPredicates predicates)
-  where
-    sort = TermLike.termLikeSort original
+    where
+        sort = TermLike.termLikeSort original
 
-    andParts :: TermLike v -> NonEmpty (TermLike v)
-    andParts (TermLike.And_ _ t1 t2) = andParts t1 <> andParts t2
-    andParts other = NonEmpty.fromList [other]
+        andParts :: TermLike v -> NonEmpty (TermLike v)
+        andParts (TermLike.And_ _ t1 t2) = andParts t1 <> andParts t2
+        andParts other = NonEmpty.fromList [other]
 
-    -- invariant: one of the lists is non-empty
-    (actualTerms, predicates) =
-        partitionEithers
-            . toList
-            . NonEmpty.map getPredicate
-            $ andParts original
+        -- invariant: one of the lists is non-empty
+        (actualTerms, predicates) =
+            partitionEithers
+                . toList
+                . NonEmpty.map getPredicate
+                $ andParts original
 
-    getPredicate t = first (const t) $ Predicate.makePredicate t
+        getPredicate t = first (const t) $ Predicate.makePredicate t
 
-    andPredicates :: [Predicate.Predicate v] -> Predicate.Predicate v
-    andPredicates = foldr1 Predicate.makeAndPredicate
+        andPredicates :: [Predicate.Predicate v] -> Predicate.Predicate v
+        andPredicates = foldr1 Predicate.makeAndPredicate
 
-    andTerms :: [TermLike v] -> TermLike v
-    andTerms = foldr1 TermLike.mkAnd
+        andTerms :: [TermLike v] -> TermLike v
+        andTerms = foldr1 TermLike.mkAnd
 
 withCondition ::
     InternalVariable variable =>
@@ -368,12 +368,12 @@ assign ::
     TermLike variable ->
     Pattern variable
 assign variable term =
-    withCondition assignedTerm $
-        Condition.fromSingleSubstitution
+    withCondition assignedTerm
+        $ Condition.fromSingleSubstitution
             assignment
-  where
-    assignment = Substitution.assign variable term
-    assignedTerm = Substitution.assignedTerm assignment
+    where
+        assignment = Substitution.assign variable term
+        assignedTerm = Substitution.assignedTerm assignment
 
 {- | Add a 'Predicate' requiring that the 'term' of a 'Pattern' is defined.
 
@@ -392,8 +392,8 @@ requireDefined Conditional{term, predicate, substitution} =
         { term
         , substitution
         , predicate =
-            Predicate.makeAndPredicate predicate $
-                Predicate.makeCeilPredicate term
+            Predicate.makeAndPredicate predicate
+                $ Predicate.makeCeilPredicate term
         }
 
 fromMultiAnd ::

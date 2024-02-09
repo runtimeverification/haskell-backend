@@ -48,20 +48,20 @@ encode8Bit =
     Text.unpack
         >>> map (Char.ord >>> encodeByte)
         >>> ByteString.pack
-  where
-    encodeByte :: Int -> Word8
-    encodeByte int
-        | int < 0x00 = failed "expected positive value"
-        | int > 0xFF = failed "expected 8-bit value"
-        | otherwise = fromIntegral int
-      where
-        failed message =
-            (error . unwords)
-                [ "encode8Bit:"
-                , message ++ ","
-                , "found:"
-                , show int
-                ]
+    where
+        encodeByte :: Int -> Word8
+        encodeByte int
+            | int < 0x00 = failed "expected positive value"
+            | int > 0xFF = failed "expected 8-bit value"
+            | otherwise = fromIntegral int
+            where
+                failed message =
+                    (error . unwords)
+                        [ "encode8Bit:"
+                        , message ++ ","
+                        , "found:"
+                        , show int
+                        ]
 
 {- | Encode text using an 8-bit encoding.
 
@@ -71,13 +71,13 @@ any character falls outside that representable range.
 parse8Bit :: Parsec Void Text ByteString
 parse8Bit =
     ByteString.pack <$> many parseByte
-  where
-    parseByte :: Parsec Void Text Word8
-    parseByte =
-        fromIntegral . Char.ord <$> Parsec.satisfy is8Bit <?> "8-bit value"
+    where
+        parseByte :: Parsec Void Text Word8
+        parseByte =
+            fromIntegral . Char.ord <$> Parsec.satisfy is8Bit <?> "8-bit value"
 
-    is8Bit :: Char -> Bool
-    is8Bit c = c < '\x100'
+        is8Bit :: Char -> Bool
+        is8Bit c = c < '\x100'
 
 decode8Bit :: ByteArrayAccess a => a -> Text
 decode8Bit =
@@ -88,31 +88,31 @@ decode8Bit =
 parseHexHalfByte :: Parsec Void Text Word8
 parseHexHalfByte =
     toEnum . Char.digitToInt <$> parseHexDigit
-  where
-    parseHexDigit = Parsec.satisfy Char.isHexDigit Parsec.<?> "hex digit"
+    where
+        parseHexDigit = Parsec.satisfy Char.isHexDigit Parsec.<?> "hex digit"
 
 parseBase16 :: Parsec Void Text ByteString
 parseBase16 = do
     bytes <- many parseByte
     pure $ foldr ByteString.cons ByteString.empty bytes
-  where
-    parseByte = do
-        half1 <- parseHexHalfByte
-        half2 <- parseHexHalfByte
-        pure (Bits.shiftL half1 4 Bits..|. half2)
+    where
+        parseByte = do
+            half1 <- parseHexHalfByte
+            half2 <- parseHexHalfByte
+            pure (Bits.shiftL half1 4 Bits..|. half2)
 
 toBase16 :: ByteString -> Text
 toBase16 byteString =
     Text.pack . concat $ List.unfoldr unfold byteString
-  where
-    unfold bytes = do
-        (byte, bytes') <- ByteString.uncons bytes
-        let lo = byte Bits..&. 0x0F
-            hi = Bits.shiftR byte 4
-        pure ([encode hi, encode lo], bytes')
-    encode half =
-        assert (0 <= half && half < 16) $
-            (Vector.!) encodingBase16 (fromEnum half)
+    where
+        unfold bytes = do
+            (byte, bytes') <- ByteString.uncons bytes
+            let lo = byte Bits..&. 0x0F
+                hi = Bits.shiftR byte 4
+            pure ([encode hi, encode lo], bytes')
+        encode half =
+            assert (0 <= half && half < 16)
+                $ (Vector.!) encodingBase16 (fromEnum half)
 
 encodingBase16 :: Vector Char
 encodingBase16 =

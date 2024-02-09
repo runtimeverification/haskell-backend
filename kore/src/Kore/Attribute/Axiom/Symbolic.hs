@@ -77,9 +77,9 @@ parseSymbolicAttribute ::
     Parser (Symbolic VariableName)
 parseSymbolicAttribute freeVariables =
     Parser.withApplication symbolicId parseApplication
-  where
-    parseApplication params args (Symbolic concreteVars) =
-        Symbolic <$> parseFreeVariables freeVariables params args concreteVars
+    where
+        parseApplication params args (Symbolic concreteVars) =
+            Symbolic <$> parseFreeVariables freeVariables params args concreteVars
 
 instance From (Symbolic VariableName) Attributes where
     from =

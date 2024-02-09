@@ -123,8 +123,8 @@ unparseGenericWith ::
     Doc ann
 unparseGenericWith helper =
     sep . SOP.hcollapse . SOP.hcmap constraint (SOP.mapIK helper) . SOP.from
-  where
-    constraint = Proxy :: Proxy Unparse
+    where
+        constraint = Proxy :: Proxy Unparse
 {-# INLINE unparseGenericWith #-}
 
 -- | Serialize an object to 'Text'.
@@ -228,9 +228,9 @@ listAux between left right =
             xs
                 & (punctuate between >>> vsep)
                 & (begin >>> nest 4 >>> end >>> group)
-  where
-    begin body = (left <> line') <> body
-    end body = body <> (line' <> right)
+    where
+        begin body = (left <> line') <> body
+        end body = body <> (line' <> right)
 
 -- | Render a 'Doc ann' with indentation and without extra line breaks.
 layoutPrettyUnbounded :: Doc ann -> SimpleDocStream ann
@@ -267,9 +267,9 @@ escapeCharS c
     | c < '\x100' = showString "\\x" . zeroPad 2 (showHexCode c)
     | c < '\x10000' = showString "\\u" . zeroPad 4 (showHexCode c)
     | otherwise = showString "\\U" . zeroPad 8 (showHexCode c)
-  where
-    showHexCode = Numeric.showHex . Char.ord
-    zeroPad = padLeftWithCharToLength '0'
+    where
+        showHexCode = Numeric.showHex . Char.ord
+        zeroPad = padLeftWithCharToLength '0'
 
 escapeCharT :: Char -> Text
 escapeCharT c
@@ -284,9 +284,9 @@ escapeCharT c
     | c < '\x100' = "\\x" <> zeroPad 2 (Text.pack $ showHexCode c "")
     | c < '\x10000' = "\\u" <> zeroPad 4 (Text.pack $ showHexCode c "")
     | otherwise = "\\U" <> zeroPad 8 (Text.pack $ showHexCode c "")
-  where
-    showHexCode = Numeric.showHex . Char.ord
-    zeroPad i = Text.justifyRight i '0'
+    where
+        showHexCode = Numeric.showHex . Char.ord
+        zeroPad i = Text.justifyRight i '0'
 
 padLeftWithCharToLength :: Char -> Int -> ShowS -> ShowS
 padLeftWithCharToLength c i ss =
@@ -317,23 +317,23 @@ unparseAssoc' ::
     Doc ann
 unparseAssoc' oper ident =
     worker
-  where
-    worker [] = ident
-    worker [x] = x
-    worker (x : xs) =
-        mconcat
-            ( worker' x xs
-                : line'
-                : replicate (length xs) rparen
-            )
+    where
+        worker [] = ident
+        worker [x] = x
+        worker (x : xs) =
+            mconcat
+                ( worker' x xs
+                    : line'
+                    : replicate (length xs) rparen
+                )
 
-    worker' x [] = indent 4 x
-    worker' x (y : rest) =
-        mconcat
-            [ oper <> lparen <> line'
-            , indent 4 x <> comma <> line
-            , worker' y rest
-            ]
+        worker' x [] = indent 4 x
+        worker' x (y : rest) =
+            mconcat
+                [ oper <> lparen <> line'
+                , indent 4 x <> comma <> line
+                , worker' y rest
+                ]
 
 {- | Unparse a concatenation of elements, given the @unit@ and @concat@ symbols.
 
@@ -350,5 +350,5 @@ unparseConcat' ::
     Pretty.Doc ann
 unparseConcat' unitSymbol concatSymbol =
     unparseAssoc' concatSymbol applyUnit
-  where
-    applyUnit = unitSymbol <> noArguments
+    where
+        applyUnit = unitSymbol <> noArguments

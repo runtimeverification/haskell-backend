@@ -67,8 +67,8 @@ unsuccessfully.
 handleTop :: IO () -> IO ()
 handleTop =
     handle handler
-  where
-    handler = die . displayException @SomeException
+    where
+        handler = die . displayException @SomeException
 
 -- TODO(virgil): Maybe add a regression test for main.
 
@@ -82,37 +82,37 @@ main = handleTop $ do
             parseKoreParserOptions
             parserInfoModifiers
     for_ (localOptions options) (runEmptyLogger . mainWorker)
-  where
-    mainWorker :: LocalOptions KoreParserOptions -> LoggerT IO ()
-    mainWorker LocalOptions{execOptions = koreParserOptions} = do
-        indexedModules <- do
-            let KoreParserOptions{fileName} = koreParserOptions
-            parsedDefinition <- mainDefinitionParse fileName
-            let KoreParserOptions{willVerify} = koreParserOptions
-            indexedModules <-
-                if willVerify
-                    then fmap Just . lift $ mainVerify parsedDefinition
-                    else pure Nothing
-            let KoreParserOptions{willPrintDefinition} = koreParserOptions
-            let KoreParserOptions{appKore} = koreParserOptions
-            when (willPrintDefinition && not appKore) $
-                putDebug parsedDefinition
-            when appKore $ for_ indexedModules printAppKore
-            pure indexedModules
+    where
+        mainWorker :: LocalOptions KoreParserOptions -> LoggerT IO ()
+        mainWorker LocalOptions{execOptions = koreParserOptions} = do
+            indexedModules <- do
+                let KoreParserOptions{fileName} = koreParserOptions
+                parsedDefinition <- mainDefinitionParse fileName
+                let KoreParserOptions{willVerify} = koreParserOptions
+                indexedModules <-
+                    if willVerify
+                        then fmap Just . lift $ mainVerify parsedDefinition
+                        else pure Nothing
+                let KoreParserOptions{willPrintDefinition} = koreParserOptions
+                let KoreParserOptions{appKore} = koreParserOptions
+                when (willPrintDefinition && not appKore)
+                    $ putDebug parsedDefinition
+                when appKore $ for_ indexedModules printAppKore
+                pure indexedModules
 
-        let KoreParserOptions{patternOpt} = koreParserOptions
-        for_ patternOpt $ \patternOptions -> do
-            let PatternOptions{mainModuleName} = patternOptions
-                moduleName = ModuleName mainModuleName
-            indexedModule <-
-                traverse (lookupMainModule moduleName) indexedModules
-            let PatternOptions{patternFileNames} = patternOptions
-            for_ patternFileNames $ \patternFileName -> do
-                parsedPattern <- mainPatternParse patternFileName
-                verifyPattern indexedModule parsedPattern
-                let KoreParserOptions{willPrintPattern, willPrintPatternJson} = koreParserOptions
-                when willPrintPattern $ putDebug parsedPattern
-                when willPrintPatternJson $ liftIO $ ByteString.putStrLn $ encodePattern parsedPattern
+            let KoreParserOptions{patternOpt} = koreParserOptions
+            for_ patternOpt $ \patternOptions -> do
+                let PatternOptions{mainModuleName} = patternOptions
+                    moduleName = ModuleName mainModuleName
+                indexedModule <-
+                    traverse (lookupMainModule moduleName) indexedModules
+                let PatternOptions{patternFileNames} = patternOptions
+                for_ patternFileNames $ \patternFileName -> do
+                    parsedPattern <- mainPatternParse patternFileName
+                    verifyPattern indexedModule parsedPattern
+                    let KoreParserOptions{willPrintPattern, willPrintPatternJson} = koreParserOptions
+                    when willPrintPattern $ putDebug parsedPattern
+                    when willPrintPatternJson $ liftIO $ ByteString.putStrLn $ encodePattern parsedPattern
 
 {- | IO action that parses a kore definition from a filename and prints timing
  information.
@@ -160,10 +160,10 @@ verifyPattern (Just verifiedModule) patt = do
             & PatternVerifier.runPatternVerifier context
             & clockSomething "Verifying the pattern"
     either errorVerify (\_ -> pure ()) verifyResult
-  where
-    context =
-        PatternVerifier.verifiedModuleContext (indexedModuleSyntax verifiedModule)
-            & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
+    where
+        context =
+            PatternVerifier.verifiedModuleContext (indexedModuleSyntax verifiedModule)
+                & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
 
 -- | Print the valid definition in Applicative Kore syntax.
 printAppKore ::

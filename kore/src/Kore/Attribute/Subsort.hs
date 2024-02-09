@@ -76,11 +76,11 @@ instance ParseAttributes Subsorts where
             (subsort, supersort) <- Parser.getTwoParams params
             let relation = Subsort subsort supersort
             return (Subsorts $ relation : subsorts)
-      where
-        withApplication' = Parser.withApplication subsortId
+        where
+            withApplication' = Parser.withApplication subsortId
 
 instance From Subsorts Attributes where
     from =
         Attributes . map toAttribute . getSubsorts
-      where
-        toAttribute = subsortAttribute <$> subsort <*> supersort
+        where
+            toAttribute = subsortAttribute <$> subsort <*> supersort

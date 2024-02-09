@@ -18,9 +18,9 @@ test_existentiallyQuantifyTarget :: [TestTree]
 test_existentiallyQuantifyTarget =
     [ target `becomes` quantified $ "quantifies target variables"
     ]
-  where
-    becomes original expect =
-        equals (Remainder.existentiallyQuantifyRuleVariables original) expect
+    where
+        becomes original expect =
+            equals (Remainder.existentiallyQuantifyRuleVariables original) expect
 
 target :: Predicate RewritingVariableName
 target =

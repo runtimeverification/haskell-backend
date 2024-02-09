@@ -34,22 +34,22 @@ instance NFData Concat
 
 instance ParseAttributes Concat where
     parseAttribute = withApplication' parseApplication
-      where
-        parseApplication params args Concat{getConcat}
-            | Just _ <- getConcat = failDuplicate'
-            | otherwise = do
-                getZeroParams params
-                arg <- getOneArgument args
-                symbol <- getSymbolOrAlias arg
-                return Concat{getConcat = Just symbol}
-        withApplication' = withApplication concatId
-        failDuplicate' = failDuplicate concatId
+        where
+            parseApplication params args Concat{getConcat}
+                | Just _ <- getConcat = failDuplicate'
+                | otherwise = do
+                    getZeroParams params
+                    arg <- getOneArgument args
+                    symbol <- getSymbolOrAlias arg
+                    return Concat{getConcat = Just symbol}
+            withApplication' = withApplication concatId
+            failDuplicate' = failDuplicate concatId
 
 instance From Concat Attributes where
     from =
         maybe def toAttribute . getConcat
-      where
-        toAttribute = from @AttributePattern . concatAttribute
+        where
+            toAttribute = from @AttributePattern . concatAttribute
 
 -- | Kore identifier representing the @concat@ attribute symbol.
 concatId :: Id

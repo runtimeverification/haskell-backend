@@ -41,11 +41,11 @@ simplifyEvaluatedMultiPredicate sideCondition predicates =
     MultiOr.observeAllT $ do
         element <- MultiAnd.traverse LogicT.scatter predicates
         andConditions element
-  where
-    andConditions predicates' =
-        fmap markSimplified $
-            Substitution.normalize sideCondition (fold predicates')
-      where
-        markSimplified =
-            Condition.setPredicateSimplified
-                (foldMap Condition.simplifiedAttribute predicates')
+    where
+        andConditions predicates' =
+            fmap markSimplified
+                $ Substitution.normalize sideCondition (fold predicates')
+            where
+                markSimplified =
+                    Condition.setPredicateSimplified
+                        (foldMap Condition.simplifiedAttribute predicates')

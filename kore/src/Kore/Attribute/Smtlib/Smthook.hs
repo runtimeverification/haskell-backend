@@ -73,13 +73,13 @@ instance ParseAttributes Smthook where
             sExpr <- parseSExpr syntax
             unless (isNothing getSmthook) failDuplicate'
             return Smthook{getSmthook = Just sExpr}
-      where
-        withApplication' = withApplication smthookId
-        failDuplicate' = failDuplicate smthookId
+        where
+            withApplication' = withApplication smthookId
+            failDuplicate' = failDuplicate smthookId
 
 instance From Smthook Attributes where
     from =
         maybe def toAttribute . getSmthook
-      where
-        toAttribute =
-            from @AttributePattern . smthookAttribute . Text.pack . showSExpr
+        where
+            toAttribute =
+                from @AttributePattern . smthookAttribute . Text.pack . showSExpr

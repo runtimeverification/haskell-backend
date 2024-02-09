@@ -38,14 +38,14 @@ test_parseSExpr =
         ]
         "(ite (< #1 #2) #1 #2)"
     ]
-  where
-    parse ::
-        HasCallStack =>
-        TestName ->
-        [SExpr] ->
-        Text ->
-        TestTree
-    parse testName results input =
-        testCase testName $
-            assertEqual "" (Right results) $
-                Parser.runParser parseSExprFile "<string>" input
+    where
+        parse ::
+            HasCallStack =>
+            TestName ->
+            [SExpr] ->
+            Text ->
+            TestTree
+        parse testName results input =
+            testCase testName
+                $ assertEqual "" (Right results)
+                $ Parser.runParser parseSExprFile "<string>" input

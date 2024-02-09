@@ -83,22 +83,22 @@ instance Pretty SourceLocation where
             , source = (Source (Just file))
             } =
             Pretty.pretty file <> loc
-          where
-            loc :: Pretty.Doc ann
-            loc =
-                case start of
-                    Just lc -> ":" <> prettyLC lc <> maybeLC end
-                    Nothing -> Pretty.emptyDoc
+            where
+                loc :: Pretty.Doc ann
+                loc =
+                    case start of
+                        Just lc -> ":" <> prettyLC lc <> maybeLC end
+                        Nothing -> Pretty.emptyDoc
 
-            prettyLC :: LineColumn -> Pretty.Doc ann
-            prettyLC LineColumn{line, column} =
-                Pretty.hcat
-                    [ Pretty.pretty line
-                    , ":"
-                    , Pretty.pretty column
-                    ]
+                prettyLC :: LineColumn -> Pretty.Doc ann
+                prettyLC LineColumn{line, column} =
+                    Pretty.hcat
+                        [ Pretty.pretty line
+                        , ":"
+                        , Pretty.pretty column
+                        ]
 
-            maybeLC :: Maybe LineColumn -> Pretty.Doc ann
-            maybeLC Nothing = Pretty.emptyDoc
-            maybeLC (Just elc) = "-" <> prettyLC elc
+                maybeLC :: Maybe LineColumn -> Pretty.Doc ann
+                maybeLC Nothing = Pretty.emptyDoc
+                maybeLC (Just elc) = "-" <> prettyLC elc
     pretty _ = ""

@@ -55,28 +55,28 @@ locationId = "org'Stop'kframework'Stop'attributes'Stop'Location"
 
 instance ParseAttributes Location where
     parseAttribute = AttributeParser.withApplication locationId parseApplication
-      where
-        parseApplication ::
-            [Sort] ->
-            [AttributePattern] ->
-            Location ->
-            AttributeParser.Parser Location
-        parseApplication params args l@(Location Nothing Nothing) = do
-            AttributeParser.getZeroParams params
-            case args of
-                [] -> pure l
-                [_] -> do
-                    arg <- AttributeParser.getOneArgument args
-                    StringLiteral str <- AttributeParser.getStringLiteral arg
-                    pure
-                        . fromMaybe def
-                        . parseMaybe locationParser
-                        $ Text.unpack str
-                _ ->
-                    Kore.Error.koreFail
-                        ("expected one argument, found " ++ show (length args))
-        parseApplication _ _ _ =
-            AttributeParser.failDuplicate locationId
+        where
+            parseApplication ::
+                [Sort] ->
+                [AttributePattern] ->
+                Location ->
+                AttributeParser.Parser Location
+            parseApplication params args l@(Location Nothing Nothing) = do
+                AttributeParser.getZeroParams params
+                case args of
+                    [] -> pure l
+                    [_] -> do
+                        arg <- AttributeParser.getOneArgument args
+                        StringLiteral str <- AttributeParser.getStringLiteral arg
+                        pure
+                            . fromMaybe def
+                            . parseMaybe locationParser
+                            $ Text.unpack str
+                    _ ->
+                        Kore.Error.koreFail
+                            ("expected one argument, found " ++ show (length args))
+            parseApplication _ _ _ =
+                AttributeParser.failDuplicate locationId
 
 instance From Location Attributes where
     -- TODO (thomas.tuegel): Implement
@@ -93,15 +93,15 @@ locationParser =
     Location
         <$> (Just <$> parseStart)
         <*> (Just <$> parseEnd)
-  where
-    parseStart :: StringParser LineColumn
-    parseStart =
-        LineColumn
-            <$> (string "Location(" *> decimal)
-            <*> (string "," *> decimal)
+    where
+        parseStart :: StringParser LineColumn
+        parseStart =
+            LineColumn
+                <$> (string "Location(" *> decimal)
+                <*> (string "," *> decimal)
 
-    parseEnd :: StringParser LineColumn
-    parseEnd =
-        LineColumn
-            <$> (string "," *> decimal)
-            <*> (string "," *> decimal <* ")")
+        parseEnd :: StringParser LineColumn
+        parseEnd =
+            LineColumn
+                <$> (string "," *> decimal)
+                <*> (string "," *> decimal <* ")")

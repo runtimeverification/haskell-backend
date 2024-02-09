@@ -116,7 +116,9 @@ instance ExpandSingleConstructors ClaimPattern where
                             allElementVariableNames ::
                                 Set (ElementVariableName RewritingVariableName)
                             allElementVariableNames =
-                                variableName <$> freeElementVariables <> existentials
+                                variableName
+                                    <$> freeElementVariables
+                                    <> existentials
                                     & Set.fromList
                             expansion ::
                                 Map.Map
@@ -140,10 +142,10 @@ instance ExpandSingleConstructors ClaimPattern where
                                 , existentials
                                 , right = substitute subst right
                                 }
-          where
-            extractFreeElementVariables =
-                mapMaybe retractElementVariable
-                    . FreeVariables.toList
+            where
+                extractFreeElementVariables =
+                    mapMaybe retractElementVariable
+                        . FreeVariables.toList
 
 instance ExpandSingleConstructors OnePathClaim where
     expandSingleConstructors tools =
@@ -184,17 +186,17 @@ expandVariables metadataTools variables stale =
         & flip evalState Expansion{stale}
         & (map . Bifunctor.first) inject
         & Map.fromList
-  where
-    expandAddVariable ::
-        ElementVariable variable ->
-        Expander
-            variable
-            (Maybe (ElementVariable variable, TermLike variable))
-    expandAddVariable variable = do
-        term <- expandVariable metadataTools variable
-        if mkElemVar variable == term
-            then return Nothing
-            else return $ Just (variable, term)
+    where
+        expandAddVariable ::
+            ElementVariable variable ->
+            Expander
+                variable
+                (Maybe (ElementVariable variable, TermLike variable))
+        expandAddVariable variable = do
+            term <- expandVariable metadataTools variable
+            if mkElemVar variable == term
+                then return Nothing
+                else return $ Just (variable, term)
 
 expandVariable ::
     forall variable attributes.
@@ -219,16 +221,16 @@ expandSort metadataTools defaultVariable variableUsage sort =
             expandConstructor metadataTools defaultVariable constructor
         Nothing ->
             maybeNewVariable defaultVariable sort variableUsage
-  where
-    findSingleConstructor (SortVariableSort _) = Nothing
-    findSingleConstructor (SortActualSort SortActual{sortActualName}) = do
-        Attribute.Constructors.Constructors ctors <-
-            findSortConstructors metadataTools sortActualName
-        ctorLikes <- ctors
-        case ctorLikes of
-            Attribute.Constructors.ConstructorLikeConstructor ctor :| [] ->
-                Just ctor
-            _ -> Nothing
+    where
+        findSingleConstructor (SortVariableSort _) = Nothing
+        findSingleConstructor (SortActualSort SortActual{sortActualName}) = do
+            Attribute.Constructors.Constructors ctors <-
+                findSortConstructors metadataTools sortActualName
+            ctorLikes <- ctors
+            case ctorLikes of
+                Attribute.Constructors.ConstructorLikeConstructor ctor :| [] ->
+                    Just ctor
+                _ -> Nothing
 
 expandConstructor ::
     forall variable attributes.
@@ -242,9 +244,9 @@ expandConstructor
     defaultVariable
     Attribute.Constructors.Constructor{name = symbol, sorts} =
         mkApplySymbol symbol <$> traverse expandChildSort sorts
-      where
-        expandChildSort :: Sort -> Expander variable (TermLike variable)
-        expandChildSort = expandSort metadataTools defaultVariable UseAsPrototype
+        where
+            expandChildSort :: Sort -> Expander variable (TermLike variable)
+            expandChildSort = expandSort metadataTools defaultVariable UseAsPrototype
 
 {- | Context: we have a TermLike that contains a variables, and we
 attempt to expand them into constructor applications whenever that's possible.
@@ -296,6 +298,6 @@ maybeNewVariable variable sort UseAsPrototype = do
                 , "while avoiding:"
                 , Pretty.indent 4 $ Debug.debug stale
                 ]
-  where
-    variable' = resort variable
-    resort var = var{variableSort = sort}
+    where
+        variable' = resort variable
+        resort var = var{variableSort = sort}

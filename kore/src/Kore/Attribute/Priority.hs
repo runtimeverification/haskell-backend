@@ -70,12 +70,12 @@ instance ParseAttributes Priority where
             integer <- Parser.parseInteger stringLiteral
             unless (isNothing priority) failDuplicate'
             return Priority{getPriority = Just integer}
-      where
-        withApplication' = Parser.withApplication priorityId
-        failDuplicate' = Parser.failDuplicate priorityId
+        where
+            withApplication' = Parser.withApplication priorityId
+            failDuplicate' = Parser.failDuplicate priorityId
 
 instance From Priority Attributes where
     from =
         maybe def toAttribute . getPriority
-      where
-        toAttribute = from @AttributePattern . priorityAttribute
+        where
+            toAttribute = from @AttributePattern . priorityAttribute

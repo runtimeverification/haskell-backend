@@ -148,8 +148,8 @@ test_applicationSimplification =
                                 { term = Mock.a
                                 , predicate = makeEqualsPredicate fOfA fOfB
                                 , substitution =
-                                    Substitution.wrap $
-                                        Substitution.mkUnwrappedSubstitution
+                                    Substitution.wrap
+                                        $ Substitution.mkUnwrappedSubstitution
                                             [(inject Mock.xConfig, fOfA)]
                                 }
                             ]
@@ -158,8 +158,8 @@ test_applicationSimplification =
                                 { term = Mock.b
                                 , predicate = makeEqualsPredicate gOfA gOfB
                                 , substitution =
-                                    Substitution.wrap $
-                                        Substitution.mkUnwrappedSubstitution
+                                    Substitution.wrap
+                                        $ Substitution.mkUnwrappedSubstitution
                                             [(inject Mock.yConfig, gOfA)]
                                 }
                             ]
@@ -168,45 +168,45 @@ test_applicationSimplification =
             assertEqual "" expect actual
         ]
     ]
-  where
-    fOfA, fOfB, gOfA, gOfB :: TermLike RewritingVariableName
-    fOfA = Mock.f Mock.a
-    fOfB = Mock.f Mock.b
-    gOfA = Mock.g Mock.a
-    gOfB = Mock.g Mock.b
+    where
+        fOfA, fOfB, gOfA, gOfB :: TermLike RewritingVariableName
+        fOfA = Mock.f Mock.a
+        fOfB = Mock.f Mock.b
+        gOfA = Mock.g Mock.a
+        gOfB = Mock.g Mock.b
 
-    aExpanded =
-        Conditional
-            { term = Mock.a
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-    bExpanded =
-        Conditional
-            { term = Mock.b
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-    cExpanded =
-        Conditional
-            { term = Mock.c
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-    dExpanded =
-        Conditional
-            { term = Mock.d
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
+        aExpanded =
+            Conditional
+                { term = Mock.a
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        bExpanded =
+            Conditional
+                { term = Mock.b
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        cExpanded =
+            Conditional
+                { term = Mock.c
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        dExpanded =
+            Conditional
+                { term = Mock.d
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
 
-    gOfAExpanded :: Pattern RewritingVariableName
-    gOfAExpanded =
-        Conditional
-            { term = gOfA
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
+        gOfAExpanded :: Pattern RewritingVariableName
+        gOfAExpanded =
+            Conditional
+                { term = gOfA
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
 
 makeApplication ::
     Symbol ->
@@ -224,5 +224,5 @@ evaluate ::
     Application Symbol (OrPattern RewritingVariableName) ->
     IO (OrPattern RewritingVariableName)
 evaluate axiomEquations = testRunSimplifier mockEnv . simplify SideCondition.top
-  where
-    mockEnv = Mock.env{axiomEquations}
+    where
+        mockEnv = Mock.env{axiomEquations}

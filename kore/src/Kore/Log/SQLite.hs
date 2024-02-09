@@ -66,12 +66,12 @@ parseLogSQLiteOptions =
 parseSQLog :: Options.Parser FilePath
 parseSQLog =
     Options.strOption info
-  where
-    info =
-        mempty
-            <> Options.long "sqlog"
-            <> Options.metavar "FILENAME"
-            <> Options.help "Write the structured query log to FILENAME."
+    where
+        info =
+            mempty
+                <> Options.long "sqlog"
+                <> Options.metavar "FILENAME"
+                <> Options.help "Write the structured query log to FILENAME."
 
 {- | Run the continuation with a 'LogAction' to send entries to the database.
 
@@ -94,12 +94,12 @@ withLogSQLite options cont =
             Exception.bracket (SQLite.open filePath) SQLite.close $ \conn -> do
                 runReaderT (SQL.getSQL declareEntries) conn
                 cont (lowerLogAction conn logSQLite)
-  where
-    LogSQLiteOptions{sqlog} = options
-    lowerLogAction conn logAction =
-        LogAction $ \entry -> do
-            let sqlt = unLogAction logAction entry
-            runReaderT (SQL.getSQL sqlt) conn
+    where
+        LogSQLiteOptions{sqlog} = options
+        lowerLogAction conn logAction =
+            LogAction $ \entry -> do
+                let sqlt = unLogAction logAction entry
+                runReaderT (SQL.getSQL sqlt) conn
 
 {- | 'foldMap' over the known 'SQL.Table' 'Entry' types.
 
@@ -135,13 +135,13 @@ database is already connected. See 'withLogSQLite' to obtain a 'LogAction' in
 logSQLite :: LogAction SQL SomeEntry
 logSQLite =
     foldMapEntries logEntry
-  where
-    logEntry ::
-        forall entry.
-        (Entry entry, SQL.Table entry) =>
-        Proxy entry ->
-        LogAction SQL SomeEntry
-    logEntry _ = LogAction (maybeInsertRow . fromEntry @entry)
+    where
+        logEntry ::
+            forall entry.
+            (Entry entry, SQL.Table entry) =>
+            Proxy entry ->
+            LogAction SQL SomeEntry
+        logEntry _ = LogAction (maybeInsertRow . fromEntry @entry)
 
-    maybeInsertRow :: SQL.Table entry => Maybe entry -> SQL ()
-    maybeInsertRow = traverse_ SQL.insertRow
+        maybeInsertRow :: SQL.Table entry => Maybe entry -> SQL ()
+        maybeInsertRow = traverse_ SQL.insertRow

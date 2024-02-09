@@ -146,16 +146,16 @@ test_andSimplification =
                         { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.wrap $
-                                Substitution.mkUnwrappedSubstitution
+                            Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
                                     [(inject Mock.yConfig, fOfX)]
                         }
                     Conditional
                         { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.wrap $
-                                Substitution.mkUnwrappedSubstitution
+                            Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
                                     [(inject Mock.zConfig, gOfX)]
                         }
             assertEqual "" (OrPattern.fromPatterns [expect]) actual
@@ -193,16 +193,16 @@ test_andSimplification =
                         { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.wrap $
-                                Substitution.mkUnwrappedSubstitution
+                            Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
                                     [(inject Mock.yConfig, fOfX)]
                         }
                     Conditional
                         { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.wrap $
-                                Substitution.mkUnwrappedSubstitution
+                            Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
                                     [(inject Mock.yConfig, gOfX)]
                         }
             assertEqual "" (OrPattern.fromPatterns [expect]) actual
@@ -213,8 +213,8 @@ test_andSimplification =
                         { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.wrap $
-                                Substitution.mkUnwrappedSubstitution
+                            Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
                                     [
                                         ( inject Mock.yConfig
                                         , Mock.functionalConstr10
@@ -226,8 +226,8 @@ test_andSimplification =
                         { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.wrap $
-                                Substitution.mkUnwrappedSubstitution
+                            Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
                                     [
                                         ( inject Mock.yConfig
                                         , Mock.functionalConstr11
@@ -402,48 +402,48 @@ test_andSimplification =
                     }
         assertEqual "" (MultiOr.make [expect]) actual
     ]
-  where
-    yExpanded =
-        Conditional
-            { term = mkElemVar Mock.yConfig
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-    fOfX = Mock.f (mkElemVar Mock.xConfig)
-    fOfXExpanded = Pattern.fromTermLike fOfX
-    gOfX = Mock.g (mkElemVar Mock.xConfig)
-    gOfXExpanded =
-        Conditional
-            { term = gOfX
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-    plain0OfX = Mock.plain10 (mkElemVar Mock.xConfig)
-    plain0OfXExpanded =
-        Conditional
-            { term = plain0OfX
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-    plain1OfX = Mock.plain11 (mkElemVar Mock.xConfig)
-    plain1OfXExpanded =
-        Conditional
-            { term = plain1OfX
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-    bottomTerm =
-        Conditional
-            { term = mkBottom Mock.topSort
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-    falsePredicate =
-        Conditional
-            { term = mkTop Mock.topSort
-            , predicate = makeFalsePredicate
-            , substitution = mempty
-            }
+    where
+        yExpanded =
+            Conditional
+                { term = mkElemVar Mock.yConfig
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        fOfX = Mock.f (mkElemVar Mock.xConfig)
+        fOfXExpanded = Pattern.fromTermLike fOfX
+        gOfX = Mock.g (mkElemVar Mock.xConfig)
+        gOfXExpanded =
+            Conditional
+                { term = gOfX
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        plain0OfX = Mock.plain10 (mkElemVar Mock.xConfig)
+        plain0OfXExpanded =
+            Conditional
+                { term = plain0OfX
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        plain1OfX = Mock.plain11 (mkElemVar Mock.xConfig)
+        plain1OfXExpanded =
+            Conditional
+                { term = plain1OfX
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        bottomTerm =
+            Conditional
+                { term = mkBottom Mock.topSort
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        falsePredicate =
+            Conditional
+                { term = mkTop Mock.topSort
+                , predicate = makeFalsePredicate
+                , substitution = mempty
+                }
 
 makeAnd ::
     [Pattern RewritingVariableName] ->

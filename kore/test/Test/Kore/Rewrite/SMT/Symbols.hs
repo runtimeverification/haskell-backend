@@ -135,11 +135,11 @@ test_sortDeclaration =
         ]
     , testsForModule
         "Constructors work (declared with sorts)"
-        ( indexModule $
-            emptyModule "m"
-                `with` sortDeclaration "S"
-                `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
-                `with` constructorAxiom "S" [("C", [])]
+        ( indexModule
+            $ emptyModule "m"
+            `with` sortDeclaration "S"
+            `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
+            `with` constructorAxiom "S" [("C", [])]
         )
         [ isSatisfiable
             [ SMT.assert (atom (encodeName "C") `eq` atom (encodeName "C"))
@@ -147,10 +147,10 @@ test_sortDeclaration =
         ]
     , testsForModule
         "Declares smtlib without name encoding"
-        ( indexModule $
-            emptyModule "m"
-                `with` sortDeclaration "S"
-                `with` (symbolDeclaration "C" "S" [] `with` smtlib "C")
+        ( indexModule
+            $ emptyModule "m"
+            `with` sortDeclaration "S"
+            `with` (symbolDeclaration "C" "S" [] `with` smtlib "C")
         )
         [ isSatisfiable
             [ SMT.assert (atom "C" `eq` atom "C")
@@ -158,13 +158,13 @@ test_sortDeclaration =
         ]
     , testsForModule
         "Uses smtlib name for constructor"
-        ( indexModule $
-            emptyModule "m"
-                `with` sortDeclaration "S"
-                `with` ( symbolDeclaration "C" "S" []
-                            `with` smtlib "C"
-                            `with` constructor
-                       )
+        ( indexModule
+            $ emptyModule "m"
+            `with` sortDeclaration "S"
+            `with` ( symbolDeclaration "C" "S" []
+                        `with` smtlib "C"
+                        `with` constructor
+                   )
         )
         [ isSatisfiable
             [ SMT.assert (atom "C" `eq` atom "C")
@@ -175,25 +175,25 @@ test_sortDeclaration =
         ]
     , testsForModule
         "Encodes smtlib name for constructor"
-        ( indexModule $
-            emptyModule "m"
-                `with` sortDeclaration "S"
-                `with` ( symbolDeclaration "C" "S" []
-                            `with` smtlib "D"
-                            `with` constructor
-                            `with` functional
-                       )
-                `with` constructorAxiom "S" [("C", [])]
+        ( indexModule
+            $ emptyModule "m"
+            `with` sortDeclaration "S"
+            `with` ( symbolDeclaration "C" "S" []
+                        `with` smtlib "D"
+                        `with` constructor
+                        `with` functional
+                   )
+            `with` constructorAxiom "S" [("C", [])]
         )
         [ isSatisfiableWithTools
-            [ encodeAndAssertPredicate $
-                makeEqualsPredicate
+            [ encodeAndAssertPredicate
+                $ makeEqualsPredicate
                     (mkElemVar x)
                     c
             ]
         , isNotSatisfiableWithTools
-            [ encodeAndAssertPredicate $
-                makeNotPredicate
+            [ encodeAndAssertPredicate
+                $ makeNotPredicate
                     ( makeEqualsPredicate
                         (mkElemVar x)
                         c
@@ -201,117 +201,117 @@ test_sortDeclaration =
             ]
         ]
     ]
-  where
-    testsForModule name = Helpers.testsForModule name declareSymbolsAndSorts
+    where
+        testsForModule name = Helpers.testsForModule name declareSymbolsAndSorts
 
-    encodeAndAssertPredicate ::
-        Predicate VariableName ->
-        SmtMetadataTools Attribute.Symbol ->
-        SMT ()
-    encodeAndAssertPredicate predicate tools = do
-        encoded <-
-            encodePredicate
-                tools
-                predicate
-        SMT.assert encoded
+        encodeAndAssertPredicate ::
+            Predicate VariableName ->
+            SmtMetadataTools Attribute.Symbol ->
+            SMT ()
+        encodeAndAssertPredicate predicate tools = do
+            encoded <-
+                encodePredicate
+                    tools
+                    predicate
+            SMT.assert encoded
 
-    encodePredicate ::
-        SmtMetadataTools Attribute.Symbol ->
-        Predicate VariableName ->
-        SMT SExpr
-    encodePredicate tools predicate = do
-        expr <-
-            runMaybeT $
-                evalTranslator $
-                    translatePredicateWith
+        encodePredicate ::
+            SmtMetadataTools Attribute.Symbol ->
+            Predicate VariableName ->
+            SMT SExpr
+        encodePredicate tools predicate = do
+            expr <-
+                runMaybeT
+                    $ evalTranslator
+                    $ translatePredicateWith
                         tools
                         SideCondition.top
                         translateTerm
                         predicate
-        maybe (error "Could not encode predicate") return expr
+            maybe (error "Could not encode predicate") return expr
 
-    sSortId :: Id
-    sSortId = testId "S"
+        sSortId :: Id
+        sSortId = testId "S"
 
-    sSort :: Sort
-    sSort =
-        SortActualSort
-            SortActual
-                { sortActualName = sSortId
-                , sortActualSorts = []
-                }
+        sSort :: Sort
+        sSort =
+            SortActualSort
+                SortActual
+                    { sortActualName = sSortId
+                    , sortActualSorts = []
+                    }
 
-    cId :: Id
-    cId = testId "C"
+        cId :: Id
+        cId = testId "C"
 
-    cSymbol :: Symbol
-    cSymbol = Mock.symbol cId [] sSort & Symbol.constructor
+        cSymbol :: Symbol
+        cSymbol = Mock.symbol cId [] sSort & Symbol.constructor
 
-    c :: InternalVariable variable => TermLike variable
-    c = mkApplySymbol cSymbol []
+        c :: InternalVariable variable => TermLike variable
+        c = mkApplySymbol cSymbol []
 
-    x :: ElementVariable VariableName
-    x = mkElementVariable (testId "x") sSort
+        x :: ElementVariable VariableName
+        x = mkElementVariable (testId "x") sSort
 
-    declareSymbolsAndSorts ::
-        SmtMetadataTools Attribute.Symbol ->
-        VerifiedModule Attribute.Symbol ->
-        SMT ()
-    declareSymbolsAndSorts _tools m =
-        declareSortsSymbols
-            (Representation.build m (Attribute.Constructors.indexBySort m))
+        declareSymbolsAndSorts ::
+            SmtMetadataTools Attribute.Symbol ->
+            VerifiedModule Attribute.Symbol ->
+            SMT ()
+        declareSymbolsAndSorts _tools m =
+            declareSortsSymbols
+                (Representation.build m (Attribute.Constructors.indexBySort m))
 
 test_resolve :: [TestTree]
 test_resolve =
     [ testCase "Builtin indirect declaration" $ do
         let verifiedModule =
-                indexModule $
-                    emptyModule "m"
-                        `with` sortDeclaration "S1"
-                        `with` sortDeclaration "S2"
-                        `with` sortDeclaration "S3"
-                        `with` (symbolDeclaration "C" "S1" ["S2", "S3"] `with` smthook "c")
+                indexModule
+                    $ emptyModule "m"
+                    `with` sortDeclaration "S1"
+                    `with` sortDeclaration "S2"
+                    `with` sortDeclaration "S3"
+                    `with` (symbolDeclaration "C" "S1" ["S2", "S3"] `with` smthook "c")
             smtDeclarations = resolveSymbolsAndSorts verifiedModule
             actual = extractSortDependencies smtDeclarations
             expected = []
         assertEqual "" expected actual
     , testCase "Constructor indirect declaration" $ do
         let verifiedModule =
-                indexModule $
-                    emptyModule "m"
-                        `with` sortDeclaration "S1"
-                        `with` sortDeclaration "S2"
-                        `with` sortDeclaration "S3"
-                        `with` ( symbolDeclaration "C" "S1" ["S2", "S3"]
-                                    `with` smtlib "D"
-                                    `with` constructor
-                                    `with` functional
-                               )
-                        `with` constructorAxiom "S1" [("C", ["S2", "S3"])]
+                indexModule
+                    $ emptyModule "m"
+                    `with` sortDeclaration "S1"
+                    `with` sortDeclaration "S2"
+                    `with` sortDeclaration "S3"
+                    `with` ( symbolDeclaration "C" "S1" ["S2", "S3"]
+                                `with` smtlib "D"
+                                `with` constructor
+                                `with` functional
+                           )
+                    `with` constructorAxiom "S1" [("C", ["S2", "S3"])]
             smtDeclarations = resolveSymbolsAndSorts verifiedModule
             actual = extractSortDependencies smtDeclarations
             expected = ["S1", "S2", "S3"] & fmap (Atom . encodeName)
         assertEqual "" expected actual
     ]
-  where
-    resolveSymbolsAndSorts ::
-        VerifiedModule Attribute.Symbol ->
-        AST.SmtDeclarations
-    resolveSymbolsAndSorts m =
-        Representation.build m (Attribute.Constructors.indexBySort m)
-    idC = testId "C"
-    extractSortDependencies declarations =
-        let symbolDeclaration' =
-                declarations
-                    & AST.symbols
-                    & Map.lookup idC
-                    & fromJust
-                    & AST.symbolDeclaration
-         in case symbolDeclaration' of
-                AST.SymbolBuiltin
-                    AST.IndirectSymbolDeclaration{sortDependencies} ->
-                        sortDependencies
-                AST.SymbolConstructor
-                    AST.IndirectSymbolDeclaration{sortDependencies} ->
-                        sortDependencies
-                _ -> error "Expecting an indirect symbol declaration."
+    where
+        resolveSymbolsAndSorts ::
+            VerifiedModule Attribute.Symbol ->
+            AST.SmtDeclarations
+        resolveSymbolsAndSorts m =
+            Representation.build m (Attribute.Constructors.indexBySort m)
+        idC = testId "C"
+        extractSortDependencies declarations =
+            let symbolDeclaration' =
+                    declarations
+                        & AST.symbols
+                        & Map.lookup idC
+                        & fromJust
+                        & AST.symbolDeclaration
+             in case symbolDeclaration' of
+                    AST.SymbolBuiltin
+                        AST.IndirectSymbolDeclaration{sortDependencies} ->
+                            sortDependencies
+                    AST.SymbolConstructor
+                        AST.IndirectSymbolDeclaration{sortDependencies} ->
+                            sortDependencies
+                    _ -> error "Expecting an indirect symbol declaration."

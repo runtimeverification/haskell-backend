@@ -92,21 +92,21 @@ solverTranscriptLogger ::
     LogAction m SomeEntry
 solverTranscriptLogger textLogger =
     LogAction action
-  where
-    action entry
-        | Just sendEntry <- matchDebugSolverSend entry =
-            unLogAction textLogger (sentText sendEntry)
-        | Just recvEntry <- matchDebugSolverRecv entry =
-            unLogAction textLogger (receivedText recvEntry)
-        | otherwise =
-            pure ()
-      where
-        sentText :: DebugSolverSend -> Text
-        sentText (DebugSolverSend sexpr) =
-            let builder = SMT.buildSExpr sexpr
-             in (Text.Lazy.toStrict . Text.Lazy.Builder.toLazyText) builder
-        receivedText :: DebugSolverRecv -> Text
-        receivedText (DebugSolverRecv text) = "; " <> text
+    where
+        action entry
+            | Just sendEntry <- matchDebugSolverSend entry =
+                unLogAction textLogger (sentText sendEntry)
+            | Just recvEntry <- matchDebugSolverRecv entry =
+                unLogAction textLogger (receivedText recvEntry)
+            | otherwise =
+                pure ()
+            where
+                sentText :: DebugSolverSend -> Text
+                sentText (DebugSolverSend sexpr) =
+                    let builder = SMT.buildSExpr sexpr
+                     in (Text.Lazy.toStrict . Text.Lazy.Builder.toLazyText) builder
+                receivedText :: DebugSolverRecv -> Text
+                receivedText (DebugSolverRecv text) = "; " <> text
 
 matchDebugSolverSend :: SomeEntry -> Maybe DebugSolverSend
 matchDebugSolverSend = fromEntry
@@ -131,12 +131,12 @@ parseDebugSolverOptions :: Parser DebugSolverOptions
 parseDebugSolverOptions =
     (DebugSolverOptions . Just <$> parseLogFile)
         <|> pure (def @DebugSolverOptions)
-  where
-    parseLogFile =
-        let info =
-                long "solver-transcript"
-                    <> help "Name of the file for the SMT solver transcript."
-         in strOption info
+    where
+        parseLogFile =
+            let info =
+                    long "solver-transcript"
+                        <> help "Name of the file for the SMT solver transcript."
+             in strOption info
 
 emptyDebugSolverOptions :: DebugSolverOptions
 emptyDebugSolverOptions = DebugSolverOptions{logFile = Nothing}

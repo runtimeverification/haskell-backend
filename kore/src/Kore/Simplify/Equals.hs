@@ -165,9 +165,9 @@ simplify
         , equalsSecond = second
         , equalsOperandSort = sort
         } = simplifyEvaluated sort sideCondition first' second'
-      where
-        (first', second') =
-            minMaxBy (on compareForEquals (OrPattern.toTermLike sort)) first second
+        where
+            (first', second') =
+                minMaxBy (on compareForEquals (OrPattern.toTermLike sort)) first second
 
 {-
 
@@ -211,9 +211,9 @@ simplifyEvaluated sort sideCondition first second
                         (OrPattern.toPattern sort first)
                         (OrPattern.toPattern sort second)
                         sideCondition
-  where
-    firstPatterns = toList first
-    secondPatterns = toList second
+    where
+        firstPatterns = toList first
+        secondPatterns = toList second
 
 makeEvaluateFunctionalOr ::
     SideCondition RewritingVariableName ->
@@ -243,14 +243,14 @@ makeEvaluateFunctionalOr sideCondition first seconds = do
     MultiOr.merge allAreBottom oneIsNotBottomEquals
         & MultiOr.map Pattern.withoutTerm
         & return
-  where
-    makeEvaluateEqualsIfSecondNotBottom
-        sort
-        Conditional{term = firstTerm}
-        (Conditional{term = secondTerm}, secondCeil) =
-            do
-                equality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
-                Implies.simplifyEvaluated sort sideCondition secondCeil equality
+    where
+        makeEvaluateEqualsIfSecondNotBottom
+            sort
+            Conditional{term = firstTerm}
+            (Conditional{term = secondTerm}, secondCeil) =
+                do
+                    equality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
+                    Implies.simplifyEvaluated sort sideCondition secondCeil equality
 
 {- | evaluates an 'Equals' given its two 'Pattern' children.
 
@@ -306,9 +306,9 @@ makeEvaluate
             Or.simplifyEvaluated equalityAnd negationAnd
                 & MultiOr.map Pattern.withoutTerm
                 & return
-      where
-        sort = sameSort (termLikeSort firstTerm) (termLikeSort secondTerm)
-        termsAreEqual = firstTerm == secondTerm
+        where
+            sort = sameSort (termLikeSort firstTerm) (termLikeSort secondTerm)
+            termsAreEqual = firstTerm == secondTerm
 
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
@@ -318,20 +318,20 @@ makeEvaluateTermsAssumesNoBottom ::
     Simplifier (OrPattern RewritingVariableName)
 makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
     result <-
-        runMaybeT $
-            makeEvaluateTermsAssumesNoBottomMaybe firstTerm secondTerm
+        runMaybeT
+            $ makeEvaluateTermsAssumesNoBottomMaybe firstTerm secondTerm
     (return . fromMaybe def) result
-  where
-    sort = termLikeSort firstTerm
-    def =
-        OrPattern.fromPattern
-            Conditional
-                { term = mkTop sort
-                , predicate =
-                    Predicate.markSimplified $
-                        makeEqualsPredicate firstTerm secondTerm
-                , substitution = mempty
-                }
+    where
+        sort = termLikeSort firstTerm
+        def =
+            OrPattern.fromPattern
+                Conditional
+                    { term = mkTop sort
+                    , predicate =
+                        Predicate.markSimplified
+                            $ makeEqualsPredicate firstTerm secondTerm
+                    , substitution = mempty
+                    }
 
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
@@ -365,10 +365,11 @@ makeEvaluateTermsToPredicate first second sideCondition
         result <- runMaybeT $ termEquals first second
         case result of
             Nothing ->
-                return $
-                    OrCondition.fromCondition . Condition.fromPredicate $
-                        Predicate.markSimplified $
-                            makeEqualsPredicate first second
+                return
+                    $ OrCondition.fromCondition
+                    . Condition.fromPredicate
+                    $ Predicate.markSimplified
+                    $ makeEqualsPredicate first second
             Just predicatedOr -> do
                 firstCeilOr <- makeEvaluateTermCeil sideCondition first
                 secondCeilOr <- makeEvaluateTermCeil sideCondition second
@@ -399,9 +400,9 @@ termEquals first second = MaybeT $ do
     case sequence maybeResults of
         Nothing -> return Nothing
         Just results ->
-            return $
-                Just $
-                    MultiOr.make (map Condition.eraseConditionalTerm results)
+            return
+                $ Just
+                $ MultiOr.make (map Condition.eraseConditionalTerm results)
 
 termEqualsAnd ::
     HasCallStack =>
@@ -410,39 +411,39 @@ termEqualsAnd ::
     MaybeT (LogicT Simplifier) (Pattern RewritingVariableName)
 termEqualsAnd p1 p2 =
     MaybeT $ run $ maybeTermEqualsWorker p1 p2
-  where
-    run it =
-        (lift . runUnifierT . runMaybeT) it
-            >>= Logic.scatter
+    where
+        run it =
+            (lift . runUnifierT . runMaybeT) it
+                >>= Logic.scatter
 
-    maybeTermEqualsWorker ::
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        MaybeT (UnifierT Simplifier) (Pattern RewritingVariableName)
-    maybeTermEqualsWorker =
-        maybeTermEquals termEqualsAndWorker
+        maybeTermEqualsWorker ::
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            MaybeT (UnifierT Simplifier) (Pattern RewritingVariableName)
+        maybeTermEqualsWorker =
+            maybeTermEquals termEqualsAndWorker
 
-    termEqualsAndWorker ::
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        UnifierT Simplifier (Pattern RewritingVariableName)
-    termEqualsAndWorker first second =
-        scatterResults
-            =<< runMaybeT (maybeTermEqualsWorker first second)
-      where
-        scatterResults =
-            pure
-                . fromMaybe
-                    equalsPattern -- default if no results
-                . Logic.scatter
-        equalsPattern =
-            makeEqualsPredicate first second
-                & Condition.fromPredicate
-                -- Although the term will eventually be discarded, the sub-term
-                -- unifier should return it in case the caller needs to
-                -- reconstruct the unified term. If we returned \top here, then
-                -- the unified pattern wouldn't be a function-like term. Because the
-                -- terms are equal, it does not matter which one is returned; we
-                -- prefer the first term because this is the "configuration" side
-                -- during rule unification.
-                & Pattern.withCondition first
+        termEqualsAndWorker ::
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            UnifierT Simplifier (Pattern RewritingVariableName)
+        termEqualsAndWorker first second =
+            scatterResults
+                =<< runMaybeT (maybeTermEqualsWorker first second)
+            where
+                scatterResults =
+                    pure
+                        . fromMaybe
+                            equalsPattern -- default if no results
+                        . Logic.scatter
+                equalsPattern =
+                    makeEqualsPredicate first second
+                        & Condition.fromPredicate
+                        -- Although the term will eventually be discarded, the sub-term
+                        -- unifier should return it in case the caller needs to
+                        -- reconstruct the unified term. If we returned \top here, then
+                        -- the unified pattern wouldn't be a function-like term. Because the
+                        -- terms are equal, it does not matter which one is returned; we
+                        -- prefer the first term because this is the "configuration" side
+                        -- during rule unification.
+                        & Pattern.withCondition first

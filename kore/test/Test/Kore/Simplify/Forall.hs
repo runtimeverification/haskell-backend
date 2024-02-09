@@ -130,8 +130,8 @@ test_forallSimplification =
                     , predicate =
                         makeCeilPredicate (Mock.h (mkElemVar Mock.xConfig))
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [ (inject Mock.xConfig, gOfA)
                                 , (inject Mock.yConfig, fOfA)
                                 ]
@@ -221,8 +221,8 @@ test_forallSimplification =
                     { term = fOfA
                     , predicate = makeCeilPredicate fOfX
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.yConfig, fOfA)]
                     }
             )
@@ -250,8 +250,8 @@ test_forallSimplification =
                     { term = mkTop Mock.topSort
                     , predicate = makeCeilPredicate fOfX
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.yConfig, fOfA)]
                     }
             )
@@ -278,8 +278,8 @@ test_forallSimplification =
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX gOfA
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.yConfig, hOfA)]
                     }
             )
@@ -302,25 +302,25 @@ test_forallSimplification =
             )
             -}
     ]
-  where
-    fOfA = Mock.f Mock.a
-    fOfX = Mock.f (mkElemVar Mock.xConfig)
-    gOfA = Mock.g Mock.a
-    hOfA = Mock.h Mock.a
-    something1OfX = Mock.plain10 (mkElemVar Mock.xConfig)
-    something2OfX = Mock.plain11 (mkElemVar Mock.xConfig)
-    something1OfXExpanded =
-        Conditional
-            { term = something1OfX
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
-    something2OfXExpanded =
-        Conditional
-            { term = something2OfX
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
+    where
+        fOfA = Mock.f Mock.a
+        fOfX = Mock.f (mkElemVar Mock.xConfig)
+        gOfA = Mock.g Mock.a
+        hOfA = Mock.h Mock.a
+        something1OfX = Mock.plain10 (mkElemVar Mock.xConfig)
+        something2OfX = Mock.plain11 (mkElemVar Mock.xConfig)
+        something1OfXExpanded =
+            Conditional
+                { term = something1OfX
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        something2OfXExpanded =
+            Conditional
+                { term = something2OfX
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
 
 makeForall ::
     ElementVariable RewritingVariableName ->

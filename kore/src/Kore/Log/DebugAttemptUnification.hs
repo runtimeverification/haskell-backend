@@ -58,7 +58,7 @@ debugAttemptUnification ::
     log a
 debugAttemptUnification term1' term2' =
     logWhile DebugAttemptUnification{term1, term2}
-  where
-    mapVariables = TermLike.mapVariables (pure toVariableName)
-    term1 = mapVariables term1'
-    term2 = mapVariables term2'
+    where
+        mapVariables = TermLike.mapVariables (pure toVariableName)
+        term1 = mapVariables term1'
+        term2 = mapVariables term2'

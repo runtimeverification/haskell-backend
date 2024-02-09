@@ -82,9 +82,9 @@ parseConcreteAttribute ::
     Parser (Concrete VariableName)
 parseConcreteAttribute freeVariables =
     Parser.withApplication concreteId parseApplication
-  where
-    parseApplication params args (Concrete concreteVars) =
-        Concrete <$> parseFreeVariables freeVariables params args concreteVars
+    where
+        parseApplication params args (Concrete concreteVars) =
+            Concrete <$> parseFreeVariables freeVariables params args concreteVars
 
 parseFreeVariables ::
     FreeVariables VariableName ->
@@ -106,18 +106,18 @@ parseFreeVariables freeVariables params args concreteVars = do
         nubVars = mapMaybe Safe.headMay groupedVars
         duplicateVars =
             mapMaybe (Safe.headMay Monad.<=< Safe.tailMay) groupedVars
-    unless (null duplicateVars) $
-        Kore.Error.koreFail
+    unless (null duplicateVars)
+        $ Kore.Error.koreFail
             ( "duplicate concrete/symbolic variable annotations for "
                 ++ show duplicateVars
             )
     return (foldMap freeVariable nubVars)
-  where
-    checkFree :: SomeVariable VariableName -> Parser ()
-    checkFree variable@Variable{variableName} =
-        unless (isFreeVariable variableName freeVariables) $
-            Kore.Error.koreFail
-                ("expected free variable, found " ++ show variable)
+    where
+        checkFree :: SomeVariable VariableName -> Parser ()
+        checkFree variable@Variable{variableName} =
+            unless (isFreeVariable variableName freeVariables)
+                $ Kore.Error.koreFail
+                    ("expected free variable, found " ++ show variable)
 
 instance From (Concrete VariableName) Attributes where
     from =

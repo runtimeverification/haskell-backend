@@ -112,82 +112,82 @@ simplify ::
     Simplifier NormalForm
 simplify sideCondition original =
     loop 0 (mkSingleton original)
-  where
-    limit :: Int
-    limit = 20
+    where
+        limit :: Int
+        limit = 20
 
-    loop :: Int -> NormalForm -> Simplifier NormalForm
-    loop count input
-        | count >= limit = do
-            warnUnsimplifiedPredicate limit original input
-            -- Return the current NormalForm. Do not iterate further.
-            pure input
-        | otherwise = do
-            output <- MultiAnd.traverseOrAnd worker input
-            if input == output
-                then pure output
-                else loop (count + 1) output
+        loop :: Int -> NormalForm -> Simplifier NormalForm
+        loop count input
+            | count >= limit = do
+                warnUnsimplifiedPredicate limit original input
+                -- Return the current NormalForm. Do not iterate further.
+                pure input
+            | otherwise = do
+                output <- MultiAnd.traverseOrAnd worker input
+                if input == output
+                    then pure output
+                    else loop (count + 1) output
 
-    replacePredicate = SideCondition.replacePredicate sideCondition
+        replacePredicate = SideCondition.replacePredicate sideCondition
 
-    -- If the child 'TermLike' is a term representing a predicate,
-    -- 'simplifyTerm' will not attempt to simplify it, so
-    -- it should be transformed into a 'Predicate' and simplified
-    -- accordingly.
-    simplifyTerm' term
-        | Right predicate <- Predicate.makePredicate term =
-            NormalForm.toOrPattern (termLikeSort term) <$> worker predicate
-        | otherwise =
-            simplifyTerm sideCondition term
+        -- If the child 'TermLike' is a term representing a predicate,
+        -- 'simplifyTerm' will not attempt to simplify it, so
+        -- it should be transformed into a 'Predicate' and simplified
+        -- accordingly.
+        simplifyTerm' term
+            | Right predicate <- Predicate.makePredicate term =
+                NormalForm.toOrPattern (termLikeSort term) <$> worker predicate
+            | otherwise =
+                simplifyTerm sideCondition term
 
-    repr = SideCondition.toRepresentation sideCondition
+        repr = SideCondition.toRepresentation sideCondition
 
-    -- Simplify the 'Predicate' bottom-up.
-    -- The children of each node in the 'Predicate' tree are simplified
-    -- either by calling the 'TermLike' simplifier (which only simplifies
-    -- non-predicate terms) or, for 'Predicate's, by recursively calling
-    -- this function.
-    worker ::
-        Predicate RewritingVariableName ->
-        Simplifier NormalForm
-    worker predicate
-        | Just predicate' <- replacePredicate predicate =
-            worker predicate'
-        | Predicate.isSimplified repr predicate =
-            pure (mkSingleton predicate)
-        | otherwise =
-            case predicateF of
-                AndF andF -> normalizeAnd =<< traverse worker andF
-                OrF orF -> normalizeOr =<< traverse worker orF
-                BottomF bottomF -> normalizeBottom =<< traverse worker bottomF
-                TopF topF -> normalizeTop =<< traverse worker topF
-                NotF notF -> simplifyNot sideCondition =<< traverse worker notF
-                ImpliesF impliesF ->
-                    simplifyImplies sideCondition
-                        =<< traverse worker impliesF
-                IffF iffF ->
-                    simplifyIff sideCondition
-                        =<< traverse worker iffF
-                CeilF ceilF ->
-                    -- TODO(Ana): don't simplify children first
-                    simplifyCeil sideCondition =<< traverse simplifyTerm' ceilF
-                FloorF floorF@(Floor _ _ child) ->
-                    simplifyFloor (termLikeSort child) sideCondition
-                        =<< traverse simplifyTerm' floorF
-                ExistsF existsF ->
-                    traverse worker (Exists.refreshExists avoid existsF)
-                        >>= simplifyExists sideCondition
-                ForallF forallF ->
-                    traverse worker (Forall.refreshForall avoid forallF)
-                        >>= simplifyForall sideCondition
-                EqualsF equalsF@(Equals _ _ term _) ->
-                    simplifyEquals sideCondition (termLikeSort term)
-                        =<< traverse simplifyTerm' equalsF
-                InF inF ->
-                    simplifyIn sideCondition =<< traverse simplifyTerm' inF
-      where
-        _ :< predicateF = Recursive.project predicate
-        ~avoid = freeVariableNames sideCondition
+        -- Simplify the 'Predicate' bottom-up.
+        -- The children of each node in the 'Predicate' tree are simplified
+        -- either by calling the 'TermLike' simplifier (which only simplifies
+        -- non-predicate terms) or, for 'Predicate's, by recursively calling
+        -- this function.
+        worker ::
+            Predicate RewritingVariableName ->
+            Simplifier NormalForm
+        worker predicate
+            | Just predicate' <- replacePredicate predicate =
+                worker predicate'
+            | Predicate.isSimplified repr predicate =
+                pure (mkSingleton predicate)
+            | otherwise =
+                case predicateF of
+                    AndF andF -> normalizeAnd =<< traverse worker andF
+                    OrF orF -> normalizeOr =<< traverse worker orF
+                    BottomF bottomF -> normalizeBottom =<< traverse worker bottomF
+                    TopF topF -> normalizeTop =<< traverse worker topF
+                    NotF notF -> simplifyNot sideCondition =<< traverse worker notF
+                    ImpliesF impliesF ->
+                        simplifyImplies sideCondition
+                            =<< traverse worker impliesF
+                    IffF iffF ->
+                        simplifyIff sideCondition
+                            =<< traverse worker iffF
+                    CeilF ceilF ->
+                        -- TODO(Ana): don't simplify children first
+                        simplifyCeil sideCondition =<< traverse simplifyTerm' ceilF
+                    FloorF floorF@(Floor _ _ child) ->
+                        simplifyFloor (termLikeSort child) sideCondition
+                            =<< traverse simplifyTerm' floorF
+                    ExistsF existsF ->
+                        traverse worker (Exists.refreshExists avoid existsF)
+                            >>= simplifyExists sideCondition
+                    ForallF forallF ->
+                        traverse worker (Forall.refreshForall avoid forallF)
+                            >>= simplifyForall sideCondition
+                    EqualsF equalsF@(Equals _ _ term _) ->
+                        simplifyEquals sideCondition (termLikeSort term)
+                            =<< traverse simplifyTerm' equalsF
+                    InF inF ->
+                        simplifyIn sideCondition =<< traverse simplifyTerm' inF
+            where
+                _ :< predicateF = Recursive.project predicate
+                ~avoid = freeVariableNames sideCondition
 
 -- | Construct a 'NormalForm' from a single 'Predicate'.
 mkSingleton ::
@@ -340,42 +340,42 @@ simplifyNot sideCondition Not{notChild = multiOr} = do
                     zipWith fromMaybe (map MultiOr.singleton ps) mbSimplifieds
             pure (anySimplified, MultiAnd.make results)
 
-    pure $
-        if (or flags)
+    pure
+        $ if (or flags)
             then fold . MultiOr.make $ map liftOrs andOrs
             else normal
-  where
-    applyUserDefined ::
-        Predicate RewritingVariableName ->
-        MaybeT Simplifier (MultiOr (Predicate RewritingVariableName))
-    applyUserDefined predicate = do
-        -- produce a termlike that we can use for matching
-        let
-            -- HAAAACK: sort stripped in NormalForm of predicates
-            helpSort = SortVariableSort . SortVariable $ noLocationId "SomeSort"
-        -- call the equation matcher
-        applied <-
-            Axiom.evaluatePattern
-                sideCondition
-                Condition.top
-                (Predicate.fromPredicate helpSort predicate)
-                (const empty)
-        -- convert result back to Predicate
-        traverse_ (warnIfNotPredicate predicate) applied
-        pure $ MultiOr.map (from . snd . Conditional.splitTerm) applied
+    where
+        applyUserDefined ::
+            Predicate RewritingVariableName ->
+            MaybeT Simplifier (MultiOr (Predicate RewritingVariableName))
+        applyUserDefined predicate = do
+            -- produce a termlike that we can use for matching
+            let
+                -- HAAAACK: sort stripped in NormalForm of predicates
+                helpSort = SortVariableSort . SortVariable $ noLocationId "SomeSort"
+            -- call the equation matcher
+            applied <-
+                Axiom.evaluatePattern
+                    sideCondition
+                    Condition.top
+                    (Predicate.fromPredicate helpSort predicate)
+                    (const empty)
+            -- convert result back to Predicate
+            traverse_ (warnIfNotPredicate predicate) applied
+            pure $ MultiOr.map (from . snd . Conditional.splitTerm) applied
 
-    warnIfNotPredicate predicate patt
-        | Conditional.isPredicate patt = pure ()
-        | otherwise = do
-            -- print a warning to the user. No hard error because a
-            -- wrong user-defined rule should not crash the execution.
-            warnNotAPredicate Warning predicate patt
-            fail "The equation RHS appears to not be a predicate"
+        warnIfNotPredicate predicate patt
+            | Conditional.isPredicate patt = pure ()
+            | otherwise = do
+                -- print a warning to the user. No hard error because a
+                -- wrong user-defined rule should not crash the execution.
+                warnNotAPredicate Warning predicate patt
+                fail "The equation RHS appears to not be a predicate"
 
-    liftOrs ::
-        MultiAnd (MultiOr (Predicate RewritingVariableName)) -> NormalForm
-    liftOrs andOrs =
-        MultiOr.observeAll $ MultiAnd.traverse Logic.scatter andOrs
+        liftOrs ::
+            MultiAnd (MultiOr (Predicate RewritingVariableName)) -> NormalForm
+        liftOrs andOrs =
+            MultiOr.observeAll $ MultiAnd.traverse Logic.scatter andOrs
 
 normalizeNotAnd ::
     forall simplifier.
@@ -394,16 +394,16 @@ normalizeNotAnd Not{notChild = predicates} =
                         & MultiOr.singleton
                         & pure
                 _ -> fallback
-          where
-            _ :< predicateF = Recursive.project predicate
+            where
+                _ :< predicateF = Recursive.project predicate
         _ -> fallback
-  where
-    fallback =
-        Predicate.fromMultiAnd predicates
-            & fromNot
-            & mkSingleton
-            & pure
-    bottom = normalizeBottom Bottom{bottomSort = ()}
+    where
+        fallback =
+            Predicate.fromMultiAnd predicates
+                & fromNot
+                & mkSingleton
+                & pure
+        bottom = normalizeBottom Bottom{bottomSort = ()}
 
 {- |
  @
@@ -421,13 +421,13 @@ simplifyImplies sideCondition Implies{impliesFirst, impliesSecond} = do
     negative <- mkNotSimplified impliesFirst
     positive <- mkAndSimplified impliesFirst impliesSecond
     mkOrSimplified negative positive
-  where
-    mkNotSimplified notChild =
-        simplifyNot sideCondition Not{notSort = (), notChild}
-    mkAndSimplified andFirst andSecond =
-        normalizeAnd BinaryAnd{andSort = (), andFirst, andSecond}
-    mkOrSimplified orFirst orSecond =
-        normalizeOr BinaryOr{orSort = (), orFirst, orSecond}
+    where
+        mkNotSimplified notChild =
+            simplifyNot sideCondition Not{notSort = (), notChild}
+        mkAndSimplified andFirst andSecond =
+            normalizeAnd BinaryAnd{andSort = (), andFirst, andSecond}
+        mkOrSimplified orFirst orSecond =
+            normalizeOr BinaryOr{orSort = (), orFirst, orSecond}
 
 {- |
  @
@@ -445,13 +445,13 @@ simplifyIff sideCondition Iff{iffFirst, iffSecond} = do
         mkAndSimplified andFirst andSecond
     orSecond <- mkAndSimplified iffFirst iffSecond
     mkOrSimplified orFirst orSecond
-  where
-    mkNotSimplified notChild =
-        simplifyNot sideCondition Not{notSort = (), notChild}
-    mkAndSimplified andFirst andSecond =
-        normalizeAnd BinaryAnd{andSort = (), andFirst, andSecond}
-    mkOrSimplified orFirst orSecond =
-        normalizeOr BinaryOr{orSort = (), orFirst, orSecond}
+    where
+        mkNotSimplified notChild =
+            simplifyNot sideCondition Not{notSort = (), notChild}
+        mkAndSimplified andFirst andSecond =
+            normalizeAnd BinaryAnd{andSort = (), andFirst, andSecond}
+        mkOrSimplified orFirst orSecond =
+            normalizeOr BinaryOr{orSort = (), orFirst, orSecond}
 
 simplifyCeil ::
     SideCondition RewritingVariableName ->
@@ -474,20 +474,20 @@ simplifyFloor termSort sideCondition floor' = do
     notTerm <- mkNotSimplifiedTerm floorChild
     ceilNotTerm <- mkCeilSimplified notTerm
     mkNotSimplified ceilNotTerm
-  where
-    Floor{floorChild} = floor'
-    mkNotSimplified notChild =
-        simplifyNot sideCondition Not{notSort = (), notChild}
-    mkNotSimplifiedTerm notChild =
-        Not.simplify sideCondition Not{notSort = termSort, notChild}
-    mkCeilSimplified ceilChild =
-        Ceil.simplify
-            sideCondition
-            Ceil
-                { ceilOperandSort = ()
-                , ceilResultSort = ()
-                , ceilChild
-                }
+    where
+        Floor{floorChild} = floor'
+        mkNotSimplified notChild =
+            simplifyNot sideCondition Not{notSort = (), notChild}
+        mkNotSimplifiedTerm notChild =
+            Not.simplify sideCondition Not{notSort = termSort, notChild}
+        mkCeilSimplified ceilChild =
+            Ceil.simplify
+                sideCondition
+                Ceil
+                    { ceilOperandSort = ()
+                    , ceilResultSort = ()
+                    , ceilChild
+                    }
 
 simplifyExists ::
     forall simplifier.
@@ -497,36 +497,36 @@ simplifyExists ::
     simplifier NormalForm
 simplifyExists _ = \exists@Exists{existsChild} ->
     MultiOr.traverseOr (simplifyExistsAnd . ($>) exists) existsChild
-  where
-    simplifyExistsAnd ::
-        (Exists () RewritingVariableName)
-            (MultiAnd (Predicate RewritingVariableName)) ->
-        simplifier NormalForm
-    simplifyExistsAnd Exists{existsVariable, existsChild}
-        | not (existsVariableName `occursIn` existsChild) =
-            pure (MultiOr.singleton existsChild)
-        | Just value <- extractFirstAssignment existsVariableName existsChild =
-            applyAssignment existsVariableName value existsChild
-                & MultiOr.singleton
-                & pure
-        | otherwise =
-            fromExists existsVariable (Predicate.fromMultiAnd existsChild)
-                & mkSingleton
-                & pure
-      where
-        existsVariableName :: SomeVariableName RewritingVariableName
-        existsVariableName = inject (variableName existsVariable)
+    where
+        simplifyExistsAnd ::
+            (Exists () RewritingVariableName)
+                (MultiAnd (Predicate RewritingVariableName)) ->
+            simplifier NormalForm
+        simplifyExistsAnd Exists{existsVariable, existsChild}
+            | not (existsVariableName `occursIn` existsChild) =
+                pure (MultiOr.singleton existsChild)
+            | Just value <- extractFirstAssignment existsVariableName existsChild =
+                applyAssignment existsVariableName value existsChild
+                    & MultiOr.singleton
+                    & pure
+            | otherwise =
+                fromExists existsVariable (Predicate.fromMultiAnd existsChild)
+                    & mkSingleton
+                    & pure
+            where
+                existsVariableName :: SomeVariableName RewritingVariableName
+                existsVariableName = inject (variableName existsVariable)
 
-    applyAssignment ::
-        SomeVariableName RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        MultiAnd (Predicate RewritingVariableName) ->
-        MultiAnd (Predicate RewritingVariableName)
-    applyAssignment someVariableName termLike predicates =
-        let substitution = Map.singleton someVariableName termLike
-            existsChild' = MultiAnd.map (substitute substitution) predicates
-            valueCeil = MultiAnd.singleton (fromCeil_ termLike)
-         in existsChild' <> valueCeil
+        applyAssignment ::
+            SomeVariableName RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            MultiAnd (Predicate RewritingVariableName) ->
+            MultiAnd (Predicate RewritingVariableName)
+        applyAssignment someVariableName termLike predicates =
+            let substitution = Map.singleton someVariableName termLike
+                existsChild' = MultiAnd.map (substitute substitution) predicates
+                valueCeil = MultiAnd.singleton (fromCeil_ termLike)
+             in existsChild' <> valueCeil
 
 {- |
  @
@@ -541,18 +541,18 @@ simplifyForall sideCondition forall' = do
     notChild <- mkNotSimplified forallChild
     existsNotChild <- mkExistsSimplified notChild
     mkNotSimplified existsNotChild
-  where
-    Forall{forallVariable, forallChild} = forall'
-    mkNotSimplified notChild =
-        simplifyNot sideCondition Not{notSort = (), notChild}
-    mkExistsSimplified existsChild =
-        simplifyExists
-            sideCondition
-            Exists
-                { existsSort = ()
-                , existsVariable = forallVariable
-                , existsChild
-                }
+    where
+        Forall{forallVariable, forallChild} = forall'
+        mkNotSimplified notChild =
+            simplifyNot sideCondition Not{notSort = (), notChild}
+        mkExistsSimplified existsChild =
+            simplifyExists
+                sideCondition
+                Exists
+                    { existsSort = ()
+                    , existsVariable = forallVariable
+                    , existsChild
+                    }
 
 extractFirstAssignment ::
     SomeVariableName RewritingVariableName ->
@@ -561,18 +561,18 @@ extractFirstAssignment ::
 extractFirstAssignment someVariableName predicates =
     foldMap (First . extractAssignment) predicates
         & getFirst
-  where
-    extractAssignment ::
-        Predicate RewritingVariableName ->
-        Maybe (TermLike RewritingVariableName)
-    extractAssignment predicate = do
-        UnorderedAssignment _ termLike <-
-            Substitution.retractAssignmentFor
-                someVariableName
-                predicate
-        guard (TermLike.isFunctionPattern termLike)
-        (guard . not) (someVariableName `occursIn` termLike)
-        pure termLike
+    where
+        extractAssignment ::
+            Predicate RewritingVariableName ->
+            Maybe (TermLike RewritingVariableName)
+        extractAssignment predicate = do
+            UnorderedAssignment _ termLike <-
+                Substitution.retractAssignmentFor
+                    someVariableName
+                    predicate
+            guard (TermLike.isFunctionPattern termLike)
+            (guard . not) (someVariableName `occursIn` termLike)
+            pure termLike
 
 simplifyEquals ::
     SideCondition RewritingVariableName ->
@@ -583,43 +583,43 @@ simplifyEquals sideCondition sort equals = do
     result <- runMaybeT applyUserSimplification
     maybe (Equals.simplify sideCondition equals') return result
         <&> MultiOr.map (from @(Condition _))
-  where
-    equals' :: Equals Sort (OrPattern RewritingVariableName)
-    equals' =
-        equals
-            { equalsOperandSort = sort
-            , equalsResultSort = sort
-            }
-    -- This relies on 'OrPattern.toPattern' which should be retired
-    -- at some point, but that will require a reworking of the
-    -- 'Equals' simplification algorithm.
-    applyUserSimplification =
-        let leftPatt = OrPattern.toPattern sort (equalsFirst equals')
-            rightPatt = OrPattern.toPattern sort (equalsSecond equals')
-         in applyEquations leftPatt rightPatt
+    where
+        equals' :: Equals Sort (OrPattern RewritingVariableName)
+        equals' =
+            equals
+                { equalsOperandSort = sort
+                , equalsResultSort = sort
+                }
+        -- This relies on 'OrPattern.toPattern' which should be retired
+        -- at some point, but that will require a reworking of the
+        -- 'Equals' simplification algorithm.
+        applyUserSimplification =
+            let leftPatt = OrPattern.toPattern sort (equalsFirst equals')
+                rightPatt = OrPattern.toPattern sort (equalsSecond equals')
+             in applyEquations leftPatt rightPatt
 
-    applyEquations ::
-        Pattern RewritingVariableName ->
-        Pattern RewritingVariableName ->
-        MaybeT Simplifier (OrCondition RewritingVariableName)
-    applyEquations
-        (Pattern.splitTerm -> (leftTerm, leftCondition))
-        (Pattern.splitTerm -> (rightTerm, rightCondition)) =
-            do
-                evaluatedTerms <-
-                    Axiom.evaluatePattern
-                        sideCondition
-                        Condition.top
-                        (TermLike.mkEquals sort leftTerm rightTerm)
-                        (const empty)
-                OrPattern.map
-                    ( Pattern.withoutTerm
-                        . flip
-                            Pattern.andCondition
-                            (leftCondition <> rightCondition)
-                    )
-                    evaluatedTerms
-                    & return
+        applyEquations ::
+            Pattern RewritingVariableName ->
+            Pattern RewritingVariableName ->
+            MaybeT Simplifier (OrCondition RewritingVariableName)
+        applyEquations
+            (Pattern.splitTerm -> (leftTerm, leftCondition))
+            (Pattern.splitTerm -> (rightTerm, rightCondition)) =
+                do
+                    evaluatedTerms <-
+                        Axiom.evaluatePattern
+                            sideCondition
+                            Condition.top
+                            (TermLike.mkEquals sort leftTerm rightTerm)
+                            (const empty)
+                    OrPattern.map
+                        ( Pattern.withoutTerm
+                            . flip
+                                Pattern.andCondition
+                                (leftCondition <> rightCondition)
+                        )
+                        evaluatedTerms
+                        & return
 
 simplifyIn ::
     SideCondition RewritingVariableName ->

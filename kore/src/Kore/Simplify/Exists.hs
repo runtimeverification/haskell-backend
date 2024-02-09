@@ -163,63 +163,63 @@ makeEvaluate sideCondition variables original = do
     let sortedVariables = sortBy substVariablesFirst variables
     foldM (flip makeEvaluateWorker) original sortedVariables
         & OrPattern.observeAllT
-  where
-    makeEvaluateWorker ::
-        ElementVariable RewritingVariableName ->
-        Pattern RewritingVariableName ->
-        LogicT Simplifier (Pattern RewritingVariableName)
-    makeEvaluateWorker variable original' = do
-        normalized <- simplifyCondition sideCondition original'
-        let Conditional{substitution = normalizedSubstitution} = normalized
-        case splitSubstitution variable normalizedSubstitution of
-            (Left boundTerm, freeSubstitution) ->
-                makeEvaluateBoundLeft
-                    sideCondition
-                    variable
-                    boundTerm
-                    normalized{Conditional.substitution = freeSubstitution}
-            (Right boundSubstitution, freeSubstitution) -> do
-                matched <-
-                    normalized
-                        { Conditional.substitution = boundSubstitution
-                        }
-                        & matchesToVariableSubstitution sideCondition variable
-                        & lift
-                if matched
-                    then
-                        return
-                            normalized
-                                { Conditional.predicate = Predicate.makeTruePredicate
-                                , Conditional.substitution = freeSubstitution
-                                }
-                    else
-                        makeEvaluateBoundRight
-                            sideCondition
-                            variable
-                            freeSubstitution
-                            normalized
-                                { Conditional.substitution = boundSubstitution
-                                }
+    where
+        makeEvaluateWorker ::
+            ElementVariable RewritingVariableName ->
+            Pattern RewritingVariableName ->
+            LogicT Simplifier (Pattern RewritingVariableName)
+        makeEvaluateWorker variable original' = do
+            normalized <- simplifyCondition sideCondition original'
+            let Conditional{substitution = normalizedSubstitution} = normalized
+            case splitSubstitution variable normalizedSubstitution of
+                (Left boundTerm, freeSubstitution) ->
+                    makeEvaluateBoundLeft
+                        sideCondition
+                        variable
+                        boundTerm
+                        normalized{Conditional.substitution = freeSubstitution}
+                (Right boundSubstitution, freeSubstitution) -> do
+                    matched <-
+                        normalized
+                            { Conditional.substitution = boundSubstitution
+                            }
+                            & matchesToVariableSubstitution sideCondition variable
+                            & lift
+                    if matched
+                        then
+                            return
+                                normalized
+                                    { Conditional.predicate = Predicate.makeTruePredicate
+                                    , Conditional.substitution = freeSubstitution
+                                    }
+                        else
+                            makeEvaluateBoundRight
+                                sideCondition
+                                variable
+                                freeSubstitution
+                                normalized
+                                    { Conditional.substitution = boundSubstitution
+                                    }
 
-    substVariablesFirst ::
-        ElementVariable RewritingVariableName ->
-        ElementVariable RewritingVariableName ->
-        Ordering
-    substVariablesFirst var1 var2
-        | var1 `elem` substVariables
-        , notElem var2 substVariables =
-            LT
-        | notElem var1 substVariables
-        , var2 `elem` substVariables =
-            GT
-        | otherwise = EQ
+        substVariablesFirst ::
+            ElementVariable RewritingVariableName ->
+            ElementVariable RewritingVariableName ->
+            Ordering
+        substVariablesFirst var1 var2
+            | var1 `elem` substVariables
+            , notElem var2 substVariables =
+                LT
+            | notElem var1 substVariables
+            , var2 `elem` substVariables =
+                GT
+            | otherwise = EQ
 
-    substVariables =
-        mapMaybe
-            retractElementVariable
-            $ toList
-            $ Substitution.variables
-                (Conditional.substitution original)
+        substVariables =
+            mapMaybe
+                retractElementVariable
+                $ toList
+                $ Substitution.variables
+                    (Conditional.substitution original)
 
 -- TODO (andrei.burdusa): this function must go away
 matchesToVariableSubstitution ::
@@ -264,8 +264,8 @@ singleVariableSubstitution
                 Just substTerm ->
                     TermLike.withoutFreeVariable someVariableName substTerm True
         | otherwise = False
-      where
-        someVariableName = inject (variableName variable)
+        where
+            someVariableName = inject (variableName variable)
 
 {- | Existentially quantify a variable in the given 'Pattern'.
 
@@ -292,16 +292,16 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized =
             substituted =
                 normalized
                     { Conditional.term =
-                        substitute boundSubstitution $
-                            Conditional.term normalized
+                        substitute boundSubstitution
+                            $ Conditional.term normalized
                     , Conditional.predicate =
-                        substitute boundSubstitution $
-                            Conditional.predicate normalized
+                        substitute boundSubstitution
+                            $ Conditional.predicate normalized
                     }
         orPattern <- liftSimplifier $ simplifyPattern sideCondition substituted
         Logic.scatter (toList orPattern)
-  where
-    someVariableName = inject (variableName variable)
+    where
+        someVariableName = inject (variableName variable)
 
 {- | Existentially quantify a variable in the given 'Pattern'.
 
@@ -323,8 +323,8 @@ makeEvaluateBoundRight ::
     LogicT Simplifier (Pattern RewritingVariableName)
 makeEvaluateBoundRight sideCondition variable freeSubstitution normalized = do
     orCondition <-
-        lift $
-            And.simplifyEvaluatedMultiPredicate
+        lift
+            $ And.simplifyEvaluatedMultiPredicate
                 sideCondition
                 ( MultiAnd.make
                     [ OrCondition.fromCondition quantifyCondition
@@ -336,10 +336,10 @@ makeEvaluateBoundRight sideCondition variable freeSubstitution normalized = do
     let simplifiedPattern = quantifyTerm `Conditional.withCondition` predicate
     TopBottom.guardAgainstBottom simplifiedPattern
     return simplifiedPattern
-  where
-    (quantifyTerm, quantifyCondition) =
-        Pattern.splitTerm
-            (quantifyPattern variable normalized)
+    where
+        (quantifyTerm, quantifyCondition) =
+            Pattern.splitTerm
+                (quantifyPattern variable normalized)
 
 {- | Split the substitution on the given variable.
 
@@ -364,21 +364,22 @@ splitSubstitution ::
     )
 splitSubstitution variable substitution =
     (bound, independent)
-  where
-    orderRenamedSubstitution =
-        Substitution.orderRenameAndRenormalizeTODO
+    where
+        orderRenamedSubstitution =
+            Substitution.orderRenameAndRenormalizeTODO
+                someVariable
+                substitution
+        (dependent, independent) =
+            Substitution.partition hasVariable orderRenamedSubstitution
+        hasVariable variable' term =
             someVariable
-            substitution
-    (dependent, independent) =
-        Substitution.partition hasVariable orderRenamedSubstitution
-    hasVariable variable' term =
-        someVariable == variable'
-            || TermLike.hasFreeVariable someVariableName term
-    bound =
-        maybe (Right dependent) Left $
-            Map.lookup someVariableName (Substitution.toMap dependent)
-    someVariable = inject variable
-    someVariableName = variableName someVariable
+                == variable'
+                || TermLike.hasFreeVariable someVariableName term
+        bound =
+            maybe (Right dependent) Left
+                $ Map.lookup someVariableName (Substitution.toMap dependent)
+        someVariable = inject variable
+        someVariableName = variableName someVariable
 
 {- | Existentially quantify the variable in a 'Pattern'.
 
@@ -401,18 +402,18 @@ quantifyPattern variable original@Conditional{term, predicate, substitution}
             ]
     | quantifyTerm = TermLike.markSimplified . mkExists variable <$> original
     | quantifyPredicate =
-        Conditional.withCondition term $
-            Condition.fromPredicate . Predicate.markSimplified
+        Conditional.withCondition term
+            $ Condition.fromPredicate
+            . Predicate.markSimplified
             -- TODO (thomas.tuegel): This may not be fully simplified: we have not used
             -- the And simplifier on the predicate.
-            $
-                Predicate.makeExistsPredicate variable predicate'
+            $ Predicate.makeExistsPredicate variable predicate'
     | otherwise = original
-  where
-    someVariableName = inject (variableName variable)
-    quantifyTerm = TermLike.hasFreeVariable someVariableName term
-    predicate' =
-        Predicate.makeAndPredicate predicate $
-            Substitution.toPredicate substitution
-    quantifyPredicate =
-        Predicate.hasFreeVariable someVariableName predicate'
+    where
+        someVariableName = inject (variableName variable)
+        quantifyTerm = TermLike.hasFreeVariable someVariableName term
+        predicate' =
+            Predicate.makeAndPredicate predicate
+                $ Substitution.toPredicate substitution
+        quantifyPredicate =
+            Predicate.hasFreeVariable someVariableName predicate'

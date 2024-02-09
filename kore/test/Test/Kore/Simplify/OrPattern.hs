@@ -96,9 +96,9 @@ test_orPatternSimplification =
                 )
         assertEqual "" expected actual
     ]
-  where
-    x :: TermLike RewritingVariableName
-    x = mkElemVar Mock.xConfig
+    where
+        x :: TermLike RewritingVariableName
+        x = mkElemVar Mock.xConfig
 
 positive :: TermLike RewritingVariableName -> Predicate RewritingVariableName
 positive u =
@@ -123,7 +123,7 @@ runSimplifyPredicates ::
     OrPattern RewritingVariableName ->
     IO (OrPattern RewritingVariableName)
 runSimplifyPredicates predicate orPattern =
-    Test.runSimplifierSMT Mock.env $
-        simplifyConditionsWithSmt
+    Test.runSimplifierSMT Mock.env
+        $ simplifyConditionsWithSmt
             (SideCondition.fromPredicateWithReplacements predicate)
             orPattern

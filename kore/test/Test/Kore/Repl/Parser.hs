@@ -401,9 +401,9 @@ redirectTests =
     , "claim > \"c f\"" `parsesTo_` redirectClaim Nothing "c f"
     , "config 5 > " `fails` ()
     ]
-  where
-    redirectConfig maybeNode file = Redirect (ShowConfig maybeNode) file
-    redirectClaim maybeClaim file = Redirect (ShowClaim maybeClaim) file
+    where
+        redirectConfig maybeNode file = Redirect (ShowConfig maybeNode) file
+        redirectClaim maybeClaim file = Redirect (ShowClaim maybeClaim) file
 
 pipeTests :: [ParserTest ReplCommand]
 pipeTests =
@@ -417,28 +417,28 @@ pipeTests =
     , "claim | \"e x e\" a1 \"a2\"" `parsesTo_` pipeClaim Nothing "e x e" ["a1", "a2"]
     , "config 5 | " `fails` ()
     ]
-  where
-    pipeConfig ::
-        Maybe ReplNode ->
-        String ->
-        [String] ->
-        ReplCommand
-    pipeConfig mrnode s xs =
-        Pipe (ShowConfig mrnode) s xs
-    pipeStep ::
-        Natural ->
-        String ->
-        [String] ->
-        ReplCommand
-    pipeStep n s xs =
-        Pipe (ProveSteps n) s xs
-    pipeClaim ::
-        Maybe (Either ClaimIndex RuleName) ->
-        String ->
-        [String] ->
-        ReplCommand
-    pipeClaim maybeClaim exe opts =
-        Pipe (ShowClaim maybeClaim) exe opts
+    where
+        pipeConfig ::
+            Maybe ReplNode ->
+            String ->
+            [String] ->
+            ReplCommand
+        pipeConfig mrnode s xs =
+            Pipe (ShowConfig mrnode) s xs
+        pipeStep ::
+            Natural ->
+            String ->
+            [String] ->
+            ReplCommand
+        pipeStep n s xs =
+            Pipe (ProveSteps n) s xs
+        pipeClaim ::
+            Maybe (Either ClaimIndex RuleName) ->
+            String ->
+            [String] ->
+            ReplCommand
+        pipeClaim maybeClaim exe opts =
+            Pipe (ShowClaim maybeClaim) exe opts
 
 pipeRedirectTests :: [ParserTest ReplCommand]
 pipeRedirectTests =
@@ -538,18 +538,18 @@ noArgsAliasTests =
     , "alias a = config 10 > f" `parsesTo_` alias "config 10 > f"
     , "alias a = config 10 | c > f" `parsesTo_` alias "config 10 | c > f"
     ]
-  where
-    alias = Alias . AliasDefinition "a" []
+    where
+        alias = Alias . AliasDefinition "a" []
 
 tryAliasTests :: [ParserTest ReplCommand]
 tryAliasTests =
     [ "whatever" `parsesTo_` tryAlias "whatever" []
     , "c 1 \"a b\"" `parsesTo_` tryAlias "c" [str "1", quoted "a b"]
     ]
-  where
-    tryAlias name = TryAlias . ReplAlias name
-    str = SimpleArgument
-    quoted = QuotedArgument
+    where
+        tryAlias name = TryAlias . ReplAlias name
+        str = SimpleArgument
+        quoted = QuotedArgument
 
 aliasesWithArgs :: [ParserTest ReplCommand]
 aliasesWithArgs =
@@ -558,9 +558,9 @@ aliasesWithArgs =
     , "alias c n s = config n | echo \"hello world\" > s"
         `parsesTo_` alias "c" ["n", "s"] "config n | echo \"hello world\" > s"
     ]
-  where
-    alias name arguments command =
-        Alias $ AliasDefinition{name, arguments, command}
+    where
+        alias name arguments command =
+            Alias $ AliasDefinition{name, arguments, command}
 
 aliasRedirectionTests :: [ParserTest ReplCommand]
 aliasRedirectionTests =

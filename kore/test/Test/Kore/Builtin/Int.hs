@@ -133,8 +133,8 @@ testUnary symb impl =
         let expect = asOrPattern $ impl a
         actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a])
         (===) expect actual
-  where
-    name = expectHook symb
+    where
+        name = expectHook symb
 
 -- | Test a binary operator hooked to the given symbol.
 testBinary ::
@@ -150,8 +150,8 @@ testBinary symb impl =
         let expect = asOrPattern $ impl a b
         actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
-  where
-    name = expectHook symb
+    where
+        name = expectHook symb
 
 -- | Test a comparison operator hooked to the given symbol
 testComparison ::
@@ -167,8 +167,8 @@ testComparison symb impl =
         let expect = Test.Bool.asOrPattern $ impl a b
         actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
-  where
-    name = expectHook symb
+    where
+        name = expectHook symb
 
 -- | Test a partial unary operator hooked to the given symbol.
 testPartialUnary ::
@@ -183,8 +183,8 @@ testPartialUnary symb impl =
         let expect = asPartialOrPattern $ impl a
         actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a])
         (===) expect actual
-  where
-    name = expectHook symb
+    where
+        name = expectHook symb
 
 -- | Test a partial binary operator hooked to the given symbol.
 testPartialBinary ::
@@ -200,8 +200,8 @@ testPartialBinary symb impl =
         let expect = asPartialOrPattern $ impl a b
         actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
-  where
-    name = expectHook symb
+    where
+        name = expectHook symb
 
 {- | Test a partial binary operator hooked to the given symbol, passing zero as
  the second argument.
@@ -218,8 +218,8 @@ testPartialBinaryZero symb impl =
         let expect = asPartialOrPattern $ impl a 0
         actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a, 0])
         (===) expect actual
-  where
-    name = expectHook symb
+    where
+        name = expectHook symb
 
 -- | Test a partial ternary operator hooked to the given symbol.
 testPartialTernary ::
@@ -236,8 +236,8 @@ testPartialTernary symb impl =
         let expect = asPartialOrPattern $ impl a b c
         actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a, b, c])
         (===) expect actual
-  where
-    name = expectHook symb
+    where
+        name = expectHook symb
 
 -- Comparison operators
 test_gt :: TestTree
@@ -379,20 +379,20 @@ test_euclidian_division_theorem =
                 divisor
         (===) (remainder >= 0 && remainder < abs divisor) True
         (===) (divisor * quotient + remainder) dividend
-  where
-    evaluate' symbol a b =
-        mkApplySymbol
-            symbol
-            (asInternal <$> [a, b])
-            & evaluateTermT
-            & fmap extractValue
+    where
+        evaluate' symbol a b =
+            mkApplySymbol
+                symbol
+                (asInternal <$> [a, b])
+                & evaluateTermT
+                & fmap extractValue
 
-    extractValue :: OrPattern RewritingVariableName -> Integer
-    extractValue (OrPattern.toTermLike intSort -> term) =
-        case term of
-            InternalInt_ InternalInt{internalIntValue} ->
-                internalIntValue
-            _ -> error "Expecting builtin Int"
+        extractValue :: OrPattern RewritingVariableName -> Integer
+        extractValue (OrPattern.toTermLike intSort -> term) =
+            case term of
+                InternalInt_ InternalInt{internalIntValue} ->
+                    internalIntValue
+                _ -> error "Expecting builtin Int"
 
 -- Bitwise operations
 test_and :: TestTree
@@ -409,13 +409,13 @@ test_not = testUnary notIntSymbol complement
 
 test_shl :: TestTree
 test_shl = testBinary shlIntSymbol shl
-  where
-    shl a = shift a . fromInteger
+    where
+        shl a = shift a . fromInteger
 
 test_shr :: TestTree
 test_shr = testBinary shrIntSymbol shr
-  where
-    shr a = shift a . fromInteger . negate
+    where
+        shr a = shift a . fromInteger . negate
 
 -- Exponential and logarithmic operations
 test_pow :: TestTree
@@ -540,8 +540,9 @@ test_symbolic_eq_not_conclusive =
         let x = mkElemVar $ "x" `ofSort` intSort
             y = mkElemVar $ "y" `ofSort` intSort
             expect =
-                MultiOr.singleton . fromTermLike $
-                    mkApplySymbol eqIntSymbol [x, y]
+                MultiOr.singleton
+                    . fromTermLike
+                    $ mkApplySymbol eqIntSymbol [x, y]
         actual <- evaluateTerm $ mkApplySymbol eqIntSymbol [x, y]
         assertEqual' "" expect actual
 
@@ -646,16 +647,16 @@ test_unifyIntEq =
                     & simplifyCondition'
             assertEqual "" [expect{term = ()}] actual
     ]
-  where
-    x, y :: ElementVariable RewritingVariableName
-    x = "x" `ofSort` intSort
-    y = "y" `ofSort` intSort
+    where
+        x, y :: ElementVariable RewritingVariableName
+        x = "x" `ofSort` intSort
+        y = "y" `ofSort` intSort
 
-    unifyIntEq ::
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        IO [Maybe (Pattern RewritingVariableName)]
-    unifyIntEq = unifyEq Int.eqKey
+        unifyIntEq ::
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            IO [Maybe (Pattern RewritingVariableName)]
+        unifyIntEq = unifyEq Int.eqKey
 
 test_contradiction :: TestTree
 test_contradiction =
@@ -673,7 +674,7 @@ test_contradiction =
                     & Condition.fromPredicate
         actual <- simplifyCondition' condition
         assertEqual "expected bottom" [] actual
-  where
-    x, y :: TermLike RewritingVariableName
-    x = mkElemVar $ ofSort "x" intSort
-    y = mkElemVar $ ofSort "y" intSort
+    where
+        x, y :: TermLike RewritingVariableName
+        x = mkElemVar $ ofSort "x" intSort
+        y = mkElemVar $ ofSort "y" intSort

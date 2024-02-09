@@ -42,25 +42,25 @@ applySExpr =
     \case
         Atom symb -> \args -> List (fillAtom symb args : args)
         list@(List _) -> fillPlacesWorker list
-  where
-    fillPlacesWorker =
-        \case
-            List sExprs -> List <$> traverse fillPlacesWorker sExprs
-            Atom symb -> fillAtom symb
+    where
+        fillPlacesWorker =
+            \case
+                List sExprs -> List <$> traverse fillPlacesWorker sExprs
+                Atom symb -> fillAtom symb
 
-    fillAtom symb = fromMaybe (\_ -> Atom symb) (fillPlace symb)
+        fillAtom symb = fromMaybe (\_ -> Atom symb) (fillPlace symb)
 
-    -- Fill one placeholder
-    fillPlace (Text.unpack -> ('#' : num)) = do
-        (n :: Int, remainder) <- Error.headMay (reads num)
-        -- A placeholder is a symbol: # followed by a decimal numeral.
-        -- Abort if any characters remain after parsing the numeral.
-        Error.assertMay (null remainder)
-        return (fillN n)
-    fillPlace _ = Nothing
+        -- Fill one placeholder
+        fillPlace (Text.unpack -> ('#' : num)) = do
+            (n :: Int, remainder) <- Error.headMay (reads num)
+            -- A placeholder is a symbol: # followed by a decimal numeral.
+            -- Abort if any characters remain after parsing the numeral.
+            Error.assertMay (null remainder)
+            return (fillN n)
+        fillPlace _ = Nothing
 
-    -- Look up the n-th argument.
-    fillN :: Int -> [SExpr] -> SExpr
-    fillN n = fromMaybe wrongArity . (`Error.atZ` (n - 1))
+        -- Look up the n-th argument.
+        fillN :: Int -> [SExpr] -> SExpr
+        fillN n = fromMaybe wrongArity . (`Error.atZ` (n - 1))
 
-    ~wrongArity = Builtin.Error.wrongArity "smtlib"
+        ~wrongArity = Builtin.Error.wrongArity "smtlib"

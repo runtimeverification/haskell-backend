@@ -170,15 +170,15 @@ instance InternalVariable variable => Pretty (Equation variable) where
             , "ensures:"
             , Pretty.indent 4 (pretty ensures)
             ]
-      where
-        Equation
-            { requires
-            , argument
-            , antiLeft
-            , left
-            , right
-            , ensures
-            } = equation
+        where
+            Equation
+                { requires
+                , argument
+                , antiLeft
+                , left
+                , right
+                , ensures
+                } = equation
 
 instance TopBottom (Equation variable) where
     isTop _ = False
@@ -235,8 +235,8 @@ toTermLike sort equation
                         argumentTerm
                     )
                 )
-                ( TermLike.mkEquals sort left $
-                    TermLike.mkAnd right ensures'
+                ( TermLike.mkEquals sort left
+                    $ TermLike.mkAnd right ensures'
                 )
     -- function rule without priority
     | Just argument' <- argument =
@@ -246,8 +246,8 @@ toTermLike sort equation
                     requires'
                     (TermLike.mkAnd argumentTerm $ TermLike.mkTop sort)
                 )
-                ( TermLike.mkEquals sort left $
-                    TermLike.mkAnd right ensures'
+                ( TermLike.mkEquals sort left
+                    $ TermLike.mkAnd right ensures'
                 )
     -- unconditional equation
     | isTop requires
@@ -257,21 +257,21 @@ toTermLike sort equation
     | otherwise =
         TermLike.mkImplies
             requires'
-            ( TermLike.mkEquals sort left $
-                TermLike.mkAnd right ensures'
+            ( TermLike.mkEquals sort left
+                $ TermLike.mkAnd right ensures'
             )
-  where
-    requires' = fromPredicate sort requires
-    ensures' = fromPredicate rightSort ensures
-    Equation
-        { requires
-        , argument
-        , antiLeft
-        , left
-        , right
-        , ensures
-        } = equation
-    rightSort = TermLike.termLikeSort right
+    where
+        requires' = fromPredicate sort requires
+        ensures' = fromPredicate rightSort ensures
+        Equation
+            { requires
+            , argument
+            , antiLeft
+            , left
+            , right
+            , ensures
+            } = equation
+        rightSort = TermLike.termLikeSort right
 
 instance
     InternalVariable variable =>
@@ -304,18 +304,18 @@ mapVariables mapping equation@(Equation _ _ _ _ _ _ _) =
         , ensures = mapPredicateVariables ensures
         , attributes = Attribute.mapAxiomVariables mapping attributes
         }
-  where
-    Equation
-        { requires
-        , argument
-        , antiLeft
-        , left
-        , right
-        , ensures
-        , attributes
-        } = equation
-    mapTermLikeVariables = TermLike.mapVariables mapping
-    mapPredicateVariables = Predicate.mapVariables mapping
+    where
+        Equation
+            { requires
+            , argument
+            , antiLeft
+            , left
+            , right
+            , ensures
+            , attributes
+            } = equation
+        mapTermLikeVariables = TermLike.mapVariables mapping
+        mapPredicateVariables = Predicate.mapVariables mapping
 
 refreshVariables ::
     forall variable.
@@ -345,11 +345,13 @@ refreshVariables
             adj =
                 AdjSomeVariableName
                     { adjSomeVariableNameElement =
-                        ElementVariableName . Lens.over _Wrapped $
-                            lookupSomeVariableName @(ElementVariableName _)
+                        ElementVariableName
+                            . Lens.over _Wrapped
+                            $ lookupSomeVariableName @(ElementVariableName _)
                     , adjSomeVariableNameSet =
-                        SetVariableName . Lens.over _Wrapped $
-                            lookupSomeVariableName @(SetVariableName _)
+                        SetVariableName
+                            . Lens.over _Wrapped
+                            $ lookupSomeVariableName @(SetVariableName _)
                     }
             subst :: Map (SomeVariableName variable) (TermLike variable)
             subst =
@@ -378,17 +380,17 @@ refreshVariables
                     , attributes = attributes'
                     }
          in (rename', equation')
-      where
-        Equation
-            { requires
-            , argument
-            , antiLeft
-            , left
-            , right
-            , ensures
-            , attributes
-            } = equation
-        originalFreeVariables = freeVariables equation
+        where
+            Equation
+                { requires
+                , argument
+                , antiLeft
+                , left
+                , right
+                , ensures
+                , attributes
+                } = equation
+            originalFreeVariables = freeVariables equation
 
 isSimplificationRule :: Equation variable -> Bool
 isSimplificationRule Equation{attributes} =
@@ -410,19 +412,19 @@ The identifiers are:
 identifiers :: Equation variable -> [Text]
 identifiers Equation{left, attributes} =
     rule <> symbols
-  where
-    symbols =
-        flip Recursive.fold left $ \case
-            _ :< TermLike.ApplySymbolF application ->
-                applySymbolIdentifiers application <> fold application
-            termLikeF -> fold termLikeF
-    rule = maybe [] pure $ Attribute.unLabel $ Attribute.label attributes
+    where
+        symbols =
+            flip Recursive.fold left $ \case
+                _ :< TermLike.ApplySymbolF application ->
+                    applySymbolIdentifiers application <> fold application
+                termLikeF -> fold termLikeF
+        rule = maybe [] pure $ Attribute.unLabel $ Attribute.label attributes
 
-    applySymbolIdentifiers application =
-        catMaybes [symbolName, symbolKlabel]
-      where
-        Application{applicationSymbolOrAlias = symbol} = application
-        symbolName = Just . getId $ symbolConstructor symbol
-        symbolKlabel =
-            (Attribute.Symbol.getKlabel . Attribute.Symbol.klabel)
-                (symbolAttributes symbol)
+        applySymbolIdentifiers application =
+            catMaybes [symbolName, symbolKlabel]
+            where
+                Application{applicationSymbolOrAlias = symbol} = application
+                symbolName = Just . getId $ symbolConstructor symbol
+                symbolKlabel =
+                    (Attribute.Symbol.getKlabel . Attribute.Symbol.klabel)
+                        (symbolAttributes symbol)

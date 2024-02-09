@@ -189,8 +189,8 @@ mapVariables ::
     PatternF variable2 child
 mapVariables adj =
     runIdentity . traverseVariables adj'
-  where
-    adj' = (.) pure <$> adj
+    where
+        adj' = (.) pure <$> adj
 {-# INLINE mapVariables #-}
 
 {- | Use the provided traversal to replace all variables in a 'PatternF' head.
@@ -229,24 +229,24 @@ traverseVariables adj =
         StringLiteralF strP -> pure (StringLiteralF strP)
         TopF topP -> pure (TopF topP)
         InhabitantF s -> pure (InhabitantF s)
-  where
-    trElemVar = traverse $ traverseElementVariableName adj
-    trSetVar = traverse $ traverseSetVariableName adj
-    traverseVariable =
-        fmap VariableF
-            . Lens.traverseOf _Unwrapped (traverseSomeVariable adj)
-    traverseVariablesExists Exists{existsSort, existsVariable, existsChild} =
-        Exists existsSort
-            <$> trElemVar existsVariable
-            <*> pure existsChild
-    traverseVariablesForall Forall{forallSort, forallVariable, forallChild} =
-        Forall forallSort
-            <$> trElemVar forallVariable
-            <*> pure forallChild
-    traverseVariablesMu Mu{muVariable, muChild} =
-        Mu <$> trSetVar muVariable <*> pure muChild
-    traverseVariablesNu Nu{nuVariable, nuChild} =
-        Nu <$> trSetVar nuVariable <*> pure nuChild
+    where
+        trElemVar = traverse $ traverseElementVariableName adj
+        trSetVar = traverse $ traverseSetVariableName adj
+        traverseVariable =
+            fmap VariableF
+                . Lens.traverseOf _Unwrapped (traverseSomeVariable adj)
+        traverseVariablesExists Exists{existsSort, existsVariable, existsChild} =
+            Exists existsSort
+                <$> trElemVar existsVariable
+                <*> pure existsChild
+        traverseVariablesForall Forall{forallSort, forallVariable, forallChild} =
+            Forall forallSort
+                <$> trElemVar forallVariable
+                <*> pure forallChild
+        traverseVariablesMu Mu{muVariable, muChild} =
+            Mu <$> trSetVar muVariable <*> pure muChild
+        traverseVariablesNu Nu{nuVariable, nuChild} =
+            Nu <$> trSetVar nuVariable <*> pure nuChild
 
 {- | Given an 'Id', 'groundHead' produces the head of an 'Application'
  corresponding to that argument.

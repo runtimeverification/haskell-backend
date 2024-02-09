@@ -43,19 +43,19 @@ data DebugAppliedRewriteRules = DebugAppliedRewriteRules
 
 instance Pretty DebugAppliedRewriteRules where
     pretty DebugAppliedRewriteRules{configuration, appliedRewriteRules} =
-        Pretty.vsep $
-            (<>)
+        Pretty.vsep
+            $ (<>)
                 prettyUnifiedRules
                 [ "On configuration:"
                 , Pretty.indent 2 . unparse $ configuration
                 ]
-      where
-        prettyUnifiedRules =
-            case appliedRewriteRules of
-                [] -> ["No rules were applied."]
-                rules ->
-                    ["The rules at following locations were applied:"]
-                        <> fmap pretty rules
+        where
+            prettyUnifiedRules =
+                case appliedRewriteRules of
+                    [] -> ["No rules were applied."]
+                    rules ->
+                        ["The rules at following locations were applied:"]
+                            <> fmap pretty rules
 
 instance Entry DebugAppliedRewriteRules where
     entrySeverity _ = Debug
@@ -74,10 +74,10 @@ debugAppliedRewriteRules initial appliedRewriteRules =
             { configuration
             , appliedRewriteRules
             }
-  where
-    configuration = mapConditionalVariables TermLike.mapVariables initial
-    mapConditionalVariables mapTermVariables =
-        Conditional.mapVariables mapTermVariables (pure toVariableName)
+    where
+        configuration = mapConditionalVariables TermLike.mapVariables initial
+        mapConditionalVariables mapTermVariables =
+            Conditional.mapVariables mapTermVariables (pure toVariableName)
 
 data DebugAppliedLabeledRewriteRule = DebugAppliedLabeledRewriteRule
     { configuration :: !(Pattern VariableName)
@@ -115,7 +115,7 @@ debugAppliedLabeledRewriteRule ::
     log ()
 debugAppliedLabeledRewriteRule initial label sourceLocation =
     logEntry DebugAppliedLabeledRewriteRule{..}
-  where
-    configuration = mapConditionalVariables TermLike.mapVariables initial
-    mapConditionalVariables mapTermVariables =
-        Conditional.mapVariables mapTermVariables (pure toVariableName)
+    where
+        configuration = mapConditionalVariables TermLike.mapVariables initial
+        mapConditionalVariables mapTermVariables =
+            Conditional.mapVariables mapTermVariables (pure toVariableName)

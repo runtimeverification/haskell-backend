@@ -131,9 +131,9 @@ insertRow tableName infos values = do
         addColumnParams infos'
     SQL.execute stmt $ SOP.hcollapse values'
     Key <$> SQL.lastInsertRowId
-  where
-    infos' = K "id" :* infos
-    values' = K SQLNull :* values
+    where
+        infos' = K "id" :* infos
+        values' = K SQLNull :* values
 
 -- | Select all rows that match the provided row.
 selectRows ::
@@ -222,8 +222,8 @@ createTableProduct ::
 createTableProduct tableName columnImpl ctorInfo = do
     defs <- defineColumns tableName columnImpl
     createTable tableName names defs
-  where
-    names = ctorFields ctorInfo
+    where
+        names = ctorFields ctorInfo
 
 {- | @createTableSum@ implements 'createTable' for a sum type.
 
@@ -244,20 +244,20 @@ createTableSum tableName columnImpls ctors = do
         createTable'
         (SOP.hzipWith Pair (SOP.unPOP columnImpls) ctors)
     createTable tableName names defs
-  where
-    names :: NP (K String) ctors
-    names = columnNamesSum ctors
+    where
+        names :: NP (K String) ctors
+        names = columnNamesSum ctors
 
-    defs :: NP (K ColumnDef) ctors
-    defs = SOP.hmap (const $ K columnTag) names
+        defs :: NP (K ColumnDef) ctors
+        defs = SOP.hmap (const $ K columnTag) names
 
-    createTable' ::
-        forall fields.
-        SOP.All SOP.Top fields =>
-        Product (NP ColumnImpl) ConstructorInfo fields ->
-        SQL ()
-    createTable' (Pair columnImpl info) =
-        createConstructorTable tableName columnImpl info
+        createTable' ::
+            forall fields.
+            SOP.All SOP.Top fields =>
+            Product (NP ColumnImpl) ConstructorInfo fields ->
+            SQL ()
+        createTable' (Pair columnImpl info) =
+            createConstructorTable tableName columnImpl info
 
 createTableGenericAux ::
     forall proxy table.
@@ -269,8 +269,8 @@ createTableGenericAux ::
 createTableGenericAux tableName columnImpls proxy =
     case SOP.constructorInfo $ SOP.datatypeInfo proxy of
         info :* Nil -> createTableProduct tableName columnImpl info
-          where
-            columnImpl :* Nil = SOP.unPOP columnImpls
+            where
+                columnImpl :* Nil = SOP.unPOP columnImpls
         infos -> createTableSum tableName columnImpls infos
 
 columnTag :: ColumnDef
@@ -295,10 +295,10 @@ createConstructorTable ::
 createConstructorTable typeTableName columnImpl info = do
     defs <- defineColumns typeTableName columnImpl
     createTable tableName (K tag :* names) (K columnTag :* defs)
-  where
-    tag = tagColumnName info
-    tableName = ctorTableName typeTableName info
-    names = ctorFields info
+    where
+        tag = tagColumnName info
+        tableName = ctorTableName typeTableName info
+        names = ctorFields info
 
 ctorTableName :: TableName -> ConstructorInfo fields -> TableName
 ctorTableName typeTableName info =
@@ -320,9 +320,9 @@ productFields ::
     NP (K String) fields
 productFields proxy =
     ctorFields ctor
-  where
-    info = SOP.datatypeInfo proxy
-    ctor :* Nil = SOP.constructorInfo info
+    where
+        info = SOP.datatypeInfo proxy
+        ctor :* Nil = SOP.constructorInfo info
 
 ctorFields ::
     SOP.All SOP.Top fields =>
@@ -333,16 +333,16 @@ ctorFields ctor =
         SOP.Constructor _ -> fakeFields
         SOP.Infix _ _ _ -> fakeFields
         SOP.Record _ fields -> fieldNames fields
-  where
-    fieldNames = SOP.hmap (K . SOP.fieldName)
+    where
+        fieldNames = SOP.hmap (K . SOP.fieldName)
 
-    fakeFields :: forall ys. SOP.SListI ys => NP (K String) ys
-    fakeFields = shapeFields 0 SOP.shape
+        fakeFields :: forall ys. SOP.SListI ys => NP (K String) ys
+        fakeFields = shapeFields 0 SOP.shape
 
-    shapeFields :: forall ys. Int -> Shape ys -> NP (K String) ys
-    shapeFields _ ShapeNil = Nil
-    shapeFields n (ShapeCons shape) =
-        K ("field" <> show n) :* shapeFields (n + 1) shape
+        shapeFields :: forall ys. Int -> Shape ys -> NP (K String) ys
+        shapeFields _ ShapeNil = Nil
+        shapeFields n (ShapeCons shape) =
+            K ("field" <> show n) :* shapeFields (n + 1) shape
 
 addTableName :: Monad m => TableName -> AccumT Query m ()
 addTableName tableName = do
@@ -366,14 +366,14 @@ addColumnNames ::
     AccumT Query m ()
 addColumnNames =
     Query.withParens . worker
-  where
-    worker :: forall fields'. NP (K String) fields' -> AccumT Query m ()
-    worker Nil = return ()
-    worker (info :* infos) = do
-        addColumnName info
-        case infos of
-            Nil -> return ()
-            _ -> Query.addComma >> worker infos
+    where
+        worker :: forall fields'. NP (K String) fields' -> AccumT Query m ()
+        worker Nil = return ()
+        worker (info :* infos) = do
+            addColumnName info
+            case infos of
+                Nil -> return ()
+                _ -> Query.addComma >> worker infos
 
 addColumnName :: Monad m => K String field -> AccumT Query m ()
 addColumnName (K fieldName) =
@@ -386,14 +386,14 @@ addColumnParams ::
     AccumT Query m ()
 addColumnParams =
     Query.withParens . worker
-  where
-    worker :: forall fields'. NP f fields' -> AccumT Query m ()
-    worker Nil = return ()
-    worker (_ :* infos) = do
-        Query.add "?"
-        case infos of
-            Nil -> return ()
-            _ -> Query.addComma >> worker infos
+    where
+        worker :: forall fields'. NP f fields' -> AccumT Query m ()
+        worker Nil = return ()
+        worker (_ :* infos) = do
+            Query.add "?"
+            case infos of
+                Nil -> return ()
+                _ -> Query.addComma >> worker infos
 
 toColumns ::
     SOP.All SOP.Top fields =>
@@ -421,15 +421,15 @@ insertRowSum typeTableName columnImpls info fields = K $ do
         rowid = SQLInteger (getKey key)
     values <- toColumns columnImpls fields
     insertRow tableName names (K rowid :* K tag :* values)
-  where
-    tableName = ctorTableName typeTableName info
-    tagName = tagColumnName info
-    tag = SQLInteger 1
+    where
+        tableName = ctorTableName typeTableName info
+        tagName = tagColumnName info
+        tag = SQLInteger 1
 
-    insertIndexRow = do
-        let names = K tagName :* Nil
-            values = K tag :* Nil
-        insertRow typeTableName names values
+        insertIndexRow = do
+            let names = K tagName :* Nil
+                values = K tag :* Nil
+            insertRow typeTableName names values
 
 -- | @insertRowProduct@ implements 'insertRow' for a product type.
 insertRowProduct ::
@@ -454,23 +454,23 @@ insertRowGenericAux ::
 insertRowGenericAux tableName columnImpls table =
     SOP.hczipWith3 proxyAllTop insertRow' (SOP.unPOP columnImpls) ctors values
         & SOP.hcollapse
-  where
-    proxy = Proxy @table
-    proxyAllTop = Proxy @(SOP.All SOP.Top)
-    values = SOP.unSOP $ SOP.from table
-    ctors = SOP.constructorInfo $ SOP.datatypeInfo proxy
+    where
+        proxy = Proxy @table
+        proxyAllTop = Proxy @(SOP.All SOP.Top)
+        values = SOP.unSOP $ SOP.from table
+        ctors = SOP.constructorInfo $ SOP.datatypeInfo proxy
 
-    insertRow' ::
-        forall fields.
-        SOP.All SOP.Top fields =>
-        NP ColumnImpl fields ->
-        ConstructorInfo fields ->
-        NP I fields ->
-        K (SQL (Key table)) fields
-    insertRow' =
-        case ctors of
-            _ :* Nil -> insertRowProduct tableName
-            _ -> insertRowSum tableName
+        insertRow' ::
+            forall fields.
+            SOP.All SOP.Top fields =>
+            NP ColumnImpl fields ->
+            ConstructorInfo fields ->
+            NP I fields ->
+            K (SQL (Key table)) fields
+        insertRow' =
+            case ctors of
+                _ :* Nil -> insertRowProduct tableName
+                _ -> insertRowSum tableName
 
 -- | Witness that the type @table@ is actually a product type.
 productTypeFrom ::
@@ -482,9 +482,9 @@ productTypeFrom a =
     case ns of
         Z np -> np
         S other -> case other of {}
-  where
-    ns :: NS (NP I) '[fields]
-    SOP.SOP ns = SOP.from a
+    where
+        ns :: NS (NP I) '[fields]
+        SOP.SOP ns = SOP.from a
 
 isNil :: NP f xs -> Bool
 isNil Nil = True
@@ -502,8 +502,8 @@ selectRowsSum typeTableName columnImpl info fields = K $ do
     let names = ctorFields info
     values <- toColumns columnImpl fields
     selectRows tableName names values
-  where
-    tableName = ctorTableName typeTableName info
+    where
+        tableName = ctorTableName typeTableName info
 
 -- | @selectRowsProduct@ implements 'selectRow' for a product type
 selectRowsProduct ::
@@ -537,20 +537,20 @@ selectRowGenericAux tableName columnImpls table = do
     return $ case keys of
         [] -> Nothing
         key : _ -> Just key
-  where
-    proxy = Proxy @table
-    proxyAllTop = Proxy @(SOP.All SOP.Top)
-    ctors = SOP.constructorInfo $ SOP.datatypeInfo proxy
-    values = SOP.unSOP $ SOP.from table
+    where
+        proxy = Proxy @table
+        proxyAllTop = Proxy @(SOP.All SOP.Top)
+        ctors = SOP.constructorInfo $ SOP.datatypeInfo proxy
+        values = SOP.unSOP $ SOP.from table
 
-    selectRows' ::
-        forall fields.
-        SOP.All SOP.Top fields =>
-        NP ColumnImpl fields ->
-        ConstructorInfo fields ->
-        NP I fields ->
-        K (SQL [Key table]) fields
-    selectRows' =
-        case ctors of
-            _ :* Nil -> selectRowsProduct tableName
-            _ -> selectRowsSum tableName
+        selectRows' ::
+            forall fields.
+            SOP.All SOP.Top fields =>
+            NP ColumnImpl fields ->
+            ConstructorInfo fields ->
+            NP I fields ->
+            K (SQL [Key table]) fields
+        selectRows' =
+            case ctors of
+                _ :* Nil -> selectRowsProduct tableName
+                _ -> selectRowsSum tableName

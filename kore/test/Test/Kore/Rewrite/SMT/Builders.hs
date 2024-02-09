@@ -81,18 +81,18 @@ indexModules moduleName modules =
                 _ ->
                     error
                         "Expected to find the module in indexed definition."
-  where
-    perhapsIndexedDefinition ::
-        Either
-            (Error VerifyError)
-            (Map.Map ModuleName (VerifiedModule Attribute.Symbol))
-    perhapsIndexedDefinition =
-        verifyAndIndexDefinition
-            Builtin.koreVerifiers
-            Definition
-                { definitionAttributes = Attributes []
-                , definitionModules = modules
-                }
+    where
+        perhapsIndexedDefinition ::
+            Either
+                (Error VerifyError)
+                (Map.Map ModuleName (VerifiedModule Attribute.Symbol))
+        perhapsIndexedDefinition =
+            verifyAndIndexDefinition
+                Builtin.koreVerifiers
+                Definition
+                    { definitionAttributes = Attributes []
+                    , definitionModules = modules
+                    }
 
 -- TODO(virgil): either use an attribute called noJunk, or rename
 -- this constant

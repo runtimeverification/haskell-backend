@@ -156,8 +156,8 @@ instance InternalVariable variable => Substitute (RHS variable) where
             , right = substitute subst' right
             , ensures = substitute subst' ensures
             }
-      where
-        subst' = foldr (Map.delete . inject . variableName) subst existentials
+        where
+            subst' = foldr (Map.delete . inject . variableName) subst existentials
 
     rename = substitute . fmap mkVar
     {-# INLINE rename #-}
@@ -180,17 +180,18 @@ topExistsToImplicitForall avoid' RHS{existentials, right, ensures} =
             , predicate = ensures
             , substitution = mempty
             }
-  where
-    avoid = FreeVariables.toNames avoid'
-    bindExistsFreeVariables =
-        freeVariables right <> freeVariables ensures
-            & FreeVariables.bindVariables (mkSomeVariable <$> existentials)
-            & FreeVariables.toNames
-    renamed :: Map (SomeVariableName variable) (SomeVariable variable)
-    renamed =
-        refreshVariablesSet
-            (avoid <> bindExistsFreeVariables)
-            (Set.fromList $ mkSomeVariable <$> existentials)
+    where
+        avoid = FreeVariables.toNames avoid'
+        bindExistsFreeVariables =
+            freeVariables right
+                <> freeVariables ensures
+                & FreeVariables.bindVariables (mkSomeVariable <$> existentials)
+                & FreeVariables.toNames
+        renamed :: Map (SomeVariableName variable) (SomeVariable variable)
+        renamed =
+            refreshVariablesSet
+                (avoid <> bindExistsFreeVariables)
+                (Set.fromList $ mkSomeVariable <$> existentials)
 
 -- | Normal rewriting axioms
 data RulePattern variable = RulePattern
@@ -232,12 +233,12 @@ instance InternalVariable variable => Pretty (RulePattern variable) where
             , "ensures:"
             , Pretty.indent 4 (pretty ensures)
             ]
-      where
-        RulePattern
-            { left
-            , requires
-            , rhs = RHS{right, existentials, ensures}
-            } = rulePattern'
+        where
+            RulePattern
+                { left
+                , requires
+                , rhs = RHS{right, existentials, ensures}
+                } = rulePattern'
 
 instance TopBottom (RulePattern variable) where
     isTop _ = False
@@ -258,8 +259,8 @@ instance InternalVariable variable => Substitute (RulePattern variable) where
             , requires = substitute subst requires
             , rhs = substitute subst rhs
             }
-      where
-        RulePattern{left, antiLeft, requires, rhs} = rulePattern'
+        where
+            RulePattern{left, antiLeft, requires, rhs} = rulePattern'
 
     rename = substitute . fmap mkVar
     {-# INLINE rename #-}
@@ -285,13 +286,13 @@ leftPattern ::
     Lens' (RulePattern variable) (Pattern variable)
 leftPattern =
     Lens.lens get set
-  where
-    get RulePattern{left, requires} =
-        Pattern.withCondition left $ from @(Predicate _) requires
-    set rule@(RulePattern _ _ _ _ _) pattern' =
-        rule{left, requires = Condition.toPredicate condition}
-      where
-        (left, condition) = Pattern.splitTerm pattern'
+    where
+        get RulePattern{left, requires} =
+            Pattern.withCondition left $ from @(Predicate _) requires
+        set rule@(RulePattern _ _ _ _ _) pattern' =
+            rule{left, requires = Condition.toPredicate condition}
+            where
+                (left, condition) = Pattern.splitTerm pattern'
 
 -- | Converts the 'RHS' back to the term form.
 rhsToTerm ::
@@ -300,11 +301,11 @@ rhsToTerm ::
     TermLike.TermLike variable
 rhsToTerm RHS{existentials, right, ensures} =
     TermLike.mkExistsN existentials rhs
-  where
-    rhs = case ensures of
-        Predicate.PredicateTrue -> right
-        _ -> TermLike.mkAnd (Predicate.fromPredicate sort ensures) right
-    sort = TermLike.termLikeSort right
+    where
+        rhs = case ensures of
+            Predicate.PredicateTrue -> right
+            _ -> TermLike.mkAnd (Predicate.fromPredicate sort ensures) right
+        sort = TermLike.termLikeSort right
 
 -- | Converts the 'RHS' back to the term form.
 rhsToPattern ::
@@ -314,14 +315,14 @@ rhsToPattern ::
 rhsToPattern RHS{existentials, right, ensures} =
     TermLike.mkExistsN existentials rhs
         & Pattern.fromTermLike
-  where
-    rhs =
-        Pattern.toTermLike
-            Conditional
-                { term = right
-                , predicate = ensures
-                , substitution = mempty
-                }
+    where
+        rhs =
+            Pattern.toTermLike
+                Conditional
+                    { term = right
+                    , predicate = ensures
+                    , substitution = mempty
+                    }
 
 -- | Converts the left-hand side to the term form
 lhsToTerm ::
@@ -359,8 +360,8 @@ termToRHS ::
     RHS variable
 termToRHS (TermLike.Exists_ _ v pat) =
     rhs{existentials = v : existentials rhs}
-  where
-    rhs = termToRHS pat
+    where
+        rhs = termToRHS pat
 termToRHS (TermLike.And_ _ right ensures')
     | Right ensures <- Predicate.makePredicate ensures' =
         RHS{existentials = [], right, ensures}
@@ -394,9 +395,9 @@ isFreeOf ::
     Set.Set (SomeVariable variable) ->
     Bool
 isFreeOf rule =
-    Set.disjoint $
-        FreeVariables.toSet $
-            freeVariables rule
+    Set.disjoint
+        $ FreeVariables.toSet
+        $ freeVariables rule
 
 renameExistentials ::
     forall variable.
@@ -411,13 +412,13 @@ renameExistentials subst RHS{existentials, right, ensures} =
         , right = rename subst right
         , ensures = rename subst ensures
         }
-  where
-    renameVariable ::
-        ElementVariable variable ->
-        ElementVariable variable
-    renameVariable var =
-        let name = SomeVariableNameElement . variableName $ var
-         in maybe var expectElementVariable $ Map.lookup name subst
+    where
+        renameVariable ::
+            ElementVariable variable ->
+            ElementVariable variable
+        renameVariable var =
+            let name = SomeVariableNameElement . variableName $ var
+             in maybe var expectElementVariable $ Map.lookup name subst
 
 rhsForgetSimplified :: InternalVariable variable => RHS variable -> RHS variable
 rhsForgetSimplified RHS{existentials, right, ensures} =
@@ -444,10 +445,10 @@ applySubstitution substitution rule =
                 ( "Substituted variables not removed from the rule, cannot throw "
                     ++ "substitution away."
                 )
-  where
-    subst = Substitution.toMap substitution
-    finalRule = substitute subst rule
-    substitutedVariables = Substitution.variables substitution
+    where
+        subst = Substitution.toMap substitution
+        finalRule = substitute subst rule
+        substitutedVariables = Substitution.variables substitution
 
 class HasAttributes rule where
     getAttributes :: rule variable -> Attribute.Axiom Symbol variable
@@ -592,18 +593,18 @@ instance UnifyingRule (RulePattern variable) where
             -- Renaming the bound variables is invisible from outside.
             pure (renaming, rule1)
             & flip evalState (FreeVariables.toNames stale)
-      where
-        RulePattern{left, antiLeft, requires, rhs, attributes} = rule0
-        refreshVariables' variables = do
-            staleNames <- State.get
-            let renaming = refreshVariablesSet staleNames variables
-                staleNames' = Set.mapMonotonic variableName variables
-                staleNames'' =
-                    Map.elems renaming
-                        & foldMap FreeVariables.freeVariable
-                        & FreeVariables.toNames
-            State.put (staleNames <> staleNames' <> staleNames'')
-            pure renaming
+        where
+            RulePattern{left, antiLeft, requires, rhs, attributes} = rule0
+            refreshVariables' variables = do
+                staleNames <- State.get
+                let renaming = refreshVariablesSet staleNames variables
+                    staleNames' = Set.mapMonotonic variableName variables
+                    staleNames'' =
+                        Map.elems renaming
+                            & foldMap FreeVariables.freeVariable
+                            & FreeVariables.toNames
+                State.put (staleNames <> staleNames' <> staleNames'')
+                pure renaming
 
 mapRuleVariables ::
     forall rule variable1 variable2.
@@ -615,8 +616,8 @@ mapRuleVariables ::
     rule variable1 ->
     rule variable2
 mapRuleVariables adj (coerce -> rule1@(RulePattern _ _ _ _ _)) =
-    coerce $
-        rule1
+    coerce
+        $ rule1
             { left = mapTermLikeVariables left
             , antiLeft = mapAntiLeftVariables <$> antiLeft
             , requires = mapPredicateVariables requires
@@ -629,17 +630,17 @@ mapRuleVariables adj (coerce -> rule1@(RulePattern _ _ _ _ _)) =
             , attributes =
                 Attribute.mapAxiomVariables adj attributes
             }
-  where
-    RulePattern
-        { left
-        , antiLeft
-        , requires
-        , rhs = RHS{existentials, right, ensures}
-        , attributes
-        } = rule1
-    mapTermLikeVariables = TermLike.mapVariables adj
-    mapPredicateVariables = Predicate.mapVariables adj
-    mapAntiLeftVariables = AntiLeft.mapVariables adj
+    where
+        RulePattern
+            { left
+            , antiLeft
+            , requires
+            , rhs = RHS{existentials, right, ensures}
+            , attributes
+            } = rule1
+        mapTermLikeVariables = TermLike.mapVariables adj
+        mapPredicateVariables = Predicate.mapVariables adj
+        mapAntiLeftVariables = AntiLeft.mapVariables adj
 
 instance UnifyingRule (RewriteRule variable) where
     type UnifyingRuleVariable (RewriteRule variable) = variable
@@ -660,8 +661,8 @@ lhsEqualsRhs ::
     Bool
 lhsEqualsRhs rule =
     lhsToTerm left antiLeft requires == rhsToTerm rhs
-  where
-    RulePattern{left, antiLeft, requires, rhs} = rule
+    where
+        RulePattern{left, antiLeft, requires, rhs} = rule
 
 {- | Prepare a rule for unification or matching with the configuration.
 

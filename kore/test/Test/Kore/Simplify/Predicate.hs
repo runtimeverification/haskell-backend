@@ -245,14 +245,15 @@ test_simplify =
                 [[fromCeil_ (Mock.f (mkElemVar y))]]
             ]
         , (test "nested quantifiers")
-            ( (fromExists x) . (fromExists y) $
-                ( fromAnd
-                    (fromEquals_ (Mock.f Mock.a) (Mock.g (mkElemVar x)))
-                    ( fromAnd
-                        (fromEquals_ (mkElemVar t) (mkElemVar x))
-                        (fromEquals_ (mkElemVar u) (mkElemVar y))
-                    )
-                )
+            ( (fromExists x)
+                . (fromExists y)
+                $ ( fromAnd
+                        (fromEquals_ (Mock.f Mock.a) (Mock.g (mkElemVar x)))
+                        ( fromAnd
+                            (fromEquals_ (mkElemVar t) (mkElemVar x))
+                            (fromEquals_ (mkElemVar u) (mkElemVar y))
+                        )
+                  )
             )
             [[fromEquals_ (Mock.f Mock.a) (Mock.g (mkElemVar t))]]
         , (test "invalid assignment")
@@ -374,21 +375,21 @@ test_simplify =
             ]
         ]
     ]
-  where
-    t, u, x, y :: ElementVariable RewritingVariableName
-    t = Mock.tConfig
-    u = Mock.uConfig
-    x = Mock.xConfig
-    y = Mock.yConfig
+    where
+        t, u, x, y :: ElementVariable RewritingVariableName
+        t = Mock.tConfig
+        u = Mock.uConfig
+        x = Mock.xConfig
+        y = Mock.yConfig
 
-    test ::
-        HasCallStack =>
-        TestName ->
-        Predicate RewritingVariableName ->
-        [[Predicate RewritingVariableName]] ->
-        TestTree
-    test testName input expect =
-        testCase testName $ simplifyExpect [] input expect
+        test ::
+            HasCallStack =>
+            TestName ->
+            Predicate RewritingVariableName ->
+            [[Predicate RewritingVariableName]] ->
+            TestTree
+        test testName input expect =
+            testCase testName $ simplifyExpect [] input expect
 
 test_simplify_SideCondition :: [TestTree]
 test_simplify_SideCondition =
@@ -433,16 +434,16 @@ test_simplify_SideCondition =
         , test "Negative" [fromNot faCeil] (fromIff faCeil fbCeil) [[fromNot fbCeil]]
         ]
     ]
-  where
-    test ::
-        HasCallStack =>
-        TestName ->
-        [Predicate RewritingVariableName] ->
-        Predicate RewritingVariableName ->
-        [[Predicate RewritingVariableName]] ->
-        TestTree
-    test testName replacements input expect =
-        testCase testName $ simplifyExpect replacements input expect
+    where
+        test ::
+            HasCallStack =>
+            TestName ->
+            [Predicate RewritingVariableName] ->
+            Predicate RewritingVariableName ->
+            [[Predicate RewritingVariableName]] ->
+            TestTree
+        test testName replacements input expect =
+            testCase testName $ simplifyExpect replacements input expect
 
 test_extractFirstAssignment :: [TestTree]
 test_extractFirstAssignment =
@@ -492,55 +493,55 @@ test_extractFirstAssignment =
         [fromEquals_ (mkElemVar x) (mkElemVar y)]
         (Just (mkElemVar x))
     ]
-  where
-    x, y :: ElementVariable RewritingVariableName
-    x = Mock.xConfig
-    y = Mock.yConfig
+    where
+        x, y :: ElementVariable RewritingVariableName
+        x = Mock.xConfig
+        y = Mock.yConfig
 
-    test ::
-        HasCallStack =>
-        TestName ->
-        ElementVariable RewritingVariableName ->
-        [Predicate RewritingVariableName] ->
-        Maybe (TermLike RewritingVariableName) ->
-        TestTree
-    test testName elementVariable predicates expect =
-        testCase testName $ do
-            let someVariableName = inject (variableName elementVariable)
-                multiAnd = MultiAnd.make predicates
-                actual = extractFirstAssignment someVariableName multiAnd
-            case expect of
-                Nothing ->
-                    case actual of
-                        Nothing -> pure ()
-                        Just actual' -> assertFailure message
-                          where
-                            message =
-                                (show . Pretty.vsep)
-                                    [ "Expected: Nothing"
-                                    , "but found:"
-                                    , Pretty.indent 4 (unparse actual')
-                                    ]
-                Just expect' ->
-                    case actual of
-                        Nothing -> assertFailure message
-                          where
-                            message =
-                                (show . Pretty.vsep)
-                                    [ "Expected:"
-                                    , Pretty.indent 4 (unparse expect')
-                                    , "but found: Nothing"
-                                    ]
-                        Just actual' ->
-                            assertEqual message expect' actual'
-                          where
-                            message =
-                                (show . Pretty.vsep)
-                                    [ "Expected:"
-                                    , Pretty.indent 4 (unparse expect')
-                                    , "but found:"
-                                    , Pretty.indent 4 (unparse actual')
-                                    ]
+        test ::
+            HasCallStack =>
+            TestName ->
+            ElementVariable RewritingVariableName ->
+            [Predicate RewritingVariableName] ->
+            Maybe (TermLike RewritingVariableName) ->
+            TestTree
+        test testName elementVariable predicates expect =
+            testCase testName $ do
+                let someVariableName = inject (variableName elementVariable)
+                    multiAnd = MultiAnd.make predicates
+                    actual = extractFirstAssignment someVariableName multiAnd
+                case expect of
+                    Nothing ->
+                        case actual of
+                            Nothing -> pure ()
+                            Just actual' -> assertFailure message
+                                where
+                                    message =
+                                        (show . Pretty.vsep)
+                                            [ "Expected: Nothing"
+                                            , "but found:"
+                                            , Pretty.indent 4 (unparse actual')
+                                            ]
+                    Just expect' ->
+                        case actual of
+                            Nothing -> assertFailure message
+                                where
+                                    message =
+                                        (show . Pretty.vsep)
+                                            [ "Expected:"
+                                            , Pretty.indent 4 (unparse expect')
+                                            , "but found: Nothing"
+                                            ]
+                            Just actual' ->
+                                assertEqual message expect' actual'
+                                where
+                                    message =
+                                        (show . Pretty.vsep)
+                                            [ "Expected:"
+                                            , Pretty.indent 4 (unparse expect')
+                                            , "but found:"
+                                            , Pretty.indent 4 (unparse actual')
+                                            ]
 
 mkDisjunctiveNormalForm :: Ord a => TopBottom a => [[a]] -> MultiOr (MultiAnd a)
 mkDisjunctiveNormalForm = MultiOr.make . map MultiAnd.make

@@ -166,21 +166,22 @@ fromNormalizationSimplified ::
     Condition variable
 fromNormalizationSimplified
     normalization@Normalization{normalized, denormalized} =
-        predicate' <> substitution'
+        predicate'
+            <> substitution'
             & withErrorContext "while normalizing substitution" normalization
-      where
-        predicate' =
-            Conditional.fromPredicate
-                . markSimplifiedIfChildrenSimplified denormalized
-                . Substitution.toPredicate
-                $ Substitution.wrap denormalized
-        substitution' =
-            Conditional.fromSubstitution $
-                Substitution.unsafeWrapFromAssignments normalized
-        markSimplifiedIfChildrenSimplified childrenList result =
-            Predicate.setSimplified childrenSimplified result
-          where
-            childrenSimplified =
-                foldMap
-                    (TermLike.simplifiedAttribute . Substitution.assignedTerm)
-                    childrenList
+        where
+            predicate' =
+                Conditional.fromPredicate
+                    . markSimplifiedIfChildrenSimplified denormalized
+                    . Substitution.toPredicate
+                    $ Substitution.wrap denormalized
+            substitution' =
+                Conditional.fromSubstitution
+                    $ Substitution.unsafeWrapFromAssignments normalized
+            markSimplifiedIfChildrenSimplified childrenList result =
+                Predicate.setSimplified childrenSimplified result
+                where
+                    childrenSimplified =
+                        foldMap
+                            (TermLike.simplifiedAttribute . Substitution.assignedTerm)
+                            childrenList

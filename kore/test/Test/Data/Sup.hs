@@ -42,62 +42,62 @@ hprop_transitiveOrd :: Property
 hprop_transitiveOrd =
     (property . sequence_)
         (transitive <$> sups <*> sups <*> sups)
-  where
-    transitive x y z = do
-        annotateShow (x, y, z)
-        implies ((x <= y) && (y <= z)) (x <= z)
+    where
+        transitive x y z = do
+            annotateShow (x, y, z)
+            implies ((x <= y) && (y <= z)) (x <= z)
 
 hprop_reflexiveOrd :: Property
 hprop_reflexiveOrd =
     property (mapM_ reflexive sups)
-  where
-    reflexive x = do
-        annotateShow x
-        Hedgehog.assert (x <= x)
+    where
+        reflexive x = do
+            annotateShow x
+            Hedgehog.assert (x <= x)
 
 hprop_antisymmetricOrd :: Property
 hprop_antisymmetricOrd =
     (property . sequence_)
         (antisymmetric <$> sups <*> sups)
-  where
-    antisymmetric x y = do
-        annotateShow (x, y)
-        implies ((x <= y) && (y <= x)) (x == y)
+    where
+        antisymmetric x y = do
+            annotateShow (x, y)
+            implies ((x <= y) && (y <= x)) (x == y)
 
 hprop_reflexiveEq :: Property
 hprop_reflexiveEq =
     property (mapM_ reflexive sups)
-  where
-    reflexive x = do
-        annotateShow x
-        Hedgehog.assert (x == x)
+    where
+        reflexive x = do
+            annotateShow x
+            Hedgehog.assert (x == x)
 
 hprop_symmetricEq :: Property
 hprop_symmetricEq =
     (property . sequence_)
         (symmetric <$> sups <*> sups)
-  where
-    symmetric x y = do
-        annotateShow (x, y)
-        (x == y) === (y == x)
+    where
+        symmetric x y = do
+            annotateShow (x, y)
+            (x == y) === (y == x)
 
 hprop_transitiveEq :: Property
 hprop_transitiveEq =
     (property . sequence_)
         (transitive <$> sups <*> sups <*> sups)
-  where
-    transitive x y z = do
-        annotateShow (x, y, z)
-        implies ((x == y) && (y == z)) (x == z)
+    where
+        transitive x y z = do
+            annotateShow (x, y, z)
+            implies ((x == y) && (y == z)) (x == z)
 
 hprop_negativeEq :: Property
 hprop_negativeEq =
     (property . sequence_)
         (negative <$> sups <*> sups)
-  where
-    negative x y = do
-        annotateShow (x, y)
-        (x /= y) === not (x == y)
+    where
+        negative x y = do
+            annotateShow (x, y)
+            (x /= y) === not (x == y)
 
 hprop_associativeSemigroup :: Property
 hprop_associativeSemigroup = property $ do

@@ -131,8 +131,8 @@ import Prelude.Kore
 notImplemented :: BuiltinAndAxiomSimplifier
 notImplemented =
     BuiltinAndAxiomSimplifier notImplemented0
-  where
-    notImplemented0 _ _ = pure NotApplicable
+    where
+        notImplemented0 _ _ = pure NotApplicable
 
 {- | Return the supplied pattern as an 'AttemptedAxiom'.
 
@@ -145,8 +145,8 @@ appliedFunction ::
     Pattern variable ->
     m (AttemptedAxiom variable)
 appliedFunction epat =
-    return $
-        Applied
+    return
+        $ Applied
             AttemptedAxiomResults
                 { results = OrPattern.fromPattern epat
                 , remainders = OrPattern.bottom
@@ -178,20 +178,20 @@ unaryOperator ::
     BuiltinAndAxiomSimplifier
 unaryOperator extractVal asPattern ctx op =
     functionEvaluator unaryOperator0
-  where
-    get :: TermLike variable -> Maybe a
-    get = extractVal ctx
+    where
+        get :: TermLike variable -> Maybe a
+        get = extractVal ctx
 
-    unaryOperator0 :: Function
-    unaryOperator0 _ resultSort children =
-        case children of
-            [termLike]
-                | Just a <- get termLike -> do
-                    -- Apply the operator to a domain value
-                    let r = op a
-                    return (asPattern resultSort r)
-                | otherwise -> empty
-            _ -> wrongArity (Text.unpack ctx)
+        unaryOperator0 :: Function
+        unaryOperator0 _ resultSort children =
+            case children of
+                [termLike]
+                    | Just a <- get termLike -> do
+                        -- Apply the operator to a domain value
+                        let r = op a
+                        return (asPattern resultSort r)
+                    | otherwise -> empty
+                _ -> wrongArity (Text.unpack ctx)
 
 {- | Construct a builtin binary operator.
 
@@ -220,19 +220,19 @@ binaryOperator ::
     BuiltinAndAxiomSimplifier
 binaryOperator extractVal asPattern ctx op =
     functionEvaluator binaryOperator0
-  where
-    get :: TermLike variable -> Maybe a
-    get = extractVal ctx
+    where
+        get :: TermLike variable -> Maybe a
+        get = extractVal ctx
 
-    binaryOperator0 :: Function
-    binaryOperator0 _ resultSort children =
-        case children of
-            [get -> Just a, get -> Just b] -> do
-                -- Apply the operator to two domain values
-                let r = op a b
-                return (asPattern resultSort r)
-            [_, _] -> empty
-            _ -> wrongArity (Text.unpack ctx)
+        binaryOperator0 :: Function
+        binaryOperator0 _ resultSort children =
+            case children of
+                [get -> Just a, get -> Just b] -> do
+                    -- Apply the operator to two domain values
+                    let r = op a b
+                    return (asPattern resultSort r)
+                [_, _] -> empty
+                _ -> wrongArity (Text.unpack ctx)
 
 {- | Construct a builtin ternary operator.
 
@@ -261,19 +261,19 @@ ternaryOperator ::
     BuiltinAndAxiomSimplifier
 ternaryOperator extractVal asPattern ctx op =
     functionEvaluator ternaryOperator0
-  where
-    get :: TermLike variable -> Maybe a
-    get = extractVal ctx
+    where
+        get :: TermLike variable -> Maybe a
+        get = extractVal ctx
 
-    ternaryOperator0 :: Function
-    ternaryOperator0 _ resultSort children =
-        case children of
-            [get -> Just a, get -> Just b, get -> Just c] -> do
-                -- Apply the operator to three domain values
-                let r = op a b c
-                return (asPattern resultSort r)
-            [_, _, _] -> empty
-            _ -> wrongArity (Text.unpack ctx)
+        ternaryOperator0 :: Function
+        ternaryOperator0 _ resultSort children =
+            case children of
+                [get -> Just a, get -> Just b, get -> Just c] -> do
+                    -- Apply the operator to three domain values
+                    let r = op a b c
+                    return (asPattern resultSort r)
+                [_, _, _] -> empty
+                _ -> wrongArity (Text.unpack ctx)
 
 type Function =
     forall variable.
@@ -302,18 +302,18 @@ applicationEvaluator ::
     BuiltinAndAxiomSimplifier
 applicationEvaluator impl =
     applicationAxiomSimplifier evaluator
-  where
-    evaluator ::
-        InternalVariable variable =>
-        SideCondition variable ->
-        CofreeF
-            (Application Symbol)
-            (TermAttributes variable)
-            (TermLike variable) ->
-        Simplifier (AttemptedAxiom variable)
-    evaluator sideCondition (_ :< app) = do
-        getAttemptedAxiom
-            (impl sideCondition app >>= appliedFunction)
+    where
+        evaluator ::
+            InternalVariable variable =>
+            SideCondition variable ->
+            CofreeF
+                (Application Symbol)
+                (TermAttributes variable)
+                (TermLike variable) ->
+            Simplifier (AttemptedAxiom variable)
+        evaluator sideCondition (_ :< app) = do
+            getAttemptedAxiom
+                (impl sideCondition app >>= appliedFunction)
 
 {- | Run a parser on a verified domain value.
 
@@ -372,18 +372,18 @@ lookupSymbolUnit tools builtinSort =
         , symbolAttributes
         , symbolSorts
         }
-  where
-    unit = Attribute.unit (MetadataTools.sortAttributes tools builtinSort)
-    symbolOrAlias =
-        Attribute.Sort.getUnit unit
-            & fromMaybe missingUnitAttribute
-    symbolConstructor = symbolOrAliasConstructor symbolOrAlias
-    symbolParams = symbolOrAliasParams symbolOrAlias
-    symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
-    symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
-    ~missingUnitAttribute =
-        verifierBug $
-            "missing 'unit' attribute of sort '"
+    where
+        unit = Attribute.unit (MetadataTools.sortAttributes tools builtinSort)
+        symbolOrAlias =
+            Attribute.Sort.getUnit unit
+                & fromMaybe missingUnitAttribute
+        symbolConstructor = symbolOrAliasConstructor symbolOrAlias
+        symbolParams = symbolOrAliasParams symbolOrAlias
+        symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
+        symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
+        ~missingUnitAttribute =
+            verifierBug
+                $ "missing 'unit' attribute of sort '"
                 ++ unparseToString builtinSort
                 ++ "'"
 
@@ -408,18 +408,18 @@ lookupSymbolElement tools builtinSort =
         , symbolAttributes
         , symbolSorts
         }
-  where
-    element = Attribute.element (MetadataTools.sortAttributes tools builtinSort)
-    symbolOrAlias =
-        Attribute.Sort.getElement element
-            & fromMaybe missingElementAttribute
-    symbolConstructor = symbolOrAliasConstructor symbolOrAlias
-    symbolParams = symbolOrAliasParams symbolOrAlias
-    symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
-    symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
-    ~missingElementAttribute =
-        verifierBug $
-            "missing 'element' attribute of sort '"
+    where
+        element = Attribute.element (MetadataTools.sortAttributes tools builtinSort)
+        symbolOrAlias =
+            Attribute.Sort.getElement element
+                & fromMaybe missingElementAttribute
+        symbolConstructor = symbolOrAliasConstructor symbolOrAlias
+        symbolParams = symbolOrAliasParams symbolOrAlias
+        symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
+        symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
+        ~missingElementAttribute =
+            verifierBug
+                $ "missing 'element' attribute of sort '"
                 ++ unparseToString builtinSort
                 ++ "'"
 
@@ -444,18 +444,18 @@ lookupSymbolConcat tools builtinSort =
         , symbolAttributes
         , symbolSorts
         }
-  where
-    concat' = Attribute.concat (MetadataTools.sortAttributes tools builtinSort)
-    symbolOrAlias =
-        Attribute.Sort.getConcat concat'
-            & fromMaybe missingConcatAttribute
-    symbolConstructor = symbolOrAliasConstructor symbolOrAlias
-    symbolParams = symbolOrAliasParams symbolOrAlias
-    symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
-    symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
-    ~missingConcatAttribute =
-        verifierBug $
-            "missing 'concat' attribute of sort '"
+    where
+        concat' = Attribute.concat (MetadataTools.sortAttributes tools builtinSort)
+        symbolOrAlias =
+            Attribute.Sort.getConcat concat'
+                & fromMaybe missingConcatAttribute
+        symbolConstructor = symbolOrAliasConstructor symbolOrAlias
+        symbolParams = symbolOrAliasParams symbolOrAlias
+        symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
+        symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
+        ~missingConcatAttribute =
+            verifierBug
+                $ "missing 'concat' attribute of sort '"
                 ++ unparseToString builtinSort
                 ++ "'"
 
@@ -507,8 +507,8 @@ makeDomainValuePattern ::
     Text ->
     Pattern variable
 makeDomainValuePattern sort stringLiteral =
-    Pattern.fromTermLike $
-        makeDomainValueTerm sort stringLiteral
+    Pattern.fromTermLike
+        $ makeDomainValueTerm sort stringLiteral
 
 data UnifyEq = UnifyEq
     { eqTerm :: !(EqTerm (TermLike RewritingVariableName))
@@ -535,13 +535,13 @@ unifyEq
                         else liftSimplifier . mkNotSimplified
             scattered <- Unify.scatter solution'
             return scattered{term = mkInternalBool internalBool}
-      where
-        UnifyEq{eqTerm, internalBool} = unifyData
-        EqTerm{symbol, operand1, operand2} = eqTerm
-        eqSort = applicationSortsResult . symbolSorts $ symbol
-        eraseTerm conditional = conditional $> (mkTop eqSort)
-        mkNotSimplified notChild =
-            notSimplifier SideCondition.top Not{notSort = eqSort, notChild}
+        where
+            UnifyEq{eqTerm, internalBool} = unifyData
+            EqTerm{symbol, operand1, operand2} = eqTerm
+            eqSort = applicationSortsResult . symbolSorts $ symbol
+            eraseTerm conditional = conditional $> (mkTop eqSort)
+            mkNotSimplified notChild =
+                notSimplifier SideCondition.top Not{notSort = eqSort, notChild}
 
 -- | Match @eq@ hooked symbols.
 matchEqual :: Text -> TermLike variable -> Maybe (EqTerm (TermLike variable))

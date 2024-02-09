@@ -35,9 +35,9 @@ test_assertRight =
         [ run (mkRight "expected") `equals_` "expected"
         , run (mkLeft someError) `throws_` printError someError
         ]
-  where
-    run = assertRight
-    someError = koreError "the error message"
+    where
+        run = assertRight
+        someError = koreError "the error message"
 
 mkRight :: String -> Wrapper
 mkRight = Right

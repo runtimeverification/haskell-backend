@@ -58,19 +58,19 @@ versionInfo = do
     if haveVersionFile
         then readVersionInfoFile versionFile
         else defaultVersionInfo
-  where
-    readVersionInfoFile versionFile = do
-        result <- Aeson.eitherDecodeFileStrict' versionFile & TH.runIO
-        either fail (TH.lift @_ @VersionInfo) result
-    defaultVersionInfo =
-        [|
-            VersionInfo
-                { gitHash = $(GitRev.gitHash)
-                , gitCommitDate = $(GitRev.gitCommitDate)
-                , gitBranch = Just $(GitRev.gitBranch)
-                , gitDirty = $(GitRev.gitDirty)
-                }
-            |]
+    where
+        readVersionInfoFile versionFile = do
+            result <- Aeson.eitherDecodeFileStrict' versionFile & TH.runIO
+            either fail (TH.lift @_ @VersionInfo) result
+        defaultVersionInfo =
+            [|
+                VersionInfo
+                    { gitHash = $(GitRev.gitHash)
+                    , gitCommitDate = $(GitRev.gitCommitDate)
+                    , gitBranch = Just $(GitRev.gitBranch)
+                    , gitDirty = $(GitRev.gitDirty)
+                    }
+                |]
 
 {- | Find the root of the package.
 
@@ -82,25 +82,25 @@ getPackageRoot = do
     bot <- takeDirectory . TH.loc_filename <$> TH.location
     let parents = getParents bot
     TH.runIO $ findPackageRoot bot parents
-  where
-    isProjectRoot here = Directory.doesFileExist (here </> "kore.cabal")
+    where
+        isProjectRoot here = Directory.doesFileExist (here </> "kore.cabal")
 
-    getParents bottom =
-        bottom
-            & splitDirectories
-            & List.inits
-            & reverse
-            & map joinPath
-            & filter (sameRelativity bottom)
+        getParents bottom =
+            bottom
+                & splitDirectories
+                & List.inits
+                & reverse
+                & map joinPath
+                & filter (sameRelativity bottom)
 
-    sameRelativity bottom = \here -> isRelative bottom == isRelative here
+        sameRelativity bottom = \here -> isRelative bottom == isRelative here
 
-    -- Find the root directory of the current package. This module file can
-    -- be moved safely because the package root is found at build time.
-    findPackageRoot bot [] =
-        fail ("Could not find kore.cabal above " ++ bot)
-    findPackageRoot bot (here : heres) = do
-        foundRoot <- isProjectRoot here
-        if foundRoot then Directory.makeAbsolute here else goUp
-      where
-        goUp = findPackageRoot bot heres
+        -- Find the root directory of the current package. This module file can
+        -- be moved safely because the package root is found at build time.
+        findPackageRoot bot [] =
+            fail ("Could not find kore.cabal above " ++ bot)
+        findPackageRoot bot (here : heres) = do
+            foundRoot <- isProjectRoot here
+            if foundRoot then Directory.makeAbsolute here else goUp
+            where
+                goUp = findPackageRoot bot heres

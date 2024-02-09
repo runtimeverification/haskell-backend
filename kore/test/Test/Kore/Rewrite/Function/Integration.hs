@@ -443,16 +443,16 @@ evaluate ::
     TermLike RewritingVariableName ->
     IO (OrPattern RewritingVariableName)
 evaluate axiomEquations termLike =
-    testRunSimplifier testEnv{axiomEquations} $
-        TermLike.simplify SideCondition.top termLike
+    testRunSimplifier testEnv{axiomEquations}
+        $ TermLike.simplify SideCondition.top termLike
 
 evaluateWith ::
     BuiltinAndAxiomSimplifier ->
     TermLike RewritingVariableName ->
     IO CommonAttemptedAxiom
 evaluateWith simplifier patt =
-    runSimplifierSMT testEnv $
-        runBuiltinAndAxiomSimplifier simplifier patt SideCondition.top
+    runSimplifierSMT testEnv
+        $ runBuiltinAndAxiomSimplifier simplifier patt SideCondition.top
 
 -- Applied tests: check that one or more rules applies or not
 withApplied ::
@@ -476,19 +476,20 @@ applies =
     withApplied $ \attempted -> do
         results <- expectApplied attempted
         expectNoRemainders results
-  where
-    expectApplied NotApplicable = assertFailure "Expected Applied"
-    expectApplied (NotApplicableUntilConditionChanges _) =
-        assertFailure "Expected Applied"
-    expectApplied (Applied results) = return results
-    expectNoRemainders =
-        assertBool "Expected no remainders"
-            . isBottom
-            . Lens.view (field @"remainders")
+    where
+        expectApplied NotApplicable = assertFailure "Expected Applied"
+        expectApplied (NotApplicableUntilConditionChanges _) =
+            assertFailure "Expected Applied"
+        expectApplied (Applied results) = return results
+        expectNoRemainders =
+            assertBool "Expected no remainders"
+                . isBottom
+                . Lens.view (field @"remainders")
 notApplies =
     withApplied $ \r ->
-        assertBool "Expected NotApplicable" $
-            isNotApplicable r || isNotApplicableUntilConditionChanges r
+        assertBool "Expected NotApplicable"
+            $ isNotApplicable r
+            || isNotApplicableUntilConditionChanges r
 
 natSort :: Sort
 natSort =
@@ -702,8 +703,8 @@ mkMap ::
     [TermLike RewritingVariableName] ->
     TermLike RewritingVariableName
 mkMap elements opaques =
-    Ac.asInternal Builtin.testMetadataTools Builtin.mapSort $
-        Map.normalizedMap elements opaques
+    Ac.asInternal Builtin.testMetadataTools Builtin.mapSort
+        $ Map.normalizedMap elements opaques
 
 removeMap ::
     TermLike RewritingVariableName ->
@@ -879,9 +880,9 @@ updateListSimplifier =
         (updateList (updateList varLConfig u v) x y)
         (updateList varLConfig u y)
         (makeEqualsPredicate (Builtin.keqBool (injK u) (injK x)) (mkBool True))
-  where
-    [u, v, x, y] = mkElemVar <$> [uConfigInt, vConfigInt, xConfigInt, yConfigInt]
-    injK = Builtin.inj Builtin.kSort
+    where
+        [u, v, x, y] = mkElemVar <$> [uConfigInt, vConfigInt, xConfigInt, yConfigInt]
+        injK = Builtin.inj Builtin.kSort
 
 test_lookupMap :: [TestTree]
 test_lookupMap =
@@ -988,9 +989,9 @@ updateMapSimplifier =
         (updateMap (updateMap mMapConfigTerm u v) x y)
         (updateMap mMapConfigTerm u y)
         (makeEqualsPredicate (Builtin.keqBool (injK u) (injK x)) (mkBool True))
-  where
-    [u, v, x, y] = mkElemVar <$> [uConfigInt, vConfigInt, xConfigInt, yConfigInt]
-    injK = Builtin.inj Builtin.kSort
+    where
+        [u, v, x, y] = mkElemVar <$> [uConfigInt, vConfigInt, xConfigInt, yConfigInt]
+        injK = Builtin.inj Builtin.kSort
 
 dummyIntSimplifier :: Equation RewritingVariableName
 dummyIntSimplifier =
@@ -1068,15 +1069,15 @@ simplifies =
     withSimplified $ \attempted -> do
         results <- expectApplied attempted
         expectNoRemainders results
-  where
-    expectApplied NotApplicable = assertFailure "Expected Applied"
-    expectApplied (NotApplicableUntilConditionChanges _) =
-        assertFailure "Expected Applied"
-    expectApplied (Applied results) = return results
-    expectNoRemainders =
-        assertBool "Expected no remainders"
-            . isBottom
-            . Lens.view (field @"remainders")
+    where
+        expectApplied NotApplicable = assertFailure "Expected Applied"
+        expectApplied (NotApplicableUntilConditionChanges _) =
+            assertFailure "Expected Applied"
+        expectApplied (Applied results) = return results
+        expectNoRemainders =
+            assertBool "Expected no remainders"
+                . isBottom
+                . Lens.view (field @"remainders")
 notSimplifies =
     withSimplified (assertBool "Expected NotApplicable" . isNotApplicable)
 
@@ -1133,7 +1134,8 @@ testModule =
 testDefinition :: ParsedDefinition
 testDefinition =
     Builtin.testDefinition
-        & field @"definitionModules" Lens.<>~ [natModule, testModule]
+        & field @"definitionModules"
+        Lens.<>~ [natModule, testModule]
 
 verify ::
     ParsedDefinition ->

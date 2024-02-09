@@ -201,8 +201,8 @@ unorderedAssign ::
     TermLike variable ->
     UnorderedAssignment variable
 unorderedAssign variable term =
-    UnorderedAssignment_ $
-        Assignment_ variable term
+    UnorderedAssignment_
+        $ Assignment_ variable term
 
 {- | Extract an 'UnorderedAssignment' for a /particular/ variable.
 
@@ -272,10 +272,10 @@ instance
     where
     diffPrec a b =
         wrapDiffPrec <$> on diffPrec unwrap a b
-      where
-        wrapDiffPrec diff' = \precOut ->
-            (if precOut >= 10 then Pretty.parens else id)
-                ("Kore.Internal.Substitution.wrap" Pretty.<+> diff' 10)
+        where
+            wrapDiffPrec diff' = \precOut ->
+                (if precOut >= 10 then Pretty.parens else id)
+                    ("Kore.Internal.Substitution.wrap" Pretty.<+> diff' 10)
 
 instance (Ord variable, SubstitutionOrd variable, Hashable variable) => Hashable (Substitution variable) where
     hashWithSalt salt (Substitution denorm) =
@@ -355,10 +355,10 @@ instance
     where
     from =
         fromMap . Map.fromAscList . fmap toVariable . Map.toAscList
-      where
-        toVariable (variableName, term) =
-            let variableSort = TermLike.termLikeSort term
-             in (Variable{variableName, variableSort}, term)
+        where
+            toVariable (variableName, term) =
+                let variableSort = TermLike.termLikeSort term
+                 in (Variable{variableName, variableSort}, term)
 
 instance InternalVariable variable => Substitute (Substitution variable) where
     type TermType (Substitution variable) = TermLike variable
@@ -408,16 +408,16 @@ toMultiMap =
     foldl' insertSubstitution Map.empty
         . fmap assignmentToPair
         . unwrap
-  where
-    insertSubstitution ::
-        forall variable1 term.
-        Ord variable1 =>
-        Map variable1 (NonEmpty term) ->
-        (variable1, term) ->
-        Map variable1 (NonEmpty term)
-    insertSubstitution multiMap (variable, termLike) =
-        let push = (termLike :|) . maybe [] Prelude.Kore.toList
-         in Map.alter (Just . push) variable multiMap
+    where
+        insertSubstitution ::
+            forall variable1 term.
+            Ord variable1 =>
+            Map variable1 (NonEmpty term) ->
+            (variable1, term) ->
+            Map variable1 (NonEmpty term)
+        insertSubstitution multiMap (variable, termLike) =
+            let push = (termLike :|) . maybe [] Prelude.Kore.toList
+             in Map.alter (Just . push) variable multiMap
 
 {- | Apply a normal order to a single substitution.
 
@@ -498,26 +498,26 @@ unsafeWrap ::
     Substitution variable
 unsafeWrap =
     NormalizedSubstitution . List.foldl' insertNormalized Map.empty
-  where
-    insertNormalized subst (var, termLike) =
-        Map.insert var termLike subst
-            -- The variable must not occur in the substitution
-            & assert (Map.notMember var subst)
-            -- or in the right-hand side of this or any other substitution,
-            & assert (not $ occurs termLike)
-            & assert (not $ any occurs subst)
-            -- this substitution must not depend on any substitution variable,
-            & assert (not $ any depends $ Map.keys subst)
-            -- and if this is an element variable substitution, the substitution
-            -- must be defined.
-            -- TODO (thomas.tuegel): isBottom -> SideCondition.isDefined
-            & assert (not $ isElementVariable var && isBottom termLike)
-            & withErrorContext "while wrapping substitution" (assign var termLike, unwrap $ fromMap subst)
-      where
-        Variable{variableName} = var
-        occurs = TermLike.hasFreeVariable variableName
-        depends Variable{variableName = variableName'} =
-            TermLike.hasFreeVariable variableName' termLike
+    where
+        insertNormalized subst (var, termLike) =
+            Map.insert var termLike subst
+                -- The variable must not occur in the substitution
+                & assert (Map.notMember var subst)
+                -- or in the right-hand side of this or any other substitution,
+                & assert (not $ occurs termLike)
+                & assert (not $ any occurs subst)
+                -- this substitution must not depend on any substitution variable,
+                & assert (not $ any depends $ Map.keys subst)
+                -- and if this is an element variable substitution, the substitution
+                -- must be defined.
+                -- TODO (thomas.tuegel): isBottom -> SideCondition.isDefined
+                & assert (not $ isElementVariable var && isBottom termLike)
+                & withErrorContext "while wrapping substitution" (assign var termLike, unwrap $ fromMap subst)
+            where
+                Variable{variableName} = var
+                occurs = TermLike.hasFreeVariable variableName
+                depends Variable{variableName = variableName'} =
+                    TermLike.hasFreeVariable variableName' termLike
 
 unsafeWrapFromAssignments ::
     HasCallStack =>
@@ -544,9 +544,9 @@ mapAssignmentVariables ::
     Assignment variable2
 mapAssignmentVariables adj (Assignment variable term) =
     assign mappedVariable mappedTerm
-  where
-    mappedVariable = mapSomeVariable adj variable
-    mappedTerm = TermLike.mapVariables adj term
+    where
+        mappedVariable = mapSomeVariable adj variable
+        mappedTerm = TermLike.mapVariables adj term
 
 {- | 'mapVariables' changes all the variables in the substitution
  with the given function.
@@ -690,16 +690,16 @@ orderRenameAndRenormalizeTODO
                             )
                  in NormalizedSubstitution
                         (Map.insert variable replacement replacedSubstitution)
-      where
-        reversable :: [(SomeVariable variable, TermLike variable)]
-        reversable = List.filter (rhsIsVar variable) (Map.toList substitution)
+        where
+            reversable :: [(SomeVariable variable, TermLike variable)]
+            reversable = List.filter (rhsIsVar variable) (Map.toList substitution)
 
-        reversableVars :: [SomeVariable variable]
-        reversableVars = map fst reversable
+            reversableVars :: [SomeVariable variable]
+            reversableVars = map fst reversable
 
-        rhsIsVar :: SomeVariable variable -> (thing, TermLike variable) -> Bool
-        rhsIsVar var (_, Var_ otherVar) = var == otherVar
-        rhsIsVar _ _ = False
+            rhsIsVar :: SomeVariable variable -> (thing, TermLike variable) -> Bool
+            rhsIsVar var (_, Var_ otherVar) = var == otherVar
+            rhsIsVar _ _ = False
 orderRenameAndRenormalizeTODO _ substitution = substitution
 
 assertNoneAreFreeVarsInRhs ::
@@ -709,37 +709,37 @@ assertNoneAreFreeVarsInRhs ::
     Map (SomeVariable variable) (TermLike variable)
 assertNoneAreFreeVarsInRhs lhsVariables =
     fmap assertNoneAreFree
-  where
-    assertNoneAreFree patt =
-        if Set.null commonVars
-            then patt
-            else
-                (error . unlines)
-                    [ "Unexpected lhs variable in rhs term "
-                    , "in normalized substitution. While this can"
-                    , "be a valid case sometimes, i.e. x=f(x),"
-                    , "we don't handle that right now."
-                    , "patt=" ++ unparseToString patt
-                    , "commonVars="
-                        ++ show
-                            ( unparseToString
-                                <$> Set.toList commonVars
-                            )
-                    ]
-      where
-        commonVars =
-            Set.intersection lhsVariables $
-                FreeVariables.toSet $
-                    freeVariables patt
+    where
+        assertNoneAreFree patt =
+            if Set.null commonVars
+                then patt
+                else
+                    (error . unlines)
+                        [ "Unexpected lhs variable in rhs term "
+                        , "in normalized substitution. While this can"
+                        , "be a valid case sometimes, i.e. x=f(x),"
+                        , "we don't handle that right now."
+                        , "patt=" ++ unparseToString patt
+                        , "commonVars="
+                            ++ show
+                                ( unparseToString
+                                    <$> Set.toList commonVars
+                                )
+                        ]
+            where
+                commonVars =
+                    Set.intersection lhsVariables
+                        $ FreeVariables.toSet
+                        $ freeVariables patt
 
 instance
     InternalVariable variable =>
     HasFreeVariables (Substitution variable) variable
     where
     freeVariables = foldMap freeVariablesWorker . unwrap
-      where
-        freeVariablesWorker (Assignment x t) =
-            freeVariable x <> freeVariables t
+        where
+            freeVariablesWorker (Assignment x t) =
+                freeVariable x <> freeVariables t
 
 -- | The left-hand side variables of the 'Substitution'.
 variables ::
@@ -788,67 +788,67 @@ orientSubstitution ::
     Map (SomeVariableName variable) (TermLike variable)
 orientSubstitution toLeft substitution =
     foldl' go substitution $ Map.toList substitution
-  where
-    go substitutionInProgress initialPair@(initialKey, _)
-        | Just (newKey, newValue) <- retractReorderedPair initialPair =
-            -- Re-orienting X = Y as Y = X.
-            let newPair = Map.singleton newKey newValue
-             in case Map.lookup newKey substitutionInProgress of
-                    Nothing ->
-                        -- There is no other Y = X substitution in the map.
-                        substitutionInProgress
-                            -- Remove X = Y pair.
-                            & Map.delete initialKey
-                            -- Apply Y = X to the right-hand side of all pairs.
-                            & Map.map (substitute newPair)
-                            -- Insert Y = X pair.
-                            & Map.insert newKey newValue
-                    Just already ->
-                        -- There is a substitution Y = T in the map.
-                        substitutionInProgress
-                            -- Remove Y = T.
-                            & Map.delete newKey
-                            -- Apply Y = X to the right-hand side of all pairs.
-                            & Map.map (substitute newPair)
-                            -- Insert Y = X pair.
-                            & Map.insert newKey newValue
-                            -- Apply X = T to the right-hand side of all pairs. This
-                            -- substitution never needs to be reoriented, but the reason why
-                            -- is subtle:
-                            -- 1. The Y = T substitution came from another swapped pair. It
-                            --    was not present in the original substitution: the original
-                            --    substitution was normalized, and the substitution we are
-                            --    reorienting now had Y on the right-hand side, so Y was not
-                            --    on the left-hand side of any pair in the original
-                            --    subsitution.
-                            -- 2. If Y = T came from another swapped pair, then T is not a
-                            --    preferred variable.
-                            -- 3. We just checked that X is not a preferred variable.
-                            -- 4. Therefore, X = T is a valid orientation.
-                            & Map.map
-                                (substitute (Map.singleton initialKey already))
-                            -- Insert X = T pair.
-                            & Map.insert initialKey already
-        | otherwise = substitutionInProgress
+    where
+        go substitutionInProgress initialPair@(initialKey, _)
+            | Just (newKey, newValue) <- retractReorderedPair initialPair =
+                -- Re-orienting X = Y as Y = X.
+                let newPair = Map.singleton newKey newValue
+                 in case Map.lookup newKey substitutionInProgress of
+                        Nothing ->
+                            -- There is no other Y = X substitution in the map.
+                            substitutionInProgress
+                                -- Remove X = Y pair.
+                                & Map.delete initialKey
+                                -- Apply Y = X to the right-hand side of all pairs.
+                                & Map.map (substitute newPair)
+                                -- Insert Y = X pair.
+                                & Map.insert newKey newValue
+                        Just already ->
+                            -- There is a substitution Y = T in the map.
+                            substitutionInProgress
+                                -- Remove Y = T.
+                                & Map.delete newKey
+                                -- Apply Y = X to the right-hand side of all pairs.
+                                & Map.map (substitute newPair)
+                                -- Insert Y = X pair.
+                                & Map.insert newKey newValue
+                                -- Apply X = T to the right-hand side of all pairs. This
+                                -- substitution never needs to be reoriented, but the reason why
+                                -- is subtle:
+                                -- 1. The Y = T substitution came from another swapped pair. It
+                                --    was not present in the original substitution: the original
+                                --    substitution was normalized, and the substitution we are
+                                --    reorienting now had Y on the right-hand side, so Y was not
+                                --    on the left-hand side of any pair in the original
+                                --    subsitution.
+                                -- 2. If Y = T came from another swapped pair, then T is not a
+                                --    preferred variable.
+                                -- 3. We just checked that X is not a preferred variable.
+                                -- 4. Therefore, X = T is a valid orientation.
+                                & Map.map
+                                    (substitute (Map.singleton initialKey already))
+                                -- Insert X = T pair.
+                                & Map.insert initialKey already
+            | otherwise = substitutionInProgress
 
-    retractReorderedPair ::
-        (SomeVariableName variable, TermLike variable) ->
-        Maybe (SomeVariableName variable, TermLike variable)
-    retractReorderedPair (xName, TermLike.Var_ (Variable yName ySort))
-        | isSameMultiplicity xName yName
-        , toLeft yName
-        , not (toLeft xName) =
-            Just (yName, TermLike.mkVar (Variable xName ySort))
-    retractReorderedPair _ = Nothing
+        retractReorderedPair ::
+            (SomeVariableName variable, TermLike variable) ->
+            Maybe (SomeVariableName variable, TermLike variable)
+        retractReorderedPair (xName, TermLike.Var_ (Variable yName ySort))
+            | isSameMultiplicity xName yName
+            , toLeft yName
+            , not (toLeft xName) =
+                Just (yName, TermLike.mkVar (Variable xName ySort))
+        retractReorderedPair _ = Nothing
 
-    isSameMultiplicity ::
-        SomeVariableName variable ->
-        SomeVariableName variable ->
-        Bool
-    isSameMultiplicity x y
-        | SomeVariableNameElement _ <- x, SomeVariableNameElement _ <- y = True
-        | SomeVariableNameSet _ <- x, SomeVariableNameSet _ <- y = True
-        | otherwise = False
+        isSameMultiplicity ::
+            SomeVariableName variable ->
+            SomeVariableName variable ->
+            Bool
+        isSameMultiplicity x y
+            | SomeVariableNameElement _ <- x, SomeVariableNameElement _ <- y = True
+            | SomeVariableNameSet _ <- x, SomeVariableNameSet _ <- y = True
+            | otherwise = False
 
 {- | The result of /normalizing/ a substitution.
 
@@ -883,14 +883,14 @@ instance InternalVariable variable => Pretty (Normalization variable) where
             , "denormalized:"
             , (Pretty.indent 4 . Pretty.vsep) (map prettyPair denormalized)
             ]
-      where
-        prettyPair assignment =
-            Pretty.vsep
-                [ "variable:"
-                , Pretty.indent 4 (unparse $ assignedVariable assignment)
-                , "term:"
-                , Pretty.indent 4 (unparse $ assignedTerm assignment)
-                ]
+        where
+            prettyPair assignment =
+                Pretty.vsep
+                    [ "variable:"
+                    , Pretty.indent 4 (unparse $ assignedVariable assignment)
+                    , "term:"
+                    , Pretty.indent 4 (unparse $ assignedTerm assignment)
+                    ]
 
 mkNormalization ::
     InternalVariable variable =>
@@ -916,9 +916,9 @@ applyNormalized Normalization{normalized, denormalized} =
         { normalized
         , denormalized = mapAssignedTerm substitute' <$> denormalized
         }
-  where
-    substitute' = substitute $ Map.fromList (toSubstitution <$> normalized)
-    toSubstitution (Assignment var term) = (variableName var, term)
+    where
+        substitute' = substitute $ Map.fromList (toSubstitution <$> normalized)
+        toSubstitution (Assignment var term) = (variableName var, term)
 
 {- | @toPredicate@ constructs a 'Predicate' equivalent to 'Substitution'.
 

@@ -173,17 +173,17 @@ lookupApplicationVerifier ::
 lookupApplicationVerifier symbol verifiers = do
     key <- getHook symbol <|> getKlabel symbol
     HashMap.lookup key verifiers
-  where
-    getHook =
-        fmap HookedSymbolKey
-            . Attribute.Symbol.getHook
-            . Attribute.Symbol.hook
-            . symbolAttributes
-    getKlabel =
-        fmap KlabelSymbolKey
-            . Attribute.Symbol.getKlabel
-            . Attribute.Symbol.klabel
-            . symbolAttributes
+    where
+        getHook =
+            fmap HookedSymbolKey
+                . Attribute.Symbol.getHook
+                . Attribute.Symbol.hook
+                . symbolAttributes
+        getKlabel =
+            fmap KlabelSymbolKey
+                . Attribute.Symbol.getKlabel
+                . Attribute.Symbol.klabel
+                . symbolAttributes
 
 applicationPatternVerifierHooks ::
     ApplicationVerifiers patternType ->
@@ -195,12 +195,12 @@ applicationPatternVerifierHooks applicationVerifiers =
                 ApplySymbolF application
                     | Just verifier <- lookupVerifier symbol ->
                         synthesize <$> runApplicationVerifier verifier application
-                  where
-                    Application{applicationSymbolOrAlias = symbol} = application
+                    where
+                        Application{applicationSymbolOrAlias = symbol} = application
                 _ -> return termLike
-  where
-    lookupVerifier symbol =
-        lookupApplicationVerifier symbol applicationVerifiers
+    where
+        lookupVerifier symbol =
+            lookupApplicationVerifier symbol applicationVerifiers
 
 domainValuePatternVerifierHook ::
     Text ->
@@ -229,8 +229,8 @@ domainValuePatternVerifierHook hook verifier =
                                         . fmap synthesize
                                         . verifier
                             pure (verify domainValue)
-                  where
-                    DomainValue{domainValueSort} = domainValue
+                    where
+                        DomainValue{domainValueSort} = domainValue
                 _ -> return termLike
 
 -- | Verify builtin sorts, symbols, and patterns.
@@ -398,8 +398,8 @@ assertSymbolResultSort indexedModule symbolId expectedSort = do
     (_, decl) <- IndexedModule.resolveSymbol indexedModule symbolId
     let SentenceSymbol{sentenceSymbolResultSort = actualSort} = decl
         SentenceSymbol{sentenceSymbolSymbol = symbol} = decl
-    unless (actualSort == expectedSort) $
-        Kore.Error.koreFailWithLocations
+    unless (actualSort == expectedSort)
+        $ Kore.Error.koreFailWithLocations
             [symbol]
             ( "Symbol does not return sort '"
                 <> unparseToText expectedSort
@@ -416,63 +416,63 @@ verifySort ::
     SortVerifier
 verifySort builtinName =
     SortVerifier worker
-  where
-    worker ::
-        (Id -> Either (Error VerifyError) SentenceSort) ->
-        Sort ->
-        Either (Error VerifyError) ()
-    worker findSort (SortActualSort SortActual{sortActualName}) = do
-        SentenceSort{sentenceSortAttributes} <- findSort sortActualName
-        let expectHook = Hook (Just builtinName)
-        declHook <- Verifier.Attributes.parseAttributes sentenceSortAttributes
-        Kore.Error.koreFailWhen
-            (expectHook /= declHook)
-            ( "Sort '"
-                ++ getIdForError sortActualName
-                ++ "' is not hooked to builtin sort '"
-                ++ Text.unpack builtinName
-                ++ "'"
-            )
-    worker _ (SortVariableSort SortVariable{getSortVariable}) =
-        Kore.Error.koreFail
-            ( "unexpected sort variable '"
-                ++ getIdForError getSortVariable
-                ++ "'"
-            )
+    where
+        worker ::
+            (Id -> Either (Error VerifyError) SentenceSort) ->
+            Sort ->
+            Either (Error VerifyError) ()
+        worker findSort (SortActualSort SortActual{sortActualName}) = do
+            SentenceSort{sentenceSortAttributes} <- findSort sortActualName
+            let expectHook = Hook (Just builtinName)
+            declHook <- Verifier.Attributes.parseAttributes sentenceSortAttributes
+            Kore.Error.koreFailWhen
+                (expectHook /= declHook)
+                ( "Sort '"
+                    ++ getIdForError sortActualName
+                    ++ "' is not hooked to builtin sort '"
+                    ++ Text.unpack builtinName
+                    ++ "'"
+                )
+        worker _ (SortVariableSort SortVariable{getSortVariable}) =
+            Kore.Error.koreFail
+                ( "unexpected sort variable '"
+                    ++ getIdForError getSortVariable
+                    ++ "'"
+                )
 
 -- Verify a sort by only checking if it has domain values.
 verifySortHasDomainValues :: SortVerifier
 verifySortHasDomainValues = SortVerifier worker
-  where
-    worker ::
-        (Id -> Either (Error VerifyError) SentenceSort) ->
-        Sort ->
-        Either (Error VerifyError) ()
-    worker findSort (SortActualSort SortActual{sortActualName}) = do
-        SentenceSort{sentenceSortAttributes} <- findSort sortActualName
-        sortAttr <- parseSortAttributes sentenceSortAttributes
-        let hasDomainValues =
-                Attribute.getHasDomainValues
-                    . Attribute.hasDomainValues
-                    $ sortAttr
-        Kore.Error.koreFailWhen
-            (not hasDomainValues)
-            ( "Sort '"
-                ++ getIdForError sortActualName
-                ++ "' does not have domain values."
-            )
-    worker _ (SortVariableSort SortVariable{getSortVariable}) =
-        Kore.Error.koreFail
-            ( "unexpected sort variable '"
-                ++ getIdForError getSortVariable
-                ++ "'"
-            )
-    parseSortAttributes ::
-        Attributes ->
-        Either (Error VerifyError) Attribute.Sort
-    parseSortAttributes rawSortAttributes =
-        Attribute.Parser.liftParser $
-            Attribute.Parser.parseAttributes rawSortAttributes
+    where
+        worker ::
+            (Id -> Either (Error VerifyError) SentenceSort) ->
+            Sort ->
+            Either (Error VerifyError) ()
+        worker findSort (SortActualSort SortActual{sortActualName}) = do
+            SentenceSort{sentenceSortAttributes} <- findSort sortActualName
+            sortAttr <- parseSortAttributes sentenceSortAttributes
+            let hasDomainValues =
+                    Attribute.getHasDomainValues
+                        . Attribute.hasDomainValues
+                        $ sortAttr
+            Kore.Error.koreFailWhen
+                (not hasDomainValues)
+                ( "Sort '"
+                    ++ getIdForError sortActualName
+                    ++ "' does not have domain values."
+                )
+        worker _ (SortVariableSort SortVariable{getSortVariable}) =
+            Kore.Error.koreFail
+                ( "unexpected sort variable '"
+                    ++ getIdForError getSortVariable
+                    ++ "'"
+                )
+        parseSortAttributes ::
+            Attributes ->
+            Either (Error VerifyError) Attribute.Sort
+        parseSortAttributes rawSortAttributes =
+            Attribute.Parser.liftParser
+                $ Attribute.Parser.parseAttributes rawSortAttributes
 
 expectDomainValue ::
     Monad m =>
@@ -488,8 +488,9 @@ expectDomainValue ctx =
                 StringLiteral_ text ->
                     return text
                 _ ->
-                    verifierBug $
-                        Text.unpack ctx ++ ": Domain value is not a string literal"
+                    verifierBug
+                        $ Text.unpack ctx
+                        ++ ": Domain value is not a string literal"
         _ -> empty
 
 -- | Wildcard for sort verification on parameterized builtin sorts
@@ -565,6 +566,6 @@ parseString ::
 parseString parser lit =
     let parsed = Parsec.parse (parser <* Parsec.eof) "<string literal>" lit
      in castParseError parsed
-  where
-    castParseError =
-        either (Kore.Error.koreFail . Parsec.errorBundlePretty) pure
+    where
+        castParseError =
+            either (Kore.Error.koreFail . Parsec.errorBundlePretty) pure

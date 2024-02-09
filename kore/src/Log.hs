@@ -112,16 +112,16 @@ instance Pretty LogMessage where
             [ Pretty.pretty message
             , Pretty.brackets (formatCallstack callstack)
             ]
-      where
-        formatCallstack :: GHC.CallStack -> Pretty.Doc ann
-        formatCallstack cs
-            | length (GHC.getCallStack cs) <= 1 = mempty
-            | otherwise = callStackToBuilder cs
-        callStackToBuilder :: GHC.CallStack -> Pretty.Doc ann
-        callStackToBuilder =
-            Pretty.pretty
-                . GHC.prettyCallStack
-                . GHC.popCallStack
+        where
+            formatCallstack :: GHC.CallStack -> Pretty.Doc ann
+            formatCallstack cs
+                | length (GHC.getCallStack cs) <= 1 = mempty
+                | otherwise = callStackToBuilder cs
+            callStackToBuilder :: GHC.CallStack -> Pretty.Doc ann
+            callStackToBuilder =
+                Pretty.pretty
+                    . GHC.prettyCallStack
+                    . GHC.popCallStack
 
 type WithLog msg = MonadLog
 
@@ -274,10 +274,10 @@ instance MonadCatch m => MonadLog (LoggerT m) where
         logEntry entry2
         (LoggerT . addContext $ getLoggerT action)
             `catch` (\(SomeEntry ctxt e) -> throwM $ SomeEntry (toEntry entry2 : ctxt) e)
-      where
-        addContext = local $
-            \LoggerEnv{logAction} ->
-                LoggerEnv $ Colog.cmap (\(SomeEntry ctxt e) -> SomeEntry (toEntry entry2 : ctxt) e) logAction
+        where
+            addContext = local
+                $ \LoggerEnv{logAction} ->
+                    LoggerEnv $ Colog.cmap (\(SomeEntry ctxt e) -> SomeEntry (toEntry entry2 : ctxt) e) logAction
     {-# INLINE logWhile #-}
 
 instance MonadTrans LoggerT where

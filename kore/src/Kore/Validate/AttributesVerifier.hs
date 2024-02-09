@@ -78,8 +78,8 @@ verifyAttributes (Attributes patterns) =
             "attributes"
             (mapM_ (verifyAttributePattern . project) patterns)
         verifySuccess
-  where
-    project = Cofree.tailF . Recursive.project
+    where
+        project = Cofree.tailF . Recursive.project
 
 verifyAttributePattern ::
     MonadError (Error VerifyError) m =>
@@ -154,18 +154,20 @@ verifyNoHookedSupersort indexedModule axiom subsorts = do
                 . Subsort.supersort
         hookedSubsort = find isHooked subsorts
     for_ hookedSubsort $ \sort ->
-        koreFail . unlines $
-            [ "Hooked sorts may not have subsorts."
-            , "Hooked sort:"
-            , show . unparse $ Subsort.supersort sort
-            , "Its subsort:"
-            , show . unparse $ Subsort.subsort sort
-            , "Location in the Kore file:"
-            , show . prettyPrintAstLocation $
-                locationFromAst (Subsort.supersort sort)
-            , "Location in the original K file: "
-            , show . pretty $ Attribute.sourceLocation axiom
-            ]
+        koreFail
+            . unlines
+            $ [ "Hooked sorts may not have subsorts."
+              , "Hooked sort:"
+              , show . unparse $ Subsort.supersort sort
+              , "Its subsort:"
+              , show . unparse $ Subsort.subsort sort
+              , "Location in the Kore file:"
+              , show
+                    . prettyPrintAstLocation
+                    $ locationFromAst (Subsort.supersort sort)
+              , "Location in the original K file: "
+              , show . pretty $ Attribute.sourceLocation axiom
+              ]
 
 verifyAxiomAttributes ::
     forall error attrs.
@@ -186,24 +188,24 @@ verifyAxiomAttributes indexedModule axiom = do
             symbol2 <- toSymbol symbolOrAlias2
             let newOverload = Overload $ Just (symbol1, symbol2)
             return (axiom & field @"overload" Lens..~ newOverload)
-  where
-    toSymbol :: SymbolOrAlias -> error Internal.Symbol.Symbol
-    toSymbol symbolOrAlias = do
-        (symbolAttributes, decl) <-
-            resolveSymbol (indexedModuleSyntax indexedModule) symbolConstructor
-        symbolSorts <-
-            symbolOrAliasSorts (symbolOrAliasParams symbolOrAlias) decl
-        let symbol =
-                Internal.Symbol.Symbol
-                    { symbolConstructor
-                    , symbolParams
-                    , symbolAttributes
-                    , symbolSorts
-                    }
-        return symbol
-      where
-        symbolConstructor = symbolOrAliasConstructor symbolOrAlias
-        symbolParams = symbolOrAliasParams symbolOrAlias
+    where
+        toSymbol :: SymbolOrAlias -> error Internal.Symbol.Symbol
+        toSymbol symbolOrAlias = do
+            (symbolAttributes, decl) <-
+                resolveSymbol (indexedModuleSyntax indexedModule) symbolConstructor
+            symbolSorts <-
+                symbolOrAliasSorts (symbolOrAliasParams symbolOrAlias) decl
+            let symbol =
+                    Internal.Symbol.Symbol
+                        { symbolConstructor
+                        , symbolParams
+                        , symbolAttributes
+                        , symbolSorts
+                        }
+            return symbol
+            where
+                symbolConstructor = symbolOrAliasConstructor symbolOrAlias
+                symbolParams = symbolOrAliasParams symbolOrAlias
 
 verifySymbolAttributes ::
     forall error a.

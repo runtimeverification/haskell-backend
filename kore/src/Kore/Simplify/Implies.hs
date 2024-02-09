@@ -93,9 +93,9 @@ simplifyEvaluated sort sideCondition first second
     | OrPattern.isFalse second =
         Not.simplify sideCondition Not{notSort = sort, notChild = first}
     | otherwise =
-        OrPattern.observeAllT $
-            Logic.scatter second
-                >>= simplifyEvaluateHalfImplies sort sideCondition first
+        OrPattern.observeAllT
+            $ Logic.scatter second
+            >>= simplifyEvaluateHalfImplies sort sideCondition first
 
 simplifyEvaluateHalfImplies ::
     Sort ->
@@ -125,9 +125,9 @@ distributeEvaluateImplies ::
 distributeEvaluateImplies sideCondition firsts second =
     (And.simplify sort sideCondition)
         (MultiAnd.make implications)
-  where
-    sort = Pattern.patternSort second
-    implications = map (\first -> makeEvaluateImplies first second) firsts
+    where
+        sort = Pattern.patternSort second
+        implications = map (\first -> makeEvaluateImplies first second) firsts
 
 makeEvaluateImplies ::
     Pattern RewritingVariableName ->
@@ -146,8 +146,8 @@ makeEvaluateImplies
             Not.makeEvaluate first
         | otherwise =
             makeEvaluateImpliesNonBool first second
-      where
-        sort = Pattern.patternSort first
+        where
+            sort = Pattern.patternSort first
 
 makeEvaluateImpliesNonBool ::
     Pattern RewritingVariableName ->
@@ -170,8 +170,8 @@ makeEvaluateImpliesNonBool
                 [ Conditional
                     { term = firstTerm
                     , predicate =
-                        Predicate.markSimplified $
-                            Predicate.makeImpliesPredicate
+                        Predicate.markSimplified
+                            $ Predicate.makeImpliesPredicate
                                 ( Predicate.makeAndPredicate
                                     firstPredicate
                                     (Substitution.toPredicate firstSubstitution)
@@ -188,8 +188,8 @@ makeEvaluateImpliesNonBool
             OrPattern.fromPatterns
                 [ Conditional
                     { term =
-                        TermLike.markSimplified $
-                            mkImplies
+                        TermLike.markSimplified
+                            $ mkImplies
                                 (Pattern.toTermLike pattern1)
                                 (Pattern.toTermLike pattern2)
                     , predicate = Predicate.makeTruePredicate

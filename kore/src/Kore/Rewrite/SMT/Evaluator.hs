@@ -109,10 +109,12 @@ evalPredicate onUnknown predicate sideConditionM = case predicate of
     Predicate.PredicateFalse -> return $ Just False
     _ -> case sideConditionM of
         Nothing ->
-            predicate :| []
+            predicate
+                :| []
                 & decidePredicate onUnknown SideCondition.top
         Just sideCondition ->
-            predicate :| [from @_ @(Predicate _) sideCondition]
+            predicate
+                :| [from @_ @(Predicate _) sideCondition]
                 & decidePredicate onUnknown sideCondition
 
 {- | Attempt to evaluate the 'Conditional' argument with an optional side
@@ -127,10 +129,10 @@ evalConditional ::
 evalConditional onUnknown conditional sideConditionM =
     evalPredicate onUnknown predicate sideConditionM
         & assert (Conditional.isNormalized conditional)
-  where
-    predicate = case sideConditionM of
-        Nothing -> Conditional.predicate conditional
-        Just _ -> Condition.toPredicate $ Conditional.withoutTerm conditional
+    where
+        predicate = case sideConditionM of
+            Nothing -> Conditional.predicate conditional
+            Just _ -> Condition.toPredicate $ Conditional.withoutTerm conditional
 
 -- | Removes from a MultiOr all items refuted by an external SMT solver.
 filterMultiOr ::
@@ -145,15 +147,15 @@ filterMultiOr ::
 filterMultiOr hsLoc multiOr = do
     elements <- mapM refute (toList multiOr)
     return (MultiOr.make (catMaybes elements))
-  where
-    refute ::
-        Conditional variable term ->
-        Simplifier (Maybe (Conditional variable term))
-    refute p =
-        evalConditional (ErrorDecidePredicateUnknown hsLoc Nothing) p Nothing <&> \case
-            Nothing -> Just p
-            Just False -> Nothing
-            Just True -> Just p
+    where
+        refute ::
+            Conditional variable term ->
+            Simplifier (Maybe (Conditional variable term))
+        refute p =
+            evalConditional (ErrorDecidePredicateUnknown hsLoc Nothing) p Nothing <&> \case
+                Nothing -> Just p
+                Just False -> Nothing
+                Just True -> Just p
 
 {- | Attempt to refute a predicate using an external SMT solver.
 
@@ -167,8 +169,8 @@ decidePredicate ::
     NonEmpty (Predicate variable) ->
     Simplifier (Maybe Bool)
 decidePredicate onUnknown sideCondition predicates =
-    whileDebugEvaluateCondition predicates $
-        do
+    whileDebugEvaluateCondition predicates
+        $ do
             result <- query >>= whenUnknown retry
             debugEvaluateConditionResult result
             case result of
@@ -185,23 +187,23 @@ decidePredicate onUnknown sideCondition predicates =
                             SMT.reinit
                         _ -> pure ()
                     empty
-            & runMaybeT
-  where
-    query :: MaybeT Simplifier Result
-    query = onErrorUnknown $ SMT.withSolver . evalTranslator $ do
-        tools <- Simplifier.askMetadataTools
-        Morph.hoist SMT.liftSMT $ do
-            predicates' <-
-                traverse
-                    (translatePredicate sideCondition tools)
-                    predicates
-            traverse_ SMT.assert predicates'
-            SMT.check >>= maybe empty return
+        & runMaybeT
+    where
+        query :: MaybeT Simplifier Result
+        query = onErrorUnknown $ SMT.withSolver . evalTranslator $ do
+            tools <- Simplifier.askMetadataTools
+            Morph.hoist SMT.liftSMT $ do
+                predicates' <-
+                    traverse
+                        (translatePredicate sideCondition tools)
+                        predicates
+                traverse_ SMT.assert predicates'
+                SMT.check >>= maybe empty return
 
-    onErrorUnknown action =
-        action `Exception.catch` \(_ :: IOException) -> pure Unknown
+        onErrorUnknown action =
+            action `Exception.catch` \(_ :: IOException) -> pure Unknown
 
-    retry = retryWithScaledTimeout $ query <* debugRetrySolverQuery predicates
+        retry = retryWithScaledTimeout $ query <* debugRetrySolverQuery predicates
 
 retryWithScaledTimeout :: MonadSMT m => m Result -> m Result
 retryWithScaledTimeout q = do
@@ -217,16 +219,16 @@ retryWithScaledTimeout q = do
     -- the tail of the list. As soon as a result is not 'Unknown', the
     -- rest of the fold is discarded.
     foldr combineRetries (pure Unknown) retryActions
-  where
-    -- helpers for re-trying solver queries with increasing timeout
-    retryOnceWithScaledTimeout :: MonadSMT m => m a -> Integer -> m a
-    retryOnceWithScaledTimeout action scale =
-        -- reinit with scaled timeout to override the original timeout
-        SMT.localTimeOut (scaleTimeOut scale) $ SMT.reinit >> action
+    where
+        -- helpers for re-trying solver queries with increasing timeout
+        retryOnceWithScaledTimeout :: MonadSMT m => m a -> Integer -> m a
+        retryOnceWithScaledTimeout action scale =
+            -- reinit with scaled timeout to override the original timeout
+            SMT.localTimeOut (scaleTimeOut scale) $ SMT.reinit >> action
 
-    scaleTimeOut :: Integer -> SMT.TimeOut -> SMT.TimeOut
-    scaleTimeOut _ (SMT.TimeOut Unlimited) = SMT.TimeOut Unlimited
-    scaleTimeOut n (SMT.TimeOut (Limit r)) = SMT.TimeOut (Limit (n * r))
+        scaleTimeOut :: Integer -> SMT.TimeOut -> SMT.TimeOut
+        scaleTimeOut _ (SMT.TimeOut Unlimited) = SMT.TimeOut Unlimited
+        scaleTimeOut n (SMT.TimeOut (Limit r)) = SMT.TimeOut (Limit (n * r))
 
 whenUnknown :: Monad m => m Result -> Result -> m Result
 whenUnknown f Unknown = f
@@ -251,8 +253,8 @@ getModelFor ::
 getModelFor tools predicates =
     fmap (fromMaybe (Left False)) . runMaybeT $ do
         (smtPredicates, translatorState) <-
-            runTranslator $
-                traverse (translatePredicate SideCondition.top tools) predicates
+            runTranslator
+                $ traverse (translatePredicate SideCondition.top tools) predicates
         let variables = freeVars translatorState
         result <-
             -- FIXME consider variables for uninterpreted terms, too
@@ -263,39 +265,39 @@ getModelFor tools predicates =
             Left Sat -> pure (Left False) -- error "impossible!"
             Right mapping -> do
                 let freeVarMap =
-                        traverse (backTranslateWith tools translatorState) $
-                            Map.compose mapping variables
+                        traverse (backTranslateWith tools translatorState)
+                            $ Map.compose mapping variables
                 case freeVarMap of
                     Left errMsg -> do
                         traceM $ "[Error] in back-translation: " <> errMsg
                         -- FIXME error logging?
                         pure (Left False)
                     Right m -> pure . Right $ mkSubst m
-  where
-    satQuery ::
-        NonEmpty SExpr -> -- predicates
-        [SExpr] -> -- interesting variables
-        SMT (Either Result (Map.Map SExpr SExpr))
-    satQuery ps vars = do
-        traverse_ SMT.assert ps
-        satResult <- SMT.check
-        case satResult of
-            Nothing -> pure $ Left Unknown
-            Just Unsat -> pure $ Left Unsat
-            Just Unknown -> pure $ Left Unknown
-            Just Sat ->
-                if null vars -- no free variables, trivial case
-                    then pure $ Right Map.empty
-                    else do
-                        mbMapping <- SMT.getValue vars
-                        case mbMapping of
-                            Nothing -> pure $ Left Unknown -- something went wrong in getValue
-                            Just mapping -> pure . Right $ Map.fromList mapping
+    where
+        satQuery ::
+            NonEmpty SExpr -> -- predicates
+            [SExpr] -> -- interesting variables
+            SMT (Either Result (Map.Map SExpr SExpr))
+        satQuery ps vars = do
+            traverse_ SMT.assert ps
+            satResult <- SMT.check
+            case satResult of
+                Nothing -> pure $ Left Unknown
+                Just Unsat -> pure $ Left Unsat
+                Just Unknown -> pure $ Left Unknown
+                Just Sat ->
+                    if null vars -- no free variables, trivial case
+                        then pure $ Right Map.empty
+                        else do
+                            mbMapping <- SMT.getValue vars
+                            case mbMapping of
+                                Nothing -> pure $ Left Unknown -- something went wrong in getValue
+                                Just mapping -> pure . Right $ Map.fromList mapping
 
-    mkSubst ::
-        Map.Map (ElementVariable variable) (TermLike.TermLike variable) ->
-        Substitution variable
-    mkSubst = Substitution.fromMap . Map.mapKeys TermLike.mkSomeVariable
+        mkSubst ::
+            Map.Map (ElementVariable variable) (TermLike.TermLike variable) ->
+            Substitution variable
+        mkSubst = Substitution.fromMap . Map.mapKeys TermLike.mkSomeVariable
 
 translatePredicate ::
     forall variable.
@@ -404,8 +406,8 @@ lookupUninterpreted ::
     Map.Map k (SMTDependentAtom variable) ->
     Translator variable SMT SExpr
 lookupUninterpreted boundPat quantifiedVars terms =
-    maybe empty (translateSMTDependentAtom quantifiedVars) $
-        Map.lookup boundPat terms
+    maybe empty (translateSMTDependentAtom quantifiedVars)
+        $ Map.lookup boundPat terms
 
 lookupVariable ::
     InternalVariable variable =>
@@ -413,14 +415,16 @@ lookupVariable ::
     Translator variable SMT SExpr
 lookupVariable var =
     lookupQuantifiedVariable <|> lookupFreeVariable
-  where
-    lookupQuantifiedVariable = do
-        TranslatorState{quantifiedVars} <- State.get
-        maybeToTranslator $
-            SMT.Atom . smtName <$> Map.lookup var quantifiedVars
-    lookupFreeVariable = do
-        TranslatorState{freeVars} <- State.get
-        maybeToTranslator $ Map.lookup var freeVars
+    where
+        lookupQuantifiedVariable = do
+            TranslatorState{quantifiedVars} <- State.get
+            maybeToTranslator
+                $ SMT.Atom
+                . smtName
+                <$> Map.lookup var quantifiedVars
+        lookupFreeVariable = do
+            TranslatorState{freeVars} <- State.get
+            maybeToTranslator $ Map.lookup var freeVars
 
 declareVariable ::
     InternalVariable variable =>

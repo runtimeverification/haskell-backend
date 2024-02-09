@@ -95,69 +95,69 @@ mkSimplifierEnv ::
     SMT Env
 mkSimplifierEnv tracingEnabled verifiedModule sortGraph overloadGraph metadataTools rawEquations =
     runSimplifier earlyEnv initialize
-  where
-    !earlyEnv =
-        {-# SCC "evalSimplifier/earlyEnv" #-}
-        Env
-            { metadataTools = metadataTools
-            , simplifierCondition
-            , simplifierPattern
-            , simplifierTerm
-            , axiomEquations = earlyAxiomEquations
-            , memo = Memo.forgetful
-            , injSimplifier
-            , overloadSimplifier
-            , hookedSymbols = Map.empty
-            , tracingEnabled
-            }
-    injSimplifier =
-        {-# SCC "evalSimplifier/injSimplifier" #-}
-        mkInjSimplifier sortGraph
-    substitutionSimplifier =
-        {-# SCC "evalSimplifier/substitutionSimplifier" #-}
-        SubstitutionSimplifier.substitutionSimplifier
-    simplifierCondition =
-        {-# SCC "evalSimplifier/simplifierCondition" #-}
-        Condition.create substitutionSimplifier
-    simplifierPattern sideCondition patt =
-        {-# SCC "evalSimplifier/simplifierPattern" #-}
-        traceProfSimplify patt (Pattern.makeEvaluate sideCondition patt)
-    simplifierTerm =
-        {-# SCC "evalSimplifier/simplifierTerm" #-}
-        TermLike.simplify
-    -- Initialize without any axiom equations.
-    earlyAxiomEquations = Map.empty
-
-    verifiedModule' :: VerifiedModuleSyntax Attribute.Symbol =
-        {-# SCC "evalSimplifier/verifiedModule'" #-}
-        IndexedModule.mapAliasPatterns
-            (Builtin.internalize metadataTools)
-            verifiedModule
-    hookedSymbols = mkHookedSymbols verifiedModule'
-    overloadSimplifier =
-        {-# SCC "evalSimplifier/overloadSimplifier" #-}
-        mkOverloadSimplifier overloadGraph injSimplifier
-
-    initialize :: Simplifier Env
-    initialize = do
-        axiomEquations <-
-            Equation.simplifyExtractedEquations $
-                (Map.map . fmap . Equation.mapVariables $ pure mkEquationVariable)
-                    rawEquations
-        memo <- Memo.new
-        return
+    where
+        !earlyEnv =
+            {-# SCC "evalSimplifier/earlyEnv" #-}
             Env
-                { metadataTools
+                { metadataTools = metadataTools
                 , simplifierCondition
                 , simplifierPattern
                 , simplifierTerm
-                , memo
+                , axiomEquations = earlyAxiomEquations
+                , memo = Memo.forgetful
                 , injSimplifier
                 , overloadSimplifier
-                , hookedSymbols
-                , axiomEquations
+                , hookedSymbols = Map.empty
                 , tracingEnabled
                 }
+        injSimplifier =
+            {-# SCC "evalSimplifier/injSimplifier" #-}
+            mkInjSimplifier sortGraph
+        substitutionSimplifier =
+            {-# SCC "evalSimplifier/substitutionSimplifier" #-}
+            SubstitutionSimplifier.substitutionSimplifier
+        simplifierCondition =
+            {-# SCC "evalSimplifier/simplifierCondition" #-}
+            Condition.create substitutionSimplifier
+        simplifierPattern sideCondition patt =
+            {-# SCC "evalSimplifier/simplifierPattern" #-}
+            traceProfSimplify patt (Pattern.makeEvaluate sideCondition patt)
+        simplifierTerm =
+            {-# SCC "evalSimplifier/simplifierTerm" #-}
+            TermLike.simplify
+        -- Initialize without any axiom equations.
+        earlyAxiomEquations = Map.empty
+
+        verifiedModule' :: VerifiedModuleSyntax Attribute.Symbol =
+            {-# SCC "evalSimplifier/verifiedModule'" #-}
+            IndexedModule.mapAliasPatterns
+                (Builtin.internalize metadataTools)
+                verifiedModule
+        hookedSymbols = mkHookedSymbols verifiedModule'
+        overloadSimplifier =
+            {-# SCC "evalSimplifier/overloadSimplifier" #-}
+            mkOverloadSimplifier overloadGraph injSimplifier
+
+        initialize :: Simplifier Env
+        initialize = do
+            axiomEquations <-
+                Equation.simplifyExtractedEquations
+                    $ (Map.map . fmap . Equation.mapVariables $ pure mkEquationVariable)
+                        rawEquations
+            memo <- Memo.new
+            return
+                Env
+                    { metadataTools
+                    , simplifierCondition
+                    , simplifierPattern
+                    , simplifierTerm
+                    , memo
+                    , injSimplifier
+                    , overloadSimplifier
+                    , hookedSymbols
+                    , axiomEquations
+                    , tracingEnabled
+                    }
 
 {- | Evaluate a simplifier computation, returning the result of only one branch.
 
@@ -201,21 +201,21 @@ evalSimplifierProofs verifiedModule simplifier =
         metadataTools
         rawEquations
         simplifier
-  where
-    sortGraph =
-        {-# SCC "evalSimplifier/sortGraph" #-}
-        SortGraph.fromIndexedModule verifiedModule
-    -- It's safe to build the MetadataTools using the external
-    -- IndexedModule because MetadataTools doesn't retain any
-    -- knowledge of the patterns which are internalized.
-    earlyMetadataTools = MetadataTools.build verifiedModule
-    verifiedModule' =
-        {-# SCC "evalSimplifier/verifiedModule'" #-}
-        IndexedModule.mapPatterns
-            (Builtin.internalize earlyMetadataTools)
-            verifiedModule
-    overloadGraph =
-        {-# SCC "evalSimplifier/overloadGraph" #-}
-        OverloadGraph.fromIndexedModule verifiedModule
-    metadataTools = MetadataTools.build verifiedModule'
-    rawEquations = Equation.extractEquations verifiedModule'
+    where
+        sortGraph =
+            {-# SCC "evalSimplifier/sortGraph" #-}
+            SortGraph.fromIndexedModule verifiedModule
+        -- It's safe to build the MetadataTools using the external
+        -- IndexedModule because MetadataTools doesn't retain any
+        -- knowledge of the patterns which are internalized.
+        earlyMetadataTools = MetadataTools.build verifiedModule
+        verifiedModule' =
+            {-# SCC "evalSimplifier/verifiedModule'" #-}
+            IndexedModule.mapPatterns
+                (Builtin.internalize earlyMetadataTools)
+                verifiedModule
+        overloadGraph =
+            {-# SCC "evalSimplifier/overloadGraph" #-}
+            OverloadGraph.fromIndexedModule verifiedModule
+        metadataTools = MetadataTools.build verifiedModule'
+        rawEquations = Equation.extractEquations verifiedModule'

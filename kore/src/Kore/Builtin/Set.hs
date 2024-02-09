@@ -141,23 +141,23 @@ verifiers =
 sortDeclVerifiers :: Builtin.SortDeclVerifiers
 sortDeclVerifiers =
     HashMap.fromList [(sort, verifySortDecl)]
-  where
-    verifySortDecl indexedModule sentenceSort attrs = do
-        Builtin.verifySortDecl indexedModule sentenceSort attrs
-        unitId <- Builtin.getUnitId attrs
-        Builtin.assertSymbolHook syntax unitId Set.unitKey
-        Builtin.assertSymbolResultSort syntax unitId expectedSort
-        elementId <- Builtin.getElementId attrs
-        Builtin.assertSymbolHook syntax elementId Set.elementKey
-        Builtin.assertSymbolResultSort syntax elementId expectedSort
-        concatId <- Builtin.getConcatId attrs
-        Builtin.assertSymbolHook syntax concatId Set.concatKey
-        Builtin.assertSymbolResultSort syntax concatId expectedSort
-        return ()
-      where
-        SentenceSort{sentenceSortName} = sentenceSort
-        expectedSort = mkSort sentenceSortName
-        syntax = indexedModuleSyntax indexedModule
+    where
+        verifySortDecl indexedModule sentenceSort attrs = do
+            Builtin.verifySortDecl indexedModule sentenceSort attrs
+            unitId <- Builtin.getUnitId attrs
+            Builtin.assertSymbolHook syntax unitId Set.unitKey
+            Builtin.assertSymbolResultSort syntax unitId expectedSort
+            elementId <- Builtin.getElementId attrs
+            Builtin.assertSymbolHook syntax elementId Set.elementKey
+            Builtin.assertSymbolResultSort syntax elementId expectedSort
+            concatId <- Builtin.getConcatId attrs
+            Builtin.assertSymbolHook syntax concatId Set.concatKey
+            Builtin.assertSymbolResultSort syntax concatId expectedSort
+            return ()
+            where
+                SentenceSort{sentenceSortName} = sentenceSort
+                expectedSort = mkSort sentenceSortName
+                syntax = indexedModuleSyntax indexedModule
 
 {- | Verify that hooked symbol declarations are well-formed.
 
@@ -257,8 +257,9 @@ evalElement :: Builtin.Function
 evalElement _ resultSort [_elem] =
     case retractKey _elem of
         Just concrete ->
-            lift . TermLike.assertConstructorLikeKeys [_elem] $
-                returnConcreteSet
+            lift
+                . TermLike.assertConstructorLikeKeys [_elem]
+                $ returnConcreteSet
                     resultSort
                     (HashMap.singleton concrete SetValue)
         Nothing ->
@@ -307,8 +308,8 @@ evalDifference
         _set1 <- expectConcreteBuiltinSet ctx _set1
         _set2 <- expectConcreteBuiltinSet ctx _set2
         lift $ returnConcreteSet resultSort (HashMap.difference _set1 _set2)
-      where
-        ctx = Set.differenceKey
+        where
+            ctx = Set.differenceKey
 evalDifference _ _ =
     Builtin.wrongArity Set.differenceKey
 
@@ -337,8 +338,8 @@ evalIntersection _ resultSort [_set1, _set2] = do
     _set1 <- expectConcreteBuiltinSet ctx _set1
     _set2 <- expectConcreteBuiltinSet ctx _set2
     lift $ returnConcreteSet resultSort (HashMap.intersection _set1 _set2)
-  where
-    ctx = Set.intersectionKey
+    where
+        ctx = Set.intersectionKey
 evalIntersection _ _ _ = Builtin.wrongArity Set.intersectionKey
 
 evalList2set :: Builtin.Function
@@ -403,8 +404,8 @@ internalize tools termLike
                     singleOpaqueTerm
                 | otherwise -> Ac.asInternal tools sort' termNormalized
     | otherwise = termLike
-  where
-    sort' = termLikeSort termLike
+    where
+        sort' = termLikeSort termLike
 
 data NormAcData = NormAcData
     { normalized1, normalized2 :: !(InternalSet Key (TermLike RewritingVariableName))
@@ -426,33 +427,34 @@ matchUnifyEquals tools first second
     | Just True <- isSetSort tools sort1 =
         worker first second True <|> worker second first False
     | otherwise = Nothing
-  where
-    sort1 = termLikeSort first
+    where
+        sort1 = termLikeSort first
 
-    normalizedOrBottom ::
-        TermLike RewritingVariableName ->
-        Ac.NormalizedOrBottom NormalizedSet RewritingVariableName
-    normalizedOrBottom = Ac.toNormalized
+        normalizedOrBottom ::
+            TermLike RewritingVariableName ->
+            Ac.NormalizedOrBottom NormalizedSet RewritingVariableName
+        normalizedOrBottom = Ac.toNormalized
 
-    worker a b isFirstMatched
-        | InternalSet_ normalized1 <- a
-        , InternalSet_ normalized2 <- b =
-            NormAc . NormAcData normalized1 normalized2 term1 term2
-                <$> Ac.matchUnifyEqualsNormalizedAc
-                    tools
-                    normalized1
-                    normalized2
-        | otherwise = case normalizedOrBottom a of
-            Ac.Bottom -> Just $ ReturnBottom term1 term2
-            Ac.Normalized normalized1 ->
-                let a' = Ac.asInternal tools sort1 normalized1
-                 in case normalizedOrBottom b of
-                        Ac.Bottom -> Just $ ReturnBottom term1 term2
-                        Ac.Normalized normalized2 ->
-                            let b' = Ac.asInternal tools sort1 normalized2
-                             in worker a' b' isFirstMatched
-      where
-        (term1, term2) = if isFirstMatched then (a, b) else (b, a)
+        worker a b isFirstMatched
+            | InternalSet_ normalized1 <- a
+            , InternalSet_ normalized2 <- b =
+                NormAc
+                    . NormAcData normalized1 normalized2 term1 term2
+                    <$> Ac.matchUnifyEqualsNormalizedAc
+                        tools
+                        normalized1
+                        normalized2
+            | otherwise = case normalizedOrBottom a of
+                Ac.Bottom -> Just $ ReturnBottom term1 term2
+                Ac.Normalized normalized1 ->
+                    let a' = Ac.asInternal tools sort1 normalized1
+                     in case normalizedOrBottom b of
+                            Ac.Bottom -> Just $ ReturnBottom term1 term2
+                            Ac.Normalized normalized2 ->
+                                let b' = Ac.asInternal tools sort1 normalized2
+                                 in worker a' b' isFirstMatched
+            where
+                (term1, term2) = if isFirstMatched then (a, b) else (b, a)
 
 {- | Simplify the conjunction or equality of two concrete Map domain values.
 
@@ -486,5 +488,5 @@ unifyEquals unifyEqualsChildren tools unifyData =
                 normalized1
                 normalized2
                 acData
-          where
-            NormAcData{normalized1, normalized2, term1, term2, acData} = unifyData'
+            where
+                NormAcData{normalized1, normalized2, term1, term2, acData} = unifyData'

@@ -94,9 +94,9 @@ instance MonadError e m => MonadError e (TransitionT rule m) where
 
     catchError action handler =
         lift (catchError action' handler') >>= scatter
-      where
-        action' = runTransitionT action
-        handler' e = runTransitionT (handler e)
+        where
+            action' = runTransitionT action
+            handler' e = runTransitionT (handler e)
     {-# INLINE catchError #-}
 
 instance MonadReader e m => MonadReader e (TransitionT rule m) where
@@ -116,9 +116,9 @@ instance MonadThrow m => MonadThrow (TransitionT rule m) where
 instance MonadCatch m => MonadCatch (TransitionT rule m) where
     catch action handler =
         lift (catch action' handler') >>= scatter
-      where
-        action' = runTransitionT action
-        handler' e = runTransitionT (handler e)
+        where
+            action' = runTransitionT action
+            handler' e = runTransitionT (handler e)
 
 runTransitionT :: Monad m => TransitionT rule m a -> m [(a, Seq rule)]
 runTransitionT (TransitionT edge) = Logic.observeAllT (runAccumT edge mempty)
@@ -170,8 +170,9 @@ mapRules f trans = do
 
 -- | Get the record of applied rules during an action.
 record :: TransitionT rule m a -> TransitionT rule m (a, Seq rule)
-record action = TransitionT $
-    AccumT $ \w -> do
+record action = TransitionT
+    $ AccumT
+    $ \w -> do
         (a, rules) <- runAccumT (getTransitionT action) mempty
         return ((a, rules), w <> rules)
 
@@ -212,8 +213,9 @@ ifte ::
     (a -> TransitionT rule m b) ->
     TransitionT rule m b ->
     TransitionT rule m b
-ifte p t e = TransitionT $
-    AccumT $ \w0 ->
+ifte p t e = TransitionT
+    $ AccumT
+    $ \w0 ->
         Logic.ifte
             (toLogicT w0 p)
             ( \(a, w1) -> do
@@ -221,5 +223,5 @@ ifte p t e = TransitionT $
                 pure (b, w1 <> w2)
             )
             (toLogicT w0 e)
-  where
-    toLogicT w = flip runAccumT w . getTransitionT
+    where
+        toLogicT w = flip runAccumT w . getTransitionT

@@ -60,6 +60,6 @@ instance Synthetic Sort (Nu variable) where
     synthetic Nu{nuVariable, nuChild} =
         nuSort
             & seq (sameSort nuSort nuChild)
-      where
-        Variable{variableSort = nuSort} = nuVariable
+        where
+            Variable{variableSort = nuSort} = nuVariable
     {-# INLINE synthetic #-}

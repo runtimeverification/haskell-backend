@@ -216,13 +216,13 @@ instance Pretty (CheckRequiresError RewritingVariableName) where
             , "The negated implication is:"
             , Pretty.indent 4 (pretty negatedImplication)
             ]
-      where
-        CheckRequiresError
-            { matchPredicate
-            , equationRequires
-            , sideCondition
-            , negatedImplication
-            } = checkRequiresError
+        where
+            CheckRequiresError
+                { matchPredicate
+                , equationRequires
+                , sideCondition
+                , negatedImplication
+                } = checkRequiresError
 
 -- * Logging
 
@@ -321,8 +321,8 @@ srcLoc equation
     | AstLocationFile fileLocation <- locationFromAst equation =
         Just (from @FileLocation fileLocation)
     | otherwise = Nothing
-  where
-    kLoc = Attribute.sourceLocation $ attributes equation
+    where
+        kLoc = Attribute.sourceLocation $ attributes equation
 
 isLocEmpty :: Attribute.SourceLocation -> Bool
 isLocEmpty Attribute.SourceLocation{source = Attribute.Source file} =

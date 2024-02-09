@@ -455,21 +455,21 @@ narrows comment (term1, term2) ((v, term), (term1', term2')) =
         checkNarrowing
         comment
         (Pair term1 term2)
-  where
-    checkNarrowing :: UnificationResult -> Assertion
-    checkNarrowing
-        ( Just
-                ( Resolution
-                        ( WithNarrowing
-                                Narrowing{narrowingSubst, overloadPair}
-                            )
-                    )
-            ) =
-            do
-                assertEqual "" (Pair term1' term2') overloadPair
-                assertEqual "" expectedSubst narrowingSubst
-    checkNarrowing _ = assertFailure "Expected narrowing solution"
-    expectedSubst = Condition.assign (inject v) term
+    where
+        checkNarrowing :: UnificationResult -> Assertion
+        checkNarrowing
+            ( Just
+                    ( Resolution
+                            ( WithNarrowing
+                                    Narrowing{narrowingSubst, overloadPair}
+                                )
+                        )
+                ) =
+                do
+                    assertEqual "" (Pair term1' term2') overloadPair
+                    assertEqual "" expectedSubst narrowingSubst
+        checkNarrowing _ = assertFailure "Expected narrowing solution"
+        expectedSubst = Condition.assign (inject v) term
 
 doesn'tUnify ::
     HasCallStack =>
@@ -515,9 +515,9 @@ match ::
     Pair (TermLike RewritingVariableName) ->
     IO TestMatchResult
 match termPair = testRunSimplifier Mock.env $ runExceptT matchResult
-  where
-    matchResult :: MatchOverloadingResult Simplifier RewritingVariableName
-    matchResult = matchOverloading termPair
+    where
+        matchResult :: MatchOverloadingResult Simplifier RewritingVariableName
+        matchResult = matchOverloading termPair
 
 withMatching ::
     (TestMatchResult -> Assertion) ->
@@ -551,9 +551,9 @@ unify ::
     IO UnificationResult
 unify termPair =
     testRunSimplifier Mock.env $ return unifyResult
-  where
-    unifyResult :: Maybe MatchResult
-    unifyResult = matchResult <$> unifyOverloading Mock.overloadSimplifier termPair
+    where
+        unifyResult :: Maybe MatchResult
+        unifyResult = matchResult <$> unifyOverloading Mock.overloadSimplifier termPair
 
 withUnification ::
     (UnificationResult -> Assertion) ->

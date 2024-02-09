@@ -148,18 +148,18 @@ instance Claim AllPathClaim where
 
     applyAxioms axiomss = \claim ->
         foldM applyAxioms1 (ApplyRemainder claim) axiomss
-      where
-        applyAxioms1 applied axioms
-            | Just claim <- retractApplyRemainder applied =
-                deriveParAxiomAllPath axioms claim
-                    >>= simplifyRemainder
-            | otherwise =
-                pure applied
+        where
+            applyAxioms1 applied axioms
+                | Just claim <- retractApplyRemainder applied =
+                    deriveParAxiomAllPath axioms claim
+                        >>= simplifyRemainder
+                | otherwise =
+                    pure applied
 
-        simplifyRemainder applied =
-            case applied of
-                ApplyRemainder claim -> ApplyRemainder <$> simplify claim
-                _ -> return applied
+            simplifyRemainder applied =
+                case applied of
+                    ApplyRemainder claim -> ApplyRemainder <$> simplify claim
+                    _ -> return applied
 
 instance From (Rule AllPathClaim) Attribute.PriorityAttributes where
     from = from @(RewriteRule _) . unRuleAllPath
@@ -179,25 +179,25 @@ instance ClaimExtractor AllPathClaim where
                                     attributes
                             (right', existentials') =
                                 ClaimPattern.termToExistentials rhs'
-                        pure $
-                            AllPathClaim $
-                                ClaimPattern.refreshExistentials
-                                    ClaimPattern
-                                        { ClaimPattern.left =
-                                            Pattern.fromTermAndPredicate
-                                                lhs
-                                                (Predicate.wrapPredicate requires)
-                                                & Pattern.mapVariables (pure mkRuleVariable)
-                                        , ClaimPattern.right = parseRightHandSide right'
-                                        , ClaimPattern.existentials = existentials'
-                                        , ClaimPattern.attributes = attributes'
-                                        }
-                  where
-                    aliasId = (getId . aliasConstructor) alias
+                        pure
+                            $ AllPathClaim
+                            $ ClaimPattern.refreshExistentials
+                                ClaimPattern
+                                    { ClaimPattern.left =
+                                        Pattern.fromTermAndPredicate
+                                            lhs
+                                            (Predicate.wrapPredicate requires)
+                                            & Pattern.mapVariables (pure mkRuleVariable)
+                                    , ClaimPattern.right = parseRightHandSide right'
+                                    , ClaimPattern.existentials = existentials'
+                                    , ClaimPattern.attributes = attributes'
+                                    }
+                    where
+                        aliasId = (getId . aliasConstructor) alias
             _ -> Nothing
-      where
-        termLike =
-            (Syntax.sentenceAxiomPattern . Syntax.getSentenceClaim) sentence
+        where
+            termLike =
+                (Syntax.sentenceAxiomPattern . Syntax.getSentenceClaim) sentence
 
 deriveParAxiomAllPath ::
     [Rule AllPathClaim] ->
@@ -208,5 +208,5 @@ deriveParAxiomAllPath ::
         (ApplyResult AllPathClaim)
 deriveParAxiomAllPath rules =
     derivePar' _Unwrapped AllPathRewriteRule rewrites
-  where
-    rewrites = unRuleAllPath <$> rules
+    where
+        rewrites = unRuleAllPath <$> rules

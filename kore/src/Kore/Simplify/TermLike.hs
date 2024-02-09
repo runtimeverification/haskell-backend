@@ -126,146 +126,146 @@ simplify ::
     Simplifier (OrPattern RewritingVariableName)
 simplify sideCondition =
     loop . OrPattern.fromTermLike
-  where
-    loop ::
-        OrPattern RewritingVariableName ->
-        Simplifier (OrPattern RewritingVariableName)
-    loop input = do
-        output <- MultiOr.traverseOr (propagateConditions worker) input
-        if input == output
-            then pure output
-            else loop output
+    where
+        loop ::
+            OrPattern RewritingVariableName ->
+            Simplifier (OrPattern RewritingVariableName)
+        loop input = do
+            output <- MultiOr.traverseOr (propagateConditions worker) input
+            if input == output
+                then pure output
+                else loop output
 
-    replaceTerm = SideCondition.replaceTerm sideCondition
+        replaceTerm = SideCondition.replaceTerm sideCondition
 
-    repr = SideCondition.toRepresentation sideCondition
+        repr = SideCondition.toRepresentation sideCondition
 
-    propagateConditions action input = do
-        results <- action (Conditional.term input)
-        MultiOr.map (input *>) results
-            & return
-    {-# INLINE propagateConditions #-}
+        propagateConditions action input = do
+            results <- action (Conditional.term input)
+            MultiOr.map (input *>) results
+                & return
+        {-# INLINE propagateConditions #-}
 
-    worker ::
-        TermLike RewritingVariableName ->
-        Simplifier (OrPattern RewritingVariableName)
-    worker termLike
-        | Just termLike' <- replaceTerm termLike =
-            worker termLike'
-        | TermLike.isSimplified repr termLike =
-            pure (OrPattern.fromTermLike termLike)
-        | otherwise =
-            case termLikeF of
-                -- Not implemented:
-                ApplyAliasF _ -> doNotSimplify
-                -- Not simplifiable:
-                EndiannessF _ -> doNotSimplify
-                SignednessF _ -> doNotSimplify
-                -- Handled elsewhere, not a proper term:
-                RewritesF _ -> doNotSimplify
-                -- Symbols:
-                ApplySymbolF applySymbolF ->
-                    Application.simplify sideCondition
-                        =<< traverse worker applySymbolF
-                InjF injF ->
-                    Inj.simplify =<< traverse worker injF
-                InternalListF internalListF ->
-                    InternalList.simplify <$> traverse worker internalListF
-                InternalMapF internalMapF ->
-                    InternalMap.simplify <$> traverse worker internalMapF
-                InternalSetF internalSetF ->
-                    InternalSet.simplify <$> traverse worker internalSetF
-                -- Domain values:
-                DomainValueF domainValueF ->
-                    DomainValue.simplify <$> traverse worker domainValueF
-                InternalBoolF internalBoolF ->
-                    InternalBool.simplify (getConst internalBoolF)
-                        & return
-                InternalBytesF internalBytesF ->
-                    InternalBytes.simplify (getConst internalBytesF)
-                        & return
-                InternalIntF internalIntF ->
-                    InternalInt.simplify (getConst internalIntF)
-                        & return
-                InternalStringF internalStringF ->
-                    InternalString.simplify (getConst internalStringF)
-                        & return
-                -- Reachability:
-                NextF nextF ->
-                    Next.simplify <$> traverse worker nextF
-                -- Matching Logic:
-                AndF andF -> do
-                    let conjuncts = foldMap MultiAnd.fromTermLike andF
-                    -- MultiAnd doesn't preserve the sort so we need to send it as an external argument
-                    And.simplify sort sideCondition
-                        =<< MultiAnd.traverse worker conjuncts
-                OrF orF ->
-                    Or.simplify <$> traverse worker orF
-                NotF notF ->
-                    Not.simplify sideCondition
-                        =<< traverse worker notF
-                ImpliesF impliesF ->
-                    Implies.simplify sideCondition
-                        =<< traverse worker impliesF
-                IffF iffF ->
-                    Iff.simplify sideCondition
-                        =<< traverse worker iffF
-                InhabitantF inhF ->
-                    Inhabitant.simplify <$> traverse worker inhF
-                -- Binders:
-                ExistsF existsF ->
-                    Exists.simplify sideCondition
-                        =<< traverse worker (refresh existsF)
-                  where
-                    avoid =
-                        freeVariableNames termLike
-                            <> freeVariableNames sideCondition
-                    refresh = refreshExists avoid
-                ForallF forallF ->
-                    Forall.simplify <$> traverse worker (refresh forallF)
-                  where
-                    avoid =
-                        freeVariableNames termLike
-                            <> freeVariableNames sideCondition
-                    refresh = refreshForall avoid
-                MuF muF ->
-                    Mu.simplify <$> traverse worker (refreshMu muF)
-                NuF nuF ->
-                    Nu.simplify <$> traverse worker (refreshNu nuF)
-                VariableF variableF ->
-                    Variable.simplify (getConst variableF)
-                        & return
-                StringLiteralF stringLiteralF ->
-                    StringLiteral.simplify (getConst stringLiteralF)
-                        & return
-                -- Predicates:
-                -- (Predicates are not simplified because this function
-                -- doesn't simplify side conditions.)
-                TopF _ ->
-                    returnPredicate fromTop_
-                BottomF _ ->
-                    returnPredicate fromBottom_
-                CeilF Ceil{ceilChild} ->
-                    returnPredicate (fromCeil_ ceilChild)
-                FloorF Floor{floorChild} ->
-                    returnPredicate (fromFloor_ floorChild)
-                EqualsF Equals{equalsFirst, equalsSecond} ->
-                    returnPredicate (fromEquals_ equalsFirst equalsSecond)
-                InF In{inContainedChild, inContainingChild} ->
-                    returnPredicate
-                        (fromIn_ inContainedChild inContainingChild)
-      where
-        _ :< termLikeF = Recursive.project termLike
-        ~sort = termLikeSort termLike
+        worker ::
+            TermLike RewritingVariableName ->
+            Simplifier (OrPattern RewritingVariableName)
+        worker termLike
+            | Just termLike' <- replaceTerm termLike =
+                worker termLike'
+            | TermLike.isSimplified repr termLike =
+                pure (OrPattern.fromTermLike termLike)
+            | otherwise =
+                case termLikeF of
+                    -- Not implemented:
+                    ApplyAliasF _ -> doNotSimplify
+                    -- Not simplifiable:
+                    EndiannessF _ -> doNotSimplify
+                    SignednessF _ -> doNotSimplify
+                    -- Handled elsewhere, not a proper term:
+                    RewritesF _ -> doNotSimplify
+                    -- Symbols:
+                    ApplySymbolF applySymbolF ->
+                        Application.simplify sideCondition
+                            =<< traverse worker applySymbolF
+                    InjF injF ->
+                        Inj.simplify =<< traverse worker injF
+                    InternalListF internalListF ->
+                        InternalList.simplify <$> traverse worker internalListF
+                    InternalMapF internalMapF ->
+                        InternalMap.simplify <$> traverse worker internalMapF
+                    InternalSetF internalSetF ->
+                        InternalSet.simplify <$> traverse worker internalSetF
+                    -- Domain values:
+                    DomainValueF domainValueF ->
+                        DomainValue.simplify <$> traverse worker domainValueF
+                    InternalBoolF internalBoolF ->
+                        InternalBool.simplify (getConst internalBoolF)
+                            & return
+                    InternalBytesF internalBytesF ->
+                        InternalBytes.simplify (getConst internalBytesF)
+                            & return
+                    InternalIntF internalIntF ->
+                        InternalInt.simplify (getConst internalIntF)
+                            & return
+                    InternalStringF internalStringF ->
+                        InternalString.simplify (getConst internalStringF)
+                            & return
+                    -- Reachability:
+                    NextF nextF ->
+                        Next.simplify <$> traverse worker nextF
+                    -- Matching Logic:
+                    AndF andF -> do
+                        let conjuncts = foldMap MultiAnd.fromTermLike andF
+                        -- MultiAnd doesn't preserve the sort so we need to send it as an external argument
+                        And.simplify sort sideCondition
+                            =<< MultiAnd.traverse worker conjuncts
+                    OrF orF ->
+                        Or.simplify <$> traverse worker orF
+                    NotF notF ->
+                        Not.simplify sideCondition
+                            =<< traverse worker notF
+                    ImpliesF impliesF ->
+                        Implies.simplify sideCondition
+                            =<< traverse worker impliesF
+                    IffF iffF ->
+                        Iff.simplify sideCondition
+                            =<< traverse worker iffF
+                    InhabitantF inhF ->
+                        Inhabitant.simplify <$> traverse worker inhF
+                    -- Binders:
+                    ExistsF existsF ->
+                        Exists.simplify sideCondition
+                            =<< traverse worker (refresh existsF)
+                        where
+                            avoid =
+                                freeVariableNames termLike
+                                    <> freeVariableNames sideCondition
+                            refresh = refreshExists avoid
+                    ForallF forallF ->
+                        Forall.simplify <$> traverse worker (refresh forallF)
+                        where
+                            avoid =
+                                freeVariableNames termLike
+                                    <> freeVariableNames sideCondition
+                            refresh = refreshForall avoid
+                    MuF muF ->
+                        Mu.simplify <$> traverse worker (refreshMu muF)
+                    NuF nuF ->
+                        Nu.simplify <$> traverse worker (refreshNu nuF)
+                    VariableF variableF ->
+                        Variable.simplify (getConst variableF)
+                            & return
+                    StringLiteralF stringLiteralF ->
+                        StringLiteral.simplify (getConst stringLiteralF)
+                            & return
+                    -- Predicates:
+                    -- (Predicates are not simplified because this function
+                    -- doesn't simplify side conditions.)
+                    TopF _ ->
+                        returnPredicate fromTop_
+                    BottomF _ ->
+                        returnPredicate fromBottom_
+                    CeilF Ceil{ceilChild} ->
+                        returnPredicate (fromCeil_ ceilChild)
+                    FloorF Floor{floorChild} ->
+                        returnPredicate (fromFloor_ floorChild)
+                    EqualsF Equals{equalsFirst, equalsSecond} ->
+                        returnPredicate (fromEquals_ equalsFirst equalsSecond)
+                    InF In{inContainedChild, inContainingChild} ->
+                        returnPredicate
+                            (fromIn_ inContainedChild inContainingChild)
+            where
+                _ :< termLikeF = Recursive.project termLike
+                ~sort = termLikeSort termLike
 
-        ~doNotSimplify = return (OrPattern.fromTermLike termLike)
+                ~doNotSimplify = return (OrPattern.fromTermLike termLike)
 
-        ~avoiding = freeVariables termLike <> freeVariables sideCondition
-        refreshSetBinder = TermLike.refreshSetBinder avoiding
-        refreshMu = Lens.over Binding.muBinder refreshSetBinder
-        refreshNu = Lens.over Binding.nuBinder refreshSetBinder
+                ~avoiding = freeVariables termLike <> freeVariables sideCondition
+                refreshSetBinder = TermLike.refreshSetBinder avoiding
+                refreshMu = Lens.over Binding.muBinder refreshSetBinder
+                refreshNu = Lens.over Binding.nuBinder refreshSetBinder
 
-        returnPredicate =
-            Pattern.fromPredicateSorted sort
-                >>> OrPattern.fromPattern
-                >>> return
+                returnPredicate =
+                    Pattern.fromPredicateSorted sort
+                        >>> OrPattern.fromPattern
+                        >>> return

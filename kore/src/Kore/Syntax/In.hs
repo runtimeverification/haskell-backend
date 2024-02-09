@@ -90,8 +90,8 @@ instance Synthetic Sort (In Sort) where
     synthetic in' =
         inResultSort
             & seq (sameSort inOperandSort inContainedChild)
-                . seq (sameSort inOperandSort inContainingChild)
-      where
-        In{inResultSort, inOperandSort} = in'
-        In{inContainedChild, inContainingChild} = in'
+            . seq (sameSort inOperandSort inContainingChild)
+        where
+            In{inResultSort, inOperandSort} = in'
+            In{inContainedChild, inContainingChild} = in'
     {-# INLINE synthetic #-}

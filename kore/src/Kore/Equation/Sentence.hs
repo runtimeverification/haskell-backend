@@ -116,140 +116,140 @@ matchEquation attributes termLike
     | isSubsortAxiom = Left SubsortAxiom
     | TermLike.Forall_ _ _ child <- termLike = matchEquation attributes child
     | otherwise = match termLike >>= removeRedundantEnsures
-  where
-    isTotalAxiom = (isDeclaredTotal . Attribute.total) attributes
-    isConstructorAxiom = (isConstructor . Attribute.constructor) attributes
-    isSubsortAxiom = (not . null . getSubsorts . Attribute.subsorts) attributes
+    where
+        isTotalAxiom = (isDeclaredTotal . Attribute.total) attributes
+        isConstructorAxiom = (isConstructor . Attribute.constructor) attributes
+        isSubsortAxiom = (not . null . getSubsorts . Attribute.subsorts) attributes
 
-    -- function rule without priority
-    match
-        ( TermLike.Implies_
-                _
-                ( TermLike.And_
-                        _
-                        requires
-                        argument@( TermLike.And_
-                                        _
-                                        (TermLike.In_ _ _ _ _)
-                                        _
-                                    )
-                    )
-                ( TermLike.Equals_
-                        _
-                        _
-                        left
-                        (TermLike.And_ _ right ensures)
-                    )
-            ) =
-            do
-                requires' <- makePredicate requires & Bifunctor.first RequiresError
-                argument' <- makePredicate argument & Bifunctor.first ArgumentError
-                ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
-                pure
-                    Equation
-                        { requires = requires'
-                        , argument = Just argument'
-                        , antiLeft = Nothing
-                        , left
-                        , right
-                        , ensures = ensures'
-                        , attributes
-                        }
+        -- function rule without priority
+        match
+            ( TermLike.Implies_
+                    _
+                    ( TermLike.And_
+                            _
+                            requires
+                            argument@( TermLike.And_
+                                            _
+                                            (TermLike.In_ _ _ _ _)
+                                            _
+                                        )
+                        )
+                    ( TermLike.Equals_
+                            _
+                            _
+                            left
+                            (TermLike.And_ _ right ensures)
+                        )
+                ) =
+                do
+                    requires' <- makePredicate requires & Bifunctor.first RequiresError
+                    argument' <- makePredicate argument & Bifunctor.first ArgumentError
+                    ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
+                    pure
+                        Equation
+                            { requires = requires'
+                            , argument = Just argument'
+                            , antiLeft = Nothing
+                            , left
+                            , right
+                            , ensures = ensures'
+                            , attributes
+                            }
 
-    -- function rule with priority
-    match
-        ( TermLike.Implies_
-                _
-                ( TermLike.And_
-                        _
-                        antiLeft
-                        ( TermLike.And_
-                                _
-                                requires
-                                argument
-                            )
-                    )
-                ( TermLike.Equals_
-                        _
-                        _
-                        left
-                        (TermLike.And_ _ right ensures)
-                    )
-            ) =
-            do
-                requires' <- makePredicate requires & Bifunctor.first RequiresError
-                argument' <- makePredicate argument & Bifunctor.first ArgumentError
-                antiLeft' <- makePredicate antiLeft & Bifunctor.first AntiLeftError
-                ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
-                pure
-                    Equation
-                        { requires = requires'
-                        , argument = Just argument'
-                        , antiLeft = Just antiLeft'
-                        , left
-                        , right
-                        , ensures = ensures'
-                        , attributes
-                        }
-    match
-        ( TermLike.Implies_
-                _
-                requires
-                ( TermLike.Equals_
-                        _
-                        _
-                        left
-                        (TermLike.And_ _ right ensures)
-                    )
-            ) =
-            do
-                left' <- matchLhs left
-                requires' <- makePredicate requires & Bifunctor.first RequiresError
-                ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
-                pure
-                    Equation
-                        { requires = requires'
-                        , argument = Nothing
-                        , antiLeft = Nothing
-                        , left = left'
-                        , right
-                        , ensures = ensures'
-                        , attributes
-                        }
-    match (TermLike.Equals_ _ _ left right) = do
-        pure
-            Equation
-                { requires = Predicate.makeTruePredicate
-                , argument = Nothing
-                , antiLeft = Nothing
-                , left
-                , right
-                , ensures = Predicate.makeTruePredicate
-                , attributes
-                }
-    match left@(TermLike.Ceil_ _ sort _) = do
-        pure
-            Equation
-                { requires = Predicate.makeTruePredicate
-                , argument = Nothing
-                , antiLeft = Nothing
-                , left
-                , right = TermLike.mkTop sort
-                , ensures = Predicate.makeTruePredicate
-                , attributes
-                }
-    match termLike' = Left (NotEquation termLike')
-    matchLhs term =
-        case term of
-            TermLike.Equals_ _ _ _ _ -> Right term
-            TermLike.Ceil_ _ _ _ -> Right term
-            TermLike.App_ _ _ -> Right term
-            TermLike.Inj_ _ -> Right term
-            TermLike.Not_ _ _ -> Right term
-            _ -> Left $ UnsupportedLHS term
+        -- function rule with priority
+        match
+            ( TermLike.Implies_
+                    _
+                    ( TermLike.And_
+                            _
+                            antiLeft
+                            ( TermLike.And_
+                                    _
+                                    requires
+                                    argument
+                                )
+                        )
+                    ( TermLike.Equals_
+                            _
+                            _
+                            left
+                            (TermLike.And_ _ right ensures)
+                        )
+                ) =
+                do
+                    requires' <- makePredicate requires & Bifunctor.first RequiresError
+                    argument' <- makePredicate argument & Bifunctor.first ArgumentError
+                    antiLeft' <- makePredicate antiLeft & Bifunctor.first AntiLeftError
+                    ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
+                    pure
+                        Equation
+                            { requires = requires'
+                            , argument = Just argument'
+                            , antiLeft = Just antiLeft'
+                            , left
+                            , right
+                            , ensures = ensures'
+                            , attributes
+                            }
+        match
+            ( TermLike.Implies_
+                    _
+                    requires
+                    ( TermLike.Equals_
+                            _
+                            _
+                            left
+                            (TermLike.And_ _ right ensures)
+                        )
+                ) =
+                do
+                    left' <- matchLhs left
+                    requires' <- makePredicate requires & Bifunctor.first RequiresError
+                    ensures' <- makePredicate ensures & Bifunctor.first EnsuresError
+                    pure
+                        Equation
+                            { requires = requires'
+                            , argument = Nothing
+                            , antiLeft = Nothing
+                            , left = left'
+                            , right
+                            , ensures = ensures'
+                            , attributes
+                            }
+        match (TermLike.Equals_ _ _ left right) = do
+            pure
+                Equation
+                    { requires = Predicate.makeTruePredicate
+                    , argument = Nothing
+                    , antiLeft = Nothing
+                    , left
+                    , right
+                    , ensures = Predicate.makeTruePredicate
+                    , attributes
+                    }
+        match left@(TermLike.Ceil_ _ sort _) = do
+            pure
+                Equation
+                    { requires = Predicate.makeTruePredicate
+                    , argument = Nothing
+                    , antiLeft = Nothing
+                    , left
+                    , right = TermLike.mkTop sort
+                    , ensures = Predicate.makeTruePredicate
+                    , attributes
+                    }
+        match termLike' = Left (NotEquation termLike')
+        matchLhs term =
+            case term of
+                TermLike.Equals_ _ _ _ _ -> Right term
+                TermLike.Ceil_ _ _ _ -> Right term
+                TermLike.App_ _ _ -> Right term
+                TermLike.Inj_ _ -> Right term
+                TermLike.Not_ _ _ -> Right term
+                _ -> Left $ UnsupportedLHS term
 
-    -- If the ensures and requires are the same, then the ensures is redundant.
-    removeRedundantEnsures equation@Equation{requires, ensures}
-        | ensures == requires =
-            return equation{ensures = Predicate.makeTruePredicate}
-        | otherwise = return equation
+        -- If the ensures and requires are the same, then the ensures is redundant.
+        removeRedundantEnsures equation@Equation{requires, ensures}
+            | ensures == requires =
+                return equation{ensures = Predicate.makeTruePredicate}
+            | otherwise = return equation

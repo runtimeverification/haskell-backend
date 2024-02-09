@@ -48,19 +48,19 @@ elementAttribute symbol =
 
 instance ParseAttributes Element where
     parseAttribute = withApplication' parseApplication
-      where
-        parseApplication params args Element{getElement}
-            | Just _ <- getElement = failDuplicate'
-            | otherwise = do
-                getZeroParams params
-                arg <- getOneArgument args
-                symbol <- getSymbolOrAlias arg
-                return Element{getElement = Just symbol}
-        withApplication' = withApplication elementId
-        failDuplicate' = failDuplicate elementId
+        where
+            parseApplication params args Element{getElement}
+                | Just _ <- getElement = failDuplicate'
+                | otherwise = do
+                    getZeroParams params
+                    arg <- getOneArgument args
+                    symbol <- getSymbolOrAlias arg
+                    return Element{getElement = Just symbol}
+            withApplication' = withApplication elementId
+            failDuplicate' = failDuplicate elementId
 
 instance From Element Attributes where
     from =
         maybe def toAttribute . getElement
-      where
-        toAttribute = from @AttributePattern . elementAttribute
+        where
+            toAttribute = from @AttributePattern . elementAttribute

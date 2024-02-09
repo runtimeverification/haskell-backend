@@ -346,11 +346,11 @@ inj ::
 inj injTo injChild =
     (synthesize . InjF)
         Inj{injConstructor, injFrom, injTo, injAttributes, injChild}
-  where
-    injFrom = termLikeSort injChild
-    symbol = injSymbol injFrom injTo
-    Internal.Symbol{symbolConstructor = injConstructor} = symbol
-    Internal.Symbol{symbolAttributes = injAttributes} = symbol
+    where
+        injFrom = termLikeSort injChild
+        symbol = injSymbol injFrom injTo
+        Internal.Symbol{symbolConstructor = injConstructor} = symbol
+        Internal.Symbol{symbolAttributes = injAttributes} = symbol
 keqBool
     , kneqBool ::
         TermLike RewritingVariableName ->
@@ -586,9 +586,9 @@ pair ::
     TermLike RewritingVariableName
 pair l r =
     mkApplySymbol (pairSymbol lSort rSort) [l, r]
-  where
-    lSort = termLikeSort l
-    rSort = termLikeSort r
+    where
+        lSort = termLikeSort l
+        rSort = termLikeSort r
 -- ** Set
 unitSetSymbol :: Internal.Symbol
 unitSetSymbol = builtinSymbol "unitSet" setSort [] & hook "SET.unit"
@@ -889,16 +889,16 @@ ripemd160Krypto message = mkApplySymbol ripemd160Symbol [message]
 sortDecl :: Sort -> ParsedSentence
 sortDecl sort =
     asSentence sentence
-  where
-    sentence :: ParsedSentenceSort
-    sentence =
-        SentenceSort
-            { sentenceSortName =
-                let SortActualSort SortActual{sortActualName} = sort
-                 in sortActualName
-            , sentenceSortParameters = []
-            , sentenceSortAttributes = Attributes []
-            }
+    where
+        sentence :: ParsedSentenceSort
+        sentence =
+            SentenceSort
+                { sentenceSortName =
+                    let SortActualSort SortActual{sortActualName} = sort
+                     in sortActualName
+                , sentenceSortParameters = []
+                , sentenceSortAttributes = Attributes []
+                }
 
 sortDeclWithAttributes ::
     -- | declared sort
@@ -908,16 +908,16 @@ sortDeclWithAttributes ::
     ParsedSentence
 sortDeclWithAttributes sort attributes =
     asSentence sentence
-  where
-    sentence :: ParsedSentenceSort
-    sentence =
-        SentenceSort
-            { sentenceSortName =
-                let SortActualSort SortActual{sortActualName} = sort
-                 in sortActualName
-            , sentenceSortParameters = []
-            , sentenceSortAttributes = Attributes attributes
-            }
+    where
+        sentence :: ParsedSentenceSort
+        sentence =
+            SentenceSort
+                { sentenceSortName =
+                    let SortActualSort SortActual{sortActualName} = sort
+                     in sortActualName
+                , sentenceSortParameters = []
+                , sentenceSortAttributes = Attributes attributes
+                }
 
 -- | Declare a hooked sort.
 hookedSortDecl ::
@@ -928,16 +928,16 @@ hookedSortDecl ::
     ParsedSentence
 hookedSortDecl sort attrs =
     (asSentence . SentenceHookedSort) sentence
-  where
-    sentence :: ParsedSentenceSort
-    sentence =
-        SentenceSort
-            { sentenceSortName =
-                let SortActualSort SortActual{sortActualName} = sort
-                 in sortActualName
-            , sentenceSortParameters = []
-            , sentenceSortAttributes = Attributes attrs
-            }
+    where
+        sentence :: ParsedSentenceSort
+        sentence =
+            SentenceSort
+                { sentenceSortName =
+                    let SortActualSort SortActual{sortActualName} = sort
+                     in sortActualName
+                , sentenceSortParameters = []
+                , sentenceSortAttributes = Attributes attrs
+                }
 
 -- ** Bool
 
@@ -1130,21 +1130,21 @@ pairSort lSort rSort =
 pairSortDecl :: ParsedSentence
 pairSortDecl =
     asSentence decl
-  where
-    lSortVariable = SortVariable (testId "l")
-    rSortVariable = SortVariable (testId "r")
-    lSort = SortVariableSort lSortVariable
-    rSort = SortVariableSort rSortVariable
-    decl :: ParsedSentenceSort
-    decl =
-        SentenceSort
-            { sentenceSortName =
-                let SortActualSort SortActual{sortActualName} =
-                        pairSort lSort rSort
-                 in sortActualName
-            , sentenceSortParameters = [lSortVariable, rSortVariable]
-            , sentenceSortAttributes = Attributes []
-            }
+    where
+        lSortVariable = SortVariable (testId "l")
+        rSortVariable = SortVariable (testId "r")
+        lSort = SortVariableSort lSortVariable
+        rSort = SortVariableSort rSortVariable
+        decl :: ParsedSentenceSort
+        decl =
+            SentenceSort
+                { sentenceSortName =
+                    let SortActualSort SortActual{sortActualName} =
+                            pairSort lSort rSort
+                     in sortActualName
+                , sentenceSortParameters = [lSortVariable, rSortVariable]
+                , sentenceSortAttributes = Attributes []
+                }
 
 -- ** Set
 
@@ -1198,13 +1198,16 @@ mkSet elements opaque =
                         , opaque
                         }
             }
-  where
-    asKey key =
-        (,) <$> retractKey key <*> pure SetValue
-            & maybe (Left (key, SetValue)) Right
-    (abstractElements, HashMap.fromList -> concreteElements) =
-        asKey <$> toList elements
-            & partitionEithers
+    where
+        asKey key =
+            (,)
+                <$> retractKey key
+                <*> pure SetValue
+                & maybe (Left (key, SetValue)) Right
+        (abstractElements, HashMap.fromList -> concreteElements) =
+            asKey
+                <$> toList elements
+                & partitionEithers
 mkSet_ ::
     InternalVariable variable =>
     Foldable f =>
@@ -1310,56 +1313,56 @@ concatAttribute = Sort.concatAttribute . Internal.toSymbolOrAlias
 hookedSymbolDecl :: Internal.Symbol -> ParsedSentence
 hookedSymbolDecl symbol =
     (asSentence . SentenceHookedSymbol) sentence
-  where
-    Internal.Symbol{symbolConstructor, symbolAttributes, symbolSorts} =
-        symbol
-    sentence :: ParsedSentenceSymbol
-    sentence =
-        SentenceSymbol
-            { sentenceSymbolSymbol
-            , sentenceSymbolSorts
-            , sentenceSymbolResultSort
-            , sentenceSymbolAttributes = toAttributes symbolAttributes
-            }
-    sentenceSymbolSymbol =
-        Symbol
-            { symbolConstructor = symbolConstructor
-            , symbolParams = []
-            }
-    sentenceSymbolSorts = applicationSortsOperands symbolSorts
-    sentenceSymbolResultSort = applicationSortsResult symbolSorts
+    where
+        Internal.Symbol{symbolConstructor, symbolAttributes, symbolSorts} =
+            symbol
+        sentence :: ParsedSentenceSymbol
+        sentence =
+            SentenceSymbol
+                { sentenceSymbolSymbol
+                , sentenceSymbolSorts
+                , sentenceSymbolResultSort
+                , sentenceSymbolAttributes = toAttributes symbolAttributes
+                }
+        sentenceSymbolSymbol =
+            Symbol
+                { symbolConstructor = symbolConstructor
+                , symbolParams = []
+                }
+        sentenceSymbolSorts = applicationSortsOperands symbolSorts
+        sentenceSymbolResultSort = applicationSortsResult symbolSorts
 
 symbolDecl :: Internal.Symbol -> ParsedSentence
 symbolDecl symbol =
     asSentence sentence
-  where
-    Internal.Symbol{symbolConstructor, symbolAttributes, symbolSorts} =
-        symbol
-    sentence :: ParsedSentenceSymbol
-    sentence =
-        SentenceSymbol
-            { sentenceSymbolSymbol
-            , sentenceSymbolSorts
-            , sentenceSymbolResultSort
-            , sentenceSymbolAttributes = toAttributes symbolAttributes
-            }
-    sentenceSymbolSymbol =
-        Symbol
-            { symbolConstructor = symbolConstructor
-            , symbolParams = []
-            }
-    sentenceSymbolSorts = applicationSortsOperands symbolSorts
-    sentenceSymbolResultSort = applicationSortsResult symbolSorts
+    where
+        Internal.Symbol{symbolConstructor, symbolAttributes, symbolSorts} =
+            symbol
+        sentence :: ParsedSentenceSymbol
+        sentence =
+            SentenceSymbol
+                { sentenceSymbolSymbol
+                , sentenceSymbolSorts
+                , sentenceSymbolResultSort
+                , sentenceSymbolAttributes = toAttributes symbolAttributes
+                }
+        sentenceSymbolSymbol =
+            Symbol
+                { symbolConstructor = symbolConstructor
+                , symbolParams = []
+                }
+        sentenceSymbolSorts = applicationSortsOperands symbolSorts
+        sentenceSymbolResultSort = applicationSortsResult symbolSorts
 importParsedModule :: ModuleName -> ParsedSentence
 importParsedModule moduleName =
     asSentence sentence
-  where
-    sentence :: ParsedSentenceImport
-    sentence =
-        SentenceImport
-            { sentenceImportModuleName = moduleName
-            , sentenceImportAttributes = Attributes []
-            }
+    where
+        sentence :: ParsedSentenceImport
+        sentence =
+            SentenceImport
+                { sentenceImportModuleName = moduleName
+                , sentenceImportAttributes = Attributes []
+                }
 -- ** BOOL
 
 boolModuleName :: ModuleName
@@ -1457,53 +1460,53 @@ kEqualModule =
 subsortDecl :: Sort -> Sort -> ParsedSentence
 subsortDecl subsort supersort =
     asSentence decl
-  where
-    decl :: ParsedSentenceAxiom
-    decl =
-        SentenceAxiom
-            { sentenceAxiomParameters = [sortVariableR]
-            , sentenceAxiomPattern =
-                externalize
-                    . mkExists x
-                    $ mkEquals
-                        sortR
-                        (mkElemVar x)
-                        (inj supersort (mkElemVar y))
-            , sentenceAxiomAttributes =
-                Attributes [subsortAttribute subsort supersort]
-            }
-    sortVariableR = SortVariable "R"
-    sortR = SortVariableSort sortVariableR
-    x = mkElementVariable "x" supersort
-    y = mkElementVariable "y" subsort
+    where
+        decl :: ParsedSentenceAxiom
+        decl =
+            SentenceAxiom
+                { sentenceAxiomParameters = [sortVariableR]
+                , sentenceAxiomPattern =
+                    externalize
+                        . mkExists x
+                        $ mkEquals
+                            sortR
+                            (mkElemVar x)
+                            (inj supersort (mkElemVar y))
+                , sentenceAxiomAttributes =
+                    Attributes [subsortAttribute subsort supersort]
+                }
+        sortVariableR = SortVariable "R"
+        sortR = SortVariableSort sortVariableR
+        x = mkElementVariable "x" supersort
+        y = mkElementVariable "y" subsort
 
 injSymbolDecl :: ParsedSentence
 injSymbolDecl =
     asSentence decl
-  where
-    decl :: ParsedSentenceSymbol
-    decl =
-        SentenceSymbol
-            { sentenceSymbolSymbol =
-                Symbol
-                    { symbolConstructor =
-                        let Internal.Symbol{symbolConstructor} =
-                                injSymbol fromSort toSort
-                         in symbolConstructor
-                    , symbolParams = [fromSortVariable, toSortVariable]
-                    }
-            , sentenceSymbolSorts = [fromSort]
-            , sentenceSymbolResultSort = toSort
-            , sentenceSymbolAttributes =
-                Attributes
-                    [ sortInjectionAttribute
-                    , injectiveAttribute
-                    ]
-            }
-    fromSortVariable = SortVariable (testId "from")
-    toSortVariable = SortVariable (testId "to")
-    fromSort = SortVariableSort fromSortVariable
-    toSort = SortVariableSort toSortVariable
+    where
+        decl :: ParsedSentenceSymbol
+        decl =
+            SentenceSymbol
+                { sentenceSymbolSymbol =
+                    Symbol
+                        { symbolConstructor =
+                            let Internal.Symbol{symbolConstructor} =
+                                    injSymbol fromSort toSort
+                             in symbolConstructor
+                        , symbolParams = [fromSortVariable, toSortVariable]
+                        }
+                , sentenceSymbolSorts = [fromSort]
+                , sentenceSymbolResultSort = toSort
+                , sentenceSymbolAttributes =
+                    Attributes
+                        [ sortInjectionAttribute
+                        , injectiveAttribute
+                        ]
+                }
+        fromSortVariable = SortVariable (testId "from")
+        toSortVariable = SortVariable (testId "to")
+        fromSort = SortVariableSort fromSortVariable
+        toSort = SortVariableSort toSortVariable
 
 -- ** LIST
 
@@ -1589,31 +1592,31 @@ pairModule =
 pairSymbolDecl :: ParsedSentence
 pairSymbolDecl =
     asSentence decl
-  where
-    decl :: ParsedSentenceSymbol
-    decl =
-        SentenceSymbol
-            { sentenceSymbolSymbol =
-                Symbol
-                    { symbolConstructor =
-                        let Internal.Symbol{symbolConstructor} =
-                                pairSymbol leftSort rightSort
-                         in symbolConstructor
-                    , symbolParams = [leftSortVariable, rightSortVariable]
-                    }
-            , sentenceSymbolSorts = [leftSort, rightSort]
-            , sentenceSymbolResultSort = pairSort leftSort rightSort
-            , sentenceSymbolAttributes =
-                Attributes
-                    [ constructorAttribute
-                    , injectiveAttribute
-                    , totalAttribute
-                    ]
-            }
-    leftSortVariable = SortVariable (testId "left")
-    rightSortVariable = SortVariable (testId "right")
-    leftSort = SortVariableSort leftSortVariable
-    rightSort = SortVariableSort rightSortVariable
+    where
+        decl :: ParsedSentenceSymbol
+        decl =
+            SentenceSymbol
+                { sentenceSymbolSymbol =
+                    Symbol
+                        { symbolConstructor =
+                            let Internal.Symbol{symbolConstructor} =
+                                    pairSymbol leftSort rightSort
+                             in symbolConstructor
+                        , symbolParams = [leftSortVariable, rightSortVariable]
+                        }
+                , sentenceSymbolSorts = [leftSort, rightSort]
+                , sentenceSymbolResultSort = pairSort leftSort rightSort
+                , sentenceSymbolAttributes =
+                    Attributes
+                        [ constructorAttribute
+                        , injectiveAttribute
+                        , totalAttribute
+                        ]
+                }
+        leftSortVariable = SortVariable (testId "left")
+        rightSortVariable = SortVariable (testId "right")
+        leftSort = SortVariableSort leftSortVariable
+        rightSort = SortVariableSort rightSortVariable
 
 -- ** SET
 
@@ -1793,34 +1796,36 @@ testModuleWithTwoClaims =
         { moduleName = testModuleName
         , moduleAttributes = Attributes []
         , moduleSentences =
-            [ SentenceClaimSentence . SentenceClaim $
-                ( SentenceAxiom
-                    { sentenceAxiomParameters = [SortVariable (testId "sv1")]
-                    , sentenceAxiomPattern =
-                        externalize (mkStringLiteral "a")
-                    , sentenceAxiomAttributes =
-                        Attributes
-                            [ embedParsedPattern $
-                                PatternF.StringLiteralF $
-                                    Const (StringLiteral "b")
-                            ]
-                    } ::
-                    ParsedSentenceAxiom
-                )
-            , SentenceClaimSentence . SentenceClaim $
-                ( SentenceAxiom
-                    { sentenceAxiomParameters = [SortVariable (testId "sv2")]
-                    , sentenceAxiomPattern =
-                        externalize (mkStringLiteral "c")
-                    , sentenceAxiomAttributes =
-                        Attributes
-                            [ embedParsedPattern $
-                                PatternF.StringLiteralF $
-                                    Const (StringLiteral "b")
-                            ]
-                    } ::
-                    ParsedSentenceAxiom
-                )
+            [ SentenceClaimSentence
+                . SentenceClaim
+                $ ( SentenceAxiom
+                        { sentenceAxiomParameters = [SortVariable (testId "sv1")]
+                        , sentenceAxiomPattern =
+                            externalize (mkStringLiteral "a")
+                        , sentenceAxiomAttributes =
+                            Attributes
+                                [ embedParsedPattern
+                                    $ PatternF.StringLiteralF
+                                    $ Const (StringLiteral "b")
+                                ]
+                        } ::
+                        ParsedSentenceAxiom
+                  )
+            , SentenceClaimSentence
+                . SentenceClaim
+                $ ( SentenceAxiom
+                        { sentenceAxiomParameters = [SortVariable (testId "sv2")]
+                        , sentenceAxiomPattern =
+                            externalize (mkStringLiteral "c")
+                        , sentenceAxiomAttributes =
+                            Attributes
+                                [ embedParsedPattern
+                                    $ PatternF.StringLiteralF
+                                    $ Const (StringLiteral "b")
+                                ]
+                        } ::
+                        ParsedSentenceAxiom
+                  )
             ]
         }
 

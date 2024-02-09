@@ -100,12 +100,12 @@ parseKoreSimplifyOptions startTime =
         <*> parseMainModuleName
         <*> parseBugReportOption
         <*> parseKoreLogOptions exeName startTime
-  where
-    parseMainModuleName =
-        GlobalMain.parseModuleName
-            "MODULE"
-            "module"
-            "The name of the main module in the Kore definition."
+    where
+        parseMainModuleName =
+            GlobalMain.parseModuleName
+                "MODULE"
+                "module"
+                "The name of the main module in the Kore definition."
 
 parserInfoModifiers :: InfoMod options
 parserInfoModifiers =
@@ -131,8 +131,8 @@ mainWithOptions localOptions@LocalOptions{execOptions} = do
             koreSimplify localOptions
                 & runKoreLog tmpDir koreLogOptions
     exitWith exitCode
-  where
-    KoreSimplifyOptions{bugReportOption, koreLogOptions} = execOptions
+    where
+        KoreSimplifyOptions{bugReportOption, koreLogOptions} = execOptions
 
 koreSimplify :: LocalOptions KoreSimplifyOptions -> Main ExitCode
 koreSimplify LocalOptions{execOptions} = do
@@ -141,17 +141,17 @@ koreSimplify LocalOptions{execOptions} = do
     inputPattern <-
         mainParseInputPattern mainModule patternFileName
     final <- simplify inputPattern
-    lift $
-        renderResult
+    lift
+        $ renderResult
             execOptions
             (unparse final)
     return ExitSuccess
-  where
-    KoreSimplifyOptions
-        { definitionFileName
-        , patternFileName
-        , mainModuleName
-        } = execOptions
+    where
+        KoreSimplifyOptions
+            { definitionFileName
+            , patternFileName
+            , mainModuleName
+            } = execOptions
 
 mainParseInputPattern ::
     VerifiedModule StepperAttributes ->
@@ -162,8 +162,8 @@ mainParseInputPattern indexedModule patternFileName = do
     purePattern <-
         mainPatternParseAndVerify metadataTools (indexedModuleSyntax indexedModule) patternFileName
     return $ parsePattern purePattern
-  where
-    parsePattern = mkRewritingPattern . Pattern.fromTermLike
+    where
+        parsePattern = mkRewritingPattern . Pattern.fromTermLike
 
 renderResult :: KoreSimplifyOptions -> Doc ann -> IO ()
 renderResult KoreSimplifyOptions{outputFileName} doc =

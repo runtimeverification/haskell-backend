@@ -43,41 +43,41 @@ test_simplify =
             & Pattern.fromTermLike
         ]
     ]
-  where
-    x = mkElementConfigVariable Mock.x
+    where
+        x = mkElementConfigVariable Mock.x
 
-    repr =
-        SideCondition.mkRepresentation
-            (SideCondition.top @RewritingVariableName)
+        repr =
+            SideCondition.mkRepresentation
+                (SideCondition.top @RewritingVariableName)
 
-    injFrom = Mock.testSort
-    injTo = Mock.topSort
-    Symbol{symbolConstructor = injConstructor} = symbol'
-    Symbol{symbolAttributes = injAttributes} = symbol'
-    symbol' = Mock.sortInjectionSymbol injFrom injTo
-    mkInj injChild =
-        Inj
-            { injConstructor
-            , injFrom
-            , injTo
-            , injAttributes
-            , injChild
-            }
+        injFrom = Mock.testSort
+        injTo = Mock.topSort
+        Symbol{symbolConstructor = injConstructor} = symbol'
+        Symbol{symbolAttributes = injAttributes} = symbol'
+        symbol' = Mock.sortInjectionSymbol injFrom injTo
+        mkInj injChild =
+            Inj
+                { injConstructor
+                , injFrom
+                , injTo
+                , injAttributes
+                , injChild
+                }
 
-    test ::
-        HasCallStack =>
-        TestName ->
-        [Pattern RewritingVariableName] ->
-        [Pattern RewritingVariableName] ->
-        TestTree
-    test testName preInput preExpect =
-        testCase testName $ do
-            let input = mkInj (OrPattern.fromPatterns preInput)
-                expect = OrPattern.fromPatterns preExpect
-            actual <- simplify input
-            (assertBool "Expected simplified patterns")
-                (OrPattern.isSimplified repr actual)
-            assertEqual "" expect actual
+        test ::
+            HasCallStack =>
+            TestName ->
+            [Pattern RewritingVariableName] ->
+            [Pattern RewritingVariableName] ->
+            TestTree
+        test testName preInput preExpect =
+            testCase testName $ do
+                let input = mkInj (OrPattern.fromPatterns preInput)
+                    expect = OrPattern.fromPatterns preExpect
+                actual <- simplify input
+                (assertBool "Expected simplified patterns")
+                    (OrPattern.isSimplified repr actual)
+                assertEqual "" expect actual
 
 simplify ::
     Inj (OrPattern RewritingVariableName) ->

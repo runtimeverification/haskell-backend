@@ -85,20 +85,20 @@ test_simplifiesToSimplified =
         result <-
             handle (exceptionHandler patt) $ lift (race warnThread simplify)
         either (flip trace discard) checkResult result
-  where
-    -- Discard exceptions that are normal for randomly generated patterns.
-    exceptionHandler ::
-        MonadThrow m =>
-        Pattern VariableName ->
-        ErrorCall ->
-        PropertyT m a
-    exceptionHandler term err@(ErrorCallWithLocation message _location)
-        | "Unification case that should be handled somewhere else"
-            `isInfixOf` message =
-            discard
-        | otherwise = do
-            traceM ("Error for input: " ++ unparseToString term)
-            throwM err
+    where
+        -- Discard exceptions that are normal for randomly generated patterns.
+        exceptionHandler ::
+            MonadThrow m =>
+            Pattern VariableName ->
+            ErrorCall ->
+            PropertyT m a
+        exceptionHandler term err@(ErrorCallWithLocation message _location)
+            | "Unification case that should be handled somewhere else"
+                `isInfixOf` message =
+                discard
+            | otherwise = do
+                traceM ("Error for input: " ++ unparseToString term)
+                throwM err
 
 test_regressionGeneratedTerms :: [TestTree]
 test_regressionGeneratedTerms =
@@ -171,8 +171,8 @@ evaluate ::
     SMT.SMT (OrPattern RewritingVariableName)
 evaluate =
     Simplification.runSimplifier env . Pattern.simplify
-  where
-    env = Mock.env{hookedSymbols = Mock.builtinSimplifiers}
+    where
+        env = Mock.env{hookedSymbols = Mock.builtinSimplifiers}
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =

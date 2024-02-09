@@ -67,7 +67,7 @@ debugAttemptedRewriteRule ::
     log ()
 debugAttemptedRewriteRule initial label attemptedRewriteRule =
     logEntry DebugAttemptedRewriteRules{..}
-  where
-    configuration = mapConditionalVariables TermLike.mapVariables initial
-    mapConditionalVariables mapTermVariables =
-        Conditional.mapVariables mapTermVariables (pure toVariableName)
+    where
+        configuration = mapConditionalVariables TermLike.mapVariables initial
+        mapConditionalVariables mapTermVariables =
+            Conditional.mapVariables mapTermVariables (pure toVariableName)

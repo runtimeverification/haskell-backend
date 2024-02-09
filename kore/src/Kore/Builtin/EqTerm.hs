@@ -66,9 +66,9 @@ unifyEqTerm unifyChildren eqTerm value =
         let solution' = MultiOr.map eraseTerm solution
         (if value then pure else liftSimplifier . mkNotSimplified) solution'
             >>= Unify.scatter
-  where
-    EqTerm{symbol, operand1, operand2} = eqTerm
-    eqSort = applicationSortsResult . symbolSorts $ symbol
-    eraseTerm conditional = conditional $> (mkTop eqSort)
-    mkNotSimplified notChild =
-        notSimplifier SideCondition.top Not{notSort = eqSort, notChild}
+    where
+        EqTerm{symbol, operand1, operand2} = eqTerm
+        eqSort = applicationSortsResult . symbolSorts $ symbol
+        eraseTerm conditional = conditional $> (mkTop eqSort)
+        mkNotSimplified notChild =
+            notSimplifier SideCondition.top Not{notSort = eqSort, notChild}

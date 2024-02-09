@@ -131,20 +131,20 @@ sortSubstitution ::
     Map.Map SortVariable Sort
 sortSubstitution variables sorts =
     foldl' insertSortVariable Map.empty (align variables sorts)
-  where
-    insertSortVariable map' =
-        \case
-            These var sort -> Map.insert var sort map'
-            This _ ->
-                (error . show . Pretty.vsep) ("Too few parameters:" : expected)
-            That _ ->
-                (error . show . Pretty.vsep) ("Too many parameters:" : expected)
-    expected =
-        [ "Expected:"
-        , Pretty.indent 4 (parameters variables)
-        , "but found:"
-        , Pretty.indent 4 (parameters sorts)
-        ]
+    where
+        insertSortVariable map' =
+            \case
+                These var sort -> Map.insert var sort map'
+                This _ ->
+                    (error . show . Pretty.vsep) ("Too few parameters:" : expected)
+                That _ ->
+                    (error . show . Pretty.vsep) ("Too many parameters:" : expected)
+        expected =
+            [ "Expected:"
+            , Pretty.indent 4 (parameters variables)
+            , "but found:"
+            , Pretty.indent 4 (parameters sorts)
+            ]
 
 {- | Substitute sort variables in a 'Sort'.
 
@@ -259,7 +259,7 @@ sameSort sort1 sort2
 
 matchSorts :: [Sort] -> [Sort] -> [Sort]
 matchSorts = alignWith matchTheseSorts
-  where
-    matchTheseSorts (This sort1) = missingArgument sort1
-    matchTheseSorts (That sort2) = unexpectedArgument sort2
-    matchTheseSorts (These sort1 sort2) = sameSort sort1 sort2
+    where
+        matchTheseSorts (This sort1) = missingArgument sort1
+        matchTheseSorts (That sort2) = unexpectedArgument sort2
+        matchTheseSorts (These sort1 sort2) = sameSort sort1 sort2

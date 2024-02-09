@@ -46,6 +46,6 @@ build ::
     AST.SmtDeclarations
 build indexedModule sortConstructors =
     resolve (sorts `AST.mergePreferFirst` symbols)
-  where
-    sorts = Sorts.buildRepresentations indexedModule sortConstructors
-    symbols = Symbols.buildRepresentations indexedModule
+    where
+        sorts = Sorts.buildRepresentations indexedModule sortConstructors
+        symbols = Symbols.buildRepresentations indexedModule

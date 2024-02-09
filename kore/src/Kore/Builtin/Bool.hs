@@ -111,20 +111,20 @@ symbolVerifiers =
 patternVerifierHook :: Builtin.PatternVerifierHook
 patternVerifierHook =
     Builtin.domainValuePatternVerifierHook sort patternVerifierWorker
-  where
-    patternVerifierWorker domainValue =
-        case externalChild of
-            StringLiteral_ lit -> do
-                internalBoolValue <- Builtin.parseString parse lit
-                (return . InternalBoolF . Const)
-                    InternalBool
-                        { internalBoolSort = domainValueSort
-                        , internalBoolValue
-                        }
-            _ -> Kore.Error.koreFail "Expected literal string"
-      where
-        DomainValue{domainValueSort} = domainValue
-        DomainValue{domainValueChild = externalChild} = domainValue
+    where
+        patternVerifierWorker domainValue =
+            case externalChild of
+                StringLiteral_ lit -> do
+                    internalBoolValue <- Builtin.parseString parse lit
+                    (return . InternalBoolF . Const)
+                        InternalBool
+                            { internalBoolSort = domainValueSort
+                            , internalBoolValue
+                            }
+                _ -> Kore.Error.koreFail "Expected literal string"
+            where
+                DomainValue{domainValueSort} = domainValue
+                DomainValue{domainValueChild = externalChild} = domainValue
 
 -- | get the value from a (possibly encoded) domain value
 extractBoolDomainValue ::
@@ -137,9 +137,9 @@ extractBoolDomainValue _ = matchBool
 -- | Parse an integer string literal.
 parse :: Builtin.Parser Bool
 parse = (Parsec.<|>) true false
-  where
-    true = Parsec.string "true" $> True
-    false = Parsec.string "false" $> False
+    where
+        true = Parsec.string "true" $> True
+        false = Parsec.string "false" $> False
 
 -- | @builtinFunctions@ are builtin functions on the 'Bool' sort.
 builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
@@ -154,13 +154,13 @@ builtinFunctions key
     | key == andThenKey = Just $ binaryOperator andThenKey (&&)
     | key == orElseKey = Just $ binaryOperator orElseKey (||)
     | otherwise = Nothing
-  where
-    unaryOperator =
-        Builtin.unaryOperator extractBoolDomainValue asPattern
-    binaryOperator =
-        Builtin.binaryOperator extractBoolDomainValue asPattern
-    xor a b = (a && not b) || (not a && b)
-    implies a b = not a || b
+    where
+        unaryOperator =
+            Builtin.unaryOperator extractBoolDomainValue asPattern
+        binaryOperator =
+            Builtin.binaryOperator extractBoolDomainValue asPattern
+        xor a b = (a && not b) || (not a && b)
+        implies a b = not a || b
 
 data UnifyBool = UnifyBool
     { bool1, bool2 :: !InternalBool
@@ -204,8 +204,8 @@ unifyBool unifyData
             "different Bool domain values"
             term1
             term2
-  where
-    UnifyBool{bool1, bool2, term1, term2} = unifyData
+    where
+        UnifyBool{bool1, bool2, term1, term2} = unifyData
 
 data UnifyBoolAnd = UnifyBoolAnd
     { term :: !(TermLike RewritingVariableName)
@@ -251,9 +251,9 @@ unifyBoolAnd ::
     unifier (Pattern RewritingVariableName)
 unifyBoolAnd unifyChildren unifyData =
     unifyBothWith unifyChildren term operand1 operand2
-  where
-    UnifyBoolAnd{term, boolAnd} = unifyData
-    BoolAnd{operand1, operand2} = boolAnd
+    where
+        UnifyBoolAnd{term, boolAnd} = unifyData
+        BoolAnd{operand1, operand2} = boolAnd
 
 {- | Takes a (function-like) pattern and unifies it against two other patterns.
    Returns the original pattern and the conditions resulting from unification.
@@ -276,9 +276,9 @@ unifyBothWith unify termLike1 operand1 operand2 = do
     unification2 <- unify' termLike1 operand2
     let conditions = unification1 <> unification2
     pure (Pattern.withCondition termLike1 conditions)
-  where
-    unify' term1 term2 =
-        Pattern.withoutTerm <$> unify term1 term2
+    where
+        unify' term1 term2 =
+            Pattern.withoutTerm <$> unify term1 term2
 
 data UnifyBoolOr = UnifyBoolOr
     { term :: !(TermLike RewritingVariableName)
@@ -323,9 +323,9 @@ unifyBoolOr ::
     unifier (Pattern RewritingVariableName)
 unifyBoolOr unifyChildren unifyData =
     unifyBothWith unifyChildren term operand1 operand2
-  where
-    UnifyBoolOr{term, boolOr} = unifyData
-    BoolOr{operand1, operand2} = boolOr
+    where
+        UnifyBoolOr{term, boolOr} = unifyData
+        BoolOr{operand1, operand2} = boolOr
 
 data UnifyBoolNot = UnifyBoolNot
     { boolNot :: !BoolNot
@@ -370,10 +370,10 @@ unifyBoolNot ::
 unifyBoolNot unifyChildren unifyData =
     let notValue = asInternal internalBoolSort (not internalBoolValue)
      in unifyChildren notValue operand
-  where
-    UnifyBoolNot{boolNot, value} = unifyData
-    InternalBool{internalBoolValue, internalBoolSort} = value
-    BoolNot{operand} = boolNot
+    where
+        UnifyBoolNot{boolNot, value} = unifyData
+        InternalBool{internalBoolValue, internalBoolSort} = value
+        BoolNot{operand} = boolNot
 
 matchInternalBool :: TermLike variable -> Maybe InternalBool
 matchInternalBool (InternalBool_ internalBool) =

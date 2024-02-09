@@ -48,36 +48,36 @@ test_simplifyEvaluated =
                         )
                    ]
     ]
-  where
-    becomes_ ::
-        HasCallStack =>
-        ( [Pattern.Pattern RewritingVariableName]
-        , [Pattern.Pattern RewritingVariableName]
-        ) ->
-        [Pattern.Pattern RewritingVariableName] ->
-        TestTree
-    becomes_ (firsts, seconds) expecteds =
-        testCase "becomes" $ do
-            actual <- simplifyEvaluated first second
-            assertEqual (message actual) expected actual
-            assertBool (message actual) (expected == actual)
-      where
-        first = OrPattern.fromPatterns firsts
-        second = OrPattern.fromPatterns seconds
-        expected = OrPattern.fromPatterns expecteds
-        message actual =
-            (show . Pretty.vsep)
-                [ "expected simplification of:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> firsts
-                , "->"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> seconds
-                , "would give:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> expecteds
-                , "but got:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
-                ]
-          where
-            actuals = toList actual
+    where
+        becomes_ ::
+            HasCallStack =>
+            ( [Pattern.Pattern RewritingVariableName]
+            , [Pattern.Pattern RewritingVariableName]
+            ) ->
+            [Pattern.Pattern RewritingVariableName] ->
+            TestTree
+        becomes_ (firsts, seconds) expecteds =
+            testCase "becomes" $ do
+                actual <- simplifyEvaluated first second
+                assertEqual (message actual) expected actual
+                assertBool (message actual) (expected == actual)
+            where
+                first = OrPattern.fromPatterns firsts
+                second = OrPattern.fromPatterns seconds
+                expected = OrPattern.fromPatterns expecteds
+                message actual =
+                    (show . Pretty.vsep)
+                        [ "expected simplification of:"
+                        , Pretty.indent 4 $ Pretty.vsep $ unparse <$> firsts
+                        , "->"
+                        , Pretty.indent 4 $ Pretty.vsep $ unparse <$> seconds
+                        , "would give:"
+                        , Pretty.indent 4 $ Pretty.vsep $ unparse <$> expecteds
+                        , "but got:"
+                        , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
+                        ]
+                    where
+                        actuals = toList actual
 
 termA :: Pattern.Pattern RewritingVariableName
 termA = Pattern.fromTermLike Mock.a
@@ -131,7 +131,7 @@ simplifyEvaluated ::
     OrPattern.OrPattern RewritingVariableName ->
     IO (OrPattern.OrPattern RewritingVariableName)
 simplifyEvaluated first second =
-    testRunSimplifier mockEnv $
-        Implies.simplifyEvaluated Mock.testSort SideCondition.top first second
-  where
-    mockEnv = Mock.env
+    testRunSimplifier mockEnv
+        $ Implies.simplifyEvaluated Mock.testSort SideCondition.top first second
+    where
+        mockEnv = Mock.env

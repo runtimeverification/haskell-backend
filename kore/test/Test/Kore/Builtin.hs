@@ -132,36 +132,36 @@ test_internalize =
     , internalizes "concatSet(s:Set, unit)" (concatSet s unitSet) s
     , internalizes "concatSet(unit, s:Set)" (concatSet unitSet s) s
     ]
-  where
-    listSort = Builtin.listSort
-    unitList = Builtin.unitList
-    elementList = Builtin.elementList
-    concatList = Builtin.concatList
-    mkList = List.asInternal
-    l = mkElemVar (configElementVariableFromId "l" listSort)
+    where
+        listSort = Builtin.listSort
+        unitList = Builtin.unitList
+        elementList = Builtin.elementList
+        concatList = Builtin.concatList
+        mkList = List.asInternal
+        l = mkElemVar (configElementVariableFromId "l" listSort)
 
-    mapSort = Builtin.mapSort
-    unitMap = Builtin.unitMap
-    elementMap = Builtin.elementMap
-    concatMap = Builtin.concatMap
-    mkMap = Map.asInternal
-    m = mkElemVar (configElementVariableFromId "m" mapSort)
+        mapSort = Builtin.mapSort
+        unitMap = Builtin.unitMap
+        elementMap = Builtin.elementMap
+        concatMap = Builtin.concatMap
+        mkMap = Map.asInternal
+        m = mkElemVar (configElementVariableFromId "m" mapSort)
 
-    setSort = Builtin.setSort
-    unitSet = Builtin.unitSet
-    elementSet = Builtin.elementSet
-    concatSet = Builtin.concatSet
-    mkSet = Set.asInternal . HashSet.fromList
-    s = mkElemVar (configElementVariableFromId "s" setSort)
+        setSort = Builtin.setSort
+        unitSet = Builtin.unitSet
+        elementSet = Builtin.elementSet
+        concatSet = Builtin.concatSet
+        mkSet = Set.asInternal . HashSet.fromList
+        s = mkElemVar (configElementVariableFromId "s" setSort)
 
-    mkInt :: Integer -> TermLike variable
-    mkInt = Int.asInternal
-    intSort = Builtin.intSort
-    zero, one :: TermLike variable
-    zero = mkInt 0
-    one = mkInt 1
-    x = mkElemVar (configElementVariableFromId "x" intSort)
-    y = mkElemVar (configElementVariableFromId "y" intSort)
+        mkInt :: Integer -> TermLike variable
+        mkInt = Int.asInternal
+        intSort = Builtin.intSort
+        zero, one :: TermLike variable
+        zero = mkInt 0
+        one = mkInt 1
+        x = mkElemVar (configElementVariableFromId "x" intSort)
+        y = mkElemVar (configElementVariableFromId "y" intSort)
 
 withInternalized ::
     (TermLike RewritingVariableName -> Assertion) ->
@@ -203,13 +203,13 @@ test_sortModuleClaims =
             ""
             (indexedModuleClaims withSortedClaims)
             (indexedModuleClaims verifiedModule & reverse)
-  where
-    ixSetLocation ::
-        Int ->
-        SourceLocation ->
-        VerifiedModule declAtts ->
-        VerifiedModule declAtts
-    ixSetLocation index sourceLocation verifiedModule =
-        verifiedModule
-            & field @"indexedModuleClaims"
+    where
+        ixSetLocation ::
+            Int ->
+            SourceLocation ->
+            VerifiedModule declAtts ->
+            VerifiedModule declAtts
+        ixSetLocation index sourceLocation verifiedModule =
+            verifiedModule
+                & field @"indexedModuleClaims"
                 %~ (ix index . Lens._1 . field @"sourceLocation" .~ sourceLocation)

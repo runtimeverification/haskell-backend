@@ -80,8 +80,8 @@ test_instance_Synthetic_TermLike =
     , NuF (Nu Mock.setX sy) `gives'` sy $ "NuF - Free"
     , (VariableF . Const) (inject Mock.setX) `gives'` sx $ "Set VariableF"
     ]
-  where
-    gives' = gives @(TermLikeF VariableName)
+    where
+        gives' = gives @(TermLikeF VariableName)
 
 sort :: Sort
 sort = Mock.testSort

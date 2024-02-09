@@ -82,10 +82,10 @@ scriptParser =
             <* skipSpacesAndComments
         )
         <* eof
-  where
-    skipSpacesAndComments :: Parser (Maybe ())
-    skipSpacesAndComments =
-        optional $ spaceConsumer <* Char.newline
+    where
+        skipSpacesAndComments :: Parser (Maybe ())
+        skipSpacesAndComments =
+            optional $ spaceConsumer <* Char.newline
 
 commandParser :: Parser ReplCommand
 commandParser = commandParser0 eof
@@ -173,24 +173,30 @@ showAxiom :: Parser ReplCommand
 showAxiom =
     ShowAxiom
         <$$> literal "axiom"
-        *> ( Left <$> parseAxiomDecimal
-                <|> Right <$> ruleNameParser
+        *> ( Left
+                <$> parseAxiomDecimal
+                <|> Right
+                <$> ruleNameParser
            )
 
 showKAxiom :: Parser ReplCommand
 showKAxiom =
     ShowKAxiom
         <$$> literal "kaxiom"
-        *> ( Left <$> parseAxiomDecimal
-                <|> Right <$> ruleNameParser
+        *> ( Left
+                <$> parseAxiomDecimal
+                <|> Right
+                <$> ruleNameParser
            )
 
 prove :: Parser ReplCommand
 prove =
     Prove
         <$$> literal "prove"
-        *> ( Left <$> parseClaimDecimal
-                <|> Right <$> ruleNameParser
+        *> ( Left
+                <$> parseClaimDecimal
+                <|> Right
+                <$> ruleNameParser
            )
 
 showGraph :: Parser ReplCommand
@@ -290,7 +296,8 @@ tryAxiomClaim =
     Try
         <$$> literal "try"
         *> ( try (ByIndex <$> ruleIndexParser)
-                <|> ByName <$> ruleNameParser
+                <|> ByName
+                <$> ruleNameParser
            )
 
 tryKAxiomClaim :: Parser ReplCommand
@@ -298,7 +305,8 @@ tryKAxiomClaim =
     KTry
         <$$> literal "ktry"
         *> ( try (ByIndex <$> ruleIndexParser)
-                <|> ByName <$> ruleNameParser
+                <|> ByName
+                <$> ruleNameParser
            )
 
 tryForceAxiomClaim :: Parser ReplCommand
@@ -306,7 +314,8 @@ tryForceAxiomClaim =
     TryF
         <$$> literal "tryf"
         *> ( try (ByIndex <$> ruleIndexParser)
-                <|> ByName <$> ruleNameParser
+                <|> ByName
+                <$> ruleNameParser
            )
 
 tryForceKAxiomClaim :: Parser ReplCommand
@@ -314,7 +323,8 @@ tryForceKAxiomClaim =
     KTryF
         <$$> literal "ktryf"
         *> ( try (ByIndex <$> ruleIndexParser)
-                <|> ByName <$> ruleNameParser
+                <|> ByName
+                <$> ruleNameParser
            )
 
 ruleIndexParser :: Parser (Either AxiomIndex ClaimIndex)
@@ -376,8 +386,8 @@ log = do
     logType <- parseLogType
     timestampsSwitch <- parseTimestampSwitchWithDefault
     -- TODO (thomas.tuegel): Allow the user to specify --sqlog.
-    pure $
-        Log
+    pure
+        $ Log
             GeneralLogOptions
                 { logType
                 , logFormat
@@ -385,13 +395,13 @@ log = do
                 , timestampsSwitch
                 , logEntries
                 }
-  where
-    parseSeverityWithDefault =
-        severity <|> pure Log.defaultSeverity
-    parseFormatWithDefault =
-        parseLogFormat <|> pure Log.Standard
-    parseTimestampSwitchWithDefault =
-        parseTimestampSwitch <|> pure Log.TimestampsEnable
+    where
+        parseSeverityWithDefault =
+            severity <|> pure Log.defaultSeverity
+        parseFormatWithDefault =
+            parseLogFormat <|> pure Log.Standard
+        parseTimestampSwitchWithDefault =
+            parseTimestampSwitch <|> pure Log.TimestampsEnable
 
 debugAttemptEquation :: Parser ReplCommand
 debugAttemptEquation =
@@ -449,11 +459,11 @@ debugRewrite =
 
 severity :: Parser Log.Severity
 severity = sDebug <|> sInfo <|> sWarning <|> sError
-  where
-    sDebug = Log.Debug <$ literal "debug"
-    sInfo = Log.Info <$ literal "info"
-    sWarning = Log.Warning <$ literal "warning"
-    sError = Log.Error <$ literal "error"
+    where
+        sDebug = Log.Debug <$ literal "debug"
+        sInfo = Log.Info <$ literal "info"
+        sWarning = Log.Warning <$ literal "warning"
+        sError = Log.Error <$ literal "error"
 
 parseLogEntries :: Parser EntryTypes
 parseLogEntries = do
@@ -461,31 +471,31 @@ parseLogEntries = do
     entries <- many entry
     literal "]"
     return . Set.fromList $ entries
-  where
-    entry :: Parser SomeTypeRep
-    entry = do
-        item <- wordWithout ['[', ']', ',']
-        _ <- optional (literal ",")
-        Log.parseEntryType . Text.pack $ item
+    where
+        entry :: Parser SomeTypeRep
+        entry = do
+            item <- wordWithout ['[', ']', ',']
+            _ <- optional (literal ",")
+            Log.parseEntryType . Text.pack $ item
 
 parseLogType :: Parser Log.KoreLogType
 parseLogType = logStdOut <|> logFile
-  where
-    logStdOut = Log.LogStdErr <$ literal "stderr"
-    logFile =
-        Log.LogFileText <$$> literal "file" *> quotedOrWordWithout ""
+    where
+        logStdOut = Log.LogStdErr <$ literal "stderr"
+        logFile =
+            Log.LogFileText <$$> literal "file" *> quotedOrWordWithout ""
 
 parseLogFormat :: Parser Log.KoreLogFormat
 parseLogFormat = logStandard <|> logOneline
-  where
-    logStandard = Log.Standard <$ literal "standard"
-    logOneline = Log.OneLine <$ literal "oneline"
+    where
+        logStandard = Log.Standard <$ literal "standard"
+        logOneline = Log.OneLine <$ literal "oneline"
 
 parseTimestampSwitch :: Parser Log.TimestampsSwitch
 parseTimestampSwitch = disable <|> enable
-  where
-    disable = Log.TimestampsDisable <$ literal "disable-log-timestamps"
-    enable = Log.TimestampsEnable <$ literal "enable-log-timestamps"
+    where
+        disable = Log.TimestampsDisable <$ literal "disable-log-timestamps"
+        enable = Log.TimestampsEnable <$ literal "enable-log-timestamps"
 
 redirect :: ReplCommand -> Parser ReplCommand
 redirect cmd =
@@ -509,8 +519,8 @@ alias = do
     literal "alias"
     name <- word
     arguments <- many $ wordWithout "="
-    when (nub arguments /= arguments) $
-        customFailure "Error when parsing alias: duplicate argument name."
+    when (nub arguments /= arguments)
+        $ customFailure "Error when parsing alias: duplicate argument name."
     literal "="
     command <- some (noneOf ['\n'])
     return . Alias $ AliasDefinition{name, arguments, command}

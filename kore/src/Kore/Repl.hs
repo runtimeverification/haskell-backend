@@ -139,9 +139,9 @@ runRepl ::
 runRepl _ _ _ _ _ _ _ _ _ [] _ _ _ _ outputFile _ _ _ _ _ =
     let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
      in liftIO . printTerm . unparseToString $ topTerm
-  where
-    topTerm :: TermLike VariableName
-    topTerm = mkTop $ mkSortVariable "R"
+    where
+        topTerm :: TermLike VariableName
+        topTerm = mkTop $ mkSortVariable "R"
 runRepl
     minDepth
     stepTimeout
@@ -166,173 +166,173 @@ runRepl
         do
             startTime <- liftIO $ getTime Monotonic
             (newState, _) <-
-                (\rwst -> execRWST rwst config (state startTime)) $
-                    evaluateScript replScript scriptModeOutput
+                (\rwst -> execRWST rwst config (state startTime))
+                    $ evaluateScript replScript scriptModeOutput
             case replMode of
                 Interactive -> do
                     replGreeting
-                    flip evalStateT newState $
-                        flip runReaderT config $
-                            runInputT defaultSettings{historyFile = Just "./.kore-repl-history"} $
-                                forever repl0
+                    flip evalStateT newState
+                        $ flip runReaderT config
+                        $ runInputT defaultSettings{historyFile = Just "./.kore-repl-history"}
+                        $ forever repl0
                 RunScript ->
                     runReplCommand Exit newState
-      where
-        runReplCommand :: ReplCommand -> ReplState -> Simplifier ()
-        runReplCommand cmd st =
-            void $
-                flip evalStateT st $
-                    flip runReaderT config $
-                        runInputT defaultSettings $
-                            replInterpreter printIfNotEmpty cmd
+        where
+            runReplCommand :: ReplCommand -> ReplState -> Simplifier ()
+            runReplCommand cmd st =
+                void
+                    $ flip evalStateT st
+                    $ flip runReaderT config
+                    $ runInputT defaultSettings
+                    $ replInterpreter printIfNotEmpty cmd
 
-        evaluateScript ::
-            ReplScript ->
-            ScriptModeOutput ->
-            RWST Config String ReplState Simplifier ()
-        evaluateScript script outputFlag =
-            maybe
-                (pure ())
-                (flip parseEvalScript outputFlag)
-                (unReplScript script)
+            evaluateScript ::
+                ReplScript ->
+                ScriptModeOutput ->
+                RWST Config String ReplState Simplifier ()
+            evaluateScript script outputFlag =
+                maybe
+                    (pure ())
+                    (flip parseEvalScript outputFlag)
+                    (unReplScript script)
 
-        repl0 :: InputT (ReaderT Config (StateT ReplState Simplifier)) ()
-        repl0 = do
-            str <- prompt
-            let command =
-                    fromMaybe ShowUsage $ parseMaybe commandParser (Text.pack str)
-                silent = pure ()
-            when (shouldStore command) $ lift $ field @"commands" Lens.%= (Seq.|> str)
-            lift $ saveSessionWithMessage silent ".sessionCommands"
-            void $ replInterpreter printIfNotEmpty command
+            repl0 :: InputT (ReaderT Config (StateT ReplState Simplifier)) ()
+            repl0 = do
+                str <- prompt
+                let command =
+                        fromMaybe ShowUsage $ parseMaybe commandParser (Text.pack str)
+                    silent = pure ()
+                when (shouldStore command) $ lift $ field @"commands" Lens.%= (Seq.|> str)
+                lift $ saveSessionWithMessage silent ".sessionCommands"
+                void $ replInterpreter printIfNotEmpty command
 
-        state :: TimeSpec -> ReplState
-        state startTime =
-            ReplState
-                { axioms = addIndexesToAxioms axioms'
-                , claims = addIndexesToClaims claims'
-                , claim = firstClaim
-                , claimIndex = firstClaimIndex
-                , graphs = Map.singleton firstClaimIndex firstClaimExecutionGraph
-                , node = ReplNode (Strategy.root firstClaimExecutionGraph)
-                , commands = Seq.empty
-                , -- TODO(Vladimir): should initialize this to the value obtained from
-                  -- the frontend via '--omit-labels'.
-                  omit = mempty
-                , labels = Map.empty
-                , aliases = Map.empty
-                , koreLogOptions =
-                    logOptions
-                        { Log.exeName = Log.ExeName "kore-repl"
-                        , Log.startTime = startTime
-                        }
-                , stepTimeout = stepTimeout
-                , stepTime = stepTime
-                , enableMovingAverage = enableMA
-                }
+            state :: TimeSpec -> ReplState
+            state startTime =
+                ReplState
+                    { axioms = addIndexesToAxioms axioms'
+                    , claims = addIndexesToClaims claims'
+                    , claim = firstClaim
+                    , claimIndex = firstClaimIndex
+                    , graphs = Map.singleton firstClaimIndex firstClaimExecutionGraph
+                    , node = ReplNode (Strategy.root firstClaimExecutionGraph)
+                    , commands = Seq.empty
+                    , -- TODO(Vladimir): should initialize this to the value obtained from
+                      -- the frontend via '--omit-labels'.
+                      omit = mempty
+                    , labels = Map.empty
+                    , aliases = Map.empty
+                    , koreLogOptions =
+                        logOptions
+                            { Log.exeName = Log.ExeName "kore-repl"
+                            , Log.startTime = startTime
+                            }
+                    , stepTimeout = stepTimeout
+                    , stepTime = stepTime
+                    , enableMovingAverage = enableMA
+                    }
 
-        config :: Config
-        config =
-            Config
-                { stepper = stepper0
-                , unifier = unificationProcedure
-                , logger
-                , outputFile
-                , mainModuleName
-                , kFileLocations
-                , kompiledDir
-                , korePrintCommand
-                }
+            config :: Config
+            config =
+                Config
+                    { stepper = stepper0
+                    , unifier = unificationProcedure
+                    , logger
+                    , outputFile
+                    , mainModuleName
+                    , kFileLocations
+                    , kompiledDir
+                    , korePrintCommand
+                    }
 
-        firstClaimIndex :: ClaimIndex
-        firstClaimIndex =
-            ClaimIndex
-                . fromMaybe (error "No claims found")
-                $ findIndex (not . isTrusted) claims'
+            firstClaimIndex :: ClaimIndex
+            firstClaimIndex =
+                ClaimIndex
+                    . fromMaybe (error "No claims found")
+                    $ findIndex (not . isTrusted) claims'
 
-        addIndexesToAxioms ::
-            [Axiom] ->
-            [Axiom]
-        addIndexesToAxioms =
-            initializeRuleIndexes Attribute.AxiomIndex lensAttribute
-          where
-            lensAttribute = _Unwrapped . _Unwrapped . field @"attributes"
+            addIndexesToAxioms ::
+                [Axiom] ->
+                [Axiom]
+            addIndexesToAxioms =
+                initializeRuleIndexes Attribute.AxiomIndex lensAttribute
+                where
+                    lensAttribute = _Unwrapped . _Unwrapped . field @"attributes"
 
-        addIndexesToClaims ::
-            [SomeClaim] ->
-            [SomeClaim]
-        addIndexesToClaims =
-            initializeRuleIndexes Attribute.ClaimIndex lensAttribute
-          where
-            lensAttribute = lensClaimPattern . field @"attributes"
+            addIndexesToClaims ::
+                [SomeClaim] ->
+                [SomeClaim]
+            addIndexesToClaims =
+                initializeRuleIndexes Attribute.ClaimIndex lensAttribute
+                where
+                    lensAttribute = lensClaimPattern . field @"attributes"
 
-        initializeRuleIndexes ctor lens rules =
-            zipWith addIndex rules [0 ..]
-          where
-            addIndex rule index =
-                Lens.set
-                    (lens . field @"identifier")
-                    (index & ctor & Just & RuleIndex)
-                    rule
+            initializeRuleIndexes ctor lens rules =
+                zipWith addIndex rules [0 ..]
+                where
+                    addIndex rule index =
+                        Lens.set
+                            (lens . field @"identifier")
+                            (index & ctor & Just & RuleIndex)
+                            rule
 
-        firstClaim :: SomeClaim
-        firstClaim = claims' !! unClaimIndex firstClaimIndex
+            firstClaim :: SomeClaim
+            firstClaim = claims' !! unClaimIndex firstClaimIndex
 
-        firstClaimExecutionGraph :: ExecutionGraph
-        firstClaimExecutionGraph = emptyExecutionGraph firstClaim
+            firstClaimExecutionGraph :: ExecutionGraph
+            firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
-        stepper0 ::
-            Maybe StepTimeout ->
-            EnableMovingAverage ->
-            [Axiom] ->
-            ExecutionGraph ->
-            ReplNode ->
-            Simplifier (Maybe ExecutionGraph)
-        stepper0 timeout enableMA' axioms graph rnode = do
-            let node = unReplNode rnode
-            if Graph.outdeg (Strategy.graph graph) node == 0
-                then
-                    proveClaimStep
-                        minDepth
-                        timeout
-                        ma
-                        enableMA'
-                        stuckCheck
-                        allowVacuous
-                        origClaims
-                        axioms
-                        graph
-                        node
-                        & Exception.handle (withConfigurationHandler (Just graph))
-                        & Exception.handle (someExceptionHandler (Just graph))
-                else pure $ Just graph
+            stepper0 ::
+                Maybe StepTimeout ->
+                EnableMovingAverage ->
+                [Axiom] ->
+                ExecutionGraph ->
+                ReplNode ->
+                Simplifier (Maybe ExecutionGraph)
+            stepper0 timeout enableMA' axioms graph rnode = do
+                let node = unReplNode rnode
+                if Graph.outdeg (Strategy.graph graph) node == 0
+                    then
+                        proveClaimStep
+                            minDepth
+                            timeout
+                            ma
+                            enableMA'
+                            stuckCheck
+                            allowVacuous
+                            origClaims
+                            axioms
+                            graph
+                            node
+                            & Exception.handle (withConfigurationHandler (Just graph))
+                            & Exception.handle (someExceptionHandler (Just graph))
+                    else pure $ Just graph
 
-        withConfigurationHandler :: a -> Claim.WithConfiguration -> Simplifier a
-        withConfigurationHandler
-            _
-            (Claim.WithConfiguration lastConfiguration someException) =
-                do
-                    liftIO $
-                        hPutStrLn
-                            stderr
-                            ("// Last configuration:\n" <> unparseToString lastConfiguration)
-                    Exception.throwM someException
+            withConfigurationHandler :: a -> Claim.WithConfiguration -> Simplifier a
+            withConfigurationHandler
+                _
+                (Claim.WithConfiguration lastConfiguration someException) =
+                    do
+                        liftIO
+                            $ hPutStrLn
+                                stderr
+                                ("// Last configuration:\n" <> unparseToString lastConfiguration)
+                        Exception.throwM someException
 
-        someExceptionHandler :: a -> Exception.SomeException -> Simplifier a
-        someExceptionHandler a someException = do
-            case Exception.fromException someException of
-                Just entry@(Log.SomeEntry _ _) ->
-                    Log.logEntry entry
-                Nothing ->
-                    errorException someException
-            pure a
+            someExceptionHandler :: a -> Exception.SomeException -> Simplifier a
+            someExceptionHandler a someException = do
+                case Exception.fromException someException of
+                    Just entry@(Log.SomeEntry _ _) ->
+                        Log.logEntry entry
+                    Nothing ->
+                        errorException someException
+                pure a
 
-        replGreeting :: Simplifier ()
-        replGreeting =
-            liftIO $
-                putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
+            replGreeting :: Simplifier ()
+            replGreeting =
+                liftIO
+                    $ putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-        prompt :: MonadIO n => MonadMask n => MonadState ReplState n => InputT n String
-        prompt = do
-            node <- lift $ Lens.use (field @"node")
-            fromMaybe "" <$> getInputLine ("Kore (" <> show (unReplNode node) <> ")> ")
+            prompt :: MonadIO n => MonadMask n => MonadState ReplState n => InputT n String
+            prompt = do
+                node <- lift $ Lens.use (field @"node")
+                fromMaybe "" <$> getInputLine ("Kore (" <> show (unReplNode node) <> ")> ")

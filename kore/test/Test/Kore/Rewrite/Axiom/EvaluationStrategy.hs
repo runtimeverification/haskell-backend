@@ -65,25 +65,25 @@ test_attemptEquations =
         updatedCounter <- readIORef counter
         assertEqual "" 2 updatedCounter
     ]
-  where
-    attemptEquationAndAccumulateErrors' counter condition term equation = do
-        liftIO $ modifyIORef' counter (+ 1)
-        attemptEquationAndAccumulateErrors condition term equation
-    applicable =
-        axiom
-            (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
-            Mock.a
-            (makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.a)
-    notApplicable1 =
-        axiom
-            (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
-            Mock.c
-            (makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.c)
-    notApplicable2 =
-        axiom
-            (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
-            Mock.b
-            (makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.b)
+    where
+        attemptEquationAndAccumulateErrors' counter condition term equation = do
+            liftIO $ modifyIORef' counter (+ 1)
+            attemptEquationAndAccumulateErrors condition term equation
+        applicable =
+            axiom
+                (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
+                Mock.a
+                (makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.a)
+        notApplicable1 =
+            axiom
+                (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
+                Mock.c
+                (makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.c)
+        notApplicable2 =
+            axiom
+                (Mock.functionalConstr10 (mkElemVar Mock.xConfig))
+                Mock.b
+                (makeEqualsPredicate (mkElemVar Mock.xConfig) Mock.b)
 
 test_definitionEvaluation :: [TestTree]
 test_definitionEvaluation =
@@ -563,7 +563,7 @@ evaluateWithPredicate ::
     Predicate RewritingVariableName ->
     IO CommonAttemptedAxiom
 evaluateWithPredicate (BuiltinAndAxiomSimplifier simplifier) term predicate =
-    runSimplifierSMT Mock.env $
-        simplifier
+    runSimplifierSMT Mock.env
+        $ simplifier
             term
             (SideCondition.fromPredicateWithReplacements predicate)

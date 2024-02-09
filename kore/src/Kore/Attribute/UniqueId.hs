@@ -54,21 +54,21 @@ uniqueIdAttribute uniqueId =
 
 instance ParseAttributes UniqueId where
     parseAttribute = withApplication' parseApplication
-      where
-        parseApplication ::
-            [Sort] ->
-            [AttributePattern] ->
-            UniqueId ->
-            AttributeParser.Parser UniqueId
-        parseApplication params args (UniqueId Nothing) = do
-            AttributeParser.getZeroParams params
-            arg <- AttributeParser.getOneArgument args
-            StringLiteral str <- AttributeParser.getStringLiteral arg
-            return (UniqueId (Just str))
-        parseApplication _ _ (UniqueId (Just _)) = failDuplicate'
+        where
+            parseApplication ::
+                [Sort] ->
+                [AttributePattern] ->
+                UniqueId ->
+                AttributeParser.Parser UniqueId
+            parseApplication params args (UniqueId Nothing) = do
+                AttributeParser.getZeroParams params
+                arg <- AttributeParser.getOneArgument args
+                StringLiteral str <- AttributeParser.getStringLiteral arg
+                return (UniqueId (Just str))
+            parseApplication _ _ (UniqueId (Just _)) = failDuplicate'
 
-        withApplication' = AttributeParser.withApplication uniqueIdId
-        failDuplicate' = AttributeParser.failDuplicate uniqueIdId
+            withApplication' = AttributeParser.withApplication uniqueIdId
+            failDuplicate' = AttributeParser.failDuplicate uniqueIdId
 
 instance From UniqueId Attributes where
     from UniqueId{getUniqueId = Just uniqueId} =

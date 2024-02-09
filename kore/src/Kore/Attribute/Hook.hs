@@ -49,9 +49,9 @@ instance ParseAttributes Hook where
             StringLiteral name <- getStringLiteral arg
             unless (isNothing hook) failDuplicate'
             return Hook{getHook = Just name}
-      where
-        withApplication' = withApplication hookId
-        failDuplicate' = failDuplicate hookId
+        where
+            withApplication' = withApplication hookId
+            failDuplicate' = failDuplicate hookId
 
 instance From Hook Attributes where
     from = maybe def (from @AttributePattern . hookAttribute) . getHook

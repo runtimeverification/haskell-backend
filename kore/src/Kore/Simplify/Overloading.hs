@@ -200,39 +200,39 @@ unifyOverloading overloadSimplifier termPair =
             case worker firstTerm secondTerm of
                 Nothing -> worker secondTerm firstTerm
                 Just result -> Just result
-  where
-    Pair term1 term2 = termPair
-    worker ::
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        Maybe MatchResult
-    worker
-        firstTerm@(App_ firstHead _)
-        (Inj_ inj@Inj{injChild = ElemVar_ secondVar}) =
-            unifyOverloadingVsOverloadedVariable
-                overloadSimplifier
-                firstHead
-                firstTerm
-                secondVar
-                inj{injChild = ()}
-    worker
-        (Inj_ Inj{injChild = firstTerm@(App_ firstHead firstChildren)})
-        (Inj_ inj@Inj{injChild = ElemVar_ secondVar}) =
-            unifyOverloadingInjVsVariable
-                overloadSimplifier
-                (Application firstHead firstChildren)
-                secondVar
-                (Attribute.freeVariables firstTerm)
-                inj{injChild = ()}
-    worker (App_ firstHead _) (Inj_ Inj{injChild}) =
-        notUnifiableTest firstHead injChild
-    worker _ _ = Nothing
+    where
+        Pair term1 term2 = termPair
+        worker ::
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            Maybe MatchResult
+        worker
+            firstTerm@(App_ firstHead _)
+            (Inj_ inj@Inj{injChild = ElemVar_ secondVar}) =
+                unifyOverloadingVsOverloadedVariable
+                    overloadSimplifier
+                    firstHead
+                    firstTerm
+                    secondVar
+                    inj{injChild = ()}
+        worker
+            (Inj_ Inj{injChild = firstTerm@(App_ firstHead firstChildren)})
+            (Inj_ inj@Inj{injChild = ElemVar_ secondVar}) =
+                unifyOverloadingInjVsVariable
+                    overloadSimplifier
+                    (Application firstHead firstChildren)
+                    secondVar
+                    (Attribute.freeVariables firstTerm)
+                    inj{injChild = ()}
+        worker (App_ firstHead _) (Inj_ Inj{injChild}) =
+            notUnifiableTest firstHead injChild
+        worker _ _ = Nothing
 
-    notUnifiableTest termHead child = do
-        Monad.guard (isOverloaded termHead)
-        notUnifiableError child
-      where
-        OverloadSimplifier{isOverloaded} = overloadSimplifier
+        notUnifiableTest termHead child = do
+            Monad.guard (isOverloaded termHead)
+            notUnifiableError child
+            where
+                OverloadSimplifier{isOverloaded} = overloadSimplifier
 {-# INLINE unifyOverloading #-}
 
 {- Handles the case
@@ -272,12 +272,12 @@ unifyOverloadingCommonOverload
                         mkInj' = maybeMkInj injectionHead
                      in Just $ Resolution $ Simple $ Pair (mkInj' first') (mkInj' second')
         | otherwise = Nothing
-      where
-        OverloadSimplifier
-            { isOverloaded
-            , resolveOverloading
-            , unifyOverloadWithinBound
-            } = overloadSimplifier
+        where
+            OverloadSimplifier
+                { isOverloaded
+                , resolveOverloading
+                , unifyOverloadWithinBound
+                } = overloadSimplifier
 
 {- Handles the case
     overloadingTerm@(overloadingHead(overloadingChildren))
@@ -313,12 +313,12 @@ unifyOverloadingVsOverloaded
                     then Just $ Resolution $ Simple $ Pair overloadingTerm overloadedTerm'
                     else throwBottom "different injected ctor"
         | otherwise = Nothing
-      where
-        OverloadSimplifier
-            { isOverloaded
-            , isOverloading
-            , resolveOverloading
-            } = overloadSimplifier
+        where
+            OverloadSimplifier
+                { isOverloaded
+                , isOverloading
+                , resolveOverloading
+                } = overloadSimplifier
 
 {- Handles the case
     overloadingTerm@(overloadingHead(overloadingChildren))
@@ -353,22 +353,22 @@ unifyOverloadingVsOverloadedVariable
             case getOverloadedWithinSort injProto overloadingHead injFrom of
                 Right Nothing -> Just notUnifiableOverloads
                 Right (Just overHead) ->
-                    Just $
-                        Resolution $
-                            WithNarrowing $
-                                computeNarrowing
-                                    overloadSimplifier
-                                    overloadingTerm
-                                    Nothing
-                                    overloadingHead
-                                    injProto
-                                    freeVars
-                                    overloadedVar
-                                    overHead
+                    Just
+                        $ Resolution
+                        $ WithNarrowing
+                        $ computeNarrowing
+                            overloadSimplifier
+                            overloadingTerm
+                            Nothing
+                            overloadingHead
+                            injProto
+                            freeVars
+                            overloadedVar
+                            overHead
                 Left err -> error err
-      where
-        freeVars = freeVariables overloadingTerm
-        OverloadSimplifier{isOverloaded, getOverloadedWithinSort} = overloadSimplifier
+        where
+            freeVars = freeVariables overloadingTerm
+            OverloadSimplifier{isOverloaded, getOverloadedWithinSort} = overloadSimplifier
 
 {- Handles the case
     inj{S1,injTo}(firstHead(firstChildren))
@@ -409,25 +409,25 @@ unifyOverloadingInjVsVariable
                     (Just InjectedOverloadPair{overloadingSymbol, overloadedSymbol}) ->
                         let (InjectedOverload headUnion maybeInjUnion) = overloadingSymbol
                             first' = resolveOverloading injProto headUnion firstChildren
-                         in Just $
-                                Resolution $
-                                    WithNarrowing $
-                                        computeNarrowing
-                                            overloadSimplifier
-                                            first'
-                                            maybeInjUnion
-                                            headUnion
-                                            injProto
-                                            freeVars
-                                            overloadedVar
-                                            overloadedSymbol
+                         in Just
+                                $ Resolution
+                                $ WithNarrowing
+                                $ computeNarrowing
+                                    overloadSimplifier
+                                    first'
+                                    maybeInjUnion
+                                    headUnion
+                                    injProto
+                                    freeVars
+                                    overloadedVar
+                                    overloadedSymbol
         | otherwise = Nothing
-      where
-        OverloadSimplifier
-            { isOverloaded
-            , resolveOverloading
-            , unifyOverloadWithSortWithinBound
-            } = overloadSimplifier
+        where
+            OverloadSimplifier
+                { isOverloaded
+                , resolveOverloading
+                , unifyOverloadWithSortWithinBound
+                } = overloadSimplifier
 
 computeNarrowing ::
     HasCallStack =>
@@ -468,13 +468,13 @@ computeNarrowing
                     , overloadPair = Pair (mkInj' first') (mkInj' second')
                     }
         | otherwise = error "This should not happen"
-      where
-        InjectedOverload{overload, injectionHead} = overloaded
-        allVars = Attribute.freeVariable (inject overloadedVar) <> freeVars
-        overloadedTerm = freshSymbolInstance allVars overload "x"
-        mkInj' = maybeMkInj injection'
-        narrowingTerm = maybeMkInj injectionHead overloadedTerm
-        OverloadSimplifier{resolveOverloading} = overloadSimplifier
+        where
+            InjectedOverload{overload, injectionHead} = overloaded
+            allVars = Attribute.freeVariable (inject overloadedVar) <> freeVars
+            overloadedTerm = freshSymbolInstance allVars overload "x"
+            mkInj' = maybeMkInj injection'
+            narrowingTerm = maybeMkInj injectionHead overloadedTerm
+            OverloadSimplifier{resolveOverloading} = overloadSimplifier
 
 -- | Generates fresh variables as arguments for a symbol to create a pattern.
 freshSymbolInstance ::
@@ -485,16 +485,16 @@ freshSymbolInstance ::
 freshSymbolInstance freeVars sym base =
     mkApplySymbol sym varTerms
         & refreshVariables freeVars
-  where
-    sorts = applicationSortsOperands $ symbolSorts sym
-    varTerms = mkElemVar <$> zipWith mkVariable [1 ..] sorts
+    where
+        sorts = applicationSortsOperands $ symbolSorts sym
+        varTerms = mkElemVar <$> zipWith mkVariable [1 ..] sorts
 
-    mkVariable :: Integer -> Sort -> ElementVariable RewritingVariableName
-    mkVariable vIdx vSort =
-        mkElementVariable
-            (generatedId $ base <> (Text.pack . show) vIdx)
-            vSort
-            & (fmap . fmap) mkConfigVariable
+        mkVariable :: Integer -> Sort -> ElementVariable RewritingVariableName
+        mkVariable vIdx vSort =
+            mkElementVariable
+                (generatedId $ base <> (Text.pack . show) vIdx)
+                vSort
+                & (fmap . fmap) mkConfigVariable
 
 mkInj ::
     Inj () ->

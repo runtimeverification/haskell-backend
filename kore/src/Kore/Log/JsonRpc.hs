@@ -46,21 +46,21 @@ instance Entry LogJsonRpcServer where
         if isDefaultLoc loc
             then Nothing
             else Just $ pretty fileLocStr
-      where
-        isDefaultLoc :: Loc -> Bool
-        isDefaultLoc (Loc "<unknown>" "<unknown>" "<unknown>" (0, 0) (0, 0)) = True
-        isDefaultLoc _ = False
+        where
+            isDefaultLoc :: Loc -> Bool
+            isDefaultLoc (Loc "<unknown>" "<unknown>" "<unknown>" (0, 0) (0, 0)) = True
+            isDefaultLoc _ = False
 
-        fileLocStr =
-            (loc_package loc)
-                ++ ':'
-                : (loc_module loc)
-                ++ ' '
-                : (loc_filename loc)
-                ++ ':'
-                : (line loc)
-                ++ ':'
-                : (char loc)
-          where
-            line = show . fst . loc_start
-            char = show . snd . loc_start
+            fileLocStr =
+                (loc_package loc)
+                    ++ ':'
+                    : (loc_module loc)
+                        ++ ' '
+                    : (loc_filename loc)
+                        ++ ':'
+                    : (line loc)
+                        ++ ':'
+                    : (char loc)
+                where
+                    line = show . fst . loc_start
+                    char = show . snd . loc_start

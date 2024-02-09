@@ -127,8 +127,8 @@ failureTestData
                 , errorContext = errorContext err ++ stack
                 }
             (testDataDefinition testData)
-      where
-        err = testDataError testData
+        where
+            err = testDataError testData
 successTestDataGroup :: HasCallStack => String -> [TestData] -> TestTree
 successTestDataGroup description testDatas =
     testGroup description (map successTestData testDatas)
@@ -218,8 +218,8 @@ simpleSortSentence (SortName name) =
 simpleAliasSentence :: AliasName -> SortName -> ParsedSentence
 simpleAliasSentence alias sort =
     asSentence @ParsedSentenceAlias (simpleAliasSentenceAux alias sort r)
-  where
-    r = externalize $ Internal.mkTop (simpleSort sort)
+    where
+        r = externalize $ Internal.mkTop (simpleSort sort)
 simpleAliasSentenceAux ::
     AliasName ->
     SortName ->
@@ -694,8 +694,8 @@ simpleExistsUnifiedPattern ::
     Text -> Sort -> TermLike VariableName
 simpleExistsUnifiedPattern name sort =
     Internal.mkExists quantifiedVariable (Internal.mkElemVar quantifiedVariable)
-  where
-    quantifiedVariable = variable name sort
+    where
+        quantifiedVariable = variable name sort
 
 simpleExistsParsedPattern :: Text -> Sort -> ParsedPattern
 simpleExistsParsedPattern name sort =
@@ -707,8 +707,8 @@ simpleExistsEqualsParsedPattern ::
     ResultSort ->
     ParsedPattern
 simpleExistsEqualsParsedPattern name operandSort resultSort =
-    externalize $
-        simpleExistsEqualsTermLike name operandSort resultSort
+    externalize
+        $ simpleExistsEqualsTermLike name operandSort resultSort
 
 simpleExistsEqualsTermLike ::
     Text ->
@@ -719,11 +719,11 @@ simpleExistsEqualsTermLike
     name
     (OperandSort operandSort)
     (ResultSort resultSort) =
-        Internal.mkExists var $
-            Internal.mkEquals resultSort variablePattern' variablePattern'
-      where
-        variablePattern' = Internal.mkElemVar var
-        var = mkElementVariable (testId name) operandSort
+        Internal.mkExists var
+            $ Internal.mkEquals resultSort variablePattern' variablePattern'
+        where
+            variablePattern' = Internal.mkElemVar var
+            var = mkElementVariable (testId name) operandSort
 
 applicationPatternWithChildren ::
     SymbolName ->
@@ -746,8 +746,8 @@ applicationParsedPatternWithParams ::
     [Sort] ->
     ParsedPattern
 applicationParsedPatternWithParams resultSort name params =
-    externalize $
-        applicationUnifiedPatternWithParams resultSort name params
+    externalize
+        $ applicationUnifiedPatternWithParams resultSort name params
 
 applicationUnifiedPatternWithParams ::
     Sort ->

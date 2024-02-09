@@ -124,9 +124,9 @@ genIdChar =
 
 genStringLiteral :: Gen Text
 genStringLiteral =
-    fmap T.concat $
-        Gen.list (Range.linear 0 32) $
-            Gen.text (Range.linear 0 128) Gen.latin1
+    fmap T.concat
+        $ Gen.list (Range.linear 0 32)
+        $ Gen.text (Range.linear 0 128) Gen.latin1
 
 exactly :: Int -> Gen a -> Gen [a]
 exactly n g
@@ -167,16 +167,17 @@ writeExamples withMultiThings dir basename n
         do
             createDirectoryIfMissing False dir
             mapM_ generateFile [1 .. n]
-  where
-    generateFile :: Int -> IO ()
-    generateFile i =
-        Gen.sample (genKoreJson generator)
-            >>= BS.writeFile (file i) . encodeKoreJson
+    where
+        generateFile :: Int -> IO ()
+        generateFile i =
+            Gen.sample (genKoreJson generator)
+                >>= BS.writeFile (file i)
+                . encodeKoreJson
 
-    generator =
-        if withMultiThings then genAllKorePatterns else genKorePattern
+        generator =
+            if withMultiThings then genAllKorePatterns else genKorePattern
 
-    file i = dir </> basename ++ printf "_%02d" i <.> "json"
+        file i = dir </> basename ++ printf "_%02d" i <.> "json"
 
 ----------------------------------------
 -- Tests
@@ -255,8 +256,8 @@ fullRoundTrip =
 
 orFailWith :: Show err => (a -> Either err b) -> String -> a -> b
 parse `orFailWith` name = either failed id . parse
-  where
-    failed err = error $ "Error in " <> name <> ": " <> show err
+    where
+        failed err = error $ "Error in " <> name <> ": " <> show err
 
 ----------------------------------------
 -- unit tests for specific properties
@@ -273,14 +274,15 @@ eVarChecks =
     testGroup
         "Element variable lexical checks"
         [ testProperty "A set variable name must not be empty" testNotEmpty
-        , testProperty "A valid element variable is accepted" $
-            property $ do
+        , testProperty "A valid element variable is accepted"
+            $ property
+            $ do
                 Id valid <- forAll genId
                 diff (checkIdChars valid) (==) []
-        , testProperty "A variable name has to start by a character" $
-            withTests 1000 testEVarInitial
-        , testProperty "A variable name must not contain non-alphanumeric characters" $
-            withTests 1000 testEVarCharSet
+        , testProperty "A variable name has to start by a character"
+            $ withTests 1000 testEVarInitial
+        , testProperty "A variable name must not contain non-alphanumeric characters"
+            $ withTests 1000 testEVarCharSet
         ]
 
 testNotEmpty :: Property
@@ -289,8 +291,8 @@ testNotEmpty =
 
 testEVarInitial :: Property
 testEVarInitial =
-    property $
-        do
+    property
+        $ do
             Id valid <- forAll genId
 
             notLetter <- forAll $ Gen.filter (not . isAlpha) Gen.ascii
@@ -305,8 +307,8 @@ testEVarInitial =
 
 testEVarCharSet :: Property
 testEVarCharSet =
-    property $
-        do
+    property
+        $ do
             initial <- forAll Gen.alpha
             notAlphaNum <- forAll $ Gen.filter (not . isAllowedChar) Gen.ascii
             let nonAlphaNumChars = checkIdChars $ T.pack [initial, notAlphaNum]
@@ -320,8 +322,9 @@ sVarChecks :: TestTree
 sVarChecks =
     testGroup
         "Set variable lexical checks"
-        [ testProperty "A valid set variable is accepted" $
-            property $ do
+        [ testProperty "A valid set variable is accepted"
+            $ property
+            $ do
                 Id valid <- forAll genId
                 diff (checkSVarName $ T.cons '@' valid) (==) []
         , testProperty
@@ -334,8 +337,8 @@ sVarChecks =
 
 testSVarInitial :: Property
 testSVarInitial =
-    property $
-        do
+    property
+        $ do
             wrongInitial <- forAll $ Gen.filter (/= '@') Gen.ascii
             Id valid <- forAll genId
             let withWrongInitial = checkSVarName $ T.cons wrongInitial valid
@@ -343,8 +346,8 @@ testSVarInitial =
 
 testSVarSuffix :: Property
 testSVarSuffix =
-    property $
-        do
+    property
+        $ do
             notAlphaNum <- forAll $ Gen.filter (not . isAllowedChar) Gen.ascii
             let withWrongSuffix = checkSVarName $ T.pack ['@', 'X', notAlphaNum]
             length withWrongSuffix === 1
@@ -354,8 +357,8 @@ testSVarSuffix =
 
 test_headerFailures :: TestTree
 test_headerFailures =
-    testGroup "Header (format and version) checks" $
-        map (uncurry testProperty) headerTests
+    testGroup "Header (format and version) checks"
+        $ map (uncurry testProperty) headerTests
 
 headerTests :: IsString name => [(name, Property)]
 headerTests =
@@ -363,45 +366,46 @@ headerTests =
         (Bifunctor.second (withTests 1 . property))
         [
             ( "Correct test data parses"
-            , assert . isRight $
-                decodeKoreJson $
-                    withHeader "KORE" "1" aString
+            , assert
+                . isRight
+                $ decodeKoreJson
+                $ withHeader "KORE" "1" aString
             )
         ,
             ( "Format string errors are reported"
-            , diffLeft "Error in $.format: expected \"KORE\"" $
-                decodeKoreJson $
-                    withHeader "Gore" "1" aString
+            , diffLeft "Error in $.format: expected \"KORE\""
+                $ decodeKoreJson
+                $ withHeader "Gore" "1" aString
             )
         ,
             ( "Version string errors are reported"
-            , diffLeft "Error in $.version: expected 1.0" $
-                decodeKoreJson $
-                    withHeader "KORE" "2" aString
+            , diffLeft "Error in $.version: expected 1.0"
+                $ decodeKoreJson
+                $ withHeader "KORE" "2" aString
             )
         ,
             ( "Payload errors are reported"
-            , expectLeft ("key \"tag\" not found" `isInfixOf`) $
-                decodeKoreJson $
-                    withHeader "KORE" "1" rubbish
+            , expectLeft ("key \"tag\" not found" `isInfixOf`)
+                $ decodeKoreJson
+                $ withHeader "KORE" "1" rubbish
             )
         ,
             ( "Format errors take precedence"
-            , diffLeft "Error in $.format: expected \"KORE\"" $
-                decodeKoreJson $
-                    withHeader "Gore" "42" rubbish
+            , diffLeft "Error in $.format: expected \"KORE\""
+                $ decodeKoreJson
+                $ withHeader "Gore" "42" rubbish
             )
         ,
             ( "Version errors take precedence"
-            , diffLeft "Error in $.version: expected 1.0" $
-                decodeKoreJson $
-                    withHeader "KORE" "42" rubbish
-                    -- NB if the payload is not an object, the version
-                    -- error does _not_ take precedence!
+            , diffLeft "Error in $.version: expected 1.0"
+                $ decodeKoreJson
+                $ withHeader "KORE" "42" rubbish
+                -- NB if the payload is not an object, the version
+                -- error does _not_ take precedence!
             )
         ]
-  where
-    rubbish = "{ \"rubbish\": 42 }"
+    where
+        rubbish = "{ \"rubbish\": 42 }"
 
 diffLeft ::
     (MonadTest m, Eq a, Eq b, Show a, Show b) =>

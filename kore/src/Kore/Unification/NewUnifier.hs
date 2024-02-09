@@ -264,11 +264,11 @@ substituteInKeys ::
     )
 substituteInKeys x s solution =
     foldr substitute' ([], []) solution
-  where
-    substitute' subst (eqs, solution') =
-        case Map.lookup x subst of
-            Nothing -> (eqs, subst : solution')
-            Just t -> ((s, t) : eqs, Map.delete x subst : solution')
+    where
+        substitute' subst (eqs, solution') =
+            case Map.lookup x subst of
+                Nothing -> (eqs, subst : solution')
+                Just t -> ((s, t) : eqs, Map.delete x subst : solution')
 
 getImproperBinding ::
     [Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)] ->
@@ -278,19 +278,19 @@ getImproperBinding ::
         , [Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)]
         )
 getImproperBinding solution = go solution []
-  where
-    go [] _ = Nothing
-    go (m : hd) tl =
-        case getImproperBinding' m of
-            Nothing -> go hd (m : tl)
-            Just (x, y, rest) -> Just (x, y, tl ++ (rest : hd))
-    getImproperBinding' m =
-        let improper = Map.filter isVar m
-         in if Map.null improper
-                then Nothing
-                else
-                    let (k, v) = Map.findMin improper
-                     in Just (k, v, Map.delete k m)
+    where
+        go [] _ = Nothing
+        go (m : hd) tl =
+            case getImproperBinding' m of
+                Nothing -> go hd (m : tl)
+                Just (x, y, rest) -> Just (x, y, tl ++ (rest : hd))
+        getImproperBinding' m =
+            let improper = Map.filter isVar m
+             in if Map.null improper
+                    then Nothing
+                    else
+                        let (k, v) = Map.findMin improper
+                         in Just (k, v, Map.delete k m)
 
 combineTheories ::
     [[Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)]] ->
@@ -305,68 +305,68 @@ combineTheories acBindings freeBindings origVars = do
         combinations = sequence withoutPureImproperBindings
     solution <- Logic.scatter combinations
     return $ varRep (freeBindings : solution) Map.empty [] origVars
-  where
-    preprocessTheory ::
-        Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName) ->
-        Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)
-    -- this fold is rather tricky. We might have a unification problem that
-    -- looks something like this:
-    --
-    -- (free)
-    -- ------
-    -- Elem1 = K1 |-> V1
-    -- Elem2 = K2 |-> V2
-    --
-    -- (ac equation)
-    -- -------------
-    -- Elem1 M1 = Elem2 M2
-    --
-    -- (ac solution)
-    -- ----------
-    -- Elem1 = V1
-    -- M1 = V2
-    -- Elem2 = V1
-    -- M2 = V2
-    --
-    -- Our goal is to remove all bindings from the ac solution which bind
-    -- variables to variables. However, there are multiple ways of doing this.
-    -- We could substitute Elem1 and M1, or we could substitute Elem1 and M2,
-    -- etc. From a unification perspective, it doesn't really matter which ones
-    -- we replace as we will end up with the same equalities in the end no
-    -- matter what. However, it turns out we are actually constrained as to
-    -- which ones we substitute, since it affects the /orientation/ of the
-    -- equalities. The substitution normalization algorithm requires that
-    -- variables which compare less-than be on the LHS and variables which
-    -- compare greater-than be on the RHS. This is important if, as here,
-    -- these equalities, once simplified, end up in the final solution.
-    --
-    -- Thus, we must use `foldlWithKey`, which processes elements from the
-    -- greatest to the least, not `foldrWithKey`, which processes elements from
-    -- the least to the greatest. That's because the elements we process first
-    -- get removed from the substitution, while the elements we process last
-    -- merely have their variables substituted on the rhs. By processing from
-    -- greatest to least, we guarantee that the least elements in the
-    -- substitution are the ones that remain at the end, which ought to
-    -- preserve the invariant.
-    preprocessTheory bindings = fst $ Map.foldlWithKey' preprocessBinding (Map.empty, Map.empty) bindings
-    preprocessBinding ::
-        ( Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)
-        , Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName)
-        ) ->
-        SomeVariable RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        ( Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)
-        , Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName)
-        )
-    preprocessBinding (accum, subst) key (ElemVar_ var) =
-        let substKey = variableName $ inject var
-            substVal = mkElemVar $ fromJust $ retract key
-         in case Map.lookup substKey subst of
-                Nothing ->
-                    (Map.map (substitute (Map.singleton substKey substVal)) accum, Map.insert substKey substVal subst)
-                Just substituted -> (Map.insert key substituted accum, subst)
-    preprocessBinding (accum, subst) key val =
-        (Map.insert key (substitute subst val) accum, subst)
+    where
+        preprocessTheory ::
+            Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName) ->
+            Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)
+        -- this fold is rather tricky. We might have a unification problem that
+        -- looks something like this:
+        --
+        -- (free)
+        -- ------
+        -- Elem1 = K1 |-> V1
+        -- Elem2 = K2 |-> V2
+        --
+        -- (ac equation)
+        -- -------------
+        -- Elem1 M1 = Elem2 M2
+        --
+        -- (ac solution)
+        -- ----------
+        -- Elem1 = V1
+        -- M1 = V2
+        -- Elem2 = V1
+        -- M2 = V2
+        --
+        -- Our goal is to remove all bindings from the ac solution which bind
+        -- variables to variables. However, there are multiple ways of doing this.
+        -- We could substitute Elem1 and M1, or we could substitute Elem1 and M2,
+        -- etc. From a unification perspective, it doesn't really matter which ones
+        -- we replace as we will end up with the same equalities in the end no
+        -- matter what. However, it turns out we are actually constrained as to
+        -- which ones we substitute, since it affects the /orientation/ of the
+        -- equalities. The substitution normalization algorithm requires that
+        -- variables which compare less-than be on the LHS and variables which
+        -- compare greater-than be on the RHS. This is important if, as here,
+        -- these equalities, once simplified, end up in the final solution.
+        --
+        -- Thus, we must use `foldlWithKey`, which processes elements from the
+        -- greatest to the least, not `foldrWithKey`, which processes elements from
+        -- the least to the greatest. That's because the elements we process first
+        -- get removed from the substitution, while the elements we process last
+        -- merely have their variables substituted on the rhs. By processing from
+        -- greatest to least, we guarantee that the least elements in the
+        -- substitution are the ones that remain at the end, which ought to
+        -- preserve the invariant.
+        preprocessTheory bindings = fst $ Map.foldlWithKey' preprocessBinding (Map.empty, Map.empty) bindings
+        preprocessBinding ::
+            ( Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)
+            , Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName)
+            ) ->
+            SomeVariable RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            ( Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)
+            , Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName)
+            )
+        preprocessBinding (accum, subst) key (ElemVar_ var) =
+            let substKey = variableName $ inject var
+                substVal = mkElemVar $ fromJust $ retract key
+             in case Map.lookup substKey subst of
+                    Nothing ->
+                        (Map.map (substitute (Map.singleton substKey substVal)) accum, Map.insert substKey substVal subst)
+                    Just substituted -> (Map.insert key substituted accum, subst)
+        preprocessBinding (accum, subst) key val =
+            (Map.insert key (substitute subst val) accum, subst)
 
 unifiedTermAnd ::
     TermLike RewritingVariableName ->
@@ -426,29 +426,29 @@ unifyTerms' rootSort sideCondition origVars _ [] bindings constraints acEquation
                         else liftSimplifier $ observeAllT $ simplifyCondition sideCondition solution'
                 debugUnificationSolved (Pattern.fromCondition rootSort solution)
                 return solution
-  where
-    isOrigVar :: SomeVariable RewritingVariableName -> a -> Bool
-    isOrigVar v = const $ Set.member (variableName v) origVars
+    where
+        isOrigVar :: SomeVariable RewritingVariableName -> a -> Bool
+        isOrigVar v = const $ Set.member (variableName v) origVars
 unifyTerms' rootSort sideCondition origVars vars [] bindings constraints acEquations = do
     tools <- askMetadataTools
     let (acSolutions, newVars) = Map.foldrWithKey' (solveAcEquations' tools) (Map.empty, vars) acEquations
         freeBindings = Map.mapMaybe fromFree bindings
     (newEqs, newBindings) <- combineTheories (Map.elems acSolutions) freeBindings origVars
     unifyTerms' rootSort sideCondition origVars newVars newEqs newBindings constraints Map.empty
-  where
-    solveAcEquations' ::
-        SmtMetadataTools Attribute.Symbol ->
-        Sort ->
-        [AcEquation] ->
-        ( Map Sort [Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)]
-        , Set (SomeVariableName RewritingVariableName)
-        ) ->
-        ( Map Sort [Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)]
-        , Set (SomeVariableName RewritingVariableName)
-        )
-    solveAcEquations' tools sort eqs (accum, vars') =
-        let (solutions, newVars) = solveAcEquations tools bindings vars' sort eqs
-         in (Map.insert sort solutions accum, newVars)
+    where
+        solveAcEquations' ::
+            SmtMetadataTools Attribute.Symbol ->
+            Sort ->
+            [AcEquation] ->
+            ( Map Sort [Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)]
+            , Set (SomeVariableName RewritingVariableName)
+            ) ->
+            ( Map Sort [Map (SomeVariable RewritingVariableName) (TermLike RewritingVariableName)]
+            , Set (SomeVariableName RewritingVariableName)
+            )
+        solveAcEquations' tools sort eqs (accum, vars') =
+            let (solutions, newVars) = solveAcEquations tools bindings vars' sort eqs
+             in (Map.insert sort solutions accum, newVars)
 unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindings constraints acEquations =
     whileDebugUnification first second $ do
         tools <- askMetadataTools
@@ -622,9 +622,9 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                             , List.isSymbolConcat symbol2 ->
                                 let (l1', var1', l2', var2') = if length l1 <= length l2 then (l1, var1, l2, var2) else (l2, var2, l1, var1)
                                     (start, left) = Seq.splitAt (length l1') l2'
-                                 in decomposeList $
-                                        (var1', mkApplySymbol symbol1 [List.asInternal tools sort left, var2'])
-                                            : zip (toList l1') (toList start)
+                                 in decomposeList
+                                        $ (var1', mkApplySymbol symbol1 [List.asInternal tools sort left, var2'])
+                                        : zip (toList l1') (toList start)
                     ( App_ symbol1 [var1@(ElemVar_ _), InternalList_ InternalList{internalListChild = l1}]
                         , App_ symbol2 [var2@(ElemVar_ _), InternalList_ InternalList{internalListChild = l2}]
                         )
@@ -632,9 +632,9 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                             , List.isSymbolConcat symbol2 ->
                                 let (l1', var1', l2', var2') = if length l1 <= length l2 then (l1, var1, l2, var2) else (l2, var2, l1, var1)
                                     (left, end) = Seq.splitAt (length l2' - length l1') l2'
-                                 in decomposeList $
-                                        (var1', mkApplySymbol symbol1 [var2', List.asInternal tools sort left])
-                                            : zip (toList l1') (toList end)
+                                 in decomposeList
+                                        $ (var1', mkApplySymbol symbol1 [var2', List.asInternal tools sort left])
+                                        : zip (toList l1') (toList end)
                     ( InternalList_ InternalList{internalListChild = l1}
                         , InternalList_ InternalList{internalListChild = l2}
                         ) ->
@@ -691,148 +691,23 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
             (_, _) | isFunctionPattern first -> trySubstDecompose
             (_, _) | isFunctionPattern second -> trySubstDecompose
             _ -> constrainEquals first second
-  where
-    sort = termLikeSort first
+    where
+        sort = termLikeSort first
 
-    discharge ::
-        NewUnifier (Condition RewritingVariableName)
-    ~discharge = unifyTerms' rootSort sideCondition origVars vars rest bindings constraints acEquations
+        discharge ::
+            NewUnifier (Condition RewritingVariableName)
+        ~discharge = unifyTerms' rootSort sideCondition origVars vars rest bindings constraints acEquations
 
-    failUnify ::
-        Text ->
-        NewUnifier (Condition RewritingVariableName)
-    failUnify message = debugUnifyBottomAndReturnBottom message first second
+        failUnify ::
+            Text ->
+            NewUnifier (Condition RewritingVariableName)
+        failUnify message = debugUnifyBottomAndReturnBottom message first second
 
-    decompose ::
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        NewUnifier (Condition RewritingVariableName)
-    decompose term1 term2 =
-        unifyTerms'
-            rootSort
-            sideCondition
-            origVars
-            vars
-            ((term1, term2) : rest)
-            bindings
-            constraints
-            acEquations
-
-    decomposeList ::
-        [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
-        NewUnifier (Condition RewritingVariableName)
-    decomposeList terms = unifyTerms' rootSort sideCondition origVars vars (terms ++ rest) bindings constraints acEquations
-
-    constrain ::
-        Predicate RewritingVariableName ->
-        NewUnifier (Condition RewritingVariableName)
-    constrain predicate =
-        unifyTerms'
-            rootSort
-            sideCondition
-            origVars
-            vars
-            rest
-            bindings
-            (Condition.andCondition constraints $ Condition.fromPredicate predicate)
-            acEquations
-
-    constrainEquals ::
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        NewUnifier (Condition RewritingVariableName)
-    constrainEquals p1 p2 = do
-        let predicate = makeEqualsPredicate p1 p2
-        constrain predicate
-
-    bind ::
-        SomeVariable RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        NewUnifier (Condition RewritingVariableName)
-    bind var term =
-        unifyTerms'
-            rootSort
-            sideCondition
-            origVars
-            vars
-            rest
-            (Map.insert var (Free term) bindings)
-            constraints
-            acEquations
-
-    -- like bind, but var2 is the representative currently, and if var2 < var1, we must make var1 the representative
-    bindMax ::
-        SomeVariable RewritingVariableName ->
-        SomeVariable RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        NewUnifier (Condition RewritingVariableName)
-    bindMax var1 var2 term1 term2 =
-        let (var, _) = Substitution.normalOrder (var1, term2)
-         in if var == var1
-                then bind var1 term2
-                else
-                    let newBindings = makeRepresentative bindings var1 var2 term1 term2
-                     in unifyTerms'
-                            rootSort
-                            sideCondition
-                            origVars
-                            vars
-                            rest
-                            (Map.insert var2 (Free term1) newBindings)
-                            constraints
-                            acEquations
-
-    makeRepresentative ::
-        Map (SomeVariable RewritingVariableName) Binding ->
-        SomeVariable RewritingVariableName ->
-        SomeVariable RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        Map (SomeVariable RewritingVariableName) Binding
-    makeRepresentative bindings' var1 var2 term1 term2 =
-        Map.map (replace (Free term2) (Free term1)) $ Map.mapKeys (replace var2 var1) bindings'
-      where
-        replace a b x = if x == a then b else x
-
-    binding var = Map.lookup var bindings
-
-    bindVarToVar var1 var2 =
-        if var1 == var2
-            then discharge
-            else case (binding var1, binding var2) of
-                (Just (Free (ElemVar_ var1')), Just (Free (ElemVar_ var2'))) -> bindVarToVar (inject var1') (inject var2')
-                (Just (Free (ElemVar_ var1')), _) -> bindVarToVar (inject var1') var2
-                (_, Just (Free (ElemVar_ var2'))) -> bindVarToVar var1 (inject var2')
-                (Nothing, Nothing) ->
-                    let (var, term) = Substitution.normalOrder (var1, second)
-                     in bind var term
-                (Nothing, Just _) -> bindMax var1 var2 first second
-                (Just _, Nothing) -> bindMax var2 var1 second first
-                (Just (Free term1), Just (Free term2)) -> decompose term1 term2
-                (Just (Ac term1), Just (Ac term2)) -> acDecompose term1 term2
-                _ -> error "invalid free binding for AC sort"
-    bindVarToPattern ::
-        SomeVariable RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        NewUnifier (Condition RewritingVariableName)
-    bindVarToPattern var term =
-        case binding var of
-            Nothing -> bind var term
-            Just (Free (ElemVar_ boundVar)) -> bind (inject boundVar) term
-            Just (Free boundVar) -> decompose boundVar term
-            Just (Ac _) -> error "invalid free binding for AC sort"
-    decomposeOverload (ClashResult _) = failUnify "Overloaded constructors do not unify with each other"
-    decomposeOverload (Resolution (Simple (Pair term1 term2))) = decompose term1 term2
-    decomposeOverload
-        ( Resolution
-                ( WithNarrowing
-                        Narrowing
-                            { narrowingSubst
-                            , overloadPair = Pair term1 term2
-                            }
-                    )
-            ) =
+        decompose ::
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            NewUnifier (Condition RewritingVariableName)
+        decompose term1 term2 =
             unifyTerms'
                 rootSort
                 sideCondition
@@ -840,233 +715,360 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                 vars
                 ((term1, term2) : rest)
                 bindings
-                (Condition.andCondition constraints narrowingSubst)
+                constraints
                 acEquations
 
-    ~trySubstDecompose = do
-        (newFirst, firstConstraints) <- substAndSimplify constraints first
-        (newSecond, secondConstraints) <- substAndSimplify firstConstraints second
-        if newFirst /= first || newSecond /= second
-            then
+        decomposeList ::
+            [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
+            NewUnifier (Condition RewritingVariableName)
+        decomposeList terms = unifyTerms' rootSort sideCondition origVars vars (terms ++ rest) bindings constraints acEquations
+
+        constrain ::
+            Predicate RewritingVariableName ->
+            NewUnifier (Condition RewritingVariableName)
+        constrain predicate =
+            unifyTerms'
+                rootSort
+                sideCondition
+                origVars
+                vars
+                rest
+                bindings
+                (Condition.andCondition constraints $ Condition.fromPredicate predicate)
+                acEquations
+
+        constrainEquals ::
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            NewUnifier (Condition RewritingVariableName)
+        constrainEquals p1 p2 = do
+            let predicate = makeEqualsPredicate p1 p2
+            constrain predicate
+
+        bind ::
+            SomeVariable RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            NewUnifier (Condition RewritingVariableName)
+        bind var term =
+            unifyTerms'
+                rootSort
+                sideCondition
+                origVars
+                vars
+                rest
+                (Map.insert var (Free term) bindings)
+                constraints
+                acEquations
+
+        -- like bind, but var2 is the representative currently, and if var2 < var1, we must make var1 the representative
+        bindMax ::
+            SomeVariable RewritingVariableName ->
+            SomeVariable RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            NewUnifier (Condition RewritingVariableName)
+        bindMax var1 var2 term1 term2 =
+            let (var, _) = Substitution.normalOrder (var1, term2)
+             in if var == var1
+                    then bind var1 term2
+                    else
+                        let newBindings = makeRepresentative bindings var1 var2 term1 term2
+                         in unifyTerms'
+                                rootSort
+                                sideCondition
+                                origVars
+                                vars
+                                rest
+                                (Map.insert var2 (Free term1) newBindings)
+                                constraints
+                                acEquations
+
+        makeRepresentative ::
+            Map (SomeVariable RewritingVariableName) Binding ->
+            SomeVariable RewritingVariableName ->
+            SomeVariable RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            Map (SomeVariable RewritingVariableName) Binding
+        makeRepresentative bindings' var1 var2 term1 term2 =
+            Map.map (replace (Free term2) (Free term1)) $ Map.mapKeys (replace var2 var1) bindings'
+            where
+                replace a b x = if x == a then b else x
+
+        binding var = Map.lookup var bindings
+
+        bindVarToVar var1 var2 =
+            if var1 == var2
+                then discharge
+                else case (binding var1, binding var2) of
+                    (Just (Free (ElemVar_ var1')), Just (Free (ElemVar_ var2'))) -> bindVarToVar (inject var1') (inject var2')
+                    (Just (Free (ElemVar_ var1')), _) -> bindVarToVar (inject var1') var2
+                    (_, Just (Free (ElemVar_ var2'))) -> bindVarToVar var1 (inject var2')
+                    (Nothing, Nothing) ->
+                        let (var, term) = Substitution.normalOrder (var1, second)
+                         in bind var term
+                    (Nothing, Just _) -> bindMax var1 var2 first second
+                    (Just _, Nothing) -> bindMax var2 var1 second first
+                    (Just (Free term1), Just (Free term2)) -> decompose term1 term2
+                    (Just (Ac term1), Just (Ac term2)) -> acDecompose term1 term2
+                    _ -> error "invalid free binding for AC sort"
+        bindVarToPattern ::
+            SomeVariable RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            NewUnifier (Condition RewritingVariableName)
+        bindVarToPattern var term =
+            case binding var of
+                Nothing -> bind var term
+                Just (Free (ElemVar_ boundVar)) -> bind (inject boundVar) term
+                Just (Free boundVar) -> decompose boundVar term
+                Just (Ac _) -> error "invalid free binding for AC sort"
+        decomposeOverload (ClashResult _) = failUnify "Overloaded constructors do not unify with each other"
+        decomposeOverload (Resolution (Simple (Pair term1 term2))) = decompose term1 term2
+        decomposeOverload
+            ( Resolution
+                    ( WithNarrowing
+                            Narrowing
+                                { narrowingSubst
+                                , overloadPair = Pair term1 term2
+                                }
+                        )
+                ) =
                 unifyTerms'
                     rootSort
                     sideCondition
                     origVars
                     vars
-                    ((newFirst, newSecond) : rest)
+                    ((term1, term2) : rest)
                     bindings
-                    secondConstraints
+                    (Condition.andCondition constraints narrowingSubst)
                     acEquations
-            else constrainEquals first second
 
-    unifyIfThenElse condition branch1 branch2 other = do
-        (bool, branch) <- Logic.scatter [(True, branch1), (False, branch2)]
-        let newConstraints =
-                Condition.andCondition constraints $
-                    Condition.fromPredicate $
-                        makeCeilPredicate $
-                            mkAnd condition $
-                                Bool.asInternal (termLikeSort condition) bool
-        unifyTerms'
-            rootSort
-            sideCondition
-            origVars
-            vars
-            ((branch, other) : rest)
-            bindings
-            newConstraints
-            acEquations
+        ~trySubstDecompose = do
+            (newFirst, firstConstraints) <- substAndSimplify constraints first
+            (newSecond, secondConstraints) <- substAndSimplify firstConstraints second
+            if newFirst /= first || newSecond /= second
+                then
+                    unifyTerms'
+                        rootSort
+                        sideCondition
+                        origVars
+                        vars
+                        ((newFirst, newSecond) : rest)
+                        bindings
+                        secondConstraints
+                        acEquations
+                else constrainEquals first second
 
-    substAndSimplify ::
-        Condition RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        NewUnifier (TermLike RewritingVariableName, Condition RewritingVariableName)
-    substAndSimplify constraints' term = do
-        let currentSubstitution = Map.mapKeysMonotonic variableName $ Map.mapMaybe fromFree bindings
-            substituted = substitute currentSubstitution term
-        if substituted /= term
-            then do
-                pats <- simplifyTermWithCache substituted
-                pat <- Logic.scatter pats
-                let (term', condition) = Pattern.splitTerm pat
-                return (term', Condition.andCondition constraints' condition)
-            else return (term, constraints')
-
-    simplifyTermWithCache ::
-        TermLike RewritingVariableName ->
-        NewUnifier (OrPattern RewritingVariableName)
-    simplifyTermWithCache term = do
-        cache <- get
-        case HashMap.lookup term cache of
-            Nothing -> do
-                simplified <- liftSimplifier $ simplifyTerm sideCondition term
-                let cache' = HashMap.insert term simplified cache
-                put cache'
-                return simplified
-            Just simplified -> return simplified
-
-    unifyMaps ::
-        InternalMap Key (TermLike RewritingVariableName) ->
-        InternalMap Key (TermLike RewritingVariableName) ->
-        NewUnifier (Condition RewritingVariableName)
-    unifyMaps ac1 ac2 =
-        unifyAc
-            (normalizeMap (builtinAcElement ac1) $ unwrapAc $ builtinAcChild ac1)
-            (normalizeMap (builtinAcElement ac2) $ unwrapAc $ builtinAcChild ac2)
-
-    unifySets ::
-        InternalSet Key (TermLike RewritingVariableName) ->
-        InternalSet Key (TermLike RewritingVariableName) ->
-        NewUnifier (Condition RewritingVariableName)
-    unifySets ac1 ac2 =
-        unifyAc
-            (normalizeSet (builtinAcElement ac1) $ unwrapAc $ builtinAcChild ac1)
-            (normalizeSet (builtinAcElement ac2) $ unwrapAc $ builtinAcChild ac2)
-
-    normalizeMap ::
-        Symbol ->
-        NormalizedAc NormalizedMap Key (TermLike RewritingVariableName) ->
-        AcCollection
-    normalizeMap
-        element
-        NormalizedAc
-            { elementsWithVariables
-            , concreteElements
-            , opaque
-            } =
-            let normalElementsWithVariables = map getMapElement elementsWithVariables
-                normalConcreteElements = map normalizeConcreteMapElement $ HashMap.toList concreteElements
-                (!variables, !functions) = (MultiSet.fromList vrs, MultiSet.fromList fns)
-                  where
-                    (fns, vrs) = partitionEithers (map elemVar opaque)
-                elements =
-                    Set.fromList $
-                        map (reconstructMapElement element) $
-                            normalElementsWithVariables ++ normalConcreteElements
-             in AcCollection{elements, variables, functions}
-
-    reconstructMapElement element (key, val) = mkApplySymbol element [key, val]
-    normalizeConcreteMapElement (key, value) = (from key, getMapValue value)
-
-    normalizeSet ::
-        Symbol ->
-        NormalizedAc NormalizedSet Key (TermLike RewritingVariableName) ->
-        AcCollection
-    normalizeSet
-        element
-        NormalizedAc
-            { elementsWithVariables
-            , concreteElements
-            , opaque
-            } =
-            let normalElementsWithVariables = map getSetElement elementsWithVariables
-                normalConcreteElements = map normalizeConcreteSetElement $ HashMap.toList concreteElements
-                (!variables, !functions) = (MultiSet.fromList vrs, MultiSet.fromList fns)
-                  where
-                    (fns, vrs) = partitionEithers (map elemVar opaque)
-                elements =
-                    Set.fromList $
-                        map (reconstructSetElement element) $
-                            normalElementsWithVariables ++ normalConcreteElements
-             in AcCollection{elements, variables, functions}
-
-    reconstructSetElement element key = mkApplySymbol element [key]
-    normalizeConcreteSetElement (key, _) = from key
-
-    unifyAc ::
-        AcCollection ->
-        AcCollection ->
-        NewUnifier (Condition RewritingVariableName)
-    unifyAc
-        AcCollection{elements = elements1, variables = variables1, functions = functions1}
-        AcCollection{elements = elements2, variables = variables2, functions = functions2} =
-            let commonElements = Set.intersection elements1 elements2
-                commonVariables = MultiSet.intersection variables1 variables2
-                commonFunctions = MultiSet.intersection functions1 functions2
-                uniqueElements1 = Set.difference elements1 commonElements
-                uniqueElements2 = Set.difference elements2 commonElements
-                uniqueVariables1 = MultiSet.difference variables1 commonVariables
-                uniqueVariables2 = MultiSet.difference variables2 commonVariables
-                uniqueFunctions1 = MultiSet.difference functions1 commonFunctions
-                uniqueFunctions2 = MultiSet.difference functions2 commonFunctions
-             in case (MultiSet.size uniqueFunctions1, MultiSet.size uniqueFunctions2) of
-                    (0, 0) ->
-                        acUnify
-                            (acCollection uniqueElements1 uniqueVariables1)
-                            (acCollection uniqueElements2 uniqueVariables2)
-                    _ -> constrainEquals first second
-
-    acUnify ::
-        AcCollection ->
-        AcCollection ->
-        NewUnifier (Condition RewritingVariableName)
-    acUnify term1@AcCollection{elements = elements1, variables = variables1} term2@AcCollection{elements = elements2, variables = variables2} =
-        case (Set.size elements1, MultiSet.size variables1, Set.size elements2, MultiSet.size variables2) of
-            (0, 0, 0, 0) -> discharge
-            (0, 1, _, _) -> acBindVarToTerm (MultiSet.findMin variables1) $ acCollection elements2 variables2
-            (_, _, 0, 1) -> acBindVarToTerm (MultiSet.findMin variables2) $ acCollection elements1 variables1
-            (1, 0, 1, 0) ->
-                let firstElement = Set.findMin elements1
-                    secondElement = Set.findMin elements2
-                 in case (firstElement, secondElement) of
-                        (App_ _ firstChildren, App_ _ secondChildren) -> decomposeList (zip firstChildren secondChildren)
-                        _ -> error "invalid element pattern"
-            (0, 0, 0, _) -> acUnifyConcat
-            (0, _, 0, 0) -> acUnifyConcat
-            (0, 0, _, _) -> failUnify "Cannot unify empty collection with non-empty collection"
-            (_, _, 0, 0) -> failUnify "Cannot unify empty collection with non-empty collection"
-            (_, _, _, _) -> acUnifyConcat
-      where
-        ~acUnifyConcat =
-            let (vars1, lhs, freeEqs1) = variableAbstraction sort vars term1
-                (vars2, rhs, freeEqs2) = variableAbstraction sort vars1 term2
-             in case (lhs, rhs) of
-                    (AcTerm{acElements = []}, AcTerm{acElements = rhsVars, acSort}) -> acRecurse acSort (map (acBind lhs) rhsVars) vars2 (freeEqs1 ++ freeEqs2)
-                    (AcTerm{acElements = lhsVars, acSort}, AcTerm{acElements = []}) -> acRecurse acSort (map (acBind rhs) lhsVars) vars2 (freeEqs1 ++ freeEqs2)
-                    (AcTerm{acSort}, _) -> acRecurse acSort [Right $ AcEquation lhs rhs] vars2 (freeEqs1 ++ freeEqs2)
-
-    acBindVarToTerm ::
-        SomeVariable RewritingVariableName ->
-        AcCollection ->
-        NewUnifier (Condition RewritingVariableName)
-    acBindVarToTerm var collection =
-        let (vars', term, freeEqs) = variableAbstraction sort vars collection
-         in acRecurse sort [acBind term var] vars' freeEqs
-
-    acBind ::
-        AcTerm ->
-        SomeVariable RewritingVariableName ->
-        Either (SomeVariable RewritingVariableName, Binding) AcEquation
-    acBind acTerm var =
-        case binding var of
-            Nothing -> Left (var, Ac acTerm)
-            Just (Free (ElemVar_ boundVar)) -> Left (inject boundVar, Ac acTerm)
-            Just (Free _) -> error "invalid free binding for AC sort"
-            Just (Ac term) -> Right $ AcEquation acTerm term
-
-    acRecurse ::
-        HasCallStack =>
-        Sort ->
-        [Either (SomeVariable RewritingVariableName, Binding) AcEquation] ->
-        Set (SomeVariableName RewritingVariableName) ->
-        [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
-        NewUnifier (Condition RewritingVariableName)
-    acRecurse acSort bindings' vars' freeEqs =
-        let newBindings = union bindings $ Map.fromList $ lefts bindings'
-            newAcEquations = rights bindings'
-         in unifyTerms' rootSort sideCondition origVars vars' (freeEqs ++ rest) newBindings constraints $
-                Map.insert acSort (newAcEquations ++ Map.findWithDefault [] acSort acEquations) acEquations
-
-    acDecompose ::
-        AcTerm ->
-        AcTerm ->
-        NewUnifier (Condition RewritingVariableName)
-    acDecompose term1 term2 =
-        unifyTerms' rootSort sideCondition origVars vars rest bindings constraints $
-            Map.insert
-                (acSort term1)
-                (AcEquation term1 term2 : Map.findWithDefault [] (acSort term1) acEquations)
+        unifyIfThenElse condition branch1 branch2 other = do
+            (bool, branch) <- Logic.scatter [(True, branch1), (False, branch2)]
+            let newConstraints =
+                    Condition.andCondition constraints
+                        $ Condition.fromPredicate
+                        $ makeCeilPredicate
+                        $ mkAnd condition
+                        $ Bool.asInternal (termLikeSort condition) bool
+            unifyTerms'
+                rootSort
+                sideCondition
+                origVars
+                vars
+                ((branch, other) : rest)
+                bindings
+                newConstraints
                 acEquations
+
+        substAndSimplify ::
+            Condition RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            NewUnifier (TermLike RewritingVariableName, Condition RewritingVariableName)
+        substAndSimplify constraints' term = do
+            let currentSubstitution = Map.mapKeysMonotonic variableName $ Map.mapMaybe fromFree bindings
+                substituted = substitute currentSubstitution term
+            if substituted /= term
+                then do
+                    pats <- simplifyTermWithCache substituted
+                    pat <- Logic.scatter pats
+                    let (term', condition) = Pattern.splitTerm pat
+                    return (term', Condition.andCondition constraints' condition)
+                else return (term, constraints')
+
+        simplifyTermWithCache ::
+            TermLike RewritingVariableName ->
+            NewUnifier (OrPattern RewritingVariableName)
+        simplifyTermWithCache term = do
+            cache <- get
+            case HashMap.lookup term cache of
+                Nothing -> do
+                    simplified <- liftSimplifier $ simplifyTerm sideCondition term
+                    let cache' = HashMap.insert term simplified cache
+                    put cache'
+                    return simplified
+                Just simplified -> return simplified
+
+        unifyMaps ::
+            InternalMap Key (TermLike RewritingVariableName) ->
+            InternalMap Key (TermLike RewritingVariableName) ->
+            NewUnifier (Condition RewritingVariableName)
+        unifyMaps ac1 ac2 =
+            unifyAc
+                (normalizeMap (builtinAcElement ac1) $ unwrapAc $ builtinAcChild ac1)
+                (normalizeMap (builtinAcElement ac2) $ unwrapAc $ builtinAcChild ac2)
+
+        unifySets ::
+            InternalSet Key (TermLike RewritingVariableName) ->
+            InternalSet Key (TermLike RewritingVariableName) ->
+            NewUnifier (Condition RewritingVariableName)
+        unifySets ac1 ac2 =
+            unifyAc
+                (normalizeSet (builtinAcElement ac1) $ unwrapAc $ builtinAcChild ac1)
+                (normalizeSet (builtinAcElement ac2) $ unwrapAc $ builtinAcChild ac2)
+
+        normalizeMap ::
+            Symbol ->
+            NormalizedAc NormalizedMap Key (TermLike RewritingVariableName) ->
+            AcCollection
+        normalizeMap
+            element
+            NormalizedAc
+                { elementsWithVariables
+                , concreteElements
+                , opaque
+                } =
+                let normalElementsWithVariables = map getMapElement elementsWithVariables
+                    normalConcreteElements = map normalizeConcreteMapElement $ HashMap.toList concreteElements
+                    (!variables, !functions) = (MultiSet.fromList vrs, MultiSet.fromList fns)
+                        where
+                            (fns, vrs) = partitionEithers (map elemVar opaque)
+                    elements =
+                        Set.fromList
+                            $ map (reconstructMapElement element)
+                            $ normalElementsWithVariables
+                            ++ normalConcreteElements
+                 in AcCollection{elements, variables, functions}
+
+        reconstructMapElement element (key, val) = mkApplySymbol element [key, val]
+        normalizeConcreteMapElement (key, value) = (from key, getMapValue value)
+
+        normalizeSet ::
+            Symbol ->
+            NormalizedAc NormalizedSet Key (TermLike RewritingVariableName) ->
+            AcCollection
+        normalizeSet
+            element
+            NormalizedAc
+                { elementsWithVariables
+                , concreteElements
+                , opaque
+                } =
+                let normalElementsWithVariables = map getSetElement elementsWithVariables
+                    normalConcreteElements = map normalizeConcreteSetElement $ HashMap.toList concreteElements
+                    (!variables, !functions) = (MultiSet.fromList vrs, MultiSet.fromList fns)
+                        where
+                            (fns, vrs) = partitionEithers (map elemVar opaque)
+                    elements =
+                        Set.fromList
+                            $ map (reconstructSetElement element)
+                            $ normalElementsWithVariables
+                            ++ normalConcreteElements
+                 in AcCollection{elements, variables, functions}
+
+        reconstructSetElement element key = mkApplySymbol element [key]
+        normalizeConcreteSetElement (key, _) = from key
+
+        unifyAc ::
+            AcCollection ->
+            AcCollection ->
+            NewUnifier (Condition RewritingVariableName)
+        unifyAc
+            AcCollection{elements = elements1, variables = variables1, functions = functions1}
+            AcCollection{elements = elements2, variables = variables2, functions = functions2} =
+                let commonElements = Set.intersection elements1 elements2
+                    commonVariables = MultiSet.intersection variables1 variables2
+                    commonFunctions = MultiSet.intersection functions1 functions2
+                    uniqueElements1 = Set.difference elements1 commonElements
+                    uniqueElements2 = Set.difference elements2 commonElements
+                    uniqueVariables1 = MultiSet.difference variables1 commonVariables
+                    uniqueVariables2 = MultiSet.difference variables2 commonVariables
+                    uniqueFunctions1 = MultiSet.difference functions1 commonFunctions
+                    uniqueFunctions2 = MultiSet.difference functions2 commonFunctions
+                 in case (MultiSet.size uniqueFunctions1, MultiSet.size uniqueFunctions2) of
+                        (0, 0) ->
+                            acUnify
+                                (acCollection uniqueElements1 uniqueVariables1)
+                                (acCollection uniqueElements2 uniqueVariables2)
+                        _ -> constrainEquals first second
+
+        acUnify ::
+            AcCollection ->
+            AcCollection ->
+            NewUnifier (Condition RewritingVariableName)
+        acUnify term1@AcCollection{elements = elements1, variables = variables1} term2@AcCollection{elements = elements2, variables = variables2} =
+            case (Set.size elements1, MultiSet.size variables1, Set.size elements2, MultiSet.size variables2) of
+                (0, 0, 0, 0) -> discharge
+                (0, 1, _, _) -> acBindVarToTerm (MultiSet.findMin variables1) $ acCollection elements2 variables2
+                (_, _, 0, 1) -> acBindVarToTerm (MultiSet.findMin variables2) $ acCollection elements1 variables1
+                (1, 0, 1, 0) ->
+                    let firstElement = Set.findMin elements1
+                        secondElement = Set.findMin elements2
+                     in case (firstElement, secondElement) of
+                            (App_ _ firstChildren, App_ _ secondChildren) -> decomposeList (zip firstChildren secondChildren)
+                            _ -> error "invalid element pattern"
+                (0, 0, 0, _) -> acUnifyConcat
+                (0, _, 0, 0) -> acUnifyConcat
+                (0, 0, _, _) -> failUnify "Cannot unify empty collection with non-empty collection"
+                (_, _, 0, 0) -> failUnify "Cannot unify empty collection with non-empty collection"
+                (_, _, _, _) -> acUnifyConcat
+            where
+                ~acUnifyConcat =
+                    let (vars1, lhs, freeEqs1) = variableAbstraction sort vars term1
+                        (vars2, rhs, freeEqs2) = variableAbstraction sort vars1 term2
+                     in case (lhs, rhs) of
+                            (AcTerm{acElements = []}, AcTerm{acElements = rhsVars, acSort}) -> acRecurse acSort (map (acBind lhs) rhsVars) vars2 (freeEqs1 ++ freeEqs2)
+                            (AcTerm{acElements = lhsVars, acSort}, AcTerm{acElements = []}) -> acRecurse acSort (map (acBind rhs) lhsVars) vars2 (freeEqs1 ++ freeEqs2)
+                            (AcTerm{acSort}, _) -> acRecurse acSort [Right $ AcEquation lhs rhs] vars2 (freeEqs1 ++ freeEqs2)
+
+        acBindVarToTerm ::
+            SomeVariable RewritingVariableName ->
+            AcCollection ->
+            NewUnifier (Condition RewritingVariableName)
+        acBindVarToTerm var collection =
+            let (vars', term, freeEqs) = variableAbstraction sort vars collection
+             in acRecurse sort [acBind term var] vars' freeEqs
+
+        acBind ::
+            AcTerm ->
+            SomeVariable RewritingVariableName ->
+            Either (SomeVariable RewritingVariableName, Binding) AcEquation
+        acBind acTerm var =
+            case binding var of
+                Nothing -> Left (var, Ac acTerm)
+                Just (Free (ElemVar_ boundVar)) -> Left (inject boundVar, Ac acTerm)
+                Just (Free _) -> error "invalid free binding for AC sort"
+                Just (Ac term) -> Right $ AcEquation acTerm term
+
+        acRecurse ::
+            HasCallStack =>
+            Sort ->
+            [Either (SomeVariable RewritingVariableName, Binding) AcEquation] ->
+            Set (SomeVariableName RewritingVariableName) ->
+            [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
+            NewUnifier (Condition RewritingVariableName)
+        acRecurse acSort bindings' vars' freeEqs =
+            let newBindings = union bindings $ Map.fromList $ lefts bindings'
+                newAcEquations = rights bindings'
+             in unifyTerms' rootSort sideCondition origVars vars' (freeEqs ++ rest) newBindings constraints
+                    $ Map.insert acSort (newAcEquations ++ Map.findWithDefault [] acSort acEquations) acEquations
+
+        acDecompose ::
+            AcTerm ->
+            AcTerm ->
+            NewUnifier (Condition RewritingVariableName)
+        acDecompose term1 term2 =
+            unifyTerms' rootSort sideCondition origVars vars rest bindings constraints
+                $ Map.insert
+                    (acSort term1)
+                    (AcEquation term1 term2 : Map.findWithDefault [] (acSort term1) acEquations)
+                    acEquations
 
 solveAcEquations ::
     HasCallStack =>
@@ -1092,8 +1094,8 @@ solveAcEquations tools bindings vars sort acEquations =
         n = Set.size u
         constrainedVars = foldl' unionConstrainedVars Set.empty acEquations
         constrainedIndices =
-            IntSet.fromList $
-                map (flip Set.findIndex $ Set.mapMonotonic variableName u) (Set.toAscList constrainedVars)
+            IntSet.fromList
+                $ map (flip Set.findIndex $ Set.mapMonotonic variableName u) (Set.toAscList constrainedVars)
         system = Matrix.matrix p n (defect' newAcEquations u_vec)
         solved = solveDiophantineEquations system
         (newVars, vars') = mkVars sort (length solved) [] vars
@@ -1103,9 +1105,9 @@ solveAcEquations tools bindings vars sort acEquations =
         acBindings = Map.mapMaybe (fromAc >=> \acTerm -> acTerm <$ guard (acSort acTerm == sort)) bindings
         allAcBindings = map (union acBindings) acSubst
      in (map (Map.map (remakeMapTerms tools)) allAcBindings, vars')
-  where
-    defect' eqs u_vec (i, j) = defect (eqs ! (i - 1)) (u_vec ! (j - 1))
-    unionConstrainedVars set (AcEquation AcTerm{elementVars = elementVars1} AcTerm{elementVars = elementVars2}) = Set.union set $ Set.union elementVars1 elementVars2
+    where
+        defect' eqs u_vec (i, j) = defect (eqs ! (i - 1)) (u_vec ! (j - 1))
+        unionConstrainedVars set (AcEquation AcTerm{elementVars = elementVars1} AcTerm{elementVars = elementVars2}) = Set.union set $ Set.union elementVars1 elementVars2
 
 allSuitableSolutions ::
     [(Vector Int, ElementVariable RewritingVariableName)] ->
@@ -1128,42 +1130,42 @@ allSuitableSolutions' basis constrained n =
         maximal = foldl' (makeMaximal legal) legal indexedBasis
         sat = BDD.allSatComplete (IntSet.fromDistinctAscList (zipWith const [0 ..] basis)) maximal
      in map toSolution sat
-  where
-    indexedBasis = zipWith (flip (,)) [0 ..] basis -- The flip is for list fusion
-    nonNullBasis i = filter (\v -> fst v ! i /= 0) indexedBasis
-    toSolution ::
-        IntMap Bool ->
-        [Vector Int]
-    toSolution intmap =
-        map fst $ filter ((intmap IntMap.!) . snd) indexedBasis
-    makeLower :: Int -> BDD AscOrder -> BDD AscOrder
-    makeLower i bdd =
-        bdd .&&. BDD.orB (map (BDD.var . snd) $ nonNullBasis i)
-    makeUpper :: Int -> BDD AscOrder -> BDD AscOrder
-    makeUpper i bdd = bdd .&&. snd (foldl' (makeBounds i) (BDD.true, BDD.true) $ nonNullBasis i)
-    makeBounds i (bounds0, bounds1) v =
-        let value = fst v ! i
-            bounds1' =
-                if value <= 1
-                    then BDD.ite (BDD.var $ snd v) bounds0 bounds1
-                    else BDD.ite (BDD.var $ snd v) BDD.false bounds1
-            bounds0' = BDD.ite (BDD.var $ snd v) BDD.false bounds0
-         in (bounds0', bounds1')
-    makeLegal ::
-        BDD AscOrder ->
-        Int ->
-        BDD AscOrder
-    makeLegal bdd i =
-        if IntSet.member i constrained
-            then makeLower i $ makeUpper i bdd
-            else bdd
-    makeMaximal ::
-        BDD AscOrder ->
-        BDD AscOrder ->
-        (Vector Int, Int) ->
-        BDD AscOrder
-    makeMaximal legal maximal (_, i) =
-        maximal .&&. (BDD.var i .||. BDD.notB (BDD.restrict i True legal))
+    where
+        indexedBasis = zipWith (flip (,)) [0 ..] basis -- The flip is for list fusion
+        nonNullBasis i = filter (\v -> fst v ! i /= 0) indexedBasis
+        toSolution ::
+            IntMap Bool ->
+            [Vector Int]
+        toSolution intmap =
+            map fst $ filter ((intmap IntMap.!) . snd) indexedBasis
+        makeLower :: Int -> BDD AscOrder -> BDD AscOrder
+        makeLower i bdd =
+            bdd .&&. BDD.orB (map (BDD.var . snd) $ nonNullBasis i)
+        makeUpper :: Int -> BDD AscOrder -> BDD AscOrder
+        makeUpper i bdd = bdd .&&. snd (foldl' (makeBounds i) (BDD.true, BDD.true) $ nonNullBasis i)
+        makeBounds i (bounds0, bounds1) v =
+            let value = fst v ! i
+                bounds1' =
+                    if value <= 1
+                        then BDD.ite (BDD.var $ snd v) bounds0 bounds1
+                        else BDD.ite (BDD.var $ snd v) BDD.false bounds1
+                bounds0' = BDD.ite (BDD.var $ snd v) BDD.false bounds0
+             in (bounds0', bounds1')
+        makeLegal ::
+            BDD AscOrder ->
+            Int ->
+            BDD AscOrder
+        makeLegal bdd i =
+            if IntSet.member i constrained
+                then makeLower i $ makeUpper i bdd
+                else bdd
+        makeMaximal ::
+            BDD AscOrder ->
+            BDD AscOrder ->
+            (Vector Int, Int) ->
+            BDD AscOrder
+        makeMaximal legal maximal (_, i) =
+            maximal .&&. (BDD.var i .||. BDD.notB (BDD.restrict i True legal))
 
 substituteAcVars ::
     Map (SomeVariable RewritingVariableName) Binding ->
@@ -1171,12 +1173,12 @@ substituteAcVars ::
     AcEquation
 substituteAcVars bindings (AcEquation term1 term2) =
     AcEquation (substituteAc term1) (substituteAc term2)
-  where
-    substituteAc term@AcTerm{acElements = elements} =
-        term{acElements = substitute' elements}
-    substitute' [] = []
-    substitute' (x : xs) | Just (Ac AcTerm{acElements = xs'}) <- Map.lookup x bindings = xs' ++ xs
-    substitute' (x : xs) = x : substitute' xs
+    where
+        substituteAc term@AcTerm{acElements = elements} =
+            term{acElements = substitute' elements}
+        substitute' [] = []
+        substitute' (x : xs) | Just (Ac AcTerm{acElements = xs'}) <- Map.lookup x bindings = xs' ++ xs
+        substitute' (x : xs) = x : substitute' xs
 
 remakeMapTerms ::
     SmtMetadataTools Attribute.Symbol ->
@@ -1188,18 +1190,18 @@ remakeMapTerms tools AcTerm{acElements, acSort} =
     if fromJust $ isMapSort tools acSort
         then Ac.asInternal tools acSort $ NormalizedMap{getNormalizedMap = normalizedAc $ map mkVar acElements}
         else Ac.asInternal tools acSort $ NormalizedSet{getNormalizedSet = normalizedAc $ map mkVar acElements}
-  where
-    normalizedAc opaque = NormalizedAc{elementsWithVariables = [], concreteElements = HashMap.empty, opaque}
+    where
+        normalizedAc opaque = NormalizedAc{elementsWithVariables = [], concreteElements = HashMap.empty, opaque}
 
 acVars ::
     Vector AcEquation ->
     Set (SomeVariable RewritingVariableName)
 acVars = foldl' go Set.empty
-  where
-    go set (AcEquation term1 term2) =
-        collectAcVars term1 $ collectAcVars term2 set
-    collectAcVars AcTerm{acElements} set =
-        Set.union set (Set.fromList acElements)
+    where
+        go set (AcEquation term1 term2) =
+            collectAcVars term1 $ collectAcVars term2 set
+        collectAcVars AcTerm{acElements} set =
+            Set.union set (Set.fromList acElements)
 
 defect ::
     AcEquation ->
@@ -1207,9 +1209,9 @@ defect ::
     Int
 defect (AcEquation term1 term2) var =
     count var (acElements term1) - count var (acElements term2)
-  where
-    count :: Eq a => a -> [a] -> Int
-    count x = length . filter (x ==)
+    where
+        count :: Eq a => a -> [a] -> Int
+        count x = length . filter (x ==)
 
 solveDiophantineEquations ::
     Matrix Int ->
@@ -1217,43 +1219,43 @@ solveDiophantineEquations ::
 solveDiophantineEquations system =
     let vk = v1 m
      in Set.toList $ computeStep vk (makeMk vk)
-  where
-    m = Matrix.ncols system
-    v1 :: Int -> Set (Vector Int)
-    v1 0 = Set.empty
-    v1 i = Set.insert (e i) $ v1 (i - 1)
-    e :: Int -> Vector Int
-    e i = Vector.generate m (\j -> if j + 1 == i then 1 else 0)
-    makeMk :: Set (Vector Int) -> Set (Vector Int)
-    makeMk vk = Set.filter (all (== 0) . defect') vk
-    defect' :: Vector Int -> Vector Int
-    defect' v = Matrix.getCol 1 $ Matrix.multStd system $ Matrix.colVector v
+    where
+        m = Matrix.ncols system
+        v1 :: Int -> Set (Vector Int)
+        v1 0 = Set.empty
+        v1 i = Set.insert (e i) $ v1 (i - 1)
+        e :: Int -> Vector Int
+        e i = Vector.generate m (\j -> if j + 1 == i then 1 else 0)
+        makeMk :: Set (Vector Int) -> Set (Vector Int)
+        makeMk vk = Set.filter (all (== 0) . defect') vk
+        defect' :: Vector Int -> Vector Int
+        defect' v = Matrix.getCol 1 $ Matrix.multStd system $ Matrix.colVector v
 
-    computeStep :: Set (Vector Int) -> Set (Vector Int) -> Set (Vector Int)
-    computeStep vk mk | Set.null vk = mk
-    computeStep vk mk =
-        let newVk = vk' vk mk
-         in computeStep newVk $ Set.union mk $ makeMk newVk
+        computeStep :: Set (Vector Int) -> Set (Vector Int) -> Set (Vector Int)
+        computeStep vk mk | Set.null vk = mk
+        computeStep vk mk =
+            let newVk = vk' vk mk
+             in computeStep newVk $ Set.union mk $ makeMk newVk
 
-    vk' :: Set (Vector Int) -> Set (Vector Int) -> Set (Vector Int)
-    vk' vk mk =
-        Set.fromList
-            [ add v (e j) | v <- Set.toList $ Set.difference vk mk, j <- [0 .. m - 1], isMinimal v (e j) mk, dot (defect' v) (defect' (e j)) < 0
-            ]
+        vk' :: Set (Vector Int) -> Set (Vector Int) -> Set (Vector Int)
+        vk' vk mk =
+            Set.fromList
+                [ add v (e j) | v <- Set.toList $ Set.difference vk mk, j <- [0 .. m - 1], isMinimal v (e j) mk, dot (defect' v) (defect' (e j)) < 0
+                ]
 
-    isMinimal :: Vector Int -> Vector Int -> Set (Vector Int) -> Bool
-    isMinimal v ej mk = all (not . gt (add v ej)) mk
+        isMinimal :: Vector Int -> Vector Int -> Set (Vector Int) -> Bool
+        isMinimal v ej mk = all (not . gt (add v ej)) mk
 
-    gt :: Vector Int -> Vector Int -> Bool
-    gt a b =
-        let zipped = Vector.zipWith (,) a b
-         in all (uncurry (>=)) zipped && any (uncurry (>)) zipped
+        gt :: Vector Int -> Vector Int -> Bool
+        gt a b =
+            let zipped = Vector.zipWith (,) a b
+             in all (uncurry (>=)) zipped && any (uncurry (>)) zipped
 
-    add :: Vector Int -> Vector Int -> Vector Int
-    add a b = Vector.zipWith (+) a b
+        add :: Vector Int -> Vector Int -> Vector Int
+        add a b = Vector.zipWith (+) a b
 
-    dot :: Vector Int -> Vector Int -> Int
-    dot a b = Vector.sum $ Vector.zipWith (*) a b
+        dot :: Vector Int -> Vector Int -> Int
+        dot a b = Vector.sum $ Vector.zipWith (*) a b
 
 makeAcSubstitution ::
     Sort ->
@@ -1297,10 +1299,10 @@ mkVars ::
 mkVars _ 0 accum vars = (accum, vars)
 mkVars sort n accum vars =
     let varName =
-            ElementVariableName $
-                mkConfigVariable $
-                    mkVariableName $
-                        generatedId (Text.concat ["VarAC", Text.pack $ show n, "'Unds'"])
+            ElementVariableName
+                $ mkConfigVariable
+                $ mkVariableName
+                $ generatedId (Text.concat ["VarAC", Text.pack $ show n, "'Unds'"])
         newVar = Variable{variableName = varName, variableSort = sort}
         renamedVar = refreshVariable vars (inject newVar)
         finalVar = maybe newVar (fromJust . retract) renamedVar

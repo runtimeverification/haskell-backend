@@ -93,11 +93,11 @@ simplifyEvaluated sort sideCondition first second
         _ -> do
             fwd <- Implies.simplifyEvaluated sort sideCondition first second
             bwd <- Implies.simplifyEvaluated sort sideCondition second first
-            And.simplify sort sideCondition $
-                MultiAnd.make [fwd, bwd]
-  where
-    firstPatterns = toList first
-    secondPatterns = toList second
+            And.simplify sort sideCondition
+                $ MultiAnd.make [fwd, bwd]
+    where
+        firstPatterns = toList first
+        secondPatterns = toList second
 
 {- | evaluates an 'Iff' given its two 'Pattern' children.
 
@@ -135,8 +135,8 @@ makeEvaluateNonBoolIff
                 [ Conditional
                     { term = firstTerm
                     , predicate =
-                        Predicate.markSimplified $
-                            Predicate.makeIffPredicate
+                        Predicate.markSimplified
+                            $ Predicate.makeIffPredicate
                                 ( Predicate.makeAndPredicate
                                     firstPredicate
                                     (Substitution.toPredicate firstSubstitution)
@@ -149,8 +149,8 @@ makeEvaluateNonBoolIff
                     }
                 ]
         | otherwise =
-            OrPattern.fromTermLike $
-                TermLike.markSimplified $
-                    mkIff
-                        (Pattern.toTermLike patt1)
-                        (Pattern.toTermLike patt2)
+            OrPattern.fromTermLike
+                $ TermLike.markSimplified
+                $ mkIff
+                    (Pattern.toTermLike patt1)
+                    (Pattern.toTermLike patt2)

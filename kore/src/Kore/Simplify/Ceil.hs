@@ -116,10 +116,10 @@ makeEvaluate sideCondition child
     | otherwise = do
         termCeil <- makeEvaluateTerm childSort sideCondition term
         return (MultiOr.map (predicates <>) termCeil)
-  where
-    (term, condition) = Pattern.splitTerm child
-    predicates = Predicate.toMultiAnd . from @_ @(Predicate _) $ condition
-    childSort = Pattern.patternSort child
+    where
+        (term, condition) = Pattern.splitTerm child
+        predicates = Predicate.toMultiAnd . from @_ @(Predicate _) $ condition
+        childSort = Pattern.patternSort child
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
 -- implicit and explicit.
@@ -140,19 +140,19 @@ makeEvaluateTerm resultSort sideCondition ceilChild =
             , ceilChild
             }
         & maybeT (makeSimplifiedCeil sideCondition Nothing ceilChild) return
-  where
-    ceilSimplifier =
-        mconcat
-            [ newPredicateCeilSimplifier
-            , newDefinedCeilSimplifier sideCondition
-            , -- We must apply user-defined \ceil rule before built-in rules
-              -- because they may be more specific. In particular, Map and Set
-              -- \ceil conditions are reduced to Bool expressions using in_keys.
-              newAxiomCeilSimplifier
-            , newApplicationCeilSimplifier
-            , newBuiltinCeilSimplifier resultSort
-            , newInjCeilSimplifier
-            ]
+    where
+        ceilSimplifier =
+            mconcat
+                [ newPredicateCeilSimplifier
+                , newDefinedCeilSimplifier sideCondition
+                , -- We must apply user-defined \ceil rule before built-in rules
+                  -- because they may be more specific. In particular, Map and Set
+                  -- \ceil conditions are reduced to Bool expressions using in_keys.
+                  newAxiomCeilSimplifier
+                , newApplicationCeilSimplifier
+                , newBuiltinCeilSimplifier resultSort
+                , newInjCeilSimplifier
+                ]
 
 newPredicateCeilSimplifier ::
     Monad simplifier =>
@@ -238,22 +238,22 @@ newAxiomCeilSimplifier = CeilSimplifier $ \input -> do
             (synthesize $ CeilF input)
             (const empty)
     return (OrPattern.map (Predicate.toMultiAnd . toPredicate) evaluation)
-  where
-    -- TODO(Ana): probably should parse MultiAnd here
-    toPredicate Conditional{term = Top_ _, predicate, substitution} =
-        Predicate.makeAndPredicate
-            predicate
-            (from @_ @(Predicate _) substitution)
-    toPredicate patt =
-        error
-            ( "Ceil simplification is expected to result in a predicate, but"
-                ++ " got ("
-                ++ show patt
-                ++ ")."
-                ++ " The most likely cases are: evaluating predicate symbols, "
-                ++ " and predicate symbols are currently unrecognized as such, "
-                ++ "and programming errors."
-            )
+    where
+        -- TODO(Ana): probably should parse MultiAnd here
+        toPredicate Conditional{term = Top_ _, predicate, substitution} =
+            Predicate.makeAndPredicate
+                predicate
+                (from @_ @(Predicate _) substitution)
+        toPredicate patt =
+            error
+                ( "Ceil simplification is expected to result in a predicate, but"
+                    ++ " got ("
+                    ++ show patt
+                    ++ ")."
+                    ++ " The most likely cases are: evaluating predicate symbols, "
+                    ++ " and predicate symbols are currently unrecognized as such, "
+                    ++ "and programming errors."
+                )
 
 makeEvaluateInternalMap ::
     Sort ->
@@ -267,8 +267,8 @@ makeEvaluateInternalMap resultSort internalMap =
             , ceilOperandSort = builtinAcSort
             , ceilChild = internalMap
             }
-  where
-    InternalAc{builtinAcSort} = internalMap
+    where
+        InternalAc{builtinAcSort} = internalMap
 
 -- | Evaluates the ceil of a domain value.
 makeEvaluateInternalSet ::
@@ -283,8 +283,8 @@ makeEvaluateInternalSet resultSort internalSet =
             , ceilOperandSort = builtinAcSort
             , ceilChild = internalSet
             }
-  where
-    InternalAc{builtinAcSort} = internalSet
+    where
+        InternalAc{builtinAcSort} = internalSet
 
 makeEvaluateInternalList ::
     Sort ->
@@ -292,8 +292,10 @@ makeEvaluateInternalList ::
     InternalList (TermLike RewritingVariableName) ->
     Simplifier NormalForm
 makeEvaluateInternalList _ _ internal =
-    return . NormalForm.fromPredicates $
-        fromCeil_ <$> toList internal
+    return
+        . NormalForm.fromPredicates
+        $ fromCeil_
+        <$> toList internal
 
 {- | This handles the case when we can't simplify a term's ceil.
 
@@ -321,51 +323,52 @@ makeSimplifiedCeil
             then
                 return
                     . NormalForm.fromPredicates
-                    $ unsimplified : (fromCeil_ <$> toList termLikeF)
+                    $ unsimplified
+                    : (fromCeil_ <$> toList termLikeF)
             else return . NormalForm.fromPredicate $ unsimplified
-      where
-        needsChildCeils = case termLikeF of
-            ApplyAliasF _ -> False
-            EndiannessF _ -> True
-            SignednessF _ -> True
-            AndF _ -> True
-            ApplySymbolF _ -> True
-            InjF _ -> True
-            CeilF _ -> unexpectedError
-            EqualsF _ -> unexpectedError
-            ExistsF _ -> False
-            IffF _ -> False
-            ImpliesF _ -> False
-            InF _ -> False
-            NotF _ -> False
-            BottomF _ -> unexpectedError
-            DomainValueF _ -> True
-            FloorF _ -> False
-            ForallF _ -> False
-            InhabitantF _ -> False
-            MuF _ -> False
-            NuF _ -> False
-            NextF _ -> True
-            OrF _ -> False
-            RewritesF _ -> False
-            TopF _ -> unexpectedError
-            StringLiteralF _ -> unexpectedError
-            InternalBoolF _ -> unexpectedError
-            InternalBytesF _ -> unexpectedError
-            InternalIntF _ -> unexpectedError
-            InternalListF _ -> True
-            InternalMapF _ -> True
-            InternalSetF _ -> True
-            InternalStringF _ -> unexpectedError
-            VariableF _ -> False
+        where
+            needsChildCeils = case termLikeF of
+                ApplyAliasF _ -> False
+                EndiannessF _ -> True
+                SignednessF _ -> True
+                AndF _ -> True
+                ApplySymbolF _ -> True
+                InjF _ -> True
+                CeilF _ -> unexpectedError
+                EqualsF _ -> unexpectedError
+                ExistsF _ -> False
+                IffF _ -> False
+                ImpliesF _ -> False
+                InF _ -> False
+                NotF _ -> False
+                BottomF _ -> unexpectedError
+                DomainValueF _ -> True
+                FloorF _ -> False
+                ForallF _ -> False
+                InhabitantF _ -> False
+                MuF _ -> False
+                NuF _ -> False
+                NextF _ -> True
+                OrF _ -> False
+                RewritesF _ -> False
+                TopF _ -> unexpectedError
+                StringLiteralF _ -> unexpectedError
+                InternalBoolF _ -> unexpectedError
+                InternalBytesF _ -> unexpectedError
+                InternalIntF _ -> unexpectedError
+                InternalListF _ -> True
+                InternalMapF _ -> True
+                InternalSetF _ -> True
+                InternalStringF _ -> unexpectedError
+                VariableF _ -> False
 
-        unsimplified =
-            Predicate.markSimplifiedMaybeConditional maybeCurrentCondition
-                . makeCeilPredicate
-                $ termLike
+            unsimplified =
+                Predicate.markSimplifiedMaybeConditional maybeCurrentCondition
+                    . makeCeilPredicate
+                    $ termLike
 
-        ~unexpectedError =
-            error ("Unexpected term type: " ++ unparseToString termLike)
+            ~unexpectedError =
+                error ("Unexpected term type: " ++ unparseToString termLike)
 
 {- | This returns a set of all subterms that need a Ceil
 
@@ -382,41 +385,41 @@ enumerateSubtermsNeedingCeil
         if needsChildCeils
             then HashSet.singleton termLike <> HashSet.fromList (toList termLikeF)
             else HashSet.singleton termLike
-      where
-        needsChildCeils = case termLikeF of
-            ApplyAliasF _ -> False
-            EndiannessF _ -> True
-            SignednessF _ -> True
-            AndF _ -> True
-            ApplySymbolF _ -> True
-            InjF _ -> True
-            CeilF _ -> unexpectedError
-            EqualsF _ -> unexpectedError
-            ExistsF _ -> False
-            IffF _ -> False
-            ImpliesF _ -> False
-            InF _ -> False
-            NotF _ -> False
-            BottomF _ -> unexpectedError
-            DomainValueF _ -> True
-            FloorF _ -> False
-            ForallF _ -> False
-            InhabitantF _ -> False
-            MuF _ -> False
-            NuF _ -> False
-            NextF _ -> True
-            OrF _ -> False
-            RewritesF _ -> False
-            TopF _ -> unexpectedError
-            StringLiteralF _ -> unexpectedError
-            InternalBoolF _ -> unexpectedError
-            InternalBytesF _ -> unexpectedError
-            InternalIntF _ -> unexpectedError
-            InternalListF _ -> True
-            InternalMapF _ -> True
-            InternalSetF _ -> True
-            InternalStringF _ -> unexpectedError
-            VariableF _ -> False
+        where
+            needsChildCeils = case termLikeF of
+                ApplyAliasF _ -> False
+                EndiannessF _ -> True
+                SignednessF _ -> True
+                AndF _ -> True
+                ApplySymbolF _ -> True
+                InjF _ -> True
+                CeilF _ -> unexpectedError
+                EqualsF _ -> unexpectedError
+                ExistsF _ -> False
+                IffF _ -> False
+                ImpliesF _ -> False
+                InF _ -> False
+                NotF _ -> False
+                BottomF _ -> unexpectedError
+                DomainValueF _ -> True
+                FloorF _ -> False
+                ForallF _ -> False
+                InhabitantF _ -> False
+                MuF _ -> False
+                NuF _ -> False
+                NextF _ -> True
+                OrF _ -> False
+                RewritesF _ -> False
+                TopF _ -> unexpectedError
+                StringLiteralF _ -> unexpectedError
+                InternalBoolF _ -> unexpectedError
+                InternalBytesF _ -> unexpectedError
+                InternalIntF _ -> unexpectedError
+                InternalListF _ -> True
+                InternalMapF _ -> True
+                InternalSetF _ -> True
+                InternalStringF _ -> unexpectedError
+                VariableF _ -> False
 
-        ~unexpectedError =
-            error ("Unexpected term type: " ++ unparseToString termLike)
+            ~unexpectedError =
+                error ("Unexpected term type: " ++ unparseToString termLike)

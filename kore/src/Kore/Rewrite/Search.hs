@@ -125,13 +125,13 @@ searchGraph Config{searchType, bound} match executionGraph = do
     let selectedConfigs = pick executionGraph
     matches <- catMaybes <$> traverse (runMaybeT . match) selectedConfigs
     return (Limit.takeWithin bound matches)
-  where
-    pick =
-        case searchType of
-            ONE -> Strategy.pickOne
-            PLUS -> Strategy.pickPlus
-            STAR -> Strategy.pickStar
-            FINAL -> Strategy.pickFinal
+    where
+        pick =
+            case searchType of
+                ONE -> Strategy.pickOne
+                PLUS -> Strategy.pickPlus
+                STAR -> Strategy.pickStar
+                FINAL -> Strategy.pickFinal
 
 matchWith ::
     SideCondition RewritingVariableName ->
@@ -172,6 +172,6 @@ matchWith sideCondition e1 e2 = do
     results <- lift $ mergeAndEvaluate matchResults
     guardAgainstBottom results
     return results
-  where
-    t1 = Conditional.term e1
-    t2 = Conditional.term e2
+    where
+        t1 = Conditional.term e1
+        t2 = Conditional.term e2

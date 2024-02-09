@@ -62,8 +62,8 @@ import Test.Tasty.Hedgehog
 
 test_stepStrategy :: [TestTree]
 test_stepStrategy =
-    [ testGroup "depth = 0: remains in Start" $
-        let mkTest name strategy' =
+    [ testGroup "depth = 0: remains in Start"
+        $ let mkTest name strategy' =
                 testCase name $ do
                     [actual] <-
                         runStep
@@ -73,11 +73,11 @@ test_stepStrategy =
                             aPatt
                             [simpleRewrite Mock.a Mock.b]
                     assertEqual "" (Step.Start aPatt) actual
-         in [ mkTest "strategy all" All
-            , mkTest "strategy any" Any
-            ]
-    , testGroup "depth = 1: applies rewrite rule, transitions to Rewritten" $
-        let mkTest name strategy' =
+           in [ mkTest "strategy all" All
+              , mkTest "strategy any" Any
+              ]
+    , testGroup "depth = 1: applies rewrite rule, transitions to Rewritten"
+        $ let mkTest name strategy' =
                 testCase name $ do
                     [actual] <-
                         runStep
@@ -87,11 +87,11 @@ test_stepStrategy =
                             aPatt
                             [simpleRewrite Mock.a Mock.b]
                     assertEqual "" (Step.Rewritten () bPatt) actual
-         in [ mkTest "strategy all" All
-            , mkTest "strategy any" Any
-            ]
-    , testGroup "depth = 2: no more rules can apply, becomes Remaining" $
-        let mkTest name strategy' =
+           in [ mkTest "strategy all" All
+              , mkTest "strategy any" Any
+              ]
+    , testGroup "depth = 2: no more rules can apply, becomes Remaining"
+        $ let mkTest name strategy' =
                 testCase name $ do
                     [actual] <-
                         runStep
@@ -101,11 +101,11 @@ test_stepStrategy =
                             aPatt
                             [simpleRewrite Mock.a Mock.b]
                     assertEqual "" (Step.Remaining bPatt) actual
-         in [ mkTest "strategy all" All
-            , mkTest "strategy any" Any
-            ]
-    , testGroup "breadth = 1: fails when breadth limit is exceeded" $
-        let mkTest name strategy' =
+           in [ mkTest "strategy all" All
+              , mkTest "strategy any" Any
+              ]
+    , testGroup "breadth = 1: fails when breadth limit is exceeded"
+        $ let mkTest name strategy' =
                 testCase name $ do
                     actual <-
                         runStepSMT
@@ -116,11 +116,11 @@ test_stepStrategy =
                             [simpleRewrite Mock.a Mock.b]
                             & try
                     expectLimitExceeded actual
-         in [ mkTest "strategy all" All
-            , mkTest "strategy any" Any
-            ]
-    , testGroup "single rule application with remainder" $
-        let mkTest name strategy' =
+           in [ mkTest "strategy all" All
+              , mkTest "strategy any" Any
+              ]
+    , testGroup "single rule application with remainder"
+        $ let mkTest name strategy' =
                 testCase name $ do
                     actual <-
                         runStepSMT
@@ -137,8 +137,8 @@ test_stepStrategy =
                         remainderPattern =
                             Pattern.fromTermAndPredicate
                                 xTerm
-                                ( makeNotPredicate $
-                                    makeEqualsPredicate
+                                ( makeNotPredicate
+                                    $ makeEqualsPredicate
                                         xTerm
                                         Mock.a
                                 )
@@ -148,10 +148,11 @@ test_stepStrategy =
                         , Step.Remaining rewrittenPattern
                         ]
                         actual
-         in [ mkTest "strategy all" All
-            , mkTest "strategy any" Any
-            ]
-    , testGroup "multiple rules, narrowing, variable renaming, remainders" $
+           in [ mkTest "strategy all" All
+              , mkTest "strategy any" Any
+              ]
+    , testGroup "multiple rules, narrowing, variable renaming, remainders"
+        $
         -- Program: c10( f( X ) )
         -- Rewrite rules:
         --   - c10( a )      => c11( g( X ) )
@@ -180,8 +181,8 @@ test_stepStrategy =
                         firstRemainderPattern =
                             Pattern.fromTermAndPredicate
                                 (Mock.functionalConstr10 (Mock.f xTerm))
-                                ( makeNotPredicate $
-                                    makeEqualsPredicate
+                                ( makeNotPredicate
+                                    $ makeEqualsPredicate
                                         Mock.a
                                         (Mock.f xTerm)
                                 )
@@ -234,8 +235,8 @@ test_stepStrategy =
          in [ mkTest "strategy all" All
             , mkTest "strategy any" Any
             ]
-    , testGroup "applies rules in priority order" $
-        let mkTest name strategy' =
+    , testGroup "applies rules in priority order"
+        $ let mkTest name strategy' =
                 testCase name $ do
                     actual <-
                         runStep
@@ -251,90 +252,92 @@ test_stepStrategy =
                         ""
                         [Step.Remaining dPatt]
                         actual
-         in [ mkTest "strategy all" All
-            , mkTest "strategy any" Any
-            ]
-    , testGroup "non-deterministic rules" $
-        let program = aPatt
-            rules =
+           in [ mkTest "strategy all" All
+              , mkTest "strategy any" Any
+              ]
+    , testGroup "non-deterministic rules"
+        $ let program = aPatt
+              rules =
                 [ simpleRewrite Mock.a Mock.b
                 , simpleRewrite Mock.a Mock.c
                 ]
-         in [ testCase "strategy all: considers both branches" $ do
-                actual <-
-                    runStep Unlimited Unlimited All program rules
-                assertEqual
-                    ""
-                    [Step.Remaining bPatt, Step.Remaining cPatt]
-                    actual
-            , testCase "strategy any: picks only one branch" $ do
-                actual <-
-                    runStep Unlimited Unlimited Any program rules
-                assertEqual
-                    ""
-                    [Step.Remaining bPatt]
-                    actual
-            ]
+           in [ testCase "strategy all: considers both branches" $ do
+                    actual <-
+                        runStep Unlimited Unlimited All program rules
+                    assertEqual
+                        ""
+                        [Step.Remaining bPatt, Step.Remaining cPatt]
+                        actual
+              , testCase "strategy any: picks only one branch" $ do
+                    actual <-
+                        runStep Unlimited Unlimited Any program rules
+                    assertEqual
+                        ""
+                        [Step.Remaining bPatt]
+                        actual
+              ]
     ]
-  where
-    aPatt = Pattern.fromTermLike Mock.a
-    bPatt = Pattern.fromTermLike Mock.b
-    cPatt = Pattern.fromTermLike Mock.c
-    dPatt = Pattern.fromTermLike Mock.d
-    xPatt = Pattern.fromTermLike xTerm
-    xTerm = mkElemVar Mock.x
+    where
+        aPatt = Pattern.fromTermLike Mock.a
+        bPatt = Pattern.fromTermLike Mock.b
+        cPatt = Pattern.fromTermLike Mock.c
+        dPatt = Pattern.fromTermLike Mock.d
+        xPatt = Pattern.fromTermLike xTerm
+        xTerm = mkElemVar Mock.x
 
-    try ::
-        Exception.Exception e =>
-        e ~ Strategy.LimitExceeded Int =>
-        IO a ->
-        IO (Either e a)
-    try = Exception.try
-    expectLimitExceeded result =
-        case result of
-            Left (Strategy.LimitExceeded _) ->
-                return ()
-            Right _ ->
-                assertFailure "Expected exception LimitExceeded"
+        try ::
+            Exception.Exception e =>
+            e ~ Strategy.LimitExceeded Int =>
+            IO a ->
+            IO (Either e a)
+        try = Exception.try
+        expectLimitExceeded result =
+            case result of
+                Left (Strategy.LimitExceeded _) ->
+                    return ()
+                Right _ ->
+                    assertFailure "Expected exception LimitExceeded"
 
 test_executionStrategy :: [TestTree]
 test_executionStrategy =
-    [ testProperty "every step contains Rewrite" $
-        Hedgehog.property $ do
+    [ testProperty "every step contains Rewrite"
+        $ Hedgehog.property
+        $ do
             strategies <- Hedgehog.forAll genStrategies
             for_ strategies $ \strategy -> do
                 Hedgehog.annotateShow strategy
                 Hedgehog.assert (hasRewrite strategy)
-    , testProperty "Simplify is the last sub-step" $
-        Hedgehog.property $ do
+    , testProperty "Simplify is the last sub-step"
+        $ Hedgehog.property
+        $ do
             strategies <- Hedgehog.forAll genStrategies
             let strategy = last strategies
             Hedgehog.annotateShow strategy
             Hedgehog.assert (isLastSimplify strategy)
     ]
-  where
-    genStrategies :: Gen [Step Prim]
-    genStrategies = do
-        let range = Hedgehog.Gen.integral (Hedgehog.Range.linear 1 16)
-        depthLimit <- Limit <$> range
-        pure (limitedExecutionStrategy depthLimit)
+    where
+        genStrategies :: Gen [Step Prim]
+        genStrategies = do
+            let range = Hedgehog.Gen.integral (Hedgehog.Range.linear 1 16)
+            depthLimit <- Limit <$> range
+            pure (limitedExecutionStrategy depthLimit)
 
-    hasRewrite :: Step Prim -> Bool
-    hasRewrite = elem Rewrite
+        hasRewrite :: Step Prim -> Bool
+        hasRewrite = elem Rewrite
 
-    isLastSimplify :: Step Prim -> Bool
-    isLastSimplify ps
-        | null ps = False
-        | otherwise = last ps == Simplify
+        isLastSimplify :: Step Prim -> Bool
+        isLastSimplify ps
+            | null ps = False
+            | otherwise = last ps == Simplify
 
 simpleRewrite ::
     TermLike VariableName ->
     TermLike VariableName ->
     RewriteRule RewritingVariableName
 simpleRewrite left right =
-    mkRewritingRule $
-        RewriteRule $
-            rulePattern left right
+    mkRewritingRule
+        $ RewriteRule
+        $ rulePattern left right
 
 simplePriorityRewrite ::
     TermLike VariableName ->
@@ -404,8 +407,8 @@ runStepWorker
     rules =
         do
             result <-
-                simplifier Mock.env $
-                    Strategy.runStrategy
+                simplifier Mock.env
+                    $ Strategy.runStrategy
                         breadthLimit
                         (transitionRule groupedRewrites Step.DisableAssumeInitialDefined execStrategy)
                         limitedDepth
@@ -414,6 +417,6 @@ runStepWorker
                     bimap (const ()) getRewritingPattern
                         <$> Strategy.pickFinal result
             return finalResult
-      where
-        groupedRewrites = groupRewritesByPriority rules
-        limitedDepth = limitedExecutionStrategy depthLimit
+        where
+            groupedRewrites = groupRewritesByPriority rules
+            limitedDepth = limitedExecutionStrategy depthLimit

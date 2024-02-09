@@ -228,9 +228,10 @@ class (MonadIO m, MonadLog m, MonadSMT m) => MonadSimplify m where
         LogicT m (Conditional RewritingVariableName term)
     simplifyCondition sideCondition conditional = do
         results <-
-            lift . lift $
-                observeAllT $
-                    simplifyCondition sideCondition conditional
+            lift
+                . lift
+                $ observeAllT
+                $ simplifyCondition sideCondition conditional
         scatter results
     {-# INLINE simplifyCondition #-}
 
@@ -309,14 +310,14 @@ mkHookedSymbols im =
         ( Map.unions
             (importHookedSymbols <$> IndexedModule.indexedModuleImportsSyntax im)
         )
-  where
-    getHook :: (Attribute.Symbol, a) -> Maybe Text
-    getHook (attrs, _) = Attribute.getHook $ Attribute.hook attrs
+    where
+        getHook :: (Attribute.Symbol, a) -> Maybe Text
+        getHook (attrs, _) = Attribute.getHook $ Attribute.hook attrs
 
-    importHookedSymbols ::
-        (a, b, VerifiedModuleSyntax Attribute.StepperAttributes) ->
-        Map Id Text
-    importHookedSymbols (_, _, im') = mkHookedSymbols im'
+        importHookedSymbols ::
+            (a, b, VerifiedModuleSyntax Attribute.StepperAttributes) ->
+            Map Id Text
+        importHookedSymbols (_, _, im') = mkHookedSymbols im'
 
 instance MonadSimplify Simplifier where
     liftSimplifier = id
@@ -521,9 +522,9 @@ applyFirstSimplifierThatWorksWorker ::
 applyFirstSimplifierThatWorksWorker [] Always _ _ =
     return NotApplicable
 applyFirstSimplifierThatWorksWorker [] Conditional _ sideCondition =
-    return $
-        NotApplicableUntilConditionChanges $
-            toRepresentation sideCondition
+    return
+        $ NotApplicableUntilConditionChanges
+        $ toRepresentation sideCondition
 applyFirstSimplifierThatWorksWorker
     (BuiltinAndAxiomSimplifier evaluator : evaluators)
     nonSimplifiability
@@ -544,31 +545,33 @@ applyFirstSimplifierThatWorksWorker
                             -- configuration.
                             -- However, right now, we shouldn't be able to get more
                             -- than one result, so we throw an error.
-                            error . show . Pretty.vsep $
-                                [ "Unexpected simplification result with more \
-                                  \than one configuration:"
-                                , Pretty.indent 2 "input:"
-                                , Pretty.indent 4 (unparse patt)
-                                , Pretty.indent 2 "results:"
-                                , (Pretty.indent 4 . Pretty.vsep)
-                                    (unparse <$> toList orResults)
-                                , Pretty.indent 2 "remainders:"
-                                , (Pretty.indent 4 . Pretty.vsep)
-                                    (unparse <$> toList orRemainders)
-                                ]
+                            error
+                                . show
+                                . Pretty.vsep
+                                $ [ "Unexpected simplification result with more \
+                                    \than one configuration:"
+                                  , Pretty.indent 2 "input:"
+                                  , Pretty.indent 4 (unparse patt)
+                                  , Pretty.indent 2 "results:"
+                                  , (Pretty.indent 4 . Pretty.vsep)
+                                        (unparse <$> toList orResults)
+                                  , Pretty.indent 2 "remainders:"
+                                  , (Pretty.indent 4 . Pretty.vsep)
+                                        (unparse <$> toList orRemainders)
+                                  ]
                         | not (OrPattern.isFalse orRemainders) ->
                             tryNextSimplifier Conditional
                         | otherwise -> return applicationResult
                 NotApplicable -> tryNextSimplifier nonSimplifiability
                 NotApplicableUntilConditionChanges _ ->
                     tryNextSimplifier Conditional
-      where
-        tryNextSimplifier nonSimplifiability' =
-            applyFirstSimplifierThatWorksWorker
-                evaluators
-                nonSimplifiability'
-                patt
-                sideCondition
+        where
+            tryNextSimplifier nonSimplifiability' =
+                applyFirstSimplifierThatWorksWorker
+                    evaluators
+                    nonSimplifiability'
+                    patt
+                    sideCondition
 
 -- | A type holding the result of applying an axiom to a pattern.
 data AttemptedAxiomResults variable = AttemptedAxiomResults
@@ -712,18 +715,18 @@ applicationAxiomSimplifier ::
     BuiltinAndAxiomSimplifier
 applicationAxiomSimplifier applicationSimplifier =
     BuiltinAndAxiomSimplifier helper
-  where
-    helper ::
-        TermLike RewritingVariableName ->
-        SideCondition RewritingVariableName ->
-        Simplifier (AttemptedAxiom RewritingVariableName)
-    helper termLike sideCondition =
-        case Recursive.project termLike of
-            (valid :< ApplySymbolF p) ->
-                applicationSimplifier sideCondition (valid :< p)
-            _ ->
-                error
-                    ("Expected an application pattern, but got: " ++ show termLike)
+    where
+        helper ::
+            TermLike RewritingVariableName ->
+            SideCondition RewritingVariableName ->
+            Simplifier (AttemptedAxiom RewritingVariableName)
+        helper termLike sideCondition =
+            case Recursive.project termLike of
+                (valid :< ApplySymbolF p) ->
+                    applicationSimplifier sideCondition (valid :< p)
+                _ ->
+                    error
+                        ("Expected an application pattern, but got: " ++ show termLike)
 
 -- | Checks whether a symbol is a constructor or is overloaded.
 isConstructorOrOverloaded ::

@@ -126,81 +126,81 @@ parseKoreReplOptions startTime =
         <*> parseOutputFile
         <*> parseKoreLogOptions (ExeName "kore-repl") startTime
         <*> parseBugReportOption
-  where
-    parseMainModule :: Parser KoreModule
-    parseMainModule =
-        KoreModule
-            <$> argument
-                str
-                ( metavar "MAIN_DEFINITION_FILE"
-                    <> help "Kore definition file to verify and use for execution"
-                )
-            <*> GlobalMain.parseModuleName
-                "MAIN_MODULE"
-                "module"
-                "Kore main module name."
-
-    parseReplMode :: Parser ReplMode
-    parseReplMode =
-        flag
-            Interactive
-            RunScript
-            ( long "run-mode"
-                <> short 'r'
-                <> help "Repl run script mode"
-            )
-
-    parseScriptModeOutput :: Parser ScriptModeOutput
-    parseScriptModeOutput =
-        flag
-            DisableOutput
-            EnableOutput
-            ( long "save-run-output"
-                <> help "Get output in run mode."
-            )
-
-    parseReplScript :: Parser ReplScript
-    parseReplScript =
-        ReplScript
-            <$> optional
-                ( strOption
-                    ( metavar "REPL_SCRIPT"
-                        <> long "repl-script"
-                        <> help "Path to the repl script file"
+    where
+        parseMainModule :: Parser KoreModule
+        parseMainModule =
+            KoreModule
+                <$> argument
+                    str
+                    ( metavar "MAIN_DEFINITION_FILE"
+                        <> help "Kore definition file to verify and use for execution"
                     )
+                <*> GlobalMain.parseModuleName
+                    "MAIN_MODULE"
+                    "module"
+                    "Kore main module name."
+
+        parseReplMode :: Parser ReplMode
+        parseReplMode =
+            flag
+                Interactive
+                RunScript
+                ( long "run-mode"
+                    <> short 'r'
+                    <> help "Repl run script mode"
                 )
 
-    parseOutputFile :: Parser OutputFile
-    parseOutputFile =
-        OutputFile
-            <$> optional
-                ( strOption
-                    ( metavar "PATTERN_OUTPUT_FILE"
-                        <> long "output"
-                        <> help "Output file to contain final Kore pattern."
+        parseScriptModeOutput :: Parser ScriptModeOutput
+        parseScriptModeOutput =
+            flag
+                DisableOutput
+                EnableOutput
+                ( long "save-run-output"
+                    <> help "Get output in run mode."
+                )
+
+        parseReplScript :: Parser ReplScript
+        parseReplScript =
+            ReplScript
+                <$> optional
+                    ( strOption
+                        ( metavar "REPL_SCRIPT"
+                            <> long "repl-script"
+                            <> help "Path to the repl script file"
+                        )
                     )
-                )
 
-    parseKorePrintCommand :: Parser KorePrintCommand
-    parseKorePrintCommand =
-        KorePrintCommand
-            <$> ( strOption
-                    ( metavar "EXEC_FILE"
-                        <> long "kore-print-command"
-                        <> help "Command to run the kore-print pretty printer."
-                        <> value "kore-print"
-                        <> showDefault
+        parseOutputFile :: Parser OutputFile
+        parseOutputFile =
+            OutputFile
+                <$> optional
+                    ( strOption
+                        ( metavar "PATTERN_OUTPUT_FILE"
+                            <> long "output"
+                            <> help "Output file to contain final Kore pattern."
+                        )
                     )
-                )
 
-    parseShowStepTime :: Parser StepTime
-    parseShowStepTime =
-        flag
-            DisableStepTime
-            EnableStepTime
-            ( long "show-step-time"
-                <> help "Print the time taken by steps."
-            )
+        parseKorePrintCommand :: Parser KorePrintCommand
+        parseKorePrintCommand =
+            KorePrintCommand
+                <$> ( strOption
+                        ( metavar "EXEC_FILE"
+                            <> long "kore-print-command"
+                            <> help "Command to run the kore-print pretty printer."
+                            <> value "kore-print"
+                            <> showDefault
+                        )
+                    )
+
+        parseShowStepTime :: Parser StepTime
+        parseShowStepTime =
+            flag
+                DisableStepTime
+                EnableStepTime
+                ( long "show-step-time"
+                    <> help "Print the time taken by steps."
+                )
 
 parserInfoModifiers :: InfoMod options
 parserInfoModifiers =
@@ -233,8 +233,9 @@ mainWithOptions LocalOptions{execOptions} = do
             withLogger tempDirectory koreLogOptions $ \actualLogAction -> do
                 mvarLogAction <- newMVar actualLogAction
                 let swapLogAction = swappableLogger mvarLogAction
-                flip runLoggerT swapLogAction $
-                    runExceptionHandlers $ do
+                flip runLoggerT swapLogAction
+                    $ runExceptionHandlers
+                    $ do
                         definition <-
                             loadDefinitions [definitionFileName, specFile]
                         indexedModule <- loadModule mainModuleName definition
@@ -251,7 +252,8 @@ mainWithOptions LocalOptions{execOptions} = do
                                     }
 
                         when
-                            ( replMode == RunScript
+                            ( replMode
+                                == RunScript
                                 && isNothing (unReplScript replScript)
                             )
                             $ lift
@@ -263,8 +265,10 @@ mainWithOptions LocalOptions{execOptions} = do
                                 exitFailure
 
                         when
-                            ( replMode == Interactive
-                                && scriptModeOutput == EnableOutput
+                            ( replMode
+                                == Interactive
+                                && scriptModeOutput
+                                == EnableOutput
                             )
                             $ lift
                             $ do
@@ -305,84 +309,84 @@ mainWithOptions LocalOptions{execOptions} = do
                             (GlobalMain.kFileLocations definition)
                         pure ExitSuccess
     exitWith exitCode
-  where
-    KoreReplOptions
-        { definitionModule
-        , proveOptions
-        , smtOptions
-        , replScript
-        , replMode
-        , scriptModeOutput
-        , outputFile
-        , koreLogOptions
-        , bugReportOption
-        , korePrintCommand
-        , stepTime
-        } = execOptions
-    runExceptionHandlers action =
-        action
-            & handle exitReplHandler
-            & handle withConfigurationHandler
-            & handle someExceptionHandler
+    where
+        KoreReplOptions
+            { definitionModule
+            , proveOptions
+            , smtOptions
+            , replScript
+            , replMode
+            , scriptModeOutput
+            , outputFile
+            , koreLogOptions
+            , bugReportOption
+            , korePrintCommand
+            , stepTime
+            } = execOptions
+        runExceptionHandlers action =
+            action
+                & handle exitReplHandler
+                & handle withConfigurationHandler
+                & handle someExceptionHandler
 
-    exitReplHandler :: ExitCode -> Main ExitCode
-    exitReplHandler = pure
+        exitReplHandler :: ExitCode -> Main ExitCode
+        exitReplHandler = pure
 
-    withConfigurationHandler :: Claim.WithConfiguration -> Main ExitCode
-    withConfigurationHandler
-        (Claim.WithConfiguration lastConfiguration someException) =
-            do
-                liftIO $
-                    hPutStrLn
-                        stderr
-                        ("// Last configuration:\n" <> unparseToString lastConfiguration)
-                throwM someException
+        withConfigurationHandler :: Claim.WithConfiguration -> Main ExitCode
+        withConfigurationHandler
+            (Claim.WithConfiguration lastConfiguration someException) =
+                do
+                    liftIO
+                        $ hPutStrLn
+                            stderr
+                            ("// Last configuration:\n" <> unparseToString lastConfiguration)
+                    throwM someException
 
-    someExceptionHandler :: SomeException -> Main ExitCode
-    someExceptionHandler someException = do
-        case fromException someException of
-            Just entry@(SomeEntry _ _) -> logEntry entry
-            Nothing -> errorException someException
-        throwM someException
+        someExceptionHandler :: SomeException -> Main ExitCode
+        someExceptionHandler someException = do
+            case fromException someException of
+                Just entry@(SomeEntry _ _) -> logEntry entry
+                Nothing -> errorException someException
+            throwM someException
 
-    mainModuleName :: ModuleName
-    mainModuleName = moduleName definitionModule
+        mainModuleName :: ModuleName
+        mainModuleName = moduleName definitionModule
 
-    definitionFileName :: FilePath
-    definitionFileName = fileName definitionModule
+        definitionFileName :: FilePath
+        definitionFileName = fileName definitionModule
 
-    specModule :: ModuleName
-    specModule = specMainModule proveOptions
+        specModule :: ModuleName
+        specModule = specMainModule proveOptions
 
-    specFile :: FilePath
-    specFile = specFileName proveOptions
+        specFile :: FilePath
+        specFile = specFileName proveOptions
 
-    kompiledDir :: KompiledDir
-    kompiledDir = KompiledDir . takeDirectory $ fileName definitionModule
+        kompiledDir :: KompiledDir
+        kompiledDir = KompiledDir . takeDirectory $ fileName definitionModule
 
-    smtTimeOut :: SMT.TimeOut
-    smtTimeOut = timeOut smtOptions
+        smtTimeOut :: SMT.TimeOut
+        smtTimeOut = timeOut smtOptions
 
-    smtRLimit :: SMT.RLimit
-    smtRLimit = rLimit smtOptions
+        smtRLimit :: SMT.RLimit
+        smtRLimit = rLimit smtOptions
 
-    smtResetInterval :: SMT.ResetInterval
-    smtResetInterval = resetInterval smtOptions
+        smtResetInterval :: SMT.ResetInterval
+        smtResetInterval = resetInterval smtOptions
 
-    smtPrelude :: SMT.Prelude
-    smtPrelude = prelude smtOptions
+        smtPrelude :: SMT.Prelude
+        smtPrelude = prelude smtOptions
 
-    replStuckCheck :: Claim.StuckCheck
-    replStuckCheck = stuckCheck proveOptions
+        replStuckCheck :: Claim.StuckCheck
+        replStuckCheck = stuckCheck proveOptions
 
-    replMinDepth :: Maybe Claim.MinDepth
-    replMinDepth = minDepth proveOptions
+        replMinDepth :: Maybe Claim.MinDepth
+        replMinDepth = minDepth proveOptions
 
-    replAllowVacuous :: Claim.AllowVacuous
-    replAllowVacuous = allowVacuous proveOptions
+        replAllowVacuous :: Claim.AllowVacuous
+        replAllowVacuous = allowVacuous proveOptions
 
-    replStepTimeout :: Maybe StepTimeout
-    replStepTimeout = GlobalMain.stepTimeout proveOptions
+        replStepTimeout :: Maybe StepTimeout
+        replStepTimeout = GlobalMain.stepTimeout proveOptions
 
-    replEnableMovingAverage :: EnableMovingAverage
-    replEnableMovingAverage = GlobalMain.enableMovingAverage proveOptions
+        replEnableMovingAverage :: EnableMovingAverage
+        replEnableMovingAverage = GlobalMain.enableMovingAverage proveOptions

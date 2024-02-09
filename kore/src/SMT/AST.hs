@@ -194,17 +194,17 @@ which signals the end of a command.
 -}
 sendSExpr :: Handle -> SExpr -> IO ()
 sendSExpr h = sendSExprWorker
-  where
-    sendSExprWorker =
-        \case
-            Atom atom -> Text.hPutStr h atom
-            List atoms -> do
-                hPutChar h '('
-                mapM_ sendListElement atoms
-                hPutChar h ')'
-    sendListElement sExpr = do
-        sendSExprWorker sExpr
-        hPutChar h ' '
+    where
+        sendSExprWorker =
+            \case
+                Atom atom -> Text.hPutStr h atom
+                List atoms -> do
+                    hPutChar h '('
+                    mapM_ sendListElement atoms
+                    hPutChar h ')'
+        sendListElement sExpr = do
+            sendSExprWorker sExpr
+            hPutChar h ' '
 
 type Parser = Parsec Void Text
 
@@ -219,28 +219,28 @@ skipLineComment = Lexer.skipLineComment ";"
 -- | Basic S-expression parser.
 parseSExpr :: Parser SExpr
 parseSExpr = parseAtom <|> parseList
-  where
-    parseAtom :: Parser SExpr
-    parseAtom = lexeme (Atom <$> Parser.takeWhile1P Nothing notSpecial)
+    where
+        parseAtom :: Parser SExpr
+        parseAtom = lexeme (Atom <$> Parser.takeWhile1P Nothing notSpecial)
 
-    parseList :: Parser SExpr
-    parseList =
-        List <$> (lparen *> Parser.many parseSExpr <* rparen)
+        parseList :: Parser SExpr
+        parseList =
+            List <$> (lparen *> Parser.many parseSExpr <* rparen)
 
-    special :: Char -> Bool
-    special c = isSpace c || c == '(' || c == ')' || c == ';'
+        special :: Char -> Bool
+        special c = isSpace c || c == '(' || c == ')' || c == ';'
 
-    notSpecial :: Char -> Bool
-    notSpecial = not . special
+        notSpecial :: Char -> Bool
+        notSpecial = not . special
 
-    lparen :: Parser Char
-    lparen = lexeme (Parser.char '(')
+        lparen :: Parser Char
+        lparen = lexeme (Parser.char '(')
 
-    rparen :: Parser Char
-    rparen = lexeme (Parser.char ')')
+        rparen :: Parser Char
+        rparen = lexeme (Parser.char ')')
 
-    lexeme :: Parser a -> Parser a
-    lexeme = Lexer.lexeme parseSExprSpace
+        lexeme :: Parser a -> Parser a
+        lexeme = Lexer.lexeme parseSExprSpace
 
 parseSExprFile :: Parser [SExpr]
 parseSExprFile = parseSExprSpace *> Parser.some parseSExpr

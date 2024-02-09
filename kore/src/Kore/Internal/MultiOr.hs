@@ -169,15 +169,15 @@ distributeApplication
             (curry go)
             (singleton application)
             applicationChildren
-      where
-        go = \case
-            (MultiOrBottom, _) -> MultiOrBottom
-            (_, MultiOrBottom) -> MultiOrBottom
-            (mor, mapp) -> make [applyTo child app | child <- toList mor, app <- toList mapp]
-        applyTo term Application{applicationSymbolOrAlias = alias, applicationChildren = children} =
-            Application{applicationSymbolOrAlias = alias, applicationChildren = term : children}
-        application =
-            Application{applicationSymbolOrAlias, applicationChildren = []}
+        where
+            go = \case
+                (MultiOrBottom, _) -> MultiOrBottom
+                (_, MultiOrBottom) -> MultiOrBottom
+                (mor, mapp) -> make [applyTo child app | child <- toList mor, app <- toList mapp]
+            applyTo term Application{applicationSymbolOrAlias = alias, applicationChildren = children} =
+                Application{applicationSymbolOrAlias = alias, applicationChildren = term : children}
+            application =
+                Application{applicationSymbolOrAlias, applicationChildren = []}
 
 {- | 'flatten' transforms a MultiOr (MultiOr term)
 into a (MultiOr term) by or-ing all the inner elements.
@@ -215,15 +215,15 @@ make ::
     f term ->
     MultiOr term
 make ~patts = foldr go stop patts Set.empty
-  where
-    go element ~r !es =
-        case patternToMaybeBool element of
-            Just True -> MultiOrTop element
-            Just False -> r es
-            Nothing -> r (Set.insert element es)
-    stop es
-        | null es = MultiOrBottom
-        | otherwise = MultiOr es
+    where
+        go element ~r !es =
+            case patternToMaybeBool element of
+                Just True -> MultiOrTop element
+                Just False -> r es
+                Nothing -> r (Set.insert element es)
+        stop es
+            | null es = MultiOrBottom
+            | otherwise = MultiOr es
 
 {- | Merge two disjunctions of items.
 

@@ -369,36 +369,36 @@ instance Corecursive (Predicate variable) where
     {-# INLINE embed #-}
 
     ana coalg = Predicate . ana0
-      where
-        ana0 =
-            Recursive.ana (Compose . Identity . coalg)
+        where
+            ana0 =
+                Recursive.ana (Compose . Identity . coalg)
     {-# INLINE ana #-}
 
     apo coalg = Predicate . apo0
-      where
-        apo0 =
-            Recursive.apo
-                ( \a ->
-                    (Compose . Identity)
-                        (Bifunctor.first getPredicate <$> coalg a)
-                )
+        where
+            apo0 =
+                Recursive.apo
+                    ( \a ->
+                        (Compose . Identity)
+                            (Bifunctor.first getPredicate <$> coalg a)
+                    )
     {-# INLINE apo #-}
 
     postpro post coalg = Predicate . postpro0
-      where
-        postpro0 =
-            Recursive.postpro
-                (\(Compose (Identity base)) -> (Compose . Identity) (post base))
-                (Compose . Identity . coalg)
+        where
+            postpro0 =
+                Recursive.postpro
+                    (\(Compose (Identity base)) -> (Compose . Identity) (post base))
+                    (Compose . Identity . coalg)
     {-# INLINE postpro #-}
 
     gpostpro dist post coalg = Predicate . gpostpro0
-      where
-        gpostpro0 =
-            Recursive.gpostpro
-                (Compose . Identity . dist . (<$>) (runIdentity . getCompose))
-                (\(Compose (Identity base)) -> (Compose . Identity) (post base))
-                (Compose . Identity . coalg)
+        where
+            gpostpro0 =
+                Recursive.gpostpro
+                    (Compose . Identity . dist . (<$>) (runIdentity . getCompose))
+                    (\(Compose (Identity base)) -> (Compose . Identity) (post base))
+                    (Compose . Identity . coalg)
     {-# INLINE gpostpro #-}
 
 instance TopBottom (Predicate variable) where
@@ -416,72 +416,74 @@ instance InternalVariable variable => Substitute (Predicate variable) where
     {-# INLINE rename #-}
 
     substitute subst predicate =
-        substituteNone <|> substituteBinder <|> substituteTermLike
-            & fromMaybe substituteDefault
-      where
-        freeVars =
-            Attribute.FreeVariables.toNames
-                (Attribute.freeVariables predicate)
-        subst' = Map.intersection subst (Map.fromSet id freeVars)
-        originalVariables = Set.difference freeVars (Map.keysSet subst')
-        targetFreeVariables =
-            (Foldable.foldl' Set.union Set.empty)
-                ( Attribute.FreeVariables.toNames
-                    . Attribute.freeVariables
-                    <$> subst'
-                )
-        freeVariables' = Set.union originalVariables targetFreeVariables
-        avoidCapture = refreshElementVariable freeVariables'
-
         substituteNone
-            | Map.null subst' = pure predicate
-            | otherwise = empty
+            <|> substituteBinder
+            <|> substituteTermLike
+            & fromMaybe substituteDefault
+        where
+            freeVars =
+                Attribute.FreeVariables.toNames
+                    (Attribute.freeVariables predicate)
+            subst' = Map.intersection subst (Map.fromSet id freeVars)
+            originalVariables = Set.difference freeVars (Map.keysSet subst')
+            targetFreeVariables =
+                (Foldable.foldl' Set.union Set.empty)
+                    ( Attribute.FreeVariables.toNames
+                        . Attribute.freeVariables
+                        <$> subst'
+                    )
+            freeVariables' = Set.union originalVariables targetFreeVariables
+            avoidCapture = refreshElementVariable freeVariables'
 
-        substituteBinder = case predF of
-            ExistsF exists'@Exists{existsVariable = var, existsChild = child} -> do
-                var' <- avoidCapture var
-                let subst'' =
-                        Map.insert
-                            (inject (variableName var))
-                            (TermLike.mkVar $ mkSomeVariable var')
-                            subst'
-                (return . synthesize . ExistsF)
-                    exists'
-                        { existsVariable = var'
-                        , existsChild = substitute subst'' child
-                        }
-            ForallF forall'@Forall{forallVariable = var, forallChild = child} -> do
-                var' <- avoidCapture var
-                let subst'' =
-                        Map.insert
-                            (inject (variableName var))
-                            (TermLike.mkVar $ mkSomeVariable var')
-                            subst'
-                (return . synthesize . ForallF)
-                    forall'
-                        { forallVariable = var'
-                        , forallChild = substitute subst'' child
-                        }
-            _ -> empty
-          where
-            _ :< predF = Recursive.project predicate
+            substituteNone
+                | Map.null subst' = pure predicate
+                | otherwise = empty
 
-        substituteTermLike = case predF of
-            CeilF ceilF ->
-                (pure . synthesize . CeilF) (substitute subst' <$> ceilF)
-            EqualsF equalsF ->
-                (pure . synthesize . EqualsF) (substitute subst' <$> equalsF)
-            FloorF floorF ->
-                (pure . synthesize . FloorF) (substitute subst' <$> floorF)
-            InF inF ->
-                (pure . synthesize . InF) (substitute subst' <$> inF)
-            _ -> empty
-          where
-            _ :< predF = Recursive.project predicate
+            substituteBinder = case predF of
+                ExistsF exists'@Exists{existsVariable = var, existsChild = child} -> do
+                    var' <- avoidCapture var
+                    let subst'' =
+                            Map.insert
+                                (inject (variableName var))
+                                (TermLike.mkVar $ mkSomeVariable var')
+                                subst'
+                    (return . synthesize . ExistsF)
+                        exists'
+                            { existsVariable = var'
+                            , existsChild = substitute subst'' child
+                            }
+                ForallF forall'@Forall{forallVariable = var, forallChild = child} -> do
+                    var' <- avoidCapture var
+                    let subst'' =
+                            Map.insert
+                                (inject (variableName var))
+                                (TermLike.mkVar $ mkSomeVariable var')
+                                subst'
+                    (return . synthesize . ForallF)
+                        forall'
+                            { forallVariable = var'
+                            , forallChild = substitute subst'' child
+                            }
+                _ -> empty
+                where
+                    _ :< predF = Recursive.project predicate
 
-        substituteDefault = synthesize (substitute subst' <$> predF)
-          where
-            _ :< predF = Recursive.project predicate
+            substituteTermLike = case predF of
+                CeilF ceilF ->
+                    (pure . synthesize . CeilF) (substitute subst' <$> ceilF)
+                EqualsF equalsF ->
+                    (pure . synthesize . EqualsF) (substitute subst' <$> equalsF)
+                FloorF floorF ->
+                    (pure . synthesize . FloorF) (substitute subst' <$> floorF)
+                InF inF ->
+                    (pure . synthesize . InF) (substitute subst' <$> inF)
+                _ -> empty
+                where
+                    _ :< predF = Recursive.project predicate
+
+            substituteDefault = synthesize (substitute subst' <$> predF)
+                where
+                    _ :< predF = Recursive.project predicate
 
 instance
     InternalVariable variable =>
@@ -508,8 +510,8 @@ unparseWithSort sort predicate =
         ("\\and" <> parameters [sort])
         (unparse (mkTop sort :: TermLike variable))
         (worker <$> getMultiAndPredicate predicate)
-  where
-    worker = unparse . fromPredicate sort
+    where
+        worker = unparse . fromPredicate sort
 
 unparse2WithSort ::
     InternalVariable variable =>
@@ -566,24 +568,24 @@ fromPredicate ::
     Predicate variable ->
     TermLike variable
 fromPredicate sort = Recursive.fold worker
-  where
-    worker (pat :< predF) =
-        TermLike.setSimplified
-            (PredicatePattern.simplifiedAttribute pat)
-            $ case predF of
-                AndF (BinaryAnd () t1 t2) -> TermLike.mkAnd t1 t2
-                BottomF _ -> TermLike.mkBottom sort
-                CeilF (Ceil () () t) -> TermLike.mkCeil sort t
-                EqualsF (Equals () () t1 t2) -> TermLike.mkEquals sort t1 t2
-                ExistsF (Exists () v t) -> TermLike.mkExists v t
-                FloorF (Floor () () t) -> TermLike.mkFloor sort t
-                ForallF (Forall () v t) -> TermLike.mkForall v t
-                IffF (Iff () t1 t2) -> TermLike.mkIff t1 t2
-                ImpliesF (Implies () t1 t2) -> TermLike.mkImplies t1 t2
-                InF (In () () t1 t2) -> TermLike.mkIn sort t1 t2
-                NotF (Not () t) -> TermLike.mkNot t
-                OrF (BinaryOr () t1 t2) -> TermLike.mkOr t1 t2
-                TopF _ -> TermLike.mkTop sort
+    where
+        worker (pat :< predF) =
+            TermLike.setSimplified
+                (PredicatePattern.simplifiedAttribute pat)
+                $ case predF of
+                    AndF (BinaryAnd () t1 t2) -> TermLike.mkAnd t1 t2
+                    BottomF _ -> TermLike.mkBottom sort
+                    CeilF (Ceil () () t) -> TermLike.mkCeil sort t
+                    EqualsF (Equals () () t1 t2) -> TermLike.mkEquals sort t1 t2
+                    ExistsF (Exists () v t) -> TermLike.mkExists v t
+                    FloorF (Floor () () t) -> TermLike.mkFloor sort t
+                    ForallF (Forall () v t) -> TermLike.mkForall v t
+                    IffF (Iff () t1 t2) -> TermLike.mkIff t1 t2
+                    ImpliesF (Implies () t1 t2) -> TermLike.mkImplies t1 t2
+                    InF (In () () t1 t2) -> TermLike.mkIn sort t1 t2
+                    NotF (Not () t) -> TermLike.mkNot t
+                    OrF (BinaryOr () t1 t2) -> TermLike.mkOr t1 t2
+                    TopF _ -> TermLike.mkTop sort
 
 {- | Simple type used to track whether a predicate building function performed
     a simplification that changed the shape of the resulting term. This is
@@ -627,8 +629,8 @@ makeNotPredicate' p
     | isTop p = (makeFalsePredicate, Changed)
     | isBottom p = (makeTruePredicate, Changed)
     | otherwise =
-        ( synthesize $
-            NotF
+        ( synthesize
+            $ NotF
                 Not
                     { notSort = ()
                     , notChild = p
@@ -657,8 +659,8 @@ makeAndPredicate' p1 p2
     | isTop p2 = (p1, Changed)
     | p1 == p2 = (p1, Changed)
     | otherwise =
-        ( synthesize $
-            AndF
+        ( synthesize
+            $ AndF
                 BinaryAnd
                     { andSort = ()
                     , andFirst = p1
@@ -686,8 +688,8 @@ makeOrPredicate' p1 p2
     | isBottom p2 = (p1, Changed)
     | p1 == p2 = (p1, Changed)
     | otherwise =
-        ( synthesize $
-            OrF
+        ( synthesize
+            $ OrF
                 BinaryOr
                     { orSort = ()
                     , orFirst = p1
@@ -714,8 +716,8 @@ makeImpliesPredicate' p1 p2
     | isTop p1 = (p2, Changed)
     | isBottom p2 = (makeNotPredicate p1, Changed)
     | otherwise =
-        ( synthesize $
-            ImpliesF
+        ( synthesize
+            $ ImpliesF
                 Implies
                     { impliesSort = ()
                     , impliesFirst = p1
@@ -742,8 +744,8 @@ makeIffPredicate' p1 p2
     | isBottom p2 = (makeNotPredicate p1, Changed)
     | isTop p2 = (p1, Changed)
     | otherwise =
-        ( synthesize $
-            IffF
+        ( synthesize
+            $ IffF
                 Iff
                     { iffSort = ()
                     , iffFirst = p1
@@ -764,8 +766,8 @@ makeCeilPredicate' ::
     TermLike variable ->
     (Predicate variable, HasChanged)
 makeCeilPredicate' t =
-    ( synthesize $
-        CeilF
+    ( synthesize
+        $ CeilF
             Ceil
                 { ceilOperandSort = ()
                 , ceilResultSort = ()
@@ -785,8 +787,8 @@ makeFloorPredicate' ::
     TermLike variable ->
     (Predicate variable, HasChanged)
 makeFloorPredicate' t =
-    ( synthesize $
-        FloorF
+    ( synthesize
+        $ FloorF
             Floor
                 { floorOperandSort = ()
                 , floorResultSort = ()
@@ -808,8 +810,8 @@ makeInPredicate' ::
     (Predicate variable, HasChanged)
 makeInPredicate' t1 t2 =
     (TermLike.checkSortsAgree makeInWorker t1 t2, NotChanged)
-  where
-    makeInWorker t1' t2' _ = synthesize $ InF $ In () () t1' t2'
+    where
+        makeInWorker t1' t2' _ = synthesize $ InF $ In () () t1' t2'
 
 makeInPredicate ::
     InternalVariable variable =>
@@ -825,8 +827,8 @@ makeEqualsPredicate' ::
     (Predicate variable, HasChanged)
 makeEqualsPredicate' t1 t2 =
     (TermLike.checkSortsAgree makeEqualsWorker t1 t2, NotChanged)
-  where
-    makeEqualsWorker t1' t2' _ = synthesize $ EqualsF $ Equals () () t1' t2'
+    where
+        makeEqualsWorker t1' t2' _ = synthesize $ EqualsF $ Equals () () t1' t2'
 
 makeEqualsPredicate ::
     InternalVariable variable =>
@@ -844,8 +846,8 @@ makeExistsPredicate' v p
     | isTop p = (p, Changed)
     | isBottom p = (p, Changed)
     | otherwise =
-        ( synthesize $
-            ExistsF
+        ( synthesize
+            $ ExistsF
                 Exists
                     { existsSort = ()
                     , existsVariable = v
@@ -878,8 +880,8 @@ makeForallPredicate' v p
     | isTop p = (p, Changed)
     | isBottom p = (p, Changed)
     | otherwise =
-        ( synthesize $
-            ForallF
+        ( synthesize
+            $ ForallF
                 Forall
                     { forallSort = ()
                     , forallVariable = v
@@ -964,89 +966,89 @@ makePredicate ::
     TermLike variable ->
     Either (NotPredicate variable) (Predicate variable)
 makePredicate t = fst <$> makePredicateWorker t
-  where
-    makePredicateWorker ::
-        TermLike variable ->
-        Either (NotPredicate variable) (Predicate variable, HasChanged)
-    makePredicateWorker =
-        Recursive.elgot makePredicateBottomUp makePredicateTopDown
+    where
+        makePredicateWorker ::
+            TermLike variable ->
+            Either (NotPredicate variable) (Predicate variable, HasChanged)
+        makePredicateWorker =
+            Recursive.elgot makePredicateBottomUp makePredicateTopDown
 
-    makePredicateBottomUp ::
-        Base
-            (TermLike variable)
-            (Either (NotPredicate variable) (Predicate variable, HasChanged)) ->
-        Either (NotPredicate variable) (Predicate variable, HasChanged)
-    makePredicateBottomUp termE = do
-        termWithChanged <- sequence termE
-        let dropChanged ::
-                (Predicate variable, HasChanged) -> Predicate variable
-            dropChanged = fst
+        makePredicateBottomUp ::
+            Base
+                (TermLike variable)
+                (Either (NotPredicate variable) (Predicate variable, HasChanged)) ->
+            Either (NotPredicate variable) (Predicate variable, HasChanged)
+        makePredicateBottomUp termE = do
+            termWithChanged <- sequence termE
+            let dropChanged ::
+                    (Predicate variable, HasChanged) -> Predicate variable
+                dropChanged = fst
 
-            dropPredicate :: (Predicate variable, HasChanged) -> HasChanged
-            dropPredicate = snd
+                dropPredicate :: (Predicate variable, HasChanged) -> HasChanged
+                dropPredicate = snd
 
-            att :< patE = dropChanged <$> termWithChanged
+                att :< patE = dropChanged <$> termWithChanged
 
-            childChanged :: HasChanged
-            childChanged = foldMap dropPredicate termWithChanged
+                childChanged :: HasChanged
+                childChanged = foldMap dropPredicate termWithChanged
 
-            oldSimplified = TermLike.attributeSimplifiedAttribute att
-        (predicate, topChanged) <- case patE of
-            TermLike.TopF _ -> return makeTruePredicate'
-            TermLike.BottomF _ -> return makeFalsePredicate'
-            TermLike.AndF p ->
-                return $
-                    makeAndPredicate' (andFirst p) (andSecond p)
-            TermLike.OrF p ->
-                return $
-                    makeOrPredicate' (orFirst p) (orSecond p)
-            TermLike.IffF p ->
-                return $
-                    makeIffPredicate' (iffFirst p) (iffSecond p)
-            TermLike.ImpliesF p ->
-                return $
-                    makeImpliesPredicate' (impliesFirst p) (impliesSecond p)
-            TermLike.NotF p -> return $ makeNotPredicate' (notChild p)
-            TermLike.ExistsF p ->
-                return $
-                    makeExistsPredicate' (existsVariable p) (existsChild p)
-            TermLike.ForallF p ->
-                return $
-                    makeForallPredicate' (forallVariable p) (forallChild p)
-            p -> Left (NotPredicate p)
-        return $ case topChanged <> childChanged of
-            Changed -> (predicate, Changed)
-            NotChanged ->
-                (setSimplified oldSimplified predicate, NotChanged)
+                oldSimplified = TermLike.attributeSimplifiedAttribute att
+            (predicate, topChanged) <- case patE of
+                TermLike.TopF _ -> return makeTruePredicate'
+                TermLike.BottomF _ -> return makeFalsePredicate'
+                TermLike.AndF p ->
+                    return
+                        $ makeAndPredicate' (andFirst p) (andSecond p)
+                TermLike.OrF p ->
+                    return
+                        $ makeOrPredicate' (orFirst p) (orSecond p)
+                TermLike.IffF p ->
+                    return
+                        $ makeIffPredicate' (iffFirst p) (iffSecond p)
+                TermLike.ImpliesF p ->
+                    return
+                        $ makeImpliesPredicate' (impliesFirst p) (impliesSecond p)
+                TermLike.NotF p -> return $ makeNotPredicate' (notChild p)
+                TermLike.ExistsF p ->
+                    return
+                        $ makeExistsPredicate' (existsVariable p) (existsChild p)
+                TermLike.ForallF p ->
+                    return
+                        $ makeForallPredicate' (forallVariable p) (forallChild p)
+                p -> Left (NotPredicate p)
+            return $ case topChanged <> childChanged of
+                Changed -> (predicate, Changed)
+                NotChanged ->
+                    (setSimplified oldSimplified predicate, NotChanged)
 
-    makePredicateTopDown ::
-        TermLike variable ->
-        Either
-            (Either (NotPredicate variable) (Predicate variable, HasChanged))
-            (Base (TermLike variable) (TermLike variable))
-    makePredicateTopDown (Recursive.project -> projected@(att :< pat)) =
-        case pat of
-            TermLike.CeilF Ceil{ceilChild} ->
-                setSmp $
-                    makeCeilPredicate' ceilChild
-            TermLike.FloorF Floor{floorChild} ->
-                setSmp $
-                    makeFloorPredicate' floorChild
-            TermLike.EqualsF Equals{equalsFirst, equalsSecond} ->
-                setSmp $
-                    makeEqualsPredicate' equalsFirst equalsSecond
-            TermLike.InF In{inContainedChild, inContainingChild} ->
-                setSmp $
-                    makeInPredicate' inContainedChild inContainingChild
-            _ -> Right projected
-      where
-        setSmp (p, Changed) = Left $ pure (p, Changed)
-        setSmp (p, NotChanged) =
-            Left $
-                pure
-                    (setSimplified oldSimplified p, NotChanged)
+        makePredicateTopDown ::
+            TermLike variable ->
+            Either
+                (Either (NotPredicate variable) (Predicate variable, HasChanged))
+                (Base (TermLike variable) (TermLike variable))
+        makePredicateTopDown (Recursive.project -> projected@(att :< pat)) =
+            case pat of
+                TermLike.CeilF Ceil{ceilChild} ->
+                    setSmp
+                        $ makeCeilPredicate' ceilChild
+                TermLike.FloorF Floor{floorChild} ->
+                    setSmp
+                        $ makeFloorPredicate' floorChild
+                TermLike.EqualsF Equals{equalsFirst, equalsSecond} ->
+                    setSmp
+                        $ makeEqualsPredicate' equalsFirst equalsSecond
+                TermLike.InF In{inContainedChild, inContainingChild} ->
+                    setSmp
+                        $ makeInPredicate' inContainedChild inContainingChild
+                _ -> Right projected
+            where
+                setSmp (p, Changed) = Left $ pure (p, Changed)
+                setSmp (p, NotChanged) =
+                    Left
+                        $ pure
+                            (setSimplified oldSimplified p, NotChanged)
 
-        oldSimplified = TermLike.attributeSimplifiedAttribute att
+                oldSimplified = TermLike.attributeSimplifiedAttribute att
 
 isPredicate :: InternalVariable variable => TermLike variable -> Bool
 isPredicate = Either.isRight . makePredicate
@@ -1103,13 +1105,13 @@ simplifiedFromChildren predF =
     case mergedSimplified of
         Attribute.NotSimplified -> Attribute.NotSimplified
         _ -> mergedSimplified `Attribute.simplifiedTo` Attribute.fullySimplified
-  where
-    mergedSimplified = case predF of
-        CeilF ceil' -> foldMap TermLike.simplifiedAttribute ceil'
-        FloorF floor' -> foldMap TermLike.simplifiedAttribute floor'
-        EqualsF equals' -> foldMap TermLike.simplifiedAttribute equals'
-        InF in' -> foldMap TermLike.simplifiedAttribute in'
-        _ -> foldMap simplifiedAttribute predF
+    where
+        mergedSimplified = case predF of
+            CeilF ceil' -> foldMap TermLike.simplifiedAttribute ceil'
+            FloorF floor' -> foldMap TermLike.simplifiedAttribute floor'
+            EqualsF equals' -> foldMap TermLike.simplifiedAttribute equals'
+            InF in' -> foldMap TermLike.simplifiedAttribute in'
+            _ -> foldMap simplifiedAttribute predF
 
 checkedSimplifiedFromChildren ::
     (HasCallStack, InternalVariable variable) =>
@@ -1170,16 +1172,16 @@ setSimplified
             ( PredicatePattern.setSimplified mergedSimplified attrs
                 :< predF
             )
-      where
-        childSimplified = simplifiedFromChildren predF
-        mergedSimplified = case (childSimplified, simplified) of
-            (Attribute.NotSimplified, Attribute.NotSimplified) ->
-                Attribute.NotSimplified
-            (Attribute.NotSimplified, _) ->
-                cannotSimplifyNotSimplifiedError predF
-            (_, Attribute.NotSimplified) ->
-                Attribute.NotSimplified
-            _ -> childSimplified <> simplified
+        where
+            childSimplified = simplifiedFromChildren predF
+            mergedSimplified = case (childSimplified, simplified) of
+                (Attribute.NotSimplified, Attribute.NotSimplified) ->
+                    Attribute.NotSimplified
+                (Attribute.NotSimplified, _) ->
+                    cannotSimplifyNotSimplifiedError predF
+                (_, Attribute.NotSimplified) ->
+                    Attribute.NotSimplified
+                _ -> childSimplified <> simplified
 
 {- | Forget the 'simplifiedAttribute' associated with a 'Predicate'.
 This is not safe to be used inside the simplifier, see 'forgetSimplifiedSafe',
@@ -1195,25 +1197,25 @@ forgetSimplified ::
     Predicate variable ->
     Predicate variable
 forgetSimplified = Recursive.fold worker
-  where
-    worker (_ :< predF) = case predF of
-        CeilF ceil' ->
-            synthesize $
-                CeilF
-                    (TermLike.forgetSimplified <$> ceil')
-        FloorF floor' ->
-            synthesize $
-                FloorF
-                    (TermLike.forgetSimplified <$> floor')
-        EqualsF equals' ->
-            synthesize $
-                EqualsF
-                    (TermLike.forgetSimplified <$> equals')
-        InF in' ->
-            synthesize $
-                InF
-                    (TermLike.forgetSimplified <$> in')
-        _ -> synthesize predF
+    where
+        worker (_ :< predF) = case predF of
+            CeilF ceil' ->
+                synthesize
+                    $ CeilF
+                        (TermLike.forgetSimplified <$> ceil')
+            FloorF floor' ->
+                synthesize
+                    $ FloorF
+                        (TermLike.forgetSimplified <$> floor')
+            EqualsF equals' ->
+                synthesize
+                    $ EqualsF
+                        (TermLike.forgetSimplified <$> equals')
+            InF in' ->
+                synthesize
+                    $ InF
+                        (TermLike.forgetSimplified <$> in')
+            _ -> synthesize predF
 
 {- | Forget the 'simplifiedAttribute' associated with a 'Predicate', with
 some special handling of specific subterms.
@@ -1225,25 +1227,25 @@ forgetSimplifiedSafe ::
     Predicate variable ->
     Predicate variable
 forgetSimplifiedSafe = Recursive.fold worker
-  where
-    worker (_ :< predF) = case predF of
-        CeilF ceil' ->
-            synthesize $
-                CeilF
-                    (TermLike.forgetSimplifiedIgnorePredicates <$> ceil')
-        FloorF floor' ->
-            synthesize $
-                FloorF
-                    (TermLike.forgetSimplifiedIgnorePredicates <$> floor')
-        EqualsF equals' ->
-            synthesize $
-                EqualsF
-                    (TermLike.forgetSimplifiedIgnorePredicates <$> equals')
-        InF in' ->
-            synthesize $
-                InF
-                    (TermLike.forgetSimplifiedIgnorePredicates <$> in')
-        _ -> synthesize predF
+    where
+        worker (_ :< predF) = case predF of
+            CeilF ceil' ->
+                synthesize
+                    $ CeilF
+                        (TermLike.forgetSimplifiedIgnorePredicates <$> ceil')
+            FloorF floor' ->
+                synthesize
+                    $ FloorF
+                        (TermLike.forgetSimplifiedIgnorePredicates <$> floor')
+            EqualsF equals' ->
+                synthesize
+                    $ EqualsF
+                        (TermLike.forgetSimplifiedIgnorePredicates <$> equals')
+            InF in' ->
+                synthesize
+                    $ InF
+                        (TermLike.forgetSimplifiedIgnorePredicates <$> in')
+            _ -> synthesize predF
 
 mapVariables ::
     forall variable1 variable2.
@@ -1262,14 +1264,16 @@ mapVariables adj predicate =
             errorMappingVariables
             id
             (makePredicate termPredicate)
-  where
-    errorMappingVariables termPredicate =
-        error . show . Pretty.vsep $
-            [ "Error when mapping the variables of predicate:"
-            , Pretty.pretty predicate
-            , "The resulting term is not a predicate:"
-            , Pretty.pretty termPredicate
-            ]
+    where
+        errorMappingVariables termPredicate =
+            error
+                . show
+                . Pretty.vsep
+                $ [ "Error when mapping the variables of predicate:"
+                  , Pretty.pretty predicate
+                  , "The resulting term is not a predicate:"
+                  , Pretty.pretty termPredicate
+                  ]
 
 -- | Is the predicate free of the given variables?
 isFreeOf ::
@@ -1279,8 +1283,8 @@ isFreeOf ::
     Bool
 isFreeOf predicate =
     Set.disjoint
-        ( Attribute.FreeVariables.toSet $
-            Attribute.freeVariables predicate
+        ( Attribute.FreeVariables.toSet
+            $ Attribute.freeVariables predicate
         )
 
 freeElementVariables :: Predicate variable -> [ElementVariable variable]
@@ -1313,13 +1317,13 @@ wrapPredicate =
 
 depth :: Predicate variable -> Int
 depth = Recursive.fold levelDepth
-  where
-    levelDepth (_ :< predF) = case predF of
-        CeilF x -> 1 + foldl' max 0 (TermLike.depth <$> x)
-        FloorF x -> 1 + foldl' max 0 (TermLike.depth <$> x)
-        EqualsF x -> 1 + foldl' max 0 (TermLike.depth <$> x)
-        InF x -> 1 + foldl' max 0 (TermLike.depth <$> x)
-        _ -> 1 + foldl' max 0 predF
+    where
+        levelDepth (_ :< predF) = case predF of
+            CeilF x -> 1 + foldl' max 0 (TermLike.depth <$> x)
+            FloorF x -> 1 + foldl' max 0 (TermLike.depth <$> x)
+            EqualsF x -> 1 + foldl' max 0 (TermLike.depth <$> x)
+            InF x -> 1 + foldl' max 0 (TermLike.depth <$> x)
+            _ -> 1 + foldl' max 0 predF
 
 containsSymbolWithIdPred :: String -> Predicate variable -> Bool
 containsSymbolWithIdPred symId (Recursive.project -> _ :< predicate) =

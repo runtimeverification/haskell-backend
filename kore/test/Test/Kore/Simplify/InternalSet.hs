@@ -67,23 +67,23 @@ test_simplify =
         )
         [Pattern.withCondition (mkSetAux [Mock.a] [] [] & mkInternalSet) ceila]
     ]
-  where
-    a = OrPattern.fromTermLike Mock.a
-    b = OrPattern.fromTermLike Mock.b
-    ceila =
-        makeCeilPredicate (Mock.f Mock.a)
-            & Condition.fromPredicate
-    bottom = OrPattern.fromPatterns [Pattern.bottomOf Mock.topSort]
-    becomes ::
-        HasCallStack =>
-        TestName ->
-        InternalSet Key (OrPattern RewritingVariableName) ->
-        [Pattern RewritingVariableName] ->
-        TestTree
-    becomes name origin (OrPattern.fromPatterns -> expects) =
-        testCase name $ do
-            let actuals = evaluate origin
-            assertEqual "" expects actuals
+    where
+        a = OrPattern.fromTermLike Mock.a
+        b = OrPattern.fromTermLike Mock.b
+        ceila =
+            makeCeilPredicate (Mock.f Mock.a)
+                & Condition.fromPredicate
+        bottom = OrPattern.fromPatterns [Pattern.bottomOf Mock.topSort]
+        becomes ::
+            HasCallStack =>
+            TestName ->
+            InternalSet Key (OrPattern RewritingVariableName) ->
+            [Pattern RewritingVariableName] ->
+            TestTree
+        becomes name origin (OrPattern.fromPatterns -> expects) =
+            testCase name $ do
+                let actuals = evaluate origin
+                assertEqual "" expects actuals
 
 mkSet :: [child] -> [child] -> InternalSet Key child
 mkSet = mkSetAux []
@@ -110,8 +110,8 @@ mkSetAux concreteElements elements opaque =
                     , opaque
                     }
         }
-  where
-    mkSetValue = \x -> (x, SetValue)
+    where
+        mkSetValue = \x -> (x, SetValue)
 
 evaluate ::
     InternalSet Key (OrPattern RewritingVariableName) ->

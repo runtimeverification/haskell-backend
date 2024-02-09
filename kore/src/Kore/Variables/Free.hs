@@ -36,39 +36,39 @@ freePureVariables root =
                 Set.empty -- initial set of bound variables
                 Set.empty -- initial set of free variables
      in free
-  where
-    isBound v = Monad.RWS.asks (Set.member v)
-    recordFree v = Monad.RWS.modify' (Set.insert v)
+    where
+        isBound v = Monad.RWS.asks (Set.member v)
+        recordFree v = Monad.RWS.modify' (Set.insert v)
 
-    freePureVariables1 recursive =
-        case Cofree.tailF (Recursive.project recursive) of
-            VariableF (Const variable) ->
-                Monad.unlessM (isBound variable) (recordFree variable)
-            ExistsF Exists{existsVariable, existsChild} ->
-                Monad.RWS.local
-                    -- record the bound variable
-                    (Set.insert (mkSomeVariable existsVariable))
-                    -- descend into the bound pattern
-                    (freePureVariables1 existsChild)
-            ForallF Forall{forallVariable, forallChild} ->
-                Monad.RWS.local
-                    -- record the bound variable
-                    (Set.insert (mkSomeVariable forallVariable))
-                    -- descend into the bound pattern
-                    (freePureVariables1 forallChild)
-            MuF Mu{muVariable, muChild} ->
-                Monad.RWS.local
-                    -- record the bound variable
-                    (Set.insert (mkSomeVariable muVariable))
-                    -- descend into the bound pattern
-                    (freePureVariables1 muChild)
-            NuF Nu{nuVariable, nuChild} ->
-                Monad.RWS.local
-                    -- record the bound variable
-                    (Set.insert (mkSomeVariable nuVariable))
-                    -- descend into the bound pattern
-                    (freePureVariables1 nuChild)
-            p -> mapM_ freePureVariables1 p
+        freePureVariables1 recursive =
+            case Cofree.tailF (Recursive.project recursive) of
+                VariableF (Const variable) ->
+                    Monad.unlessM (isBound variable) (recordFree variable)
+                ExistsF Exists{existsVariable, existsChild} ->
+                    Monad.RWS.local
+                        -- record the bound variable
+                        (Set.insert (mkSomeVariable existsVariable))
+                        -- descend into the bound pattern
+                        (freePureVariables1 existsChild)
+                ForallF Forall{forallVariable, forallChild} ->
+                    Monad.RWS.local
+                        -- record the bound variable
+                        (Set.insert (mkSomeVariable forallVariable))
+                        -- descend into the bound pattern
+                        (freePureVariables1 forallChild)
+                MuF Mu{muVariable, muChild} ->
+                    Monad.RWS.local
+                        -- record the bound variable
+                        (Set.insert (mkSomeVariable muVariable))
+                        -- descend into the bound pattern
+                        (freePureVariables1 muChild)
+                NuF Nu{nuVariable, nuChild} ->
+                    Monad.RWS.local
+                        -- record the bound variable
+                        (Set.insert (mkSomeVariable nuVariable))
+                        -- descend into the bound pattern
+                        (freePureVariables1 nuChild)
+                p -> mapM_ freePureVariables1 p
 
 pureMergeVariables ::
     Ord variable =>

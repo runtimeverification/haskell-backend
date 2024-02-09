@@ -153,8 +153,8 @@ respond serverState moduleName runSMT =
                                 fromMaybe False logSuccessfulRewrites || fromMaybe False logSuccessfulSimplifications
                         traversalResult <-
                             liftIO
-                                ( runSMT (Exec.metadataTools serializedModule) lemmas $
-                                    Exec.rpcExec
+                                ( runSMT (Exec.metadataTools serializedModule) lemmas
+                                    $ Exec.rpcExec
                                         (maybe Unlimited (\(Depth n) -> Limit n) maxDepth)
                                         (coerce stepTimeout)
                                         ( if fromMaybe False movingAverageStepTimeout
@@ -175,32 +175,34 @@ respond serverState moduleName runSMT =
                         let duration =
                                 if (fromMaybe False logTiming)
                                     then
-                                        Just $
-                                            fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
+                                        Just
+                                            $ fromIntegral (toNanoSecs (diffTimeSpec stop start))
+                                            / 1e9
                                     else Nothing
                         pure $ buildResult duration (TermLike.termLikeSort verifiedPattern) traversalResult
-              where
-                toStopLabels :: Maybe [Text] -> Maybe [Text] -> Exec.StopLabels
-                toStopLabels cpRs tRs =
-                    Exec.StopLabels (fromMaybe [] cpRs) (fromMaybe [] tRs)
+                where
+                    toStopLabels :: Maybe [Text] -> Maybe [Text] -> Exec.StopLabels
+                    toStopLabels cpRs tRs =
+                        Exec.StopLabels (fromMaybe [] cpRs) (fromMaybe [] tRs)
 
-                containsLabelOrRuleId rules = \case
-                    Nothing -> Nothing
-                    Just lblsOrRuleIds ->
-                        let requestSet =
-                                Set.fromList $
-                                    concat
-                                        [[Left $ Label $ Just lblOrRid, Right $ UniqueId $ Just lblOrRid] | lblOrRid <- lblsOrRuleIds]
-                            ruleSet =
-                                Set.fromList $
-                                    concat [[Left ruleLabel, Right ruleId] | Exec.RuleTrace{ruleId, ruleLabel} <- toList rules]
-                         in either unLabel getUniqueId <$> Set.lookupMin (requestSet `Set.intersection` ruleSet)
-                mkLogs mbDuration rules
-                    | isJust mbDuration
-                        || fromMaybe False logSuccessfulRewrites
-                        || fromMaybe False logSuccessfulSimplifications =
-                        Just . concat $
-                            maybe [] (\t -> [ProcessingTime (Just KoreRpc) t]) mbDuration
+                    containsLabelOrRuleId rules = \case
+                        Nothing -> Nothing
+                        Just lblsOrRuleIds ->
+                            let requestSet =
+                                    Set.fromList
+                                        $ concat
+                                            [[Left $ Label $ Just lblOrRid, Right $ UniqueId $ Just lblOrRid] | lblOrRid <- lblsOrRuleIds]
+                                ruleSet =
+                                    Set.fromList
+                                        $ concat [[Left ruleLabel, Right ruleId] | Exec.RuleTrace{ruleId, ruleLabel} <- toList rules]
+                             in either unLabel getUniqueId <$> Set.lookupMin (requestSet `Set.intersection` ruleSet)
+                    mkLogs mbDuration rules
+                        | isJust mbDuration
+                            || fromMaybe False logSuccessfulRewrites
+                            || fromMaybe False logSuccessfulSimplifications =
+                            Just
+                                . concat
+                                $ maybe [] (\t -> [ProcessingTime (Just KoreRpc) t]) mbDuration
                                 : [ [ Simplification
                                         { originalTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm originalTerm
                                         , originalTermIndex = Nothing
@@ -228,21 +230,21 @@ respond serverState moduleName runSMT =
                                        ]
                                   | Exec.RuleTrace{simplifications, ruleId} <- toList rules
                                   ]
-                    | otherwise = Nothing
+                        | otherwise = Nothing
 
-                buildResult ::
-                    Maybe Double ->
-                    TermLike.Sort ->
-                    GraphTraversal.TraversalResult (Exec.RpcExecState RewritingVariableName) ->
-                    Either ErrorObj (API 'Res)
-                buildResult mbDuration sort = \case
-                    GraphTraversal.Ended
-                        [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result, rpcRules = rules}] ->
-                            -- Actually not "ended" but out of instructions.
-                            -- See @toTransitionResult@ in @rpcExec@.
-                            Right $
-                                Execute $
-                                    ExecuteResult
+                    buildResult ::
+                        Maybe Double ->
+                        TermLike.Sort ->
+                        GraphTraversal.TraversalResult (Exec.RpcExecState RewritingVariableName) ->
+                        Either ErrorObj (API 'Res)
+                    buildResult mbDuration sort = \case
+                        GraphTraversal.Ended
+                            [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result, rpcRules = rules}] ->
+                                -- Actually not "ended" but out of instructions.
+                                -- See @toTransitionResult@ in @rpcExec@.
+                                Right
+                                    $ Execute
+                                    $ ExecuteResult
                                         { state = patternToExecState False sort result
                                         , depth = Depth depth
                                         , reason = if Just (Depth depth) == maxDepth then DepthBound else Stuck
@@ -251,14 +253,14 @@ respond serverState moduleName runSMT =
                                         , logs = mkLogs mbDuration rules
                                         , unknownPredicate = Nothing
                                         }
-                    GraphTraversal.GotStuck
-                        _n
-                        [ GraphTraversal.IsStuck
-                                Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result, rpcRules = rules}
-                            ] ->
-                            Right $
-                                Execute $
-                                    ExecuteResult
+                        GraphTraversal.GotStuck
+                            _n
+                            [ GraphTraversal.IsStuck
+                                    Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result, rpcRules = rules}
+                                ] ->
+                                Right
+                                    $ Execute
+                                    $ ExecuteResult
                                         { state = patternToExecState False sort result
                                         , depth = Depth depth
                                         , reason = Stuck
@@ -267,14 +269,14 @@ respond serverState moduleName runSMT =
                                         , logs = mkLogs mbDuration rules
                                         , unknownPredicate = Nothing
                                         }
-                    GraphTraversal.GotStuck
-                        _n
-                        [ GraphTraversal.IsVacuous
-                                Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result, rpcRules = rules}
-                            ] ->
-                            Right $
-                                Execute $
-                                    ExecuteResult
+                        GraphTraversal.GotStuck
+                            _n
+                            [ GraphTraversal.IsVacuous
+                                    Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState = result, rpcRules = rules}
+                                ] ->
+                                Right
+                                    $ Execute
+                                    $ ExecuteResult
                                         { state = patternToExecState False sort result
                                         , depth = Depth depth
                                         , reason = Vacuous
@@ -283,13 +285,13 @@ respond serverState moduleName runSMT =
                                         , logs = mkLogs mbDuration rules
                                         , unknownPredicate = Nothing
                                         }
-                    GraphTraversal.Stopped
-                        [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRules = rules}]
-                        nexts
-                            | Just rule <- containsLabelOrRuleId (mconcatMap Exec.rpcRules nexts) cutPointRules ->
-                                Right $
-                                    Execute $
-                                        ExecuteResult
+                        GraphTraversal.Stopped
+                            [Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRules = rules}]
+                            nexts
+                                | Just rule <- containsLabelOrRuleId (mconcatMap Exec.rpcRules nexts) cutPointRules ->
+                                    Right
+                                        $ Execute
+                                        $ ExecuteResult
                                             { state = patternToExecState False sort rpcProgState
                                             , depth = Depth depth
                                             , reason = CutPointRule
@@ -299,10 +301,10 @@ respond serverState moduleName runSMT =
                                             , logs = mkLogs mbDuration rules
                                             , unknownPredicate = Nothing
                                             }
-                            | Just rule <- containsLabelOrRuleId rules terminalRules ->
-                                Right $
-                                    Execute $
-                                        ExecuteResult
+                                | Just rule <- containsLabelOrRuleId rules terminalRules ->
+                                    Right
+                                        $ Execute
+                                        $ ExecuteResult
                                             { state = patternToExecState False sort rpcProgState
                                             , depth = Depth depth
                                             , reason = TerminalRule
@@ -311,10 +313,10 @@ respond serverState moduleName runSMT =
                                             , logs = mkLogs mbDuration rules
                                             , unknownPredicate = Nothing
                                             }
-                            | otherwise ->
-                                Right $
-                                    Execute $
-                                        ExecuteResult
+                                | otherwise ->
+                                    Right
+                                        $ Execute
+                                        $ ExecuteResult
                                             { state = patternToExecState False sort rpcProgState
                                             , depth = Depth depth
                                             , reason = Branching
@@ -324,12 +326,12 @@ respond serverState moduleName runSMT =
                                             , logs = mkLogs mbDuration rules
                                             , unknownPredicate = Nothing
                                             }
-                    GraphTraversal.TimedOut
-                        Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRules = rules}
-                        _ ->
-                            Right $
-                                Execute $
-                                    ExecuteResult
+                        GraphTraversal.TimedOut
+                            Exec.RpcExecState{rpcDepth = ExecDepth depth, rpcProgState, rpcRules = rules}
+                            _ ->
+                                Right
+                                    $ Execute
+                                    $ ExecuteResult
                                         { state = patternToExecState False sort rpcProgState
                                         , depth = Depth depth
                                         , reason = Timeout
@@ -338,73 +340,73 @@ respond serverState moduleName runSMT =
                                         , logs = mkLogs mbDuration rules
                                         , unknownPredicate = Nothing
                                         }
-                    -- these are programmer errors
-                    result@GraphTraversal.Aborted{} ->
-                        Left $ backendError Kore.JsonRpc.Error.Aborted $ show result
-                    other ->
-                        Left $ backendError MultipleStates $ show other
+                        -- these are programmer errors
+                        result@GraphTraversal.Aborted{} ->
+                            Left $ backendError Kore.JsonRpc.Error.Aborted $ show result
+                        other ->
+                            Left $ backendError MultipleStates $ show other
 
-                patternToExecState ::
-                    Bool ->
-                    TermLike.Sort ->
-                    ProgramState (RuleInfo RewritingVariableName) (Pattern RewritingVariableName) ->
-                    ExecuteState
-                patternToExecState includeRuleInfo sort s
-                    | includeRuleInfo =
+                    patternToExecState ::
+                        Bool ->
+                        TermLike.Sort ->
+                        ProgramState (RuleInfo RewritingVariableName) (Pattern RewritingVariableName) ->
                         ExecuteState
-                            { term
-                            , predicate
-                            , substitution
-                            , ruleSubstitution
-                            , rulePredicate
-                            , ruleId
-                            }
-                    | otherwise =
-                        ExecuteState
-                            { term
-                            , predicate
-                            , substitution
-                            , ruleSubstitution = Nothing
-                            , rulePredicate = Nothing
-                            , ruleId = Nothing
-                            }
-                  where
-                    term = PatternJson.fromTermLike $ Pattern.term p
-                    predicate =
-                        case Pattern.predicate p of
-                            PredicateTrue -> Nothing
-                            pr -> Just $ PatternJson.fromPredicate sort pr
-                    substitution =
-                        PatternJson.fromSubstitution sort $ Pattern.substitution p
-                    (p, rulePredicate, ruleSubstitution, ruleId) = case extractProgramState s of
-                        (Nothing, _) -> (Pattern.bottomOf sort, Nothing, Nothing, Nothing)
-                        (Just p', Nothing) -> (getRewritingPattern p', Nothing, Nothing, Nothing)
-                        (Just p', Just (RuleInfo{rulePredicate = pr, ruleSubstitution = sub, ruleId = UniqueId rid})) ->
-                            let subUnwrapped = Substitution.unwrap sub
-                                -- any substitutions which are not RuleVariable <var> -> <term> have been added to the substitution list
-                                -- via an equation in the requires clause, e.g. X ==Int 0
-                                -- hence, we want to copy these into the rule-condition
-                                predsFromSub = filter ((isSomeConfigVariable ||| isSomeEquationVariable) . assignedVariable) subUnwrapped
-                                pr' = Predicate.fromPredicate sort $ Predicate.mapVariables getRewritingVariable pr
-                                finalPr =
-                                    if isTop pr
-                                        then
-                                            if null predsFromSub
-                                                then Nothing
-                                                else Just $ Kore.Syntax.Json.fromTermLike $ foldl1 TermLike.mkAnd $ map toEquals predsFromSub
-                                        else Just $ Kore.Syntax.Json.fromTermLike $ foldl TermLike.mkAnd pr' $ map toEquals predsFromSub
-                             in ( getRewritingPattern p'
-                                , finalPr
-                                , PatternJson.fromSubstitution sort $ Substitution.mapVariables getRewritingVariable sub
-                                , rid
-                                )
+                    patternToExecState includeRuleInfo sort s
+                        | includeRuleInfo =
+                            ExecuteState
+                                { term
+                                , predicate
+                                , substitution
+                                , ruleSubstitution
+                                , rulePredicate
+                                , ruleId
+                                }
+                        | otherwise =
+                            ExecuteState
+                                { term
+                                , predicate
+                                , substitution
+                                , ruleSubstitution = Nothing
+                                , rulePredicate = Nothing
+                                , ruleId = Nothing
+                                }
+                        where
+                            term = PatternJson.fromTermLike $ Pattern.term p
+                            predicate =
+                                case Pattern.predicate p of
+                                    PredicateTrue -> Nothing
+                                    pr -> Just $ PatternJson.fromPredicate sort pr
+                            substitution =
+                                PatternJson.fromSubstitution sort $ Pattern.substitution p
+                            (p, rulePredicate, ruleSubstitution, ruleId) = case extractProgramState s of
+                                (Nothing, _) -> (Pattern.bottomOf sort, Nothing, Nothing, Nothing)
+                                (Just p', Nothing) -> (getRewritingPattern p', Nothing, Nothing, Nothing)
+                                (Just p', Just (RuleInfo{rulePredicate = pr, ruleSubstitution = sub, ruleId = UniqueId rid})) ->
+                                    let subUnwrapped = Substitution.unwrap sub
+                                        -- any substitutions which are not RuleVariable <var> -> <term> have been added to the substitution list
+                                        -- via an equation in the requires clause, e.g. X ==Int 0
+                                        -- hence, we want to copy these into the rule-condition
+                                        predsFromSub = filter ((isSomeConfigVariable ||| isSomeEquationVariable) . assignedVariable) subUnwrapped
+                                        pr' = Predicate.fromPredicate sort $ Predicate.mapVariables getRewritingVariable pr
+                                        finalPr =
+                                            if isTop pr
+                                                then
+                                                    if null predsFromSub
+                                                        then Nothing
+                                                        else Just $ Kore.Syntax.Json.fromTermLike $ foldl1 TermLike.mkAnd $ map toEquals predsFromSub
+                                                else Just $ Kore.Syntax.Json.fromTermLike $ foldl TermLike.mkAnd pr' $ map toEquals predsFromSub
+                                     in ( getRewritingPattern p'
+                                        , finalPr
+                                        , PatternJson.fromSubstitution sort $ Substitution.mapVariables getRewritingVariable sub
+                                        , rid
+                                        )
 
-                    toEquals :: Assignment RewritingVariableName -> TermLike VariableName
-                    toEquals (Substitution.Assignment v t) =
-                        TermLike.mkEquals sort (TermLike.mkVar $ SomeVariable.mapSomeVariable getRewritingVariable v) $
-                            TermLike.mapVariables getRewritingVariable t
+                            toEquals :: Assignment RewritingVariableName -> TermLike VariableName
+                            toEquals (Substitution.Assignment v t) =
+                                TermLike.mkEquals sort (TermLike.mkVar $ SomeVariable.mapSomeVariable getRewritingVariable v)
+                                    $ TermLike.mapVariables getRewritingVariable t
 
-                    a ||| b = \v -> a v || b v
+                            a ||| b = \v -> a v || b v
 
         -- Step StepRequest{} -> pure $ Right $ Step $ StepResult []
         Implies ImpliesRequest{antecedent, consequent, _module, logSuccessfulSimplifications, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
@@ -417,8 +419,8 @@ respond serverState moduleName runSMT =
                             mkRewritingPattern $ Pattern.parsePatternFromTermLike antVerified
                         sort = TermLike.termLikeSort antVerified
                         (consWOExistentials, existentialVars) =
-                            ClaimPattern.termToExistentials $
-                                mkRewritingTerm consVerified
+                            ClaimPattern.termToExistentials
+                                $ mkRewritingTerm consVerified
                         rightPatt = Pattern.parsePatternFromTermLike consWOExistentials
 
                     (logs, result) <-
@@ -441,48 +443,49 @@ respond serverState moduleName runSMT =
                                 then maybe (Just [timeLog]) (Just . (timeLog :)) simplLogs
                                 else simplLogs
                     pure $ buildResult allLogs sort result
-          where
-            verify = do
-                antVerified <-
-                    PatternVerifier.verifyStandalonePattern Nothing $
-                        PatternJson.toParsedPattern $
-                            PatternJson.term antecedent
-                consVerified <-
-                    PatternVerifier.verifyStandalonePattern Nothing $
-                        PatternJson.toParsedPattern $
-                            PatternJson.term consequent
-                pure (antVerified, consVerified)
+            where
+                verify = do
+                    antVerified <-
+                        PatternVerifier.verifyStandalonePattern Nothing
+                            $ PatternJson.toParsedPattern
+                            $ PatternJson.term antecedent
+                    consVerified <-
+                        PatternVerifier.verifyStandalonePattern Nothing
+                            $ PatternJson.toParsedPattern
+                            $ PatternJson.term consequent
+                    pure (antVerified, consVerified)
 
-            renderCond sort cond =
-                let pat = Condition.mapVariables getRewritingVariable cond
-                    predicate =
-                        PatternJson.fromPredicate sort $ Condition.predicate pat
-                    mbSubstitution =
-                        PatternJson.fromSubstitution sort $ Condition.substitution pat
-                    noSubstitution = PatternJson.fromTermLike $ TermLike.mkTop sort
-                 in Condition
-                        { predicate
-                        , substitution = fromMaybe noSubstitution mbSubstitution
-                        }
+                renderCond sort cond =
+                    let pat = Condition.mapVariables getRewritingVariable cond
+                        predicate =
+                            PatternJson.fromPredicate sort $ Condition.predicate pat
+                        mbSubstitution =
+                            PatternJson.fromSubstitution sort $ Condition.substitution pat
+                        noSubstitution = PatternJson.fromTermLike $ TermLike.mkTop sort
+                     in Condition
+                            { predicate
+                            , substitution = fromMaybe noSubstitution mbSubstitution
+                            }
 
-            buildResult _ _ (Left err) = Left $ backendError ImplicationCheckError $ toJSON err
-            buildResult logs sort (Right (term, r)) =
-                let jsonTerm =
-                        PatternJson.fromTermLike $
-                            TermLike.mapVariables getRewritingVariable term
-                 in Right . Implies $
-                        case r of
-                            Claim.Implied Nothing ->
-                                ImpliesResult jsonTerm True (Just . renderCond sort $ Condition.bottom) logs
-                            Claim.Implied (Just cond) ->
-                                ImpliesResult jsonTerm True (Just . renderCond sort $ cond) logs
-                            Claim.NotImplied _ ->
-                                ImpliesResult jsonTerm False Nothing logs
-                            Claim.NotImpliedStuck (Just cond) ->
-                                let jsonCond = renderCond sort cond
-                                 in ImpliesResult jsonTerm False (Just jsonCond) logs
-                            Claim.NotImpliedStuck Nothing ->
-                                ImpliesResult jsonTerm False (Just . renderCond sort $ Condition.bottom) logs
+                buildResult _ _ (Left err) = Left $ backendError ImplicationCheckError $ toJSON err
+                buildResult logs sort (Right (term, r)) =
+                    let jsonTerm =
+                            PatternJson.fromTermLike
+                                $ TermLike.mapVariables getRewritingVariable term
+                     in Right
+                            . Implies
+                            $ case r of
+                                Claim.Implied Nothing ->
+                                    ImpliesResult jsonTerm True (Just . renderCond sort $ Condition.bottom) logs
+                                Claim.Implied (Just cond) ->
+                                    ImpliesResult jsonTerm True (Just . renderCond sort $ cond) logs
+                                Claim.NotImplied _ ->
+                                    ImpliesResult jsonTerm False Nothing logs
+                                Claim.NotImpliedStuck (Just cond) ->
+                                    let jsonCond = renderCond sort cond
+                                     in ImpliesResult jsonTerm False (Just jsonCond) logs
+                                Claim.NotImpliedStuck Nothing ->
+                                    ImpliesResult jsonTerm False (Just . renderCond sort $ Condition.bottom) logs
         Simplify SimplifyRequest{state, _module, logSuccessfulSimplifications, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
             start <- liftIO $ getTime Monotonic
             case verifyIn serializedModule state of
@@ -497,7 +500,8 @@ respond serverState moduleName runSMT =
                         liftIO
                             . runSMT (Exec.metadataTools serializedModule) lemmas
                             . evalInSimplifierContext (fromMaybe False logSuccessfulSimplifications) serializedModule
-                            $ SMT.Evaluator.filterMultiOr $srcLoc =<< Pattern.simplify patt
+                            $ SMT.Evaluator.filterMultiOr $srcLoc
+                            =<< Pattern.simplify patt
 
                     let simplLogs = mkSimplifierLogs logSuccessfulSimplifications logs
                     stop <- liftIO $ getTime Monotonic
@@ -509,22 +513,22 @@ respond serverState moduleName runSMT =
                             if (fromMaybe False logTiming)
                                 then maybe (Just [timeLog]) (Just . (timeLog :)) simplLogs
                                 else simplLogs
-                    pure $
-                        Right $
-                            Simplify
-                                SimplifyResult
-                                    { state =
-                                        PatternJson.fromTermLike $
-                                            TermLike.mapVariables getRewritingVariable $
-                                                OrPattern.toTermLike sort result
-                                    , logs = allLogs
-                                    }
+                    pure
+                        $ Right
+                        $ Simplify
+                            SimplifyResult
+                                { state =
+                                    PatternJson.fromTermLike
+                                        $ TermLike.mapVariables getRewritingVariable
+                                        $ OrPattern.toTermLike sort result
+                                , logs = allLogs
+                                }
         AddModule AddModuleRequest{_module, nameAsId = nameAsId'} -> runExceptT $ do
             let nameAsId = fromMaybe False nameAsId'
             parsedModule@Module{moduleName = name} <-
-                withExceptT (backendError InvalidModule) $
-                    liftEither $
-                        parseKoreModule "<add-module>" _module
+                withExceptT (backendError InvalidModule)
+                    $ liftEither
+                    $ parseKoreModule "<add-module>" _module
             st@ServerState
                 { serializedModules
                 , loadedDefinition = LoadedDefinition{indexedModules, definedNames, kFileLocations}
@@ -534,8 +538,8 @@ respond serverState moduleName runSMT =
 
             -- put the original state back if we fail at any point
             flip catchE (\e -> liftIO (MVar.putMVar serverState st) >> throwError e) $ do
-                when nameAsId $
-                    case (Map.lookup (coerce name) indexedModules, Map.lookup (coerce moduleHash) indexedModules) of
+                when nameAsId
+                    $ case (Map.lookup (coerce name) indexedModules, Map.lookup (coerce moduleHash) indexedModules) of
                         (Just{}, Nothing) ->
                             -- another module with the same name already exists
                             throwError $ backendError DuplicateModuleName name
@@ -553,37 +557,37 @@ respond serverState moduleName runSMT =
 
                 case (Map.lookup (coerce moduleHash) indexedModules, Map.lookup (coerce moduleHash) serializedModules) of
                     (Just foundIdxModule, Just foundSerModule) -> do
-                        liftIO $
-                            MVar.putMVar serverState $
-                                if nameAsId
-                                    then -- the module already exists, but re-adding with name because name-as-id is true
+                        liftIO
+                            $ MVar.putMVar serverState
+                            $ if nameAsId
+                                then -- the module already exists, but re-adding with name because name-as-id is true
 
-                                        ServerState
-                                            { serializedModules =
-                                                Map.insert (coerce name) foundSerModule serializedModules
-                                            , loadedDefinition =
-                                                LoadedDefinition
-                                                    { indexedModules = Map.insert (coerce name) foundIdxModule indexedModules
-                                                    , definedNames
-                                                    , kFileLocations
-                                                    }
-                                            }
-                                    else -- the module already exists so we don't need to add it again
-                                        st
+                                    ServerState
+                                        { serializedModules =
+                                            Map.insert (coerce name) foundSerModule serializedModules
+                                        , loadedDefinition =
+                                            LoadedDefinition
+                                                { indexedModules = Map.insert (coerce name) foundIdxModule indexedModules
+                                                , definedNames
+                                                , kFileLocations
+                                                }
+                                        }
+                                else -- the module already exists so we don't need to add it again
+                                    st
                         pure . AddModule $ AddModuleResult (getModuleName moduleHash)
                     _ -> do
                         (newIndexedModules, newDefinedNames) <-
-                            withExceptT (backendError InvalidModule) $
-                                liftEither $
-                                    verifyAndIndexDefinitionWithBase
-                                        (indexedModules, definedNames)
-                                        Builtin.koreVerifiers
-                                        (Definition (def @Attributes) [parsedModule{moduleName = moduleHash}])
+                            withExceptT (backendError InvalidModule)
+                                $ liftEither
+                                $ verifyAndIndexDefinitionWithBase
+                                    (indexedModules, definedNames)
+                                    Builtin.koreVerifiers
+                                    (Definition (def @Attributes) [parsedModule{moduleName = moduleHash}])
 
                         newModule <-
-                            liftEither $
-                                maybe (Left $ backendError CouldNotFindModule moduleHash) Right $
-                                    Map.lookup (coerce moduleHash) newIndexedModules
+                            liftEither
+                                $ maybe (Left $ backendError CouldNotFindModule moduleHash) Right
+                                $ Map.lookup (coerce moduleHash) newIndexedModules
 
                         let metadataTools = MetadataTools.build newModule
                             lemmas = getSMTLemmas newModule
@@ -601,8 +605,8 @@ respond serverState moduleName runSMT =
                                     , lemmas = lemmas
                                     }
                             newSerializedModules =
-                                Map.fromList $
-                                    if nameAsId
+                                Map.fromList
+                                    $ if nameAsId
                                         then [(coerce moduleHash, serializedDefinition), (coerce name, serializedDefinition)]
                                         else [(coerce moduleHash, serializedDefinition)]
                             loadedDefinition =
@@ -612,8 +616,9 @@ respond serverState moduleName runSMT =
                                     , kFileLocations
                                     }
 
-                        liftIO . MVar.putMVar serverState $
-                            ServerState
+                        liftIO
+                            . MVar.putMVar serverState
+                            $ ServerState
                                 { serializedModules =
                                     serializedModules `Map.union` newSerializedModules
                                 , loadedDefinition
@@ -642,8 +647,10 @@ respond serverState moduleName runSMT =
                                         . SMT.Evaluator.getModelFor tools
                                         $ NonEmpty.fromList preds
 
-                        pure . Right . GetModel $
-                            case result of
+                        pure
+                            . Right
+                            . GetModel
+                            $ case result of
                                 Left False ->
                                     GetModelResult
                                         { satisfiable = Unknown
@@ -658,79 +665,79 @@ respond serverState moduleName runSMT =
                                     GetModelResult
                                         { satisfiable = Sat
                                         , substitution =
-                                            PatternJson.fromSubstitution sort $
-                                                Substitution.mapVariables getRewritingVariable subst
+                                            PatternJson.fromSubstitution sort
+                                                $ Substitution.mapVariables getRewritingVariable subst
                                         }
 
         -- this case is only reachable if the cancel appeared as part of a batch request
         Cancel -> pure $ Left cancelUnsupportedInBatchMode
-  where
-    withMainModule module' act = do
-        let mainModule = fromMaybe moduleName module'
-        ServerState{serializedModules} <- liftIO $ MVar.readMVar serverState
-        case Map.lookup mainModule serializedModules of
-            Nothing -> pure $ Left $ backendError CouldNotFindModule mainModule
-            Just (SerializedDefinition{serializedModule, lemmas}) ->
-                act serializedModule lemmas
+    where
+        withMainModule module' act = do
+            let mainModule = fromMaybe moduleName module'
+            ServerState{serializedModules} <- liftIO $ MVar.readMVar serverState
+            case Map.lookup mainModule serializedModules of
+                Nothing -> pure $ Left $ backendError CouldNotFindModule mainModule
+                Just (SerializedDefinition{serializedModule, lemmas}) ->
+                    act serializedModule lemmas
 
-    verifierContext Exec.SerializedModule{verifiedModule} =
-        PatternVerifier.verifiedModuleContext verifiedModule
-            & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
-            & withRpcRequest
-      where
-        withRpcRequest context = context{isRpcRequest = True}
+        verifierContext Exec.SerializedModule{verifiedModule} =
+            PatternVerifier.verifiedModuleContext verifiedModule
+                & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
+                & withRpcRequest
+            where
+                withRpcRequest context = context{isRpcRequest = True}
 
-    -- verifyIn :: Exec.SerializedModule -> PatternJson.KoreJson -> Either VerifyError (Pattern _)
-    verifyIn m state =
-        PatternVerifier.runPatternVerifier (verifierContext m) $
-            PatternVerifier.verifyStandalonePattern Nothing $
-                PatternJson.toParsedPattern (PatternJson.term state)
+        -- verifyIn :: Exec.SerializedModule -> PatternJson.KoreJson -> Either VerifyError (Pattern _)
+        verifyIn m state =
+            PatternVerifier.runPatternVerifier (verifierContext m)
+                $ PatternVerifier.verifyStandalonePattern Nothing
+                $ PatternJson.toParsedPattern (PatternJson.term state)
 
-    mkSimplifierLogs :: Maybe Bool -> Seq SimplifierTrace -> Maybe [LogEntry]
-    mkSimplifierLogs Nothing _ = Nothing
-    mkSimplifierLogs (Just False) _ = Nothing
-    mkSimplifierLogs (Just True) logs =
-        Just
-            [ Simplification
-                { originalTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm originalTerm
-                , originalTermIndex = Nothing
-                , result =
-                    Success
-                        { rewrittenTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm $ Pattern.term rewrittenTerm
-                        , substitution = Nothing
-                        , ruleId = fromMaybe "UNKNOWN" $ getUniqueId equationId
-                        }
-                , origin = KoreRpc
+        mkSimplifierLogs :: Maybe Bool -> Seq SimplifierTrace -> Maybe [LogEntry]
+        mkSimplifierLogs Nothing _ = Nothing
+        mkSimplifierLogs (Just False) _ = Nothing
+        mkSimplifierLogs (Just True) logs =
+            Just
+                [ Simplification
+                    { originalTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm originalTerm
+                    , originalTermIndex = Nothing
+                    , result =
+                        Success
+                            { rewrittenTerm = Just $ PatternJson.fromTermLike $ getRewritingTerm $ Pattern.term rewrittenTerm
+                            , substitution = Nothing
+                            , ruleId = fromMaybe "UNKNOWN" $ getUniqueId equationId
+                            }
+                    , origin = KoreRpc
+                    }
+                | SimplifierTrace{originalTerm, rewrittenTerm, equationId} <- toList logs
+                ]
+
+        evalInSimplifierContext ::
+            Bool -> Exec.SerializedModule -> Simplifier a -> SMT.SMT (Seq SimplifierTrace, a)
+        evalInSimplifierContext
+            doTracing
+            Exec.SerializedModule
+                { sortGraph
+                , overloadGraph
+                , metadataTools
+                , verifiedModule
+                , equations
                 }
-            | SimplifierTrace{originalTerm, rewrittenTerm, equationId} <- toList logs
-            ]
-
-    evalInSimplifierContext ::
-        Bool -> Exec.SerializedModule -> Simplifier a -> SMT.SMT (Seq SimplifierTrace, a)
-    evalInSimplifierContext
-        doTracing
-        Exec.SerializedModule
-            { sortGraph
-            , overloadGraph
-            , metadataTools
-            , verifiedModule
-            , equations
-            }
-            | doTracing =
-                evalSimplifierLogged
-                    verifiedModule
-                    sortGraph
-                    overloadGraph
-                    metadataTools
-                    equations
-            | otherwise =
-                fmap (Seq.empty,)
-                    . evalSimplifier
+                | doTracing =
+                    evalSimplifierLogged
                         verifiedModule
                         sortGraph
                         overloadGraph
                         metadataTools
                         equations
+                | otherwise =
+                    fmap (Seq.empty,)
+                        . evalSimplifier
+                            verifiedModule
+                            sortGraph
+                            overloadGraph
+                            metadataTools
+                            equations
 
 data ServerState = ServerState
     { serializedModules :: Map.Map ModuleName SerializedDefinition
@@ -750,8 +757,8 @@ runServer ::
     Log.LoggerEnv IO ->
     IO ()
 runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
-    flip runLoggingT logFun $
-        jsonRpcServer
+    flip runLoggingT logFun
+        $ jsonRpcServer
             srvSettings
             ( \req parsed ->
                 log (InfoJsonRpcProcessRequest (getReqId req) parsed)
@@ -761,14 +768,14 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
             , handleErrorCall
             , handleSomeException
             ]
-  where
-    srvSettings = serverSettings port "*"
+    where
+        srvSettings = serverSettings port "*"
 
-    logFun loc src level msg =
-        Log.logWith logAction $ LogJsonRpcServer{loc, src, level, msg}
+        logFun loc src level msg =
+            Log.logWith logAction $ LogJsonRpcServer{loc, src, level, msg}
 
-    log :: MonadIO m => Log.Entry entry => entry -> m ()
-    log = Log.logWith $ Log.hoistLogAction liftIO logAction
+        log :: MonadIO m => Log.Entry entry => entry -> m ()
+        log = Log.logWith $ Log.hoistLogAction liftIO logAction
 
 handleDecidePredicateUnknown :: JsonRpcHandler
 handleDecidePredicateUnknown = JsonRpcHandler $ \(err :: DecidePredicateUnknown) ->

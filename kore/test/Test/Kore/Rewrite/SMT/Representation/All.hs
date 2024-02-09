@@ -50,10 +50,10 @@ test_symbolParsing :: [TestTree]
 test_symbolParsing =
     [ testsForModule
         "Definition with orphan constructors"
-        ( indexModule $
-            emptyModule "m"
-                `with` sortDeclaration "S"
-                `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
+        ( indexModule
+            $ emptyModule "m"
+            `with` sortDeclaration "S"
+            `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
         )
         [ declarationsAre
             AST.Declarations
@@ -71,17 +71,17 @@ test_symbolParsing =
                 }
         ]
     ]
-  where
-    astSortDeclaration name =
-        AST.Sort
-            { sortData = AST.ConstSExpr $ AST.encode (AST.encodable name)
-            , sortDeclaration =
-                AST.SortDeclarationSort
-                    SMT.SortDeclaration
-                        { name = AST.encode (AST.encodable name)
-                        , arity = 0
-                        }
-            }
+    where
+        astSortDeclaration name =
+            AST.Sort
+                { sortData = AST.ConstSExpr $ AST.encode (AST.encodable name)
+                , sortDeclaration =
+                    AST.SortDeclarationSort
+                        SMT.SortDeclaration
+                            { name = AST.encode (AST.encodable name)
+                            , arity = 0
+                            }
+                }
 
 testsForModule ::
     String ->

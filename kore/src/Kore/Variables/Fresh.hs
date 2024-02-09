@@ -103,13 +103,13 @@ instance FreshPartialOrd VariableName where
             & Lens.set (field @"counter") counter'
             & Lens.set (field @"base" . field @"internedIdLocation") generated
             & Just
-      where
-        generated = AstLocationGeneratedVariable
-        counter' =
-            case Lens.view (field @"counter") name2 of
-                Nothing -> Just (Element 0)
-                Just (Element n) -> Just (Element (succ n))
-                Just Sup -> illegalVariableCounter
+        where
+            generated = AstLocationGeneratedVariable
+            counter' =
+                case Lens.view (field @"counter") name2 of
+                    Nothing -> Just (Element 0)
+                    Just (Element n) -> Just (Element (succ n))
+                    Just Sup -> illegalVariableCounter
     {-# INLINE nextName #-}
 
 instance FreshPartialOrd Void where
@@ -289,24 +289,24 @@ refreshVariables' avoid0 variables =
     let (variables', (_, rename)) =
             runState (otraverse worker variables) (avoid0, Map.empty)
      in (variables', rename)
-  where
-    worker var = do
-        (avoid, rename) <- State.get
-        case refreshVariable avoid var of
-            Just var' -> do
-                let avoid' =
-                        -- Avoid the freshly-generated variable in future
-                        -- renamings.
-                        Set.insert (variableName var') avoid
-                    rename' =
-                        -- Record a mapping from the original variable to the
-                        -- freshly-generated variable.
-                        Map.insert var var' rename
-                State.put (avoid', rename')
-                pure var'
-            _ -> do
-                -- The variable does not collide with any others, so renaming is
-                -- not necessary.
-                let avoid' = Set.insert (variableName var) avoid
-                State.put (avoid', rename)
-                pure var
+    where
+        worker var = do
+            (avoid, rename) <- State.get
+            case refreshVariable avoid var of
+                Just var' -> do
+                    let avoid' =
+                            -- Avoid the freshly-generated variable in future
+                            -- renamings.
+                            Set.insert (variableName var') avoid
+                        rename' =
+                            -- Record a mapping from the original variable to the
+                            -- freshly-generated variable.
+                            Map.insert var var' rename
+                    State.put (avoid', rename')
+                    pure var'
+                _ -> do
+                    -- The variable does not collide with any others, so renaming is
+                    -- not necessary.
+                    let avoid' = Set.insert (variableName var) avoid
+                    State.put (avoid', rename)
+                    pure var

@@ -123,42 +123,42 @@ enabledPlaces = Map.empty
 
 smt :: Map DebugPlace DebugResult
 smt =
-    id $
-        Map.insert
+    id
+        $ Map.insert
             D_SMT_command
             DebugResult
             Map.empty
 
 smtStartup :: Map DebugPlace DebugResult
 smtStartup =
-    id $
-        Map.insert D_SMT_referenceCheckSort DebugResult $
-            Map.insert D_SMT_referenceCheckSymbol DebugResult $
-                Map.insert D_SMT_resolveSort DebugResult $
-                    Map.insert
-                        D_SMT_resolveSymbol
-                        DebugResult
-                        Map.empty
+    id
+        $ Map.insert D_SMT_referenceCheckSort DebugResult
+        $ Map.insert D_SMT_referenceCheckSymbol DebugResult
+        $ Map.insert D_SMT_resolveSort DebugResult
+        $ Map.insert
+            D_SMT_resolveSymbol
+            DebugResult
+            Map.empty
 
 onePathWithFunctionNames :: Map DebugPlace DebugResult
 onePathWithFunctionNames =
-    id $
-        Map.insert D_Function_evaluatePattern DebugNoResult $
-            Map.insert D_OnePath_verifyClaim DebugNoResult $
-                Map.insert D_OnePath_Step_transitionRule DebugResult $
-                    Map.insert
-                        D_SMT_refutePredicate
-                        DebugResult
-                        Map.empty
+    id
+        $ Map.insert D_Function_evaluatePattern DebugNoResult
+        $ Map.insert D_OnePath_verifyClaim DebugNoResult
+        $ Map.insert D_OnePath_Step_transitionRule DebugResult
+        $ Map.insert
+            D_SMT_refutePredicate
+            DebugResult
+            Map.empty
 
 executionWithFunctionNames :: Map DebugPlace DebugResult
 executionWithFunctionNames =
-    id $
-        Map.insert D_Function_evaluatePattern DebugNoResult $
-            Map.insert
-                D_Step
-                DebugNoResult
-                Map.empty
+    id
+        $ Map.insert D_Function_evaluatePattern DebugNoResult
+        $ Map.insert
+            D_Step
+            DebugNoResult
+            Map.empty
 
 traceWhenEnabled ::
     DebugPlace -> (DebugResult -> a -> a) -> (a -> a)
@@ -198,15 +198,15 @@ traceExceptTS ::
     ExceptT a m b
 traceExceptTS name startValues debugResult action = ExceptT $ do
     result <-
-        startThing name startValues $
-            runExceptT action
+        startThing name startValues
+            $ runExceptT action
     case result of
         Left err ->
-            endThing name ("error: " ++ show err) debugResult $
-                return (Left err)
+            endThing name ("error: " ++ show err) debugResult
+                $ return (Left err)
         Right r ->
-            endThing name ("result: " ++ show r) debugResult $
-                return (Right r)
+            endThing name ("result: " ++ show r) debugResult
+                $ return (Right r)
 
 {- | Wraps a 'MaybeT' action for printing debug messages, similar to 'trace'.
 
@@ -241,11 +241,11 @@ traceMaybeTS name startValues debugResult action = MaybeT $ do
     result <- startThing name startValues $ runMaybeT action
     case result of
         Nothing ->
-            endThing name "nothing" debugResult $
-                return Nothing
+            endThing name "nothing" debugResult
+                $ return Nothing
         Just r ->
-            endThing name ("result: " ++ show r) debugResult $
-                return (Just r)
+            endThing name ("result: " ++ show r) debugResult
+                $ return (Just r)
 
 {- | Wraps an 'Either' action for printing debug messages, similar to 'trace'.
 
@@ -277,14 +277,14 @@ traceEitherS ::
     Either a b ->
     Either a b
 traceEitherS name startValues debugResult action =
-    startThing name startValues $
-        case action of
+    startThing name startValues
+        $ case action of
             Left err ->
-                endThing name ("error: " ++ show err) debugResult $
-                    Left err
+                endThing name ("error: " ++ show err) debugResult
+                    $ Left err
             Right r ->
-                endThing name ("result: " ++ show r) debugResult $
-                    Right r
+                endThing name ("result: " ++ show r) debugResult
+                    $ Right r
 
 {- | Wraps a 'Maybe' action for printing debug messages, similar to 'trace'.
 
@@ -316,13 +316,13 @@ traceMaybeS ::
     Maybe a ->
     Maybe a
 traceMaybeS name startValues debugResult action =
-    startThing name startValues $
-        case action of
+    startThing name startValues
+        $ case action of
             Nothing ->
                 endThing name "Nothing" debugResult Nothing
             Just r ->
-                endThing name ("result: " ++ show r) debugResult $
-                    Just r
+                endThing name ("result: " ++ show r) debugResult
+                    $ Just r
 
 {- | Wraps a generic monad action for printing debug messages, similar to 'trace'.
 
@@ -358,11 +358,11 @@ traceNonErrorMonadS ::
     m a ->
     m a
 traceNonErrorMonadS name startValues debugResult action =
-    startThing name startValues $
-        do
+    startThing name startValues
+        $ do
             result <- action
-            endThing name ("result: " ++ show result) debugResult $
-                return result
+            endThing name ("result: " ++ show result) debugResult
+                $ return result
 
 {- | Wraps a function for printing debug messages, similar to 'Debug.trace'.
 
@@ -394,19 +394,19 @@ traceFunctionS ::
     -- function result
     a
 traceFunctionS name startValues debugResult result =
-    startThing name startValues $
-        endThing name ("result: " ++ show result) debugResult result
+    startThing name startValues
+        $ endThing name ("result: " ++ show result) debugResult result
 
 startThing :: String -> [DebugArg] -> a -> a
 startThing name startValues =
     trace ("starting " ++ name ++ " with (" ++ formatted ++ ")")
-  where
-    formatted = intercalate "," (map show startValues)
+    where
+        formatted = intercalate "," (map show startValues)
 
 endThing :: String -> String -> DebugResult -> a -> a
 endThing name result debugResult =
     trace ("ending " ++ name ++ resultMesasge)
-  where
-    resultMesasge = case debugResult of
-        DebugResult -> " with " ++ result
-        DebugNoResult -> ""
+    where
+        resultMesasge = case debugResult of
+            DebugResult -> " with " ++ result
+            DebugNoResult -> ""

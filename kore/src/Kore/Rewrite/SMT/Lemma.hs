@@ -92,72 +92,73 @@ declareSMTLemmas tools lemmas = do
         Just Sat -> pure ()
         Just Unsat -> errorInconsistentDefinitions
         Just Unknown -> do
-            SMT.localTimeOut quadrupleTimeOut $
-                SMT.checkUsing checkSatTactic >>= \case
+            SMT.localTimeOut quadrupleTimeOut
+                $ SMT.checkUsing checkSatTactic
+                >>= \case
                     Nothing -> pure ()
                     Just Sat -> pure ()
                     Just Unsat -> errorInconsistentDefinitions
                     Just Unknown -> errorPossiblyInconsistentDefinitions
-  where
-    checkSatTactic :: SExpr
-    checkSatTactic = List [Atom "check-sat"]
+    where
+        checkSatTactic :: SExpr
+        checkSatTactic = List [Atom "check-sat"]
 
-    quadrupleTimeOut :: SMT.TimeOut -> SMT.TimeOut
-    quadrupleTimeOut (SMT.TimeOut Unlimited) = SMT.TimeOut Unlimited
-    quadrupleTimeOut (SMT.TimeOut (Limit r)) = SMT.TimeOut (Limit (4 * r))
+        quadrupleTimeOut :: SMT.TimeOut -> SMT.TimeOut
+        quadrupleTimeOut (SMT.TimeOut Unlimited) = SMT.TimeOut Unlimited
+        quadrupleTimeOut (SMT.TimeOut (Limit r)) = SMT.TimeOut (Limit (4 * r))
 
-    declareRule ::
-        SentenceAxiom (TermLike VariableName) ->
-        m (Maybe ())
-    declareRule axiomDeclaration = runMaybeT $ do
-        oldAxiomEncoding <-
-            sentenceAxiomPattern axiomDeclaration
-                & convert
-                & hoistMaybe
-        (lemma, TranslatorState{terms, predicates}) <-
-            oldAxiomEncoding
-                & wrapPredicate
-                & translatePredicateWith tools top translateUninterpreted
-                & runTranslator
-        addQuantifiers (Map.elems terms <> Map.elems predicates) lemma
-            & SMT.assert
+        declareRule ::
+            SentenceAxiom (TermLike VariableName) ->
+            m (Maybe ())
+        declareRule axiomDeclaration = runMaybeT $ do
+            oldAxiomEncoding <-
+                sentenceAxiomPattern axiomDeclaration
+                    & convert
+                    & hoistMaybe
+            (lemma, TranslatorState{terms, predicates}) <-
+                oldAxiomEncoding
+                    & wrapPredicate
+                    & translatePredicateWith tools top translateUninterpreted
+                    & runTranslator
+            addQuantifiers (Map.elems terms <> Map.elems predicates) lemma
+                & SMT.assert
 
-    -- Translate an "unparsed" equation for Z3.
-    -- Convert new encoding back to old.
-    -- See https://github.com/runtimeverification/k/pull/2061#issuecomment-927922217
-    convert :: TermLike VariableName -> Maybe (TermLike VariableName)
-    convert
-        ( Implies_
-                impliesSort
-                requires
-                ( Equals_
-                        _ -- equalsOperandSort
-                        _ -- equalsResultSort
-                        left
-                        ( And_
-                                _ -- andSort
-                                right
-                                ensures
-                            )
-                    )
-            )
-            | -- matching a chain of "argument predicates" \in(Var_n, actualArg_n)
-              And_ _ requires' argPreds@(And_ _ In_{} _rest) <- requires = do
-                argBinders <- Map.fromList <$> extractBinders argPreds
-                let inlinedLeft = substitute argBinders left
-                requiresPred <- hush $ makePredicate requires'
-                ensuresPred <- hush $ makePredicate ensures
-                Just $
-                    fromPredicate impliesSort $
-                        makeImpliesPredicate
+        -- Translate an "unparsed" equation for Z3.
+        -- Convert new encoding back to old.
+        -- See https://github.com/runtimeverification/k/pull/2061#issuecomment-927922217
+        convert :: TermLike VariableName -> Maybe (TermLike VariableName)
+        convert
+            ( Implies_
+                    impliesSort
+                    requires
+                    ( Equals_
+                            _ -- equalsOperandSort
+                            _ -- equalsResultSort
+                            left
+                            ( And_
+                                    _ -- andSort
+                                    right
+                                    ensures
+                                )
+                        )
+                )
+                | -- matching a chain of "argument predicates" \in(Var_n, actualArg_n)
+                  And_ _ requires' argPreds@(And_ _ In_{} _rest) <- requires = do
+                    argBinders <- Map.fromList <$> extractBinders argPreds
+                    let inlinedLeft = substitute argBinders left
+                    requiresPred <- hush $ makePredicate requires'
+                    ensuresPred <- hush $ makePredicate ensures
+                    Just
+                        $ fromPredicate impliesSort
+                        $ makeImpliesPredicate
                             requiresPred
                             (makeAndPredicate (makeEqualsPredicate inlinedLeft right) ensuresPred)
-            | otherwise = do
-                requiresPredicate <- hush $ makePredicate requires
-                ensuresPredicate <- hush $ makePredicate ensures
-                Just $
-                    fromPredicate impliesSort $
-                        makeImpliesPredicate
+                | otherwise = do
+                    requiresPredicate <- hush $ makePredicate requires
+                    ensuresPredicate <- hush $ makePredicate ensures
+                    Just
+                        $ fromPredicate impliesSort
+                        $ makeImpliesPredicate
                             requiresPredicate
                             ( makeAndPredicate
                                 ( makeEqualsPredicate
@@ -166,34 +167,34 @@ declareSMTLemmas tools lemmas = do
                                 )
                                 ensuresPredicate
                             )
-    convert termLike = Just termLike
+        convert termLike = Just termLike
 
-    extractBinders ::
-        TermLike VariableName ->
-        Maybe [(SomeVariableName VariableName, TermLike VariableName)]
-    extractBinders Top_{} =
-        Just []
-    extractBinders (And_ _ (In_ _ _ (ElemVar_ var) t) rest) =
-        ((SomeVariableNameElement $ variableName var, t) :) <$> extractBinders rest
-    extractBinders _ =
-        Nothing
+        extractBinders ::
+            TermLike VariableName ->
+            Maybe [(SomeVariableName VariableName, TermLike VariableName)]
+        extractBinders Top_{} =
+            Just []
+        extractBinders (And_ _ (In_ _ _ (ElemVar_ var) t) rest) =
+            ((SomeVariableNameElement $ variableName var, t) :) <$> extractBinders rest
+        extractBinders _ =
+            Nothing
 
-    addQuantifiers :: [SMTDependentAtom variable] -> SExpr -> SExpr
-    addQuantifiers smtDependentAtoms lemma | null smtDependentAtoms = lemma
-    addQuantifiers smtDependentAtoms lemma =
-        SMT.List
-            [ SMT.Atom "forall"
-            , SMT.List
-                [ SMT.List [SMT.Atom smtName, smtType]
-                | SMTDependentAtom{smtName, smtType} <- smtDependentAtoms
+        addQuantifiers :: [SMTDependentAtom variable] -> SExpr -> SExpr
+        addQuantifiers smtDependentAtoms lemma | null smtDependentAtoms = lemma
+        addQuantifiers smtDependentAtoms lemma =
+            SMT.List
+                [ SMT.Atom "forall"
+                , SMT.List
+                    [ SMT.List [SMT.Atom smtName, smtType]
+                    | SMTDependentAtom{smtName, smtType} <- smtDependentAtoms
+                    ]
+                , lemma
                 ]
-            , lemma
-            ]
 
-    ~errorInconsistentDefinitions =
-        error "The definitions sent to the solver are inconsistent."
-    ~errorPossiblyInconsistentDefinitions =
-        error "The definitions sent to the solver may not be consistent (Z3 timed out)."
+        ~errorInconsistentDefinitions =
+            error "The definitions sent to the solver are inconsistent."
+        ~errorPossiblyInconsistentDefinitions =
+            error "The definitions sent to the solver may not be consistent (Z3 timed out)."
 
 translateUninterpreted ::
     ( Ord variable
@@ -209,19 +210,19 @@ translateUninterpreted _ (UninterpretedPredicate _) = empty
 translateUninterpreted t (UninterpretedTerm pat)
     | isVariable pat = lookupPattern <|> freeVariable
     | otherwise = empty
-  where
-    isVariable p =
-        case Cofree.tailF $ Recursive.project p of
-            VariableF _ -> True
-            _ -> False
-    lookupPattern = do
-        result <- State.gets $ Map.lookup pat . terms
-        maybe empty (return . SMT.Atom . smtName) result
-    freeVariable = do
-        n <- Counter.increment
-        let var = "<" <> Text.pack (show n) <> ">"
-        field @"terms"
-            Lens.%= Map.insert
-                pat
-                SMTDependentAtom{smtName = var, smtType = t, boundVars = []}
-        return $ SMT.Atom var
+    where
+        isVariable p =
+            case Cofree.tailF $ Recursive.project p of
+                VariableF _ -> True
+                _ -> False
+        lookupPattern = do
+            result <- State.gets $ Map.lookup pat . terms
+            maybe empty (return . SMT.Atom . smtName) result
+        freeVariable = do
+            n <- Counter.increment
+            let var = "<" <> Text.pack (show n) <> ">"
+            field @"terms"
+                Lens.%= Map.insert
+                    pat
+                    SMTDependentAtom{smtName = var, smtType = t, boundVars = []}
+            return $ SMT.Atom var

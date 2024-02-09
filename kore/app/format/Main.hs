@@ -60,25 +60,26 @@ main = do
             commandLine
             infoMod
     for_ (localOptions options) mainWorker
-  where
-    mainWorker
-        LocalOptions
-            { execOptions =
-                KoreFormatOptions{fileName, width}
-            } =
-            do
-                defn <- readKoreOrDie fileName
-                let layoutOptions =
-                        defaultLayoutOptions
-                            { layoutPageWidth =
-                                if width > 0
-                                    then AvailablePerLine width 1.0
-                                    else Unbounded
-                            }
-                renderIO stdout (layoutPretty layoutOptions $ unparse defn)
+    where
+        mainWorker
+            LocalOptions
+                { execOptions =
+                    KoreFormatOptions{fileName, width}
+                } =
+                do
+                    defn <- readKoreOrDie fileName
+                    let layoutOptions =
+                            defaultLayoutOptions
+                                { layoutPageWidth =
+                                    if width > 0
+                                        then AvailablePerLine width 1.0
+                                        else Unbounded
+                                }
+                    renderIO stdout (layoutPretty layoutOptions $ unparse defn)
 
 -- | Read a 'KoreDefinition' from the given file name or signal an error.
 readKoreOrDie :: FilePath -> IO ParsedDefinition
 readKoreOrDie fileName =
     Text.readFile fileName
-        >>= either error return . parseKoreDefinition fileName
+        >>= either error return
+        . parseKoreDefinition fileName

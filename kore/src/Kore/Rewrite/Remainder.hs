@@ -69,9 +69,9 @@ remainder' ::
     Predicate RewritingVariableName
 remainder' results =
     mkMultiAndPredicate $ mkNotExists conditions
-  where
-    conditions = MultiOr.map (mkMultiAndPredicate . unificationConditions) results
-    mkNotExists = mkNotMultiOr . MultiOr.map existentiallyQuantifyRuleVariables
+    where
+        conditions = MultiOr.map (mkMultiAndPredicate . unificationConditions) results
+        mkNotExists = mkNotMultiOr . MultiOr.map existentiallyQuantifyRuleVariables
 
 -- | Existentially-quantify target (axiom) variables in the 'Condition'.
 existentiallyQuantifyRuleVariables ::
@@ -79,10 +79,11 @@ existentiallyQuantifyRuleVariables ::
     Predicate RewritingVariableName
 existentiallyQuantifyRuleVariables predicate =
     Predicate.makeMultipleExists freeRuleVariables predicate
-  where
-    freeRuleVariables =
-        filter isElementRuleVariable . Predicate.freeElementVariables $
-            predicate
+    where
+        freeRuleVariables =
+            filter isElementRuleVariable
+                . Predicate.freeElementVariables
+                $ predicate
 
 {- | Negate a disjunction of many terms.
 
@@ -112,8 +113,8 @@ unificationConditions ::
     MultiAnd (Predicate RewritingVariableName)
 unificationConditions Conditional{predicate, substitution} =
     MultiAnd.singleton predicate <> substitutionConditions substitution'
-  where
-    substitution' = Substitution.filter isSomeConfigVariable substitution
+    where
+        substitution' = Substitution.filter isSomeConfigVariable substitution
 
 substitutionConditions ::
     InternalVariable variable =>
@@ -121,9 +122,9 @@ substitutionConditions ::
     MultiAnd (Predicate variable)
 substitutionConditions subst =
     MultiAnd.make (substitutionCoverageWorker <$> Substitution.unwrap subst)
-  where
-    substitutionCoverageWorker (Assignment x t) =
-        Predicate.makeEqualsPredicate (mkVar x) t
+    where
+        substitutionCoverageWorker (Assignment x t) =
+            Predicate.makeEqualsPredicate (mkVar x) t
 
 ceilChildOfApplicationOrTop ::
     SideCondition RewritingVariableName ->
@@ -149,5 +150,5 @@ ceilChildOfApplicationOrTop sideCondition patt =
                     , substitution = mempty
                     }
         _ -> pure Condition.top
-  where
-    termSort = termLikeSort patt
+    where
+        termSort = termLikeSort patt

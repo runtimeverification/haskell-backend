@@ -154,18 +154,18 @@ test_matchInjs =
         (inj topSort simplOther)
         (Just $ UnifyInjDistinct ())
     ]
-  where
-    test ::
-        HasCallStack =>
-        TestName ->
-        Inj (TermLike RewritingVariableName) ->
-        Inj (TermLike RewritingVariableName) ->
-        Maybe (UnifyInj ()) ->
-        TestTree
-    test testName inj1 inj2 expect =
-        testCase testName $ do
-            let actual = matchInjs injSimplifier inj1 inj2
-            assertEqual "" expect (fmap void actual)
+    where
+        test ::
+            HasCallStack =>
+            TestName ->
+            Inj (TermLike RewritingVariableName) ->
+            Inj (TermLike RewritingVariableName) ->
+            Maybe (UnifyInj ()) ->
+            TestTree
+        test testName inj1 inj2 expect =
+            testCase testName $ do
+                let actual = matchInjs injSimplifier inj1 inj2
+                assertEqual "" expect (fmap void actual)
 
 test_unifyInjs :: [TestTree]
 test_unifyInjs =
@@ -258,17 +258,17 @@ test_unifyInjs =
         )
         Nothing
     ]
-  where
-    test ::
-        HasCallStack =>
-        TestName ->
-        UnifyInj (InjPair RewritingVariableName) ->
-        Maybe (Inj (Pair (TermLike RewritingVariableName))) ->
-        TestTree
-    test testName unifyInj expect =
-        testCase testName $ do
-            let actual = unifyInjs injSimplifier unifyInj
-            assertEqual "" expect actual
+    where
+        test ::
+            HasCallStack =>
+            TestName ->
+            UnifyInj (InjPair RewritingVariableName) ->
+            Maybe (Inj (Pair (TermLike RewritingVariableName))) ->
+            TestTree
+        test testName unifyInj expect =
+            testCase testName $ do
+                let actual = unifyInjs injSimplifier unifyInj
+                assertEqual "" expect actual
 
 test_normalize :: [TestTree]
 test_normalize =
@@ -277,13 +277,13 @@ test_normalize =
         (mkInj topSort (mkInj testSort (mkInj subSort ctorSubSub)))
         (mkInj topSort ctorSubSub)
     ]
-  where
-    test ::
-        HasCallStack =>
-        TestName ->
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        TestTree
-    test testName original expect =
-        let actual = normalize injSimplifier original
-         in testCase testName (assertEqual "" expect actual)
+    where
+        test ::
+            HasCallStack =>
+            TestName ->
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            TestTree
+        test testName original expect =
+            let actual = normalize injSimplifier original
+             in testCase testName (assertEqual "" expect actual)

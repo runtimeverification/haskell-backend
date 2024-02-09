@@ -113,16 +113,16 @@ existsBinder ::
         (Binder (ElementVariable variable2) child2)
 existsBinder mapping exists =
     finish <$> mapping binder
-  where
-    binder =
-        Binder
-            { binderVariable = existsVariable
-            , binderChild = existsChild
-            }
-      where
-        Exists{existsVariable, existsChild} = exists
-    finish Binder{binderVariable, binderChild} =
-        exists{existsVariable = binderVariable, existsChild = binderChild}
+    where
+        binder =
+            Binder
+                { binderVariable = existsVariable
+                , binderChild = existsChild
+                }
+            where
+                Exists{existsVariable, existsChild} = exists
+        finish Binder{binderVariable, binderChild} =
+            exists{existsVariable = binderVariable, existsChild = binderChild}
 
 refreshExists ::
     forall sort variable child.
@@ -134,6 +134,6 @@ refreshExists ::
     Exists sort variable child
 refreshExists extraAvoid existsF =
     Lens.over existsBinder (refreshElementBinder avoid) existsF
-  where
-    avoid = freeVariableNames existsF <> extraAvoid
+    where
+        avoid = freeVariableNames existsF <> extraAvoid
 {-# INLINE refreshExists #-}

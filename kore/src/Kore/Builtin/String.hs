@@ -202,19 +202,19 @@ symbolVerifiers =
 patternVerifierHook :: Builtin.PatternVerifierHook
 patternVerifierHook =
     Builtin.domainValuePatternVerifierHook sort patternVerifierWorker
-  where
-    patternVerifierWorker domainValue =
-        case externalChild of
-            StringLiteral_ internalStringValue ->
-                (return . InternalStringF . Const)
-                    InternalString
-                        { internalStringSort
-                        , internalStringValue
-                        }
-            _ -> Kore.Error.koreFail "Expected literal string"
-      where
-        DomainValue{domainValueSort = internalStringSort} = domainValue
-        DomainValue{domainValueChild = externalChild} = domainValue
+    where
+        patternVerifierWorker domainValue =
+            case externalChild of
+                StringLiteral_ internalStringValue ->
+                    (return . InternalStringF . Const)
+                        InternalString
+                            { internalStringSort
+                            , internalStringValue
+                            }
+                _ -> Kore.Error.koreFail "Expected literal string"
+            where
+                DomainValue{domainValueSort = internalStringSort} = domainValue
+                DomainValue{domainValueChild = externalChild} = domainValue
 
 -- | get the value from a (possibly encoded) domain value
 extractStringDomainValue ::
@@ -226,8 +226,8 @@ extractStringDomainValue _ =
     \case
         InternalString_ internal ->
             Just internalStringValue
-          where
-            InternalString{internalStringValue} = internal
+            where
+                InternalString{internalStringValue} = internal
         _ -> Nothing
 
 -- | Parse a string literal.
@@ -251,173 +251,173 @@ expectBuiltinString _ =
     \case
         InternalString_ internal ->
             return internalStringValue
-          where
-            InternalString{internalStringValue} = internal
+            where
+                InternalString{internalStringValue} = internal
         _ -> empty
 
 evalSubstr :: BuiltinAndAxiomSimplifier
 evalSubstr = Builtin.functionEvaluator evalSubstr0
-  where
-    substr :: Int -> Int -> Text -> Text
-    substr startIndex endIndex =
-        Text.take (endIndex - startIndex) . Text.drop startIndex
+    where
+        substr :: Int -> Int -> Text -> Text
+        substr startIndex endIndex =
+            Text.take (endIndex - startIndex) . Text.drop startIndex
 
-    evalSubstr0 _ resultSort [_str, _start, _end] = do
-        _str <- expectBuiltinString substrKey _str
-        _start <- fromInteger <$> Int.expectBuiltinInt substrKey _start
-        _end <- fromInteger <$> Int.expectBuiltinInt substrKey _end
-        substr _start _end _str
-            & asPattern resultSort
-            & return
-    evalSubstr0 _ _ _ = Builtin.wrongArity substrKey
+        evalSubstr0 _ resultSort [_str, _start, _end] = do
+            _str <- expectBuiltinString substrKey _str
+            _start <- fromInteger <$> Int.expectBuiltinInt substrKey _start
+            _end <- fromInteger <$> Int.expectBuiltinInt substrKey _end
+            substr _start _end _str
+                & asPattern resultSort
+                & return
+        evalSubstr0 _ _ _ = Builtin.wrongArity substrKey
 
 evalLength :: BuiltinAndAxiomSimplifier
 evalLength = Builtin.functionEvaluator evalLength0
-  where
-    evalLength0 _ resultSort [_str] = do
-        _str <- expectBuiltinString lengthKey _str
-        Text.length _str
-            & toInteger
-            & Int.asPattern resultSort
-            & return
-    evalLength0 _ _ _ = Builtin.wrongArity lengthKey
+    where
+        evalLength0 _ resultSort [_str] = do
+            _str <- expectBuiltinString lengthKey _str
+            Text.length _str
+                & toInteger
+                & Int.asPattern resultSort
+                & return
+        evalLength0 _ _ _ = Builtin.wrongArity lengthKey
 
 evalFind :: BuiltinAndAxiomSimplifier
 evalFind = Builtin.functionEvaluator evalFind0
-  where
-    maybeNotFound :: Maybe Int -> Integer
-    maybeNotFound = maybe (-1) toInteger
+    where
+        maybeNotFound :: Maybe Int -> Integer
+        maybeNotFound = maybe (-1) toInteger
 
-    evalFind0 _ resultSort [_str, _substr, _idx] = do
-        _str <- expectBuiltinString findKey _str
-        _substr <- expectBuiltinString findKey _substr
-        _idx <- fromInteger <$> Int.expectBuiltinInt substrKey _idx
-        let result =
-                findIndex
-                    (Text.isPrefixOf _substr)
-                    (Text.tails . Text.drop _idx $ _str)
-        maybeNotFound result
-            & Int.asPattern resultSort
-            & return
-    evalFind0 _ _ _ = Builtin.wrongArity findKey
+        evalFind0 _ resultSort [_str, _substr, _idx] = do
+            _str <- expectBuiltinString findKey _str
+            _substr <- expectBuiltinString findKey _substr
+            _idx <- fromInteger <$> Int.expectBuiltinInt substrKey _idx
+            let result =
+                    findIndex
+                        (Text.isPrefixOf _substr)
+                        (Text.tails . Text.drop _idx $ _str)
+            maybeNotFound result
+                & Int.asPattern resultSort
+                & return
+        evalFind0 _ _ _ = Builtin.wrongArity findKey
 
 evalString2Base :: BuiltinAndAxiomSimplifier
 evalString2Base = Builtin.applicationEvaluator evalString2Base0
-  where
-    evalString2Base0 _ app
-        | [_strTerm, _baseTerm] <- applicationChildren app = do
-            let Application{applicationSymbolOrAlias = symbol} = app
-                resultSort = symbolSorts symbol & applicationSortsResult
-            _str <- expectBuiltinString string2BaseKey _strTerm
-            _base <- Int.expectBuiltinInt string2BaseKey _baseTerm
-            unless (2 <= _base && _base <= 36) $ warnNotImplemented app >> empty
-            return $ case readWithBase _base (Text.unpack _str) of
-                [(result, "")] -> Int.asPattern resultSort result
-                _ -> Pattern.bottomOf resultSort
-    evalString2Base0 _ _ = Builtin.wrongArity string2BaseKey
+    where
+        evalString2Base0 _ app
+            | [_strTerm, _baseTerm] <- applicationChildren app = do
+                let Application{applicationSymbolOrAlias = symbol} = app
+                    resultSort = symbolSorts symbol & applicationSortsResult
+                _str <- expectBuiltinString string2BaseKey _strTerm
+                _base <- Int.expectBuiltinInt string2BaseKey _baseTerm
+                unless (2 <= _base && _base <= 36) $ warnNotImplemented app >> empty
+                return $ case readWithBase _base (Text.unpack _str) of
+                    [(result, "")] -> Int.asPattern resultSort result
+                    _ -> Pattern.bottomOf resultSort
+        evalString2Base0 _ _ = Builtin.wrongArity string2BaseKey
 
 readWithBase :: Integer -> ReadS Integer
 readWithBase base = sign $ readInt base isValidDigit valDigit
-  where
-    sign p ('-' : cs) = do
-        (a, str') <- p cs
-        return (negate a, str')
-    sign p ('+' : cs) = p cs
-    sign p cs = p cs
-    isValidDigit = maybe False (< base) . valDig
-    valDigit = fromMaybe 0 . valDig
-    valDig c
-        | isDigit c = Just $ fromIntegral $ ord c - ord '0'
-        | isAsciiLower c = Just $ fromIntegral $ ord c - ord 'a' + 10
-        | isAsciiUpper c = Just $ fromIntegral $ ord c - ord 'A' + 10
-        | otherwise = Nothing
+    where
+        sign p ('-' : cs) = do
+            (a, str') <- p cs
+            return (negate a, str')
+        sign p ('+' : cs) = p cs
+        sign p cs = p cs
+        isValidDigit = maybe False (< base) . valDig
+        valDigit = fromMaybe 0 . valDig
+        valDig c
+            | isDigit c = Just $ fromIntegral $ ord c - ord '0'
+            | isAsciiLower c = Just $ fromIntegral $ ord c - ord 'a' + 10
+            | isAsciiUpper c = Just $ fromIntegral $ ord c - ord 'A' + 10
+            | otherwise = Nothing
 
 evalBase2String :: BuiltinAndAxiomSimplifier
 evalBase2String = Builtin.applicationEvaluator evalBase2String0
-  where
-    evalBase2String0 _ app
-        | [_intTerm, _baseTerm] <- applicationChildren app = do
-            let Application{applicationSymbolOrAlias = symbol} = app
-                resultSort = symbolSorts symbol & applicationSortsResult
-            _int <- Int.expectBuiltinInt base2StringKey _intTerm
-            _base <- Int.expectBuiltinInt base2StringKey _baseTerm
-            unless (2 <= _base && _base <= 36) $ warnNotImplemented app >> empty
-            Text.pack (showWithBase _int _base)
-                & asPattern resultSort
-                & return
-    evalBase2String0 _ _ = Builtin.wrongArity base2StringKey
+    where
+        evalBase2String0 _ app
+            | [_intTerm, _baseTerm] <- applicationChildren app = do
+                let Application{applicationSymbolOrAlias = symbol} = app
+                    resultSort = symbolSorts symbol & applicationSortsResult
+                _int <- Int.expectBuiltinInt base2StringKey _intTerm
+                _base <- Int.expectBuiltinInt base2StringKey _baseTerm
+                unless (2 <= _base && _base <= 36) $ warnNotImplemented app >> empty
+                Text.pack (showWithBase _int _base)
+                    & asPattern resultSort
+                    & return
+        evalBase2String0 _ _ = Builtin.wrongArity base2StringKey
 
 showWithBase :: Integer -> Integer -> String
 showWithBase int base = showSigned (showIntAtBase base toChar) 0 int ""
-  where
-    -- chr 48 == '0', chr 97 == 'a'
-    toChar digit
-        | 0 <= digit && digit <= 9 = chr $ digit + 48
-        | otherwise = chr $ digit + 87
+    where
+        -- chr 48 == '0', chr 97 == 'a'
+        toChar digit
+            | 0 <= digit && digit <= 9 = chr $ digit + 48
+            | otherwise = chr $ digit + 87
 
 evalString2Int :: BuiltinAndAxiomSimplifier
 evalString2Int = Builtin.functionEvaluator evalString2Int0
-  where
-    evalString2Int0 _ resultSort [_str] = do
-        _str <- expectBuiltinString string2IntKey _str
-        case Text.signed Text.decimal _str of
-            Right (result, Text.unpack -> "") ->
-                return (Int.asPattern resultSort result)
-            _ -> return (Pattern.bottomOf resultSort)
-    evalString2Int0 _ _ _ = Builtin.wrongArity string2IntKey
+    where
+        evalString2Int0 _ resultSort [_str] = do
+            _str <- expectBuiltinString string2IntKey _str
+            case Text.signed Text.decimal _str of
+                Right (result, Text.unpack -> "") ->
+                    return (Int.asPattern resultSort result)
+                _ -> return (Pattern.bottomOf resultSort)
+        evalString2Int0 _ _ _ = Builtin.wrongArity string2IntKey
 
 evalInt2String :: BuiltinAndAxiomSimplifier
 evalInt2String = Builtin.functionEvaluator evalInt2String0
-  where
-    evalInt2String0 _ resultSort [_int] = do
-        _int <- Int.expectBuiltinInt int2StringKey _int
-        Text.pack (show _int)
-            & asPattern resultSort
-            & return
-    evalInt2String0 _ _ _ = Builtin.wrongArity int2StringKey
+    where
+        evalInt2String0 _ resultSort [_int] = do
+            _int <- Int.expectBuiltinInt int2StringKey _int
+            Text.pack (show _int)
+                & asPattern resultSort
+                & return
+        evalInt2String0 _ _ _ = Builtin.wrongArity int2StringKey
 
 evalChr :: BuiltinAndAxiomSimplifier
 evalChr = Builtin.functionEvaluator evalChr0
-  where
-    evalChr0 _ resultSort [_n] = do
-        _n <- Int.expectBuiltinInt chrKey _n
-        Text.singleton (chr $ fromIntegral _n)
-            & asPattern resultSort
-            & return
-    evalChr0 _ _ _ = Builtin.wrongArity chrKey
+    where
+        evalChr0 _ resultSort [_n] = do
+            _n <- Int.expectBuiltinInt chrKey _n
+            Text.singleton (chr $ fromIntegral _n)
+                & asPattern resultSort
+                & return
+        evalChr0 _ _ _ = Builtin.wrongArity chrKey
 
 evalOrd :: BuiltinAndAxiomSimplifier
 evalOrd = Builtin.functionEvaluator evalOrd0
-  where
-    evalOrd0 _ resultSort [_str] = do
-        _str <- expectBuiltinString ordKey _str
-        let result
-                | Text.length _str == 1 = charToOrdInt (Text.head _str)
-                | otherwise = Pattern.bottomOf resultSort
-        return result
-      where
-        charToOrdInt =
-            Int.asPattern resultSort
-                . toInteger
-                . ord
-    evalOrd0 _ _ _ = Builtin.wrongArity ordKey
+    where
+        evalOrd0 _ resultSort [_str] = do
+            _str <- expectBuiltinString ordKey _str
+            let result
+                    | Text.length _str == 1 = charToOrdInt (Text.head _str)
+                    | otherwise = Pattern.bottomOf resultSort
+            return result
+            where
+                charToOrdInt =
+                    Int.asPattern resultSort
+                        . toInteger
+                        . ord
+        evalOrd0 _ _ _ = Builtin.wrongArity ordKey
 
 evalToken2String :: BuiltinAndAxiomSimplifier
 evalToken2String = Builtin.functionEvaluator evalToken2String0
-  where
-    evalToken2String0 _ resultSort [_dv] = do
-        _dv <- Builtin.expectDomainValue token2StringKey _dv
-        return (asPattern resultSort _dv)
-    evalToken2String0 _ _ _ = Builtin.wrongArity token2StringKey
+    where
+        evalToken2String0 _ resultSort [_dv] = do
+            _dv <- Builtin.expectDomainValue token2StringKey _dv
+            return (asPattern resultSort _dv)
+        evalToken2String0 _ _ _ = Builtin.wrongArity token2StringKey
 
 evalString2Token :: BuiltinAndAxiomSimplifier
 evalString2Token = Builtin.functionEvaluator evalString2Token0
-  where
-    evalString2Token0 _ resultSort [_str] = do
-        _str <- expectBuiltinString string2TokenKey _str
-        Builtin.makeDomainValuePattern resultSort _str
-            & return
-    evalString2Token0 _ _ _ = Builtin.wrongArity token2StringKey
+    where
+        evalString2Token0 _ resultSort [_str] = do
+            _str <- expectBuiltinString string2TokenKey _str
+            Builtin.makeDomainValuePattern resultSort _str
+                & return
+        evalString2Token0 _ _ _ = Builtin.wrongArity token2StringKey
 
 -- | Implement builtin function evaluation.
 builtinFunctions :: Text -> Maybe BuiltinAndAxiomSimplifier
@@ -437,19 +437,19 @@ builtinFunctions key
     | key == token2StringKey = Just evalToken2String
     | key == string2TokenKey = Just evalString2Token
     | otherwise = Nothing
-  where
-    comparator name op =
-        Builtin.binaryOperator
-            extractStringDomainValue
-            Bool.asPattern
-            name
-            op
-    binaryOperator name op =
-        Builtin.binaryOperator
-            extractStringDomainValue
-            asPattern
-            name
-            op
+    where
+        comparator name op =
+            Builtin.binaryOperator
+                extractStringDomainValue
+                Bool.asPattern
+                name
+                op
+        binaryOperator name op =
+            Builtin.binaryOperator
+                extractStringDomainValue
+                asPattern
+                name
+                op
 
 data UnifyString = UnifyString
     { string1, string2 :: !InternalString
@@ -487,13 +487,13 @@ unifyString ::
     unifier (Pattern RewritingVariableName)
 unifyString unifyData =
     assert (on (==) internalStringSort string1 string2) worker
-  where
-    worker :: unifier (Pattern RewritingVariableName)
-    worker
-        | on (==) internalStringValue string1 string2 =
-            return $ Pattern.fromTermLike term1
-        | otherwise = debugUnifyBottomAndReturnBottom "distinct strings" term1 term2
-    UnifyString{string1, string2, term1, term2} = unifyData
+    where
+        worker :: unifier (Pattern RewritingVariableName)
+        worker
+            | on (==) internalStringValue string1 string2 =
+                return $ Pattern.fromTermLike term1
+            | otherwise = debugUnifyBottomAndReturnBottom "distinct strings" term1 term2
+        UnifyString{string1, string2, term1, term2} = unifyData
 
 {- | Matches
 

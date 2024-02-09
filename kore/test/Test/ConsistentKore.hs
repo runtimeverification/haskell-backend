@@ -186,15 +186,15 @@ runKoreGen
     setup@Setup{freeElementVariables, freeSetVariables}
     generator =
         Reader.runReaderT generator (setup, context)
-      where
-        context =
-            Context
-                { availableElementVariables = freeElementVariables
-                , availableSetVariables = freeSetVariables
-                , onlyConstructorLike = False
-                , onlyConcrete = False
-                , allowTermConnectives = True
-                }
+        where
+            context =
+                Context
+                    { availableElementVariables = freeElementVariables
+                    , availableSetVariables = freeSetVariables
+                    , onlyConstructorLike = False
+                    , onlyConcrete = False
+                    , allowTermConnectives = True
+                    }
 
 patternGen :: Gen (Pattern VariableName)
 patternGen =
@@ -225,15 +225,15 @@ termGen =
 termLikeGenWithSort :: Sort -> Gen (TermLike VariableName)
 termLikeGenWithSort topSort = do
     maybeResult <-
-        Gen.scale limitTermDepth $
-            Gen.sized (\size -> termLikeGenImpl size topSort)
+        Gen.scale limitTermDepth
+            $ Gen.sized (\size -> termLikeGenImpl size topSort)
     case maybeResult of
         Nothing -> error $ "Cannot generate terms for " <> show topSort
         Just result -> return result
-  where
-    limitTermDepth (Range.Size s)
-        | s < 10 = Range.Size s
-        | otherwise = Range.Size 10
+    where
+        limitTermDepth (Range.Size s)
+            | s < 10 = Range.Size s
+            | otherwise = Range.Size 10
 
 predicateGen :: Gen (Predicate VariableName)
 predicateGen =
@@ -332,28 +332,28 @@ termLikeGenImpl (Range.Size size) requestedSort = do
         else do
             TermGenerator{generator} <- Gen.element actualGenerators
             tryToGetJust 3 (generator nextGenerator requestedSort)
-  where
-    isNullary :: TermGenerator -> Bool
-    isNullary TermGenerator{arity} = arity == 0
+    where
+        isNullary :: TermGenerator -> Bool
+        isNullary TermGenerator{arity} = arity == 0
 
-    tryToGetJust ::
-        Int ->
-        Gen (Maybe a) ->
-        Gen (Maybe a)
-    tryToGetJust attempts generator
-        | attempts <= 0 = return Nothing
-        | otherwise = do
-            maybeResult <- generator
-            maybe
-                (tryToGetJust (attempts - 1) generator)
-                (return . Just)
-                maybeResult
+        tryToGetJust ::
+            Int ->
+            Gen (Maybe a) ->
+            Gen (Maybe a)
+        tryToGetJust attempts generator
+            | attempts <= 0 = return Nothing
+            | otherwise = do
+                maybeResult <- generator
+                maybe
+                    (tryToGetJust (attempts - 1) generator)
+                    (return . Just)
+                    maybeResult
 
-    generatorsForSort ::
-        Map.Map SortRequirements [TermGenerator] -> Sort -> [TermGenerator]
-    generatorsForSort generators sort =
-        fromMaybe [] (Map.lookup AnySort generators)
-            ++ fromMaybe [] (Map.lookup (SpecificSort sort) generators)
+        generatorsForSort ::
+            Map.Map SortRequirements [TermGenerator] -> Sort -> [TermGenerator]
+        generatorsForSort generators sort =
+            fromMaybe [] (Map.lookup AnySort generators)
+                ++ fromMaybe [] (Map.lookup (SpecificSort sort) generators)
 
 {- The only purpose of this function is to produce an error message when
 new cases are being added to TermLikeF, so that we don't forget to also
@@ -362,40 +362,40 @@ change this file.
 _checkTermImplemented :: TermLike VariableName -> TermLike VariableName
 _checkTermImplemented term@(Recursive.project -> _ :< termF) =
     checkTermF termF
-  where
-    checkTermF (AndF _) = term
-    checkTermF (ApplySymbolF _) = term
-    checkTermF (ApplyAliasF _) = term
-    checkTermF (BottomF _) = term
-    checkTermF (CeilF _) = term
-    checkTermF (DomainValueF _) = term
-    checkTermF (EqualsF _) = term
-    checkTermF (ExistsF _) = term
-    checkTermF (FloorF _) = term
-    checkTermF (ForallF _) = term
-    checkTermF (IffF _) = term
-    checkTermF (ImpliesF _) = term
-    checkTermF (InF _) = term
-    checkTermF (MuF _) = term
-    checkTermF (NextF _) = term
-    checkTermF (NotF _) = term
-    checkTermF (NuF _) = term
-    checkTermF (OrF _) = term
-    checkTermF (RewritesF _) = term
-    checkTermF (TopF _) = term
-    checkTermF (VariableF _) = term
-    checkTermF (StringLiteralF _) = term
-    checkTermF (InternalBoolF _) = term
-    checkTermF (InternalBytesF _) = term
-    checkTermF (InternalIntF _) = term
-    checkTermF (InternalStringF _) = term
-    checkTermF (InternalListF _) = term
-    checkTermF (InternalMapF _) = term
-    checkTermF (InternalSetF _) = term
-    checkTermF (InhabitantF _) = term -- Not implemented.
-    checkTermF (EndiannessF _) = term -- Not implemented.
-    checkTermF (SignednessF _) = term -- Not implemented.
-    checkTermF (InjF _) = term -- Not implemented.
+    where
+        checkTermF (AndF _) = term
+        checkTermF (ApplySymbolF _) = term
+        checkTermF (ApplyAliasF _) = term
+        checkTermF (BottomF _) = term
+        checkTermF (CeilF _) = term
+        checkTermF (DomainValueF _) = term
+        checkTermF (EqualsF _) = term
+        checkTermF (ExistsF _) = term
+        checkTermF (FloorF _) = term
+        checkTermF (ForallF _) = term
+        checkTermF (IffF _) = term
+        checkTermF (ImpliesF _) = term
+        checkTermF (InF _) = term
+        checkTermF (MuF _) = term
+        checkTermF (NextF _) = term
+        checkTermF (NotF _) = term
+        checkTermF (NuF _) = term
+        checkTermF (OrF _) = term
+        checkTermF (RewritesF _) = term
+        checkTermF (TopF _) = term
+        checkTermF (VariableF _) = term
+        checkTermF (StringLiteralF _) = term
+        checkTermF (InternalBoolF _) = term
+        checkTermF (InternalBytesF _) = term
+        checkTermF (InternalIntF _) = term
+        checkTermF (InternalStringF _) = term
+        checkTermF (InternalListF _) = term
+        checkTermF (InternalMapF _) = term
+        checkTermF (InternalSetF _) = term
+        checkTermF (InhabitantF _) = term -- Not implemented.
+        checkTermF (EndiannessF _) = term -- Not implemented.
+        checkTermF (SignednessF _) = term -- Not implemented.
+        checkTermF (InjF _) = term -- Not implemented.
 
 termGenerators :: Gen (Map.Map SortRequirements [TermGenerator])
 termGenerators = do
@@ -416,8 +416,8 @@ termGenerators = do
     if onlyConstructorLike
         then return symbol
         else
-            return $
-                Map.unionsWith
+            return
+                $ Map.unionsWith
                     (<>)
                     [ symbol
                     , alias
@@ -441,12 +441,12 @@ binaryOperatorGenerator builder =
                 }
         , generator = worker
         }
-  where
-    worker childGenerator childSort = do
-        first <- childGenerator childSort
-        second <- childGenerator childSort
-        return
-            (builder <$> first <*> second) -- Maybe applicative
+    where
+        worker childGenerator childSort = do
+            first <- childGenerator childSort
+            second <- childGenerator childSort
+            return
+                (builder <$> first <*> second) -- Maybe applicative
 
 andGenerator :: TermGenerator
 andGenerator = binaryOperatorGenerator mkAnd
@@ -490,24 +490,24 @@ allBuiltinGenerators = do
         termGeneratorList =
             map toTermGenerator $ catMaybes maybeBuiltinGenerators
     filterGeneratorsGroupAndPickOne termGeneratorList
-  where
-    toTermGenerator :: BuiltinGenerator -> TermGenerator
-    toTermGenerator
-        BuiltinGenerator{arity, sort, attributes, generator} =
-            TermGenerator
-                { arity
-                , sort
-                , attributes
-                , generator =
-                    \childGenerator resultSort -> do
-                        case sort of
-                            AnySort -> return ()
-                            SpecificSort generatedSort ->
-                                when
-                                    (generatedSort /= resultSort)
-                                    (error "Sort mismatch.")
-                        generator childGenerator
-                }
+    where
+        toTermGenerator :: BuiltinGenerator -> TermGenerator
+        toTermGenerator
+            BuiltinGenerator{arity, sort, attributes, generator} =
+                TermGenerator
+                    { arity
+                    , sort
+                    , attributes
+                    , generator =
+                        \childGenerator resultSort -> do
+                            case sort of
+                                AnySort -> return ()
+                                SpecificSort generatedSort ->
+                                    when
+                                        (generatedSort /= resultSort)
+                                        (error "Sort mismatch.")
+                            generator childGenerator
+                    }
 
 maybeStringBuiltinGenerator :: Setup -> Maybe BuiltinGenerator
 maybeStringBuiltinGenerator Setup{maybeStringBuiltinSort} =
@@ -525,13 +525,13 @@ maybeStringBuiltinGenerator Setup{maybeStringBuiltinSort} =
                             }
                     , generator = stringGenerator stringSort
                     }
-  where
-    stringGenerator ::
-        Sort ->
-        (Sort -> Gen (Maybe (TermLike VariableName))) ->
-        Gen (Maybe (TermLike VariableName))
-    stringGenerator stringSort _childGenerator =
-        Just . mkInternalString . InternalString stringSort <$> stringGen
+    where
+        stringGenerator ::
+            Sort ->
+            (Sort -> Gen (Maybe (TermLike VariableName))) ->
+            Gen (Maybe (TermLike VariableName))
+        stringGenerator stringSort _childGenerator =
+            Just . mkInternalString . InternalString stringSort <$> stringGen
 
 maybeBoolBuiltinGenerator :: Setup -> Maybe BuiltinGenerator
 maybeBoolBuiltinGenerator Setup{maybeBoolSort} =
@@ -549,13 +549,13 @@ maybeBoolBuiltinGenerator Setup{maybeBoolSort} =
                             }
                     , generator = boolGenerator boolSort
                     }
-  where
-    boolGenerator ::
-        Sort ->
-        (Sort -> Gen (Maybe (TermLike VariableName))) ->
-        Gen (Maybe (TermLike VariableName))
-    boolGenerator boolSort _childGenerator =
-        Just . mkInternalBool . BuiltinBool.asBuiltin boolSort <$> Gen.bool
+    where
+        boolGenerator ::
+            Sort ->
+            (Sort -> Gen (Maybe (TermLike VariableName))) ->
+            Gen (Maybe (TermLike VariableName))
+        boolGenerator boolSort _childGenerator =
+            Just . mkInternalBool . BuiltinBool.asBuiltin boolSort <$> Gen.bool
 
 maybeIntBuiltinGenerator :: Setup -> Maybe BuiltinGenerator
 maybeIntBuiltinGenerator Setup{maybeIntSort} =
@@ -573,14 +573,14 @@ maybeIntBuiltinGenerator Setup{maybeIntSort} =
                             }
                     , generator = intGenerator intSort
                     }
-  where
-    intGenerator ::
-        Sort ->
-        (Sort -> Gen (Maybe (TermLike VariableName))) ->
-        Gen (Maybe (TermLike VariableName))
-    intGenerator intSort _childGenerator = do
-        value <- Gen.integral (Range.constant 0 2000)
-        (pure . Just . mkInternalInt) (BuiltinInt.asBuiltin intSort value)
+    where
+        intGenerator ::
+            Sort ->
+            (Sort -> Gen (Maybe (TermLike VariableName))) ->
+            Gen (Maybe (TermLike VariableName))
+        intGenerator intSort _childGenerator = do
+            value <- Gen.integral (Range.constant 0 2000)
+            (pure . Just . mkInternalInt) (BuiltinInt.asBuiltin intSort value)
 
 maybeListBuiltinGenerator :: Setup -> Maybe BuiltinGenerator
 maybeListBuiltinGenerator Setup{maybeListSorts} =
@@ -600,22 +600,23 @@ maybeListBuiltinGenerator Setup{maybeListSorts} =
                             }
                     , generator = listGenerator collectionSort elementSort
                     }
-  where
-    listGenerator ::
-        Sort ->
-        Sort ->
-        (Sort -> Gen (Maybe (TermLike VariableName))) ->
-        Gen (Maybe (TermLike VariableName))
-    listGenerator listSort listElementSort childGenerator = do
-        (Setup{metadataTools}, _) <- Reader.ask
-        elements <-
-            Gen.seq
-                (Range.constant 0 5)
-                (childGenerator listElementSort)
-        return
-            ( mkInternalList . BuiltinList.asBuiltin metadataTools listSort
-                <$> sequenceA elements
-            )
+    where
+        listGenerator ::
+            Sort ->
+            Sort ->
+            (Sort -> Gen (Maybe (TermLike VariableName))) ->
+            Gen (Maybe (TermLike VariableName))
+        listGenerator listSort listElementSort childGenerator = do
+            (Setup{metadataTools}, _) <- Reader.ask
+            elements <-
+                Gen.seq
+                    (Range.constant 0 5)
+                    (childGenerator listElementSort)
+            return
+                ( mkInternalList
+                    . BuiltinList.asBuiltin metadataTools listSort
+                    <$> sequenceA elements
+                )
 
 concreteTermGenerator ::
     Sort ->
@@ -623,14 +624,14 @@ concreteTermGenerator ::
     Gen (Maybe (TermLike Concrete))
 concreteTermGenerator requestedSort childGenerator = do
     maybeResult <-
-        requestConcrete $
-            childGenerator requestedSort
+        requestConcrete
+            $ childGenerator requestedSort
     return (forceConcrete <$> maybeResult)
-  where
-    forceConcrete term =
-        fromMaybe
-            (error "Expected concrete key.")
-            (TermLike.asConcrete term)
+    where
+        forceConcrete term =
+            fromMaybe
+                (error "Expected concrete key.")
+                (TermLike.asConcrete term)
 
 -- TODO(virgil): Test that we are generating non-empty maps.
 maybeMapBuiltinGenerator :: Setup -> Maybe BuiltinGenerator
@@ -655,14 +656,14 @@ maybeMapBuiltinGenerator Setup{maybeMapSorts} =
                             keySort
                             (valueGenerator valueSort)
                     }
-  where
-    valueGenerator ::
-        Sort ->
-        (Sort -> Gen (Maybe (TermLike VariableName))) ->
-        Gen (Maybe (MapValue (TermLike VariableName)))
-    valueGenerator valueSort childGenerator = do
-        maybeValue <- childGenerator valueSort
-        return (MapValue <$> maybeValue)
+    where
+        valueGenerator ::
+            Sort ->
+            (Sort -> Gen (Maybe (TermLike VariableName))) ->
+            Gen (Maybe (MapValue (TermLike VariableName)))
+        valueGenerator valueSort childGenerator = do
+            maybeValue <- childGenerator valueSort
+            return (MapValue <$> maybeValue)
 
 -- TODO(virgil): Test that we are generating non-empty sets.
 maybeSetBuiltinGenerator :: Setup -> Maybe BuiltinGenerator
@@ -684,9 +685,9 @@ maybeSetBuiltinGenerator Setup{maybeSetSorts} =
                     , generator =
                         acGenerator collectionSort elementSort valueGenerator
                     }
-  where
-    valueGenerator :: a -> Gen (Maybe (SetValue (TermLike VariableName)))
-    valueGenerator _ = return (Just SetValue)
+    where
+        valueGenerator :: a -> Gen (Maybe (SetValue (TermLike VariableName)))
+        valueGenerator _ = return (Just SetValue)
 
 acGenerator ::
     forall normalized.
@@ -701,9 +702,9 @@ acGenerator ::
 acGenerator mapSort keySort valueGenerator childGenerator = do
     let concreteKeyGenerator :: Gen (Maybe Key)
         concreteKeyGenerator =
-            fmap (>>= retractKey) $
-                requestConstructorLike $
-                    concreteTermGenerator keySort childGenerator
+            fmap (>>= retractKey)
+                $ requestConstructorLike
+                $ concreteTermGenerator keySort childGenerator
     maybeConcreteMap <-
         Gen.map
             (Range.constant 0 5)
@@ -721,8 +722,8 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
             HashMap.fromList
                 (mapMaybe concreteMapElem (Map.toList maybeConcreteMap))
     mixedKeys <-
-        requestConstructorLike $
-            Gen.set
+        requestConstructorLike
+            $ Gen.set
                 (Range.constant 0 5)
                 (childGenerator keySort)
     let variableKeys :: [TermLike VariableName]
@@ -734,31 +735,31 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
     let variablePairs :: [Element normalized (TermLike VariableName)]
         variablePairs = catMaybes maybeVariablePairs
     (Setup{metadataTools}, _) <- Reader.ask
-    return $
-        Just $
-            AssociativeCommutative.asInternal
-                metadataTools
-                mapSort
-                ( wrapAc
-                    NormalizedAc
-                        { elementsWithVariables = variablePairs
-                        , concreteElements = concreteMap
-                        , opaque = []
-                        -- TODO (virgil): also fill the opaque field.
-                        }
-                )
-  where
-    freeVariables' :: TermLike VariableName -> FreeVariables VariableName
-    freeVariables' = freeVariables
-    variablePair ::
-        TermLike VariableName ->
-        Gen (Maybe (Element normalized (TermLike VariableName)))
-    variablePair key = do
-        maybeValue <- valueGenerator childGenerator
-        return $ do
-            -- maybe monad
-            value <- maybeValue
-            return (wrapElement (key, value))
+    return
+        $ Just
+        $ AssociativeCommutative.asInternal
+            metadataTools
+            mapSort
+            ( wrapAc
+                NormalizedAc
+                    { elementsWithVariables = variablePairs
+                    , concreteElements = concreteMap
+                    , opaque = []
+                    -- TODO (virgil): also fill the opaque field.
+                    }
+            )
+    where
+        freeVariables' :: TermLike VariableName -> FreeVariables VariableName
+        freeVariables' = freeVariables
+        variablePair ::
+            TermLike VariableName ->
+            Gen (Maybe (Element normalized (TermLike VariableName)))
+        variablePair key = do
+            maybeValue <- valueGenerator childGenerator
+            return $ do
+                -- maybe monad
+                value <- maybeValue
+                return (wrapElement (key, value))
 
 stringGen :: Gen Text
 stringGen = Gen.text (Range.linear 0 64) (Reader.lift Gen.unicode)
@@ -785,27 +786,27 @@ symbolGenerator
             , attributes =
                 AttributeRequirements
                     { isConstructorLike =
-                        Attribute.Constructor.isConstructor $
-                            Attribute.Symbol.constructor symbolAttributes
+                        Attribute.Constructor.isConstructor
+                            $ Attribute.Symbol.constructor symbolAttributes
                     , isConcrete = True
                     }
             , generator = applicationGenerator
             }
-      where
-        applicationGenerator termGenerator sort = do
-            when (sort /= applicationSortsResult) (error "Sort mismatch.")
-            let restrict
-                    | BuiltinMap.isSymbolElement symbol =
-                        requestConcrete . requestConstructorLike
-                    | BuiltinSet.isSymbolElement symbol =
-                        requestConcrete . requestConstructorLike
-                    | Attribute.Symbol.isFunction symbolAttributes =
-                        withoutConnectives
-                    | otherwise = id
-            -- TODO (virgil): also allow constructor-like
-            -- stuff with variables.
-            maybeTerms <- restrict $ mapM termGenerator applicationSortsOperands
-            return (mkApplySymbol symbol <$> sequenceA maybeTerms)
+        where
+            applicationGenerator termGenerator sort = do
+                when (sort /= applicationSortsResult) (error "Sort mismatch.")
+                let restrict
+                        | BuiltinMap.isSymbolElement symbol =
+                            requestConcrete . requestConstructorLike
+                        | BuiltinSet.isSymbolElement symbol =
+                            requestConcrete . requestConstructorLike
+                        | Attribute.Symbol.isFunction symbolAttributes =
+                            withoutConnectives
+                        | otherwise = id
+                -- TODO (virgil): also allow constructor-like
+                -- stuff with variables.
+                maybeTerms <- restrict $ mapM termGenerator applicationSortsOperands
+                return (mkApplySymbol symbol <$> sequenceA maybeTerms)
 symbolGenerator
     Internal.Symbol
         { symbolParams = _ : _
@@ -837,17 +838,17 @@ aliasGenerator
                     }
             , generator = applicationGenerator
             }
-      where
-        applicationGenerator ::
-            (Sort -> Gen (Maybe (TermLike VariableName))) ->
-            Sort ->
-            Gen (Maybe (TermLike VariableName))
-        applicationGenerator termGenerator sort = do
-            when (sort /= applicationSortsResult) (error "Sort mismatch.")
-            maybeTerms <- mapM termGenerator applicationSortsOperands
-            return $ do
-                terms <- sequenceA maybeTerms
-                return $ mkApplyAlias alias terms
+        where
+            applicationGenerator ::
+                (Sort -> Gen (Maybe (TermLike VariableName))) ->
+                Sort ->
+                Gen (Maybe (TermLike VariableName))
+            applicationGenerator termGenerator sort = do
+                when (sort /= applicationSortsResult) (error "Sort mismatch.")
+                maybeTerms <- mapM termGenerator applicationSortsOperands
+                return $ do
+                    terms <- sequenceA maybeTerms
+                    return $ mkApplyAlias alias terms
 aliasGenerator
     Internal.Alias
         { aliasParams = _ : _
@@ -883,46 +884,46 @@ elementVariableGenerators = do
     let generators =
             map generatorForVariable (Set.toList availableElementVariables)
     filterGeneratorsGroupAndPickOne generators
-  where
-    generatorForVariable :: ElementVariable VariableName -> TermGenerator
-    generatorForVariable variable =
-        TermGenerator
-            { arity = 0
-            , sort = SpecificSort (variableSort variable)
-            , attributes =
-                AttributeRequirements
-                    { isConstructorLike = False
-                    , isConcrete = False
-                    }
-            , generator = variableGenerator variable
-            }
+    where
+        generatorForVariable :: ElementVariable VariableName -> TermGenerator
+        generatorForVariable variable =
+            TermGenerator
+                { arity = 0
+                , sort = SpecificSort (variableSort variable)
+                , attributes =
+                    AttributeRequirements
+                        { isConstructorLike = False
+                        , isConcrete = False
+                        }
+                , generator = variableGenerator variable
+                }
 
-    variableGenerator variable _termGenerator sort = do
-        when (sort /= variableSort variable) (error "Sort mismatch.")
-        return (Just (mkElemVar variable))
+        variableGenerator variable _termGenerator sort = do
+            when (sort /= variableSort variable) (error "Sort mismatch.")
+            return (Just (mkElemVar variable))
 
 setVariableGenerators :: Gen (Map.Map SortRequirements TermGenerator)
 setVariableGenerators = do
     (_, Context{availableSetVariables}) <- Reader.ask
     let generators = map generatorForVariable (Set.toList availableSetVariables)
     filterGeneratorsGroupAndPickOne generators
-  where
-    generatorForVariable :: SetVariable VariableName -> TermGenerator
-    generatorForVariable variable =
-        TermGenerator
-            { arity = 0
-            , sort = SpecificSort (variableSort variable)
-            , attributes =
-                AttributeRequirements
-                    { isConstructorLike = False
-                    , isConcrete = False
-                    }
-            , generator = variableGenerator variable
-            }
+    where
+        generatorForVariable :: SetVariable VariableName -> TermGenerator
+        generatorForVariable variable =
+            TermGenerator
+                { arity = 0
+                , sort = SpecificSort (variableSort variable)
+                , attributes =
+                    AttributeRequirements
+                        { isConstructorLike = False
+                        , isConcrete = False
+                        }
+                , generator = variableGenerator variable
+                }
 
-    variableGenerator variable _termGenerator sort = do
-        when (sort /= variableSort variable) (error "Sort mismatch.")
-        return (Just (mkSetVar variable))
+        variableGenerator variable _termGenerator sort = do
+            when (sort /= variableSort variable) (error "Sort mismatch.")
+            return (Just (mkSetVar variable))
 
 filterGeneratorsGroupAndPickOne ::
     [TermGenerator] -> Gen (Map.Map SortRequirements TermGenerator)
@@ -939,13 +940,13 @@ filterGeneratorsAndGroup generators = do
 filterGenerators :: [TermGenerator] -> Gen [TermGenerator]
 filterGenerators generators =
     Reader.asks snd >>= \context -> pure $ filter (accept context) generators
-  where
-    accept :: Context -> TermGenerator -> Bool
-    accept
-        Context{onlyConcrete, onlyConstructorLike}
-        TermGenerator{attributes = AttributeRequirements{isConcrete, isConstructorLike}} =
-            (not onlyConcrete || isConcrete)
-                && (not onlyConstructorLike || isConstructorLike)
+    where
+        accept :: Context -> TermGenerator -> Bool
+        accept
+            Context{onlyConcrete, onlyConstructorLike}
+            TermGenerator{attributes = AttributeRequirements{isConcrete, isConstructorLike}} =
+                (not onlyConcrete || isConcrete)
+                    && (not onlyConstructorLike || isConstructorLike)
 
 groupBySort :: [TermGenerator] -> Map.Map SortRequirements [TermGenerator]
 groupBySort = groupBy termGeneratorSort
@@ -953,13 +954,13 @@ groupBySort = groupBy termGeneratorSort
 groupBy :: forall a b. Ord b => (a -> b) -> [a] -> Map.Map b [a]
 groupBy keyExtractor elements =
     List.foldl' addElement Map.empty elements
-  where
-    addElement ::
-        Map.Map b [a] ->
-        a ->
-        Map.Map b [a]
-    addElement keyToElement element =
-        Map.insertWith (++) (keyExtractor element) [element] keyToElement
+    where
+        addElement ::
+            Map.Map b [a] ->
+            a ->
+            Map.Map b [a]
+        addElement keyToElement element =
+            Map.insertWith (++) (keyExtractor element) [element] keyToElement
 
 sortGen :: Gen Sort
 sortGen = do

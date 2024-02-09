@@ -28,83 +28,83 @@ test_graph :: [TestTree]
 test_graph =
     [ testGroup
         "Smooth out graph with a single node"
-        [ testCase "Contains only a subset of the original nodes" $
-            assertBool "" (nodesSet g1' `isSubsetOf` nodesSet g1)
-        , testCase "Number of edges is smaller or equal" $
-            assertBool "" (Graph.size g1' <= Graph.size g1)
+        [ testCase "Contains only a subset of the original nodes"
+            $ assertBool "" (nodesSet g1' `isSubsetOf` nodesSet g1)
+        , testCase "Number of edges is smaller or equal"
+            $ assertBool "" (Graph.size g1' <= Graph.size g1)
         , testCase
             "The only nodes with in/out degree == 1\
             \ are included in the children of branchings"
             $ assertBool ""
             $ Set.fromList (inOutDegreeOne g1')
-                `isSubsetOf` Set.fromList (childrenOfBranchings g1)
-        , testCase "actual === expected" $
-            assert (g1' == expectedG1') $
-                return ()
+            `isSubsetOf` Set.fromList (childrenOfBranchings g1)
+        , testCase "actual === expected"
+            $ assert (g1' == expectedG1')
+            $ return ()
         ]
     , testGroup
         "Smooth out graph with two nodes"
-        [ testCase "Contains only a subset of the original nodes" $
-            assertBool "" (nodesSet g2' `isSubsetOf` nodesSet g2)
-        , testCase "Number of edges is smaller or equal" $
-            assertBool "" (Graph.size g2' <= Graph.size g2)
+        [ testCase "Contains only a subset of the original nodes"
+            $ assertBool "" (nodesSet g2' `isSubsetOf` nodesSet g2)
+        , testCase "Number of edges is smaller or equal"
+            $ assertBool "" (Graph.size g2' <= Graph.size g2)
         , testCase
             "The only nodes with in/out degree == 1\
             \ are included in the children of branchings"
             $ assertBool ""
             $ Set.fromList (inOutDegreeOne g2')
-                `isSubsetOf` Set.fromList (childrenOfBranchings g2)
-        , testCase "actual === expected" $
-            assert (g2' == expectedG2') $
-                return ()
+            `isSubsetOf` Set.fromList (childrenOfBranchings g2)
+        , testCase "actual === expected"
+            $ assert (g2' == expectedG2')
+            $ return ()
         ]
     , testGroup
         "Smooth out chain graph"
-        [ testCase "Contains only a subset of the original nodes" $
-            assertBool "" (nodesSet chain' `isSubsetOf` nodesSet chain)
-        , testCase "Number of edges is smaller or equal" $
-            assertBool "" (Graph.size chain' <= Graph.size chain)
+        [ testCase "Contains only a subset of the original nodes"
+            $ assertBool "" (nodesSet chain' `isSubsetOf` nodesSet chain)
+        , testCase "Number of edges is smaller or equal"
+            $ assertBool "" (Graph.size chain' <= Graph.size chain)
         , testCase
             "The only nodes with in/out degree == 1\
             \ are included in the children of branchings"
             $ assertBool ""
             $ Set.fromList (inOutDegreeOne chain')
-                `isSubsetOf` Set.fromList (childrenOfBranchings chain)
-        , testCase "actual === expected" $
-            assert (chain' == expectedChain') $
-                return ()
+            `isSubsetOf` Set.fromList (childrenOfBranchings chain)
+        , testCase "actual === expected"
+            $ assert (chain' == expectedChain')
+            $ return ()
         ]
     , testGroup
         "Smooth out arbitrary tree1"
-        [ testCase "Contains only a subset of the original nodes" $
-            assertBool "" (nodesSet tree1' `isSubsetOf` nodesSet tree1)
-        , testCase "Number of edges is smaller or equal" $
-            assertBool "" (Graph.size tree1' <= Graph.size tree1)
+        [ testCase "Contains only a subset of the original nodes"
+            $ assertBool "" (nodesSet tree1' `isSubsetOf` nodesSet tree1)
+        , testCase "Number of edges is smaller or equal"
+            $ assertBool "" (Graph.size tree1' <= Graph.size tree1)
         , testCase
             "The only nodes with in/out degree == 1\
             \ are included in the children of branchings"
             $ assertBool ""
             $ Set.fromList (inOutDegreeOne tree1')
-                `isSubsetOf` Set.fromList (childrenOfBranchings tree1)
-        , testCase "actual === expected" $
-            assert (tree1' == expectedTree1') $
-                return ()
+            `isSubsetOf` Set.fromList (childrenOfBranchings tree1)
+        , testCase "actual === expected"
+            $ assert (tree1' == expectedTree1')
+            $ return ()
         ]
     , testGroup
         "Smooth out tree with branching at the root"
-        [ testCase "Contains only a subset of the original nodes" $
-            assertBool "" (nodesSet tree2' `isSubsetOf` nodesSet tree2)
-        , testCase "Number of edges is smaller or equal" $
-            assertBool "" (Graph.size tree2' <= Graph.size tree2)
+        [ testCase "Contains only a subset of the original nodes"
+            $ assertBool "" (nodesSet tree2' `isSubsetOf` nodesSet tree2)
+        , testCase "Number of edges is smaller or equal"
+            $ assertBool "" (Graph.size tree2' <= Graph.size tree2)
         , testCase
             "The only nodes with in/out degree == 1\
             \ are included in the children of branchings"
             $ assertBool ""
             $ Set.fromList (inOutDegreeOne tree2')
-                `isSubsetOf` Set.fromList (childrenOfBranchings tree2)
-        , testCase "actual === expected" $
-            assert (tree2' == expectedTree2') $
-                return ()
+            `isSubsetOf` Set.fromList (childrenOfBranchings tree2)
+        , testCase "actual === expected"
+            $ assert (tree2' == expectedTree2')
+            $ return ()
         ]
     ]
 

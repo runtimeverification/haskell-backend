@@ -61,8 +61,9 @@ asInternal ::
     Text ->
     TermLike variable
 asInternal internalStringSort internalStringValue =
-    TermLike.fromConcrete . mkInternalString $
-        asBuiltin internalStringSort internalStringValue
+    TermLike.fromConcrete
+        . mkInternalString
+        $ asBuiltin internalStringSort internalStringValue
 
 asBuiltin ::
     -- | resulting sort

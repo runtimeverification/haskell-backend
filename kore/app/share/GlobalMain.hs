@@ -289,36 +289,36 @@ parseKoreProveOptions =
             ( long "moving-average"
                 <> help "Enable timeout based on moving average."
             )
-  where
-    parseMinDepth =
-        let minDepth = readPositiveIntegral MinDepth "min-depth"
-         in minDepth <|> pure (MinDepth 1)
-    parseGraphSearch =
-        option
-            readGraphSearch
-            ( metavar "GRAPH_SEARCH"
-                <> long "graph-search"
-                <> value BreadthFirst
-                <> help
-                    "Search order of the execution graph. \
-                    \Either breadth-first or depth-first. \
-                    \Default is breadth-first."
-            )
-      where
-        searchOrders =
-            [ ("breadth-first", BreadthFirst)
-            , ("depth-first", DepthFirst)
-            ]
-        readGraphSearch = do
-            input <- str
-            let found = lookup input searchOrders
-            case found of
-                Just searchOrder -> pure searchOrder
-                Nothing ->
-                    let unknown = "Unknown search order '" ++ input ++ "'. "
-                        names = intercalate ", " (fst <$> searchOrders)
-                        known = "Known search order are: " ++ names
-                     in readerError (unknown ++ known)
+    where
+        parseMinDepth =
+            let minDepth = readPositiveIntegral MinDepth "min-depth"
+             in minDepth <|> pure (MinDepth 1)
+        parseGraphSearch =
+            option
+                readGraphSearch
+                ( metavar "GRAPH_SEARCH"
+                    <> long "graph-search"
+                    <> value BreadthFirst
+                    <> help
+                        "Search order of the execution graph. \
+                        \Either breadth-first or depth-first. \
+                        \Default is breadth-first."
+                )
+            where
+                searchOrders =
+                    [ ("breadth-first", BreadthFirst)
+                    , ("depth-first", DepthFirst)
+                    ]
+                readGraphSearch = do
+                    input <- str
+                    let found = lookup input searchOrders
+                    case found of
+                        Just searchOrder -> pure searchOrder
+                        Nothing ->
+                            let unknown = "Unknown search order '" ++ input ++ "'. "
+                                names = intercalate ", " (fst <$> searchOrders)
+                                known = "Known search order are: " ++ names
+                             in readerError (unknown ++ known)
 
 {- | Record Type containing common command-line arguments for each executable in
 the project
@@ -366,8 +366,8 @@ mainVersion =
         , "  branch:\t" ++ fromMaybe "<unknown>" gitBranch
         , "  last commit:\t" ++ gitCommitDate
         ]
-  where
-    VersionInfo{gitHash, gitDirty, gitBranch, gitCommitDate} = $versionInfo
+    where
+        VersionInfo{gitHash, gitDirty, gitBranch, gitCommitDate} = $versionInfo
 
 --------------------
 -- Option Parsers --
@@ -417,29 +417,29 @@ commandLineParse (ExeName exeName) maybeEnv parser infoMod = do
             | Just env <- maybeEnv = overFailure (changeHelp args env argsEnv)
             | otherwise = id
     handleParseResult $ changeHelpOverFailure parseResult
-  where
-    parseLocalOptions =
-        LocalOptions
-            <$> parser
-    parseMainOptions =
-        MainOptions
-            <$> globalCommandLineParser
-            <*> optional parseLocalOptions
-            <**> helper
+    where
+        parseLocalOptions =
+            LocalOptions
+                <$> parser
+        parseMainOptions =
+            MainOptions
+                <$> globalCommandLineParser
+                <*> optional parseLocalOptions
+                <**> helper
 
-    changeHelp :: [String] -> String -> [String] -> ParserHelp -> ParserHelp
-    changeHelp args env argsEnv parserHelp@ParserHelp{helpError} =
-        parserHelp
-            { helpError =
-                vsepChunks [Chunk . Just $ commandWithOpts, helpError]
-            }
-      where
-        commandWithOpts =
-            Pretty.vsep
-                [ Pretty.linebreak
-                , Pretty.pretty (unwords (exeName : args))
-                , Pretty.pretty env <> "=" <> Pretty.squotes (Pretty.pretty $ unwords argsEnv)
-                ]
+        changeHelp :: [String] -> String -> [String] -> ParserHelp -> ParserHelp
+        changeHelp args env argsEnv parserHelp@ParserHelp{helpError} =
+            parserHelp
+                { helpError =
+                    vsepChunks [Chunk . Just $ commandWithOpts, helpError]
+                }
+            where
+                commandWithOpts =
+                    Pretty.vsep
+                        [ Pretty.linebreak
+                        , Pretty.pretty (unwords (exeName : args))
+                        , Pretty.pretty env <> "=" <> Pretty.squotes (Pretty.pretty $ unwords argsEnv)
+                        ]
 
 ----------------------
 -- Helper Functions --
@@ -457,16 +457,16 @@ clockSomethingIO description something = do
     end <- lift $ getTime Monotonic
     logEntry $ logMessage end start
     return x
-  where
-    logMessage end start =
-        mkMessage start end
-    mkMessage start end =
-        Log.LogMessage
-            { message =
-                pack $ description ++ " " ++ show (diffTimeSpec end start)
-            , severity = Log.Info
-            , callstack = emptyCallStack
-            }
+    where
+        logMessage end start =
+            mkMessage start end
+        mkMessage start end =
+            Log.LogMessage
+                { message =
+                    pack $ description ++ " " ++ show (diffTimeSpec end start)
+                , severity = Log.Info
+                , callstack = emptyCallStack
+                }
 
 -- | Verify that a Kore pattern is well-formed and print timing information.
 mainPatternVerify ::
@@ -481,10 +481,10 @@ mainPatternVerify verifiedModule patt = do
             "Verifying the pattern"
             (runPatternVerifier context $ verifyStandalonePattern Nothing patt)
     either errorVerify return verifyResult
-  where
-    context =
-        PatternVerifier.verifiedModuleContext verifiedModule
-            & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
+    where
+        context =
+            PatternVerifier.verifiedModuleContext verifiedModule
+                & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
 
 lookupMainModule ::
     Monad monad =>
@@ -563,26 +563,26 @@ execute ::
     SMT r ->
     Main r
 execute options metadataTools lemmas worker =
-    clockSomethingIO "Executing" $
-        case solver of
+    clockSomethingIO "Executing"
+        $ case solver of
             Z3 -> withZ3
             None -> withoutSMT
-  where
-    withZ3 =
-        SMT.runSMT
-            config
-            (declareSMTLemmas metadataTools lemmas)
-            worker
-    withoutSMT = SMT.runNoSMT worker
-    KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, solver} =
-        options
-    config =
-        SMT.defaultConfig
-            { SMT.timeOut = timeOut
-            , SMT.rLimit = rLimit
-            , SMT.resetInterval = resetInterval
-            , SMT.prelude = prelude
-            }
+    where
+        withZ3 =
+            SMT.runSMT
+                config
+                (declareSMTLemmas metadataTools lemmas)
+                worker
+        withoutSMT = SMT.runNoSMT worker
+        KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, solver} =
+            options
+        config =
+            SMT.defaultConfig
+                { SMT.timeOut = timeOut
+                , SMT.rLimit = rLimit
+                , SMT.resetInterval = resetInterval
+                , SMT.prelude = prelude
+                }
 
 data SerializedDefinition = SerializedDefinition
     { serializedModule :: SerializedModule
@@ -617,16 +617,16 @@ deserializeDefinition
                         solverOptions
                         definitionFilePath
                         mainModuleName
-      where
-        readContents definitionHandle = do
-            isCompact <- hHasCompactMarker definitionHandle
-            if isCompact
-                then do
-                    serializedDefinition <-
-                        hUnsafeGetCompact definitionHandle
-                            >>= either errorParse (return . getCompact)
-                    return (Just serializedDefinition)
-                else return Nothing
+        where
+            readContents definitionHandle = do
+                isCompact <- hHasCompactMarker definitionHandle
+                if isCompact
+                    then do
+                        serializedDefinition <-
+                            hUnsafeGetCompact definitionHandle
+                                >>= either errorParse (return . getCompact)
+                        return (Just serializedDefinition)
+                    else return Nothing
 
 makeSerializedDefinition ::
     KoreSolverOptions ->
@@ -639,8 +639,8 @@ makeSerializedDefinition solverOptions definitionFileName mainModuleName = do
     let metadataTools = MetadataTools.build mainModule
     let lemmas = getSMTLemmas mainModule
     serializedModule <-
-        execute solverOptions metadataTools lemmas $
-            makeSerializedModule mainModule
+        execute solverOptions metadataTools lemmas
+            $ makeSerializedModule mainModule
     let locations = kFileLocations definition
     internedTextCache <- lift $ readIORef globalInternedTextCache
     let serializedDefinition =
@@ -666,24 +666,24 @@ loadDefinitions :: [FilePath] -> Main LoadedDefinition
 loadDefinitions filePaths =
     do
         loadedDefinitions & fmap sortClaims
-  where
-    loadedDefinitions = do
-        parsedDefinitions <- traverse parseDefinition filePaths
-        let attributes = fmap definitionAttributes parsedDefinitions
-        sources <- traverse parseKFileAttributes attributes
-        let sources' = filter notDefault (nub sources)
-        (indexedModules, definedNames) <-
-            Monad.foldM verifyDefinitionWithBase mempty parsedDefinitions
-        return $
-            LoadedDefinition
-                indexedModules
-                definedNames
-                (KFileLocations sources')
+    where
+        loadedDefinitions = do
+            parsedDefinitions <- traverse parseDefinition filePaths
+            let attributes = fmap definitionAttributes parsedDefinitions
+            sources <- traverse parseKFileAttributes attributes
+            let sources' = filter notDefault (nub sources)
+            (indexedModules, definedNames) <-
+                Monad.foldM verifyDefinitionWithBase mempty parsedDefinitions
+            return
+                $ LoadedDefinition
+                    indexedModules
+                    definedNames
+                    (KFileLocations sources')
 
-    sortClaims :: LoadedDefinition -> LoadedDefinition
-    sortClaims def@LoadedDefinition{indexedModules} =
-        let indexedModules' = indexedModules & Lens.traversed %~ sortModuleClaims
-         in def{indexedModules = indexedModules'}
+        sortClaims :: LoadedDefinition -> LoadedDefinition
+        sortClaims def@LoadedDefinition{indexedModules} =
+            let indexedModules' = indexedModules & Lens.traversed %~ sortModuleClaims
+             in def{indexedModules = indexedModules'}
 
 loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule
 loadModule moduleName = lookupMainModule moduleName . indexedModules
@@ -738,4 +738,4 @@ addExtraAxioms ::
 addExtraAxioms definitionModule moduleWithExtraAxioms =
     definitionModule
         & field @"indexedModuleAxioms"
-            <>~ indexedModuleAxioms moduleWithExtraAxioms
+        <>~ indexedModuleAxioms moduleWithExtraAxioms

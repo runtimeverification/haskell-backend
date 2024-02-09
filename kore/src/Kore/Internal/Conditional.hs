@@ -151,9 +151,9 @@ instance InternalVariable variable => Applicative (Conditional variable) where
             , predicate = Predicate.makeAndPredicate predicate1 predicate2
             , substitution = substitution1 <> substitution2
             }
-      where
-        Conditional f predicate1 substitution1 = predicated1
-        Conditional a predicate2 substitution2 = predicated2
+        where
+            Conditional f predicate1 substitution1 = predicated1
+            Conditional a predicate2 substitution2 = predicated2
 
 {- | 'Conditional' is equivalent to the 'Control.Comonad.Env.Env' comonad.
 
@@ -185,8 +185,8 @@ instance
     From (Conditional variable ()) (Predicate variable)
     where
     from Conditional{predicate, substitution} =
-        Predicate.makeAndPredicate predicate $
-            from substitution
+        Predicate.makeAndPredicate predicate
+            $ from substitution
 
 instance
     InternalVariable variable =>
@@ -287,10 +287,10 @@ prettyConditional sort termDoc predicateDoc substitutionDocs =
             "/* substitution: */"
             (unparseAssoc' andHead andIdent substitutionDocs)
         ]
-  where
-    andHead = "\\and" <> parameters' [unparse sort]
-    andIdent = "\\top" <> parameters' [unparse sort] <> noArguments
-    below first second = (Pretty.align . Pretty.vsep) [first, second]
+    where
+        andHead = "\\and" <> parameters' [unparse sort]
+        andIdent = "\\top" <> parameters' [unparse sort] <> noArguments
+        below first second = (Pretty.align . Pretty.vsep) [first, second]
 
 prettyConditional' ::
     -- | term
@@ -310,10 +310,10 @@ prettyConditional' termDoc predicateDoc substitutionDocs =
             "/* substitution: */"
             (unparseAssoc' andHead andIdent substitutionDocs)
         ]
-  where
-    andHead = "\\and"
-    andIdent = "\\top" <> noArguments
-    below first second = (Pretty.align . Pretty.vsep) [first, second]
+    where
+        andHead = "\\and"
+        andIdent = "\\top" <> noArguments
+        below first second = (Pretty.align . Pretty.vsep) [first, second]
 
 instance InternalVariable variable => Pretty (Conditional variable ()) where
     pretty conditional =
@@ -329,11 +329,11 @@ instance
             (unparse term)
             (unparseWithSort sort predicate)
             (unparseWithSort sort <$> termLikeSubstitution)
-      where
-        sort = termLikeSort term
-        termLikeSubstitution =
-            Substitution.singleSubstitutionToPredicate
-                <$> Substitution.unwrap substitution
+        where
+            sort = termLikeSort term
+            termLikeSubstitution =
+                Substitution.singleSubstitutionToPredicate
+                    <$> Substitution.unwrap substitution
 
     unparse2 Conditional{term, predicate, substitution} =
         prettyConditional
@@ -341,11 +341,11 @@ instance
             (unparse2 term)
             (unparse2WithSort sort predicate)
             (unparse2WithSort sort <$> termLikeSubstitution)
-      where
-        sort = termLikeSort term
-        termLikeSubstitution =
-            Substitution.singleSubstitutionToPredicate
-                <$> Substitution.unwrap substitution
+        where
+            sort = termLikeSort term
+            termLikeSubstitution =
+                Substitution.singleSubstitutionToPredicate
+                    <$> Substitution.unwrap substitution
 
 instance
     InternalVariable variable =>
@@ -356,10 +356,10 @@ instance
             (pretty term)
             (pretty predicate)
             (pretty <$> termLikeSubstitution)
-      where
-        termLikeSubstitution =
-            Substitution.singleSubstitutionToPredicate
-                <$> Substitution.unwrap substitution
+        where
+            termLikeSubstitution =
+                Substitution.singleSubstitutionToPredicate
+                    <$> Substitution.unwrap substitution
 
 instance
     InternalVariable variable =>
@@ -511,8 +511,8 @@ assertNormalized Conditional{predicate, substitution} a =
     a
         & assert (Substitution.isNormalized substitution)
         & assert (Predicate.isFreeOf predicate variables)
-  where
-    variables = Substitution.variables substitution
+    where
+        variables = Substitution.variables substitution
 
 {- | Marks the condition's predicate as being simplified.
 

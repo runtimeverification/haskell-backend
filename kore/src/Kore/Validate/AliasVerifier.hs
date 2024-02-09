@@ -53,8 +53,9 @@ verifyAliases ::
     SentenceVerifier ()
 verifyAliases sentences = do
     let aliases =
-            Map.fromList . map (\sentence -> (aliasName sentence, sentence)) $
-                mapMaybe projectSentenceAlias sentences
+            Map.fromList
+                . map (\sentence -> (aliasName sentence, sentence))
+                $ mapMaybe projectSentenceAlias sentences
         aliasIds = Map.keysSet aliases
     runReaderT
         (traverse_ verifyAlias aliasIds)
@@ -86,8 +87,8 @@ It is an error if the alias is missing.
 lookupParsedAlias :: Id -> AliasVerifier ParsedSentenceAlias
 lookupParsedAlias name =
     Reader.asks (Map.lookup name . aliases) >>= maybe notFound return
-  where
-    notFound = koreFail "Alias not found."
+    where
+        notFound = koreFail "Alias not found."
 
 {- | Verify and add the named alias to the current module.
 
@@ -99,13 +100,13 @@ verifyAlias name =
     withLocationAndContext name aliasContext $ do
         checkAliasCycle
         lookupVerifiedAlias name >>= maybe notCached cached
-  where
-    aliasContext = "alias '" <> getId name <> "' declaration"
-    checkAliasCycle = do
-        isCycle <- Reader.asks (Set.member name . verifying)
-        koreFailWhen isCycle "Circular alias dependency."
-    cached _ = return ()
-    notCached = verifyUncachedAlias name
+    where
+        aliasContext = "alias '" <> getId name <> "' declaration"
+        checkAliasCycle = do
+            isCycle <- Reader.asks (Set.member name . verifying)
+            koreFailWhen isCycle "Circular alias dependency."
+        cached _ = return ()
+        notCached = verifyUncachedAlias name
 
 -- | Verify the named alias without using the cache.
 verifyUncachedAlias :: Id -> AliasVerifier ()
@@ -116,11 +117,11 @@ verifyUncachedAlias name = do
     verified <- SentenceVerifier.verifyAliasSentence sentence & lift
     attrs <- parseAttributes (sentenceAliasAttributes verified) & liftParser
     State.modify' $ addAlias verified attrs
-  where
-    addAlias verified attrs =
-        Lens.over
-            (field @"indexedModuleSyntax" . field @"indexedModuleAliasSentences")
-            (Map.insert (aliasName verified) (attrs, verified))
+    where
+        addAlias verified attrs =
+            Lens.over
+                (field @"indexedModuleSyntax" . field @"indexedModuleAliasSentences")
+                (Map.insert (aliasName verified) (attrs, verified))
 
 -- | Determine the names of all aliases the 'ParsedSentenceAlias' depends on.
 aliasDependencies :: ParsedSentenceAlias -> AliasVerifier (Set Id)
@@ -138,9 +139,9 @@ collectAliasIds base = do
         ApplicationF application
             | Map.member name aliases ->
                 return $ Set.insert name names
-          where
-            name =
-                symbolOrAliasConstructor
-                    . applicationSymbolOrAlias
-                    $ application
+            where
+                name =
+                    symbolOrAliasConstructor
+                        . applicationSymbolOrAlias
+                        $ application
         _ -> return names

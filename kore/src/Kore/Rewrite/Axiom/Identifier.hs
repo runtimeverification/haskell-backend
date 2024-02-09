@@ -112,84 +112,84 @@ matchAxiomIdentifier ::
     TermLike variable ->
     AxiomIdentifier
 matchAxiomIdentifier = Recursive.fold matchWorker
-  where
-    matchWorker (_ :< termLikeF) =
-        case termLikeF of
-            ApplyAliasF application -> mkAliasId application
-            ApplySymbolF application -> mkAppId application
-            CeilF ceil -> Ceil $ Syntax.ceilChild ceil
-            EqualsF equals ->
-                Equals
-                    (Syntax.equalsFirst equals)
-                    (Syntax.equalsSecond equals)
-            ExistsF exists -> Exists $ Syntax.existsChild exists
-            NotF not' ->
-                Not $ Syntax.notChild not'
-            VariableF _ ->
-                Variable
-            EndiannessF endiannessF ->
-                mkAppId $
-                    Endianness.toApplication $
-                        getConst endiannessF
-            SignednessF signednessF ->
-                mkAppId $
-                    Signedness.toApplication $
-                        getConst signednessF
-            InjF inj -> mkAppId $ Inj.toApplication inj
-            InternalListF internalList -> listToId internalList
-            InternalSetF internalSet -> acToId internalSet
-            InternalMapF internalMap -> acToId internalMap
-            DomainValueF _ -> DV
-            InternalBoolF _ -> DV
-            InternalBytesF _ -> DV
-            InternalIntF _ -> DV
-            InternalStringF _ -> DV
-            -- Anything we do not want to handle specially returns this.
-            _ -> Other
+    where
+        matchWorker (_ :< termLikeF) =
+            case termLikeF of
+                ApplyAliasF application -> mkAliasId application
+                ApplySymbolF application -> mkAppId application
+                CeilF ceil -> Ceil $ Syntax.ceilChild ceil
+                EqualsF equals ->
+                    Equals
+                        (Syntax.equalsFirst equals)
+                        (Syntax.equalsSecond equals)
+                ExistsF exists -> Exists $ Syntax.existsChild exists
+                NotF not' ->
+                    Not $ Syntax.notChild not'
+                VariableF _ ->
+                    Variable
+                EndiannessF endiannessF ->
+                    mkAppId
+                        $ Endianness.toApplication
+                        $ getConst endiannessF
+                SignednessF signednessF ->
+                    mkAppId
+                        $ Signedness.toApplication
+                        $ getConst signednessF
+                InjF inj -> mkAppId $ Inj.toApplication inj
+                InternalListF internalList -> listToId internalList
+                InternalSetF internalSet -> acToId internalSet
+                InternalMapF internalMap -> acToId internalMap
+                DomainValueF _ -> DV
+                InternalBoolF _ -> DV
+                InternalBytesF _ -> DV
+                InternalIntF _ -> DV
+                InternalStringF _ -> DV
+                -- Anything we do not want to handle specially returns this.
+                _ -> Other
 
-    listToId
-        InternalList
-            { internalListChild = list
-            , internalListUnit = unitSymbol
-            , internalListElement = elementSymbol
-            , internalListConcat = concatSymbol
-            }
-            | Seq.null list = Application $ symbolToId unitSymbol
-            | Seq.length list == 1 = Application $ symbolToId elementSymbol
-            | otherwise = Application $ symbolToId concatSymbol
+        listToId
+            InternalList
+                { internalListChild = list
+                , internalListUnit = unitSymbol
+                , internalListElement = elementSymbol
+                , internalListConcat = concatSymbol
+                }
+                | Seq.null list = Application $ symbolToId unitSymbol
+                | Seq.length list == 1 = Application $ symbolToId elementSymbol
+                | otherwise = Application $ symbolToId concatSymbol
 
-    acToId ::
-        AcWrapper wrapper =>
-        InternalAc k wrapper AxiomIdentifier ->
-        AxiomIdentifier
-    acToId
-        InternalAc
-            { builtinAcChild
-            , builtinAcUnit = unitSymbol
-            , builtinAcElement = elementSymbol
-            , builtinAcConcat = concatSymbol
-            } =
-            acToId'
-                unitSymbol
-                elementSymbol
-                concatSymbol
-                elementsWithVariables
-                (HashMap.toList concreteElements)
-                opaque
-          where
-            NormalizedAc
-                { elementsWithVariables
-                , concreteElements
-                , opaque
-                } = unwrapAc builtinAcChild
+        acToId ::
+            AcWrapper wrapper =>
+            InternalAc k wrapper AxiomIdentifier ->
+            AxiomIdentifier
+        acToId
+            InternalAc
+                { builtinAcChild
+                , builtinAcUnit = unitSymbol
+                , builtinAcElement = elementSymbol
+                , builtinAcConcat = concatSymbol
+                } =
+                acToId'
+                    unitSymbol
+                    elementSymbol
+                    concatSymbol
+                    elementsWithVariables
+                    (HashMap.toList concreteElements)
+                    opaque
+                where
+                    NormalizedAc
+                        { elementsWithVariables
+                        , concreteElements
+                        , opaque
+                        } = unwrapAc builtinAcChild
 
-    acToId' unitSymbol _ _ [] [] [] = Application $ symbolToId unitSymbol
-    acToId' _ elementSymbol _ [_] [] [] = Application $ symbolToId elementSymbol
-    acToId' _ elementSymbol _ [] [_] [] = Application $ symbolToId elementSymbol
-    acToId' _ _ _ [] [] [opaque] = opaque
-    acToId' _ _ concatSymbol _ _ _ = Application $ symbolToId concatSymbol
+        acToId' unitSymbol _ _ [] [] [] = Application $ symbolToId unitSymbol
+        acToId' _ elementSymbol _ [_] [] [] = Application $ symbolToId elementSymbol
+        acToId' _ elementSymbol _ [] [_] [] = Application $ symbolToId elementSymbol
+        acToId' _ _ _ [] [] [opaque] = opaque
+        acToId' _ _ concatSymbol _ _ _ = Application $ symbolToId concatSymbol
 
-    mkAppId = Application . symbolToId . Syntax.applicationSymbolOrAlias
-    mkAliasId = Application . aliasToId . Syntax.applicationSymbolOrAlias
-    symbolToId = Syntax.symbolOrAliasConstructor . Symbol.toSymbolOrAlias
-    aliasToId = Syntax.symbolOrAliasConstructor . Alias.toSymbolOrAlias
+        mkAppId = Application . symbolToId . Syntax.applicationSymbolOrAlias
+        mkAliasId = Application . aliasToId . Syntax.applicationSymbolOrAlias
+        symbolToId = Syntax.symbolOrAliasConstructor . Symbol.toSymbolOrAlias
+        aliasToId = Syntax.symbolOrAliasConstructor . Alias.toSymbolOrAlias

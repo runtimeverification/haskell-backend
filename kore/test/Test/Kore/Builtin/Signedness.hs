@@ -43,18 +43,18 @@ test_verify =
     [ test "littleSignedBytes" signedBytesSymbol signedBytes
     , test "verify bigSignedBytes" unsignedBytesSymbol unsignedBytes
     ]
-  where
-    test ::
-        HasCallStack =>
-        TestName ->
-        Symbol ->
-        TermLike VariableName ->
-        TestTree
-    test name symbol expect =
-        testCase name $ do
-            let original = mkApplySymbol symbol []
-                actual = verifyPattern (Just signednessSort) original
-            assertEqual "expected verified pattern" (Right expect) actual
+    where
+        test ::
+            HasCallStack =>
+            TestName ->
+            Symbol ->
+            TermLike VariableName ->
+            TestTree
+        test name symbol expect =
+            testCase name $ do
+                let original = mkApplySymbol symbol []
+                    actual = verifyPattern (Just signednessSort) original
+                assertEqual "expected verified pattern" (Right expect) actual
 
 test_match :: [TestTree]
 test_match =
@@ -83,31 +83,31 @@ test_unify =
         unsignedBytes
         signedBytes
     ]
-  where
-    unifies ::
-        HasCallStack =>
-        TestName ->
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        [Assignment RewritingVariableName] ->
-        TestTree
-    unifies name term1 term2 solution =
-        testCase name $ do
-            let expect =
-                    Pattern.withCondition term1 $
-                        mconcat (Condition.fromSingleSubstitution <$> solution)
-            actual <- unify term1 term2
-            assertEqual "expected unification solution" [expect] actual
-    doesn'tUnify ::
-        HasCallStack =>
-        TestName ->
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        TestTree
-    doesn'tUnify name term1 term2 =
-        testCase name $ do
-            actual <- unify term1 term2
-            assertEqual "expected bottom" [] actual
+    where
+        unifies ::
+            HasCallStack =>
+            TestName ->
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            [Assignment RewritingVariableName] ->
+            TestTree
+        unifies name term1 term2 solution =
+            testCase name $ do
+                let expect =
+                        Pattern.withCondition term1
+                            $ mconcat (Condition.fromSingleSubstitution <$> solution)
+                actual <- unify term1 term2
+                assertEqual "expected unification solution" [expect] actual
+        doesn'tUnify ::
+            HasCallStack =>
+            TestName ->
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            TestTree
+        doesn'tUnify name term1 term2 =
+            testCase name $ do
+                actual <- unify term1 term2
+                assertEqual "expected bottom" [] actual
 
 unify ::
     HasCallStack =>
@@ -115,7 +115,7 @@ unify ::
     TermLike RewritingVariableName ->
     IO [Pattern RewritingVariableName]
 unify term1 term2 =
-    runNoSMT $
-        runSimplifier testEnv $
-            runUnifierT $
-                termUnification term1 term2
+    runNoSMT
+        $ runSimplifier testEnv
+        $ runUnifierT
+        $ termUnification term1 term2

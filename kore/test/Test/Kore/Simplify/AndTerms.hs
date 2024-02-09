@@ -418,8 +418,8 @@ test_andTermsSimplification =
                         )
                     )
             assertEqual "" ([], []) actual
-        , testCase "injected overload vs. injected domain value, common join" $
-            do
+        , testCase "injected overload vs. injected domain value, common join"
+            $ do
                 actual <-
                     simplifyUnify
                         ( Mock.sortInjectionOtherToTop
@@ -433,8 +433,8 @@ test_andTermsSimplification =
                             subOtherDomainValue
                         )
                 assertEqual "" ([], []) actual
-        , testCase "injected overload vs. injected domain value, no common join" $
-            do
+        , testCase "injected overload vs. injected domain value, no common join"
+            $ do
                 actual <-
                     simplifyUnify
                         ( Mock.sortInjectionOtherToOtherTop
@@ -1151,8 +1151,8 @@ test_andTermsSimplification =
                 y = mkVariable "y"
                 alias1 = mkAlias' "alias1" x (mkTop Mock.testSort)
                 alias1App =
-                    applyAlias' alias1 $
-                        mkSetVar (SetVariableName <$> y)
+                    applyAlias' alias1
+                        $ mkSetVar (SetVariableName <$> y)
                 alias2 = mkAlias' "alias2" x alias1App
                 alias2App = applyAlias' alias2 $ mkTop Mock.testSort
                 expect =
@@ -1285,11 +1285,11 @@ test_andTermsSimplification =
                 assertEqual "" Nothing actual
         ]
     ]
-  where
-    xVar = mkElemVar Mock.xConfig
-    cf = Mock.functionalConstr10
-    a = Mock.a
-    b = Mock.b
+    where
+        xVar = mkElemVar Mock.xConfig
+        cf = Mock.functionalConstr10
+        a = Mock.a
+        b = Mock.b
 
 mkVariable :: Text -> Variable VariableName
 mkVariable ident =
@@ -1348,9 +1348,9 @@ test_equalsTermsSimplification =
                         ]
                 mconcat
                     [ Condition.assign (inject Mock.xConfig) xValue
-                    , Condition.assign (inject Mock.xConfigSet) $
-                        asInternal $
-                            Set.fromList xSetValue
+                    , Condition.assign (inject Mock.xConfigSet)
+                        $ asInternal
+                        $ Set.fromList xSetValue
                     ]
                     & pure
         actual <-
@@ -1404,17 +1404,17 @@ test_equalsTermsSimplification =
             assertEqual "" (Just [expect]) actual
         , testCase "key not in two-element Map" $ do
             let expect =
-                    [ makeNotPredicate $
-                        makeEqualsPredicate
+                    [ makeNotPredicate
+                        $ makeEqualsPredicate
                             (mkElemVar Mock.xConfig)
                             (mkElemVar Mock.yConfig)
-                    , makeNotPredicate $
-                        makeEqualsPredicate
+                    , makeNotPredicate
+                        $ makeEqualsPredicate
                             (mkElemVar Mock.xConfig)
                             (mkElemVar Mock.zConfig)
                     , -- Definedness condition
-                      makeNotPredicate $
-                        makeEqualsPredicate
+                      makeNotPredicate
+                        $ makeEqualsPredicate
                             (mkElemVar Mock.yConfig)
                             (mkElemVar Mock.zConfig)
                     ]
@@ -1472,9 +1472,9 @@ test_functionAnd =
             x = mkElemVar Mock.xConfig
             y = mkElemVar Mock.yConfig
             expect =
-                Pattern.withCondition (f x) $
-                    Condition.fromPredicate $
-                        makeEqualsPredicate (f x) (f y)
+                Pattern.withCondition (f x)
+                    $ Condition.fromPredicate
+                    $ makeEqualsPredicate (f x) (f y)
         let actual = functionAnd $ FunctionAnd (f x) (f y)
         let matchResult = matchFunctionAnd (f x) (f y)
         assertBool "" (isJust matchResult)
@@ -1559,23 +1559,23 @@ unify ::
     IO [Pattern RewritingVariableName]
 unify first second =
     testRunSimplifier mockEnv unification
-  where
-    mockEnv = Mock.env
-    unification =
-        Monad.Unify.runUnifierT $
-            termUnification
-                (simplifiedTerm first)
-                (simplifiedTerm second)
+    where
+        mockEnv = Mock.env
+        unification =
+            Monad.Unify.runUnifierT
+                $ termUnification
+                    (simplifiedTerm first)
+                    (simplifiedTerm second)
 
 simplify ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     IO [Pattern RewritingVariableName]
 simplify first second =
-    testRunSimplifierBranch mockEnv $
-        termAnd (simplifiedTerm first) (simplifiedTerm second)
-  where
-    mockEnv = Mock.env
+    testRunSimplifierBranch mockEnv
+        $ termAnd (simplifiedTerm first) (simplifiedTerm second)
+    where
+        mockEnv = Mock.env
 
 simplifyEquals ::
     Map.Map AxiomIdentifier [Equation RewritingVariableName] ->
@@ -1583,12 +1583,12 @@ simplifyEquals ::
     TermLike RewritingVariableName ->
     IO (Maybe [Condition RewritingVariableName])
 simplifyEquals axiomEquations first second =
-    (fmap . fmap) toList $
-        testRunSimplifier mockEnv $
-            runMaybeT $
-                termEquals (simplifiedTerm first) (simplifiedTerm second)
-  where
-    mockEnv = Mock.env{axiomEquations}
+    (fmap . fmap) toList
+        $ testRunSimplifier mockEnv
+        $ runMaybeT
+        $ termEquals (simplifiedTerm first) (simplifiedTerm second)
+    where
+        mockEnv = Mock.env{axiomEquations}
 
 sideRepresentation :: SideCondition.Representation
 sideRepresentation =

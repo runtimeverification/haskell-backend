@@ -37,10 +37,10 @@ assertEqual preface expected actual =
     case diff expected actual of
         Nothing -> return ()
         Just ab -> liftIO $ assertFailure message
-          where
-            message
-                | null preface = show ab
-                | otherwise = (show . Pretty.vsep) [Pretty.pretty preface, ab]
+            where
+                message
+                    | null preface = show ab
+                    | otherwise = (show . Pretty.vsep) [Pretty.pretty preface, ab]
 
 (@=?) ::
     (Diff a, HasCallStack) =>
@@ -63,14 +63,14 @@ assertEqual preface expected actual =
 assertSubstring :: HasCallStack => String -> String -> String -> IO ()
 assertSubstring preface a b =
     assertBool message (a `isInfixOf` b)
-  where
-    message =
-        (show . Pretty.vsep)
-            [ Pretty.pretty preface
-            , debug a
-            , "is not a substring of"
-            , debug b
-            ]
+    where
+        message =
+            (show . Pretty.vsep)
+                [ Pretty.pretty preface
+                , debug a
+                , "is not a substring of"
+                , debug b
+                ]
 
 assertErrorIO :: HasCallStack => (String -> IO ()) -> IO a -> IO ()
 assertErrorIO errorTest action = do

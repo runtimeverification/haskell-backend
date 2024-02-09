@@ -71,34 +71,34 @@ substitutionSimplifier ::
     SubstitutionSimplifier unifier
 substitutionSimplifier =
     SubstitutionSimplifier wrapper
-  where
-    wrapper ::
-        SideCondition RewritingVariableName ->
-        Substitution RewritingVariableName ->
-        unifier (OrCondition RewritingVariableName)
-    wrapper sideCondition substitution =
-        whileDebugSubstitutionSimplifier $ do
-            (predicate, result) <-
-                worker substitution
-                    & maybeT empty return
-            let condition = Condition.fromNormalizationSimplified result
-            let condition' = Condition.fromPredicate predicate <> condition
-                conditions = OrCondition.fromCondition condition'
-            TopBottom.guardAgainstBottom conditions
-            debugSubstitutionSimplifierResult
-            return conditions
-      where
-        worker ::
+    where
+        wrapper ::
+            SideCondition RewritingVariableName ->
             Substitution RewritingVariableName ->
-            MaybeT
-                unifier
-                ( Predicate RewritingVariableName
-                , Normalization RewritingVariableName
-                )
-        worker =
-            simplifySubstitutionWorker
-                sideCondition
-                unificationMakeAnd
+            unifier (OrCondition RewritingVariableName)
+        wrapper sideCondition substitution =
+            whileDebugSubstitutionSimplifier $ do
+                (predicate, result) <-
+                    worker substitution
+                        & maybeT empty return
+                let condition = Condition.fromNormalizationSimplified result
+                let condition' = Condition.fromPredicate predicate <> condition
+                    conditions = OrCondition.fromCondition condition'
+                TopBottom.guardAgainstBottom conditions
+                debugSubstitutionSimplifierResult
+                return conditions
+            where
+                worker ::
+                    Substitution RewritingVariableName ->
+                    MaybeT
+                        unifier
+                        ( Predicate RewritingVariableName
+                        , Normalization RewritingVariableName
+                        )
+                worker =
+                    simplifySubstitutionWorker
+                        sideCondition
+                        unificationMakeAnd
 
 unificationMakeAnd ::
     forall unifier.
@@ -107,13 +107,13 @@ unificationMakeAnd ::
     MakeAnd unifier
 unificationMakeAnd =
     MakeAnd{makeAnd}
-  where
-    makeAnd ::
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        SideCondition RewritingVariableName ->
-        unifier (Pattern RewritingVariableName)
-    makeAnd termLike1 termLike2 sideCondition = do
-        unified <- termUnification termLike1 termLike2
-        Simplifier.simplifyCondition sideCondition unified
-            & Logic.lowerLogicT
+    where
+        makeAnd ::
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            SideCondition RewritingVariableName ->
+            unifier (Pattern RewritingVariableName)
+        makeAnd termLike1 termLike2 sideCondition = do
+            unified <- termUnification termLike1 termLike2
+            Simplifier.simplifyCondition sideCondition unified
+                & Logic.lowerLogicT

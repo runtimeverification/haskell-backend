@@ -252,13 +252,13 @@ instance Unparse SentenceSymbol where
                         )
                     ]
                 ]
-          where
-            unparse2Inhabitant ss =
-                case ss of
-                    [] -> ""
-                    (s : rest) ->
-                        Pretty.parens (Pretty.fillSep ["\\inh", unparse2 s])
-                            <> unparse2Inhabitant rest
+            where
+                unparse2Inhabitant ss =
+                    case ss of
+                        [] -> ""
+                        (s : rest) ->
+                            Pretty.parens (Pretty.fillSep ["\\inh", unparse2 s])
+                                <> unparse2Inhabitant rest
 
 {- | 'SentenceImport' corresponds to the @sentence-import@ syntactic category
 from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#sentences kore-syntax.md#sentences>.
@@ -336,11 +336,11 @@ instance Unparse SentenceSort where
                     , "Sorts"
                     ]
                 ]
-          where
-            printLbSortsRb n =
-                case n of
-                    0 -> ""
-                    m -> Pretty.fillSep ["(\\inh Sorts)", printLbSortsRb (m - 1)]
+            where
+                printLbSortsRb n =
+                    case n of
+                        0 -> ""
+                        m -> Pretty.fillSep ["(\\inh Sorts)", printLbSortsRb (m - 1)]
 
 -- | 'SentenceAxiom' corresponds to the @sentence-axiom@ syntactic category from <https://github.com/runtimeverification/haskell-backend/blob/master/docs/kore-syntax.md#sentences kore-syntax.md#sentences>.
 data SentenceAxiom (patternType :: Type) = SentenceAxiom

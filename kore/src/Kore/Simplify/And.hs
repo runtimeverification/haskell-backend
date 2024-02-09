@@ -171,14 +171,14 @@ applyAndIdempotenceAndFindContradictions patt =
     if noContradictions
         then foldl1' mkAndSimplified . Set.toList $ Set.union terms negatedTerms
         else mkBottom sort
-  where
-    sort = TermLike.termLikeSort patt
-    (terms, negatedTerms) = splitIntoTermsAndNegations patt
-    noContradictions = Set.disjoint (Set.map mkNot terms) negatedTerms
-    mkAndSimplified a b =
-        TermLike.setSimplified
-            (TermLike.simplifiedAttribute a <> TermLike.simplifiedAttribute b)
-            (mkAnd a b)
+    where
+        sort = TermLike.termLikeSort patt
+        (terms, negatedTerms) = splitIntoTermsAndNegations patt
+        noContradictions = Set.disjoint (Set.map mkNot terms) negatedTerms
+        mkAndSimplified a b =
+            TermLike.setSimplified
+                (TermLike.simplifiedAttribute a <> TermLike.simplifiedAttribute b)
+                (mkAnd a b)
 
 splitIntoTermsAndNegations ::
     TermLike RewritingVariableName ->
@@ -189,20 +189,20 @@ splitIntoTermsAndNegations =
     bimap Set.fromList Set.fromList
         . partitionWith termOrNegation
         . children
-  where
-    children ::
-        TermLike RewritingVariableName -> [TermLike RewritingVariableName]
-    children (And_ _ p1 p2) = children p1 ++ children p2
-    children p = [p]
+    where
+        children ::
+            TermLike RewritingVariableName -> [TermLike RewritingVariableName]
+        children (And_ _ p1 p2) = children p1 ++ children p2
+        children p = [p]
 
-    -- Left is for regular terms, Right is negated terms
-    termOrNegation ::
-        TermLike RewritingVariableName ->
-        Either
-            (TermLike RewritingVariableName)
-            (TermLike RewritingVariableName)
-    termOrNegation t@(Not_ _ _) = Right t
-    termOrNegation t = Left t
+        -- Left is for regular terms, Right is negated terms
+        termOrNegation ::
+            TermLike RewritingVariableName ->
+            Either
+                (TermLike RewritingVariableName)
+                (TermLike RewritingVariableName)
+        termOrNegation t@(Not_ _ _) = Right t
+        termOrNegation t = Left t
 
 partitionWith :: (a -> Either b c) -> [a] -> ([b], [c])
 partitionWith f = partitionEithers . fmap f
@@ -219,14 +219,14 @@ termAnd ::
 termAnd p1 p2 =
     Logic.scatter
         =<< (lift . runUnifierT) (termAndWorker p1 p2)
-  where
-    termAndWorker ::
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        UnifierT Simplifier (Pattern RewritingVariableName)
-    termAndWorker first second =
-        maybeTermAnd termAndWorker first second
-            & runMaybeT
-            & fmap (fromMaybe andPattern)
-      where
-        andPattern = Pattern.fromTermLike (mkAnd first second)
+    where
+        termAndWorker ::
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            UnifierT Simplifier (Pattern RewritingVariableName)
+        termAndWorker first second =
+            maybeTermAnd termAndWorker first second
+                & runMaybeT
+                & fmap (fromMaybe andPattern)
+            where
+                andPattern = Pattern.fromTermLike (mkAnd first second)

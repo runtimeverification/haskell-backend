@@ -104,12 +104,12 @@ parseKoreRpcServerOptions startTime =
                 <> long "server-port"
                 <> help "Port for the RPC server to bind to"
             )
-  where
-    parseMainModuleName =
-        GlobalMain.parseModuleName
-            "MODULE"
-            "module"
-            "The name of the main module in the Kore definition."
+    where
+        parseMainModuleName =
+            GlobalMain.parseModuleName
+                "MODULE"
+                "module"
+                "The name of the main module in the Kore definition."
 
 -- | modifiers for the Command line parser description
 parserInfoModifiers :: InfoMod options
@@ -153,15 +153,15 @@ mainWithOptions
                             tmpDir
                             koreLogOptions
                 )
-      where
-        isInterrupt :: AsyncException -> Maybe ()
-        isInterrupt UserInterrupt = Just ()
-        isInterrupt _other = Nothing
+        where
+            isInterrupt :: AsyncException -> Maybe ()
+            isInterrupt UserInterrupt = Just ()
+            isInterrupt _other = Nothing
 
-        handleInterrupt :: () -> LoggerT IO ExitCode
-        handleInterrupt () = do
-            logInfo "RPC server shutting down"
-            pure ExitSuccess
+            handleInterrupt :: () -> LoggerT IO ExitCode
+            handleInterrupt () = do
+                logInfo "RPC server shutting down"
+                pure ExitSuccess
 
 koreRpcServerRun ::
     GlobalMain.LocalOptions KoreRpcServerOptions ->
@@ -176,47 +176,49 @@ koreRpcServerRun GlobalMain.LocalOptions{execOptions} = do
 
     loadedDefinition <- GlobalMain.loadDefinitions [definitionFileName]
     serverState <-
-        lift $
-            MVar.newMVar
+        lift
+            $ MVar.newMVar
                 ServerState
                     { serializedModules = Map.singleton mainModuleName sd
                     , loadedDefinition
                     }
-    GlobalMain.clockSomethingIO "Executing" $
+    GlobalMain.clockSomethingIO "Executing"
+        $
         -- wrap the call to runServer in the logger monad
-        Log.LoggerT $
-            ReaderT $
-                \loggerEnv -> runServer port serverState mainModuleName (runSMT loggerEnv) loggerEnv
+        Log.LoggerT
+        $ ReaderT
+        $ \loggerEnv -> runServer port serverState mainModuleName (runSMT loggerEnv) loggerEnv
 
     pure ExitSuccess
-  where
-    KoreRpcServerOptions{definitionFileName, mainModuleName, koreSolverOptions, port} = execOptions
-    KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, tactic} = koreSolverOptions
-    smtConfig =
-        SMT.defaultConfig
-            { SMT.timeOut = timeOut
-            , SMT.rLimit = rLimit
-            , SMT.resetInterval = resetInterval
-            , SMT.prelude = prelude
-            , SMT.tactic = tactic
-            }
-    -- SMT solver with user declared lemmas
-    runSMT ::
-        forall a.
-        Log.LoggerEnv IO ->
-        SmtMetadataTools StepperAttributes ->
-        [SentenceAxiom (TermLike VariableName)] ->
-        SMT.SMT a ->
-        IO a
-    runSMT Log.LoggerEnv{logAction} metadataTools lemmas m =
-        flip Log.runLoggerT logAction $
-            bracket (SMT.newSolver smtConfig) SMT.stopSolver $ \refSolverHandle -> do
-                let userInit = SMT.runWithSolver $ declareSMTLemmas metadataTools lemmas
-                    solverSetup =
-                        SMT.SolverSetup
-                            { userInit
-                            , refSolverHandle
-                            , config = smtConfig
-                            }
-                SMT.initSolver solverSetup
-                SMT.runWithSolver m solverSetup
+    where
+        KoreRpcServerOptions{definitionFileName, mainModuleName, koreSolverOptions, port} = execOptions
+        KoreSolverOptions{timeOut, rLimit, resetInterval, prelude, tactic} = koreSolverOptions
+        smtConfig =
+            SMT.defaultConfig
+                { SMT.timeOut = timeOut
+                , SMT.rLimit = rLimit
+                , SMT.resetInterval = resetInterval
+                , SMT.prelude = prelude
+                , SMT.tactic = tactic
+                }
+        -- SMT solver with user declared lemmas
+        runSMT ::
+            forall a.
+            Log.LoggerEnv IO ->
+            SmtMetadataTools StepperAttributes ->
+            [SentenceAxiom (TermLike VariableName)] ->
+            SMT.SMT a ->
+            IO a
+        runSMT Log.LoggerEnv{logAction} metadataTools lemmas m =
+            flip Log.runLoggerT logAction
+                $ bracket (SMT.newSolver smtConfig) SMT.stopSolver
+                $ \refSolverHandle -> do
+                    let userInit = SMT.runWithSolver $ declareSMTLemmas metadataTools lemmas
+                        solverSetup =
+                            SMT.SolverSetup
+                                { userInit
+                                , refSolverHandle
+                                , config = smtConfig
+                                }
+                    SMT.initSolver solverSetup
+                    SMT.runWithSolver m solverSetup

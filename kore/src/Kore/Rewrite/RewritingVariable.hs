@@ -242,25 +242,25 @@ resetResultPattern ::
     Pattern RewritingVariableName
 resetResultPattern initial config@Conditional{substitution} =
     Pattern.mapVariables resetConfigVariable renamed
-  where
-    substitution' = Substitution.filter isSomeConfigVariable substitution
-    filtered = config{Pattern.substitution = substitution'}
-    avoiding =
-        initial
-            & FreeVariables.toNames
-            & (Set.map . fmap) toVariableName
-    introduced =
-        Set.fromAscList
-            . mapMaybe getUnifiedRuleVariable
-            . Set.toAscList
-            . FreeVariables.toSet
-            $ freeVariables filtered
-    renaming =
-        Map.mapKeysMonotonic (fmap RuleVariableName)
-            . Map.map (TermLike.mkVar . mkUnifiedConfigVariable)
-            $ refreshVariablesSet avoiding introduced
-    renamed :: Pattern RewritingVariableName
-    renamed = filtered & substitute renaming
+    where
+        substitution' = Substitution.filter isSomeConfigVariable substitution
+        filtered = config{Pattern.substitution = substitution'}
+        avoiding =
+            initial
+                & FreeVariables.toNames
+                & (Set.map . fmap) toVariableName
+        introduced =
+            Set.fromAscList
+                . mapMaybe getUnifiedRuleVariable
+                . Set.toAscList
+                . FreeVariables.toSet
+                $ freeVariables filtered
+        renaming =
+            Map.mapKeysMonotonic (fmap RuleVariableName)
+                . Map.map (TermLike.mkVar . mkUnifiedConfigVariable)
+                $ refreshVariablesSet avoiding introduced
+        renamed :: Pattern RewritingVariableName
+        renamed = filtered & substitute renaming
 
 -- | Renames configuration variables to distinguish them from those in the rule.
 mkRewritingPattern :: Pattern VariableName -> Pattern RewritingVariableName
@@ -275,8 +275,8 @@ getRemainderPredicate ::
 getRemainderPredicate predicate =
     Predicate.mapVariables getRewritingVariable predicate
         & assert (all isSomeConfigVariable freeVars)
-  where
-    freeVars = freeVariables predicate & FreeVariables.toList
+    where
+        freeVars = freeVariables predicate & FreeVariables.toList
 
 assertRemainderPattern ::
     HasCallStack =>
@@ -285,8 +285,8 @@ assertRemainderPattern ::
 assertRemainderPattern pattern' =
     pattern'
         & assert (all isSomeConfigVariable freeVars)
-  where
-    freeVars = freeVariables pattern' & FreeVariables.toList
+    where
+        freeVars = freeVariables pattern' & FreeVariables.toList
 
 isSomeEquationVariable :: SomeVariable RewritingVariableName -> Bool
 isSomeEquationVariable = isSomeEquationVariableName . variableName

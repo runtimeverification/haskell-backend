@@ -52,10 +52,10 @@ instance Synthetic Function (Bottom sort) where
 instance Synthetic Function (Application Internal.Symbol) where
     synthetic application =
         functionSymbol <> fold children
-      where
-        functionSymbol = Function (Internal.isFunction symbol)
-        children = applicationChildren application
-        symbol = applicationSymbolOrAlias application
+        where
+            functionSymbol = Function (Internal.isFunction symbol)
+            children = applicationChildren application
+            symbol = applicationSymbolOrAlias application
 
 instance Synthetic Function (Application (Internal.Alias patternType)) where
     synthetic = const (Function False)

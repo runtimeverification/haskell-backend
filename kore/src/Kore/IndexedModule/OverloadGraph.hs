@@ -92,11 +92,11 @@ fromOverloads overloadPairsList =
             { overloadingSymbols = Map.fromSet superOverloading allOverloadsSet
             , overloadedSymbols = Map.fromSet subOverloading allOverloadsSet
             }
-  where
-    superOverloading subOverload =
-        Set.fromList [x | (x, y) <- overloadPairsList, y == subOverload]
-    subOverloading superOverload =
-        Set.fromList [y | (x, y) <- overloadPairsList, x == superOverload]
+    where
+        superOverloading subOverload =
+            Set.fromList [x | (x, y) <- overloadPairsList, y == subOverload]
+        subOverloading superOverload =
+            Set.fromList [y | (x, y) <- overloadPairsList, x == superOverload]
 
 {- | Builds an overload graph from the @overload@ attribute annotations
 associated to overloading equations in a verified module.
@@ -107,9 +107,9 @@ fromIndexedModule ::
     VerifiedModule Attribute.Symbol ->
     OverloadGraph
 fromIndexedModule verifiedModule = fromOverloads overloadPairList
-  where
-    overloadPairList = preOverloadPairsList
-    preOverloadPairsList =
-        mapMaybe
-            (Attribute.getOverload . Attribute.overload . fst)
-            (recursiveIndexedModuleAxioms verifiedModule)
+    where
+        overloadPairList = preOverloadPairsList
+        preOverloadPairsList =
+            mapMaybe
+                (Attribute.getOverload . Attribute.overload . fst)
+                (recursiveIndexedModuleAxioms verifiedModule)

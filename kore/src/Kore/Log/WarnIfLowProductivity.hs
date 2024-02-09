@@ -51,13 +51,13 @@ instance Pretty WarnIfLowProductivity where
                     , "Please file a bug report: https://github.com/runtimeverification/haskell-backend/issues"
                     ]
                 ]
-          where
-            kFiles
-                | not . null $ locations =
-                    [ (Pretty.nest 4 . Pretty.vsep)
-                        ("Relevant K files include:" : fmap Pretty.pretty locations)
-                    ]
-                | otherwise = []
+            where
+                kFiles
+                    | not . null $ locations =
+                        [ (Pretty.nest 4 . Pretty.vsep)
+                            ("Relevant K files include:" : fmap Pretty.pretty locations)
+                        ]
+                    | otherwise = []
 instance Entry WarnIfLowProductivity where
     entrySeverity _ = Warning
     oneLineDoc (WarnIfLowProductivity productivityPercent _) =
@@ -75,5 +75,6 @@ warnIfLowProductivity kFileLocations = do
         gcPercentage = gc_cpu_ns * 100 `div` cpu_ns
         productivity = 100 - gcPercentage & fromIntegral
         runTimeOver60Seconds = cpu_ns >= 60 * 10 ^ (9 :: Int)
-    when (runTimeOver60Seconds && gcTimeOver10Percent) . logEntry $
-        WarnIfLowProductivity productivity kFileLocations
+    when (runTimeOver60Seconds && gcTimeOver10Percent)
+        . logEntry
+        $ WarnIfLowProductivity productivity kFileLocations

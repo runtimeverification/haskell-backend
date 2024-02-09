@@ -105,14 +105,14 @@ forallBinder ::
         (Binder (ElementVariable variable2) child2)
 forallBinder mapping forall =
     finish <$> mapping binder
-  where
-    binder =
-        Binder{binderVariable = forallVariable, binderChild}
-      where
-        Forall{forallVariable} = forall
-        Forall{forallChild = binderChild} = forall
-    finish Binder{binderVariable, binderChild} =
-        forall{forallVariable = binderVariable, forallChild = binderChild}
+    where
+        binder =
+            Binder{binderVariable = forallVariable, binderChild}
+            where
+                Forall{forallVariable} = forall
+                Forall{forallChild = binderChild} = forall
+        finish Binder{binderVariable, binderChild} =
+            forall{forallVariable = binderVariable, forallChild = binderChild}
 
 refreshForall ::
     forall sort variable child.
@@ -124,6 +124,6 @@ refreshForall ::
     Forall sort variable child
 refreshForall extraAvoid forallF =
     Lens.over forallBinder (refreshElementBinder avoid) forallF
-  where
-    avoid = freeVariableNames forallF <> extraAvoid
+    where
+        avoid = freeVariableNames forallF <> extraAvoid
 {-# INLINE refreshForall #-}

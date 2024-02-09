@@ -72,8 +72,8 @@ and symbols must be declared). Removes all declarations with missing references.
 resolve :: UnresolvedDeclarations -> SmtDeclarations
 resolve declarations =
     resolveDeclarations (smtResolvers checkedDeclarations) checkedDeclarations
-  where
-    checkedDeclarations = removeBrokenReferences declarations
+    where
+        checkedDeclarations = removeBrokenReferences declarations
 
 smtResolvers ::
     UnresolvedDeclarations ->
@@ -85,72 +85,72 @@ smtResolvers Declarations{sorts, symbols} =
         , nameResolver = encode
         , sortDeclaresSymbol = sortDeclaresSymbolImpl sorts
         }
-  where
-    referenceCheckSort
-        ( SortReference
-                ( Kore.SortActualSort
-                        Kore.SortActual
-                            { sortActualName
-                            , sortActualSorts = []
-                            }
-                    )
-            ) =
-            case Map.lookup sortActualName sorts of
+    where
+        referenceCheckSort
+            ( SortReference
+                    ( Kore.SortActualSort
+                            Kore.SortActual
+                                { sortActualName
+                                , sortActualSorts = []
+                                }
+                        )
+                ) =
+                case Map.lookup sortActualName sorts of
+                    Nothing ->
+                        (error . unlines)
+                            [ "All references should be resolved before transforming"
+                            , "to smt declarations."
+                            ]
+                    Just Sort{sortData} ->
+                        case sortSmtFromSortArgs sortData Map.empty [] of
+                            Nothing ->
+                                (error . unlines)
+                                    [ "Expecting to be able to produce sort representation"
+                                    , "for defining it."
+                                    ]
+                            Just value -> return value
+        referenceCheckSort _ =
+            error "Unimplemented: sort with arguments."
+
+        referenceCheckSymbol SymbolReference{getSymbolReference} =
+            case Map.lookup getSymbolReference symbols of
                 Nothing ->
                     (error . unlines)
                         [ "All references should be resolved before transforming"
                         , "to smt declarations."
                         ]
-                Just Sort{sortData} ->
-                    case sortSmtFromSortArgs sortData Map.empty [] of
+                Just Symbol{symbolData} ->
+                    case symbolSmtFromSortArgs symbolData Map.empty [] of
                         Nothing ->
                             (error . unlines)
-                                [ "Expecting to be able to produce sort representation"
-                                , "for defining it."
+                                [ "Expecting to be able to produce symbol"
+                                , "representation for defining it."
                                 ]
-                        Just value -> return value
-    referenceCheckSort _ =
-        error "Unimplemented: sort with arguments."
-
-    referenceCheckSymbol SymbolReference{getSymbolReference} =
-        case Map.lookup getSymbolReference symbols of
-            Nothing ->
-                (error . unlines)
-                    [ "All references should be resolved before transforming"
-                    , "to smt declarations."
-                    ]
-            Just Symbol{symbolData} ->
-                case symbolSmtFromSortArgs symbolData Map.empty [] of
-                    Nothing ->
-                        (error . unlines)
-                            [ "Expecting to be able to produce symbol"
-                            , "representation for defining it."
-                            ]
-                    Just (SMT.Atom name) -> return name
-                    Just _ ->
-                        error
-                            "Unable to understand symbol representation."
+                        Just (SMT.Atom name) -> return name
+                        Just _ ->
+                            error
+                                "Unable to understand symbol representation."
 
 removeBrokenReferences :: UnresolvedDeclarations -> UnresolvedDeclarations
 removeBrokenReferences declarations@Declarations{sorts, symbols} =
     if not (shouldContinue afterOneStep)
         then afterOneStep
         else removeBrokenReferences afterOneStep
-  where
-    afterOneStep :: UnresolvedDeclarations
-    afterOneStep =
-        resolveDeclarations (referenceCheckResolvers declarations) declarations
+    where
+        afterOneStep :: UnresolvedDeclarations
+        afterOneStep =
+            resolveDeclarations (referenceCheckResolvers declarations) declarations
 
-    shouldContinue :: UnresolvedDeclarations -> Bool
-    shouldContinue Declarations{sorts = newSorts, symbols = newSymbols} =
-        case (sortComparison, symbolComparison) of
-            (LT, _) -> error "Unexpected increase in sort count"
-            (_, LT) -> error "Unexpected increase in symbol count"
-            (EQ, EQ) -> False
-            (_, _) -> True
-      where
-        sortComparison = compare (Map.size sorts) (Map.size newSorts)
-        symbolComparison = compare (Map.size symbols) (Map.size newSymbols)
+        shouldContinue :: UnresolvedDeclarations -> Bool
+        shouldContinue Declarations{sorts = newSorts, symbols = newSymbols} =
+            case (sortComparison, symbolComparison) of
+                (LT, _) -> error "Unexpected increase in sort count"
+                (_, LT) -> error "Unexpected increase in symbol count"
+                (EQ, EQ) -> False
+                (_, _) -> True
+            where
+                sortComparison = compare (Map.size sorts) (Map.size newSorts)
+                symbolComparison = compare (Map.size symbols) (Map.size newSymbols)
 
 referenceCheckResolvers ::
     UnresolvedDeclarations ->
@@ -162,31 +162,31 @@ referenceCheckResolvers Declarations{sorts, symbols} =
         , nameResolver = id
         , sortDeclaresSymbol = sortDeclaresSymbolImpl sorts
         }
-  where
-    referenceCheckSort
-        reference@( SortReference
-                        ( Kore.SortActualSort
-                                Kore.SortActual
-                                    { sortActualName
-                                    , sortActualSorts = []
-                                    }
-                            )
-                    ) =
-            traceMaybe D_SMT_referenceCheckSort [debugArg "reference" reference] $
-                do
-                    _ <- Map.lookup sortActualName sorts
-                    return reference
-    referenceCheckSort reference =
-        traceMaybe
-            D_SMT_referenceCheckSort
-            [debugArg "reference" reference]
-            Nothing
+    where
+        referenceCheckSort
+            reference@( SortReference
+                            ( Kore.SortActualSort
+                                    Kore.SortActual
+                                        { sortActualName
+                                        , sortActualSorts = []
+                                        }
+                                )
+                        ) =
+                traceMaybe D_SMT_referenceCheckSort [debugArg "reference" reference]
+                    $ do
+                        _ <- Map.lookup sortActualName sorts
+                        return reference
+        referenceCheckSort reference =
+            traceMaybe
+                D_SMT_referenceCheckSort
+                [debugArg "reference" reference]
+                Nothing
 
-    referenceCheckSymbol reference@SymbolReference{getSymbolReference} =
-        traceMaybe D_SMT_referenceCheckSymbol [debugArg "reference" reference] $
-            do
-                _ <- Map.lookup getSymbolReference symbols
-                return reference
+        referenceCheckSymbol reference@SymbolReference{getSymbolReference} =
+            traceMaybe D_SMT_referenceCheckSymbol [debugArg "reference" reference]
+                $ do
+                    _ <- Map.lookup getSymbolReference symbols
+                    return reference
 
 resolveDeclarations ::
     (Show sort, Show symbol, Show name) =>
@@ -209,8 +209,8 @@ resolveSort ::
 resolveSort
     resolvers
     Sort{sortData, sortDeclaration} =
-        traceMaybe D_SMT_resolveSort [debugArg "declaration" sortDeclaration] $
-            do
+        traceMaybe D_SMT_resolveSort [debugArg "declaration" sortDeclaration]
+            $ do
                 newDeclaration <- resolveKoreSortDeclaration resolvers sortDeclaration
                 return
                     Sort
@@ -342,8 +342,8 @@ resolveKoreSymbolDeclaration
             --
             -- Note that direct smtlib declarations take precedence over constructors,
             -- so we would not reach this line if this symbol had a smtlib attribute.
-            assertMay $
-                any (flip sortDeclaresSymbol symbolId) sortDependencies
+            assertMay
+                $ any (flip sortDeclaresSymbol symbolId) sortDependencies
 
             SymbolConstructor
                 <$> resolveIndirectConstructorSymbolDeclaration
@@ -429,8 +429,8 @@ dataTypeDeclaresSymbol
     SMT.DataTypeDeclaration{constructors}
     symbolId =
         any isSameSymbol constructors
-      where
-        isSameSymbol :: UnresolvedConstructor -> Bool
-        isSameSymbol
-            SMT.Constructor{name = SymbolReference symbolReferenceId} =
-                symbolReferenceId == symbolId
+        where
+            isSameSymbol :: UnresolvedConstructor -> Bool
+            isSameSymbol
+                SMT.Constructor{name = SymbolReference symbolReferenceId} =
+                    symbolReferenceId == symbolId

@@ -122,73 +122,73 @@ srv respond handlers = do
                             loop
              in loop
     spawnWorker reqQueue >>= mainLoop
-  where
-    isRequest = \case
-        Request{} -> True
-        _ -> False
+    where
+        isRequest = \case
+            Request{} -> True
+            _ -> False
 
-    getRequests = \case
-        SingleRequest r -> [r]
-        BatchRequest rs -> rs
+        getRequests = \case
+            SingleRequest r -> [r]
+            BatchRequest rs -> rs
 
-    mReqId = \case
-        Request _ _ _ (IdTxt i) -> i
-        Request _ _ _ (IdInt i) -> Text.pack $ show i
-        Notif{} -> ""
+        mReqId = \case
+            Request _ _ _ (IdTxt i) -> i
+            Request _ _ _ (IdInt i) -> Text.pack $ show i
+            Notif{} -> ""
 
-    cancelError = ErrorObj "Request cancelled" (-32000) Null
+        cancelError = ErrorObj "Request cancelled" (-32000) Null
 
-    spawnWorker reqQueue = do
-        rpcSession <- ask
-        logger <- Log.askLoggerIO
-        let withLog :: Log.LoggingT IO a -> IO a
-            withLog = flip Log.runLoggingT logger
+        spawnWorker reqQueue = do
+            rpcSession <- ask
+            logger <- Log.askLoggerIO
+            let withLog :: Log.LoggingT IO a -> IO a
+                withLog = flip Log.runLoggingT logger
 
-            sendResponses :: BatchResponse -> Log.LoggingT IO ()
-            sendResponses r = flip runReaderT rpcSession $ sendBatchResponse r
+                sendResponses :: BatchResponse -> Log.LoggingT IO ()
+                sendResponses r = flip runReaderT rpcSession $ sendBatchResponse r
 
-            respondTo :: Request -> Log.LoggingT IO (Maybe Response)
-            respondTo req = buildResponse (respond req) req
+                respondTo :: Request -> Log.LoggingT IO (Maybe Response)
+                respondTo req = buildResponse (respond req) req
 
-            cancelReq :: ErrorObj -> BatchRequest -> Log.LoggingT IO ()
-            cancelReq err = \case
-                SingleRequest req@Request{} -> do
-                    let reqVersion = getReqVer req
-                        reqId = getReqId req
-                    sendResponses $ SingleResponse $ ResponseError reqVersion err reqId
-                SingleRequest Notif{} -> pure ()
-                BatchRequest reqs -> do
-                    sendResponses $
-                        BatchResponse $
-                            [ResponseError (getReqVer req) err (getReqId req) | req <- reqs, isRequest req]
+                cancelReq :: ErrorObj -> BatchRequest -> Log.LoggingT IO ()
+                cancelReq err = \case
+                    SingleRequest req@Request{} -> do
+                        let reqVersion = getReqVer req
+                            reqId = getReqId req
+                        sendResponses $ SingleResponse $ ResponseError reqVersion err reqId
+                    SingleRequest Notif{} -> pure ()
+                    BatchRequest reqs -> do
+                        sendResponses $
+                            BatchResponse $
+                                [ResponseError (getReqVer req) err (getReqId req) | req <- reqs, isRequest req]
 
-            processReq :: BatchRequest -> Log.LoggingT IO ()
-            processReq = \case
-                SingleRequest req -> do
-                    rM <- respondTo req
-                    mapM_ (sendResponses . SingleResponse) rM
-                BatchRequest reqs -> do
-                    rs <- catMaybes <$> mapM respondTo reqs
-                    sendResponses $ BatchResponse rs
+                processReq :: BatchRequest -> Log.LoggingT IO ()
+                processReq = \case
+                    SingleRequest req -> do
+                        rM <- respondTo req
+                        mapM_ (sendResponses . SingleResponse) rM
+                    BatchRequest reqs -> do
+                        rs <- catMaybes <$> mapM respondTo reqs
+                        sendResponses $ BatchResponse rs
 
-            catchesHandler a e = foldr tryHandler (throw e) $ JsonRpcHandler (\(_ :: ReqException) -> pure cancelError) : handlers
-              where
-                tryHandler (JsonRpcHandler handler) res =
-                    case fromException e of
-                        Just e' ->
-                            withLog $ do
-                                err <- handler e'
-                                cancelReq err a
-                        Nothing -> res
+                catchesHandler a e = foldr tryHandler (throw e) $ JsonRpcHandler (\(_ :: ReqException) -> pure cancelError) : handlers
+                    where
+                        tryHandler (JsonRpcHandler handler) res =
+                            case fromException e of
+                                Just e' ->
+                                    withLog $ do
+                                        err <- handler e'
+                                        cancelReq err a
+                                Nothing -> res
 
-            bracketOnReqException before thing =
-                mask $ \restore -> do
-                    a <- before
-                    restore (thing a) `catch` catchesHandler a
+                bracketOnReqException before thing =
+                    mask $ \restore -> do
+                        a <- before
+                        restore (thing a) `catch` catchesHandler a
 
-        liftIO $
-            forkIO $
-                forever $
-                    bracketOnReqException
-                        (atomically $ readTChan reqQueue)
-                        (withLog . processReq)
+            liftIO $
+                forkIO $
+                    forever $
+                        bracketOnReqException
+                            (atomically $ readTChan reqQueue)
+                            (withLog . processReq)

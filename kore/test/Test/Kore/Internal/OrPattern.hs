@@ -205,9 +205,9 @@ test_distributeApplication =
                     ]
         assertEqual "" expect (distributeApplication app)
     ]
-  where
-    sigma0 = Application Mock.functional00Symbol []
-    sigma2 = Application Mock.functional20Symbol
+    where
+        sigma0 = Application Mock.functional00Symbol []
+        sigma2 = Application Mock.functional20Symbol
 
 a, b, c, d :: TermLike VariableName
 a = Mock.a

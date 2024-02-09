@@ -672,8 +672,8 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [ (inject Mock.xConfig, fOfA)
                                 , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
                                 ]
@@ -717,8 +717,8 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [ (inject Mock.xConfig, fOfA)
                                 , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
                                 ]
@@ -762,8 +762,8 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [ (inject Mock.xConfig, fOfA)
                                 , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
                                 ]
@@ -807,8 +807,8 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [ (inject Mock.xConfig, fOfA)
                                 , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
                                 ]
@@ -868,8 +868,8 @@ test_equalsSimplification_TermLike =
                         , -- TODO(virgil): This sort should be listSort.
                           predicate = makeTruePredicate
                         , substitution =
-                            Substitution.wrap $
-                                Substitution.mkUnwrappedSubstitution
+                            Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
                                     [(inject x, Mock.builtinList [Mock.b])]
                         }
                     term5
@@ -908,29 +908,29 @@ assertBidirectionalEqualityResult
                         , equalsSecond = equalsFirst
                         }
             testOneDirection reverseEquality
-      where
-        testOneDirection orderedEquality = do
-            actualEvaluateEquals <- evaluateOr orderedEquality
-            let assertEqual' name expect actual =
-                    let message =
-                            (show . Pretty.vsep)
-                                [ Pretty.hsep
-                                    [ Pretty.pretty firstName
-                                    , "vs"
-                                    , Pretty.pretty secondName <> Pretty.colon
+        where
+            testOneDirection orderedEquality = do
+                actualEvaluateEquals <- evaluateOr orderedEquality
+                let assertEqual' name expect actual =
+                        let message =
+                                (show . Pretty.vsep)
+                                    [ Pretty.hsep
+                                        [ Pretty.pretty firstName
+                                        , "vs"
+                                        , Pretty.pretty secondName <> Pretty.colon
+                                        ]
+                                    , "Expected" Pretty.<+> name
+                                    , (Pretty.indent 4) (Pretty.pretty orderedEquality)
+                                    , "would simplify to"
+                                    , (Pretty.indent 4) (Pretty.pretty expect)
+                                    , "but instead found"
+                                    , (Pretty.indent 4) (Pretty.pretty actual)
                                     ]
-                                , "Expected" Pretty.<+> name
-                                , (Pretty.indent 4) (Pretty.pretty orderedEquality)
-                                , "would simplify to"
-                                , (Pretty.indent 4) (Pretty.pretty expect)
-                                , "but instead found"
-                                , (Pretty.indent 4) (Pretty.pretty actual)
-                                ]
-                     in assertEqual message expect actual
-            assertEqual'
-                "evaluate equals"
-                expectEvaluateEquals
-                actualEvaluateEquals
+                         in assertEqual message expect actual
+                assertEqual'
+                    "evaluate equals"
+                    expectEvaluateEquals
+                    actualEvaluateEquals
 
 assertTermEquals ::
     HasCallStack =>
@@ -975,17 +975,17 @@ assertTermEqualsMultiGeneric expect first second = do
         "PureMLPattern"
         expect'
         actualPure
-  where
-    termToPattern ::
-        TermLike RewritingVariableName -> Pattern RewritingVariableName
-    termToPattern (Bottom_ sort) =
-        Conditional.bottomOf sort
-    termToPattern term =
-        Conditional
-            { term = term
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
+    where
+        termToPattern ::
+            TermLike RewritingVariableName -> Pattern RewritingVariableName
+        termToPattern (Bottom_ sort) =
+            Conditional.bottomOf sort
+        termToPattern term =
+            Conditional
+                { term = term
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
 
 fOfA :: TermLike RewritingVariableName
 fOfA = Mock.f Mock.a
@@ -1033,31 +1033,31 @@ evaluateOr =
     testRunSimplifier mockEnv
         . simplify SideCondition.top
         . fmap simplifiedOrPattern
-  where
-    mockEnv = Mock.env
+    where
+        mockEnv = Mock.env
 
 evaluate ::
     Pattern RewritingVariableName ->
     Pattern RewritingVariableName ->
     IO (OrCondition RewritingVariableName)
 evaluate first second =
-    testRunSimplifier mockEnv $
-        makeEvaluate
+    testRunSimplifier mockEnv
+        $ makeEvaluate
             (simplifiedPattern first)
             (simplifiedPattern second)
             SideCondition.top
-  where
-    mockEnv = Mock.env
+    where
+        mockEnv = Mock.env
 
 evaluateTermsGeneric ::
     TermLike RewritingVariableName ->
     TermLike RewritingVariableName ->
     IO (OrCondition RewritingVariableName)
 evaluateTermsGeneric first second =
-    testRunSimplifier mockEnv $
-        makeEvaluateTermsToPredicate
+    testRunSimplifier mockEnv
+        $ makeEvaluateTermsToPredicate
             (simplifiedTerm first)
             (simplifiedTerm second)
             SideCondition.top
-  where
-    mockEnv = Mock.env
+    where
+        mockEnv = Mock.env

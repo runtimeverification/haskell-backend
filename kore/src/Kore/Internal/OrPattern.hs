@@ -180,28 +180,28 @@ toPattern sort multiOr =
         [] -> Pattern.bottomOf sort
         [patt] -> patt
         patts -> foldr1 mergeWithOr patts
-  where
-    mergeWithOr :: Pattern variable -> Pattern variable -> Pattern variable
-    mergeWithOr patt1 patt2
-        | isTop term1
-        , isTop term2 =
-            term1
-                `Conditional.withCondition` mergeConditionsWithOr predicate1 predicate2
-        | otherwise =
-            Pattern.fromTermLike
-                (mkOr (Pattern.toTermLike patt1) (Pattern.toTermLike patt2))
-      where
-        (term1, predicate1) = Pattern.splitTerm patt1
-        (term2, predicate2) = Pattern.splitTerm patt2
+    where
+        mergeWithOr :: Pattern variable -> Pattern variable -> Pattern variable
+        mergeWithOr patt1 patt2
+            | isTop term1
+            , isTop term2 =
+                term1
+                    `Conditional.withCondition` mergeConditionsWithOr predicate1 predicate2
+            | otherwise =
+                Pattern.fromTermLike
+                    (mkOr (Pattern.toTermLike patt1) (Pattern.toTermLike patt2))
+            where
+                (term1, predicate1) = Pattern.splitTerm patt1
+                (term2, predicate2) = Pattern.splitTerm patt2
 
-    mergeConditionsWithOr ::
-        Condition variable -> Condition variable -> Condition variable
-    mergeConditionsWithOr predicate1 predicate2 =
-        Condition.fromPredicate
-            ( Predicate.makeOrPredicate
-                (Condition.toPredicate predicate1)
-                (Condition.toPredicate predicate2)
-            )
+        mergeConditionsWithOr ::
+            Condition variable -> Condition variable -> Condition variable
+        mergeConditionsWithOr predicate1 predicate2 =
+            Condition.fromPredicate
+                ( Predicate.makeOrPredicate
+                    (Condition.toPredicate predicate1)
+                    (Condition.toPredicate predicate2)
+                )
 
 {- Check if an OrPattern can be reduced to a Predicate. -}
 isPredicate :: OrPattern variable -> Bool

@@ -107,8 +107,8 @@ The location will be 'AstLocationGeneratedVariable'.
 generatedId :: Text -> Id
 generatedId text =
     Id{getId = text, idLocation = location}
-  where
-    location = AstLocationGeneratedVariable
+    where
+        location = AstLocationGeneratedVariable
 
 -- | Get the identifier name for an error message 'String'.
 getIdForError :: Id -> String

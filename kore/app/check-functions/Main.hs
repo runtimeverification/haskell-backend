@@ -101,12 +101,12 @@ parseKoreCheckerOptions startTime =
         <*> parseMainModuleName
         <*> parseBugReportOption
         <*> parseKoreLogOptions exeName startTime
-  where
-    parseMainModuleName =
-        parseModuleName
-            "MODULE"
-            "module"
-            "The name of the main module in the Kore definition."
+    where
+        parseMainModuleName =
+            parseModuleName
+                "MODULE"
+                "module"
+                "The name of the main module in the Kore definition."
 
 -- | Executable name
 exeName :: ExeName
@@ -145,9 +145,9 @@ koreCheckFunctions LocalOptions{execOptions} tmpDir =
         return ExitSuccess
         & handle handleSomeException
         & runKoreLog tmpDir koreLogOptions
-  where
-    KoreCheckerOptions
-        { fileName
-        , mainModuleName
-        , koreLogOptions
-        } = execOptions
+    where
+        KoreCheckerOptions
+            { fileName
+            , mainModuleName
+            , koreLogOptions
+            } = execOptions

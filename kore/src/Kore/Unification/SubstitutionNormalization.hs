@@ -82,85 +82,86 @@ normalize (dropTrivialSubstitutions -> substitutionMap) =
                         setCtorCycle cycleVariables'
                     | otherwise ->
                         mixedCtorCycle cycleVariables'
-  where
-    isRenaming variable =
-        case substitutionMap Map.! variable of
-            Var_ _ -> True
-            _ -> False
+    where
+        isRenaming variable =
+            case substitutionMap Map.! variable of
+                Var_ _ -> True
+                _ -> False
 
-    ~renamingCycle =
-        error
-            "Impossible: order on variables should prevent \
-            \variable-only cycles!"
+        ~renamingCycle =
+            error
+                "Impossible: order on variables should prevent \
+                \variable-only cycles!"
 
-    setCtorCycle variables = do
-        let substitution' = foldl' assignBottom substitutionMap variables
-        normalize substitution'
+        setCtorCycle variables = do
+            let substitution' = foldl' assignBottom substitutionMap variables
+            normalize substitution'
 
-    mixedCtorCycle _ = empty
+        mixedCtorCycle _ = empty
 
-    simplifiableCycle (Set.fromList -> variables) = do
-        let
-            -- Variables with simplifiable dependencies
-            simplifiable = Set.filter (isSimplifiable variables) variables
-            denormalized =
-                Substitution.mkUnwrappedSubstitution $
-                    Map.toList $
-                        Map.restrictKeys substitutionMap simplifiable
-            substitution' = Map.withoutKeys substitutionMap simplifiable
-        -- Partially normalize the substitution by separating variables with
-        -- simplifiable dependencies.
-        normalization <- normalize substitution'
-        pure $ normalization <> mempty{denormalized}
+        simplifiableCycle (Set.fromList -> variables) = do
+            let
+                -- Variables with simplifiable dependencies
+                simplifiable = Set.filter (isSimplifiable variables) variables
+                denormalized =
+                    Substitution.mkUnwrappedSubstitution
+                        $ Map.toList
+                        $ Map.restrictKeys substitutionMap simplifiable
+                substitution' = Map.withoutKeys substitutionMap simplifiable
+            -- Partially normalize the substitution by separating variables with
+            -- simplifiable dependencies.
+            normalization <- normalize substitution'
+            pure $ normalization <> mempty{denormalized}
 
-    isSimplifiable cycleVariables variable =
-        allDeps /= nonSimplDeps
-      where
-        allDeps = cycleDeps allDependencies
-        nonSimplDeps = cycleDeps nonSimplifiableDependencies
-        cycleDeps deps =
-            Set.intersection cycleVariables . Set.fromList
-                <$> Map.lookup variable deps
+        isSimplifiable cycleVariables variable =
+            allDeps /= nonSimplDeps
+            where
+                allDeps = cycleDeps allDependencies
+                nonSimplDeps = cycleDeps nonSimplifiableDependencies
+                cycleDeps deps =
+                    Set.intersection cycleVariables
+                        . Set.fromList
+                        <$> Map.lookup variable deps
 
-    assignBottom ::
-        Map (SomeVariable variable) (TermLike variable) ->
-        SomeVariable variable ->
-        Map (SomeVariable variable) (TermLike variable)
-    assignBottom subst variable =
-        Map.adjust (mkBottom . termLikeSort) variable subst
+        assignBottom ::
+            Map (SomeVariable variable) (TermLike variable) ->
+            SomeVariable variable ->
+            Map (SomeVariable variable) (TermLike variable)
+        assignBottom subst variable =
+            Map.adjust (mkBottom . termLikeSort) variable subst
 
-    interestingVariables :: Set (SomeVariable variable)
-    interestingVariables = Map.keysSet substitutionMap
+        interestingVariables :: Set (SomeVariable variable)
+        interestingVariables = Map.keysSet substitutionMap
 
-    getDependencies' =
-        getDependencies interestingVariables
+        getDependencies' =
+            getDependencies interestingVariables
 
-    allDependencies ::
-        Map (SomeVariable variable) [SomeVariable variable]
-    allDependencies =
-        Map.map Set.toList $
-            Map.mapWithKey getDependencies' substitutionMap
+        allDependencies ::
+            Map (SomeVariable variable) [SomeVariable variable]
+        allDependencies =
+            Map.map Set.toList
+                $ Map.mapWithKey getDependencies' substitutionMap
 
-    getNonSimplifiableDependencies' =
-        getNonSimplifiableDependencies interestingVariables
+        getNonSimplifiableDependencies' =
+            getNonSimplifiableDependencies interestingVariables
 
-    nonSimplifiableDependencies ::
-        Map (SomeVariable variable) [SomeVariable variable]
-    nonSimplifiableDependencies =
-        Map.map Set.toList $
-            Map.mapWithKey getNonSimplifiableDependencies' substitutionMap
+        nonSimplifiableDependencies ::
+            Map (SomeVariable variable) [SomeVariable variable]
+        nonSimplifiableDependencies =
+            Map.map Set.toList
+                $ Map.mapWithKey getNonSimplifiableDependencies' substitutionMap
 
-    sorted :: [SomeVariable variable] -> Maybe (Normalization variable)
-    sorted order
-        | any (not . isSatisfiableSubstitution) substitution = empty
-        | otherwise = do
-            let normalized = backSubstitute substitution
-            pure Normalization{normalized, denormalized = mempty}
-      where
-        substitution :: [Assignment variable]
-        substitution =
-            order
-                <&> \v -> Substitution.assign v ((Map.!) substitutionMap v)
+        sorted :: [SomeVariable variable] -> Maybe (Normalization variable)
+        sorted order
+            | any (not . isSatisfiableSubstitution) substitution = empty
+            | otherwise = do
+                let normalized = backSubstitute substitution
+                pure Normalization{normalized, denormalized = mempty}
+            where
+                substitution :: [Assignment variable]
+                substitution =
+                    order
+                        <&> \v -> Substitution.assign v ((Map.!) substitutionMap v)
 
 {- | Apply a topologically sorted list of substitutions to itself.
 
@@ -180,16 +181,16 @@ backSubstitute ::
     UnwrappedSubstitution variable
 backSubstitute sorted =
     flip State.evalState mempty (traverse worker sorted)
-  where
-    worker (Assignment variable termLike) = do
-        termLike' <- applySubstitution termLike
-        insertSubstitution variable termLike'
-        return $ Substitution.assign variable termLike'
-    insertSubstitution variable termLike =
-        State.modify' $ Map.insert (variableName variable) termLike
-    applySubstitution termLike = do
-        substitution <- State.get
-        return $ substitute substitution termLike
+    where
+        worker (Assignment variable termLike) = do
+            termLike' <- applySubstitution termLike
+            insertSubstitution variable termLike'
+            return $ Substitution.assign variable termLike'
+        insertSubstitution variable termLike =
+            State.modify' $ Map.insert (variableName variable) termLike
+        applySubstitution termLike = do
+            substitution <- State.get
+            return $ substitute substitution termLike
 
 isTrivialSubstitution ::
     Eq variable =>
@@ -234,8 +235,8 @@ getDependencies interesting var termLike =
     case termLike of
         Var_ v | v == var -> Set.empty
         _ -> Set.intersection interesting freeVars
-  where
-    freeVars = freeVariables termLike & FreeVariables.toSet
+    where
+        freeVars = freeVariables termLike & FreeVariables.toSet
 
 {- | Calculate the dependencies of a substitution that have only
      non-simplifiable symbols above.
@@ -274,6 +275,6 @@ nonSimplifiableAbove interesting p =
                 dependencies
         InjF _ -> dependencies
         _ -> Set.empty
-  where
-    dependencies :: Set (SomeVariable variable)
-    dependencies = foldl Set.union Set.empty p
+    where
+        dependencies :: Set (SomeVariable variable)
+        dependencies = foldl Set.union Set.empty p

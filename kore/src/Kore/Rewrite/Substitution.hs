@@ -53,11 +53,11 @@ normalize ::
 normalize sideCondition conditional@Conditional{substitution} = do
     results <- simplifySubstitution sideCondition substitution & lift
     scatter (MultiOr.map applyTermPredicate results)
-  where
-    applyTermPredicate =
-        Pattern.andCondition conditional{substitution = mempty}
-    SubstitutionSimplifier{simplifySubstitution} =
-        SubstitutionSimplifier.substitutionSimplifier
+    where
+        applyTermPredicate =
+            Pattern.andCondition conditional{substitution = mempty}
+        SubstitutionSimplifier{simplifySubstitution} =
+            SubstitutionSimplifier.substitutionSimplifier
 
 {- | 'mergePredicatesAndSubstitutions' merges a list of substitutions into
 a single one, then merges the merge side condition and the given condition list

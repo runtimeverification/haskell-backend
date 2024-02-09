@@ -129,16 +129,16 @@ makeEvaluate variable patt
                     (makeForallPredicate variable (Condition.toPredicate predicate))
                 )
     | otherwise =
-        Pattern.fromTermLike $
-            TermLike.markSimplified $
-                mkForall variable $
-                    Pattern.toTermLike patt
-  where
-    sort = Pattern.patternSort patt
-    (term, predicate) = Pattern.splitTerm patt
-    someVariable = mkSomeVariable variable
-    someVariableName = variableName someVariable
-    variableInTerm = TermLike.hasFreeVariable someVariableName term
-    variableInCondition = Condition.hasFreeVariable someVariableName predicate
-    termIsBoolean = isTop term || isBottom term
-    predicateIsBoolean = isTop predicate || isBottom predicate
+        Pattern.fromTermLike
+            $ TermLike.markSimplified
+            $ mkForall variable
+            $ Pattern.toTermLike patt
+    where
+        sort = Pattern.patternSort patt
+        (term, predicate) = Pattern.splitTerm patt
+        someVariable = mkSomeVariable variable
+        someVariableName = variableName someVariable
+        variableInTerm = TermLike.hasFreeVariable someVariableName term
+        variableInCondition = Condition.hasFreeVariable someVariableName predicate
+        termIsBoolean = isTop term || isBottom term
+        predicateIsBoolean = isTop predicate || isBottom predicate

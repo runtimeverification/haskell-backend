@@ -290,24 +290,24 @@ deriveSeqClaim ::
     claim ->
     Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
 deriveSeqClaim lensClaimPattern mkClaim claims claim =
-    getCompose $
-        Lens.forOf lensClaimPattern claim $
-            \claimPattern ->
-                fmap (snd . Step.refreshRule mempty) $
-                    Lens.forOf (field @"left") claimPattern $
-                        \config -> Compose $ do
-                            results <-
-                                Step.applyClaimsSequence
-                                    mkClaim
-                                    config
-                                    (Lens.view lensClaimPattern <$> claims)
-                                    & lift
-                            deriveResults fromAppliedRule results
-  where
-    fromAppliedRule =
-        AppliedClaim
-            . mkClaim
-            . Step.withoutUnification
+    getCompose
+        $ Lens.forOf lensClaimPattern claim
+        $ \claimPattern ->
+            fmap (snd . Step.refreshRule mempty)
+                $ Lens.forOf (field @"left") claimPattern
+                $ \config -> Compose $ do
+                    results <-
+                        Step.applyClaimsSequence
+                            mkClaim
+                            config
+                            (Lens.view lensClaimPattern <$> claims)
+                            & lift
+                    deriveResults fromAppliedRule results
+    where
+        fromAppliedRule =
+            AppliedClaim
+                . mkClaim
+                . Step.withoutUnification
 
 type TransitionRule m rule state =
     Prim -> state -> Strategy.TransitionT rule m state
@@ -328,57 +328,57 @@ transitionRule ::
     [[Rule claim]] ->
     TransitionRule Simplifier (AppliedRule claim) (ClaimState claim)
 transitionRule stuckCheck allowVacuous claims axiomGroups = transitionRuleWorker
-  where
-    transitionRuleWorker ::
-        Prim ->
-        ClaimState claim ->
-        Strategy.TransitionT (AppliedRule claim) Simplifier (ClaimState claim)
+    where
+        transitionRuleWorker ::
+            Prim ->
+            ClaimState claim ->
+            Strategy.TransitionT (AppliedRule claim) Simplifier (ClaimState claim)
 
-    transitionRuleWorker Begin Proven = empty
-    transitionRuleWorker Begin (Stuck _) = empty
-    transitionRuleWorker Begin (Rewritten claim) = pure (Claimed claim)
-    transitionRuleWorker Begin claimState = pure claimState
-    transitionRuleWorker Simplify claimState
-        | Just claim <- retractSimplifiable claimState =
-            Transition.ifte (simplify claim) (pure . ($>) claimState) $
-                case allowVacuous of
-                    AllowedVacuous -> pure Proven
-                    DisallowedVacuous -> pure $ Stuck claim
-        | otherwise =
-            pure claimState
-    transitionRuleWorker CheckImplication claimState
-        | Just claim <- retractRewritable claimState = do
-            result <- checkImplication claim & Logic.lowerLogicT
-            case result of
-                Implied _ -> pure Proven
-                NotImpliedStuck a ->
-                    returnStuckOrContinue a
-                NotImplied a
-                    | isRemainder claimState -> do
-                        pure (Stuck a)
-                    | otherwise -> pure (Claimed a)
-        | otherwise = pure claimState
-    transitionRuleWorker ApplyClaims (Claimed claim) =
-        Transition.ifte
-            (applyClaims claims claim)
-            (return . applyResultToClaimState)
-            (pure Proven)
-    transitionRuleWorker ApplyClaims claimState = pure claimState
-    transitionRuleWorker ApplyAxioms claimState
-        | Just claim <- retractRewritable claimState =
+        transitionRuleWorker Begin Proven = empty
+        transitionRuleWorker Begin (Stuck _) = empty
+        transitionRuleWorker Begin (Rewritten claim) = pure (Claimed claim)
+        transitionRuleWorker Begin claimState = pure claimState
+        transitionRuleWorker Simplify claimState
+            | Just claim <- retractSimplifiable claimState =
+                Transition.ifte (simplify claim) (pure . ($>) claimState)
+                    $ case allowVacuous of
+                        AllowedVacuous -> pure Proven
+                        DisallowedVacuous -> pure $ Stuck claim
+            | otherwise =
+                pure claimState
+        transitionRuleWorker CheckImplication claimState
+            | Just claim <- retractRewritable claimState = do
+                result <- checkImplication claim & Logic.lowerLogicT
+                case result of
+                    Implied _ -> pure Proven
+                    NotImpliedStuck a ->
+                        returnStuckOrContinue a
+                    NotImplied a
+                        | isRemainder claimState -> do
+                            pure (Stuck a)
+                        | otherwise -> pure (Claimed a)
+            | otherwise = pure claimState
+        transitionRuleWorker ApplyClaims (Claimed claim) =
             Transition.ifte
-                (applyAxioms axiomGroups claim)
+                (applyClaims claims claim)
                 (return . applyResultToClaimState)
                 (pure Proven)
-        | otherwise = pure claimState
+        transitionRuleWorker ApplyClaims claimState = pure claimState
+        transitionRuleWorker ApplyAxioms claimState
+            | Just claim <- retractRewritable claimState =
+                Transition.ifte
+                    (applyAxioms axiomGroups claim)
+                    (return . applyResultToClaimState)
+                    (pure Proven)
+            | otherwise = pure claimState
 
-    applyResultToClaimState (ApplyRewritten a) = Rewritten a
-    applyResultToClaimState (ApplyRemainder a) = Remaining a
+        applyResultToClaimState (ApplyRewritten a) = Rewritten a
+        applyResultToClaimState (ApplyRemainder a) = Remaining a
 
-    returnStuckOrContinue state =
-        case stuckCheck of
-            EnabledStuckCheck -> return (Stuck state)
-            DisabledStuckCheck -> return (Claimed state)
+        returnStuckOrContinue state =
+            case stuckCheck of
+                EnabledStuckCheck -> return (Stuck state)
+                DisabledStuckCheck -> return (Claimed state)
 
 retractSimplifiable :: ClaimState a -> Maybe a
 retractSimplifiable (Claimed a) = Just a
@@ -449,12 +449,12 @@ strategyWithMinDepth (MinDepth minDepth) =
     Stream.prepend
         noCheckReachabilitySteps
         reachabilitySteps
-  where
-    noCheckReachabilitySteps =
-        reachabilityFirstStepNoCheck
-            : replicate (minDepth - 1) reachabilityNextStepNoCheck
-    reachabilitySteps =
-        Stream.iterate id reachabilityNextStep
+    where
+        noCheckReachabilitySteps =
+            reachabilityFirstStepNoCheck
+                : replicate (minDepth - 1) reachabilityNextStepNoCheck
+        reachabilitySteps =
+            Stream.iterate id reachabilityNextStep
 
 {- | The result of checking the direct implication of a proof claim.
 
@@ -514,16 +514,18 @@ assertFunctionLikeConfiguration ::
     m ()
 assertFunctionLikeConfiguration claimPattern
     | (not . isFunctionPattern) leftTerm =
-        error . show . Pretty.vsep $
-            [ "The check implication step expects\
-              \ the configuration term to be function-like."
-            , Pretty.indent 2 "Configuration term:"
-            , Pretty.indent 4 (unparse leftTerm)
-            ]
+        error
+            . show
+            . Pretty.vsep
+            $ [ "The check implication step expects\
+                \ the configuration term to be function-like."
+              , Pretty.indent 2 "Configuration term:"
+              , Pretty.indent 4 (unparse leftTerm)
+              ]
     | otherwise = pure ()
-  where
-    ClaimPattern{left} = claimPattern
-    leftTerm = Pattern.term left
+    where
+        ClaimPattern{left} = claimPattern
+        leftTerm = Pattern.term left
 
 newtype AnyUnified = AnyUnified {didAnyUnify :: Bool}
     deriving stock (Eq, Ord, Read, Show)
@@ -590,9 +592,9 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
     elseImplied $ do
         (anyUnified, removal) <- getNegativeConjuncts
         let definedConfig =
-                Pattern.andCondition left $
-                    from $
-                        makeCeilPredicate leftTerm
+                Pattern.andCondition left
+                    $ from
+                    $ makeCeilPredicate leftTerm
         let configs' = MultiOr.map (definedConfig <*) removal
         stuck <- simplifyRemainder configs'
         result <- examine anyUnified stuck
@@ -603,83 +605,87 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
                 stuck' <- simplifyRemainder unmarkedSimplified
                 examine anyUnified stuck'
             implResult -> return implResult
-  where
-    ClaimPattern{right, left, existentials} = claimPattern
-    leftTerm = Pattern.term left
-    sort = termLikeSort leftTerm
-    leftCondition = Pattern.withoutTerm left
+    where
+        ClaimPattern{right, left, existentials} = claimPattern
+        leftTerm = Pattern.term left
+        sort = termLikeSort leftTerm
+        leftCondition = Pattern.withoutTerm left
 
-    simplifyRemainder remainder =
-        Logic.scatter remainder
-            >>= liftSimplifier . Pattern.simplify
-            >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
-            >>= Logic.scatter
-
-    -- TODO (#1278): Do not combine the predicate and the substitution.
-    -- This is held over from the old representation of claims, which did not
-    -- distinguish the predicate and substitution in the first place. We can't
-    -- use the substitution directly yet, because it isn't kept normalized. Once
-    -- the claim is fully simplified at every step, that should not be a
-    -- problem.
-    sideCondition =
-        SideCondition.fromConditionWithReplacements
-            ( Condition.fromPredicate
-                . Condition.toPredicate
-                $ leftCondition
-            )
-
-    getNegativeConjuncts :: m (AnyUnified, OrPattern RewritingVariableName)
-    getNegativeConjuncts =
-        do
-            assertFunctionLikeConfiguration claimPattern
-            right' <- Logic.scatter right
-            let (rightTerm, rightCondition) = Pattern.splitTerm right'
-            unified <-
-                makeInPredicate leftTerm rightTerm
-                    & Pattern.fromPredicateSorted sort
-                    & liftSimplifier . Pattern.simplify
-                    & (>>= Logic.scatter)
-            didUnify
-            removed <-
-                Pattern.andCondition unified rightCondition
-                    & liftSimplifier . Pattern.simplify
-                    & (>>= Logic.scatter)
-            liftSimplifier (Exists.makeEvaluate sideCondition existentials removed)
+        simplifyRemainder remainder =
+            Logic.scatter remainder
+                >>= liftSimplifier
+                . Pattern.simplify
+                >>= liftSimplifier
+                . SMT.Evaluator.filterMultiOr $srcLoc
                 >>= Logic.scatter
-            & OrPattern.observeAllT
-            & (>>= mkNotSimplified)
-            & wereAnyUnified
-      where
-        mkNotSimplified notChild =
-            liftSimplifier $ Not.simplify sideCondition Not{notSort = sort, notChild}
 
-    wereAnyUnified :: StateT AnyUnified m a -> m (AnyUnified, a)
-    wereAnyUnified act = swap <$> runStateT act mempty
+        -- TODO (#1278): Do not combine the predicate and the substitution.
+        -- This is held over from the old representation of claims, which did not
+        -- distinguish the predicate and substitution in the first place. We can't
+        -- use the substitution directly yet, because it isn't kept normalized. Once
+        -- the claim is fully simplified at every step, that should not be a
+        -- problem.
+        sideCondition =
+            SideCondition.fromConditionWithReplacements
+                ( Condition.fromPredicate
+                    . Condition.toPredicate
+                    $ leftCondition
+                )
 
-    didUnify :: MonadState AnyUnified state => state ()
-    didUnify = State.put (AnyUnified True)
+        getNegativeConjuncts :: m (AnyUnified, OrPattern RewritingVariableName)
+        getNegativeConjuncts =
+            do
+                assertFunctionLikeConfiguration claimPattern
+                right' <- Logic.scatter right
+                let (rightTerm, rightCondition) = Pattern.splitTerm right'
+                unified <-
+                    makeInPredicate leftTerm rightTerm
+                        & Pattern.fromPredicateSorted sort
+                        & liftSimplifier
+                        . Pattern.simplify
+                        & (>>= Logic.scatter)
+                didUnify
+                removed <-
+                    Pattern.andCondition unified rightCondition
+                        & liftSimplifier
+                        . Pattern.simplify
+                        & (>>= Logic.scatter)
+                liftSimplifier (Exists.makeEvaluate sideCondition existentials removed)
+                    >>= Logic.scatter
+                & OrPattern.observeAllT
+                & (>>= mkNotSimplified)
+                & wereAnyUnified
+            where
+                mkNotSimplified notChild =
+                    liftSimplifier $ Not.simplify sideCondition Not{notSort = sort, notChild}
 
-    elseImplied acts = Logic.ifte acts pure (pure $ Implied claimPattern)
+        wereAnyUnified :: StateT AnyUnified m a -> m (AnyUnified, a)
+        wereAnyUnified act = swap <$> runStateT act mempty
 
-    examine ::
-        AnyUnified ->
-        Pattern RewritingVariableName ->
-        m (CheckImplicationResult ClaimPattern)
-    examine AnyUnified{didAnyUnify} stuck
-        | didAnyUnify
-        , isBottom condition =
-            pure $ Implied claimPattern
-        | not didAnyUnify
-        , not (isBottom right) =
-            pure $ NotImplied claimPattern
-        | otherwise = do
-            when (isBottom right) $
-                warnClaimRHSIsBottom claimPattern
-            Lens.set (field @"left") stuck claimPattern
-                & NotImpliedStuck
-                & pure
-      where
-        (_, condition) = Pattern.splitTerm stuck
+        didUnify :: MonadState AnyUnified state => state ()
+        didUnify = State.put (AnyUnified True)
+
+        elseImplied acts = Logic.ifte acts pure (pure $ Implied claimPattern)
+
+        examine ::
+            AnyUnified ->
+            Pattern RewritingVariableName ->
+            m (CheckImplicationResult ClaimPattern)
+        examine AnyUnified{didAnyUnify} stuck
+            | didAnyUnify
+            , isBottom condition =
+                pure $ Implied claimPattern
+            | not didAnyUnify
+            , not (isBottom right) =
+                pure $ NotImplied claimPattern
+            | otherwise = do
+                when (isBottom right)
+                    $ warnClaimRHSIsBottom claimPattern
+                Lens.set (field @"left") stuck claimPattern
+                    & NotImpliedStuck
+                    & pure
+            where
+                (_, condition) = Pattern.splitTerm stuck
 
 {- | Check a simple implication (with a single consequent), and return a
   substitution that witnesses it if the implication is true.
@@ -761,17 +767,19 @@ checkSimpleImplication inLeft inRight existentials =
                     (mkExistsN existentials (Pattern.toTermLike right))
 
         let definedConfig =
-                Pattern.andCondition left $
-                    from $
-                        makeCeilPredicate leftTerm
+                Pattern.andCondition left
+                    $ from
+                    $ makeCeilPredicate leftTerm
         trivial <-
-            fmap isBottom . liftSimplifier $
-                SMT.Evaluator.filterMultiOr $srcLoc
-                    =<< Pattern.simplify definedConfig
+            fmap isBottom
+                . liftSimplifier
+                $ SMT.Evaluator.filterMultiOr $srcLoc
+                =<< Pattern.simplify definedConfig
         rhsBottom <-
-            fmap isBottom . liftSimplifier $
-                SMT.Evaluator.filterMultiOr $srcLoc
-                    =<< Pattern.simplify right
+            fmap isBottom
+                . liftSimplifier
+                $ SMT.Evaluator.filterMultiOr $srcLoc
+                =<< Pattern.simplify right
 
         case (trivial, rhsBottom) of
             (True, _) -> pure (claimToCheck, Implied Nothing)
@@ -779,9 +787,9 @@ checkSimpleImplication inLeft inRight existentials =
             _ -> do
                 -- attempt term unification (to remember the substitution
                 unified <-
-                    lift $
-                        runUnifier $
-                            unificationProcedure SideCondition.top leftTerm rightTerm
+                    lift
+                        $ runUnifier
+                        $ unificationProcedure SideCondition.top leftTerm rightTerm
 
                 -- for each unification result, attempt to refute the formula
                 remainders ::
@@ -801,113 +809,114 @@ checkSimpleImplication inLeft inRight existentials =
                         -- successful unification but all stuck,
                         -- return original left term and unifier
                         NotImpliedStuck $ Just unifier
-  where
-    sort = termLikeSort (Pattern.term inLeft)
+    where
+        sort = termLikeSort (Pattern.term inLeft)
 
-    simplifyToSingle ::
-        String ->
-        Pattern v ->
-        ExceptT (Error ImplicationError) Simplifier (Pattern v)
-    simplifyToSingle ctx pat = do
-        let patSort = termLikeSort (Pattern.term pat)
-        simplified <- toList <$> lift (Pattern.simplify pat)
-        withContext (ctx <> showPretty pat) $
-            koreFailWhen
-                (length simplified > 1)
-                "Term does not simplify to a singleton pattern"
-        pure $
-            fromMaybe (Pattern.bottomOf patSort) $
-                headMay simplified
+        simplifyToSingle ::
+            String ->
+            Pattern v ->
+            ExceptT (Error ImplicationError) Simplifier (Pattern v)
+        simplifyToSingle ctx pat = do
+            let patSort = termLikeSort (Pattern.term pat)
+            simplified <- toList <$> lift (Pattern.simplify pat)
+            withContext (ctx <> showPretty pat)
+                $ koreFailWhen
+                    (length simplified > 1)
+                    "Term does not simplify to a singleton pattern"
+            pure
+                $ fromMaybe (Pattern.bottomOf patSort)
+                $ headMay simplified
 
-    showPretty :: Pretty a => a -> String
-    showPretty = Pretty.renderString . Pretty.layoutOneLine . Pretty.pretty
+        showPretty :: Pretty a => a -> String
+        showPretty = Pretty.renderString . Pretty.layoutOneLine . Pretty.pretty
 
-    checkAssumptions left right = do
-        let leftTerm = Pattern.term left
-        -- must be function-like
-        withContext (showPretty leftTerm) $
-            koreFailWhen
-                (not $ isFunctionPattern leftTerm)
-                "The check implication step expects the antecedent term to be function-like."
-        -- RHS existentials must not capture free variables of LHS
-        let lhsFreeElemVars = getFreeElementVariables (freeVariables left)
-            nameCollisions = existentials `intersect` lhsFreeElemVars
-            rightTerm = Pattern.term right
-        withContext ("LHS: " <> showPretty leftTerm)
-            . withContext ("RHS: " <> showPretty rightTerm)
-            . withContext ("existentials: " <> show (map unparse2 existentials))
-            $ koreFailWhen (not $ null nameCollisions)
-            $ unwords
-                ( "Existentials capture free variables of the antecedent:"
-                    : map (show . unparse2) nameCollisions
-                )
-        -- RHS must not have free variables that aren't free in the LHS
-        let rhsFreeElemVars = getFreeElementVariables $ freeVariables right
-            offending = rhsFreeElemVars \\ (lhsFreeElemVars <> existentials)
-        withContext ("LHS: " <> showPretty leftTerm)
-            . withContext ("RHS: " <> showPretty rightTerm)
-            . withContext ("existentials: " <> show (map unparse2 existentials))
-            $ koreFailWhen (not $ null offending)
-            $ unwords
-                ( "The RHS must not have free variables not present in the LHS:"
-                    : map (show . unparse2) offending
-                )
-        -- sorts of LHS and RHS have to agree
-        let lSort = termLikeSort leftTerm
-            rSort = termLikeSort rightTerm
-        withContext ("LHS sort: " <> show (unparse2 lSort))
-            . withContext ("RHS sort: " <> show (unparse2 rSort))
-            $ koreFailWhen
-                (lSort /= rSort)
-                "Antecedent and consequent must have the same sort."
+        checkAssumptions left right = do
+            let leftTerm = Pattern.term left
+            -- must be function-like
+            withContext (showPretty leftTerm)
+                $ koreFailWhen
+                    (not $ isFunctionPattern leftTerm)
+                    "The check implication step expects the antecedent term to be function-like."
+            -- RHS existentials must not capture free variables of LHS
+            let lhsFreeElemVars = getFreeElementVariables (freeVariables left)
+                nameCollisions = existentials `intersect` lhsFreeElemVars
+                rightTerm = Pattern.term right
+            withContext ("LHS: " <> showPretty leftTerm)
+                . withContext ("RHS: " <> showPretty rightTerm)
+                . withContext ("existentials: " <> show (map unparse2 existentials))
+                $ koreFailWhen (not $ null nameCollisions)
+                $ unwords
+                    ( "Existentials capture free variables of the antecedent:"
+                        : map (show . unparse2) nameCollisions
+                    )
+            -- RHS must not have free variables that aren't free in the LHS
+            let rhsFreeElemVars = getFreeElementVariables $ freeVariables right
+                offending = rhsFreeElemVars \\ (lhsFreeElemVars <> existentials)
+            withContext ("LHS: " <> showPretty leftTerm)
+                . withContext ("RHS: " <> showPretty rightTerm)
+                . withContext ("existentials: " <> show (map unparse2 existentials))
+                $ koreFailWhen (not $ null offending)
+                $ unwords
+                    ( "The RHS must not have free variables not present in the LHS:"
+                        : map (show . unparse2) offending
+                    )
+            -- sorts of LHS and RHS have to agree
+            let lSort = termLikeSort leftTerm
+                rSort = termLikeSort rightTerm
+            withContext ("LHS sort: " <> show (unparse2 lSort))
+                . withContext ("RHS sort: " <> show (unparse2 rSort))
+                $ koreFailWhen
+                    (lSort /= rSort)
+                    "Antecedent and consequent must have the same sort."
 
-    -- using a successful unification result (Condition), build term
-    -- to refute and try to refute (returning non-refutable parts and
-    -- the substitution for unification)
-    checkUnifiedConsequent ::
-        Pattern v ->
-        Pattern.Condition v ->
-        Pattern.Condition v ->
-        Pattern.Condition v ->
-        Simplifier (OrPattern v, Pattern.Condition v)
-    checkUnifiedConsequent
-        definedConfig
-        leftCondition
-        rightCondition
-        unified =
-            fmap ((,unified) . MultiOr.mergeAll) $
-                Logic.observeAllT $ do
-                    let existsChild =
-                            Pattern.andCondition
-                                (Pattern.fromCondition sort unified)
-                                rightCondition
-                        sideCondition =
-                            SideCondition.fromConditionWithReplacements
-                                -- (NB this from . to applies the substitution)
-                                (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
+        -- using a successful unification result (Condition), build term
+        -- to refute and try to refute (returning non-refutable parts and
+        -- the substitution for unification)
+        checkUnifiedConsequent ::
+            Pattern v ->
+            Pattern.Condition v ->
+            Pattern.Condition v ->
+            Pattern.Condition v ->
+            Simplifier (OrPattern v, Pattern.Condition v)
+        checkUnifiedConsequent
+            definedConfig
+            leftCondition
+            rightCondition
+            unified =
+                fmap ((,unified) . MultiOr.mergeAll)
+                    $ Logic.observeAllT
+                    $ do
+                        let existsChild =
+                                Pattern.andCondition
+                                    (Pattern.fromCondition sort unified)
+                                    rightCondition
+                            sideCondition =
+                                SideCondition.fromConditionWithReplacements
+                                    -- (NB this from . to applies the substitution)
+                                    (Condition.fromPredicate . Condition.toPredicate $ leftCondition)
 
-                    notChild <- -- ∃ Y. ⌈t(X) ∧ t'(X, Y)⌉ ∧ P'(X, Y) (Or pattern)
-                        liftSimplifier $ Exists.makeEvaluate sideCondition existentials existsChild
+                        notChild <- -- ∃ Y. ⌈t(X) ∧ t'(X, Y)⌉ ∧ P'(X, Y) (Or pattern)
+                            liftSimplifier $ Exists.makeEvaluate sideCondition existentials existsChild
 
-                    notRhs <- -- not notChild (Or pattern)
-                        liftSimplifier $ Not.simplify sideCondition Not{notSort = sort, notChild}
+                        notRhs <- -- not notChild (Or pattern)
+                            liftSimplifier $ Not.simplify sideCondition Not{notSort = sort, notChild}
 
-                    let combineWithAntecedent :: Pattern v -> Pattern v
-                        combineWithAntecedent = (definedConfig <*)
-                    -- (<*) takes the 1st arg.s term but combines
-                    -- both arg.s predicate and substitution
+                        let combineWithAntecedent :: Pattern v -> Pattern v
+                            combineWithAntecedent = (definedConfig <*)
+                        -- (<*) takes the 1st arg.s term but combines
+                        -- both arg.s predicate and substitution
 
-                    -- The result's substitution needs to be renormalized,
-                    -- which we achieve by simplifying it
+                        -- The result's substitution needs to be renormalized,
+                        -- which we achieve by simplifying it
 
-                    toRefute <-
-                        liftSimplifier
-                            $ Pattern.simplify
+                        toRefute <-
+                            liftSimplifier
+                                $ Pattern.simplify
                                 . OrPattern.toPattern sort
                                 . MultiOr.map combineWithAntecedent
-                            $ notRhs
+                                $ notRhs
 
-                    liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc toRefute
+                        liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc toRefute
 
 -- | type tag for errors thrown from the above
 data ImplicationError
@@ -921,28 +930,28 @@ simplify' lensClaimPattern claim = do
     let claim'' = Lens.over lensClaimPattern applySubstOnRightHandSide claim'
         sideCondition = extractSideCondition claim''
     liftSimplifier $ simplifyRightHandSide lensClaimPattern sideCondition claim''
-  where
-    applySubstOnRightHandSide :: ClaimPattern -> ClaimPattern
-    applySubstOnRightHandSide claimPat@ClaimPattern{left, right} =
-        let substitution = Pattern.substitution left
-            mapSubstitution ::
-                Pattern RewritingVariableName -> Pattern RewritingVariableName
-            mapSubstitution = Lens.over (field @"substitution") (substitution <>)
-            right' = MultiOr.map mapSubstitution right
-         in claimPat{right = right'}
-    extractSideCondition =
-        SideCondition.fromConditionWithReplacements
-            . Pattern.withoutTerm
-            . Lens.view (lensClaimPattern . field @"left")
+    where
+        applySubstOnRightHandSide :: ClaimPattern -> ClaimPattern
+        applySubstOnRightHandSide claimPat@ClaimPattern{left, right} =
+            let substitution = Pattern.substitution left
+                mapSubstitution ::
+                    Pattern RewritingVariableName -> Pattern RewritingVariableName
+                mapSubstitution = Lens.over (field @"substitution") (substitution <>)
+                right' = MultiOr.map mapSubstitution right
+             in claimPat{right = right'}
+        extractSideCondition =
+            SideCondition.fromConditionWithReplacements
+                . Pattern.withoutTerm
+                . Lens.view (lensClaimPattern . field @"left")
 
-    simplifyLeftHandSide =
-        Lens.traverseOf (lensClaimPattern . field @"left") $ \config -> do
-            configs <-
-                simplifyTopConfigurationDefined
-                    config
-                    >>= SMT.Evaluator.filterMultiOr $srcLoc
-                    & liftSimplifier
-            asum (pure <$> toList configs)
+        simplifyLeftHandSide =
+            Lens.traverseOf (lensClaimPattern . field @"left") $ \config -> do
+                configs <-
+                    simplifyTopConfigurationDefined
+                        config
+                        >>= SMT.Evaluator.filterMultiOr $srcLoc
+                        & liftSimplifier
+                asum (pure <$> toList configs)
 
 simplifyRightHandSide ::
     Lens' claim ClaimPattern ->
@@ -951,11 +960,14 @@ simplifyRightHandSide ::
     Simplifier claim
 simplifyRightHandSide lensClaimPattern sideCondition =
     Lens.traverseOf (lensClaimPattern . field @"right") $ \dest ->
-        OrPattern.observeAllT $
-            Logic.scatter dest
-                >>= liftSimplifier . Pattern.makeEvaluate sideCondition . Pattern.requireDefined
-                >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
-                >>= Logic.scatter
+        OrPattern.observeAllT
+            $ Logic.scatter dest
+            >>= liftSimplifier
+            . Pattern.makeEvaluate sideCondition
+            . Pattern.requireDefined
+            >>= liftSimplifier
+            . SMT.Evaluator.filterMultiOr $srcLoc
+            >>= Logic.scatter
 
 isTrusted :: From claim Attribute.Axiom.Trusted => claim -> Bool
 isTrusted = Attribute.Trusted.isTrusted . from @_ @Attribute.Axiom.Trusted
@@ -997,20 +1009,20 @@ deriveWith ::
     claim ->
     Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 deriveWith lensClaimPattern mkRule takeStep rewrites claim =
-    getCompose $
-        Lens.forOf lensClaimPattern claim $
-            \claimPattern ->
-                fmap (snd . Step.refreshRule mempty) $
-                    Lens.forOf (field @"left") claimPattern $
-                        \config -> Compose $ do
-                            results <- takeStep rewrites config & lift
-                            deriveResults fromAppliedRule results
-  where
-    fromAppliedRule =
-        AppliedAxiom
-            . mkRule
-            . RewriteRule
-            . Step.withoutUnification
+    getCompose
+        $ Lens.forOf lensClaimPattern claim
+        $ \claimPattern ->
+            fmap (snd . Step.refreshRule mempty)
+                $ Lens.forOf (field @"left") claimPattern
+                $ \config -> Compose $ do
+                    results <- takeStep rewrites config & lift
+                    deriveResults fromAppliedRule results
+    where
+        fromAppliedRule =
+            AppliedAxiom
+                . mkRule
+                . RewriteRule
+                . Step.withoutUnification
 
 -- | Apply 'Rule's to the claim in sequence.
 deriveSeq' ::
@@ -1033,15 +1045,15 @@ deriveResults ::
         (ApplyResult (Pattern RewritingVariableName))
 deriveResults fromAppliedRule Results{results, remainders} =
     addResults <|> addRemainders
-  where
-    addResults = asum (addResult <$> results)
-    addRemainders = asum (addRemainder <$> toList remainders)
+    where
+        addResults = asum (addResult <$> results)
+        addRemainders = asum (addRemainder <$> toList remainders)
 
-    addResult Result{appliedRule, result} = do
-        addRule appliedRule
-        addRewritten result
+        addResult Result{appliedRule, result} = do
+            addRule appliedRule
+            addRewritten result
 
-    addRewritten = pure . ApplyRewritten
-    addRemainder = pure . ApplyRemainder
+        addRewritten = pure . ApplyRewritten
+        addRemainder = pure . ApplyRemainder
 
-    addRule = Transition.addRule . fromAppliedRule
+        addRule = Transition.addRule . fromAppliedRule

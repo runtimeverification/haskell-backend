@@ -207,9 +207,9 @@ parseBoolAttributeAux asBool ident =
         getZeroArguments args
         when (Lens.view asBool attr) failDuplicate'
         return (Lens.review asBool True)
-  where
-    withApplication' = withApplication ident
-    failDuplicate' = failDuplicate ident
+    where
+        withApplication' = withApplication ident
+        failDuplicate' = failDuplicate ident
 
 withApplication ::
     Id ->
@@ -223,12 +223,12 @@ withApplication ident go kore =
             | symbolOrAliasConstructor == ident ->
                 Kore.Error.withLocationAndContext symbol context
                     . go symbolOrAliasParams applicationChildren
-          where
-            ~context = "attribute '" <> Text.pack (show symbol) <> "'"
-            Application{applicationSymbolOrAlias = symbol} = app
-            Application{applicationChildren} = app
-            SymbolOrAlias{symbolOrAliasConstructor} = symbol
-            SymbolOrAlias{symbolOrAliasParams} = symbol
+            where
+                ~context = "attribute '" <> Text.pack (show symbol) <> "'"
+                Application{applicationSymbolOrAlias = symbol} = app
+                Application{applicationChildren} = app
+                SymbolOrAlias{symbolOrAliasConstructor} = symbol
+                SymbolOrAlias{symbolOrAliasParams} = symbol
         _ -> return
 
 getZeroParams :: [Sort] -> Parser ()
@@ -239,8 +239,8 @@ getZeroParams =
             Kore.Error.koreFailWithLocations
                 params
                 ("expected zero parameters, found " <> Text.pack (show arity))
-          where
-            arity = length params
+            where
+                arity = length params
 
 getTwoParams :: [Sort] -> Parser (Sort, Sort)
 getTwoParams =
@@ -250,8 +250,8 @@ getTwoParams =
             Kore.Error.koreFailWithLocations
                 params
                 ("expected two parameters, found " <> Text.pack (show arity))
-          where
-            arity = length params
+            where
+                arity = length params
 
 -- | Accept exactly zero arguments.
 getZeroArguments ::
@@ -263,8 +263,8 @@ getZeroArguments =
         args ->
             Kore.Error.koreFail
                 ("expected zero arguments, found " ++ show arity)
-          where
-            arity = length args
+            where
+                arity = length args
 
 -- | Accept exactly one argument.
 getOneArgument ::
@@ -276,8 +276,8 @@ getOneArgument =
         args ->
             Kore.Error.koreFail
                 ("expected one argument, found " ++ show arity)
-          where
-            arity = length args
+            where
+                arity = length args
 
 getZeroOrOneArguments ::
     [AttributePattern] ->
@@ -289,8 +289,8 @@ getZeroOrOneArguments =
         args ->
             Kore.Error.koreFail
                 ("expected at most one argument, found " <> show arity)
-          where
-            arity = length args
+            where
+                arity = length args
 
 -- | Accept exactly two arguments.
 getTwoArguments ::
@@ -302,8 +302,8 @@ getTwoArguments =
         args ->
             Kore.Error.koreFail
                 ("expected two arguments, found " ++ show arity)
-          where
-            arity = length args
+            where
+                arity = length args
 
 -- | Accept a symbol or alias applied to no arguments.
 getSymbolOrAlias :: AttributePattern -> Parser SymbolOrAlias
@@ -316,9 +316,9 @@ getSymbolOrAlias kore =
                     symbol
                     ("symbol '" <> Text.pack (show symbol) <> "'")
                     (Kore.Error.koreFail "expected zero arguments")
-          where
-            Application{applicationSymbolOrAlias = symbol} = app
-            Application{applicationChildren} = app
+            where
+                Application{applicationSymbolOrAlias = symbol} = app
+                Application{applicationChildren} = app
         _ -> Kore.Error.koreFail "expected symbol or alias application"
 
 -- | Accept a string literal.
@@ -349,16 +349,20 @@ parseReadS aReadS (Text.unpack -> syntax) =
                 _
                     | null unparsed -> return a
                     | otherwise -> incompleteParse unparsed
-          where
-            (a, unparsed) = r
-  where
-    noParse = Kore.Error.koreFail ("failed to parse \"" ++ syntax ++ "\"")
-    ambiguousParse =
-        Kore.Error.koreFail $
-            "parsing \"" ++ syntax ++ "\" was ambiguous"
-    incompleteParse unparsed =
-        Kore.Error.koreFail $
-            "incomplete parse: failed to parse \"" ++ unparsed ++ "\""
+            where
+                (a, unparsed) = r
+    where
+        noParse = Kore.Error.koreFail ("failed to parse \"" ++ syntax ++ "\"")
+        ambiguousParse =
+            Kore.Error.koreFail
+                $ "parsing \""
+                ++ syntax
+                ++ "\" was ambiguous"
+        incompleteParse unparsed =
+            Kore.Error.koreFail
+                $ "incomplete parse: failed to parse \""
+                ++ unparsed
+                ++ "\""
 
 -- | Parse an 'Integer' from a 'StringLiteral'.
 parseInteger :: StringLiteral -> Parser Integer
@@ -384,6 +388,6 @@ parseSExpr syntax =
             case rest of
                 [] -> return sExpr
                 _ -> incompleteParse
-  where
-    noParse = Kore.Error.koreFail "failed to parse S-expression"
-    incompleteParse = Kore.Error.koreFail "failed to parse entire argument"
+    where
+        noParse = Kore.Error.koreFail "failed to parse S-expression"
+        incompleteParse = Kore.Error.koreFail "failed to parse entire argument"

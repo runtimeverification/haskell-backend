@@ -269,13 +269,13 @@ by short representations of the 'Type' and 'Condition'.
 unparseTag :: Simplified -> Maybe Text
 unparseTag (Simplified_ ty condition) =
     Just $ "S" <> typeRepresentation ty <> conditionRepresentation condition
-  where
-    typeRepresentation Fully = "f"
-    typeRepresentation Partly = "p"
+    where
+        typeRepresentation Fully = "f"
+        typeRepresentation Partly = "p"
 
-    conditionRepresentation Any = "a"
-    conditionRepresentation (Condition _) = "c"
-    conditionRepresentation Unknown = "u"
+        conditionRepresentation Any = "a"
+        conditionRepresentation (Condition _) = "c"
+        conditionRepresentation Unknown = "u"
 unparseTag NotSimplified = Nothing
 
 instance Synthetic Simplified (Bottom sort) where

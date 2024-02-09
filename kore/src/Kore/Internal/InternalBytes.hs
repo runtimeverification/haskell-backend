@@ -38,15 +38,15 @@ instance Unparse InternalBytes where
         "\\dv"
             <> parameters [internalBytesSort]
             <> arguments [StringLiteral (Encoding.decode8Bit $ ByteString.fromShort internalBytesValue)]
-      where
-        InternalBytes{internalBytesSort, internalBytesValue} = internalBytes
+        where
+            InternalBytes{internalBytesSort, internalBytesValue} = internalBytes
 
     unparse2 internalBytes@(InternalBytes _ _) =
         "\\dv2"
             <> parameters2 [internalBytesSort]
             <> arguments2 [StringLiteral (Encoding.decode8Bit $ ByteString.fromShort internalBytesValue)]
-      where
-        InternalBytes{internalBytesSort, internalBytesValue} = internalBytes
+        where
+            InternalBytes{internalBytesSort, internalBytesValue} = internalBytes
 
 instance Synthetic Sort (Const InternalBytes) where
     synthetic = internalBytesSort . getConst

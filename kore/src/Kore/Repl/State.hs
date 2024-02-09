@@ -323,13 +323,13 @@ updateInnerGraph ig = do
     ReplState{claimIndex, graphs} <- get
     field @"graphs"
         Lens..= Map.adjust (updateInnerGraph0 ig) claimIndex graphs
-  where
-    updateInnerGraph0 ::
-        InnerGraph ->
-        ExecutionGraph ->
-        ExecutionGraph
-    updateInnerGraph0 graph Strategy.ExecutionGraph{root} =
-        Strategy.ExecutionGraph{root, graph}
+    where
+        updateInnerGraph0 ::
+            InnerGraph ->
+            ExecutionGraph ->
+            ExecutionGraph
+        updateInnerGraph0 graph Strategy.ExecutionGraph{root} =
+            Strategy.ExecutionGraph{root, graph}
 
 -- | Update the current execution graph.
 updateExecutionGraph :: MonadState ReplState m => ExecutionGraph -> m ()
@@ -355,39 +355,41 @@ smoothOutGraph graph = do
         liftedSubGraph = Graph.emap IndividualLabel (Graph.delNodes nodesToRemove graph)
         liftedGraph = Graph.insEdges edgesToAdd liftedSubGraph
     return liftedGraph
-  where
-    inOutDegreeOne :: Graph.Node -> Bool
-    inOutDegreeOne node =
-        Graph.outdeg graph node == 1
-            && Graph.indeg graph node == 1
-            && not (all isBranchingNode $ Graph.pre graph node)
-    componentToEdge ::
-        Gr node edgeLabel ->
-        [Graph.Node] ->
-        Maybe (Graph.LEdge (EdgeLabel edgeLabel))
-    componentToEdge subGraph nodes =
-        case filter (isTerminalNode subGraph) nodes of
-            [node] -> makeNewEdge node 1 node
-            [node1, node2] ->
-                if node1 < node2
-                    then makeNewEdge node1 (genericLength nodes) node2
-                    else makeNewEdge node2 (genericLength nodes) node1
-            _ -> Nothing
-    makeNewEdge ::
-        Graph.Node ->
-        Natural ->
-        Graph.Node ->
-        Maybe (Graph.LEdge (EdgeLabel edgeLabel))
-    makeNewEdge node1 nrOfNodes node2 = do
-        nodePre <- headMay (Graph.pre graph node1)
-        nodeSuc <- headMay (Graph.suc graph node2)
-        return (nodePre, nodeSuc, OmmitedNodes nrOfNodes)
-    isBranchingNode :: Graph.Node -> Bool
-    isBranchingNode node =
-        Graph.outdeg graph node > 1
-    isTerminalNode :: Gr node edgeLabel -> Graph.Node -> Bool
-    isTerminalNode graph' node =
-        Graph.indeg graph' node == 0 || Graph.outdeg graph' node == 0
+    where
+        inOutDegreeOne :: Graph.Node -> Bool
+        inOutDegreeOne node =
+            Graph.outdeg graph node
+                == 1
+                && Graph.indeg graph node
+                == 1
+                && not (all isBranchingNode $ Graph.pre graph node)
+        componentToEdge ::
+            Gr node edgeLabel ->
+            [Graph.Node] ->
+            Maybe (Graph.LEdge (EdgeLabel edgeLabel))
+        componentToEdge subGraph nodes =
+            case filter (isTerminalNode subGraph) nodes of
+                [node] -> makeNewEdge node 1 node
+                [node1, node2] ->
+                    if node1 < node2
+                        then makeNewEdge node1 (genericLength nodes) node2
+                        else makeNewEdge node2 (genericLength nodes) node1
+                _ -> Nothing
+        makeNewEdge ::
+            Graph.Node ->
+            Natural ->
+            Graph.Node ->
+            Maybe (Graph.LEdge (EdgeLabel edgeLabel))
+        makeNewEdge node1 nrOfNodes node2 = do
+            nodePre <- headMay (Graph.pre graph node1)
+            nodeSuc <- headMay (Graph.suc graph node2)
+            return (nodePre, nodeSuc, OmmitedNodes nrOfNodes)
+        isBranchingNode :: Graph.Node -> Bool
+        isBranchingNode node =
+            Graph.outdeg graph node > 1
+        isTerminalNode :: Gr node edgeLabel -> Graph.Node -> Bool
+        isTerminalNode graph' node =
+            Graph.indeg graph' node == 0 || Graph.outdeg graph' node == 0
 
 data EdgeLabel individualLabel
     = OmmitedNodes Natural
@@ -429,14 +431,14 @@ getInterestingBranchingNode n graph node
             [] -> Nothing
             [a] -> Just a
             _ -> Just node
-  where
-    gnode = unReplNode node
-    nodeIsBottom = (==) (getNodeState graph gnode) Nothing
-    sucResults =
-        fmap
-            (getInterestingBranchingNode (n - 1) graph . ReplNode)
-            (Graph.suc graph gnode)
-    interestingResults = catMaybes sucResults
+    where
+        gnode = unReplNode node
+        nodeIsBottom = (==) (getNodeState graph gnode) Nothing
+        sucResults =
+            fmap
+                (getInterestingBranchingNode (n - 1) graph . ReplNode)
+                (Graph.suc graph gnode)
+        interestingResults = catMaybes sucResults
 
 -- | Get the node labels for the current claim.
 getLabels ::
@@ -484,8 +486,8 @@ getClaimStateAt maybeNode = do
         Just n -> do
             graph' <- getInnerGraph
             pure $ Just (n, getLabel graph' (unReplNode n))
-  where
-    getLabel gr n = Graph.lab' . Graph.context gr $ n
+    where
+        getLabel gr n = Graph.lab' . Graph.context gr $ n
 
 -- | Get the rule used to reach selected node.
 getRuleFor ::
@@ -497,14 +499,14 @@ getRuleFor maybeNode = do
     targetNode <- getTargetNode maybeNode
     graph' <- getInnerGraph
     pure $ targetNode >>= getRewriteRule . Graph.inn graph' . unReplNode
-  where
-    getRewriteRule ::
-        [(a, b, Seq axiom)] ->
-        Maybe axiom
-    getRewriteRule = headMay . concatMap (toList . third)
+    where
+        getRewriteRule ::
+            [(a, b, Seq axiom)] ->
+            Maybe axiom
+        getRewriteRule = headMay . concatMap (toList . third)
 
-    third :: forall a b c. (a, b, c) -> c
-    third (_, _, c) = c
+        third :: forall a b c. (a, b, c) -> c
+        third (_, _, c) = c
 
 -- | Lifting function that takes logging into account.
 liftSimplifierWithLogger ::
@@ -525,30 +527,31 @@ liftSimplifierWithLogger mLogger simplifier = do
             } = koreLogOptions
     (textLogger, maybeHandle) <- logTypeToLogger logType
     let logger =
-            Log.koreLogFilters koreLogOptions $
-                Log.makeKoreLogger
+            Log.koreLogFilters koreLogOptions
+                $ Log.makeKoreLogger
                     exeName
                     startTime
                     timestampsSwitch
                     logFormat
                     textLogger
     _ <-
-        Monad.Trans.lift . liftIO $
-            swapMVar mLogger logger
+        Monad.Trans.lift
+            . liftIO
+            $ swapMVar mLogger logger
     result <- Monad.Trans.lift simplifier
     maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
     pure result
-  where
-    logTypeToLogger ::
-        Log.KoreLogType ->
-        t Simplifier (Log.LogAction IO Text, Maybe Handle)
-    logTypeToLogger =
-        \case
-            Log.LogSomeAction a -> pure (a, Nothing)
-            Log.LogStdErr -> pure (Log.logTextStderr, Nothing)
-            Log.LogFileText file -> do
-                handle <- Monad.Trans.lift . liftIO $ openFile file AppendMode
-                pure (Log.logTextHandle handle, Just handle)
+    where
+        logTypeToLogger ::
+            Log.KoreLogType ->
+            t Simplifier (Log.LogAction IO Text, Maybe Handle)
+        logTypeToLogger =
+            \case
+                Log.LogSomeAction a -> pure (a, Nothing)
+                Log.LogStdErr -> pure (Log.logTextStderr, Nothing)
+                Log.LogFileText file -> do
+                    handle <- Monad.Trans.lift . liftIO $ openFile file AppendMode
+                    pure (Log.logTextHandle handle, Just handle)
 
 {- | Run a single step for the data in state
  (claim, axioms, claims, current node and execution graph).
@@ -581,15 +584,15 @@ runStepper' ::
 runStepper' axioms node =
     runStepperWorker axioms node
         & (fmap . fmap) (maybe Timeout processResult)
-  where
-    processResult [] = NoResult
-    processResult [(claimState', nextNode)] =
-        case claimState' of
-            Proven -> NoResult
-            Stuck _ -> NoResult
-            _ -> SingleResult . ReplNode $ nextNode
-    processResult (fmap snd -> nextNodes) =
-        BranchResult $ fmap ReplNode nextNodes
+    where
+        processResult [] = NoResult
+        processResult [(claimState', nextNode)] =
+            case claimState' of
+                Proven -> NoResult
+                Stuck _ -> NoResult
+                _ -> SingleResult . ReplNode $ nextNode
+        processResult (fmap snd -> nextNodes) =
+            BranchResult $ fmap ReplNode nextNodes
 
 tryApplyAxiomOrClaim ::
     MonadState ReplState (t Simplifier) =>
@@ -603,15 +606,15 @@ tryApplyAxiomOrClaim axiomOrClaim node =
         (either pure mempty axiomOrClaim)
         node
         & (fmap . fmap) (maybe DoesNotApply processResult)
-  where
-    processResult [] = DoesNotApply
-    processResult [(claimState', nextNode)] =
-        case claimState' of
-            Proven -> GetsProven
-            Stuck _ -> DoesNotApply
-            Remaining _ -> DoesNotApply
-            _ -> OneResult . ReplNode $ nextNode
-    processResult _ = MultipleResults
+    where
+        processResult [] = DoesNotApply
+        processResult [(claimState', nextNode)] =
+            case claimState' of
+                Proven -> GetsProven
+                Stuck _ -> DoesNotApply
+                Remaining _ -> DoesNotApply
+                _ -> OneResult . ReplNode $ nextNode
+        processResult _ = MultipleResults
 
 type SuccessorNodes = [(CommonClaimState, Graph.Node)]
 
@@ -630,10 +633,10 @@ runStepperWorker axioms node = do
     enableMA <- gets enableMovingAverage
     stepResult <- liftSimplifierWithLogger mvar $ stepper st enableMA axioms gph node
     return (fromMaybe gph stepResult, getSuccesorNodes <$> stepResult)
-  where
-    getSuccesorNodes Strategy.ExecutionGraph{graph = innerGraph} =
-        getClaimState innerGraph
-            <$> Graph.suc innerGraph (unReplNode node)
+    where
+        getSuccesorNodes Strategy.ExecutionGraph{graph = innerGraph} =
+            getClaimState innerGraph
+                <$> Graph.suc innerGraph (unReplNode node)
 
 runUnifier ::
     MonadState ReplState (t Simplifier) =>
@@ -650,8 +653,9 @@ runUnifier sideCondition first second = do
     let unifyBottomEntry = someTypeRep (Proxy @DebugUnifyBottom)
         newState =
             initialState
-                & field @"koreLogOptions" . field @"logEntries"
-                    Lens.%~ Set.insert unifyBottomEntry
+                & field @"koreLogOptions"
+                . field @"logEntries"
+                Lens.%~ Set.insert unifyBottomEntry
     put newState
     result <-
         liftSimplifierWithLogger mvar
@@ -701,32 +705,32 @@ addOrUpdateAlias alias@AliasDefinition{name, command} = do
     checkNameIsNotUsed
     checkCommandExists
     field @"aliases" Lens.%= Map.insert name alias
-  where
-    checkNameIsNotUsed :: m ()
-    checkNameIsNotUsed = do
-        commands <- existingCommands
-        falseToError NameAlreadyDefined $ not $ Set.member name commands
+    where
+        checkNameIsNotUsed :: m ()
+        checkNameIsNotUsed = do
+            commands <- existingCommands
+            falseToError NameAlreadyDefined $ not $ Set.member name commands
 
-    checkCommandExists :: m ()
-    checkCommandExists = do
-        cmds <- existingCommands
-        let maybeCommand = headMay $ words command
-            maybeExists = Set.member <$> maybeCommand <*> pure cmds
-        maybe
-            (Monad.Error.throwError UnknownCommand)
-            (falseToError UnknownCommand)
-            maybeExists
+        checkCommandExists :: m ()
+        checkCommandExists = do
+            cmds <- existingCommands
+            let maybeCommand = headMay $ words command
+                maybeExists = Set.member <$> maybeCommand <*> pure cmds
+            maybe
+                (Monad.Error.throwError UnknownCommand)
+                (falseToError UnknownCommand)
+                maybeExists
 
-    existingCommands :: m (Set String)
-    existingCommands =
-        Set.union commandSet
-            . Set.fromList
-            . Map.keys
-            <$> Lens.use (field @"aliases")
+        existingCommands :: m (Set String)
+        existingCommands =
+            Set.union commandSet
+                . Set.fromList
+                . Map.keys
+                <$> Lens.use (field @"aliases")
 
-    falseToError :: AliasError -> Bool -> m ()
-    falseToError e b =
-        if b then pure () else Monad.Error.throwError e
+        falseToError :: AliasError -> Bool -> m ()
+        falseToError e b =
+            if b then pure () else Monad.Error.throwError e
 
 findAlias ::
     MonadState ReplState m =>
@@ -745,20 +749,20 @@ substituteAlias
             . fmap replaceArguments
             . words
             $ command
-      where
-        values :: Map String AliasArgument
-        values
-            | length arguments == length actualArguments =
-                Map.fromList $ zip arguments actualArguments
-            | otherwise = Map.empty
+        where
+            values :: Map String AliasArgument
+            values
+                | length arguments == length actualArguments =
+                    Map.fromList $ zip arguments actualArguments
+                | otherwise = Map.empty
 
-        replaceArguments :: String -> String
-        replaceArguments s = maybe s toString $ Map.lookup s values
+            replaceArguments :: String -> String
+            replaceArguments s = maybe s toString $ Map.lookup s values
 
-        toString :: AliasArgument -> String
-        toString = \case
-            SimpleArgument str -> str
-            QuotedArgument str -> "\"" <> str <> "\""
+            toString :: AliasArgument -> String
+            toString = \case
+                SimpleArgument str -> str
+                QuotedArgument str -> "\"" <> str <> "\""
 
 conjOfClaims ::
     From claim (AxiomPattern VariableName) =>
@@ -781,20 +785,20 @@ generateInProgressClaims = do
     let started = unprovenGoals graphs
         notStarted = notStartedClaims graphs claims
     return $ started <> notStarted
-  where
-    notStartedClaims ::
-        Map.Map ClaimIndex ExecutionGraph ->
-        [SomeClaim] ->
-        [SomeClaim]
-    notStartedClaims graphs claims =
-        Set.difference claimIndices startedClaims
-            & Set.toList
-            & map lookupClaim
-            & filter (not . isTrusted)
-      where
-        claimIndices = Set.fromList (ClaimIndex <$> take (length claims) [0 ..])
-        startedClaims = Map.keysSet graphs
-        lookupClaim = (!!) claims . unClaimIndex
+    where
+        notStartedClaims ::
+            Map.Map ClaimIndex ExecutionGraph ->
+            [SomeClaim] ->
+            [SomeClaim]
+        notStartedClaims graphs claims =
+            Set.difference claimIndices startedClaims
+                & Set.toList
+                & map lookupClaim
+                & filter (not . isTrusted)
+            where
+                claimIndices = Set.fromList (ClaimIndex <$> take (length claims) [0 ..])
+                startedClaims = Map.keysSet graphs
+                lookupClaim = (!!) claims . unClaimIndex
 
 unprovenGoals ::
     Map ClaimIndex ExecutionGraph ->
@@ -858,34 +862,34 @@ createNewDefinition mainModuleName name claims =
         { definitionAttributes = mempty
         , definitionModules = [newModule]
         }
-  where
-    newModule :: Module (Sentence (TermLike VariableName))
-    newModule =
-        Module
-            { moduleName = ModuleName . pack $ name
-            , moduleSentences =
-                importVerification
-                    : fmap claimToSentence claims
-            , moduleAttributes = Default.def
-            }
-
-    importVerification :: Sentence (TermLike VariableName)
-    importVerification =
-        SentenceImportSentence
-            SentenceImport
-                { sentenceImportModuleName = mainModuleName
-                , sentenceImportAttributes = mempty
+    where
+        newModule :: Module (Sentence (TermLike VariableName))
+        newModule =
+            Module
+                { moduleName = ModuleName . pack $ name
+                , moduleSentences =
+                    importVerification
+                        : fmap claimToSentence claims
+                , moduleAttributes = Default.def
                 }
 
-    claimToSentence :: SomeClaim -> Sentence (TermLike VariableName)
-    claimToSentence claim =
-        SentenceClaimSentence
-            . SentenceClaim
-            $ SentenceAxiom
-                { sentenceAxiomParameters = []
-                , sentenceAxiomPattern =
-                    from @SomeClaim @(AxiomPattern _) claim
-                        & getAxiomPattern
-                , sentenceAxiomAttributes =
-                    from @Attribute.Trusted $ from @SomeClaim claim
-                }
+        importVerification :: Sentence (TermLike VariableName)
+        importVerification =
+            SentenceImportSentence
+                SentenceImport
+                    { sentenceImportModuleName = mainModuleName
+                    , sentenceImportAttributes = mempty
+                    }
+
+        claimToSentence :: SomeClaim -> Sentence (TermLike VariableName)
+        claimToSentence claim =
+            SentenceClaimSentence
+                . SentenceClaim
+                $ SentenceAxiom
+                    { sentenceAxiomParameters = []
+                    , sentenceAxiomPattern =
+                        from @SomeClaim @(AxiomPattern _) claim
+                            & getAxiomPattern
+                    , sentenceAxiomAttributes =
+                        from @Attribute.Trusted $ from @SomeClaim claim
+                    }

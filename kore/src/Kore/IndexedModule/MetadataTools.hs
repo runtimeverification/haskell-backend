@@ -99,8 +99,8 @@ extractMetadataTools m constructorsExtractor smtExtractor =
         , smtData = smtExtractor m constructors
         , sortConstructors = constructors
         }
-  where
-    constructors = constructorsExtractor m
+    where
+        constructors = constructorsExtractor m
 
 {- | Extracts all constructors for a sort.
 

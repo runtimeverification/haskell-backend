@@ -112,8 +112,8 @@ alexMonadScan = do
     case alexScanUser () inp__ sc of
         AlexEOF -> alexEOF
         AlexError (AlexInput{alexPosn = (AlexPn fp _ line column), alexStr = s}) ->
-            alexError fp line column $
-                if s == ""
+            alexError fp line column
+                $ if s == ""
                     then "unexpected end of input"
                     else "unexpected character " ++ show (ByteString.w2c $ ByteString.head s)
         AlexSkip inp__' _len -> do
@@ -156,14 +156,14 @@ token t input__ len = return (t input__ len)
 -- | Monad that repeats an operation until a boolean predicate returns True.
 whileM :: Monad m => (a -> Bool) -> m a -> m [a]
 whileM p f = go
-  where
-    go = do
-        x <- f
-        if p x
-            then do
-                xs <- go
-                return (x : xs)
-            else return []
+    where
+        go = do
+            x <- f
+            if p x
+                then do
+                    xs <- go
+                    return (x : xs)
+                else return []
 
 -- | Returns True if the specified Token is not the EOF token.
 isNotEOF :: Token -> Bool

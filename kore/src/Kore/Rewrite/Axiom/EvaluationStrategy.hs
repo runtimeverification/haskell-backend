@@ -103,15 +103,16 @@ attemptEquationAndAccumulateErrors ::
         (Maybe (Min (AttemptEquationError RewritingVariableName)))
 attemptEquationAndAccumulateErrors condition term equation =
     attemptEquation
-  where
-    attemptEquation =
-        ExceptRT . ExceptT $
-            Equation.attemptEquation
-                condition
-                term
-                equation
+    where
+        attemptEquation =
+            ExceptRT
+                . ExceptT
+                $ Equation.attemptEquation
+                    condition
+                    term
+                    equation
                 >>= either (return . Left . Just . Min) (fmap Right . apply)
-    apply = Equation.applyEquation condition term equation
+        apply = Equation.applyEquation condition term equation
 
 attemptEquations ::
     Monoid error =>
@@ -197,9 +198,9 @@ evaluateBuiltin
                             , Pretty.indent 4 (unparse patt)
                             ]
                 _ -> return result
-      where
-        isValue pat =
-            maybe False TermLike.isConstructorLike $ asConcrete pat
+        where
+            isValue pat =
+                maybe False TermLike.isConstructorLike $ asConcrete pat
 
 -- | Creates an 'BuiltinAndAxiomSimplifier' from a set of equations.
 mkEvaluator ::
@@ -212,16 +213,17 @@ mkEvaluator equations =
         (Nothing, Just evaluator) -> Just evaluator
         (Just sEvaluator, Just dEvaluator) ->
             Just (simplifierWithFallback dEvaluator sEvaluator)
-  where
-    PartitionedEquations{functionRules, simplificationRules} = partitionEquations equations
-    simplificationEvaluator =
-        if null simplificationRules
-            then Nothing
-            else
-                Just . firstFullEvaluation $
-                    simplificationEvaluation
+    where
+        PartitionedEquations{functionRules, simplificationRules} = partitionEquations equations
+        simplificationEvaluator =
+            if null simplificationRules
+                then Nothing
+                else
+                    Just
+                        . firstFullEvaluation
+                        $ simplificationEvaluation
                         <$> simplificationRules
-    definitionEvaluator =
-        if null functionRules
-            then Nothing
-            else Just $ definitionEvaluation functionRules
+        definitionEvaluator =
+            if null functionRules
+                then Nothing
+                else Just $ definitionEvaluation functionRules

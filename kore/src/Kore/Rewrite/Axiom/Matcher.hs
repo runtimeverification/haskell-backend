@@ -170,31 +170,31 @@ instance Ord MatchItem where
         | pat1 `needs` pat2 = GT
         | pat2 `needs` pat1 = LT
         | otherwise = compare (pat1, subject1, bound1, set1) (pat2, subject2, bound2, set2)
-      where
-        -- term A needs term B if term A is a map or set pattern and the keys
-        -- of the map or set contain variables that are free vareiables in
-        -- term B
-        needs ::
-            TermLike RewritingVariableName ->
-            TermLike RewritingVariableName ->
-            Bool
-        needs (InternalSet_ s) term = needsAc (builtinAcChild s) term
-        needs (InternalMap_ m) term = needsAc (builtinAcChild m) term
-        needs _ _ = False
+        where
+            -- term A needs term B if term A is a map or set pattern and the keys
+            -- of the map or set contain variables that are free vareiables in
+            -- term B
+            needs ::
+                TermLike RewritingVariableName ->
+                TermLike RewritingVariableName ->
+                Bool
+            needs (InternalSet_ s) term = needsAc (builtinAcChild s) term
+            needs (InternalMap_ m) term = needsAc (builtinAcChild m) term
+            needs _ _ = False
 
-        needsAc ::
-            forall normalized.
-            AcWrapper normalized =>
-            normalized Key (TermLike RewritingVariableName) ->
-            TermLike RewritingVariableName ->
-            Bool
-        needsAc collection term =
-            not $ Set.disjoint (FreeVariables.toSet abstractFreeVars) $ FreeVariables.toSet $ freeVariables term
-          where
-            abstractKeys :: [TermLike RewritingVariableName]
-            abstractKeys = getSymbolicKeysOfAc collection
-            abstractFreeVars :: FreeVariables RewritingVariableName
-            abstractFreeVars = foldMap freeVariables abstractKeys
+            needsAc ::
+                forall normalized.
+                AcWrapper normalized =>
+                normalized Key (TermLike RewritingVariableName) ->
+                TermLike RewritingVariableName ->
+                Bool
+            needsAc collection term =
+                not $ Set.disjoint (FreeVariables.toSet abstractFreeVars) $ FreeVariables.toSet $ freeVariables term
+                where
+                    abstractKeys :: [TermLike RewritingVariableName]
+                    abstractKeys = getSymbolicKeysOfAc collection
+                    abstractFreeVars :: FreeVariables RewritingVariableName
+                    abstractFreeVars = foldMap freeVariables abstractKeys
 
 -- AC matching works by substituting the current substitution into the
 -- pre-existing pattern. However, that substitution may bind variables to
@@ -207,9 +207,9 @@ finalizeSubst ::
     Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName) ->
     Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName)
 finalizeSubst subst = Map.filterWithKey go subst
-  where
-    go k (Var_ v) = k /= variableName v
-    go _ _ = True
+    where
+        go k (Var_ v) = k /= variableName v
+        go _ _ = True
 
 {- | Match a collection of MatchItems, representing subject/pattern pairs to
  - perform matching.
@@ -258,71 +258,71 @@ patternMatch' sideCondition [] queue predicate subst = do
                 (unwrapAc $ builtinAcChild set1)
                 (unwrapAc $ builtinAcChild set2)
         _ -> error "error in matching algorithm: unexpected deferred term"
-  where
-    (MatchItem pat subject boundVars boundSet, rest) = MinQueue.deleteFindMin queue
+    where
+        (MatchItem pat subject boundVars boundSet, rest) = MinQueue.deleteFindMin queue
 
-    -- recursively pattern match with a list of new MatchItems
-    decomposeList ::
-        [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
-        Simplifier (Either Text (MatchResult RewritingVariableName))
-    decomposeList l =
-        let l' = map (\(p, s) -> MatchItem p s boundVars boundSet) l
-         in patternMatch' sideCondition l' rest predicate $ Map.foldl' processSubst subst subst
+        -- recursively pattern match with a list of new MatchItems
+        decomposeList ::
+            [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
+            Simplifier (Either Text (MatchResult RewritingVariableName))
+        decomposeList l =
+            let l' = map (\(p, s) -> MatchItem p s boundVars boundSet) l
+             in patternMatch' sideCondition l' rest predicate $ Map.foldl' processSubst subst subst
 
-    -- add bindings of variables in the term to themselves. See comment above
-    -- on `finalizeSubst`.
-    processSubst ::
-        Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName) ->
-        TermLike RewritingVariableName ->
-        Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName)
-    processSubst subst' term =
-        let vars = FreeVariables.toList $ freeVariables term
-            newSubst = foldMap (\var -> Map.singleton (variableName var) (mkVar var)) vars
-         in subst' <> newSubst
+        -- add bindings of variables in the term to themselves. See comment above
+        -- on `finalizeSubst`.
+        processSubst ::
+            Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName) ->
+            TermLike RewritingVariableName ->
+            Map (SomeVariableName RewritingVariableName) (TermLike RewritingVariableName)
+        processSubst subst' term =
+            let vars = FreeVariables.toList $ freeVariables term
+                newSubst = foldMap (\var -> Map.singleton (variableName var) (mkVar var)) vars
+             in subst' <> newSubst
 
-    -- the below functions are used to guide matchNormalizedAc so that it can
-    -- reuse the same code for both maps and sets
-    wrapSet ::
-        InternalAc Key NormalizedSet (TermLike RewritingVariableName) ->
-        NormalizedAc NormalizedSet ->
-        TermLike RewritingVariableName
-    wrapSet set2 unwrapped =
-        set2
-            & Lens.set (field @"builtinAcChild") (wrapAc unwrapped)
-            & mkInternalSet
-    wrapMap ::
-        InternalAc Key NormalizedMap (TermLike RewritingVariableName) ->
-        NormalizedAc NormalizedMap ->
-        TermLike RewritingVariableName
-    wrapMap map2 unwrapped =
-        map2
-            & Lens.set (field @"builtinAcChild") (wrapAc unwrapped)
-            & mkInternalMap
+        -- the below functions are used to guide matchNormalizedAc so that it can
+        -- reuse the same code for both maps and sets
+        wrapSet ::
+            InternalAc Key NormalizedSet (TermLike RewritingVariableName) ->
+            NormalizedAc NormalizedSet ->
+            TermLike RewritingVariableName
+        wrapSet set2 unwrapped =
+            set2
+                & Lens.set (field @"builtinAcChild") (wrapAc unwrapped)
+                & mkInternalSet
+        wrapMap ::
+            InternalAc Key NormalizedMap (TermLike RewritingVariableName) ->
+            NormalizedAc NormalizedMap ->
+            TermLike RewritingVariableName
+        wrapMap map2 unwrapped =
+            map2
+                & Lens.set (field @"builtinAcChild") (wrapAc unwrapped)
+                & mkInternalMap
 
-    unwrapSetValue ::
-        [(Value NormalizedSet, Value NormalizedSet)] ->
-        [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
-    unwrapSetValue _ = []
+        unwrapSetValue ::
+            [(Value NormalizedSet, Value NormalizedSet)] ->
+            [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
+        unwrapSetValue _ = []
 
-    unwrapMapValue ::
-        [(Value NormalizedMap, Value NormalizedMap)] ->
-        [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
-    unwrapMapValue vals = map (Bifunctor.bimap getMapValue getMapValue) vals
+        unwrapMapValue ::
+            [(Value NormalizedMap, Value NormalizedMap)] ->
+            [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
+        unwrapMapValue vals = map (Bifunctor.bimap getMapValue getMapValue) vals
 
-    unwrapSetElement ::
-        Element NormalizedSet ->
-        Element NormalizedSet ->
-        [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
-    unwrapSetElement elem1 elem2 = [(getSetElement elem1, getSetElement elem2)]
+        unwrapSetElement ::
+            Element NormalizedSet ->
+            Element NormalizedSet ->
+            [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
+        unwrapSetElement elem1 elem2 = [(getSetElement elem1, getSetElement elem2)]
 
-    unwrapMapElement ::
-        Element NormalizedMap ->
-        Element NormalizedMap ->
-        [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
-    unwrapMapElement elem1 elem2 =
-        let (key1, val1) = getMapElement elem1
-            (key2, val2) = getMapElement elem2
-         in [(key1, key2), (val1, val2)]
+        unwrapMapElement ::
+            Element NormalizedMap ->
+            Element NormalizedMap ->
+            [(TermLike RewritingVariableName, TermLike RewritingVariableName)]
+        unwrapMapElement elem1 elem2 =
+            let (key1, val1) = getMapElement elem1
+                (key2, val2) = getMapElement elem2
+             in [(key1, key2), (val1, val2)]
 patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) deferred predicate subst = do
     tools <- Simplifier.askMetadataTools
     injSimplifier <- Simplifier.askInjSimplifier
@@ -397,8 +397,11 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
             if symbol1 == symbol2
                 then decomposeList (zip children1 children2)
                 else
-                    failMatch $
-                        "distinct application symbols: " <> (unparseToText symbol1) <> ", " <> (unparseToText symbol2)
+                    failMatch
+                        $ "distinct application symbols: "
+                        <> (unparseToText symbol1)
+                        <> ", "
+                        <> (unparseToText symbol2)
         (Inj_ inj1, Inj_ inj2)
             | Just unifyData <- matchInjs inj1 inj2 ->
                 case unifyData of
@@ -477,126 +480,126 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
         (InternalSet_ _, InternalSet_ _) ->
             defer
         _ -> failMatch "unimplemented matching case"
-  where
-    sort = termLikeSort pat
+    where
+        sort = termLikeSort pat
 
-    -- recurse by deleting the current MatchItem
-    discharge ::
-        Simplifier (Either Text (MatchResult RewritingVariableName))
-    ~discharge = patternMatch' sideCondition rest deferred predicate subst
+        -- recurse by deleting the current MatchItem
+        discharge ::
+            Simplifier (Either Text (MatchResult RewritingVariableName))
+        ~discharge = patternMatch' sideCondition rest deferred predicate subst
 
-    -- recurse by adding a variable binding to the current substitution
-    bind ::
-        SomeVariable RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        Simplifier (Either Text (MatchResult RewritingVariableName))
-    bind var term
-        | variableSort var == termLikeSort term =
-            let varName = variableName var
-                freeVars = FreeVariables.toNames (freeVariables term)
-             in if not $ Set.disjoint freeVars boundSet
-                    then failMatch "bound variable would escape binder"
-                    else case Map.lookup varName subst of
-                        Nothing ->
-                            patternMatch'
-                                sideCondition
-                                rest
-                                deferred
-                                (isTermDefined var term)
-                                (Map.insert (variableName var) term subst)
-                        Just binding ->
-                            if binding == term
-                                then patternMatch' sideCondition rest deferred predicate subst
-                                else failMatch "nonlinear matching fails equality test"
-        | otherwise = failMatch "sorts don't match"
+        -- recurse by adding a variable binding to the current substitution
+        bind ::
+            SomeVariable RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            Simplifier (Either Text (MatchResult RewritingVariableName))
+        bind var term
+            | variableSort var == termLikeSort term =
+                let varName = variableName var
+                    freeVars = FreeVariables.toNames (freeVariables term)
+                 in if not $ Set.disjoint freeVars boundSet
+                        then failMatch "bound variable would escape binder"
+                        else case Map.lookup varName subst of
+                            Nothing ->
+                                patternMatch'
+                                    sideCondition
+                                    rest
+                                    deferred
+                                    (isTermDefined var term)
+                                    (Map.insert (variableName var) term subst)
+                            Just binding ->
+                                if binding == term
+                                    then patternMatch' sideCondition rest deferred predicate subst
+                                    else failMatch "nonlinear matching fails equality test"
+            | otherwise = failMatch "sorts don't match"
 
-    -- compute the new predicate of a `bind` operation
-    isTermDefined ::
-        SomeVariable RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        MultiAnd (Predicate RewritingVariableName)
-    isTermDefined var term
-        | SideCondition.isDefined sideCondition term || isSetVariable var = predicate
-        | otherwise = (predicate <> MultiAnd.make [makeCeilPredicate term])
+        -- compute the new predicate of a `bind` operation
+        isTermDefined ::
+            SomeVariable RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            MultiAnd (Predicate RewritingVariableName)
+        isTermDefined var term
+            | SideCondition.isDefined sideCondition term || isSetVariable var = predicate
+            | otherwise = (predicate <> MultiAnd.make [makeCeilPredicate term])
 
-    -- recurse by adding a new MatchItem
-    decompose ::
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        Simplifier (Either Text (MatchResult RewritingVariableName))
-    decompose term1 term2 =
-        patternMatch'
-            sideCondition
-            ((MatchItem term1 term2 boundVars boundSet) : rest)
-            deferred
-            predicate
-            subst
+        -- recurse by adding a new MatchItem
+        decompose ::
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            Simplifier (Either Text (MatchResult RewritingVariableName))
+        decompose term1 term2 =
+            patternMatch'
+                sideCondition
+                ((MatchItem term1 term2 boundVars boundSet) : rest)
+                deferred
+                predicate
+                subst
 
-    -- recusre by moving a MatchItem to the priority queue
-    defer ::
-        Simplifier (Either Text (MatchResult RewritingVariableName))
-    ~defer =
-        patternMatch'
-            sideCondition
-            rest
-            (MinQueue.insert (MatchItem pat subject boundVars boundSet) deferred)
-            predicate
-            subst
+        -- recusre by moving a MatchItem to the priority queue
+        defer ::
+            Simplifier (Either Text (MatchResult RewritingVariableName))
+        ~defer =
+            patternMatch'
+                sideCondition
+                rest
+                (MinQueue.insert (MatchItem pat subject boundVars boundSet) deferred)
+                predicate
+                subst
 
-    --- recurse by adding two new MatchItems
-    decomposeTwo ::
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        Simplifier (Either Text (MatchResult RewritingVariableName))
-    decomposeTwo term11 term21 term12 term22 =
-        patternMatch'
-            sideCondition
-            ((MatchItem term11 term21 boundVars boundSet) : (MatchItem term12 term22 boundVars boundSet) : rest)
-            deferred
-            predicate
-            subst
+        --- recurse by adding two new MatchItems
+        decomposeTwo ::
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            Simplifier (Either Text (MatchResult RewritingVariableName))
+        decomposeTwo term11 term21 term12 term22 =
+            patternMatch'
+                sideCondition
+                ((MatchItem term11 term21 boundVars boundSet) : (MatchItem term12 term22 boundVars boundSet) : rest)
+                deferred
+                predicate
+                subst
 
-    -- recurse by adding a list of MatchItems
-    decomposeList ::
-        [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
-        Simplifier (Either Text (MatchResult RewritingVariableName))
-    decomposeList l =
-        let l' = map (\(p, s) -> MatchItem p s boundVars boundSet) l
-         in patternMatch' sideCondition (l' ++ rest) deferred predicate subst
+        -- recurse by adding a list of MatchItems
+        decomposeList ::
+            [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
+            Simplifier (Either Text (MatchResult RewritingVariableName))
+        decomposeList l =
+            let l' = map (\(p, s) -> MatchItem p s boundVars boundSet) l
+             in patternMatch' sideCondition (l' ++ rest) deferred predicate subst
 
-    -- recurse on an \exists or \forall
-    decomposeBinder ::
-        SomeVariable RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        SomeVariable RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        Simplifier (Either Text (MatchResult RewritingVariableName))
-    decomposeBinder var1 term1 var2 term2 =
-        patternMatch'
-            sideCondition
-            ( (MatchItem term1 term2 ((var1, var2) : boundVars) (Set.insert (variableName var2) boundSet)) : rest
-            )
-            deferred
-            predicate
-            subst
+        -- recurse on an \exists or \forall
+        decomposeBinder ::
+            SomeVariable RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            SomeVariable RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            Simplifier (Either Text (MatchResult RewritingVariableName))
+        decomposeBinder var1 term1 var2 term2 =
+            patternMatch'
+                sideCondition
+                ( (MatchItem term1 term2 ((var1, var2) : boundVars) (Set.insert (variableName var2) boundSet)) : rest
+                )
+                deferred
+                predicate
+                subst
 
-    -- recurse with a specified result from the overload simplifier
-    decomposeOverload (Overloading.Resolution (Simple (Pair term1 term2))) = decompose term1 term2
-    decomposeOverload _ = failMatch "unsupported overload case in matching"
+        -- recurse with a specified result from the overload simplifier
+        decomposeOverload (Overloading.Resolution (Simple (Pair term1 term2))) = decompose term1 term2
+        decomposeOverload _ = failMatch "unsupported overload case in matching"
 
-    -- returns true if a variable is not bound by a binder
-    isFree ::
-        SomeVariable RewritingVariableName ->
-        Bool
-    isFree var = not $ any ((== var) . fst) boundVars
+        -- returns true if a variable is not bound by a binder
+        isFree ::
+            SomeVariable RewritingVariableName ->
+            Bool
+        isFree var = not $ any ((== var) . fst) boundVars
 
-    -- returns true if two variables are the same bound variable
-    isBoundToSameAs var1 var2 =
-        case find ((== var1) . fst) boundVars of
-            Nothing -> undefined
-            Just (_, bound) -> var2 == bound
+        -- returns true if two variables are the same bound variable
+        isBoundToSameAs var1 var2 =
+            case find ((== var1) . fst) boundVars of
+                Nothing -> undefined
+                Just (_, bound) -> var2 == bound
 
 -- fail pattern matching with an error message
 failMatch ::
@@ -642,9 +645,9 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
     , isNothing (lookupSymbolicKeyOfAc key1 normalized2) =
         -- bind element1 <- concElem2, deal with the identical parts
         let concElem2' = wrapElement $ Bifunctor.first (from @Key) concElem2
-         in decomposeList $
-                unwrapElementToTermLike element1 concElem2'
-                    <> unwrapValues (concrete12 <> abstractMerge)
+         in decomposeList
+                $ unwrapElementToTermLike element1 concElem2'
+                <> unwrapValues (concrete12 <> abstractMerge)
     -- Case for when all symbolic elements in normalized1 appear in normalized2:
     | [] <- excessAbstract1 =
         do
@@ -687,8 +690,8 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
             -- If K in_keys(normalized2)
             Just value2 ->
                 let normalized2' =
-                        wrapTermLike $
-                            removeSymbolicKeyOfAc key1 normalized2
+                        wrapTermLike
+                            $ removeSymbolicKeyOfAc key1 normalized2
                  in decomposeList $ (frame1, normalized2') : unwrapValues [(value1, value2)]
             Nothing ->
                 case (headMay . HashMap.toList $ concrete2, headMay abstract2) of
@@ -701,8 +704,8 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
                                     & wrapElement
                             (key2, _) = concreteElement2
                             normalized2' =
-                                wrapTermLike $
-                                    removeConcreteKeyOfAc key2 normalized2
+                                wrapTermLike
+                                    $ removeConcreteKeyOfAc key2 normalized2
                          in decomposeList $ (frame1, normalized2') : unwrapElementToTermLike element1 liftedConcreteElement2
                     -- Select first symbolic element of normalized2, symbolic2
                     -- Match K |-> V with symbolic2
@@ -710,75 +713,75 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
                     (_, Just abstractElement2) ->
                         let (key2, _) = unwrapElement abstractElement2
                             normalized2' =
-                                wrapTermLike $
-                                    removeSymbolicKeyOfAc key2 normalized2
+                                wrapTermLike
+                                    $ removeSymbolicKeyOfAc key2 normalized2
                          in decomposeList $ (frame1, normalized2') : unwrapElementToTermLike element1 abstractElement2
                     _ -> failMatch "unimplemented ac collection case"
     -- Case for ACs which are structurally equal:
     | length excessAbstract1 == length excessAbstract2
     , length concrete1 == length concrete2
     , length opaque1 == length opaque2 =
-        decomposeList $
-            unwrapValues (abstractMerge ++ concrete12)
-                ++ unwrapElements (zip excessAbstract1 excessAbstract2)
-                ++ (zip opaque1ACs opaque2ACs)
+        decomposeList
+            $ unwrapValues (abstractMerge ++ concrete12)
+            ++ unwrapElements (zip excessAbstract1 excessAbstract2)
+            ++ (zip opaque1ACs opaque2ACs)
     | otherwise = failMatch "unimplemented ac collection case"
-  where
-    abstract1 = elementsWithVariables normalized1
-    concrete1 = concreteElements normalized1
-    opaque1 = opaque normalized1
-    opaque1ACs = wrapTermLike . toSingleOpaqueElem <$> opaque1
-    abstract2 = elementsWithVariables normalized2
-    concrete2 = concreteElements normalized2
-    opaque2 = opaque normalized2
-    opaque2ACs = wrapTermLike . toSingleOpaqueElem <$> opaque2
+    where
+        abstract1 = elementsWithVariables normalized1
+        concrete1 = concreteElements normalized1
+        opaque1 = opaque normalized1
+        opaque1ACs = wrapTermLike . toSingleOpaqueElem <$> opaque1
+        abstract2 = elementsWithVariables normalized2
+        concrete2 = concreteElements normalized2
+        opaque2 = opaque normalized2
+        opaque2ACs = wrapTermLike . toSingleOpaqueElem <$> opaque2
 
-    excessConcrete1 = HashMap.difference concrete1 concrete2
-    excessConcrete2 = HashMap.difference concrete2 concrete1
-    concrete12 = HashMap.elems $ HashMap.intersectionWith (,) concrete1 concrete2
+        excessConcrete1 = HashMap.difference concrete1 concrete2
+        excessConcrete2 = HashMap.difference concrete2 concrete1
+        concrete12 = HashMap.elems $ HashMap.intersectionWith (,) concrete1 concrete2
 
-    unwrapElements = concatMap $ uncurry unwrapElementToTermLike
+        unwrapElements = concatMap $ uncurry unwrapElementToTermLike
 
-    IntersectionDifference
-        { intersection = abstractMerge
-        , excessFirst = excessAbstract1
-        , excessSecond = excessAbstract2
-        } = abstractIntersectionMerge abstract1 abstract2
-
-    abstractIntersectionMerge ::
-        [Element normalized] ->
-        [Element normalized] ->
         IntersectionDifference
-            (Element normalized)
-            (Value normalized, Value normalized)
-    abstractIntersectionMerge first second =
-        keyBasedIntersectionDifference
-            elementMerger
-            (toMap first)
-            (toMap second)
-      where
-        toMap ::
+            { intersection = abstractMerge
+            , excessFirst = excessAbstract1
+            , excessSecond = excessAbstract2
+            } = abstractIntersectionMerge abstract1 abstract2
+
+        abstractIntersectionMerge ::
             [Element normalized] ->
-            Map (TermLike RewritingVariableName) (Element normalized)
-        toMap elements =
-            let elementMap =
-                    Map.fromList
-                        ( map
-                            (\value -> (elementKey value, value))
-                            elements
-                        )
-             in if length elementMap == length elements
-                    then elementMap
-                    else error "Invalid map: duplicated keys."
-        elementKey ::
-            Element normalized ->
-            TermLike RewritingVariableName
-        elementKey = fst . unwrapElement
-        elementMerger ::
-            Element normalized ->
-            Element normalized ->
-            (Value normalized, Value normalized)
-        elementMerger = (,) `on` (snd . unwrapElement)
+            [Element normalized] ->
+            IntersectionDifference
+                (Element normalized)
+                (Value normalized, Value normalized)
+        abstractIntersectionMerge first second =
+            keyBasedIntersectionDifference
+                elementMerger
+                (toMap first)
+                (toMap second)
+            where
+                toMap ::
+                    [Element normalized] ->
+                    Map (TermLike RewritingVariableName) (Element normalized)
+                toMap elements =
+                    let elementMap =
+                            Map.fromList
+                                ( map
+                                    (\value -> (elementKey value, value))
+                                    elements
+                                )
+                     in if length elementMap == length elements
+                            then elementMap
+                            else error "Invalid map: duplicated keys."
+                elementKey ::
+                    Element normalized ->
+                    TermLike RewritingVariableName
+                elementKey = fst . unwrapElement
+                elementMerger ::
+                    Element normalized ->
+                    Element normalized ->
+                    (Value normalized, Value normalized)
+                elementMerger = (,) `on` (snd . unwrapElement)
 
 data IntersectionDifference a b = IntersectionDifference
     { intersection :: ![b]
@@ -807,23 +810,23 @@ keyBasedIntersectionDifference merger firsts seconds =
         helper
         emptyIntersectionDifference
         (Map.elems $ Align.align firsts seconds)
-  where
-    helper ::
-        IntersectionDifference a b ->
-        These a a ->
-        IntersectionDifference a b
-    helper
-        result@IntersectionDifference{excessFirst}
-        (This first) =
-            result{excessFirst = first : excessFirst}
-    helper
-        result@IntersectionDifference{excessSecond}
-        (That second) =
-            result{excessSecond = second : excessSecond}
-    helper
-        result@IntersectionDifference{intersection}
-        (These first second) =
-            result{intersection = merger first second : intersection}
+    where
+        helper ::
+            IntersectionDifference a b ->
+            These a a ->
+            IntersectionDifference a b
+        helper
+            result@IntersectionDifference{excessFirst}
+            (This first) =
+                result{excessFirst = first : excessFirst}
+        helper
+            result@IntersectionDifference{excessSecond}
+            (That second) =
+                result{excessSecond = second : excessSecond}
+        helper
+            result@IntersectionDifference{intersection}
+            (These first second) =
+                result{intersection = merger first second : intersection}
 
 -- | Renormalize builtin types after substitution.
 renormalizeBuiltins ::

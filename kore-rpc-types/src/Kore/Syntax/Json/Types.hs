@@ -230,10 +230,10 @@ codecOptions =
         , tagSingleConstructors = True
         , rejectUnknownFields = True
         }
-  where
-    constructorTagModifier = \case
-        'K' : 'J' : rest -> rest
-        other -> other
+    where
+        constructorTagModifier = \case
+            'K' : 'J' : rest -> rest
+            other -> other
 
 ----------------------------------------
 -- Identifiers and lexical checks
@@ -296,28 +296,28 @@ lexicalCheck p =
         KJRightAssoc{symbol = Id n} ->
             reportErrors n "left-assoc symbol" checkSymbolName
         _ -> pure p
-  where
-    reportErrors :: Text -> String -> (Text -> [String]) -> Json.Parser KorePattern
-    reportErrors text kind check
-        | null errors = pure p
-        | otherwise =
-            fail . unwords $
-                [ "Lexical"
-                , if length errors == 1 then "error" else "errors"
-                , "in"
-                , kind
-                , ":"
-                , T.unpack text
+    where
+        reportErrors :: Text -> String -> (Text -> [String]) -> Json.Parser KorePattern
+        reportErrors text kind check
+            | null errors = pure p
+            | otherwise =
+                fail . unwords $
+                    [ "Lexical"
+                    , if length errors == 1 then "error" else "errors"
+                    , "in"
+                    , kind
+                    , ":"
+                    , T.unpack text
+                    ]
+                        <> map ("* " <>) errors
+            where
+                errors = check text
+        checkLatin1Range :: Text -> [String]
+        checkLatin1Range txt =
+            let illegal = T.filter (> '\255') txt
+             in [ "Found non-latin1 characters: " <> show illegal
+                | not (T.null illegal)
                 ]
-                    <> map ("* " <>) errors
-      where
-        errors = check text
-    checkLatin1Range :: Text -> [String]
-    checkLatin1Range txt =
-        let illegal = T.filter (> '\255') txt
-         in [ "Found non-latin1 characters: " <> show illegal
-            | not (T.null illegal)
-            ]
 
 {- | Basic identifiers start with letters and may contain letters,
  digits, - or '. Set variables start with '@' followed by a basic
@@ -332,9 +332,9 @@ checkIdChars name
             ++ [ "Contains illegal characters: " <> show (nub $ T.unpack illegalChars)
                | not $ T.null illegalChars
                ]
-  where
-    ~first = T.head name
-    ~illegalChars = T.filter (not . isIdChar) $ T.tail name
+    where
+        ~first = T.head name
+        ~illegalChars = T.filter (not . isIdChar) $ T.tail name
 
 isIdChar :: Char -> Bool
 isIdChar c = isAlpha c || isDigit c || c `elem` ['-', '\'']
@@ -353,8 +353,8 @@ checkSymbolName name
     | Nothing <- mbParts = ["Empty"]
     | Just ('\\', rest) <- mbParts = checkIdChars rest
     | otherwise = checkIdChars name
-  where
-    mbParts = T.uncons name
+    where
+        mbParts = T.uncons name
 
 ------------------------------------------------------------
 data Sort

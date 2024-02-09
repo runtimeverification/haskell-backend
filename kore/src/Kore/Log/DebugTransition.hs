@@ -57,8 +57,8 @@ instance Pretty DebugTransition where
 
 instance Pretty AfterTransition where
     pretty AfterTransition{resultState, transition, appliedRules} =
-        Pretty.vsep $
-            concat
+        Pretty.vsep
+            $ concat
                 [
                     [ "Applied the following transition:"
                     , Pretty.indent 4 (pretty transition)
@@ -69,20 +69,20 @@ instance Pretty AfterTransition where
                     , Pretty.indent 4 (maybe "Terminal state." pretty resultState)
                     ]
                 ]
-      where
-        shouldDisplayRules = case transition of
-            ApplyAxioms -> True
-            ApplyClaims -> True
-            _ -> False
-        prettyRules
-            -- match behavior of DebugAppliedRewriteRules
-            | shouldDisplayRules = case appliedRules of
-                [] -> ["No rules were applied."]
-                rules ->
-                    [ "The rules at following locations were applied:"
-                    , Pretty.indent 4 $ Pretty.vsep $ fmap pretty rules
-                    ]
-            | otherwise = []
+        where
+            shouldDisplayRules = case transition of
+                ApplyAxioms -> True
+                ApplyClaims -> True
+                _ -> False
+            prettyRules
+                -- match behavior of DebugAppliedRewriteRules
+                | shouldDisplayRules = case appliedRules of
+                    [] -> ["No rules were applied."]
+                    rules ->
+                        [ "The rules at following locations were applied:"
+                        , Pretty.indent 4 $ Pretty.vsep $ fmap pretty rules
+                        ]
+                | otherwise = []
 
 instance Pretty BeforeTransition where
     pretty BeforeTransition{proofState, transition} =
@@ -100,12 +100,12 @@ instance Entry DebugTransition where
         (DebugAfterTransition AfterTransition{transition, appliedRules}) =
             transitionHeader
                 <> Pretty.hsep (pretty <$> appliedRules)
-          where
-            transitionHeader =
-                "after  "
-                    <> case appliedRules of
-                        [] -> pretty transition
-                        _otherwise -> pretty transition <> ": "
+            where
+                transitionHeader =
+                    "after  "
+                        <> case appliedRules of
+                            [] -> pretty transition
+                            _otherwise -> pretty transition <> ": "
     oneLineDoc
         (DebugBeforeTransition BeforeTransition{transition}) =
             "before " <> pretty transition
@@ -117,8 +117,8 @@ debugBeforeTransition ::
     log ()
 debugBeforeTransition proofState transition =
     logEntry $ DebugBeforeTransition before
-  where
-    before = BeforeTransition{proofState, transition}
+    where
+        before = BeforeTransition{proofState, transition}
 
 debugAfterTransition ::
     MonadLog log =>
@@ -129,14 +129,14 @@ debugAfterTransition ::
     log ()
 debugAfterTransition resultState transition rules =
     logEntry $ DebugAfterTransition after
-  where
-    appliedRules = map from rules
-    after =
-        AfterTransition
-            { resultState = Just resultState
-            , transition
-            , appliedRules
-            }
+    where
+        appliedRules = map from rules
+        after =
+            AfterTransition
+                { resultState = Just resultState
+                , transition
+                , appliedRules
+                }
 
 debugFinalTransition ::
     MonadLog log =>
@@ -144,10 +144,10 @@ debugFinalTransition ::
     log ()
 debugFinalTransition transition =
     logEntry $ DebugAfterTransition after
-  where
-    after =
-        AfterTransition
-            { resultState = Nothing
-            , transition
-            , appliedRules = []
-            }
+    where
+        after =
+            AfterTransition
+                { resultState = Nothing
+                , transition
+                , appliedRules = []
+                }

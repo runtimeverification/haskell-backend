@@ -71,30 +71,31 @@ simplifyTopConfigurationDefined configuration =
         (return OrPattern.bottom)
         (worker definedConfiguration)
         sideCondition
-  where
-    worker patt condition =
-        makeEvaluate condition patt
-            >>= return . removeTopExists
+    where
+        worker patt condition =
+            makeEvaluate condition patt
+                >>= return
+                . removeTopExists
 
-    term = Conditional.term configuration
-    sideCondition = SideCondition.assumeDefined term
-    definedConfiguration =
-        makeCeilPredicate term
-            & from @_ @(Condition _)
-            & Pattern.andCondition configuration
+        term = Conditional.term configuration
+        sideCondition = SideCondition.assumeDefined term
+        definedConfiguration =
+            makeCeilPredicate term
+                & from @_ @(Condition _)
+                & Pattern.andCondition configuration
 
 -- | Removes all existential quantifiers at the top of every 'Pattern''s 'term'.
 removeTopExists ::
     OrPattern RewritingVariableName ->
     OrPattern RewritingVariableName
 removeTopExists = OrPattern.map removeTopExistsWorker
-  where
-    removeTopExistsWorker ::
-        Pattern RewritingVariableName ->
-        Pattern RewritingVariableName
-    removeTopExistsWorker p@Conditional{term = Exists_ _ _ quantified} =
-        removeTopExistsWorker p{term = quantified}
-    removeTopExistsWorker p = p
+    where
+        removeTopExistsWorker ::
+            Pattern RewritingVariableName ->
+            Pattern RewritingVariableName
+        removeTopExistsWorker p@Conditional{term = Exists_ _ _ quantified} =
+            removeTopExistsWorker p{term = quantified}
+        removeTopExistsWorker p = p
 
 -- | Simplifies an 'Pattern', returning an 'OrPattern'.
 simplify ::
@@ -113,29 +114,29 @@ makeEvaluate ::
     Simplifier (OrPattern RewritingVariableName)
 makeEvaluate sideCondition =
     loop . OrPattern.fromPattern
-  where
-    loop input = do
-        output <-
-            OrPattern.traverse worker input
-                & fmap OrPattern.flatten
-        if input == output
-            then pure output
-            else loop output
+    where
+        loop input = do
+            output <-
+                OrPattern.traverse worker input
+                    & fmap OrPattern.flatten
+            if input == output
+                then pure output
+                else loop output
 
-    worker pattern' =
-        OrPattern.observeAllT $ do
-            withSimplifiedCondition <-
-                simplifyCondition sideCondition pattern'
-            let (term, simplifiedCondition) =
-                    Conditional.splitTerm withSimplifiedCondition
-                term' = substitute (toMap $ substitution simplifiedCondition) term
-                termSideCondition =
-                    SideCondition.addConditionWithReplacements
-                        simplifiedCondition
-                        sideCondition
-            simplifiedTerm <-
-                liftSimplifier (simplifyTerm termSideCondition term')
-                    >>= Logic.scatter
-            let simplifiedPattern =
-                    Conditional.andCondition simplifiedTerm simplifiedCondition
-            simplifyCondition sideCondition simplifiedPattern
+        worker pattern' =
+            OrPattern.observeAllT $ do
+                withSimplifiedCondition <-
+                    simplifyCondition sideCondition pattern'
+                let (term, simplifiedCondition) =
+                        Conditional.splitTerm withSimplifiedCondition
+                    term' = substitute (toMap $ substitution simplifiedCondition) term
+                    termSideCondition =
+                        SideCondition.addConditionWithReplacements
+                            simplifiedCondition
+                            sideCondition
+                simplifiedTerm <-
+                    liftSimplifier (simplifyTerm termSideCondition term')
+                        >>= Logic.scatter
+                let simplifiedPattern =
+                        Conditional.andCondition simplifiedTerm simplifiedCondition
+                simplifyCondition sideCondition simplifiedPattern

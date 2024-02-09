@@ -48,10 +48,10 @@ instance Synthetic Defined (Bottom sort) where
 instance Synthetic Defined (Application Internal.Symbol) where
     synthetic application =
         totalSymbol <> fold children
-      where
-        totalSymbol = Defined (Internal.isNotBottom symbol)
-        children = applicationChildren application
-        symbol = applicationSymbolOrAlias application
+        where
+            totalSymbol = Defined (Internal.isNotBottom symbol)
+            children = applicationChildren application
+            symbol = applicationSymbolOrAlias application
 
 -- TODO: calculate by looking at RHS of alias
 instance Synthetic Defined (Application (Internal.Alias patternType)) where

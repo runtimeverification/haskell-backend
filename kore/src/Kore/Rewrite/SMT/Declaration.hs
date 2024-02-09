@@ -38,11 +38,11 @@ import SMT (
 -- | Sends all symbols in the given declarations to the SMT.
 declareSymbols :: MonadSMT m => SmtDeclarations -> m ()
 declareSymbols = traverse_ (declareSymbol . symbolDeclaration) . symbols
-  where
-    declareSymbol = \case
-        SymbolDeclaredDirectly decl -> declareFun_ decl
-        SymbolBuiltin _ -> return ()
-        SymbolConstructor _ -> return ()
+    where
+        declareSymbol = \case
+            SymbolDeclaredDirectly decl -> declareFun_ decl
+            SymbolBuiltin _ -> return ()
+            SymbolConstructor _ -> return ()
 
 -- | Sends all sorts in the given declarations to the SMT.
 declareSorts :: MonadSMT m => SmtDeclarations -> m ()
@@ -53,11 +53,11 @@ declareSorts Declarations{sorts} = do
                 & partitionEithers
     traverse_ declareSort sortDecls
     declareDatatypes dataTypeDecls
-  where
-    eitherDecl = \case
-        SortDeclarationSort decl -> Just $ Left decl
-        SortDeclarationDataType decl -> Just $ Right decl
-        SortDeclaredIndirectly _ -> Nothing
+    where
+        eitherDecl = \case
+            SortDeclarationSort decl -> Just $ Left decl
+            SortDeclarationDataType decl -> Just $ Right decl
+            SortDeclaredIndirectly _ -> Nothing
 
 -- | Sends all given declarations to the SMT
 declareSortsSymbols :: MonadSMT m => SmtDeclarations -> m ()

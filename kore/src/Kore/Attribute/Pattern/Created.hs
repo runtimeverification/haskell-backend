@@ -48,15 +48,15 @@ instance Diff Created where
 instance Pretty Created where
     pretty =
         maybe "" go . getCallStackHead
-      where
-        go (name, srcLoc) =
-            Pretty.hsep ["/* Created:", qualifiedName, "*/"]
-          where
-            qualifiedName =
-                Pretty.pretty srcLocModule
-                    <> Pretty.dot
-                    <> Pretty.pretty name
-            SrcLoc{srcLocModule} = srcLoc
+        where
+            go (name, srcLoc) =
+                Pretty.hsep ["/* Created:", qualifiedName, "*/"]
+                where
+                    qualifiedName =
+                        Pretty.pretty srcLocModule
+                            <> Pretty.dot
+                            <> Pretty.pretty name
+                    SrcLoc{srcLocModule} = srcLoc
 
 instance Functor pat => Synthetic Created pat where
     synthetic = const (Created Nothing)

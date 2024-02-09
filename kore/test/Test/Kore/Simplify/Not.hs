@@ -43,54 +43,54 @@ test_simplifyEvaluated =
     , [termXAndY] `becomes_` [termNotX, termNotY]
     , [termNotXAndY] `becomes_` [termX, termNotY]
     ]
-  where
-    becomes_ ::
-        HasCallStack =>
-        [Pattern.Pattern RewritingVariableName] ->
-        [Pattern.Pattern RewritingVariableName] ->
-        TestTree
-    becomes_ originals expecteds =
-        testCase "becomes" $ do
-            actual <- simplifyEvaluated original
-            let actual' = MultiOr.map (Pattern.coerceSort Mock.testSort) actual
-            assertBool (message actual) (expected == actual')
-      where
-        original =
-            OrPattern.fromPatterns
-                (Pattern.coerceSort Mock.testSort <$> originals)
-        expected =
-            OrPattern.fromPatterns
-                (Pattern.coerceSort Mock.testSort <$> expecteds)
-        message actual =
-            (show . Pretty.vsep)
-                [ "expected simplification of:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> originals
-                , "would give:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> expecteds
-                , "but got:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
-                ]
-          where
-            actuals = toList actual
-    patternBecomes ::
-        HasCallStack =>
-        Pattern.Pattern RewritingVariableName ->
-        [Pattern.Pattern RewritingVariableName] ->
-        TestTree
-    patternBecomes original expecteds =
-        testCase "patternBecomes" $ do
-            let actuals = toList $ Not.makeEvaluate original
-            assertEqual (message actuals) expecteds actuals
-      where
-        message actuals =
-            (show . Pretty.vsep)
-                [ "expected simplification of:"
-                , Pretty.indent 4 $ unparse original
-                , "would give:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> expecteds
-                , "but got:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
-                ]
+    where
+        becomes_ ::
+            HasCallStack =>
+            [Pattern.Pattern RewritingVariableName] ->
+            [Pattern.Pattern RewritingVariableName] ->
+            TestTree
+        becomes_ originals expecteds =
+            testCase "becomes" $ do
+                actual <- simplifyEvaluated original
+                let actual' = MultiOr.map (Pattern.coerceSort Mock.testSort) actual
+                assertBool (message actual) (expected == actual')
+            where
+                original =
+                    OrPattern.fromPatterns
+                        (Pattern.coerceSort Mock.testSort <$> originals)
+                expected =
+                    OrPattern.fromPatterns
+                        (Pattern.coerceSort Mock.testSort <$> expecteds)
+                message actual =
+                    (show . Pretty.vsep)
+                        [ "expected simplification of:"
+                        , Pretty.indent 4 $ Pretty.vsep $ unparse <$> originals
+                        , "would give:"
+                        , Pretty.indent 4 $ Pretty.vsep $ unparse <$> expecteds
+                        , "but got:"
+                        , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
+                        ]
+                    where
+                        actuals = toList actual
+        patternBecomes ::
+            HasCallStack =>
+            Pattern.Pattern RewritingVariableName ->
+            [Pattern.Pattern RewritingVariableName] ->
+            TestTree
+        patternBecomes original expecteds =
+            testCase "patternBecomes" $ do
+                let actuals = toList $ Not.makeEvaluate original
+                assertEqual (message actuals) expecteds actuals
+            where
+                message actuals =
+                    (show . Pretty.vsep)
+                        [ "expected simplification of:"
+                        , Pretty.indent 4 $ unparse original
+                        , "would give:"
+                        , Pretty.indent 4 $ Pretty.vsep $ unparse <$> expecteds
+                        , "but got:"
+                        , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
+                        ]
 
 termX :: Pattern.Pattern RewritingVariableName
 termX = Pattern.fromTermLike (mkElemVar Mock.xConfig)
@@ -142,11 +142,11 @@ notEqualsXASorted =
 
 neitherXAB :: Pattern.Pattern RewritingVariableName
 neitherXAB =
-    Pattern.coerceSort Mock.testSort $
-        fromPredicate $
-            Predicate.makeAndPredicate
-                (Predicate.makeNotPredicate equalsXA_)
-                (Predicate.makeNotPredicate equalsXB_)
+    Pattern.coerceSort Mock.testSort
+        $ fromPredicate
+        $ Predicate.makeAndPredicate
+            (Predicate.makeNotPredicate equalsXA_)
+            (Predicate.makeNotPredicate equalsXB_)
 
 substXA :: Pattern.Pattern RewritingVariableName
 substXA = fromSubstitution $ Substitution.unsafeWrap [(inject Mock.xConfig, Mock.a)]
@@ -177,7 +177,7 @@ simplifyEvaluated ::
     IO (OrPattern.OrPattern RewritingVariableName)
 simplifyEvaluated =
     testRunSimplifier mockEnv . mkNotSimplified
-  where
-    mockEnv = Mock.env
-    mkNotSimplified notChild =
-        Not.simplify SideCondition.top Not{notSort = Mock.testSort, notChild}
+    where
+        mockEnv = Mock.env
+        mkNotSimplified notChild =
+            Not.simplify SideCondition.top Not{notSort = Mock.testSort, notChild}

@@ -69,5 +69,5 @@ instance Synthetic Sort (Iff Sort) where
     synthetic Iff{iffSort, iffFirst, iffSecond} =
         iffSort
             & seq (sameSort iffSort iffFirst)
-                . seq (sameSort iffSort iffSecond)
+            . seq (sameSort iffSort iffSecond)
     {-# INLINE synthetic #-}

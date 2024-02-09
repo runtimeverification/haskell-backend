@@ -254,8 +254,8 @@ insertRowGeneric ::
     SQL (Key table)
 insertRowGeneric =
     SOP.insertRowGenericAux (tableNameOf proxy) mkColumnImpls
-  where
-    proxy = Proxy @table
+    where
+        proxy = Proxy @table
 
 -- | @selectRowGeneric@ implements 'selectRow' for a 'SOP.Generic' record type.
 selectRowGeneric ::
@@ -266,8 +266,8 @@ selectRowGeneric ::
     SQL (Maybe (Key table))
 selectRowGeneric =
     SOP.selectRowGenericAux (tableNameOf proxy) mkColumnImpls
-  where
-    proxy = Proxy @table
+    where
+        proxy = Proxy @table
 
 {- | @(createTableIso iso)@ implements 'createTable'.
 
@@ -285,9 +285,9 @@ createTableIso ::
     SQL ()
 createTableIso _ proxy =
     SOP.createTableGenericAux tableName mkColumnImpls proxy'
-  where
-    proxy' = Proxy @inner
-    tableName = tableNameOf proxy
+    where
+        proxy' = Proxy @inner
+        tableName = tableNameOf proxy
 
 {- | @(insertRowIso iso)@ implements 'insertRow' for a table created with
 'createTableIso'.
@@ -301,11 +301,11 @@ insertRowIso ::
     SQL (Key outer)
 insertRowIso iso outer =
     fromInnerKey <$> SOP.insertRowGenericAux tableName mkColumnImpls inner
-  where
-    tableName = tableNameOf (Proxy @outer)
-    inner = Lens.view iso outer
-    fromInnerKey :: Key inner -> Key outer
-    fromInnerKey = fmap (Lens.review iso)
+    where
+        tableName = tableNameOf (Proxy @outer)
+        inner = Lens.view iso outer
+        fromInnerKey :: Key inner -> Key outer
+        fromInnerKey = fmap (Lens.review iso)
 
 {- | @(selectRowIso iso)@ implements 'selectRow' for a table created with
 'createTableIso'.
@@ -319,11 +319,11 @@ selectRowIso ::
     SQL (Maybe (Key outer))
 selectRowIso iso outer =
     fromInnerKeys <$> SOP.selectRowGenericAux tableName mkColumnImpls inner
-  where
-    tableName = tableNameOf (Proxy @outer)
-    inner = Lens.view iso outer
-    fromInnerKeys :: Maybe (Key inner) -> Maybe (Key outer)
-    fromInnerKeys = (fmap . fmap) (Lens.review iso)
+    where
+        tableName = tableNameOf (Proxy @outer)
+        inner = Lens.view iso outer
+        fromInnerKeys :: Maybe (Key inner) -> Maybe (Key outer)
+        fromInnerKeys = (fmap . fmap) (Lens.review iso)
 
 {- | @createTableUnwrapped@ implements 'createTable' for a @newtype@ wrapper.
 

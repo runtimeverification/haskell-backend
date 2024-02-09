@@ -197,20 +197,20 @@ symbolVerifiers =
 patternVerifierHook :: Builtin.PatternVerifierHook
 patternVerifierHook =
     Builtin.domainValuePatternVerifierHook sort patternVerifierWorker
-  where
-    patternVerifierWorker external =
-        case externalChild of
-            StringLiteral_ lit -> do
-                internalIntValue <- Builtin.parseString parse lit
-                (return . InternalIntF . Const)
-                    InternalInt
-                        { internalIntSort
-                        , internalIntValue
-                        }
-            _ -> Kore.Error.koreFail "Expected literal string"
-      where
-        DomainValue{domainValueSort = internalIntSort} = external
-        DomainValue{domainValueChild = externalChild} = external
+    where
+        patternVerifierWorker external =
+            case externalChild of
+                StringLiteral_ lit -> do
+                    internalIntValue <- Builtin.parseString parse lit
+                    (return . InternalIntF . Const)
+                        InternalInt
+                            { internalIntSort
+                            , internalIntValue
+                            }
+                _ -> Kore.Error.koreFail "Expected literal string"
+            where
+                DomainValue{domainValueSort = internalIntSort} = external
+                DomainValue{domainValueChild = externalChild} = external
 
 -- | get the value from a (possibly encoded) domain value
 extractIntDomainValue ::
@@ -226,8 +226,8 @@ extractIntDomainValue _ =
 -- | Parse a string literal as an integer.
 parse :: Builtin.Parser Integer
 parse = Parsec.signed noSpace Parsec.decimal
-  where
-    noSpace = pure ()
+    where
+        noSpace = pure ()
 
 {- | Abort function evaluation if the argument is not a Int domain value.
 
@@ -285,43 +285,43 @@ builtinFunctions key
     | key == powmodKey = Just $ partialTernaryOperator powmodKey powmod
     | key == log2Key = Just $ partialUnaryOperator log2Key log2
     | otherwise = Nothing
-  where
-    unaryOperator name op =
-        Builtin.unaryOperator
-            extractIntDomainValue
-            asPattern
-            name
-            op
-    binaryOperator name op =
-        Builtin.binaryOperator
-            extractIntDomainValue
-            asPattern
-            name
-            op
-    comparator name op =
-        Builtin.binaryOperator
-            extractIntDomainValue
-            Bool.asPattern
-            name
-            op
-    partialUnaryOperator name op =
-        Builtin.unaryOperator
-            extractIntDomainValue
-            asPartialPattern
-            name
-            op
-    partialBinaryOperator name op =
-        Builtin.binaryOperator
-            extractIntDomainValue
-            asPartialPattern
-            name
-            op
-    partialTernaryOperator name op =
-        Builtin.ternaryOperator
-            extractIntDomainValue
-            asPartialPattern
-            name
-            op
+    where
+        unaryOperator name op =
+            Builtin.unaryOperator
+                extractIntDomainValue
+                asPattern
+                name
+                op
+        binaryOperator name op =
+            Builtin.binaryOperator
+                extractIntDomainValue
+                asPattern
+                name
+                op
+        comparator name op =
+            Builtin.binaryOperator
+                extractIntDomainValue
+                Bool.asPattern
+                name
+                op
+        partialUnaryOperator name op =
+            Builtin.unaryOperator
+                extractIntDomainValue
+                asPartialPattern
+                name
+                op
+        partialBinaryOperator name op =
+            Builtin.binaryOperator
+                extractIntDomainValue
+                asPartialPattern
+                name
+                op
+        partialTernaryOperator name op =
+            Builtin.ternaryOperator
+                extractIntDomainValue
+                asPartialPattern
+                name
+                op
 
 tdiv
     , tmod
@@ -367,44 +367,45 @@ powmod b e m
     | m == 0 = Nothing
     | e < 0 && recipModInteger b m == 0 = Nothing
     | otherwise = Just (powModInteger b e m)
-  where
-    -- These functions are deprecated in integer-gmp. I'm not sure how to
-    -- adapt best to the new ghc-bignum regime.
-    recipModInteger :: Integer -> Integer -> Integer
-    recipModInteger x m' = case integerRecipMod# x (integerToNatural m') of
-        (# y | #) -> integerFromNatural y
-        (# | () #) -> 0
+    where
+        -- These functions are deprecated in integer-gmp. I'm not sure how to
+        -- adapt best to the new ghc-bignum regime.
+        recipModInteger :: Integer -> Integer -> Integer
+        recipModInteger x m' = case integerRecipMod# x (integerToNatural m') of
+            (# y | #) -> integerFromNatural y
+            (# | () #) -> 0
 
-    powModInteger :: Integer -> Integer -> Integer -> Integer
-    powModInteger b' e' m' = case integerPowMod# b' e' (integerToNatural m') of
-        (# r | #) -> integerFromNatural r
-        (# | () #) -> 0
+        powModInteger :: Integer -> Integer -> Integer -> Integer
+        powModInteger b' e' m' = case integerPowMod# b' e' (integerToNatural m') of
+            (# r | #) -> integerFromNatural r
+            (# | () #) -> 0
 
 evalEq :: Builtin.Function
 evalEq sideCondition resultSort arguments@[_intLeft, _intRight] =
     concrete <|> symbolicReflexivity
-  where
-    concrete = do
-        _intLeft <- expectBuiltinInt eqKey _intLeft
-        _intRight <- expectBuiltinInt eqKey _intRight
-        _intLeft == _intRight
-            & Bool.asPattern resultSort
-            & return
+    where
+        concrete = do
+            _intLeft <- expectBuiltinInt eqKey _intLeft
+            _intRight <- expectBuiltinInt eqKey _intRight
+            _intLeft
+                == _intRight
+                & Bool.asPattern resultSort
+                & return
 
-    symbolicReflexivity = do
-        Monad.guard (TermLike.isFunctionPattern _intLeft)
-        -- Do not need to check _intRight because we only return a result
-        -- when _intLeft and _intRight are equal.
-        if _intLeft == _intRight
-            then True & Bool.asPattern resultSort & returnPattern
-            else empty
+        symbolicReflexivity = do
+            Monad.guard (TermLike.isFunctionPattern _intLeft)
+            -- Do not need to check _intRight because we only return a result
+            -- when _intLeft and _intRight are equal.
+            if _intLeft == _intRight
+                then True & Bool.asPattern resultSort & returnPattern
+                else empty
 
-    mkCeilUnlessDefined termLike
-        | SideCondition.isDefined sideCondition termLike = Condition.top
-        | otherwise =
-            Condition.fromPredicate (makeCeilPredicate termLike)
-    returnPattern = return . flip Pattern.andCondition conditions
-    conditions = foldMap mkCeilUnlessDefined arguments
+        mkCeilUnlessDefined termLike
+            | SideCondition.isDefined sideCondition termLike = Condition.top
+            | otherwise =
+                Condition.fromPredicate (makeCeilPredicate termLike)
+        returnPattern = return . flip Pattern.andCondition conditions
+        conditions = foldMap mkCeilUnlessDefined arguments
 evalEq _ _ _ = Builtin.wrongArity eqKey
 
 data UnifyInt = UnifyInt
@@ -443,14 +444,14 @@ unifyInt ::
     unifier (Pattern RewritingVariableName)
 unifyInt unifyData =
     assert (on (==) internalIntSort int1 int2) worker
-  where
-    UnifyInt{int1, int2, term1, term2} = unifyData
-    worker :: unifier (Pattern RewritingVariableName)
-    worker
-        | on (==) internalIntValue int1 int2 =
-            return $ Pattern.fromTermLike term1
-        | otherwise =
-            debugUnifyBottomAndReturnBottom "distinct integers" term1 term2
+    where
+        UnifyInt{int1, int2, term1, term2} = unifyData
+        worker :: unifier (Pattern RewritingVariableName)
+        worker
+            | on (==) internalIntValue int1 int2 =
+                return $ Pattern.fromTermLike term1
+            | otherwise =
+                debugUnifyBottomAndReturnBottom "distinct integers" term1 term2
 
 {- | Matches
 @

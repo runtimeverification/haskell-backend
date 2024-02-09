@@ -114,8 +114,8 @@ instance Synthetic Sort (Equals Sort) where
     synthetic equals =
         equalsResultSort
             & seq (sameSort equalsOperandSort equalsFirst)
-                . seq (sameSort equalsOperandSort equalsSecond)
-      where
-        Equals{equalsOperandSort, equalsResultSort} = equals
-        Equals{equalsFirst, equalsSecond} = equals
+            . seq (sameSort equalsOperandSort equalsSecond)
+        where
+            Equals{equalsOperandSort, equalsResultSort} = equals
+            Equals{equalsFirst, equalsSecond} = equals
     {-# INLINE synthetic #-}

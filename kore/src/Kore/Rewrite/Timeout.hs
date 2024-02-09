@@ -62,8 +62,11 @@ updateStepMovingAverage ma stepTime =
         Just (StepMovingAverage movingAverage) -> do
             let w = 0.95
                 newMA =
-                    floor @Double $
-                        w * fromIntegral movingAverage + (1 - w) * fromIntegral stepTime
+                    floor @Double
+                        $ w
+                        * fromIntegral movingAverage
+                        + (1 - w)
+                        * fromIntegral stepTime
             liftIO . putMVar ma $ StepMovingAverage newMA
 
 getStepMovingAverage :: MonadIO m => MVar StepMovingAverage -> m Int
@@ -71,8 +74,8 @@ getStepMovingAverage sma =
     liftIO (tryReadMVar sma) >>= \case
         Nothing -> pure defaultDelay
         Just (StepMovingAverage ma) -> pure ma
-  where
-    defaultDelay = 3000000
+    where
+        defaultDelay = 3000000
 
 getTimeout :: TimeoutMode -> Int
 getTimeout (ManualTimeout t) = t
@@ -99,8 +102,9 @@ getTimeoutMode stepTimeout enableMA sma =
         (Just (StepTimeout st), EnableMovingAverage) -> do
             ma <- getStepMovingAverage sma
             let manualST = st * 1000
-            pure . Just $
-                if ma < manualST
+            pure
+                . Just
+                $ if ma < manualST
                     then MovingAverage ma
                     else ManualTimeout manualST
 

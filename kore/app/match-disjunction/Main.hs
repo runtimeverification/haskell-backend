@@ -111,12 +111,12 @@ parseKoreMatchDisjunctionOptions startTime =
         <*> parseMainModuleName
         <*> parseBugReportOption
         <*> parseKoreLogOptions exeName startTime
-  where
-    parseMainModuleName =
-        GlobalMain.parseModuleName
-            "MODULE"
-            "module"
-            "The name of the main module in the Kore definition."
+    where
+        parseMainModuleName =
+            GlobalMain.parseModuleName
+                "MODULE"
+                "module"
+                "The name of the main module in the Kore definition."
 
 parserInfoModifiers :: InfoMod options
 parserInfoModifiers =
@@ -143,9 +143,9 @@ mainWithOptions localOptions@LocalOptions{execOptions} = do
             koreMatchDisjunction localOptions
                 & runKoreLog tmpDir koreLogOptions
     exitWith exitCode
-  where
-    KoreMatchDisjunctionOptions{bugReportOption} = execOptions
-    KoreMatchDisjunctionOptions{koreLogOptions} = execOptions
+    where
+        KoreMatchDisjunctionOptions{bugReportOption} = execOptions
+        KoreMatchDisjunctionOptions{koreLogOptions} = execOptions
 
 koreMatchDisjunction :: LocalOptions KoreMatchDisjunctionOptions -> Main ExitCode
 koreMatchDisjunction LocalOptions{execOptions} = do
@@ -156,27 +156,27 @@ koreMatchDisjunction LocalOptions{execOptions} = do
     disjunctionPattern <-
         mainParseDisjunctionPattern mainModule disjunctionFileName
     final <-
-        clockSomethingIO "Executing" $
-            runNoSMT $
-                matchDisjunction
-                    mainModule
-                    matchPattern
-                    disjunctionPattern
-    lift $
-        renderResult
+        clockSomethingIO "Executing"
+            $ runNoSMT
+            $ matchDisjunction
+                mainModule
+                matchPattern
+                disjunctionPattern
+    lift
+        $ renderResult
             execOptions
             (unparse final)
     return ExitSuccess
-  where
-    mainParseMatchPattern metadataTools mainModule fileName =
-        mainParseSearchPattern metadataTools mainModule fileName
-            <&> mkRewritingPattern
-    KoreMatchDisjunctionOptions
-        { definitionFileName
-        , disjunctionFileName
-        , matchFileName
-        , mainModuleName
-        } = execOptions
+    where
+        mainParseMatchPattern metadataTools mainModule fileName =
+            mainParseSearchPattern metadataTools mainModule fileName
+                <&> mkRewritingPattern
+        KoreMatchDisjunctionOptions
+            { definitionFileName
+            , disjunctionFileName
+            , matchFileName
+            , mainModuleName
+            } = execOptions
 
 mainParseDisjunctionPattern ::
     VerifiedModule StepperAttributes ->
@@ -187,15 +187,15 @@ mainParseDisjunctionPattern indexedModule patternFileName = do
     purePattern <-
         mainPatternParseAndVerify metadataTools (indexedModuleSyntax indexedModule) patternFileName
     return $ parseDisjunction purePattern
-  where
-    parseDisjunction (Or_ _ term1 term2) =
-        parseDisjunction term1 <> parseDisjunction term2
-    parseDisjunction term =
-        let patt =
-                mkRewritingPattern
-                    . Pattern.fromTermLike
-                    $ term
-         in [patt]
+    where
+        parseDisjunction (Or_ _ term1 term2) =
+            parseDisjunction term1 <> parseDisjunction term2
+        parseDisjunction term =
+            let patt =
+                    mkRewritingPattern
+                        . Pattern.fromTermLike
+                        $ term
+             in [patt]
 
 renderResult :: KoreMatchDisjunctionOptions -> Doc ann -> IO ()
 renderResult KoreMatchDisjunctionOptions{outputFileName} doc =

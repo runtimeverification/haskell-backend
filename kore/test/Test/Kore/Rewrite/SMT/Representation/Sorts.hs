@@ -75,10 +75,10 @@ test_sortParsing =
         ]
     , testsForModule
         "Definition with simple sorts"
-        ( indexModule $
-            emptyModule "m"
-                `with` sortDeclaration "S"
-                `with` sortDeclaration "T"
+        ( indexModule
+            $ emptyModule "m"
+            `with` sortDeclaration "S"
+            `with` sortDeclaration "T"
         )
         [ inDeclarations (unresolvedSortMap "S")
         , inDeclarations (unresolvedSortMap "T")
@@ -87,12 +87,12 @@ test_sortParsing =
         ]
     , testsForModule
         "Definition with constructor-based sorts"
-        ( indexModule $
-            emptyModule "m"
-                `with` sortDeclaration "S"
-                `with` sortDeclaration "T"
-                `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
-                `with` constructorAxiom "S" [("C", [])]
+        ( indexModule
+            $ emptyModule "m"
+            `with` sortDeclaration "S"
+            `with` sortDeclaration "T"
+            `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
+            `with` constructorAxiom "S" [("C", [])]
         )
         [ inDeclarations
             ( unresolvedDataMap "S"
@@ -104,14 +104,14 @@ test_sortParsing =
         ]
     , testsForModule
         "Definition with complex constructor-based sorts"
-        ( indexModule $
-            emptyModule "m"
-                `with` sortDeclaration "S"
-                `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
-                `with` ( symbolDeclaration "D" "S" ["S"]
-                            `with` [functional, constructor]
-                       )
-                `with` constructorAxiom "S" [("C", []), ("D", ["S"])]
+        ( indexModule
+            $ emptyModule "m"
+            `with` sortDeclaration "S"
+            `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
+            `with` ( symbolDeclaration "D" "S" ["S"]
+                        `with` [functional, constructor]
+                   )
+            `with` constructorAxiom "S" [("C", []), ("D", ["S"])]
         )
         [ inDeclarations
             ( unresolvedDataMap "S"
@@ -124,9 +124,9 @@ test_sortParsing =
         ]
     , testsForModule
         "Definition with builtin sorts"
-        ( indexModule $
-            emptyModule "m"
-                `with` (hookedSortDeclaration "Integer" `with` hook Int.sort)
+        ( indexModule
+            $ emptyModule "m"
+            `with` (hookedSortDeclaration "Integer" `with` hook Int.sort)
         )
         [ inDeclarations
             ( unresolvedIndirectSortMap
@@ -136,15 +136,15 @@ test_sortParsing =
         , smtForSortIs (testId "Integer") "Int"
         ]
     ]
-  where
-    inDeclarations ::
-        ( HasCallStack
-        , Diff (AST.Sort sort symbol name)
-        ) =>
-        (Kore.Id, AST.Sort sort symbol name) ->
-        AST.Declarations sort symbol name ->
-        TestTree
-    inDeclarations = testContainedIn
+    where
+        inDeclarations ::
+            ( HasCallStack
+            , Diff (AST.Sort sort symbol name)
+            ) =>
+            (Kore.Id, AST.Sort sort symbol name) ->
+            AST.Declarations sort symbol name ->
+            TestTree
+        inDeclarations = testContainedIn
 
 testsForModule ::
     String ->
@@ -155,5 +155,5 @@ testsForModule ::
     TestTree
 testsForModule name =
     Helpers.testsForModule name build
-  where
-    build m = buildRepresentations m (Attribute.Constructors.indexBySort m)
+    where
+        build m = buildRepresentations m (Attribute.Constructors.indexBySort m)

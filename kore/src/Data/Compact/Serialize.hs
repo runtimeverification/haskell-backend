@@ -149,9 +149,9 @@ hHasCompactMarker handle = do
     marker <- BSL.hGet handle offset
     hSeek handle RelativeSeek (negate offset)
     pure $ compactMarker == marker
-  where
-    offset :: Integral a => a
-    offset = fromIntegral $ BSL.length compactMarker
+    where
+        offset :: Integral a => a
+        offset = fromIntegral $ BSL.length compactMarker
 
 ----------------------------------------
 
@@ -206,15 +206,15 @@ putList putElem xs = do
 
 getSerializedCompact :: B.Get (SerializedCompact a)
 getSerializedCompact = SerializedCompact <$> getList getBlock <*> getPtr
-  where
-    getBlock :: B.Get (Ptr a, Word)
-    getBlock = (,) <$> getPtr <*> B.get
+    where
+        getBlock :: B.Get (Ptr a, Word)
+        getBlock = (,) <$> getPtr <*> B.get
 
 putSerializedCompact :: SerializedCompact a -> B.Put
 putSerializedCompact (SerializedCompact a b) = putList putBlock a <> putPtr b
-  where
-    putBlock :: (Ptr a, Word) -> B.Put
-    putBlock (ptr, len) = putPtr ptr <> B.put len
+    where
+        putBlock :: (Ptr a, Word) -> B.Put
+        putBlock (ptr, len) = putPtr ptr <> B.put len
 
 hPutStorable :: forall a. Storable a => Handle -> a -> IO ()
 hPutStorable h a =

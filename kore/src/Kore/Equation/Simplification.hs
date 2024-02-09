@@ -45,8 +45,8 @@ simplifyExtractedEquations ::
 simplifyExtractedEquations = do
     results <- (traverse . traverse) simplifyEquation
     return $ collectResults results
-  where
-    collectResults = (fmap . fmap) (concatMap toList)
+    where
+        collectResults = (fmap . fmap) (concatMap toList)
 
 {- | Simplify an 'Equation' using only Matching Logic rules.
 
@@ -85,17 +85,17 @@ simplifyEquation equation@(Equation _ _ _ _ _ _ _) =
                 }
         & Logic.observeAllT
         & fmap MultiAnd.make
-  where
-    argument' =
-        fromMaybe Predicate.makeTruePredicate argument
-    antiLeft' =
-        fromMaybe Predicate.makeTruePredicate antiLeft
-    Equation
-        { requires
-        , argument
-        , antiLeft
-        , left
-        , right
-        , ensures
-        , attributes
-        } = equation
+    where
+        argument' =
+            fromMaybe Predicate.makeTruePredicate argument
+        antiLeft' =
+            fromMaybe Predicate.makeTruePredicate antiLeft
+        Equation
+            { requires
+            , argument
+            , antiLeft
+            , left
+            , right
+            , ensures
+            , attributes
+            } = equation

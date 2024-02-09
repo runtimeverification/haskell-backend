@@ -99,14 +99,14 @@ getHeadApplicationSorts ::
     ApplicationSorts
 getHeadApplicationSorts m patternHead =
     applyToHeadSentence sentenceSorts m patternHead
-  where
-    sentenceSorts ::
-        SentenceSymbolOrAlias sentence =>
-        [Sort] ->
-        sentence ->
-        ApplicationSorts
-    sentenceSorts sortParameters sentence =
-        assertRight $ symbolOrAliasSorts sortParameters sentence
+    where
+        sentenceSorts ::
+            SentenceSymbolOrAlias sentence =>
+            [Sort] ->
+            sentence ->
+            ApplicationSorts
+        sentenceSorts sortParameters sentence =
+            assertRight $ symbolOrAliasSorts sortParameters sentence
 
 getSortAttributes ::
     HasCallStack =>
@@ -182,8 +182,8 @@ resolveThingInternal
                     , Set.insert (indexedModuleName indexedModule) searchedModules
                     )
                     (indexedModuleImportsSyntax indexedModule)
-      where
-        things = mapExtractor indexedModule
+        where
+            things = mapExtractor indexedModule
 
 {- | 'resolveSymbol' looks up a symbol id in an 'IndexedModule',
 also searching in the imported modules.
@@ -257,15 +257,15 @@ resolveHook ::
     Sort ->
     Either (Error e) Id
 resolveHook indexedModule builtinName builtinSort =
-    resolveHookHandler builtinName $
-        Set.filter relevant $
-            resolveHooks indexedModule builtinName
-  where
-    relevant name =
-        involvesSort
-            (indexedModuleSyntax indexedModule)
-            builtinSort
-            (SymbolOrAlias name [])
+    resolveHookHandler builtinName
+        $ Set.filter relevant
+        $ resolveHooks indexedModule builtinName
+    where
+        relevant name =
+            involvesSort
+                (indexedModuleSyntax indexedModule)
+                builtinSort
+                (SymbolOrAlias name [])
 
 involvesSort ::
     IndexedModuleSyntax patternType declAtts ->
@@ -273,9 +273,9 @@ involvesSort ::
     SymbolOrAlias ->
     Bool
 involvesSort indexedModule builtinSort sym =
-    elem builtinSort $
-        (\s -> applicationSortsResult s : applicationSortsOperands s) $
-            getHeadApplicationSorts indexedModule sym
+    elem builtinSort
+        $ (\s -> applicationSortsResult s : applicationSortsOperands s)
+        $ getHeadApplicationSorts indexedModule sym
 
 resolveHookHandler ::
     Text ->
@@ -303,10 +303,10 @@ resolveHooks ::
     Set Id
 resolveHooks indexedModule builtinName =
     foldMap resolveHooks1 allHooks
-  where
-    allHooks = indexedModuleHooks <$> indexedModulesInScope indexedModule
-    resolveHooks1 hooks =
-        maybe Set.empty Set.fromList (Map.lookup builtinName hooks)
+    where
+        allHooks = indexedModuleHooks <$> indexedModulesInScope indexedModule
+        resolveHooks1 hooks =
+            maybe Set.empty Set.fromList (Map.lookup builtinName hooks)
 
 {- | Find a sort by name in an indexed module and its imports.
 
@@ -355,8 +355,8 @@ applyToResolution f m patternHead =
     case symbolResult <> aliasResult of
         Right result -> result
         Left _ -> error $ noHead patternHead
-  where
-    headName = symbolOrAliasConstructor patternHead
-    headParams = symbolOrAliasParams patternHead
-    symbolResult = f headParams <$> resolveSymbol m headName
-    aliasResult = f headParams <$> resolveAlias m headName
+    where
+        headName = symbolOrAliasConstructor patternHead
+        headParams = symbolOrAliasParams patternHead
+        symbolResult = f headParams <$> resolveSymbol m headName
+        aliasResult = f headParams <$> resolveAlias m headName

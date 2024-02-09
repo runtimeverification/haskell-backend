@@ -104,19 +104,19 @@ instance Pretty ErrorRewritesInstantiation where
             , configuration
             , errorCallStack
             } =
-            Pretty.vsep $
-                [ "While rewriting the configuration:"
-                , Pretty.indent 4 (unparse configuration)
-                , "Unable to instantiate semantic rule at "
-                    <> Pretty.pretty location
-                , "Unification did not find a solution for the variables:"
-                , (Pretty.indent 4 . Pretty.sep)
-                    (unparse <$> Set.toAscList missingVariables)
-                , "The unification solution was:"
-                , unparse (fmap getAxiomPattern solution)
-                , "Error! Please report this."
-                ]
-                    <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
+            Pretty.vsep
+                $ [ "While rewriting the configuration:"
+                  , Pretty.indent 4 (unparse configuration)
+                  , "Unable to instantiate semantic rule at "
+                        <> Pretty.pretty location
+                  , "Unification did not find a solution for the variables:"
+                  , (Pretty.indent 4 . Pretty.sep)
+                        (unparse <$> Set.toAscList missingVariables)
+                  , "The unification solution was:"
+                  , unparse (fmap getAxiomPattern solution)
+                  , "Error! Please report this."
+                  ]
+                <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
 
 {- | Check that the final substitution covers the applied rule appropriately.
 
@@ -160,15 +160,15 @@ checkSubstitutionCoverage configuration unifiedRule
                 , configuration
                 , errorCallStack = callStack
                 }
-  where
-    ~substitutionCoverageError =
-        SubstitutionCoverageError{solution, location, missingVariables}
+    where
+        ~substitutionCoverageError =
+            SubstitutionCoverageError{solution, location, missingVariables}
 
-    missingVariables = wouldNarrowWith unifiedRule
-    isCoveringSubstitution = Set.null missingVariables
-    location = from @_ @SourceLocation . term $ unifiedRule
-    {- This is lazy because it may call allPathRuleToTerm or onePathRuleToTerm,
-       which may end up calling illSorted
-    -}
-    ~solution = from @rule @(AxiomPattern _) <$> unifiedRule
-    isSymbolic = (not . isConstructorLike) (term configuration)
+        missingVariables = wouldNarrowWith unifiedRule
+        isCoveringSubstitution = Set.null missingVariables
+        location = from @_ @SourceLocation . term $ unifiedRule
+        {- This is lazy because it may call allPathRuleToTerm or onePathRuleToTerm,
+           which may end up calling illSorted
+        -}
+        ~solution = from @rule @(AxiomPattern _) <$> unifiedRule
+        isSymbolic = (not . isConstructorLike) (term configuration)

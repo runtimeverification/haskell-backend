@@ -49,8 +49,8 @@ translateSymbol ::
 translateSymbol tools Symbol{symbolConstructor, symbolParams} = do
     AST.Symbol{symbolData} <- Map.lookup symbolConstructor symbols
     AST.symbolSmtFromSortArgs symbolData sorts symbolParams
-  where
-    MetadataTools{smtData = AST.Declarations{sorts, symbols}} = tools
+    where
+        MetadataTools{smtData = AST.Declarations{sorts, symbols}} = tools
 
 translateSort ::
     SmtMetadataTools Attribute.Symbol ->
@@ -62,6 +62,6 @@ translateSort
         do
             AST.Sort{sortData} <- Map.lookup sortActualName sorts
             AST.sortSmtFromSortArgs sortData sorts sortActualSorts
-      where
-        MetadataTools{smtData = AST.Declarations{sorts}} = tools
+        where
+            MetadataTools{smtData = AST.Declarations{sorts}} = tools
 translateSort _ (SortVariableSort _) = Nothing

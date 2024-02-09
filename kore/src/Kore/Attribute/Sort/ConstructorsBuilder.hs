@@ -108,12 +108,12 @@ parseNoJunkPatternHelper
                 )
         ) =
         Just (sortActualName, fromConstructors, [])
-      where
-        -- TODO: Delete?
-        fromConstructors :: [ConstructorLike] -> Constructors
-        fromConstructors [] = Constructors Nothing
-        fromConstructors (constructor : constructors) =
-            Constructors (Just (constructor :| constructors))
+        where
+            -- TODO: Delete?
+            fromConstructors :: [ConstructorLike] -> Constructors
+            fromConstructors [] = Constructors Nothing
+            fromConstructors (constructor : constructors) =
+                Constructors (Just (constructor :| constructors))
 parseNoJunkPatternHelper (Or_ _ first second) = do
     -- Maybe
     (name, sortBuilder, constructors) <- parseNoJunkPatternHelper second
@@ -129,71 +129,71 @@ parseSMTConstructor patt =
                 checkOnlyQuantifiedVariablesOnce quantifiedVariables children
             buildConstructor symbol childVariables
         _ -> Nothing
-  where
-    (quantifiedVariables, parsedPatt) = parseExists patt
+    where
+        (quantifiedVariables, parsedPatt) = parseExists patt
 
-    parseExists ::
-        TermLike VariableName ->
-        (Set.Set (ElementVariable VariableName), TermLike VariableName)
-    parseExists (Exists_ _ variable child) =
-        (Set.insert variable childVars, unquantifiedPatt)
-      where
-        (childVars, unquantifiedPatt) = parseExists child
-    parseExists unquantifiedPatt = (Set.empty, unquantifiedPatt)
+        parseExists ::
+            TermLike VariableName ->
+            (Set.Set (ElementVariable VariableName), TermLike VariableName)
+        parseExists (Exists_ _ variable child) =
+            (Set.insert variable childVars, unquantifiedPatt)
+            where
+                (childVars, unquantifiedPatt) = parseExists child
+        parseExists unquantifiedPatt = (Set.empty, unquantifiedPatt)
 
-    checkOnlyQuantifiedVariablesOnce ::
-        Set.Set (ElementVariable VariableName) ->
-        [TermLike VariableName] ->
-        Maybe [ElementVariable VariableName]
-    checkOnlyQuantifiedVariablesOnce
-        allowedVars
-        []
-            | Set.null allowedVars = Just []
-            | otherwise = Nothing
-    checkOnlyQuantifiedVariablesOnce
-        allowedVars
-        (patt0 : patts) =
-            case patt0 of
-                ElemVar_ var ->
-                    if var `Set.member` allowedVars
-                        then do
-                            vars <-
-                                checkOnlyQuantifiedVariablesOnce
-                                    (Set.delete var allowedVars)
-                                    patts
-                            return (var : vars)
-                        else Nothing
-                _ -> Nothing
+        checkOnlyQuantifiedVariablesOnce ::
+            Set.Set (ElementVariable VariableName) ->
+            [TermLike VariableName] ->
+            Maybe [ElementVariable VariableName]
+        checkOnlyQuantifiedVariablesOnce
+            allowedVars
+            []
+                | Set.null allowedVars = Just []
+                | otherwise = Nothing
+        checkOnlyQuantifiedVariablesOnce
+            allowedVars
+            (patt0 : patts) =
+                case patt0 of
+                    ElemVar_ var ->
+                        if var `Set.member` allowedVars
+                            then do
+                                vars <-
+                                    checkOnlyQuantifiedVariablesOnce
+                                        (Set.delete var allowedVars)
+                                        patts
+                                return (var : vars)
+                            else Nothing
+                    _ -> Nothing
 
-    buildConstructor ::
-        Symbol ->
-        [ElementVariable VariableName] ->
-        Maybe ConstructorLike
-    buildConstructor
-        symbol@Symbol{symbolParams = []}
-        childVariables =
-            do
-                -- Maybe monad
-                sorts <- traverse parseVariableSort childVariables
-                return
-                    ( ConstructorLikeConstructor
-                        Constructor
-                            { name = symbol
-                            , sorts
-                            }
-                    )
+        buildConstructor ::
+            Symbol ->
+            [ElementVariable VariableName] ->
+            Maybe ConstructorLike
+        buildConstructor
+            symbol@Symbol{symbolParams = []}
+            childVariables =
+                do
+                    -- Maybe monad
+                    sorts <- traverse parseVariableSort childVariables
+                    return
+                        ( ConstructorLikeConstructor
+                            Constructor
+                                { name = symbol
+                                , sorts
+                                }
+                        )
 
-    -- TODO(virgil): Also handle parameterized constructors and inj.
-    buildConstructor _ _ = Nothing
+        -- TODO(virgil): Also handle parameterized constructors and inj.
+        buildConstructor _ _ = Nothing
 
-    parseVariableSort ::
-        ElementVariable VariableName ->
-        Maybe Sort
-    parseVariableSort
-        Variable
-            { variableSort =
-                sort@(SortActualSort SortActual{sortActualSorts = []})
-            } =
-            Just sort
-    -- TODO(virgil): Also handle parameterized sorts.
-    parseVariableSort _ = Nothing
+        parseVariableSort ::
+            ElementVariable VariableName ->
+            Maybe Sort
+        parseVariableSort
+            Variable
+                { variableSort =
+                    sort@(SortActualSort SortActual{sortActualSorts = []})
+                } =
+                Just sort
+        -- TODO(virgil): Also handle parameterized sorts.
+        parseVariableSort _ = Nothing

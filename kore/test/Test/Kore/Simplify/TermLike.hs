@@ -39,7 +39,8 @@ test_simplify_sideConditionReplacements :: [TestTree]
 test_simplify_sideConditionReplacements =
     [ testCase "Replaces top level term" $ do
         let sideCondition =
-                f a `equals` b
+                f a
+                    `equals` b
                     & SideCondition.fromPredicateWithReplacements
             term = f a
             expected = b & OrPattern.fromTermLike
@@ -50,7 +51,8 @@ test_simplify_sideConditionReplacements =
         assertEqual "" expected actual
     , testCase "Replaces nested term" $ do
         let sideCondition =
-                f a `equals` b
+                f a
+                    `equals` b
                     & SideCondition.fromPredicateWithReplacements
             term = g (f a)
             expected = g b & OrPattern.fromTermLike
@@ -61,7 +63,8 @@ test_simplify_sideConditionReplacements =
         assertEqual "" expected actual
     , testCase "Replaces terms in sequence" $ do
         let sideCondition =
-                (f a `equals` g b) `and'` (g b `equals` c)
+                (f a `equals` g b)
+                    `and'` (g b `equals` c)
                     & SideCondition.fromPredicateWithReplacements
             term = f a
             expected = c & OrPattern.fromTermLike
@@ -72,7 +75,8 @@ test_simplify_sideConditionReplacements =
         assertEqual "" expected actual
     , testCase "Replaces top level term after replacing subterm" $ do
         let sideCondition =
-                (f a `equals` b) `and'` (g b `equals` c)
+                (f a `equals` b)
+                    `and'` (g b `equals` c)
                     & SideCondition.fromPredicateWithReplacements
             term = g (f a)
             expected = c & OrPattern.fromTermLike
@@ -82,14 +86,14 @@ test_simplify_sideConditionReplacements =
                 term
         assertEqual "" expected actual
     ]
-  where
-    f = Mock.f
-    g = Mock.g
-    a = Mock.a
-    b = Mock.b
-    c = Mock.c
-    equals = makeEqualsPredicate
-    and' = makeAndPredicate
+    where
+        f = Mock.f
+        g = Mock.g
+        a = Mock.a
+        b = Mock.b
+        c = Mock.c
+        equals = makeEqualsPredicate
+        and' = makeAndPredicate
 
 simplifyWithSideCondition ::
     SideCondition VariableName ->
@@ -99,8 +103,8 @@ simplifyWithSideCondition
     (SideCondition.mapVariables (pure mkConfigVariable) -> sideCondition) =
         fmap (OrPattern.map getRewritingPattern)
             <$> testRunSimplifier Mock.env
-                . TermLike.simplify sideCondition
-                . mkRewritingTerm
+            . TermLike.simplify sideCondition
+            . mkRewritingTerm
 
 test_simplifyOnly :: [TestTree]
 test_simplifyOnly =
@@ -129,38 +133,38 @@ test_simplifyOnly =
         (mkElemVar x)
         (expectTerm $ mkElemVar x)
     ]
-  where
-    expectUnsimplified = Nothing
-    expectTerm termLike = Just (OrPattern.fromTermLike termLike)
+    where
+        expectUnsimplified = Nothing
+        expectTerm termLike = Just (OrPattern.fromTermLike termLike)
 
-    x = mkElementConfigVariable Mock.x
+        x = mkElementConfigVariable Mock.x
 
-    test ::
-        HasCallStack =>
-        TestName ->
-        TermLike RewritingVariableName ->
-        -- Expected output, if simplified.
-        Maybe (OrPattern RewritingVariableName) ->
-        TestTree
-    test testName input maybeExpect =
-        testCase testName $ do
-            let expect = fromMaybe (OrPattern.fromTermLike input) maybeExpect
-            actual <- simplify input
-            let message =
-                    (show . Pretty.vsep)
-                        [ "Expected:"
-                        , (Pretty.indent 4) (Pretty.pretty expect)
-                        , "Actually:"
-                        , (Pretty.indent 4) (Pretty.pretty actual)
-                        ]
-            assertEqual message expect actual
-            (assertBool "Expected simplified pattern")
-                (isNothing maybeExpect || OrPattern.isSimplified repr actual)
+        test ::
+            HasCallStack =>
+            TestName ->
+            TermLike RewritingVariableName ->
+            -- Expected output, if simplified.
+            Maybe (OrPattern RewritingVariableName) ->
+            TestTree
+        test testName input maybeExpect =
+            testCase testName $ do
+                let expect = fromMaybe (OrPattern.fromTermLike input) maybeExpect
+                actual <- simplify input
+                let message =
+                        (show . Pretty.vsep)
+                            [ "Expected:"
+                            , (Pretty.indent 4) (Pretty.pretty expect)
+                            , "Actually:"
+                            , (Pretty.indent 4) (Pretty.pretty actual)
+                            ]
+                assertEqual message expect actual
+                (assertBool "Expected simplified pattern")
+                    (isNothing maybeExpect || OrPattern.isSimplified repr actual)
 
-    repr :: SideCondition.Representation
-    repr =
-        SideCondition.mkRepresentation
-            (SideCondition.top @RewritingVariableName)
+        repr :: SideCondition.Representation
+        repr =
+            SideCondition.mkRepresentation
+                (SideCondition.top @RewritingVariableName)
 
 simplify ::
     TermLike RewritingVariableName ->

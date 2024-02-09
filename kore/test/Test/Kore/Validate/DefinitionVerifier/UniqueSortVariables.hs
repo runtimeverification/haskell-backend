@@ -488,6 +488,6 @@ test_uniqueSortVariables =
             ]
         )
     ]
-  where
-    topS = externalize $ mkTop $ simpleSort $ SortName "s"
-    topS1 = externalize $ mkTop $ simpleSort $ SortName "s1"
+    where
+        topS = externalize $ mkTop $ simpleSort $ SortName "s"
+        topS1 = externalize $ mkTop $ simpleSort $ SortName "s1"

@@ -47,6 +47,6 @@ normalizeInternalMap sort map' =
                 -- Otherwise, inject the InternalMap into TermLike.
                 & fromMaybe (mkInternalMap normalizedMap)
         _ -> mkBottom sort
-  where
-    getSingleOpaque = retractSingleOpaqueElem . getNormalizedAc
-    getNormalizedAc = getNormalizedMap . builtinAcChild
+    where
+        getSingleOpaque = retractSingleOpaqueElem . getNormalizedAc
+        getNormalizedAc = getNormalizedMap . builtinAcChild

@@ -66,8 +66,8 @@ printError e@(Error _ _) =
         , (Pretty.indent 2 . Pretty.vsep) (printContext <$> errorContext e)
         , (Pretty.indent 4 . Pretty.pretty) (errorError e)
         ]
-  where
-    printContext ctx = Pretty.pretty ctx <> Pretty.colon
+    where
+        printContext ctx = Pretty.pretty ctx <> Pretty.colon
 
 -- | 'koreError' constructs an error object with an empty context.
 koreError :: String -> Error a
@@ -107,9 +107,9 @@ action fails.
 withContext :: MonadError (Error a) m => String -> m result -> m result
 withContext ~localContext action =
     catchError action inContext
-  where
-    inContext err@Error{errorContext} =
-        throwError err{errorContext = localContext : errorContext}
+    where
+        inContext err@Error{errorContext} =
+            throwError err{errorContext = localContext : errorContext}
 
 {- | 'withContext' prepends the given text to the context whenever the given
 action fails.

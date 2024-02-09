@@ -48,8 +48,8 @@ instance Pretty DebugEvaluateCondition where
                         , Pretty.indent 4 (pretty sideCondition)
                         ]
             )
-      where
-        predicate :| sideConditions = predicates
+        where
+            predicate :| sideConditions = predicates
     pretty (DebugEvaluateConditionResult result) =
         case result of
             Unsat -> "solver returned unsatisfiable"

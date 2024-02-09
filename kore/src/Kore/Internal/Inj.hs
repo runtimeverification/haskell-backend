@@ -76,8 +76,8 @@ instance Hashable a => Hashable (Inj a) where
             `hashWithSalt` injFrom
             `hashWithSalt` injTo
             `hashWithSalt` injChild
-      where
-        Inj{injConstructor, injFrom, injTo, injChild} = inj
+        where
+            Inj{injConstructor, injFrom, injTo, injChild} = inj
 
 instance Unparse a => Unparse (Inj a) where
     unparse inj = Pretty.hsep ["/* Inj: */", unparse (toApplication inj)]
@@ -104,8 +104,8 @@ toSymbol inj@(Inj _ _ _ _ _) =
         , symbolSorts = ApplicationSorts [injFrom] injTo
         , symbolAttributes = injAttributes
         }
-  where
-    Inj{injConstructor, injFrom, injTo, injAttributes} = inj
+    where
+        Inj{injConstructor, injFrom, injTo, injAttributes} = inj
 
 toApplication :: Inj a -> Application Symbol a
 toApplication inj =

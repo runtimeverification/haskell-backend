@@ -66,45 +66,45 @@ test_extractClaim =
             (makeEqualsPredicate (mkElemVar Mock.x) (mkElemVar Mock.z))
         )
     ]
-  where
-    mkPattern term predicate =
-        Pattern.fromTermAndPredicate term predicate
-            & Pattern.mapVariables (pure mkRuleVariable)
-            & Pattern.syncSort
-    test name leftTerm requires existentials rightTerms ensures =
-        testCase name $ do
-            let rightTerm = foldr1 mkOr rightTerms
-                leftSort = termLikeSort leftTerm
-                rightSort = termLikeSort rightTerm
-                termLike =
-                    mkImplies
-                        (mkAnd (fromPredicate leftSort requires) leftTerm)
-                        ( applyModality
-                            WAF
-                            ( foldr
-                                mkExists
-                                (mkAnd (fromPredicate rightSort ensures) rightTerm)
-                                existentials
+    where
+        mkPattern term predicate =
+            Pattern.fromTermAndPredicate term predicate
+                & Pattern.mapVariables (pure mkRuleVariable)
+                & Pattern.syncSort
+        test name leftTerm requires existentials rightTerms ensures =
+            testCase name $ do
+                let rightTerm = foldr1 mkOr rightTerms
+                    leftSort = termLikeSort leftTerm
+                    rightSort = termLikeSort rightTerm
+                    termLike =
+                        mkImplies
+                            (mkAnd (fromPredicate leftSort requires) leftTerm)
+                            ( applyModality
+                                WAF
+                                ( foldr
+                                    mkExists
+                                    (mkAnd (fromPredicate rightSort ensures) rightTerm)
+                                    existentials
+                                )
                             )
-                        )
-                sentence =
-                    SentenceClaim
-                        SentenceAxiom
-                            { sentenceAxiomParameters = []
-                            , sentenceAxiomPattern = termLike
-                            , sentenceAxiomAttributes = mempty
-                            }
-                expect =
-                    (AllPath . AllPathClaim)
-                        ClaimPattern
-                            { left = mkPattern leftTerm requires
-                            , right =
-                                OrPattern.fromPatterns
-                                    (map (\term -> mkPattern term ensures) rightTerms)
-                            , existentials =
-                                mapElementVariable (pure mkRuleVariable)
-                                    <$> existentials
-                            , attributes = def
-                            }
-            actual <- expectJust $ extractClaim (def, sentence)
-            assertEqual "" expect actual
+                    sentence =
+                        SentenceClaim
+                            SentenceAxiom
+                                { sentenceAxiomParameters = []
+                                , sentenceAxiomPattern = termLike
+                                , sentenceAxiomAttributes = mempty
+                                }
+                    expect =
+                        (AllPath . AllPathClaim)
+                            ClaimPattern
+                                { left = mkPattern leftTerm requires
+                                , right =
+                                    OrPattern.fromPatterns
+                                        (map (\term -> mkPattern term ensures) rightTerms)
+                                , existentials =
+                                    mapElementVariable (pure mkRuleVariable)
+                                        <$> existentials
+                                , attributes = def
+                                }
+                actual <- expectJust $ extractClaim (def, sentence)
+                assertEqual "" expect actual

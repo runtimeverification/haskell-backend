@@ -69,17 +69,19 @@ testBinary symb impl =
         actual <-
             evaluateTermT
                 . mkApplySymbol symb
-                $ inj kSort . Test.Bool.asInternal <$> [a, b]
+                $ inj kSort
+                . Test.Bool.asInternal
+                <$> [a, b]
         (===) expect actual
-  where
-    name = expectHook symb
+    where
+        name = expectHook symb
 
 test_KEqual :: [TestTree]
 test_KEqual =
     [ testCaseWithoutSMT "dotk equals dotk" $ do
         let expect =
-                OrPattern.fromTermLike $
-                    Test.Bool.asInternal True
+                OrPattern.fromTermLike
+                    $ Test.Bool.asInternal True
             original = keqBool dotk dotk
         actual <- evaluateTerm original
         assertEqual' "" expect actual
@@ -179,10 +181,10 @@ test_KIte =
         assertEqual' "" expect actual
     , testCaseWithoutSMT "false" $ do
         let expect =
-                MultiOr.singleton $
-                    Pattern.fromTermLike $
-                        inj kSort $
-                            Test.Bool.asInternal True
+                MultiOr.singleton
+                    $ Pattern.fromTermLike
+                    $ inj kSort
+                    $ Test.Bool.asInternal True
             original =
                 kiteK
                     (Test.Bool.asInternal False)
@@ -236,13 +238,13 @@ runKEqualSimplification term1 term2 =
         & runMaybeT
         & evalEnvUnifierT
         & runSimplifierBranch testEnv
-  where
-    matched =
-        KEqual.matchUnifyKequalsEq term1 term2
-            <|> KEqual.matchUnifyKequalsEq term2 term1
-    unify (Just unifyData) =
-        Builtin.unifyEq
-            termUnification
-            unifyData
-            & lift
-    unify Nothing = empty
+    where
+        matched =
+            KEqual.matchUnifyKequalsEq term1 term2
+                <|> KEqual.matchUnifyKequalsEq term2 term1
+        unify (Just unifyData) =
+            Builtin.unifyEq
+                termUnification
+                unifyData
+                & lift
+        unify Nothing = empty

@@ -132,93 +132,93 @@ attemptEquation sideCondition termLike equation = do
     case result of
         Just attemptResult -> return (Left attemptResult)
         Nothing -> attemptEquationWorker
-  where
-    attemptEquationWorker =
-        whileDebugAttemptEquation' . runExceptT $ do
-            let Equation{left} = equationRenamed
-            (equation', predicate) <- matchAndApplyResults left
-            let Equation
-                    { requires
-                    , ensures
-                    , right
-                    , attributes = Attribute.Axiom{simplification}
-                    } = equation'
-                eqSrc = Equation.srcLoc equation'
-                onDecidePredicateUnknown = case simplification of
-                    Attribute.NotSimplification -> ErrorDecidePredicateUnknown $srcLoc eqSrc
-                    Attribute.IsSimplification _ -> WarnDecidePredicateUnknown $srcLoc eqSrc
-            checkRequires onDecidePredicateUnknown sideCondition predicate requires
-                & whileCheckRequires
-            return $ Pattern.withCondition right $ from @(Predicate _) ensures
+    where
+        attemptEquationWorker =
+            whileDebugAttemptEquation' . runExceptT $ do
+                let Equation{left} = equationRenamed
+                (equation', predicate) <- matchAndApplyResults left
+                let Equation
+                        { requires
+                        , ensures
+                        , right
+                        , attributes = Attribute.Axiom{simplification}
+                        } = equation'
+                    eqSrc = Equation.srcLoc equation'
+                    onDecidePredicateUnknown = case simplification of
+                        Attribute.NotSimplification -> ErrorDecidePredicateUnknown $srcLoc eqSrc
+                        Attribute.IsSimplification _ -> WarnDecidePredicateUnknown $srcLoc eqSrc
+                checkRequires onDecidePredicateUnknown sideCondition predicate requires
+                    & whileCheckRequires
+                return $ Pattern.withCondition right $ from @(Predicate _) ensures
 
-    equationRenamed = refreshVariables sideCondition termLike equation
-    matchError matchFailReason =
-        MatchError
-            { matchTerm = termLike
-            , matchEquation = equationRenamed
-            , matchFailReason
-            }
-    match term1 term2 =
-        patternMatch sideCondition term1 term2
-            & ExceptT
-            & withExceptT matchError
+        equationRenamed = refreshVariables sideCondition termLike equation
+        matchError matchFailReason =
+            MatchError
+                { matchTerm = termLike
+                , matchEquation = equationRenamed
+                , matchFailReason
+                }
+        match term1 term2 =
+            patternMatch sideCondition term1 term2
+                & ExceptT
+                & withExceptT matchError
 
-    matchAndApplyResults left' = do
-        matchResult <- match left' termLike & whileMatch
-        applyMatchResult equationRenamed matchResult
-            & whileApplyMatchResult
+        matchAndApplyResults left' = do
+            matchResult <- match left' termLike & whileMatch
+            applyMatchResult equationRenamed matchResult
+                & whileApplyMatchResult
 
-    whileDebugAttemptEquation' ::
-        Simplifier (AttemptEquationResult RewritingVariableName) ->
-        Simplifier (AttemptEquationResult RewritingVariableName)
-    whileDebugAttemptEquation' action =
-        whileDebugAttemptEquation termLike equationRenamed $ do
-            result <- action
-            cacheIfFailure result
-            debugAttemptEquationResult equation result
-            return result
+        whileDebugAttemptEquation' ::
+            Simplifier (AttemptEquationResult RewritingVariableName) ->
+            Simplifier (AttemptEquationResult RewritingVariableName)
+        whileDebugAttemptEquation' action =
+            whileDebugAttemptEquation termLike equationRenamed $ do
+                result <- action
+                cacheIfFailure result
+                debugAttemptEquationResult equation result
+                return result
 
-    cacheIfFailure result =
-        case result of
-            Left failure ->
-                addToCache failure
-            _ -> return ()
+        cacheIfFailure result =
+            case result of
+                Left failure ->
+                    addToCache failure
+                _ -> return ()
 
-    addToCache result = do
-        oldCache <- Simplifier.getCache
-        let newEntry =
-                Simplifier.EvaluationAttempt
-                    { cachedEquation = equation
-                    , cachedTerm = termLike
-                    }
-            newCache =
-                Simplifier.updateCache newEntry result oldCache
-        Simplifier.putCache newCache
+        addToCache result = do
+            oldCache <- Simplifier.getCache
+            let newEntry =
+                    Simplifier.EvaluationAttempt
+                        { cachedEquation = equation
+                        , cachedTerm = termLike
+                        }
+                newCache =
+                    Simplifier.updateCache newEntry result oldCache
+            Simplifier.putCache newCache
 
-    alreadyAttempted = do
-        cache <- Simplifier.getCache
-        let entry =
-                Simplifier.EvaluationAttempt
-                    { cachedEquation = equation
-                    , cachedTerm = termLike
-                    }
-        value <-
-            Simplifier.lookupCache entry cache
-                & (MaybeT . return)
-        checkWithSideCondition value
-      where
-        checkWithSideCondition value =
-            case value of
-                WhileMatch _ -> return value
-                WhileApplyMatchResult _ -> return value
-                WhileCheckRequires
-                    ( CheckRequiresError
-                            { sideCondition = oldSideCondition
-                            }
-                        ) ->
-                        if sideCondition == oldSideCondition
-                            then return value
-                            else empty
+        alreadyAttempted = do
+            cache <- Simplifier.getCache
+            let entry =
+                    Simplifier.EvaluationAttempt
+                        { cachedEquation = equation
+                        , cachedTerm = termLike
+                        }
+            value <-
+                Simplifier.lookupCache entry cache
+                    & (MaybeT . return)
+            checkWithSideCondition value
+            where
+                checkWithSideCondition value =
+                    case value of
+                        WhileMatch _ -> return value
+                        WhileApplyMatchResult _ -> return value
+                        WhileCheckRequires
+                            ( CheckRequiresError
+                                    { sideCondition = oldSideCondition
+                                    }
+                                ) ->
+                                if sideCondition == oldSideCondition
+                                    then return value
+                                    else empty
 
 {- | Simplify the argument of a function definition equation with the
  match substitution and the priority predicate. This will avoid
@@ -261,9 +261,9 @@ applyEquation _ term equation result = do
     let results = OrPattern.fromPattern result
     debugApplyEquation equation result
     doTracing <- liftSimplifier $ asks Simplifier.tracingEnabled
-    when doTracing $
-        modify $
-            second (|> SimplifierTrace term (Attribute.uniqueId $ attributes equation) result)
+    when doTracing
+        $ modify
+        $ second (|> SimplifierTrace term (Attribute.uniqueId $ attributes equation) result)
     pure results
 
 {- | Use a 'MatchResult' to instantiate an 'Equation'.
@@ -296,56 +296,56 @@ applyMatchResult equation matchResult@(predicate, substitution) = do
     let predicate' = substitute orientedSubstitution predicate
         equation' = substitute orientedSubstitution equation
     return (equation', predicate')
-  where
-    orientedSubstitution = Substitution.orientSubstitution occursInEquation substitution
+    where
+        orientedSubstitution = Substitution.orientSubstitution occursInEquation substitution
 
-    equationVariables = freeVariables equation
+        equationVariables = freeVariables equation
 
-    occursInEquation :: (SomeVariableName RewritingVariableName -> Bool)
-    occursInEquation = \someVariableName ->
-        Set.member someVariableName equationVariableNames
+        occursInEquation :: (SomeVariableName RewritingVariableName -> Bool)
+        occursInEquation = \someVariableName ->
+            Set.member someVariableName equationVariableNames
 
-    equationVariableNames =
-        Set.mapMonotonic variableName (FreeVariables.toSet equationVariables)
+        equationVariableNames =
+            Set.mapMonotonic variableName (FreeVariables.toSet equationVariables)
 
-    errors =
-        concatMap checkVariable (FreeVariables.toList equationVariables)
-            <> checkNotInEquation
+        errors =
+            concatMap checkVariable (FreeVariables.toList equationVariables)
+                <> checkNotInEquation
 
-    checkVariable Variable{variableName} =
-        case Map.lookup variableName orientedSubstitution of
-            Nothing -> [NotMatched variableName]
-            Just termLike ->
-                checkConcreteVariable variableName termLike
-                    <> checkSymbolicVariable variableName termLike
+        checkVariable Variable{variableName} =
+            case Map.lookup variableName orientedSubstitution of
+                Nothing -> [NotMatched variableName]
+                Just termLike ->
+                    checkConcreteVariable variableName termLike
+                        <> checkSymbolicVariable variableName termLike
 
-    checkConcreteVariable variable termLike
-        | Set.member variable concretes
-        , (not . TermLike.isConstructorLike) termLike =
-            [NotConcrete variable termLike]
-        | otherwise =
-            empty
+        checkConcreteVariable variable termLike
+            | Set.member variable concretes
+            , (not . TermLike.isConstructorLike) termLike =
+                [NotConcrete variable termLike]
+            | otherwise =
+                empty
 
-    checkSymbolicVariable variable termLike
-        | Set.member variable symbolics
-        , TermLike.isConstructorLike termLike =
-            [NotSymbolic variable termLike]
-        | otherwise =
-            empty
+        checkSymbolicVariable variable termLike
+            | Set.member variable symbolics
+            , TermLike.isConstructorLike termLike =
+                [NotSymbolic variable termLike]
+            | otherwise =
+                empty
 
-    checkNotInEquation =
-        NonMatchingSubstitution
-            <$> filter (not . occursInEquation) (Map.keys orientedSubstitution)
+        checkNotInEquation =
+            NonMatchingSubstitution
+                <$> filter (not . occursInEquation) (Map.keys orientedSubstitution)
 
-    Equation{attributes} = equation
-    concretes =
-        attributes
-            & Attribute.concrete
-            & from @_ @(Set _)
-    symbolics =
-        attributes
-            & Attribute.symbolic
-            & from @_ @(Set _)
+        Equation{attributes} = equation
+        concretes =
+            attributes
+                & Attribute.concrete
+                & from @_ @(Set _)
+        symbolics =
+            attributes
+                & Attribute.symbolic
+                & from @_ @(Set _)
 
 {- | Check that the requires from matching and the 'Equation' hold.
 
@@ -368,9 +368,11 @@ checkRequires onUnknown sideCondition predicate requires =
             condition = from @(Predicate _) (makeNotPredicate requires')
         return condition
             -- First try to refute 'condition' without user-defined axioms:
-            >>= withoutAxioms . simplifyCondition
+            >>= withoutAxioms
+            . simplifyCondition
             -- Next try to refute 'condition' including user-defined axioms:
-            >>= withAxioms . simplifyCondition
+            >>= withAxioms
+            . simplifyCondition
             -- Finally, try to refute the simplified 'condition' using the
             -- external solver:
             >>= filterBranch
@@ -379,37 +381,37 @@ checkRequires onUnknown sideCondition predicate requires =
         -- requires) is valid; otherwise, the required pre-conditions are not met
         -- and the rule will not be applied.
         & (OrCondition.observeAllT >=> assertBottom)
-  where
-    simplifyCondition = Simplifier.simplifyCondition sideCondition
+    where
+        simplifyCondition = Simplifier.simplifyCondition sideCondition
 
-    filterBranch condition = do
-        l <-
-            liftSimplifier $
-                SMT.evalConditional
-                    onUnknown
-                    condition
-                    (Just sideCondition)
-        case l of
-            Just False -> empty
-            _ -> return condition
+        filterBranch condition = do
+            l <-
+                liftSimplifier
+                    $ SMT.evalConditional
+                        onUnknown
+                        condition
+                        (Just sideCondition)
+            case l of
+                Just False -> empty
+                _ -> return condition
 
-    assertBottom negatedImplication
-        | isBottom negatedImplication = done
-        | otherwise = requiresNotMet negatedImplication
-    done = return ()
-    requiresNotMet negatedImplication =
-        throwE
-            CheckRequiresError
-                { matchPredicate = predicate
-                , equationRequires = requires
-                , sideCondition
-                , negatedImplication
-                }
+        assertBottom negatedImplication
+            | isBottom negatedImplication = done
+            | otherwise = requiresNotMet negatedImplication
+        done = return ()
+        requiresNotMet negatedImplication =
+            throwE
+                CheckRequiresError
+                    { matchPredicate = predicate
+                    , equationRequires = requires
+                    , sideCondition
+                    , negatedImplication
+                    }
 
-    withoutAxioms =
-        fmap Condition.forgetSimplified
-            . Simplifier.localAxiomEquations (const mempty)
-    withAxioms = id
+        withoutAxioms =
+            fmap Condition.forgetSimplified
+                . Simplifier.localAxiomEquations (const mempty)
+        withAxioms = id
 
 refreshVariables ::
     SideCondition RewritingVariableName ->
@@ -419,6 +421,6 @@ refreshVariables ::
 refreshVariables sideCondition initial =
     snd
         . Equation.refreshVariables avoiding
-  where
-    avoiding = sideConditionVariables <> freeVariables initial
-    sideConditionVariables = freeVariables sideCondition
+    where
+        avoiding = sideConditionVariables <> freeVariables initial
+        sideConditionVariables = freeVariables sideCondition

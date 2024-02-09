@@ -70,9 +70,9 @@ escapeAndAddChar c
         showString "\\" . zeroPad 3 (showOct code)
     | code <= 65535 = showString "\\u" . zeroPad 4 (showHex code)
     | otherwise = showString "\\U" . zeroPad 8 (showHex code)
-  where
-    code = ord c
-    zeroPad = padLeftWithCharToLength '0'
+    where
+        code = ord c
+        zeroPad = padLeftWithCharToLength '0'
 
 escapeAndAddCharT :: Char -> Text
 escapeAndAddCharT '"' = "\\\""
@@ -92,9 +92,9 @@ escapeAndAddCharT c
         "\\" <> zeroPad 3 (Text.pack $ showOct code "")
     | code <= 65535 = "\\u" <> zeroPad 4 (Text.pack $ showHex code "")
     | otherwise = "\\U" <> zeroPad 8 (Text.pack $ showHex code "")
-  where
-    code = ord c
-    zeroPad i = Text.justifyRight i '0'
+    where
+        code = ord c
+        zeroPad i = Text.justifyRight i '0'
 
 -- | Expects input string to be a properly escaped C String.
 unescapeCString :: String -> Either String String

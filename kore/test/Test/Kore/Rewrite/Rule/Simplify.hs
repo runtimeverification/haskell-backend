@@ -227,46 +227,46 @@ test_simplifyRule_OnePathClaim =
 
         assertEqual "" expected actual
     ]
-  where
-    simplClaim ::
-        forall simplifier.
-        MonadSimplify simplifier =>
-        OnePathClaim ->
-        simplifier [OnePathClaim]
-    simplClaim claim =
-        liftSimplifier (runTransitionT (simplify claim))
-            & (fmap . fmap) fst
+    where
+        simplClaim ::
+            forall simplifier.
+            MonadSimplify simplifier =>
+            OnePathClaim ->
+            simplifier [OnePathClaim]
+        simplClaim claim =
+            liftSimplifier (runTransitionT (simplify claim))
+                & (fmap . fmap) fst
 
-    runSimplSMT :: OnePathClaim -> IO [OnePathClaim]
-    runSimplSMT claim =
-        runSimplifierSMT Mock.env (simplClaim claim)
+        runSimplSMT :: OnePathClaim -> IO [OnePathClaim]
+        runSimplSMT claim =
+            runSimplifierSMT Mock.env (simplClaim claim)
 
-    rewritesToWithSort ::
-        RuleBase base OnePathClaim =>
-        base VariableName ->
-        base VariableName ->
-        OnePathClaim
-    rewritesToWithSort = Common.rewritesToWithSort
+        rewritesToWithSort ::
+            RuleBase base OnePathClaim =>
+            base VariableName ->
+            base VariableName ->
+            OnePathClaim
+        rewritesToWithSort = Common.rewritesToWithSort
 
-    x = mkElemVar Mock.x
+        x = mkElemVar Mock.x
 
 runSimplifyRule ::
     SimplifyRuleLHS rule =>
     rule ->
     IO [rule]
 runSimplifyRule rule =
-    fmap toList $
-        testRunSimplifier Mock.env $
-            simplifyRuleLhs rule
+    fmap toList
+        $ testRunSimplifier Mock.env
+        $ simplifyRuleLhs rule
 
 runSimplifyRuleSMT ::
     SimplifyRuleLHS rule =>
     rule ->
     IO [rule]
 runSimplifyRuleSMT rule =
-    fmap toList $
-        runSimplifierSMT Mock.env $
-            simplifyRuleLhs rule
+    fmap toList
+        $ runSimplifierSMT Mock.env
+        $ simplifyRuleLhs rule
 
 test_simplifyClaimRule :: [TestTree]
 test_simplifyClaimRule =
@@ -281,79 +281,79 @@ test_simplifyClaimRule =
         rule2
         [rule2']
     ]
-  where
-    rule1, rule2, rule2' :: ClaimPattern
-    rule1 =
-        mkClaimPattern
-            (Pattern.fromTermLike (Mock.f Mock.a))
-            (OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
-            []
-    rule1' = rule1 & requireDefined
-    rule2 =
-        mkClaimPattern
-            (Pattern.fromTermLike (Mock.g Mock.a))
-            (OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
-            []
-            & require aEqualsb
-    rule2' =
-        rule2
-            & requireDefined
-            & Lens.over
+    where
+        rule1, rule2, rule2' :: ClaimPattern
+        rule1 =
+            mkClaimPattern
+                (Pattern.fromTermLike (Mock.f Mock.a))
+                (OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
+                []
+        rule1' = rule1 & requireDefined
+        rule2 =
+            mkClaimPattern
+                (Pattern.fromTermLike (Mock.g Mock.a))
+                (OrPattern.fromPatterns [Pattern.fromTermLike Mock.b])
+                []
+                & require aEqualsb
+        rule2' =
+            rule2
+                & requireDefined
+                & Lens.over
+                    (field @"left")
+                    ( Pattern.andCondition
+                        (Mock.f Mock.a & Pattern.fromTermLike)
+                        . Pattern.withoutTerm
+                    )
+
+        require condition =
+            Lens.over
                 (field @"left")
-                ( Pattern.andCondition
-                    (Mock.f Mock.a & Pattern.fromTermLike)
-                    . Pattern.withoutTerm
+                (flip Pattern.andCondition condition)
+
+        aEqualsb =
+            makeEqualsPredicate Mock.a Mock.b
+                & Condition.fromPredicate
+
+        requireDefined =
+            Lens.over
+                (field @"left")
+                ( \left' ->
+                    let leftTerm = Pattern.term left'
+                     in Pattern.andCondition
+                            left'
+                            ( makeCeilPredicate leftTerm
+                                & Condition.fromPredicate
+                            )
                 )
 
-    require condition =
-        Lens.over
-            (field @"left")
-            (flip Pattern.andCondition condition)
-
-    aEqualsb =
-        makeEqualsPredicate Mock.a Mock.b
-            & Condition.fromPredicate
-
-    requireDefined =
-        Lens.over
-            (field @"left")
-            ( \left' ->
-                let leftTerm = Pattern.term left'
-                 in Pattern.andCondition
-                        left'
-                        ( makeCeilPredicate leftTerm
-                            & Condition.fromPredicate
-                        )
-            )
-
-    test ::
-        HasCallStack =>
-        TestName ->
-        -- replacements
-        [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
-        ClaimPattern ->
-        [ClaimPattern] ->
-        TestTree
-    test name replacements (OnePathClaim -> input) (map OnePathClaim -> expect) =
-        -- Test simplifyClaimRule through the OnePathClaim instance.
-        testCase name $ do
-            actual <- run (simplifyRuleLhs input) & fmap toList
-            assertEqual "" expect actual
-      where
-        run =
-            runSimplifierSMT env
-        testEnv =
-            TestEnv
-                { replacements
-                , input
-                , requires = aEqualsb
-                }
-        env =
-            Mock.env
-                { simplifierCondition = emptyConditionSimplifier
-                , axiomEquations = mempty
-                , simplifierTerm = testSimplifyTerm testEnv
-                }
+        test ::
+            HasCallStack =>
+            TestName ->
+            -- replacements
+            [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
+            ClaimPattern ->
+            [ClaimPattern] ->
+            TestTree
+        test name replacements (OnePathClaim -> input) (map OnePathClaim -> expect) =
+            -- Test simplifyClaimRule through the OnePathClaim instance.
+            testCase name $ do
+                actual <- run (simplifyRuleLhs input) & fmap toList
+                assertEqual "" expect actual
+            where
+                run =
+                    runSimplifierSMT env
+                testEnv =
+                    TestEnv
+                        { replacements
+                        , input
+                        , requires = aEqualsb
+                        }
+                env =
+                    Mock.env
+                        { simplifierCondition = emptyConditionSimplifier
+                        , axiomEquations = mempty
+                        , simplifierTerm = testSimplifyTerm testEnv
+                        }
 
 data TestEnv = TestEnv
     { replacements ::
@@ -384,42 +384,42 @@ testSimplifyTerm testEnv sideCondition termLike = do
         . OrPattern.fromTermLike
         . (if satisfied then applyReplacements replacements else id)
         $ termLike
-  where
-    applyReplacements ::
-        InternalVariable variable =>
-        [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
-        TermLike variable ->
-        TermLike variable
-    applyReplacements replacements zero =
-        foldl' applyReplacement zero $
-            fmap liftReplacement replacements
+    where
+        applyReplacements ::
+            InternalVariable variable =>
+            [(TermLike RewritingVariableName, TermLike RewritingVariableName)] ->
+            TermLike variable ->
+            TermLike variable
+        applyReplacements replacements zero =
+            foldl' applyReplacement zero
+                $ fmap liftReplacement replacements
 
-    applyReplacement orig (ini, fin)
-        | orig == ini = fin
-        | otherwise = orig
+        applyReplacement orig (ini, fin)
+            | orig == ini = fin
+            | otherwise = orig
 
-    liftPredicate ::
-        InternalVariable variable =>
-        Predicate RewritingVariableName ->
-        Predicate variable
-    liftPredicate =
-        Predicate.mapVariables liftRewritingVariable
+        liftPredicate ::
+            InternalVariable variable =>
+            Predicate RewritingVariableName ->
+            Predicate variable
+        liftPredicate =
+            Predicate.mapVariables liftRewritingVariable
 
-    liftTermLike ::
-        InternalVariable variable =>
-        TermLike RewritingVariableName ->
-        TermLike variable
-    liftTermLike =
-        TermLike.mapVariables liftRewritingVariable
+        liftTermLike ::
+            InternalVariable variable =>
+            TermLike RewritingVariableName ->
+            TermLike variable
+        liftTermLike =
+            TermLike.mapVariables liftRewritingVariable
 
-    liftReplacement ::
-        InternalVariable variable =>
-        (TermLike RewritingVariableName, TermLike RewritingVariableName) ->
-        (TermLike variable, TermLike variable)
-    liftReplacement = Bifunctor.bimap liftTermLike liftTermLike
+        liftReplacement ::
+            InternalVariable variable =>
+            (TermLike RewritingVariableName, TermLike RewritingVariableName) ->
+            (TermLike variable, TermLike variable)
+        liftReplacement = Bifunctor.bimap liftTermLike liftTermLike
 
-    liftRewritingVariable ::
-        InternalVariable variable =>
-        AdjSomeVariableName (RewritingVariableName -> variable)
-    liftRewritingVariable =
-        pure (.) <*> pure fromVariableName <*> getRewritingVariable
+        liftRewritingVariable ::
+            InternalVariable variable =>
+            AdjSomeVariableName (RewritingVariableName -> variable)
+        liftRewritingVariable =
+            pure (.) <*> pure fromVariableName <*> getRewritingVariable

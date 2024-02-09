@@ -101,16 +101,16 @@ illegalVariableCounter =
 externalizeFreshVariableName :: VariableName -> VariableName
 externalizeFreshVariableName VariableName{base, counter} =
     VariableName{base = base', counter = Nothing}
-  where
-    base' =
-        base
-            { getId =
-                case counter of
-                    Nothing -> getId base
-                    Just (Element n) -> getId base <> Text.pack (show n)
-                    Just Sup -> illegalVariableCounter
-            , idLocation = AstLocationGeneratedVariable
-            }
+    where
+        base' =
+            base
+                { getId =
+                    case counter of
+                        Nothing -> getId base
+                        Just (Element n) -> getId base <> Text.pack (show n)
+                        Just Sup -> illegalVariableCounter
+                , idLocation = AstLocationGeneratedVariable
+                }
 
 fromVariableName ::
     forall variable. From VariableName variable => VariableName -> variable
@@ -481,8 +481,8 @@ mapSomeVariableName ::
     SomeVariableName variable2
 mapSomeVariableName adj variable1 =
     fmap (index adj idx) variable1
-  where
-    idx = void variable1
+    where
+        idx = void variable1
 
 mapElementVariableName ::
     AdjSomeVariableName (variable1 -> variable2) ->
@@ -505,8 +505,8 @@ traverseSomeVariableName ::
     f (SomeVariableName variable2)
 traverseSomeVariableName adj variable1 =
     traverse (index adj idx) variable1
-  where
-    idx = void variable1
+    where
+        idx = void variable1
 
 traverseElementVariableName ::
     forall variable1 variable2 f.

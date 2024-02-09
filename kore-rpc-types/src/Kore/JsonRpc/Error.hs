@@ -10,10 +10,10 @@ import Text.Casing (Identifier (unIdentifier), fromHumps)
 
 toSentence :: Identifier String -> String
 toSentence = unwords . sentence . unIdentifier
-  where
-    sentence = \case
-        (first : rest) -> first : map (map toLower) rest
-        other -> other
+    where
+        sentence = \case
+            (first : rest) -> first : map (map toLower) rest
+            other -> other
 
 -- RPC Server implementation errors
 

@@ -68,8 +68,8 @@ test_andThen = testBinary andThenBoolSymbol (&&)
 
 test_xor :: TestTree
 test_xor = testBinary xorBoolSymbol xor
-  where
-    xor u v = (u && not v) || (not u && v)
+    where
+        xor u v = (u && not v) || (not u && v)
 
 test_ne :: TestTree
 test_ne = testBinary neBoolSymbol (/=)
@@ -82,8 +82,8 @@ test_not = testUnary notBoolSymbol not
 
 test_implies :: TestTree
 test_implies = testBinary impliesBoolSymbol implies
-  where
-    implies u v = not u || v
+    where
+        implies u v = not u || v
 
 -- | Specialize 'Bool.asInternal' to the builtin sort 'boolSort'.
 asInternal ::
@@ -111,8 +111,8 @@ testBinary symb impl =
         let expect = asOrPattern $ impl a b
         actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
-  where
-    name = expectHook symb
+    where
+        name = expectHook symb
 
 -- | Test a unary operator hooked to the given symbol
 testUnary ::
@@ -127,8 +127,8 @@ testUnary symb impl =
         let expect = asOrPattern $ impl a
         actual <- evaluateTermT $ mkApplySymbol symb (asInternal <$> [a])
         (===) expect actual
-  where
-    name = expectHook symb
+    where
+        name = expectHook symb
 
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> Gen.bool)
@@ -143,26 +143,26 @@ test_unifyBoolValues =
                 | otherwise = []
         [test "" term1 term2 result]
     ]
-  where
-    literals = [(_True, True), (_False, False)]
+    where
+        literals = [(_True, True), (_False, False)]
 
-    test ::
-        HasCallStack =>
-        TestName ->
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        [Maybe (Pattern RewritingVariableName)] ->
-        TestTree
-    test testName term1 term2 expected =
-        testCase testName $ do
-            case Bool.matchBools term1 term2 of
-                Just unifyData -> do
-                    actual <- unify unifyData
-                    assertEqual "" expected actual
-                Nothing -> assertEqual "" expected [Nothing]
+        test ::
+            HasCallStack =>
+            TestName ->
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            [Maybe (Pattern RewritingVariableName)] ->
+            TestTree
+        test testName term1 term2 expected =
+            testCase testName $ do
+                case Bool.matchBools term1 term2 of
+                    Just unifyData -> do
+                        actual <- unify unifyData
+                        assertEqual "" expected actual
+                    Nothing -> assertEqual "" expected [Nothing]
 
-    unify unifyData =
-        run (lift $ Bool.unifyBool unifyData)
+        unify unifyData =
+            run (lift $ Bool.unifyBool unifyData)
 
 test_unifyBoolAnd :: [TestTree]
 test_unifyBoolAnd =
@@ -178,26 +178,26 @@ test_unifyBoolAnd =
           result = [Nothing]
        in test "BOOL.and - false" term1 term2 result
     ]
-  where
-    test ::
-        HasCallStack =>
-        TestName ->
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        [Maybe (Pattern RewritingVariableName)] ->
-        TestTree
-    test testName term1 term2 expected =
-        testCase testName $ do
-            case Bool.matchUnifyBoolAnd term1 term2 of
-                Just unifyData -> do
-                    actual <- unify unifyData
-                    assertEqual "" expected actual
-                Nothing -> assertEqual "" expected [Nothing]
+    where
+        test ::
+            HasCallStack =>
+            TestName ->
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            [Maybe (Pattern RewritingVariableName)] ->
+            TestTree
+        test testName term1 term2 expected =
+            testCase testName $ do
+                case Bool.matchUnifyBoolAnd term1 term2 of
+                    Just unifyData -> do
+                        actual <- unify unifyData
+                        assertEqual "" expected actual
+                    Nothing -> assertEqual "" expected [Nothing]
 
-    unify unifyData =
-        Bool.unifyBoolAnd termSimplifier unifyData
-            & lift
-            & run
+        unify unifyData =
+            Bool.unifyBoolAnd termSimplifier unifyData
+                & lift
+                & run
 
 test_unifyBoolOr :: [TestTree]
 test_unifyBoolOr =
@@ -213,26 +213,26 @@ test_unifyBoolOr =
           result = [Nothing]
        in test "BOOL.or - true" term1 term2 result
     ]
-  where
-    test ::
-        HasCallStack =>
-        TestName ->
-        TermLike RewritingVariableName ->
-        TermLike RewritingVariableName ->
-        [Maybe (Pattern RewritingVariableName)] ->
-        TestTree
-    test testName term1 term2 expected =
-        testCase testName $ do
-            case Bool.matchUnifyBoolOr term1 term2 of
-                Just unifyData -> do
-                    actual <- unify unifyData
-                    assertEqual "" expected actual
-                Nothing -> assertEqual "" expected [Nothing]
+    where
+        test ::
+            HasCallStack =>
+            TestName ->
+            TermLike RewritingVariableName ->
+            TermLike RewritingVariableName ->
+            [Maybe (Pattern RewritingVariableName)] ->
+            TestTree
+        test testName term1 term2 expected =
+            testCase testName $ do
+                case Bool.matchUnifyBoolOr term1 term2 of
+                    Just unifyData -> do
+                        actual <- unify unifyData
+                        assertEqual "" expected actual
+                    Nothing -> assertEqual "" expected [Nothing]
 
-    unify unifyData =
-        Bool.unifyBoolOr termSimplifier unifyData
-            & lift
-            & run
+        unify unifyData =
+            Bool.unifyBoolOr termSimplifier unifyData
+                & lift
+                & run
 
 run :: MaybeT (UnifierT Simplifier) a -> IO [Maybe a]
 run =
@@ -248,16 +248,16 @@ termSimplifier ::
 termSimplifier = \term1 term2 ->
     runMaybeT (worker term1 term2 <|> worker term2 term1)
         >>= maybe (fallback term1 term2) return
-  where
-    worker term1 term2
-        | ElemVar_ var <- term1 =
-            Pattern.assign (inject var) term2
+    where
+        worker term1 term2
+            | ElemVar_ var <- term1 =
+                Pattern.assign (inject var) term2
+                    & return
+            | otherwise = empty
+        fallback term1 term2 =
+            mkAnd term1 term2
+                & Pattern.fromTermLike
                 & return
-        | otherwise = empty
-    fallback term1 term2 =
-        mkAnd term1 term2
-            & Pattern.fromTermLike
-            & return
 
 _True, _False :: TermLike RewritingVariableName
 _True = asInternal True

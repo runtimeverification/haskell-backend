@@ -89,29 +89,29 @@ test_simplify =
             (ceila <> ceilb)
         ]
     ]
-  where
-    a = OrPattern.fromTermLike Mock.a
-    b = OrPattern.fromTermLike Mock.b
-    c = OrPattern.fromTermLike Mock.c
-    ceila =
-        makeCeilPredicate (Mock.f Mock.a)
-            & Condition.fromPredicate
-    ceilb =
-        makeCeilPredicate (Mock.f Mock.b)
-            & Condition.fromPredicate
-    bottom = OrPattern.fromPatterns [Pattern.bottomOf Mock.topSort]
-    becomes ::
-        HasCallStack =>
-        TestName ->
-        InternalMap Key (OrPattern RewritingVariableName) ->
-        [Pattern RewritingVariableName] ->
-        TestTree
-    becomes name origin expect =
-        testCase name $
-            assertEqual
-                ""
-                (OrPattern.fromPatterns expect)
-                (evaluate origin)
+    where
+        a = OrPattern.fromTermLike Mock.a
+        b = OrPattern.fromTermLike Mock.b
+        c = OrPattern.fromTermLike Mock.c
+        ceila =
+            makeCeilPredicate (Mock.f Mock.a)
+                & Condition.fromPredicate
+        ceilb =
+            makeCeilPredicate (Mock.f Mock.b)
+                & Condition.fromPredicate
+        bottom = OrPattern.fromPatterns [Pattern.bottomOf Mock.topSort]
+        becomes ::
+            HasCallStack =>
+            TestName ->
+            InternalMap Key (OrPattern RewritingVariableName) ->
+            [Pattern RewritingVariableName] ->
+            TestTree
+        becomes name origin expect =
+            testCase name
+                $ assertEqual
+                    ""
+                    (OrPattern.fromPatterns expect)
+                    (evaluate origin)
 
 mkMap :: [(child, child)] -> [child] -> InternalMap Key child
 mkMap = mkMapAux []

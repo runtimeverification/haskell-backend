@@ -84,14 +84,14 @@ checkImplicationIsTop lhs rhs =
                 , "We don't know how to simplify the implication whose rhs is:"
                 , Pretty.indent 4 (unparse rhs)
                 ]
-  where
-    lhsFreeVariables =
-        freeVariables lhs
-            & getFreeElementVariables
-            & map variableName
-            & Set.fromList
-    lhsMLPatt = Pattern.toTermLike lhs
-    sort = TermLike.termLikeSort rhs
+    where
+        lhsFreeVariables =
+            freeVariables lhs
+                & getFreeElementVariables
+                & map variableName
+                & Set.fromList
+        lhsMLPatt = Pattern.toTermLike lhs
+        sort = TermLike.termLikeSort rhs
 
 stripForallQuantifiers ::
     TermLike RewritingVariableName ->

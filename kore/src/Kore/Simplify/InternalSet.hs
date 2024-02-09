@@ -47,6 +47,6 @@ normalizeInternalSet returnSort map' =
                 -- Otherwise, inject the InternalSet into TermLike.
                 & fromMaybe (mkInternalSet normalizedSet)
         _ -> mkBottom returnSort
-  where
-    getSingleOpaque = retractSingleOpaqueElem . getNormalizedAc
-    getNormalizedAc = getNormalizedSet . builtinAcChild
+    where
+        getSingleOpaque = retractSingleOpaqueElem . getNormalizedAc
+        getNormalizedAc = getNormalizedSet . builtinAcChild

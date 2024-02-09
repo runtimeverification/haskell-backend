@@ -46,8 +46,8 @@ data InternalList child = InternalList
 instance Hashable child => Hashable (InternalList child) where
     hashWithSalt salt internal =
         hashWithSalt salt (toList internalListChild)
-      where
-        InternalList{internalListChild} = internal
+        where
+            InternalList{internalListChild} = internal
 
 instance NFData child => NFData (InternalList child)
 
@@ -60,12 +60,12 @@ instance Unparse child => Unparse (InternalList child) where
                 (unparse internalListConcat)
                 (element <$> toList internalListChild)
             ]
-      where
-        element x = unparse internalListElement <> arguments [x]
-        InternalList{internalListChild} = internalList
-        InternalList{internalListUnit} = internalList
-        InternalList{internalListElement} = internalList
-        InternalList{internalListConcat} = internalList
+        where
+            element x = unparse internalListElement <> arguments [x]
+            InternalList{internalListChild} = internalList
+            InternalList{internalListUnit} = internalList
+            InternalList{internalListElement} = internalList
+            InternalList{internalListConcat} = internalList
 
     unparse2 internalList =
         Pretty.hsep
@@ -75,12 +75,12 @@ instance Unparse child => Unparse (InternalList child) where
                 (unparse internalListConcat)
                 (element <$> toList internalListChild)
             ]
-      where
-        element x = unparse2 internalListElement <> arguments2 [x]
-        InternalList{internalListChild} = internalList
-        InternalList{internalListUnit} = internalList
-        InternalList{internalListElement} = internalList
-        InternalList{internalListConcat} = internalList
+        where
+            element x = unparse2 internalListElement <> arguments2 [x]
+            InternalList{internalListChild} = internalList
+            InternalList{internalListUnit} = internalList
+            InternalList{internalListElement} = internalList
+            InternalList{internalListConcat} = internalList
 
 instance Synthetic Sort InternalList where
     synthetic = internalListSort

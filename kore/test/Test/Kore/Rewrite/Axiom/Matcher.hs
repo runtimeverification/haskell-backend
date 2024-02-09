@@ -511,9 +511,9 @@ test_matcherVariableFunction =
             assertEqual "" expected actual
         ]
     ]
-  where
-    aSubSub = Mock.functional00SubSubSort
-    xSub = configElementVariableFromId (testId "xSub") Mock.subSort
+    where
+        aSubSub = Mock.functional00SubSubSort
+        xSub = configElementVariableFromId (testId "xSub") Mock.subSort
 
 test_matcherNonVarToPattern :: [TestTree]
 test_matcherNonVarToPattern =
@@ -522,9 +522,9 @@ test_matcherNonVarToPattern =
     , failure Mock.a (mkElemVar Mock.xConfig) "no-var - var"
     , failure (mkElemVar Mock.xConfig) (mkElemVar Mock.yConfig) "no-var - var"
     ]
-  where
-    failure term1 term2 name =
-        doesn'tMatch name (Mock.plain10 term1) (Mock.plain11 term2)
+    where
+        failure term1 term2 name =
+            doesn'tMatch name (Mock.plain10 term1) (Mock.plain11 term2)
 
 test_matcherMergeSubresults :: [TestTree]
 test_matcherMergeSubresults =
@@ -583,17 +583,17 @@ test_matching_Bool =
         (mkBool False)
         (mkElemVar Mock.xConfigBool)
     ]
-  where
-    top = topCondition
-    substitution subst =
-        mkMatchResult
-            ( makeTruePredicate
-            , Map.fromList ((fmap . fmap) mkBool subst)
-            )
-    mkBool = Bool.asInternal Mock.boolSort
-    matchConcrete = matchDefinition `on` mkBool
-    matchVariable var val =
-        matchDefinition (mkElemVar var) (mkBool val)
+    where
+        top = topCondition
+        substitution subst =
+            mkMatchResult
+                ( makeTruePredicate
+                , Map.fromList ((fmap . fmap) mkBool subst)
+                )
+        mkBool = Bool.asInternal Mock.boolSort
+        matchConcrete = matchDefinition `on` mkBool
+        matchVariable var val =
+            matchDefinition (mkElemVar var) (mkBool val)
 
 test_matching_Int :: [TestTree]
 test_matching_Int =
@@ -611,16 +611,16 @@ test_matching_Int =
         (mkInt 1)
         (mkElemVar xInt)
     ]
-  where
-    top = topCondition
-    substitution subst =
-        mkMatchResult
-            ( makeTruePredicate
-            , Map.fromList ((fmap . fmap) mkInt subst)
-            )
-    matchConcrete = matchDefinition `on` mkInt
-    matchVariable var val =
-        matchDefinition (mkElemVar var) (mkInt val)
+    where
+        top = topCondition
+        substitution subst =
+            mkMatchResult
+                ( makeTruePredicate
+                , Map.fromList ((fmap . fmap) mkInt subst)
+                )
+        matchConcrete = matchDefinition `on` mkInt
+        matchVariable var val =
+            matchDefinition (mkElemVar var) (mkInt val)
 
 test_matching_String :: [TestTree]
 test_matching_String =
@@ -642,16 +642,16 @@ test_matching_String =
         (mkStr "str")
         (mkElemVar Mock.xConfigString)
     ]
-  where
-    substitution subst =
-        mkMatchResult
-            ( makeTruePredicate
-            , Map.fromList ((fmap . fmap) mkStr subst)
-            )
-    mkStr = String.asInternal Mock.stringSort
-    matchConcrete = matchDefinition `on` mkStr
-    matchVariable var val =
-        matchDefinition (mkElemVar var) (mkStr val)
+    where
+        substitution subst =
+            mkMatchResult
+                ( makeTruePredicate
+                , Map.fromList ((fmap . fmap) mkStr subst)
+                )
+        mkStr = String.asInternal Mock.stringSort
+        matchConcrete = matchDefinition `on` mkStr
+        matchVariable var val =
+            matchDefinition (mkElemVar var) (mkStr val)
 
 test_matching_List :: [TestTree]
 test_matching_List =
@@ -816,17 +816,17 @@ test_matching_List =
         , (yList, mkList [one])
         ]
     ]
-  where
-    xList = inject $ configElementVariableFromId (testId "xList") Mock.listSort
-    yList = inject $ configElementVariableFromId (testId "yList") Mock.listSort
-    one = mkInt 1
-    two = mkInt 2
-    concatList = Mock.concatList
-    unitList = mkList []
-    prefixList elems frame = concatList (mkList elems) (mkVar frame)
-    suffixList frame elems = concatList (mkVar frame) (mkList elems)
-    concreteList = mkList . map mkInt
-    mkList = Mock.builtinList
+    where
+        xList = inject $ configElementVariableFromId (testId "xList") Mock.listSort
+        yList = inject $ configElementVariableFromId (testId "yList") Mock.listSort
+        one = mkInt 1
+        two = mkInt 2
+        concatList = Mock.concatList
+        unitList = mkList []
+        prefixList elems frame = concatList (mkList elems) (mkVar frame)
+        suffixList frame elems = concatList (mkVar frame) (mkList elems)
+        concreteList = mkList . map mkInt
+        mkList = Mock.builtinList
 
 test_matching_Exists :: [TestTree]
 test_matching_Exists =
@@ -885,8 +885,8 @@ test_matching_Equals =
         (mkEquals' (mkElemVar xInt) (mkElemVar xInt))
         (mkEquals' (mkInt 1) (mkInt 2))
     ]
-  where
-    mkEquals' = mkEquals Mock.intSort
+    where
+        mkEquals' = mkEquals Mock.intSort
 
 test_matching_Forall :: [TestTree]
 test_matching_Forall =
@@ -1096,15 +1096,15 @@ test_matching_Set =
 
 sSet :: SomeVariable RewritingVariableName
 sSet =
-    inject $
-        mkElementVariable (testId "sSet") Mock.setSort
-            & mapElementVariable (pure mkConfigVariable)
+    inject
+        $ mkElementVariable (testId "sSet") Mock.setSort
+        & mapElementVariable (pure mkConfigVariable)
 
 s'Set :: SomeVariable RewritingVariableName
 s'Set =
-    inject $
-        mkElementVariable (testId "s'Set") Mock.setSort
-            & mapElementVariable (pure mkConfigVariable)
+    inject
+        $ mkElementVariable (testId "s'Set") Mock.setSort
+        & mapElementVariable (pure mkConfigVariable)
 
 mkSet ::
     [TermLike RewritingVariableName] ->
@@ -1387,9 +1387,9 @@ match ::
     IO MatchResult
 match first second =
     testRunSimplifier Mock.env matchResult
-  where
-    matchResult :: Simplifier MatchResult
-    matchResult = patternMatch SideCondition.top first second
+    where
+        matchResult :: Simplifier MatchResult
+        matchResult = patternMatch SideCondition.top first second
 
 withMatch ::
     (MatchResult -> Assertion) ->
@@ -1441,9 +1441,9 @@ matchesMulti comment term1 term2 substs =
         term1
         term2
         (mkMatchResult' <$> substs)
-  where
-    mkMatchResult' subst =
-        mkMatchResult (makeTruePredicate, Map.fromList subst)
+    where
+        mkMatchResult' subst =
+            mkMatchResult (makeTruePredicate, Map.fromList subst)
 
 matchesP ::
     HasCallStack =>
@@ -1469,8 +1469,8 @@ matchesAux ::
     TestTree
 matchesAux comment term1 term2 expect =
     withMatch check comment term1 term2
-  where
-    check actual = assertEqual "" expect actual
+    where
+        check actual = assertEqual "" expect actual
 
 matchesAuxMulti ::
     HasCallStack =>
@@ -1481,8 +1481,8 @@ matchesAuxMulti ::
     TestTree
 matchesAuxMulti comment term1 term2 expect =
     withMatch check comment term1 term2
-  where
-    check actual =
-        assertBool
-            "Is one of expected results."
-            (actual `elem` expect)
+    where
+        check actual =
+            assertBool
+                "Is one of expected results."
+                (actual `elem` expect)

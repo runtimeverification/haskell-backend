@@ -189,18 +189,18 @@ recursiveIndexedModuleStuff ::
     stuff
 recursiveIndexedModuleStuff stuffExtractor m =
     fold (stuffExtractor m : subModuleStuffs)
-  where
-    subModuleStuffs :: [stuff]
-    subModuleStuffs =
-        map subModuleStuff (indexedModuleImports m)
-    subModuleStuff ::
-        ( declAtts
-        , Attributes
-        , IndexedModule pat declAtts axiomAtts
-        ) ->
-        stuff
-    subModuleStuff (_, _, subMod) =
-        recursiveIndexedModuleStuff stuffExtractor subMod
+    where
+        subModuleStuffs :: [stuff]
+        subModuleStuffs =
+            map subModuleStuff (indexedModuleImports m)
+        subModuleStuff ::
+            ( declAtts
+            , Attributes
+            , IndexedModule pat declAtts axiomAtts
+            ) ->
+            stuff
+        subModuleStuff (_, _, subMod) =
+            recursiveIndexedModuleStuff stuffExtractor subMod
 
 -- | Strip module of its parsed attributes, replacing them with 'Attribute.Null'
 eraseAxiomAttributes ::
@@ -303,11 +303,11 @@ eraseAliasPatterns ::
 eraseAliasPatterns indexedModuleSyntax =
     indexedModuleSyntax
         { indexedModuleAliasSentences =
-            Lens.set (Lens.mapped . Lens._2 . Lens.mapped) () $
-                indexedModuleAliasSentences indexedModuleSyntax
+            Lens.set (Lens.mapped . Lens._2 . Lens.mapped) ()
+                $ indexedModuleAliasSentences indexedModuleSyntax
         , indexedModuleImportsSyntax =
-            Lens.over (Lens.mapped . Lens._3) eraseAliasPatterns $
-                indexedModuleImportsSyntax indexedModuleSyntax
+            Lens.over (Lens.mapped . Lens._3) eraseAliasPatterns
+                $ indexedModuleImportsSyntax indexedModuleSyntax
         }
 
 erasePatterns ::
@@ -320,8 +320,8 @@ erasePatterns indexedModule =
         , indexedModuleAxioms = []
         , indexedModuleClaims = []
         , indexedModuleImports =
-            Lens.over (Lens.mapped . Lens._3) erasePatterns $
-                indexedModuleImports indexedModule
+            Lens.over (Lens.mapped . Lens._3) erasePatterns
+                $ indexedModuleImports indexedModule
         }
 
 mapAliasPatterns ::
@@ -336,9 +336,9 @@ mapAliasPatterns mapping indexedModuleSyntax =
             indexedModuleImportsSyntax
                 & Lens.over (Lens.mapped . Lens._3) (mapAliasPatterns mapping)
         }
-  where
-    IndexedModuleSyntax{indexedModuleAliasSentences} = indexedModuleSyntax
-    IndexedModuleSyntax{indexedModuleImportsSyntax} = indexedModuleSyntax
+    where
+        IndexedModuleSyntax{indexedModuleAliasSentences} = indexedModuleSyntax
+        IndexedModuleSyntax{indexedModuleImportsSyntax} = indexedModuleSyntax
 
 mapPatterns ::
     (patternType1 -> patternType2) ->
@@ -356,11 +356,11 @@ mapPatterns mapping indexedModule =
             indexedModuleImports
                 & Lens.over (Lens.mapped . Lens._3) (mapPatterns mapping)
         }
-  where
-    IndexedModule{indexedModuleSyntax} = indexedModule
-    IndexedModule{indexedModuleAxioms} = indexedModule
-    IndexedModule{indexedModuleClaims} = indexedModule
-    IndexedModule{indexedModuleImports} = indexedModule
+    where
+        IndexedModule{indexedModuleSyntax} = indexedModule
+        IndexedModule{indexedModuleAxioms} = indexedModule
+        IndexedModule{indexedModuleClaims} = indexedModule
+        IndexedModule{indexedModuleImports} = indexedModule
 
 type KoreIndexedModule = IndexedModule ParsedPattern
 
@@ -418,9 +418,9 @@ toVerifiedDefinition idx =
             toVerifiedModule
                 <$> filter notImplicitKoreModule (toList idx)
         }
-  where
-    notImplicitKoreModule verifiedModule =
-        indexedModuleName (indexedModuleSyntax verifiedModule) /= "kore"
+    where
+        notImplicitKoreModule verifiedModule =
+            indexedModuleName (indexedModuleSyntax verifiedModule) /= "kore"
 
 indexedModuleRawSentences ::
     IndexedModule pat atts atts' -> [Sentence pat]
@@ -444,19 +444,19 @@ indexedModuleRawSentences im =
             (SentenceImport (indexedModuleName $ indexedModuleSyntax m) attributes)
            | (_, attributes, m) <- indexedModuleImports im
            ]
-  where
-    hookedIds :: Set.Set Id
-    hookedIds = indexedModuleHookedIdentifiers $ indexedModuleSyntax im
-    hookSortIfNeeded (x, (_, sortDescription))
-        | x `Set.member` hookedIds =
-            SentenceHookSentence (SentenceHookedSort sortDescription)
-        | otherwise =
-            SentenceSortSentence sortDescription
-    hookSymbolIfNeeded (x, (_, symbolSentence))
-        | x `Set.member` hookedIds =
-            SentenceHookSentence (SentenceHookedSymbol symbolSentence)
-        | otherwise =
-            SentenceSymbolSentence symbolSentence
+    where
+        hookedIds :: Set.Set Id
+        hookedIds = indexedModuleHookedIdentifiers $ indexedModuleSyntax im
+        hookSortIfNeeded (x, (_, sortDescription))
+            | x `Set.member` hookedIds =
+                SentenceHookSentence (SentenceHookedSort sortDescription)
+            | otherwise =
+                SentenceSortSentence sortDescription
+        hookSymbolIfNeeded (x, (_, symbolSentence))
+            | x `Set.member` hookedIds =
+                SentenceHookSentence (SentenceHookedSymbol symbolSentence)
+            | otherwise =
+                SentenceSymbolSentence symbolSentence
 
 {- | 'ImplicitIndexedModule' is the type for the 'IndexedModule' containing
 things that are implicitly defined.
@@ -515,8 +515,8 @@ indexedModuleWithDefaultImports name defaultImport =
                 Nothing ->
                     []
         }
-  where
-    indexedModule = emptyIndexedModule name
+    where
+        indexedModule = emptyIndexedModule name
 
 -- | Retrieve those object-level symbol sentences that are hooked.
 hookedObjectSymbolSentences ::
@@ -536,10 +536,10 @@ indexedModuleSubsorts imod =
     case internalIndexedModuleSubsorts imod of
         Right subsorts -> subsorts
         Left err ->
-            error $
-                "IndexedModule should already have checked"
-                    ++ " form of subsort attributes, but parsing failed\n:"
-                    ++ show err
+            error
+                $ "IndexedModule should already have checked"
+                ++ " form of subsort attributes, but parsing failed\n:"
+                ++ show err
 
 internalIndexedModuleSubsorts ::
     MonadError (Error e) error =>
@@ -552,8 +552,8 @@ internalIndexedModuleSubsorts imod = do
                 recursiveIndexedModuleAxioms imod
             ]
     Subsorts subsorts <-
-        Attribute.Parser.liftParser $
-            foldrM Attribute.Parser.parseAttributesWith def attributes
+        Attribute.Parser.liftParser
+            $ foldrM Attribute.Parser.parseAttributesWith def attributes
     return subsorts
 
 {- | Determine all indexed modules in scope from the given module.
@@ -567,19 +567,19 @@ indexedModulesInScope ::
     Map ModuleName (IndexedModule pat declAtts axiomAtts)
 indexedModulesInScope =
     \imod -> execState (resolveModule imod) Map.empty
-  where
-    alreadyResolved name =
-        Monad.State.gets (Map.member name)
-    resolveModule imod =
-        unlessM (alreadyResolved name) $ do
-            -- resolve the module: insert it into the map
-            Monad.State.modify' (Map.insert name imod)
-            -- resolve this modules imports
-            mapM_ resolveImport (indexedModuleImports imod)
-      where
-        name = indexedModuleName $ indexedModuleSyntax imod
+    where
+        alreadyResolved name =
+            Monad.State.gets (Map.member name)
+        resolveModule imod =
+            unlessM (alreadyResolved name) $ do
+                -- resolve the module: insert it into the map
+                Monad.State.modify' (Map.insert name imod)
+                -- resolve this modules imports
+                mapM_ resolveImport (indexedModuleImports imod)
+            where
+                name = indexedModuleName $ indexedModuleSyntax imod
 
-    resolveImport (_, _, imod) = resolveModule imod
+        resolveImport (_, _, imod) = resolveModule imod
 
 implicitModules ::
     Default declAttrs =>
@@ -602,21 +602,21 @@ implicitIndexedModule =
                     Map.fromSet makeSortIndex implicitSortNames
                 }
         }
-  where
-    indexedModule = emptyIndexedModule implicitModuleName
-    makeSortIndex sortId = (Default.def, declareSort sortId)
-    declareSort sortId =
-        SentenceSort
-            { sentenceSortName = sortId
-            , sentenceSortParameters = []
-            , sentenceSortAttributes = Attributes []
-            }
+    where
+        indexedModule = emptyIndexedModule implicitModuleName
+        makeSortIndex sortId = (Default.def, declareSort sortId)
+        declareSort sortId =
+            SentenceSort
+                { sentenceSortName = sortId
+                , sentenceSortParameters = []
+                , sentenceSortAttributes = Attributes []
+                }
 
 implicitNames :: HashMap InternedText AstLocation
 implicitNames =
-    HashMap.fromList $
-        (getInternedId &&& idLocation)
-            <$> (predicateSortId : Set.toList implicitSortNames)
+    HashMap.fromList
+        $ (getInternedId &&& idLocation)
+        <$> (predicateSortId : Set.toList implicitSortNames)
 
 implicitSortNames :: Set Id
 implicitSortNames = Set.fromList [stringMetaSortId]

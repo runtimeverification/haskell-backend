@@ -126,6 +126,6 @@ fromSubstitution sort subst
             . map toEquals
             . Substitution.unwrap
             $ subst
-  where
-    toEquals :: Assignment VariableName -> TermLike VariableName
-    toEquals (Substitution.Assignment v t) = TermLike.mkEquals sort (TermLike.mkVar v) t
+    where
+        toEquals :: Assignment VariableName -> TermLike VariableName
+        toEquals (Substitution.Assignment v t) = TermLike.mkEquals sort (TermLike.mkVar v) t

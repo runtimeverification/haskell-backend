@@ -153,18 +153,18 @@ retractRemaining _ = Nothing
 executionStrategy :: Stream (Step Prim)
 executionStrategy =
     step1 Stream.:> Stream.iterate id stepN
-  where
-    step1 =
-        [ Begin
-        , Simplify
-        , Rewrite
-        , Simplify
-        ]
-    stepN =
-        [ Begin
-        , Rewrite
-        , Simplify
-        ]
+    where
+        step1 =
+            [ Begin
+            , Simplify
+            , Rewrite
+            , Simplify
+            ]
+        stepN =
+            [ Begin
+            , Rewrite
+            , Simplify
+            ]
 
 {- | The sequence of transitions under the specified depth limit.
 
@@ -205,52 +205,52 @@ transitionRule ::
             (Pattern RewritingVariableName)
         )
 transitionRule rewriteGroups assumeInitialDefined = transitionRuleWorker
-  where
-    transitionRuleWorker _ Simplify Bottom = pure Bottom
-    transitionRuleWorker _ _ Bottom = empty
-    transitionRuleWorker _ Begin (Rewritten _ a) = pure $ Start a
-    transitionRuleWorker _ Begin (Remaining _) = empty
-    transitionRuleWorker _ Begin state@(Start _) = pure state
-    transitionRuleWorker _ Simplify (Rewritten x patt) =
-        transitionSimplify (Rewritten x) patt
-    transitionRuleWorker _ Simplify (Remaining patt) =
-        transitionSimplify Remaining patt
-    transitionRuleWorker _ Simplify (Start patt) =
-        transitionSimplify Start patt
-    transitionRuleWorker mode Rewrite (Remaining patt) =
-        transitionRewrite mode patt
-    transitionRuleWorker mode Rewrite (Start patt) =
-        transitionRewrite mode patt
-    transitionRuleWorker _ Rewrite state@(Rewritten _ _) =
-        pure state
+    where
+        transitionRuleWorker _ Simplify Bottom = pure Bottom
+        transitionRuleWorker _ _ Bottom = empty
+        transitionRuleWorker _ Begin (Rewritten _ a) = pure $ Start a
+        transitionRuleWorker _ Begin (Remaining _) = empty
+        transitionRuleWorker _ Begin state@(Start _) = pure state
+        transitionRuleWorker _ Simplify (Rewritten x patt) =
+            transitionSimplify (Rewritten x) patt
+        transitionRuleWorker _ Simplify (Remaining patt) =
+            transitionSimplify Remaining patt
+        transitionRuleWorker _ Simplify (Start patt) =
+            transitionSimplify Start patt
+        transitionRuleWorker mode Rewrite (Remaining patt) =
+            transitionRewrite mode patt
+        transitionRuleWorker mode Rewrite (Start patt) =
+            transitionRewrite mode patt
+        transitionRuleWorker _ Rewrite state@(Rewritten _ _) =
+            pure state
 
-    transitionSimplify prim config = do
-        configs <- lift $ Pattern.simplifyTopConfiguration config
-        filteredConfigs <- liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc configs
-        if isBottom filteredConfigs
-            then pure Bottom
-            else prim <$> asum (pure <$> toList filteredConfigs)
+        transitionSimplify prim config = do
+            configs <- lift $ Pattern.simplifyTopConfiguration config
+            filteredConfigs <- liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc configs
+            if isBottom filteredConfigs
+                then pure Bottom
+                else prim <$> asum (pure <$> toList filteredConfigs)
 
-    transitionRewrite All patt = transitionAllRewrite patt
-    transitionRewrite Any patt = transitionAnyRewrite patt
+        transitionRewrite All patt = transitionAllRewrite patt
+        transitionRewrite Any patt = transitionAnyRewrite patt
 
-    transitionAllRewrite config =
-        foldM transitionRewrite' (Remaining config) rewriteGroups
-      where
-        transitionRewrite' applied rewrites
-            | Just config' <- retractRemaining applied =
-                Step.applyRewriteRulesParallel rewrites assumeInitialDefined config'
-                    & lift
-                    >>= deriveResults
-                    >>= simplifyRemainder
-            | otherwise = pure applied
-        simplifyRemainder (Remaining p) = transitionSimplify Remaining p
-        simplifyRemainder p = return p
+        transitionAllRewrite config =
+            foldM transitionRewrite' (Remaining config) rewriteGroups
+            where
+                transitionRewrite' applied rewrites
+                    | Just config' <- retractRemaining applied =
+                        Step.applyRewriteRulesParallel rewrites assumeInitialDefined config'
+                            & lift
+                            >>= deriveResults
+                            >>= simplifyRemainder
+                    | otherwise = pure applied
+                simplifyRemainder (Remaining p) = transitionSimplify Remaining p
+                simplifyRemainder p = return p
 
-    transitionAnyRewrite config = do
-        let rules = concat rewriteGroups
-        results <- Step.applyRewriteRulesSequence config rules & lift
-        deriveResults results
+        transitionAnyRewrite config = do
+            let rules = concat rewriteGroups
+            results <- Step.applyRewriteRulesSequence config rules & lift
+            deriveResults results
 
 deriveResults ::
     TopBottom a =>
@@ -268,20 +268,20 @@ deriveResults Result.Results{results, remainders} =
     if (null results || all (\Result.Result{result} -> isBottom result) results) && null remainders
         then pure Bottom
         else addResults results <|> addRemainders remainders
-  where
-    addResults results' = asum (addResult <$> results')
-    addResult Result.Result{appliedRule, result}
-        | isBottom result = empty
-        | otherwise = do
-            (_, simplifyRules :: Seq SimplifierTrace) <- lift get
-            lift $ modify $ \(cache, _rules) -> (cache, mempty)
-            addRule (RewriteRule $ extract appliedRule, simplifyRules)
-            pure $
-                Rewritten
-                    (RuleInfo (predicate appliedRule) (substitution appliedRule) $ from $ extract appliedRule)
-                    result
-    addRemainders remainders' =
-        asum (pure . Remaining <$> toList remainders')
+    where
+        addResults results' = asum (addResult <$> results')
+        addResult Result.Result{appliedRule, result}
+            | isBottom result = empty
+            | otherwise = do
+                (_, simplifyRules :: Seq SimplifierTrace) <- lift get
+                lift $ modify $ \(cache, _rules) -> (cache, mempty)
+                addRule (RewriteRule $ extract appliedRule, simplifyRules)
+                pure
+                    $ Rewritten
+                        (RuleInfo (predicate appliedRule) (substitution appliedRule) $ from $ extract appliedRule)
+                        result
+        addRemainders remainders' =
+            asum (pure . Remaining <$> toList remainders')
 
 groupRewritesByPriority ::
     [RewriteRule variable] -> [[RewriteRule variable]]

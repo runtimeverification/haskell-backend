@@ -92,13 +92,13 @@ parsePatternOptions =
                 <> long "module"
                 <> help "The name of the main module in the Kore definition"
             )
-  where
-    parsePatternFileName =
-        strOption
-            ( metavar "PATTERN_FILE"
-                <> long "pattern"
-                <> help "Kore pattern source file to parse [and verify]. Needs --module."
-            )
+    where
+        parsePatternFileName =
+            strOption
+                ( metavar "PATTERN_FILE"
+                    <> long "pattern"
+                    <> help "Kore pattern source file to parse [and verify]. Needs --module."
+                )
 
 -- | Command Line Argument Parser
 parseKoreParserOptions :: Parser KoreParserOptions

@@ -98,29 +98,29 @@ symbolVerifiers =
             )
         , (iteKey, iteVerifier)
         ]
-  where
-    iteVerifier :: Builtin.SymbolVerifier
-    iteVerifier = Builtin.SymbolVerifier $ \findSort decl -> do
-        let SentenceSymbol{sentenceSymbolSorts = sorts} = decl
-            SentenceSymbol{sentenceSymbolResultSort = result} = decl
-            arity = length sorts
-        Kore.Error.withContext "In argument sorts" $
-            case sorts of
-                [firstSort, secondSort, thirdSort] -> do
-                    Builtin.runSortVerifier Bool.assertSort findSort firstSort
-                    Kore.Error.koreFailWhen
-                        (secondSort /= thirdSort)
-                        "Expected continuations to match"
-                    Kore.Error.koreFailWhen
-                        (secondSort /= result)
-                        "Expected continuations to match"
-                    return ()
-                _ ->
-                    Kore.Error.koreFail
-                        ( "Wrong arity, expected 3 but got "
-                            ++ show arity
-                            ++ " in KEQUAL.ite"
-                        )
+    where
+        iteVerifier :: Builtin.SymbolVerifier
+        iteVerifier = Builtin.SymbolVerifier $ \findSort decl -> do
+            let SentenceSymbol{sentenceSymbolSorts = sorts} = decl
+                SentenceSymbol{sentenceSymbolResultSort = result} = decl
+                arity = length sorts
+            Kore.Error.withContext "In argument sorts"
+                $ case sorts of
+                    [firstSort, secondSort, thirdSort] -> do
+                        Builtin.runSortVerifier Bool.assertSort findSort firstSort
+                        Kore.Error.koreFailWhen
+                            (secondSort /= thirdSort)
+                            "Expected continuations to match"
+                        Kore.Error.koreFailWhen
+                            (secondSort /= result)
+                            "Expected continuations to match"
+                        return ()
+                    _ ->
+                        Kore.Error.koreFail
+                            ( "Wrong arity, expected 3 but got "
+                                ++ show arity
+                                ++ " in KEQUAL.ite"
+                            )
 
 {- | @builtinFunctions@ defines the hooks for @KEQUAL.eq@, @KEQUAL.neq@, and
 @KEQUAL.ite@.
@@ -153,23 +153,23 @@ evalKEq true _ (valid :< app) =
     case applicationChildren of
         [t1, t2] -> Builtin.getAttemptedAxiom (evalEq t1 t2)
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
-  where
-    sort = termSort valid
-    Application{applicationChildren} = app
-    evalEq ::
-        TermLike variable ->
-        TermLike variable ->
-        MaybeT Simplifier (AttemptedAxiom variable)
-    evalEq termLike1 termLike2
-        | termLike1 == termLike2 =
-            Builtin.appliedFunction $ Bool.asPattern sort true
-        | otherwise = do
-            -- Here we handle the case when both patterns are constructor-like
-            -- (so that equality is syntactic). If either pattern is not
-            -- constructor-like, we postpone evaluation until we know more.
-            Monad.guard (TermLike.isConstructorLike termLike1)
-            Monad.guard (TermLike.isConstructorLike termLike2)
-            Builtin.appliedFunction $ Bool.asPattern sort (not true)
+    where
+        sort = termSort valid
+        Application{applicationChildren} = app
+        evalEq ::
+            TermLike variable ->
+            TermLike variable ->
+            MaybeT Simplifier (AttemptedAxiom variable)
+        evalEq termLike1 termLike2
+            | termLike1 == termLike2 =
+                Builtin.appliedFunction $ Bool.asPattern sort true
+            | otherwise = do
+                -- Here we handle the case when both patterns are constructor-like
+                -- (so that equality is syntactic). If either pattern is not
+                -- constructor-like, we postpone evaluation until we know more.
+                Monad.guard (TermLike.isConstructorLike termLike1)
+                Monad.guard (TermLike.isConstructorLike termLike2)
+                Builtin.appliedFunction $ Bool.asPattern sort (not true)
 
 evalKIte ::
     SideCondition RewritingVariableName ->
@@ -183,16 +183,16 @@ evalKIte _ (_ :< app) =
         Application{applicationChildren = [expr, t1, t2]} ->
             evalIte expr t1 t2
         _ -> Builtin.wrongArity iteKey
-  where
-    evaluate :: TermLike RewritingVariableName -> Maybe Bool
-    evaluate = Bool.matchBool
+    where
+        evaluate :: TermLike RewritingVariableName -> Maybe Bool
+        evaluate = Bool.matchBool
 
-    evalIte expr t1 t2 =
-        case evaluate expr of
-            Just result
-                | result -> purePatternAxiomEvaluator t1
-                | otherwise -> purePatternAxiomEvaluator t2
-            Nothing -> notApplicableAxiomEvaluator
+        evalIte expr t1 t2 =
+            case evaluate expr of
+                Just result
+                    | result -> purePatternAxiomEvaluator t1
+                    | otherwise -> purePatternAxiomEvaluator t2
+                Nothing -> notApplicableAxiomEvaluator
 
 eqKey :: IsString s => s
 eqKey = "KEQUAL.eq"
@@ -255,12 +255,12 @@ matchIfThenElse first second
     | Just ifThenElse <- matchITE second =
         Just $ UnifyIfThenElse{ifThenElse, term = first}
     | otherwise = Nothing
-  where
-    matchITE (App_ symbol [condition, branch1, branch2]) = do
-        hook' <- (getHook . symbolHook) symbol
-        Monad.guard (hook' == iteKey)
-        return IfThenElse{symbol, condition, branch1, branch2}
-    matchITE _ = Nothing
+    where
+        matchITE (App_ symbol [condition, branch1, branch2]) = do
+            hook' <- (getHook . symbolHook) symbol
+            Monad.guard (hook' == iteKey)
+            return IfThenElse{symbol, condition, branch1, branch2}
+        matchITE _ = Nothing
 {-# INLINE matchIfThenElse #-}
 
 unifyIfThenElse ::
@@ -271,25 +271,25 @@ unifyIfThenElse ::
     unifier (Pattern RewritingVariableName)
 unifyIfThenElse unifyChildren unifyData =
     worker ifThenElse term
-  where
-    UnifyIfThenElse{ifThenElse, term} = unifyData
-    takeCondition value condition' =
-        makeCeilPredicate (mkAnd (Bool.asInternal sort value) condition')
-            & Condition.fromPredicate
-      where
-        sort = termLikeSort condition'
-    worker ifThenElse' second' =
-        takeBranch1 ifThenElse' <|> takeBranch2 ifThenElse'
-      where
-        takeBranch1 IfThenElse{condition, branch1} = do
-            solution <- unifyChildren branch1 second'
-            let branchCondition = takeCondition True condition
-            Pattern.andCondition solution branchCondition
-                & simplifyCondition SideCondition.top
-                & Logic.lowerLogicT
-        takeBranch2 IfThenElse{condition, branch2} = do
-            solution <- unifyChildren branch2 second'
-            let branchCondition = takeCondition False condition
-            Pattern.andCondition solution branchCondition
-                & simplifyCondition SideCondition.top
-                & Logic.lowerLogicT
+    where
+        UnifyIfThenElse{ifThenElse, term} = unifyData
+        takeCondition value condition' =
+            makeCeilPredicate (mkAnd (Bool.asInternal sort value) condition')
+                & Condition.fromPredicate
+            where
+                sort = termLikeSort condition'
+        worker ifThenElse' second' =
+            takeBranch1 ifThenElse' <|> takeBranch2 ifThenElse'
+            where
+                takeBranch1 IfThenElse{condition, branch1} = do
+                    solution <- unifyChildren branch1 second'
+                    let branchCondition = takeCondition True condition
+                    Pattern.andCondition solution branchCondition
+                        & simplifyCondition SideCondition.top
+                        & Logic.lowerLogicT
+                takeBranch2 IfThenElse{condition, branch2} = do
+                    solution <- unifyChildren branch2 second'
+                    let branchCondition = takeCondition False condition
+                    Pattern.andCondition solution branchCondition
+                        & simplifyCondition SideCondition.top
+                        & Logic.lowerLogicT

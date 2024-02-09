@@ -43,41 +43,41 @@ test_evaluateApplication =
     [ evaluates "f(a) -- f(x) => x" (f a) a
     , notEvaluates "g(a) -- no axioms" (g a) id
     ]
-  where
-    a = Mock.a
-    evaluates ::
-        HasCallStack =>
-        TestName ->
-        Application Symbol (TermLike RewritingVariableName) ->
-        TermLike RewritingVariableName ->
-        TestTree
-    evaluates name origin expect =
-        makeTest
-            name
-            origin
-            (OrPattern.fromTermLike expect)
-    notEvaluates ::
-        HasCallStack =>
-        TestName ->
-        Application Symbol (TermLike RewritingVariableName) ->
-        (TermLike RewritingVariableName -> TermLike RewritingVariableName) ->
-        TestTree
-    notEvaluates name origin mkExpect =
-        makeTest
-            name
-            origin
-            (OrPattern.fromTermLike $ mkExpect $ mkApplySymbol origin)
+    where
+        a = Mock.a
+        evaluates ::
+            HasCallStack =>
+            TestName ->
+            Application Symbol (TermLike RewritingVariableName) ->
+            TermLike RewritingVariableName ->
+            TestTree
+        evaluates name origin expect =
+            makeTest
+                name
+                origin
+                (OrPattern.fromTermLike expect)
+        notEvaluates ::
+            HasCallStack =>
+            TestName ->
+            Application Symbol (TermLike RewritingVariableName) ->
+            (TermLike RewritingVariableName -> TermLike RewritingVariableName) ->
+            TestTree
+        notEvaluates name origin mkExpect =
+            makeTest
+                name
+                origin
+                (OrPattern.fromTermLike $ mkExpect $ mkApplySymbol origin)
 
-    makeTest ::
-        HasCallStack =>
-        TestName ->
-        Application Symbol (TermLike RewritingVariableName) ->
-        OrPattern RewritingVariableName ->
-        TestTree
-    makeTest name origin expect =
-        testCase name $ do
-            actual <- evaluateApplication Condition.top origin
-            assertEqual "" expect actual
+        makeTest ::
+            HasCallStack =>
+            TestName ->
+            Application Symbol (TermLike RewritingVariableName) ->
+            OrPattern RewritingVariableName ->
+            TestTree
+        makeTest name origin expect =
+            testCase name $ do
+                actual <- evaluateApplication Condition.top origin
+                assertEqual "" expect actual
 
 fSymbol, gSymbol :: Symbol
 fSymbol = Mock.fSymbol
@@ -100,10 +100,10 @@ mkApplySymbol' = synthesize . TermLike.ApplySymbolF
 fEquation :: Equation.Equation RewritingVariableName
 fEquation =
     Equation.mkEquation left right
-  where
-    left = mkApplySymbol' (f x)
-    right = x
-    x = TermLike.mkElemVar Mock.xConfig
+    where
+        left = mkApplySymbol' (f x)
+        right = x
+        x = TermLike.mkElemVar Mock.xConfig
 
 evaluateApplication ::
     Condition RewritingVariableName ->
@@ -115,8 +115,8 @@ evaluateApplication predicate =
 
 axiomEquations :: Map AxiomIdentifier [Equation.Equation RewritingVariableName]
 axiomEquations = Map.fromList [(fId, [fEquation])]
-  where
-    fId = Axiom.Identifier.Application (TermLike.symbolConstructor fSymbol)
+    where
+        fId = Axiom.Identifier.Application (TermLike.symbolConstructor fSymbol)
 
 env :: Test.Env
 env = Mock.env{Test.axiomEquations = axiomEquations}

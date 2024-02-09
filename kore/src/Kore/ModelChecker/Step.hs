@@ -128,106 +128,110 @@ transitionRule
             Unroll goalrhs -> transitionUnroll goalrhs proofState
             ComputeWeakNext rewrites ->
                 transitionComputeWeakNext rewrites proofState
-      where
-        transitionCheckProofState ::
-            CommonProofState ->
-            Transition Simplifier CommonProofState
-        transitionCheckProofState proofState0 = do
-            execState <- lift State.get
-            -- End early if any unprovable state was reached
-            when (isJust execState) empty
-            case proofState0 of
-                Proven -> empty
-                Unprovable _ -> empty
-                ps -> return ps
+        where
+            transitionCheckProofState ::
+                CommonProofState ->
+                Transition Simplifier CommonProofState
+            transitionCheckProofState proofState0 = do
+                execState <- lift State.get
+                -- End early if any unprovable state was reached
+                when (isJust execState) empty
+                case proofState0 of
+                    Proven -> empty
+                    Unprovable _ -> empty
+                    ps -> return ps
 
-        transitionSimplify ::
-            CommonProofState ->
-            Transition Simplifier CommonProofState
-        transitionSimplify Proven = return Proven
-        transitionSimplify (Unprovable config) = return (Unprovable config)
-        transitionSimplify (GoalLHS config) =
-            applySimplify GoalLHS config
-        transitionSimplify (GoalRemLHS config) =
-            applySimplify GoalRemLHS config
+            transitionSimplify ::
+                CommonProofState ->
+                Transition Simplifier CommonProofState
+            transitionSimplify Proven = return Proven
+            transitionSimplify (Unprovable config) = return (Unprovable config)
+            transitionSimplify (GoalLHS config) =
+                applySimplify GoalLHS config
+            transitionSimplify (GoalRemLHS config) =
+                applySimplify GoalRemLHS config
 
-        applySimplify wrapper config =
-            do
-                configs <-
-                    lift . lift $
-                        Pattern.simplifyTopConfiguration config
-                filteredConfigs <- liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc configs
-                if null filteredConfigs
-                    then return Proven
-                    else
-                        asum $
-                            pure . wrapper
+            applySimplify wrapper config =
+                do
+                    configs <-
+                        lift
+                            . lift
+                            $ Pattern.simplifyTopConfiguration config
+                    filteredConfigs <- liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc configs
+                    if null filteredConfigs
+                        then return Proven
+                        else
+                            asum
+                                $ pure
+                                . wrapper
                                 <$> toList filteredConfigs
 
-        transitionUnroll ::
-            CommonModalPattern ->
-            CommonProofState ->
-            Transition Simplifier CommonProofState
-        transitionUnroll _ Proven = empty
-        transitionUnroll _ (Unprovable _) = empty
-        transitionUnroll goalrhs (GoalLHS config)
-            | Pattern.isBottom config = return Proven
-            | otherwise = applyUnroll goalrhs GoalLHS config
-        transitionUnroll goalrhs (GoalRemLHS config)
-            | Pattern.isBottom config = return Proven
-            | otherwise = applyUnroll goalrhs GoalRemLHS config
+            transitionUnroll ::
+                CommonModalPattern ->
+                CommonProofState ->
+                Transition Simplifier CommonProofState
+            transitionUnroll _ Proven = empty
+            transitionUnroll _ (Unprovable _) = empty
+            transitionUnroll goalrhs (GoalLHS config)
+                | Pattern.isBottom config = return Proven
+                | otherwise = applyUnroll goalrhs GoalLHS config
+            transitionUnroll goalrhs (GoalRemLHS config)
+                | Pattern.isBottom config = return Proven
+                | otherwise = applyUnroll goalrhs GoalRemLHS config
 
-        applyUnroll ModalPattern{modalOp, term} wrapper config
-            | modalOp == allPathGlobally = do
-                result <-
-                    lift . lift $
-                        checkImplicationIsTop config term
-                if result
-                    then return (wrapper config)
-                    else do
-                        (lift . State.put) (Just ())
-                        return (Unprovable config)
-            | otherwise =
-                (error . show . Pretty.vsep)
-                    [ "Not implemented error:"
-                    , "We don't know how to unroll the modalOp:"
-                    , Pretty.pretty modalOp
-                    ]
+            applyUnroll ModalPattern{modalOp, term} wrapper config
+                | modalOp == allPathGlobally = do
+                    result <-
+                        lift
+                            . lift
+                            $ checkImplicationIsTop config term
+                    if result
+                        then return (wrapper config)
+                        else do
+                            (lift . State.put) (Just ())
+                            return (Unprovable config)
+                | otherwise =
+                    (error . show . Pretty.vsep)
+                        [ "Not implemented error:"
+                        , "We don't know how to unroll the modalOp:"
+                        , Pretty.pretty modalOp
+                        ]
 
-        transitionComputeWeakNext ::
-            [RewriteRule RewritingVariableName] ->
-            CommonProofState ->
-            Transition Simplifier CommonProofState
-        transitionComputeWeakNext _ Proven = return Proven
-        transitionComputeWeakNext _ (Unprovable config) = return (Unprovable config)
-        transitionComputeWeakNext rules (GoalLHS config) =
-            transitionComputeWeakNextHelper rules config
-        transitionComputeWeakNext _ (GoalRemLHS pat) =
-            let patSort = Pattern.patternSort pat
-             in return (GoalLHS (Pattern.bottomOf patSort))
+            transitionComputeWeakNext ::
+                [RewriteRule RewritingVariableName] ->
+                CommonProofState ->
+                Transition Simplifier CommonProofState
+            transitionComputeWeakNext _ Proven = return Proven
+            transitionComputeWeakNext _ (Unprovable config) = return (Unprovable config)
+            transitionComputeWeakNext rules (GoalLHS config) =
+                transitionComputeWeakNextHelper rules config
+            transitionComputeWeakNext _ (GoalRemLHS pat) =
+                let patSort = Pattern.patternSort pat
+                 in return (GoalLHS (Pattern.bottomOf patSort))
 
-        transitionComputeWeakNextHelper ::
-            [RewriteRule RewritingVariableName] ->
-            Pattern RewritingVariableName ->
-            Transition Simplifier CommonProofState
-        transitionComputeWeakNextHelper _ config
-            | Pattern.isBottom config = return Proven
-        transitionComputeWeakNextHelper rules config = do
-            results <-
-                Step.applyRewriteRulesParallel
-                    rules
-                    Step.DisableAssumeInitialDefined
-                    config
-                    & lift . lift
-            let mapRules =
-                    StepResult.mapRules $
-                        RewriteRule
+            transitionComputeWeakNextHelper ::
+                [RewriteRule RewritingVariableName] ->
+                Pattern RewritingVariableName ->
+                Transition Simplifier CommonProofState
+            transitionComputeWeakNextHelper _ config
+                | Pattern.isBottom config = return Proven
+            transitionComputeWeakNextHelper rules config = do
+                results <-
+                    Step.applyRewriteRulesParallel
+                        rules
+                        Step.DisableAssumeInitialDefined
+                        config
+                        & lift
+                        . lift
+                let mapRules =
+                        StepResult.mapRules
+                            $ RewriteRule
                             . Step.withoutUnification
-                mapConfigs =
-                    StepResult.mapConfigs
-                        GoalLHS
-                        GoalRemLHS
-            StepResult.transitionResults (mapConfigs $ mapRules results)
+                    mapConfigs =
+                        StepResult.mapConfigs
+                            GoalLHS
+                            GoalRemLHS
+                StepResult.transitionResults (mapConfigs $ mapRules results)
 
 defaultOneStepStrategy ::
     -- | The modal pattern.

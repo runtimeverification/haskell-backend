@@ -33,11 +33,11 @@ instance Pretty DebugCreatedSubstitution where
             [ "Created and applied the following substitution:"
             , Pretty.indent 4 (unparse substitutionTerm)
             ]
-      where
-        substitutionTerm =
-            Predicate.fromPredicate resultSort
-                . Substitution.toPredicate
-                $ substitution
+        where
+            substitutionTerm =
+                Predicate.fromPredicate resultSort
+                    . Substitution.toPredicate
+                    $ substitution
 
 instance Entry DebugCreatedSubstitution where
     entrySeverity _ = Debug

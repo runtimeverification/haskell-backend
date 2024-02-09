@@ -49,20 +49,20 @@ instance From GHC.RTSStats Stats where
             , cpu_ns
             , elapsed_ns
             }
-      where
-        GHC.RTSStats
-            { gcs
-            , major_gcs
-            , allocated_bytes
-            , max_live_bytes
-            , mutator_cpu_ns
-            , mutator_elapsed_ns
-            , gc_cpu_ns
-            , gc_elapsed_ns
-            , cpu_ns
-            , elapsed_ns
-            } =
-                rtsStats
+        where
+            GHC.RTSStats
+                { gcs
+                , major_gcs
+                , allocated_bytes
+                , max_live_bytes
+                , mutator_cpu_ns
+                , mutator_elapsed_ns
+                , gc_cpu_ns
+                , gc_elapsed_ns
+                , cpu_ns
+                , elapsed_ns
+                } =
+                    rtsStats
 
 getStats :: IO Stats
 getStats = do
@@ -76,5 +76,5 @@ writeStats = Aeson.encodeFile
 readStats :: FilePath -> IO Stats
 readStats filePath =
     either errorWith return =<< Aeson.eitherDecodeFileStrict filePath
-  where
-    errorWith message = error ("readStats: " ++ message)
+    where
+        errorWith message = error ("readStats: " ++ message)

@@ -75,8 +75,8 @@ replicate limit b = takeWithin limit (repeat b)
 -- | Take a limited prefix of the given list.
 takeWithin :: (Enum a, Ord a) => Limit a -> [b] -> [b]
 takeWithin limit bs = zipWith const bs limiting
-  where
-    limiting = enumFromLimit limit (toEnum 1)
+    where
+        limiting = enumFromLimit limit (toEnum 1)
 
 maybeLimit :: b -> (a -> b) -> Limit a -> b
 maybeLimit b f = foldr (\a _ -> f a) b

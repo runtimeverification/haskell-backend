@@ -57,12 +57,12 @@ instance ParseAttributes ProductionID where
             StringLiteral name <- Parser.getStringLiteral arg
             unless (isNothing productionID) failDuplicate'
             return ProductionID{getProductionID = Just name}
-      where
-        withApplication' = Parser.withApplication productionIDId
-        failDuplicate' = Parser.failDuplicate productionIDId
+        where
+            withApplication' = Parser.withApplication productionIDId
+            failDuplicate' = Parser.failDuplicate productionIDId
 
 instance From ProductionID Attributes where
     from =
         maybe def toAttribute . getProductionID
-      where
-        toAttribute = from @AttributePattern . productionIDAttribute
+        where
+            toAttribute = from @AttributePattern . productionIDAttribute

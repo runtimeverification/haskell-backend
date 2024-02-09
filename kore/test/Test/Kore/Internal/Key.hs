@@ -42,9 +42,9 @@ test_retractKey =
                 }
         )
     ]
-  where
-    test :: HasCallStack => TestName -> TermLike Concrete -> TestTree
-    test testName term =
-        testCase testName $ do
-            let actual = retractKey term
-            assertBool "expected key" (isJust actual)
+    where
+        test :: HasCallStack => TestName -> TermLike Concrete -> TestTree
+        test testName term =
+            testCase testName $ do
+                let actual = retractKey term
+                assertBool "expected key" (isJust actual)

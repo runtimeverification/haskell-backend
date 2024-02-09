@@ -151,20 +151,20 @@ isError ::
     SmtPrelude ->
     TestTree
 isError actions _ prelude =
-    testCase "isError" $
-        catch (catch runSolver ignoreIOError) ignoreErrorCall
-  where
-    runSolver = do
-        _ <- getSmtResult actions prelude
-        assertFailure "No `error` was raised."
+    testCase "isError"
+        $ catch (catch runSolver ignoreIOError) ignoreErrorCall
+    where
+        runSolver = do
+            _ <- getSmtResult actions prelude
+            assertFailure "No `error` was raised."
 
-    ignoreIOError :: IOError -> IO ()
-    ignoreIOError _err =
-        return ()
+        ignoreIOError :: IOError -> IO ()
+        ignoreIOError _err =
+            return ()
 
-    ignoreErrorCall :: ErrorCall -> IO ()
-    ignoreErrorCall _err =
-        return ()
+        ignoreErrorCall :: ErrorCall -> IO ()
+        ignoreErrorCall _err =
+            return ()
 
 getSmtResult ::
     [SMT ()] ->
@@ -214,11 +214,11 @@ testsForModule ::
     TestTree
 testsForModule name functionToTest indexedModule tests =
     testGroup name (map (\f -> f tools prelude) tests)
-  where
-    prelude =
-        SmtPrelude
-            (functionToTest tools indexedModule)
-    tools = MetadataTools.build indexedModule
+    where
+        prelude =
+            SmtPrelude
+                (functionToTest tools indexedModule)
+        tools = MetadataTools.build indexedModule
 
 constructorAxiom :: Text -> [(Text, [Text])] -> ParsedSentence
 constructorAxiom sortName constructors =
@@ -226,32 +226,32 @@ constructorAxiom sortName constructors =
         SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
-                externalize $
-                    foldr mkOr (mkBottom sort) constructorAssertions
+                externalize
+                    $ foldr mkOr (mkBottom sort) constructorAssertions
             , sentenceAxiomAttributes = Attributes []
             }
         `with` noJunk
-  where
-    sort = makeSort sortName
-    constructorAssertions =
-        map constructorAssertion constructors
-    constructorAssertion (constructorName, argumentSorts) =
-        foldr
-            mkExists
-            (mkApplySymbol symbol (map mkElemVar argumentVariables))
-            argumentVariables
-      where
-        argumentVariables :: [ElementVariable VariableName]
-        argumentVariables = zipWith makeVariable [1 ..] argumentSorts
+    where
+        sort = makeSort sortName
+        constructorAssertions =
+            map constructorAssertion constructors
+        constructorAssertion (constructorName, argumentSorts) =
+            foldr
+                mkExists
+                (mkApplySymbol symbol (map mkElemVar argumentVariables))
+                argumentVariables
+            where
+                argumentVariables :: [ElementVariable VariableName]
+                argumentVariables = zipWith makeVariable [1 ..] argumentSorts
 
-        symbol =
-            Symbol
-                { symbolConstructor = testId constructorName
-                , symbolParams = []
-                , symbolAttributes = Mock.constructorTotalAttributes
-                , symbolSorts =
-                    applicationSorts (map makeSort argumentSorts) sort
-                }
+                symbol =
+                    Symbol
+                        { symbolConstructor = testId constructorName
+                        , symbolParams = []
+                        , symbolAttributes = Mock.constructorTotalAttributes
+                        , symbolSorts =
+                            applicationSorts (map makeSort argumentSorts) sort
+                        }
 
 makeVariable :: Natural -> Text -> ElementVariable VariableName
 makeVariable varIndex sortName =

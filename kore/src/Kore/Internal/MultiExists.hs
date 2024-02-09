@@ -77,8 +77,8 @@ instance
             , pretty existsChild
             , mconcat (")" <$ toList existsVariables)
             ]
-      where
-        mkExistsDoc variable = "\\exists{_}(" <> unparse variable <> ","
+        where
+            mkExistsDoc variable = "\\exists{_}(" <> unparse variable <> ","
     {-# INLINE pretty #-}
 
 instance
@@ -89,8 +89,8 @@ instance
         FreeVariables.bindVariables
             (inject <$> existsVariables)
             (freeVariables existsChild)
-      where
-        MultiExists{existsVariables, existsChild} = multiExists
+        where
+            MultiExists{existsVariables, existsChild} = multiExists
 
 instance
     ( FreshPartialOrd variable
@@ -102,15 +102,15 @@ instance
     where
     (<>) exists1 exists2 =
         MultiExists variables' child'
-      where
-        variables' = variables1' <> variables2'
-        child' = child1' <> child2'
-        avoid2 = allVariableNames exists1
-        exists2' = refresh avoid2 exists2
-        MultiExists variables2' child2' = exists2'
-        avoid1 = allVariableNames exists2'
-        exists1' = refresh avoid1 exists1
-        MultiExists variables1' child1' = exists1'
+        where
+            variables' = variables1' <> variables2'
+            child' = child1' <> child2'
+            avoid2 = allVariableNames exists1
+            exists2' = refresh avoid2 exists2
+            MultiExists variables2' child2' = exists2'
+            avoid1 = allVariableNames exists2'
+            exists1' = refresh avoid1 exists1
+            MultiExists variables1' child1' = exists1'
 
 -- | All (free and bound) variable names of a 'MultiExists'.
 allVariableNames ::
@@ -134,10 +134,10 @@ refresh extraAvoiding multiExists@MultiExists{existsVariables, existsChild} =
         { existsVariables = expectElementVariable <$> someVariables'
         , existsChild = rename (Map.mapKeysMonotonic variableName refreshing) existsChild
         }
-  where
-    avoiding = freeVariableNames multiExists <> extraAvoiding
-    someVariables = inject @(SomeVariable _) <$> existsVariables
-    (someVariables', refreshing) = refreshVariables' avoiding someVariables
+    where
+        avoiding = freeVariableNames multiExists <> extraAvoiding
+        someVariables = inject @(SomeVariable _) <$> existsVariables
+        (someVariables', refreshing) = refreshVariables' avoiding someVariables
 
 {- | Quantify over a variable in a 'MultiExists'. If the variable is redundant
 (does not occur free in the 'MultiExists') then it will be omitted.
@@ -156,9 +156,9 @@ quantify elementVariable ~original@MultiExists{existsVariables, existsChild}
             , existsChild
             }
     | otherwise = original
-  where
-    someVariableName :: SomeVariableName variable
-    someVariableName = inject (variableName elementVariable)
+    where
+        someVariableName :: SomeVariableName variable
+        someVariableName = inject (variableName elementVariable)
 
 -- | Construct a 'MultiExists' containing @child@ without any quantifiers.
 unquantified :: child -> MultiExists variable child
@@ -181,7 +181,7 @@ filterRelevant multiExists =
             | someVariableName `occursIn` inner ->
                 quantify x (filterRelevant inner)
             | otherwise -> filterRelevant inner
-          where
-            someVariableName :: SomeVariableName variable
-            someVariableName = inject (variableName x)
-            inner = multiExists{existsVariables = xs}
+            where
+                someVariableName :: SomeVariableName variable
+                someVariableName = inject (variableName x)
+                inner = multiExists{existsVariables = xs}

@@ -114,19 +114,19 @@ encodePattern Conditional.Conditional{term, predicate, substitution} =
         , "constraint" .= encodedConstraint
         , "substitution" .= encodeSubstitution substitution
         ]
-  where
-    sort = TermLike.termLikeSort term
-    encodedConstraint = (renderText $ layoutOneLine $ unparseWithSort sort predicate) :: Text
+    where
+        sort = TermLike.termLikeSort term
+        encodedConstraint = (renderText $ layoutOneLine $ unparseWithSort sort predicate) :: Text
 
 encodeSubstitution :: Substitution VariableName -> Value
 encodeSubstitution substitution =
     array (encodeKV <$> unwrap substitution)
-  where
-    encodeKV assignment =
-        object
-            [ "key" .= unparseOneLine (assignedVariable assignment)
-            , "value" .= unparseOneLine (assignedTerm assignment)
-            ]
+    where
+        encodeKV assignment =
+            object
+                [ "key" .= unparseOneLine (assignedVariable assignment)
+                , "value" .= unparseOneLine (assignedTerm assignment)
+                ]
 
 instance ToJSON DebugInitialClaim where
     toJSON (DebugInitialClaim uniqueId claim) =
@@ -227,24 +227,24 @@ debugRewriteTrace ::
     Results rule ->
     log ()
 debugRewriteTrace initial Result.Results{results = (toList -> results), remainders} =
-    unless (null results) $
-        logEntry
+    unless (null results)
+        $ logEntry
             DebugRewriteTrace
                 { initialPattern = getRewritingPattern initial
                 , rewriteResults = getResult <$> results
                 , remainders = multiOrToList remainders
                 }
-  where
-    mapSubstitutionVariables = Substitution.mapVariables (pure toVariableName)
+    where
+        mapSubstitutionVariables = Substitution.mapVariables (pure toVariableName)
 
-    multiOrToList = (getRewritingPattern <$>) . from
+        multiOrToList = (getRewritingPattern <$>) . from
 
-    getResult Result.Result{appliedRule, result} =
-        RewriteResult
-            { ruleId = from @_ @UniqueId $ extract appliedRule
-            , substitution = mapSubstitutionVariables $ Conditional.substitution appliedRule
-            , result = getRewritingPattern result
-            }
+        getResult Result.Result{appliedRule, result} =
+            RewriteResult
+                { ruleId = from @_ @UniqueId $ extract appliedRule
+                , substitution = mapSubstitutionVariables $ Conditional.substitution appliedRule
+                , result = getRewritingPattern result
+                }
 
 rewriteTraceLogger ::
     Applicative m =>
@@ -252,15 +252,15 @@ rewriteTraceLogger ::
     LogAction m SomeEntry
 rewriteTraceLogger textLogger =
     LogAction action
-  where
-    action entry
-        | Just initial <- fromEntry @DebugInitialClaim entry =
-            unLogAction textLogger $ "---\n" <> encode initial <> "steps:"
-        | Just initial <- fromEntry @DebugInitialPattern entry =
-            unLogAction textLogger $ encode initial <> "steps:"
-        | Just final <- fromEntry @DebugFinalPatterns entry =
-            unLogAction textLogger $ encode final
-        | Just rewrite <- fromEntry @DebugRewriteTrace entry =
-            unLogAction textLogger $ encode [rewrite]
-        | otherwise =
-            pure ()
+    where
+        action entry
+            | Just initial <- fromEntry @DebugInitialClaim entry =
+                unLogAction textLogger $ "---\n" <> encode initial <> "steps:"
+            | Just initial <- fromEntry @DebugInitialPattern entry =
+                unLogAction textLogger $ encode initial <> "steps:"
+            | Just final <- fromEntry @DebugFinalPatterns entry =
+                unLogAction textLogger $ encode final
+            | Just rewrite <- fromEntry @DebugRewriteTrace entry =
+                unLogAction textLogger $ encode [rewrite]
+            | otherwise =
+                pure ()

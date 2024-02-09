@@ -75,9 +75,9 @@ See also: 'verifyUncachedModule'
 -}
 verifyModule :: ModuleName -> Verifier VerifiedModule'
 verifyModule name = lookupVerifiedModule name >>= maybe notCached cached
-  where
-    cached = return
-    notCached = verifyUncachedModule name
+    where
+        cached = return
+        notCached = verifyUncachedModule name
 
 -- | Verify the named module, irrespective of the cache.
 verifyUncachedModule :: ModuleName -> Verifier VerifiedModule'
@@ -101,8 +101,8 @@ verifyUncachedModule name = whileImporting name $ do
                         verifyClaims sentences
                 )
     _ <-
-        withModuleContext name $
-            internalIndexedModuleSubsorts indexedModule
+        withModuleContext name
+            $ internalIndexedModuleSubsorts indexedModule
     field @"verifiedModules" %= Map.insert name indexedModule
     return indexedModule
 
@@ -137,15 +137,15 @@ verifyImport sentence =
         verified <- lift $ verifyModule importName
         State.modify' $ addImport verified attrs1 attrs0
         State.modify' $ addImportSyntax verified attrs1 attrs0
-  where
-    addImport verified attrs1 attrs0 =
-        Lens.over
-            (field @"indexedModuleImports")
-            ((attrs1, attrs0, verified) :)
-    addImportSyntax verified attrs1 attrs0 =
-        Lens.over
-            (field @"indexedModuleSyntax" . field @"indexedModuleImportsSyntax")
-            ((attrs1, attrs0, indexedModuleSyntax verified) :)
+    where
+        addImport verified attrs1 attrs0 =
+            Lens.over
+                (field @"indexedModuleImports")
+                ((attrs1, attrs0, verified) :)
+        addImportSyntax verified attrs1 attrs0 =
+            Lens.over
+                (field @"indexedModuleSyntax" . field @"indexedModuleImportsSyntax")
+                ((attrs1, attrs0, indexedModuleSyntax verified) :)
 
 parseAttributes' ::
     forall attrs error e.

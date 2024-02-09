@@ -106,9 +106,9 @@ verifyUniqueNames ::
     Either (Error VerifyError) (HashMap InternedText AstLocation)
 verifyUniqueNames sentences existingNames =
     foldM verifyUniqueId existingNames definedNames
-  where
-    definedNames =
-        concatMap definedNamesForSentence sentences
+    where
+        definedNames =
+            concatMap definedNamesForSentence sentences
 
 data UnparameterizedId = UnparameterizedId
     { unparameterizedIdName :: InternedText
@@ -250,17 +250,17 @@ addIndexedModuleHook ::
 addIndexedModuleHook name hook =
     Lens.over (field @"indexedModuleSyntax" . field @"indexedModuleHookedIdentifiers") (Set.insert name)
         . Lens.over (field @"indexedModuleHooks") addHook
-  where
-    addHook
-        | Just hookId <- Attribute.getHook hook =
-            Map.alter (Just . maybe [name] (name :)) hookId
-        | otherwise = id
+    where
+        addHook
+            | Just hookId <- Attribute.getHook hook =
+                Map.alter (Just . maybe [name] (name :)) hookId
+            | otherwise = id
 
 verifySymbols :: [ParsedSentence] -> SentenceVerifier ()
 verifySymbols = traverse_ verifySymbolSentence . mapMaybe project
-  where
-    project sentence =
-        projectSentenceSymbol sentence <|> projectSentenceHookedSymbol sentence
+    where
+        project sentence =
+            projectSentenceSymbol sentence <|> projectSentenceHookedSymbol sentence
 
 verifySymbolSentence ::
     SentenceSymbol ->
@@ -281,13 +281,13 @@ verifySymbolSentence sentence =
         when isConstructor (verifyConstructor sentence)
         State.modify' $ addSymbol sentence attrs
         return sentence
-  where
-    addSymbol verified attrs =
-        Lens.over
-            (field @"indexedModuleSyntax" . field @"indexedModuleSymbolSentences")
-            (Map.insert name (attrs, verified))
-      where
-        Symbol{symbolConstructor = name} = sentenceSymbolSymbol verified
+    where
+        addSymbol verified attrs =
+            Lens.over
+                (field @"indexedModuleSyntax" . field @"indexedModuleSymbolSentences")
+                (Map.insert name (attrs, verified))
+            where
+                Symbol{symbolConstructor = name} = sentenceSymbolSymbol verified
 
 verifyConstructor ::
     Verified.SentenceSymbol ->
@@ -315,9 +315,9 @@ verifyConstructor verified = do
     koreFailWhen
         hasDomainValues
         (noConstructorWithDomainValues symbolName resultSort)
-  where
-    symbolName = (symbolConstructor . sentenceSymbolSymbol) verified
-    resultSort = sentenceSymbolResultSort verified
+    where
+        symbolName = (symbolConstructor . sentenceSymbolSymbol) verified
+        resultSort = sentenceSymbolResultSort verified
 
 verifyAliasSentence ::
     ParsedSentenceAlias ->
@@ -331,21 +331,21 @@ verifyAliasSentence sentence = do
         (declaredVariables, verifiedLeftPattern) <-
             verifyAliasLeftPattern alias sentenceAliasSorts leftPattern
         verifiedRightPattern <-
-            withDeclaredVariables declaredVariables $
-                verifyPattern (Just expectedSort) rightPattern
+            withDeclaredVariables declaredVariables
+                $ verifyPattern (Just expectedSort) rightPattern
         return
             sentence
                 { sentenceAliasLeftPattern = verifiedLeftPattern
                 , sentenceAliasRightPattern = verifiedRightPattern
                 }
-  where
-    SentenceAlias{sentenceAliasAlias = alias} = sentence
-    SentenceAlias{sentenceAliasLeftPattern = leftPattern} = sentence
-    SentenceAlias{sentenceAliasRightPattern = rightPattern} = sentence
-    SentenceAlias{sentenceAliasSorts} = sentence
-    SentenceAlias{sentenceAliasResultSort} = sentence
-    sortParams = (aliasParams . sentenceAliasAlias) sentence
-    expectedSort = sentenceAliasResultSort
+    where
+        SentenceAlias{sentenceAliasAlias = alias} = sentence
+        SentenceAlias{sentenceAliasLeftPattern = leftPattern} = sentence
+        SentenceAlias{sentenceAliasRightPattern = rightPattern} = sentence
+        SentenceAlias{sentenceAliasSorts} = sentence
+        SentenceAlias{sentenceAliasResultSort} = sentence
+        sortParams = (aliasParams . sentenceAliasAlias) sentence
+        expectedSort = sentenceAliasResultSort
 
 verifyAxioms :: [ParsedSentence] -> SentenceVerifier ()
 verifyAxioms =
@@ -364,11 +364,11 @@ verifyAxiomSentence sentence =
                 (sentenceAxiomAttributes sentence)
         validateAxiom attrs verified
         State.modify $ addAxiom verified attrs
-  where
-    addAxiom verified attrs =
-        Lens.over
-            (field @"indexedModuleAxioms")
-            ((attrs, verified) :)
+    where
+        addAxiom verified attrs =
+            Lens.over
+                (field @"indexedModuleAxioms")
+                ((attrs, verified) :)
 
 verifyAxiomSentenceWorker ::
     ParsedSentenceAxiom ->
@@ -398,36 +398,36 @@ verifyClaimSentence sentence =
                 verifiedModule'
                 (freeVariables sentence)
                 (sentenceClaimAttributes sentence)
-        when (rejectClaim attrs verified) $
-            koreFail
+        when (rejectClaim attrs verified)
+            $ koreFail
                 "Found claim with universally-quantified variables\
                 \ appearing only on the right-hand side"
         State.modify' $ addClaim (SentenceClaim verified) attrs
-  where
-    addClaim verified attrs =
-        Lens.over
-            (field @"indexedModuleClaims")
-            ((attrs, verified) :)
-    rejectClaim attrs verified =
-        do
-            someClaim <- extractClaim @SomeClaim (attrs, SentenceClaim verified)
-            let claimPattern = Lens.view lensClaimPattern someClaim
-            pure (rejectClaimPattern claimPattern)
-            & fromMaybe False
-    rejectClaimPattern :: ClaimPattern -> Bool
-    rejectClaimPattern claimPattern =
-        not $ Set.isSubsetOf freeRightVars freeLeftVars
-      where
-        freeRightVars =
-            freeVariablesRight claimPattern & FreeVariables.toSet
-        freeLeftVars =
-            freeVariablesLeft claimPattern & FreeVariables.toSet
+    where
+        addClaim verified attrs =
+            Lens.over
+                (field @"indexedModuleClaims")
+                ((attrs, verified) :)
+        rejectClaim attrs verified =
+            do
+                someClaim <- extractClaim @SomeClaim (attrs, SentenceClaim verified)
+                let claimPattern = Lens.view lensClaimPattern someClaim
+                pure (rejectClaimPattern claimPattern)
+                & fromMaybe False
+        rejectClaimPattern :: ClaimPattern -> Bool
+        rejectClaimPattern claimPattern =
+            not $ Set.isSubsetOf freeRightVars freeLeftVars
+            where
+                freeRightVars =
+                    freeVariablesRight claimPattern & FreeVariables.toSet
+                freeLeftVars =
+                    freeVariablesLeft claimPattern & FreeVariables.toSet
 
 verifySorts :: [ParsedSentence] -> SentenceVerifier ()
 verifySorts = traverse_ verifySortSentence . mapMaybe project
-  where
-    project sentence =
-        projectSentenceSort sentence <|> projectSentenceHookedSort sentence
+    where
+        project sentence =
+            projectSentenceSort sentence <|> projectSentenceHookedSort sentence
 
 verifySortSentence ::
     SentenceSort ->
@@ -438,27 +438,27 @@ verifySortSentence sentence =
         attrs <- parseAttributes' $ sentenceSortAttributes sentence
         State.modify' $ addSort sentence attrs
         return sentence
-  where
-    addSort verified attrs =
-        Lens.over
-            (field @"indexedModuleSyntax" . field @"indexedModuleSortDescriptions")
-            (Map.insert (sentenceSortName verified) (attrs, verified))
+    where
+        addSort verified attrs =
+            Lens.over
+                (field @"indexedModuleSyntax" . field @"indexedModuleSortDescriptions")
+                (Map.insert (sentenceSortName verified) (attrs, verified))
 
 verifyNonHooks ::
     [ParsedSentence] ->
     SentenceVerifier ()
 verifyNonHooks sentences =
     traverse_ verifyNonHookSentence nonHookSentences
-  where
-    nonHookSentences = mapMaybe project sentences
-    project (SentenceHookSentence _) = Nothing
-    project sentence = Just sentence
+    where
+        nonHookSentences = mapMaybe project sentences
+        project (SentenceHookSentence _) = Nothing
+        project sentence = Just sentence
 
 verifyNonHookSentence :: ParsedSentence -> SentenceVerifier ()
 verifyNonHookSentence sentence =
-    withSentenceContext sentence $
-        verifyNoHookAttribute $
-            sentenceAttributes sentence
+    withSentenceContext sentence
+        $ verifyNoHookAttribute
+        $ sentenceAttributes sentence
 
 buildDeclaredSortVariables ::
     MonadError (Error e) error =>
@@ -475,8 +475,8 @@ buildDeclaredSortVariables (unifiedVariable : list) = do
             <> "."
         )
     return (Set.insert unifiedVariable variables)
-  where
-    extractVariableName variable = getId (getSortVariable variable)
+    where
+        extractVariableName variable = getId (getSortVariable variable)
 
 parseAttributes' ::
     forall attrs error e.
@@ -494,6 +494,6 @@ parseAndVerifyAxiomAttributes ::
     error (Attribute.Axiom Symbol.Symbol VariableName)
 parseAndVerifyAxiomAttributes indexModule freeVars attrs =
     parseAxiomAttributes' attrs >>= verifyAxiomAttributes indexModule
-  where
-    parseAxiomAttributes' =
-        Attribute.Parser.liftParser . Attribute.parseAxiomAttributes freeVars
+    where
+        parseAxiomAttributes' =
+            Attribute.Parser.liftParser . Attribute.parseAxiomAttributes freeVars

@@ -82,23 +82,23 @@ instance SimplifyRuleLHS (RulePattern RewritingVariableName) where
         fullySimplified <- SMT.Evaluator.filterMultiOr $srcLoc simplifiedTerms
         let rules = map (setRuleLeft rule) (toList fullySimplified)
         return (MultiAnd.make rules)
-      where
-        RulePattern{left} = rule
+        where
+            RulePattern{left} = rule
 
-        setRuleLeft ::
-            RulePattern RewritingVariableName ->
-            Pattern RewritingVariableName ->
-            RulePattern RewritingVariableName
-        setRuleLeft
-            rulePattern@RulePattern{requires = requires'}
-            Conditional{term, predicate, substitution} =
-                RulePattern.applySubstitution
-                    substitution
-                    rulePattern
-                        { RulePattern.left = term
-                        , RulePattern.requires =
-                            makeAndPredicate predicate requires'
-                        }
+            setRuleLeft ::
+                RulePattern RewritingVariableName ->
+                Pattern RewritingVariableName ->
+                RulePattern RewritingVariableName
+            setRuleLeft
+                rulePattern@RulePattern{requires = requires'}
+                Conditional{term, predicate, substitution} =
+                    RulePattern.applySubstitution
+                        substitution
+                        rulePattern
+                            { RulePattern.left = term
+                            , RulePattern.requires =
+                                makeAndPredicate predicate requires'
+                            }
 
 instance SimplifyRuleLHS (RewriteRule RewritingVariableName) where
     simplifyRuleLhs =
@@ -127,8 +127,9 @@ instance SimplifyRuleLHS SomeClaim where
 simplifyClaimRule ::
     ClaimPattern ->
     Simplifier (MultiAnd ClaimPattern)
-simplifyClaimRule claimPattern = fmap MultiAnd.make $
-    Logic.observeAllT $ do
+simplifyClaimRule claimPattern = fmap MultiAnd.make
+    $ Logic.observeAllT
+    $ do
         let lhs = Pattern.requireDefined $ ClaimPattern.left claimPattern
         simplified <-
             liftSimplifier (Pattern.simplifyTopConfiguration lhs)
@@ -139,17 +140,17 @@ simplifyClaimRule claimPattern = fmap MultiAnd.make $
         claimPattern{ClaimPattern.left = lhs'}
             & ClaimPattern.applySubstitution substitution
             & return
-  where
-    filterWithSolver ::
-        Pattern RewritingVariableName ->
-        LogicT Simplifier (Pattern RewritingVariableName)
-    filterWithSolver conditional = do
-        l <-
-            lift $
-                SMT.Evaluator.evalConditional (ErrorDecidePredicateUnknown $srcLoc Nothing) conditional Nothing
-        case l of
-            Just False -> empty
-            _ -> return conditional
+    where
+        filterWithSolver ::
+            Pattern RewritingVariableName ->
+            LogicT Simplifier (Pattern RewritingVariableName)
+        filterWithSolver conditional = do
+            l <-
+                lift
+                    $ SMT.Evaluator.evalConditional (ErrorDecidePredicateUnknown $srcLoc Nothing) conditional Nothing
+            case l of
+                Just False -> empty
+                _ -> return conditional
 
 {- | Simplify a 'ClaimPattern' using only matching logic rules.
 
@@ -188,7 +189,7 @@ simplifyPattern' ::
     TermLike RewritingVariableName ->
     Simplifier (OrPattern.OrPattern RewritingVariableName)
 simplifyPattern' termLike =
-    Simplifier.localAxiomEquations (const mempty) $
-        Simplifier.simplifyPattern
+    Simplifier.localAxiomEquations (const mempty)
+        $ Simplifier.simplifyPattern
             SideCondition.top
             (Pattern.fromTermLike termLike)

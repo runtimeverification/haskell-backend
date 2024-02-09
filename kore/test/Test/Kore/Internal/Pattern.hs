@@ -106,8 +106,8 @@ test_expandedPattern =
                 { term = war' "1"
                 , predicate = makeEquals (war' "2") (war' "3")
                 , substitution =
-                    Substitution.wrap $
-                        Substitution.mkUnwrappedSubstitution
+                    Substitution.wrap
+                        $ Substitution.mkUnwrappedSubstitution
                             [(inject . fmap ElementVariableName $ mkW "4", war' "5")]
                 }
             ( Pattern.mapVariables
@@ -116,8 +116,8 @@ test_expandedPattern =
                     { term = var' 1
                     , predicate = makeEquals (var' 2) (var' 3)
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject . fmap ElementVariableName $ mkV 4, var' 5)]
                     }
             )
@@ -138,8 +138,8 @@ test_expandedPattern =
                     { term = var' 1
                     , predicate = makeEquals (var' 2) (var' 3)
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject . fmap ElementVariableName $ mkV 4, var' 5)]
                     }
             )
@@ -157,8 +157,8 @@ test_expandedPattern =
                     { term = mkTop sortVariable
                     , predicate = makeEquals (var' 2) (var' 3)
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject . fmap ElementVariableName $ mkV 4, var' 5)]
                     }
             )
@@ -186,8 +186,8 @@ test_expandedPattern =
                     { term = mkBottom sortVariable
                     , predicate = makeEquals (var' 2) (var' 3)
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject . fmap ElementVariableName $ mkV 4, var' 5)]
                     }
             )
@@ -330,31 +330,31 @@ test_hasSimplifiedChildren =
             True
             (Pattern.hasSimplifiedChildren topSideCondition patt)
     ]
-  where
-    mockTerm1, mockTerm2 :: TermLike VariableName
-    mockTerm1 = Mock.f Mock.a
-    mockTerm2 = Mock.f Mock.b
+    where
+        mockTerm1, mockTerm2 :: TermLike VariableName
+        mockTerm1 = Mock.f Mock.a
+        mockTerm2 = Mock.f Mock.b
 
-    mockPredicate1, mockPredicate2 :: Predicate VariableName
-    mockPredicate1 = makeCeilPredicate mockTerm1
-    mockPredicate2 = makeCeilPredicate mockTerm2
+        mockPredicate1, mockPredicate2 :: Predicate VariableName
+        mockPredicate1 = makeCeilPredicate mockTerm1
+        mockPredicate2 = makeCeilPredicate mockTerm2
 
-    topSideCondition :: SideCondition.Representation
-    topSideCondition =
-        SideCondition.mkRepresentation
-            (SideCondition.top :: SideCondition VariableName)
+        topSideCondition :: SideCondition.Representation
+        topSideCondition =
+            SideCondition.mkRepresentation
+                (SideCondition.top :: SideCondition VariableName)
 
-    mockSideCondition :: SideCondition.Representation
-    mockSideCondition =
-        makeEqualsPredicate
-            (Mock.f (mkElemVar Mock.x))
-            Mock.a
-            & Condition.fromPredicate
-            & SideCondition.fromConditionWithReplacements
-            & SideCondition.mkRepresentation
+        mockSideCondition :: SideCondition.Representation
+        mockSideCondition =
+            makeEqualsPredicate
+                (Mock.f (mkElemVar Mock.x))
+                Mock.a
+                & Condition.fromPredicate
+                & SideCondition.fromConditionWithReplacements
+                & SideCondition.mkRepresentation
 
-    setSimplifiedTerm = TermLike.setSimplified
-    setSimplifiedPred = Predicate.setSimplified
+        setSimplifiedTerm = TermLike.setSimplified
+        setSimplifiedPred = Predicate.setSimplified
 
 makeEq ::
     InternalVariable var =>

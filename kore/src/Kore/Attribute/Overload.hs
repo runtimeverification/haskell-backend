@@ -60,22 +60,22 @@ overloadAttribute symbol1 symbol2 =
 
 instance ParseAttributes (Overload SymbolOrAlias) where
     parseAttribute = withApplication' parseApplication
-      where
-        parseApplication params args Overload{getOverload}
-            | Just _ <- getOverload = failDuplicate'
-            | otherwise = do
-                Parser.getZeroParams params
-                (arg1, arg2) <- Parser.getTwoArguments args
-                symbol1 <- Parser.getSymbolOrAlias arg1
-                symbol2 <- Parser.getSymbolOrAlias arg2
-                return Overload{getOverload = Just (symbol1, symbol2)}
-        withApplication' = Parser.withApplication overloadId
-        failDuplicate' = Parser.failDuplicate overloadId
+        where
+            parseApplication params args Overload{getOverload}
+                | Just _ <- getOverload = failDuplicate'
+                | otherwise = do
+                    Parser.getZeroParams params
+                    (arg1, arg2) <- Parser.getTwoArguments args
+                    symbol1 <- Parser.getSymbolOrAlias arg1
+                    symbol2 <- Parser.getSymbolOrAlias arg2
+                    return Overload{getOverload = Just (symbol1, symbol2)}
+            withApplication' = Parser.withApplication overloadId
+            failDuplicate' = Parser.failDuplicate overloadId
 
 instance From symbol SymbolOrAlias => From (Overload symbol) Attributes where
     from =
         maybe def toAttribute . getOverload
-      where
-        toAttribute (symbol1, symbol2) =
-            from @AttributePattern $
-                overloadAttribute (from symbol1) (from symbol2)
+        where
+            toAttribute (symbol1, symbol2) =
+                from @AttributePattern
+                    $ overloadAttribute (from symbol1) (from symbol2)

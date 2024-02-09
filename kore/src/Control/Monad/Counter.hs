@@ -205,14 +205,14 @@ findState ::
     [m a] ->
     m (Maybe a)
 findState predicate = findState0
-  where
-    findState0 [] = return Nothing
-    findState0 (action : actions) =
-        do
-            s <- Monad.State.get
-            a <- action
-            if predicate a
-                then return (Just a)
-                else do
-                    Monad.State.put s
-                    findState0 actions
+    where
+        findState0 [] = return Nothing
+        findState0 (action : actions) =
+            do
+                s <- Monad.State.get
+                a <- action
+                if predicate a
+                    then return (Just a)
+                    else do
+                        Monad.State.put s
+                        findState0 actions

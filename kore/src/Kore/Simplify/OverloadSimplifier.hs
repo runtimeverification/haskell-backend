@@ -124,119 +124,121 @@ mkOverloadSimplifier overloadGraph InjSimplifier{isOrderedInj, injectTermTo} =
         , unifyOverloadWithinBound
         , unifyOverloadWithSortWithinBound
         }
-  where
-    isOverloading = OverloadGraph.isOverloading overloadGraph
-    isOverloaded = OverloadGraph.isOverloaded overloadGraph
+    where
+        isOverloading = OverloadGraph.isOverloading overloadGraph
+        isOverloaded = OverloadGraph.isOverloaded overloadGraph
 
-    resolveOverloading ::
-        HasCallStack =>
-        Inj () ->
-        Symbol ->
-        [TermLike RewritingVariableName] ->
-        TermLike RewritingVariableName
-    resolveOverloading injProto overloadedHead overloadingChildren =
-        mkApplySymbol overloadedHead $
-            assert (length overloadedChildrenSorts == length overloadingChildren) $
-                zipWith mkInj overloadingChildren overloadedChildrenSorts
-      where
-        mkInj = injectTermTo injProto
-        overloadedChildrenSorts =
-            Symbol.applicationSortsOperands (symbolSorts overloadedHead)
+        resolveOverloading ::
+            HasCallStack =>
+            Inj () ->
+            Symbol ->
+            [TermLike RewritingVariableName] ->
+            TermLike RewritingVariableName
+        resolveOverloading injProto overloadedHead overloadingChildren =
+            mkApplySymbol overloadedHead
+                $ assert (length overloadedChildrenSorts == length overloadingChildren)
+                $ zipWith mkInj overloadingChildren overloadedChildrenSorts
+            where
+                mkInj = injectTermTo injProto
+                overloadedChildrenSorts =
+                    Symbol.applicationSortsOperands (symbolSorts overloadedHead)
 
-    unifyOverloadWithinBound ::
-        Inj () -> Symbol -> Symbol -> Sort -> Maybe InjectedOverload
-    unifyOverloadWithinBound injProto s1 s2 topSort =
-        headMay withinBound
-      where
-        withinBound =
-            filterOverloads injProto topSort $
-                OverloadGraph.commonOverloads overloadGraph s1 s2
+        unifyOverloadWithinBound ::
+            Inj () -> Symbol -> Symbol -> Sort -> Maybe InjectedOverload
+        unifyOverloadWithinBound injProto s1 s2 topSort =
+            headMay withinBound
+            where
+                withinBound =
+                    filterOverloads injProto topSort
+                        $ OverloadGraph.commonOverloads overloadGraph s1 s2
 
-    unifyOverloadWithSortWithinBound ::
-        Symbol -> Inj () -> Either String (Maybe InjectedOverloadPair)
-    unifyOverloadWithSortWithinBound sym injProto@Inj{injFrom, injTo} =
-        do
-            l <- overloads
-            let l' =
-                    [ InjectedOverloadPair{overloadingSymbol, overloadedSymbol}
-                    | (overloadingSymbol, Just overloadedSymbol) <- l
-                    ]
-                rightSymbol = overload . overloadedSymbol
-            case findMaxOverload rightSymbol l' of
-                Nothing -> return Nothing
-                Just m' ->
-                    if checkMaxOverload rightSymbol m' l'
-                        then return (Just m')
-                        else errorAmbiguousOverloads (map rightSymbol l')
-      where
-        overloads =
-            traverse
-                ( \s ->
-                    getOverloadedWithinSort injProto (overload s) injFrom
-                        >>= \r -> return (s, r)
-                )
-                overloadings
-        overloadings =
-            filterOverloads injProto injTo . Set.toList $
-                OverloadGraph.getOverloading overloadGraph sym
+        unifyOverloadWithSortWithinBound ::
+            Symbol -> Inj () -> Either String (Maybe InjectedOverloadPair)
+        unifyOverloadWithSortWithinBound sym injProto@Inj{injFrom, injTo} =
+            do
+                l <- overloads
+                let l' =
+                        [ InjectedOverloadPair{overloadingSymbol, overloadedSymbol}
+                        | (overloadingSymbol, Just overloadedSymbol) <- l
+                        ]
+                    rightSymbol = overload . overloadedSymbol
+                case findMaxOverload rightSymbol l' of
+                    Nothing -> return Nothing
+                    Just m' ->
+                        if checkMaxOverload rightSymbol m' l'
+                            then return (Just m')
+                            else errorAmbiguousOverloads (map rightSymbol l')
+            where
+                overloads =
+                    traverse
+                        ( \s ->
+                            getOverloadedWithinSort injProto (overload s) injFrom
+                                >>= \r -> return (s, r)
+                        )
+                        overloadings
+                overloadings =
+                    filterOverloads injProto injTo
+                        . Set.toList
+                        $ OverloadGraph.getOverloading overloadGraph sym
 
-    getOverloadedWithinSort ::
-        Inj () ->
-        Symbol ->
-        Sort ->
-        Either String (Maybe InjectedOverload)
-    getOverloadedWithinSort injProto sym topSort
-        | null overloads = Right Nothing
-        | Just m <- findMaxOverload overload overloads
-        , checkMaxOverload overload m overloads =
-            Right (Just m)
-        | otherwise = errorAmbiguousOverloads (map overload overloads)
-      where
-        overloads =
-            filterOverloads injProto topSort . Set.toList $
-                OverloadGraph.getOverloaded overloadGraph sym
+        getOverloadedWithinSort ::
+            Inj () ->
+            Symbol ->
+            Sort ->
+            Either String (Maybe InjectedOverload)
+        getOverloadedWithinSort injProto sym topSort
+            | null overloads = Right Nothing
+            | Just m <- findMaxOverload overload overloads
+            , checkMaxOverload overload m overloads =
+                Right (Just m)
+            | otherwise = errorAmbiguousOverloads (map overload overloads)
+            where
+                overloads =
+                    filterOverloads injProto topSort
+                        . Set.toList
+                        $ OverloadGraph.getOverloaded overloadGraph sym
 
-    updateMaxOverload :: (a -> Symbol) -> a -> Maybe a -> Maybe a
-    updateMaxOverload _ x Nothing = Just x
-    updateMaxOverload f x (Just m) =
-        do
-            ord <- compareOverloading sm sx
-            case ord of
-                LT -> return x
-                _ -> return m
-      where
-        sx = f x
-        sm = f m
+        updateMaxOverload :: (a -> Symbol) -> a -> Maybe a -> Maybe a
+        updateMaxOverload _ x Nothing = Just x
+        updateMaxOverload f x (Just m) =
+            do
+                ord <- compareOverloading sm sx
+                case ord of
+                    LT -> return x
+                    _ -> return m
+            where
+                sx = f x
+                sm = f m
 
-    findMaxOverload :: (a -> Symbol) -> [a] -> Maybe a
-    findMaxOverload f = foldr (updateMaxOverload f) Nothing
+        findMaxOverload :: (a -> Symbol) -> [a] -> Maybe a
+        findMaxOverload f = foldr (updateMaxOverload f) Nothing
 
-    checkMaxOverload :: (a -> Symbol) -> a -> [a] -> Bool
-    checkMaxOverload f m = all (isOverloadingOrEqual (f m) . f)
+        checkMaxOverload :: (a -> Symbol) -> a -> [a] -> Bool
+        checkMaxOverload f m = all (isOverloadingOrEqual (f m) . f)
 
-    isOverloadingOrEqual x y = maybe False (LT /=) (compareOverloading x y)
+        isOverloadingOrEqual x y = maybe False (LT /=) (compareOverloading x y)
 
-    filterOverloads :: Inj () -> Sort -> [Symbol] -> [InjectedOverload]
-    filterOverloads injProto topSort overloads =
-        overloads
-            & map (\x -> (x, injProtoTop{injFrom = resultSort x}))
-            & filter (isOrderedInj . snd)
-            & map (uncurry InjectedOverload . fmap removeEmptyInjection)
-      where
-        injProtoTop = injProto{injTo = topSort}
-        removeEmptyInjection inj
-            | injFrom inj == injTo inj = Nothing
-            | otherwise = Just inj
+        filterOverloads :: Inj () -> Sort -> [Symbol] -> [InjectedOverload]
+        filterOverloads injProto topSort overloads =
+            overloads
+                & map (\x -> (x, injProtoTop{injFrom = resultSort x}))
+                & filter (isOrderedInj . snd)
+                & map (uncurry InjectedOverload . fmap removeEmptyInjection)
+            where
+                injProtoTop = injProto{injTo = topSort}
+                removeEmptyInjection inj
+                    | injFrom inj == injTo inj = Nothing
+                    | otherwise = Just inj
 
-    resultSort :: Symbol -> Sort
-    resultSort = applicationSortsResult . symbolSorts
+        resultSort :: Symbol -> Sort
+        resultSort = applicationSortsResult . symbolSorts
 
-    compareOverloading :: Symbol -> Symbol -> Maybe Ordering
-    compareOverloading x y
-        | x == y = Just EQ
-        | x `isOverloading` y = Just GT
-        | y `isOverloading` x = Just LT
-        | otherwise = Nothing
+        compareOverloading :: Symbol -> Symbol -> Maybe Ordering
+        compareOverloading x y
+            | x == y = Just EQ
+            | x `isOverloading` y = Just GT
+            | y `isOverloading` x = Just LT
+            | otherwise = Nothing
 
 errorAmbiguousOverloads :: [Symbol] -> Either String a
 errorAmbiguousOverloads overloads =

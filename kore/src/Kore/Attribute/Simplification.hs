@@ -72,26 +72,26 @@ defaultSimplificationPriority = 50
 instance ParseAttributes Simplification where
     parseAttribute =
         withApplication' parseSimplification
-      where
-        parseSimplification params args NotSimplification = do
-            Parser.getZeroParams params
-            arg <- Parser.getZeroOrOneArguments args
-            case arg of
-                Just arg' ->
-                    Parser.getStringLiteral arg'
-                        >>= Parser.parseStringLiteral readPriority
-                Nothing -> pure (IsSimplification Nothing)
-        parseSimplification _ _ _ =
-            failDuplicate'
+        where
+            parseSimplification params args NotSimplification = do
+                Parser.getZeroParams params
+                arg <- Parser.getZeroOrOneArguments args
+                case arg of
+                    Just arg' ->
+                        Parser.getStringLiteral arg'
+                            >>= Parser.parseStringLiteral readPriority
+                    Nothing -> pure (IsSimplification Nothing)
+            parseSimplification _ _ _ =
+                failDuplicate'
 
-        readPriority str
-            | null str = pure (IsSimplification Nothing, "")
-            | otherwise = do
-                (integer, rest) <- reads str
-                pure (IsSimplification (Just integer), rest)
+            readPriority str
+                | null str = pure (IsSimplification Nothing, "")
+                | otherwise = do
+                    (integer, rest) <- reads str
+                    pure (IsSimplification (Just integer), rest)
 
-        withApplication' = Parser.withApplication simplificationId
-        failDuplicate' = Parser.failDuplicate simplificationId
+            withApplication' = Parser.withApplication simplificationId
+            failDuplicate' = Parser.failDuplicate simplificationId
 
 instance From Simplification Attributes where
     from NotSimplification = def

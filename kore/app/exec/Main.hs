@@ -210,21 +210,21 @@ parseKoreSearchOptions =
             )
         <*> parseBound
         <*> parseSearchType
-  where
-    parseBound = Limit <$> bound <|> pure Unlimited
-    bound =
-        option
-            auto
-            ( metavar "BOUND"
-                <> long "bound"
-                <> help "Maximum number of solutions."
-            )
-    parseSearchType =
-        parseSum
-            "SEARCH_TYPE"
-            "searchType"
-            "Search type (selects potential solutions)"
-            (map (\s -> (show s, s)) [ONE, FINAL, STAR, PLUS])
+    where
+        parseBound = Limit <$> bound <|> pure Unlimited
+        bound =
+            option
+                auto
+                ( metavar "BOUND"
+                    <> long "bound"
+                    <> help "Maximum number of solutions."
+                )
+        parseSearchType =
+            parseSum
+                "SEARCH_TYPE"
+                "searchType"
+                "Search type (selects potential solutions)"
+                (map (\s -> (show s, s)) [ONE, FINAL, STAR, PLUS])
 
 parseSum :: String -> String -> String -> [(String, value)] -> Parser value
 parseSum metaName longName helpMsg options =
@@ -234,8 +234,8 @@ parseSum metaName longName helpMsg options =
             <> long longName
             <> help (helpMsg <> ": " <> knownOptions)
         )
-  where
-    knownOptions = intercalate ", " (map fst options)
+    where
+        knownOptions = intercalate ", " (map fst options)
 
 readSum :: String -> [(String, value)] -> Options.ReadM (String, value)
 readSum longName options = do
@@ -243,10 +243,10 @@ readSum longName options = do
     case lookup opt options of
         Just val -> pure (opt, val)
         _ -> readerError (unknown opt ++ known)
-  where
-    knownOptions = intercalate ", " (map fst options)
-    unknown opt = "Unknown " ++ longName ++ " '" ++ opt ++ "'. "
-    known = "Known " ++ longName ++ "s are: " ++ knownOptions ++ "."
+    where
+        knownOptions = intercalate ", " (map fst options)
+        unknown opt = "Unknown " ++ longName ++ " '" ++ opt ++ "'. "
+        known = "Known " ++ longName ++ "s are: " ++ knownOptions ++ "."
 
 applyKoreSearchOptions ::
     Maybe KoreSearchOptions ->
@@ -258,13 +258,13 @@ applyKoreSearchOptions koreSearchOptions@(Just koreSearchOpts) koreExecOpts =
         { koreSearchOptions
         , depthLimit = min depthLimit searchTypeDepthLimit
         }
-  where
-    KoreSearchOptions{searchType} = koreSearchOpts
-    KoreExecOptions{depthLimit} = koreExecOpts
-    searchTypeDepthLimit =
-        case searchType of
-            ONE -> Limit 1
-            _ -> Unlimited
+    where
+        KoreSearchOptions{searchType} = koreSearchOpts
+        KoreExecOptions{depthLimit} = koreExecOpts
+        searchTypeDepthLimit =
+            case searchType of
+                ONE -> Limit 1
+                _ -> Unlimited
 
 -- | Main options record
 data KoreExecOptions = KoreExecOptions
@@ -297,110 +297,110 @@ parseKoreExecOptions startTime =
     applyKoreSearchOptions
         <$> optional parseKoreSearchOptions
         <*> parseKoreExecOptions0
-  where
-    parseKoreExecOptions0 :: Parser KoreExecOptions
-    parseKoreExecOptions0 =
-        KoreExecOptions
-            <$> argument
-                str
-                ( metavar "DEFINITION_FILE"
-                    <> help "Kore definition file to verify and use for execution"
-                )
-            <*> optional
-                ( strOption
-                    ( metavar "PATTERN_FILE"
-                        <> long "pattern"
-                        <> help
-                            "Verify and execute the Kore pattern found in PATTERN_FILE."
+    where
+        parseKoreExecOptions0 :: Parser KoreExecOptions
+        parseKoreExecOptions0 =
+            KoreExecOptions
+                <$> argument
+                    str
+                    ( metavar "DEFINITION_FILE"
+                        <> help "Kore definition file to verify and use for execution"
                     )
-                )
-            <*> optional
-                ( strOption
-                    ( metavar "PATTERN_OUTPUT_FILE"
-                        <> long "output"
-                        <> help "Output file to contain final Kore pattern."
+                <*> optional
+                    ( strOption
+                        ( metavar "PATTERN_FILE"
+                            <> long "pattern"
+                            <> help
+                                "Verify and execute the Kore pattern found in PATTERN_FILE."
+                        )
                     )
-                )
-            <*> parseMainModuleName
-            <*> parseBreadthLimit
-            <*> parseDepthLimit
-            <*> parseStrategy
-            <*> parseKoreSolverOptions
-            <*> parseKoreLogOptions (ExeName "kore-exec") startTime
-            <*> pure Nothing
-            <*> optional parseKoreProveOptions
-            <*> Options.flag
-                Leaf
-                LeafOrBranching
-                ( long "execute-to-branch"
-                    <> help "Execute until the proof branches."
-                )
-            <*> optional parseRtsStatistics
-            <*> parseBugReportOption
-            <*> parseMaxCounterexamples
-            <*> enableDisableFlag
-                "serialize"
-                True
-                False
-                False
-                "serialization of initialized definition to disk. [default: disabled]"
-    parseMaxCounterexamples = counterexamples <|> pure 1
-      where
-        counterexamples =
+                <*> optional
+                    ( strOption
+                        ( metavar "PATTERN_OUTPUT_FILE"
+                            <> long "output"
+                            <> help "Output file to contain final Kore pattern."
+                        )
+                    )
+                <*> parseMainModuleName
+                <*> parseBreadthLimit
+                <*> parseDepthLimit
+                <*> parseStrategy
+                <*> parseKoreSolverOptions
+                <*> parseKoreLogOptions (ExeName "kore-exec") startTime
+                <*> pure Nothing
+                <*> optional parseKoreProveOptions
+                <*> Options.flag
+                    Leaf
+                    LeafOrBranching
+                    ( long "execute-to-branch"
+                        <> help "Execute until the proof branches."
+                    )
+                <*> optional parseRtsStatistics
+                <*> parseBugReportOption
+                <*> parseMaxCounterexamples
+                <*> enableDisableFlag
+                    "serialize"
+                    True
+                    False
+                    False
+                    "serialization of initialized definition to disk. [default: disabled]"
+        parseMaxCounterexamples = counterexamples <|> pure 1
+            where
+                counterexamples =
+                    option
+                        (readPositiveIntegral id "max-counterexamples")
+                        ( metavar "MAX_COUNTEREXAMPLES"
+                            <> long "max-counterexamples"
+                            <> help "Specify the maximum number of counterexamples."
+                        )
+        parseBreadthLimit = Limit <$> breadth <|> pure Unlimited
+        parseDepthLimit = Limit <$> depth <|> pure Unlimited
+        parseStrategy =
             option
-                (readPositiveIntegral id "max-counterexamples")
-                ( metavar "MAX_COUNTEREXAMPLES"
-                    <> long "max-counterexamples"
-                    <> help "Specify the maximum number of counterexamples."
+                parseExecutionMode
+                ( metavar "STRATEGY"
+                    <> long "strategy"
+                    <> value All
+                    <> help "Select rewrites using STRATEGY."
                 )
-    parseBreadthLimit = Limit <$> breadth <|> pure Unlimited
-    parseDepthLimit = Limit <$> depth <|> pure Unlimited
-    parseStrategy =
-        option
-            parseExecutionMode
-            ( metavar "STRATEGY"
-                <> long "strategy"
-                <> value All
-                <> help "Select rewrites using STRATEGY."
-            )
 
-    breadth =
-        option
-            auto
-            ( metavar "BREADTH"
-                <> long "breadth"
-                <> help "Allow up to BREADTH parallel execution branches."
-            )
-    depth =
-        option
-            auto
-            ( metavar "DEPTH"
-                <> long "depth"
-                <> help "Execute up to DEPTH steps."
-            )
+        breadth =
+            option
+                auto
+                ( metavar "BREADTH"
+                    <> long "breadth"
+                    <> help "Allow up to BREADTH parallel execution branches."
+                )
+        depth =
+            option
+                auto
+                ( metavar "DEPTH"
+                    <> long "depth"
+                    <> help "Execute up to DEPTH steps."
+                )
 
-    parseMainModuleName =
-        GlobalMain.parseModuleName
-            "MODULE"
-            "module"
-            "The name of the main module in the Kore definition."
-    parseRtsStatistics =
-        strOption (mconcat infos)
-      where
-        infos =
-            [ metavar "FILENAME"
-            , long "rts-statistics"
-            , help "Write runtime statistics to FILENAME in JSON format."
-            ]
-    parseExecutionMode = do
-        val <- str
-        case val :: String of
-            "all" -> return All
-            "any" -> return Any
-            _ ->
-                readerError $
-                    show $
-                        OptPretty.hsep
+        parseMainModuleName =
+            GlobalMain.parseModuleName
+                "MODULE"
+                "module"
+                "The name of the main module in the Kore definition."
+        parseRtsStatistics =
+            strOption (mconcat infos)
+            where
+                infos =
+                    [ metavar "FILENAME"
+                    , long "rts-statistics"
+                    , help "Write runtime statistics to FILENAME in JSON format."
+                    ]
+        parseExecutionMode = do
+            val <- str
+            case val :: String of
+                "all" -> return All
+                "any" -> return Any
+                _ ->
+                    readerError
+                        $ show
+                        $ OptPretty.hsep
                             [ "Unknown option"
                             , OptPretty.squotes (OptPretty.text val)
                                 <> OptPretty.dot
@@ -457,9 +457,9 @@ unparseKoreProveOptions
             EnableMovingAverage -> "--moving-average"
             _ -> ""
         ]
-      where
-        unparseMinDepth md =
-            unwords ["--min-depth", (show . getMinDepth) md]
+        where
+            unparseMinDepth md =
+                unwords ["--min-depth", (show . getMinDepth) md]
 
 koreExecSh :: KoreExecOptions -> String
 koreExecSh
@@ -481,37 +481,37 @@ koreExecSh
                             maxCounterexamples
                             _
                         ) =
-        unlines $
-            [ "#!/bin/sh"
-            , "exec kore-exec \\"
-            ]
-                <> fmap (\line -> "    " <> line <> " \\") options
-                <> ["    \"$@\""]
-      where
-        options =
-            concat
-                [ catMaybes
-                    [ pure $ defaultDefinitionFilePath koreExecOptions
-                    , patternFileName $> "--pattern pgm.kore"
-                    , outputFileName $> "--output result.kore"
-                    , pure $ unwords ["--module", unpack (getModuleName mainModuleName)]
-                    , (\limit -> unwords ["--breadth", show limit])
-                        <$> maybeLimit Nothing Just breadthLimit
-                    , (\limit -> unwords ["--depth", show limit])
-                        <$> maybeLimit Nothing Just depthLimit
-                    , pure $ unwords ["--strategy", unparseExecutionMode strategy]
-                    , rtsStatistics
-                        $> unwords ["--rts-statistics", defaultRtsStatisticsFilePath]
-                    , pure $ unwords ["--max-counterexamples", show maxCounterexamples]
+        unlines
+            $ [ "#!/bin/sh"
+              , "exec kore-exec \\"
+              ]
+            <> fmap (\line -> "    " <> line <> " \\") options
+            <> ["    \"$@\""]
+        where
+            options =
+                concat
+                    [ catMaybes
+                        [ pure $ defaultDefinitionFilePath koreExecOptions
+                        , patternFileName $> "--pattern pgm.kore"
+                        , outputFileName $> "--output result.kore"
+                        , pure $ unwords ["--module", unpack (getModuleName mainModuleName)]
+                        , (\limit -> unwords ["--breadth", show limit])
+                            <$> maybeLimit Nothing Just breadthLimit
+                        , (\limit -> unwords ["--depth", show limit])
+                            <$> maybeLimit Nothing Just depthLimit
+                        , pure $ unwords ["--strategy", unparseExecutionMode strategy]
+                        , rtsStatistics
+                            $> unwords ["--rts-statistics", defaultRtsStatisticsFilePath]
+                        , pure $ unwords ["--max-counterexamples", show maxCounterexamples]
+                        ]
+                    , unparseKoreSolverOptions koreSolverOptions
+                    , unparseKoreLogOptions koreLogOptions
+                    , maybe mempty unparseKoreSearchOptions koreSearchOptions
+                    , maybe mempty unparseKoreProveOptions koreProveOptions
+                    , ["--execute-to-branch" | finalNodeType == LeafOrBranching]
                     ]
-                , unparseKoreSolverOptions koreSolverOptions
-                , unparseKoreLogOptions koreLogOptions
-                , maybe mempty unparseKoreSearchOptions koreSearchOptions
-                , maybe mempty unparseKoreProveOptions koreProveOptions
-                , ["--execute-to-branch" | finalNodeType == LeafOrBranching]
-                ]
-        unparseExecutionMode All = "all"
-        unparseExecutionMode Any = "any"
+            unparseExecutionMode All = "all"
+            unparseExecutionMode Any = "any"
 
 defaultDefinitionFilePath :: KoreExecOptions -> FilePath
 defaultDefinitionFilePath KoreExecOptions{koreProveOptions}
@@ -560,8 +560,8 @@ writeOptionsAndKoreFiles
             copyFile
                 definitionKore
                 (reportDirectory </> defaultDefinitionFilePath opts)
-            for_ patternFileName $
-                flip copyFile (reportDirectory </> "pgm.kore")
+            for_ patternFileName
+                $ flip copyFile (reportDirectory </> "pgm.kore")
             writeKoreSolverFiles koreSolverOptions reportDirectory
             for_
                 koreSearchOptions
@@ -621,53 +621,53 @@ mainWithOptions LocalOptions{execOptions} = do
     for_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
     exitWith exitCode
-  where
-    KoreExecOptions{koreLogOptions} = execOptions
+    where
+        KoreExecOptions{koreLogOptions} = execOptions
 
-    -- Display the proof's depth if the flag '--execute-to-branch' was given
-    branchingDepth :: KoreLogOptions -> KoreLogOptions
-    branchingDepth logOpts
-        | LeafOrBranching <-
-            execOptions & Lens.view (field @"finalNodeType") =
-            logOpts
-                & Lens.over
-                    (field @"logEntries")
-                    (Set.insert (someTypeRep $ Proxy @InfoProofDepth))
-    branchingDepth logOpts = logOpts
+        -- Display the proof's depth if the flag '--execute-to-branch' was given
+        branchingDepth :: KoreLogOptions -> KoreLogOptions
+        branchingDepth logOpts
+            | LeafOrBranching <-
+                execOptions & Lens.view (field @"finalNodeType") =
+                logOpts
+                    & Lens.over
+                        (field @"logEntries")
+                        (Set.insert (someTypeRep $ Proxy @InfoProofDepth))
+        branchingDepth logOpts = logOpts
 
-    handleWithConfiguration :: Claim.WithConfiguration -> Main ExitCode
-    handleWithConfiguration
-        (Claim.WithConfiguration lastConfiguration someException) =
-            do
-                liftIO $
-                    renderResult
-                        execOptions
-                        ("// Last configuration:\n" <> unparse lastConfiguration)
-                throwM someException
+        handleWithConfiguration :: Claim.WithConfiguration -> Main ExitCode
+        handleWithConfiguration
+            (Claim.WithConfiguration lastConfiguration someException) =
+                do
+                    liftIO
+                        $ renderResult
+                            execOptions
+                            ("// Last configuration:\n" <> unparse lastConfiguration)
+                    throwM someException
 
 -- | Dispatch the requested command, for example 'koreProve' or 'koreRun'.
 mainDispatch :: KoreExecOptions -> Main ExitCode
 mainDispatch = warnProductivity . mainDispatchWorker
-  where
-    warnProductivity :: Main (KFileLocations, ExitCode) -> Main ExitCode
-    warnProductivity action = do
-        (kFileLocations, exitCode) <- action
-        warnIfLowProductivity kFileLocations
-        return exitCode
-    mainDispatchWorker ::
-        KoreExecOptions ->
-        Main (KFileLocations, ExitCode)
-    mainDispatchWorker execOptions
-        | isJust koreProveOptions = koreProve execOptions
-        | isJust koreSearchOptions = koreSearch execOptions
-        | serialize = koreSerialize execOptions
-        | otherwise = koreRun execOptions
-      where
-        KoreExecOptions
-            { koreProveOptions
-            , koreSearchOptions
-            , serialize
-            } = execOptions
+    where
+        warnProductivity :: Main (KFileLocations, ExitCode) -> Main ExitCode
+        warnProductivity action = do
+            (kFileLocations, exitCode) <- action
+            warnIfLowProductivity kFileLocations
+            return exitCode
+        mainDispatchWorker ::
+            KoreExecOptions ->
+            Main (KFileLocations, ExitCode)
+        mainDispatchWorker execOptions
+            | isJust koreProveOptions = koreProve execOptions
+            | isJust koreSearchOptions = koreSearch execOptions
+            | serialize = koreSerialize execOptions
+            | otherwise = koreRun execOptions
+            where
+                KoreExecOptions
+                    { koreProveOptions
+                    , koreSearchOptions
+                    , serialize
+                    } = execOptions
 
 koreSearch ::
     KoreExecOptions ->
@@ -692,9 +692,10 @@ koreSearch execOptions = do
             , rewrites
             } = serializedModule
         undefinedLabels = runValidate $ validateDebugOptions equations (rewriteRules rewrites) koreLogOptions
-    when (isLeft undefinedLabels) $
-        throwM . DebugOptionsValidationError $
-            fromLeft mempty undefinedLabels
+    when (isLeft undefinedLabels)
+        $ throwM
+        . DebugOptionsValidationError
+        $ fromLeft mempty undefinedLabels
     lift $ writeIORef globalInternedTextCache internedTextCache
     let KoreSearchOptions
             { searchFileName
@@ -705,8 +706,8 @@ koreSearch execOptions = do
     initial <- loadPattern metadataTools verifiedModule patternFileName
     let config = Search.Config{bound, searchType}
     final <-
-        execute koreSolverOptions metadataTools lemmas $
-            search
+        execute koreSolverOptions metadataTools lemmas
+            $ search
                 depthLimit
                 breadthLimit
                 serializedModule
@@ -741,14 +742,15 @@ koreRun execOptions = do
             , rewrites
             } = serializedModule
         undefinedLabels = runValidate $ validateDebugOptions equations (rewriteRules rewrites) koreLogOptions
-    when (isLeft undefinedLabels) $
-        throwM . DebugOptionsValidationError $
-            fromLeft mempty undefinedLabels
+    when (isLeft undefinedLabels)
+        $ throwM
+        . DebugOptionsValidationError
+        $ fromLeft mempty undefinedLabels
     lift $ writeIORef globalInternedTextCache internedTextCache
     initial <- loadPattern metadataTools verifiedModule patternFileName
     (exitCode, final) <-
-        execute koreSolverOptions metadataTools lemmas $
-            exec
+        execute koreSolverOptions metadataTools lemmas
+            $ exec
                 Nothing
                 DisableMovingAverage
                 depthLimit
@@ -843,77 +845,77 @@ koreProve execOptions = do
                     stuckPatterns
                         & OrPattern.toTermLike (getClaimPatternSort $ claimPattern claim)
                         & failure
-                  where
-                    stuckPatterns =
-                        OrPattern.fromPatterns (MultiAnd.map getStuckConfig stuckClaims)
-                    getStuckConfig =
-                        getRewritingPattern . getConfiguration . getStuckClaim
-                    claimPattern = Lens.view lensClaimPattern . getStuckClaim
+                    where
+                        stuckPatterns =
+                            OrPattern.fromPatterns (MultiAnd.map getStuckConfig stuckClaims)
+                        getStuckConfig =
+                            getRewritingPattern . getConfiguration . getStuckClaim
+                        claimPattern = Lens.view lensClaimPattern . getStuckClaim
 
     lift $ for_ saveProofs $ saveProven specModule provenClaims
     lift $ renderResult execOptions (unparse final)
-    when (unexplored /= 0) $
-        warnUnexploredBranches unexplored
+    when (unexplored /= 0)
+        $ warnUnexploredBranches unexplored
     return (kFileLocations definition, exitCode)
-  where
-    failure pat = (ExitFailure 1, pat)
-    success :: (ExitCode, TermLike VariableName)
-    success = (ExitSuccess, mkTop $ mkSortVariable "R")
+    where
+        failure pat = (ExitFailure 1, pat)
+        success :: (ExitCode, TermLike VariableName)
+        success = (ExitSuccess, mkTop $ mkSortVariable "R")
 
-    loadProven ::
-        FilePath ->
-        Maybe FilePath ->
-        Main (Maybe (VerifiedModule StepperAttributes))
-    loadProven _ Nothing = return Nothing
-    loadProven definitionFileName (Just saveProofsFileName) = do
-        fileExists <- lift $ doesFileExist saveProofsFileName
-        if fileExists
-            then do
-                savedProofsDefinition <-
-                    loadDefinitions [definitionFileName, saveProofsFileName]
-                savedProofsModule <-
-                    loadModule savedProofsModuleName savedProofsDefinition
-                return (Just savedProofsModule)
-            else return Nothing
+        loadProven ::
+            FilePath ->
+            Maybe FilePath ->
+            Main (Maybe (VerifiedModule StepperAttributes))
+        loadProven _ Nothing = return Nothing
+        loadProven definitionFileName (Just saveProofsFileName) = do
+            fileExists <- lift $ doesFileExist saveProofsFileName
+            if fileExists
+                then do
+                    savedProofsDefinition <-
+                        loadDefinitions [definitionFileName, saveProofsFileName]
+                    savedProofsModule <-
+                        loadModule savedProofsModuleName savedProofsDefinition
+                    return (Just savedProofsModule)
+                else return Nothing
 
-    saveProven ::
-        VerifiedModule StepperAttributes ->
-        MultiAnd SomeClaim ->
-        FilePath ->
-        IO ()
-    saveProven specModule (toList -> provenClaims) outputFile =
-        withFile
-            outputFile
-            WriteMode
-            (`hPutDoc` unparse provenDefinition)
-      where
-        specModuleDefinitions :: [Sentence (TermLike VariableName)]
-        specModuleDefinitions =
-            filter isNotAxiomOrClaim (indexedModuleRawSentences specModule)
+        saveProven ::
+            VerifiedModule StepperAttributes ->
+            MultiAnd SomeClaim ->
+            FilePath ->
+            IO ()
+        saveProven specModule (toList -> provenClaims) outputFile =
+            withFile
+                outputFile
+                WriteMode
+                (`hPutDoc` unparse provenDefinition)
+            where
+                specModuleDefinitions :: [Sentence (TermLike VariableName)]
+                specModuleDefinitions =
+                    filter isNotAxiomOrClaim (indexedModuleRawSentences specModule)
 
-        isNotAxiomOrClaim :: Sentence patternType -> Bool
-        isNotAxiomOrClaim (SentenceAxiomSentence _) = False
-        isNotAxiomOrClaim (SentenceClaimSentence _) = False
-        isNotAxiomOrClaim (SentenceAliasSentence _) = True
-        isNotAxiomOrClaim (SentenceSymbolSentence _) = True
-        isNotAxiomOrClaim (SentenceImportSentence _) = True
-        isNotAxiomOrClaim (SentenceSortSentence _) = True
-        isNotAxiomOrClaim (SentenceHookSentence _) = True
+                isNotAxiomOrClaim :: Sentence patternType -> Bool
+                isNotAxiomOrClaim (SentenceAxiomSentence _) = False
+                isNotAxiomOrClaim (SentenceClaimSentence _) = False
+                isNotAxiomOrClaim (SentenceAliasSentence _) = True
+                isNotAxiomOrClaim (SentenceSymbolSentence _) = True
+                isNotAxiomOrClaim (SentenceImportSentence _) = True
+                isNotAxiomOrClaim (SentenceSortSentence _) = True
+                isNotAxiomOrClaim (SentenceHookSentence _) = True
 
-        provenClaimSentences = map (from @SomeClaim @(Sentence _)) provenClaims
-        provenModule =
-            Module
-                { moduleName = savedProofsModuleName
-                , moduleSentences =
-                    specModuleDefinitions <> provenClaimSentences
-                , moduleAttributes = def
-                }
+                provenClaimSentences = map (from @SomeClaim @(Sentence _)) provenClaims
+                provenModule =
+                    Module
+                        { moduleName = savedProofsModuleName
+                        , moduleSentences =
+                            specModuleDefinitions <> provenClaimSentences
+                        , moduleAttributes = def
+                        }
 
-        provenDefinition =
-            Definition
-                { definitionAttributes = def
-                , definitionModules = [provenModule]
-                }
+                provenDefinition =
+                    Definition
+                        { definitionAttributes = def
+                        , definitionModules = [provenModule]
+                        }
 
 loadPattern ::
     SmtMetadataTools StepperAttributes ->

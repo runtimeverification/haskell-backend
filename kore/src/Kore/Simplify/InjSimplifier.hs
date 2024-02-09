@@ -140,121 +140,121 @@ mkInjSimplifier sortGraph =
         , evaluateCeilInj
         , injectTermTo
         }
-  where
-    isSubsortOf' = isSubsortOf sortGraph
+    where
+        isSubsortOf' = isSubsortOf sortGraph
 
-    isOrderedInj :: forall child. Inj child -> Bool
-    isOrderedInj Inj{injFrom, injTo}
-        | SortVariableSort _ <- injFrom
-        , SortVariableSort _ <- injTo =
-            -- Assume variable sorts are properly ordered.
-            True
-        | otherwise = injFrom `isSubsortOf'` injTo
+        isOrderedInj :: forall child. Inj child -> Bool
+        isOrderedInj Inj{injFrom, injTo}
+            | SortVariableSort _ <- injFrom
+            , SortVariableSort _ <- injTo =
+                -- Assume variable sorts are properly ordered.
+                True
+            | otherwise = injFrom `isSubsortOf'` injTo
 
-    evaluateInj ::
-        forall variable.
-        HasCallStack =>
-        InternalVariable variable =>
-        Inj (TermLike variable) ->
-        TermLike variable
-    evaluateInj inj
-        | injFrom inj == injTo inj = injChild inj
-        | not ignoreUnorderedInj, not (isOrderedInj inj) = unorderedInj inj
-        | otherwise =
-            synthesize . InjF $ case injChild inj of
-                Inj_ inj'
-                    | not ignoreUnorderedInj
-                    , not (isOrderedInj inj') ->
-                        unorderedInj inj
-                    | otherwise ->
-                        assert sameConstructor
-                            . assert innerSortsAgree
-                            $ Inj
-                                { injConstructor = injConstructor inj
-                                , injTo = injTo inj
-                                , injFrom = injFrom inj'
-                                , injChild = injChild inj'
-                                , injAttributes = injAttributes inj
-                                }
-                  where
-                    sameConstructor = injConstructor inj == injConstructor inj'
-                    innerSortsAgree = injFrom inj == injTo inj'
-                _ -> inj
+        evaluateInj ::
+            forall variable.
+            HasCallStack =>
+            InternalVariable variable =>
+            Inj (TermLike variable) ->
+            TermLike variable
+        evaluateInj inj
+            | injFrom inj == injTo inj = injChild inj
+            | not ignoreUnorderedInj, not (isOrderedInj inj) = unorderedInj inj
+            | otherwise =
+                synthesize . InjF $ case injChild inj of
+                    Inj_ inj'
+                        | not ignoreUnorderedInj
+                        , not (isOrderedInj inj') ->
+                            unorderedInj inj
+                        | otherwise ->
+                            assert sameConstructor
+                                . assert innerSortsAgree
+                                $ Inj
+                                    { injConstructor = injConstructor inj
+                                    , injTo = injTo inj
+                                    , injFrom = injFrom inj'
+                                    , injChild = injChild inj'
+                                    , injAttributes = injAttributes inj
+                                    }
+                        where
+                            sameConstructor = injConstructor inj == injConstructor inj'
+                            innerSortsAgree = injFrom inj == injTo inj'
+                    _ -> inj
 
-    matchInjs ::
-        forall variable.
-        Inj (TermLike variable) ->
-        Inj (TermLike variable) ->
-        Maybe (UnifyInj (InjPair variable))
-    matchInjs inj1 inj2
-        | injTo1 /= injTo2 = distinct
-        | injFrom1 == injFrom2 = direct
-        | injFrom2 `isSubsortOf'` injFrom1 = splitRight
-        | injFrom1 `isSubsortOf'` injFrom2 = splitLeft
-        -- If the child patterns are simplifiable, then they could eventually be
-        -- simplified to produce matching sort injections, but if they are
-        -- non-simplifiable, then they will never match.
-        | hasConstructorLikeTop (injChild inj1) = distinct
-        | hasConstructorLikeTop (injChild inj2) = distinct
-        -- Even if the child patterns are simplifiable, if they do not have any
-        -- common subsorts, then they will never simplify to produce matching sort
-        -- injections.
-        | Set.disjoint subsorts1 subsorts2 = distinct
-        | otherwise = Nothing
-      where
-        Inj{injFrom = injFrom1, injTo = injTo1} = inj1
-        Inj{injFrom = injFrom2, injTo = injTo2} = inj2
-        subsorts1 = subsortsOf sortGraph injFrom1
-        subsorts2 = subsortsOf sortGraph injFrom2
-        distinct = Just (UnifyInjDistinct InjPair{inj1, inj2})
-        direct = Just (UnifyInjDirect InjPair{inj1, inj2})
-        splitRight = Just (UnifyInjSplit InjPair{inj1, inj2})
-        splitLeft = Just (UnifyInjSplit InjPair{inj1 = inj2, inj2 = inj1})
-
-    evaluateCeilInj ::
-        forall variable.
-        Ceil Sort (Inj (TermLike variable)) ->
-        Ceil Sort (TermLike variable)
-    evaluateCeilInj Ceil{ceilResultSort, ceilChild = inj}
-        | not ignoreUnorderedInj, not (isOrderedInj inj) = unorderedInj inj
-        | otherwise =
-            Ceil
-                { ceilOperandSort = injFrom inj
-                , ceilResultSort
-                , ceilChild = injChild inj
-                }
-
-    unifyInjs ::
-        forall variable.
-        InternalVariable variable =>
-        UnifyInj (InjPair variable) ->
-        Maybe (Inj (Pair (TermLike variable)))
-    unifyInjs unify =
-        case unify of
-            (UnifyInjDirect injPair) ->
-                assert (injTo1 == injTo2) $ do
-                    let child1 = injChild inj1
-                        child2 = injChild inj2
-                    Just (Pair child1 child2 <$ inj1)
-              where
-                InjPair{inj1, inj2} = injPair
-                Inj{injTo = injTo1} = inj1
-                Inj{injTo = injTo2} = inj2
-            (UnifyInjSplit injPair) ->
-                assert (injTo1 == injTo2) $ do
-                    let child1' = injChild inj1
-                        child2' = evaluateInj inj2{injTo = injFrom1}
-                    Just (Pair child1' child2' <$ inj1)
-              where
-                InjPair{inj1, inj2} = injPair
+        matchInjs ::
+            forall variable.
+            Inj (TermLike variable) ->
+            Inj (TermLike variable) ->
+            Maybe (UnifyInj (InjPair variable))
+        matchInjs inj1 inj2
+            | injTo1 /= injTo2 = distinct
+            | injFrom1 == injFrom2 = direct
+            | injFrom2 `isSubsortOf'` injFrom1 = splitRight
+            | injFrom1 `isSubsortOf'` injFrom2 = splitLeft
+            -- If the child patterns are simplifiable, then they could eventually be
+            -- simplified to produce matching sort injections, but if they are
+            -- non-simplifiable, then they will never match.
+            | hasConstructorLikeTop (injChild inj1) = distinct
+            | hasConstructorLikeTop (injChild inj2) = distinct
+            -- Even if the child patterns are simplifiable, if they do not have any
+            -- common subsorts, then they will never simplify to produce matching sort
+            -- injections.
+            | Set.disjoint subsorts1 subsorts2 = distinct
+            | otherwise = Nothing
+            where
                 Inj{injFrom = injFrom1, injTo = injTo1} = inj1
-                Inj{injTo = injTo2} = inj2
-            UnifyInjDistinct _ -> Nothing
+                Inj{injFrom = injFrom2, injTo = injTo2} = inj2
+                subsorts1 = subsortsOf sortGraph injFrom1
+                subsorts2 = subsortsOf sortGraph injFrom2
+                distinct = Just (UnifyInjDistinct InjPair{inj1, inj2})
+                direct = Just (UnifyInjDirect InjPair{inj1, inj2})
+                splitRight = Just (UnifyInjSplit InjPair{inj1, inj2})
+                splitLeft = Just (UnifyInjSplit InjPair{inj1 = inj2, inj2 = inj1})
 
-    injectTermTo injProto injChild injTo =
-        evaluateInj injProto{injFrom, injTo, injChild}
-      where
-        injFrom = termLikeSort injChild
+        evaluateCeilInj ::
+            forall variable.
+            Ceil Sort (Inj (TermLike variable)) ->
+            Ceil Sort (TermLike variable)
+        evaluateCeilInj Ceil{ceilResultSort, ceilChild = inj}
+            | not ignoreUnorderedInj, not (isOrderedInj inj) = unorderedInj inj
+            | otherwise =
+                Ceil
+                    { ceilOperandSort = injFrom inj
+                    , ceilResultSort
+                    , ceilChild = injChild inj
+                    }
+
+        unifyInjs ::
+            forall variable.
+            InternalVariable variable =>
+            UnifyInj (InjPair variable) ->
+            Maybe (Inj (Pair (TermLike variable)))
+        unifyInjs unify =
+            case unify of
+                (UnifyInjDirect injPair) ->
+                    assert (injTo1 == injTo2) $ do
+                        let child1 = injChild inj1
+                            child2 = injChild inj2
+                        Just (Pair child1 child2 <$ inj1)
+                    where
+                        InjPair{inj1, inj2} = injPair
+                        Inj{injTo = injTo1} = inj1
+                        Inj{injTo = injTo2} = inj2
+                (UnifyInjSplit injPair) ->
+                    assert (injTo1 == injTo2) $ do
+                        let child1' = injChild inj1
+                            child2' = evaluateInj inj2{injTo = injFrom1}
+                        Just (Pair child1' child2' <$ inj1)
+                    where
+                        InjPair{inj1, inj2} = injPair
+                        Inj{injFrom = injFrom1, injTo = injTo1} = inj1
+                        Inj{injTo = injTo2} = inj2
+                UnifyInjDistinct _ -> Nothing
+
+        injectTermTo injProto injChild injTo =
+            evaluateInj injProto{injFrom, injTo, injChild}
+            where
+                injFrom = termLikeSort injChild
 
 normalize ::
     InjSimplifier ->
@@ -262,8 +262,8 @@ normalize ::
     TermLike RewritingVariableName
 normalize InjSimplifier{evaluateInj} =
     Recursive.fold worker
-  where
-    worker (_ :< termLikeF) =
-        case termLikeF of
-            InjF inj -> evaluateInj inj
-            _ -> synthesize termLikeF
+    where
+        worker (_ :< termLikeF) =
+            case termLikeF of
+                InjF inj -> evaluateInj inj
+                _ -> synthesize termLikeF

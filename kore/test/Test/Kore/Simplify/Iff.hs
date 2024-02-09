@@ -47,12 +47,12 @@ test_simplify =
         , (termA, bottomOf Mock.testSort) `becomes` [termNotA] $ "iff(a, ⊤) = ¬a"
         ]
     ]
-  where
-    becomes (a, b) rs name =
-        testCase name $ do
-            let expect = OrPattern.fromPatterns rs
-            actual <- simplify $ makeIff [a] [b]
-            assertEqual "" expect actual
+    where
+        becomes (a, b) rs name =
+            testCase name $ do
+                let expect = OrPattern.fromPatterns rs
+                actual <- simplify $ makeIff [a] [b]
+                assertEqual "" expect actual
 
 test_makeEvaluate :: [TestTree]
 test_makeEvaluate =
@@ -100,16 +100,16 @@ test_makeEvaluate =
                     { term = mkTop Mock.testSort
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.xConfig, Mock.a)]
                     }
                 Conditional
                     { term = mkTop Mock.testSort
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.yConfig, Mock.b)]
                     }
             )
@@ -146,26 +146,26 @@ test_makeEvaluate =
                     { term = Mock.f Mock.a
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.xConfig, Mock.a)]
                     }
                 Conditional
                     { term = Mock.g Mock.b
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.yConfig, Mock.b)]
                     }
             )
         )
     ]
-  where
-    becomes (a, b) rs =
-        Terse.equals
-            (makeEvaluate a b)
-            (OrPattern.fromPatterns rs)
+    where
+        becomes (a, b) rs =
+            Terse.equals
+                (makeEvaluate a b)
+                (OrPattern.fromPatterns rs)
 
 testSimplifyBoolean :: HasCallStack => Bool -> Bool -> TestTree
 testSimplifyBoolean a b =
@@ -173,8 +173,8 @@ testSimplifyBoolean a b =
         actual <- simplify $ makeIff [valueBool a] [valueBool b]
         let expect = OrPattern.fromPatterns [valueBool r]
         assertEqual ("expected: " ++ nameBool r) expect actual
-  where
-    r = a == b
+    where
+        r = a == b
 
 testEvaluateBoolean :: HasCallStack => Bool -> Bool -> TestTree
 testEvaluateBoolean a b =
@@ -182,8 +182,8 @@ testEvaluateBoolean a b =
         (OrPattern.fromPatterns [valueBool r])
         (on makeEvaluate valueBool a b)
         ("iff(" ++ nameBool a ++ ", " ++ nameBool b ++ ")")
-  where
-    r = a == b
+    where
+        r = a == b
 
 nameBool :: Bool -> String
 nameBool x
@@ -224,8 +224,8 @@ simplify =
     testRunSimplifier mockEnv
         . Iff.simplify SideCondition.top
         . fmap simplifiedOrPattern
-  where
-    mockEnv = Mock.env
+    where
+        mockEnv = Mock.env
 
 makeEvaluate ::
     Pattern RewritingVariableName ->

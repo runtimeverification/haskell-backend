@@ -40,28 +40,28 @@ sourceId = "org'Stop'kframework'Stop'attributes'Stop'Source"
 
 instance ParseAttributes Source where
     parseAttribute = AttributeParser.withApplication sourceId parseApplication
-      where
-        parseApplication ::
-            [Sort] ->
-            [AttributePattern] ->
-            Source ->
-            AttributeParser.Parser Source
-        parseApplication params args s@(Source Nothing) = do
-            AttributeParser.getZeroParams params
-            case args of
-                [] -> pure s
-                [_] -> do
-                    arg <- AttributeParser.getOneArgument args
-                    StringLiteral str <- AttributeParser.getStringLiteral arg
-                    pure
-                        . fromMaybe def
-                        . parseMaybe sourceParser
-                        $ Text.unpack str
-                _ ->
-                    Kore.Error.koreFail
-                        ("expected one argument, found " ++ show (length args))
-        parseApplication _ _ _ =
-            AttributeParser.failDuplicate sourceId
+        where
+            parseApplication ::
+                [Sort] ->
+                [AttributePattern] ->
+                Source ->
+                AttributeParser.Parser Source
+            parseApplication params args s@(Source Nothing) = do
+                AttributeParser.getZeroParams params
+                case args of
+                    [] -> pure s
+                    [_] -> do
+                        arg <- AttributeParser.getOneArgument args
+                        StringLiteral str <- AttributeParser.getStringLiteral arg
+                        pure
+                            . fromMaybe def
+                            . parseMaybe sourceParser
+                            $ Text.unpack str
+                    _ ->
+                        Kore.Error.koreFail
+                            ("expected one argument, found " ++ show (length args))
+            parseApplication _ _ _ =
+                AttributeParser.failDuplicate sourceId
 
 instance From Source Attributes where
     -- TODO (thomas.tuegel): Implement
@@ -74,10 +74,10 @@ type StringParser = Parsec String String
 
 sourceParser :: StringParser Source
 sourceParser = Source <$> (Just <$> sourceParser0)
-  where
-    sourceParser0 :: StringParser String
-    sourceParser0 =
-        string "Source(" *> many (noneOf excludedChars) <* string ")"
+    where
+        sourceParser0 :: StringParser String
+        sourceParser0 =
+            string "Source(" *> many (noneOf excludedChars) <* string ")"
 
-    excludedChars :: String
-    excludedChars = ")"
+        excludedChars :: String
+        excludedChars = ")"
