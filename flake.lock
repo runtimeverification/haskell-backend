@@ -32,17 +32,16 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1707490693,
+        "lastModified": 1707492220,
         "narHash": "sha256-KRndaUPzUumDlNcKF7KzA8F/EZKLYCvurh7Z13sw2PI=",
         "owner": "runtimeverification",
         "repo": "rv-nix-tools",
-        "rev": "f3e8bab938db9800044a94b94e59c5eba25977bc",
+        "rev": "abf86805a623948c941e603e2fc4c26a06ea6eb6",
         "type": "github"
       },
       "original": {
         "owner": "runtimeverification",
         "repo": "rv-nix-tools",
-        "rev": "f3e8bab938db9800044a94b94e59c5eba25977bc",
         "type": "github"
       }
     },

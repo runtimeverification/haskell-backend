@@ -118,7 +118,7 @@
           mkShell {
             nativeBuildInputs = [
               (haskell.lib.justStaticExecutables
-                haskellPackages.fourmolu_0_14_1_0)
+                haskellPackages.fourmolu)
             ];
           };
         cabal = let pkgs = nixpkgsFor system;
