@@ -549,6 +549,9 @@ respond serverState moduleName runSMT =
                                 -- we can allow this, since the contents of the named module
                                 -- are the same
                                 pure ()
+                        (Nothing, Just{}) ->
+                            -- an unlikely case where another module's name clashes with the current module's hash
+                            throwError $ backendError DuplicateModuleName name
                         _ -> pure ()
 
                 case (Map.lookup (coerce moduleHash) indexedModules, Map.lookup (coerce moduleHash) serializedModules) of
