@@ -747,8 +747,8 @@ mkRuleElementVariable ::
 mkRuleElementVariable base counter variableSort =
     Variable
         { variableName =
-            ElementVariableName $
-                mkRuleVariable VariableName{base, counter}
+            ElementVariableName
+                $ mkRuleVariable VariableName{base, counter}
         , variableSort
         }
 mkConfigElementVariable ::
@@ -756,8 +756,8 @@ mkConfigElementVariable ::
 mkConfigElementVariable base counter variableSort =
     Variable
         { variableName =
-            ElementVariableName $
-                mkConfigVariable VariableName{base, counter}
+            ElementVariableName
+                $ mkConfigVariable VariableName{base, counter}
         , variableSort
         }
 mkEquationElementVariable ::
@@ -765,8 +765,8 @@ mkEquationElementVariable ::
 mkEquationElementVariable base counter variableSort =
     Variable
         { variableName =
-            ElementVariableName $
-                mkEquationVariable VariableName{base, counter}
+            ElementVariableName
+                $ mkEquationVariable VariableName{base, counter}
         , variableSort
         }
 
@@ -787,8 +787,8 @@ mkRuleSetVariable ::
 mkRuleSetVariable base counter variableSort =
     Variable
         { variableName =
-            SetVariableName $
-                mkRuleVariable VariableName{base, counter}
+            SetVariableName
+                $ mkRuleVariable VariableName{base, counter}
         , variableSort
         }
 
@@ -797,8 +797,8 @@ mkConfigSetVariable ::
 mkConfigSetVariable base counter variableSort =
     Variable
         { variableName =
-            SetVariableName $
-                mkConfigVariable VariableName{base, counter}
+            SetVariableName
+                $ mkConfigVariable VariableName{base, counter}
         , variableSort
         }
 
@@ -1021,8 +1021,8 @@ makeSomeConfigVariable name variableSort =
         }
   where
     variableName =
-        injectVariableName $
-            mkConfigVariable VariableName{base = testId name, counter = mempty}
+        injectVariableName
+            $ mkConfigVariable VariableName{base = testId name, counter = mempty}
     injectVariableName
         | Text.head name == '@' = inject . SetVariableName
         | otherwise = inject . ElementVariableName
@@ -2178,10 +2178,14 @@ framedInternalMap elements opaque =
         }
   where
     asConcrete element@(key, value) =
-        (,) <$> retractKey key <*> pure value
+        (,)
+            <$> retractKey key
+            <*> pure value
             & maybe (Left element) Right
     (abstractElements, HashMap.fromList -> concreteElements) =
-        asConcrete . Bifunctor.second MapValue <$> elements
+        asConcrete
+            . Bifunctor.second MapValue
+            <$> elements
             & partitionEithers
 
 builtinList ::
@@ -2247,7 +2251,8 @@ framedInternalSet elements opaque =
             (,) <$> retractKey key <*> pure SetValue
             & maybe (Left (key, SetValue)) Right
     (abstractElements, HashMap.fromList -> concreteElements) =
-        asConcrete <$> elements
+        asConcrete
+            <$> elements
             & partitionEithers
 
 builtinInt ::
@@ -2352,8 +2357,8 @@ generatorSetup =
 -- | ensure that test data can be generated using the above setup
 test_canGenerateConsistentTerms :: TestTree
 test_canGenerateConsistentTerms =
-    testGroup "can generate consistent terms for all given sorts" $
-        map mkTest testSorts
+    testGroup "can generate consistent terms for all given sorts"
+        $ map mkTest testSorts
   where
     testSorts = ConsistentKore.allSorts generatorSetup
     sizes = map Range.Size [1 .. 10]
@@ -2364,8 +2369,9 @@ test_canGenerateConsistentTerms =
             (show getInternedId)
             [ testProperty (show size) . withTests 1 . property $ do
                 r <-
-                    forAll . Gen.resize size $
-                        ConsistentKore.runKoreGen
+                    forAll
+                        . Gen.resize size
+                        $ ConsistentKore.runKoreGen
                             generatorSetup
                             (ConsistentKore.termLikeGenWithSort sort)
                 -- just test that this works

@@ -111,8 +111,8 @@ toBase16 byteString =
             hi = Bits.shiftR byte 4
         pure ([encode hi, encode lo], bytes')
     encode half =
-        assert (0 <= half && half < 16) $
-            (Vector.!) encodingBase16 (fromEnum half)
+        assert (0 <= half && half < 16)
+            $ (Vector.!) encodingBase16 (fromEnum half)
 
 encodingBase16 :: Vector Char
 encodingBase16 =

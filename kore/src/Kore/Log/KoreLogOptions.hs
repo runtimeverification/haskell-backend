@@ -94,6 +94,7 @@ import Options.Applicative.Help.Pretty qualified as OptPretty
 import Prelude.Kore
 import Pretty (Pretty (..))
 import Pretty qualified
+import Prettyprinter qualified
 import System.Clock (
     TimeSpec,
  )
@@ -275,7 +276,7 @@ parseEntryTypes =
             [ "Log entries: comma-separated list logs entries to enable"
             , "Available entry types:"
             , (OptPretty.indent 4 . OptPretty.vsep)
-                (OptPretty.text <$> getEntryTypesAsText)
+                (Prettyprinter.pretty <$> getEntryTypesAsText)
             ]
 
 parseCommaSeparatedEntries :: Options.ReadM EntryTypes
@@ -334,7 +335,7 @@ parseErrorEntries =
             [ "Turn arbitrary log entries into errors"
             , "Available entry types:"
             , (OptPretty.indent 4 . OptPretty.vsep)
-                (OptPretty.text <$> getNoErrEntryTypesAsText)
+                (Prettyprinter.pretty <$> getNoErrEntryTypesAsText)
                 {- The user can still give error entries as arguments, but it's
                     useless, so we don't list them here
                 -}
@@ -371,21 +372,21 @@ parseDebugApplyEquationOptions =
     mconcat <$> many parse
   where
     parse =
-        fmap (DebugApplyEquationOptions . HashSet.singleton) $
-            Options.strOption $
-                mconcat
-                    [ Options.metavar "EQUATION_IDENTIFIER"
-                    , Options.long "debug-apply-equation"
-                    , Options.help
-                        "Log every succesfully applied equation that matches EQUATION_IDENTIFIER, \
-                        \which may be the name of a symbol or a rule. \
-                        \The name of a symbol may be a Kore identifier or a K label, \
-                        \which will match any equation where the named symbol \
-                        \occurs on the left-hand side. \
-                        \The name of a rule is given with the K module name \
-                        \as a dot-separated prefix: 'MODULE-NAME.rule-name'. \
-                        \This option may be specified multiple times to log multiple equations."
-                    ]
+        fmap (DebugApplyEquationOptions . HashSet.singleton)
+            $ Options.strOption
+            $ mconcat
+                [ Options.metavar "EQUATION_IDENTIFIER"
+                , Options.long "debug-apply-equation"
+                , Options.help
+                    "Log every succesfully applied equation that matches EQUATION_IDENTIFIER, \
+                    \which may be the name of a symbol or a rule. \
+                    \The name of a symbol may be a Kore identifier or a K label, \
+                    \which will match any equation where the named symbol \
+                    \occurs on the left-hand side. \
+                    \The name of a rule is given with the K module name \
+                    \as a dot-separated prefix: 'MODULE-NAME.rule-name'. \
+                    \This option may be specified multiple times to log multiple equations."
+                ]
 
 selectDebugApplyEquation ::
     DebugApplyEquationOptions ->
@@ -411,23 +412,23 @@ parseDebugAttemptEquationOptions =
     mconcat <$> many parse
   where
     parse =
-        fmap (DebugAttemptEquationOptions . HashSet.singleton) $
-            Options.strOption $
-                mconcat
-                    [ Options.metavar "EQUATION_IDENTIFIER"
-                    , Options.long "debug-attempt-equation"
-                    , Options.help
-                        "Log every attempt to apply an equation \
-                        \that matches EQUATION_IDENTIFIER, \
-                        \which may be the name of a symbol or a rule. \
-                        \It will not be mentioned whether the application succeeds or not. \
-                        \The name of a symbol may be a Kore identifier or a K label, \
-                        \which will match any equation where the named symbol \
-                        \occurs on the left-hand side. \
-                        \The name of a rule is given with the K module name \
-                        \as a dot-separated prefix: 'MODULE-NAME.rule-name'. \
-                        \This option may be specified multiple times to log multiple equations."
-                    ]
+        fmap (DebugAttemptEquationOptions . HashSet.singleton)
+            $ Options.strOption
+            $ mconcat
+                [ Options.metavar "EQUATION_IDENTIFIER"
+                , Options.long "debug-attempt-equation"
+                , Options.help
+                    "Log every attempt to apply an equation \
+                    \that matches EQUATION_IDENTIFIER, \
+                    \which may be the name of a symbol or a rule. \
+                    \It will not be mentioned whether the application succeeds or not. \
+                    \The name of a symbol may be a Kore identifier or a K label, \
+                    \which will match any equation where the named symbol \
+                    \occurs on the left-hand side. \
+                    \The name of a rule is given with the K module name \
+                    \as a dot-separated prefix: 'MODULE-NAME.rule-name'. \
+                    \This option may be specified multiple times to log multiple equations."
+                ]
 
 selectDebugAttemptEquation ::
     DebugAttemptEquationOptions ->
@@ -459,22 +460,22 @@ parseDebugEquationOptions =
     mconcat <$> many parse
   where
     parse =
-        fmap (DebugEquationOptions . HashSet.singleton) $
-            Options.strOption $
-                mconcat
-                    [ Options.metavar "EQUATION_IDENTIFIER"
-                    , Options.long "debug-equation"
-                    , Options.help
-                        "Log every attempt to apply or successful application of \
-                        \an equation that matches EQUATION_IDENTIFIER, \
-                        \which may be the name of a symbol or a rule. \
-                        \The name of a symbol may be a Kore identifier or a K label, \
-                        \which will match any equation where the named symbol \
-                        \occurs on the left-hand side. \
-                        \The name of a rule is given with the K module name \
-                        \as a dot-separated prefix: 'MODULE-NAME.rule-name'. \
-                        \This option may be specified multiple times to log multiple equations."
-                    ]
+        fmap (DebugEquationOptions . HashSet.singleton)
+            $ Options.strOption
+            $ mconcat
+                [ Options.metavar "EQUATION_IDENTIFIER"
+                , Options.long "debug-equation"
+                , Options.help
+                    "Log every attempt to apply or successful application of \
+                    \an equation that matches EQUATION_IDENTIFIER, \
+                    \which may be the name of a symbol or a rule. \
+                    \The name of a symbol may be a Kore identifier or a K label, \
+                    \which will match any equation where the named symbol \
+                    \occurs on the left-hand side. \
+                    \The name of a rule is given with the K module name \
+                    \as a dot-separated prefix: 'MODULE-NAME.rule-name'. \
+                    \This option may be specified multiple times to log multiple equations."
+                ]
 
 selectDebugEquation ::
     DebugEquationOptions ->
@@ -501,23 +502,23 @@ parseDebugAttemptRewriteOptions =
     mconcat <$> many parse
   where
     parse =
-        fmap (DebugAttemptRewriteOptions . HashSet.singleton) $
-            Options.strOption $
-                mconcat
-                    [ Options.metavar "REWRITE_RULE_IDENTIFIER"
-                    , Options.long "debug-attempt-rewrite"
-                    , Options.help
-                        "Log every attempt to apply an rewrite rule \
-                        \that matches REWRITE_RULE_IDENTIFIER, \
-                        \which may be the name of a symbol or a rule. \
-                        \It will not be mentioned whether the application succeeds or not. \
-                        \The name of a symbol may be a Kore identifier or a K label, \
-                        \which will match any equation where the named symbol \
-                        \occurs on the left-hand side. \
-                        \The name of a rule is given with the K module name \
-                        \as a dot-separated prefix: 'MODULE-NAME.rule-name'. \
-                        \This option may be specified multiple times to log multiple equations."
-                    ]
+        fmap (DebugAttemptRewriteOptions . HashSet.singleton)
+            $ Options.strOption
+            $ mconcat
+                [ Options.metavar "REWRITE_RULE_IDENTIFIER"
+                , Options.long "debug-attempt-rewrite"
+                , Options.help
+                    "Log every attempt to apply an rewrite rule \
+                    \that matches REWRITE_RULE_IDENTIFIER, \
+                    \which may be the name of a symbol or a rule. \
+                    \It will not be mentioned whether the application succeeds or not. \
+                    \The name of a symbol may be a Kore identifier or a K label, \
+                    \which will match any equation where the named symbol \
+                    \occurs on the left-hand side. \
+                    \The name of a rule is given with the K module name \
+                    \as a dot-separated prefix: 'MODULE-NAME.rule-name'. \
+                    \This option may be specified multiple times to log multiple equations."
+                ]
 
 selectDebugAttemptRewrite ::
     DebugAttemptRewriteOptions ->
@@ -546,21 +547,21 @@ parseDebugApplyRewriteOptions =
     mconcat <$> many parse
   where
     parse =
-        fmap (DebugApplyRewriteOptions . HashSet.singleton) $
-            Options.strOption $
-                mconcat
-                    [ Options.metavar "REWRITE_RULE_IDENTIFIER"
-                    , Options.long "debug-apply-rewrite"
-                    , Options.help
-                        "Log every succesfully applied rewrite rule that matches REWRITE_RULE_IDENTIFIER, \
-                        \which may be the name of a symbol or a rule. \
-                        \The name of a symbol may be a Kore identifier or a K label, \
-                        \which will match any equation where the named symbol \
-                        \occurs on the left-hand side. \
-                        \The name of a rule is given with the K module name \
-                        \as a dot-separated prefix: 'MODULE-NAME.rule-name'. \
-                        \This option may be specified multiple times to log multiple equations."
-                    ]
+        fmap (DebugApplyRewriteOptions . HashSet.singleton)
+            $ Options.strOption
+            $ mconcat
+                [ Options.metavar "REWRITE_RULE_IDENTIFIER"
+                , Options.long "debug-apply-rewrite"
+                , Options.help
+                    "Log every succesfully applied rewrite rule that matches REWRITE_RULE_IDENTIFIER, \
+                    \which may be the name of a symbol or a rule. \
+                    \The name of a symbol may be a Kore identifier or a K label, \
+                    \which will match any equation where the named symbol \
+                    \occurs on the left-hand side. \
+                    \The name of a rule is given with the K module name \
+                    \as a dot-separated prefix: 'MODULE-NAME.rule-name'. \
+                    \This option may be specified multiple times to log multiple equations."
+                ]
 
 selectDebugApplyRewrite ::
     DebugApplyRewriteOptions ->
@@ -589,22 +590,22 @@ parseDebugRewriteOptions =
     mconcat <$> many parse
   where
     parse =
-        fmap (DebugRewriteOptions . HashSet.singleton) $
-            Options.strOption $
-                mconcat
-                    [ Options.metavar "REWRITE_RULE_IDENTIFIER"
-                    , Options.long "debug-rewrite"
-                    , Options.help
-                        "Log every attempt to apply or successful application of \
-                        \an rewrite rule that matches REWRITE_RULE_IDENTIFIER, \
-                        \which may be the name of a symbol or a rule. \
-                        \The name of a symbol may be a Kore identifier or a K label, \
-                        \which will match any equation where the named symbol \
-                        \occurs on the left-hand side. \
-                        \The name of a rule is given with the K module name \
-                        \as a dot-separated prefix: 'MODULE-NAME.rule-name'. \
-                        \This option may be specified multiple times to log multiple equations."
-                    ]
+        fmap (DebugRewriteOptions . HashSet.singleton)
+            $ Options.strOption
+            $ mconcat
+                [ Options.metavar "REWRITE_RULE_IDENTIFIER"
+                , Options.long "debug-rewrite"
+                , Options.help
+                    "Log every attempt to apply or successful application of \
+                    \an rewrite rule that matches REWRITE_RULE_IDENTIFIER, \
+                    \which may be the name of a symbol or a rule. \
+                    \The name of a symbol may be a Kore identifier or a K label, \
+                    \which will match any equation where the named symbol \
+                    \occurs on the left-hand side. \
+                    \The name of a rule is given with the K module name \
+                    \as a dot-separated prefix: 'MODULE-NAME.rule-name'. \
+                    \This option may be specified multiple times to log multiple equations."
+                ]
 
 selectDebugRewrite ::
     DebugRewriteOptions ->
@@ -723,11 +724,11 @@ instance Pretty DebugOptionsValidationError => Show DebugOptionsValidationError 
 
 instance Pretty DebugOptionsValidationError where
     pretty (DebugOptionsValidationError labels) =
-        Pretty.vsep $
-            ["Rule labels for the following debug options are not defined:"]
-                <> Map.foldMapWithKey
-                    (\k v -> [Pretty.hsep [pretty (k <> ":"), pretty . Text.intercalate ", " $ v]])
-                    (unUndefinedLabels labels)
+        Pretty.vsep
+            $ ["Rule labels for the following debug options are not defined:"]
+            <> Map.foldMapWithKey
+                (\k v -> [Pretty.hsep [pretty (k <> ":"), pretty . Text.intercalate ", " $ v]])
+                (unUndefinedLabels labels)
 
 validateDebugOptions ::
     Map
@@ -738,8 +739,8 @@ validateDebugOptions ::
     Validate UndefinedLabels ()
 validateDebugOptions equations rewrites KoreLogOptions{..} = do
     let eqDefinedLabels =
-            HashSet.fromList $
-                mapMaybe
+            HashSet.fromList
+                $ mapMaybe
                     (Attribute.unLabel . Attribute.label . Equation.attributes)
                     (concat (Map.elems equations))
         rwDefinedLabels = HashSet.fromList $ mapMaybe (Attribute.unLabel . from . getRewriteRule) rewrites
@@ -758,5 +759,5 @@ validateDebugOptions equations rewrites KoreLogOptions{..} = do
   where
     validateOption definedLabels (opt, value) = do
         let undefinedLabels = HashSet.difference value definedLabels
-        unless (HashSet.null undefinedLabels) $
-            dispute (UndefinedLabels $ Map.singleton opt (HashSet.toList undefinedLabels))
+        unless (HashSet.null undefinedLabels)
+            $ dispute (UndefinedLabels $ Map.singleton opt (HashSet.toList undefinedLabels))

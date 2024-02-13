@@ -225,8 +225,8 @@ termGen =
 termLikeGenWithSort :: Sort -> Gen (TermLike VariableName)
 termLikeGenWithSort topSort = do
     maybeResult <-
-        Gen.scale limitTermDepth $
-            Gen.sized (\size -> termLikeGenImpl size topSort)
+        Gen.scale limitTermDepth
+            $ Gen.sized (\size -> termLikeGenImpl size topSort)
     case maybeResult of
         Nothing -> error $ "Cannot generate terms for " <> show topSort
         Just result -> return result
@@ -416,8 +416,8 @@ termGenerators = do
     if onlyConstructorLike
         then return symbol
         else
-            return $
-                Map.unionsWith
+            return
+                $ Map.unionsWith
                     (<>)
                     [ symbol
                     , alias
@@ -613,7 +613,8 @@ maybeListBuiltinGenerator Setup{maybeListSorts} =
                 (Range.constant 0 5)
                 (childGenerator listElementSort)
         return
-            ( mkInternalList . BuiltinList.asBuiltin metadataTools listSort
+            ( mkInternalList
+                . BuiltinList.asBuiltin metadataTools listSort
                 <$> sequenceA elements
             )
 
@@ -623,8 +624,8 @@ concreteTermGenerator ::
     Gen (Maybe (TermLike Concrete))
 concreteTermGenerator requestedSort childGenerator = do
     maybeResult <-
-        requestConcrete $
-            childGenerator requestedSort
+        requestConcrete
+            $ childGenerator requestedSort
     return (forceConcrete <$> maybeResult)
   where
     forceConcrete term =
@@ -701,9 +702,9 @@ acGenerator ::
 acGenerator mapSort keySort valueGenerator childGenerator = do
     let concreteKeyGenerator :: Gen (Maybe Key)
         concreteKeyGenerator =
-            fmap (>>= retractKey) $
-                requestConstructorLike $
-                    concreteTermGenerator keySort childGenerator
+            fmap (>>= retractKey)
+                $ requestConstructorLike
+                $ concreteTermGenerator keySort childGenerator
     maybeConcreteMap <-
         Gen.map
             (Range.constant 0 5)
@@ -721,8 +722,8 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
             HashMap.fromList
                 (mapMaybe concreteMapElem (Map.toList maybeConcreteMap))
     mixedKeys <-
-        requestConstructorLike $
-            Gen.set
+        requestConstructorLike
+            $ Gen.set
                 (Range.constant 0 5)
                 (childGenerator keySort)
     let variableKeys :: [TermLike VariableName]
@@ -734,19 +735,19 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
     let variablePairs :: [Element normalized (TermLike VariableName)]
         variablePairs = catMaybes maybeVariablePairs
     (Setup{metadataTools}, _) <- Reader.ask
-    return $
-        Just $
-            AssociativeCommutative.asInternal
-                metadataTools
-                mapSort
-                ( wrapAc
-                    NormalizedAc
-                        { elementsWithVariables = variablePairs
-                        , concreteElements = concreteMap
-                        , opaque = []
-                        -- TODO (virgil): also fill the opaque field.
-                        }
-                )
+    return
+        $ Just
+        $ AssociativeCommutative.asInternal
+            metadataTools
+            mapSort
+            ( wrapAc
+                NormalizedAc
+                    { elementsWithVariables = variablePairs
+                    , concreteElements = concreteMap
+                    , opaque = []
+                    -- TODO (virgil): also fill the opaque field.
+                    }
+            )
   where
     freeVariables' :: TermLike VariableName -> FreeVariables VariableName
     freeVariables' = freeVariables
@@ -785,8 +786,8 @@ symbolGenerator
             , attributes =
                 AttributeRequirements
                     { isConstructorLike =
-                        Attribute.Constructor.isConstructor $
-                            Attribute.Symbol.constructor symbolAttributes
+                        Attribute.Constructor.isConstructor
+                            $ Attribute.Symbol.constructor symbolAttributes
                     , isConcrete = True
                     }
             , generator = applicationGenerator

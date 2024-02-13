@@ -299,12 +299,14 @@ test_assumeDefined =
             expectedMaps = collectionToMapTerm <$> expectedCollections
             expectedSets = collectionToSetTerm <$> expectedCollections
             mapExpected =
-                expectedTerms <> expectedMaps
+                expectedTerms
+                    <> expectedMaps
                     & HashSet.fromList
                     & fromDefinedTerms
                     & Just
             setExpected =
-                expectedTerms <> expectedSets
+                expectedTerms
+                    <> expectedSets
                     & HashSet.fromList
                     & fromDefinedTerms
                     & Just
@@ -703,13 +705,13 @@ test_generateNormalizedAcs =
         let testMap = collectionToMap input
             testSet = collectionToSet input
             expectedMaps =
-                HashSet.fromList $
-                    collectionToMap
-                        <$> expected
+                HashSet.fromList
+                    $ collectionToMap
+                    <$> expected
             expectedSets =
-                HashSet.fromList $
-                    collectionToSet
-                        <$> expected
+                HashSet.fromList
+                    $ collectionToSet
+                    <$> expected
             actualMaps = generateNormalizedAcs testMap
             actualSets = generateNormalizedAcs testSet
         assertEqual "Maps" expectedMaps actualMaps

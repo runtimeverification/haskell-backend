@@ -34,7 +34,7 @@
         haskell-backend = final.stacklock2nix {
           stackYaml = ./stack.yaml;
           # This should based on the compiler version from the resolver in stack.yaml.
-          baseHaskellPkgSet = final.haskell.packages.ghc928;
+          baseHaskellPkgSet = final.haskell.packages.ghc964;
           cabal2nixArgsOverrides = args:
             args // {
               # The Haskell package `"graphviz"` depends on the _system_
@@ -47,7 +47,8 @@
             with final.haskell.lib; {
               decision-diagrams = dontCheck hprev.decision-diagrams;
               fgl = dontCheck hprev.fgl;
-              haskeline = dontCheck hprev.haskeline;
+              fgl-arbitrary = dontCheck hprev.fgl-arbitrary;
+              # haskeline = dontCheck hprev.haskeline;
               json-rpc = dontCheck hprev.json-rpc;
               kore = (overrideCabal hprev.kore (drv: {
                 doCheck = false;
@@ -56,7 +57,7 @@
                   substituteInPlace src/Kore/VersionInfo.hs \
                     --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}"'
                 '';
-                postInstall = ''
+                postInstall = '' 
                   ${drv.postInstall or ""}
                   rm $out/bin/kore-check-functions
                   rm $out/bin/kore-format
@@ -66,33 +67,30 @@
                 # and depending on another copy of ghc-compact breaks HLS in the dev shell.
                 ghc-compact = null;
               };
+              lifted-base = dontCheck hprev.lifted-base;
+              prettyprinter = dontCheck hprev.prettyprinter;
               tar = dontCheck hprev.tar;
+              # typerep-map = doJailbreak hprev.typerep-map;
             };
 
           # Additional packages that should be available for development.
           additionalDevShellNativeBuildInputs = stacklockHaskellPkgSet:
             with final; [
-              haskell.packages.ghc928.cabal-install
-              haskellPackages.fourmolu_0_14_1_0
-              (let
-                ghc-lib-parser = haskellPackages.ghc-lib-parser_9_4_5_20230430;
-                ghc-lib-parser-ex =
-                  haskellPackages.ghc-lib-parser-ex_9_4_0_0.override {
-                    inherit ghc-lib-parser;
-                  };
-              in haskellPackages.hlint_3_5.override {
-                inherit ghc-lib-parser ghc-lib-parser-ex;
-              })
-              (haskell-language-server.override {
-                supportedGhcVersions = [ "928" ];
-              })
+              haskell.packages.ghc964.cabal-install
+              haskell.packages.ghc964.fourmolu
+              haskell.packages.ghc964.hlint
+
+              # (haskell-language-server.override {
+              #   supportedGhcVersions = [ "964" ];
+              # })
+
               final.z3
               final.secp256k1
             ];
           all-cabal-hashes = final.fetchurl {
             url =
-              "https://github.com/commercialhaskell/all-cabal-hashes/archive/779bc22f8c7f8e3566edd5a4922750b73a0e5ed5.tar.gz";
-            sha256 = "sha256-qJ/rrdjCTil5wBlcJQ0w+1NP9F/Cr7X/pAfnnx/ahLc=";
+              "https://github.com/commercialhaskell/all-cabal-hashes/archive/80fe3174b98134e50d4541c9c2a3803601f6fbb7.tar.gz";
+            sha256 = "sha256-b3E6JLu1tBpZnPXBJxNXfjkglY/du8k1l+WTS8Fetr4=";
           };
         };
       };
@@ -118,14 +116,14 @@
           mkShell {
             nativeBuildInputs = [
               (haskell.lib.justStaticExecutables
-                haskellPackages.fourmolu_0_14_1_0)
+                haskell.packages.ghc964.fourmolu)
             ];
           };
         cabal = let pkgs = nixpkgsFor system;
         in pkgs.haskell-backend.pkgSet.shellFor {
           packages = pkgs.haskell-backend.localPkgsSelector;
           nativeBuildInputs =
-            [ pkgs.haskell.packages.ghc928.cabal-install pkgs.z3 ];
+            [ pkgs.haskell.packages.ghc964.cabal-install pkgs.z3 ];
         };
       });
 

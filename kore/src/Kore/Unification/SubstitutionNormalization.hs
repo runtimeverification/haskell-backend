@@ -104,9 +104,9 @@ normalize (dropTrivialSubstitutions -> substitutionMap) =
             -- Variables with simplifiable dependencies
             simplifiable = Set.filter (isSimplifiable variables) variables
             denormalized =
-                Substitution.mkUnwrappedSubstitution $
-                    Map.toList $
-                        Map.restrictKeys substitutionMap simplifiable
+                Substitution.mkUnwrappedSubstitution
+                    $ Map.toList
+                    $ Map.restrictKeys substitutionMap simplifiable
             substitution' = Map.withoutKeys substitutionMap simplifiable
         -- Partially normalize the substitution by separating variables with
         -- simplifiable dependencies.
@@ -119,7 +119,8 @@ normalize (dropTrivialSubstitutions -> substitutionMap) =
         allDeps = cycleDeps allDependencies
         nonSimplDeps = cycleDeps nonSimplifiableDependencies
         cycleDeps deps =
-            Set.intersection cycleVariables . Set.fromList
+            Set.intersection cycleVariables
+                . Set.fromList
                 <$> Map.lookup variable deps
 
     assignBottom ::
@@ -138,8 +139,8 @@ normalize (dropTrivialSubstitutions -> substitutionMap) =
     allDependencies ::
         Map (SomeVariable variable) [SomeVariable variable]
     allDependencies =
-        Map.map Set.toList $
-            Map.mapWithKey getDependencies' substitutionMap
+        Map.map Set.toList
+            $ Map.mapWithKey getDependencies' substitutionMap
 
     getNonSimplifiableDependencies' =
         getNonSimplifiableDependencies interestingVariables
@@ -147,8 +148,8 @@ normalize (dropTrivialSubstitutions -> substitutionMap) =
     nonSimplifiableDependencies ::
         Map (SomeVariable variable) [SomeVariable variable]
     nonSimplifiableDependencies =
-        Map.map Set.toList $
-            Map.mapWithKey getNonSimplifiableDependencies' substitutionMap
+        Map.map Set.toList
+            $ Map.mapWithKey getNonSimplifiableDependencies' substitutionMap
 
     sorted :: [SomeVariable variable] -> Maybe (Normalization variable)
     sorted order

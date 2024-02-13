@@ -43,9 +43,9 @@ test_parseBase16 =
   where
     valid :: HasCallStack => String -> [Word8] -> TestTree
     valid (Text.pack -> input) (ByteString.pack -> expect) =
-        testCase ("parseBase16 " <> show input) $
-            either unexpected expected $
-                Parsec.parse parseBase16 "<test>" input
+        testCase ("parseBase16 " <> show input)
+            $ either unexpected expected
+            $ Parsec.parse parseBase16 "<test>" input
       where
         unexpected = error . Parsec.errorBundlePretty
         expected = assertEqual "" expect

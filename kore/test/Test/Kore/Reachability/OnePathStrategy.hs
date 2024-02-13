@@ -71,8 +71,8 @@ makeOnePathGoal ::
 makeOnePathGoal
     (mkRewritingTerm -> left)
     (mkRewritingTerm -> right) =
-        OnePathClaim $
-            ClaimPattern
+        OnePathClaim
+            $ ClaimPattern
                 { left =
                     Pattern.fromTermAndPredicate
                         left
@@ -93,8 +93,8 @@ makeOnePathClaim ::
 makeOnePathClaim
     (TermLike.mapVariables (pure mkRuleVariable) -> left)
     (TermLike.mapVariables (pure mkRuleVariable) -> right) =
-        OnePathClaim $
-            ClaimPattern
+        OnePathClaim
+            $ ClaimPattern
                 { left =
                     Pattern.fromTermAndPredicate
                         left
@@ -115,8 +115,8 @@ makeOnePathGoalFromPatterns ::
 makeOnePathGoalFromPatterns
     (Pattern.mapVariables (pure mkConfigVariable) -> left)
     (Pattern.mapVariables (pure mkConfigVariable) -> right) =
-        OnePathClaim $
-            ClaimPattern
+        OnePathClaim
+            $ ClaimPattern
                 { left
                 , right = OrPattern.fromPattern right
                 , existentials = []
@@ -528,8 +528,8 @@ test_onePathStrategy =
                 ]
         assertEqual
             ""
-            [ Stuck $
-                makeOnePathGoalFromPatterns
+            [ Stuck
+                $ makeOnePathGoalFromPatterns
                     Conditional
                         { term = Mock.functionalConstr10 Mock.b
                         , predicate =
@@ -648,8 +648,8 @@ test_onePathStrategy =
             runOnePathSteps
                 Unlimited
                 (Limit 1)
-                ( OnePath $
-                    makeOnePathGoalFromPatterns
+                ( OnePath
+                    $ makeOnePathGoalFromPatterns
                         Conditional
                             { term = Mock.functionalConstr10 Mock.b
                             , predicate =
@@ -687,8 +687,8 @@ test_onePathStrategy =
                 ]
         assertEqual
             ""
-            [ Rewritten $
-                makeOnePathGoalFromPatterns
+            [ Rewritten
+                $ makeOnePathGoalFromPatterns
                     Conditional
                         { term = Mock.a
                         , predicate =
@@ -746,8 +746,8 @@ test_onePathStrategy =
             runOnePathSteps
                 Unlimited
                 (Limit 1)
-                ( OnePath $
-                    makeOnePathGoalFromPatterns
+                ( OnePath
+                    $ makeOnePathGoalFromPatterns
                         Conditional
                             { term = Mock.functionalConstr10 Mock.b
                             , predicate =
@@ -775,8 +775,8 @@ test_onePathStrategy =
                 ]
         assertEqual
             ""
-            [ Rewritten $
-                makeOnePathGoalFromPatterns
+            [ Rewritten
+                $ makeOnePathGoalFromPatterns
                     Conditional
                         { term = Mock.a
                         , predicate =
@@ -821,8 +821,8 @@ test_onePathStrategy =
             right =
                 Pattern.withCondition
                     (TermLike.mkElemVar Mock.x)
-                    ( Condition.fromPredicate $
-                        makeNotPredicate
+                    ( Condition.fromPredicate
+                        $ makeNotPredicate
                             ( makeEqualsPredicate
                                 (TermLike.mkElemVar Mock.x)
                                 Mock.a
@@ -846,8 +846,9 @@ simpleRewrite ::
     TermLike' ->
     Rule OnePathClaim
 simpleRewrite left right =
-    OnePathRewriteRule . mkRewritingRule $
-        RewriteRule
+    OnePathRewriteRule
+        . mkRewritingRule
+        $ RewriteRule
             RulePattern
                 { left = left
                 , antiLeft = Nothing
@@ -869,8 +870,9 @@ rewriteWithPredicate ::
     Predicate' ->
     Rule OnePathClaim
 rewriteWithPredicate left right predicate =
-    OnePathRewriteRule . mkRewritingRule $
-        RewriteRule
+    OnePathRewriteRule
+        . mkRewritingRule
+        $ RewriteRule
             RulePattern
                 { left = left
                 , antiLeft = Nothing
@@ -908,14 +910,15 @@ runSteps
     axiomGroups
     configuration
     strategy' =
-        (<$>) picker $
-            runSimplifierSMT mockEnv $
-                fromMaybe (error "Unexpected missing tree") . graphFilter
-                    <$> runStrategy
-                        breadthLimit
-                        (transitionRule EnabledStuckCheck AllowedVacuous claims axiomGroups)
-                        strategy'
-                        (Claimed configuration)
+        (<$>) picker
+            $ runSimplifierSMT mockEnv
+            $ fromMaybe (error "Unexpected missing tree")
+            . graphFilter
+            <$> runStrategy
+                breadthLimit
+                (transitionRule EnabledStuckCheck AllowedVacuous claims axiomGroups)
+                strategy'
+                (Claimed configuration)
       where
         mockEnv = Mock.env
 

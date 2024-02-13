@@ -68,8 +68,8 @@ smtForSortIs
     sortId
     expectedSExpr
     AST.Declarations{sorts} =
-        testCase "smtForSortIs" $
-            case Map.lookup sortId sorts of
+        testCase "smtForSortIs"
+            $ case Map.lookup sortId sorts of
                 Nothing ->
                     assertFailure
                         ( "Key ("
@@ -94,8 +94,8 @@ smtForSymbolIs
     sortId
     expectedSExpr
     AST.Declarations{symbols} =
-        testCase "smtForSymbolIs" $
-            case Map.lookup sortId symbols of
+        testCase "smtForSymbolIs"
+            $ case Map.lookup sortId symbols of
                 Nothing ->
                     assertFailure
                         ( "Key ("

@@ -303,11 +303,11 @@ eraseAliasPatterns ::
 eraseAliasPatterns indexedModuleSyntax =
     indexedModuleSyntax
         { indexedModuleAliasSentences =
-            Lens.set (Lens.mapped . Lens._2 . Lens.mapped) () $
-                indexedModuleAliasSentences indexedModuleSyntax
+            Lens.set (Lens.mapped . Lens._2 . Lens.mapped) ()
+                $ indexedModuleAliasSentences indexedModuleSyntax
         , indexedModuleImportsSyntax =
-            Lens.over (Lens.mapped . Lens._3) eraseAliasPatterns $
-                indexedModuleImportsSyntax indexedModuleSyntax
+            Lens.over (Lens.mapped . Lens._3) eraseAliasPatterns
+                $ indexedModuleImportsSyntax indexedModuleSyntax
         }
 
 erasePatterns ::
@@ -320,8 +320,8 @@ erasePatterns indexedModule =
         , indexedModuleAxioms = []
         , indexedModuleClaims = []
         , indexedModuleImports =
-            Lens.over (Lens.mapped . Lens._3) erasePatterns $
-                indexedModuleImports indexedModule
+            Lens.over (Lens.mapped . Lens._3) erasePatterns
+                $ indexedModuleImports indexedModule
         }
 
 mapAliasPatterns ::
@@ -536,10 +536,10 @@ indexedModuleSubsorts imod =
     case internalIndexedModuleSubsorts imod of
         Right subsorts -> subsorts
         Left err ->
-            error $
-                "IndexedModule should already have checked"
-                    ++ " form of subsort attributes, but parsing failed\n:"
-                    ++ show err
+            error
+                $ "IndexedModule should already have checked"
+                ++ " form of subsort attributes, but parsing failed\n:"
+                ++ show err
 
 internalIndexedModuleSubsorts ::
     MonadError (Error e) error =>
@@ -552,8 +552,8 @@ internalIndexedModuleSubsorts imod = do
                 recursiveIndexedModuleAxioms imod
             ]
     Subsorts subsorts <-
-        Attribute.Parser.liftParser $
-            foldrM Attribute.Parser.parseAttributesWith def attributes
+        Attribute.Parser.liftParser
+            $ foldrM Attribute.Parser.parseAttributesWith def attributes
     return subsorts
 
 {- | Determine all indexed modules in scope from the given module.
@@ -614,9 +614,9 @@ implicitIndexedModule =
 
 implicitNames :: HashMap InternedText AstLocation
 implicitNames =
-    HashMap.fromList $
-        (getInternedId &&& idLocation)
-            <$> (predicateSortId : Set.toList implicitSortNames)
+    HashMap.fromList
+        $ (getInternedId &&& idLocation)
+        <$> (predicateSortId : Set.toList implicitSortNames)
 
 implicitSortNames :: Set Id
 implicitSortNames = Set.fromList [stringMetaSortId]

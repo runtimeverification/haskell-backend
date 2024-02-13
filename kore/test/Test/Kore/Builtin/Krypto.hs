@@ -83,8 +83,9 @@ test_ecdsaRecover =
             assertEqual "" expect actual
       where
         Just name =
-            Attribute.getHook . Attribute.hook $
-                symbolAttributes ecdsaRecoverSymbol
+            Attribute.getHook
+                . Attribute.hook
+                $ symbolAttributes ecdsaRecoverSymbol
 
 test_secp256k1EcdsaRecover :: [TestTree]
 test_secp256k1EcdsaRecover =
@@ -115,8 +116,9 @@ test_secp256k1EcdsaRecover =
             assertEqual "" expect actual
       where
         Just name =
-            Attribute.getHook . Attribute.hook $
-                symbolAttributes ecdsaRecoverSymbol
+            Attribute.getHook
+                . Attribute.hook
+                $ symbolAttributes ecdsaRecoverSymbol
 
 test_keccak256 :: [TestTree]
 test_keccak256 =

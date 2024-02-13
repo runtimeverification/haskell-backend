@@ -201,8 +201,8 @@ unorderedAssign ::
     TermLike variable ->
     UnorderedAssignment variable
 unorderedAssign variable term =
-    UnorderedAssignment_ $
-        Assignment_ variable term
+    UnorderedAssignment_
+        $ Assignment_ variable term
 
 {- | Extract an 'UnorderedAssignment' for a /particular/ variable.
 
@@ -728,9 +728,9 @@ assertNoneAreFreeVarsInRhs lhsVariables =
                     ]
       where
         commonVars =
-            Set.intersection lhsVariables $
-                FreeVariables.toSet $
-                    freeVariables patt
+            Set.intersection lhsVariables
+                $ FreeVariables.toSet
+                $ freeVariables patt
 
 instance
     InternalVariable variable =>

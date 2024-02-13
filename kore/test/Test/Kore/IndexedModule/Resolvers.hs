@@ -52,15 +52,15 @@ objectA =
 -- Two variations on a constructor axiom for 'objectA'.
 axiomA, axiomA' :: SentenceAxiom ParsedPattern
 axiomA =
-    fmap externalize $
-        TermLike.mkAxiom_ $
-            TermLike.applySymbol_ objectA []
+    fmap externalize
+        $ TermLike.mkAxiom_
+        $ TermLike.applySymbol_ objectA []
 axiomA' =
-    fmap externalize $
-        TermLike.mkAxiom [sortVariableR] $
-            TermLike.mkForall x $
-                TermLike.mkEquals sortR (TermLike.applySymbol_ objectA []) $
-                    TermLike.mkElemVar x
+    fmap externalize
+        $ TermLike.mkAxiom [sortVariableR]
+        $ TermLike.mkForall x
+        $ TermLike.mkEquals sortR (TermLike.applySymbol_ objectA [])
+        $ TermLike.mkElemVar x
   where
     x = TermLike.mkElementVariable "x" objectS1
     sortVariableR = SortVariable (testId "R")
@@ -68,18 +68,18 @@ axiomA' =
 
 objectB :: SentenceAlias ParsedPattern
 objectB =
-    fmap externalize $
-        TermLike.mkAlias_ (testId "b") objectS1 [] $
-            TermLike.mkTop objectS1
+    fmap externalize
+        $ TermLike.mkAlias_ (testId "b") objectS1 []
+        $ TermLike.mkTop objectS1
 
 metaA :: SentenceSymbol
 metaA = TermLike.mkSymbol_ (testId "#a") [] stringMetaSort
 
 metaB :: SentenceAlias ParsedPattern
 metaB =
-    fmap externalize $
-        TermLike.mkAlias_ (testId "#b") stringMetaSort [] $
-            TermLike.mkTop stringMetaSort
+    fmap externalize
+        $ TermLike.mkAlias_ (testId "#b") stringMetaSort []
+        $ TermLike.mkTop stringMetaSort
 
 testObjectModuleName :: ModuleName
 testObjectModuleName = ModuleName "TEST-OBJECT-MODULE"
@@ -169,11 +169,11 @@ testIndexedModule
     , testIndexedObjectModule ::
         VerifiedModule Attribute.Symbol
 testIndexedModule =
-    fromMaybe (error $ "Missing module: " ++ show testMainModuleName) $
-        Map.lookup testMainModuleName indexedModules
+    fromMaybe (error $ "Missing module: " ++ show testMainModuleName)
+        $ Map.lookup testMainModuleName indexedModules
 testIndexedObjectModule =
-    fromMaybe (error $ "Missing module: " ++ show testObjectModuleName) $
-        Map.lookup testObjectModuleName indexedModules
+    fromMaybe (error $ "Missing module: " ++ show testObjectModuleName)
+        $ Map.lookup testObjectModuleName indexedModules
 
 testIndexedModuleSyntax :: VerifiedModuleSyntax Attribute.Symbol
 testIndexedModuleSyntax = indexedModuleSyntax testIndexedModule
@@ -263,8 +263,8 @@ test_resolvers =
                                     , symbolOrAliasParams =
                                         (<$>)
                                             SortVariableSort
-                                            ( aliasParams $
-                                                sentenceAliasAlias objectB
+                                            ( aliasParams
+                                                $ sentenceAliasAlias objectB
                                             )
                                     }
                             , applicationChildren = []
@@ -296,8 +296,8 @@ test_resolvers =
                                     , symbolOrAliasParams =
                                         (<$>)
                                             SortVariableSort
-                                            ( aliasParams $
-                                                sentenceAliasAlias metaB
+                                            ( aliasParams
+                                                $ sentenceAliasAlias metaB
                                             )
                                     }
                             , applicationChildren = []
@@ -340,7 +340,8 @@ test_resolvers =
         ( assertEqual
             ""
             (List.sortOn Data.Ord.Down [axiomA, axiomA'])
-            ( fmap externalize . getIndexedSentence
+            ( fmap externalize
+                . getIndexedSentence
                 <$> indexedModuleAxioms testIndexedObjectModule
             )
         )
@@ -382,8 +383,8 @@ assertError_ actualContext actualError expected =
 
 checkLeftOf_ :: Show r => Either l r -> (l -> Assertion) -> TestTree
 checkLeftOf_ actual testBody =
-    testCase "" $
-        case actual of
+    testCase ""
+        $ case actual of
             Left l ->
                 testBody l
             Right unexpected ->

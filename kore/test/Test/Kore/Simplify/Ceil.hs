@@ -137,8 +137,8 @@ test_ceilSimplification =
                     { term = somethingOfA
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.xConfig, fOfB)]
                     }
         assertEqual
@@ -163,8 +163,8 @@ test_ceilSimplification =
                         { term = constructorTerm
                         , predicate = makeEqualsPredicate fOfA gOfA
                         , substitution =
-                            Substitution.wrap $
-                                Substitution.mkUnwrappedSubstitution
+                            Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
                                     [(inject Mock.xConfig, fOfB)]
                         }
             assertEqual
@@ -198,8 +198,8 @@ test_ceilSimplification =
                     { term = Mock.functional20 somethingOfA somethingOfB
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.xConfig, fOfB)]
                     }
         assertEqual
@@ -223,8 +223,8 @@ test_ceilSimplification =
                     { term = fOfA
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.xConfig, fOfB)]
                     }
         assertEqual
@@ -246,8 +246,8 @@ test_ceilSimplification =
                     { term = Mock.a
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.xConfig, fOfB)]
                     }
         assertEqual
@@ -273,8 +273,8 @@ test_ceilSimplification =
                     { term = Mock.functional20 fOfA fOfB
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.xConfig, fOfB)]
                     }
         assertEqual
@@ -295,8 +295,8 @@ test_ceilSimplification =
                     { term = Mock.functional20 fOfA fOfB
                     , predicate = makeEqualsPredicate fOfA gOfA
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.xConfig, fOfB)]
                     }
         assertEqual
@@ -307,13 +307,13 @@ test_ceilSimplification =
         -- ceil(1) = top
         let expected = NormalForm.fromPredicate fromTop_
         actual <-
-            makeEvaluate $
-                Pattern.fromTermLike $
-                    mkDomainValue
-                        DomainValue
-                            { domainValueSort = Mock.testSort
-                            , domainValueChild = mkStringLiteral "a"
-                            }
+            makeEvaluate
+                $ Pattern.fromTermLike
+                $ mkDomainValue
+                    DomainValue
+                        { domainValueSort = Mock.testSort
+                        , domainValueChild = mkStringLiteral "a"
+                        }
         assertEqual "ceil(1)" expected actual
     , testCase "ceil with list domain value" $ do
         -- ceil([a, b]) = ceil(a) and ceil(b)
@@ -364,8 +364,8 @@ evaluate ::
     Ceil Sort (OrPattern RewritingVariableName) ->
     IO NormalForm
 evaluate ceil =
-    testRunSimplifier mockEnv $
-        Ceil.simplify SideCondition.top ceil
+    testRunSimplifier mockEnv
+        $ Ceil.simplify SideCondition.top ceil
   where
     mockEnv = Mock.env
 
@@ -378,7 +378,7 @@ makeEvaluateWithAxioms ::
     Pattern RewritingVariableName ->
     IO NormalForm
 makeEvaluateWithAxioms axiomEquations child =
-    testRunSimplifier mockEnv $
-        Ceil.makeEvaluate SideCondition.top child
+    testRunSimplifier mockEnv
+        $ Ceil.makeEvaluate SideCondition.top child
   where
     mockEnv = Mock.env{axiomEquations}

@@ -142,11 +142,11 @@ notEqualsXASorted =
 
 neitherXAB :: Pattern.Pattern RewritingVariableName
 neitherXAB =
-    Pattern.coerceSort Mock.testSort $
-        fromPredicate $
-            Predicate.makeAndPredicate
-                (Predicate.makeNotPredicate equalsXA_)
-                (Predicate.makeNotPredicate equalsXB_)
+    Pattern.coerceSort Mock.testSort
+        $ fromPredicate
+        $ Predicate.makeAndPredicate
+            (Predicate.makeNotPredicate equalsXA_)
+            (Predicate.makeNotPredicate equalsXB_)
 
 substXA :: Pattern.Pattern RewritingVariableName
 substXA = fromSubstitution $ Substitution.unsafeWrap [(inject Mock.xConfig, Mock.a)]

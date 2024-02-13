@@ -119,7 +119,9 @@ simplify SubstitutionSimplifier{simplifySubstitution} sideCondition original = d
         simplified <-
             simplifyPredicate predicate'
                 >>= Logic.scatter
-                >>= mapLogicT liftSimplifier . simplifyPredicates sideCondition . prepareForResimplification
+                >>= mapLogicT liftSimplifier
+                . simplifyPredicates sideCondition
+                . prepareForResimplification
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
@@ -187,16 +189,18 @@ simplifyPredicates ::
 simplifyPredicates sideCondition original = do
     let predicates =
             SideCondition.simplifyConjunctionByAssumption original
-                & fst . extract
+                & fst
+                . extract
     simplifiedPredicates <- do
         let eliminatedExists =
                 map
-                    ( simplifyPredicateExistElim $
+                    ( simplifyPredicateExistElim
+                        $
                         -- TODO (sam): this is quite conservative and we may not need to
                         -- avoid names here, but there doesn't seem to be a negative
                         -- impact on performance, so best leave this in for now.
                         freeVariableNames original
-                            <> freeVariableNames sideCondition
+                        <> freeVariableNames sideCondition
                     )
                     $ toList predicates
         simplifyPredicatesWithAssumptions

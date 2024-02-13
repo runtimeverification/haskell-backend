@@ -416,7 +416,9 @@ instance InternalVariable variable => Substitute (Predicate variable) where
     {-# INLINE rename #-}
 
     substitute subst predicate =
-        substituteNone <|> substituteBinder <|> substituteTermLike
+        substituteNone
+            <|> substituteBinder
+            <|> substituteTermLike
             & fromMaybe substituteDefault
       where
         freeVars =
@@ -627,8 +629,8 @@ makeNotPredicate' p
     | isTop p = (makeFalsePredicate, Changed)
     | isBottom p = (makeTruePredicate, Changed)
     | otherwise =
-        ( synthesize $
-            NotF
+        ( synthesize
+            $ NotF
                 Not
                     { notSort = ()
                     , notChild = p
@@ -657,8 +659,8 @@ makeAndPredicate' p1 p2
     | isTop p2 = (p1, Changed)
     | p1 == p2 = (p1, Changed)
     | otherwise =
-        ( synthesize $
-            AndF
+        ( synthesize
+            $ AndF
                 BinaryAnd
                     { andSort = ()
                     , andFirst = p1
@@ -686,8 +688,8 @@ makeOrPredicate' p1 p2
     | isBottom p2 = (p1, Changed)
     | p1 == p2 = (p1, Changed)
     | otherwise =
-        ( synthesize $
-            OrF
+        ( synthesize
+            $ OrF
                 BinaryOr
                     { orSort = ()
                     , orFirst = p1
@@ -714,8 +716,8 @@ makeImpliesPredicate' p1 p2
     | isTop p1 = (p2, Changed)
     | isBottom p2 = (makeNotPredicate p1, Changed)
     | otherwise =
-        ( synthesize $
-            ImpliesF
+        ( synthesize
+            $ ImpliesF
                 Implies
                     { impliesSort = ()
                     , impliesFirst = p1
@@ -742,8 +744,8 @@ makeIffPredicate' p1 p2
     | isBottom p2 = (makeNotPredicate p1, Changed)
     | isTop p2 = (p1, Changed)
     | otherwise =
-        ( synthesize $
-            IffF
+        ( synthesize
+            $ IffF
                 Iff
                     { iffSort = ()
                     , iffFirst = p1
@@ -764,8 +766,8 @@ makeCeilPredicate' ::
     TermLike variable ->
     (Predicate variable, HasChanged)
 makeCeilPredicate' t =
-    ( synthesize $
-        CeilF
+    ( synthesize
+        $ CeilF
             Ceil
                 { ceilOperandSort = ()
                 , ceilResultSort = ()
@@ -785,8 +787,8 @@ makeFloorPredicate' ::
     TermLike variable ->
     (Predicate variable, HasChanged)
 makeFloorPredicate' t =
-    ( synthesize $
-        FloorF
+    ( synthesize
+        $ FloorF
             Floor
                 { floorOperandSort = ()
                 , floorResultSort = ()
@@ -844,8 +846,8 @@ makeExistsPredicate' v p
     | isTop p = (p, Changed)
     | isBottom p = (p, Changed)
     | otherwise =
-        ( synthesize $
-            ExistsF
+        ( synthesize
+            $ ExistsF
                 Exists
                     { existsSort = ()
                     , existsVariable = v
@@ -878,8 +880,8 @@ makeForallPredicate' v p
     | isTop p = (p, Changed)
     | isBottom p = (p, Changed)
     | otherwise =
-        ( synthesize $
-            ForallF
+        ( synthesize
+            $ ForallF
                 Forall
                     { forallSort = ()
                     , forallVariable = v
@@ -995,24 +997,24 @@ makePredicate t = fst <$> makePredicateWorker t
             TermLike.TopF _ -> return makeTruePredicate'
             TermLike.BottomF _ -> return makeFalsePredicate'
             TermLike.AndF p ->
-                return $
-                    makeAndPredicate' (andFirst p) (andSecond p)
+                return
+                    $ makeAndPredicate' (andFirst p) (andSecond p)
             TermLike.OrF p ->
-                return $
-                    makeOrPredicate' (orFirst p) (orSecond p)
+                return
+                    $ makeOrPredicate' (orFirst p) (orSecond p)
             TermLike.IffF p ->
-                return $
-                    makeIffPredicate' (iffFirst p) (iffSecond p)
+                return
+                    $ makeIffPredicate' (iffFirst p) (iffSecond p)
             TermLike.ImpliesF p ->
-                return $
-                    makeImpliesPredicate' (impliesFirst p) (impliesSecond p)
+                return
+                    $ makeImpliesPredicate' (impliesFirst p) (impliesSecond p)
             TermLike.NotF p -> return $ makeNotPredicate' (notChild p)
             TermLike.ExistsF p ->
-                return $
-                    makeExistsPredicate' (existsVariable p) (existsChild p)
+                return
+                    $ makeExistsPredicate' (existsVariable p) (existsChild p)
             TermLike.ForallF p ->
-                return $
-                    makeForallPredicate' (forallVariable p) (forallChild p)
+                return
+                    $ makeForallPredicate' (forallVariable p) (forallChild p)
             p -> Left (NotPredicate p)
         return $ case topChanged <> childChanged of
             Changed -> (predicate, Changed)
@@ -1027,23 +1029,23 @@ makePredicate t = fst <$> makePredicateWorker t
     makePredicateTopDown (Recursive.project -> projected@(att :< pat)) =
         case pat of
             TermLike.CeilF Ceil{ceilChild} ->
-                setSmp $
-                    makeCeilPredicate' ceilChild
+                setSmp
+                    $ makeCeilPredicate' ceilChild
             TermLike.FloorF Floor{floorChild} ->
-                setSmp $
-                    makeFloorPredicate' floorChild
+                setSmp
+                    $ makeFloorPredicate' floorChild
             TermLike.EqualsF Equals{equalsFirst, equalsSecond} ->
-                setSmp $
-                    makeEqualsPredicate' equalsFirst equalsSecond
+                setSmp
+                    $ makeEqualsPredicate' equalsFirst equalsSecond
             TermLike.InF In{inContainedChild, inContainingChild} ->
-                setSmp $
-                    makeInPredicate' inContainedChild inContainingChild
+                setSmp
+                    $ makeInPredicate' inContainedChild inContainingChild
             _ -> Right projected
       where
         setSmp (p, Changed) = Left $ pure (p, Changed)
         setSmp (p, NotChanged) =
-            Left $
-                pure
+            Left
+                $ pure
                     (setSimplified oldSimplified p, NotChanged)
 
         oldSimplified = TermLike.attributeSimplifiedAttribute att
@@ -1198,20 +1200,20 @@ forgetSimplified = Recursive.fold worker
   where
     worker (_ :< predF) = case predF of
         CeilF ceil' ->
-            synthesize $
-                CeilF
+            synthesize
+                $ CeilF
                     (TermLike.forgetSimplified <$> ceil')
         FloorF floor' ->
-            synthesize $
-                FloorF
+            synthesize
+                $ FloorF
                     (TermLike.forgetSimplified <$> floor')
         EqualsF equals' ->
-            synthesize $
-                EqualsF
+            synthesize
+                $ EqualsF
                     (TermLike.forgetSimplified <$> equals')
         InF in' ->
-            synthesize $
-                InF
+            synthesize
+                $ InF
                     (TermLike.forgetSimplified <$> in')
         _ -> synthesize predF
 
@@ -1228,20 +1230,20 @@ forgetSimplifiedSafe = Recursive.fold worker
   where
     worker (_ :< predF) = case predF of
         CeilF ceil' ->
-            synthesize $
-                CeilF
+            synthesize
+                $ CeilF
                     (TermLike.forgetSimplifiedIgnorePredicates <$> ceil')
         FloorF floor' ->
-            synthesize $
-                FloorF
+            synthesize
+                $ FloorF
                     (TermLike.forgetSimplifiedIgnorePredicates <$> floor')
         EqualsF equals' ->
-            synthesize $
-                EqualsF
+            synthesize
+                $ EqualsF
                     (TermLike.forgetSimplifiedIgnorePredicates <$> equals')
         InF in' ->
-            synthesize $
-                InF
+            synthesize
+                $ InF
                     (TermLike.forgetSimplifiedIgnorePredicates <$> in')
         _ -> synthesize predF
 
@@ -1264,12 +1266,14 @@ mapVariables adj predicate =
             (makePredicate termPredicate)
   where
     errorMappingVariables termPredicate =
-        error . show . Pretty.vsep $
-            [ "Error when mapping the variables of predicate:"
-            , Pretty.pretty predicate
-            , "The resulting term is not a predicate:"
-            , Pretty.pretty termPredicate
-            ]
+        error
+            . show
+            . Pretty.vsep
+            $ [ "Error when mapping the variables of predicate:"
+              , Pretty.pretty predicate
+              , "The resulting term is not a predicate:"
+              , Pretty.pretty termPredicate
+              ]
 
 -- | Is the predicate free of the given variables?
 isFreeOf ::
@@ -1279,8 +1283,8 @@ isFreeOf ::
     Bool
 isFreeOf predicate =
     Set.disjoint
-        ( Attribute.FreeVariables.toSet $
-            Attribute.freeVariables predicate
+        ( Attribute.FreeVariables.toSet
+            $ Attribute.freeVariables predicate
         )
 
 freeElementVariables :: Predicate variable -> [ElementVariable variable]

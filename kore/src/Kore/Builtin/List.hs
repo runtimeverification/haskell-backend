@@ -295,7 +295,8 @@ evalIn :: Builtin.Function
 evalIn _ resultSort [_elem, _list] = do
     _list <- expectConcreteBuiltinList inKey _list
     _elem <- hoistMaybe $ retractKey _elem
-    _elem `elem` _list
+    _elem
+        `elem` _list
         & Bool.asPattern resultSort
         & return
 evalIn _ _ _ = Builtin.wrongArity inKey

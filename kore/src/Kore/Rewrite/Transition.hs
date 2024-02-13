@@ -170,8 +170,9 @@ mapRules f trans = do
 
 -- | Get the record of applied rules during an action.
 record :: TransitionT rule m a -> TransitionT rule m (a, Seq rule)
-record action = TransitionT $
-    AccumT $ \w -> do
+record action = TransitionT
+    $ AccumT
+    $ \w -> do
         (a, rules) <- runAccumT (getTransitionT action) mempty
         return ((a, rules), w <> rules)
 
@@ -212,8 +213,9 @@ ifte ::
     (a -> TransitionT rule m b) ->
     TransitionT rule m b ->
     TransitionT rule m b
-ifte p t e = TransitionT $
-    AccumT $ \w0 ->
+ifte p t e = TransitionT
+    $ AccumT
+    $ \w0 ->
         Logic.ifte
             (toLogicT w0 p)
             ( \(a, w1) -> do

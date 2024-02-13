@@ -113,13 +113,13 @@ instance Pretty a => Pretty (TransitionResult a) where
 
         multi :: Doc x -> Doc x -> a -> Doc x -> [a] -> Doc x
         multi lbl lbl1 a lbl2 as =
-            Pretty.vsep $
-                [ lbl
-                , Pretty.indent 2 $ "- " <> lbl1
-                , Pretty.indent 4 $ Pretty.pretty a
-                , Pretty.indent 2 $ "- " <> lbl2
-                ]
-                    <> map (Pretty.indent 4 . Pretty.pretty) as
+            Pretty.vsep
+                $ [ lbl
+                  , Pretty.indent 2 $ "- " <> lbl1
+                  , Pretty.indent 4 $ Pretty.pretty a
+                  , Pretty.indent 2 $ "- " <> lbl2
+                  ]
+                <> map (Pretty.indent 4 . Pretty.pretty) as
 
 isStuckOrVacuous, isFinal, isStop, isBranch :: TransitionResult a -> Bool
 isStuckOrVacuous (Stuck _) = True
@@ -269,8 +269,8 @@ graphTraversal
                 )
         enqueue as q = do
             newQ <- enqueue' as q
-            pure $
-                if exceedsLimit newQ
+            pure
+                $ if exceedsLimit newQ
                     then Left (LimitExceeded newQ)
                     else Right newQ
 
@@ -308,8 +308,8 @@ graphTraversal
                             stuck <- gets (filter isStuckOrVacuous)
                             if maxCounterExamples <= Limit (fromIntegral (length stuck))
                                 then
-                                    pure $
-                                        GotStuck (Seq.length nextQ) (mapMaybe extractStuckOrVacuous stuck)
+                                    pure
+                                        $ GotStuck (Seq.length nextQ) (mapMaybe extractStuckOrVacuous stuck)
                                 else worker ma nextQ
                 Abort _lastState queue -> do
                     pure $ Aborted $ toList queue
@@ -327,19 +327,21 @@ graphTraversal
                                         case timeoutMode of
                                             ManualTimeout t -> warnStepManualTimeout t
                                             MovingAverage t -> warnStepMATimeout t
-                                        whenJust (unparseConfig $ currentState stepState) $
-                                            \config ->
-                                                liftIO . hPutStrLn stderr $
-                                                    "// Last configuration:\n" <> config
+                                        whenJust (unparseConfig $ currentState stepState)
+                                            $ \config ->
+                                                liftIO
+                                                    . hPutStrLn stderr
+                                                    $ "// Last configuration:\n"
+                                                    <> config
                             withAsync warnThread (const $ timeAction execStep)
                                 >>= \(time, stepResult) -> do
                                     updateStepMovingAverage ma time
                                     pure stepResult
                         GraphTraversalCancel -> do
                             let warnThread =
-                                    liftIO $
-                                        threadDelay $
-                                            getTimeout timeoutMode
+                                    liftIO
+                                        $ threadDelay
+                                        $ getTimeout timeoutMode
                             race warnThread (timeAction execStep) >>= \case
                                 Right (time, stepResult) -> do
                                     updateStepMovingAverage ma time
@@ -372,17 +374,18 @@ graphTraversal
                 -- Other states may be unfinished but not stuck (Stop)
                 -- Only provide the requested amount of states (maxCounterExamples)
                 let unproven =
-                        takeWithin maxCounterExamples . map (fmap currentState) $
-                            filter isStop collected
-                pure $
-                    if
-                            | (not $ null stuck) ->
-                                GotStuck 0 (mapMaybe extractStuckOrVacuous stuck)
-                            | not $ null unproven ->
-                                Stopped
-                                    (mapMaybe extractState unproven)
-                                    (concatMap extractNext unproven)
-                            | otherwise -> fmap currentState result
+                        takeWithin maxCounterExamples
+                            . map (fmap currentState)
+                            $ filter isStop collected
+                pure
+                    $ if
+                        | (not $ null stuck) ->
+                            GotStuck 0 (mapMaybe extractStuckOrVacuous stuck)
+                        | not $ null unproven ->
+                            Stopped
+                                (mapMaybe extractState unproven)
+                                (concatMap extractNext unproven)
+                        | otherwise -> fmap currentState result
             other -> pure $ fmap currentState other
 
 {- | Used to select whether the step should be canceled
@@ -451,24 +454,30 @@ instance (Debug a, Diff a) => Diff (TraversalResult a)
 instance Pretty a => Pretty (TraversalResult a) where
     pretty = \case
         GotStuck n as ->
-            Pretty.hang 4 . Pretty.vsep $
-                ("Got stuck with queue of " <> Pretty.pretty n)
-                    : map Pretty.pretty as
+            Pretty.hang 4
+                . Pretty.vsep
+                $ ("Got stuck with queue of " <> Pretty.pretty n)
+                : map Pretty.pretty as
         Aborted as ->
-            Pretty.hang 4 . Pretty.vsep $
-                "Aborted with queue of "
-                    : map Pretty.pretty as
+            Pretty.hang 4
+                . Pretty.vsep
+                $ "Aborted with queue of "
+                : map Pretty.pretty as
         Ended as ->
-            Pretty.hang 4 . Pretty.vsep $
-                "Ended" : map Pretty.pretty as
+            Pretty.hang 4
+                . Pretty.vsep
+                $ "Ended"
+                : map Pretty.pretty as
         Stopped as qu ->
-            Pretty.hang 4 . Pretty.vsep $
-                ("Stopped" : map Pretty.pretty as)
-                    <> ("Queue" : map Pretty.pretty qu)
+            Pretty.hang 4
+                . Pretty.vsep
+                $ ("Stopped" : map Pretty.pretty as)
+                <> ("Queue" : map Pretty.pretty qu)
         TimedOut as qu ->
-            Pretty.hang 4 . Pretty.vsep $
-                ("Timed out" <> Pretty.pretty as)
-                    : ("Queue" : map Pretty.pretty qu)
+            Pretty.hang 4
+                . Pretty.vsep
+                $ ("Timed out" <> Pretty.pretty as)
+                : ("Queue" : map Pretty.pretty qu)
 instance Functor TraversalResult where
     fmap f = \case
         GotStuck n rs -> GotStuck n (map (fmap f) rs)

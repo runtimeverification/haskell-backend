@@ -154,15 +154,17 @@ transitionRule
         applySimplify wrapper config =
             do
                 configs <-
-                    lift . lift $
-                        Pattern.simplifyTopConfiguration config
+                    lift
+                        . lift
+                        $ Pattern.simplifyTopConfiguration config
                 filteredConfigs <- liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc configs
                 if null filteredConfigs
                     then return Proven
                     else
-                        asum $
-                            pure . wrapper
-                                <$> toList filteredConfigs
+                        asum
+                            $ pure
+                            . wrapper
+                            <$> toList filteredConfigs
 
         transitionUnroll ::
             CommonModalPattern ->
@@ -180,8 +182,9 @@ transitionRule
         applyUnroll ModalPattern{modalOp, term} wrapper config
             | modalOp == allPathGlobally = do
                 result <-
-                    lift . lift $
-                        checkImplicationIsTop config term
+                    lift
+                        . lift
+                        $ checkImplicationIsTop config term
                 if result
                     then return (wrapper config)
                     else do
@@ -218,11 +221,12 @@ transitionRule
                     rules
                     Step.DisableAssumeInitialDefined
                     config
-                    & lift . lift
+                    & lift
+                    . lift
             let mapRules =
-                    StepResult.mapRules $
-                        RewriteRule
-                            . Step.withoutUnification
+                    StepResult.mapRules
+                        $ RewriteRule
+                        . Step.withoutUnification
                 mapConfigs =
                     StepResult.mapConfigs
                         GoalLHS

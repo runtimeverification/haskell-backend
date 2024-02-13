@@ -50,8 +50,8 @@ instance Pretty WarnFunctionWithoutEvaluators where
          in let Attribute.Symbol{klabel, sourceLocation} = symbolAttributes
              in Pretty.vsep
                     [ "No evaluators for function symbol:"
-                    , Pretty.indent 4 $
-                        Pretty.hsep
+                    , Pretty.indent 4
+                        $ Pretty.hsep
                             [ unparse symbol
                             , Pretty.parens $ Pretty.pretty klabel
                             ]

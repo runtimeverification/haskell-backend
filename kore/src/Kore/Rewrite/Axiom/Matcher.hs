@@ -397,8 +397,11 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
             if symbol1 == symbol2
                 then decomposeList (zip children1 children2)
                 else
-                    failMatch $
-                        "distinct application symbols: " <> (unparseToText symbol1) <> ", " <> (unparseToText symbol2)
+                    failMatch
+                        $ "distinct application symbols: "
+                        <> (unparseToText symbol1)
+                        <> ", "
+                        <> (unparseToText symbol2)
         (Inj_ inj1, Inj_ inj2)
             | Just unifyData <- matchInjs inj1 inj2 ->
                 case unifyData of
@@ -642,9 +645,9 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
     , isNothing (lookupSymbolicKeyOfAc key1 normalized2) =
         -- bind element1 <- concElem2, deal with the identical parts
         let concElem2' = wrapElement $ Bifunctor.first (from @Key) concElem2
-         in decomposeList $
-                unwrapElementToTermLike element1 concElem2'
-                    <> unwrapValues (concrete12 <> abstractMerge)
+         in decomposeList
+                $ unwrapElementToTermLike element1 concElem2'
+                <> unwrapValues (concrete12 <> abstractMerge)
     -- Case for when all symbolic elements in normalized1 appear in normalized2:
     | [] <- excessAbstract1 =
         do
@@ -687,8 +690,8 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
             -- If K in_keys(normalized2)
             Just value2 ->
                 let normalized2' =
-                        wrapTermLike $
-                            removeSymbolicKeyOfAc key1 normalized2
+                        wrapTermLike
+                            $ removeSymbolicKeyOfAc key1 normalized2
                  in decomposeList $ (frame1, normalized2') : unwrapValues [(value1, value2)]
             Nothing ->
                 case (headMay . HashMap.toList $ concrete2, headMay abstract2) of
@@ -701,8 +704,8 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
                                     & wrapElement
                             (key2, _) = concreteElement2
                             normalized2' =
-                                wrapTermLike $
-                                    removeConcreteKeyOfAc key2 normalized2
+                                wrapTermLike
+                                    $ removeConcreteKeyOfAc key2 normalized2
                          in decomposeList $ (frame1, normalized2') : unwrapElementToTermLike element1 liftedConcreteElement2
                     -- Select first symbolic element of normalized2, symbolic2
                     -- Match K |-> V with symbolic2
@@ -710,18 +713,18 @@ matchNormalizedAc decomposeList unwrapValues unwrapElementToTermLike wrapTermLik
                     (_, Just abstractElement2) ->
                         let (key2, _) = unwrapElement abstractElement2
                             normalized2' =
-                                wrapTermLike $
-                                    removeSymbolicKeyOfAc key2 normalized2
+                                wrapTermLike
+                                    $ removeSymbolicKeyOfAc key2 normalized2
                          in decomposeList $ (frame1, normalized2') : unwrapElementToTermLike element1 abstractElement2
                     _ -> failMatch "unimplemented ac collection case"
     -- Case for ACs which are structurally equal:
     | length excessAbstract1 == length excessAbstract2
     , length concrete1 == length concrete2
     , length opaque1 == length opaque2 =
-        decomposeList $
-            unwrapValues (abstractMerge ++ concrete12)
-                ++ unwrapElements (zip excessAbstract1 excessAbstract2)
-                ++ (zip opaque1ACs opaque2ACs)
+        decomposeList
+            $ unwrapValues (abstractMerge ++ concrete12)
+            ++ unwrapElements (zip excessAbstract1 excessAbstract2)
+            ++ (zip opaque1ACs opaque2ACs)
     | otherwise = failMatch "unimplemented ac collection case"
   where
     abstract1 = elementsWithVariables normalized1

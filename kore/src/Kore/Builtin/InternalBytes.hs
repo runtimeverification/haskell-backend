@@ -466,7 +466,8 @@ evalConcat =
     evalConcat0 _ resultSort [_lhs, _rhs] = do
         _lhs <- expectBuiltinBytes _lhs
         _rhs <- expectBuiltinBytes _rhs
-        _lhs <> _rhs
+        _lhs
+            <> _rhs
             & asPattern resultSort
             & return
     evalConcat0 _ _ _ = Builtin.wrongArity concatKey

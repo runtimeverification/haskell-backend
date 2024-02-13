@@ -130,8 +130,8 @@ test_forallSimplification =
                     , predicate =
                         makeCeilPredicate (Mock.h (mkElemVar Mock.xConfig))
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [ (inject Mock.xConfig, gOfA)
                                 , (inject Mock.yConfig, fOfA)
                                 ]
@@ -221,8 +221,8 @@ test_forallSimplification =
                     { term = fOfA
                     , predicate = makeCeilPredicate fOfX
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.yConfig, fOfA)]
                     }
             )
@@ -250,8 +250,8 @@ test_forallSimplification =
                     { term = mkTop Mock.topSort
                     , predicate = makeCeilPredicate fOfX
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.yConfig, fOfA)]
                     }
             )
@@ -278,8 +278,8 @@ test_forallSimplification =
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX gOfA
                     , substitution =
-                        Substitution.wrap $
-                            Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap
+                            $ Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.yConfig, hOfA)]
                     }
             )

@@ -129,10 +129,10 @@ makeEvaluate variable patt
                     (makeForallPredicate variable (Condition.toPredicate predicate))
                 )
     | otherwise =
-        Pattern.fromTermLike $
-            TermLike.markSimplified $
-                mkForall variable $
-                    Pattern.toTermLike patt
+        Pattern.fromTermLike
+            $ TermLike.markSimplified
+            $ mkForall variable
+            $ Pattern.toTermLike patt
   where
     sort = Pattern.patternSort patt
     (term, predicate) = Pattern.splitTerm patt

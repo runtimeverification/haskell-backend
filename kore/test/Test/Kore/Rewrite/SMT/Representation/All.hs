@@ -50,10 +50,10 @@ test_symbolParsing :: [TestTree]
 test_symbolParsing =
     [ testsForModule
         "Definition with orphan constructors"
-        ( indexModule $
-            emptyModule "m"
-                `with` sortDeclaration "S"
-                `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
+        ( indexModule
+            $ emptyModule "m"
+            `with` sortDeclaration "S"
+            `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
         )
         [ declarationsAre
             AST.Declarations

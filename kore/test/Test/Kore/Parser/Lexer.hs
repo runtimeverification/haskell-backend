@@ -86,8 +86,8 @@ test_bracesPair =
 
 test_parseSymbolId :: [TestTree]
 test_parseSymbolId =
-    lexTree $
-        mappend
+    lexTree
+        $ mappend
             (successes ["a", "a ", " a", "a/**/ ", "//\na"] [TokenIdent "a"])
             [ success "A" [TokenIdent "A"]
             , success "abc" [TokenIdent "abc"]
@@ -214,8 +214,8 @@ test_keyword =
 
 test_parseModuleName :: [TestTree]
 test_parseModuleName =
-    lexTree $
-        mappend
+    lexTree
+        $ mappend
             (successes ["A", "A ", "A/**/ ", " A"] [TokenIdent "A"])
             [ success "A-" [TokenIdent "A-"]
             , success "A2" [TokenIdent "A2"]
@@ -259,8 +259,8 @@ test_parensTuple =
 
 test_space :: [TestTree]
 test_space =
-    lexTree $
-        mappend
+    lexTree
+        $ mappend
             ( successes
                 [ ""
                 , " "

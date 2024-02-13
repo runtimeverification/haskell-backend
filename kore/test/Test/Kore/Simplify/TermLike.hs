@@ -39,7 +39,8 @@ test_simplify_sideConditionReplacements :: [TestTree]
 test_simplify_sideConditionReplacements =
     [ testCase "Replaces top level term" $ do
         let sideCondition =
-                f a `equals` b
+                f a
+                    `equals` b
                     & SideCondition.fromPredicateWithReplacements
             term = f a
             expected = b & OrPattern.fromTermLike
@@ -50,7 +51,8 @@ test_simplify_sideConditionReplacements =
         assertEqual "" expected actual
     , testCase "Replaces nested term" $ do
         let sideCondition =
-                f a `equals` b
+                f a
+                    `equals` b
                     & SideCondition.fromPredicateWithReplacements
             term = g (f a)
             expected = g b & OrPattern.fromTermLike
@@ -61,7 +63,8 @@ test_simplify_sideConditionReplacements =
         assertEqual "" expected actual
     , testCase "Replaces terms in sequence" $ do
         let sideCondition =
-                (f a `equals` g b) `and'` (g b `equals` c)
+                (f a `equals` g b)
+                    `and'` (g b `equals` c)
                     & SideCondition.fromPredicateWithReplacements
             term = f a
             expected = c & OrPattern.fromTermLike
@@ -72,7 +75,8 @@ test_simplify_sideConditionReplacements =
         assertEqual "" expected actual
     , testCase "Replaces top level term after replacing subterm" $ do
         let sideCondition =
-                (f a `equals` b) `and'` (g b `equals` c)
+                (f a `equals` b)
+                    `and'` (g b `equals` c)
                     & SideCondition.fromPredicateWithReplacements
             term = g (f a)
             expected = c & OrPattern.fromTermLike
@@ -99,8 +103,8 @@ simplifyWithSideCondition
     (SideCondition.mapVariables (pure mkConfigVariable) -> sideCondition) =
         fmap (OrPattern.map getRewritingPattern)
             <$> testRunSimplifier Mock.env
-                . TermLike.simplify sideCondition
-                . mkRewritingTerm
+            . TermLike.simplify sideCondition
+            . mkRewritingTerm
 
 test_simplifyOnly :: [TestTree]
 test_simplifyOnly =

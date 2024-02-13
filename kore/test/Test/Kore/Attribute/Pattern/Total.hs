@@ -44,20 +44,20 @@ test_instance_Synthetic =
     , testGroup "DomainValueF" $ do
         x <- range
         [expect x $ DomainValueF (DomainValue sort x)]
-    , testGroup "EqualsF" $
-        map (isn't . EqualsF) (Equals sort sort <$> range <*> range)
+    , testGroup "EqualsF"
+        $ map (isn't . EqualsF) (Equals sort sort <$> range <*> range)
     , testGroup "FloorF" $ map (isn't . FloorF) (Floor sort sort <$> range)
     , testGroup "IffF" $ map (isn't . IffF) (Iff sort <$> range <*> range)
-    , testGroup "ImpliesF" $
-        map (isn't . ImpliesF) (Implies sort <$> range <*> range)
+    , testGroup "ImpliesF"
+        $ map (isn't . ImpliesF) (Implies sort <$> range <*> range)
     , testGroup "InF" $ map (isn't . InF) (In sort sort <$> range <*> range)
     , testGroup "NextF" $ do
         x <- range
         [expect x $ NextF (Next sort x)]
     , testGroup "NotF" $ map (isn't . NotF) (Not sort <$> range)
     , testGroup "OrF" $ map (isn't . OrF) (BinaryOr sort <$> range <*> range)
-    , testGroup "RewritesF" $
-        map (isn't . RewritesF) (Rewrites sort <$> range <*> range)
+    , testGroup "RewritesF"
+        $ map (isn't . RewritesF) (Rewrites sort <$> range <*> range)
     , testGroup "TopF" [isn't $ TopF (Top sort)]
     , testGroup "ExistsF" $ map (isn't . ExistsF) (Exists sort Mock.x <$> range)
     , testGroup "ForallF" $ map (isn't . ForallF) (Forall sort Mock.x <$> range)
@@ -71,33 +71,47 @@ test_instance_Synthetic =
         [isn't $ VariableF $ Const (mkSomeVariable @VariableName Mock.setX)]
     , testGroup
         "BuiltinSet"
-        [ is . asSetBuiltin $
-            emptyNormalizedSet
-        , is . asSetBuiltin $
-            with emptyNormalizedSet $
-                map (retractKey >>> fromJust) [Mock.a @Concrete, Mock.b]
-        , is . asSetBuiltin $
-            emptyNormalizedSet `with` VariableElement total
-        , isn't . asSetBuiltin $
-            emptyNormalizedSet `with` VariableElement nonTotal
-        , isn't . asSetBuiltin $
-            emptyNormalizedSet
-                `with` [VariableElement total, VariableElement total]
-        , isn't . asSetBuiltin $
-            emptyNormalizedSet
-                `with` [(retractKey >>> fromJust) (Mock.a @Concrete)]
-                `with` VariableElement total
-        , is . asSetBuiltin $
-            emptyNormalizedSet `with` OpaqueSet total
-        , isn't . asSetBuiltin $
-            emptyNormalizedSet `with` OpaqueSet nonTotal
-        , isn't . asSetBuiltin $
-            emptyNormalizedSet
-                `with` [OpaqueSet total, OpaqueSet nonTotal]
-        , isn't . asSetBuiltin $
-            emptyNormalizedSet
-                `with` [(retractKey >>> fromJust) (Mock.a @Concrete)]
-                `with` OpaqueSet total
+        [ is
+            . asSetBuiltin
+            $ emptyNormalizedSet
+        , is
+            . asSetBuiltin
+            $ with emptyNormalizedSet
+            $ map (retractKey >>> fromJust) [Mock.a @Concrete, Mock.b]
+        , is
+            . asSetBuiltin
+            $ emptyNormalizedSet
+            `with` VariableElement total
+        , isn't
+            . asSetBuiltin
+            $ emptyNormalizedSet
+            `with` VariableElement nonTotal
+        , isn't
+            . asSetBuiltin
+            $ emptyNormalizedSet
+            `with` [VariableElement total, VariableElement total]
+        , isn't
+            . asSetBuiltin
+            $ emptyNormalizedSet
+            `with` [(retractKey >>> fromJust) (Mock.a @Concrete)]
+            `with` VariableElement total
+        , is
+            . asSetBuiltin
+            $ emptyNormalizedSet
+            `with` OpaqueSet total
+        , isn't
+            . asSetBuiltin
+            $ emptyNormalizedSet
+            `with` OpaqueSet nonTotal
+        , isn't
+            . asSetBuiltin
+            $ emptyNormalizedSet
+            `with` [OpaqueSet total, OpaqueSet nonTotal]
+        , isn't
+            . asSetBuiltin
+            $ emptyNormalizedSet
+            `with` [(retractKey >>> fromJust) (Mock.a @Concrete)]
+            `with` OpaqueSet total
         ]
     ]
   where

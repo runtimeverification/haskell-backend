@@ -81,8 +81,9 @@ existentiallyQuantifyRuleVariables predicate =
     Predicate.makeMultipleExists freeRuleVariables predicate
   where
     freeRuleVariables =
-        filter isElementRuleVariable . Predicate.freeElementVariables $
-            predicate
+        filter isElementRuleVariable
+            . Predicate.freeElementVariables
+            $ predicate
 
 {- | Negate a disjunction of many terms.
 

@@ -20,7 +20,6 @@ import Control.Error (
  )
 import Control.Lens qualified as Lens
 import Control.Monad.Counter qualified as Counter
-import Control.Monad.Except
 import Control.Monad.State qualified as State
 import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Product.Fields
@@ -92,8 +91,9 @@ declareSMTLemmas tools lemmas = do
         Just Sat -> pure ()
         Just Unsat -> errorInconsistentDefinitions
         Just Unknown -> do
-            SMT.localTimeOut quadrupleTimeOut $
-                SMT.checkUsing checkSatTactic >>= \case
+            SMT.localTimeOut quadrupleTimeOut
+                $ SMT.checkUsing checkSatTactic
+                >>= \case
                     Nothing -> pure ()
                     Just Sat -> pure ()
                     Just Unsat -> errorInconsistentDefinitions
@@ -147,25 +147,25 @@ declareSMTLemmas tools lemmas = do
                 let inlinedLeft = substitute argBinders left
                 requiresPred <- hush $ makePredicate requires'
                 ensuresPred <- hush $ makePredicate ensures
-                Just $
-                    fromPredicate impliesSort $
-                        makeImpliesPredicate
-                            requiresPred
-                            (makeAndPredicate (makeEqualsPredicate inlinedLeft right) ensuresPred)
+                Just
+                    $ fromPredicate impliesSort
+                    $ makeImpliesPredicate
+                        requiresPred
+                        (makeAndPredicate (makeEqualsPredicate inlinedLeft right) ensuresPred)
             | otherwise = do
                 requiresPredicate <- hush $ makePredicate requires
                 ensuresPredicate <- hush $ makePredicate ensures
-                Just $
-                    fromPredicate impliesSort $
-                        makeImpliesPredicate
-                            requiresPredicate
-                            ( makeAndPredicate
-                                ( makeEqualsPredicate
-                                    left
-                                    right
-                                )
-                                ensuresPredicate
+                Just
+                    $ fromPredicate impliesSort
+                    $ makeImpliesPredicate
+                        requiresPredicate
+                        ( makeAndPredicate
+                            ( makeEqualsPredicate
+                                left
+                                right
                             )
+                            ensuresPredicate
+                        )
     convert termLike = Just termLike
 
     extractBinders ::

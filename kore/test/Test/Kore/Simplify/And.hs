@@ -146,16 +146,16 @@ test_andSimplification =
                         { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.wrap $
-                                Substitution.mkUnwrappedSubstitution
+                            Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
                                     [(inject Mock.yConfig, fOfX)]
                         }
                     Conditional
                         { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.wrap $
-                                Substitution.mkUnwrappedSubstitution
+                            Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
                                     [(inject Mock.zConfig, gOfX)]
                         }
             assertEqual "" (OrPattern.fromPatterns [expect]) actual
@@ -193,16 +193,16 @@ test_andSimplification =
                         { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.wrap $
-                                Substitution.mkUnwrappedSubstitution
+                            Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
                                     [(inject Mock.yConfig, fOfX)]
                         }
                     Conditional
                         { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.wrap $
-                                Substitution.mkUnwrappedSubstitution
+                            Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
                                     [(inject Mock.yConfig, gOfX)]
                         }
             assertEqual "" (OrPattern.fromPatterns [expect]) actual
@@ -213,8 +213,8 @@ test_andSimplification =
                         { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.wrap $
-                                Substitution.mkUnwrappedSubstitution
+                            Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
                                     [
                                         ( inject Mock.yConfig
                                         , Mock.functionalConstr10
@@ -226,8 +226,8 @@ test_andSimplification =
                         { term = mkTop Mock.testSort
                         , predicate = makeTruePredicate
                         , substitution =
-                            Substitution.wrap $
-                                Substitution.mkUnwrappedSubstitution
+                            Substitution.wrap
+                                $ Substitution.mkUnwrappedSubstitution
                                     [
                                         ( inject Mock.yConfig
                                         , Mock.functionalConstr11

@@ -1200,10 +1200,13 @@ mkSet elements opaque =
             }
   where
     asKey key =
-        (,) <$> retractKey key <*> pure SetValue
+        (,)
+            <$> retractKey key
+            <*> pure SetValue
             & maybe (Left (key, SetValue)) Right
     (abstractElements, HashMap.fromList -> concreteElements) =
-        asKey <$> toList elements
+        asKey
+            <$> toList elements
             & partitionEithers
 mkSet_ ::
     InternalVariable variable =>
@@ -1793,34 +1796,36 @@ testModuleWithTwoClaims =
         { moduleName = testModuleName
         , moduleAttributes = Attributes []
         , moduleSentences =
-            [ SentenceClaimSentence . SentenceClaim $
-                ( SentenceAxiom
-                    { sentenceAxiomParameters = [SortVariable (testId "sv1")]
-                    , sentenceAxiomPattern =
-                        externalize (mkStringLiteral "a")
-                    , sentenceAxiomAttributes =
-                        Attributes
-                            [ embedParsedPattern $
-                                PatternF.StringLiteralF $
-                                    Const (StringLiteral "b")
-                            ]
-                    } ::
-                    ParsedSentenceAxiom
-                )
-            , SentenceClaimSentence . SentenceClaim $
-                ( SentenceAxiom
-                    { sentenceAxiomParameters = [SortVariable (testId "sv2")]
-                    , sentenceAxiomPattern =
-                        externalize (mkStringLiteral "c")
-                    , sentenceAxiomAttributes =
-                        Attributes
-                            [ embedParsedPattern $
-                                PatternF.StringLiteralF $
-                                    Const (StringLiteral "b")
-                            ]
-                    } ::
-                    ParsedSentenceAxiom
-                )
+            [ SentenceClaimSentence
+                . SentenceClaim
+                $ ( SentenceAxiom
+                        { sentenceAxiomParameters = [SortVariable (testId "sv1")]
+                        , sentenceAxiomPattern =
+                            externalize (mkStringLiteral "a")
+                        , sentenceAxiomAttributes =
+                            Attributes
+                                [ embedParsedPattern
+                                    $ PatternF.StringLiteralF
+                                    $ Const (StringLiteral "b")
+                                ]
+                        } ::
+                        ParsedSentenceAxiom
+                  )
+            , SentenceClaimSentence
+                . SentenceClaim
+                $ ( SentenceAxiom
+                        { sentenceAxiomParameters = [SortVariable (testId "sv2")]
+                        , sentenceAxiomPattern =
+                            externalize (mkStringLiteral "c")
+                        , sentenceAxiomAttributes =
+                            Attributes
+                                [ embedParsedPattern
+                                    $ PatternF.StringLiteralF
+                                    $ Const (StringLiteral "b")
+                                ]
+                        } ::
+                        ParsedSentenceAxiom
+                  )
             ]
         }
 

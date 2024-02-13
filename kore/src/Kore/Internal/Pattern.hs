@@ -368,8 +368,8 @@ assign ::
     TermLike variable ->
     Pattern variable
 assign variable term =
-    withCondition assignedTerm $
-        Condition.fromSingleSubstitution
+    withCondition assignedTerm
+        $ Condition.fromSingleSubstitution
             assignment
   where
     assignment = Substitution.assign variable term
@@ -392,8 +392,8 @@ requireDefined Conditional{term, predicate, substitution} =
         { term
         , substitution
         , predicate =
-            Predicate.makeAndPredicate predicate $
-                Predicate.makeCeilPredicate term
+            Predicate.makeAndPredicate predicate
+                $ Predicate.makeCeilPredicate term
         }
 
 fromMultiAnd ::

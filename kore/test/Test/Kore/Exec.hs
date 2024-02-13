@@ -160,8 +160,9 @@ test_execBranch = testCase "execBranch" $ actual >>= assertEqual "" (ExitSuccess
 
 test_execBranch1Stuck :: TestTree
 test_execBranch1Stuck =
-    testCase "execBranch1Stuck" $
-        actual >>= assertEqual "" (ExitSuccess, expected)
+    testCase "execBranch1Stuck"
+        $ actual
+        >>= assertEqual "" (ExitSuccess, expected)
   where
     actual =
         execTest
@@ -321,8 +322,8 @@ test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
                     , asSentence $ constructorDecl "b"
                     , asSentence $ constructorDecl "c"
                     , asSentence $ constructorDecl "d"
-                    , asSentence $
-                        aliasDecl
+                    , asSentence
+                        $ aliasDecl
                             "A"
                             (mkOr (applyAliasToNoArgs mySort "B") (mkBottom mySort))
                     , asSentence $ aliasDecl "B" (mkAnd (mkTop mySort) (mkTop mySort))
@@ -340,8 +341,8 @@ test_execPriority = testCase "execPriority" $ actual >>= assertEqual "" expected
     expected = (ExitSuccess, applyToNoArgs mySort "d")
 
 test_execDepthLimitExceeded :: TestTree
-test_execDepthLimitExceeded = testCase "exec exceeds depth limit" $
-    do
+test_execDepthLimitExceeded = testCase "exec exceeds depth limit"
+    $ do
         (output, entries) <- actual
         let actualDepthWarnings =
                 catMaybes $ fromEntry @WarnDepthLimitExceeded <$> entries
@@ -356,7 +357,8 @@ test_execDepthLimitExceeded = testCase "exec exceeds depth limit" $
             verifiedModule
             Any
             inputPattern
-            & runTestLoggerT . SMT.runNoSMT
+            & runTestLoggerT
+            . SMT.runNoSMT
     expected = (ExitSuccess, applyToNoArgs mySort "b")
     verifiedModule =
         verifiedMyModule
@@ -376,15 +378,15 @@ test_execDepthLimitExceeded = testCase "exec exceeds depth limit" $
 
 test_matchDisjunction :: [TestTree]
 test_matchDisjunction =
-    [ testCase "match disjunction" $
-        do
+    [ testCase "match disjunction"
+        $ do
             let actual =
                     matchDisjunction verifiedModule initial [final1, final2]
                         & runNoSMT
             result <- actual
             assertEqual "" (mkBottom mySort) result
-    , testCase "match disjunction - bottom 1" $
-        do
+    , testCase "match disjunction - bottom 1"
+        $ do
             let actual =
                     matchDisjunction
                         verifiedModule
@@ -393,8 +395,8 @@ test_matchDisjunction =
                         & runNoSMT
             result <- actual
             assertEqual "" (mkBottom mySort) result
-    , testCase "match disjunction - bottom 2" $
-        do
+    , testCase "match disjunction - bottom 2"
+        $ do
             let actual =
                     matchDisjunction
                         verifiedModule
@@ -403,8 +405,8 @@ test_matchDisjunction =
                         & runNoSMT
             result <- actual
             assertEqual "" (mkBottom mySort) result
-    , testCase "match disjunction - bottom 3" $
-        do
+    , testCase "match disjunction - bottom 3"
+        $ do
             let actual =
                     matchDisjunction
                         verifiedModule
@@ -413,8 +415,8 @@ test_matchDisjunction =
                         & runNoSMT
             result <- actual
             assertEqual "" (mkBottom mySort) result
-    , testCase "match disjunction - bottom 4" $
-        do
+    , testCase "match disjunction - bottom 4"
+        $ do
             let actual =
                     matchDisjunction
                         verifiedModule
@@ -423,8 +425,8 @@ test_matchDisjunction =
                         & runNoSMT
             result <- actual
             assertEqual "" (mkBottom mySort) result
-    , testCase "match disjunction - bottom 5" $
-        do
+    , testCase "match disjunction - bottom 5"
+        $ do
             let actual =
                     matchDisjunction
                         verifiedModule
@@ -433,8 +435,8 @@ test_matchDisjunction =
                         & runNoSMT
             result <- actual
             assertEqual "" (mkBottom mySort) result
-    , testCase "match disjunction - bottom 6" $
-        do
+    , testCase "match disjunction - bottom 6"
+        $ do
             let actual =
                     matchDisjunction
                         verifiedModule
@@ -443,8 +445,8 @@ test_matchDisjunction =
                         & runNoSMT
             result <- actual
             assertEqual "" (mkBottom mySort) result
-    , testCase "match disjunction - top" $
-        do
+    , testCase "match disjunction - top"
+        $ do
             let actual =
                     matchDisjunction
                         verifiedModule
@@ -504,7 +506,8 @@ test_checkFunctions =
                             }
             actual <-
                 checkFunctions verifiedModule
-                    & runTestLoggerT . SMT.runNoSMT
+                    & runTestLoggerT
+                    . SMT.runNoSMT
                     & try @ErrorEquationRightFunction
             assertEqual "" True $ isRight actual
         , testCase "Not every equation RHS is a function pattern." $ do
@@ -523,7 +526,8 @@ test_checkFunctions =
                             }
             actual <-
                 checkFunctions verifiedModule
-                    & runTestLoggerT . SMT.runNoSMT
+                    & runTestLoggerT
+                    . SMT.runNoSMT
                     & try @ErrorEquationRightFunction
             assertEqual "" True $ isLeft actual
         , testCase "Test RHS ignore simplification equations." $ do
@@ -540,7 +544,8 @@ test_checkFunctions =
                             }
             actual <-
                 checkFunctions verifiedModule
-                    & runTestLoggerT . SMT.runNoSMT
+                    & runTestLoggerT
+                    . SMT.runNoSMT
                     & try @ErrorEquationRightFunction
             assertEqual "" True $ isRight actual
         , testCase "Function patterns do not both match." $ do
@@ -559,7 +564,8 @@ test_checkFunctions =
                             }
             actual <-
                 checkFunctions verifiedModule
-                    & runTestLoggerT . SMT.runNoSMT
+                    & runTestLoggerT
+                    . SMT.runNoSMT
                     & try @ErrorEquationsSameMatch
             assertEqual "" True $ isRight actual
         , testCase "Two function patterns both match." $ do
@@ -579,7 +585,8 @@ test_checkFunctions =
                             }
             actual <-
                 checkFunctions verifiedModule
-                    & runTestLoggerT . SMT.runNoSMT
+                    & runTestLoggerT
+                    . SMT.runNoSMT
                     & try @ErrorEquationsSameMatch
             assertEqual "" True $ isLeft actual
         , testCase "Test both match ignore simplification equations." $ do
@@ -599,7 +606,8 @@ test_checkFunctions =
                             }
             actual <-
                 checkFunctions verifiedModule
-                    & runTestLoggerT . SMT.runNoSMT
+                    & runTestLoggerT
+                    . SMT.runNoSMT
                     & try @ErrorEquationsSameMatch
             assertEqual "" True $ isRight actual
         ]
@@ -720,8 +728,8 @@ test_exec = testCase "exec" $ actual >>= assertEqual "" expected
     expected = (ExitSuccess, applyToNoArgs mySort "d")
 
 test_execBottom :: TestTree
-test_execBottom = testCase "exec returns bottom on unsatisfiable input patterns." $
-    do
+test_execBottom = testCase "exec returns bottom on unsatisfiable input patterns."
+    $ do
         ((_, actual), _) <- result
         assertEqual "" expected actual
   where
@@ -733,7 +741,8 @@ test_execBottom = testCase "exec returns bottom on unsatisfiable input patterns.
             verifiedModule
             Any
             inputPattern
-            & runTestLoggerT . SMT.runNoSMT
+            & runTestLoggerT
+            . SMT.runNoSMT
     verifiedModule =
         verifiedMyModule
             Module
@@ -777,8 +786,8 @@ test_searchPriority =
                     , asSentence $ constructorDecl "c"
                     , asSentence $ constructorDecl "d"
                     , asSentence $ constructorDecl "e"
-                    , asSentence $
-                        aliasDecl
+                    , asSentence
+                        $ aliasDecl
                             "A"
                             (mkOr (applyAliasToNoArgs mySort "B") (mkBottom mySort))
                     , asSentence $ aliasDecl "B" (mkAnd (mkTop mySort) (mkTop mySort))
@@ -815,15 +824,15 @@ test_searchExceedingBreadthLimit =
             (assertion searchType)
 
     assertion searchType =
-        catch (shouldExceedBreadthLimit searchType) $
-            \(_ :: LimitExceeded Graph.Node) ->
+        catch (shouldExceedBreadthLimit searchType)
+            $ \(_ :: LimitExceeded Graph.Node) ->
                 pure ()
 
     shouldExceedBreadthLimit :: SearchType -> IO ()
     shouldExceedBreadthLimit searchType = do
         a <- actual searchType
-        when (a == expected searchType) $
-            assertFailure "Did not exceed breadth limit"
+        when (a == expected searchType)
+            $ assertFailure "Did not exceed breadth limit"
 
     actual searchType = do
         finalPattern <-
@@ -899,9 +908,12 @@ extractSearchResults :: TermLike VariableName -> Maybe (Set (TermLike VariableNa
 extractSearchResults =
     \case
         Equals_ operandSort resultSort first second
-            | operandSort == mySort
-                && resultSort == mySort
-                && first == searchVar ->
+            | operandSort
+                == mySort
+                && resultSort
+                == mySort
+                && first
+                == searchVar ->
                 Just $ Set.singleton second
         Or_ sort first second
             | sort == mySort ->
@@ -921,8 +933,8 @@ verifiedMyModule module_ = indexedModule
             (error "Missing module: MY-MODULE")
             (Map.lookup (ModuleName "MY-MODULE") indexedModules)
     indexedModules =
-        Kore.Error.assertRight $
-            verifyAndIndexDefinition Builtin.koreVerifiers definition
+        Kore.Error.assertRight
+            $ verifyAndIndexDefinition Builtin.koreVerifiers definition
     definition =
         Definition
             { definitionAttributes = Attributes []
@@ -1118,8 +1130,9 @@ test_execGetExitCode =
         ]
   where
     makeTestCase name testModule inputInteger expectedCode =
-        testCase name $
-            actual testModule inputInteger >>= assertEqual "" expectedCode
+        testCase name
+            $ actual testModule inputInteger
+            >>= assertEqual "" expectedCode
 
     actual testModule exitCode =
         execTest

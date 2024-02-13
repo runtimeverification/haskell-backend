@@ -77,5 +77,5 @@ instance From symbol SymbolOrAlias => From (Overload symbol) Attributes where
         maybe def toAttribute . getOverload
       where
         toAttribute (symbol1, symbol2) =
-            from @AttributePattern $
-                overloadAttribute (from symbol1) (from symbol2)
+            from @AttributePattern
+                $ overloadAttribute (from symbol1) (from symbol2)

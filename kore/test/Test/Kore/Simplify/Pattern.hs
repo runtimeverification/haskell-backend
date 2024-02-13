@@ -42,12 +42,15 @@ import Test.Tasty.HUnit.Ext
 
 test_Pattern_simplify :: [TestTree]
 test_Pattern_simplify =
-    [ notTop `becomes` OrPattern.bottom $
-        "\\not(\\top)"
-    , orAs `becomes` OrPattern.fromTermLike Mock.a $
-        "\\or(a, a)"
-    , bottomLike `becomes` OrPattern.bottom $
-        "\\and(a, \\bottom)"
+    [ notTop
+        `becomes` OrPattern.bottom
+        $ "\\not(\\top)"
+    , orAs
+        `becomes` OrPattern.fromTermLike Mock.a
+        $ "\\or(a, a)"
+    , bottomLike
+        `becomes` OrPattern.bottom
+        $ "\\and(a, \\bottom)"
     , testCase "Removes top level exist quantifier whilst simplifying" $ do
         let expect =
                 Pattern.fromTermAndPredicate
@@ -76,30 +79,32 @@ test_Pattern_simplify =
         let expect =
                 Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
-                    ( Predicate.fromMultiAnd . MultiAnd.make $
-                        [ makeCeilPredicate fOfX
-                        , makeCeilPredicate fOfY
-                        , makeCeilPredicate gOfX
-                        , makeEqualsPredicate fOfX gOfX
-                        ]
+                    ( Predicate.fromMultiAnd
+                        . MultiAnd.make
+                        $ [ makeCeilPredicate fOfX
+                          , makeCeilPredicate fOfY
+                          , makeCeilPredicate gOfX
+                          , makeEqualsPredicate fOfX gOfX
+                          ]
                     )
                     & OrPattern.fromPattern
         actual <-
-            simplify $
-                Pattern.fromTermAndPredicate
+            simplify
+                $ Pattern.fromTermAndPredicate
                     ( mkAnd
                         (Mock.constr10 fOfX)
                         (Mock.constr10 gOfX)
                     )
-                    ( Predicate.fromMultiAnd . MultiAnd.make $
-                        [ makeCeilPredicate fOfX
-                        , makeImpliesPredicate
-                            (makeCeilPredicate fOfX)
-                            (makeCeilPredicate gOfX)
-                        , makeImpliesPredicate
-                            (makeCeilPredicate gOfX)
-                            (makeCeilPredicate fOfY)
-                        ]
+                    ( Predicate.fromMultiAnd
+                        . MultiAnd.make
+                        $ [ makeCeilPredicate fOfX
+                          , makeImpliesPredicate
+                                (makeCeilPredicate fOfX)
+                                (makeCeilPredicate gOfX)
+                          , makeImpliesPredicate
+                                (makeCeilPredicate gOfX)
+                                (makeCeilPredicate fOfY)
+                          ]
                     )
         Pattern.assertEquivalentPatterns expect actual
     , testCase "Does not replace and terms under intersecting quantifiers" $ do
@@ -118,8 +123,8 @@ test_Pattern_simplify =
                     )
                     & OrPattern.fromPattern
         actual <-
-            simplify $
-                Pattern.fromTermAndPredicate
+            simplify
+                $ Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
                     ( makeAndPredicate
                         (makeCeilPredicate fOfX)
@@ -131,8 +136,8 @@ test_Pattern_simplify =
         Pattern.assertEquivalentPatterns expect actual
     , testCase "Contradictions result in bottom" $ do
         actual <-
-            simplify $
-                Pattern.fromTermAndPredicate
+            simplify
+                $ Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
                     ( makeAndPredicate
                         (makeCeilPredicate fOfX)
@@ -143,16 +148,17 @@ test_Pattern_simplify =
         let expect =
                 Pattern.fromTermAndPredicate
                     (Mock.constr10 fOfX)
-                    ( Predicate.fromMultiAnd . MultiAnd.make $
-                        [ makeCeilPredicate fOfX
-                        , makeCeilPredicate gOfX
-                        , makeEqualsPredicate fOfX gOfX
-                        ]
+                    ( Predicate.fromMultiAnd
+                        . MultiAnd.make
+                        $ [ makeCeilPredicate fOfX
+                          , makeCeilPredicate gOfX
+                          , makeEqualsPredicate fOfX gOfX
+                          ]
                     )
                     & OrPattern.fromPattern
         actual <-
-            simplify $
-                Pattern.fromTermAndPredicate
+            simplify
+                $ Pattern.fromTermAndPredicate
                     ( mkAnd
                         (Mock.constr10 fOfX)
                         (Mock.constr10 gOfX)
@@ -175,8 +181,8 @@ test_Pattern_simplify =
                         ]
                     )
         actual <-
-            simplify $
-                Pattern.fromTermAndPredicate
+            simplify
+                $ Pattern.fromTermAndPredicate
                     ( mkAnd
                         (Mock.constr10 fOfX)
                         (Mock.constr10 gOfX)
@@ -211,45 +217,50 @@ test_Pattern_simplify_equalityterm =
         let expected =
                 (OrPattern.fromOrCondition Mock.testSort . MultiOr.make)
                     [ Condition.fromPredicate
-                        ( Predicate.fromMultiAnd . MultiAnd.make $
-                            [ makeCeilPredicate Mock.cf
-                            , makeCeilPredicate Mock.cg
-                            , makeEqualsPredicate Mock.cf Mock.cg
-                            , makeNotPredicate (makeCeilPredicate Mock.ch)
-                            ]
+                        ( Predicate.fromMultiAnd
+                            . MultiAnd.make
+                            $ [ makeCeilPredicate Mock.cf
+                              , makeCeilPredicate Mock.cg
+                              , makeEqualsPredicate Mock.cf Mock.cg
+                              , makeNotPredicate (makeCeilPredicate Mock.ch)
+                              ]
                         )
                     , Condition.fromPredicate
-                        ( Predicate.fromMultiAnd . MultiAnd.make $
-                            [ makeCeilPredicate Mock.cf
-                            , makeCeilPredicate Mock.cg
-                            , makeCeilPredicate Mock.ch
-                            , makeEqualsPredicate Mock.cf Mock.cg
-                            , makeEqualsPredicate Mock.cf Mock.ch
-                            ]
+                        ( Predicate.fromMultiAnd
+                            . MultiAnd.make
+                            $ [ makeCeilPredicate Mock.cf
+                              , makeCeilPredicate Mock.cg
+                              , makeCeilPredicate Mock.ch
+                              , makeEqualsPredicate Mock.cf Mock.cg
+                              , makeEqualsPredicate Mock.cf Mock.ch
+                              ]
                         )
                     , Condition.fromPredicate
-                        ( Predicate.fromMultiAnd . MultiAnd.make $
-                            [ makeCeilPredicate Mock.cf
-                            , makeCeilPredicate Mock.ch
-                            , makeEqualsPredicate Mock.cf Mock.ch
-                            , makeNotPredicate $ makeCeilPredicate Mock.cg
-                            ]
+                        ( Predicate.fromMultiAnd
+                            . MultiAnd.make
+                            $ [ makeCeilPredicate Mock.cf
+                              , makeCeilPredicate Mock.ch
+                              , makeEqualsPredicate Mock.cf Mock.ch
+                              , makeNotPredicate $ makeCeilPredicate Mock.cg
+                              ]
                         )
                     , Condition.fromPredicate
-                        ( Predicate.fromMultiAnd . MultiAnd.make $
-                            [ makeCeilPredicate Mock.cf
-                            , makeCeilPredicate Mock.ch
-                            , makeCeilPredicate Mock.cg
-                            , makeEqualsPredicate Mock.cf Mock.ch
-                            , makeEqualsPredicate Mock.cf Mock.cg
-                            ]
+                        ( Predicate.fromMultiAnd
+                            . MultiAnd.make
+                            $ [ makeCeilPredicate Mock.cf
+                              , makeCeilPredicate Mock.ch
+                              , makeCeilPredicate Mock.cg
+                              , makeEqualsPredicate Mock.cf Mock.ch
+                              , makeEqualsPredicate Mock.cf Mock.cg
+                              ]
                         )
                     , Condition.fromPredicate
-                        ( Predicate.fromMultiAnd . MultiAnd.make $
-                            [ makeNotPredicate $ makeCeilPredicate Mock.cf
-                            , makeNotPredicate $ makeCeilPredicate Mock.cg
-                            , makeNotPredicate $ makeCeilPredicate Mock.ch
-                            ]
+                        ( Predicate.fromMultiAnd
+                            . MultiAnd.make
+                            $ [ makeNotPredicate $ makeCeilPredicate Mock.cf
+                              , makeNotPredicate $ makeCeilPredicate Mock.cg
+                              , makeNotPredicate $ makeCeilPredicate Mock.ch
+                              ]
                         )
                     ]
             first = Mock.cf
@@ -260,20 +271,22 @@ test_Pattern_simplify_equalityterm =
                 OrPattern.fromPatterns
                     [ Pattern.fromTermAndPredicate
                         (mkTop Mock.testSort)
-                        ( Predicate.fromMultiAnd . MultiAnd.make $
-                            [ makeCeilPredicate Mock.cf
-                            , makeCeilPredicate Mock.ch
-                            , makeEqualsPredicate Mock.cf Mock.ch
-                            , makeNotPredicate $ makeCeilPredicate Mock.cg
-                            ]
+                        ( Predicate.fromMultiAnd
+                            . MultiAnd.make
+                            $ [ makeCeilPredicate Mock.cf
+                              , makeCeilPredicate Mock.ch
+                              , makeEqualsPredicate Mock.cf Mock.ch
+                              , makeNotPredicate $ makeCeilPredicate Mock.cg
+                              ]
                         )
                     , Pattern.fromTermAndPredicate
                         (mkTop Mock.testSort)
-                        ( Predicate.fromMultiAnd . MultiAnd.make $
-                            [ makeNotPredicate $ makeCeilPredicate Mock.cf
-                            , makeNotPredicate $ makeCeilPredicate Mock.cg
-                            , makeNotPredicate $ makeCeilPredicate Mock.ch
-                            ]
+                        ( Predicate.fromMultiAnd
+                            . MultiAnd.make
+                            $ [ makeNotPredicate $ makeCeilPredicate Mock.cf
+                              , makeNotPredicate $ makeCeilPredicate Mock.cg
+                              , makeNotPredicate $ makeCeilPredicate Mock.ch
+                              ]
                         )
                     ]
             first = Mock.functionalConstr10 Mock.cf
@@ -313,19 +326,21 @@ test_Pattern_simplify_equalityterm =
                         , Condition.assign (inject Mock.xConfig) Mock.a
                         ]
                     , Condition.fromPredicate
-                        ( Predicate.fromMultiAnd . MultiAnd.make $
-                            [ definedF
-                            , definedH
-                            , makeEqualsPredicate Mock.cf Mock.ch
-                            , makeNotPredicate definedGWithSubstitution
-                            ]
+                        ( Predicate.fromMultiAnd
+                            . MultiAnd.make
+                            $ [ definedF
+                              , definedH
+                              , makeEqualsPredicate Mock.cf Mock.ch
+                              , makeNotPredicate definedGWithSubstitution
+                              ]
                         )
                     , Condition.fromPredicate
-                        ( Predicate.fromMultiAnd . MultiAnd.make $
-                            [ makeNotPredicate definedGWithSubstitution
-                            , makeNotPredicate definedF
-                            , makeNotPredicate definedH
-                            ]
+                        ( Predicate.fromMultiAnd
+                            . MultiAnd.make
+                            $ [ makeNotPredicate definedGWithSubstitution
+                              , makeNotPredicate definedF
+                              , makeNotPredicate definedH
+                              ]
                         )
                     ]
             first = Mock.cf
@@ -340,20 +355,27 @@ test_Pattern_simplify_equalityterm =
 
 test_Pattern_simplifyAndRemoveTopExists :: [TestTree]
 test_Pattern_simplifyAndRemoveTopExists =
-    [ notTop `becomes` OrPattern.bottom $
-        "\\not(\\top)"
-    , orAs `becomes` OrPattern.fromTermLike Mock.a $
-        "\\or(a, a)"
-    , bottomLike `becomes` OrPattern.bottom $
-        "\\and(a, \\bottom)"
-    , existential `becomes` OrPattern.fromTermLike unquantified $
-        "..."
-    , multiexistential `becomes` OrPattern.fromTermLike unquantified $
-        "..."
-    , universal `becomes` OrPattern.fromPattern universal $
-        "..."
-    , existentialuniversal `becomes` OrPattern.fromPattern universal $
-        "..."
+    [ notTop
+        `becomes` OrPattern.bottom
+        $ "\\not(\\top)"
+    , orAs
+        `becomes` OrPattern.fromTermLike Mock.a
+        $ "\\or(a, a)"
+    , bottomLike
+        `becomes` OrPattern.bottom
+        $ "\\and(a, \\bottom)"
+    , existential
+        `becomes` OrPattern.fromTermLike unquantified
+        $ "..."
+    , multiexistential
+        `becomes` OrPattern.fromTermLike unquantified
+        $ "..."
+    , universal
+        `becomes` OrPattern.fromPattern universal
+        $ "..."
+    , existentialuniversal
+        `becomes` OrPattern.fromPattern universal
+        $ "..."
     ]
   where
     becomes ::

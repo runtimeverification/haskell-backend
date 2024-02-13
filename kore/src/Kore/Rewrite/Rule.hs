@@ -344,34 +344,34 @@ termToAxiomPattern attributes pat =
                                 (pure mkRuleVariable)
                                 attributes
                         (right', existentials') = ClaimPattern.termToExistentials rhs'
-                    pure $
-                        constructor $
-                            ClaimPattern.refreshExistentials
-                                ClaimPattern
-                                    { ClaimPattern.left =
-                                        Pattern.fromTermAndPredicate
-                                            lhs
-                                            (Predicate.wrapPredicate requires)
-                                            & Pattern.mapVariables (pure mkRuleVariable)
-                                    , ClaimPattern.right = parseRightHandSide right'
-                                    , ClaimPattern.existentials = existentials'
-                                    , ClaimPattern.attributes = attributes'
-                                    }
+                    pure
+                        $ constructor
+                        $ ClaimPattern.refreshExistentials
+                            ClaimPattern
+                                { ClaimPattern.left =
+                                    Pattern.fromTermAndPredicate
+                                        lhs
+                                        (Predicate.wrapPredicate requires)
+                                        & Pattern.mapVariables (pure mkRuleVariable)
+                                , ClaimPattern.right = parseRightHandSide right'
+                                , ClaimPattern.existentials = existentials'
+                                , ClaimPattern.attributes = attributes'
+                                }
         TermLike.Forall_ _ _ child -> termToAxiomPattern attributes child
         -- implication axioms:
         -- init -> modal_op ( prop )
         TermLike.Implies_ _ lhs rhs@(TermLike.ApplyAlias_ op _)
             | isModalSymbol op ->
-                pure $
-                    ImplicationAxiomPattern $
-                        ImplicationRule
-                            RulePattern
-                                { left = lhs
-                                , antiLeft = Nothing
-                                , requires = Predicate.makeTruePredicate
-                                , rhs = injectTermIntoRHS rhs
-                                , attributes
-                                }
+                pure
+                    $ ImplicationAxiomPattern
+                    $ ImplicationRule
+                        RulePattern
+                            { left = lhs
+                            , antiLeft = Nothing
+                            , requires = Predicate.makeTruePredicate
+                            , rhs = injectTermIntoRHS rhs
+                            , attributes
+                            }
         (TermLike.Rewrites_ _ _ _) ->
             koreFail "Rewrite patterns should not be parsed through this"
         _
@@ -437,14 +437,14 @@ mkEqualityAxiom ::
     Maybe (Sort -> TermLike.TermLike VariableName) ->
     Verified.Sentence
 mkEqualityAxiom lhs rhs requires =
-    Syntax.SentenceAxiomSentence $
-        TermLike.mkAxiom [sortVariableR] $
-            case requires of
-                Just requires' ->
-                    TermLike.mkImplies
-                        (requires' sortR)
-                        (TermLike.mkAnd function (TermLike.mkTop sortR))
-                Nothing -> function
+    Syntax.SentenceAxiomSentence
+        $ TermLike.mkAxiom [sortVariableR]
+        $ case requires of
+            Just requires' ->
+                TermLike.mkImplies
+                    (requires' sortR)
+                    (TermLike.mkAnd function (TermLike.mkTop sortR))
+            Nothing -> function
   where
     sortVariableR = SortVariable "R"
     sortR = SortVariableSort sortVariableR
@@ -456,9 +456,9 @@ mkCeilAxiom ::
     TermLike.TermLike VariableName ->
     Verified.Sentence
 mkCeilAxiom child =
-    Syntax.SentenceAxiomSentence $
-        TermLike.mkAxiom [sortVariableR] $
-            TermLike.mkCeil sortR child
+    Syntax.SentenceAxiomSentence
+        $ TermLike.mkAxiom [sortVariableR]
+        $ TermLike.mkCeil sortR child
   where
     sortVariableR = SortVariable "R"
     sortR = SortVariableSort sortVariableR

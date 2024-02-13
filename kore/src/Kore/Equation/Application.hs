@@ -261,9 +261,9 @@ applyEquation _ term equation result = do
     let results = OrPattern.fromPattern result
     debugApplyEquation equation result
     doTracing <- liftSimplifier $ asks Simplifier.tracingEnabled
-    when doTracing $
-        modify $
-            second (|> SimplifierTrace term (Attribute.uniqueId $ attributes equation) result)
+    when doTracing
+        $ modify
+        $ second (|> SimplifierTrace term (Attribute.uniqueId $ attributes equation) result)
     pure results
 
 {- | Use a 'MatchResult' to instantiate an 'Equation'.
@@ -368,9 +368,11 @@ checkRequires onUnknown sideCondition predicate requires =
             condition = from @(Predicate _) (makeNotPredicate requires')
         return condition
             -- First try to refute 'condition' without user-defined axioms:
-            >>= withoutAxioms . simplifyCondition
+            >>= withoutAxioms
+            . simplifyCondition
             -- Next try to refute 'condition' including user-defined axioms:
-            >>= withAxioms . simplifyCondition
+            >>= withAxioms
+            . simplifyCondition
             -- Finally, try to refute the simplified 'condition' using the
             -- external solver:
             >>= filterBranch
@@ -384,8 +386,8 @@ checkRequires onUnknown sideCondition predicate requires =
 
     filterBranch condition = do
         l <-
-            liftSimplifier $
-                SMT.evalConditional
+            liftSimplifier
+                $ SMT.evalConditional
                     onUnknown
                     condition
                     (Just sideCondition)

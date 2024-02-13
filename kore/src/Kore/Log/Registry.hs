@@ -279,7 +279,8 @@ entryHelpDocsErr, entryHelpDocsNoErr :: [Pretty.Doc ()]
             , mk $ Proxy @DecidePredicateUnknown
             ]
         )
-            & Lens.each %~ unzip
+            & Lens.each
+            %~ unzip
       where
         mk proxy =
             let tRep = someTypeRep proxy
@@ -295,25 +296,25 @@ makeInverse ::
     Map k1 k2 ->
     Map k2 k1
 makeInverse map' =
-    Map.fromList $
-        swap
-            <$> Map.toList map'
+    Map.fromList
+        $ swap
+        <$> Map.toList map'
 
 lookupTextFromTypeWithError :: SomeTypeRep -> Text
 lookupTextFromTypeWithError type' =
-    fromMaybe notFoundError $
-        Map.lookup type' (typeToText registry)
+    fromMaybe notFoundError
+        $ Map.lookup type' (typeToText registry)
   where
     ~notFoundError =
-        error $
-            "Tried to log nonexistent entry type: "
-                <> show type'
-                <> " It should be added to Kore.Log.Registry.registry."
+        error
+            $ "Tried to log nonexistent entry type: "
+            <> show type'
+            <> " It should be added to Kore.Log.Registry.registry."
 
 parseEntryType :: Ord e => Text -> Parser.Parsec e Text SomeTypeRep
 parseEntryType entryText =
-    maybe empty return $
-        Map.lookup entryText (textToType registry)
+    maybe empty return
+        $ Map.lookup entryText (textToType registry)
 
 toSomeEntryType :: Entry entry => entry -> SomeTypeRep
 toSomeEntryType =

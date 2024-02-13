@@ -55,4 +55,4 @@ instance Synthetic Sort (Rewrites Sort) where
     synthetic Rewrites{rewritesSort, rewritesFirst, rewritesSecond} =
         rewritesSort
             & seq (sameSort rewritesSort rewritesFirst)
-                . seq (sameSort rewritesSort rewritesSecond)
+            . seq (sameSort rewritesSort rewritesSecond)

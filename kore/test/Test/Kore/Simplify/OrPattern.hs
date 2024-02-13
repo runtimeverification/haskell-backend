@@ -123,7 +123,7 @@ runSimplifyPredicates ::
     OrPattern RewritingVariableName ->
     IO (OrPattern RewritingVariableName)
 runSimplifyPredicates predicate orPattern =
-    Test.runSimplifierSMT Mock.env $
-        simplifyConditionsWithSmt
+    Test.runSimplifierSMT Mock.env
+        $ simplifyConditionsWithSmt
             (SideCondition.fromPredicateWithReplacements predicate)
             orPattern

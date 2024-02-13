@@ -57,8 +57,8 @@ instance Pretty DebugTransition where
 
 instance Pretty AfterTransition where
     pretty AfterTransition{resultState, transition, appliedRules} =
-        Pretty.vsep $
-            concat
+        Pretty.vsep
+            $ concat
                 [
                     [ "Applied the following transition:"
                     , Pretty.indent 4 (pretty transition)

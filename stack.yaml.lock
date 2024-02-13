@@ -5,20 +5,6 @@
 
 packages:
 - completed:
-    hackage: chronos-1.1.5@sha256:ca35be5fdbbb384414226b4467c6d1c8b44defe59a9c8a3af32c1c5fb250c781,3830
-    pantry-tree:
-      sha256: 329bf39a05362a9c1f507a4a529725c757208843b562c55e0b7c88538dc3160f
-      size: 581
-  original:
-    hackage: chronos-1.1.5
-- completed:
-    hackage: co-log-0.5.0.0@sha256:a7e84650eaef7eba2d59ee7664309e79317a7ca67011abedf971f0e6bd6475bb,5448
-    pantry-tree:
-      sha256: 33b838c07c8b7e70b2e82bddc889bb1e6386d7e12a9d1593c0b4b263b1fcb925
-      size: 1043
-  original:
-    hackage: co-log-0.5.0.0
-- completed:
     hackage: decision-diagrams-0.2.0.0@sha256:9f82d39f7331f6836784fa89354986e436a4d62d810b8fb2b44dd10c6a0beb85,3415
     pantry-tree:
       sha256: 36696cfd2af10c44fc0b7d8746c57d94c476eef4ba16f6ac98c2d6dae04f4b36
@@ -26,22 +12,29 @@ packages:
   original:
     hackage: decision-diagrams-0.2.0.0
 - completed:
-    hackage: typerep-map-0.5.0.0@sha256:34f1ba9b268a6d52e26ae460011a5571e8099b50a3f4a7c8db25dd8efe3be8ee,4667
+    hackage: tasty-test-reporter-0.1.1.4@sha256:22acd61058a9aa6fafeb742051347f22f1bac8658ad285bc2eb65b86173a1bc2,1765
     pantry-tree:
-      sha256: ca5565de307d260dc67f6dae0d4d33eee42a3238183461569b5142ceb909c91d
+      sha256: 7d309686e6b362e904a2b49b7513307be54381690ca7472e926f73fd08a8353b
+      size: 411
+  original:
+    hackage: tasty-test-reporter-0.1.1.4
+- completed:
+    hackage: typerep-map-0.6.0.0@sha256:e54a4e99614ad890a10200da687efa189860c13207a97063db1b6881032ebecc,4890
+    pantry-tree:
+      sha256: f970c9dc26194bf708a5c18cf4daac5a1518afa1d8b92e8f1c170959587ee7a6
       size: 1487
   original:
-    hackage: typerep-map-0.5.0.0
+    hackage: typerep-map-0.6.0.0
 - completed:
-    hackage: monad-validate-1.2.0.1@sha256:5a100da896f11ca4b7c123da85decbedeb46c37054a097f258ac911e715cb68d,2587
+    hackage: monad-validate-1.3.0.0@sha256:eb6ddd5c9cf72ff0563cba604fa00291376e96138fdb4932d00ff3a99d66706e,2605
     pantry-tree:
-      sha256: 034ee4de9765e38b763f5d73b236cc112205728e680cefbfe12d2882accc3264
+      sha256: 0b2a3a57be48fcc739708b214fca202f1e95b1cd773dd3bb9589d3007cf8cf5e
       size: 611
   original:
-    hackage: monad-validate-1.2.0.1
+    hackage: monad-validate-1.3.0.0
 snapshots:
 - completed:
-    sha256: 5a59b2a405b3aba3c00188453be172b85893cab8ebc352b1ef58b0eae5d248a2
-    size: 650475
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/26.yaml
-  original: lts-20.26
+    sha256: 1ecd36c6af82cd6940fd16e4ecf40ac6e3844ba8f49873e34f1cf12bd1f9dfb1
+    size: 712886
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/10.yaml
+  original: lts-22.10

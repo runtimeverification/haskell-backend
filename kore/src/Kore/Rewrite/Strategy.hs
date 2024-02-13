@@ -437,17 +437,17 @@ pickLongest exeGraph = head $ last $ history exeGraph
 -- | Return all 'stuck' configurations, i.e. all leaves of the 'Tree'.
 pickFinal :: ExecutionGraph config rule -> [config]
 pickFinal ExecutionGraph{graph} =
-    map (fromJust . Graph.lab graph) $
-        filter isFinal $
-            Graph.nodes graph
+    map (fromJust . Graph.lab graph)
+        $ filter isFinal
+        $ Graph.nodes graph
   where
     isFinal = (0 ==) . Graph.outdeg graph
 
 -- | Return all configurations reachable in one step.
 pickOne :: ExecutionGraph config rule -> [config]
 pickOne ExecutionGraph{root, graph} =
-    map (fromJust . Graph.lab graph) $
-        Graph.neighbors graph root
+    map (fromJust . Graph.lab graph)
+        $ Graph.neighbors graph root
 
 -- | Return all reachable configurations.
 pickStar :: ExecutionGraph config rule -> [config]
@@ -456,6 +456,6 @@ pickStar ExecutionGraph{graph} = map snd $ Graph.labNodes graph
 -- | Return all configurations reachable after at least one step.
 pickPlus :: ExecutionGraph config rule -> [config]
 pickPlus ExecutionGraph{root, graph} =
-    map snd $
-        filter ((/= root) . fst) $
-            Graph.labNodes graph
+    map snd
+        $ filter ((/= root) . fst)
+        $ Graph.labNodes graph

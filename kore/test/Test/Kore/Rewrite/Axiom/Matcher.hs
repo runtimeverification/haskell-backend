@@ -1096,15 +1096,15 @@ test_matching_Set =
 
 sSet :: SomeVariable RewritingVariableName
 sSet =
-    inject $
-        mkElementVariable (testId "sSet") Mock.setSort
-            & mapElementVariable (pure mkConfigVariable)
+    inject
+        $ mkElementVariable (testId "sSet") Mock.setSort
+        & mapElementVariable (pure mkConfigVariable)
 
 s'Set :: SomeVariable RewritingVariableName
 s'Set =
-    inject $
-        mkElementVariable (testId "s'Set") Mock.setSort
-            & mapElementVariable (pure mkConfigVariable)
+    inject
+        $ mkElementVariable (testId "s'Set") Mock.setSort
+        & mapElementVariable (pure mkConfigVariable)
 
 mkSet ::
     [TermLike RewritingVariableName] ->

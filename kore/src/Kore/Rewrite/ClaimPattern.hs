@@ -180,8 +180,8 @@ instance Substitute ClaimPattern where
     type VariableNameType ClaimPattern = RewritingVariableName
 
     substitute subst claimPattern'@(ClaimPattern _ _ _ _) =
-        substituteRight subst $
-            claimPattern'
+        substituteRight subst
+            $ claimPattern'
                 { left = substitute subst left
                 }
       where
@@ -280,8 +280,8 @@ renameExistentials subst0 claimPattern'@ClaimPattern{right, existentials} =
         ElementVariable RewritingVariableName
     renameVariable var =
         let name = SomeVariableNameElement . variableName $ var
-         in maybe var TermLike.expectElementVariable $
-                Map.lookup name subst0
+         in maybe var TermLike.expectElementVariable
+                $ Map.lookup name subst0
     subst = TermLike.mkVar <$> subst0
 
 {- | Applies a substitution to a claim and checks that
@@ -312,9 +312,9 @@ isFreeOf ::
     Set.Set (SomeVariable RewritingVariableName) ->
     Bool
 isFreeOf rule =
-    Set.disjoint $
-        FreeVariables.toSet $
-            freeVariables rule
+    Set.disjoint
+        $ FreeVariables.toSet
+        $ freeVariables rule
 
 -- TODO(Ana): move this to Internal.TermLike?
 

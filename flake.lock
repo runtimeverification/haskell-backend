@@ -32,27 +32,26 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1707490693,
+        "lastModified": 1707492220,
         "narHash": "sha256-KRndaUPzUumDlNcKF7KzA8F/EZKLYCvurh7Z13sw2PI=",
         "owner": "runtimeverification",
         "repo": "rv-nix-tools",
-        "rev": "f3e8bab938db9800044a94b94e59c5eba25977bc",
+        "rev": "abf86805a623948c941e603e2fc4c26a06ea6eb6",
         "type": "github"
       },
       "original": {
         "owner": "runtimeverification",
         "repo": "rv-nix-tools",
-        "rev": "f3e8bab938db9800044a94b94e59c5eba25977bc",
         "type": "github"
       }
     },
     "stacklock2nix": {
       "locked": {
-        "lastModified": 1700633677,
-        "narHash": "sha256-ATrA3tZZYo9aj9IAZZNqyvtkz4Ub1Q3q5OgADwxImTA=",
+        "lastModified": 1705051190,
+        "narHash": "sha256-xgH0gaD3dNtOzZzX3A40hZTiHJP5cIGmifbmfcS2OGI=",
         "owner": "cdepillabout",
         "repo": "stacklock2nix",
-        "rev": "84694f48ddd8e49b96a02216ca2ab406fba25e65",
+        "rev": "22676dfc45fa1c33899ba1da1a23665172a18ba7",
         "type": "github"
       },
       "original": {

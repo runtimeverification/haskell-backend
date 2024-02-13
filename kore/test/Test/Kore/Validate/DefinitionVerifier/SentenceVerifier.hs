@@ -89,14 +89,16 @@ test_FreeVarInRHS =
 
 patternToSentence :: Pattern VariableName Null -> ParsedSentence
 patternToSentence patt =
-    SentenceClaimSentence $
-        SentenceClaim $
-            SentenceAxiom [] patt (Attributes [])
+    SentenceClaimSentence
+        $ SentenceClaim
+        $ SentenceAxiom [] patt (Attributes [])
 
 patternFreeVarInRHS :: Pattern VariableName Null
 patternFreeVarInRHS =
-    externalize . getAxiomPattern . from $
-        OnePathClaim rulePatternFreeVarInRHS
+    externalize
+        . getAxiomPattern
+        . from
+        $ OnePathClaim rulePatternFreeVarInRHS
   where
     rulePatternFreeVarInRHS :: ClaimPattern
     rulePatternFreeVarInRHS =
@@ -116,8 +118,10 @@ patternFreeVarInRHS =
 
 patternNoFreeVarInRHS :: Pattern VariableName Null
 patternNoFreeVarInRHS =
-    externalize . getAxiomPattern . from $
-        OnePathClaim rulePatternNoFreeVarInRHS
+    externalize
+        . getAxiomPattern
+        . from
+        $ OnePathClaim rulePatternNoFreeVarInRHS
   where
     rulePatternNoFreeVarInRHS :: ClaimPattern
     rulePatternNoFreeVarInRHS =
