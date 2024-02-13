@@ -771,9 +771,9 @@ conjOfClaims ::
     TermLike VariableName
 conjOfClaims claims sort =
     foldr
-        TermLike.mkAnd
+        (TermLike.mkAnd . getAxiomPattern . from)
         (TermLike.mkTop sort)
-        $ fmap (getAxiomPattern . from) claims
+        claims
 
 generateInProgressClaims ::
     forall m.

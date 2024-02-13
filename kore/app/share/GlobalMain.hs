@@ -180,7 +180,6 @@ import Options.SMT (
  )
 import Prelude.Kore
 import Pretty qualified as KorePretty
-import Prettyprinter qualified
 import SMT (
     SMT,
  )
@@ -437,7 +436,7 @@ commandLineParse (ExeName exeName) maybeEnv parser infoMod = do
       where
         commandWithOpts =
             Pretty.vsep
-                [ Prettyprinter.line'
+                [ Pretty.line'
                 , Pretty.pretty (unwords (exeName : args))
                 , Pretty.pretty env <> "=" <> Pretty.squotes (Pretty.pretty $ unwords argsEnv)
                 ]

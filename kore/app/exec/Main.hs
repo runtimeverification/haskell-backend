@@ -150,8 +150,8 @@ import Pretty (
     Doc,
     hPutDoc,
     putDoc,
+    pretty,
  )
-import Prettyprinter qualified
 import Stats
 import System.Clock (
     Clock (Monotonic),
@@ -403,7 +403,7 @@ parseKoreExecOptions startTime =
                     $ show
                     $ OptPretty.hsep
                         [ "Unknown option"
-                        , OptPretty.squotes (Prettyprinter.pretty val)
+                        , OptPretty.squotes (pretty val)
                             <> OptPretty.dot
                         , "Known options are 'all' and 'any'."
                         ]

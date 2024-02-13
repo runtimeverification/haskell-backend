@@ -304,16 +304,18 @@ test_substitute =
             (mkElemVar Mock.y)
             (substitute subst (mkElemVar Mock.y))
     , testGroup "Ignores patterns without children"
-        $ let expect = mkPredicate Mock.testSort
-              actual =
-                substitute
-                    (mkSubst Mock.x Mock.z)
-                    (mkPredicate Mock.testSort)
-              ignoring mkPredicate =
-                assertEqual
-                    "Expected no substitution"
-                    expect
-                    actual
+        $ let ignoring mkPredicate =
+                let
+                    expect = mkPredicate Mock.testSort
+                    actual =
+                        substitute
+                            (mkSubst Mock.x Mock.z)
+                            (mkPredicate Mock.testSort)
+                 in
+                    assertEqual
+                        "Expected no substitution"
+                        expect
+                        actual
            in [ testCase "Bottom" (ignoring mkBottom)
               , testCase "Top" (ignoring mkTop)
               ]

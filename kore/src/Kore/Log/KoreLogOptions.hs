@@ -94,7 +94,6 @@ import Options.Applicative.Help.Pretty qualified as OptPretty
 import Prelude.Kore
 import Pretty (Pretty (..))
 import Pretty qualified
-import Prettyprinter qualified
 import System.Clock (
     TimeSpec,
  )
@@ -276,7 +275,7 @@ parseEntryTypes =
             [ "Log entries: comma-separated list logs entries to enable"
             , "Available entry types:"
             , (OptPretty.indent 4 . OptPretty.vsep)
-                (Prettyprinter.pretty <$> getEntryTypesAsText)
+                (Pretty.pretty <$> getEntryTypesAsText)
             ]
 
 parseCommaSeparatedEntries :: Options.ReadM EntryTypes
@@ -335,7 +334,7 @@ parseErrorEntries =
             [ "Turn arbitrary log entries into errors"
             , "Available entry types:"
             , (OptPretty.indent 4 . OptPretty.vsep)
-                (Prettyprinter.pretty <$> getNoErrEntryTypesAsText)
+                (Pretty.pretty <$> getNoErrEntryTypesAsText)
                 {- The user can still give error entries as arguments, but it's
                     useless, so we don't list them here
                 -}

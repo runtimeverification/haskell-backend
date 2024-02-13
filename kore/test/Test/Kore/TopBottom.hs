@@ -75,7 +75,7 @@ test_Predicate =
     , Tasty.testGroup "\\in(x, a)" $ testIsNeither inA
     , Tasty.testGroup "\\in(x, b)" $ testIsNeither inB
     , Tasty.testGroup "\\exists(x, \\equals(x, a))" $ testIsNeither exists
-    , Tasty.testGroup "\\forall(x, \\equals(x, a))" $ testIsNeither forall
+    , Tasty.testGroup "\\forall(x, \\equals(x, a))" $ testIsNeither forAll
     , Tasty.testGroup "\\and(\\equals(x, a), \\equals(x, b))" $ testIsNeither and
     , Tasty.testGroup "\\or(\\equals(x, a), \\equals(x, b))" $ testIsNeither or
     , Tasty.testGroup "\\iff(\\equals(x, a), \\equals(x, b))" $ testIsNeither iff
@@ -97,7 +97,7 @@ test_Predicate =
     inA = Predicate.makeInPredicate (AST.mkElemVar Mock.x) Mock.a
     inB = Predicate.makeInPredicate (AST.mkElemVar Mock.x) Mock.b
     exists = Predicate.makeExistsPredicate Mock.x equalsA
-    forall = Predicate.makeForallPredicate Mock.x equalsA
+    forAll = Predicate.makeForallPredicate Mock.x equalsA
     and = Predicate.makeAndPredicate equalsA equalsB
     or = Predicate.makeOrPredicate equalsA equalsB
     iff = Predicate.makeIffPredicate equalsA equalsB

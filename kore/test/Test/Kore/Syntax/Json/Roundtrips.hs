@@ -35,8 +35,7 @@ patternsFrom path = do
 
 getPatterns :: ParsedDefinition -> [ParsedPattern]
 getPatterns =
-    mapMaybe fromSentence
-        . concatMap Kore.moduleSentences
+    concatMap (mapMaybe fromSentence . Kore.moduleSentences)
         . Kore.definitionModules
 
 fromSentence :: Kore.Sentence ParsedPattern -> Maybe ParsedPattern
