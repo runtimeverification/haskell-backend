@@ -149,8 +149,8 @@ import Prelude.Kore
 import Pretty (
     Doc,
     hPutDoc,
-    putDoc,
     pretty,
+    putDoc,
  )
 import Stats
 import System.Clock (

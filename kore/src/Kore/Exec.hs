@@ -904,7 +904,8 @@ matchDisjunction mainModule matchPattern disjunctionPattern =
     evalSimplifierProofs mainModule $ do
         results <-
             traverse (runMaybeT . match matchPattern) disjunctionPattern
-                <&> concatMap toList . catMaybes
+                <&> concatMap toList
+                . catMaybes
         results
             <&> Condition.toPredicate
             & Predicate.makeMultipleOrPredicate
