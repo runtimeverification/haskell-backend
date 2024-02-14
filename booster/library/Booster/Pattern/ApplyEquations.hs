@@ -48,11 +48,12 @@ import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
 import Data.Data (Data)
 import Data.Foldable (toList, traverse_)
-import Data.List (elemIndex, partition)
+import Data.List (partition)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust)
-import Data.Sequence (Seq (..))
+import Data.Sequence (Seq (..), pattern (:<|))
+import Data.Sequence qualified as Seq
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text, pack)
@@ -145,7 +146,7 @@ pattern NoCollectEquationTraces :: Flag "CollectEquationTraces"
 pattern NoCollectEquationTraces = Flag False
 
 data EquationState = EquationState
-    { termStack :: [Term]
+    { termStack :: Seq Term
     , recursionStack :: [Term]
     , changed :: Bool
     , predicates :: Set Predicate
@@ -256,7 +257,7 @@ isSuccess _ = False
 startState :: Map Term Term -> EquationState
 startState cache =
     EquationState
-        { termStack = []
+        { termStack = mempty
         , recursionStack = []
         , changed = False
         , predicates = mempty
@@ -277,7 +278,7 @@ countSteps :: MonadLoggerIO io => EquationT io Int
 countSteps = length . (.termStack) <$> getState
 
 pushTerm :: MonadLoggerIO io => Term -> EquationT io ()
-pushTerm t = eqState . modify $ \s -> s{termStack = t : s.termStack}
+pushTerm t = eqState . modify $ \s -> s{termStack = t :<| s.termStack}
 
 pushConstraints :: MonadLoggerIO io => Set Predicate -> EquationT io ()
 pushConstraints ps = eqState . modify $ \s -> s{predicates = s.predicates <> ps}
@@ -311,8 +312,8 @@ fromCache t = eqState $ Map.lookup t <$> gets (.cache)
 checkForLoop :: MonadLoggerIO io => Term -> EquationT io ()
 checkForLoop t = do
     EquationState{termStack} <- getState
-    whenJust (elemIndex t termStack) $ \i -> do
-        throw (EquationLoop $ reverse $ t : take (i + 1) termStack)
+    whenJust (Seq.elemIndexL t termStack) $ \i -> do
+        throw (EquationLoop $ reverse $ t : take (i + 1) (toList termStack))
 
 data Direction = TopDown | BottomUp
     deriving stock (Eq, Show)
@@ -907,7 +908,7 @@ simplifyConstraint' recurseIntoEvalBool = \case
     evalBool :: MonadLoggerIO io => Term -> EquationT io Term
     evalBool t = do
         prior <- getState -- save prior state so we can revert
-        eqState $ put prior{termStack = [], changed = False}
+        eqState $ put prior{termStack = mempty, changed = False}
         result <- iterateEquations BottomUp PreferFunctions t
         eqState $ put prior
         pure result
