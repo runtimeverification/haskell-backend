@@ -372,8 +372,12 @@ applyRule pat@Pattern{ceilConditions} rule = runRewriteRuleAppT $ do
         RewriteRuleAppT (RewriteT io (RewriteFailed k)) (Maybe a)
     checkConstraint onUnclear onBottom p = do
         RewriteConfig{definition, llvmApi, smtSolver, doTracing} <- lift $ RewriteT ask
-        (simplified, _traces, _cache) <-
-            simplifyConstraint (castDoTracingFlag doTracing) definition llvmApi smtSolver mempty p
+        oldCache <- lift . RewriteT . lift $ get
+        (simplified, _traces, cache) <-
+            simplifyConstraint (castDoTracingFlag doTracing) definition llvmApi smtSolver oldCache p
+        -- update cache
+        lift . RewriteT . lift . modify $ const cache
+        -- TODO should we keep the traces? Or only on success?
         case simplified of
             Right (Predicate FalseBool) -> onBottom
             Right (Predicate TrueBool) -> pure Nothing
