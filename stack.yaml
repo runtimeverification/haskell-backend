@@ -49,12 +49,10 @@ packages:
 # (e.g., acme-missiles-0.3)
 extra-deps:
   - decision-diagrams-0.2.0.0
-  - tasty-test-reporter-0.1.1.4
   - typerep-map-0.6.0.0
   - monad-validate-1.3.0.0
-
-# TODO remove when co-log is updated
-allow-newer: true
+  - github: goodlyrottenapple/tasty-test-reporter 
+    commit: c842f45a58c4141c5671bfe7421ae5990231abb1
 
 ghc-options:
   "$everything": -haddock

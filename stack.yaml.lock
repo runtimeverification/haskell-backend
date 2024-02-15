@@ -12,13 +12,6 @@ packages:
   original:
     hackage: decision-diagrams-0.2.0.0
 - completed:
-    hackage: tasty-test-reporter-0.1.1.4@sha256:22acd61058a9aa6fafeb742051347f22f1bac8658ad285bc2eb65b86173a1bc2,1765
-    pantry-tree:
-      sha256: 7d309686e6b362e904a2b49b7513307be54381690ca7472e926f73fd08a8353b
-      size: 411
-  original:
-    hackage: tasty-test-reporter-0.1.1.4
-- completed:
     hackage: typerep-map-0.6.0.0@sha256:e54a4e99614ad890a10200da687efa189860c13207a97063db1b6881032ebecc,4890
     pantry-tree:
       sha256: f970c9dc26194bf708a5c18cf4daac5a1518afa1d8b92e8f1c170959587ee7a6

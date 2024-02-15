@@ -9,3 +9,9 @@ package *
 package kore
   ghc-options: -Wall -Werror
   profiling-detail: toplevel-functions
+
+source-repository-package
+  type: git
+  location: https://github.com/goodlyrottenapple/tasty-test-reporter.git
+  tag: c842f45a58c4141c5671bfe7421ae5990231abb1
+  post-checkout-command: hpack

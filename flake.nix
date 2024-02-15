@@ -48,7 +48,6 @@
               decision-diagrams = dontCheck hprev.decision-diagrams;
               fgl = dontCheck hprev.fgl;
               fgl-arbitrary = dontCheck hprev.fgl-arbitrary;
-              # haskeline = dontCheck hprev.haskeline;
               json-rpc = dontCheck hprev.json-rpc;
               kore = (overrideCabal hprev.kore (drv: {
                 doCheck = false;
@@ -70,7 +69,6 @@
               lifted-base = dontCheck hprev.lifted-base;
               prettyprinter = dontCheck hprev.prettyprinter;
               tar = dontCheck hprev.tar;
-              # typerep-map = doJailbreak hprev.typerep-map;
             };
 
           # Additional packages that should be available for development.
