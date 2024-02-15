@@ -41,7 +41,7 @@ test_duplicate =
 test_arguments :: TestTree
 test_arguments =
     testCase "[symbolKywd{}(\"legal\")]" $
-        expectFailure $
+        expectSuccess legalAttribute $
             parseSymbolKywd $
                 Attributes [legalAttribute]
   where
