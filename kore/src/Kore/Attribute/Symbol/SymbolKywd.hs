@@ -9,26 +9,26 @@ module Kore.Attribute.Symbol.SymbolKywd (
     symbolKywdAttribute,
 ) where
 
-import Data.Monoid (
-    Any (..),
- )
+import Data.Text (Text)
 import GHC.Generics qualified as GHC
 import Generics.SOP qualified as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 import Prelude.Kore
 
--- | @SymbolKywd@ represents the @symbolKywd@ attribute for symbols.
-newtype SymbolKywd = SymbolKywd {isSymbolKywd :: Bool}
+{- | @SymbolKywd@ represents the @symbolKywd@ attribute for symbols.
+  Hold an optional Text, which is an empty string if the attribute had
+  no argument. Use sites can check emptiness to achieve old behaviour.
+-}
+newtype SymbolKywd = SymbolKywd {getSymbol :: Maybe Text}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
     deriving anyclass (SOP.Generic, SOP.HasDatatypeInfo)
     deriving anyclass (Debug, Diff)
-    deriving (Semigroup, Monoid) via Any
 
 instance Default SymbolKywd where
-    def = mempty
+    def = SymbolKywd Nothing
 
 -- | Kore identifier representing the @symbolKywd@ attribute symbol.
 symbolKywdId :: Id
@@ -43,11 +43,20 @@ symbolKywdSymbol =
         }
 
 -- | Kore pattern representing the @symbolKywd@ attribute.
-symbolKywdAttribute :: AttributePattern
-symbolKywdAttribute = attributePattern_ symbolKywdSymbol
+symbolKywdAttribute :: Text -> AttributePattern
+symbolKywdAttribute = attributePattern symbolKywdSymbol . (: []) . attributeString
 
 instance ParseAttributes SymbolKywd where
-    parseAttribute = parseBoolAttribute symbolKywdId
+    -- if an argument is present, use it for the contents, otherwise
+    -- leave it empty (but present) to signal presence of the attribute.
+    parseAttribute =
+        withApplication symbolKywdId $ \params args SymbolKywd{getSymbol} -> do
+            Parser.getZeroParams params
+            mbArg <- Parser.getZeroOrOneArguments args
+            unless (isNothing getSymbol) $ failDuplicate symbolKywdId
+            StringLiteral arg <- maybe (pure $ StringLiteral "") getStringLiteral mbArg
+            pure $ SymbolKywd (Just arg)
 
 instance From SymbolKywd Attributes where
-    from = toBoolAttributes symbolKywdAttribute
+    from =
+        maybe def (from @AttributePattern . symbolKywdAttribute) . getSymbol

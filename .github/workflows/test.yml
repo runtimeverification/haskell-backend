@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: 'Check out code'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
@@ -23,7 +23,7 @@ jobs:
           token: ${{ secrets.JENKINS_GITHUB_PAT }}
 
       - name: 'Install Nix'
-        uses: cachix/install-nix-action@v22
+        uses: cachix/install-nix-action@v25
         with:
           install_url: https://releases.nixos.org/nix/nix-2.13.3/install
           extra_nix_config: |
@@ -32,7 +32,7 @@ jobs:
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
 
       - name: 'Install Cachix'
-        uses: cachix/cachix-action@v12
+        uses: cachix/cachix-action@v14
         with:
           name: k-framework
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
@@ -80,7 +80,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           # Check out pull request HEAD instead of merge commit.
           ref: ${{ github.event.pull_request.head.sha }}
@@ -93,7 +93,7 @@ jobs:
       # Do the Following only on Public Runners; Mac Runner is pre-installed with build tools
       - name: 'Install Nix'
         if: ${{ !startsWith(matrix.os, 'self') }}
-        uses: cachix/install-nix-action@v22
+        uses: cachix/install-nix-action@v25
         with:
           install_url: https://releases.nixos.org/nix/nix-2.13.3/install
           extra_nix_config: |
@@ -103,7 +103,7 @@ jobs:
 
       - name: 'Install Cachix'
         if: ${{ !startsWith(matrix.os, 'self') }}
-        uses: cachix/cachix-action@v12
+        uses: cachix/cachix-action@v14
         with:
           name: k-framework
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
@@ -112,7 +112,7 @@ jobs:
         run: GC_DONT_GC=1 nix build .#kore-exec
 
       - name: Cache Cabal package database and store
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cabal/packages
@@ -132,14 +132,14 @@ jobs:
     runs-on: [self-hosted, linux, normal]
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           # Check out pull request HEAD instead of merge commit.
           ref: ${{ github.event.pull_request.head.sha }}
           submodules: recursive
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v22
+        uses: cachix/install-nix-action@v25
         with:
           install_url: https://releases.nixos.org/nix/nix-2.13.3/install
           extra_nix_config: |
@@ -148,7 +148,7 @@ jobs:
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
 
       - name: Install Cachix
-        uses: cachix/cachix-action@v12
+        uses: cachix/cachix-action@v14
         with:
           name: k-framework
           skipPush: true
@@ -168,14 +168,14 @@ jobs:
         run: |
           sudo apt install --yes z3 libsecp256k1-dev
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           # Check out pull request HEAD instead of merge commit.
           ref: ${{ github.event.pull_request.head.sha }}
           submodules: recursive
 
       - name: Cache Stack root
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.stack
           key: stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
@@ -209,7 +209,7 @@ jobs:
     env:
       hlint_version: "3.5"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           # Check out pull request HEAD instead of merge commit.
           ref: ${{ github.event.pull_request.head.sha }}

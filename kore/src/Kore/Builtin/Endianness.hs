@@ -62,9 +62,9 @@ endiannessVerifier ctor =
     worker application = do
         -- TODO (thomas.tuegel): Move the checks into the symbol verifiers.
         unless (null arguments) (koreFail "expected zero arguments")
-        let Attribute.Symbol.SymbolKywd{isSymbolKywd} =
+        let Attribute.Symbol.SymbolKywd{getSymbol} =
                 Attribute.Symbol.symbolKywd $ symbolAttributes symbol
-        unless isSymbolKywd (koreFail "expected symbol'Kywd'{}() attribute")
+        unless (isJust getSymbol) (koreFail "expected symbol'Kywd'{}() attribute")
         return (EndiannessF . Const $ ctor symbol)
       where
         arguments = applicationChildren application
