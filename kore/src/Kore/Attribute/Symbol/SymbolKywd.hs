@@ -17,7 +17,8 @@ import Kore.Debug
 import Prelude.Kore
 
 {- | @SymbolKywd@ represents the @symbolKywd@ attribute for symbols.
-FIXME change this to hold an optional Text (see kLabel), use sites can check emptiness
+  Hold an optional Text, which is an empty string if the attribute had
+  no argument. Use sites can check emptiness to achieve old behaviour.
 -}
 newtype SymbolKywd = SymbolKywd {getSymbol :: Maybe Text}
     deriving stock (Eq, Ord, Show)
