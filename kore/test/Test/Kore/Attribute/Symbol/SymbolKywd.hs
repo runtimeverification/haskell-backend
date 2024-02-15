@@ -2,7 +2,8 @@ module Test.Kore.Attribute.Symbol.SymbolKywd (
     test_symbolKywd,
     test_Attributes,
     test_duplicate,
-    test_arguments,
+    test_argument,
+    test_2arguments,
     test_parameters,
 ) where
 
@@ -38,8 +39,8 @@ test_duplicate =
             parseSymbolKywd $
                 Attributes [symbolKywdAttribute "", symbolKywdAttribute ""]
 
-test_arguments :: TestTree
-test_arguments =
+test_argument :: TestTree
+test_argument =
     testCase "[symbolKywd{}(\"legal\")]" $
         expectSuccess legalAttribute $
             parseSymbolKywd $
@@ -47,6 +48,16 @@ test_arguments =
   where
     legalAttribute =
         attributePattern symbolKywdSymbol [attributeString "legal"]
+
+test_2arguments :: TestTree
+test_2arguments =
+    testCase "[symbolKywd{}(\"not\", \"allowed\")]" $
+        expectFailure $
+            parseSymbolKywd $
+                Attributes [legalAttribute]
+  where
+    legalAttribute =
+        attributePattern symbolKywdSymbol [attributeString "not", attributeString "allowed"]
 
 test_parameters :: TestTree
 test_parameters =
