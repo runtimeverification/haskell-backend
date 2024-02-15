@@ -85,7 +85,7 @@ klabelAttributeGen :: Gen Attribute.Klabel
 klabelAttributeGen = pure Default.def
 
 symbolKywdAttributeGen :: Gen Attribute.SymbolKywd
-symbolKywdAttributeGen = Attribute.SymbolKywd <$> Gen.choice [pure Nothing, pure $ Just "", pure $ Just "aSymbol" ]
+symbolKywdAttributeGen = Attribute.SymbolKywd <$> Gen.choice [pure Nothing, pure $ Just "", pure $ Just "aSymbol"]
 
 noEvaluatorsAttributeGen :: Gen Attribute.NoEvaluators
 noEvaluatorsAttributeGen = Attribute.NoEvaluators <$> Gen.bool

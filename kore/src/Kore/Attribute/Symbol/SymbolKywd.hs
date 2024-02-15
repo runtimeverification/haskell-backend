@@ -16,8 +16,9 @@ import Kore.Attribute.Parser as Parser
 import Kore.Debug
 import Prelude.Kore
 
--- | @SymbolKywd@ represents the @symbolKywd@ attribute for symbols.
--- FIXME change this to hold an optional Text (see kLabel), use sites can check emptiness
+{- | @SymbolKywd@ represents the @symbolKywd@ attribute for symbols.
+FIXME change this to hold an optional Text (see kLabel), use sites can check emptiness
+-}
 newtype SymbolKywd = SymbolKywd {getSymbol :: Maybe Text}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
@@ -42,10 +43,10 @@ symbolKywdSymbol =
 
 -- | Kore pattern representing the @symbolKywd@ attribute.
 symbolKywdAttribute :: Text -> AttributePattern
-symbolKywdAttribute = attributePattern symbolKywdSymbol . (:[]) . attributeString
+symbolKywdAttribute = attributePattern symbolKywdSymbol . (: []) . attributeString
 
 instance ParseAttributes SymbolKywd where
-    -- if an argument is present, use it for the contents, otherwise 
+    -- if an argument is present, use it for the contents, otherwise
     -- leave it empty (but present) to signal presence of the attribute.
     parseAttribute =
         withApplication symbolKywdId $ \params args SymbolKywd{getSymbol} -> do

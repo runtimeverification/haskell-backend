@@ -17,18 +17,18 @@ parseSymbolKywd :: Attributes -> Parser SymbolKywd
 parseSymbolKywd = parseAttributes
 
 test_symbolKywd :: TestTree
-test_symbolKywd = 
-  testGroup "symbolKyWd tests" 
-    [
-      testCase "[symbolKywd{}()] :: SymbolKywd" $
-        expectSuccess SymbolKywd{getSymbol = Just ""} $
-            parseSymbolKywd $
-                Attributes [symbolKywdAttribute ""]
-    , _test_Attributes
-    , _test_duplicate
---    , _test_arguments
-    , _test_parameters
-    ]
+test_symbolKywd =
+    testGroup
+        "symbolKyWd tests"
+        [ testCase "[symbolKywd{}()] :: SymbolKywd" $
+            expectSuccess SymbolKywd{getSymbol = Just ""} $
+                parseSymbolKywd $
+                    Attributes [symbolKywdAttribute ""]
+        , _test_Attributes
+        , _test_duplicate
+        , --    , _test_arguments
+          _test_parameters
+        ]
 
 _test_Attributes :: TestTree
 _test_Attributes =
