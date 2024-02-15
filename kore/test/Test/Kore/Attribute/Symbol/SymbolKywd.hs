@@ -42,7 +42,7 @@ test_duplicate =
 test_argument :: TestTree
 test_argument =
     testCase "[symbolKywd{}(\"legal\")]" $
-        expectSuccess legalAttribute $
+        expectSuccess SymbolKywd{getSymbol = Just "legal"} $
             parseSymbolKywd $
                 Attributes [legalAttribute]
   where
@@ -54,9 +54,9 @@ test_2arguments =
     testCase "[symbolKywd{}(\"not\", \"allowed\")]" $
         expectFailure $
             parseSymbolKywd $
-                Attributes [legalAttribute]
+                Attributes [illegalAttribute]
   where
-    legalAttribute =
+    illegalAttribute =
         attributePattern symbolKywdSymbol [attributeString "not", attributeString "allowed"]
 
 test_parameters :: TestTree
