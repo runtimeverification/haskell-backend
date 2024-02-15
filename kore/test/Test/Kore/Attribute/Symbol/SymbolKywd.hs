@@ -1,9 +1,9 @@
 module Test.Kore.Attribute.Symbol.SymbolKywd (
     test_symbolKywd,
-    test_Attributes,
-    test_duplicate,
-    test_arguments,
-    test_parameters,
+    -- test_Attributes,
+    -- test_duplicate,
+    -- test_arguments,
+    -- test_parameters,
 ) where
 
 import Kore.Attribute.Symbol.SymbolKywd
@@ -17,39 +17,46 @@ parseSymbolKywd :: Attributes -> Parser SymbolKywd
 parseSymbolKywd = parseAttributes
 
 test_symbolKywd :: TestTree
-test_symbolKywd =
-    testCase "[symbolKywd{}()] :: SymbolKywd" $
-        expectSuccess SymbolKywd{isSymbolKywd = True} $
+test_symbolKywd = 
+  testGroup "symbolKyWd tests" 
+    [
+      testCase "[symbolKywd{}()] :: SymbolKywd" $
+        expectSuccess SymbolKywd{getSymbol = Just ""} $
             parseSymbolKywd $
-                Attributes [symbolKywdAttribute]
+                Attributes [symbolKywdAttribute ""]
+    , _test_Attributes
+    , _test_duplicate
+--    , _test_arguments
+    , _test_parameters
+    ]
 
-test_Attributes :: TestTree
-test_Attributes =
+_test_Attributes :: TestTree
+_test_Attributes =
     testCase "[symbolKywd{}()] :: Attributes" $
         expectSuccess attrs $
             parseAttributes attrs
   where
-    attrs = Attributes [symbolKywdAttribute]
+    attrs = Attributes [symbolKywdAttribute ""]
 
-test_duplicate :: TestTree
-test_duplicate =
+_test_duplicate :: TestTree
+_test_duplicate =
     testCase "[symbolKywd{}(), symbolKywd{}()]" $
         expectFailure $
             parseSymbolKywd $
-                Attributes [symbolKywdAttribute, symbolKywdAttribute]
+                Attributes [symbolKywdAttribute "", symbolKywdAttribute ""]
 
-test_arguments :: TestTree
-test_arguments =
-    testCase "[symbolKywd{}(\"illegal\")]" $
+_test_arguments :: TestTree
+_test_arguments =
+    testCase "[symbolKywd{}(\"legal\")]" $
         expectFailure $
             parseSymbolKywd $
-                Attributes [illegalAttribute]
+                Attributes [legalAttribute]
   where
-    illegalAttribute =
-        attributePattern symbolKywdSymbol [attributeString "illegal"]
+    legalAttribute =
+        attributePattern symbolKywdSymbol [attributeString "legal"]
 
-test_parameters :: TestTree
-test_parameters =
+_test_parameters :: TestTree
+_test_parameters =
     testCase "[symbolKywd{illegal}()]" $
         expectFailure $
             parseSymbolKywd $
