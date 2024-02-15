@@ -535,7 +535,6 @@ respond serverState moduleName runSMT =
 
             -- put the original state back if we fail at any point
             flip catchE (\e -> liftIO (MVar.putMVar serverState st) >> throwError e) $ do
-
                 -- check if we already received a module with this name
                 when nameAsId $
                     case Map.lookup (coerce name) receivedModules of
