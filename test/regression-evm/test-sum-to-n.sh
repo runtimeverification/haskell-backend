@@ -13,8 +13,6 @@ exec kore-exec \
     --log-level \
     warning \
     --enable-log-timestamps \
-    --log-entries \
-    DebugTransition \
     --prove test-sum-to-n-spec.kore \
     --spec-module SUM-TO-N-SPEC \
     --graph-search breadth-first \
