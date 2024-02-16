@@ -80,7 +80,7 @@ subSymbolOrAlias = toSymbolOrAlias subSymbol
 
 test_Overload :: TestTree
 test_Overload =
-    testCase "[overload{}(super{}(), sub{}())] :: Overload" $
+    testCase "[symbol-overload{}(super{}(), sub{}())] :: Overload" $
         expectSuccess expected $
             parseOverload attributes
   where
@@ -95,20 +95,20 @@ attributes = Attributes [attribute]
 
 test_Attributes :: TestTree
 test_Attributes =
-    testCase "[overload{}(super{}(), sub{}())] :: Attributes" $
+    testCase "[symbol-overload{}(super{}(), sub{}())] :: Attributes" $
         expectSuccess attributes $
             parseAttributes attributes
 
 test_duplicate :: TestTree
 test_duplicate =
-    testCase "[overload{}(_, _), overload{}(_, _)]" $
+    testCase "[symbol-overload{}(_, _), overload{}(_, _)]" $
         expectFailure $
             parseOverload $
                 Attributes [attribute, attribute]
 
 test_arguments :: TestTree
 test_arguments =
-    testCase "[overload{}(\"illegal\")]" $
+    testCase "[symbol-overload{}(\"illegal\")]" $
         expectFailure $
             parseOverload $
                 Attributes [illegalAttribute]
