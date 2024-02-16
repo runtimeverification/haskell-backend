@@ -233,7 +233,7 @@ symbolKywd :: Symbol -> Symbol
 symbolKywd =
     Lens.set
         (typed @Attribute.Symbol . typed @Attribute.SymbolKywd)
-        Attribute.SymbolKywd{isSymbolKywd = True}
+        Attribute.SymbolKywd{getSymbol = Just ""}
 
 {- | Coerce a sort injection symbol's source and target sorts.
 
