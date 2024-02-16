@@ -545,7 +545,7 @@ respond serverState moduleName runSMT =
                 -- Check for a corner case when we send module M1 with the name "m<hash of M2>"" and name-as-id: true
                 -- followed by adding M2. Should not happen in practice...
                 case Map.lookup (coerce moduleHash) receivedModules of
-                    Just m | _module /= m -> throwError $ backendError DuplicateModuleName name
+                    Just m | _module /= m -> throwError $ backendError DuplicateModuleName moduleHash
                     _ -> pure ()
 
                 case (Map.lookup (coerce moduleHash) indexedModules, Map.lookup (coerce moduleHash) serializedModules) of
