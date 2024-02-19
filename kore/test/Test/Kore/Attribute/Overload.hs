@@ -101,7 +101,7 @@ test_Attributes =
 
 test_duplicate :: TestTree
 test_duplicate =
-    testCase "[symbol-overload{}(_, _), overload{}(_, _)]" $
+    testCase "[symbol-overload{}(_, _), symbol-overload{}(_, _)]" $
         expectFailure $
             parseOverload $
                 Attributes [attribute, attribute]
@@ -118,7 +118,7 @@ test_arguments =
 
 test_parameters :: TestTree
 test_parameters =
-    testCase "[overload{illegal}()]" $
+    testCase "[symbol-overload{illegal}()]" $
         expectFailure $
             parseOverload $
                 Attributes [illegalAttribute]
