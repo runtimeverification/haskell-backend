@@ -682,22 +682,7 @@ mkLogEquationTrace
             _ruleId = fmap getUniqueId metadata.ruleId
         ApplyEquations.EquationNotApplied _subjectTerm metadata result ->
             case result of
-                ApplyEquations.Success rewrittenTrm
-                    | logSuccessfulSimplifications ->
-                        Just $
-                            Simplification
-                                { originalTerm
-                                , originalTermIndex
-                                , origin
-                                , result =
-                                    Success
-                                        { rewrittenTerm =
-                                            Just $ execStateToKoreJson $ toExecState (Pattern.Pattern_ rewrittenTrm) mempty mempty
-                                        , substitution = Nothing
-                                        , ruleId = fromMaybe "UNKNOWN" _ruleId
-                                        }
-                                }
-                ApplyEquations.FailedMatch _failReason
+                ApplyEquations.FailedMatch{}
                     | logFailedSimplifications ->
                         Just $
                             Simplification
@@ -715,7 +700,7 @@ mkLogEquationTrace
                                 , origin
                                 , result = Failure{reason = "Indeterminate match", _ruleId}
                                 }
-                ApplyEquations.IndeterminateCondition _failedConditions
+                ApplyEquations.IndeterminateCondition{}
                     | logFailedSimplifications ->
                         Just $
                             Simplification
