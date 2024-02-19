@@ -21,6 +21,7 @@ module Booster.Pattern.ApplyEquations (
     eraseStates,
     EquationMetadata (..),
     ApplyEquationResult (..),
+    ApplyEquationFailure (..),
     applyEquations,
     handleSimplificationEquation,
     isMatchFailure,
@@ -163,10 +164,9 @@ data EquationMetadata = EquationMetadata
     }
     deriving stock (Eq, Show)
 
--- TODO: refactor ApplyEquationResult into EquationNonApplicableReason or something
 data EquationTrace term
     = EquationApplied term EquationMetadata term
-    | EquationNotApplied term EquationMetadata ApplyEquationResult
+    | EquationNotApplied term EquationMetadata ApplyEquationFailure
     deriving stock (Eq, Show)
 
 {- | For the given equation trace, construct a new one,
@@ -191,14 +191,6 @@ instance Pretty (EquationTrace Term) where
         locationInfo = pretty metadata.location <> " - " <> pretty metadata.label
         prettyTerm = pretty subjectTerm
     pretty (EquationNotApplied subjectTerm metadata result) = case result of
-        Success rewritten ->
-            vsep
-                [ "Simplifying term"
-                , prettyTerm
-                , "to"
-                , pretty rewritten
-                , "using " <> locationInfo
-                ]
         FailedMatch reason ->
             vsep ["Term did not match rule " <> locationInfo, prettyTerm, pretty reason]
         IndeterminateMatch ->
@@ -603,7 +595,11 @@ applyAtTop pref term = do
 
 data ApplyEquationResult
     = Success Term
-    | FailedMatch MatchFailReason
+    | Failure ApplyEquationFailure
+    deriving stock (Eq, Show)
+
+data ApplyEquationFailure
+    = FailedMatch MatchFailReason
     | IndeterminateMatch
     | IndeterminateCondition [Predicate]
     | ConditionFalse Predicate
@@ -625,24 +621,24 @@ type ResultHandler io =
 handleFunctionEquation :: MonadLoggerIO io => ResultHandler io
 handleFunctionEquation success continue abort = \case
     Success rewritten -> success rewritten
-    FailedMatch _ -> continue
-    IndeterminateMatch -> abort
-    IndeterminateCondition{} -> abort
-    ConditionFalse _ -> continue
-    EnsuresFalse p -> throw $ SideConditionFalse p
-    RuleNotPreservingDefinedness -> abort
-    MatchConstraintViolated{} -> continue
+    Failure (FailedMatch _) -> continue
+    Failure IndeterminateMatch -> abort
+    Failure (IndeterminateCondition{}) -> abort
+    Failure (ConditionFalse _) -> continue
+    Failure (EnsuresFalse p) -> throw $ SideConditionFalse p
+    Failure RuleNotPreservingDefinedness -> abort
+    Failure (MatchConstraintViolated{}) -> continue
 
 handleSimplificationEquation :: MonadLoggerIO io => ResultHandler io
 handleSimplificationEquation success continue _abort = \case
     Success rewritten -> success rewritten
-    FailedMatch _ -> continue
-    IndeterminateMatch -> continue
-    IndeterminateCondition{} -> continue
-    ConditionFalse _ -> continue
-    EnsuresFalse p -> throw $ SideConditionFalse p
-    RuleNotPreservingDefinedness -> continue
-    MatchConstraintViolated{} -> continue
+    Failure (FailedMatch _) -> continue
+    Failure IndeterminateMatch -> continue
+    Failure (IndeterminateCondition{}) -> continue
+    Failure (ConditionFalse _) -> continue
+    Failure (EnsuresFalse p) -> throw $ SideConditionFalse p
+    Failure RuleNotPreservingDefinedness -> continue
+    Failure (MatchConstraintViolated{}) -> continue
 
 applyEquations ::
     forall io tag.
@@ -702,7 +698,7 @@ emitEquationTrace t loc lbl uid res = do
     let newTraceItem =
             case res of
                 Success rewritten -> EquationApplied t (EquationMetadata loc lbl uid) rewritten
-                failure -> EquationNotApplied t (EquationMetadata loc lbl uid) failure
+                Failure failure -> EquationNotApplied t (EquationMetadata loc lbl uid) failure
         prettyItem = pack . renderDefault . pretty $ newTraceItem
     logOther (LevelOther "Simplify") prettyItem
     case res of
@@ -719,7 +715,7 @@ applyEquation ::
     Term ->
     RewriteRule tag ->
     EquationT io ApplyEquationResult
-applyEquation term rule = fmap (either id Success) $ runExceptT $ do
+applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
     -- ensured by internalisation: no existentials in equations
     unless (null rule.existentials) $
         lift . throw . InternalError $
@@ -776,9 +772,9 @@ applyEquation term rule = fmap (either id Success) $ runExceptT $ do
     -- Call 'whenBottom' if it is Bottom, return Nothing if it is Top,
     -- otherwise return the simplified remaining predicate.
     checkConstraint ::
-        (Predicate -> ApplyEquationResult) ->
+        (Predicate -> ApplyEquationFailure) ->
         Predicate ->
-        ExceptT ApplyEquationResult (EquationT io) (Maybe Predicate)
+        ExceptT ApplyEquationFailure (EquationT io) (Maybe Predicate)
     checkConstraint whenBottom (Predicate p) = do
         logOther (LevelOther "Simplify") $
             "Recursive simplification of predicate: " <> pack (renderDefault (pretty p))
@@ -806,7 +802,7 @@ applyEquation term rule = fmap (either id Success) $ runExceptT $ do
     checkConcreteness ::
         Concreteness ->
         Map Variable Term ->
-        ExceptT ApplyEquationResult (EquationT io) ()
+        ExceptT ApplyEquationFailure (EquationT io) ()
     checkConcreteness Unconstrained _ = pure ()
     checkConcreteness (AllConstrained constrained) subst =
         mapM_ (\(var, t) -> mkCheck (toPair var) constrained t) $ Map.assocs subst
@@ -822,7 +818,7 @@ applyEquation term rule = fmap (either id Success) $ runExceptT $ do
         (VarName, SortName) ->
         Constrained ->
         Term ->
-        ExceptT ApplyEquationResult (EquationT io) ()
+        ExceptT ApplyEquationFailure (EquationT io) ()
     mkCheck (varName, _) constrained (Term attributes _)
         | not test = throwE $ MatchConstraintViolated constrained varName
         | otherwise = pure ()
@@ -834,8 +830,8 @@ applyEquation term rule = fmap (either id Success) $ runExceptT $ do
     verifyVar ::
         Map Variable Term ->
         (VarName, SortName) ->
-        (Term -> ExceptT ApplyEquationResult (EquationT io) ()) ->
-        ExceptT ApplyEquationResult (EquationT io) ()
+        (Term -> ExceptT ApplyEquationFailure (EquationT io) ()) ->
+        ExceptT ApplyEquationFailure (EquationT io) ()
     verifyVar subst (variableName, sortName) check =
         maybe
             ( lift . throw . InternalError . Text.pack $
