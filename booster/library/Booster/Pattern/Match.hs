@@ -13,9 +13,11 @@ import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.State
+import Data.Bifunctor (first)
 import Data.Either.Extra
 import Data.Map (Map)
 import Data.Map qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq (..), (><))
 import Data.Sequence qualified as Seq
 import Data.Set (Set)
@@ -88,24 +90,32 @@ matchTerm KoreDefinition{sorts} term1 term2 =
                     State
                         { mSubstitution = Map.empty
                         , mQueue = Seq.singleton (term1, term2)
+                        , mMapQueue = mempty
                         , mSubsorts = Map.map snd sorts
                         }
 
 data MatchState = State
     { mSubstitution :: Map Variable Term
     , mQueue :: Seq (Term, Term) -- work queue
+    , mMapQueue :: Seq (Term, Term) -- work queue for Map/Set matching (2nd priority)
     , mSubsorts :: Map SortName (Set SortName)
     }
 
 matching :: StateT MatchState (Except MatchResult) ()
 matching = do
-    queue <- gets mQueue
-    case queue of
-        Empty -> pure () -- done
+    st <- get
+    case st.mQueue of
         (term1, term2) :<| rest -> do
             modify $ \s -> s{mQueue = rest}
             match1 term1 term2
             matching
+        Empty ->
+            case st.mMapQueue of
+                (term1, term2) :<| rest -> do
+                    modify $ \s -> s{mMapQueue = rest}
+                    match1 term1 term2
+                    matching
+                Empty -> pure () -- done
 
 match1 ::
     Term ->
@@ -268,25 +278,102 @@ match1
                 failWith $ DifferentSymbols app subj
 ----- KMap
 match1
-    t1@(KMap def1 keyVals1 Nothing)
-    t2@(KMap def2 keyVals2 Nothing)
-        | def1 == def2 =
-            if isConcrete t1 && isConcrete t2
-                then
-                    if keyVals1 == keyVals2 -- identical concrete maps match
-                        then pure mempty
-                        else failWith $ DifferentValues t1 t2
-                else indeterminate t1 t2 -- symbolic maps are indeterminate
-        | otherwise = failWith $ DifferentSorts t1 t2
--- matching on non-empty symbolic maps is not supported
+    t1@(KMap patDef patKeyVals patRest)
+    t2@(KMap subjDef subjKeyVals subjRest) = do
+        -- different map sorts do not match
+        unless (patDef == subjDef) $
+            failWith (DifferentSorts t1 t2)
+        st <- get
+        if not (Seq.null st.mQueue)
+            then -- delay matching 'KMap's until there are no regular
+            -- problems left, to obtain a maximal prior substitution
+            -- before matching map keys.
+                enqueueMapProblem t1 t2
+            else do
+                -- first apply current substitution to pattern key-value pairs
+                let patternKeyVals = map (first (substituteInTerm st.mSubstitution)) patKeyVals
+
+                -- check for duplicate keys
+                checkDuplicateKeys (KMap patDef patternKeyVals patRest)
+                checkDuplicateKeys t2
+
+                let patMap = Map.fromList patternKeyVals
+                    subjMap = Map.fromList subjKeyVals
+                    -- handles syntactically identical keys in pattern and subject
+                    commonMap = Map.intersectionWith (,) patMap subjMap
+                    patExtra = patMap `Map.withoutKeys` Map.keysSet commonMap
+                    subjExtra = subjMap `Map.withoutKeys` Map.keysSet commonMap
+
+                -- Before enqueueing the common elements for matching,
+                -- check whether we can abort early
+                case (Map.null patExtra, Map.null subjExtra) of
+                    (True, True) ->
+                        -- all keys are common, handle opaque rest (if any)
+                        case patRest of
+                            Nothing ->
+                                maybe (pure ()) (enqueueProblem emptyMap) subjRest
+                            Just pRest ->
+                                enqueueProblem pRest $ fromMaybe emptyMap subjRest
+                    (True, False) ->
+                        -- subject has extra assocs to match with pattern rest
+                        let subj' = KMap subjDef (Map.assocs subjExtra) subjRest
+                         in case patRest of
+                                Nothing ->
+                                    failWith $ DifferentValues emptyMap subj'
+                                Just pRest -> do
+                                    enqueueProblem pRest subj'
+                    (False, True) ->
+                        -- pattern has extra assocs
+                        let pat' = KMap patDef (Map.assocs patExtra) patRest
+                         in case subjRest of
+                                Nothing ->
+                                    -- no opaque rest, match is definitely failing
+                                    failWith $ DifferentValues pat' emptyMap
+                                Just sRest ->
+                                    -- indeterminate matching with an opaque rest
+                                    indeterminate pat' sRest
+                    (False, False)
+                        -- Special case: definitely fail if all (extra) pattern keys are concrete
+                        -- and there is no opaque subject rest
+                        | Nothing <- subjRest
+                        , all isConcrete (Map.keys patExtra) ->
+                            let pat' = KMap patDef (Map.assocs patExtra) patRest
+                                subj' = KMap subjDef (Map.assocs subjExtra) subjRest
+                             in failWith $ DifferentValues pat' subj'
+                        -- Special case: attempt a match if pattern and subject assocs
+                        -- are singleton and there is no opaque subject rest
+                        | Nothing <- subjRest
+                        , [(pKey, pVal)] <- Map.assocs patExtra
+                        , [(sKey, sVal)] <- Map.assocs subjExtra -> do
+                            let opaque = case patRest of
+                                    Nothing -> []
+                                    Just rest -> [(rest, emptyMap)]
+                            enqueueProblems . Seq.fromList $ (pKey, sKey) : (pVal, sVal) : opaque
+                        | otherwise ->
+                            indeterminate t1 t2
+
+                -- enqueue common elements for matching unless already failed
+                enqueueProblems $ Seq.fromList $ Map.elems commonMap
+      where
+        emptyMap = KMap patDef [] Nothing
+
+        checkDuplicateKeys m@(KMap _ assocs _) =
+            let duplicates =
+                    Map.filter (> (1 :: Int)) $ foldr (flip (Map.insertWith (+)) 1 . fst) mempty assocs
+             in case Map.assocs duplicates of
+                    [] -> pure ()
+                    (k, _) : _ -> failWith $ DuplicateKeys k m
+        checkDuplicateKeys _ = pure ()
+
+--- not matching map patterns with anything else
 match1
     t1@KMap{}
     t2 = indeterminate t1 t2
--- no unification for lists, return indeterminate for now
+-- no matching for lists, return indeterminate for now
 match1
     t1@KList{}
     t2 = indeterminate t1 t2
--- no unification for sets, return indeterminate for now
+-- no matching for sets, return indeterminate for now
 match1
     t1@KSet{}
     t2 = indeterminate t1 t2
@@ -300,6 +387,10 @@ indeterminate t1 t2 = lift . throwE $ MatchIndeterminate t1 t2
 enqueueProblem :: Monad m => Term -> Term -> StateT MatchState m ()
 enqueueProblem term1 term2 =
     modify $ \s@State{mQueue} -> s{mQueue = mQueue :|> (term1, term2)}
+
+enqueueMapProblem :: Monad m => Term -> Term -> StateT MatchState m ()
+enqueueMapProblem term1 term2 =
+    modify $ \s@State{mMapQueue} -> s{mMapQueue = mMapQueue :|> (term1, term2)}
 
 enqueueProblems :: Monad m => Seq (Term, Term) -> StateT MatchState m ()
 enqueueProblems ts =
