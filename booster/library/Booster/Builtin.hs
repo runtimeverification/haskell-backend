@@ -14,6 +14,7 @@ module Booster.Builtin (
 import Control.Monad
 import Control.Monad.Trans.Except
 import Data.ByteString.Char8 (ByteString)
+import Data.List (partition)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text (Text)
@@ -32,11 +33,82 @@ hooks :: Map ByteString BuiltinFunction
 hooks =
     Map.unions
         [ builtinsKEQUAL
+        , builtinsMAP
         ]
 
 ------------------------------------------------------------
 (~~>) :: ByteString -> BuiltinFunction -> (ByteString, BuiltinFunction)
 (~~>) = (,)
+
+------------------------------------------------------------
+-- MAP hooks
+-- only lookups and in_keys are implemented
+builtinsMAP :: Map ByteString BuiltinFunction
+builtinsMAP =
+    Map.mapKeys ("MAP." <>) $
+        Map.fromList
+            [ "lookup" ~~> mapLookupHook
+            , "lookupOrDefault" ~~> mapLookupOrDefaultHook
+            , "in_keys" ~~> mapInKeysHook
+            ]
+
+mapLookupHook :: BuiltinFunction
+mapLookupHook args
+    | [KMap _ pairs _mbRest, key] <- args =
+        -- if the key is not found, return Nothing (no result),
+        -- regardless of whether the key _could_ still be there.
+        pure $ lookup key pairs
+    | [_other, _] <- args =
+        -- other `shouldHaveSort` "SortMap"
+        pure Nothing -- not an internalised map, maybe a function call
+    | otherwise =
+        -- FIXME write a helper function for arity check
+        throwE . renderText $ "MAP.lookup: wrong arity " <> pretty (length args)
+
+mapLookupOrDefaultHook :: BuiltinFunction
+mapLookupOrDefaultHook args
+    | [KMap _ pairs mbRest, key, defaultValue] <- args = do
+        case lookup key pairs of
+            Just value ->
+                -- key was found, simply return
+                pure $ Just value
+            Nothing -- key could be in unevaluated or opaque part
+                | Just _ <- mbRest ->
+                    pure Nothing -- have opaque part, no result
+                | any ((\(Term a _) -> not a.isConstructorLike) . fst) pairs ->
+                    pure Nothing -- have unevaluated keys, no result
+                | otherwise -> -- certain that the key is not in the map
+                    pure $ Just defaultValue
+    | [_other, _, _] <- args =
+        -- other `shouldHaveSort` "SortMap"
+        pure Nothing -- not an internalised map, maybe a function call
+    | otherwise =
+        throwE . renderText $ "MAP.lookupOrDefault: wrong arity " <> pretty (length args)
+
+mapInKeysHook :: BuiltinFunction
+mapInKeysHook args
+    | [key, KMap _ pairs mbRest] <- args = do
+        -- only consider evaluated keys, return Nothing if any unevaluated ones are present
+        let (eval'edKeys, uneval'edKeys) =
+                partition (\(Term a _) -> a.isConstructorLike) (map fst pairs)
+        case (key `elem` eval'edKeys, key `elem` uneval'edKeys) of
+            (True, _) ->
+                -- constructor-like (evaluated) key is present
+                pure $ Just TrueBool
+            (False, True) ->
+                -- syntactically-equal unevaluated key is present
+                pure $ Just TrueBool
+            (False, False)
+                | Nothing <- mbRest -- no opaque rest
+                , null uneval'edKeys -> -- no keys unevaluated
+                    pure $ Just FalseBool
+                | otherwise -> -- key could be present once evaluated
+                    pure Nothing
+    | [_, _other] <- args = do
+        -- other `shouldHaveSort` "SortMap"
+        pure Nothing -- not an internalised map, maybe a function call
+    | otherwise =
+        throwE . renderText $ "MAP.in_keys: wrong arity " <> pretty (length args)
 
 ------------------------------------------------------------
 -- KEQUAL hooks
