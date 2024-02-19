@@ -199,26 +199,99 @@ kmapTerms =
             concreteKMapWithOneItem
             (success [])
         , test
-            "Empty KMap on the left, non-empty concrete KMap on the right: failed"
+            "Empty KMap ~= non-empty concrete KMap: fails"
             emptyKMap
             concreteKMapWithOneItem
-            (MatchFailed (General (DifferentValues emptyKMap concreteKMapWithOneItem)))
+            (failed $ DifferentValues emptyKMap concreteKMapWithOneItem)
         , test
-            "Non-empty concrete KMap on the left, empty KMap on the right: failed"
+            "Non-empty concrete KMap ~= empty KMap: fails"
             concreteKMapWithOneItem
             emptyKMap
-            (MatchFailed (General (DifferentValues concreteKMapWithOneItem emptyKMap)))
+            (failed $ DifferentValues concreteKMapWithOneItem emptyKMap)
         , test
-            "Non-empty symbolic KMap on the left, empty KMap on the right: indeterminate"
+            "Non-empty symbolic KMap ~= empty KMap: fails"
             symbolicKMapWithOneItem
             emptyKMap
-            (MatchIndeterminate symbolicKMapWithOneItem emptyKMap)
+            (failed $ DifferentValues symbolicKMapWithOneItem emptyKMap)
         , test
-            "Non-empty symbolic KMap on the left, non-empty concrete KMap on the right: indeterminate"
-            symbolicKMapWithOneItem
+            "Non-empty symbolic KMap ~= non-empty concrete KMap, same key: matches contained value"
+            symbolicKMapWithOneItem -- "key" -> A
+            concreteKMapWithOneItem -- "key" -> "value"
+            (success [("A", kmapElementSort, dv kmapElementSort "value")])
+        , test
+            "One key and rest variable ~= same key: Match rest with empty map"
+            concreteKMapWithOneItemAndRest
             concreteKMapWithOneItem
-            (MatchIndeterminate symbolicKMapWithOneItem concreteKMapWithOneItem)
+            (success [("REST", kmapSort, emptyKMap)])
+        , test
+            "One key and rest variable ~= two keys (one the same): Match rest with other key singleton"
+            concreteKMapWithOneItemAndRest
+            concreteKMapWithTwoItems
+            ( let restMap = kmap [(dv kmapKeySort "key2", dv kmapElementSort "value2")] Nothing
+               in success [("REST", kmapSort, restMap)]
+            )
+        , -- pattern has more assocs than subject
+          let patRest = kmap [(dv kmapKeySort "key2", dv kmapElementSort "value2")] Nothing
+           in test
+                "Extra concrete key in pattern, no rest in subject: fail on rest"
+                concreteKMapWithTwoItems
+                concreteKMapWithOneItem
+                (failed $ DifferentValues patRest emptyKMap)
+        , let patRest =
+                kmap [(dv kmapKeySort "key2", dv kmapElementSort "value2")] Nothing
+           in test
+                "Extra concrete key in pattern, opaque rest in subject: indeterminate part"
+                concreteKMapWithTwoItems
+                concreteKMapWithOneItemAndRest
+                (MatchIndeterminate patRest (var "REST" kmapSort))
+        , -- cases with disjoint keys
+          test
+            "Variable key ~= concrete key (and common element) without rest: match key"
+            concreteAndSymbolicKMapWithTwoItems
+            concreteKMapWithTwoItems
+            ( success [("A", kmapKeySort, dv kmapKeySort "key2")]
+            )
+        , let patMap =
+                kmap [(var "K" kmapKeySort, var "V" kmapElementSort)] (Just "PATTERN")
+           in test
+                "Variable key ~= concrete key with rest in subject and pattern: indeterminate"
+                patMap
+                functionKMapWithOneItemAndRest
+                (MatchIndeterminate patMap functionKMapWithOneItemAndRest)
+        , let patMap =
+                kmap [(var "K" kmapKeySort, var "V" kmapElementSort)] (Just "PATTERN")
+           in test
+                "Variable key and opaque rest ~= two items: indeterminate"
+                patMap
+                concreteKMapWithTwoItems
+                (MatchIndeterminate patMap concreteKMapWithTwoItems)
+        , test
+            "Keys disjoint and pattern keys are fully-concrete: fail"
+            concreteKMapWithOneItemAndRest
+            functionKMapWithOneItem
+            (failed $ DifferentValues concreteKMapWithOneItemAndRest functionKMapWithOneItem)
+        , let patMap =
+                kmap
+                    [ (var "A" kmapKeySort, dv kmapElementSort "a")
+                    , (var "B" kmapKeySort, dv kmapElementSort "b")
+                    ]
+                    (Just "PATTERN")
+              subjMap =
+                kmap
+                    [ (dv kmapKeySort "k1", dv kmapElementSort "a")
+                    , (dv kmapKeySort "k2", dv kmapElementSort "b")
+                    ]
+                    (Just "SUBJECT")
+           in test
+                "Disjoint non-singleton maps, non-concrete keys in pattern: indeterminate"
+                patMap
+                subjMap
+                (MatchIndeterminate patMap subjMap)
         ]
+  where
+    kmap :: [(Term, Term)] -> Maybe VarName -> Term
+    kmap assocs mbRestVar =
+        KMap testKMapDefinition assocs $ fmap (`var` kmapSort) mbRestVar
 
 cornerCases :: TestTree
 cornerCases =
