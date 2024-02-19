@@ -540,8 +540,8 @@ respond serverState moduleName runSMT =
             -- put the original state back if we fail at any point
             flip catchE (\e -> liftIO (MVar.putMVar serverState st) >> throwError e) $ do
                 -- check if we already received a module with this name
-                when nameAsId $
-                    case Map.lookup (coerce name) receivedModules of
+                when nameAsId
+                    $ case Map.lookup (coerce name) receivedModules of
                         -- if a different module was already added, throw error
                         Just m | _module /= m -> throwError $ backendError DuplicateModuleName name
                         _ -> pure ()
@@ -554,26 +554,26 @@ respond serverState moduleName runSMT =
 
                 case (Map.lookup (coerce moduleHash) indexedModules, Map.lookup (coerce moduleHash) serializedModules) of
                     (Just foundIdxModule, Just foundSerModule) -> do
-                        liftIO $
-                            MVar.putMVar serverState $
-                                if nameAsId
-                                    then -- the module already exists, but re-adding with name because name-as-id is true
+                        liftIO
+                            $ MVar.putMVar serverState
+                            $ if nameAsId
+                                then -- the module already exists, but re-adding with name because name-as-id is true
 
-                                        ServerState
-                                            { serializedModules =
-                                                Map.insert (coerce name) foundSerModule serializedModules
-                                            , receivedModules = case Map.lookup (coerce moduleHash) receivedModules of
-                                                Just recMod -> Map.insert (coerce name) recMod receivedModules
-                                                Nothing -> receivedModules
-                                            , loadedDefinition =
-                                                LoadedDefinition
-                                                    { indexedModules = Map.insert (coerce name) foundIdxModule indexedModules
-                                                    , definedNames
-                                                    , kFileLocations
-                                                    }
-                                            }
-                                    else -- the module already exists so we don't need to add it again
-                                        st
+                                    ServerState
+                                        { serializedModules =
+                                            Map.insert (coerce name) foundSerModule serializedModules
+                                        , receivedModules = case Map.lookup (coerce moduleHash) receivedModules of
+                                            Just recMod -> Map.insert (coerce name) recMod receivedModules
+                                            Nothing -> receivedModules
+                                        , loadedDefinition =
+                                            LoadedDefinition
+                                                { indexedModules = Map.insert (coerce name) foundIdxModule indexedModules
+                                                , definedNames
+                                                , kFileLocations
+                                                }
+                                        }
+                                else -- the module already exists so we don't need to add it again
+                                    st
                         pure . AddModule $ AddModuleResult (getModuleName moduleHash)
                     _ -> do
                         (newIndexedModules, newDefinedNames) <-
@@ -623,8 +623,8 @@ respond serverState moduleName runSMT =
                                     serializedModules `Map.union` newSerializedModules
                                 , loadedDefinition
                                 , receivedModules =
-                                    (if nameAsId then Map.insert (coerce name) _module else id) $
-                                        Map.insert (coerce moduleHash) _module receivedModules
+                                    (if nameAsId then Map.insert (coerce name) _module else id)
+                                        $ Map.insert (coerce moduleHash) _module receivedModules
                                 }
 
                         pure . AddModule $ AddModuleResult (getModuleName moduleHash)

@@ -189,8 +189,8 @@ test_SymbolKywd =
             "[symbolKywd{}()]"
             (Right SymbolKywd{getSymbol = Just ""})
             (symbolKywd <$> parse [symbolKywdAttribute ""])
-    , testCase "defaultSymbolAttributes" $
-        assertEqual
+    , testCase "defaultSymbolAttributes"
+        $ assertEqual
             "[]"
             (Right def)
             (symbolKywd <$> parse [])
