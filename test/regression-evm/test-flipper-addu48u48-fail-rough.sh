@@ -13,8 +13,6 @@ exec kore-exec \
     --log-level \
     warning \
     --enable-log-timestamps \
-    --log-entries \
-    DebugTransition \
     --prove test-flipper-addu48u48-fail-rough-spec.kore \
     --spec-module FLIPPER-ADDU48U48-FAIL-ROUGH-SPEC \
     --graph-search breadth-first \

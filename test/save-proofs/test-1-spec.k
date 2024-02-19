@@ -4,5 +4,5 @@ requires "save-proofs.k"
 module TEST-1-SPEC
   imports SAVE-PROOFS
 
-  claim BB(X:Int) => CC(X:Int)
+  claim <k> BB(X:Int) => CC(X:Int) </k>
 endmodule

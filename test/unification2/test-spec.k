@@ -1,5 +1,5 @@
 module TEST-SPEC
   imports TEST
 
-  claim (mapLookup(address(X), address(X) |-> u(_) M:Map) => ?_:Maybe) ~> M:Map ~> _:K
+  claim <k>(mapLookup(address(X), address(X) |-> u(_) M:Map) => ?_:Maybe) ~> M:Map ~> _:K </k>
 endmodule
