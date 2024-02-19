@@ -1,8 +1,4 @@
 Kore (0)> ProveSteps 1
-  <k>
-    evaluated ~> _DotVar1 ~> .
-  </k>
+  a
 #Implies
-  #wAF ( <k>
-    evaluated ~> _DotVar1 ~> .
-  </k> )
+  #wAF ( evaluated )

@@ -2,7 +2,8 @@ module Test.Kore.Attribute.Symbol.SymbolKywd (
     test_symbolKywd,
     test_Attributes,
     test_duplicate,
-    test_arguments,
+    test_argument,
+    test_2arguments,
     test_parameters,
 ) where
 
@@ -18,10 +19,10 @@ parseSymbolKywd = parseAttributes
 
 test_symbolKywd :: TestTree
 test_symbolKywd =
-    testCase "[symbolKywd{}()] :: SymbolKywd"
-        $ expectSuccess SymbolKywd{isSymbolKywd = True}
-        $ parseSymbolKywd
-        $ Attributes [symbolKywdAttribute]
+    testCase "[symbolKywd{}()] :: SymbolKywd" $
+        expectSuccess SymbolKywd{getSymbol = Just ""} $
+            parseSymbolKywd $
+                Attributes [symbolKywdAttribute ""]
 
 test_Attributes :: TestTree
 test_Attributes =
@@ -29,24 +30,34 @@ test_Attributes =
         $ expectSuccess attrs
         $ parseAttributes attrs
   where
-    attrs = Attributes [symbolKywdAttribute]
+    attrs = Attributes [symbolKywdAttribute ""]
 
 test_duplicate :: TestTree
 test_duplicate =
-    testCase "[symbolKywd{}(), symbolKywd{}()]"
-        $ expectFailure
-        $ parseSymbolKywd
-        $ Attributes [symbolKywdAttribute, symbolKywdAttribute]
+    testCase "[symbolKywd{}(), symbolKywd{}()]" $
+        expectFailure $
+            parseSymbolKywd $
+                Attributes [symbolKywdAttribute "", symbolKywdAttribute ""]
 
-test_arguments :: TestTree
-test_arguments =
-    testCase "[symbolKywd{}(\"illegal\")]"
-        $ expectFailure
-        $ parseSymbolKywd
-        $ Attributes [illegalAttribute]
+test_argument :: TestTree
+test_argument =
+    testCase "[symbolKywd{}(\"legal\")]" $
+        expectSuccess SymbolKywd{getSymbol = Just "legal"} $
+            parseSymbolKywd $
+                Attributes [legalAttribute]
+  where
+    legalAttribute =
+        attributePattern symbolKywdSymbol [attributeString "legal"]
+
+test_2arguments :: TestTree
+test_2arguments =
+    testCase "[symbolKywd{}(\"not\", \"allowed\")]" $
+        expectFailure $
+            parseSymbolKywd $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
-        attributePattern symbolKywdSymbol [attributeString "illegal"]
+        attributePattern symbolKywdSymbol [attributeString "not", attributeString "allowed"]
 
 test_parameters :: TestTree
 test_parameters =

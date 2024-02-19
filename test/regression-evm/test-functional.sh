@@ -13,8 +13,6 @@ exec kore-exec \
     --log-level \
     warning \
     --enable-log-timestamps \
-    --log-entries \
-    DebugTransition \
     --prove test-functional-spec.kore \
     --spec-module FUNCTIONAL-SPEC \
     --graph-search breadth-first \

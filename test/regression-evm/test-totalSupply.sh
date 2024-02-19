@@ -13,8 +13,6 @@ exec kore-exec \
     --log-level \
     warning \
     --enable-log-timestamps \
-    --log-entries \
-    DebugTransition \
     --prove test-totalSupply-spec.kore \
     --spec-module TOTALSUPPLY-SPEC \
     --graph-search breadth-first \
