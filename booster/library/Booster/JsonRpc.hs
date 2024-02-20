@@ -40,10 +40,12 @@ import GHC.Records
 import Numeric.Natural
 import Prettyprinter (pretty)
 import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
+import System.IO qualified as IO
 
 import Booster.Definition.Attributes.Base (getUniqueId, uniqueId)
 import Booster.Definition.Base (KoreDefinition (..))
 import Booster.Definition.Base qualified as Definition (RewriteRule (..))
+import Booster.JsonRpc.Utils (runHandleLoggingT)
 import Booster.LLVM as LLVM (API)
 import Booster.Pattern.ApplyEquations qualified as ApplyEquations
 import Booster.Pattern.Base (
@@ -478,8 +480,11 @@ runServer ::
     IO ()
 runServer port definitions defaultMain mLlvmLibrary mSMTOptions (logLevel, customLevels) =
     do
+        let logLevelToHandle = \case
+                _ -> IO.stderr
+
         stateVar <- newMVar ServerState{definitions, defaultMain, mLlvmLibrary, mSMTOptions}
-        Log.runStderrLoggingT . Log.filterLogger levelFilter $
+        runHandleLoggingT logLevelToHandle . Log.filterLogger levelFilter $
             jsonRpcServer
                 srvSettings
                 (const $ respond stateVar)

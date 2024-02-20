@@ -13,19 +13,23 @@ module Booster.JsonRpc.Utils (
     rpcTypeOf,
     typeString,
     diffBy,
+    runHandleLoggingT,
 ) where
 
 import Control.Applicative ((<|>))
+import Control.Monad.Logger.CallStack qualified as Log
 import Control.Monad.Trans.Except
 import Data.Aeson as Json
 import Data.Aeson.Encode.Pretty (encodePretty')
 import Data.Aeson.Types (parseMaybe)
+import Data.ByteString.Char8 qualified as BS8
 import Data.ByteString.Lazy.Char8 qualified as BS
 import Data.Maybe (fromMaybe)
 import Network.JSONRPC
 import Prettyprinter
 import System.Exit (ExitCode (..))
 import System.FilePath
+import System.IO qualified as IO
 import System.IO.Extra (withTempDir)
 import System.IO.Unsafe (unsafePerformIO)
 import System.Process (readProcessWithExitCode)
@@ -260,3 +264,21 @@ diffBy def pat1 pat2 =
             renderBS
             . runExcept
             . internaliseTermOrPredicate DisallowAlias IgnoreSubsorts Nothing def
+
+-------------------------------------------------------------------
+-- logging helpers, adapted from monad-logger-aeson
+
+handleOutput ::
+    (Log.LogLevel -> IO.Handle) ->
+    Log.Loc ->
+    Log.LogSource ->
+    Log.LogLevel ->
+    Log.LogStr ->
+    IO ()
+handleOutput levelToHandle loc src level msg =
+    let bytes = Log.fromLogStr $ Log.defaultLogStr loc src level msg
+     in BS8.hPutStrLn (levelToHandle level) bytes
+
+-- | Run a logging computation, redirecting various levels to the handles specified by the first arguments
+runHandleLoggingT :: (Log.LogLevel -> IO.Handle) -> Log.LoggingT m a -> m a
+runHandleLoggingT = flip Log.runLoggingT . handleOutput
