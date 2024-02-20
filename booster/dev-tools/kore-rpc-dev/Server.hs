@@ -269,6 +269,7 @@ mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainMo
                 MVar.newMVar
                     Kore.ServerState
                         { serializedModules = Map.singleton (ModuleName mainModuleName) sd
+                        , receivedModules = mempty
                         , loadedDefinition
                         }
 

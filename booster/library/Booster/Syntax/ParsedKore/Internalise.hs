@@ -668,6 +668,7 @@ classifyAxiom parsedAx@ParsedAxiom{axiom, sortVars, attributes} =
             | hasAttribute "comm" -> pure Nothing -- could check symbol axiom.first.name
             | hasAttribute "idem" -> pure Nothing -- could check axiom.first.name
             | hasAttribute "unit" -> pure Nothing -- could check axiom.first.name and the unit symbol in axiom.first.args
+            | hasAttribute "symbol-overload" -> pure Nothing
             | hasAttribute "overload" -> pure Nothing
             | hasAttribute "simplification" -- special case of injection simplification
             , Syntax.KJApp{name = sym1} <- axiom.first
