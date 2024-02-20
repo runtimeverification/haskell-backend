@@ -52,7 +52,7 @@ extra-deps:
   - typerep-map-0.6.0.0
   - monad-validate-1.3.0.0
   - github: goodlyrottenapple/tasty-test-reporter 
-    commit: c842f45a58c4141c5671bfe7421ae5990231abb1
+    commit: b704130545aa3925a8487bd3e92f1dd5ce0512e2
 
 ghc-options:
   "$everything": -haddock

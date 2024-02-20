@@ -13,5 +13,4 @@ package kore
 source-repository-package
   type: git
   location: https://github.com/goodlyrottenapple/tasty-test-reporter.git
-  tag: c842f45a58c4141c5671bfe7421ae5990231abb1
-  post-checkout-command: hpack
+  tag: b704130545aa3925a8487bd3e92f1dd5ce0512e2
