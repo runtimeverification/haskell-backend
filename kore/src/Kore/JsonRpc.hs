@@ -57,7 +57,6 @@ import Kore.JsonRpc.Error
 import Kore.JsonRpc.Server (
     ErrorObj (..),
     JsonRpcHandler (JsonRpcHandler),
-    Request (getReqId),
     Respond,
     jsonRpcServer,
  )
@@ -69,7 +68,6 @@ import Kore.Log.DecidePredicateUnknown (
     srcLoc,
  )
 import Kore.Log.InfoExecDepth (ExecDepth (..))
-import Kore.Log.InfoJsonRpcProcessRequest (InfoJsonRpcProcessRequest (..))
 import Kore.Log.JsonRpc (LogJsonRpcServer (..))
 import Kore.Parser (parseKoreModule)
 import Kore.Reachability.Claim qualified as Claim
@@ -757,10 +755,7 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
     flip runLoggingT logFun $
         jsonRpcServer
             srvSettings
-            ( \req parsed ->
-                log (InfoJsonRpcProcessRequest (getReqId req) parsed)
-                    >> respond serverState mainModule runSMT parsed
-            )
+            (const (respond serverState mainModule runSMT))
             [ handleDecidePredicateUnknown
             , handleErrorCall
             , handleSomeException
@@ -770,9 +765,6 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
 
     logFun loc src level msg =
         Log.logWith logAction $ LogJsonRpcServer{loc, src, level, msg}
-
-    log :: MonadIO m => Log.Entry entry => entry -> m ()
-    log = Log.logWith $ Log.hoistLogAction liftIO logAction
 
 handleDecidePredicateUnknown :: JsonRpcHandler
 handleDecidePredicateUnknown = JsonRpcHandler $ \(err :: DecidePredicateUnknown) ->
