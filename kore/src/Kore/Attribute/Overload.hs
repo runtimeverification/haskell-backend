@@ -36,7 +36,7 @@ instance Default (Overload symbol) where
 
 -- | Kore identifier representing the @overload@ attribute symbol.
 overloadId :: Id
-overloadId = "overload"
+overloadId = "symbol-overload"
 
 -- | Kore symbol representing the @overload@ attribute.
 overloadSymbol :: SymbolOrAlias
