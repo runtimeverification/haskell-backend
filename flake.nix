@@ -228,6 +228,7 @@
           kore-parser = withZ3 pkgs kore "kore-parser";
           kore-repl = withZ3 pkgs kore "kore-repl";
           kore-rpc = withZ3 pkgs kore "kore-rpc";
+          inherit (pkgs.haskell-backend.pkgSet) haskell-language-server;
         });
 
       devShells = perSystem (system: {
