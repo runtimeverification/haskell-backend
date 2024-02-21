@@ -68,7 +68,6 @@ library:
   - casing
   - clock
   - conduit
-  - conduit-extra
   - containers
   - cryptonite
   - deepseq

@@ -9,24 +9,22 @@ License     : BSD-3-Clause
 module Booster.JsonRpc (
     ServerState (..),
     respond,
-    runServer,
     RpcTypes.rpcJsonConfig,
     execStateToKoreJson,
     toExecState,
 ) where
 
 import Control.Applicative ((<|>))
-import Control.Concurrent (MVar, newMVar, putMVar, readMVar, takeMVar)
+import Control.Concurrent (MVar, putMVar, readMVar, takeMVar)
 import Control.Monad
 import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class
-import Control.Monad.Logger.CallStack (LogLevel (LevelError), MonadLoggerIO)
+import Control.Monad.Logger.CallStack (MonadLoggerIO)
 import Control.Monad.Logger.CallStack qualified as Log
 import Control.Monad.Trans.Except (catchE, except, runExcept, runExceptT, throwE, withExceptT)
 import Crypto.Hash (SHA256 (..), hashWith)
 import Data.Bifunctor (second)
 import Data.Coerce (coerce)
-import Data.Conduit.Network (serverSettings)
 import Data.Foldable
 import Data.List (singleton)
 import Data.Map.Strict (Map)
@@ -40,12 +38,10 @@ import GHC.Records
 import Numeric.Natural
 import Prettyprinter (pretty)
 import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
-import System.IO qualified as IO
 
 import Booster.Definition.Attributes.Base (getUniqueId, uniqueId)
 import Booster.Definition.Base (KoreDefinition (..))
 import Booster.Definition.Base qualified as Definition (RewriteRule (..))
-import Booster.JsonRpc.Utils (runHandleLoggingT)
 import Booster.LLVM as LLVM (API)
 import Booster.Pattern.ApplyEquations qualified as ApplyEquations
 import Booster.Pattern.Base (
@@ -468,39 +464,6 @@ respond stateVar =
         case Map.lookup mainName state.definitions of
             Nothing -> pure $ Left $ RpcError.backendError RpcError.CouldNotFindModule mainName
             Just d -> action (d, state.mLlvmLibrary, state.mSMTOptions)
-
-runServer ::
-    Int ->
-    Map Text KoreDefinition ->
-    Text ->
-    Maybe LLVM.API ->
-    Maybe SMT.SMTOptions ->
-    (LogLevel, [LogLevel]) ->
-    IO ()
-runServer port definitions defaultMain mLlvmLibrary mSMTOptions (logLevel, customLevels) =
-    do
-        let logLevelToHandle = \case
-                _ -> IO.stderr
-
-        stateVar <-
-            newMVar
-                ServerState
-                    { definitions
-                    , defaultMain
-                    , mLlvmLibrary
-                    , mSMTOptions
-                    , addedModules = mempty
-                    }
-        runHandleLoggingT logLevelToHandle . Log.filterLogger levelFilter $
-            jsonRpcServer
-                srvSettings
-                (const $ respond stateVar)
-                [RpcError.handleErrorCall, RpcError.handleSomeException]
-  where
-    levelFilter _source lvl =
-        lvl `elem` customLevels || lvl >= logLevel && lvl <= LevelError
-
-    srvSettings = serverSettings port "*"
 
 data ServerState = ServerState
     { definitions :: Map Text KoreDefinition
