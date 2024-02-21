@@ -125,7 +125,6 @@ srv respond handlers = do
              in loop
     spawnWorker reqQueue >>= mainLoop
     Log.logInfoN $ "Session terminated"
-
   where
     isRequest = \case
         Request{} -> True
