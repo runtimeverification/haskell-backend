@@ -15,9 +15,9 @@ module Kore.JsonRpc.Server (
 ) where
 
 import Control.Concurrent (forkIO, throwTo)
-import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
+import Control.Concurrent.STM.TMChan (newTMChan, readTMChan, writeTMChan, closeTMChan)
 import Control.Exception (Exception (fromException), catch, mask, throw)
-import Control.Monad (forM_, forever)
+import Control.Monad (forM_)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Logger (MonadLoggerIO)
 import Control.Monad.Logger qualified as Log
@@ -104,12 +104,12 @@ srv ::
     [JsonRpcHandler] ->
     JSONRPCT m ()
 srv respond handlers = do
-    reqQueue <- liftIO $ atomically newTChan
+    reqQueue <- liftIO $ atomically newTMChan
     let mainLoop tid =
             let loop =
                     receiveBatchRequest >>= \case
-                        Nothing -> do
-                            return ()
+                        Nothing ->
+                            atomically $ closeTMChan reqQueue
                         Just (SingleRequest req) | Right True <- isCancel @q <$> fromRequest req -> do
                             Log.logInfoN "Cancel request"
                             liftIO $ throwTo tid CancelRequest
@@ -118,7 +118,7 @@ srv respond handlers = do
                             forM_ (getRequests req) $ \r -> do
                                 Log.logInfoN $ "Process request " <> mReqId r <> " " <> getReqMethod r
                                 Log.logDebugN $ Text.pack $ show r
-                            liftIO $ atomically $ writeTChan reqQueue req
+                            liftIO $ atomically $ writeTMChan reqQueue req
                             loop
              in loop
     spawnWorker reqQueue >>= mainLoop
@@ -150,17 +150,20 @@ srv respond handlers = do
             respondTo :: Request -> Log.LoggingT IO (Maybe Response)
             respondTo req = buildResponse (respond req) req
 
-            cancelReq :: ErrorObj -> BatchRequest -> Log.LoggingT IO ()
+            cancelReq :: ErrorObj -> Maybe BatchRequest -> Log.LoggingT IO Bool
             cancelReq err = \case
-                SingleRequest req@Request{} -> do
+                Just (SingleRequest req@Request{}) -> do
                     let reqVersion = getReqVer req
                         reqId = getReqId req
                     sendResponses $ SingleResponse $ ResponseError reqVersion err reqId
-                SingleRequest Notif{} -> pure ()
-                BatchRequest reqs -> do
+                    pure True
+                Just (SingleRequest Notif{}) -> pure True
+                Just (BatchRequest reqs) -> do
                     sendResponses $
                         BatchResponse $
                             [ResponseError (getReqVer req) err (getReqId req) | req <- reqs, isRequest req]
+                    pure True
+                Nothing -> pure False
 
             processReq :: BatchRequest -> Log.LoggingT IO ()
             processReq = \case
@@ -186,9 +189,12 @@ srv respond handlers = do
                     a <- before
                     restore (thing a) `catch` catchesHandler a
 
-        liftIO $
-            forkIO $
-                forever $
-                    bracketOnReqException
-                        (atomically $ readTChan reqQueue)
-                        (withLog . processReq)
+            loop = 
+                bracketOnReqException
+                    (atomically $ readTMChan reqQueue)
+                    (\case
+                        Nothing -> pure False
+                        Just req -> withLog (processReq req) >> pure True
+                    ) 
+                >>= \shouldContinue -> if shouldContinue then loop else pure ()
+        liftIO $ forkIO loop
