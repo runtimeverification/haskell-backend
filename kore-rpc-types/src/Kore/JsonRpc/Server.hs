@@ -64,16 +64,17 @@ runJSONRPCT encodeOpts ver ignore snk src f = do
     let inSnk = sinkTBMChan (inCh qs)
         outSrc = sourceTBMChan (outCh qs)
     withAsync
-        ((runConduit $ src .| decodeConduit ver .| inSnk) >> liftIO (atomically $ closeTBMChan $ inCh qs)) $
-        const $
-            withAsync (runConduit $ outSrc .| encodeConduit encodeOpts .| snk) $ \o ->
-                withAsync (runReaderT processIncoming qs) $
-                    const $ do
-                        a <- runReaderT f qs
-                        liftIO $ do
-                            atomically . closeTBMChan $ outCh qs
-                            _ <- wait o
-                            return a
+        ((runConduit $ src .| decodeConduit ver .| inSnk) >> liftIO (atomically $ closeTBMChan $ inCh qs))
+        $ const
+        $ withAsync (runConduit $ outSrc .| encodeConduit encodeOpts .| snk)
+        $ \o ->
+            withAsync (runReaderT processIncoming qs) $
+                const $ do
+                    a <- runReaderT f qs
+                    liftIO $ do
+                        atomically . closeTBMChan $ outCh qs
+                        _ <- wait o
+                        return a
 
 -- | TCP server transport for JSON-RPC.
 jsonRpcServer ::
