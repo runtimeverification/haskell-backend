@@ -46,12 +46,12 @@ import Booster.CLOptions
 import Booster.Definition.Ceil (computeCeilsDefinition)
 import Booster.GlobalState
 import Booster.JsonRpc qualified as Booster
-import Booster.JsonRpc.Utils qualified as Booster
 import Booster.LLVM.Internal (mkAPI, withDLib)
 import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
 import Booster.SMT.Interface (SMTOptions (..))
 import Booster.Syntax.ParsedKore (loadDefinition)
 import Booster.Trace
+import Booster.Util qualified as Booster
 import Data.Limit (Limit (..))
 import GlobalMain qualified
 import Kore.Attribute.Symbol (StepperAttributes)

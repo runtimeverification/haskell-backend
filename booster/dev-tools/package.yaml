@@ -59,12 +59,14 @@ executables:
     dependencies:
     - base
     - containers
+    - conduit-extra
     - deepseq
     - hs-backend-booster
     - optparse-applicative
     - text
     - directory
     - monad-logger
+    - kore-rpc-types
     ghc-options:
     - -rtsopts
     - -eventlog
