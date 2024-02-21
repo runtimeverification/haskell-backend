@@ -18,7 +18,7 @@ import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.STM qualified as GHC
 import Control.Concurrent.STM.TChan (newTChan, readTChan, writeTChan)
 import Control.Exception (Exception (fromException), catch, mask, throw)
-import Control.Monad (forM, forM_, forever)
+import Control.Monad (forM, forM_)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Logger (MonadLoggerIO)
 import Control.Monad.Logger qualified as Log
@@ -205,7 +205,7 @@ srv respond handlers = do
 
         liftIO $
             forkIO $
-                forever $
+                id $
                     bracketOnReqException
                         (atomically $ readTChan reqQueue)
                         (withLog . processReq)
