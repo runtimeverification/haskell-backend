@@ -13,8 +13,6 @@ exec kore-exec \
     --log-level \
     warning \
     --enable-log-timestamps \
-    --log-entries \
-    DebugTransition \
     --prove test-lemmas-spec.kore \
     --spec-module LEMMAS-SPEC \
     --graph-search breadth-first \

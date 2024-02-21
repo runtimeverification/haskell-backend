@@ -33,14 +33,14 @@ jobs:
       EVM_SEMANTICS: ./evm-semantics
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Switch to update branch (or create it off master)
         run: |
           git checkout -B _update origin/_update || git checkout -B _update
       - name: Check out evm-semantics
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: runtimeverification/evm-semantics
           submodules: recursive

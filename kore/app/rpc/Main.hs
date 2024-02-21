@@ -181,6 +181,7 @@ koreRpcServerRun GlobalMain.LocalOptions{execOptions} = do
                 ServerState
                     { serializedModules = Map.singleton mainModuleName sd
                     , loadedDefinition
+                    , receivedModules = mempty
                     }
     GlobalMain.clockSomethingIO "Executing" $
         -- wrap the call to runServer in the logger monad

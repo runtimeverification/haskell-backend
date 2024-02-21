@@ -17,33 +17,37 @@ module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
                         LblBB'LParUndsRParUnds'SAVE-PROOFS'Unds'KItem'Unds'Int{}(
                             /* T Fn D Sfa */ VarX:SortInt{}
                         ),
-                        /* T Fn D Sfa */ Var'Unds'DotVar1:SortK{}
+                        /* T Fn D Sfa Cl */ dotk{}()
                     )
                 ),
                 /* T Fn D Spa */
                 Lbl'-LT-'generatedCounter'-GT-'{}(
-                    /* T Fn D Sfa */ Var'Unds'DotVar2:SortInt{}
+                    /* T Fn D Sfa */ Var'Unds'Gen0:SortInt{}
                 )
             )
         ),
         /* Spa */
         weakAlwaysFinally{SortGeneratedTopCell{}}(
-            /* T Fn D Spa */
-            Lbl'-LT-'generatedTop'-GT-'{}(
+            /* Spa */
+            \exists{SortGeneratedTopCell{}}(
+                Var'QuesUnds'Gen1:SortInt{},
                 /* T Fn D Spa */
-                Lbl'-LT-'k'-GT-'{}(
+                Lbl'-LT-'generatedTop'-GT-'{}(
                     /* T Fn D Spa */
-                    kseq{}(
+                    Lbl'-LT-'k'-GT-'{}(
                         /* T Fn D Spa */
-                        LblCC'LParUndsRParUnds'SAVE-PROOFS'Unds'KItem'Unds'Int{}(
-                            /* T Fn D Sfa */ VarX:SortInt{}
-                        ),
-                        /* T Fn D Sfa */ Var'Unds'DotVar1:SortK{}
+                        kseq{}(
+                            /* T Fn D Spa */
+                            LblCC'LParUndsRParUnds'SAVE-PROOFS'Unds'KItem'Unds'Int{}(
+                                /* T Fn D Sfa */ VarX:SortInt{}
+                            ),
+                            /* T Fn D Sfa Cl */ dotk{}()
+                        )
+                    ),
+                    /* T Fn D Spa */
+                    Lbl'-LT-'generatedCounter'-GT-'{}(
+                        /* T Fn D Sfa */ Var'QuesUnds'Gen1:SortInt{}
                     )
-                ),
-                /* T Fn D Spa */
-                Lbl'-LT-'generatedCounter'-GT-'{}(
-                    /* T Fn D Sfa */ Var'Unds'DotVar2:SortInt{}
                 )
             )
         )
