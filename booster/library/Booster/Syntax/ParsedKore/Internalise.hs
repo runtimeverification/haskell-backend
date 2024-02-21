@@ -1295,7 +1295,7 @@ instance Pretty DefinitionError where
         ParseError msg ->
             "Parse error: " <> pretty msg
         NoSuchModule name ->
-            pretty $ name <> ": No such module"
+            pretty $ "Module " <> name <> " not found."
         DuplicateModule name ->
             pretty $ name <> ": Duplicate module"
         DuplicateSorts sorts ->

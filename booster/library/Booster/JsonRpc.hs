@@ -181,22 +181,18 @@ respond stateVar =
                             "Module introduces new symbols: " <> listNames newModule.symbols
                         )
 
+                -- check if we already received a module with this name
                 when nameAsId $
-                    case (Map.lookup (getId $ newModule.name) state.definitions, Map.lookup moduleHash state.definitions) of
-                        (Just{}, Nothing) ->
-                            -- another module with the same name already exists
-                            throwE (RpcError.DuplicateModuleName, toJSON $ getId $ newModule.name)
-                        (Just nmMod, Just idMod)
-                            | nmMod /= idMod ->
-                                -- this module has previously been added and different
-                                -- module with the same name also already exists
-                                throwE (RpcError.DuplicateModuleName, toJSON $ getId $ newModule.name)
-                            | otherwise ->
-                                -- this module has previously been added with name-as-id: true
-                                -- we can allow this, since the contents of the named module
-                                -- are the same
-                                pure ()
+                    case Map.lookup (getId $ newModule.name) state.addedModules of
+                        -- if a different module was already added, throw error
+                        Just m | _module /= m -> throwE (RpcError.DuplicateModuleName, toJSON $ getId $ newModule.name)
                         _ -> pure ()
+
+                -- Check for a corner case when we send module M1 with the name "m<hash of M2>"" and name-as-id: true
+                -- followed by adding M2. Should not happen in practice...
+                case Map.lookup moduleHash state.addedModules of
+                    Just m | _module /= m -> throwE (RpcError.DuplicateModuleName, toJSON moduleHash)
+                    _ -> pure ()
 
                 newDefinitions <-
                     withExceptT ((RpcError.InvalidModule,) . toJSON) $
@@ -212,6 +208,9 @@ respond stateVar =
                                 if nameAsId
                                     then Map.insert (getId $ newModule.name) (newDefinitions Map.! moduleHash) newDefinitions
                                     else newDefinitions
+                            , addedModules =
+                                (if nameAsId then Map.insert (getId $ newModule.name) _module else id) $
+                                    Map.insert moduleHash _module state.addedModules
                             }
                 Log.logInfo $
                     "Added a new module. Now in scope: " <> Text.intercalate ", " (Map.keys newDefinitions)
@@ -483,7 +482,15 @@ runServer port definitions defaultMain mLlvmLibrary mSMTOptions (logLevel, custo
         let logLevelToHandle = \case
                 _ -> IO.stderr
 
-        stateVar <- newMVar ServerState{definitions, defaultMain, mLlvmLibrary, mSMTOptions}
+        stateVar <-
+            newMVar
+                ServerState
+                    { definitions
+                    , defaultMain
+                    , mLlvmLibrary
+                    , mSMTOptions
+                    , addedModules = mempty
+                    }
         runHandleLoggingT logLevelToHandle . Log.filterLogger levelFilter $
             jsonRpcServer
                 srvSettings
@@ -504,6 +511,8 @@ data ServerState = ServerState
     -- ^ optional LLVM simplification library
     , mSMTOptions :: Maybe SMT.SMTOptions
     -- ^ (optional) SMT solver options
+    , addedModules :: Map Text Text
+    -- ^ map of raw modules added via add-module
     }
 
 execStateToKoreJson :: RpcTypes.ExecuteState -> KoreJson.KoreJson

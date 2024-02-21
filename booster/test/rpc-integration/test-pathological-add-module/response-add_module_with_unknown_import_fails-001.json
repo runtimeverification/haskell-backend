@@ -1,0 +1,12 @@
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "error": {
+        "code": 8,
+        "data": {
+            "context": null,
+            "error": "Module UNKNOWN not found."
+        },
+        "message": "Invalid module"
+    }
+}
