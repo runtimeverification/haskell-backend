@@ -122,7 +122,7 @@ srv respond handlers = do
                             loop
              in loop
     spawnWorker reqQueue >>= mainLoop
-    liftIO $ putStrLn "session end"
+    Log.logInfoN $ "Session terminated"
 
   where
     isRequest = \case
