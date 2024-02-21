@@ -15,7 +15,7 @@ module Kore.JsonRpc.Server (
 ) where
 
 import Control.Concurrent (forkIO, throwTo)
-import Control.Concurrent.STM.TMChan (newTMChan, readTMChan, writeTMChan, closeTMChan)
+import Control.Concurrent.STM.TMChan (closeTMChan, newTMChan, readTMChan, writeTMChan)
 import Control.Exception (Exception (fromException), catch, mask, throw)
 import Control.Monad (forM_)
 import Control.Monad.IO.Class (MonadIO (liftIO))
@@ -189,12 +189,12 @@ srv respond handlers = do
                     a <- before
                     restore (thing a) `catch` catchesHandler a
 
-            loop = 
+            loop =
                 bracketOnReqException
                     (atomically $ readTMChan reqQueue)
-                    (\case
+                    ( \case
                         Nothing -> pure False
                         Just req -> withLog (processReq req) >> pure True
-                    ) 
-                >>= \shouldContinue -> if shouldContinue then loop else pure ()
+                    )
+                    >>= \shouldContinue -> if shouldContinue then loop else pure ()
         liftIO $ forkIO loop
