@@ -3,7 +3,7 @@
     https://github.com/runtimeverification/casper-proofs/blob/master/Core/AccountableSafety.v
 */
 
-require "proof-script.k"
+requires "proof-script.k"
 
 module CHAIN-SYNTAX
 

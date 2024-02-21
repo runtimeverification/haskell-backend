@@ -5,8 +5,8 @@
  *
  */
 module PATH
-  import BOOL
-  import INT
+  imports BOOL
+  imports INT
   syntax S ::= "a" | "b" | "c"
 
   rule a => a

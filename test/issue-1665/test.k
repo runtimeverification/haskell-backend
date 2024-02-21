@@ -1,5 +1,5 @@
 module TEST-SYNTAX
-  import INT
+  imports INT
 
   syntax Pgm ::= "begin" Int | "end" Int
   syntax Int ::= fun(Int) [function, no-evaluators]
@@ -8,7 +8,7 @@ module TEST-SYNTAX
 endmodule
 
 module TEST
-  import TEST-SYNTAX
+  imports TEST-SYNTAX
 
   configuration <k> $PGM:Pgm </k>
 
