@@ -63,7 +63,8 @@ runJSONRPCT encodeOpts ver ignore snk src f = do
     qs <- liftIO . atomically $ initSession ver ignore
     let inSnk = sinkTBMChan (inCh qs)
         outSrc = sourceTBMChan (outCh qs)
-    withAsync ((runConduit $ src .| decodeConduit ver .| inSnk) >> liftIO (atomically $ closeTBMChan $ inCh qs)) $
+    withAsync
+        ((runConduit $ src .| decodeConduit ver .| inSnk) >> liftIO (atomically $ closeTBMChan $ inCh qs)) $
         const $
             withAsync (runConduit $ outSrc .| encodeConduit encodeOpts .| snk) $ \o ->
                 withAsync (runReaderT processIncoming qs) $
@@ -123,7 +124,6 @@ srv respond handlers = do
              in loop
     spawnWorker reqQueue >>= mainLoop
     liftIO $ putStrLn "session end"
-
   where
     isRequest = \case
         Request{} -> True
