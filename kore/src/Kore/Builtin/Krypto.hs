@@ -63,7 +63,7 @@ import Data.Text (
 import Data.Word (
     Word8,
  )
-import Foreign (alloca, allocaBytes, peek, poke, Ptr)
+import Foreign (Ptr, alloca, allocaBytes, peek, poke)
 import Kore.Builtin.Builtin qualified as Builtin
 import Kore.Builtin.Encoding (
     decode8Bit,
