@@ -1,5 +1,5 @@
 module TEST
-  import BOOL
+  imports BOOL
 
   syntax State ::= "a" [token]
                  | "b" [token]

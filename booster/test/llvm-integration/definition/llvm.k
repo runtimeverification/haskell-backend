@@ -59,7 +59,7 @@ module MAP-VAL-TO-VAL
 
   syntax MapValToVal ::= MapValToVal "[" key: Val "<-" value: Val "]" [function, total, klabel(MapVal2Val:update), symbol, hook(MAP.update), prefer]
 
-  syntax priorities _Val2Val|->_ > _MapValToVal_ .MapValToVal
+  syntax priority _Val2Val|->_ > _MapValToVal_ .MapValToVal
   syntax non-assoc _Val2Val|->_
 
   syntax MapValToVal ::= MapValToVal "{{" key: Val "<-" value: Val "}}"
