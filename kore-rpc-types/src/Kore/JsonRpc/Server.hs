@@ -17,7 +17,7 @@ module Kore.JsonRpc.Server (
 import Control.Concurrent (forkIO, throwTo)
 import Control.Concurrent.STM.TMChan (closeTMChan, newTMChan, readTMChan, writeTMChan)
 import Control.Exception (Exception (fromException), catch, mask, throw)
-import Control.Monad (forM_)
+import Control.Monad (forM_, when)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Logger (MonadLoggerIO)
 import Control.Monad.Logger qualified as Log
@@ -63,18 +63,20 @@ runJSONRPCT encodeOpts ver ignore snk src f = do
     qs <- liftIO . atomically $ initSession ver ignore
     let inSnk = sinkTBMChan (inCh qs)
         outSrc = sourceTBMChan (outCh qs)
-    withAsync
-        ((runConduit $ src .| decodeConduit ver .| inSnk) >> liftIO (atomically $ closeTBMChan $ inCh qs))
-        $ const
-        $ withAsync (runConduit $ outSrc .| encodeConduit encodeOpts .| snk)
-        $ \o ->
-            withAsync (runReaderT processIncoming qs) $
-                const $ do
-                    a <- runReaderT f qs
-                    liftIO $ do
-                        atomically . closeTBMChan $ outCh qs
-                        _ <- wait o
-                        return a
+        decodeInput = do
+            runConduit $ src .| decodeConduit ver .| inSnk
+            liftIO (atomically $ closeTBMChan $ inCh qs)
+        encodeOutput = runConduit $ outSrc .| encodeConduit encodeOpts .| snk
+    withAsync decodeInput $
+        const $
+            withAsync encodeOutput $ \o ->
+                withAsync (runReaderT processIncoming qs) $
+                    const $ do
+                        a <- runReaderT f qs
+                        liftIO $ do
+                            atomically . closeTBMChan $ outCh qs
+                            _ <- wait o
+                            return a
 
 -- | TCP server transport for JSON-RPC.
 jsonRpcServer ::
@@ -124,7 +126,7 @@ srv respond handlers = do
                             loop
              in loop
     spawnWorker reqQueue >>= mainLoop
-    Log.logInfoN $ "Session terminated"
+    Log.logInfoN "Session terminated"
   where
     isRequest = \case
         Request{} -> True
@@ -192,12 +194,13 @@ srv respond handlers = do
                     a <- before
                     restore (thing a) `catch` catchesHandler a
 
-            loop =
-                bracketOnReqException
-                    (atomically $ readTMChan reqQueue)
-                    ( \case
-                        Nothing -> pure False
-                        Just req -> withLog (processReq req) >> pure True
-                    )
-                    >>= \shouldContinue -> if shouldContinue then loop else pure ()
+            loop = do
+                shouldContinue <-
+                    bracketOnReqException
+                        (atomically $ readTMChan reqQueue)
+                        ( \case
+                            Nothing -> pure False
+                            Just req -> withLog (processReq req) >> pure True
+                        )
+                when shouldContinue loop
         liftIO $ forkIO loop
