@@ -18,7 +18,7 @@
   #And
     <generatedTop>
       <k>
-        getOffset ( obj ( 1 ) ) ~> .
+        getOffset ( obj ( 1 ) ) ~> .K
       </k>
       <objects>
         <object>
@@ -71,7 +71,7 @@
   #And
     <generatedTop>
       <k>
-        1 ~> .
+        1 ~> .K
       </k>
       <objects>
         <object>

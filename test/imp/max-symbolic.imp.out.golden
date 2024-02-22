@@ -1,6 +1,6 @@
     <T>
       <k>
-        .
+        .K
       </k>
       <state>
         max |-> ?_I0:Int
@@ -24,7 +24,7 @@
 #Or
     <T>
       <k>
-        .
+        .K
       </k>
       <state>
         max |-> ?_I1:Int
@@ -48,7 +48,7 @@
 #Or
     <T>
       <k>
-        .
+        .K
       </k>
       <state>
         max |-> ?_I1:Int
@@ -72,7 +72,7 @@
 #Or
     <T>
       <k>
-        .
+        .K
       </k>
       <state>
         max |-> ?_I:Int

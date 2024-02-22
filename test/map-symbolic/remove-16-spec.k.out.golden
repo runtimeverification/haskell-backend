@@ -11,5 +11,5 @@
   } )
 #And
   <k>
-    removeResult ( 3 ~> . ) ~> .
+    removeResult ( 3 ~> .K ) ~> .K
   </k>

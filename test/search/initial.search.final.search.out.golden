@@ -2,7 +2,7 @@
     Result:GeneratedTopCell
   #Equals
     <k>
-      final1 ~> .
+      final1 ~> .K
     </k>
   }
 #Or
@@ -10,6 +10,6 @@
     Result:GeneratedTopCell
   #Equals
     <k>
-      final2 ~> .
+      final2 ~> .K
     </k>
   }

@@ -11,5 +11,5 @@
   } )
 #And
   <k>
-    partial ( X ) ~> .
+    partial ( X ) ~> .K
   </k>
