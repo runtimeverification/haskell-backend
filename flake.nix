@@ -240,7 +240,7 @@
             nativeBuildInputs = [
               (haskell.lib.justStaticExecutables
                 # (ghcVersion pkgs).fourmolu
-                (import nixpkgs2305 { inherit (prev) system; }).haskellPackages.fourmolu_0_12_0_0
+                (import nixpkgs2305 { inherit system; }).haskellPackages.fourmolu_0_12_0_0
                 )
             ];
           };
