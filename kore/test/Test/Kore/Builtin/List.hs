@@ -456,26 +456,26 @@ test_updateAll :: [TestTree]
 test_updateAll =
     [ testCaseWithoutSMT "updateAll([1, 2, 3], -1, [5]) === \\bottom" $ do
         result <-
-            evaluateTerm
-                $ updateAllList original (mkInt (-1)) (elementList $ mkInt 5)
+            evaluateTerm $
+                updateAllList original (mkInt (-1)) (elementList $ mkInt 5)
         assertEqual' "" OrPattern.bottom result
     , testCaseWithoutSMT "updateAll([1, 2, 3], 10, []) === [1, 2, 3]" $ do
         result <-
-            evaluateTerm
-                $ updateAllList original (mkInt 10) unitList
+            evaluateTerm $
+                updateAllList original (mkInt 10) unitList
         assertEqual' "" (OrPattern.fromTermLike original) result
     , testCaseWithoutSMT "updateAll([1, 2, 3], 1, [5]) === [1, 5, 3]" $ do
         result <-
-            evaluateTerm
-                $ updateAllList original (mkInt 1) (elementList $ mkInt 5)
+            evaluateTerm $
+                updateAllList original (mkInt 1) (elementList $ mkInt 5)
         let expect = asInternal . fmap mkInt $ Seq.fromList [1, 5, 3]
         assertEqual' "" (OrPattern.fromTermLike expect) result
-    , testCaseWithoutSMT "updateAll([1, 2, 3], 0, [1, 2, 3, 4]) === \\bottom"
-        $ do
+    , testCaseWithoutSMT "updateAll([1, 2, 3], 0, [1, 2, 3, 4]) === \\bottom" $
+        do
             let new = asInternal . fmap mkInt $ Seq.fromList [1, 2, 3, 4]
             result <-
-                evaluateTerm
-                    $ updateAllList original (mkInt 0) new
+                evaluateTerm $
+                    updateAllList original (mkInt 0) new
             assertEqual' "" OrPattern.bottom result
     ]
   where

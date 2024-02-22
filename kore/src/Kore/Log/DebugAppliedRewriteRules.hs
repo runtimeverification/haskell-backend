@@ -43,8 +43,8 @@ data DebugAppliedRewriteRules = DebugAppliedRewriteRules
 
 instance Pretty DebugAppliedRewriteRules where
     pretty DebugAppliedRewriteRules{configuration, appliedRewriteRules} =
-        Pretty.vsep
-            $ (<>)
+        Pretty.vsep $
+            (<>)
                 prettyUnifiedRules
                 [ "On configuration:"
                 , Pretty.indent 2 . unparse $ configuration

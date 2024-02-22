@@ -50,16 +50,16 @@ instance Exception ErrorRewriteLoop where
 
 instance Pretty ErrorRewriteLoop where
     pretty ErrorRewriteLoop{rule, errorCallStack} =
-        Pretty.vsep
-            $ [ "Found semantic rule with the same left- and right-hand side at:"
-              , Pretty.pretty
-                    . sourceLocation
-                    . attributes
-                    . getRewriteRule
-                    $ rule
-              , "Execution would not terminate when the rule applies."
-              ]
-            <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
+        Pretty.vsep $
+            [ "Found semantic rule with the same left- and right-hand side at:"
+            , Pretty.pretty
+                . sourceLocation
+                . attributes
+                . getRewriteRule
+                $ rule
+            , "Execution would not terminate when the rule applies."
+            ]
+                <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
 
 instance Entry ErrorRewriteLoop where
     oneLineDoc ErrorRewriteLoop{rule} = pretty @SourceLocation $ from rule

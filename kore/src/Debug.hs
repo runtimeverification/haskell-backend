@@ -140,8 +140,8 @@ encloseSep ldelim rdelim sep =
     \case
         [] -> ldelim <> rdelim
         (doc : docs) ->
-            mconcat
-                $ concat
+            mconcat $
+                concat
                     [ [ldelim <+> doc]
                     , map ((Pretty.line' <> sep) <+>) docs
                     , [Pretty.line, rdelim]
@@ -246,12 +246,12 @@ debugConstr (SOP.Record name fields) args =
 
     debugField :: FieldInfo x -> K (Int -> Doc ann) x -> K (Doc ann) x
     debugField (FieldInfo fieldName) (K arg) =
-        K
-            $ Pretty.nest 4
-            $ Pretty.sep
-                [ Pretty.pretty fieldName Pretty.<+> "="
-                , arg 0
-                ]
+        K $
+            Pretty.nest 4 $
+                Pretty.sep
+                    [ Pretty.pretty fieldName Pretty.<+> "="
+                    , arg 0
+                    ]
 
 debugSOP ::
     forall xss ann.
@@ -389,10 +389,8 @@ instance Debug GHC.SrcLoc
 -- | Prints a typed hole for the function.
 instance (Typeable a, Typeable b) => Debug (a -> b) where
     debugPrec f = \precOut ->
-        parens (precOut > 0)
-            $ "_"
-            <+> "::"
-            <+> (Pretty.pretty . show) (typeOf f)
+        parens (precOut > 0) $
+            "_" <+> "::" <+> (Pretty.pretty . show) (typeOf f)
 
 instance Debug a => Debug (Hashed a) where
     debugPrec h precOut =
@@ -608,8 +606,8 @@ instance
 
 instance (Debug a, Diff a) => Diff (Seq a) where
     diffPrec as bs =
-        fmap wrapFromList
-            $ diffPrec (toList as) (toList bs)
+        fmap wrapFromList $
+            diffPrec (toList as) (toList bs)
       where
         wrapFromList diff' precOut =
             parens (precOut >= 10) $ "Data.Sequence.fromList" <+> diff' 10

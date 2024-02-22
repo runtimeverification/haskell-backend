@@ -250,27 +250,23 @@ checkFunctionLike unifiedRules pat
     | TermLike.isFunctionPattern pat =
         traverse_ checkFunctionLikeRule unifiedRules
     | otherwise =
-        Left
-            . show
-            . Pretty.vsep
-            $ [ "Expected function-like term, but found:"
-              , Pretty.indent 4 (unparse pat)
-              ]
+        Left . show . Pretty.vsep $
+            [ "Expected function-like term, but found:"
+            , Pretty.indent 4 (unparse pat)
+            ]
   where
     checkFunctionLikeRule ::
         UnifiedRule rule ->
         Either String ()
     checkFunctionLikeRule Conditional{term, substitution}
-        | all (TermLike.isFunctionPattern . Substitution.assignedTerm)
-            $ Substitution.unwrap substitution =
+        | all (TermLike.isFunctionPattern . Substitution.assignedTerm) $
+            Substitution.unwrap substitution =
             return ()
         | otherwise =
-            Left
-                . show
-                . Pretty.vsep
-                $ [ "Expected function-like unification solution, but found:"
-                  , Pretty.indent 4 (unparse conditional)
-                  ]
+            Left . show . Pretty.vsep $
+                [ "Expected function-like unification solution, but found:"
+                , Pretty.indent 4 (unparse conditional)
+                ]
       where
         conditional =
             TermLike.mkTop (TermLike.termLikeSort left)

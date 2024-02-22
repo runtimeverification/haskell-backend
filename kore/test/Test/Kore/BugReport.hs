@@ -117,8 +117,8 @@ test_Parse_BugReportOption =
     assertParse :: HasCallStack => [String] -> BugReportOption -> Assertion
     assertParse arguments opt =
         assertEqual
-            ( show
-                $ Pretty.vsep
+            ( show $
+                Pretty.vsep
                     [ "while parsing:"
                     , Pretty.indent 4 (debug arguments)
                     , "expected:"

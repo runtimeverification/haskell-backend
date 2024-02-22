@@ -104,8 +104,8 @@ symbolVerifiers =
         let SentenceSymbol{sentenceSymbolSorts = sorts} = decl
             SentenceSymbol{sentenceSymbolResultSort = result} = decl
             arity = length sorts
-        Kore.Error.withContext "In argument sorts"
-            $ case sorts of
+        Kore.Error.withContext "In argument sorts" $
+            case sorts of
                 [firstSort, secondSort, thirdSort] -> do
                     Builtin.runSortVerifier Bool.assertSort findSort firstSort
                     Kore.Error.koreFailWhen

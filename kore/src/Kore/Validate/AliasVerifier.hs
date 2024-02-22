@@ -53,9 +53,8 @@ verifyAliases ::
     SentenceVerifier ()
 verifyAliases sentences = do
     let aliases =
-            Map.fromList
-                . map (\sentence -> (aliasName sentence, sentence))
-                $ mapMaybe projectSentenceAlias sentences
+            Map.fromList . map (\sentence -> (aliasName sentence, sentence)) $
+                mapMaybe projectSentenceAlias sentences
         aliasIds = Map.keysSet aliases
     runReaderT
         (traverse_ verifyAlias aliasIds)

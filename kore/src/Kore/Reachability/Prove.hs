@@ -317,9 +317,8 @@ proveClaimsWorker
                     OnePath onePathClaim -> from $ getOnePathClaim onePathClaim
                     AllPath allPathClaim -> from $ getAllPathClaim allPathClaim
                 result <-
-                    lift
-                        . lift
-                        $ proveClaim
+                    lift . lift $
+                        proveClaim
                             maybeMinDepth
                             stepTimeout
                             enableMA
@@ -505,8 +504,8 @@ proveClaimStep
     axioms
     executionGraph
     node =
-        withTimeout
-            $ executionHistoryStep
+        withTimeout $
+            executionHistoryStep
                 transitionRule''
                 strategy'
                 executionGraph
@@ -548,9 +547,9 @@ proveClaimStep
                     pure $ Just newExecGraph
                 Just timeoutMode -> do
                     let warnThread =
-                            liftIO
-                                $ threadDelay (getTimeout timeoutMode)
-                                $> timeoutMode
+                            liftIO $
+                                threadDelay (getTimeout timeoutMode)
+                                    $> timeoutMode
                     race warnThread (timeAction execStep) >>= \case
                         Right (time, newExecGraph) -> do
                             updateStepMovingAverage ma time
@@ -630,15 +629,13 @@ checkStuckConfiguration rule prim proofState = do
     for_ (extractStuck proofState) $ \rule' -> do
         let resultPatternPredicate = predicate (getConfiguration rule')
             multiAndPredicate = getMultiAndPredicate resultPatternPredicate
-        when (any isNot_Ceil_ multiAndPredicate)
-            $ error
-            . show
-            . Pretty.vsep
-            $ [ "Found '\\not(\\ceil(_))' in stuck configuration:"
-              , Pretty.pretty rule'
-              , "Please file a bug report:\
-                \ https://github.com/runtimeverification/haskell-backend/issues"
-              ]
+        when (any isNot_Ceil_ multiAndPredicate) $
+            error . show . Pretty.vsep $
+                [ "Found '\\not(\\ceil(_))' in stuck configuration:"
+                , Pretty.pretty rule'
+                , "Please file a bug report:\
+                  \ https://github.com/runtimeverification/haskell-backend/issues"
+                ]
     return proofState'
   where
     isNot_Ceil_ :: Predicate variable -> Bool
@@ -735,6 +732,6 @@ withConfiguration transit prim proofState =
     config = extractUnproven proofState & fmap getConfiguration
     handle' = maybe id handleConfig config
     handleConfig config' =
-        handleAll
-            $ throwM
-            . WithConfiguration (getRewritingPattern config')
+        handleAll $
+            throwM
+                . WithConfiguration (getRewritingPattern config')

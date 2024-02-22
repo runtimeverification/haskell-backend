@@ -195,8 +195,8 @@ test_diff =
     [ test (SA A, SA A) Nothing
     , test (SA A, SB B) $ Just "{- was: SA A -} SB B"
     , test (N (SA A), N (SB B)) $ Just "N {- was: (SA A) -} (SB B)"
-    , test (Rn{unRn = SA A}, Rn{unRn = SB B})
-        $ Just "Rn { unRn = {- was: SA A -} SB B }"
+    , test (Rn{unRn = SA A}, Rn{unRn = SB B}) $
+        Just "Rn { unRn = {- was: SA A -} SB B }"
     , test ("A" :: String, "B") $ Just "{- was: \"A\" -} \"B\""
     , test ('A', 'B') $ Just "{- was: 'A' -} 'B'"
     , test (0 :: Integer, 1) $ Just "{- was: 0 -} 1"
@@ -204,8 +204,8 @@ test_diff =
     , test ([True], []) $ Just "{- was: [ True ] -} []"
     , test ([], [True]) $ Just "{- was: [] -} [ True ]"
     , test ([True], [True, False]) $ Just "_ : {- was: [] -} [ False ]"
-    , test ([True, True], [True, False, True])
-        $ Just "_ : ({- was: True -} False : {- was: [] -} [ True ])"
+    , test ([True, True], [True, False, True]) $
+        Just "_ : ({- was: True -} False : {- was: [] -} [ True ])"
     , test
         ( R3{fieldA = True, fieldB = True, fieldC = True}
         , R3{fieldA = False, fieldB = False, fieldC = True}

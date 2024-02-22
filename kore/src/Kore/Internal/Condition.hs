@@ -166,8 +166,7 @@ fromNormalizationSimplified ::
     Condition variable
 fromNormalizationSimplified
     normalization@Normalization{normalized, denormalized} =
-        predicate'
-            <> substitution'
+        predicate' <> substitution'
             & withErrorContext "while normalizing substitution" normalization
       where
         predicate' =
@@ -176,8 +175,8 @@ fromNormalizationSimplified
                 . Substitution.toPredicate
                 $ Substitution.wrap denormalized
         substitution' =
-            Conditional.fromSubstitution
-                $ Substitution.unsafeWrapFromAssignments normalized
+            Conditional.fromSubstitution $
+                Substitution.unsafeWrapFromAssignments normalized
         markSimplifiedIfChildrenSimplified childrenList result =
             Predicate.setSimplified childrenSimplified result
           where

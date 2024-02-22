@@ -369,8 +369,8 @@ concatNormalized normalized1 normalized2 = do
         updateAbstractElements $ onBoth (++) elementsWithVariables
     let concrete' = onBoth HashMap.union concreteElements
         opaque' = Data.List.sort $ onBoth (++) opaque
-    renormalize
-        $ wrapAc
+    renormalize $
+        wrapAc
             NormalizedAc
                 { elementsWithVariables = abstract'
                 , concreteElements = concrete'
@@ -438,9 +438,9 @@ updateAbstractElements ::
     [Element collection child] ->
     Maybe [Element collection child]
 updateAbstractElements elements =
-    fmap (map wrapElement . HashMap.toList)
-        $ foldrM (uncurry insertMissing) HashMap.empty
-        $ map unwrapElement elements
+    fmap (map wrapElement . HashMap.toList) $
+        foldrM (uncurry insertMissing) HashMap.empty $
+            map unwrapElement elements
 
 {- | Make any abstract elements into concrete elements if possible.
 
@@ -453,8 +453,8 @@ normalizeAbstractElements ::
 normalizeAbstractElements (unwrapAc -> normalized) = do
     concrete' <- updateConcreteElements concrete newConcrete
     abstract' <- updateAbstractElements newAbstract
-    return
-        $ wrapAc
+    return $
+        wrapAc
             NormalizedAc
                 { elementsWithVariables = abstract'
                 , concreteElements = concrete'
@@ -567,8 +567,8 @@ asInternalConcrete ::
     HashMap Key (Value normalized (TermLike variable)) ->
     TermLike variable
 asInternalConcrete tools sort1 concreteAc =
-    asInternal tools sort1
-        $ wrapAc
+    asInternal tools sort1 $
+        wrapAc
             NormalizedAc
                 { elementsWithVariables = []
                 , concreteElements = concreteAc
@@ -583,8 +583,7 @@ elementListAsInternal ::
     [(TermLike variable, Value normalized (TermLike variable))] ->
     Maybe (TermLike variable)
 elementListAsInternal tools sort1 terms =
-    asInternal tools sort1
-        . wrapAc
+    asInternal tools sort1 . wrapAc
         <$> elementListAsNormalized terms
 
 elementListAsNormalized ::
@@ -635,8 +634,8 @@ evalConcatNormalizedOrBottom
     resultSort
     (Normalized normalized1)
     (Normalized normalized2) =
-        maybe (return $ Pattern.bottomOf resultSort) (lift . returnAc resultSort)
-            $ concatNormalized normalized1 normalized2
+        maybe (return $ Pattern.bottomOf resultSort) (lift . returnAc resultSort) $
+            concatNormalized normalized1 normalized2
 
 disjointMap :: Ord a => Hashable a => [(a, b)] -> Maybe (HashMap a b)
 disjointMap = addToMapDisjoint HashMap.empty
@@ -781,23 +780,23 @@ matchUnifyEqualsNormalizedAc
     normalized2 =
         case (opaqueDifference1, opaqueDifference2) of
             ([], []) ->
-                Just
-                    $ UnifyEqualsElementLists
-                    $ UnifyEqualsElementListsData
-                        allElements1
-                        allElements2
-                        Nothing
-            ([ElemVar_ v1], _)
-                | null opaqueDifference2 ->
-                    Just
-                        $ UnifyEqualsElementLists
-                        $ UnifyEqualsElementListsData
+                Just $
+                    UnifyEqualsElementLists $
+                        UnifyEqualsElementListsData
                             allElements1
                             allElements2
-                            (Just v1)
+                            Nothing
+            ([ElemVar_ v1], _)
+                | null opaqueDifference2 ->
+                    Just $
+                        UnifyEqualsElementLists $
+                            UnifyEqualsElementListsData
+                                allElements1
+                                allElements2
+                                (Just v1)
                 | null allElements1 ->
-                    fmap UnifyOpaqueVar
-                        $ matchUnifyOpaqueVariable'
+                    fmap UnifyOpaqueVar $
+                        matchUnifyOpaqueVariable'
                             v1
                             allElements2
                             opaqueDifference2
@@ -1405,17 +1404,15 @@ unifyEqualsElementLists
                             result = unifier `andCondition` opaqueCondition
                         return (result, [opaqueTerm])
                 _ ->
-                    error
-                        . show
-                        . Pretty.vsep
-                        $ [ "Unification case that should be handled somewhere else: \
-                            \attempting normalized unification with \
-                            \non-function maps could lead to infinite loops."
-                          , Pretty.indent 2 "first="
-                          , Pretty.indent 4 (unparse first)
-                          , Pretty.indent 2 "second="
-                          , Pretty.indent 4 (unparse second)
-                          ]
+                    error . show . Pretty.vsep $
+                        [ "Unification case that should be handled somewhere else: \
+                          \attempting normalized unification with \
+                          \non-function maps could lead to infinite loops."
+                        , Pretty.indent 2 "first="
+                        , Pretty.indent 4 (unparse first)
+                        , Pretty.indent 2 "second="
+                        , Pretty.indent 4 (unparse second)
+                        ]
       where
         unifyWithPermutations =
             unifyEqualsElementPermutations
@@ -1461,9 +1458,9 @@ matchUnifyOpaqueVariable
                             )
                  in if TermLike.isFunctionPattern secondTerm
                         then
-                            Just
-                                $ NoCheckUnifyOpaqueChildren
-                                $ NoCheckUnifyOpaqueChildrenData v1 secondTerm
+                            Just $
+                                NoCheckUnifyOpaqueChildren $
+                                    NoCheckUnifyOpaqueChildrenData v1 secondTerm
                         else Nothing
       where
         sort = variableSort v1

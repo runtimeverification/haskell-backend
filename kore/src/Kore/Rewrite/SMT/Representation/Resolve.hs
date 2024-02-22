@@ -172,8 +172,8 @@ referenceCheckResolvers Declarations{sorts, symbols} =
                                     }
                             )
                     ) =
-            traceMaybe D_SMT_referenceCheckSort [debugArg "reference" reference]
-                $ do
+            traceMaybe D_SMT_referenceCheckSort [debugArg "reference" reference] $
+                do
                     _ <- Map.lookup sortActualName sorts
                     return reference
     referenceCheckSort reference =
@@ -183,8 +183,8 @@ referenceCheckResolvers Declarations{sorts, symbols} =
             Nothing
 
     referenceCheckSymbol reference@SymbolReference{getSymbolReference} =
-        traceMaybe D_SMT_referenceCheckSymbol [debugArg "reference" reference]
-            $ do
+        traceMaybe D_SMT_referenceCheckSymbol [debugArg "reference" reference] $
+            do
                 _ <- Map.lookup getSymbolReference symbols
                 return reference
 
@@ -209,8 +209,8 @@ resolveSort ::
 resolveSort
     resolvers
     Sort{sortData, sortDeclaration} =
-        traceMaybe D_SMT_resolveSort [debugArg "declaration" sortDeclaration]
-            $ do
+        traceMaybe D_SMT_resolveSort [debugArg "declaration" sortDeclaration] $
+            do
                 newDeclaration <- resolveKoreSortDeclaration resolvers sortDeclaration
                 return
                     Sort
@@ -342,8 +342,8 @@ resolveKoreSymbolDeclaration
             --
             -- Note that direct smtlib declarations take precedence over constructors,
             -- so we would not reach this line if this symbol had a smtlib attribute.
-            assertMay
-                $ any (flip sortDeclaresSymbol symbolId) sortDependencies
+            assertMay $
+                any (flip sortDeclaresSymbol symbolId) sortDependencies
 
             SymbolConstructor
                 <$> resolveIndirectConstructorSymbolDeclaration

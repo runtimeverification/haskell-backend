@@ -327,8 +327,8 @@ exec
                         GraphTraversal.GotStuck _ results ->
                             pure $ map extractStuckTraversalResult results
                         GraphTraversal.Stopped results nexts -> do
-                            when (null nexts)
-                                $ forM_ depthLimit warnDepthLimitExceeded
+                            when (null nexts) $
+                                forM_ depthLimit warnDepthLimitExceeded
                             pure results
                         GraphTraversal.Aborted results -> do
                             pure results
@@ -338,8 +338,8 @@ exec
             let (depths, finalConfigs) = unzip finals
             infoExecDepth (maximum (ExecDepth 0 : depths))
             let finalConfigs' =
-                    MultiOr.make
-                        $ mapMaybe (fst . extractProgramState) finalConfigs
+                    MultiOr.make $
+                        mapMaybe (fst . extractProgramState) finalConfigs
             debugFinalPatterns finalConfigs'
             exitCode <- getExitCode verifiedModule finalConfigs'
             let finalTerm =
@@ -357,9 +357,9 @@ exec
 
         execStrategy :: [Strategy.Step Prim]
         execStrategy =
-            Limit.takeWithin depthLimit
-                $ [Begin, Simplify, Rewrite, Simplify]
-                : repeat [Begin, Rewrite, Simplify]
+            Limit.takeWithin depthLimit $
+                [Begin, Simplify, Rewrite, Simplify]
+                    : repeat [Begin, Rewrite, Simplify]
 
         transit ::
             GraphTraversal.TState
@@ -382,9 +382,8 @@ exec
                 )
         transit =
             GraphTraversal.simpleTransition
-                ( trackExecDepth
-                    . profTransitionRule
-                    $ transitionRule (groupRewritesByPriority rewriteRules) Step.DisableAssumeInitialDefined execMode
+                ( trackExecDepth . profTransitionRule $
+                    transitionRule (groupRewritesByPriority rewriteRules) Step.DisableAssumeInitialDefined execMode
                 )
                 toTransitionResult
 
@@ -480,8 +479,8 @@ rpcExec
         }
     StopLabels{cutPointLabels, terminalLabels}
     (mkRewritingTerm -> initialTerm) =
-        simplifierRun
-            $ GraphTraversal.graphTraversal
+        simplifierRun $
+            GraphTraversal.graphTraversal
                 GraphTraversal.GraphTraversalCancel
                 stepTimeout
                 enableMA
@@ -507,9 +506,9 @@ rpcExec
 
         execStrategy :: [Strategy.Step Prim]
         execStrategy =
-            Limit.takeWithin depthLimit
-                $ [Begin, Simplify, Rewrite, Simplify]
-                : repeat [Begin, Rewrite, Simplify]
+            Limit.takeWithin depthLimit $
+                [Begin, Simplify, Rewrite, Simplify]
+                    : repeat [Begin, Rewrite, Simplify]
 
         transit ::
             GraphTraversal.TState Prim (RpcExecState RewritingVariableName) ->
@@ -519,10 +518,8 @@ rpcExec
                 )
         transit =
             GraphTraversal.transitionWithRule
-                ( withRpcExecState
-                    . trackExecDepth
-                    . profTransitionRule
-                    $ transitionRule (groupRewritesByPriority rewriteRules) assumeInitialDefined All
+                ( withRpcExecState . trackExecDepth . profTransitionRule $
+                    transitionRule (groupRewritesByPriority rewriteRules) assumeInitialDefined All
                 )
                 toTransitionResult
 
@@ -533,8 +530,8 @@ rpcExec
             TransitionRule m r (RpcExecState v)
         withRpcExecState transition =
             \prim RpcExecState{rpcProgState, rpcRules, rpcDepth} ->
-                fmap (\(d, st) -> RpcExecState st rpcRules d)
-                    $ transition prim (rpcDepth, rpcProgState)
+                fmap (\(d, st) -> RpcExecState st rpcRules d) $
+                    transition prim (rpcDepth, rpcProgState)
 
         toTransitionResult ::
             RpcExecState v ->
@@ -708,8 +705,8 @@ search
         evalSimplifier verifiedModule sortGraph overloadGraph metadataTools equations $ do
             let Initialized{rewriteRules} = rewrites
             simplifiedPatterns <-
-                Pattern.simplify
-                    $ Pattern.fromTermLike termLike
+                Pattern.simplify $
+                    Pattern.fromTermLike termLike
             let initialPattern =
                     case toList simplifiedPatterns of
                         [] -> Pattern.bottomOf (termLikeSort termLike)
@@ -904,8 +901,8 @@ matchDisjunction mainModule matchPattern disjunctionPattern =
     evalSimplifierProofs mainModule $ do
         results <-
             traverse (runMaybeT . match matchPattern) disjunctionPattern
+                <&> catMaybes
                 <&> concatMap toList
-                . catMaybes
         results
             <&> Condition.toPredicate
             & Predicate.makeMultipleOrPredicate
@@ -990,11 +987,10 @@ simplify = return
 
 assertSomeClaims :: Monad m => [claim] -> m ()
 assertSomeClaims claims =
-    when (null claims)
-        . error
-        $ "Unexpected empty set of claims.\n"
-        ++ "Possible explanation: the frontend and the backend don't agree "
-        ++ "on the representation of claims."
+    when (null claims) . error $
+        "Unexpected empty set of claims.\n"
+            ++ "Possible explanation: the frontend and the backend don't agree "
+            ++ "on the representation of claims."
 
 simplifySomeClaim ::
     SomeClaim ->
@@ -1057,10 +1053,9 @@ initializeProver koreLogOptions definitionModule specModule maybeTrustedModule =
     let Initialized{rewriteRules} = initialized
         equations = extractEquations definitionModule
         undefinedLabels = runValidate $ validateDebugOptions equations rewriteRules koreLogOptions
-    when (isLeft undefinedLabels)
-        $ throwM
-        . DebugOptionsValidationError
-        $ fromLeft mempty undefinedLabels
+    when (isLeft undefinedLabels) $
+        throwM . DebugOptionsValidationError $
+            fromLeft mempty undefinedLabels
     tools <- askMetadataTools
     let changedSpecClaims :: [MaybeChanged SomeClaim]
         changedSpecClaims = expandClaim tools <$> extractClaims specModule

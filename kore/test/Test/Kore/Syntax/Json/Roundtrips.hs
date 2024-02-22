@@ -29,13 +29,14 @@ import Test.Tasty.HUnit (testCase, (@?=))
 patternsFrom :: FilePath -> IO [ParsedPattern]
 patternsFrom path = do
     contents <- T.readFile path
-    pure
-        $ either (const []) getPatterns
-        $ parseKoreDefinition path contents
+    pure $
+        either (const []) getPatterns $
+            parseKoreDefinition path contents
 
 getPatterns :: ParsedDefinition -> [ParsedPattern]
 getPatterns =
-    concatMap (mapMaybe fromSentence . Kore.moduleSentences)
+    mapMaybe fromSentence
+        . concatMap Kore.moduleSentences
         . Kore.definitionModules
 
 fromSentence :: Kore.Sentence ParsedPattern -> Maybe ParsedPattern
@@ -107,8 +108,8 @@ makeGold = do
 -}
 comparePatternsFrom :: FilePath -> TestTree
 comparePatternsFrom jsonFile =
-    testCase ("Comparing results from " <> baseName)
-        $ do
+    testCase ("Comparing results from " <> baseName) $
+        do
             fromJson <- parseJson jsonFile
             fromKore <- map fromPattern <$> patternsFrom koreFile
             fromJson @?= fromKore
@@ -122,8 +123,8 @@ comparePatternsFrom jsonFile =
 test_ParserKoreFiles :: IO TestTree
 test_ParserKoreFiles = do
     jsonFiles <- findByExtension [".json"] jsonLocation
-    pure
-        $ testGroup
+    pure $
+        testGroup
             "JSON <-> textual kore conversion tests"
             [ testGroup
                 ("Encode to golden JSON files in " <> jsonLocation)

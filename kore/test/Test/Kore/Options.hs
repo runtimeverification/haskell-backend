@@ -17,8 +17,8 @@ test_flags =
         "print-definition"
         [ testCase "default is False" $ do
             let flagValue =
-                    willPrintDefinition
-                        $ runParser
+                    willPrintDefinition $
+                        runParser
                             parseKoreParserOptions
                             ["mock/path/to/def"]
             assertEqual
@@ -27,8 +27,8 @@ test_flags =
                 flagValue
         , testCase "given explicitly is True" $ do
             let flagValue =
-                    willPrintDefinition
-                        $ runParser
+                    willPrintDefinition $
+                        runParser
                             parseKoreParserOptions
                             ["mock/path/to/def", "--print-definition"]
             assertEqual
@@ -37,8 +37,8 @@ test_flags =
                 flagValue
         , testCase "with `no` prefix is False" $ do
             let flagValue =
-                    willPrintDefinition
-                        $ runParser
+                    willPrintDefinition $
+                        runParser
                             parseKoreParserOptions
                             ["mock/path/to/def", "--no-print-definition"]
             assertEqual
@@ -50,8 +50,8 @@ test_flags =
         "print-pattern"
         [ testCase "default is False" $ do
             let flagValue =
-                    willPrintPattern
-                        $ runParser
+                    willPrintPattern $
+                        runParser
                             parseKoreParserOptions
                             ["mock/path/to/def"]
             assertEqual
@@ -60,8 +60,8 @@ test_flags =
                 flagValue
         , testCase "given explicitly is True" $ do
             let flagValue =
-                    willPrintPattern
-                        $ runParser
+                    willPrintPattern $
+                        runParser
                             parseKoreParserOptions
                             ["mock/path/to/def", "--print-pattern"]
             assertEqual
@@ -70,8 +70,8 @@ test_flags =
                 flagValue
         , testCase "with `no` prefix is False" $ do
             let flagValue =
-                    willPrintPattern
-                        $ runParser
+                    willPrintPattern $
+                        runParser
                             parseKoreParserOptions
                             ["mock/path/to/def", "--no-print-pattern"]
             assertEqual
@@ -90,15 +90,15 @@ test_options =
                     runParser'
                         parseKoreParserOptions
                         ["mock/path/to/def", "--pattern", "mock/path/to/pat"]
-            assertBool "Expected passing only the pattern option to fail"
-                $ isNothing result
+            assertBool "Expected passing only the pattern option to fail" $
+                isNothing result
         , testCase "module only" $ do
             let result =
                     runParser'
                         parseKoreParserOptions
                         ["mock/path/to/def", "--module", "mock_module"]
-            assertBool "Expected passing only the module option to fail"
-                $ isNothing result
+            assertBool "Expected passing only the module option to fail" $
+                isNothing result
         , testCase "pattern and module" $ do
             let result =
                     runParser'
@@ -109,8 +109,8 @@ test_options =
                         , "--module"
                         , "mock_module"
                         ]
-            assertBool "Expected passing both pattern and module options to not fail"
-                $ isJust result
+            assertBool "Expected passing both pattern and module options to not fail" $
+                isJust result
         ]
     ]
 

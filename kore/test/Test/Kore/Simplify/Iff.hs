@@ -100,16 +100,16 @@ test_makeEvaluate =
                     { term = mkTop Mock.testSort
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution =
-                        Substitution.wrap
-                            $ Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.xConfig, Mock.a)]
                     }
                 Conditional
                     { term = mkTop Mock.testSort
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution =
-                        Substitution.wrap
-                            $ Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.yConfig, Mock.b)]
                     }
             )
@@ -146,16 +146,16 @@ test_makeEvaluate =
                     { term = Mock.f Mock.a
                     , predicate = makeCeilPredicate Mock.cf
                     , substitution =
-                        Substitution.wrap
-                            $ Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.xConfig, Mock.a)]
                     }
                 Conditional
                     { term = Mock.g Mock.b
                     , predicate = makeCeilPredicate Mock.cg
                     , substitution =
-                        Substitution.wrap
-                            $ Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
                                 [(inject Mock.yConfig, Mock.b)]
                     }
             )

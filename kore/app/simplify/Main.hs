@@ -141,8 +141,8 @@ koreSimplify LocalOptions{execOptions} = do
     inputPattern <-
         mainParseInputPattern mainModule patternFileName
     final <- simplify inputPattern
-    lift
-        $ renderResult
+    lift $
+        renderResult
             execOptions
             (unparse final)
     return ExitSuccess

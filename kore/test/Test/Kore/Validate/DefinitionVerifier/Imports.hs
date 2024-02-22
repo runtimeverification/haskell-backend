@@ -394,8 +394,8 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    externalize
-                        $ mkExists existsVariable (mkElemVar existsVariable)
+                    externalize $
+                        mkExists existsVariable (mkElemVar existsVariable)
                 , sentenceAxiomAttributes = Attributes []
                 }
       where
@@ -421,12 +421,12 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    externalize
-                        $ mkNext
-                        $ mkEquals
-                            anotherSort
-                            (mkTop sort)
-                            (mkTop sort)
+                    externalize $
+                        mkNext $
+                            mkEquals
+                                anotherSort
+                                (mkTop sort)
+                                (mkTop sort)
                 , sentenceAxiomAttributes = Attributes []
                 }
     sortReferenceInPatternInPatternSupportingSentences =
@@ -512,8 +512,8 @@ sortVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    externalize
-                        $ mkApplySymbol
+                    externalize $
+                        mkApplySymbol
                             Internal.Symbol
                                 { symbolConstructor = testId "symbol2"
                                 , symbolParams = [sort]
@@ -706,8 +706,8 @@ symbolVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    externalize
-                        $ mkApplySymbol
+                    externalize $
+                        mkApplySymbol
                             Internal.Symbol
                                 { symbolConstructor = testId "symbol2"
                                 , symbolParams = [defaultSort]
@@ -930,8 +930,8 @@ aliasVisibilityTests =
             SentenceAxiom
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
-                    externalize
-                        $ mkApplyAlias
+                    externalize $
+                        mkApplyAlias
                             Internal.Alias
                                 { aliasConstructor = testId "alias2"
                                 , aliasParams = [defaultSort]
@@ -971,9 +971,9 @@ aliasVisibilityTests =
                                         ]
                                     }
                             , applicationChildren =
-                                [ mkSomeVariable
-                                    $ mkSetVariable (testId "@x")
-                                    $ SortVariableSort (SortVariable (testId "sv1"))
+                                [ mkSomeVariable $
+                                    mkSetVariable (testId "@x") $
+                                        SortVariableSort (SortVariable (testId "sv1"))
                                 ]
                             }
                     , sentenceAliasRightPattern =
@@ -1344,8 +1344,8 @@ nameDuplicationTests =
                                     , applicationChildren = []
                                     }
                             , sentenceAliasRightPattern =
-                                externalize
-                                    $ mkTop (SortVariableSort sv1)
+                                externalize $
+                                    mkTop (SortVariableSort sv1)
                             , sentenceAliasAttributes = Attributes []
                             }
                     ]

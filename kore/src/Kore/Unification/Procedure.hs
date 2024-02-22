@@ -71,9 +71,8 @@ unificationProcedure sideCondition p1 p2
         orCeil <- liftSimplifier $ makeEvaluateTermCeil sideCondition term
         marker "unify" "CombineCeil"
         ceil' <- Monad.Unify.scatter orCeil
-        lowerLogicT
-            . simplifyCondition sideCondition
-            $ Conditional.andCondition ceil' condition
+        lowerLogicT . simplifyCondition sideCondition $
+            Conditional.andCondition ceil' condition
   where
     p1Sort = termLikeSort p1
     p2Sort = termLikeSort p2

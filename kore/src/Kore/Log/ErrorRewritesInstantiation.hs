@@ -104,19 +104,19 @@ instance Pretty ErrorRewritesInstantiation where
             , configuration
             , errorCallStack
             } =
-            Pretty.vsep
-                $ [ "While rewriting the configuration:"
-                  , Pretty.indent 4 (unparse configuration)
-                  , "Unable to instantiate semantic rule at "
-                        <> Pretty.pretty location
-                  , "Unification did not find a solution for the variables:"
-                  , (Pretty.indent 4 . Pretty.sep)
-                        (unparse <$> Set.toAscList missingVariables)
-                  , "The unification solution was:"
-                  , unparse (fmap getAxiomPattern solution)
-                  , "Error! Please report this."
-                  ]
-                <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
+            Pretty.vsep $
+                [ "While rewriting the configuration:"
+                , Pretty.indent 4 (unparse configuration)
+                , "Unable to instantiate semantic rule at "
+                    <> Pretty.pretty location
+                , "Unification did not find a solution for the variables:"
+                , (Pretty.indent 4 . Pretty.sep)
+                    (unparse <$> Set.toAscList missingVariables)
+                , "The unification solution was:"
+                , unparse (fmap getAxiomPattern solution)
+                , "Error! Please report this."
+                ]
+                    <> fmap Pretty.pretty (prettyCallStackLines errorCallStack)
 
 {- | Check that the final substitution covers the applied rule appropriately.
 

@@ -80,9 +80,9 @@ test_sortDeclaration =
         ]
     , testsForModule
         "One sort without constructors"
-        ( indexModule
-            $ emptyModule "m"
-            `with` sortDeclaration "S"
+        ( indexModule $
+            emptyModule "m"
+                `with` sortDeclaration "S"
         )
         [ isSatisfiable
             [ "x" `ofType` encodeName "S"
@@ -101,11 +101,11 @@ test_sortDeclaration =
         ]
     , testsForModule
         "One sort with one constructor"
-        ( indexModule
-            $ emptyModule "m"
-            `with` sortDeclaration "S"
-            `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
-            `with` constructorAxiom "S" [("C", [])]
+        ( indexModule $
+            emptyModule "m"
+                `with` sortDeclaration "S"
+                `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
+                `with` constructorAxiom "S" [("C", [])]
         )
         [ isNotSatisfiable
             [ "x" `ofType` encodeName "S"
@@ -124,12 +124,12 @@ test_sortDeclaration =
         ]
     , testsForModule
         "One sort with two constructors"
-        ( indexModule
-            $ emptyModule "m"
-            `with` sortDeclaration "S"
-            `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
-            `with` (symbolDeclaration "D" "S" [] `with` [functional, constructor])
-            `with` constructorAxiom "S" [("C", []), ("D", [])]
+        ( indexModule $
+            emptyModule "m"
+                `with` sortDeclaration "S"
+                `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
+                `with` (symbolDeclaration "D" "S" [] `with` [functional, constructor])
+                `with` constructorAxiom "S" [("C", []), ("D", [])]
         )
         [ isSatisfiable
             [ "x" `ofType` encodeName "S"
@@ -152,15 +152,15 @@ test_sortDeclaration =
         ]
     , testsForModule
         "Constructor with arguments"
-        ( indexModule
-            $ emptyModule "m"
-            `with` sortDeclaration "S"
-            `with` (hookedSortDeclaration "Integer" `with` hook Int.sort)
-            `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
-            `with` ( symbolDeclaration "D" "S" ["Integer"]
-                        `with` [functional, constructor]
-                   )
-            `with` constructorAxiom "S" [("C", []), ("D", ["Integer"])]
+        ( indexModule $
+            emptyModule "m"
+                `with` sortDeclaration "S"
+                `with` (hookedSortDeclaration "Integer" `with` hook Int.sort)
+                `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
+                `with` ( symbolDeclaration "D" "S" ["Integer"]
+                            `with` [functional, constructor]
+                       )
+                `with` constructorAxiom "S" [("C", []), ("D", ["Integer"])]
         )
         [ isSatisfiable
             [ "x" `ofType` encodeName "S"
@@ -210,17 +210,17 @@ test_sortDeclaration =
         ]
     , testsForModule
         "Sort dependencies"
-        ( indexModule
-            $ emptyModule "m"
-            `with` sortDeclaration "T"
-            `with` sortDeclaration "S"
-            `with` (symbolDeclaration "E" "S" [] `with` [functional, constructor])
-            `with` (symbolDeclaration "C" "T" [] `with` [functional, constructor])
-            `with` ( symbolDeclaration "D" "T" ["S"]
-                        `with` [functional, constructor]
-                   )
-            `with` constructorAxiom "T" [("C", []), ("D", ["S"])]
-            `with` constructorAxiom "S" [("E", [])]
+        ( indexModule $
+            emptyModule "m"
+                `with` sortDeclaration "T"
+                `with` sortDeclaration "S"
+                `with` (symbolDeclaration "E" "S" [] `with` [functional, constructor])
+                `with` (symbolDeclaration "C" "T" [] `with` [functional, constructor])
+                `with` ( symbolDeclaration "D" "T" ["S"]
+                            `with` [functional, constructor]
+                       )
+                `with` constructorAxiom "T" [("C", []), ("D", ["S"])]
+                `with` constructorAxiom "S" [("E", [])]
         )
         [ isSatisfiable
             [ "x" `ofType` encodeName "T"
@@ -256,17 +256,17 @@ test_sortDeclaration =
         ]
     , testsForModule
         "Sort dependencies reverse order"
-        ( indexModule
-            $ emptyModule "m"
-            `with` sortDeclaration "S"
-            `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
-            `with` ( symbolDeclaration "D" "S" ["T"]
-                        `with` [functional, constructor]
-                   )
-            `with` constructorAxiom "S" [("C", []), ("D", ["T"])]
-            `with` sortDeclaration "T"
-            `with` (symbolDeclaration "E" "T" [] `with` [functional, constructor])
-            `with` constructorAxiom "T" [("E", [])]
+        ( indexModule $
+            emptyModule "m"
+                `with` sortDeclaration "S"
+                `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
+                `with` ( symbolDeclaration "D" "S" ["T"]
+                            `with` [functional, constructor]
+                       )
+                `with` constructorAxiom "S" [("C", []), ("D", ["T"])]
+                `with` sortDeclaration "T"
+                `with` (symbolDeclaration "E" "T" [] `with` [functional, constructor])
+                `with` constructorAxiom "T" [("E", [])]
         )
         [ isSatisfiable
             [ "x" `ofType` encodeName "S"

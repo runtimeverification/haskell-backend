@@ -275,8 +275,8 @@ instance MonadCatch m => MonadLog (LoggerT m) where
         (LoggerT . addContext $ getLoggerT action)
             `catch` (\(SomeEntry ctxt e) -> throwM $ SomeEntry (toEntry entry2 : ctxt) e)
       where
-        addContext = local
-            $ \LoggerEnv{logAction} ->
+        addContext = local $
+            \LoggerEnv{logAction} ->
                 LoggerEnv $ Colog.cmap (\(SomeEntry ctxt e) -> SomeEntry (toEntry entry2 : ctxt) e) logAction
     {-# INLINE logWhile #-}
 

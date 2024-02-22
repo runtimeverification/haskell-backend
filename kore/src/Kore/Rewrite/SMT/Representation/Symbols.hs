@@ -120,7 +120,7 @@ builtinDeclaration
                                 , sortDependencies =
                                     AST.SortReference
                                         <$> sentenceSymbolResultSort
-                                        : sentenceSymbolSorts
+                                            : sentenceSymbolSorts
                                 }
                     }
                 )
@@ -181,7 +181,7 @@ constructorDeclaration
                                     , sortDependencies =
                                         AST.SortReference
                                             <$> sentenceSymbolResultSort
-                                            : sentenceSymbolSorts
+                                                : sentenceSymbolSorts
                                     }
                         }
                     )

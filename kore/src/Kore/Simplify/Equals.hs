@@ -318,8 +318,8 @@ makeEvaluateTermsAssumesNoBottom ::
     Simplifier (OrPattern RewritingVariableName)
 makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
     result <-
-        runMaybeT
-            $ makeEvaluateTermsAssumesNoBottomMaybe firstTerm secondTerm
+        runMaybeT $
+            makeEvaluateTermsAssumesNoBottomMaybe firstTerm secondTerm
     (return . fromMaybe def) result
   where
     sort = termLikeSort firstTerm
@@ -328,8 +328,8 @@ makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
             Conditional
                 { term = mkTop sort
                 , predicate =
-                    Predicate.markSimplified
-                        $ makeEqualsPredicate firstTerm secondTerm
+                    Predicate.markSimplified $
+                        makeEqualsPredicate firstTerm secondTerm
                 , substitution = mempty
                 }
 
@@ -365,11 +365,10 @@ makeEvaluateTermsToPredicate first second sideCondition
         result <- runMaybeT $ termEquals first second
         case result of
             Nothing ->
-                return
-                    $ OrCondition.fromCondition
-                    . Condition.fromPredicate
-                    $ Predicate.markSimplified
-                    $ makeEqualsPredicate first second
+                return $
+                    OrCondition.fromCondition . Condition.fromPredicate $
+                        Predicate.markSimplified $
+                            makeEqualsPredicate first second
             Just predicatedOr -> do
                 firstCeilOr <- makeEvaluateTermCeil sideCondition first
                 secondCeilOr <- makeEvaluateTermCeil sideCondition second
@@ -400,9 +399,9 @@ termEquals first second = MaybeT $ do
     case sequence maybeResults of
         Nothing -> return Nothing
         Just results ->
-            return
-                $ Just
-                $ MultiOr.make (map Condition.eraseConditionalTerm results)
+            return $
+                Just $
+                    MultiOr.make (map Condition.eraseConditionalTerm results)
 
 termEqualsAnd ::
     HasCallStack =>

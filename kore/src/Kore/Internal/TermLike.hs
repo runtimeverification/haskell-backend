@@ -490,10 +490,9 @@ forgetSimplifiedIgnorePredicates term@(Recursive.project -> (_ :< termF)) =
         _ -> term
   where
     newAttrs =
-        synthetic
-            $ Cofree.headF
-            . Recursive.project
-            <$> termF
+        synthetic $
+            Cofree.headF . Recursive.project
+                <$> termF
     recursiveCall ::
         Functor f =>
         f (TermLike variable) ->
@@ -514,25 +513,25 @@ assertConstructorLikeKeys ::
 assertConstructorLikeKeys keys a
     | any (not . Attribute.isConstructorLike) keys =
         let simplifiableKeys =
-                filter (not . Attribute.isConstructorLike)
-                    $ Prelude.Kore.toList keys
-         in (error . show . Pretty.vsep)
-                $ [ "Internal error: expected constructor-like patterns,\
-                    \ an internal invariant has been violated.\
-                    \ Please report this error."
-                  , Pretty.indent 2 "Non-constructor-like patterns:"
-                  ]
-                <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
+                filter (not . Attribute.isConstructorLike) $
+                    Prelude.Kore.toList keys
+         in (error . show . Pretty.vsep) $
+                [ "Internal error: expected constructor-like patterns,\
+                  \ an internal invariant has been violated.\
+                  \ Please report this error."
+                , Pretty.indent 2 "Non-constructor-like patterns:"
+                ]
+                    <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
     | any (not . isSimplifiedAnyCondition) keys =
         let simplifiableKeys =
                 filter (not . isSimplifiedAnyCondition) $ Prelude.Kore.toList keys
-         in (error . show . Pretty.vsep)
-                $ [ "Internal error: expected fully simplified patterns,\
-                    \ an internal invariant has been violated.\
-                    \ Please report this error."
-                  , Pretty.indent 2 "Unsimplified patterns:"
-                  ]
-                <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
+         in (error . show . Pretty.vsep) $
+                [ "Internal error: expected fully simplified patterns,\
+                  \ an internal invariant has been violated.\
+                  \ Please report this error."
+                , Pretty.indent 2 "Unsimplified patterns:"
+                ]
+                    <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
     | otherwise = a
 
 {- | Mark a 'TermLike' as fully simplified at the current level.
@@ -862,8 +861,8 @@ mkApplySymbol ::
     [TermLike variable] ->
     TermLike variable
 mkApplySymbol symbol children =
-    updateCallStack
-        $ synthesize (ApplySymbolF (symbolApplication symbol children))
+    updateCallStack $
+        synthesize (ApplySymbolF (symbolApplication symbol children))
 
 symbolApplication ::
     HasCallStack =>
@@ -1014,8 +1013,8 @@ mkCeil ::
     TermLike variable ->
     TermLike variable
 mkCeil ceilResultSort ceilChild =
-    updateCallStack
-        $ synthesize (CeilF Ceil{ceilOperandSort, ceilResultSort, ceilChild})
+    updateCallStack $
+        synthesize (CeilF Ceil{ceilOperandSort, ceilResultSort, ceilChild})
   where
     ceilOperandSort = termLikeSort ceilChild
 
@@ -1105,8 +1104,8 @@ mkExists ::
     TermLike variable ->
     TermLike variable
 mkExists existsVariable existsChild =
-    updateCallStack
-        $ synthesize (ExistsF Exists{existsSort, existsVariable, existsChild})
+    updateCallStack $
+        synthesize (ExistsF Exists{existsSort, existsVariable, existsChild})
   where
     existsSort = termLikeSort existsChild
 
@@ -1128,8 +1127,8 @@ mkFloor ::
     TermLike variable ->
     TermLike variable
 mkFloor floorResultSort floorChild =
-    updateCallStack
-        $ synthesize (FloorF Floor{floorOperandSort, floorResultSort, floorChild})
+    updateCallStack $
+        synthesize (FloorF Floor{floorOperandSort, floorResultSort, floorChild})
   where
     floorOperandSort = termLikeSort floorChild
 
@@ -1141,8 +1140,8 @@ mkForall ::
     TermLike variable ->
     TermLike variable
 mkForall forallVariable forallChild =
-    updateCallStack
-        $ synthesize (ForallF Forall{forallSort, forallVariable, forallChild})
+    updateCallStack $
+        synthesize (ForallF Forall{forallSort, forallVariable, forallChild})
   where
     forallSort = termLikeSort forallChild
 
@@ -1325,11 +1324,8 @@ mkInternalBytes ::
     ByteString ->
     TermLike variable
 mkInternalBytes sort value =
-    updateCallStack
-        . synthesize
-        . InternalBytesF
-        . Const
-        $ InternalBytes
+    updateCallStack . synthesize . InternalBytesF . Const $
+        InternalBytes
             { internalBytesSort = sort
             , internalBytesValue = ByteString.toShort value
             }

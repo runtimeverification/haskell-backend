@@ -137,18 +137,18 @@ test_stepperAttributes =
 
 test_Anywhere :: [TestTree]
 test_Anywhere =
-    [ testCase "parseAttribute"
-        $ assertEqual
+    [ testCase "parseAttribute" $
+        assertEqual
             "[anywhere{}()]"
             (Right Anywhere{isAnywhere = True})
             (anywhere <$> parse [anywhereAttribute])
-    , testCase "defaultSymbolAttributes"
-        $ assertEqual
+    , testCase "defaultSymbolAttributes" $
+        assertEqual
             "[]"
             (Right def)
             (anywhere <$> parse [])
-    , testCase "isInjective"
-        $ assertEqual
+    , testCase "isInjective" $
+        assertEqual
             ""
             (Right False)
             (isInjective <$> parse [anywhereAttribute])
@@ -156,13 +156,13 @@ test_Anywhere =
 
 test_Memo :: [TestTree]
 test_Memo =
-    [ testCase "parseAttribute"
-        $ assertEqual
+    [ testCase "parseAttribute" $
+        assertEqual
             "[memo{}()]"
             (Right Memo{isMemo = True})
             (memo <$> parse [memoAttribute])
-    , testCase "defaultSymbolAttributes"
-        $ assertEqual
+    , testCase "defaultSymbolAttributes" $
+        assertEqual
             "[]"
             (Right def)
             (memo <$> parse [])
@@ -170,13 +170,13 @@ test_Memo =
 
 test_Klabel :: [TestTree]
 test_Klabel =
-    [ testCase "parseAttribute"
-        $ assertEqual
+    [ testCase "parseAttribute" $
+        assertEqual
             "[klabel{}(\"string\")]"
             (Right Klabel{getKlabel = Just "string"})
             (klabel <$> parse [klabelAttribute "string"])
-    , testCase "defaultSymbolAttributes"
-        $ assertEqual
+    , testCase "defaultSymbolAttributes" $
+        assertEqual
             "[]"
             (Right def)
             (klabel <$> parse [])
@@ -184,13 +184,13 @@ test_Klabel =
 
 test_SymbolKywd :: [TestTree]
 test_SymbolKywd =
-    [ testCase "parseAttribute"
-        $ assertEqual
+    [ testCase "parseAttribute" $
+        assertEqual
             "[symbolKywd{}()]"
             (Right SymbolKywd{getSymbol = Just ""})
             (symbolKywd <$> parse [symbolKywdAttribute ""])
-    , testCase "defaultSymbolAttributes"
-        $ assertEqual
+    , testCase "defaultSymbolAttributes" $
+        assertEqual
             "[]"
             (Right def)
             (symbolKywd <$> parse [])
@@ -198,13 +198,13 @@ test_SymbolKywd =
 
 test_NoEvaluators :: [TestTree]
 test_NoEvaluators =
-    [ testCase "parseAttribute"
-        $ assertEqual
+    [ testCase "parseAttribute" $
+        assertEqual
             "[noEvaluators{}[]]"
             (Right NoEvaluators{hasNoEvaluators = True})
             (noEvaluators <$> parse [noEvaluatorsAttribute])
-    , testCase "defaultSymbolAttributes"
-        $ assertEqual
+    , testCase "defaultSymbolAttributes" $
+        assertEqual
             "[]"
             (Right def)
             (noEvaluators <$> parse [])

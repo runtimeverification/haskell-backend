@@ -347,8 +347,8 @@ newSolver exe opts logger = do
     void $ forkIO (X.handle ignoreExceptions redirectErrorsToLogger)
 
     setOption solver ":print-success" "true"
-    Monad.when featureProduceAssertions
-        $ setOption solver ":produce-assertions" "true"
+    Monad.when featureProduceAssertions $
+        setOption solver ":produce-assertions" "true"
 
     return solverHandle
   where
@@ -441,8 +441,8 @@ ackCommand solver comment cmd =
         case res of
             Atom "success" -> return ()
             _ ->
-                fail
-                    $ unlines
+                fail $
+                    unlines
                         [ "Unexpected result from the SMT solver:"
                         , "  Command: " ++ showSExpr cmd
                         , "  Expected: success"
@@ -470,8 +470,8 @@ simpleCommandMaybe solver c =
             Atom "success" -> return True
             Atom "unsupported" -> return False
             _ ->
-                fail
-                    $ unlines
+                fail $
+                    unlines
                         [ "Unexpected result from the SMT solver:"
                         , "  Command: " ++ showSExpr cmd
                         , "  Expected: success or unsupported"
@@ -539,8 +539,8 @@ declareSort
     solver
     SortDeclaration{name, arity} =
         do
-            ackCommand solver Nothing
-                $ fun "declare-sort" [name, (Atom . Text.pack . show) arity]
+            ackCommand solver Nothing $
+                fun "declare-sort" [name, (Atom . Text.pack . show) arity]
             pure name
 
 -- | Declare a set of ADTs
@@ -701,8 +701,8 @@ defineFun ::
     SExpr ->
     IO SExpr
 defineFun solver f as t e = do
-    ackCommand solver Nothing
-        $ fun
+    ackCommand solver Nothing $
+        fun
             "define-fun"
             [Atom f, List [List [const x, a] | (x, a) <- as], t, e]
     return (const f)
@@ -732,8 +732,8 @@ checkUsing solver tactic = do
             return Unknown
         Atom "sat" -> return Sat
         _ ->
-            fail
-                $ unlines
+            fail $
+                unlines
                     [ "Unexpected result from the SMT solver:"
                     , "  Expected: unsat, unknown, or sat"
                     , "  Result: " ++ showSExpr res
@@ -778,8 +778,8 @@ getExprs solver vals =
         case res of
             List xs -> mapM getAns xs
             _ ->
-                fail
-                    $ unlines
+                fail $
+                    unlines
                         [ "Unexpected response from the SMT solver:"
                         , "  Command: " ++ showSExpr cmd
                         , "  Expected: a list"
@@ -790,8 +790,8 @@ getExprs solver vals =
         case expr of
             List [e, v] -> return (e, sexprToVal v)
             _ ->
-                fail
-                    $ unlines
+                fail $
+                    unlines
                         [ "Unexpected response from the SMT solver:"
                         , "  Expected: (expr val)"
                         , "  Result: " ++ showSExpr expr
@@ -833,8 +833,8 @@ getUnsatCore s =
             _ -> unexpected "an atom" x
 
     unexpected x e =
-        fail
-            $ unlines
+        fail $
+            unlines
                 [ "Unexpected response from the SMT Solver:"
                 , "  Expected: " ++ x
                 , "  Result: " ++ showSExpr e

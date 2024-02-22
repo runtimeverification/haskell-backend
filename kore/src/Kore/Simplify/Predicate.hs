@@ -340,8 +340,8 @@ simplifyNot sideCondition Not{notChild = multiOr} = do
                     zipWith fromMaybe (map MultiOr.singleton ps) mbSimplifieds
             pure (anySimplified, MultiAnd.make results)
 
-    pure
-        $ if (or flags)
+    pure $
+        if (or flags)
             then fold . MultiOr.make $ map liftOrs andOrs
             else normal
   where

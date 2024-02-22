@@ -3,13 +3,14 @@
   inputs = {
     rv-utils.url = "github:runtimeverification/rv-nix-tools";
     nixpkgs.follows = "rv-utils/nixpkgs";
+    nixpkgs2305.url = "nixpkgs/nixos-23.05";
     stacklock2nix.url = "github:cdepillabout/stacklock2nix";
     z3 = {
       url = "github:Z3Prover/z3/z3-4.12.1";
       flake = false;
     };
   };
-  outputs = { self, nixpkgs, stacklock2nix, z3, rv-utils }:
+  outputs = { self, nixpkgs, nixpkgs2305, stacklock2nix, z3, rv-utils }:
     let
       perSystem = nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed;
       nixpkgsCleanFor = system: import nixpkgs { inherit system; };
@@ -200,7 +201,8 @@
           additionalDevShellNativeBuildInputs = stacklockHaskellPkgSet:
             with ghcVersion final; [
               cabal-install
-              fourmolu
+              # fourmolu
+              (import nixpkgs2305 { inherit (prev) system; }).haskellPackages.fourmolu_0_12_0_0
               hlint
               stacklockHaskellPkgSet.haskell-language-server
               final.haskell-language-server
@@ -237,7 +239,9 @@
           mkShell {
             nativeBuildInputs = [
               (haskell.lib.justStaticExecutables
-                (ghcVersion pkgs).fourmolu)
+                # (ghcVersion pkgs).fourmolu
+                (import nixpkgs2305 { inherit (prev) system; }).haskellPackages.fourmolu_0_12_0_0
+                )
             ];
           };
         cabal = let pkgs = nixpkgsFor system;

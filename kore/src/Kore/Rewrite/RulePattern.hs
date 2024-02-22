@@ -183,8 +183,7 @@ topExistsToImplicitForall avoid' RHS{existentials, right, ensures} =
   where
     avoid = FreeVariables.toNames avoid'
     bindExistsFreeVariables =
-        freeVariables right
-            <> freeVariables ensures
+        freeVariables right <> freeVariables ensures
             & FreeVariables.bindVariables (mkSomeVariable <$> existentials)
             & FreeVariables.toNames
     renamed :: Map (SomeVariableName variable) (SomeVariable variable)
@@ -395,9 +394,9 @@ isFreeOf ::
     Set.Set (SomeVariable variable) ->
     Bool
 isFreeOf rule =
-    Set.disjoint
-        $ FreeVariables.toSet
-        $ freeVariables rule
+    Set.disjoint $
+        FreeVariables.toSet $
+            freeVariables rule
 
 renameExistentials ::
     forall variable.
@@ -616,8 +615,8 @@ mapRuleVariables ::
     rule variable1 ->
     rule variable2
 mapRuleVariables adj (coerce -> rule1@(RulePattern _ _ _ _ _)) =
-    coerce
-        $ rule1
+    coerce $
+        rule1
             { left = mapTermLikeVariables left
             , antiLeft = mapAntiLeftVariables <$> antiLeft
             , requires = mapPredicateVariables requires

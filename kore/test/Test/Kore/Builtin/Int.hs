@@ -540,9 +540,8 @@ test_symbolic_eq_not_conclusive =
         let x = mkElemVar $ "x" `ofSort` intSort
             y = mkElemVar $ "y" `ofSort` intSort
             expect =
-                MultiOr.singleton
-                    . fromTermLike
-                    $ mkApplySymbol eqIntSymbol [x, y]
+                MultiOr.singleton . fromTermLike $
+                    mkApplySymbol eqIntSymbol [x, y]
         actual <- evaluateTerm $ mkApplySymbol eqIntSymbol [x, y]
         assertEqual' "" expect actual
 

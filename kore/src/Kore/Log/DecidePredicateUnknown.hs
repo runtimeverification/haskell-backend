@@ -80,23 +80,22 @@ instance Entry DecidePredicateUnknown where
             WarnDecidePredicateUnknown _ _ -> Warning
             _ -> Error
     contextDoc DecidePredicateUnknown{action} =
-        Just
-            $ Pretty.align
-            $ Pretty.vsep
-                [ Pretty.hsep
-                    . catMaybes
-                    $ [ Just "while applying equation"
-                      , (\loc -> Pretty.hsep ["defined at", pretty loc]) <$> case action of
+        Just $
+            Pretty.align $
+                Pretty.vsep
+                    [ Pretty.hsep . catMaybes $
+                        [ Just "while applying equation"
+                        , (\loc -> Pretty.hsep ["defined at", pretty loc]) <$> case action of
                             WarnDecidePredicateUnknown _ koreLoc -> koreLoc
                             ErrorDecidePredicateUnknown _ koreLoc -> koreLoc
-                      ]
-                , Pretty.hsep
-                    [ "in"
-                    , case action of
-                        ErrorDecidePredicateUnknown hsLoc _ -> prettyHsLoc hsLoc
-                        WarnDecidePredicateUnknown hsLoc _ -> prettyHsLoc hsLoc
+                        ]
+                    , Pretty.hsep
+                        [ "in"
+                        , case action of
+                            ErrorDecidePredicateUnknown hsLoc _ -> prettyHsLoc hsLoc
+                            WarnDecidePredicateUnknown hsLoc _ -> prettyHsLoc hsLoc
+                        ]
                     ]
-                ]
       where
         prettyHsLoc Loc{loc_module, loc_start = (row, col)} =
             Pretty.pretty loc_module <> ":" <> Pretty.pretty row <> ":" <> Pretty.pretty col

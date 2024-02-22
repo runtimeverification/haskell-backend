@@ -20,16 +20,16 @@ parseTotal = parseAttributes
 
 test_total :: TestTree
 test_total =
-    testCase "[total{}()] :: Total"
-        $ expectSuccess Total{isDeclaredTotal = True}
-        $ parseTotal
-        $ Attributes [totalAttribute]
+    testCase "[total{}()] :: Total" $
+        expectSuccess Total{isDeclaredTotal = True} $
+            parseTotal $
+                Attributes [totalAttribute]
 
 test_Attributes :: TestTree
 test_Attributes =
-    testCase "[total{}()] :: Attributes"
-        $ expectSuccess attrs
-        $ parseAttributes attrs
+    testCase "[total{}()] :: Attributes" $
+        expectSuccess attrs $
+            parseAttributes attrs
   where
     attrs = Attributes [totalAttribute]
 
@@ -47,20 +47,20 @@ test_Attributes =
 
 test_arguments :: TestTree
 test_arguments =
-    testCase "[total{}(\"illegal\")]"
-        $ expectFailure
-        $ parseTotal
-        $ Attributes [illegalAttribute]
+    testCase "[total{}(\"illegal\")]" $
+        expectFailure $
+            parseTotal $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         attributePattern totalSymbol [attributeString "illegal"]
 
 test_parameters :: TestTree
 test_parameters =
-    testCase "[total{illegal}()]"
-        $ expectFailure
-        $ parseTotal
-        $ Attributes [illegalAttribute]
+    testCase "[total{illegal}()]" $
+        expectFailure $
+            parseTotal $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)

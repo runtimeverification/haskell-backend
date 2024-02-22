@@ -256,63 +256,52 @@ int = Builtin.Int.intLiteral
 
 test_Int_contradictions :: [TestTree]
 test_Int_contradictions =
-    [ testCase "a < 0 ∧ 0 < a"
-        . assertRefuted
-        $ makeEqualsPredicate true
-        $ andBool (a `ltInt` int 0) (int 0 `ltInt` a)
-    , testCase "(a + a < a + b) ∧ (b + b < a + b)"
-        . assertRefuted
-        $ makeEqualsPredicate true
-        $ andBool
-            ((a `addInt` a) `ltInt` (a `addInt` b))
-            ((b `addInt` b) `ltInt` (a `addInt` b))
-    , testCase "¬(a < b → b < c → a < c)"
-        . assertRefuted
-        $ makeEqualsPredicate false
-        $ impliesBool (a `ltInt` b) (impliesBool (b `ltInt` c) (a `ltInt` c))
-    , testCase "1 + 2 a (odd) = 2 b (even)"
-        . assertRefuted
-        $ makeEqualsPredicate true
-        $ eqInt
-            (addInt (int 1) (int 2 `mulInt` a))
-            (int 2 `mulInt` b)
-    , testCase "¬((0 - a² = b²) → a = 0)"
-        . assertRefuted
-        $ makeEqualsPredicate false
-        $ impliesBool
-            (eqInt (int 0 `subInt` (a `mulInt` a)) (b `mulInt` b))
-            (eqInt a (int 0))
+    [ testCase "a < 0 ∧ 0 < a" . assertRefuted $
+        makeEqualsPredicate true $
+            andBool (a `ltInt` int 0) (int 0 `ltInt` a)
+    , testCase "(a + a < a + b) ∧ (b + b < a + b)" . assertRefuted $
+        makeEqualsPredicate true $
+            andBool
+                ((a `addInt` a) `ltInt` (a `addInt` b))
+                ((b `addInt` b) `ltInt` (a `addInt` b))
+    , testCase "¬(a < b → b < c → a < c)" . assertRefuted $
+        makeEqualsPredicate false $
+            impliesBool (a `ltInt` b) (impliesBool (b `ltInt` c) (a `ltInt` c))
+    , testCase "1 + 2 a (odd) = 2 b (even)" . assertRefuted $
+        makeEqualsPredicate true $
+            eqInt
+                (addInt (int 1) (int 2 `mulInt` a))
+                (int 2 `mulInt` b)
+    , testCase "¬((0 - a² = b²) → a = 0)" . assertRefuted $
+        makeEqualsPredicate false $
+            impliesBool
+                (eqInt (int 0 `subInt` (a `mulInt` a)) (b `mulInt` b))
+                (eqInt a (int 0))
     , testCase "f(0) = 123 ∧ f(0) = 456  -- uninterpreted functions"
         . assertRefuted
         $ makeEqualsPredicate true
         $ andBool
             (eqInt (dummyFunctionalInt (int 0)) (int 123))
             (eqInt (dummyFunctionalInt (int 0)) (int 456))
-    , testCase "¬(0 < a → (a / 2) < a)"
-        . assertRefuted
-        $ makeEqualsPredicate false
-        $ impliesBool (int 0 `ltInt` a) (ltInt (a `tdivInt` int 2) a)
-    , testCase "¬(2 a % 2 = 0)"
-        . assertRefuted
-        $ makeEqualsPredicate false
-        $ eqInt (tmodInt (a `mulInt` int 2) (int 2)) (int 0)
+    , testCase "¬(0 < a → (a / 2) < a)" . assertRefuted $
+        makeEqualsPredicate false $
+            impliesBool (int 0 `ltInt` a) (ltInt (a `tdivInt` int 2) a)
+    , testCase "¬(2 a % 2 = 0)" . assertRefuted $
+        makeEqualsPredicate false $
+            eqInt (tmodInt (a `mulInt` int 2) (int 2)) (int 0)
     ]
 
 test_Bool_contradictions :: [TestTree]
 test_Bool_contradictions =
-    [ testCase "¬(((p → q) → p) → p)  -- Pierce"
-        . assertRefuted
-        $ makeEqualsPredicate false
-        $ ((p `impliesBool` q) `impliesBool` p)
-        `impliesBool` p
-    , testCase "¬(¬(p ∨ q) = ¬p ∧ ¬q)  -- de Morgan"
-        . assertRefuted
-        $ makeEqualsPredicate false
-        $ eqBool (notBool (p `orBool` q)) (andBool (notBool p) (notBool q))
+    [ testCase "¬(((p → q) → p) → p)  -- Pierce" . assertRefuted $
+        makeEqualsPredicate false $
+            ((p `impliesBool` q) `impliesBool` p) `impliesBool` p
+    , testCase "¬(¬(p ∨ q) = ¬p ∧ ¬q)  -- de Morgan" . assertRefuted $
+        makeEqualsPredicate false $
+            eqBool (notBool (p `orBool` q)) (andBool (notBool p) (notBool q))
     , testCase "¬⊤" . assertRefuted $ makeNotPredicate makeTruePredicate
-    , testCase "¬(¬p = p → false)"
-        . assertRefuted
-        $ makeNotPredicate
-        $ makeEqualsPredicate true
-        $ eqBool (notBool p) (p `impliesBool` false)
+    , testCase "¬(¬p = p → false)" . assertRefuted $
+        makeNotPredicate $
+            makeEqualsPredicate true $
+                eqBool (notBool p) (p `impliesBool` false)
     ]

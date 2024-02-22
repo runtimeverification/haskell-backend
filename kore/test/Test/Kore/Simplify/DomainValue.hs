@@ -26,8 +26,8 @@ test_simplify =
         "DomainValue evaluates to DomainValue"
         ( assertEqual
             ""
-            ( OrPattern.fromTermLike
-                $ mkDomainValue
+            ( OrPattern.fromTermLike $
+                mkDomainValue
                     DomainValue
                         { domainValueSort = testSort
                         , domainValueChild = mkStringLiteral "a"

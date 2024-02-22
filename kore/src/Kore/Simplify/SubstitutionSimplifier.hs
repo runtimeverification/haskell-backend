@@ -241,8 +241,8 @@ deduplicateSubstitution sideCondition makeAnd' =
                 -- New substitutions produced by simplification.
                 Conditional{substitution} = simplified
                 substitutions'' =
-                    Map.unionWith (<>) substitutions'
-                        $ Substitution.toMultiMap substitution
+                    Map.unionWith (<>) substitutions' $
+                        Substitution.toMultiMap substitution
             worker predicate'' substitutions''
 
     getSingleton (t :| []) = Just t
@@ -288,8 +288,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
         simplified <-
             takeSubstitution
                 >>= deduplicate
-                >>= return
-                . normalize
+                >>= return . normalize
                 >>= traverse simplifyNormalizationOnce
         substitution <- takeSubstitution
         lastCount <- Lens.use (field @"count")
@@ -394,8 +393,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
     deduplicate substitution = do
         (predicate, substitution') <-
             deduplicateSubstitution makeAnd' sideCondition substitution
-                & lift
-                . lift
+                & lift . lift
         addPredicate predicate
         return substitution'
 

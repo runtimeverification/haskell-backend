@@ -94,8 +94,8 @@ test_unify =
     unifies name term1 term2 solution =
         testCase name $ do
             let expect =
-                    Pattern.withCondition term1
-                        $ mconcat (Condition.fromSingleSubstitution <$> solution)
+                    Pattern.withCondition term1 $
+                        mconcat (Condition.fromSingleSubstitution <$> solution)
             actual <- unify term1 term2
             assertEqual "expected unification solution" [expect] actual
     doesn'tUnify ::
@@ -115,7 +115,7 @@ unify ::
     TermLike RewritingVariableName ->
     IO [Pattern RewritingVariableName]
 unify term1 term2 =
-    runNoSMT
-        $ runSimplifier testEnv
-        $ runUnifierT
-        $ termUnification term1 term2
+    runNoSMT $
+        runSimplifier testEnv $
+            runUnifierT $
+                termUnification term1 term2

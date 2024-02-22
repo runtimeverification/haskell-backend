@@ -672,8 +672,8 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
                     , substitution =
-                        Substitution.wrap
-                            $ Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
                                 [ (inject Mock.xConfig, fOfA)
                                 , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
                                 ]
@@ -717,8 +717,8 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
                     , substitution =
-                        Substitution.wrap
-                            $ Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
                                 [ (inject Mock.xConfig, fOfA)
                                 , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
                                 ]
@@ -762,8 +762,8 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
                     , substitution =
-                        Substitution.wrap
-                            $ Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
                                 [ (inject Mock.xConfig, fOfA)
                                 , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
                                 ]
@@ -807,8 +807,8 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
                     , substitution =
-                        Substitution.wrap
-                            $ Substitution.mkUnwrappedSubstitution
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
                                 [ (inject Mock.xConfig, fOfA)
                                 , (inject Mock.mConfig, Mock.builtinMap [(Mock.b, fOfB)])
                                 ]
@@ -868,8 +868,8 @@ test_equalsSimplification_TermLike =
                         , -- TODO(virgil): This sort should be listSort.
                           predicate = makeTruePredicate
                         , substitution =
-                            Substitution.wrap
-                                $ Substitution.mkUnwrappedSubstitution
+                            Substitution.wrap $
+                                Substitution.mkUnwrappedSubstitution
                                     [(inject x, Mock.builtinList [Mock.b])]
                         }
                     term5
@@ -1041,8 +1041,8 @@ evaluate ::
     Pattern RewritingVariableName ->
     IO (OrCondition RewritingVariableName)
 evaluate first second =
-    testRunSimplifier mockEnv
-        $ makeEvaluate
+    testRunSimplifier mockEnv $
+        makeEvaluate
             (simplifiedPattern first)
             (simplifiedPattern second)
             SideCondition.top
@@ -1054,8 +1054,8 @@ evaluateTermsGeneric ::
     TermLike RewritingVariableName ->
     IO (OrCondition RewritingVariableName)
 evaluateTermsGeneric first second =
-    testRunSimplifier mockEnv
-        $ makeEvaluateTermsToPredicate
+    testRunSimplifier mockEnv $
+        makeEvaluateTermsToPredicate
             (simplifiedTerm first)
             (simplifiedTerm second)
             SideCondition.top

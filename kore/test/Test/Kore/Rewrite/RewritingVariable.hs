@@ -18,13 +18,13 @@ import Test.Tasty
 
 test_FreshPartialOrd_RewritingVariableName :: TestTree
 test_FreshPartialOrd_RewritingVariableName =
-    testGroup "instance FreshPartialOrd RewritingVariableName"
-        $ testFreshPartialOrd relatedRewritingVariableNameGen
+    testGroup "instance FreshPartialOrd RewritingVariableName" $
+        testFreshPartialOrd relatedRewritingVariableNameGen
 
 test_FreshPartialOrd_SomeVariableName_RewritingVariableName :: TestTree
 test_FreshPartialOrd_SomeVariableName_RewritingVariableName =
-    testGroup "instance FreshPartialOrd (SomeVariableName RewritingVariableName)"
-        $ testFreshPartialOrd relatedSomeRewritingVariableGen
+    testGroup "instance FreshPartialOrd (SomeVariableName RewritingVariableName)" $
+        testFreshPartialOrd relatedSomeRewritingVariableGen
 
 relatedRewritingVariableNameGen :: Gen (Pair RewritingVariableName)
 relatedRewritingVariableNameGen =

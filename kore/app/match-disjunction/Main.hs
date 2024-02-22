@@ -156,14 +156,14 @@ koreMatchDisjunction LocalOptions{execOptions} = do
     disjunctionPattern <-
         mainParseDisjunctionPattern mainModule disjunctionFileName
     final <-
-        clockSomethingIO "Executing"
-            $ runNoSMT
-            $ matchDisjunction
-                mainModule
-                matchPattern
-                disjunctionPattern
-    lift
-        $ renderResult
+        clockSomethingIO "Executing" $
+            runNoSMT $
+                matchDisjunction
+                    mainModule
+                    matchPattern
+                    disjunctionPattern
+    lift $
+        renderResult
             execOptions
             (unparse final)
     return ExitSuccess

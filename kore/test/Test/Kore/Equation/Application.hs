@@ -157,11 +157,11 @@ test_attemptEquation =
                     (Mock.functional11 (mkElemVar Mock.xConfig))
                     (Mock.functional10 (mkElemVar Mock.xConfig))
             expect =
-                Pattern.withCondition initial
-                    $ Condition.fromPredicate
-                    $ makeEqualsPredicate
-                        (Mock.functional11 (mkElemVar Mock.yConfig))
-                        (Mock.functional10 (mkElemVar Mock.yConfig))
+                Pattern.withCondition initial $
+                    Condition.fromPredicate $
+                        makeEqualsPredicate
+                            (Mock.functional11 (mkElemVar Mock.yConfig))
+                            (Mock.functional10 (mkElemVar Mock.yConfig))
             initial = mkElemVar Mock.yConfig
             equation = equationId{ensures}
         actual <-
@@ -300,8 +300,8 @@ test_attemptEquation =
         -- using SMT
         "Σ(X, Y) => A requires (X > 0 or not Y > 0) applies to Σ(Z, Z)"
         (axiom (sigma x y) a (positive x `orNot` positive y))
-        ( SideCondition.fromPredicateWithReplacements
-            $ positive a
+        ( SideCondition.fromPredicateWithReplacements $
+            positive a
         )
         (sigma a a)
         -- SMT not used to simplify trivial constraints
@@ -310,16 +310,16 @@ test_attemptEquation =
         -- using SMT
         "f(X) => A requires (X > 0) doesn't apply to f(Z) and (not (Z > 0))"
         (axiom (f x) a (positive x))
-        ( SideCondition.fromPredicateWithReplacements
-            $ makeNotPredicate (positive z)
+        ( SideCondition.fromPredicateWithReplacements $
+            makeNotPredicate (positive z)
         )
         (f z)
     , applies
         -- using SMT
         "f(X) => A requires (X > 0) applies to f(Z) and (Z > 0)"
         (axiom (f x) a (positive x))
-        ( SideCondition.fromPredicateWithReplacements
-            $ positive z
+        ( SideCondition.fromPredicateWithReplacements $
+            positive z
         )
         (f z)
         (Pattern.fromTermLike a)

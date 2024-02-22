@@ -36,8 +36,8 @@ test_fromSentenceAxiom =
             left = Mock.f (mkElemVar Mock.x)
             right = Mock.g (mkElemVar Mock.x)
             original =
-                mkImplies requires
-                    $ mkEquals sortR left (mkAnd right ensures)
+                mkImplies requires $
+                    mkEquals sortR left (mkAnd right ensures)
             equation =
                 (mkEquation left right)
                     { requires = wrapPredicate requires
@@ -53,8 +53,8 @@ test_fromSentenceAxiom =
             left = Mock.f (mkElemVar Mock.y)
             right = Mock.g (mkElemVar Mock.y)
             original =
-                mkImplies (mkAnd requires argument')
-                    $ mkEquals sortR left (mkAnd right ensures)
+                mkImplies (mkAnd requires argument') $
+                    mkEquals sortR left (mkAnd right ensures)
             equation =
                 (mkEquation left right)
                     { requires = wrapPredicate requires

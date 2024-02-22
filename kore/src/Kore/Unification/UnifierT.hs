@@ -66,8 +66,8 @@ deriving newtype instance MonadSMT m => MonadSMT (UnifierT m)
 
 instance MonadSimplify m => MonadSimplify (UnifierT m) where
     localAxiomEquations locally (UnifierT readerT) =
-        UnifierT
-            $ mapReaderT
+        UnifierT $
+            mapReaderT
                 ( mapLogicT
                     (localAxiomEquations locally)
                 )

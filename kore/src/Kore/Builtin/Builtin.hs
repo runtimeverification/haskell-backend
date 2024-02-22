@@ -145,8 +145,8 @@ appliedFunction ::
     Pattern variable ->
     m (AttemptedAxiom variable)
 appliedFunction epat =
-    return
-        $ Applied
+    return $
+        Applied
             AttemptedAxiomResults
                 { results = OrPattern.fromPattern epat
                 , remainders = OrPattern.bottom
@@ -382,10 +382,10 @@ lookupSymbolUnit tools builtinSort =
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
     symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
     ~missingUnitAttribute =
-        verifierBug
-            $ "missing 'unit' attribute of sort '"
-            ++ unparseToString builtinSort
-            ++ "'"
+        verifierBug $
+            "missing 'unit' attribute of sort '"
+                ++ unparseToString builtinSort
+                ++ "'"
 
 {- | Find the symbol hooked to @element@.
 
@@ -418,10 +418,10 @@ lookupSymbolElement tools builtinSort =
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
     symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
     ~missingElementAttribute =
-        verifierBug
-            $ "missing 'element' attribute of sort '"
-            ++ unparseToString builtinSort
-            ++ "'"
+        verifierBug $
+            "missing 'element' attribute of sort '"
+                ++ unparseToString builtinSort
+                ++ "'"
 
 {- | Find the symbol hooked to @concat@.
 
@@ -454,10 +454,10 @@ lookupSymbolConcat tools builtinSort =
     symbolSorts = MetadataTools.applicationSorts tools symbolOrAlias
     symbolAttributes = MetadataTools.symbolAttributes tools symbolConstructor
     ~missingConcatAttribute =
-        verifierBug
-            $ "missing 'concat' attribute of sort '"
-            ++ unparseToString builtinSort
-            ++ "'"
+        verifierBug $
+            "missing 'concat' attribute of sort '"
+                ++ unparseToString builtinSort
+                ++ "'"
 
 -- | Is the given symbol hooked to the named builtin?
 isSymbol ::
@@ -507,8 +507,8 @@ makeDomainValuePattern ::
     Text ->
     Pattern variable
 makeDomainValuePattern sort stringLiteral =
-    Pattern.fromTermLike
-        $ makeDomainValueTerm sort stringLiteral
+    Pattern.fromTermLike $
+        makeDomainValueTerm sort stringLiteral
 
 data UnifyEq = UnifyEq
     { eqTerm :: !(EqTerm (TermLike RewritingVariableName))

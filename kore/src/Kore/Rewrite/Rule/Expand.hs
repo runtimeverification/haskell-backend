@@ -116,9 +116,7 @@ instance ExpandSingleConstructors ClaimPattern where
                             allElementVariableNames ::
                                 Set (ElementVariableName RewritingVariableName)
                             allElementVariableNames =
-                                variableName
-                                    <$> freeElementVariables
-                                    <> existentials
+                                variableName <$> freeElementVariables <> existentials
                                     & Set.fromList
                             expansion ::
                                 Map.Map

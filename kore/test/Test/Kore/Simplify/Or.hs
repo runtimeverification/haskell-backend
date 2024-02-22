@@ -141,8 +141,8 @@ testVar :: Text -> ElementVariable RewritingVariableName
 testVar ident =
     Variable
         { variableName =
-            ElementVariableName
-                $ mkConfigVariable
+            ElementVariableName $
+                mkConfigVariable
                     VariableName
                         { base = testId ident
                         , counter = mempty
@@ -173,14 +173,14 @@ sT = mempty
 
 sm :: Substitution RewritingVariableName
 sm =
-    Substitution.wrap
-        $ Substitution.mkUnwrappedSubstitution
+    Substitution.wrap $
+        Substitution.mkUnwrappedSubstitution
             [(inject Mock.xConfig, Mock.a)] -- I'd rather these were meaningful
 
 sM :: Substitution RewritingVariableName
 sM =
-    Substitution.wrap
-        $ Substitution.mkUnwrappedSubstitution
+    Substitution.wrap $
+        Substitution.mkUnwrappedSubstitution
             [(inject Mock.yConfig, Mock.b)] -- I'd rather these were meaningful
 
 test_valueProperties :: TestTree

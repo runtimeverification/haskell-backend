@@ -46,6 +46,6 @@ test_parseSExpr =
         Text ->
         TestTree
     parse testName results input =
-        testCase testName
-            $ assertEqual "" (Right results)
-            $ Parser.runParser parseSExprFile "<string>" input
+        testCase testName $
+            assertEqual "" (Right results) $
+                Parser.runParser parseSExprFile "<string>" input

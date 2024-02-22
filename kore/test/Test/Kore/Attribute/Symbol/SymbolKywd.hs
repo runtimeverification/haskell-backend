@@ -19,52 +19,52 @@ parseSymbolKywd = parseAttributes
 
 test_symbolKywd :: TestTree
 test_symbolKywd =
-    testCase "[symbolKywd{}()] :: SymbolKywd"
-        $ expectSuccess SymbolKywd{getSymbol = Just ""}
-        $ parseSymbolKywd
-        $ Attributes [symbolKywdAttribute ""]
+    testCase "[symbolKywd{}()] :: SymbolKywd" $
+        expectSuccess SymbolKywd{getSymbol = Just ""} $
+            parseSymbolKywd $
+                Attributes [symbolKywdAttribute ""]
 
 test_Attributes :: TestTree
 test_Attributes =
-    testCase "[symbolKywd{}()] :: Attributes"
-        $ expectSuccess attrs
-        $ parseAttributes attrs
+    testCase "[symbolKywd{}()] :: Attributes" $
+        expectSuccess attrs $
+            parseAttributes attrs
   where
     attrs = Attributes [symbolKywdAttribute ""]
 
 test_duplicate :: TestTree
 test_duplicate =
-    testCase "[symbolKywd{}(), symbolKywd{}()]"
-        $ expectFailure
-        $ parseSymbolKywd
-        $ Attributes [symbolKywdAttribute "", symbolKywdAttribute ""]
+    testCase "[symbolKywd{}(), symbolKywd{}()]" $
+        expectFailure $
+            parseSymbolKywd $
+                Attributes [symbolKywdAttribute "", symbolKywdAttribute ""]
 
 test_argument :: TestTree
 test_argument =
-    testCase "[symbolKywd{}(\"legal\")]"
-        $ expectSuccess SymbolKywd{getSymbol = Just "legal"}
-        $ parseSymbolKywd
-        $ Attributes [legalAttribute]
+    testCase "[symbolKywd{}(\"legal\")]" $
+        expectSuccess SymbolKywd{getSymbol = Just "legal"} $
+            parseSymbolKywd $
+                Attributes [legalAttribute]
   where
     legalAttribute =
         attributePattern symbolKywdSymbol [attributeString "legal"]
 
 test_2arguments :: TestTree
 test_2arguments =
-    testCase "[symbolKywd{}(\"not\", \"allowed\")]"
-        $ expectFailure
-        $ parseSymbolKywd
-        $ Attributes [illegalAttribute]
+    testCase "[symbolKywd{}(\"not\", \"allowed\")]" $
+        expectFailure $
+            parseSymbolKywd $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         attributePattern symbolKywdSymbol [attributeString "not", attributeString "allowed"]
 
 test_parameters :: TestTree
 test_parameters =
-    testCase "[symbolKywd{illegal}()]"
-        $ expectFailure
-        $ parseSymbolKywd
-        $ Attributes [illegalAttribute]
+    testCase "[symbolKywd{illegal}()]" $
+        expectFailure $
+            parseSymbolKywd $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)

@@ -56,8 +56,8 @@ test_matchAxiomIdentifier =
         (Exists (Application Mock.fId))
     , matches
         "\\exists(x, \\equals(x, f(a)))"
-        ( TermLike.mkExists Mock.x
-            $ TermLike.mkEquals
+        ( TermLike.mkExists Mock.x $
+            TermLike.mkEquals
                 Mock.topSort
                 (TermLike.mkElemVar Mock.x)
                 (Mock.f Mock.a)
@@ -120,9 +120,9 @@ test_matchAxiomIdentifier =
         "Domain Values"
         [ test
             "domain value"
-            ( TermLike.mkDomainValue
-                $ DomainValue Mock.testSort
-                $ TermLike.mkStringLiteral "hello"
+            ( TermLike.mkDomainValue $
+                DomainValue Mock.testSort $
+                    TermLike.mkStringLiteral "hello"
             )
             DV
         , test
@@ -163,6 +163,6 @@ matches ::
     AxiomIdentifier ->
     TestTree
 matches name input expect =
-    testCase ("matches " ++ name)
-        $ assertEqual "" expect
-        $ matchAxiomIdentifier input
+    testCase ("matches " ++ name) $
+        assertEqual "" expect $
+            matchAxiomIdentifier input

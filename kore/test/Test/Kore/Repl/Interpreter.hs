@@ -127,9 +127,7 @@ runSequentially tests
 
 test_replInterpreter :: TestTree
 test_replInterpreter =
-    testGroup "Interpreter interaction"
-        . runSequentially
-        $
+    testGroup "Interpreter interaction" . runSequentially $
         -- we need to sequentialise these tests, `runInputT` in
         -- `runWithState` is not thread-safe
         [ showUsage `tests` "Showing the usage message"
@@ -538,7 +536,7 @@ showCurrentClaim =
             equalsOutput
                 output
                 $ makeAuxReplOutput (showCurrentClaimIndex expectedCindex)
-                <> (makeKoreReplOutput . unparseToString $ zeroToTen)
+                    <> (makeKoreReplOutput . unparseToString $ zeroToTen)
             continue `equals` Continue
 
 showClaim1 :: IO ()
@@ -679,27 +677,24 @@ add1 =
 
 zeroToTen :: SomeClaim
 zeroToTen =
-    OnePath
-        . OnePathClaim
-        $ claimWithName zero ten "0to10Claim"
+    OnePath . OnePathClaim $
+        claimWithName zero ten "0to10Claim"
   where
     zero = Int.asInternal intSort 0
     ten = Int.asInternal intSort 10
 
 emptyClaim :: SomeClaim
 emptyClaim =
-    OnePath
-        . OnePathClaim
-        $ claimWithName
+    OnePath . OnePathClaim $
+        claimWithName
             (mkBottom kSort)
             (mkBottom kSort)
             "emptyClaim"
 
 zeroToZero :: SomeClaim
 zeroToZero =
-    AllPath
-        . AllPathClaim
-        $ claimWithName zero zero "0to0Claim"
+    AllPath . AllPathClaim $
+        claimWithName zero zero "0to0Claim"
   where
     zero = Int.asInternal intSort 0
 
@@ -772,8 +767,8 @@ runWithState command axioms claims claim stateTransformer = do
                 . flip runReaderT config
                 . runInputT defaultSettings
     ((c, s), logEntries) <-
-        runLogger
-            $ replInterpreter0
+        runLogger $
+            replInterpreter0
                 (modifyAuxOutput output)
                 (modifyKoreOutput output)
                 command

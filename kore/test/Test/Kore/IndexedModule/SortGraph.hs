@@ -73,8 +73,8 @@ test_subsortsOf =
 
 test_fromIndexedModule :: TestTree
 test_fromIndexedModule =
-    testCase "fromIndexedModule = fromSubsorts"
-        $ assertEqual "" sortGraph (fromIndexedModule verifiedModule)
+    testCase "fromIndexedModule = fromSubsorts" $
+        assertEqual "" sortGraph (fromIndexedModule verifiedModule)
   where
     verifiedModules =
         assertRight $ verifyAndIndexDefinition Builtin.koreVerifiers definition

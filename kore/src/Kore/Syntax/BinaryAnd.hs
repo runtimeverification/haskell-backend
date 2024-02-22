@@ -57,5 +57,5 @@ instance Synthetic Sort (BinaryAnd Sort) where
     synthetic BinaryAnd{andSort, andFirst, andSecond} =
         andSort
             & seq (sameSort andSort andFirst)
-            . seq (sameSort andSort andSecond)
+                . seq (sameSort andSort andSecond)
     {-# INLINE synthetic #-}

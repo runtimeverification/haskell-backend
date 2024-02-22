@@ -133,8 +133,9 @@ axiomPatternsUnitTests =
                         , definitionModules = [moduleTest]
                         }
            in testCase "definition containing I1:AInt => I2:AInt"
-                -- TODO(traiansf): such checks should be made during verification
-                $ assertErrorIO
+              -- TODO(traiansf): such checks should be made during verification
+              $
+                assertErrorIO
                     (assertSubstring "" "Unsupported pattern type in axiom")
                     ( evaluate
                         . force
@@ -142,11 +143,11 @@ axiomPatternsUnitTests =
                         . indexedModuleAxioms
                         $ extractIndexedModule "TEST" indexedDefinition
                     )
-        , testCase "(I1:AInt => I2:AInt)::KItem"
-            $ assertErrorIO
+        , testCase "(I1:AInt => I2:AInt)::KItem" $
+            assertErrorIO
                 (assertSubstring "" "Unsupported pattern type in axiom")
-                ( evaluate
-                    $ force
+                ( evaluate $
+                    force
                         ( fromSentenceAxiom
                             ( def
                             , mkAxiom_
@@ -233,17 +234,17 @@ test_rewritePatternToRewriteRuleAndBack =
               initialPattern =
                 Rewrites Mock.testSort initialLhs initialRhs
               finalTerm = mkRewrites initialLhs initialRhs
-           in testCase "RewriteRule without antileft"
-                $ assertEqual
+           in testCase "RewriteRule without antileft" $
+                assertEqual
                     ""
                     finalTerm
                     (perhapsFinalPattern def initialPattern)
         ]
   where
     perhapsFinalPattern attribute initialPattern =
-        rewriteRuleToTerm
-            $ fromRight (error "Expected simple rewrite rule")
-            $ simpleRewriteTermToRule attribute initialPattern
+        rewriteRuleToTerm $
+            fromRight (error "Expected simple rewrite rule") $
+                simpleRewriteTermToRule attribute initialPattern
 
 test_patternToAxiomPatternAndBack :: TestTree
 test_patternToAxiomPatternAndBack =
@@ -254,8 +255,8 @@ test_patternToAxiomPatternAndBack =
                 mkImplies
                     leftP
                     (mkApplyAlias op [mkElemVar Mock.x])
-           in testCase "implication axioms:"
-                $ assertEqual
+           in testCase "implication axioms:" $
+                assertEqual
                     ""
                     (Right initialPattern)
                     (perhapsFinalPattern def initialPattern)

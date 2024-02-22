@@ -180,8 +180,8 @@ instance Substitute (Implication modality) where
     type VariableNameType (Implication modality) = RewritingVariableName
 
     substitute subst implication'@(Implication _ _ _ _ _) =
-        substituteRight subst
-            $ implication'
+        substituteRight subst $
+            implication'
                 { left = substitute subst left
                 }
       where
@@ -264,8 +264,7 @@ substituteRight subst0 implication'@Implication{right, existentials} =
         Foldable.foldl'
             Set.union
             Set.empty
-            ( FreeVariables.toNames
-                . freeVariables @_ @RewritingVariableName
+            ( FreeVariables.toNames . freeVariables @_ @RewritingVariableName
                 <$> subst
             )
 
@@ -280,8 +279,8 @@ substituteRight subst0 implication'@Implication{right, existentials} =
         ElementVariable RewritingVariableName
     renameVariable var =
         let name = SomeVariableNameElement $ variableName var
-         in maybe var TermLike.expectElementVariable
-                $ Map.lookup name subst'
+         in maybe var TermLike.expectElementVariable $
+                Map.lookup name subst'
 
 {- | Applies a substitution to an implication and checks that
  it was fully applied, i.e. there is no substitution
@@ -307,9 +306,9 @@ isFreeOf ::
     Set.Set (SomeVariable RewritingVariableName) ->
     Bool
 isFreeOf rule =
-    Set.disjoint
-        $ FreeVariables.toSet
-        $ freeVariables rule
+    Set.disjoint $
+        FreeVariables.toSet $
+            freeVariables rule
 
 -- TODO(Ana): move this to Internal.TermLike?
 
@@ -392,8 +391,8 @@ instance UnifyingRule (Implication modality) where
                     Map.lookup (inject (variableName var)) subst0
                         & maybe var TermLike.expectElementVariable
                 subst = TermLike.mkVar <$> subst0
-            pure
-                $ implication'
+            pure $
+                implication'
                     { right = substitute subst right
                     , existentials = renameVariable <$> existentials
                     }

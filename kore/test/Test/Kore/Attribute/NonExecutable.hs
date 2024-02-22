@@ -18,42 +18,42 @@ parseNonExecutable = parseAttributes
 
 test_nonExecutable :: TestTree
 test_nonExecutable =
-    testCase "[non-executable{}()] :: NonExecutable"
-        $ expectSuccess NonExecutable{isNonExecutable = True}
-        $ parseNonExecutable
-        $ Attributes [nonExecutableAttribute]
+    testCase "[non-executable{}()] :: NonExecutable" $
+        expectSuccess NonExecutable{isNonExecutable = True} $
+            parseNonExecutable $
+                Attributes [nonExecutableAttribute]
 
 test_Attributes :: TestTree
 test_Attributes =
-    testCase "[non-executable{}()] :: Attributes"
-        $ expectSuccess attrs
-        $ parseAttributes attrs
+    testCase "[non-executable{}()] :: Attributes" $
+        expectSuccess attrs $
+            parseAttributes attrs
   where
     attrs = Attributes [nonExecutableAttribute]
 
 test_duplicate :: TestTree
 test_duplicate =
-    testCase "[non-executable{}(), non-executable{}()]"
-        $ expectFailure
-        $ parseNonExecutable
-        $ Attributes [nonExecutableAttribute, nonExecutableAttribute]
+    testCase "[non-executable{}(), non-executable{}()]" $
+        expectFailure $
+            parseNonExecutable $
+                Attributes [nonExecutableAttribute, nonExecutableAttribute]
 
 test_arguments :: TestTree
 test_arguments =
-    testCase "[non-executable{}(\"illegal\")]"
-        $ expectFailure
-        $ parseNonExecutable
-        $ Attributes [illegalAttribute]
+    testCase "[non-executable{}(\"illegal\")]" $
+        expectFailure $
+            parseNonExecutable $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         attributePattern nonExecutableSymbol [attributeString "illegal"]
 
 test_parameters :: TestTree
 test_parameters =
-    testCase "[non-executable{illegal}()]"
-        $ expectFailure
-        $ parseNonExecutable
-        $ Attributes [illegalAttribute]
+    testCase "[non-executable{illegal}()]" $
+        expectFailure $
+            parseNonExecutable $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)

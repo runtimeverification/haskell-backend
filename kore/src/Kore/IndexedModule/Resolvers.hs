@@ -257,9 +257,9 @@ resolveHook ::
     Sort ->
     Either (Error e) Id
 resolveHook indexedModule builtinName builtinSort =
-    resolveHookHandler builtinName
-        $ Set.filter relevant
-        $ resolveHooks indexedModule builtinName
+    resolveHookHandler builtinName $
+        Set.filter relevant $
+            resolveHooks indexedModule builtinName
   where
     relevant name =
         involvesSort
@@ -273,9 +273,9 @@ involvesSort ::
     SymbolOrAlias ->
     Bool
 involvesSort indexedModule builtinSort sym =
-    elem builtinSort
-        $ (\s -> applicationSortsResult s : applicationSortsOperands s)
-        $ getHeadApplicationSorts indexedModule sym
+    elem builtinSort $
+        (\s -> applicationSortsResult s : applicationSortsOperands s) $
+            getHeadApplicationSorts indexedModule sym
 
 resolveHookHandler ::
     Text ->
