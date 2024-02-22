@@ -23,7 +23,7 @@
     by apply/connect1.
 */
 
-require "chain.k"
+requires "chain.k"
 
 // base case
 module NTH1-SPEC

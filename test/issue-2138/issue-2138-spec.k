@@ -1,7 +1,7 @@
 requires "test.k"
 
 module ISSUE-2138-SPEC
-  import TEST
+  imports TEST
 
   claim
     <k> #assert i ( 1 , 0 ) ==Int 0 => . </k>

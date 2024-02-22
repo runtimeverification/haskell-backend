@@ -1,4 +1,4 @@
-require "domains.md"
+requires "domains.md"
 
 module TEST-K-EQUAL
     imports BOOL
