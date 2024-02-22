@@ -1,6 +1,6 @@
 module TEST
-  import BOOL
-  import K-EQUAL
+  imports BOOL
+  imports K-EQUAL
 
   syntax State ::= St1()
                  | St2()

@@ -1,5 +1,5 @@
 module TEST
-  import INT
+  imports INT
 
   syntax State ::= "symbolic-subst" [token]
                  | "concrete-subst" [token]
