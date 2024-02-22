@@ -1,6 +1,6 @@
 module TEST
-  import INT
-  import BOOL
+  imports INT
+  imports BOOL
 
   syntax State ::= "init" [token]
                  | "a"    [token]
