@@ -1,6 +1,7 @@
 {
   description = "K Kore Language Haskell Backend";
   inputs = {
+    nixpkgs2305.url = "nixpkgs/nixos-23.05";
     rv-utils.url = "github:runtimeverification/rv-nix-tools";
     nixpkgs.follows = "rv-utils/nixpkgs";
     stacklock2nix.url = "github:cdepillabout/stacklock2nix";
@@ -9,10 +10,10 @@
       flake = false;
     };
   };
-  outputs = { self, nixpkgs, stacklock2nix, z3, rv-utils }:
+  outputs = { self, nixpkgs, nixpkgs2305, stacklock2nix, z3, rv-utils }:
     let
       perSystem = nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed;
-      nixpkgsCleanFor = system: import nixpkgs { inherit system; };
+      nixpkgs2305CleanFor = system: import nixpkgs2305 { inherit system; };
       nixpkgsFor = system:
         import nixpkgs {
           inherit system;
@@ -71,20 +72,21 @@
 
           # Additional packages that should be available for development.
           additionalDevShellNativeBuildInputs = stacklockHaskellPkgSet:
-            with ghcVersion final; [
+            let pkgs2305 = nixpkgs2305CleanFor prev.system;
+            in with ghcVersion final; [
               cabal-install
-              fourmolu
-              # (let
-              #   ghc-lib-parser = haskellPackages.ghc-lib-parser_9_4_5_20230430;
-              #   ghc-lib-parser-ex =
-              #     haskellPackages.ghc-lib-parser-ex_9_4_0_0.override {
-              #       inherit ghc-lib-parser;
-              #     };
-              # in haskellPackages.hlint_3_5.override {
-              #   inherit ghc-lib-parser ghc-lib-parser-ex;
-              # })
-              hlint
-              (final.haskell-language-server.override {
+              pkgs2305.haskellPackages.fourmolu_0_12_0_0
+              (let
+                ghc-lib-parser =
+                  pkgs2305.haskellPackages.ghc-lib-parser_9_4_5_20230430;
+                ghc-lib-parser-ex =
+                  pkgs2305.haskellPackages.ghc-lib-parser-ex_9_4_0_0.override {
+                    inherit ghc-lib-parser;
+                  };
+              in pkgs2305.haskellPackages.hlint_3_5.override {
+                inherit ghc-lib-parser ghc-lib-parser-ex;
+              })
+              (pkgs2305.haskell-language-server.override {
                 supportedGhcVersions = [ "928" ];
               })
               final.z3
@@ -115,7 +117,7 @@
 
       devShells = perSystem (system: {
         # Separate fourmolu and cabal shells just for CI
-        fourmolu = with nixpkgsCleanFor system;
+        fourmolu = with nixpkgs2305CleanFor system;
           mkShell {
             nativeBuildInputs = [
               (haskell.lib.justStaticExecutables
@@ -125,8 +127,7 @@
         cabal = let pkgs = nixpkgsFor system;
         in pkgs.haskell-backend.pkgSet.shellFor {
           packages = pkgs.haskell-backend.localPkgsSelector;
-          nativeBuildInputs =
-            [ pkgs.haskell.packages.ghc928.cabal-install pkgs.z3 ];
+          nativeBuildInputs = [ (ghcVersion pkgs).cabal-install pkgs.z3 ];
         };
       });
 
