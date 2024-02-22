@@ -1,4 +1,4 @@
-require "domains.md"
+requires "domains.md"
 
 module ABOOL-SYNTAX
   syntax ABool ::= "Zero" | "One"
@@ -10,8 +10,8 @@ module AINT-SYNTAX
 endmodule
 
 module AINT
-  import AINT-SYNTAX
-  import ABOOL-SYNTAX
+  imports AINT-SYNTAX
+  imports ABOOL-SYNTAX
 
   syntax AInt
     ::= AInt "+AInt" AInt [function]
