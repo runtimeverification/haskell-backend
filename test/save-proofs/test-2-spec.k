@@ -1,7 +1,7 @@
 // Two claims, the first one should fail, but is loaded from the saved claims
 // for first.k, which allows the entire spec to pass.
 
-require "save-proofs.k"
+requires "save-proofs.k"
 
 module TEST-2-SPEC
   imports SAVE-PROOFS

@@ -55,7 +55,7 @@ lead to claims not being proved because the semantics has chosen the wrong path
 Given the following definition:
 ```
 module PATH
-  import DOMAINS
+  imports DOMAINS
   syntax S ::= "a" | "b" | "c"
 
   rule a => b
@@ -71,7 +71,7 @@ if the prover selects to advance the execution using the other rule.
 Given the following definition:
 ```
 module PATH
-  import DOMAINS
+  imports DOMAINS
   syntax S ::= "a" | "b" | "c" 
   syntax Cmd ::= "select"
 

@@ -1,4 +1,4 @@
-require "harness.k"
+requires "harness.k"
 
 module FUNCTIONS
 
