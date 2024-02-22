@@ -2,24 +2,47 @@
   "nodes": {
     "nixpkgs": {
       "locked": {
-        "lastModified": 1704290814,
-        "narHash": "sha256-LWvKHp7kGxk/GEtlrGYV68qIvPHkU9iToomNFGagixU=",
-        "owner": "NixOS",
+        "lastModified": 1707163378,
+        "narHash": "sha256-oz+BzUDwtyircjjxv9aPYOS5gobxLCjD2il+gb/bCRo=",
+        "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "70bdadeb94ffc8806c0570eb5c2695ad29f0e421",
+        "rev": "e2ffefe304d941bb98989847944f3b58e0adcdd5",
         "type": "github"
       },
       "original": {
-        "id": "nixpkgs",
-        "ref": "nixos-23.05",
-        "type": "indirect"
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "e2ffefe304d941bb98989847944f3b58e0adcdd5",
+        "type": "github"
       }
     },
     "root": {
       "inputs": {
-        "nixpkgs": "nixpkgs",
+        "nixpkgs": [
+          "rv-utils",
+          "nixpkgs"
+        ],
+        "rv-utils": "rv-utils",
         "stacklock2nix": "stacklock2nix",
         "z3": "z3"
+      }
+    },
+    "rv-utils": {
+      "inputs": {
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "lastModified": 1707492220,
+        "narHash": "sha256-KRndaUPzUumDlNcKF7KzA8F/EZKLYCvurh7Z13sw2PI=",
+        "owner": "runtimeverification",
+        "repo": "rv-nix-tools",
+        "rev": "abf86805a623948c941e603e2fc4c26a06ea6eb6",
+        "type": "github"
+      },
+      "original": {
+        "owner": "runtimeverification",
+        "repo": "rv-nix-tools",
+        "type": "github"
       }
     },
     "stacklock2nix": {

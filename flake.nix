@@ -1,14 +1,15 @@
 {
   description = "K Kore Language Haskell Backend";
   inputs = {
-    nixpkgs.url = "nixpkgs/nixos-23.05";
+    rv-utils.url = "github:runtimeverification/rv-nix-tools";
+    nixpkgs.follows = "rv-utils/nixpkgs";
     stacklock2nix.url = "github:cdepillabout/stacklock2nix";
     z3 = {
       url = "github:Z3Prover/z3/z3-4.12.1";
       flake = false;
     };
   };
-  outputs = { self, nixpkgs, stacklock2nix, z3 }:
+  outputs = { self, nixpkgs, stacklock2nix, z3, rv-utils }:
     let
       perSystem = nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed;
       nixpkgsCleanFor = system: import nixpkgs { inherit system; };
@@ -27,12 +28,13 @@
             makeWrapper ${pkg}/bin/${exe} $out/bin/${exe} --prefix PATH : ${pkgs.z3}/bin
           '';
         };
+      ghcVersion = pkgs: pkgs.haskell.packages.ghc928;
     in {
       overlay = final: prev: {
         haskell-backend = final.stacklock2nix {
           stackYaml = ./stack.yaml;
           # This should based on the compiler version from the resolver in stack.yaml.
-          baseHaskellPkgSet = final.haskell.packages.ghc928;
+          baseHaskellPkgSet = ghcVersion final;
           cabal2nixArgsOverrides = args:
             args // {
               # The Haskell package `"graphviz"` depends on the _system_
@@ -69,19 +71,20 @@
 
           # Additional packages that should be available for development.
           additionalDevShellNativeBuildInputs = stacklockHaskellPkgSet:
-            with final; [
-              haskell.packages.ghc928.cabal-install
-              haskellPackages.fourmolu_0_12_0_0
-              (let
-                ghc-lib-parser = haskellPackages.ghc-lib-parser_9_4_5_20230430;
-                ghc-lib-parser-ex =
-                  haskellPackages.ghc-lib-parser-ex_9_4_0_0.override {
-                    inherit ghc-lib-parser;
-                  };
-              in haskellPackages.hlint_3_5.override {
-                inherit ghc-lib-parser ghc-lib-parser-ex;
-              })
-              (haskell-language-server.override {
+            with ghcVersion final; [
+              cabal-install
+              fourmolu
+              # (let
+              #   ghc-lib-parser = haskellPackages.ghc-lib-parser_9_4_5_20230430;
+              #   ghc-lib-parser-ex =
+              #     haskellPackages.ghc-lib-parser-ex_9_4_0_0.override {
+              #       inherit ghc-lib-parser;
+              #     };
+              # in haskellPackages.hlint_3_5.override {
+              #   inherit ghc-lib-parser ghc-lib-parser-ex;
+              # })
+              hlint
+              (final.haskell-language-server.override {
                 supportedGhcVersions = [ "928" ];
               })
               final.z3
