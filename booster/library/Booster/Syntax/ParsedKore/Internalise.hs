@@ -167,10 +167,10 @@ mergeDefs k1 k2
     | otherwise =
         fmap Imported $
             KoreDefinition k2.attributes
-                <$> mergeDisjoint modules k1 k2
-                <*> mergeDisjoint sorts k1 k2
-                <*> mergeDisjoint symbols k1 k2
-                <*> mergeDisjoint aliases k1 k2
+                <$> mergeDisjoint Def.modules k1 k2
+                <*> mergeDisjoint Def.sorts k1 k2
+                <*> mergeDisjoint Def.symbols k1 k2
+                <*> mergeDisjoint Def.aliases k1 k2
                 <*> pure (mergeTheories rewriteTheory k1 k2)
                 <*> pure (mergeTheories functionEquations k1 k2)
                 <*> pure (mergeTheories simplifications k1 k2)
