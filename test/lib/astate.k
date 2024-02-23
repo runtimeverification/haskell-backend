@@ -1,5 +1,5 @@
-require "adomains.k"
-require "state.k"
+requires "adomains.k"
+requires "state.k"
 
 module ASTATE
   imports STATE-BASIC

@@ -23,7 +23,7 @@
     by apply/connect1.
 */
 
-require "chain.k"
+requires "chain.k"
 
 // inductive case
 module NTH2-SPEC

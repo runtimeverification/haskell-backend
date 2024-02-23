@@ -1,5 +1,5 @@
 module SIMPLE-LISTS
-    import BOOL
+    imports BOOL
     syntax EmptyStmt
  // ----------------
 

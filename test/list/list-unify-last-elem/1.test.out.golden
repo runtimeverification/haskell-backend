@@ -1,6 +1,6 @@
 <T>
   <k>
-    a ~> .
+    a ~> .K
   </k>
   <l>
     ListItem ( a )
@@ -8,6 +8,6 @@
     ListItem ( c )
   </l>
   <v>
-    .
+    .K
   </v>
 </T>

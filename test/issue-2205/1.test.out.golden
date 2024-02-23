@@ -11,13 +11,13 @@
     } )
   #And
     <k>
-      ?_Gen0:Int ~> .
+      ?_Gen0:Int ~> .K
     </k>
 #Or
   <k>
-    one ~> .
+    one ~> .K
   </k>
 #Or
   <k>
-    two ~> .
+    two ~> .K
   </k>
