@@ -436,7 +436,7 @@ commandLineParse (ExeName exeName) maybeEnv parser infoMod = do
       where
         commandWithOpts =
             Pretty.vsep
-                [ Pretty.linebreak
+                [ Pretty.line'
                 , Pretty.pretty (unwords (exeName : args))
                 , Pretty.pretty env <> "=" <> Pretty.squotes (Pretty.pretty $ unwords argsEnv)
                 ]

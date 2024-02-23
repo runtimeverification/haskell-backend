@@ -15,7 +15,6 @@ module Kore.Simplify.API (
     evalSimplifierLogged,
 ) where
 
-import Control.Monad.Reader
 import Data.Map.Strict (
     Map,
  )

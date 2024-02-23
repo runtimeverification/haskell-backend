@@ -1,5 +1,5 @@
     <k>
-      I:Int ~> .
+      I:Int ~> .K
     </k>
   #And
     {
@@ -9,7 +9,7 @@
     }
 #Or
     <k>
-      true ~> .
+      true ~> .K
     </k>
   #And
     {

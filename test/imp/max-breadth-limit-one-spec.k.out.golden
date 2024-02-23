@@ -2,7 +2,7 @@
       <k>
         {
           max = a;
-        } ~> .
+        } ~> .K
       </k>
       <state>
         a |-> A:Int
@@ -21,7 +21,7 @@
       <k>
         {
           max = b;
-        } ~> .
+        } ~> .K
       </k>
       <state>
         a |-> A:Int

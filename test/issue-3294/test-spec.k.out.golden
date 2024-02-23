@@ -6,5 +6,5 @@
 #And
   <k>
     result ( intersectSet ( SetItem ( _X )
-    SetItem ( a ) , SetItem ( b ) ) ) ~> .
+    SetItem ( a ) , SetItem ( b ) ) ) ~> .K
   </k>

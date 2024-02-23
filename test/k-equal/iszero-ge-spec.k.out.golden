@@ -6,7 +6,7 @@
 #And
   <T>
     <k>
-      #done ( bool2Int ( I ==Int 0 ) ) ~> .
+      #done ( bool2Int ( I ==Int 0 ) ) ~> .K
     </k>
   </T>
 #And

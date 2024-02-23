@@ -616,10 +616,10 @@ patternNameForContext (ExistsF exists) =
         , Pretty.squotes (unparse $ variableName $ existsVariable exists)
         ]
 patternNameForContext (FloorF _) = "\\floor"
-patternNameForContext (ForallF forall) =
+patternNameForContext (ForallF forAll) =
     (Pretty.renderText . Pretty.layoutOneLine . Pretty.hsep)
         [ "\\forall"
-        , Pretty.squotes (unparse $ variableName $ forallVariable forall)
+        , Pretty.squotes (unparse $ variableName $ forallVariable forAll)
         ]
 patternNameForContext (IffF _) = "\\iff"
 patternNameForContext (ImpliesF _) = "\\implies"

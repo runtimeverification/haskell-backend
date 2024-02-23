@@ -339,7 +339,7 @@ translatePattern tools sideCondition translateTerm sort pat =
                 let translated = translateSymbol tools applicationSymbolOrAlias
                 sexpr <- maybe warnAndDiscard return translated
                 children <-
-                    zipWithM
+                    Monad.zipWithM
                         (translatePattern tools sideCondition translateTerm)
                         applicationChildrenSorts
                         applicationChildren

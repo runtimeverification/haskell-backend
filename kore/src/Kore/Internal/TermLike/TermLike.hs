@@ -810,8 +810,8 @@ instance InternalVariable variable => Binding (TermLike variable) where
         case termLikeF of
             ExistsF exists ->
                 synthesize . ExistsF <$> existsBinder traversal exists
-            ForallF forall ->
-                synthesize . ForallF <$> forallBinder traversal forall
+            ForallF forAll ->
+                synthesize . ForallF <$> forallBinder traversal forAll
             _ -> pure termLike
       where
         _ :< termLikeF = Recursive.project termLike
@@ -1228,7 +1228,7 @@ traverseVariables adj termLike =
                 unifiedVariable' <- askSomeVariable unifiedVariable
                 (pure . VariableF) (Const unifiedVariable')
             ExistsF exists -> ExistsF <$> traverseExists avoiding exists
-            ForallF forall -> ForallF <$> traverseForall avoiding forall
+            ForallF forAll -> ForallF <$> traverseForall avoiding forAll
             MuF mu -> MuF <$> traverseMu avoiding mu
             NuF nu -> NuF <$> traverseNu avoiding nu
             _ ->

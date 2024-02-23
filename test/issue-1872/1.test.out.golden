@@ -6,7 +6,7 @@
   #And
     <generatedTop>
       <k>
-        ?_Gen0:Int ~> .
+        ?_Gen0:Int ~> .K
       </k>
       <exitcode>
         0
@@ -15,7 +15,7 @@
 #Or
     <generatedTop>
       <k>
-        odd ~> .
+        odd ~> .K
       </k>
       <exitcode>
         0

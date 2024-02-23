@@ -7,5 +7,5 @@
   } )
 #And
   <k>
-    doneTest ( func4 ( X ) ) ~> _DotVar1 ~> .
+    doneTest ( func4 ( X ) ) ~> _DotVar1 ~> .K
   </k>

@@ -103,16 +103,16 @@ forallBinder ::
         (Forall sort variable2 child2)
         (Binder (ElementVariable variable1) child1)
         (Binder (ElementVariable variable2) child2)
-forallBinder mapping forall =
+forallBinder mapping forAll =
     finish <$> mapping binder
   where
     binder =
         Binder{binderVariable = forallVariable, binderChild}
       where
-        Forall{forallVariable} = forall
-        Forall{forallChild = binderChild} = forall
+        Forall{forallVariable} = forAll
+        Forall{forallChild = binderChild} = forAll
     finish Binder{binderVariable, binderChild} =
-        forall{forallVariable = binderVariable, forallChild = binderChild}
+        forAll{forallVariable = binderVariable, forallChild = binderChild}
 
 refreshForall ::
     forall sort variable child.
