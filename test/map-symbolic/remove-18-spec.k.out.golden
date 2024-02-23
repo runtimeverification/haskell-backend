@@ -5,5 +5,5 @@
   } )
 #And
   <k>
-    removeResult ( Y:MyId |-> 2 ~> . ) ~> .
+    removeResult ( Y:MyId |-> 2 ~> .K ) ~> .K
   </k>

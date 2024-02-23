@@ -43,7 +43,10 @@ import Crypto.Hash (
  )
 import Crypto.PubKey.ECC.Prim
 import Crypto.PubKey.ECC.Types
-import Crypto.Secp256k1.Internal qualified as Secp256k1
+import Crypto.Secp256k1.Internal.BaseOps qualified as Secp256k1
+import Crypto.Secp256k1.Internal.Context qualified as Secp256k1
+import Crypto.Secp256k1.Internal.ForeignTypes qualified as Secp256k1
+import Crypto.Secp256k1.Internal.Util qualified as Secp256k1
 import Data.Bits
 import Data.ByteString (
     ByteString,
@@ -60,7 +63,7 @@ import Data.Text (
 import Data.Word (
     Word8,
  )
-import Foreign (alloca, allocaBytes, peek, poke)
+import Foreign (Ptr, alloca, allocaBytes, peek, poke)
 import Kore.Builtin.Builtin qualified as Builtin
 import Kore.Builtin.Encoding (
     decode8Bit,
@@ -236,7 +239,7 @@ evalSha3256 = evalHashFunction sha3256Key SHA3_256
 evalRipemd160 :: BuiltinAndAxiomSimplifier
 evalRipemd160 = evalHashFunction ripemd160Key RIPEMD160
 
-secp256k1Ctx :: Secp256k1.Ctx
+secp256k1Ctx :: Ptr Secp256k1.LCtx
 secp256k1Ctx = unsafePerformIO $ Secp256k1.contextCreate Secp256k1.sign
 {-# NOINLINE secp256k1Ctx #-}
 

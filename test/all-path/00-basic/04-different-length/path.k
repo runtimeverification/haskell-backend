@@ -1,5 +1,5 @@
 module PATH
-  import BOOL
+  imports BOOL
   syntax S ::= "a" | "b" | "c" | "d" | "e" | "f"
 
   rule a    =>  b

@@ -5,11 +5,11 @@
     } )
   #And
     <k>
-      ?T1:Type = ?T2:Type ~> .
+      ?T1:Type = ?T2:Type ~> .K
     </k>
 #Or
     <k>
-      .
+      .K
     </k>
   #And
     {

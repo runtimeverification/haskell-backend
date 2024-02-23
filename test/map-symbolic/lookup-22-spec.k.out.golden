@@ -11,5 +11,5 @@
   } )
 #And
   <k>
-    lookupResult ( 3 ~> . ) ~> .
+    lookupResult ( 3 ~> .K ) ~> .K
   </k>

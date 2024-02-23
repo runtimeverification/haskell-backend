@@ -1,7 +1,7 @@
 module PATH
-  import BOOL
-  import INT
-  import SET
+  imports BOOL
+  imports INT
+  imports SET
   syntax S ::= "a" | "b" | "c" 
   syntax Cmd ::= "select"
 

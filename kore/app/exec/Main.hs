@@ -149,6 +149,7 @@ import Prelude.Kore
 import Pretty (
     Doc,
     hPutDoc,
+    pretty,
     putDoc,
  )
 import Stats
@@ -402,7 +403,7 @@ parseKoreExecOptions startTime =
                     show $
                         OptPretty.hsep
                             [ "Unknown option"
-                            , OptPretty.squotes (OptPretty.text val)
+                            , OptPretty.squotes (pretty val)
                                 <> OptPretty.dot
                             , "Known options are 'all' and 'any'."
                             ]

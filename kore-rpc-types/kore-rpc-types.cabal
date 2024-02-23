@@ -61,7 +61,7 @@ common haskell
 common library
   -- Dependencies of the library, shared in common with the tests
   build-depends: aeson >=1.4
-  build-depends: aeson-pretty == 0.8.9
+  build-depends: aeson-pretty == 0.8.10
   build-depends: bytestring >=0.10
   build-depends: casing >= 0.1.4
   build-depends: conduit >= 1.3

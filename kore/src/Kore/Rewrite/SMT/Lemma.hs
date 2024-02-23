@@ -20,7 +20,6 @@ import Control.Error (
  )
 import Control.Lens qualified as Lens
 import Control.Monad.Counter qualified as Counter
-import Control.Monad.Except
 import Control.Monad.State qualified as State
 import Data.Functor.Foldable qualified as Recursive
 import Data.Generics.Product.Fields
