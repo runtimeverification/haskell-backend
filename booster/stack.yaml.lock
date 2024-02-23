@@ -5,20 +5,6 @@
 
 packages:
 - completed:
-    hackage: chronos-1.1.5@sha256:ca35be5fdbbb384414226b4467c6d1c8b44defe59a9c8a3af32c1c5fb250c781,3830
-    pantry-tree:
-      sha256: 329bf39a05362a9c1f507a4a529725c757208843b562c55e0b7c88538dc3160f
-      size: 581
-  original:
-    hackage: chronos-1.1.5
-- completed:
-    hackage: co-log-0.5.0.0@sha256:a7e84650eaef7eba2d59ee7664309e79317a7ca67011abedf971f0e6bd6475bb,5448
-    pantry-tree:
-      sha256: 33b838c07c8b7e70b2e82bddc889bb1e6386d7e12a9d1593c0b4b263b1fcb925
-      size: 1043
-  original:
-    hackage: co-log-0.5.0.0
-- completed:
     hackage: decision-diagrams-0.2.0.0@sha256:9f82d39f7331f6836784fa89354986e436a4d62d810b8fb2b44dd10c6a0beb85,3415
     pantry-tree:
       sha256: 36696cfd2af10c44fc0b7d8746c57d94c476eef4ba16f6ac98c2d6dae04f4b36
@@ -26,62 +12,66 @@ packages:
   original:
     hackage: decision-diagrams-0.2.0.0
 - completed:
-    hackage: smtlib-backends-0.3@sha256:917d88540a9ede7beedbe2ed13b492acddbce394d30ccf5d0ef4f4fba9aa2c12,1157
+    hackage: smtlib-backends-0.3@sha256:a947aead99f6a314833bddca9b502d5faea8d3bd2fc76ffb53c34d5c5b7557bc,1211
     pantry-tree:
-      sha256: 59b578ae7df155a6c73a513358370747e3cc6229ebb44adaba9e0935f811539c
+      sha256: 97b88a647ac996808a93b2eab62e9e8574d9b9a451ee37a9103e209b63be012d
       size: 275
   original:
     hackage: smtlib-backends-0.3
 - completed:
-    hackage: smtlib-backends-process-0.3@sha256:d4d7d02859383e0a43db2d8ce7ef01deffe1bcd356b2ff8626925c3a1c8db922,1600
+    hackage: smtlib-backends-process-0.3@sha256:caf131d3d6f6825e3a3182713130a8e14d0bd6530eeda643e8a511b546ff1a26,1676
     pantry-tree:
-      sha256: d7d8ec52d07f4a59614000fd93d77b109d085d58f2d96e2c4b972f541c4e8287
+      sha256: 7147fef29b4270275168a285fc0c68784329d1276ab9e44e9a45f8d79b526220
       size: 461
   original:
     hackage: smtlib-backends-process-0.3
 - completed:
-    hackage: typerep-map-0.5.0.0@sha256:34f1ba9b268a6d52e26ae460011a5571e8099b50a3f4a7c8db25dd8efe3be8ee,4667
+    hackage: monad-validate-1.3.0.0@sha256:eb6ddd5c9cf72ff0563cba604fa00291376e96138fdb4932d00ff3a99d66706e,2605
     pantry-tree:
-      sha256: ca5565de307d260dc67f6dae0d4d33eee42a3238183461569b5142ceb909c91d
-      size: 1487
-  original:
-    hackage: typerep-map-0.5.0.0
-- completed:
-    hackage: monad-validate-1.2.0.1@sha256:5a100da896f11ca4b7c123da85decbedeb46c37054a097f258ac911e715cb68d,2587
-    pantry-tree:
-      sha256: 034ee4de9765e38b763f5d73b236cc112205728e680cefbfe12d2882accc3264
+      sha256: 0b2a3a57be48fcc739708b214fca202f1e95b1cd773dd3bb9589d3007cf8cf5e
       size: 611
   original:
-    hackage: monad-validate-1.2.0.1
+    hackage: monad-validate-1.3.0.0
 - completed:
-    commit: ac6908d0ca26f194802c72f66f200e7079139f1b
+    commit: fa0d3b2809154e4c01c0ab62660f757a8fc31dfb
     git: https://github.com/runtimeverification/haskell-backend.git
     name: kore
     pantry-tree:
-      sha256: f2bf571997066fb33e2bc78566d5aa2773d0a2bc5dcfe2930da74ddd214d21bd
+      sha256: 89d6273388be5536fb4c80a469e20c21999b9689298a3467441a4aadbeeefaf7
       size: 44685
     subdir: kore
     version: 0.60.0.0
   original:
-    commit: ac6908d0ca26f194802c72f66f200e7079139f1b
+    commit: fa0d3b2809154e4c01c0ab62660f757a8fc31dfb
     git: https://github.com/runtimeverification/haskell-backend.git
     subdir: kore
 - completed:
-    commit: ac6908d0ca26f194802c72f66f200e7079139f1b
+    commit: fa0d3b2809154e4c01c0ab62660f757a8fc31dfb
     git: https://github.com/runtimeverification/haskell-backend.git
     name: kore-rpc-types
     pantry-tree:
-      sha256: cd97e8edf8891e7c2651a6bde746812cebee610c6d2b4ee3c020df954d7a8c2a
+      sha256: e3acfb76416b3503e725d340cc9fde9f6cb49b7a37835c3355ddc951ba5a0765
       size: 476
     subdir: kore-rpc-types
     version: 0.60.0.0
   original:
-    commit: ac6908d0ca26f194802c72f66f200e7079139f1b
+    commit: fa0d3b2809154e4c01c0ab62660f757a8fc31dfb
     git: https://github.com/runtimeverification/haskell-backend.git
     subdir: kore-rpc-types
+- completed:
+    name: tasty-test-reporter
+    pantry-tree:
+      sha256: 474bc3fcf7719257c5a6c3b6b883a41c1fc2e7eb61b42f9ecb93ffe1ad36a592
+      size: 861
+    sha256: 52f8ee5c20aa71ab40f612d617e5d2871ce42c1092de7f500cfc0088671cebab
+    size: 235629
+    url: https://github.com/goodlyrottenapple/tasty-test-reporter/archive/b704130545aa3925a8487bd3e92f1dd5ce0512e2.tar.gz
+    version: 0.1.1.4
+  original:
+    url: https://github.com/goodlyrottenapple/tasty-test-reporter/archive/b704130545aa3925a8487bd3e92f1dd5ce0512e2.tar.gz
 snapshots:
 - completed:
-    sha256: 5a59b2a405b3aba3c00188453be172b85893cab8ebc352b1ef58b0eae5d248a2
-    size: 650475
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/26.yaml
-  original: lts-20.26
+    sha256: 1ecd36c6af82cd6940fd16e4ecf40ac6e3844ba8f49873e34f1cf12bd1f9dfb1
+    size: 712886
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/10.yaml
+  original: lts-22.10

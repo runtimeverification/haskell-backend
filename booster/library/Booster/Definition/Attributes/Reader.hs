@@ -14,7 +14,6 @@ module Booster.Definition.Attributes.Reader (
     readLocation,
 ) where
 
-import Control.Applicative (liftA2)
 import Control.Monad.Extra (whenM)
 import Control.Monad.Trans.Except
 import Data.Bifunctor

@@ -179,9 +179,9 @@ respond stateVar =
 
                 -- check if we already received a module with this name
                 when nameAsId $
-                    case Map.lookup (getId $ newModule.name) state.addedModules of
+                    case Map.lookup (getId newModule.name) state.addedModules of
                         -- if a different module was already added, throw error
-                        Just m | _module /= m -> throwE (RpcError.DuplicateModuleName, toJSON $ getId $ newModule.name)
+                        Just m | _module /= m -> throwE (RpcError.DuplicateModuleName, toJSON $ getId newModule.name)
                         _ -> pure ()
 
                 -- Check for a corner case when we send module M1 with the name "m<hash of M2>"" and name-as-id: true
@@ -202,10 +202,10 @@ respond stateVar =
                         state
                             { definitions =
                                 if nameAsId
-                                    then Map.insert (getId $ newModule.name) (newDefinitions Map.! moduleHash) newDefinitions
+                                    then Map.insert (getId newModule.name) (newDefinitions Map.! moduleHash) newDefinitions
                                     else newDefinitions
                             , addedModules =
-                                (if nameAsId then Map.insert (getId $ newModule.name) _module else id) $
+                                (if nameAsId then Map.insert (getId newModule.name) _module else id) $
                                     Map.insert moduleHash _module state.addedModules
                             }
                 Log.logInfo $

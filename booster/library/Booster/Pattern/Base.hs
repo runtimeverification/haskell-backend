@@ -1,9 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE TemplateHaskellQuotes #-}
 
 {- |
 Copyright   : (c) Runtime Verification, 2022
@@ -40,7 +38,7 @@ import Data.Functor.Foldable
 import Data.Hashable (Hashable)
 import Data.Hashable qualified as Hashable
 import Data.List as List (foldl1', sort)
-import Data.Set (Set, fromList, toList)
+import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
@@ -138,9 +136,6 @@ data TermAttributes = TermAttributes
     deriving stock (Eq, Ord, Show, Generic, Data, Lift)
     deriving anyclass (NFData, Hashable)
 
-instance Lift (Set Variable) where
-    lift s = let s' = toList s in [|fromList s'|]
-    liftTyped s = let s' = toList s in [||fromList s'||]
 instance Semigroup TermAttributes where
     a1 <> a2 =
         TermAttributes

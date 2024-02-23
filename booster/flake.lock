@@ -2,32 +2,54 @@
   "nodes": {
     "haskell-backend": {
       "inputs": {
-        "nixpkgs": "nixpkgs",
+        "nixpkgs": [
+          "haskell-backend",
+          "rv-utils",
+          "nixpkgs"
+        ],
+        "nixpkgs2305": "nixpkgs2305",
+        "rv-utils": "rv-utils",
         "stacklock2nix": "stacklock2nix",
         "z3": "z3"
       },
       "locked": {
-        "lastModified": 1708380172,
-        "narHash": "sha256-rIKNZKY+a2XX2MnUlMGeKT7kcsiX4BgoQoAQHqXk85w=",
+        "lastModified": 1708682215,
+        "narHash": "sha256-xHajfRHVx3dL4kqurY9BK5Yj56fF16DlNnQPIohp7is=",
         "owner": "runtimeverification",
         "repo": "haskell-backend",
-        "rev": "ac6908d0ca26f194802c72f66f200e7079139f1b",
+        "rev": "fa0d3b2809154e4c01c0ab62660f757a8fc31dfb",
         "type": "github"
       },
       "original": {
         "owner": "runtimeverification",
         "repo": "haskell-backend",
-        "rev": "ac6908d0ca26f194802c72f66f200e7079139f1b",
+        "rev": "fa0d3b2809154e4c01c0ab62660f757a8fc31dfb",
         "type": "github"
       }
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1696983906,
-        "narHash": "sha256-L7GyeErguS7Pg4h8nK0wGlcUTbfUMDu+HMf1UcyP72k=",
+        "lastModified": 1707163378,
+        "narHash": "sha256-oz+BzUDwtyircjjxv9aPYOS5gobxLCjD2il+gb/bCRo=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "e2ffefe304d941bb98989847944f3b58e0adcdd5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "e2ffefe304d941bb98989847944f3b58e0adcdd5",
+        "type": "github"
+      }
+    },
+    "nixpkgs2305": {
+      "locked": {
+        "lastModified": 1704290814,
+        "narHash": "sha256-LWvKHp7kGxk/GEtlrGYV68qIvPHkU9iToomNFGagixU=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "bd1cde45c77891214131cbbea5b1203e485a9d51",
+        "rev": "70bdadeb94ffc8806c0570eb5c2695ad29f0e421",
         "type": "github"
       },
       "original": {
@@ -47,6 +69,24 @@
           "haskell-backend",
           "stacklock2nix"
         ]
+      }
+    },
+    "rv-utils": {
+      "inputs": {
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "lastModified": 1707492220,
+        "narHash": "sha256-KRndaUPzUumDlNcKF7KzA8F/EZKLYCvurh7Z13sw2PI=",
+        "owner": "runtimeverification",
+        "repo": "rv-nix-tools",
+        "rev": "abf86805a623948c941e603e2fc4c26a06ea6eb6",
+        "type": "github"
+      },
+      "original": {
+        "owner": "runtimeverification",
+        "repo": "rv-nix-tools",
+        "type": "github"
       }
     },
     "stacklock2nix": {

@@ -70,7 +70,7 @@
                                                                         "name": "SortId",
                                                                         "args": []
                                                                     },
-                                                                    "value": "k"
+                                                                    "value": "sum"
                                                                 }
                                                             ]
                                                         },
@@ -97,7 +97,7 @@
                                                                         "name": "SortInt",
                                                                         "args": []
                                                                     },
-                                                                    "value": "10001"
+                                                                    "value": "50005000"
                                                                 }
                                                             ]
                                                         }
@@ -131,7 +131,7 @@
                                                                         "name": "SortId",
                                                                         "args": []
                                                                     },
-                                                                    "value": "sum"
+                                                                    "value": "k"
                                                                 }
                                                             ]
                                                         },
@@ -158,7 +158,7 @@
                                                                         "name": "SortInt",
                                                                         "args": []
                                                                     },
-                                                                    "value": "50005000"
+                                                                    "value": "10001"
                                                                 }
                                                             ]
                                                         }

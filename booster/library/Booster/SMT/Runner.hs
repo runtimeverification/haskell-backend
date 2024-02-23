@@ -90,7 +90,7 @@ closeContext ctxt = do
     whenJust ctxt.mbTranscript $ \h -> liftIO $ do
         BS.hPutStrLn h "; stopping solver\n;;;;;;;;;;;;;;;;;;;;;;;"
         hClose h
-    liftIO $ ctxt.solverClose
+    liftIO ctxt.solverClose
 
 newtype SMT m a = SMT (ReaderT SMTContext m a)
     deriving newtype (Functor, Applicative, Monad, MonadIO, MonadLogger, MonadLoggerIO)

@@ -42,14 +42,14 @@ instance (Floating a, PrintfArg a, Ord a) => Pretty (RequestStats a) where
             , "Average time per request:"
                 <+> withUnit stats.average
                 <+> parens ("+-" <+> withUnit stats.stddev)
-                    <> ", range"
-                <+> brackets (withUnit stats.minVal <> ", " <> withUnit stats.maxVal)
+                <> ", range"
+                    <+> brackets (withUnit stats.minVal <> ", " <> withUnit stats.maxVal)
             , "Total time in kore-rpc code:"
                 <+> withUnit stats.koreTotal
             , "Average time per request in kore-rpc code:"
                 <+> withUnit stats.koreAverage
-                    <> ", max"
-                <+> withUnit stats.koreMax
+                <> ", max"
+                    <+> withUnit stats.koreMax
             ]
       where
         withUnit = pretty . microsWithUnit
