@@ -2,24 +2,13 @@ packages:
   .
   dev-tools
 
-
-index-state: 2023-06-29T00:00:00Z
-allow-newer:
-  compact:base,
-  compact:bytestring,
-  ghc-trace-events:base,
-  ghc-bignum:base
-
-source-repository-package
-    type: git
-    location: https://github.com/co-log/co-log.git
-    tag: v0.5.0.0
-    --sha256: sha256-zs+cQf2bIQEaN10eEg8VJkCp0pQcTuXpUovCev5C6dc=
-
--- Do not move the order of `location`, `tag` and `--sha256` fields below as this will break the update script
 source-repository-package
     type: git
     location: https://github.com/runtimeverification/haskell-backend.git
-    tag: ac6908d0ca26f194802c72f66f200e7079139f1b
-    --sha256: 
+    tag: fa0d3b2809154e4c01c0ab62660f757a8fc31dfb
     subdir: kore kore-rpc-types
+
+source-repository-package
+  type: git
+  location: https://github.com/goodlyrottenapple/tasty-test-reporter.git
+  tag: b704130545aa3925a8487bd3e92f1dd5ce0512e2
