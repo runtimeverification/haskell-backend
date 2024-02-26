@@ -275,7 +275,7 @@ parseEntryTypes =
             [ "Log entries: comma-separated list logs entries to enable"
             , "Available entry types:"
             , (OptPretty.indent 4 . OptPretty.vsep)
-                (OptPretty.text <$> getEntryTypesAsText)
+                (Pretty.pretty <$> getEntryTypesAsText)
             ]
 
 parseCommaSeparatedEntries :: Options.ReadM EntryTypes
@@ -334,7 +334,7 @@ parseErrorEntries =
             [ "Turn arbitrary log entries into errors"
             , "Available entry types:"
             , (OptPretty.indent 4 . OptPretty.vsep)
-                (OptPretty.text <$> getNoErrEntryTypesAsText)
+                (Pretty.pretty <$> getNoErrEntryTypesAsText)
                 {- The user can still give error entries as arguments, but it's
                     useless, so we don't list them here
                 -}

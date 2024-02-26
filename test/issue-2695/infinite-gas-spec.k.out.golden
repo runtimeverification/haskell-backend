@@ -7,7 +7,7 @@
   } )
 #And
   <k>
-    doneLemma ( #gas ( GAVAIL ) <Int log2Int ( G0 ) +Int 1 ) ~> _DotVar1 ~> .
+    doneLemma ( #gas ( GAVAIL ) <Int log2Int ( G0 ) +Int 1 ) ~> _DotVar1 ~> .K
   </k>
 #And
   {
