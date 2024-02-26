@@ -229,7 +229,10 @@ koreExtraLogs =
     Map.map (Set.fromList . mapMaybe (`Map.lookup` Log.textToType Log.registry)) $
         Map.fromList
             [ (LevelOther "SimplifyKore", ["DebugAttemptEquation", "DebugApplyEquation"])
-            , (LevelOther "RewriteKore", ["DebugAttemptedRewriteRules", "DebugAppliedRewriteRules"])
+            ,
+                ( LevelOther "RewriteKore"
+                , ["DebugAttemptedRewriteRules", "DebugAppliedLabeledRewriteRule", "DebugAppliedRewriteRules"]
+                )
             , (LevelOther "SimplifySuccess", ["DebugApplyEquation"])
             , (LevelOther "RewriteSuccess", ["DebugAppliedRewriteRules"])
             ]
