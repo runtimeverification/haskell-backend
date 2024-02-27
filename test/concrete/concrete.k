@@ -3,8 +3,8 @@ module CONCRETE
 
   syntax Val ::= "a"
 
-  syntax Val ::= f(Val) [function, functional]
+  syntax Val ::= f(Val) [function, total]
   rule f(X) => a [concrete]
 
-  syntax Val ::= g() [function, functional]
+  syntax Val ::= g() [function, total]
 endmodule

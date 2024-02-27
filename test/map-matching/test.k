@@ -9,7 +9,7 @@ module TEST
 
   syntax KItem ::= "init"
   syntax ObjectId ::= obj(Int)
-  syntax Int ::= stackAddress(Int) [function, functional, no-evaluators]
+  syntax Int ::= stackAddress(Int) [function, total, no-evaluators]
   rule <k> init => . ...</k>
        (.Bag => <object> <object-id> obj(0) </object-id> <object-address> stackAddress(0) </object-address> </object>
                 <object> <object-id> obj(1) </object-id> <object-address> stackAddress(1) </object-address> </object>

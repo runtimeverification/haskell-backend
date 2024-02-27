@@ -16,7 +16,7 @@ module SETVARS
 //  syntax KItem ::= i(Int)
 //  rule i(@X:Int) => @X +Int 1 [anywhere] // This is not yet supported
 
-  syntax Int ::= j(Int, Int) [function, functional]
+  syntax Int ::= j(Int, Int) [function, total]
 
   rule j(X:Int,Y:Int) => X /Int Y requires Y =/=Int 0
   rule j(X:Int,0) => 1

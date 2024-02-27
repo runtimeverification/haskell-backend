@@ -37,7 +37,7 @@ module SMC
 
   syntax ValStack ::= ".ValStack" | Val ":" ValStack
 
-  syntax Int ::= stackSize(ValStack) [function, functional, smtlib(stackSize)]
+  syntax Int ::= stackSize(ValStack) [function, total, smtlib(stackSize)]
   rule stackSize(.ValStack) => 0
   rule stackSize(_:Val : S:ValStack) => 1 +Int stackSize(S)
 
