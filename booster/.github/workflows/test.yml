@@ -23,7 +23,7 @@ jobs:
     steps:
 
       - name: 'Checkout Code'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           # Check out pull request HEAD instead of merge commit.
           ref: ${{ github.event.pull_request.head.sha }}
@@ -126,7 +126,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: 'Check out code'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
