@@ -9,4 +9,4 @@ a-spec.k.out: a-spec.k simplification.k $(TEST_DEPS)
 	@echo ">>>" $(CURDIR) "kprove" $<
 	rm -f $@
 	$(KPROVE) $(KPROVE_OPTS) $(KPROVE_SPEC) 1> /dev/null 2> $@ || true
-	grep -q "equation is not applicable" $@ && rm $@ || mv $@ $@.fail
+	grep -q "equation is not applicable" $@ && echo "OK" > $@ || mv $@ $@.fail
