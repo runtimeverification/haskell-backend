@@ -183,7 +183,7 @@ jobs:
             stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}
             stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}
 
-      - uses: haskell-actions/setup@v2
+      - uses: haskell-actions/setup@v2.6.1
         id: setup-haskell-stack
         with:
           ghc-version: ${{ env.ghc_version }}
