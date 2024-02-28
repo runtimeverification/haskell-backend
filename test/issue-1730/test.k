@@ -16,11 +16,11 @@ module TEST
       <k> $PGM:Pgm </k>
       <a> 0 </a>
 
-    rule <k> MIN X Y => . ... </k>
+    rule <k> MIN X Y => .K ... </k>
          <a> _ => X </a>
       requires X <=Int Y
 
-    rule <k> MIN X Y => . ... </k>
+    rule <k> MIN X Y => .K ... </k>
          <a> _ => Y </a>
       requires Y <Int X
 

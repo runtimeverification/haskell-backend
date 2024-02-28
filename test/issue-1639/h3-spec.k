@@ -3,7 +3,7 @@ requires "h.k"
 module H3-SPEC
 imports H
 
-claim <k> foo(X) => . </k>
+claim <k> foo(X) => .K </k>
      <m>
       0 => ?Y -Int 1
      </m>

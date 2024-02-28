@@ -15,7 +15,7 @@ module TEST
       <sum> 0 </sum>
 
     rule
-      <k> loop(0) => . ... </k>
+      <k> loop(0) => .K ... </k>
     rule
       <k> loop(Times:Int => Times -Int 1) ...</k>
       <counter> C:Int => C +Int 1 </counter>

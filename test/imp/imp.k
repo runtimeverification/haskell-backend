@@ -151,7 +151,7 @@ considering their erasure as computational steps in the resulting transition
 systems.  You can make these rules computational (dropping the attribute
 \texttt{structural}) if you do want these to count as computational steps. */
 
-  rule {} => .
+  rule {} => .K
   rule {S} => S
 
 /*@ \subsubsection{Assignment}
@@ -159,7 +159,7 @@ The assigned variable is updated in the state.  The variable is expected
 to be declared, otherwise the semantics will get stuck.  At the same time,
 the assignment is dissolved. */
 
-  rule <k> X = I:Int; => . ...</k> <state>... X |-> (_ => I) ...</state>  [label(variable_setting)]
+  rule <k> X = I:Int; => .K ...</k> <state>... X |-> (_ => I) ...</state>  [label(variable_setting)]
 
 /*@ \subsubsection{Sequential composition}
 Sequential composition is simply structurally translated into \K's

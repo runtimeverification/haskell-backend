@@ -5,7 +5,7 @@ module PUSH-SPEC
   imports TEST
 
   claim
-    <k> push(X) => . ... </k>
+    <k> push(X) => .K ... </k>
     <stack> _ => ?_ </stack>
 
 endmodule
