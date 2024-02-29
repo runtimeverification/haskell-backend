@@ -40,7 +40,7 @@ module SIMPLIFIED
   rule f(X) => t(X) requires X >Int 0
   rule f(X) => t(X) requires X <=Int 0
 
-  syntax Int ::= g(Int) [function, total]
+  syntax Int ::= g(Int) [function, total, no-evaluators]
 
   rule g(X) => s(X) requires X >Int 0 [simplification]
   rule g(X) => s(X) requires X <=Int 0 [simplification]

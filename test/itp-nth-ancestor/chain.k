@@ -88,7 +88,7 @@ module CHAIN
     // for nth2-spec
     syntax Bool ::= const(Int) [function, smtlib(con)]
 
-    syntax Int ::= k(Int) [function, total, injective, smtlib(k)]
+    syntax Int ::= k(Int) [function, total, injective, no-evaluators, smtlib(k)]
 
     rule (k(N) +Int 1) -Int 1 => k(N) [simplification]
 endmodule
