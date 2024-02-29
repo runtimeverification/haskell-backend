@@ -7,7 +7,7 @@ module SMC-SYNTAX
                  | "(" AExp ")"               [bracket]
                  > AExp "+" AExp              [left, color(pink)]
   syntax BExp  ::= Bool
-                 | AExp "<=" AExp             [latex({#1}\leq{#2}), color(pink)]
+                 | AExp "<=" AExp             [color(pink)]
                  | "!" BExp                   [color(pink)]
                  | "(" BExp ")"               [bracket]
                  > BExp "&&" BExp             [left, color(pink)]
@@ -37,7 +37,7 @@ module SMC
 
   syntax ValStack ::= ".ValStack" | Val ":" ValStack
 
-  syntax Int ::= stackSize(ValStack) [function, functional, smtlib(stackSize)]
+  syntax Int ::= stackSize(ValStack) [function, total, smtlib(stackSize)]
   rule stackSize(.ValStack) => 0
   rule stackSize(_:Val : S:ValStack) => 1 +Int stackSize(S)
 
@@ -48,44 +48,44 @@ module SMC
                 </T>
 
   rule <k> X:Id => I ...</k> <mem>... X |-> I ...</mem>
-  rule <k> I:Int => . ...</k> <stack> S:ValStack => I : S </stack>
+  rule <k> I:Int => .K ...</k> <stack> S:ValStack => I : S </stack>
     requires stackSize(S) <Int 8
   rule <k> _:Int => STUCK ...</k> <stack> S:ValStack => S </stack>
     requires stackSize(S) >=Int 8
 
 
   rule E1:AExp / E2:AExp => E1 ~> E2 ~> /
-  rule <k> / => . ...</k>
+  rule <k> / => .K ...</k>
        <stack> I2:Int : I1:Int : S:ValStack => I1 /Int I2 : S </stack>
   requires I2 =/=Int 0
 
   rule E1:AExp + E2:AExp => E1 ~> E2 ~> +
-  rule <k> + => . ...</k>
+  rule <k> + => .K ...</k>
        <stack> I2:Int : I1:Int : S:ValStack => I1 +Int I2 : S </stack>
 
   rule - I:Int => I ~> -
-  rule <k> - => . ...</k>
+  rule <k> - => .K ...</k>
        <stack> I:Int : S:ValStack => 0 -Int I : S </stack>
 
   rule E1:AExp <= E2:AExp => E1 ~> E2 ~> <=
-  rule <k> <= => . ...</k>
+  rule <k> <= => .K ...</k>
        <stack> I2:Int : I1:Int : S:ValStack => I1 <=Int I2 : S </stack>
 
   rule ! E:BExp => E ~> !
-  rule <k> ! => . ...</k>
+  rule <k> ! => .K ...</k>
        <stack> B:Bool : S:ValStack => notBool(B) : S </stack>
 
   rule E1:BExp && E2:BExp => E1 ~> && E2
-  rule <k> && _ => . ...</k>
+  rule <k> && _ => .K ...</k>
        <stack> false : S:ValStack => false : S </stack>
   rule <k> && E => E ...</k>
        <stack> true : S:ValStack => S </stack>
 
-  rule {} => .
+  rule {} => .K
   rule {S} => S
 
   rule X:Id = E:AExp ; => E ~> X =
-  rule <k> X = => . ...</k>
+  rule <k> X = => .K ...</k>
        <mem>... X |-> (_ => I) ...</mem>
        <stack> I:Int : S:ValStack => S </stack>
 

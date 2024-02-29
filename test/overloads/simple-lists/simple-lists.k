@@ -25,13 +25,13 @@ module SIMPLE-LISTS
 
     syntax EmptyStmt ::= "e"
 
-    syntax Instr ::= mkEmptyInstr() [function, functional]
+    syntax Instr ::= mkEmptyInstr() [function, total]
     rule mkEmptyInstr() => e
 
     rule D:Defn Ds:Defns => D ~> Ds
-    rule e => .
+    rule e => .K
 
-    rule .Stmts => .
+    rule .Stmts => .K
 
     configuration <k> $PGM:Stmts </k>
 endmodule

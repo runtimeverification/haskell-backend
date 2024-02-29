@@ -4,7 +4,7 @@ module TEST
 
     syntax MaybeInt ::= "Some" Int
                       | "None"
-    syntax MaybeInt ::= f() [function, functional, no-evaluators]
+    syntax MaybeInt ::= f() [function, total, no-evaluators]
 
     configuration <k> $PGM:MaybeInt </k>
 

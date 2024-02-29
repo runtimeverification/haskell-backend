@@ -6,6 +6,6 @@ module TEST
     configuration <k> $PGM:KItem </k>
 
     syntax KItem ::= "#assume" Bool
-    rule <k> #assume B => . ... </k> ensures B
+    rule <k> #assume B => .K ... </k> ensures B
 
 endmodule
