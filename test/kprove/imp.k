@@ -151,7 +151,7 @@ considering their erasure as computational steps in the resulting transition
 systems.  You can make these rules computational (dropping the attribute
 \texttt{structural}) if you do want these to count as computational steps. */
 
-  rule {} => .
+  rule {} => .K
   rule {S} => S
 
 /*@ \subsubsection{Assignment}

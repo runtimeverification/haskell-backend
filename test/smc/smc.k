@@ -81,7 +81,7 @@ module SMC
   rule <k> && E => E ...</k>
        <stack> true : S:ValStack => S </stack>
 
-  rule {} => .
+  rule {} => .K
   rule {S} => S
 
   rule X:Id = E:AExp ; => E ~> X =

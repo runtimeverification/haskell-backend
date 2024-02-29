@@ -29,9 +29,9 @@ module SIMPLE-LISTS
     rule mkEmptyInstr() => e
 
     rule D:Defn Ds:Defns => D ~> Ds
-    rule e => .
+    rule e => .K
 
-    rule .Stmts => .
+    rule .Stmts => .K
 
     configuration <k> $PGM:Stmts </k>
 endmodule
