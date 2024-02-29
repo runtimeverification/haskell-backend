@@ -52,7 +52,7 @@ jobs:
         run: |
           echo "PR_HEAD=$(curl -s ${{ github.event.issue.pull_request.url }} | jq '.head.sha' | xargs echo)" | tee -a $GITHUB_OUTPUT
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: '${{ steps.determine-commit.outputs.PR_HEAD }}'
       - name: Run Tests
@@ -73,7 +73,7 @@ jobs:
           nix run .#profile ./${FILE_NAME}
 
       - name: Publish Profile Results
-        uses: actions/upload-artifact@v3.1.0
+        uses: actions/upload-artifact@v4
         with:
           path: ./profile-*.tar.gz
 

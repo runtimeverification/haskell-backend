@@ -3,7 +3,7 @@ module SMT-LEMMA
   syntax KItem ::= delayed(KItem) [strict]
   syntax KResult ::= Int
 
-  syntax Bool ::= test(Int) [smtlib(smt_test), function, functional]
+  syntax Bool ::= test(Int) [smtlib(smt_test), function, total]
 
   syntax KItem ::= "symInt"
 
