@@ -12,7 +12,7 @@ module TEST
     </T>
 
   rule
-    <k> push( X:KItem ) => . ... </k>
+    <k> push( X:KItem ) => .K ... </k>
     <stack> .List => ListItem(X) ... </stack>
 
 endmodule

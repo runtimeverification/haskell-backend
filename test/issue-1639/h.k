@@ -8,7 +8,7 @@ imports MAP
 configuration <T> <k> $PGM:Cmd </k> <m> 0 </m> </T>
 
 syntax Cmd ::= foo(Int)
-rule <k> foo(X) => . ... </k>
+rule <k> foo(X) => .K ... </k>
      <m>
        0 => X
      </m>

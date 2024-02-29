@@ -15,6 +15,6 @@ module TEST
   rule
     <k> V:Val </k>
     <l> ListItem(V) ... </l>
-    <v> . => V </v>
+    <v> .K => V </v>
 
 endmodule

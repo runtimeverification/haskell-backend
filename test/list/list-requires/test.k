@@ -15,8 +15,8 @@ module TEST
       <sr> (a |-> b) </sr>
     </T>
 
-syntax Map ::= removeAs ( Map ) [function, functional]
-             | removeAs ( List , Map ) [function, functional]
+syntax Map ::= removeAs ( Map ) [function, total]
+             | removeAs ( List , Map ) [function, total]
 // ------------------------------------------------------------------------------
 rule removeAs( M )                                   => removeAs(Set2List(keys(M)), M)
 //rule removeAs( .List, .Map )                         => .Map

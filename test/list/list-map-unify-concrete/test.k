@@ -24,7 +24,7 @@ module TEST
 
     syntax Command ::= newAccount ( Int )
  // -------------------------------------
-    rule <k> newAccount(ACCT) => . ... </k>
+    rule <k> newAccount(ACCT) => .K ... </k>
          <accounts>
            ( .Bag
           => <account>
@@ -37,12 +37,12 @@ module TEST
 
     syntax Command ::= setAccount ( Int )
  // -------------------------------------
-    rule <k> setAccount(ACCT) => . ... </k>
+    rule <k> setAccount(ACCT) => .K ... </k>
          <acct> _ => ACCT </acct>
 
     syntax Command ::= write ( Int , Int )
  // --------------------------------------
-    rule <k> write(KEY, VALUE) => . ... </k>
+    rule <k> write(KEY, VALUE) => .K ... </k>
          <acct> ACCT </acct>
          <account>
             <acctID> ACCT </acctID>
@@ -52,7 +52,7 @@ module TEST
 
     syntax Command ::= finalize ( List )
  // ------------------------------------
-    rule <k> finalize(.List) => . ... </k>
+    rule <k> finalize(.List) => .K ... </k>
 
     rule <k> finalize((ListItem(ACCT) => .List) _) ... </k>
          <account>

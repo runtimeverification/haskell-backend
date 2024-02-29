@@ -21,11 +21,11 @@ module WITH-CONFIG
     syntax AccountId ::= ".AccountId" | Int
     // ---------------------------------------
 
-    syntax Int ::= "total_balance" "(" AccountId ")" [function, functional]
+    syntax Int ::= "total_balance" "(" AccountId ")" [function, total]
     // -----------------------------------------------------------------------
     rule total_balance(WHO) => free_balance(WHO) +Int reserved_balance(WHO)
 
-    syntax Int ::= "free_balance" "(" AccountId ")" [function, functional]
+    syntax Int ::= "free_balance" "(" AccountId ")" [function, total]
     // ----------------------------------------------------------------------
     rule    free_balance(_)   => 0 [owise]
     rule [[ free_balance(WHO) => FREE_BALANCE ]]
@@ -35,7 +35,7 @@ module WITH-CONFIG
             ...
         </account>
 
-    syntax Int ::= "reserved_balance" "(" AccountId ")" [function, functional]
+    syntax Int ::= "reserved_balance" "(" AccountId ")" [function, total]
     // --------------------------------------------------------------------------
     rule    reserved_balance(_)   => 0 [owise]
     rule [[ reserved_balance(WHO) => FREE_BALANCE ]]
