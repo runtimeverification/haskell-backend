@@ -7,7 +7,7 @@ module SMC-SYNTAX
                  | "(" AExp ")"               [bracket]
                  > AExp "+" AExp              [left, color(pink)]
   syntax BExp  ::= Bool
-                 | AExp "<=" AExp             [latex({#1}\leq{#2}), color(pink)]
+                 | AExp "<=" AExp             [color(pink)]
                  | "!" BExp                   [color(pink)]
                  | "(" BExp ")"               [bracket]
                  > BExp "&&" BExp             [left, color(pink)]
