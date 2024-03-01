@@ -6,26 +6,26 @@ module IMP-SYNTAX
   imports ID
 
   syntax AExp  ::= Int | Id
-                 | "-" Int                    [klabel(-_), symbol, format(%1%2)]
-                 | AExp "/" AExp              [klabel(_/_), symbol, left, seqstrict, color(pink)]
-                 > AExp "+" AExp              [klabel(_+_), symbol, left, seqstrict, color(pink)]
+                 | "-" Int                    [symbol(-_), format(%1%2)]
+                 | AExp "/" AExp              [symbol(_/_), left, seqstrict, color(pink)]
+                 > AExp "+" AExp              [symbol(_+_), left, seqstrict, color(pink)]
                  | "(" AExp ")"               [bracket]
   syntax BExp  ::= Bool
-                 | AExp "<=" AExp             [klabel(_<=_), symbol, seqstrict, latex({#1}\leq{#2}), color(pink)]
-                 | "!" BExp                   [klabel(!_), symbol, strict, color(pink)]
-                 > BExp "&&" BExp             [klabel(_&&_), symbol, left, strict(1), color(pink)]
+                 | AExp "<=" AExp             [symbol(_<=_), seqstrict, color(pink)]
+                 | "!" BExp                   [symbol(!_), strict, color(pink)]
+                 > BExp "&&" BExp             [symbol(_&&_), left, strict(1), color(pink)]
                  | "(" BExp ")"               [bracket]
-  syntax Block ::= "{" "}"                    [klabel({}), symbol]
-                 | "{" Stmt "}"               [klabel({_}), symbol, format(%1%i%n%2%d%n%3)]
+  syntax Block ::= "{" "}"                    [symbol({})]
+                 | "{" Stmt "}"               [symbol({_}), format(%1%i%n%2%d%n%3)]
   syntax Stmt  ::= Block
-                 | Id "=" AExp ";"            [klabel(_=_;), symbol, strict(2), color(pink), format(%1 %2 %3%4)]
+                 | Id "=" AExp ";"            [symbol(_=_;), strict(2), color(pink), format(%1 %2 %3%4)]
                  | "if" "(" BExp ")"
-                   Block "else" Block         [klabel(if(_)_else_), symbol, strict(1), colors(yellow, white, white, yellow), format(%1 %2%3%4 %5 %6 %7)]
-                 | "while" "(" BExp ")" Block [klabel(while(_)_), symbol, colors(yellow,white,white), format(%1 %2%3%4 %5)]
-                 > Stmt Stmt                  [klabel(__), symbol, left, format(%1%n%2)]
+                   Block "else" Block         [symbol(if(_)_else_), strict(1), colors(yellow, white, white, yellow), format(%1 %2%3%4 %5 %6 %7)]
+                 | "while" "(" BExp ")" Block [symbol(while(_)_), colors(yellow,white,white), format(%1 %2%3%4 %5)]
+                 > Stmt Stmt                  [symbol(__), left, format(%1%n%2)]
 
-  syntax Pgm ::= "int" Ids ";" Stmt           [klabel(int_;_), symbol, format(%1 %2%3%n%4), colors(yellow,pink)]
-  syntax Ids ::= List{Id,","}                 [klabel(_,_), symbol, format(%1%2 %3)]
+  syntax Pgm ::= "int" Ids ";" Stmt           [symbol(int_;_), format(%1 %2%3%n%4), colors(yellow,pink)]
+  syntax Ids ::= List{Id,","}                 [symbol(_,_), format(%1%2 %3)]
 endmodule
 
 module IMP
@@ -44,7 +44,6 @@ module IMP
                   <state color="red"> .Map </state>
                 </T>
 
-  // rule <k> X:Id => I ...</k> <state>... X |-> I ...</state>
   rule <k> X:Id => #lookup(X, M) ...</k> <state> M</state>
 
   syntax KItem ::= #lookup(Id, Map) [function, total]
@@ -64,11 +63,10 @@ module IMP
   rule true && B => B
   rule false && _ => false
 
-  rule {} => .
+  rule {} => .K
   rule {S} => S
 
-  // rule <k> X = I:Int; => . ...</k> <state>... X |-> (_ => I) ...</state>
-  rule <k> X = I:Int; => . ...</k> <state> M => M [ X <- I ] </state>
+  rule <k> X = I:Int; => .K ...</k> <state> M => M [ X <- I ] </state>
 
   rule S1:Stmt S2:Stmt => S1 ~> S2
 
@@ -77,12 +75,11 @@ module IMP
 
   rule while (B) S => if (B) {S while (B) S} else {}
 
-  // rule <k> int (X,Xs => Xs);_ </k> <state> Rho:Map (.Map => X|->0) </state>
   rule <k> int (X,Xs => Xs);_ </k> <state> M => M [ X <- 0 ] </state>
     requires notBool (X in keys(M))
   rule int .Ids; S => S ~> Stop()
 
   syntax KItem ::= Stop()
-  rule [stop]: <k> Stop() => . </k>
+  rule [stop]: <k> Stop() => .K </k>
 
 endmodule
