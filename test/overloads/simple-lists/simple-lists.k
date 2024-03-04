@@ -8,10 +8,10 @@ module SIMPLE-LISTS
     syntax Stmt  ::= Instr | Defn
  // -----------------------------
 
-    syntax EmptyStmts ::= List{EmptyStmt , ""} [klabel(listStmt)]
-    syntax Instrs     ::= List{Instr     , ""} [klabel(listStmt)]
-    syntax Defns      ::= List{Defn      , ""} [klabel(listStmt)]
-    syntax Stmts      ::= List{Stmt      , ""} [klabel(listStmt)]
+    syntax EmptyStmts ::= List{EmptyStmt , ""} [overload(listStmt)]
+    syntax Instrs     ::= List{Instr     , ""} [overload(listStmt)]
+    syntax Defns      ::= List{Defn      , ""} [overload(listStmt)]
+    syntax Stmts      ::= List{Stmt      , ""} [overload(listStmt)]
  // -------------------------------------------------------------
 
     syntax Instrs ::= EmptyStmts
@@ -25,13 +25,13 @@ module SIMPLE-LISTS
 
     syntax EmptyStmt ::= "e"
 
-    syntax Instr ::= mkEmptyInstr() [function, functional]
+    syntax Instr ::= mkEmptyInstr() [function, total]
     rule mkEmptyInstr() => e
 
     rule D:Defn Ds:Defns => D ~> Ds
-    rule e => .
+    rule e => .K
 
-    rule .Stmts => .
+    rule .Stmts => .K
 
     configuration <k> $PGM:Stmts </k>
 endmodule

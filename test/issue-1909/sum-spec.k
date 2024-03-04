@@ -3,7 +3,7 @@ requires "test.k"
 module SUM-SPEC
   imports TEST
 
-  claim  <k> loop(N:Int) => . ...</k>
+  claim  <k> loop(N:Int) => .K ...</k>
         <counter> C:Int => ?_ </counter>
         <sum> S:Int => ?S:Int </sum>
     requires

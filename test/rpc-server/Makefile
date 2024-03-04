@@ -13,3 +13,6 @@ clean: ;
 build-test: ;
 
 .PHONY: test test-k clean build-test
+
+golden: RECREATE_BROKEN_GOLDEN = true
+golden: test

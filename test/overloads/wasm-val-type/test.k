@@ -6,9 +6,9 @@ module TEST
     syntax FValType ::= "f32" | "f64"
     syntax AValType ::= IValType | FValType
     syntax Number ::= Int | Float
-    syntax IVal ::= "<" IValType ">" Int    [klabel(<_>_)]
-    syntax FVal ::= "<" FValType ">" Float  [klabel(<_>_)]
-    syntax  Val ::= "<" AValType ">" Number [klabel(<_>_)]
+    syntax IVal ::= "<" IValType ">" Int    [overload(<_>_)]
+    syntax FVal ::= "<" FValType ">" Float  [overload(<_>_)]
+    syntax  Val ::= "<" AValType ">" Number [overload(<_>_)]
                   | IVal | FVal
     syntax Instr ::= Instr Instr
 

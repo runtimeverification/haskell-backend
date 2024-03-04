@@ -127,7 +127,8 @@ common library
   build-depends: gitrev >=1.3
   build-depends: graphviz >=2999.20
   -- Pin hashable to make sure cabal build uses the one Nix & Stack builds do
-  build-depends: hashable ==1.4.3.0
+  -- Also note that hashable-1.4.3.0 DOES NOT WORK! (see #3730)
+  build-depends: hashable ==1.4.2.0
   build-depends: haskeline ==0.8.*
   build-depends: ghc-bignum >=1.2
   build-depends: json-rpc >=1.0
