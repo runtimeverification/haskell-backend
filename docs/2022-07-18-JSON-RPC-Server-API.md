@@ -734,6 +734,22 @@ This error wraps an error message from the internal implication check routine, i
 
 Error returned when the SMT solver crashes or is unable to discharge a goal.
 
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "code": 5,
+    "message": "Smt solver error",
+    "data": {
+      "format": "KORE",
+      "version": 1,
+      "term": {}
+    }
+  }
+}
+```
+
 ## 6 Aborted
 
 ## 7 Multiple states
