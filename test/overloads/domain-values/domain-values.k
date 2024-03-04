@@ -6,11 +6,11 @@ module DOMAIN-VALUES
   syntax B ::= "b"
   syntax AB ::= A | B
 
-  syntax Sub ::= "ctor" A [klabel(ctor)]
+  syntax Sub ::= "ctor" A [overload(ctor)]
   syntax Sub ::= Int
 
   syntax Sup ::= Sub
-  syntax Sup ::= "ctor" AB [klabel(ctor)]
+  syntax Sup ::= "ctor" AB [overload(ctor)]
 
   syntax Pgm ::= Sup
   syntax Pgm ::= "end"
