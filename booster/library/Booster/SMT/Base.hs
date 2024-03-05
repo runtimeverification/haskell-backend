@@ -66,6 +66,7 @@ getComment (DeclareFunc c _ _ _) = c
 data ControlCommand
     = Push -- Int
     | Pop -- Int
+    | SetTimeout Int
     | Exit
     deriving stock (Eq, Ord, Show)
 

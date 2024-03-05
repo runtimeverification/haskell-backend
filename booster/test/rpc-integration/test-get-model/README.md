@@ -17,3 +17,6 @@ For the time being, this is testing the pass-through of `get-model` requests to 
 * a trivial satisfiable predicate without variables
   - Input kore term: ` 0 <= 0`
   - Result: `sat`, no substitution
+* a predicate that causes the SMT solver to return `Unknown`
+  - Input kore term: `X == X ^ 256`
+  - Result: `unknown`, no substitution
