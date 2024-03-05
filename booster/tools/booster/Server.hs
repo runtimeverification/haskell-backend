@@ -197,7 +197,11 @@ main = do
                         jsonRpcServer
                             srvSettings
                             (const $ Proxy.respondEither proxyConfig boosterRespond koreRespond)
-                            [Kore.handleDecidePredicateUnknown, handleErrorCall, handleSomeException]
+                            [ Kore.handleDecidePredicateUnknown
+                            , Booster.handleSmtError
+                            , handleErrorCall
+                            , handleSomeException
+                            ]
                     interruptHandler _ = do
                         when (logLevel >= LevelInfo) $
                             IO.hPutStrLn IO.stderr "[Info#proxy] Server shutting down"

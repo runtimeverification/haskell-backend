@@ -9,6 +9,7 @@ License     : BSD-3-Clause
 module Booster.JsonRpc (
     ServerState (..),
     respond,
+    handleSmtError,
     RpcTypes.rpcJsonConfig,
     execStateToKoreJson,
     toExecState,
@@ -23,6 +24,7 @@ import Control.Monad.Logger.CallStack (MonadLoggerIO)
 import Control.Monad.Logger.CallStack qualified as Log
 import Control.Monad.Trans.Except (catchE, except, runExcept, runExceptT, throwE, withExceptT)
 import Crypto.Hash (SHA256 (..), hashWith)
+import Data.Aeson (ToJSON (toJSON))
 import Data.Bifunctor (second)
 import Data.Coerce (coerce)
 import Data.Foldable
@@ -31,6 +33,7 @@ import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (catMaybes, fromMaybe, isJust, mapMaybe)
 import Data.Sequence (Seq)
+import Data.Set qualified as Set
 import Data.Text (Text, pack)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
@@ -75,10 +78,8 @@ import Booster.Syntax.ParsedKore.Base hiding (ParsedModule)
 import Booster.Syntax.ParsedKore.Base qualified as ParsedModule (ParsedModule (..))
 import Booster.Syntax.ParsedKore.Internalise (addToDefinitions)
 import Booster.Util (Flag (..), constructorName)
-import Data.Aeson (ToJSON (toJSON))
-import Data.Set qualified as Set
 import Kore.JsonRpc.Error qualified as RpcError
-import Kore.JsonRpc.Server
+import Kore.JsonRpc.Server (ErrorObj (..), JsonRpcHandler (..), Respond)
 import Kore.JsonRpc.Types qualified as RpcTypes
 import Kore.JsonRpc.Types.Log
 import Kore.Syntax.Json.Types (Id (..))
@@ -464,6 +465,23 @@ respond stateVar =
         case Map.lookup mainName state.definitions of
             Nothing -> pure $ Left $ RpcError.backendError RpcError.CouldNotFindModule mainName
             Just d -> action (d, state.mLlvmLibrary, state.mSMTOptions)
+
+handleSmtError :: JsonRpcHandler
+handleSmtError = JsonRpcHandler $ \case
+    SMT.GeneralSMTError err -> runtimeError "problem" err
+    SMT.SMTTranslationError err -> runtimeError "translation" err
+    SMT.SMTSolverUnknown premises preds -> do
+        Log.logErrorNS "booster" $ "SMT returned unknown: " <> "FIXME"
+
+        let bool = externaliseSort Pattern.SortBool -- predicates are terms of sort Bool
+            externalise = Syntax.KJAnd bool . map (externalisePredicate bool) . Set.toList
+            allPreds = addHeader $ Syntax.KJAnd bool [externalise premises, externalise preds]
+        pure $ RpcError.backendError RpcError.SmtSolverError $ toJSON allPreds
+  where
+    runtimeError prefix err = do
+        let msg = "SMT " <> prefix <> ": " <> err
+        Log.logErrorNS "booster" msg
+        pure $ RpcError.runtimeError msg
 
 data ServerState = ServerState
     { definitions :: Map Text KoreDefinition

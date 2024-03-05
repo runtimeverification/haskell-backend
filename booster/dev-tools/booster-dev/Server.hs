@@ -26,7 +26,7 @@ import Booster.CLOptions
 import Booster.Definition.Base (KoreDefinition (..))
 import Booster.Definition.Ceil (computeCeilsDefinition)
 import Booster.GlobalState
-import Booster.JsonRpc (ServerState (..), respond)
+import Booster.JsonRpc (ServerState (..), handleSmtError, respond)
 import Booster.LLVM as LLVM (API)
 import Booster.LLVM.Internal (mkAPI, withDLib)
 import Booster.SMT.Interface qualified as SMT
@@ -129,7 +129,7 @@ runServer port definitions defaultMain mLlvmLibrary mSMTOptions (logLevel, custo
             jsonRpcServer
                 srvSettings
                 (const $ respond stateVar)
-                [RpcError.handleErrorCall, RpcError.handleSomeException]
+                [handleSmtError, RpcError.handleErrorCall, RpcError.handleSomeException]
   where
     levelFilter _source lvl =
         lvl `elem` customLevels || lvl >= logLevel && lvl <= LevelError
