@@ -7,7 +7,7 @@ module Main (main) where
 import Booster.Util (runHandleLoggingT)
 import Control.Concurrent (newMVar)
 import Control.DeepSeq (force)
-import Control.Exception (catch, evaluate, throwIO)
+import Control.Exception (evaluate)
 import Control.Monad (forM_, when)
 import Control.Monad.Logger (runNoLoggingT)
 import Control.Monad.Logger qualified as Log
@@ -15,12 +15,10 @@ import Control.Monad.Logger.CallStack (LogLevel (LevelError))
 import Data.Conduit.Network (serverSettings)
 import Data.Map (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (fromJust, isJust, isNothing)
+import Data.Maybe (isNothing)
 import Data.Text (Text, unpack)
 import Options.Applicative
-import System.Directory (removeFile)
 import System.IO qualified as IO
-import System.IO.Error (isDoesNotExistError)
 
 import Booster.CLOptions
 import Booster.Definition.Base (KoreDefinition (..))
@@ -47,18 +45,11 @@ main = do
             , smtOptions
             , equationOptions
             , eventlogEnabledUserEvents
-            , hijackEventlogFile
             } = options
 
     forM_ eventlogEnabledUserEvents $ \t -> do
         putStrLn $ "Tracing " <> show t
         enableCustomUserEvent t
-    when (isJust hijackEventlogFile) $ do
-        let fname = fromJust hijackEventlogFile
-        putStrLn $
-            "Hijacking eventlog into file " <> show fname
-        removeFileIfExists fname
-        enableHijackEventlogFile fname
     putStrLn $
         "Loading definition from "
             <> definitionFile
@@ -95,13 +86,6 @@ parserInfoModifiers =
     fullDesc
         <> header
             "Haskell Backend Booster - a JSON RPC server for quick symbolic execution of Kore definitions"
-
-removeFileIfExists :: FilePath -> IO ()
-removeFileIfExists fileName = removeFile fileName `catch` handleExists
-  where
-    handleExists e
-        | isDoesNotExistError e = return ()
-        | otherwise = throwIO e
 
 runServer ::
     Int ->
