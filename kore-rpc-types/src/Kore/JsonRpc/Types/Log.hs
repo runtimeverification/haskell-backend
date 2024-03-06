@@ -3,8 +3,10 @@
 module Kore.JsonRpc.Types.Log (module Kore.JsonRpc.Types.Log) where
 
 import Data.Aeson (FromJSON, ToJSON)
+import Data.Aeson.Text (encodeToLazyText)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
+import Data.Text.Lazy qualified as Text (toStrict)
 import GHC.Generics (Generic)
 import Kore.JsonRpc.Types.Depth (Depth (..))
 import Kore.Syntax.Json.Types (KoreJson)
@@ -85,3 +87,20 @@ data LogEntry
         via CustomJSON
                 '[OmitNothingFields, FieldLabelModifier '[CamelToKebab], ConstructorTagModifier '[CamelToKebab]]
                 LogEntry
+
+-- | If the log entry contains the any of the term fields, make them Nothing
+logEntryEraseTerms :: LogEntry -> LogEntry
+logEntryEraseTerms = \case
+    entry@Rewrite{result} -> entry{result = removeTermsFromResult result}
+    entry@Simplification{result} -> entry{result = removeTermsFromResult result, originalTerm = Nothing}
+    entry@Fallback{} -> entry{originalTerm = Nothing, rewrittenTerm = Nothing}
+    entry@ProcessingTime{} -> entry
+  where
+    removeTermsFromResult :: LogRewriteResult -> LogRewriteResult
+    removeTermsFromResult = \case
+        Success{ruleId} -> Success{ruleId, rewrittenTerm = Nothing, substitution = Nothing}
+        res -> res
+
+-- | Encode a Kore RPC as Text-embedded JSON for stderr/file logging
+encodeLogEntryText :: LogEntry -> Text
+encodeLogEntryText = Text.toStrict . encodeToLazyText
