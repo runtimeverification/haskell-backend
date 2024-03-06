@@ -33,15 +33,12 @@ import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Control.Monad.Trans.Reader qualified as Reader
 import Data.Binary (Binary, get, put)
-import Data.ByteString.Builder
 import Data.ByteString.Char8 (ByteString, pack)
 import Data.ByteString.Char8 qualified as BS
-import Data.ByteString.Lazy qualified as BL
 import Data.Data (Data)
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HM
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
-import Data.List qualified as List (intersperse)
 import Foreign (ForeignPtr, finalizeForeignPtr, newForeignPtr, withForeignPtr)
 import Foreign qualified
 import Foreign.C qualified as C
@@ -49,7 +46,6 @@ import Foreign.C.Types (CSize (..))
 import Foreign.Marshal (alloca)
 import Foreign.Storable (peek)
 import GHC.Generics (Generic)
-import Prettyprinter (Pretty (..))
 import System.IO (hPutStrLn, stderr)
 import System.Posix.DynamicLinker qualified as Linker
 
@@ -57,7 +53,6 @@ import Booster.LLVM.TH (dynamicBindings)
 import Booster.Pattern.Base
 import Booster.Pattern.Binary hiding (Block)
 import Booster.Pattern.Util (sortOfTerm)
-import Booster.Prettyprinter qualified as KPretty
 import Booster.Trace
 import Booster.Trace qualified as Trace
 
@@ -150,27 +145,6 @@ instance CustomUserEvent LlvmCall where
     userEventTag _ = "LLVM "
     eventType _ = LlvmCalls
 
-    prettyPrintUserEvent (LlvmCall{ret, call, args}) =
-        let prettyRet = case ret of
-                Just (ty, SomePtr ptr) -> byteString ty <> lazyByteString " v" <> byteString ptr <> lazyByteString " = "
-                _ -> ""
-
-            prettyArgs =
-                charUtf8 '('
-                    <> mconcat
-                        ( List.intersperse (charUtf8 ',') $
-                            map
-                                ( \case
-                                    LlvmCallArgByteString str -> charUtf8 '"' <> byteString str <> charUtf8 '"'
-                                    LlvmCallArgWord int -> word64Dec (fromIntegral int)
-                                    LlvmCallArgPtr (SomePtr ptr) -> charUtf8 'v' <> byteString ptr
-                                )
-                                args
-                        )
-                    <> charUtf8 ')'
-            call_str = prettyRet <> byteString "api." <> byteString call <> prettyArgs
-         in BL.toStrict . toLazyByteString $ call_str <> lazyByteString ";\n"
-
 data LlvmVar = LlvmVar SomePtr Term
 
 instance CustomUserEvent LlvmVar where
@@ -178,7 +152,6 @@ instance CustomUserEvent LlvmVar where
     decodeUserEvent = LlvmVar <$> get <*> decodeTerm' Nothing
     userEventTag _ = "LLVMV"
     eventType _ = LlvmCalls
-    prettyPrintUserEvent (LlvmVar (SomePtr ptr) trm) = "/* " <> ptr <> " |-> " <> BS.pack (KPretty.renderDefault $ pretty trm) <> " */\n"
 
 {- | Uses dlopen to load a .so/.dylib C library at runtime. For doucmentation of flags such as `RTL_LAZY`, consult e.g.
      https://man7.org/linux/man-pages/man3/dlopen.3.html

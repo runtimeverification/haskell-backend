@@ -17,7 +17,6 @@ import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as BL
 import Data.IORef
 import Data.Kind (Type)
-import Data.Maybe (fromJust, isJust)
 import Data.Proxy (Proxy (..))
 import Debug.Trace.Binary (traceBinaryEvent, traceBinaryEventIO)
 import Debug.Trace.Flags
@@ -34,7 +33,6 @@ class CustomUserEvent e where
     decodeUserEvent :: Get e
     userEventTag :: proxy e -> ByteString
     eventType :: proxy e -> CustomUserEventType
-    prettyPrintUserEvent :: e -> ByteString
 
 class DecodeUserEvents es where
     decodeUserEvents' :: ByteString -> Get (Sum es)
@@ -83,7 +81,7 @@ instance CustomUserEvent Start where
     decodeUserEvent = Start <$> get
     userEventTag _ = "START"
     eventType _ = Timing
-    prettyPrintUserEvent (Start ident) = "START " <> ident
+
 newtype Stop = Stop ByteString
 
 instance CustomUserEvent Stop where
@@ -91,7 +89,6 @@ instance CustomUserEvent Stop where
     decodeUserEvent = Stop <$> get
     userEventTag _ = "STOP "
     eventType _ = Timing
-    prettyPrintUserEvent (Stop ident) = "STOP " <> ident
 
 encodeCustomUserEvent :: forall e. CustomUserEvent e => e -> Put
 encodeCustomUserEvent e = do
@@ -100,9 +97,6 @@ encodeCustomUserEvent e = do
 
 traceIO :: forall m e. MonadIO m => CustomUserEvent e => e -> m ()
 traceIO e
-    | isJust hijackEventlogFileEnabled = do
-        let fname = fromJust hijackEventlogFileEnabled
-        liftIO $ BS.appendFile fname (prettyPrintUserEvent e)
     | userTracingEnabled && customUserEventEnabled (eventType (undefined :: proxy e)) = do
         let message = BL.toStrict $ runPut $ encodeCustomUserEvent e
         when (BS.length message > 2 ^ (16 :: Int)) $ error "eventlog message too long"
