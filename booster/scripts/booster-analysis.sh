@@ -36,8 +36,8 @@ export PLUGIN_DIR=$(nix build github:runtimeverification/blockchain-k-plugin/$PL
 
 
 run_tarball(){
-  echo "######## $1 ########"; 
-  $SCRIPT_DIR/run-with-tarball.sh $1 -l Aborts --print-stats 2>&1 | tee $LOG_DIR/$(basename $1).out; 
+  echo "######## $1 ########";
+  $SCRIPT_DIR/run-with-tarball.sh $1 -l Aborts --print-stats 2>&1 | tee $LOG_DIR/$(basename $1).out;
 }
 
 export -f run_tarball
@@ -46,15 +46,15 @@ export SCRIPT_DIR
 find $BUG_REPORT_DIR -name \*tar -print0 | xargs -0 -t -I {} -P $PARALLEL bash -c 'run_tarball "$@"' $(basename {}) {}
 
 # for tar in $(find $BUG_REPORT_DIR -name \*tar );
-# do 
-#   echo "######## $tar ########"; 
-#   $SCRIPT_DIR/run-with-tarball.sh $tar -l Aborts --print-stats 2>&1 | tee $LOG_DIR/$(basename $tar).out; 
+# do
+#   echo "######## $tar ########";
+#   $SCRIPT_DIR/run-with-tarball.sh $tar -l Aborts --print-stats 2>&1 | tee $LOG_DIR/$(basename $tar).out;
 # done
 
 cd $LOG_DIR
 
 # Counting abort reasons
-grep -e "Uncertain about" *log | sed -e 's,/tmp/tmp.[^/]*/evm-semantics/kevm-pyk/src/kevm_pyk/kproj/evm-semantics/,,' -e "s/.*Uncertain about \(.*\)$/\1/" -e "s/jumpi.true :.*/jumpi.true/" | nix_shell "runghc --ghc-arg='--package extra' $SCRIPT_DIR/Count.hs" > abort_reasons.count
+grep -e "Uncertain about" *log | sed -e 's,/tmp/tmp.[^/]*/evm-semantics/kevm-pyk/src/kevm_pyk/kproj/evm-semantics/,,' -e "s/.*Uncertain about \(.*\)$/\1/" -e "s/jumpi.true :.*/jumpi.true/" | nix_shell "runghc --ghc-arg='-package extra' --ghc-arg='-package containers' $SCRIPT_DIR/Count.hs" > abort_reasons.count
 
 # Counting uncertain conditions by rule and actual outcome in kore-rpc
-grep -E -e "^\[Aborts.*Uncertain about a condition| Booster aborted, kore yields"  *log | sed -n -e '/Uncertain about/,/yields/{/yields/{!p};p}' | sed  -e 's/\(jumpi\.true\) :.*$/\1/' | sed -n -e 'N;s/.*Uncertain about a condition in \(.*\)\n.*kore yields \(.*\)/ \1 -- \2 /g;p' | less | nix_shell "runghc --ghc-arg='--package extra' $SCRIPT_DIR/Count.hs" > uncertain_conditions.count
+grep -E -e "^\[Aborts.*Uncertain about a condition| Booster aborted, kore yields"  *log | sed -n -e '/Uncertain about/,/yields/{/yields/{!p};p}' | sed  -e 's/\(jumpi\.true\) :.*$/\1/' | sed -n -e 'N;s/.*Uncertain about a condition in \(.*\)\n.*kore yields \(.*\)/ \1 -- \2 /g;p' | less | nix_shell "runghc --ghc-arg='-package extra' --ghc-arg='-package containers' $SCRIPT_DIR/Count.hs" > uncertain_conditions.count
