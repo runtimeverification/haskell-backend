@@ -116,7 +116,7 @@ i=15
 while ! $LSOF -a -p${server_pid} -sTCP:LISTEN -iTCP && [[ $i -ge 0 ]]; do
     echo "Waiting for server ($i attempts left)"
     i=$((i-1))
-    sleep 1
+    sleep 2
 done
 
 # find server port via lsof
