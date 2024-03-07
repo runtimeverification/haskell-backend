@@ -172,7 +172,7 @@ attemptEquation sideCondition termLike equation = do
         Simplifier (AttemptEquationResult RewritingVariableName) ->
         Simplifier (AttemptEquationResult RewritingVariableName)
     whileDebugAttemptEquation' action =
-        whileDebugAttemptEquation termLike equationRenamed $ do
+        whileDebugAttemptEquation termLike equationRenamed sideCondition $ do
             result <- action
             cacheIfFailure result
             debugAttemptEquationResult equation result

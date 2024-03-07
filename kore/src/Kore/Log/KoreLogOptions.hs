@@ -441,7 +441,7 @@ selectDebugAttemptEquation options entry
     getEquation = do
         debugAttemptEquation <- fromEntry entry
         case debugAttemptEquation of
-            DebugAttemptEquation equation _ -> pure equation
+            DebugAttemptEquation equation _ _ -> pure equation
             DebugAttemptEquationResult equation _ -> pure equation
 
 newtype DebugEquationOptions = DebugEquationOptions (HashSet Text)

@@ -232,6 +232,7 @@ data DebugAttemptEquation
       DebugAttemptEquation
         (Equation RewritingVariableName)
         (TermLike RewritingVariableName)
+        (SideCondition RewritingVariableName)
     | -- | Entered into the log when an equation is applicable.
       DebugAttemptEquationResult
         (Equation RewritingVariableName)
@@ -240,7 +241,7 @@ data DebugAttemptEquation
     deriving stock (GHC.Generic)
 
 instance Pretty DebugAttemptEquation where
-    pretty (DebugAttemptEquation equation termLike) =
+    pretty (DebugAttemptEquation equation termLike sideCondition) =
         Pretty.vsep
             [ (Pretty.hsep . catMaybes)
                 [ Just "applying equation"
@@ -249,6 +250,8 @@ instance Pretty DebugAttemptEquation where
                 , Just "to term:"
                 ]
             , Pretty.indent 4 (unparse termLike)
+            , "  with side condition:"
+            , Pretty.indent 4 (pretty sideCondition)
             ]
     pretty (DebugAttemptEquationResult _ (Left attemptEquationError)) =
         Pretty.vsep
@@ -260,7 +263,7 @@ instance Pretty DebugAttemptEquation where
 
 instance Entry DebugAttemptEquation where
     entrySeverity _ = Debug
-    contextDoc (DebugAttemptEquation equation _) =
+    contextDoc (DebugAttemptEquation equation _ _) =
         (Just . Pretty.hsep . catMaybes)
             [ Just "while applying equation"
             , (\label -> Pretty.hsep ["(label: ", pretty label, ")"]) <$> ruleLabel equation
@@ -268,7 +271,7 @@ instance Entry DebugAttemptEquation where
             ]
     contextDoc _ = Nothing
     helpDoc _ = "log equation application attempts"
-    oneLineDoc (DebugAttemptEquation equation _) =
+    oneLineDoc (DebugAttemptEquation equation _ _) =
         maybe
             mempty
             (\loc -> Pretty.hsep ["applying equation at", pretty loc])
@@ -289,10 +292,11 @@ whileDebugAttemptEquation ::
     MonadLog log =>
     TermLike RewritingVariableName ->
     Equation RewritingVariableName ->
+    SideCondition RewritingVariableName ->
     log a ->
     log a
-whileDebugAttemptEquation termLike equation =
-    logWhile (DebugAttemptEquation equation termLike)
+whileDebugAttemptEquation termLike equation sideCondition =
+    logWhile (DebugAttemptEquation equation termLike sideCondition)
 
 -- | Log when an 'Equation' is actually applied.
 data DebugApplyEquation
