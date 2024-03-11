@@ -5,8 +5,8 @@ module SIMPLE-EXPS
   syntax Exp ::= Exp "+" Exp             [strict]
   syntax Exp ::= "[" Exps "]"
   syntax Exp ::= length(Exps)
-  syntax Exps ::= List{Exp,","}          [klabel(_,_)]  // automatically hybrid now
-  syntax Vals ::= List{Val,","}          [klabel(_,_)]
+  syntax Exps ::= List{Exp,","}          [overload(_,_)]
+  syntax Vals ::= List{Val,","}          [overload(_,_)]
   syntax Exps ::= Vals
 
   rule [Vs:Vals] => length(Vs)
