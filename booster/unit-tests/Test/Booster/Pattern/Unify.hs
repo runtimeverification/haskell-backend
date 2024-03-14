@@ -133,27 +133,35 @@ functions :: TestTree
 functions =
     testGroup
         "Functions (should not unify)"
-        [ let f = app f1 [dv someSort ""]
-           in test "exact same function (but not unifying)" f f $ remainder [(f, f)]
-        , let f1T = app f1 [dv someSort ""]
-              f2T = app f2 [dv someSort ""]
-           in test "different functions" f1T f2T $ remainder [(f1T, f2T)]
-        , let someDv = dv someSort ""
-              f1T = app f1 [someDv]
-              f2T = app f2 [someDv]
-              con3f1 = app con3 [f1T, app con1 [someDv]]
-              con3f2 = app con3 [f2T, app con1 [someDv]]
-           in test "postponed: different functions" con3f1 con3f2 $ remainder [(f1T, f2T)]
-        , let someDv = dv someSort ""
-              f1T = app f1 [someDv]
-              f2T = app f2 [someDv]
-              c1T = app con1 [someDv]
-              c2T = app con2 [someDv]
-              con3f1c1 = app con3 [f1T, c1T]
-              con3f2c2 = app con3 [f2T, c2T]
-           in test "different constrs after different functions" con3f1c1 con3f2c2 $
-                failed (DifferentSymbols c1T c2T)
-        ]
+        $ [ let f = app f1 [dv someSort ""]
+             in test "exact same function (but not unifying)" f f $ remainder [(f, f)]
+          , let f1T = app f1 [dv someSort ""]
+                f2T = app f2 [dv someSort ""]
+             in test "different functions" f1T f2T $ remainder [(f1T, f2T)]
+          , let someDv = dv someSort ""
+                f1T = app f1 [someDv]
+                f2T = app f2 [someDv]
+                con3f1 = app con3 [f1T, app con1 [someDv]]
+                con3f2 = app con3 [f2T, app con1 [someDv]]
+             in test "postponed: different functions" con3f1 con3f2 $ remainder [(f1T, f2T)]
+          , let someDv = dv someSort ""
+                f1T = app f1 [someDv]
+                f2T = app f2 [someDv]
+                c1T = app con1 [someDv]
+                c2T = app con2 [someDv]
+                con3f1c1 = app con3 [f1T, c1T]
+                con3f2c2 = app con3 [f2T, c2T]
+             in test "different constrs after different functions" con3f1c1 con3f2c2 $
+                    failed (DifferentSymbols c1T c2T)
+          ]
+            ++ let f1T = app f1 [dv someSort ""]
+                   dv1 = dv someSort ""
+                   inj1 = Injection aSubsort someSort $ dv aSubsort ""
+                in [ test "function with domain value" f1T dv1 $ remainder [(f1T, dv1)]
+                   , test "domain value with function" dv1 f1T $ remainder [(dv1, f1T)]
+                   , test "function with injection" f1T inj1 $ remainder [(f1T, inj1)]
+                   , test "injection with function" inj1 f1T $ remainder [(inj1, f1T)]
+                   ]
 
 varsAndValues :: TestTree
 varsAndValues =

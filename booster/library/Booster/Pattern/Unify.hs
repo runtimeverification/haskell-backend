@@ -271,16 +271,18 @@ unify1
     term1
     v@Var{} =
         unify1 v term1
--- injection in pattern, no injection in subject: fail (trm cannot be a variable)
+-- injection in pattern, no injection in subject: indeterminate if trm is a function, otherwise fail (trm cannot be a variable)
 unify1
     inj@Injection{}
-    trm =
-        failWith $ DifferentSymbols inj trm
--- injection in subject but not in pattern: fail (trm cannot be a variable)
+    trm = case trm of
+        SymbolApplication symbol _ _ | isFunctionSymbol symbol -> addIndeterminate inj trm
+        _ -> failWith $ DifferentSymbols inj trm
+-- injection in subject but not in pattern: indeterminate if trm is a function, otherwise fail (trm cannot be a variable)
 unify1
     trm
-    inj@Injection{} =
-        failWith $ DifferentSymbols trm inj
+    inj@Injection{} = case trm of
+        SymbolApplication symbol _ _ | isFunctionSymbol symbol -> addIndeterminate trm inj
+        _ -> failWith $ DifferentSymbols trm inj
 ------ Internalised Lists
 -- unification for lists. Only solves simple cases, returns indeterminate otherwise
 unify1
