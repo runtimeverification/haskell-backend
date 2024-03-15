@@ -54,7 +54,6 @@ import Kore.Internal.Symbol (
     function,
     hook,
     injective,
-    klabel,
     smthook,
     sortInjection,
     symbolKywd,
