@@ -36,7 +36,7 @@ instance Pretty Klabel where
 
 -- | Kore identifier representing the @klabel@ attribute symbol.
 klabelId :: Id
-klabelId = "klabel"
+klabelId = "symbol'Kywd'"
 
 -- | Kore symbol representing the @klabel@ attribute.
 klabelSymbol :: SymbolOrAlias
