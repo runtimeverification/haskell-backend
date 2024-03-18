@@ -14,6 +14,9 @@ module TEST
   syntax Bool ::= g(Int)  [function]
 
   // this simplification shoud never be applied, as it requireas false.
+  // However, it will be applied if we simplify the configutaion assuming
+  // the remainder predicate derived from the side conditions of the rules
+  // for a(_,_). Not every #Bottom is the same, sinve some are diverging!
   rule g(_I) => true requires false [simplification]
 
   rule f(I) => f(I) requires g(I)  [simplification]
