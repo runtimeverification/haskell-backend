@@ -297,7 +297,7 @@ finalizeRulesParallel
                 remainderPredicate = Remainder.remainder' unifications
             -- evaluate the remainder predicate to make sure it is actually satisfiable
             SMT.evalPredicate
-                (WarnDecidePredicateUnknown $srcLoc Nothing)
+                (ErrorDecidePredicateUnknown $srcLoc Nothing)
                 remainderPredicate
                 Nothing
                 >>= \case
@@ -310,7 +310,8 @@ finalizeRulesParallel
                                 { results = Seq.fromList results
                                 , remainders = mempty
                                 }
-                    -- remainder condition is UNKNOWN: TODO: what happens here?
+                    -- NB: the UNKNOWN case will trigger an exception in SMT.evalPredicate, which will
+                    --     be caught by the top-level code in the RPC server and reported to the client
                     _ -> do
                         -- remainder condition is SAT: we are safe to explore
                         -- the remainder branch, i.e. to evaluate the functions in the configuration
