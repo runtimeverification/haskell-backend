@@ -187,7 +187,7 @@ test_SymbolKywd =
     [ testCase "parseAttribute" $
         assertEqual
             "[symbolKywd{}()]"
-            (Right SymbolKywd{getSymbol = Just ""})
+            (Right SymbolKywd{getSymbolKywd = Just ""})
             (symbolKywd <$> parse [symbolKywdAttribute ""])
     , testCase "defaultSymbolAttributes" $
         assertEqual
