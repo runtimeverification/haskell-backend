@@ -13,7 +13,7 @@ module TEST
 
   syntax Bool ::= g(Int)  [function]
 
-  // this simplification shooed never be applied, as it requires false.
+  // this simplification should never be applied, as it requires false.
   // However, it will be applied if we simplify the configuration assuming
   // the remainder predicate derived from the side conditions of the rules
   // for a(_,_). Not every #Bottom is the same, since some are diverging!
