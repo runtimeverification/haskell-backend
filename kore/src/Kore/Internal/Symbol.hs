@@ -229,11 +229,11 @@ klabel name =
         (typed @Attribute.Symbol . typed @Attribute.Klabel)
         Attribute.Klabel{getKlabel = Just name}
 
-symbolKywd :: Symbol -> Symbol
-symbolKywd =
+symbolKywd :: Text -> Symbol -> Symbol
+symbolKywd name =
     Lens.set
         (typed @Attribute.Symbol . typed @Attribute.SymbolKywd)
-        Attribute.SymbolKywd{getSymbol = Just ""}
+        Attribute.SymbolKywd{getSymbolKywd = Just name}
 
 {- | Coerce a sort injection symbol's source and target sorts.
 
