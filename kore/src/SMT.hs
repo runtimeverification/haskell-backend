@@ -217,7 +217,7 @@ checkUsing = liftSMT . checkSMTUsing
 {-# INLINE checkUsing #-}
 
 -- | Retrieve the given variables from the model (only valid if satisfiable)
-getValue :: MonadSMT m => [SExpr] -> m (Maybe [(SExpr, SExpr)])
+getValue :: MonadSMT m => [SExpr] -> m (Either Text [(SExpr, SExpr)])
 getValue = liftSMT . getValueSMT
 {-# INLINE getValue #-}
 
@@ -655,19 +655,19 @@ checkSMTUsing tactic =
                     withSolver' solverSetup (\solver -> SimpleSMT.checkUsing solver (Just tactic))
             return (Just result)
 
-getValueSMT :: [SExpr] -> SMT (Maybe [(SExpr, SExpr)])
+getValueSMT :: [SExpr] -> SMT (Either Text [(SExpr, SExpr)])
 getValueSMT targets =
     SMT $ \case
-        Nothing -> return Nothing
+        Nothing -> return $ Left $ "no-solver"
         Just solverSetup ->
             traceProf ":solver:get-value" $
-                onErrorNothing $
+                onErrorLeft $
                     fmap (map (second SimpleSMT.value)) $
                         withSolver' solverSetup (flip SimpleSMT.getExprs targets)
   where
-    onErrorNothing :: (MonadIO m, MonadCatch m) => m a -> m (Maybe a)
-    onErrorNothing action =
-        fmap Just action `Exception.catch` \(_ :: IOException) -> pure Nothing
+    onErrorLeft :: (MonadIO m, MonadCatch m) => m a -> m (Either Text a)
+    onErrorLeft action =
+        fmap Right action `Exception.catch` \(e :: IOException) -> pure $ Left $ Text.pack $ show e
 
 ackCommandSMT :: SExpr -> SMT ()
 ackCommandSMT command =

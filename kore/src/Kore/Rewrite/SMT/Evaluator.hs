@@ -174,11 +174,11 @@ decidePredicate onUnknown sideCondition predicates =
             case result of
                 Unsat -> return False
                 Sat -> empty
-                Unknown -> do
+                Unknown reason -> do
                     limit <- SMT.withSolver SMT.askRetryLimit
                     -- depending on the value of `onUnknown`, this call will either log a warning
                     -- or throw an error
-                    throwDecidePredicateUnknown onUnknown limit predicates
+                    throwDecidePredicateUnknown onUnknown limit predicates reason
                     case onUnknown of
                         WarnDecidePredicateUnknown _ _ ->
                             -- the solver may be in an inconsistent state, so we re-initialize
@@ -199,7 +199,7 @@ decidePredicate onUnknown sideCondition predicates =
             SMT.check >>= maybe empty return
 
     onErrorUnknown action =
-        action `Exception.catch` \(_ :: IOException) -> pure Unknown
+        action `Exception.catch` \(e :: IOException) -> pure $ Unknown $ Text.pack $ show e
 
     retry = retryWithScaledTimeout $ query <* debugRetrySolverQuery predicates
 
@@ -216,7 +216,7 @@ retryWithScaledTimeout q = do
     -- argument to 'whenUnknown' will be the 'combineRetries' of all of
     -- the tail of the list. As soon as a result is not 'Unknown', the
     -- rest of the fold is discarded.
-    foldr combineRetries (pure Unknown) retryActions
+    foldr combineRetries (pure $ Unknown "") retryActions
   where
     -- helpers for re-trying solver queries with increasing timeout
     retryOnceWithScaledTimeout :: MonadSMT m => m a -> Integer -> m a
@@ -229,7 +229,7 @@ retryWithScaledTimeout q = do
     scaleTimeOut n (SMT.TimeOut (Limit r)) = SMT.TimeOut (Limit (n * r))
 
 whenUnknown :: Monad m => m Result -> Result -> m Result
-whenUnknown f Unknown = f
+whenUnknown f Unknown{} = f
 whenUnknown _ result = return result
 
 {- | Check if the given combination of predicates is satisfiable, and
@@ -258,7 +258,7 @@ getModelFor tools predicates =
             -- FIXME consider variables for uninterpreted terms, too
             lift . SMT.withSolver $ satQuery smtPredicates (Map.elems variables)
         case result of
-            Left Unknown -> pure (Left False)
+            Left Unknown{} -> pure (Left False)
             Left Unsat -> pure (Left True)
             Left Sat -> pure (Left False) -- error "impossible!"
             Right mapping -> do
@@ -280,17 +280,17 @@ getModelFor tools predicates =
         traverse_ SMT.assert ps
         satResult <- SMT.check
         case satResult of
-            Nothing -> pure $ Left Unknown
+            Nothing -> pure $ Left $ Unknown "no-solver"
             Just Unsat -> pure $ Left Unsat
-            Just Unknown -> pure $ Left Unknown
+            Just u@Unknown{} -> pure $ Left u
             Just Sat ->
                 if null vars -- no free variables, trivial case
                     then pure $ Right Map.empty
                     else do
                         mbMapping <- SMT.getValue vars
                         case mbMapping of
-                            Nothing -> pure $ Left Unknown -- something went wrong in getValue
-                            Just mapping -> pure . Right $ Map.fromList mapping
+                            Left e -> pure $ Left $ Unknown e -- something went wrong in getValue
+                            Right mapping -> pure . Right $ Map.fromList mapping
 
     mkSubst ::
         Map.Map (ElementVariable variable) (TermLike.TermLike variable) ->

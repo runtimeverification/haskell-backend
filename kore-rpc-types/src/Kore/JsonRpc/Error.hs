@@ -1,12 +1,27 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE TypeOperators #-}
+
 module Kore.JsonRpc.Error (module Kore.JsonRpc.Error) where
 
 import Control.Exception (ErrorCall (..), SomeException)
 import Control.Monad.Logger (logWarnN)
 import Data.Aeson
 import Data.Char (toLower)
+import Data.Kind (Type)
 import Data.Text qualified as Text
 import Kore.JsonRpc.Server (ErrorObj (..), JsonRpcHandler (..))
+import Kore.Syntax.Json.Types (KoreJson)
 import Text.Casing (Identifier (unIdentifier), fromHumps)
+
+import Deriving.Aeson (
+    CamelToKebab,
+    FieldLabelModifier,
+    OmitNothingFields,
+    SumUntaggedValue,
+ )
+import Deriving.Aeson.Stock
+import GHC.Generics
 
 toSentence :: Identifier String -> String
 toSentence = unwords . sentence . unIdentifier
@@ -28,25 +43,64 @@ unsupportedOption = ErrorObj "Unsupported option" (-32003) . toJSON
 
 -- Runtime backend errors
 
+data ErrorWithContext = ErrorWithContext
+    { error :: Text.Text
+    , context :: Maybe [Text.Text]
+    }
+    deriving stock (Generic, Show, Eq)
+    deriving
+        (ToJSON)
+        via CustomJSON
+                '[SumUntaggedValue, OmitNothingFields, FieldLabelModifier '[CamelToKebab]]
+                ErrorWithContext
+
+data ErrorWithTerm = ErrorWithTerm
+    { error :: Text.Text
+    , term :: Maybe KoreJson
+    }
+    deriving stock (Generic, Show, Eq)
+    deriving
+        (ToJSON)
+        via CustomJSON '[SumUntaggedValue, OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ErrorWithTerm
+
 {- | Do NOT re-order the constructors in this type!
     If new error types are to be added, only append at the end.
-    This restriction is due to using the Enum instance to generate
+    This restriction is due to using the CN typeclass to generate
     the error codes in `ErrorObj`.
 -}
 data JsonRpcBackendError
-    = CouldNotParsePattern
-    | CouldNotVerifyPattern
-    | CouldNotFindModule
-    | ImplicationCheckError
-    | SmtSolverError
-    | Aborted
-    | MultipleStates
-    | InvalidModule
-    | DuplicateModuleName
-    deriving stock (Enum, Show)
+    = CouldNotParsePattern ErrorWithContext
+    | CouldNotVerifyPattern ErrorWithContext
+    | CouldNotFindModule Text.Text
+    | ImplicationCheckError ErrorWithContext
+    | SmtSolverError ErrorWithTerm
+    | Aborted Text.Text
+    | MultipleStates Text.Text
+    | InvalidModule ErrorWithContext
+    | DuplicateModuleName Text.Text
+    deriving stock (Generic, Show, Eq)
+    deriving
+        (ToJSON)
+        via CustomJSON '[SumUntaggedValue] JsonRpcBackendError
 
-backendError :: ToJSON a => JsonRpcBackendError -> a -> ErrorObj
-backendError err detail = ErrorObj (toSentence $ fromHumps $ show err) (fromEnum err + 1) (toJSON detail)
+class CN (f :: Type -> Type) where
+    constructorCodeAndName' :: Int -> f x -> (Int, String)
+
+instance CN f => CN (D1 c f) where
+    constructorCodeAndName' n (M1 x) = constructorCodeAndName' n x
+instance (CN f, CN g) => CN (f :+: g) where
+    constructorCodeAndName' n (L1 l) = constructorCodeAndName' n l
+    constructorCodeAndName' n (R1 r) = constructorCodeAndName' (n + 1) r
+instance Constructor c => CN (C1 c f) where
+    constructorCodeAndName' n x = (n, conName x)
+
+constructorCodeAndName :: (CN (Rep a), Generic a) => a -> (Int, String)
+constructorCodeAndName = constructorCodeAndName' 1 . from
+
+backendError :: JsonRpcBackendError -> ErrorObj
+backendError detail = ErrorObj (toSentence $ fromHumps nm) code (toJSON detail)
+  where
+    (code, nm) = constructorCodeAndName detail
 
 -- Common runtime error handlers
 

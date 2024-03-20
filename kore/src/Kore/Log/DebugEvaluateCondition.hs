@@ -54,7 +54,7 @@ instance Pretty DebugEvaluateCondition where
         case result of
             Unsat -> "solver returned unsatisfiable"
             Sat -> "solver returned satisfiable"
-            Unknown -> "solver returned unknown"
+            Unknown condition -> "solver returned unknown: " <> pretty condition
 
 instance Entry DebugEvaluateCondition where
     entrySeverity _ = Debug

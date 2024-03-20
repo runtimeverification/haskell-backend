@@ -258,7 +258,7 @@ data Result
     | -- | The assertions are unsatisfiable
       Unsat
     | -- | The result is inconclusive
-      Unknown
+      Unknown Text
     deriving stock (Eq, Show)
 
 -- | Common values returned by SMT solvers.
@@ -728,8 +728,8 @@ checkUsing solver tactic = do
             Monad.when featureProduceAssertions $ do
                 asserts <- command solver Nothing (List [Atom "get-assertions"])
                 warn solver (buildText asserts)
-            _ <- command solver Nothing (List [Atom "get-info", Atom ":reason-unknown"])
-            return Unknown
+            Atom reason <- command solver Nothing (List [Atom "get-info", Atom ":reason-unknown"])
+            return $ Unknown reason
         Atom "sat" -> return Sat
         _ ->
             fail $

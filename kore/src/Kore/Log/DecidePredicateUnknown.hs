@@ -20,6 +20,7 @@ import Control.Exception (
     Exception (..),
     throw,
  )
+import Data.Text (Text)
 import Debug
 import Kore.Attribute.SourceLocation (
     SourceLocation (..),
@@ -55,6 +56,7 @@ srcLoc = qLocation >>= liftLoc
 data DecidePredicateUnknown = DecidePredicateUnknown
     { action :: OnDecidePredicateUnknown
     , smtLimit :: SMT.RetryLimit
+    , message :: Text
     , predicates :: NonEmpty (Predicate VariableName)
     }
     deriving stock (Show, Eq)
@@ -108,18 +110,21 @@ throwDecidePredicateUnknown ::
     OnDecidePredicateUnknown ->
     SMT.RetryLimit ->
     NonEmpty (Predicate variable) ->
+    Text ->
     log ()
-throwDecidePredicateUnknown action smtLimit predicates' =
+throwDecidePredicateUnknown action smtLimit predicates' message =
     case action of
         WarnDecidePredicateUnknown _ _ ->
-            logEntry DecidePredicateUnknown{action, smtLimit, predicates}
+            logEntry DecidePredicateUnknown{action, smtLimit, predicates, message}
         ErrorDecidePredicateUnknown _ _ ->
-            throw DecidePredicateUnknown{action, smtLimit, predicates}
+            throw DecidePredicateUnknown{action, smtLimit, predicates, message}
   where
     predicates = Predicate.mapVariables (pure toVariableName) <$> predicates'
 
-externaliseDecidePredicateUnknown :: DecidePredicateUnknown -> PatternJson.KoreJson
-externaliseDecidePredicateUnknown err =
-    PatternJson.fromPredicate
+externaliseDecidePredicateUnknown :: DecidePredicateUnknown -> (Text, PatternJson.KoreJson)
+externaliseDecidePredicateUnknown err@DecidePredicateUnknown{message} =
+    ( message
+    , PatternJson.fromPredicate
         (TermLike.SortActualSort $ TermLike.SortActual (TermLike.Id "SortBool" TermLike.AstLocationNone) [])
         (Predicate.makeMultipleAndPredicate . toList $ predicates err)
+    )
