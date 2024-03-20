@@ -171,7 +171,7 @@ lookupApplicationVerifier ::
     ApplicationVerifiers patternType ->
     Maybe (ApplicationVerifier patternType)
 lookupApplicationVerifier symbol verifiers = do
-    key <- getHook symbol <|> getKlabel symbol
+    key <- getHook symbol <|> getKlabel symbol <|> getSymbolKywd symbol
     HashMap.lookup key verifiers
   where
     getHook =
@@ -180,6 +180,11 @@ lookupApplicationVerifier symbol verifiers = do
             . Attribute.Symbol.hook
             . symbolAttributes
     getKlabel =
+        fmap KlabelSymbolKey
+            . Attribute.Symbol.getKlabel
+            . Attribute.Symbol.klabel
+            . symbolAttributes
+    getSymbolKywd =
         fmap KlabelSymbolKey
             . Attribute.Symbol.getSymbolKywd
             . Attribute.Symbol.symbolKywd
