@@ -181,7 +181,7 @@ lookupApplicationVerifier symbol verifiers = do
             . symbolAttributes
     getKlabel =
         fmap KlabelSymbolKey
-            . Attribute.Symbol.getSymbol
+            . Attribute.Symbol.getSymbolKywd
             . Attribute.Symbol.symbolKywd
             . symbolAttributes
 

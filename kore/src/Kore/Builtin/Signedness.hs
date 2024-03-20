@@ -62,9 +62,9 @@ signednessVerifier ctor =
     worker application = do
         -- TODO (thomas.tuegel): Move the checks into the symbol verifiers.
         unless (null arguments) (koreFail "expected zero arguments")
-        let Attribute.Symbol.SymbolKywd{getSymbol} =
+        let Attribute.Symbol.SymbolKywd{getSymbolKywd} =
                 Attribute.Symbol.symbolKywd $ symbolAttributes symbol
-        unless (isJust getSymbol) (koreFail "expected symbol'Kywd'{}() attribute")
+        unless (isJust getSymbolKywd) (koreFail "expected symbol'Kywd'{}() attribute")
         return (SignednessF . Const $ ctor symbol)
       where
         arguments = applicationChildren application
