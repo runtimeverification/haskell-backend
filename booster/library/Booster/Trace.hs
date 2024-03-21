@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -Wno-partial-fields #-}
@@ -21,12 +22,14 @@ import Data.Proxy (Proxy (..))
 import Debug.Trace.Binary (traceBinaryEvent, traceBinaryEventIO)
 import Debug.Trace.Flags
 import GHC.IO (unsafePerformIO)
+import System.IO (Handle)
 
 type family Sum a :: Type where
     Sum '[] = ()
     Sum (a ': as) = Either a (Sum as)
 
-data CustomUserEventType = Timing | LlvmCalls deriving (Show, Enum, Read, Bounded)
+data CustomUserEventType = Timing | LlvmCalls | SimplificationTraces
+    deriving (Show, Enum, Read, Bounded)
 
 class CustomUserEvent e where
     encodeUserEvent :: e -> Put
@@ -53,7 +56,7 @@ enabledCustomUserEventTypes :: IORef Word32
 {-# NOINLINE enabledCustomUserEventTypes #-}
 enabledCustomUserEventTypes = unsafePerformIO $ newIORef 0
 
-enabledHijackEventlogFile :: IORef (Maybe FilePath)
+enabledHijackEventlogFile :: IORef (Maybe Handle)
 {-# NOINLINE enabledHijackEventlogFile #-}
 enabledHijackEventlogFile = unsafePerformIO $ newIORef Nothing
 
@@ -61,15 +64,15 @@ enableCustomUserEvent :: Enum a => a -> IO ()
 enableCustomUserEvent a =
     modifyIORef enabledCustomUserEventTypes (.|. (bit $ fromEnum a))
 
-enableHijackEventlogFile :: FilePath -> IO ()
-enableHijackEventlogFile fpath = writeIORef enabledHijackEventlogFile (Just fpath)
+enableHijackEventlogFile :: Handle -> IO ()
+enableHijackEventlogFile fhandle = writeIORef enabledHijackEventlogFile (Just fhandle)
 
 customUserEventEnabled :: Enum a => a -> Bool
 customUserEventEnabled a =
     unsafePerformIO $
         flip testBit (fromEnum a) <$> readIORef enabledCustomUserEventTypes
 
-hijackEventlogFileEnabled :: Maybe FilePath
+hijackEventlogFileEnabled :: Maybe Handle
 {-# NOINLINE hijackEventlogFileEnabled #-}
 hijackEventlogFileEnabled =
     unsafePerformIO $ readIORef enabledHijackEventlogFile
