@@ -658,7 +658,7 @@ checkSMTUsing tactic =
 getValueSMT :: [SExpr] -> SMT (Either Text [(SExpr, SExpr)])
 getValueSMT targets =
     SMT $ \case
-        Nothing -> return $ Left $ "no-solver"
+        Nothing -> return $ Left "no-solver"
         Just solverSetup ->
             traceProf ":solver:get-value" $
                 onErrorLeft $
