@@ -738,9 +738,9 @@ checkUsing solver tactic = do
                     , "  Expected: unsat, unknown, or sat"
                     , "  Result: " ++ showSExpr res
                     ]
-    where
-        extractReason (List [Atom ":reason-unknown", String reason]) = reason
-        extractReason other = Text.pack $ showSExpr other
+  where
+    extractReason (List [Atom ":reason-unknown", String reason]) = reason
+    extractReason other = Text.pack $ showSExpr other
 
 -- | Convert an s-expression to a value.
 sexprToVal :: SExpr -> Value

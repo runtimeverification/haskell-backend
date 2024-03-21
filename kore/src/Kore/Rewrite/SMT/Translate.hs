@@ -542,7 +542,7 @@ backTranslateWith
             | otherwise =
                 throwError "backTranslate.List-case: implement me!"
         backTranslate String{} =
-                throwError "backTranslate.String-case: implement me!"
+            throwError "backTranslate.String-case: implement me!"
 
         -- FIXME unable to recover non-standard sort names (case where Int < OtherSort)
         simpleSort name = SortActualSort $ SortActual (Id name AstLocationNone) []
