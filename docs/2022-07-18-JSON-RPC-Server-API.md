@@ -715,7 +715,7 @@ This error wraps an error message from the internal implication check routine, i
 ```json
 {
   "jsonrpc":"2.0",
-  "id":1
+  "id":1,
   "error": {
     "code": 4,
     "message": "Implication check error",
@@ -742,9 +742,12 @@ Error returned when the SMT solver crashes or is unable to discharge a goal.
     "code": 5,
     "message": "Smt solver error",
     "data": {
-      "format": "KORE",
-      "version": 1,
-      "term": {}
+      "term": {
+        "format": "KORE",
+        "version": 1,
+        "term": {}
+      },
+      "error": "(incomplete (theory arithmetic))",
     }
   }
 }
