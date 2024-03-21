@@ -272,19 +272,19 @@ respond stateVar =
                                 , ceilConditions = pat.ceilConditions
                                 }
                     ApplyEquations.evaluatePattern doTracing def mLlvmLibrary solver mempty substPat >>= \case
-                        (Right newPattern, patternTraces, _) -> do
+                        (Right newPattern, _) -> do
                             let (term, mbPredicate, mbSubstitution) = externalisePattern newPattern substitution
                                 tSort = externaliseSort (sortOfPattern newPattern)
                                 result = case catMaybes (mbPredicate : mbSubstitution : map Just unsupported) of
                                     [] -> term
                                     ps -> KoreJson.KJAnd tSort $ term : ps
-                            pure $ Right (addHeader result, patternTraces)
-                        (Left ApplyEquations.SideConditionFalse{}, patternTraces, _) -> do
+                            pure $ Right (addHeader result, [])
+                        (Left ApplyEquations.SideConditionFalse{}, _) -> do
                             let tSort = externaliseSort $ sortOfPattern pat
-                            pure $ Right (addHeader $ KoreJson.KJBottom tSort, patternTraces)
-                        (Left (ApplyEquations.EquationLoop terms), _traces, _) ->
+                            pure $ Right (addHeader $ KoreJson.KJBottom tSort, [])
+                        (Left (ApplyEquations.EquationLoop terms), _) ->
                             pure . Left . RpcError.backendError RpcError.Aborted $ map externaliseTerm terms -- FIXME
-                        (Left other, _traces, _) ->
+                        (Left other, _) ->
                             pure . Left . RpcError.backendError RpcError.Aborted $ (Text.pack . constructorName $ other) -- FIXME
                             -- predicate only
                 Right (Predicates ps)
@@ -312,7 +312,7 @@ respond stateVar =
                             mempty
                             predicates
                             >>= \case
-                                (Right newPreds, traces, _) -> do
+                                (Right newPreds, _) -> do
                                     let predicateSort =
                                             fromMaybe (error "not a predicate") $
                                                 sortOfJson req.state.term
@@ -322,8 +322,8 @@ respond stateVar =
                                                 <> map (uncurry $ externaliseSubstitution predicateSort) (Map.toList ps.substitution)
                                                 <> ps.unsupported
 
-                                    pure $ Right (addHeader $ Syntax.KJAnd predicateSort result, traces)
-                                (Left something, _traces, _) ->
+                                    pure $ Right (addHeader $ Syntax.KJAnd predicateSort result, [])
+                                (Left something, _) ->
                                     pure . Left . RpcError.backendError RpcError.Aborted $ show something
             whenJust solver SMT.closeSolver
             stop <- liftIO $ getTime Monotonic
