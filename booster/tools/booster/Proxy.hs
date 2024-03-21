@@ -20,6 +20,7 @@ import Control.Monad.Logger qualified as Log
 import Control.Monad.Trans.Except (runExcept)
 import Data.Aeson (ToJSON (..))
 import Data.Aeson.KeyMap qualified as Aeson
+import Data.Aeson.Text (encodeToLazyText)
 import Data.Aeson.Types (Value (..))
 import Data.Bifunctor (second)
 import Data.Either (partitionEithers)
@@ -28,6 +29,7 @@ import Data.Map qualified as Map
 import Data.Maybe (catMaybes, fromJust, fromMaybe, isJust, isNothing, mapMaybe)
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Text.Lazy (toStrict)
 import Network.JSONRPC
 import System.Clock (Clock (Monotonic), TimeSpec, diffTimeSpec, getTime, toNanoSecs)
 
@@ -138,8 +140,30 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                 (koreRes, koreTime) <- Stats.timed $ kore req
                 logStats AddModuleM (boosterTime + koreTime, koreTime)
                 pure koreRes
-    GetModel _ ->
-        loggedKore GetModelM req
+    GetModel _ -> do
+        -- try the booster end-point first
+        (bResult, bTime) <- Stats.timed $ booster req
+        (result, kTime) <-
+            case bResult of
+                Left err -> do
+                    Log.logErrorNS "proxy" . Text.pack $
+                        "get-model error in booster: " <> fromError err
+                    Stats.timed $ kore req
+                Right (GetModel res@GetModelResult{})
+                    -- re-check with legacy-kore if result is unknown
+                    | Unknown <- res.satisfiable -> do
+                        Log.logOtherNS "proxy" (Log.LevelOther "Aborts") "Re-checking a get-model result Unknown"
+                        r@(kResult, _) <- Stats.timed $ kore req
+                        Log.logOtherNS "proxy" (Log.LevelOther "Aborts") $
+                            "Double-check returned " <> toStrict (encodeToLazyText kResult)
+                        pure r
+                    -- keep other results
+                    | otherwise ->
+                        pure (bResult, 0)
+                other ->
+                    error $ "Unexpected get-model result " <> show other
+        logStats GetModelM (bTime + kTime, kTime)
+        pure result
     Cancel ->
         pure $ Left $ ErrorObj "Cancel not supported" (-32601) Null
   where
