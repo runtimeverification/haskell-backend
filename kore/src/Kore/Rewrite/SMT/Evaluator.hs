@@ -213,7 +213,7 @@ retryWithScaledTimeout q = do
         retryActions = map (retryOnceWithScaledTimeout q) timeoutScales
         combineRetries [] = pure $ Unknown "retry limit is 0"
         combineRetries [r] = r
-        combineRetries (r:rs) = r >>= whenUnknown (combineRetries rs)
+        combineRetries (r : rs) = r >>= whenUnknown (combineRetries rs)
     -- This works even if 'retryActions' is infinite, because the second
     -- argument to 'whenUnknown' will be the 'combineRetries' of all of
     -- the tail of the list. As soon as a result is not 'Unknown', the
