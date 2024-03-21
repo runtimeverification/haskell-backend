@@ -20,7 +20,7 @@ parseSymbolKywd = parseAttributes
 test_symbolKywd :: TestTree
 test_symbolKywd =
     testCase "[symbolKywd{}()] :: SymbolKywd" $
-        expectSuccess SymbolKywd{getSymbol = Just ""} $
+        expectSuccess SymbolKywd{getSymbolKywd = Just ""} $
             parseSymbolKywd $
                 Attributes [symbolKywdAttribute ""]
 
@@ -42,7 +42,7 @@ test_duplicate =
 test_argument :: TestTree
 test_argument =
     testCase "[symbolKywd{}(\"legal\")]" $
-        expectSuccess SymbolKywd{getSymbol = Just "legal"} $
+        expectSuccess SymbolKywd{getSymbolKywd = Just "legal"} $
             parseSymbolKywd $
                 Attributes [legalAttribute]
   where

@@ -20,7 +20,7 @@ import Prelude.Kore
   Hold an optional Text, which is an empty string if the attribute had
   no argument. Use sites can check emptiness to achieve old behaviour.
 -}
-newtype SymbolKywd = SymbolKywd {getSymbol :: Maybe Text}
+newtype SymbolKywd = SymbolKywd {getSymbolKywd :: Maybe Text}
     deriving stock (Eq, Ord, Show)
     deriving stock (GHC.Generic)
     deriving anyclass (Hashable, NFData)
@@ -50,13 +50,13 @@ instance ParseAttributes SymbolKywd where
     -- if an argument is present, use it for the contents, otherwise
     -- leave it empty (but present) to signal presence of the attribute.
     parseAttribute =
-        withApplication symbolKywdId $ \params args SymbolKywd{getSymbol} -> do
+        withApplication symbolKywdId $ \params args SymbolKywd{getSymbolKywd} -> do
             Parser.getZeroParams params
             mbArg <- Parser.getZeroOrOneArguments args
-            unless (isNothing getSymbol) $ failDuplicate symbolKywdId
+            unless (isNothing getSymbolKywd) $ failDuplicate symbolKywdId
             StringLiteral arg <- maybe (pure $ StringLiteral "") getStringLiteral mbArg
             pure $ SymbolKywd (Just arg)
 
 instance From SymbolKywd Attributes where
     from =
-        maybe def (from @AttributePattern . symbolKywdAttribute) . getSymbol
+        maybe def (from @AttributePattern . symbolKywdAttribute) . getSymbolKywd
