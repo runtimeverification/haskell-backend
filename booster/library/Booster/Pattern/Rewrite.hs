@@ -373,7 +373,7 @@ applyRule pat@Pattern{ceilConditions} rule = runRewriteRuleAppT $ do
     checkConstraint onUnclear onBottom p = do
         RewriteConfig{definition, llvmApi, smtSolver, doTracing} <- lift $ RewriteT ask
         oldCache <- lift . RewriteT . lift $ get
-        (simplified, _traces, cache) <-
+        (simplified, cache) <-
             simplifyConstraint (castDoTracingFlag doTracing) definition llvmApi smtSolver oldCache p
         -- update cache
         lift . RewriteT . lift . modify $ const cache
@@ -679,20 +679,19 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
         st <- get
         let cache = st.simplifierCache
             smt = st.smtSolver
-        evaluatePattern (castDoTracingFlag doTracing) def mLlvmLibrary smt cache p >>= \(res, traces, newCache) -> do
+        evaluatePattern (castDoTracingFlag doTracing) def mLlvmLibrary smt cache p >>= \(res, newCache) -> do
             updateCache newCache
-            logTraces traces
             case res of
                 Right newPattern -> do
-                    emitRewriteTrace $ RewriteSimplified traces Nothing
+                    emitRewriteTrace $ RewriteSimplified [] Nothing
                     pure $ Just newPattern
                 Left r@(SideConditionFalse _p) -> do
                     logSimplify "A side condition was found to be false, pruning"
-                    emitRewriteTrace $ RewriteSimplified traces (Just r)
+                    emitRewriteTrace $ RewriteSimplified [] (Just r)
                     pure Nothing
                 Left r@UndefinedTerm{} -> do
                     logSimplify "Term is undefined, pruning"
-                    emitRewriteTrace $ RewriteSimplified traces (Just r)
+                    emitRewriteTrace $ RewriteSimplified [] (Just r)
                     pure Nothing
                 -- NB any errors here might be caused by simplifying one
                 -- of the constraints, so we cannot use partial results
@@ -708,7 +707,7 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                             ]
                         )
                     -- could output term before and after at debug or custom log level
-                    emitRewriteTrace $ RewriteSimplified traces (Just r)
+                    emitRewriteTrace $ RewriteSimplified [] (Just r)
                     pure $ Just p
                 Left r@(EquationLoop (t : ts)) -> do
                     logError "Equation evaluation loop"
@@ -719,11 +718,11 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
                                 <> prettyText l
                                 <> ": \n"
                                 <> Text.unlines (map (prettyText . fst) termDiffs)
-                    emitRewriteTrace $ RewriteSimplified traces (Just r)
+                    emitRewriteTrace $ RewriteSimplified [] (Just r)
                     pure $ Just p
                 Left other -> do
                     logError $ "Simplification error during rewrite: " <> (Text.pack . constructorName $ other)
-                    emitRewriteTrace $ RewriteSimplified traces (Just other)
+                    emitRewriteTrace $ RewriteSimplified [] (Just other)
                     pure $ Just p
 
     -- Results may change when simplification prunes a false side
@@ -762,9 +761,6 @@ performRewrite doTracing def mLlvmLibrary mSolver mbMaxDepth cutLabels terminalL
             maybe (RewriteTrivial orig) (RewriteFinished lbl uId) <$> simplifyP p
         RewriteAborted reason p ->
             maybe (RewriteTrivial orig) (RewriteAborted reason) <$> simplifyP p
-
-    logTraces =
-        mapM_ (logSimplify . pack . renderDefault . pretty)
 
     doSteps ::
         Bool -> Pattern -> StateT RewriteStepsState io (RewriteResult Pattern)

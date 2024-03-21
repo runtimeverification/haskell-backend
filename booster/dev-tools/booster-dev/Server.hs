@@ -4,7 +4,7 @@ License     : BSD-3-Clause
 -}
 module Main (main) where
 
-import Booster.Util (runHandleLoggingT)
+import Booster.Util (runHandleLoggingT, withLogFile)
 import Control.Concurrent (newMVar)
 import Control.DeepSeq (force)
 import Control.Exception (evaluate)
@@ -15,7 +15,7 @@ import Control.Monad.Logger.CallStack (LogLevel (LevelError))
 import Data.Conduit.Network (serverSettings)
 import Data.Map (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (isNothing)
+import Data.Maybe (fromMaybe, isNothing)
 import Data.Text (Text, unpack)
 import Options.Applicative
 import System.IO qualified as IO
@@ -45,6 +45,7 @@ main = do
             , smtOptions
             , equationOptions
             , eventlogEnabledUserEvents
+            , simplificationLogFile
             } = options
 
     forM_ eventlogEnabledUserEvents $ \t -> do
@@ -55,7 +56,8 @@ main = do
             <> definitionFile
             <> ", main module "
             <> show mainModuleName
-    withLlvmLib llvmLibraryFile $ \mLlvmLibrary -> do
+
+    withLogFile simplificationLogFile $ \mLogFileHandle -> withLlvmLib llvmLibraryFile $ \mLlvmLibrary -> do
         definitionMap <-
             loadDefinition definitionFile
                 >>= mapM (mapM ((fst <$>) . runNoLoggingT . computeCeilsDefinition mLlvmLibrary))
@@ -68,7 +70,14 @@ main = do
         writeGlobalEquationOptions equationOptions
 
         putStrLn "Starting RPC server"
-        runServer port definitionMap mainModuleName mLlvmLibrary smtOptions (adjustLogLevels logLevels)
+        runServer
+            port
+            definitionMap
+            mainModuleName
+            mLlvmLibrary
+            mLogFileHandle
+            smtOptions
+            (adjustLogLevels logLevels)
   where
     withLlvmLib libFile m = case libFile of
         Nothing -> m Nothing
@@ -92,12 +101,14 @@ runServer ::
     Map Text KoreDefinition ->
     Text ->
     Maybe LLVM.API ->
+    Maybe IO.Handle ->
     Maybe SMT.SMTOptions ->
     (LogLevel, [LogLevel]) ->
     IO ()
-runServer port definitions defaultMain mLlvmLibrary mSMTOptions (logLevel, customLevels) =
+runServer port definitions defaultMain mLlvmLibrary mLogFileHandle mSMTOptions (logLevel, customLevels) =
     do
         let logLevelToHandle = \case
+                Log.LevelOther "SimplifyJson" -> fromMaybe IO.stderr mLogFileHandle
                 _ -> IO.stderr
 
         stateVar <-
