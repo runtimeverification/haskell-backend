@@ -12,7 +12,10 @@ module Main (
 import Booster.Prettyprinter (renderDefault)
 import Booster.Syntax.Json (KoreJson (..))
 import Booster.Syntax.Json.Internalise (
+    InternalisedPredicates (..),
+    PatternError (..),
     internalisePattern,
+    internalisePredicates,
     pattern CheckSubsorts,
     pattern DisallowAlias,
  )
@@ -35,8 +38,21 @@ main = do
     case eitherDecode fileContent of
         Left err -> putStrLn $ "Error: " ++ err
         Right KoreJson{term} -> do
-            let (trm, _subst, _unsupported) =
-                    either (error . show) id $
-                        runExcept $
-                            internalisePattern DisallowAlias CheckSubsorts Nothing internalDef term
-            putStrLn $ renderDefault $ pretty trm
+            case runExcept $ internalisePattern DisallowAlias CheckSubsorts Nothing internalDef term of
+                Right (trm, _subst, _unsupported) -> do
+                    putStrLn "Pretty-printing pattern: "
+                    putStrLn $ renderDefault $ pretty trm
+                Left (NoTermFound _) ->
+                    case runExcept $ internalisePredicates DisallowAlias CheckSubsorts Nothing internalDef [term] of
+                        Left es -> error (show es)
+                        Right ts -> do
+                            putStrLn "Pretty-printing predicates: "
+                            putStrLn "Bool predicates: "
+                            mapM_ (putStrLn . renderDefault . pretty) ts.boolPredicates
+                            putStrLn "Ceil predicates: "
+                            mapM_ (putStrLn . renderDefault . pretty) ts.ceilPredicates
+                            putStrLn "Substitution: "
+                            mapM_ (putStrLn . renderDefault . pretty) ts.substitution
+                            putStrLn "Unsupported predicates: "
+                            mapM_ print ts.unsupported
+                Left err -> error (show err)

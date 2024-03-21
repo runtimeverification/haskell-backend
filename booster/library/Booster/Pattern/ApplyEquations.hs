@@ -32,7 +32,7 @@ module Booster.Pattern.ApplyEquations (
 ) where
 
 import Control.Monad
-import Control.Monad.Extra
+import Control.Monad.Extra (fromMaybeM, whenJust)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Logger.CallStack (
     LogLevel (..),
@@ -45,6 +45,7 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader (ReaderT (..), ask)
 import Control.Monad.Trans.State
+import Data.Aeson.Text (encodeToLazyText)
 import Data.ByteString.Char8 qualified as BS
 import Data.Coerce (coerce)
 import Data.Data (Data)
@@ -60,6 +61,7 @@ import Data.Set qualified as Set
 import Data.Text (Text, pack)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as Text
+import Data.Text.Lazy qualified as Text (toStrict)
 import Prettyprinter
 
 import Booster.Builtin as Builtin
@@ -75,6 +77,7 @@ import Booster.Pattern.Util
 import Booster.Prettyprinter (renderDefault, renderText)
 import Booster.SMT.Interface qualified as SMT
 import Booster.Util (Bound (..), Flag (..))
+import Kore.JsonRpc.Types.Log qualified as KoreRpcLog
 
 newtype EquationT io a
     = EquationT (ReaderT EquationConfig (ExceptT EquationFailure (StateT EquationState io)) a)
@@ -151,7 +154,6 @@ data EquationState = EquationState
     , recursionStack :: [Term]
     , changed :: Bool
     , predicates :: Set Predicate
-    , trace :: Seq (EquationTrace Term)
     , cache :: SimplifierCache
     }
 
@@ -257,6 +259,44 @@ isMatchFailure _ = False
 isSuccess EquationApplied{} = True
 isSuccess _ = False
 
+equationTraceToLogEntry :: EquationTrace Term -> KoreRpcLog.LogEntry
+equationTraceToLogEntry = \case
+    EquationApplied _subjectTerm metadata _rewritten ->
+        KoreRpcLog.Simplification
+            { originalTerm
+            , originalTermIndex
+            , origin
+            , result =
+                KoreRpcLog.Success Nothing Nothing (fromMaybe "UNKNOWN" _ruleId)
+            }
+      where
+        originalTerm = Nothing
+        originalTermIndex = Nothing
+        origin = KoreRpcLog.Booster
+        _ruleId = fmap getUniqueId metadata.ruleId
+    EquationNotApplied _subjectTerm metadata failure ->
+        KoreRpcLog.Simplification
+            { originalTerm
+            , originalTermIndex
+            , origin
+            , result = KoreRpcLog.Failure (failureDescription failure) _ruleId
+            }
+      where
+        originalTerm = Nothing
+        originalTermIndex = Nothing
+        origin = KoreRpcLog.Booster
+        _ruleId = fmap getUniqueId metadata.ruleId
+
+        failureDescription :: ApplyEquationFailure -> Text.Text
+        failureDescription = \case
+            FailedMatch{} -> "Failed match"
+            IndeterminateMatch -> "IndeterminateMatch"
+            IndeterminateCondition{} -> "IndeterminateCondition"
+            ConditionFalse{} -> "ConditionFalse"
+            EnsuresFalse{} -> "EnsuresFalse"
+            RuleNotPreservingDefinedness -> "RuleNotPreservingDefinedness"
+            MatchConstraintViolated{} -> "MatchConstraintViolated"
+
 startState :: SimplifierCache -> EquationState
 startState cache =
     EquationState
@@ -264,7 +304,6 @@ startState cache =
         , recursionStack = []
         , changed = False
         , predicates = mempty
-        , trace = mempty
         , cache
         }
 
@@ -340,7 +379,7 @@ runEquationT ::
     Maybe SMT.SMTContext ->
     SimplifierCache ->
     EquationT io a ->
-    io (Either EquationFailure a, [EquationTrace Term], SimplifierCache)
+    io (Either EquationFailure a, SimplifierCache)
 runEquationT doTracing definition llvmApi smtSolver sCache (EquationT m) = do
     globalEquationOptions <- liftIO GlobalState.readGlobalEquationOptions
     (res, endState) <-
@@ -356,7 +395,7 @@ runEquationT doTracing definition llvmApi smtSolver sCache (EquationT m) = do
                         , maxIterations = globalEquationOptions.maxIterations
                         , maxRecursion = globalEquationOptions.maxRecursion
                         }
-    pure (res, toList endState.trace, endState.cache)
+    pure (res, endState.cache)
 
 iterateEquations ::
     MonadLoggerIO io =>
@@ -478,7 +517,7 @@ evaluateTerm ::
     Maybe LLVM.API ->
     Maybe SMT.SMTContext ->
     Term ->
-    io (Either EquationFailure Term, [EquationTrace Term], SimplifierCache)
+    io (Either EquationFailure Term, SimplifierCache)
 evaluateTerm doTracing direction def llvmApi smtSolver =
     runEquationT doTracing def llvmApi smtSolver mempty
         . evaluateTerm' direction
@@ -502,7 +541,7 @@ evaluatePattern ::
     Maybe SMT.SMTContext ->
     SimplifierCache ->
     Pattern ->
-    io (Either EquationFailure Pattern, [EquationTrace Term], SimplifierCache)
+    io (Either EquationFailure Pattern, SimplifierCache)
 evaluatePattern doTracing def mLlvmLibrary smtSolver cache =
     runEquationT doTracing def mLlvmLibrary smtSolver cache . evaluatePattern'
 
@@ -782,13 +821,12 @@ emitEquationTrace t loc lbl uid res = do
                 Failure failure -> EquationNotApplied t (EquationMetadata loc lbl uid) failure
         prettyItem = pack . renderDefault . pretty $ newTraceItem
     logOther (LevelOther "Simplify") prettyItem
+    logOther
+        (LevelOther "SimplifyJson")
+        (Text.toStrict . encodeToLazyText $ equationTraceToLogEntry newTraceItem)
     case res of
         Success{} -> logOther (LevelOther "SimplifySuccess") prettyItem
         _ -> pure ()
-    config <- getConfig
-    when (coerce config.doTracing) $
-        eqState . modify $
-            \s -> s{trace = s.trace :|> newTraceItem}
 
 applyEquation ::
     forall io tag.
@@ -941,7 +979,7 @@ simplifyConstraint ::
     Maybe SMT.SMTContext ->
     SimplifierCache ->
     Predicate ->
-    io (Either EquationFailure Predicate, [EquationTrace Term], SimplifierCache)
+    io (Either EquationFailure Predicate, SimplifierCache)
 simplifyConstraint doTracing def mbApi mbSMT cache (Predicate p) =
     runEquationT doTracing def mbApi mbSMT cache $ (coerce <$>) . simplifyConstraint' True $ p
 
@@ -953,7 +991,7 @@ simplifyConstraints ::
     Maybe SMT.SMTContext ->
     SimplifierCache ->
     [Predicate] ->
-    io (Either EquationFailure [Predicate], [EquationTrace Term], SimplifierCache)
+    io (Either EquationFailure [Predicate], SimplifierCache)
 simplifyConstraints doTracing def mbApi mbSMT cache ps =
     runEquationT doTracing def mbApi mbSMT cache $
         concatMap splitAndBools

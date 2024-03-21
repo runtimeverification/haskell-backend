@@ -16,7 +16,7 @@ extra-deps:
     subdirs:
       - kore
       - kore-rpc-types
-  - github: goodlyrottenapple/tasty-test-reporter 
+  - github: goodlyrottenapple/tasty-test-reporter
     commit: b704130545aa3925a8487bd3e92f1dd5ce0512e2
 
 # Control whether we use the GHC we find on the path

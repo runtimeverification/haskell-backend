@@ -34,9 +34,6 @@ import Booster.Syntax.Json.Internalise (trm)
 import Booster.Util (Flag (..))
 import Test.Booster.Fixture hiding (inj)
 
-fst3 :: (a, b, c) -> a
-fst3 (a, _, _) = a
-
 inj :: Symbol
 inj = injectionSymbol
 
@@ -100,7 +97,7 @@ test_evaluateFunction =
     eval direction =
         unsafePerformIO
             . runNoLoggingT
-            . (fst3 <$>)
+            . (fst <$>)
             . evaluateTerm NoCollectEquationTraces direction funDef Nothing Nothing
 
     isTooManyIterations (Left (TooManyIterations _n _ _)) = pure ()
@@ -131,7 +128,7 @@ test_simplify =
     simpl direction =
         unsafePerformIO
             . runNoLoggingT
-            . (fst3 <$>)
+            . (fst <$>)
             . evaluateTerm NoCollectEquationTraces direction simplDef Nothing Nothing
     a = var "A" someSort
 
@@ -161,7 +158,7 @@ test_simplifyPattern =
     simpl =
         unsafePerformIO
             . runNoLoggingT
-            . (fst3 <$>)
+            . (fst <$>)
             . evaluatePattern NoCollectEquationTraces simplDef Nothing Nothing mempty
     a = var "A" someSort
 
@@ -231,7 +228,7 @@ test_simplifyConstraint =
     simpl =
         unsafePerformIO
             . runNoLoggingT
-            . (fst3 <$>)
+            . (fst <$>)
             . simplifyConstraint NoCollectEquationTraces testDefinition Nothing Nothing mempty
 
 test_errors :: TestTree
@@ -245,7 +242,7 @@ test_errors =
                 loopTerms =
                     [f $ app con1 [a], f $ app con2 [a], f $ app con3 [a, a], f $ app con1 [a]]
             isLoop loopTerms . unsafePerformIO . runNoLoggingT $
-                fst3 <$> evaluateTerm NoCollectEquationTraces TopDown loopDef Nothing Nothing subj
+                fst <$> evaluateTerm NoCollectEquationTraces TopDown loopDef Nothing Nothing subj
         ]
   where
     isLoop ts (Left (EquationLoop ts')) = ts @?= ts'
