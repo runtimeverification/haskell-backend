@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 {- |
 Copyright   : (c) Runtime Verification, 2019-2021
 License     : BSD-3-Clause
@@ -44,6 +46,7 @@ import Kore.Log.DebugCreatedSubstitution (debugCreatedSubstitution)
 import Kore.Log.DebugRewriteTrace (
     debugRewriteTrace,
  )
+import Kore.Log.DecidePredicateUnknown (OnDecidePredicateUnknown (..), srcLoc)
 import Kore.Log.ErrorRewritesInstantiation (
     checkSubstitutionCoverage,
  )
@@ -63,6 +66,7 @@ import Kore.Rewrite.RulePattern (
     RulePattern,
  )
 import Kore.Rewrite.RulePattern qualified as Rule
+import Kore.Rewrite.SMT.Evaluator qualified as SMT
 import Kore.Rewrite.Step (
     Result,
     Results,
@@ -290,16 +294,37 @@ finalizeRulesParallel
                     unifiedRules
                     & fmap fold
             let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
-                remainder = Condition.fromPredicate (Remainder.remainder' unifications)
-            remainders <-
-                applyRemainder sideCondition initial remainder
-                    & Logic.observeAllT
-                    & fmap (fmap assertRemainderPattern >>> OrPattern.fromPatterns)
-            return
-                Step.Results
-                    { results = Seq.fromList results
-                    , remainders
-                    }
+                remainderPredicate = Remainder.remainder' unifications
+            -- evaluate the remainder predicate to make sure it is actually satisfiable
+            SMT.evalPredicate
+                (ErrorDecidePredicateUnknown $srcLoc Nothing)
+                remainderPredicate
+                Nothing
+                >>= \case
+                    -- remainder condition is UNSAT: we prune the remainder branch early to avoid
+                    -- jumping into the pit of function evaluation in the configuration under the
+                    -- contradictory condition (the unsatisfiable remainder)
+                    Just False ->
+                        return
+                            Step.Results
+                                { results = Seq.fromList results
+                                , remainders = mempty
+                                }
+                    -- NB: the UNKNOWN case will trigger an exception in SMT.evalPredicate, which will
+                    --     be caught by the top-level code in the RPC server and reported to the client
+                    _ -> do
+                        -- remainder condition is SAT: we are safe to explore
+                        -- the remainder branch, i.e. to evaluate the functions in the configuration
+                        -- with the remainder in the path condition and rewrite further
+                        remainders <-
+                            applyRemainder sideCondition initial (Condition.fromPredicate remainderPredicate)
+                                & Logic.observeAllT
+                                & fmap (fmap assertRemainderPattern >>> OrPattern.fromPatterns)
+                        return
+                            Step.Results
+                                { results = Seq.fromList results
+                                , remainders
+                                }
 
 finalizeSequence ::
     forall representation rule.
