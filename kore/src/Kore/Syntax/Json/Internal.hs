@@ -12,14 +12,37 @@ module Kore.Syntax.Json.Internal (
     module Kore.Syntax.Json.Types,
 ) where
 
+import Data.ByteString.Short qualified as ByteString
 import Data.Char (isDigit)
 import Data.Foldable ()
 import Data.Functor.Const (Const (..))
 import Data.Functor.Foldable as Recursive (Recursive (..))
+import Data.HashMap.Lazy qualified as HashMap
 import Data.List.NonEmpty qualified as NE
 import Data.Sup (Sup (..))
 import Data.Text qualified as T
+import Data.Text qualified as Text
 import Kore.Attribute.Attributes (ParsedPattern)
+import Kore.Builtin.Encoding qualified as Encoding
+import Kore.Builtin.Endianness.Endianness qualified as Endianness
+import Kore.Builtin.Signedness.Signedness qualified as Signedness
+import Kore.Internal.Alias qualified as Kore
+import Kore.Internal.Inj qualified as Inj
+import Kore.Internal.InternalBool (InternalBool (..))
+import Kore.Internal.InternalInt (InternalInt (..))
+import Kore.Internal.InternalList (InternalList (..))
+import Kore.Internal.InternalMap (
+    AcWrapper,
+    InternalAc (..),
+    NormalizedAc (..),
+    concreteElementToApplicationArgs,
+    elementToApplicationArgs,
+    unwrapAc,
+ )
+import Kore.Internal.InternalString (InternalString (..))
+import Kore.Internal.Symbol qualified as Kore
+import Kore.Internal.TermLike (InternalBytes (..), Key)
+import Kore.Internal.TermLike qualified as TermLike
 import Kore.Parser (embedParsedPattern)
 import Kore.Syntax qualified as Kore
 import Kore.Syntax.Json.Types
@@ -309,25 +332,309 @@ fromPatternF (_ :< patt) = case patt of
             KJSVar{name = fromKoreVariableName svar, sort}
       where
         sort = fromSort variableSort
-  where
-    fromSort :: Kore.Sort -> Sort
-    fromSort = \case
-        Kore.SortActualSort Kore.SortActual{sortActualName, sortActualSorts} ->
-            SortApp
-                { name = fromKoreId sortActualName
-                , args = map fromSort sortActualSorts
-                }
-        Kore.SortVariableSort Kore.SortVariable{getSortVariable} ->
-            SortVar . Id $ Kore.getId getSortVariable
 
-    fromKoreId :: Kore.Id -> Id
-    fromKoreId =
-        Id . Kore.getId -- forgetting the location
-    fromKoreVariableName :: Kore.VariableName -> Id
-    fromKoreVariableName VariableName{base, counter} =
-        Id $
-            Kore.getId base
-                <> case counter of
-                    Nothing -> ""
-                    Just (Element n) -> T.pack $ show n
-                    Just Sup -> error "Found Sup while converting variable name"
+fromSort :: Kore.Sort -> Sort
+fromSort = \case
+    Kore.SortActualSort Kore.SortActual{sortActualName, sortActualSorts} ->
+        SortApp
+            { name = fromKoreId sortActualName
+            , args = map fromSort sortActualSorts
+            }
+    Kore.SortVariableSort Kore.SortVariable{getSortVariable} ->
+        SortVar . Id $ Kore.getId getSortVariable
+
+fromKoreId :: Kore.Id -> Id
+fromKoreId =
+    Id . Kore.getId -- forgetting the location
+fromKoreVariableName :: Kore.VariableName -> Id
+fromKoreVariableName VariableName{base, counter} =
+    Id $
+        Kore.getId base
+            <> case counter of
+                Nothing -> ""
+                Just (Element n) -> T.pack $ show n
+                Just Sup -> error "Found Sup while converting variable name"
+
+fromTermLike ::
+    TermLike.TermLike VariableName ->
+    KorePattern
+fromTermLike = cata go
+  where
+    go ::
+        CofreeF
+            (TermLike.TermLikeF VariableName)
+            attrs
+            KorePattern ->
+        KorePattern
+    go (_ :< trmLikePat) = case trmLikePat of
+        TermLike.AndF Kore.BinaryAnd{andSort, andFirst, andSecond} ->
+            KJAnd
+                { sort = fromSort andSort
+                , patterns = flattenAnd andFirst <> flattenAnd andSecond
+                }
+        TermLike.ApplySymbolF
+            ( Kore.Application
+                    Kore.Symbol{symbolConstructor, symbolParams}
+                    args
+                ) ->
+                KJApp
+                    { name = fromKoreId symbolConstructor
+                    , sorts = map fromSort symbolParams
+                    , args
+                    }
+        TermLike.ApplyAliasF
+            ( Kore.Application
+                    Kore.Alias{aliasConstructor, aliasParams}
+                    args
+                ) ->
+                KJApp
+                    { name = fromKoreId aliasConstructor
+                    , sorts = map fromSort aliasParams
+                    , args
+                    }
+        TermLike.BottomF Kore.Bottom{bottomSort} ->
+            KJBottom{sort = fromSort bottomSort}
+        TermLike.CeilF Kore.Ceil{ceilOperandSort, ceilResultSort, ceilChild} ->
+            KJCeil
+                { argSort = fromSort ceilOperandSort
+                , sort = fromSort ceilResultSort
+                , arg = ceilChild
+                }
+        TermLike.DomainValueF Kore.DomainValue{domainValueSort, domainValueChild = KJString value} ->
+            KJDV
+                { sort = fromSort domainValueSort
+                , value
+                }
+        TermLike.DomainValueF Kore.DomainValue{} ->
+            error "Bad domain value"
+        TermLike.EqualsF Kore.Equals{equalsOperandSort, equalsResultSort, equalsFirst, equalsSecond} ->
+            KJEquals
+                { argSort = fromSort equalsOperandSort
+                , sort = fromSort equalsResultSort
+                , first = equalsFirst
+                , second = equalsSecond
+                }
+        TermLike.ExistsF Kore.Exists{existsSort, existsVariable, existsChild} ->
+            KJExists
+                { sort = fromSort existsSort
+                , var = fromKoreVariableName $ Kore.unElementVariableName $ Kore.variableName existsVariable
+                , varSort = fromSort $ Kore.variableSort existsVariable
+                , arg = existsChild
+                }
+        TermLike.FloorF Kore.Floor{floorOperandSort, floorResultSort, floorChild} ->
+            KJFloor
+                { argSort = fromSort floorOperandSort
+                , sort = fromSort floorResultSort
+                , arg = floorChild
+                }
+        TermLike.ForallF Kore.Forall{forallSort, forallVariable, forallChild} ->
+            KJForall
+                { sort = fromSort forallSort
+                , var = fromKoreVariableName $ unElementVariableName $ variableName forallVariable
+                , varSort = fromSort $ variableSort forallVariable
+                , arg = forallChild
+                }
+        TermLike.IffF Kore.Iff{iffSort, iffFirst, iffSecond} ->
+            KJIff
+                { sort = fromSort iffSort
+                , first = iffFirst
+                , second = iffSecond
+                }
+        TermLike.ImpliesF Kore.Implies{impliesSort, impliesFirst, impliesSecond} ->
+            KJImplies
+                { sort = fromSort impliesSort
+                , first = impliesFirst
+                , second = impliesSecond
+                }
+        TermLike.InF Kore.In{inOperandSort, inResultSort, inContainedChild, inContainingChild} ->
+            KJIn
+                { argSort = fromSort inOperandSort
+                , sort = fromSort inResultSort
+                , first = inContainedChild
+                , second = inContainingChild
+                }
+        TermLike.MuF Kore.Mu{muVariable, muChild} ->
+            KJMu
+                { var = fromKoreVariableName $ unSetVariableName $ variableName muVariable
+                , varSort = fromSort $ variableSort muVariable
+                , arg = muChild
+                }
+        TermLike.NextF Kore.Next{nextSort, nextChild} ->
+            KJNext
+                { sort = fromSort nextSort
+                , dest = nextChild
+                }
+        TermLike.NotF Kore.Not{notSort, notChild} ->
+            KJNot
+                { sort = fromSort notSort
+                , arg = notChild
+                }
+        TermLike.NuF Kore.Nu{nuVariable, nuChild} ->
+            KJNu
+                { var = fromKoreVariableName $ unSetVariableName $ variableName nuVariable
+                , varSort = fromSort $ variableSort nuVariable
+                , arg = nuChild
+                }
+        TermLike.OrF Kore.BinaryOr{orSort, orFirst, orSecond} ->
+            KJOr
+                { sort = fromSort orSort
+                , patterns = flattenOr orFirst <> flattenOr orSecond
+                }
+        TermLike.RewritesF Kore.Rewrites{rewritesSort, rewritesFirst, rewritesSecond} ->
+            KJRewrites
+                { sort = fromSort rewritesSort
+                , source = rewritesFirst
+                , dest = rewritesSecond
+                }
+        TermLike.TopF Kore.Top{topSort} ->
+            KJTop{sort = fromSort topSort}
+        TermLike.InhabitantF Kore.Inhabitant{} ->
+            error "Found inhabitant, not representable in json"
+        TermLike.StringLiteralF (Const Kore.StringLiteral{getStringLiteral}) ->
+            KJString getStringLiteral
+        TermLike.VariableF (Const Kore.Variable{variableName, variableSort})
+            | Kore.SomeVariableNameElement (ElementVariableName evar) <- variableName ->
+                KJEVar{name = fromKoreVariableName evar, sort}
+            | Kore.SomeVariableNameSet (SetVariableName svar) <- variableName ->
+                KJSVar{name = fromKoreVariableName svar, sort}
+          where
+            sort = fromSort variableSort
+        TermLike.EndiannessF (Const endianness)
+            | Kore.Symbol{symbolConstructor, symbolParams} <- Endianness.toSymbol endianness ->
+                KJApp
+                    { name = fromKoreId symbolConstructor
+                    , sorts = map fromSort symbolParams
+                    , args = []
+                    }
+        TermLike.SignednessF (Const signedness)
+            | Kore.Symbol{symbolConstructor, symbolParams} <- Signedness.toSymbol signedness ->
+                undefined
+                    KJApp
+                        { name = fromKoreId symbolConstructor
+                        , sorts = map fromSort symbolParams
+                        , args = []
+                        }
+        TermLike.InjF inj
+            | ( Kore.Application
+                    Kore.Symbol{symbolConstructor, symbolParams}
+                    args
+                ) <-
+                Inj.toApplication inj ->
+                KJApp
+                    { name = fromKoreId symbolConstructor
+                    , sorts = map fromSort symbolParams
+                    , args
+                    }
+        TermLike.InternalBoolF (Const (InternalBool boolSort boolValue)) ->
+            encodeInternalValue boolSort $
+                if boolValue then "true" else "false"
+        TermLike.InternalBytesF (Const (InternalBytes bytesSort bytesValue)) ->
+            encodeInternalValue bytesSort $
+                Encoding.decode8Bit $
+                    ByteString.fromShort bytesValue
+        TermLike.InternalIntF (Const (InternalInt intSort intValue)) ->
+            encodeInternalValue intSort $
+                Text.pack $
+                    show intValue
+        TermLike.InternalStringF (Const (InternalString stringSort stringValue)) ->
+            encodeInternalValue stringSort stringValue
+        TermLike.InternalListF internalList -> encodeInternalList internalList
+        TermLike.InternalMapF internalMap -> encodeInternalAc internalMap
+        TermLike.InternalSetF internalSet -> encodeInternalAc internalSet
+      where
+        flattenAnd KJAnd{patterns} = concatMap flattenAnd patterns
+        flattenAnd other = [other]
+
+        flattenOr KJOr{patterns} = concatMap flattenOr patterns
+        flattenOr other = [other]
+
+        encodeInternalValue domainValueSort value =
+            KJDV
+                { sort = fromSort domainValueSort
+                , value
+                }
+
+        -- The encoded lists and ac types are all of the following form:
+        -- If the structure has no elements, we simply get the application of the unit symbol with no arguments
+        -- If the structure has exactly one child, we just get the child.
+        -- This child will be an application of internalElement symbol to its arguments
+        -- For multiple children we will get a \right-assoc{concatSymbol}(x1,...x_n)
+        foldApplication Kore.Symbol{symbolConstructor = unitSymbolConstructor, symbolParams = unitSymbolParams} Kore.Symbol{symbolConstructor = concatSymbolConstructor, symbolParams = concatSymbolParams} = foldAux
+          where
+            foldAux = \case
+                [] ->
+                    KJApp
+                        { name = fromKoreId unitSymbolConstructor
+                        , sorts = map fromSort unitSymbolParams
+                        , args = []
+                        }
+                [x] -> x
+                (x : xs) ->
+                    KJRightAssoc
+                        { symbol = fromKoreId concatSymbolConstructor
+                        , sorts = map fromSort concatSymbolParams
+                        , argss = x :| xs
+                        }
+
+        encodeInternalList
+            InternalList
+                { internalListUnit
+                , internalListConcat
+                , internalListElement =
+                    Kore.Symbol{symbolConstructor = elementSymbolConstructor, symbolParams = elementSymbolParams}
+                , internalListChild
+                } =
+                foldApplication internalListUnit internalListConcat children
+              where
+                encodeListElement e =
+                    KJApp
+                        { name = fromKoreId elementSymbolConstructor
+                        , sorts = map fromSort elementSymbolParams
+                        , args = [e]
+                        }
+
+                children = map encodeListElement $ toList internalListChild
+
+        encodeInternalAc ::
+            forall normalized.
+            AcWrapper normalized =>
+            InternalAc Key normalized KorePattern ->
+            KorePattern
+        encodeInternalAc
+            InternalAc
+                { builtinAcUnit
+                , builtinAcConcat
+                , builtinAcElement =
+                    Kore.Symbol{symbolConstructor = elementSymbolConstructor, symbolParams = elementSymbolParams}
+                , builtinAcChild
+                } =
+                foldApplication builtinAcUnit builtinAcConcat children
+              where
+                NormalizedAc{elementsWithVariables, concreteElements, opaque} = unwrapAc builtinAcChild
+
+                encodeAcElement args =
+                    KJApp
+                        { name = fromKoreId elementSymbolConstructor
+                        , sorts = map fromSort elementSymbolParams
+                        , args
+                        }
+
+                encodedElementsWithVariables =
+                    map
+                        ( encodeAcElement
+                            . elementToApplicationArgs
+                        )
+                        elementsWithVariables
+
+                encodedConcreteElements =
+                    map
+                        ( \(k, v) ->
+                            encodeAcElement $
+                                encodeKey k : concreteElementToApplicationArgs v
+                        )
+                        $ HashMap.toList concreteElements
+
+                encodeKey = fromTermLike . from
+
+                children =
+                    encodedElementsWithVariables ++ encodedConcreteElements ++ opaque
