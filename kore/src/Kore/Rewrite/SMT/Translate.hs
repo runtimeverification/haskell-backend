@@ -541,6 +541,8 @@ backTranslateWith
                 pure $ TermLike.mkApplySymbol koreSym args
             | otherwise =
                 throwError "backTranslate.List-case: implement me!"
+        backTranslate String{} =
+                throwError "backTranslate.String-case: implement me!"
 
         -- FIXME unable to recover non-standard sort names (case where Int < OtherSort)
         simpleSort name = SortActualSort $ SortActual (Id name AstLocationNone) []
@@ -592,3 +594,4 @@ backTranslateWith
             simpleSort "SortBool"
         backTranslateSort (List _) =
             error "reverse the translateSort function" -- FIXME
+        backTranslateSort String{} = error "invalid sort"

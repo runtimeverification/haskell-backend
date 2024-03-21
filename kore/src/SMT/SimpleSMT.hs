@@ -728,8 +728,8 @@ checkUsing solver tactic = do
             Monad.when featureProduceAssertions $ do
                 asserts <- command solver Nothing (List [Atom "get-assertions"])
                 warn solver (buildText asserts)
-            Atom reason <- command solver Nothing (List [Atom "get-info", Atom ":reason-unknown"])
-            return $ Unknown reason
+            reason <- command solver Nothing (List [Atom "get-info", Atom ":reason-unknown"])
+            return $ Unknown $ extractReason reason
         Atom "sat" -> return Sat
         _ ->
             fail $
@@ -738,6 +738,9 @@ checkUsing solver tactic = do
                     , "  Expected: unsat, unknown, or sat"
                     , "  Result: " ++ showSExpr res
                     ]
+    where
+        extractReason (List [Atom ":reason-unknown", String reason]) = reason
+        extractReason other = Text.pack $ showSExpr other
 
 -- | Convert an s-expression to a value.
 sexprToVal :: SExpr -> Value
