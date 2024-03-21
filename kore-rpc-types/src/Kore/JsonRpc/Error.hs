@@ -1,5 +1,5 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Kore.JsonRpc.Error (module Kore.JsonRpc.Error) where
@@ -20,7 +20,7 @@ import Deriving.Aeson (
     OmitNothingFields,
     SumUntaggedValue,
  )
-import Deriving.Aeson.Stock
+import Deriving.Aeson.Stock (CustomJSON (CustomJSON), Generic)
 import GHC.Generics
 
 toSentence :: Identifier String -> String
@@ -85,14 +85,20 @@ data JsonRpcBackendError
 
 class CN (f :: Type -> Type) where
     constructorCodeAndName' :: Int -> f x -> (Int, String)
+    countConstructors :: proxy f -> Int
 
 instance CN f => CN (D1 c f) where
     constructorCodeAndName' n (M1 x) = constructorCodeAndName' n x
+    countConstructors _ = countConstructors @f undefined
 instance (CN f, CN g) => CN (f :+: g) where
     constructorCodeAndName' n (L1 l) = constructorCodeAndName' n l
-    constructorCodeAndName' n (R1 r) = constructorCodeAndName' (n + 1) r
+    constructorCodeAndName' n (R1 r) = constructorCodeAndName' (n + countConstructors @f undefined) r
+
+    countConstructors _ = countConstructors @f undefined + countConstructors @g undefined
+
 instance Constructor c => CN (C1 c f) where
     constructorCodeAndName' n x = (n, conName x)
+    countConstructors _ = 1
 
 constructorCodeAndName :: (CN (Rep a), Generic a) => a -> (Int, String)
 constructorCodeAndName = constructorCodeAndName' 1 . from
