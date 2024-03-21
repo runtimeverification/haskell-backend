@@ -211,12 +211,14 @@ retryWithScaledTimeout q = do
     -- retry it once.
     let timeoutScales = takeWithin limit [1 ..]
         retryActions = map (retryOnceWithScaledTimeout q) timeoutScales
-        combineRetries r1 r2 = r1 >>= whenUnknown r2
+        combineRetries [] = pure $ Unknown "retry limit is 0"
+        combineRetries [r] = r
+        combineRetries (r:rs) = r >>= whenUnknown (combineRetries rs)
     -- This works even if 'retryActions' is infinite, because the second
     -- argument to 'whenUnknown' will be the 'combineRetries' of all of
     -- the tail of the list. As soon as a result is not 'Unknown', the
-    -- rest of the fold is discarded.
-    foldr combineRetries (pure $ Unknown "") retryActions
+    -- rest of the retries are discarded.
+    combineRetries retryActions
   where
     -- helpers for re-trying solver queries with increasing timeout
     retryOnceWithScaledTimeout :: MonadSMT m => m a -> Integer -> m a

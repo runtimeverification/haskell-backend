@@ -20,7 +20,7 @@ import Deriving.Aeson (
     OmitNothingFields,
     SumUntaggedValue,
  )
-import Deriving.Aeson.Stock (CustomJSON (CustomJSON), Generic)
+import Deriving.Aeson.Stock (CustomJSON (CustomJSON))
 import GHC.Generics
 
 toSentence :: Identifier String -> String
