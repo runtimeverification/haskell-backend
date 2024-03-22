@@ -393,6 +393,42 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
             decomposeBinder (inject variable1) term1 (inject variable2) term2
         (Exists_ _ variable1 term1, Exists_ _ variable2 term2) ->
             decomposeBinder (inject variable1) term1 (inject variable2) term2
+        (_, _)
+            | Just True <- List.isListSort tools sort ->
+                case (List.normalize pat, List.normalize subject) of
+                    (Var_ var1, Var_ var2)
+                        | var1 == var2 ->
+                            discharge
+                    (ElemVar_ var1, _)
+                        | isFunctionPattern subject ->
+                            bind (inject var1) subject
+                    (SetVar_ var1, _) ->
+                        bind (inject var1) subject
+                    ( InternalList_ InternalList{internalListChild = l1}
+                        , InternalList_ InternalList{internalListChild = l2}
+                        ) ->
+                            if length l1 == length l2
+                                then decomposeList $ zip (toList l1) (toList l2)
+                                else failMatch "list lengths are not equal"
+                    ( App_ symbol [InternalList_ InternalList{internalListChild = l1}, var@(ElemVar_ _)]
+                        , InternalList_ InternalList{internalListChild = l2}
+                        )
+                            | List.isSymbolConcat symbol ->
+                                if length l1 <= length l2
+                                    then
+                                        let (start, l2') = Seq.splitAt (length l1) l2
+                                         in decomposeList $ (var, List.asInternal tools sort l2') : zip (toList l1) (toList start)
+                                    else failMatch "subject list is too short"
+                    ( App_ symbol [var@(ElemVar_ _), InternalList_ InternalList{internalListChild = l1}]
+                        , InternalList_ InternalList{internalListChild = l2}
+                        )
+                            | List.isSymbolConcat symbol ->
+                                if length l1 <= length l2
+                                    then
+                                        let (l2', end) = Seq.splitAt (length l2 - length l1) l2
+                                         in decomposeList $ (var, List.asInternal tools sort l2') : zip (toList l1) (toList end)
+                                    else failMatch "subject list is too short"
+                    _ -> failMatch "unimplemented list matching case"
         (App_ symbol1 children1, App_ symbol2 children2) ->
             if symbol1 == symbol2
                 then decomposeList (zip children1 children2)
@@ -436,42 +472,6 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
                         (Application secondHead secondChildren)
                         inj1{injChild = ()} ->
                     decomposeOverload unifyData
-        (_, _)
-            | Just True <- List.isListSort tools sort ->
-                case (List.normalize pat, List.normalize subject) of
-                    (Var_ var1, Var_ var2)
-                        | var1 == var2 ->
-                            discharge
-                    (ElemVar_ var1, _)
-                        | isFunctionPattern subject ->
-                            bind (inject var1) subject
-                    (SetVar_ var1, _) ->
-                        bind (inject var1) subject
-                    ( InternalList_ InternalList{internalListChild = l1}
-                        , InternalList_ InternalList{internalListChild = l2}
-                        ) ->
-                            if length l1 == length l2
-                                then decomposeList $ zip (toList l1) (toList l2)
-                                else failMatch "list lengths are not equal"
-                    ( App_ symbol [InternalList_ InternalList{internalListChild = l1}, var@(ElemVar_ _)]
-                        , InternalList_ InternalList{internalListChild = l2}
-                        )
-                            | List.isSymbolConcat symbol ->
-                                if length l1 <= length l2
-                                    then
-                                        let (start, l2') = Seq.splitAt (length l1) l2
-                                         in decomposeList $ (var, List.asInternal tools sort l2') : zip (toList l1) (toList start)
-                                    else failMatch "subject list is too short"
-                    ( App_ symbol [var@(ElemVar_ _), InternalList_ InternalList{internalListChild = l1}]
-                        , InternalList_ InternalList{internalListChild = l2}
-                        )
-                            | List.isSymbolConcat symbol ->
-                                if length l1 <= length l2
-                                    then
-                                        let (l2', end) = Seq.splitAt (length l2 - length l1) l2
-                                         in decomposeList $ (var, List.asInternal tools sort l2') : zip (toList l1) (toList end)
-                                    else failMatch "subject list is too short"
-                    _ -> failMatch "unimplemented list matching case"
         (InternalMap_ _, InternalMap_ _) ->
             defer
         (InternalSet_ _, InternalSet_ _) ->
