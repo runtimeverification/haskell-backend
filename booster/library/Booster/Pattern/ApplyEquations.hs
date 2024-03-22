@@ -430,34 +430,25 @@ iterateEquations direction preference startTerm = do
             -- the equation evaluation does not change the term any more.
             resetChanged
             -- evaluate functions and simplify (recursively at each level)
-            newTerm <- applyTerm direction preference llvmResult
+            newTerm <-
+                let simp = cached Equations $ traverseTerm direction simp (applyHooksAndEquations preference)
+                 in simp llvmResult
             changeFlag <- getChanged
             if changeFlag
                 then checkForLoop newTerm >> resetChanged >> go newTerm
                 else pure llvmResult
 
 llvmSimplify :: forall io. MonadLoggerIO io => Term -> EquationT io Term
-llvmSimplify t = do
+llvmSimplify term = do
     config <- getConfig
     case config.llvmApi of
-        Nothing -> pure t
+        Nothing -> pure term
         Just api -> do
             logOtherNS "booster" (LevelOther "Simplify") "Calling LLVM simplification"
-            llvmEval config.definition api t
-
-llvmEval :: MonadLoggerIO io => KoreDefinition -> LLVM.API -> Term -> EquationT io Term
-llvmEval definition api = eval
+            let simp = cached LLVM $ evalLlvm config.definition api $ traverseTerm BottomUp simp pure
+             in simp term
   where
-    eval t@(Term attributes _)
-        | attributes.isEvaluated = pure t
-        | otherwise =
-            fromCache LLVM t >>= \case
-                Nothing ->
-                    eval' t
-                Just cached ->
-                    when (cached /= t) setChanged >> pure cached
-
-    eval' t@(Term attributes _)
+    evalLlvm definition api cb t@(Term attributes _)
         | attributes.isEvaluated = pure t
         | isConcrete t && attributes.canBeEvaluated = do
             LLVM.simplifyTerm api definition t (sortOfTerm t)
@@ -470,40 +461,9 @@ llvmEval definition api = eval
                         toCache LLVM t result
                         pure result
         | otherwise = do
-            result <- descend t
+            result <- cb t
             toCache LLVM t result
             pure result
-    descend = \case
-        dv@DomainValue{} -> pure dv
-        v@Var{} -> pure v
-        Injection src trg t ->
-            Injection src trg <$> eval t -- no injection simplification
-        AndTerm arg1 arg2 ->
-            AndTerm -- no \and simplification
-                <$> eval arg1
-                <*> eval arg2
-        SymbolApplication sym sorts args ->
-            SymbolApplication sym sorts <$> mapM eval args
-        KMap def keyVals rest ->
-            KMap def
-                <$> mapM (\(k, v) -> (,) <$> eval k <*> eval v) keyVals
-                <*> maybe (pure Nothing) ((Just <$>) . eval) rest
-        KList def heads rest ->
-            KList def
-                <$> mapM eval heads
-                <*> maybe
-                    (pure Nothing)
-                    ( (Just <$>)
-                        . \(mid, tails) ->
-                            (,)
-                                <$> eval mid
-                                <*> mapM eval tails
-                    )
-                    rest
-        KSet def keyVals rest ->
-            KSet def
-                <$> mapM eval keyVals
-                <*> maybe (pure Nothing) ((Just <$>) . eval) rest
 
 ----------------------------------------
 -- Interface functions
@@ -576,102 +536,100 @@ evaluatePattern' Pattern{term, constraints, ceilConditions} = do
   No iteration happens at the same AST level inside these traversals,
   one equation will be applied per level (if any).
 -}
-applyTerm ::
-    MonadLoggerIO io =>
-    Direction ->
-    EquationPreference ->
-    Term ->
-    EquationT io Term
-applyTerm direction pref trm = do
-    logOtherNS "booster" (LevelOther "Simplify") "Calling equation-based simplifier"
-    config <- getConfig -- avoid re-reading config at every node
-    descend config trm
-  where
-    -- descend :: EquationConfig -> Term -> EquationT io Term
-    descend config t@(Term attributes _)
-        | attributes.isEvaluated = pure t
-        | otherwise =
-            fromCache Equations t >>= \case
-                Nothing -> do
-                    simplified <- apply config t
-                    toCache Equations t simplified
-                    pure simplified
-                Just cached -> do
-                    when (t /= cached) $ do
-                        setChanged
-                        emitEquationTrace t Nothing (Just "Cache") Nothing $ Success cached
-                    pure cached
-
-    -- Bottom-up evaluation traverses AST nodes in post-order but finds work top-down
-    -- Top-down evaluation traverses AST nodes in pre-order
-    apply config = \case
+traverseTerm ::
+    MonadLoggerIO m => Direction -> (Term -> m Term) -> (Term -> m Term) -> Term -> m Term
+traverseTerm direction onRecurse onEval trm = do
+    case trm of
         dv@DomainValue{} ->
             pure dv
         v@Var{} ->
             pure v
         Injection src trg t ->
-            Injection src trg <$> descend config t -- no injection simplification
+            Injection src trg <$> onRecurse t -- no injection simplification
         AndTerm arg1 arg2 ->
             AndTerm -- no \and simplification
-                <$> descend config arg1
-                <*> descend config arg2
+                <$> onRecurse arg1
+                <*> onRecurse arg2
         app@(SymbolApplication sym sorts args)
             | direction == BottomUp -> do
                 -- evaluate arguments first
-                args' <- mapM (descend config) args
+                args' <- mapM onRecurse args
                 -- then try to apply equations
-                applyAtTop pref $ SymbolApplication sym sorts args'
+                onEval $ SymbolApplication sym sorts args'
             | otherwise {- direction == TopDown -} -> do
                 -- try to apply equations
-                t <- applyAtTop pref app
+                t <- onEval app
                 -- then recurse into arguments or re-evaluate (avoiding a loop)
                 if t /= app
                     then do
                         case t of
                             SymbolApplication sym' sorts' args' ->
                                 SymbolApplication sym' sorts'
-                                    <$> mapM (descend config) args'
+                                    <$> mapM onRecurse args'
                             _otherwise ->
-                                descend config t -- won't loop
+                                onRecurse t -- won't loop
                     else
                         SymbolApplication sym sorts
-                            <$> mapM (descend config) args
+                            <$> mapM onRecurse args
         -- maps, lists, and sets, are not currently evaluated because
         -- the matcher does not provide matches on collections.
         KMap def keyVals rest ->
             KMap def
-                <$> mapM (\(k, v) -> (,) <$> descend config k <*> descend config v) keyVals
-                <*> maybe (pure Nothing) ((Just <$>) . descend config) rest
+                <$> mapM (\(k, v) -> (,) <$> onRecurse k <*> onRecurse v) keyVals
+                <*> maybe (pure Nothing) ((Just <$>) . onRecurse) rest
         KList def heads rest ->
             KList def
-                <$> mapM (descend config) heads
+                <$> mapM onRecurse heads
                 <*> maybe
                     (pure Nothing)
                     ( (Just <$>)
                         . \(mid, tails) ->
                             (,)
-                                <$> descend config mid
-                                <*> mapM (descend config) tails
+                                <$> onRecurse mid
+                                <*> mapM onRecurse tails
                     )
                     rest
         KSet def keyVals rest ->
             KSet def
-                <$> mapM (descend config) keyVals
-                <*> maybe (pure Nothing) ((Just <$>) . descend config) rest
+                <$> mapM onRecurse keyVals
+                <*> maybe (pure Nothing) ((Just <$>) . onRecurse) rest
+
+cached :: MonadLoggerIO io => CacheTag -> (Term -> EquationT io Term) -> Term -> EquationT io Term
+cached cacheTag cb t@(Term attributes _)
+    | attributes.isEvaluated = pure t
+    | otherwise =
+        fromCache cacheTag t >>= \case
+            Nothing -> do
+                simplified <- cb t
+                toCache cacheTag t simplified
+                pure simplified
+            Just cachedTerm -> do
+                when (t /= cachedTerm) $ do
+                    setChanged
+                    emitEquationTrace t Nothing (Just "Cache") Nothing $ Success cachedTerm
+                pure cachedTerm
+
+elseApply :: (Monad m, Eq b) => (b -> m b) -> (b -> m b) -> b -> m b
+elseApply cb1 cb2 term = do
+    fromCb1 <- cb1 term
+    if fromCb1 /= term
+        then pure fromCb1
+        else cb2 term
 
 {- | Try to apply function equations and simplifications to the given
    top-level term, in priority order and per group.
 -}
-applyAtTop ::
+applyHooksAndEquations ::
     forall io.
     MonadLoggerIO io =>
     EquationPreference ->
     Term ->
     EquationT io Term
-applyAtTop pref term = do
+applyHooksAndEquations pref term = do
     -- always try built-in (hooked) functions first, then equations
-    fromMaybeM tryEquations tryBuiltins
+    tryBuiltins `whenNothing` tryEquations
   where
+    whenNothing = flip fromMaybeM
     tryBuiltins :: EquationT io (Maybe Term)
     tryBuiltins = do
         case term of
@@ -701,17 +659,15 @@ applyAtTop pref term = do
     tryEquations :: EquationT io Term
     tryEquations = do
         def <- (.definition) <$> getConfig
-        case pref of
-            PreferFunctions -> do
-                fromFunctions <- applyEquations def.functionEquations handleFunctionEquation term
-                if fromFunctions == term
-                    then applyEquations def.simplifications handleSimplificationEquation term
-                    else pure fromFunctions
-            PreferSimplifications -> do
-                simplified <- applyEquations def.simplifications handleSimplificationEquation term
-                if simplified == term
-                    then applyEquations def.functionEquations handleFunctionEquation term
-                    else pure simplified
+        ( case pref of
+                PreferFunctions -> do
+                    applyEquations def.functionEquations handleFunctionEquation
+                        `elseApply` applyEquations def.simplifications handleSimplificationEquation
+                PreferSimplifications -> do
+                    applyEquations def.simplifications handleSimplificationEquation
+                        `elseApply` applyEquations def.functionEquations handleFunctionEquation
+            )
+            term
 
 data ApplyEquationResult
     = Success Term
