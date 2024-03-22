@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -43,25 +44,26 @@ unsupportedOption = ErrorObj "Unsupported option" (-32003) . toJSON
 
 -- Runtime backend errors
 
-data ErrorWithContext = ErrorWithContext
+data ErrorWithTermAndContext = ErrorWithTermAndContext
     { error :: Text.Text
     , context :: Maybe [Text.Text]
+    , term :: Maybe KoreJson
     }
     deriving stock (Generic, Show, Eq)
     deriving
         (ToJSON)
         via CustomJSON
                 '[SumUntaggedValue, OmitNothingFields, FieldLabelModifier '[CamelToKebab]]
-                ErrorWithContext
+                ErrorWithTermAndContext
 
-data ErrorWithTerm = ErrorWithTerm
-    { error :: Text.Text
-    , term :: Maybe KoreJson
-    }
-    deriving stock (Generic, Show, Eq)
-    deriving
-        (ToJSON)
-        via CustomJSON '[SumUntaggedValue, OmitNothingFields, FieldLabelModifier '[CamelToKebab]] ErrorWithTerm
+pattern ErrorWithTerm :: Text.Text -> KoreJson -> ErrorWithTermAndContext
+pattern ErrorWithTerm error term = ErrorWithTermAndContext error Nothing (Just term)
+
+pattern ErrorWithContext :: Text.Text -> [Text.Text] -> ErrorWithTermAndContext
+pattern ErrorWithContext error context = ErrorWithTermAndContext error (Just context) Nothing
+
+pattern ErrorOnly :: Text.Text -> ErrorWithTermAndContext
+pattern ErrorOnly error = ErrorWithTermAndContext error Nothing Nothing
 
 {- | Do NOT re-order the constructors in this type!
     If new error types are to be added, only append at the end.
@@ -69,14 +71,14 @@ data ErrorWithTerm = ErrorWithTerm
     the error codes in `ErrorObj`.
 -}
 data JsonRpcBackendError
-    = CouldNotParsePattern ErrorWithContext
-    | CouldNotVerifyPattern ErrorWithContext
+    = CouldNotParsePattern ErrorWithTermAndContext
+    | CouldNotVerifyPattern ErrorWithTermAndContext
     | CouldNotFindModule Text.Text
-    | ImplicationCheckError ErrorWithContext
-    | SmtSolverError ErrorWithTerm
+    | ImplicationCheckError ErrorWithTermAndContext
+    | SmtSolverError ErrorWithTermAndContext
     | Aborted Text.Text
     | MultipleStates Text.Text
-    | InvalidModule ErrorWithContext
+    | InvalidModule ErrorWithTermAndContext
     | DuplicateModuleName Text.Text
     deriving stock (Generic, Show, Eq)
     deriving
