@@ -13,7 +13,6 @@ import Control.Monad.Except (MonadError (throwError), liftEither, runExceptT, wi
 import Control.Monad.Logger (runLoggingT)
 import Control.Monad.Trans.Except (catchE)
 import Crypto.Hash (SHA256 (..), hashWith)
-import Data.Bifunctor (second)
 import Data.Coerce (coerce)
 import Data.Conduit.Network (serverSettings)
 import Data.Default (Default (..))
@@ -154,8 +153,7 @@ respond serverState moduleName runSMT =
                                 backendError $
                                     CouldNotVerifyPattern $
                                         ErrorWithContext (pack errorError) $
-                                            Just $
-                                                map pack errorContext
+                                            map pack errorContext
                     Right verifiedPattern -> do
                         let tracingEnabled =
                                 fromMaybe False logSuccessfulRewrites || fromMaybe False logSuccessfulSimplifications
@@ -424,8 +422,7 @@ respond serverState moduleName runSMT =
                             backendError $
                                 CouldNotVerifyPattern $
                                     ErrorWithContext (pack errorError) $
-                                        Just $
-                                            map pack errorContext
+                                        map pack errorContext
                 Right (antVerified, consVerified) -> do
                     let leftPatt =
                             mkRewritingPattern $ Pattern.parsePatternFromTermLike antVerified
@@ -484,8 +481,7 @@ respond serverState moduleName runSMT =
                     backendError $
                         ImplicationCheckError $
                             ErrorWithContext (pack errorError) $
-                                Just $
-                                    map pack errorContext
+                                map pack errorContext
             buildResult logs sort (Right (term, r)) =
                 let jsonTerm =
                         PatternJson.fromTermLike $
@@ -512,8 +508,7 @@ respond serverState moduleName runSMT =
                             backendError $
                                 CouldNotVerifyPattern $
                                     ErrorWithContext (pack errorError) $
-                                        Just $
-                                            map pack errorContext
+                                        map pack errorContext
                 Right stateVerified -> do
                     let patt =
                             mkRewritingPattern $ Pattern.parsePatternFromTermLike stateVerified
@@ -548,7 +543,7 @@ respond serverState moduleName runSMT =
         AddModule AddModuleRequest{_module, nameAsId = nameAsId'} -> runExceptT $ do
             let nameAsId = fromMaybe False nameAsId'
             parsedModule@Module{moduleName = name} <-
-                withExceptT (\err -> backendError $ InvalidModule $ ErrorWithContext (pack err) Nothing) $
+                withExceptT (\err -> backendError $ InvalidModule $ ErrorOnly $ pack err) $
                     liftEither $
                         parseKoreModule "<add-module>" _module
             st@ServerState
@@ -600,7 +595,7 @@ respond serverState moduleName runSMT =
                     _ -> do
                         (newIndexedModules, newDefinedNames) <-
                             withExceptT
-                                ( \Error{errorError, errorContext} -> backendError $ InvalidModule $ ErrorWithContext (pack errorError) $ Just $ map pack errorContext
+                                ( \Error{errorError, errorContext} -> backendError $ InvalidModule $ ErrorWithContext (pack errorError) $ map pack errorContext
                                 )
                                 $ liftEither
                                 $ verifyAndIndexDefinitionWithBase
@@ -660,8 +655,7 @@ respond serverState moduleName runSMT =
                                 backendError $
                                     CouldNotVerifyPattern $
                                         ErrorWithContext (pack errorError) $
-                                            Just $
-                                                map pack errorContext
+                                            map pack errorContext
                     Right stateVerified -> do
                         let sort = TermLike.termLikeSort stateVerified
                             patt =
@@ -813,7 +807,6 @@ handleDecidePredicateUnknown = JsonRpcHandler $ \(err :: DecidePredicateUnknown)
     pure
         ( backendError $
             SmtSolverError $
-                uncurry (ErrorWithTerm) $
-                    second Just $
-                        externaliseDecidePredicateUnknown err
+                uncurry ErrorWithTerm $
+                    externaliseDecidePredicateUnknown err
         )

@@ -56,11 +56,14 @@ data ErrorWithTermAndContext = ErrorWithTermAndContext
                 '[SumUntaggedValue, OmitNothingFields, FieldLabelModifier '[CamelToKebab]]
                 ErrorWithTermAndContext
 
-pattern ErrorWithTerm :: Text.Text -> Maybe KoreJson -> ErrorWithTermAndContext
-pattern ErrorWithTerm error term = ErrorWithTermAndContext error Nothing term
+pattern ErrorWithTerm :: Text.Text -> KoreJson -> ErrorWithTermAndContext
+pattern ErrorWithTerm error term = ErrorWithTermAndContext error Nothing (Just term)
 
-pattern ErrorWithContext :: Text.Text -> Maybe [Text.Text] -> ErrorWithTermAndContext
-pattern ErrorWithContext error context = ErrorWithTermAndContext error context Nothing
+pattern ErrorWithContext :: Text.Text -> [Text.Text] -> ErrorWithTermAndContext
+pattern ErrorWithContext error context = ErrorWithTermAndContext error (Just context) Nothing
+
+pattern ErrorOnly :: Text.Text -> ErrorWithTermAndContext
+pattern ErrorOnly error = ErrorWithTermAndContext error Nothing Nothing
 
 {- | Do NOT re-order the constructors in this type!
     If new error types are to be added, only append at the end.
