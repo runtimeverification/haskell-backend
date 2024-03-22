@@ -13,7 +13,7 @@ import Control.Monad.Except (MonadError (throwError), liftEither, runExceptT, wi
 import Control.Monad.Logger (runLoggingT)
 import Control.Monad.Trans.Except (catchE)
 import Crypto.Hash (SHA256 (..), hashWith)
-import Data.Aeson.Types (ToJSON (..))
+import Data.Bifunctor (second)
 import Data.Coerce (coerce)
 import Data.Conduit.Network (serverSettings)
 import Data.Default (Default (..))
@@ -26,7 +26,7 @@ import Data.Map.Strict qualified as Map
 import Data.Sequence as Seq (Seq, empty)
 import Data.Set qualified as Set
 import Data.String (fromString)
-import Data.Text (Text)
+import Data.Text (Text, pack)
 import Data.Text.Encoding (encodeUtf8)
 import GlobalMain (
     LoadedDefinition (..),
@@ -36,6 +36,7 @@ import Kore.Attribute.Attributes (Attributes)
 import Kore.Attribute.Axiom (Label (Label), UniqueId (UniqueId), getUniqueId, unLabel)
 import Kore.Attribute.Symbol (StepperAttributes)
 import Kore.Builtin qualified as Builtin
+import Kore.Error (Error (..))
 import Kore.Exec qualified as Exec
 import Kore.Exec.GraphTraversal qualified as GraphTraversal
 import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
@@ -147,7 +148,14 @@ respond serverState moduleName runSMT =
                 } -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
                 start <- liftIO $ getTime Monotonic
                 case verifyIn serializedModule state of
-                    Left err -> pure $ Left $ backendError CouldNotVerifyPattern err
+                    Left Error{errorError, errorContext} ->
+                        pure $
+                            Left $
+                                backendError $
+                                    CouldNotVerifyPattern $
+                                        ErrorWithContext (pack errorError) $
+                                            Just $
+                                                map pack errorContext
                     Right verifiedPattern -> do
                         let tracingEnabled =
                                 fromMaybe False logSuccessfulRewrites || fromMaybe False logSuccessfulSimplifications
@@ -340,9 +348,9 @@ respond serverState moduleName runSMT =
                                         }
                     -- these are programmer errors
                     result@GraphTraversal.Aborted{} ->
-                        Left $ backendError Kore.JsonRpc.Error.Aborted $ show result
+                        Left $ backendError $ Kore.JsonRpc.Error.Aborted $ pack $ show result
                     other ->
-                        Left $ backendError MultipleStates $ show other
+                        Left $ backendError $ MultipleStates $ pack $ show other
 
                 patternToExecState ::
                     Bool ->
@@ -410,8 +418,14 @@ respond serverState moduleName runSMT =
         Implies ImpliesRequest{antecedent, consequent, _module, logSuccessfulSimplifications, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
             start <- liftIO $ getTime Monotonic
             case PatternVerifier.runPatternVerifier (verifierContext serializedModule) verify of
-                Left err ->
-                    pure $ Left $ backendError CouldNotVerifyPattern $ toJSON err
+                Left Error{errorError, errorContext} ->
+                    pure $
+                        Left $
+                            backendError $
+                                CouldNotVerifyPattern $
+                                    ErrorWithContext (pack errorError) $
+                                        Just $
+                                            map pack errorContext
                 Right (antVerified, consVerified) -> do
                     let leftPatt =
                             mkRewritingPattern $ Pattern.parsePatternFromTermLike antVerified
@@ -465,7 +479,13 @@ respond serverState moduleName runSMT =
                         , substitution = fromMaybe noSubstitution mbSubstitution
                         }
 
-            buildResult _ _ (Left err) = Left $ backendError ImplicationCheckError $ toJSON err
+            buildResult _ _ (Left Error{errorError, errorContext}) =
+                Left $
+                    backendError $
+                        ImplicationCheckError $
+                            ErrorWithContext (pack errorError) $
+                                Just $
+                                    map pack errorContext
             buildResult logs sort (Right (term, r)) =
                 let jsonTerm =
                         PatternJson.fromTermLike $
@@ -486,8 +506,14 @@ respond serverState moduleName runSMT =
         Simplify SimplifyRequest{state, _module, logSuccessfulSimplifications, logTiming} -> withMainModule (coerce _module) $ \serializedModule lemmas -> do
             start <- liftIO $ getTime Monotonic
             case verifyIn serializedModule state of
-                Left err ->
-                    pure $ Left $ backendError CouldNotVerifyPattern err
+                Left Error{errorError, errorContext} ->
+                    pure $
+                        Left $
+                            backendError $
+                                CouldNotVerifyPattern $
+                                    ErrorWithContext (pack errorError) $
+                                        Just $
+                                            map pack errorContext
                 Right stateVerified -> do
                     let patt =
                             mkRewritingPattern $ Pattern.parsePatternFromTermLike stateVerified
@@ -522,7 +548,7 @@ respond serverState moduleName runSMT =
         AddModule AddModuleRequest{_module, nameAsId = nameAsId'} -> runExceptT $ do
             let nameAsId = fromMaybe False nameAsId'
             parsedModule@Module{moduleName = name} <-
-                withExceptT (backendError InvalidModule) $
+                withExceptT (\err -> backendError $ InvalidModule $ ErrorWithContext (pack err) Nothing) $
                     liftEither $
                         parseKoreModule "<add-module>" _module
             st@ServerState
@@ -539,13 +565,13 @@ respond serverState moduleName runSMT =
                 when nameAsId $
                     case Map.lookup (coerce name) receivedModules of
                         -- if a different module was already added, throw error
-                        Just m | _module /= m -> throwError $ backendError DuplicateModuleName name
+                        Just m | _module /= m -> throwError $ backendError $ DuplicateModuleName $ coerce name
                         _ -> pure ()
 
                 -- Check for a corner case when we send module M1 with the name "m<hash of M2>"" and name-as-id: true
                 -- followed by adding M2. Should not happen in practice...
                 case Map.lookup (coerce moduleHash) receivedModules of
-                    Just m | _module /= m -> throwError $ backendError DuplicateModuleName moduleHash
+                    Just m | _module /= m -> throwError $ backendError $ DuplicateModuleName $ coerce moduleHash
                     _ -> pure ()
 
                 case (Map.lookup (coerce moduleHash) indexedModules, Map.lookup (coerce moduleHash) serializedModules) of
@@ -573,16 +599,18 @@ respond serverState moduleName runSMT =
                         pure . AddModule $ AddModuleResult (getModuleName moduleHash)
                     _ -> do
                         (newIndexedModules, newDefinedNames) <-
-                            withExceptT (backendError InvalidModule) $
-                                liftEither $
-                                    verifyAndIndexDefinitionWithBase
-                                        (indexedModules, definedNames)
-                                        Builtin.koreVerifiers
-                                        (Definition (def @Attributes) [parsedModule{moduleName = moduleHash}])
+                            withExceptT
+                                ( \Error{errorError, errorContext} -> backendError $ InvalidModule $ ErrorWithContext (pack errorError) $ Just $ map pack errorContext
+                                )
+                                $ liftEither
+                                $ verifyAndIndexDefinitionWithBase
+                                    (indexedModules, definedNames)
+                                    Builtin.koreVerifiers
+                                    (Definition (def @Attributes) [parsedModule{moduleName = moduleHash}])
 
                         newModule <-
                             liftEither $
-                                maybe (Left $ backendError CouldNotFindModule moduleHash) Right $
+                                maybe (Left $ backendError $ CouldNotFindModule $ coerce moduleHash) Right $
                                     Map.lookup (coerce moduleHash) newIndexedModules
 
                         let metadataTools = MetadataTools.build newModule
@@ -626,8 +654,14 @@ respond serverState moduleName runSMT =
         GetModel GetModelRequest{state, _module} ->
             withMainModule (coerce _module) $ \serializedModule lemmas ->
                 case verifyIn serializedModule state of
-                    Left err ->
-                        pure $ Left $ backendError CouldNotVerifyPattern err
+                    Left Error{errorError, errorContext} ->
+                        pure $
+                            Left $
+                                backendError $
+                                    CouldNotVerifyPattern $
+                                        ErrorWithContext (pack errorError) $
+                                            Just $
+                                                map pack errorContext
                     Right stateVerified -> do
                         let sort = TermLike.termLikeSort stateVerified
                             patt =
@@ -672,7 +706,7 @@ respond serverState moduleName runSMT =
         let mainModule = fromMaybe moduleName module'
         ServerState{serializedModules} <- liftIO $ MVar.readMVar serverState
         case Map.lookup mainModule serializedModules of
-            Nothing -> pure $ Left $ backendError CouldNotFindModule mainModule
+            Nothing -> pure $ Left $ backendError $ CouldNotFindModule $ coerce mainModule
             Just (SerializedDefinition{serializedModule, lemmas}) ->
                 act serializedModule lemmas
 
@@ -776,4 +810,10 @@ runServer port serverState mainModule runSMT Log.LoggerEnv{logAction} = do
 
 handleDecidePredicateUnknown :: JsonRpcHandler
 handleDecidePredicateUnknown = JsonRpcHandler $ \(err :: DecidePredicateUnknown) ->
-    pure (backendError SmtSolverError $ externaliseDecidePredicateUnknown err)
+    pure
+        ( backendError $
+            SmtSolverError $
+                uncurry (ErrorWithTerm) $
+                    second Just $
+                        externaliseDecidePredicateUnknown err
+        )
