@@ -24,6 +24,7 @@ import Data.PQueue.Min (
     MinQueue,
  )
 import Data.PQueue.Min qualified as MinQueue
+import Data.Sequence (Seq ((:|>)))
 import Data.Sequence qualified as Seq
 import Data.Set (
     Set,
@@ -428,6 +429,18 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
                                         let (l2', end) = Seq.splitAt (length l2 - length l1) l2
                                          in decomposeList $ (var, List.asInternal tools sort l2') : zip (toList l1) (toList end)
                                     else failMatch "subject list is too short"
+                    ( App_ symbol1 [InternalList_ InternalList{internalListChild = l1}, var1@(ElemVar_ _)]
+                        , App_ symbol2 [InternalList_ InternalList{internalListChild = l2}, var2@(ElemVar_ _)]
+                        )
+                            | List.isSymbolConcat symbol1
+                            , symbol1 == symbol2 ->
+                                if length l1 <= length l2
+                                    then
+                                        let (start, l2') = Seq.splitAt (length l1) l2
+                                         in decomposeList $
+                                                (var1, List.asInternal tools sort (l2' :|> var2))
+                                                    : zip (toList l1) (toList start)
+                                    else failMatch "subject list is too short" -- TODO: think of a better message
                     _ -> failMatch "unimplemented list matching case"
         (App_ symbol1 children1, App_ symbol2 children2) ->
             if symbol1 == symbol2
