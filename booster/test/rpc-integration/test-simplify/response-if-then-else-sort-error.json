@@ -24,7 +24,7 @@
                         "args": [
                             {
                                 "tag": "App",
-                                "name": "Lbl'Hash'if'UndsHash'then'UndsHash'else'UndsHash'fi'Unds'K-EQUAL-SYNTAX'Unds'Sort'Unds'Bool'Unds'Sort'Unds'Sort",
+                                "name": "Lblite",
                                 "sorts": [
                                     {
                                         "tag": "SortApp",
