@@ -85,7 +85,13 @@ done
 
 # find server port via lsof
 server_port=$(lsof -a -p${server_pid} -sTCP:LISTEN -iTCP | grep ${server_pid} | sed -e 's/.* TCP \*:\([0-9]*\).*$/\1/')
-echo "Server listening on port ${server_port}"
+
+if [ -z "${server_port}" ]; then
+    echo "Unable to identify the server, aborting"
+    exit 4
+else
+    echo "Server listening on port ${server_port}"
+fi
 
 client="$client -p ${server_port}"
 
