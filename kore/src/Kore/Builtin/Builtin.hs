@@ -477,9 +477,11 @@ isSort :: Text -> SmtMetadataTools attr -> Sort -> Maybe Bool
 isSort builtinName tools sort
     | SortVariableSort _ <- sort = Nothing
     | otherwise =
-        let sortAttributes = MetadataTools.sortAttributes tools
-            Attribute.Sort{hook} = sortAttributes sort
-         in Just (getHook hook == Just builtinName)
+        case MetadataTools.sortAttributes tools sort of
+            Right sortAttributes ->
+                let Attribute.Sort{hook} = sortAttributes
+                 in Just (getHook hook == Just builtinName)
+            Left _err -> Just False
 
 -- | Run a function evaluator that can terminate early.
 getAttemptedAxiom ::
