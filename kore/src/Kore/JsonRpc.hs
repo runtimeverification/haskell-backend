@@ -151,9 +151,10 @@ respond serverState moduleName runSMT =
                         pure $
                             Left $
                                 backendError $
-                                    CouldNotVerifyPattern $
-                                        ErrorWithContext (pack errorError) $
+                                    CouldNotVerifyPattern
+                                        [ ErrorWithContext (pack errorError) $
                                             map pack errorContext
+                                        ]
                     Right verifiedPattern -> do
                         let tracingEnabled =
                                 fromMaybe False logSuccessfulRewrites || fromMaybe False logSuccessfulSimplifications
@@ -420,9 +421,10 @@ respond serverState moduleName runSMT =
                     pure $
                         Left $
                             backendError $
-                                CouldNotVerifyPattern $
-                                    ErrorWithContext (pack errorError) $
+                                CouldNotVerifyPattern
+                                    [ ErrorWithContext (pack errorError) $
                                         map pack errorContext
+                                    ]
                 Right (antVerified, consVerified) -> do
                     let leftPatt =
                             mkRewritingPattern $ Pattern.parsePatternFromTermLike antVerified
@@ -506,9 +508,10 @@ respond serverState moduleName runSMT =
                     pure $
                         Left $
                             backendError $
-                                CouldNotVerifyPattern $
-                                    ErrorWithContext (pack errorError) $
+                                CouldNotVerifyPattern
+                                    [ ErrorWithContext (pack errorError) $
                                         map pack errorContext
+                                    ]
                 Right stateVerified -> do
                     let patt =
                             mkRewritingPattern $ Pattern.parsePatternFromTermLike stateVerified
@@ -653,9 +656,10 @@ respond serverState moduleName runSMT =
                         pure $
                             Left $
                                 backendError $
-                                    CouldNotVerifyPattern $
-                                        ErrorWithContext (pack errorError) $
+                                    CouldNotVerifyPattern
+                                        [ ErrorWithContext (pack errorError) $
                                             map pack errorContext
+                                        ]
                     Right stateVerified -> do
                         let sort = TermLike.termLikeSort stateVerified
                             patt =
