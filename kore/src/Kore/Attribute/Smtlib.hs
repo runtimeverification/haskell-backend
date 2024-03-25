@@ -41,12 +41,14 @@ applySExpr ::
 applySExpr =
     \case
         Atom symb -> \args -> List (fillAtom symb args : args)
+        String str -> \_ -> String str
         list@(List _) -> fillPlacesWorker list
   where
     fillPlacesWorker =
         \case
             List sExprs -> List <$> traverse fillPlacesWorker sExprs
             Atom symb -> fillAtom symb
+            String s -> \_ -> String s
 
     fillAtom symb = fromMaybe (\_ -> Atom symb) (fillPlace symb)
 

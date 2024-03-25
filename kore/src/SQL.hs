@@ -125,7 +125,7 @@ instance Column SMT.Result where
 
     toColumn SMT.Unsat = toColumn @Text "unsat"
     toColumn SMT.Sat = toColumn @Text "sat"
-    toColumn SMT.Unknown = toColumn @Text "unknown"
+    toColumn SMT.Unknown{} = toColumn @Text "unknown"
 
 -- | Reify a 'Column' constraint into a concrete implementation 'ColumnImpl'.
 mkColumnImpl :: forall a. Column a => ColumnImpl a
