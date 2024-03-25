@@ -92,7 +92,7 @@ If the verification of the `state` pattern fails, the following error is returne
       }
     ],
     "code": 2,
-    "message": "Could not verify KORE pattern"
+    "message": "Could not verify pattern"
   }
 }
 ```
