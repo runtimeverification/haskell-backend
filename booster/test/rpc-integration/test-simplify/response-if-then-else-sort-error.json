@@ -5,8 +5,10 @@
         "code": 2,
         "data": [
             {
-                "context": [
-                    {
+                "term": {
+                    "format": "KORE",
+                    "version": 1,
+                    "term": {
                         "tag": "App",
                         "name": "inj",
                         "sorts": [
@@ -64,12 +66,14 @@
                             }
                         ]
                     }
-                ],
+                },
                 "error": "Expected a predicate but found a term"
             },
             {
-                "context": [
-                    {
+                "term": {
+                    "format": "KORE",
+                    "version": 1,
+                    "term": {
                         "tag": "DV",
                         "sort": {
                             "tag": "SortApp",
@@ -78,7 +82,7 @@
                         },
                         "value": "42"
                     }
-                ],
+                },
                 "error": "Incorrect sort: expected SortBool{} but got SortInt{}"
             }
         ],

@@ -55,7 +55,7 @@ data SMTOptions = SMTOptions
 data SMTError
     = GeneralSMTError Text
     | SMTTranslationError Text
-    | SMTSolverUnknown (Set Predicate) (Set Predicate)
+    | SMTSolverUnknown Text (Set Predicate) (Set Predicate)
     deriving (Eq, Show)
 
 instance Exception SMTError
@@ -66,8 +66,8 @@ throwSMT = throw . GeneralSMTError
 throwSMT' :: String -> a
 throwSMT' = throwSMT . pack
 
-throwUnknown :: Set Predicate -> Set Predicate -> a
-throwUnknown premises preds = throw $ SMTSolverUnknown premises preds
+throwUnknown :: Text -> Set Predicate -> Set Predicate -> a
+throwUnknown reason premises preds = throw $ SMTSolverUnknown reason premises preds
 
 smtTranslateError :: Text -> a
 smtTranslateError = throw . SMTTranslationError
@@ -179,9 +179,12 @@ getModelFor ctxt ps subst
             Unsat -> do
                 runCmd_ SMT.Pop
                 pure $ Left Unsat
-            Unknown -> do
+            Unknown{} -> do
+                res <- runCmd SMT.GetReasonUnknown
                 runCmd_ SMT.Pop
-                pure $ Left Unknown
+                pure $ Left res
+            r@ReasonUnknown{} ->
+                pure $ Left r
             Values{} -> do
                 runCmd_ SMT.Pop
                 throwSMT' $ "Unexpected SMT response to CheckSat: " <> show satResponse
@@ -306,8 +309,14 @@ checkPredicates ctxt givenPs givenSubst psToCheck
             (Sat, Sat) -> fail "Implication not determined"
             (Sat, Unsat) -> pure True
             (Unsat, Sat) -> pure False
-            (Unknown, _) -> throwUnknown givenPs psToCheck
-            (_, Unknown) -> throwUnknown givenPs psToCheck
+            (Unknown, _) -> do
+                smtRun GetReasonUnknown >>= \case
+                    ReasonUnknown reason -> throwUnknown reason givenPs psToCheck
+                    other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
+            (_, Unknown) -> do
+                smtRun GetReasonUnknown >>= \case
+                    ReasonUnknown reason -> throwUnknown reason givenPs psToCheck
+                    other -> throwSMT' $ "Unexpected result while calling ':reason-unknown': " <> show other
             other -> throwSMT' $ "Unexpected result while checking a condition: " <> show other
   where
     smtRun_ :: SMTEncode c => c -> MaybeT (SMT io) ()

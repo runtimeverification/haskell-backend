@@ -24,7 +24,6 @@ import Control.Monad.Logger.CallStack (MonadLoggerIO)
 import Control.Monad.Logger.CallStack qualified as Log
 import Control.Monad.Trans.Except (catchE, except, runExcept, runExceptT, throwE, withExceptT)
 import Crypto.Hash (SHA256 (..), hashWith)
-import Data.Aeson (ToJSON (toJSON))
 import Data.Bifunctor (second)
 import Data.Coerce (coerce)
 import Data.Foldable
@@ -70,13 +69,14 @@ import Booster.Syntax.Json.Internalise (
     TermOrPredicates (..),
     internalisePattern,
     internaliseTermOrPredicate,
+    patternErrorToRpcError,
     pattern CheckSubsorts,
     pattern DisallowAlias,
  )
 import Booster.Syntax.ParsedKore (parseKoreModule)
 import Booster.Syntax.ParsedKore.Base hiding (ParsedModule)
 import Booster.Syntax.ParsedKore.Base qualified as ParsedModule (ParsedModule (..))
-import Booster.Syntax.ParsedKore.Internalise (addToDefinitions)
+import Booster.Syntax.ParsedKore.Internalise (addToDefinitions, definitionErrorToRpcError)
 import Booster.Util (Flag (..), constructorName)
 import Kore.JsonRpc.Error qualified as RpcError
 import Kore.JsonRpc.Server (ErrorObj (..), JsonRpcHandler (..), Respond)
@@ -105,7 +105,12 @@ respond stateVar =
             case internalised of
                 Left patternError -> do
                     Log.logDebug $ "Error internalising cterm" <> Text.pack (show patternError)
-                    pure $ Left $ RpcError.backendError RpcError.CouldNotVerifyPattern patternError
+                    pure $
+                        Left $
+                            RpcError.backendError $
+                                RpcError.CouldNotVerifyPattern
+                                    [ patternErrorToRpcError patternError
+                                    ]
                 Right (pat, substitution, unsupported) -> do
                     unless (null unsupported) $ do
                         Log.logWarnNS
@@ -153,46 +158,43 @@ respond stateVar =
             state <- liftIO $ takeMVar stateVar
             let nameAsId = fromMaybe False nameAsId'
                 moduleHash = Text.pack $ ('m' :) . show . hashWith SHA256 $ Text.encodeUtf8 _module
-                restoreStateAndRethrow (errTy, errMsg) = do
+                restoreStateAndRethrow err = do
                     liftIO (putMVar stateVar state)
-                    throwE $ RpcError.backendError errTy errMsg
+                    throwE $ RpcError.backendError err
                 listNames :: (HasField "name" a b, HasField "getId" b Text) => [a] -> Text
                 listNames = Text.intercalate ", " . map (.name.getId)
 
             flip catchE restoreStateAndRethrow $ do
                 newModule <-
-                    withExceptT ((RpcError.InvalidModule,) . toJSON) $
+                    withExceptT (RpcError.InvalidModule . RpcError.ErrorOnly . pack) $
                         except $
                             parseKoreModule "rpc-request" _module
 
                 unless (null newModule.sorts) $
-                    throwE
-                        ( RpcError.InvalidModule
-                        , toJSON $
+                    throwE $
+                        RpcError.InvalidModule . RpcError.ErrorOnly $
                             "Module introduces new sorts: " <> listNames newModule.sorts
-                        )
+
                 unless (null newModule.symbols) $
-                    throwE
-                        ( RpcError.InvalidModule
-                        , toJSON $
+                    throwE $
+                        RpcError.InvalidModule . RpcError.ErrorOnly $
                             "Module introduces new symbols: " <> listNames newModule.symbols
-                        )
 
                 -- check if we already received a module with this name
                 when nameAsId $
                     case Map.lookup (getId newModule.name) state.addedModules of
                         -- if a different module was already added, throw error
-                        Just m | _module /= m -> throwE (RpcError.DuplicateModuleName, toJSON $ getId newModule.name)
+                        Just m | _module /= m -> throwE $ RpcError.DuplicateModuleName $ getId newModule.name
                         _ -> pure ()
 
                 -- Check for a corner case when we send module M1 with the name "m<hash of M2>"" and name-as-id: true
                 -- followed by adding M2. Should not happen in practice...
                 case Map.lookup moduleHash state.addedModules of
-                    Just m | _module /= m -> throwE (RpcError.DuplicateModuleName, toJSON moduleHash)
+                    Just m | _module /= m -> throwE $ RpcError.DuplicateModuleName moduleHash
                     _ -> pure ()
 
                 newDefinitions <-
-                    withExceptT ((RpcError.InvalidModule,) . toJSON) $
+                    withExceptT (RpcError.InvalidModule . definitionErrorToRpcError) $
                         except $
                             runExcept $
                                 addToDefinitions newModule{ParsedModule.name = Id moduleHash} state.definitions
@@ -246,13 +248,18 @@ respond stateVar =
 
             result <- case internalised of
                 Left patternErrors -> do
-                    Log.logErrorNS "booster" $
-                        "Error internalising cterm: " <> Text.pack (show patternErrors)
+                    forM_ patternErrors $ \patternError ->
+                        Log.logErrorNS "booster" $
+                            "Error internalising cterm: " <> pack (show patternError)
                     Log.logOtherNS
                         "booster"
                         (Log.LevelOther "ErrorDetails")
                         (prettyPattern req.state.term)
-                    pure $ Left $ RpcError.backendError RpcError.CouldNotVerifyPattern patternErrors
+                    pure $
+                        Left $
+                            RpcError.backendError $
+                                RpcError.CouldNotVerifyPattern $
+                                    map patternErrorToRpcError patternErrors
                 -- term and predicate (pattern)
                 Right (TermAndPredicates pat substitution unsupported) -> do
                     Log.logInfoNS "booster" "Simplifying a pattern"
@@ -282,11 +289,11 @@ respond stateVar =
                         (Left ApplyEquations.SideConditionFalse{}, _) -> do
                             let tSort = externaliseSort $ sortOfPattern pat
                             pure $ Right (addHeader $ KoreJson.KJBottom tSort, [])
-                        (Left (ApplyEquations.EquationLoop terms), _) ->
-                            pure . Left . RpcError.backendError RpcError.Aborted $ map externaliseTerm terms -- FIXME
+                        (Left (ApplyEquations.EquationLoop _terms), _) ->
+                            pure . Left . RpcError.backendError $ RpcError.Aborted "equation loop detected"
                         (Left other, _) ->
-                            pure . Left . RpcError.backendError RpcError.Aborted $ (Text.pack . constructorName $ other) -- FIXME
-                            -- predicate only
+                            pure . Left . RpcError.backendError $ RpcError.Aborted (Text.pack . constructorName $ other)
+                -- predicate only
                 Right (Predicates ps)
                     | null ps.boolPredicates && null ps.ceilPredicates && null ps.substitution && null ps.unsupported ->
                         pure $
@@ -324,7 +331,7 @@ respond stateVar =
 
                                     pure $ Right (addHeader $ Syntax.KJAnd predicateSort result, [])
                                 (Left something, _) ->
-                                    pure . Left . RpcError.backendError RpcError.Aborted $ show something
+                                    pure . Left . RpcError.backendError $ RpcError.Aborted $ renderText $ pretty something
             whenJust solver SMT.closeSolver
             stop <- liftIO $ getTime Monotonic
 
@@ -344,13 +351,18 @@ respond stateVar =
                             internaliseTermOrPredicate DisallowAlias CheckSubsorts Nothing def req.state.term
                 case internalised of
                     Left patternErrors -> do
-                        Log.logErrorNS "booster" $
-                            "Error internalising cterm: " <> Text.pack (show patternErrors)
+                        forM_ patternErrors $ \patternError ->
+                            Log.logErrorNS "booster" $
+                                "Error internalising cterm: " <> pack (show patternError)
                         Log.logOtherNS
                             "booster"
                             (Log.LevelOther "ErrorDetails")
                             (prettyPattern req.state.term)
-                        pure $ Left $ RpcError.backendError RpcError.CouldNotVerifyPattern patternErrors
+                        pure $
+                            Left $
+                                RpcError.backendError $
+                                    RpcError.CouldNotVerifyPattern $
+                                        map patternErrorToRpcError patternErrors
                     -- various predicates obtained
                     Right things -> do
                         Log.logInfoNS "booster" "get-model request"
@@ -414,13 +426,18 @@ respond stateVar =
                                     { satisfiable = RpcTypes.Unsat
                                     , substitution = Nothing
                                     }
+                            Left SMT.ReasonUnknown{} ->
+                                RpcTypes.GetModelResult
+                                    { satisfiable = RpcTypes.Unknown
+                                    , substitution = Nothing
+                                    }
                             Left SMT.Unknown ->
                                 RpcTypes.GetModelResult
                                     { satisfiable = RpcTypes.Unknown
                                     , substitution = Nothing
                                     }
                             Left other ->
-                                error $ "Unexpected result " <> show other <> "from getModelFor"
+                                error $ "Unexpected result " <> show other <> " from getModelFor"
                             Right subst ->
                                 let sort = fromMaybe (error "Unknown sort in input") $ sortOfJson req.state.term
                                     substitution
@@ -463,20 +480,20 @@ respond stateVar =
         state <- liftIO $ readMVar stateVar
         let mainName = fromMaybe state.defaultMain mbMainModule
         case Map.lookup mainName state.definitions of
-            Nothing -> pure $ Left $ RpcError.backendError RpcError.CouldNotFindModule mainName
+            Nothing -> pure $ Left $ RpcError.backendError $ RpcError.CouldNotFindModule mainName
             Just d -> action (d, state.mLlvmLibrary, state.mSMTOptions)
 
 handleSmtError :: JsonRpcHandler
 handleSmtError = JsonRpcHandler $ \case
     SMT.GeneralSMTError err -> runtimeError "problem" err
     SMT.SMTTranslationError err -> runtimeError "translation" err
-    SMT.SMTSolverUnknown premises preds -> do
+    SMT.SMTSolverUnknown reason premises preds -> do
         Log.logErrorNS "booster" "SMT returned `Unknown'"
 
         let bool = externaliseSort Pattern.SortBool -- predicates are terms of sort Bool
             externalise = Syntax.KJAnd bool . map (externalisePredicate bool) . Set.toList
             allPreds = addHeader $ Syntax.KJAnd bool [externalise premises, externalise preds]
-        pure $ RpcError.backendError RpcError.SmtSolverError $ toJSON allPreds
+        pure $ RpcError.backendError $ RpcError.SmtSolverError $ RpcError.ErrorWithTerm reason allPreds
   where
     runtimeError prefix err = do
         let msg = "SMT " <> prefix <> ": " <> err
