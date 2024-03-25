@@ -72,7 +72,7 @@ pattern ErrorOnly error = ErrorWithTermAndContext error Nothing Nothing
 -}
 data JsonRpcBackendError
     = CouldNotParsePattern ErrorWithTermAndContext
-    | CouldNotVerifyPattern ErrorWithTermAndContext
+    | CouldNotVerifyPattern [ErrorWithTermAndContext]
     | CouldNotFindModule Text.Text
     | ImplicationCheckError ErrorWithTermAndContext
     | SmtSolverError ErrorWithTermAndContext
