@@ -3,38 +3,42 @@
     "id": 1,
     "error": {
         "code": 2,
-        "data": {
-            "context": [
-                {
-                    "tag": "App",
-                    "name": "inj",
-                    "sorts": [
-                        {
-                            "tag": "SortApp",
-                            "name": "SortKItem",
-                            "args": []
-                        },
-                        {
-                            "tag": "SortApp",
-                            "name": "SortK",
-                            "args": []
-                        }
-                    ],
-                    "args": [
-                        {
-                            "tag": "EVar",
-                            "name": "VarX",
-                            "sort": {
+        "data": [
+            {
+                "term": {
+                    "format": "KORE",
+                    "version": 1,
+                    "term": {
+                        "tag": "App",
+                        "name": "inj",
+                        "sorts": [
+                            {
                                 "tag": "SortApp",
                                 "name": "SortKItem",
                                 "args": []
+                            },
+                            {
+                                "tag": "SortApp",
+                                "name": "SortK",
+                                "args": []
                             }
-                        }
-                    ]
-                }
-            ],
-            "error": "SortKItem{} is not a subsort of SortK{}"
-        },
+                        ],
+                        "args": [
+                            {
+                                "tag": "EVar",
+                                "name": "VarX",
+                                "sort": {
+                                    "tag": "SortApp",
+                                    "name": "SortKItem",
+                                    "args": []
+                                }
+                            }
+                        ]
+                    }
+                },
+                "error": "SortKItem{} is not a subsort of SortK{}"
+            }
+        ],
         "message": "Could not verify pattern"
     }
 }

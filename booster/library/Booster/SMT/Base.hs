@@ -14,6 +14,7 @@ import Data.ByteString.Char8 qualified as BS
 import Data.Data (Data)
 import Data.Hashable (Hashable)
 import Data.String
+import Data.Text (Text)
 import GHC.Generics (Generic)
 import Language.Haskell.TH.Syntax (Lift)
 
@@ -73,6 +74,7 @@ data ControlCommand
 data QueryCommand
     = CheckSat
     | GetValue [SExpr] -- for get-model
+    | GetReasonUnknown
     deriving stock (Eq, Ord, Show)
 
 data Response
@@ -81,6 +83,7 @@ data Response
     | Unsat
     | Unknown
     | Values [(SExpr, Value)]
+    | ReasonUnknown Text
     | Error BS.ByteString
     deriving stock (Eq, Ord, Show)
 

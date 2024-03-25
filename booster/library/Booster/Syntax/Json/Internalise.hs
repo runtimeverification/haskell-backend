@@ -12,6 +12,7 @@ module Booster.Syntax.Json.Internalise (
     internalisePredicates,
     lookupInternalSort,
     PatternError (..),
+    patternErrorToRpcError,
     internaliseSort,
     SortError (..),
     renderSortError,
@@ -39,7 +40,6 @@ import Control.Monad
 import Control.Monad.Extra
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.State
-import Data.Aeson (ToJSON (..), Value, object, (.=))
 import Data.Bifunctor
 import Data.ByteString.Char8 (ByteString, isPrefixOf)
 import Data.ByteString.Char8 qualified as BS
@@ -67,9 +67,11 @@ import Booster.Pattern.Base qualified as Internal
 import Booster.Pattern.Bool qualified as Internal
 import Booster.Pattern.Util (freeVariables, sortOfTerm, substituteInSort)
 import Booster.Prettyprinter (renderDefault)
+import Booster.Syntax.Json (addHeader)
 import Booster.Syntax.Json.Externalise (externaliseSort)
 import Booster.Syntax.ParsedKore.Parser (parsePattern)
 import Booster.Util (Flag (..))
+import Kore.JsonRpc.Error qualified as RpcError
 import Kore.Syntax.Json.Types qualified as Syntax
 
 pattern IsQQ, IsNotQQ :: Flag "qq"
@@ -648,38 +650,38 @@ a 'data' object.
 If the error is a sort error, the message will contain its information
 while the context provides the pattern where the error occurred.
 -}
-instance ToJSON PatternError where
-    toJSON = \case
-        NotSupported p ->
-            wrap "Pattern not supported" p
-        NoTermFound p ->
-            wrap "Pattern must contain at least one term" p
-        PatternSortError p sortErr ->
-            wrap (renderSortError sortErr) p
-        InconsistentPattern p ->
-            wrap "Inconsistent pattern" p
-        TermExpected p ->
-            wrap "Expected a term but found a predicate" p
-        PredicateExpected p ->
-            wrap "Expected a predicate but found a term" p
-        UnknownSymbol sym p ->
-            wrap ("Unknown symbol '" <> Syntax.getId sym <> "'") p
-        MacroOrAliasSymbolNotAllowed sym p ->
-            wrap ("Symbol '" <> Syntax.getId sym <> "' is a macro/alias") p
-        SubstitutionNotAllowed -> "Substitution predicates are not allowed here"
-        IncorrectSymbolArity p s expected got ->
-            wrap
-                ( "Inconsistent pattern. Symbol '"
-                    <> Syntax.getId s
-                    <> "' expected "
-                    <> (pack $ show expected)
-                    <> " arguments but got "
-                    <> (pack $ show got)
-                )
-                p
-      where
-        wrap :: Text -> Syntax.KorePattern -> Value
-        wrap msg p = object ["error" .= msg, "context" .= toJSON [p]]
+patternErrorToRpcError :: PatternError -> RpcError.ErrorWithTermAndContext
+patternErrorToRpcError = \case
+    NotSupported p ->
+        wrap "Pattern not supported" p
+    NoTermFound p ->
+        wrap "Pattern must contain at least one term" p
+    PatternSortError p sortErr ->
+        wrap (renderSortError sortErr) p
+    InconsistentPattern p ->
+        wrap "Inconsistent pattern" p
+    TermExpected p ->
+        wrap "Expected a term but found a predicate" p
+    PredicateExpected p ->
+        wrap "Expected a predicate but found a term" p
+    UnknownSymbol sym p ->
+        wrap ("Unknown symbol '" <> Syntax.getId sym <> "'") p
+    MacroOrAliasSymbolNotAllowed sym p ->
+        wrap ("Symbol '" <> Syntax.getId sym <> "' is a macro/alias") p
+    SubstitutionNotAllowed -> RpcError.ErrorOnly "Substitution predicates are not allowed here"
+    IncorrectSymbolArity p s expected got ->
+        wrap
+            ( "Inconsistent pattern. Symbol '"
+                <> Syntax.getId s
+                <> "' expected "
+                <> (pack $ show expected)
+                <> " arguments but got "
+                <> (pack $ show got)
+            )
+            p
+  where
+    wrap :: Text -> Syntax.KorePattern -> RpcError.ErrorWithTermAndContext
+    wrap err p = RpcError.ErrorWithTerm err $ addHeader p
 
 data SortError
     = UnknownSort Syntax.Sort

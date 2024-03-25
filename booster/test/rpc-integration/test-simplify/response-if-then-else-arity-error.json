@@ -5,8 +5,10 @@
         "code": 2,
         "data": [
             {
-                "context": [
-                    {
+                "term": {
+                    "format": "KORE",
+                    "version": 1,
+                    "term": {
                         "tag": "App",
                         "name": "inj",
                         "sorts": [
@@ -55,12 +57,14 @@
                             }
                         ]
                     }
-                ],
+                },
                 "error": "Expected a predicate but found a term"
             },
             {
-                "context": [
-                    {
+                "term": {
+                    "format": "KORE",
+                    "version": 1,
+                    "term": {
                         "tag": "App",
                         "name": "Lblite",
                         "sorts": [
@@ -91,7 +95,7 @@
                             }
                         ]
                     }
-                ],
+                },
                 "error": "Inconsistent pattern. Symbol 'Lblite' expected 3 arguments but got 2"
             }
         ],
