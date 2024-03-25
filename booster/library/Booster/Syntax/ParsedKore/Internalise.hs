@@ -14,6 +14,7 @@ module Booster.Syntax.ParsedKore.Internalise (
     lookupModule,
     DefinitionError (..),
     symb,
+    definitionErrorToRpcError,
 ) where
 
 import Control.Monad
@@ -21,7 +22,6 @@ import Control.Monad.Extra (mapMaybeM)
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.State
-import Data.Aeson (ToJSON (..), Value (..), object, (.=))
 import Data.Bifunctor (first, second)
 import Data.ByteString.Char8 (ByteString)
 import Data.Coerce (Coercible, coerce)
@@ -60,6 +60,7 @@ import Booster.Syntax.Json.Internalise
 import Booster.Syntax.ParsedKore.Base
 import Booster.Syntax.ParsedKore.Parser (ParsedSentence (SentenceSymbol), parseSentence)
 import Booster.Util (Flag (..))
+import Kore.JsonRpc.Error qualified as RpcError
 import Kore.Syntax.Json.Types (Id, Sort)
 import Kore.Syntax.Json.Types qualified as Syntax
 
@@ -1324,34 +1325,41 @@ instance Pretty DefinitionError where
         ElemSymbolNotFound sym ->
             pretty $ "Expected an element{} symbol " <> show sym
 
-{- | ToJSON instance (user-facing for add-module endpoint):
+{- | RPC error instance (user-facing for add-module endpoint):
 Renders the error string as 'error', with minimal context.
 -}
-instance ToJSON DefinitionError where
-    toJSON = \case
-        DuplicateSorts sorts ->
-            "Duplicate sorts" `withContext` map toJSON sorts
-        DuplicateSymbols syms ->
-            "Duplicate symbols" `withContext` map toJSON syms
-        DuplicateAliases aliases ->
-            "DuplicateAliases" `withContext` map toJSON aliases
-        DefinitionPatternError ref patErr ->
-            ("Pattern error at " <> render ref <> " in definition") `withContext` [toJSON patErr]
-        DefinitionAxiomError (MalformedRewriteRule rule) ->
-            "Malformed rewrite rule" `withContext` [toJSON rule]
-        DefinitionAxiomError (MalformedEquation rule) ->
-            "Malformed equation" `withContext` [toJSON rule]
-        DefinitionAxiomError (UnexpectedAxiom rule) ->
-            "Unknown kind of axiom" `withContext` [toJSON rule]
-        other ->
-            object ["error" .= render other, "context" .= Null]
-      where
-        withContext :: Text -> [Value] -> Value
-        withContext errMsg context =
-            object ["error" .= errMsg, "context" .= context]
+definitionErrorToRpcError :: DefinitionError -> RpcError.ErrorWithTermAndContext
+definitionErrorToRpcError = \case
+    DuplicateSorts sorts ->
+        "Duplicate sorts" `withContext` map (.name.getId) sorts
+    DuplicateSymbols syms ->
+        "Duplicate symbols" `withContext` map (.name.getId) syms
+    DuplicateAliases aliases ->
+        "DuplicateAliases" `withContext` map (.name.getId) aliases
+    DefinitionPatternError ref patErr ->
+        let err@RpcError.ErrorWithTermAndContext{context} = patternErrorToRpcError patErr
+         in err
+                { RpcError.context =
+                    Just $ "Pattern error at " <> render ref <> " in definition" : fromMaybe [] context
+                }
+    DefinitionAxiomError (MalformedRewriteRule rule) ->
+        "Malformed rewrite rule" `withContext` [renderOneLineText $ location rule]
+    DefinitionAxiomError (MalformedEquation rule) ->
+        "Malformed equation" `withContext` [renderOneLineText $ location rule]
+    DefinitionAxiomError (UnexpectedAxiom rule) ->
+        "Unknown kind of axiom" `withContext` [renderOneLineText $ location rule]
+    other ->
+        RpcError.ErrorOnly $ render other
+  where
+    withContext :: Text -> [Text] -> RpcError.ErrorWithTermAndContext
+    withContext = RpcError.ErrorWithContext
 
-        render :: Pretty a => a -> Text
-        render = renderOneLineText . pretty
+    render :: Pretty a => a -> Text
+    render = renderOneLineText . pretty
+
+    location rule =
+        either (const "unknown location") pretty $
+            runExcept (Attributes.readLocation rule.attributes)
 
 data AliasError
     = UnknownAlias AliasName

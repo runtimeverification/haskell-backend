@@ -60,7 +60,7 @@ import Kore.IndexedModule.MetadataTools (SmtMetadataTools)
 import Kore.Internal.TermLike (TermLike, VariableName)
 import Kore.JsonRpc (ServerState (..))
 import Kore.JsonRpc qualified as Kore
-import Kore.JsonRpc.Error hiding (Aborted)
+import Kore.JsonRpc.Error hiding (Aborted, error)
 import Kore.JsonRpc.Server
 import Kore.JsonRpc.Types (API, HaltReason (..), ReqOrRes (Req, Res))
 import Kore.JsonRpc.Types.Depth (Depth (..))

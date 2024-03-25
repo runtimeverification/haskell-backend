@@ -506,7 +506,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                 Execute
                     <$> ( simplifyResult res
                             `catch` ( \(err :: DecidePredicateUnknown) ->
-                                        pure res{reason = Aborted, unknownPredicate = Just . externaliseDecidePredicateUnknown $ err}
+                                        pure res{reason = Aborted, unknownPredicate = Just . snd . externaliseDecidePredicateUnknown $ err}
                                     )
                         )
             other -> pure other
