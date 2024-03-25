@@ -440,8 +440,17 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
                                          in decomposeList $
                                                 (var1, List.asInternal tools sort (l2' :|> var2))
                                                     : zip (toList l1) (toList start)
-                                    else failMatch "subject list is too short" -- TODO: think of a better message
-                    _ -> failMatch "unimplemented list matching case"
+                                    else failMatch "subject list is too short"
+                    -- this case is NOT redundant with the App_ general case below because we are matching internalized lists
+                    (App_ symbol1 children1, App_ symbol2 children2) ->
+                        if symbol1 == symbol2
+                            then decomposeList (zip children1 children2)
+                            else
+                                failMatch $
+                                    "distinct application symbols: " <> (unparseToText symbol1) <> ", " <> (unparseToText symbol2)
+                    _ ->
+                        failMatch
+                            "unimplemented list matching case"
         (App_ symbol1 children1, App_ symbol2 children2) ->
             if symbol1 == symbol2
                 then decomposeList (zip children1 children2)
