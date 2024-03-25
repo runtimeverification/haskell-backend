@@ -20,6 +20,7 @@ import Data.Functor (($>))
 import Text.Read
 
 import Booster.SMT.Base
+import Data.Text.Encoding (decodeUtf8)
 
 readResponse :: BS.ByteString -> Response
 readResponse =
@@ -36,11 +37,12 @@ responseP =
         <|> A.string "sat" $> Sat
         <|> A.string "unsat" $> Unsat
         <|> A.string "unknown" $> Unknown
-        <|> A.char '(' *> errOrValuesP <* A.char ')'
+        <|> A.char '(' *> errOrValuesOrReasonUnknownP <* A.char ')'
 
-errOrValuesP :: A.Parser Response
-errOrValuesP =
+errOrValuesOrReasonUnknownP :: A.Parser Response
+errOrValuesOrReasonUnknownP =
     A.string "error " *> (Error <$> stringP)
+        <|> A.string ":reason-unknown " *> (ReasonUnknown . decodeUtf8 <$> stringP)
         <|> Values <$> A.many1' pairP
 
 stringP :: A.Parser BS.ByteString
@@ -103,6 +105,7 @@ encodeQuery :: QueryCommand -> BS.Builder
 encodeQuery = \case
     CheckSat -> BS.shortByteString "(check-sat)"
     GetValue xs -> toBuilder $ List [atom "get-value", List xs]
+    GetReasonUnknown -> toBuilder $ List [atom "get-info", atom ":reason-unknown"]
 
 atom :: String -> SExpr
 atom = Atom . SMTId . BS.pack
