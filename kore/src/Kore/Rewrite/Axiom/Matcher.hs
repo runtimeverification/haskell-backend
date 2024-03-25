@@ -437,7 +437,7 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
                                     else failMatch "subject list is too short"
                     ( App_ symbol1 [InternalList_ InternalList{internalListChild = l1}, var1@(ElemVar_ _)]
                         , App_ symbol2 [InternalList_ InternalList{internalListChild = l2}, var2@(ElemVar_ _)]
-                        )
+                        ) -- NB: may need to add the symmetric case in future, i.e. VAR _List_ ListItem(X)
                             | List.isSymbolConcat symbol1
                             , symbol1 == symbol2 ->
                                 if length l1 <= length l2
