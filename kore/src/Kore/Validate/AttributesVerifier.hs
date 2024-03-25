@@ -150,7 +150,7 @@ verifyNoHookedSupersort indexedModule axiom subsorts = do
     let isHooked =
             getHasDomainValues
                 . hasDomainValues
-                . getSortAttributes (indexedModuleSyntax indexedModule)
+                . (unsafeGetSortAttributes (indexedModuleSyntax indexedModule))
                 . Subsort.supersort
         hookedSubsort = find isHooked subsorts
     for_ hookedSubsort $ \sort ->

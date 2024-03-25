@@ -240,7 +240,7 @@ translatePredicateWith tools sideCondition translateTerm predicate =
                     | builtinSort == Builtin.Int.sort -> pure SMT.tInt
                 _ -> translateSort tools variableSort & maybeToTranslator
         Attribute.Sort{hook = Hook{getHook}} =
-            sortAttributes tools variableSort
+            unsafeSortAttributes tools variableSort
 
 {- | Attempt to translate an arbitrary ML pattern for the solver.
  It should only be used in the 'Predicate' translator or in
@@ -270,7 +270,7 @@ translatePattern tools sideCondition translateTerm sort pat =
             _ -> empty
   where
     Attribute.Sort{hook = Hook{getHook}} =
-        sortAttributes tools sort
+        unsafeSortAttributes tools sort
 
     translateInt :: TermLike variable -> Translator variable monad SExpr
     translateInt pat'

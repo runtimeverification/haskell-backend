@@ -16,6 +16,7 @@ module Kore.IndexedModule.MetadataTools (
     extractMetadataTools,
     findSortConstructors,
     sortAttributes,
+    unsafeSortAttributes,
     applicationSorts,
     symbolAttributes,
 ) where
@@ -119,10 +120,19 @@ findSortConstructors
 sortAttributes ::
     MetadataTools sortConstructors smt attributes ->
     Sort ->
-    Attribute.Sort
+    Either String Attribute.Sort
 sortAttributes MetadataTools{syntax = MetadataSyntaxData sdata} =
     getSortAttributes sdata
 sortAttributes MetadataTools{syntax = MetadataSyntaxDataTable sdata} =
+    lookupThingIn (sortAttributeTable sdata)
+
+unsafeSortAttributes ::
+    MetadataTools sortConstructors smt attributes ->
+    Sort ->
+    Attribute.Sort
+unsafeSortAttributes MetadataTools{syntax = MetadataSyntaxData sdata} =
+    unsafeGetSortAttributes sdata
+unsafeSortAttributes MetadataTools{syntax = MetadataSyntaxDataTable sdata} =
     either error id . lookupThingIn (sortAttributeTable sdata)
 
 applicationSorts ::
