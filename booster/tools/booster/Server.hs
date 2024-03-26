@@ -43,10 +43,13 @@ import System.Exit
 import System.IO qualified as IO
 
 import Booster.CLOptions
-import Booster.Definition.Ceil (computeCeilsDefinition)
+import Booster.Definition.Attributes.Base (ComputedAxiomAttributes (notPreservesDefinednessReasons))
+import Booster.Definition.Base (HasSourceRef (sourceRef), RewriteRule (computedAttributes))
+import Booster.Definition.Ceil (ComputeCeilSummary (..), computeCeilsDefinition)
 import Booster.GlobalState
 import Booster.JsonRpc qualified as Booster
 import Booster.LLVM.Internal (mkAPI, withDLib)
+import Booster.Prettyprinter (renderText)
 import Booster.SMT.Base qualified as SMT (SExpr (..), SMTId (..))
 import Booster.SMT.Interface (SMTOptions (..))
 import Booster.Syntax.ParsedKore (loadDefinition)
@@ -79,6 +82,7 @@ import Kore.Log.Registry qualified as Log
 import Kore.Rewrite.SMT.Lemma (declareSMTLemmas)
 import Kore.Syntax.Definition (ModuleName (ModuleName), SentenceAxiom)
 import Options.SMT as KoreSMT (KoreSolverOptions (..), Solver (..))
+import Prettyprinter qualified as Pretty
 import Proxy (KoreServer (..), ProxyConfig (..))
 import Proxy qualified
 import SMT qualified as KoreSMT
@@ -151,16 +155,37 @@ main = do
 
                 withLogger reportDirectory koreLogOptions $ \actualLogAction -> do
                     mLlvmLibrary <- maybe (pure Nothing) (fmap Just . mkAPI) mdl
-                    definitions <-
+                    definitionsWithCeilSummaries <-
                         liftIO $
                             loadDefinition definitionFile
-                                >>= mapM (mapM ((fst <$>) . runNoLoggingT . computeCeilsDefinition mLlvmLibrary))
+                                >>= mapM (mapM (runNoLoggingT . computeCeilsDefinition mLlvmLibrary))
                                 >>= evaluate . force . either (error . show) id
-                    unless (isJust $ Map.lookup mainModuleName definitions) $ do
+                    unless (isJust $ Map.lookup mainModuleName definitionsWithCeilSummaries) $ do
                         flip runLoggingT monadLogger $
                             Logger.logErrorNS "proxy" $
                                 "Main module " <> mainModuleName <> " not found in " <> Text.pack definitionFile
                         liftIO exitFailure
+
+                    flip runLoggingT monadLogger $
+                        forM_ (Map.elems definitionsWithCeilSummaries) $ \(_, summaries) ->
+                            forM_ summaries $ \ComputeCeilSummary{rule, ceils} ->
+                                Logger.logOtherNS "booster" (Logger.LevelOther "Ceil") $
+                                    renderText $
+                                        Pretty.vsep $
+                                            [ "Partial symbols found in rule"
+                                            , Pretty.pretty (sourceRef rule)
+                                            , Pretty.indent 2 . Pretty.vsep $
+                                                map Pretty.pretty rule.computedAttributes.notPreservesDefinednessReasons
+                                            ]
+                                                <> if null ceils
+                                                    then ["discharged all ceils, rule preserves definedness"]
+                                                    else
+                                                        [ "rule does NOT preserve definedness. Partially computed ceils:"
+                                                        , Pretty.indent 2 . Pretty.vsep $
+                                                            map
+                                                                (either Pretty.pretty (\t -> "#Ceil(" Pretty.<+> Pretty.pretty t Pretty.<+> ")"))
+                                                                (Set.toList ceils)
+                                                        ]
 
                     mvarLogAction <- newMVar actualLogAction
                     let logAction = swappableLogger mvarLogAction
@@ -172,7 +197,7 @@ main = do
                         liftIO $
                             newMVar
                                 Booster.ServerState
-                                    { definitions
+                                    { definitions = Map.map fst definitionsWithCeilSummaries
                                     , defaultMain = mainModuleName
                                     , mLlvmLibrary
                                     , mSMTOptions = if boosterSMT then smtOptions else Nothing
