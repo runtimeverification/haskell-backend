@@ -394,13 +394,14 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
             decomposeBinder (inject variable1) term1 (inject variable2) term2
         (Exists_ _ variable1 term1, Exists_ _ variable2 term2) ->
             decomposeBinder (inject variable1) term1 (inject variable2) term2
-        (App_ symbol1 children1, App_ symbol2 children2) ->
-            if symbol1 == symbol2 && not (List.isSymbolConcat symbol1) -- List concatenation symbol is handled below
-                then decomposeList (zip children1 children2)
-                else
-                    failMatch $
-                        "distinct application symbols: " <> (unparseToText symbol1) <> ", " <> (unparseToText symbol2)
         (_, _)
+            | Just False <- List.isListSort tools sort
+            , (App_ symbol1 children1, App_ symbol2 children2) <- (pat, subject) ->
+                if symbol1 == symbol2
+                    then decomposeList (zip children1 children2)
+                    else
+                        failMatch $
+                            "distinct application symbols: " <> (unparseToText symbol1) <> ", " <> (unparseToText symbol2)
             | Just True <- List.isListSort tools sort ->
                 case (List.normalize pat, List.normalize subject) of
                     (Var_ var1, Var_ var2)
@@ -447,6 +448,12 @@ patternMatch' sideCondition ((MatchItem pat subject boundVars boundSet) : rest) 
                                                 (var1, List.asInternal tools sort (l2' :|> var2))
                                                     : zip (toList l1) (toList start)
                                     else failMatch "subject list is too short"
+                    (App_ symbol1 children1, App_ symbol2 children2) ->
+                        if symbol1 == symbol2
+                            then decomposeList (zip children1 children2)
+                            else
+                                failMatch $
+                                    "distinct application symbols: " <> (unparseToText symbol1) <> ", " <> (unparseToText symbol2)
                     _ ->
                         failMatch
                             "unimplemented list matching case"
