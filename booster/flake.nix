@@ -109,7 +109,11 @@
                 (ghcVersion pkgs).fourmolu)
               (haskell.lib.justStaticExecutables
                 (ghcVersion pkgs).hlint)
+              pkgs.hpack
             ];
+            shellHook = ''
+              hpack && hpack dev-tools
+            '';
           };
         cabal = let pkgs = nixpkgsFor system;
         in pkgs.booster-backend.pkgSet.shellFor {
