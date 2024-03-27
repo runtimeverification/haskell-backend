@@ -6,4 +6,4 @@ fourmolu_version=$(${fourmolu} --version | head -n1)
 # drop the prefix 'fourmolu ' which is 9 letters long
 fourmolu_version=${fourmolu_version:9}
 [[ ${fourmolu_version} == ${expected_fourmolu_version} ]] || { echo "Unexpected fourmolu version, got ${fourmolu_version}, expected ${expected_fourmolu_version}" ; exit 1 ; }
-git ls-files | grep '.*\.hs$' | xargs ${fourmolu} -d -o -XImportQualifiedPost -o -XTypeApplications -o -XPatternSynonyms -o -XBangPatterns -o -XOverloadedRecordDot -i
+git ls-files | grep '.*\.hs$' | xargs ${fourmolu} -o -XImportQualifiedPost -o -XTypeApplications -o -XPatternSynonyms -o -XBangPatterns -o -XOverloadedRecordDot -i
