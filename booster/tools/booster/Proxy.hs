@@ -476,7 +476,17 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                         simplified.state.term
                         case internalPattern of
                             Right (p, sub, unsup) ->
-                                pure $ Right (Booster.toExecState p sub unsup, simplified.logs)
+                                -- put back the ruleId, ruleSubstitution and rulePredicate that was originally passed to simplifyExecuteState
+                                -- this ensures the information from next states in a branch reponse doesn't get lost
+                                pure $
+                                    Right
+                                        ( (Booster.toExecState p sub unsup Nothing)
+                                            { ruleId = s.ruleId
+                                            , ruleSubstitution = s.ruleSubstitution
+                                            , rulePredicate = s.rulePredicate
+                                            }
+                                        , simplified.logs
+                                        )
                             Left err -> do
                                 Log.logWarnNS "proxy" $
                                     "Error processing execute state simplification result: "
