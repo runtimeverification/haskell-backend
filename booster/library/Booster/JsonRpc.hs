@@ -41,7 +41,7 @@ import Numeric.Natural
 import Prettyprinter (pretty)
 import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 
-import Booster.Definition.Attributes.Base (getUniqueId, uniqueId)
+import Booster.Definition.Attributes.Base (UniqueId, getUniqueId, uniqueId)
 import Booster.Definition.Base (KoreDefinition (..))
 import Booster.Definition.Base qualified as Definition (RewriteRule (..))
 import Booster.LLVM as LLVM (API)
@@ -543,9 +543,9 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                     { reason = RpcTypes.Branching
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported
+                    , state = toExecState p originalSubstitution unsupported Nothing
                     , nextStates =
-                        Just $ map (\(_, _, p') -> toExecState p' originalSubstitution unsupported) $ toList nexts
+                        Just $ map (\(_, muid, p') -> toExecState p' originalSubstitution unsupported muid) $ toList nexts
                     , rule = Nothing
                     , unknownPredicate = Nothing
                     }
@@ -556,7 +556,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                     { reason = RpcTypes.Stuck
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported
+                    , state = toExecState p originalSubstitution unsupported Nothing
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -568,7 +568,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                     { reason = RpcTypes.Vacuous
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported
+                    , state = toExecState p originalSubstitution unsupported Nothing
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -580,8 +580,8 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                     { reason = RpcTypes.CutPointRule
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported
-                    , nextStates = Just [toExecState next originalSubstitution unsupported]
+                    , state = toExecState p originalSubstitution unsupported Nothing
+                    , nextStates = Just [toExecState next originalSubstitution unsupported Nothing]
                     , rule = Just lbl
                     , unknownPredicate = Nothing
                     }
@@ -592,7 +592,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                     { reason = RpcTypes.TerminalRule
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported
+                    , state = toExecState p originalSubstitution unsupported Nothing
                     , nextStates = Nothing
                     , rule = Just lbl
                     , unknownPredicate = Nothing
@@ -604,7 +604,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                     { reason = RpcTypes.DepthBound
                     , depth
                     , logs
-                    , state = toExecState p originalSubstitution unsupported
+                    , state = toExecState p originalSubstitution unsupported Nothing
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -622,7 +622,7 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                                     (logSuccessfulSimplifications, logFailedSimplifications)
                                     (RewriteStepFailed failure)
                          in logs <|> abortRewriteLog
-                    , state = toExecState p originalSubstitution unsupported
+                    , state = toExecState p originalSubstitution unsupported Nothing
                     , nextStates = Nothing
                     , rule = Nothing
                     , unknownPredicate = Nothing
@@ -650,15 +650,16 @@ execResponse mbDuration req (d, traces, rr) originalSubstitution unsupported = c
                 (Nothing, xs@(_ : _)) -> Just xs
                 (Just t, xs) -> Just (t : xs)
 
-toExecState :: Pattern -> Map Variable Term -> [Syntax.KorePattern] -> RpcTypes.ExecuteState
-toExecState pat sub unsupported =
+toExecState ::
+    Pattern -> Map Variable Term -> [Syntax.KorePattern] -> Maybe UniqueId -> RpcTypes.ExecuteState
+toExecState pat sub unsupported muid =
     RpcTypes.ExecuteState
         { term = addHeader t
         , predicate = addHeader <$> addUnsupported p
         , substitution = addHeader <$> s
         , ruleSubstitution = Nothing
         , rulePredicate = Nothing
-        , ruleId = Nothing
+        , ruleId = getUniqueId <$> muid
         }
   where
     (t, p, s) = externalisePattern pat sub
@@ -826,7 +827,7 @@ mkLogRewriteTrace
                     let final = singleton $ case failure of
                             ApplyEquations.IndexIsNone trm ->
                                 Simplification
-                                    { originalTerm = Just $ execStateToKoreJson $ toExecState (Pattern.Pattern_ trm) mempty mempty
+                                    { originalTerm = Just $ execStateToKoreJson $ toExecState (Pattern.Pattern_ trm) mempty mempty Nothing
                                     , originalTermIndex = Nothing
                                     , origin = Booster
                                     , result = Failure{reason = "No index found for term", _ruleId = Nothing}
