@@ -12,7 +12,7 @@ extra-deps:
   - smtlib-backends-process-0.3
   - monad-validate-1.3.0.0
   - git: https://github.com/runtimeverification/haskell-backend.git
-    commit: e7ba3c7e5626d3b2dd61318e91704fd6bf47228e
+    commit: 531f7c1db1a9fad6d18cbcedb3cfd3e35d6b82a5
     subdirs:
       - kore
       - kore-rpc-types
