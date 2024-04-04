@@ -60,10 +60,6 @@ jobs:
             echo "Reformatted code pushed, aborting this workflow" | tee -a $GITHUB_STEP_SUMMARY
             exit 1
           fi
-      - name: Check code style
-        run: |
-          nix develop .#fourmolu --command bash -c "hlint --version && hlint -gj"
-
 
   nix-build:
     name: 'Nix / Unit Tests'
@@ -211,7 +207,7 @@ jobs:
     needs: formatting
     runs-on: ubuntu-22.04
     env:
-      hlint_version: "3.5"
+      hlint_version: "3.6.1"
     steps:
       - uses: actions/checkout@v4
         with:
