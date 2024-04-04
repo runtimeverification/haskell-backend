@@ -135,11 +135,11 @@ test_sortDeclaration =
         ]
     , testsForModule
         "Constructors work (declared with sorts)"
-        ( indexModule $
-            emptyModule "m"
-                `with` sortDeclaration "S"
-                `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
-                `with` constructorAxiom "S" [("C", [])]
+        ( indexModule
+            $ emptyModule "m"
+            `with` sortDeclaration "S"
+            `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
+            `with` constructorAxiom "S" [("C", [])]
         )
         [ isSatisfiable
             [ SMT.assert (atom (encodeName "C") `eq` atom (encodeName "C"))
@@ -147,10 +147,10 @@ test_sortDeclaration =
         ]
     , testsForModule
         "Declares smtlib without name encoding"
-        ( indexModule $
-            emptyModule "m"
-                `with` sortDeclaration "S"
-                `with` (symbolDeclaration "C" "S" [] `with` smtlib "C")
+        ( indexModule
+            $ emptyModule "m"
+            `with` sortDeclaration "S"
+            `with` (symbolDeclaration "C" "S" [] `with` smtlib "C")
         )
         [ isSatisfiable
             [ SMT.assert (atom "C" `eq` atom "C")
@@ -158,13 +158,13 @@ test_sortDeclaration =
         ]
     , testsForModule
         "Uses smtlib name for constructor"
-        ( indexModule $
-            emptyModule "m"
-                `with` sortDeclaration "S"
-                `with` ( symbolDeclaration "C" "S" []
-                            `with` smtlib "C"
-                            `with` constructor
-                       )
+        ( indexModule
+            $ emptyModule "m"
+            `with` sortDeclaration "S"
+            `with` ( symbolDeclaration "C" "S" []
+                        `with` smtlib "C"
+                        `with` constructor
+                   )
         )
         [ isSatisfiable
             [ SMT.assert (atom "C" `eq` atom "C")
@@ -175,25 +175,25 @@ test_sortDeclaration =
         ]
     , testsForModule
         "Encodes smtlib name for constructor"
-        ( indexModule $
-            emptyModule "m"
-                `with` sortDeclaration "S"
-                `with` ( symbolDeclaration "C" "S" []
-                            `with` smtlib "D"
-                            `with` constructor
-                            `with` functional
-                       )
-                `with` constructorAxiom "S" [("C", [])]
+        ( indexModule
+            $ emptyModule "m"
+            `with` sortDeclaration "S"
+            `with` ( symbolDeclaration "C" "S" []
+                        `with` smtlib "D"
+                        `with` constructor
+                        `with` functional
+                   )
+            `with` constructorAxiom "S" [("C", [])]
         )
         [ isSatisfiableWithTools
-            [ encodeAndAssertPredicate $
-                makeEqualsPredicate
+            [ encodeAndAssertPredicate
+                $ makeEqualsPredicate
                     (mkElemVar x)
                     c
             ]
         , isNotSatisfiableWithTools
-            [ encodeAndAssertPredicate $
-                makeNotPredicate
+            [ encodeAndAssertPredicate
+                $ makeNotPredicate
                     ( makeEqualsPredicate
                         (mkElemVar x)
                         c
@@ -221,13 +221,13 @@ test_sortDeclaration =
         SMT SExpr
     encodePredicate tools predicate = do
         expr <-
-            runMaybeT $
-                evalTranslator $
-                    translatePredicateWith
-                        tools
-                        SideCondition.top
-                        translateTerm
-                        predicate
+            runMaybeT
+                $ evalTranslator
+                $ translatePredicateWith
+                    tools
+                    SideCondition.top
+                    translateTerm
+                    predicate
         maybe (error "Could not encode predicate") return expr
 
     sSortId :: Id
@@ -265,29 +265,29 @@ test_resolve :: [TestTree]
 test_resolve =
     [ testCase "Builtin indirect declaration" $ do
         let verifiedModule =
-                indexModule $
-                    emptyModule "m"
-                        `with` sortDeclaration "S1"
-                        `with` sortDeclaration "S2"
-                        `with` sortDeclaration "S3"
-                        `with` (symbolDeclaration "C" "S1" ["S2", "S3"] `with` smthook "c")
+                indexModule
+                    $ emptyModule "m"
+                    `with` sortDeclaration "S1"
+                    `with` sortDeclaration "S2"
+                    `with` sortDeclaration "S3"
+                    `with` (symbolDeclaration "C" "S1" ["S2", "S3"] `with` smthook "c")
             smtDeclarations = resolveSymbolsAndSorts verifiedModule
             actual = extractSortDependencies smtDeclarations
             expected = []
         assertEqual "" expected actual
     , testCase "Constructor indirect declaration" $ do
         let verifiedModule =
-                indexModule $
-                    emptyModule "m"
-                        `with` sortDeclaration "S1"
-                        `with` sortDeclaration "S2"
-                        `with` sortDeclaration "S3"
-                        `with` ( symbolDeclaration "C" "S1" ["S2", "S3"]
-                                    `with` smtlib "D"
-                                    `with` constructor
-                                    `with` functional
-                               )
-                        `with` constructorAxiom "S1" [("C", ["S2", "S3"])]
+                indexModule
+                    $ emptyModule "m"
+                    `with` sortDeclaration "S1"
+                    `with` sortDeclaration "S2"
+                    `with` sortDeclaration "S3"
+                    `with` ( symbolDeclaration "C" "S1" ["S2", "S3"]
+                                `with` smtlib "D"
+                                `with` constructor
+                                `with` functional
+                           )
+                    `with` constructorAxiom "S1" [("C", ["S2", "S3"])]
             smtDeclarations = resolveSymbolsAndSorts verifiedModule
             actual = extractSortDependencies smtDeclarations
             expected = ["S1", "S2", "S3"] & fmap (Atom . encodeName)

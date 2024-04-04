@@ -82,5 +82,5 @@ instance Synthetic Sort (BinaryOr Sort) where
     synthetic BinaryOr{orSort, orFirst, orSecond} =
         orSort
             & seq (sameSort orSort orFirst)
-                . seq (sameSort orSort orSecond)
+            . seq (sameSort orSort orSecond)
     {-# INLINE synthetic #-}

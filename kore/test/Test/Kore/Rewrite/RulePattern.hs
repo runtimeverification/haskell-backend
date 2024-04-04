@@ -54,8 +54,8 @@ test_refreshRule =
     , testCase "no stale variables" $ do
         let (renaming, _) = refreshRule mempty testRulePattern
         assertBool "expected not to rename variables" (null renaming)
-    , testGroup "stale existentials" $
-        let assertions (renaming, RulePattern{rhs}) = do
+    , testGroup "stale existentials"
+        $ let assertions (renaming, RulePattern{rhs}) = do
                 assertBool
                     "expected to refresh existentials"
                     (notElem Mock.y $ existentials rhs)
@@ -65,13 +65,13 @@ test_refreshRule =
                 assertBool
                     "expected not to rename free variables"
                     (null renaming)
-         in [ testCase "from outside" $ do
-                let stale = freeVariable (inject Mock.y)
-                assertions $ refreshRule stale testRulePattern
-            , testCase "from left-hand side" $ do
-                let input = testRulePattern{left = mkElemVar Mock.y}
-                assertions $ refreshRule mempty input
-            ]
+           in [ testCase "from outside" $ do
+                    let stale = freeVariable (inject Mock.y)
+                    assertions $ refreshRule stale testRulePattern
+              , testCase "from left-hand side" $ do
+                    let input = testRulePattern{left = mkElemVar Mock.y}
+                    assertions $ refreshRule mempty input
+              ]
     ]
 
 testRulePattern :: RulePattern VariableName
@@ -81,8 +81,8 @@ testRulePattern =
             -- Include an implicitly-quantified variable.
             mkElemVar Mock.x
         , antiLeft =
-            Just $
-                AntiLeft
+            Just
+                $ AntiLeft
                     { aliasTerm = mkElemVar Mock.u
                     , maybeInner = Nothing
                     , leftHands = []

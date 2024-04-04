@@ -63,8 +63,9 @@ asInternal ::
     Bool ->
     TermLike variable
 asInternal builtinBoolSort builtinBoolValue =
-    TermLike.markSimplified . mkInternalBool $
-        asBuiltin builtinBoolSort builtinBoolValue
+    TermLike.markSimplified
+        . mkInternalBool
+        $ asBuiltin builtinBoolSort builtinBoolValue
 
 asBuiltin ::
     -- | resulting sort

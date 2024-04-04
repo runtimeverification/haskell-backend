@@ -87,27 +87,32 @@ monoidTests =
             $ assertEqual
                 ""
                 mempty
-            $ wrap mempty <> wrap emptyRawSubst
+            $ wrap mempty
+            <> wrap emptyRawSubst
         , testCase "empty <> normalized == normalized"
             $ assertEqual
                 ""
                 (unsafeWrapFromAssignments singletonSubst)
-            $ wrap mempty <> unsafeWrapFromAssignments singletonSubst
+            $ wrap mempty
+            <> unsafeWrapFromAssignments singletonSubst
         , testCase "empty normalized <> normalized == normalized"
             $ assertEqual
                 ""
                 (unsafeWrapFromAssignments singletonSubst)
-            $ emptySubst <> unsafeWrapFromAssignments singletonSubst
+            $ emptySubst
+            <> unsafeWrapFromAssignments singletonSubst
         , testCase "normalized <> empty == normalized"
             $ assertEqual
                 ""
                 (unsafeWrapFromAssignments singletonSubst)
-            $ unsafeWrapFromAssignments singletonSubst <> wrap mempty
+            $ unsafeWrapFromAssignments singletonSubst
+            <> wrap mempty
         , testCase "normalized <> empty normalized == normalized"
             $ assertEqual
                 ""
                 (unsafeWrapFromAssignments singletonSubst)
-            $ unsafeWrapFromAssignments singletonSubst <> emptySubst
+            $ unsafeWrapFromAssignments singletonSubst
+            <> emptySubst
         ]
 
 unwrapTests :: TestTree
@@ -123,15 +128,15 @@ unwrapTests =
             $ assertEqual
                 ""
                 singletonSubst
-                . unwrap
-                . wrap
+            . unwrap
+            . wrap
             $ singletonSubst
         , testCase "unwrap . unsafeWrap == id"
             $ assertEqual
                 ""
                 singletonSubst
-                . unwrap
-                . unsafeWrapFromAssignments
+            . unwrap
+            . unsafeWrapFromAssignments
             $ singletonSubst
         ]
 
@@ -143,19 +148,19 @@ modifyTests =
             $ assertEqual
                 ""
                 (wrap singletonSubst)
-                . modify id
+            . modify id
             $ wrap singletonSubst
         , testCase "modify id normalized substitution un-normalizes"
             $ assertEqual
                 ""
                 (wrap singletonSubst)
-                . modify id
+            . modify id
             $ unsafeWrapFromAssignments singletonSubst
         , testCase "modify empty subst == id"
             $ assertEqual
                 ""
                 mempty
-                . modify id
+            . modify id
             $ emptySubst
         ]
 
@@ -167,25 +172,25 @@ mapVariablesTests =
             $ assertEqual
                 ""
                 (wrap mempty)
-                . mapVariables (pure id)
+            . mapVariables (pure id)
             $ emptySubst
         , testCase "map id over wrap empty is normalized empty"
             $ assertEqual
                 ""
                 (wrap mempty)
-                . mapVariables (pure id)
+            . mapVariables (pure id)
             $ wrap emptyRawSubst
         , testCase "map id over singleton == id"
             $ assertEqual
                 ""
                 (wrap singletonSubst)
-                . mapVariables (pure id)
+            . mapVariables (pure id)
             $ wrap singletonSubst
         , testCase "map id over normalized singletonSubst"
             $ assertEqual
                 ""
                 (wrap singletonSubst)
-                . mapVariables (pure id)
+            . mapVariables (pure id)
             $ unsafeWrapFromAssignments singletonSubst
         ]
 
@@ -197,19 +202,19 @@ isNormalizedTests =
             $ assertEqual
                 ""
                 True
-                . isNormalized
+            . isNormalized
             $ emptySubst
         , testCase "wrap is not normalized"
             $ assertEqual
                 ""
                 False
-                . isNormalized
+            . isNormalized
             $ wrap singletonSubst
         , testCase "unsafeWrap is normalized"
             $ assertEqual
                 ""
                 True
-                . isNormalized
+            . isNormalized
             $ unsafeWrapFromAssignments singletonSubst
         ]
 
@@ -221,25 +226,25 @@ nullTests =
             $ assertEqual
                 ""
                 True
-                . null
+            . null
             $ wrap emptyRawSubst
         , testCase "unsafeWrap empty is null"
             $ assertEqual
                 ""
                 True
-                . null
+            . null
             $ unsafeWrapFromAssignments emptyRawSubst
         , testCase "nonempty is not null"
             $ assertEqual
                 ""
                 False
-                . null
+            . null
             $ wrap singletonSubst
         , testCase "nonempty normalized is not null"
             $ assertEqual
                 ""
                 False
-                . null
+            . null
             $ unsafeWrapFromAssignments singletonSubst
         ]
 
@@ -256,19 +261,19 @@ variablesTests =
             $ assertEqual
                 ""
                 mempty
-                . variables
+            . variables
             $ wrap emptyRawSubst
         , testCase "singleton normalized subst has one variable"
             $ assertEqual
                 ""
                 (Set.fromList $ assignedVariable <$> singletonSubst)
-                . variables
+            . variables
             $ unsafeWrapFromAssignments singletonSubst
         , testCase "singleton subst has one variable"
             $ assertEqual
                 ""
                 (Set.fromList $ assignedVariable <$> singletonSubst)
-                . variables
+            . variables
             $ wrap singletonSubst
         ]
 
@@ -276,8 +281,8 @@ orderRenameAndRenormalizeTODOTests :: TestTree
 orderRenameAndRenormalizeTODOTests =
     testGroup
         "Reverse RHS if equal to variable"
-        [ testCase "empty subst unchanged" $
-            assertEqual
+        [ testCase "empty subst unchanged"
+            $ assertEqual
                 ""
                 emptySubst
                 (orderRenameAndRenormalizeTODO (inject Mock.x) emptySubst)
@@ -295,11 +300,13 @@ orderRenameAndRenormalizeTODOTests =
                 (orderRenameAndRenormalizeTODO (inject Mock.x) subst)
         , testCase "unnormalized reverses RHS" $ do
             let expectedSubst =
-                    wrap . mkUnwrappedSubstitution $
-                        [(varX, pattY)]
+                    wrap
+                        . mkUnwrappedSubstitution
+                        $ [(varX, pattY)]
                 originalSubst =
-                    wrap . mkUnwrappedSubstitution $
-                        [(varY, pattX)]
+                    wrap
+                        . mkUnwrappedSubstitution
+                        $ [(varY, pattX)]
             assertEqual
                 ""
                 expectedSubst
@@ -309,11 +316,13 @@ orderRenameAndRenormalizeTODOTests =
                 )
         , testCase "unnormalized does not reverse RHS" $ do
             let expectedSubst =
-                    wrap . mkUnwrappedSubstitution $
-                        [(varX, pattY)]
+                    wrap
+                        . mkUnwrappedSubstitution
+                        $ [(varX, pattY)]
                 originalSubst =
-                    wrap . mkUnwrappedSubstitution $
-                        [(varX, pattY)]
+                    wrap
+                        . mkUnwrappedSubstitution
+                        $ [(varX, pattY)]
             assertEqual
                 ""
                 expectedSubst
@@ -330,11 +339,13 @@ orderRenameAndRenormalizeTODOTests =
                 (orderRenameAndRenormalizeTODO (inject Mock.x) originalSubst)
         , testCase "unnormalized reverses multiple RHS" $ do
             let expectedSubst =
-                    wrap . mkUnwrappedSubstitution $
-                        [(varX, pattY), (varX, pattZ)]
+                    wrap
+                        . mkUnwrappedSubstitution
+                        $ [(varX, pattY), (varX, pattZ)]
                 originalSubst =
-                    wrap . mkUnwrappedSubstitution $
-                        [(varY, pattX), (varZ, pattX)]
+                    wrap
+                        . mkUnwrappedSubstitution
+                        $ [(varY, pattX), (varZ, pattX)]
             assertEqual
                 ""
                 expectedSubst
@@ -410,8 +421,8 @@ test_toPredicate =
         assertEqual
             "a = b"
             (makeAndPredicate pr1 makeTruePredicate)
-            ( toPredicate $
-                wrap
+            ( toPredicate
+                $ wrap
                     [assign (inject $ a Mock.testSort) (mkElemVar $ b Mock.testSort)]
             )
 

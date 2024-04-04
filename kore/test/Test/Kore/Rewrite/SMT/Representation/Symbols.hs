@@ -69,11 +69,11 @@ test_symbolParsing =
         ]
     , testsForModule
         "Definition with constructors"
-        ( indexModule $
-            emptyModule "m"
-                `with` sortDeclaration "S"
-                `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
-                `with` constructorAxiom "S" [("C", [])]
+        ( indexModule
+            $ emptyModule "m"
+            `with` sortDeclaration "S"
+            `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
+            `with` constructorAxiom "S" [("C", [])]
         )
         [ inDeclarations
             (unresolvedConstructorSymbolMap (testId "C") (koreSort "S") [])
@@ -81,15 +81,15 @@ test_symbolParsing =
         ]
     , testsForModule
         "Definition with complex constructor-based sorts"
-        ( indexModule $
-            emptyModule "m"
-                `with` sortDeclaration "S"
-                `with` sortDeclaration "T"
-                `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
-                `with` ( symbolDeclaration "D" "S" ["T"]
-                            `with` [functional, constructor]
-                       )
-                `with` constructorAxiom "S" [("C", []), ("D", ["T"])]
+        ( indexModule
+            $ emptyModule "m"
+            `with` sortDeclaration "S"
+            `with` sortDeclaration "T"
+            `with` (symbolDeclaration "C" "S" [] `with` [functional, constructor])
+            `with` ( symbolDeclaration "D" "S" ["T"]
+                        `with` [functional, constructor]
+                   )
+            `with` constructorAxiom "S" [("C", []), ("D", ["T"])]
         )
         [ inDeclarations
             (unresolvedConstructorSymbolMap (testId "C") (koreSort "S") [])
@@ -104,11 +104,11 @@ test_symbolParsing =
         ]
     , testsForModule
         "Declares smtlib without name encoding"
-        ( indexModule $
-            emptyModule "m"
-                `with` sortDeclaration "S"
-                `with` sortDeclaration "T"
-                `with` (symbolDeclaration "C" "S" ["T"] `with` smtlib "c")
+        ( indexModule
+            $ emptyModule "m"
+            `with` sortDeclaration "S"
+            `with` sortDeclaration "T"
+            `with` (symbolDeclaration "C" "S" ["T"] `with` smtlib "c")
         )
         [ inDeclarations
             ( unresolvedSmtlibSymbolMap
@@ -121,12 +121,12 @@ test_symbolParsing =
         ]
     , testsForModule
         "Declares smthook"
-        ( indexModule $
-            emptyModule "m"
-                `with` (hookedSortDeclaration "Integer" `with` hook Int.sort)
-                `with` ( symbolDeclaration "minus" "Integer" ["Integer"]
-                            `with` smthook "-"
-                       )
+        ( indexModule
+            $ emptyModule "m"
+            `with` (hookedSortDeclaration "Integer" `with` hook Int.sort)
+            `with` ( symbolDeclaration "minus" "Integer" ["Integer"]
+                        `with` smthook "-"
+                   )
         )
         [ inDeclarations
             ( unresolvedSmthookSymbolMap

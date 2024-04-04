@@ -55,11 +55,11 @@ instance Entry LogJsonRpcServer where
             (loc_package loc)
                 ++ ':'
                 : (loc_module loc)
-                ++ ' '
+                    ++ ' '
                 : (loc_filename loc)
-                ++ ':'
+                    ++ ':'
                 : (line loc)
-                ++ ':'
+                    ++ ':'
                 : (char loc)
           where
             line = show . fst . loc_start

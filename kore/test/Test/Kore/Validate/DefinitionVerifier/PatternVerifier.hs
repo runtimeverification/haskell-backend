@@ -143,8 +143,8 @@ test_patternVerifier =
             Mu
                 { muVariable = objectSetVariable'
                 , muChild =
-                    externalize $
-                        Internal.mkSetVar anotherSetVariable
+                    externalize
+                        $ Internal.mkSetVar anotherSetVariable
                 }
         )
         (NamePrefix "dummy")
@@ -175,8 +175,8 @@ test_patternVerifier =
             Nu
                 { nuVariable = objectSetVariable'
                 , nuChild =
-                    externalize $
-                        Internal.mkSetVar anotherSetVariable
+                    externalize
+                        $ Internal.mkSetVar anotherSetVariable
                 }
         )
         (NamePrefix "dummy")
@@ -210,8 +210,8 @@ test_patternVerifier =
                 { existsSort = objectSort
                 , existsVariable = objectVariable'
                 , existsChild =
-                    embedParsedPattern $
-                        simpleExistsPattern
+                    embedParsedPattern
+                        $ simpleExistsPattern
                             objectVariableSortVariable
                             objectSortVariableSort
                 }
@@ -472,8 +472,8 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = intSort
                 , domainValueChild =
-                    externalize $
-                        Internal.mkStringLiteral "abcd" -- Not a decimal integer
+                    externalize
+                        $ Internal.mkStringLiteral "abcd" -- Not a decimal integer
                 }
         )
         (NamePrefix "dummy")
@@ -488,8 +488,8 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = intSort
                 , domainValueChild =
-                    externalize $
-                        Internal.mkStringLiteral "-256"
+                    externalize
+                        $ Internal.mkStringLiteral "-256"
                 }
         )
         (NamePrefix "dummy")
@@ -504,8 +504,8 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = intSort
                 , domainValueChild =
-                    externalize $
-                        Internal.mkStringLiteral "1024"
+                    externalize
+                        $ Internal.mkStringLiteral "1024"
                 }
         )
         (NamePrefix "dummy")
@@ -520,8 +520,8 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = intSort
                 , domainValueChild =
-                    externalize $
-                        Internal.mkStringLiteral "+128"
+                    externalize
+                        $ Internal.mkStringLiteral "+128"
                 }
         )
         (NamePrefix "dummy")
@@ -550,8 +550,8 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = boolSort
                 , domainValueChild =
-                    externalize $
-                        Internal.mkStringLiteral "untrue" -- Not a BOOL.Bool
+                    externalize
+                        $ Internal.mkStringLiteral "untrue" -- Not a BOOL.Bool
                 }
         )
         (NamePrefix "dummy")
@@ -566,8 +566,8 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = boolSort
                 , domainValueChild =
-                    externalize $
-                        Internal.mkStringLiteral "true"
+                    externalize
+                        $ Internal.mkStringLiteral "true"
                 }
         )
         (NamePrefix "dummy")
@@ -582,8 +582,8 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = boolSort
                 , domainValueChild =
-                    externalize $
-                        Internal.mkStringLiteral "false"
+                    externalize
+                        $ Internal.mkStringLiteral "false"
                 }
         )
         (NamePrefix "dummy")
@@ -606,8 +606,8 @@ test_patternVerifier =
             DomainValue
                 { domainValueSort = intSort
                 , domainValueChild =
-                    externalize $
-                        Internal.mkStringLiteral "1" -- Not a decimal integer
+                    externalize
+                        $ Internal.mkStringLiteral "1" -- Not a decimal integer
                 }
         )
         (NamePrefix "dummy")
@@ -943,8 +943,8 @@ objectPatternInAllContexts
                     { existsSort = testedSort
                     , existsVariable = anotherVariable
                     , existsChild =
-                        externalize $
-                            Internal.mkElemVar anotherVariable
+                        externalize
+                            $ Internal.mkElemVar anotherVariable
                     }
         anotherVariable =
             mkElementVariable (testId (namePrefix <> "_anotherVar")) testedSort
@@ -1113,8 +1113,10 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
             ErrorStack
                 [ "\\exists '"
                     ++ getIdForError
-                        ( base . unElementVariableName . variableName $
-                            quantifiedVariable
+                        ( base
+                            . unElementVariableName
+                            . variableName
+                            $ quantifiedVariable
                         )
                     ++ "' (<test data>)"
                 ]
@@ -1132,8 +1134,10 @@ patternInQuantifiedPatterns testedPattern testedSort quantifiedVariable =
             ErrorStack
                 [ "\\forall '"
                     ++ getIdForError
-                        ( base . unElementVariableName . variableName $
-                            quantifiedVariable
+                        ( base
+                            . unElementVariableName
+                            . variableName
+                            $ quantifiedVariable
                         )
                     ++ "' (<test data>)"
                 ]

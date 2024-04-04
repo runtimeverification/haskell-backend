@@ -14,7 +14,7 @@ test_Klabel :: [TestTree]
 test_Klabel =
     [ testCase "[klabel{}(\"string\")] :: Klabel"
         $ expectSuccess Klabel{getKlabel = Just "string"}
-            . parseKlabel
+        . parseKlabel
         $ Attributes [klabelAttribute "string"]
     , testCase "[klabel{}(\"string\")] :: Attributes" $ do
         let attrs = Attributes [klabelAttribute "string"]

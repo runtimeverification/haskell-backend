@@ -55,7 +55,8 @@ makeMetadataTools ::
 makeMetadataTools attr sortTypes sorts declarations sortConstructors =
     MetadataTools
         { syntax =
-            MetadataSyntaxDataTable $
+            MetadataSyntaxDataTable
+                $
                 -- TODO(Vladimir): fix the inconsistency that both 'subsorts' and
                 -- 'isSubsortOf' only work with direct (non-transitive) relationships.
                 -- For now, we can manually add the relationships for tests.

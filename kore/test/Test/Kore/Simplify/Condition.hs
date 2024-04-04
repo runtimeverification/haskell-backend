@@ -371,9 +371,9 @@ conditionRunSimplifier ::
     Condition RewritingVariableName ->
     IO (OrCondition RewritingVariableName)
 conditionRunSimplifier axiomEquations predicate =
-    fmap MultiOr.make $
-        Test.testRunSimplifierBranch env $
-            simplifier SideCondition.top predicate
+    fmap MultiOr.make
+        $ Test.testRunSimplifierBranch env
+        $ simplifier SideCondition.top predicate
   where
     env = Mock.env{axiomEquations}
     ConditionSimplifier simplifier =

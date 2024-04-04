@@ -85,7 +85,8 @@ parseBugReportOption =
     parseBugReportEnable <|> parseBugReportDisable
   where
     parseBugReportEnable =
-        BugReportEnable . BugReport
+        BugReportEnable
+            . BugReport
             <$> strOption
                 ( metavar "REPORT_FILE"
                     <> long "bug-report"
@@ -115,7 +116,9 @@ writeBugReportArchive base tar = do
             removeFile sessionCommands
     contents <- listDirectory base
     let filename = tar <.> "tar" <.> "gz"
-    ByteString.Lazy.writeFile filename . GZip.compress . Tar.write
+    ByteString.Lazy.writeFile filename
+        . GZip.compress
+        . Tar.write
         =<< Tar.pack base contents
     (hPutStrLn stderr . unwords) ["Created bug report:", filename]
 

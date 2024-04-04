@@ -353,18 +353,18 @@ unifyOverloadingVsOverloadedVariable
             case getOverloadedWithinSort injProto overloadingHead injFrom of
                 Right Nothing -> Just notUnifiableOverloads
                 Right (Just overHead) ->
-                    Just $
-                        Resolution $
-                            WithNarrowing $
-                                computeNarrowing
-                                    overloadSimplifier
-                                    overloadingTerm
-                                    Nothing
-                                    overloadingHead
-                                    injProto
-                                    freeVars
-                                    overloadedVar
-                                    overHead
+                    Just
+                        $ Resolution
+                        $ WithNarrowing
+                        $ computeNarrowing
+                            overloadSimplifier
+                            overloadingTerm
+                            Nothing
+                            overloadingHead
+                            injProto
+                            freeVars
+                            overloadedVar
+                            overHead
                 Left err -> error err
       where
         freeVars = freeVariables overloadingTerm
@@ -409,18 +409,18 @@ unifyOverloadingInjVsVariable
                     (Just InjectedOverloadPair{overloadingSymbol, overloadedSymbol}) ->
                         let (InjectedOverload headUnion maybeInjUnion) = overloadingSymbol
                             first' = resolveOverloading injProto headUnion firstChildren
-                         in Just $
-                                Resolution $
-                                    WithNarrowing $
-                                        computeNarrowing
-                                            overloadSimplifier
-                                            first'
-                                            maybeInjUnion
-                                            headUnion
-                                            injProto
-                                            freeVars
-                                            overloadedVar
-                                            overloadedSymbol
+                         in Just
+                                $ Resolution
+                                $ WithNarrowing
+                                $ computeNarrowing
+                                    overloadSimplifier
+                                    first'
+                                    maybeInjUnion
+                                    headUnion
+                                    injProto
+                                    freeVars
+                                    overloadedVar
+                                    overloadedSymbol
         | otherwise = Nothing
       where
         OverloadSimplifier

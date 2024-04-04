@@ -387,7 +387,8 @@ evalEq sideCondition resultSort arguments@[_intLeft, _intRight] =
     concrete = do
         _intLeft <- expectBuiltinInt eqKey _intLeft
         _intRight <- expectBuiltinInt eqKey _intRight
-        _intLeft == _intRight
+        _intLeft
+            == _intRight
             & Bool.asPattern resultSort
             & return
 

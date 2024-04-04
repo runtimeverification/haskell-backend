@@ -403,8 +403,8 @@ assertSymbolResultSort indexedModule symbolId expectedSort = do
     (_, decl) <- IndexedModule.resolveSymbol indexedModule symbolId
     let SentenceSymbol{sentenceSymbolResultSort = actualSort} = decl
         SentenceSymbol{sentenceSymbolSymbol = symbol} = decl
-    unless (actualSort == expectedSort) $
-        Kore.Error.koreFailWithLocations
+    unless (actualSort == expectedSort)
+        $ Kore.Error.koreFailWithLocations
             [symbol]
             ( "Symbol does not return sort '"
                 <> unparseToText expectedSort
@@ -476,8 +476,8 @@ verifySortHasDomainValues = SortVerifier worker
         Attributes ->
         Either (Error VerifyError) Attribute.Sort
     parseSortAttributes rawSortAttributes =
-        Attribute.Parser.liftParser $
-            Attribute.Parser.parseAttributes rawSortAttributes
+        Attribute.Parser.liftParser
+            $ Attribute.Parser.parseAttributes rawSortAttributes
 
 expectDomainValue ::
     Monad m =>
@@ -493,8 +493,9 @@ expectDomainValue ctx =
                 StringLiteral_ text ->
                     return text
                 _ ->
-                    verifierBug $
-                        Text.unpack ctx ++ ": Domain value is not a string literal"
+                    verifierBug
+                        $ Text.unpack ctx
+                        ++ ": Domain value is not a string literal"
         _ -> empty
 
 -- | Wildcard for sort verification on parameterized builtin sorts

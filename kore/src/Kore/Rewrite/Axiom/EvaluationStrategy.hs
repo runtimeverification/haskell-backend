@@ -105,12 +105,13 @@ attemptEquationAndAccumulateErrors condition term equation =
     attemptEquation
   where
     attemptEquation =
-        ExceptRT . ExceptT $
-            Equation.attemptEquation
+        ExceptRT
+            . ExceptT
+            $ Equation.attemptEquation
                 condition
                 term
                 equation
-                >>= either (return . Left . Just . Min) (fmap Right . apply)
+            >>= either (return . Left . Just . Min) (fmap Right . apply)
     apply = Equation.applyEquation condition term equation
 
 attemptEquations ::
@@ -218,9 +219,10 @@ mkEvaluator equations =
         if null simplificationRules
             then Nothing
             else
-                Just . firstFullEvaluation $
-                    simplificationEvaluation
-                        <$> simplificationRules
+                Just
+                    . firstFullEvaluation
+                    $ simplificationEvaluation
+                    <$> simplificationRules
     definitionEvaluator =
         if null functionRules
             then Nothing

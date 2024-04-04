@@ -101,8 +101,8 @@ verifyUncachedModule name = whileImporting name $ do
                         verifyClaims sentences
                 )
     _ <-
-        withModuleContext name $
-            internalIndexedModuleSubsorts indexedModule
+        withModuleContext name
+            $ internalIndexedModuleSubsorts indexedModule
     field @"verifiedModules" %= Map.insert name indexedModule
     return indexedModule
 

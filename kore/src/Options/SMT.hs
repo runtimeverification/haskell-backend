@@ -166,8 +166,8 @@ unparseKoreSolverOptions
                 <$> maybeLimit Nothing Just unwrappedRetryLimit
             , (\limit -> unwords ["--smt-rlimit", show limit])
                 <$> maybeLimit Nothing Just unwrappedRLimit
-            , pure $
-                unwords
+            , pure
+                $ unwords
                     [ "--smt-reset-interval"
                     , show . getResetInterval $ resetInterval
                     ]
@@ -184,11 +184,11 @@ data Solver = Z3 | None
 
 parseSolver :: Parser Solver
 parseSolver =
-    option (snd <$> readSum longName options) $
-        metavar "SOLVER"
-            <> long longName
-            <> help ("SMT solver for checking constraints: " <> knownOptions)
-            <> value Z3
+    option (snd <$> readSum longName options)
+        $ metavar "SOLVER"
+        <> long longName
+        <> help ("SMT solver for checking constraints: " <> knownOptions)
+        <> value Z3
   where
     longName = "smt"
     knownOptions = intercalate ", " (map fst options)
@@ -216,8 +216,8 @@ writeKoreSolverFiles :: KoreSolverOptions -> FilePath -> IO ()
 writeKoreSolverFiles
     KoreSolverOptions{prelude = Prelude unwrappedPrelude}
     reportFile =
-        for_ unwrappedPrelude $
-            flip copyFile (reportFile </> defaultSmtPreludeFilePath)
+        for_ unwrappedPrelude
+            $ flip copyFile (reportFile </> defaultSmtPreludeFilePath)
 
 -- | Ensure that the SMT prelude file exists, if specified.
 ensureSmtPreludeExists :: KoreSolverOptions -> IO ()

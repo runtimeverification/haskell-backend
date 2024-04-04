@@ -558,7 +558,8 @@ matchUnifyEquals tools first second
     worker a b isFirstMatched
         | InternalMap_ normalized1 <- a
         , InternalMap_ normalized2 <- b =
-            NormAc . NormAcData normalized1 normalized2 term1 term2
+            NormAc
+                . NormAcData normalized1 normalized2 term1 term2
                 <$> Ac.matchUnifyEqualsNormalizedAc
                     tools
                     normalized1
@@ -766,8 +767,8 @@ unifyNotInKeys resultSort unifyChildren unifyData =
             -- the terms are all wrapped in \ceil below.
             unificationSolutions <-
                 fmap eraseTerm <$> Unify.gather (unifyChildren t1 t2)
-            liftSimplifier $
-                (notSimplifier SideCondition.top)
+            liftSimplifier
+                $ (notSimplifier SideCondition.top)
                     Not
                         { notSort = resultSort
                         , notChild = OrPattern.fromPatterns unificationSolutions

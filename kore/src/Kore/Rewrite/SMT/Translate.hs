@@ -275,8 +275,8 @@ translatePattern tools sideCondition translateTerm sort pat =
     translateInt :: TermLike variable -> Translator variable monad SExpr
     translateInt pat'
         | SideCondition.isDefined sideCondition pat' =
-            withDefinednessAssumption $
-                translateIntWorker pat'
+            withDefinednessAssumption
+                $ translateIntWorker pat'
         | otherwise =
             translateIntWorker pat'
 
@@ -292,8 +292,8 @@ translatePattern tools sideCondition translateTerm sort pat =
     translateBool :: TermLike variable -> Translator variable monad SExpr
     translateBool pat'
         | SideCondition.isDefined sideCondition pat' =
-            withDefinednessAssumption $
-                translateBoolWorker pat'
+            withDefinednessAssumption
+                $ translateBoolWorker pat'
         | otherwise =
             translateBoolWorker pat'
 
@@ -401,8 +401,8 @@ translateSMTDependentAtom
         maybe empty (return . SimpleSMT.fun funName) boundEncodings
       where
         boundEncodings =
-            for boundVars $
-                \name -> SMT.Atom . smtName <$> Map.lookup name quantifiedVars
+            for boundVars
+                $ \name -> SMT.Atom . smtName <$> Map.lookup name quantifiedVars
 
 -- ----------------------------------------------------------------
 -- Translator
@@ -515,19 +515,22 @@ backTranslateWith
         backTranslate :: SExpr -> Except String (TermLike variable)
         backTranslate s@(Atom t)
             | isVarName t =
-                maybe (throwError $ "backtranslate: unbound atom" <> show t) pure $
-                    Map.lookup s reverseMap
+                maybe (throwError $ "backtranslate: unbound atom" <> show t) pure
+                    $ Map.lookup s reverseMap
             -- Bool values are translated back to _terms_ not predicates
             | t == "true" =
-                pure . TermLike.mkInternalBool $
-                    InternalBool (simpleSort "SortBool") True
+                pure
+                    . TermLike.mkInternalBool
+                    $ InternalBool (simpleSort "SortBool") True
             | t == "false" =
-                pure . TermLike.mkInternalBool $
-                    InternalBool (simpleSort "SortBool") False
+                pure
+                    . TermLike.mkInternalBool
+                    $ InternalBool (simpleSort "SortBool") False
             | Text.all isDigit t =
-                pure . TermLike.mkInternalInt $
-                    InternalInt (simpleSort "SortInt") $
-                        read (Text.unpack t)
+                pure
+                    . TermLike.mkInternalInt
+                    $ InternalInt (simpleSort "SortInt")
+                    $ read (Text.unpack t)
             | otherwise =
                 throwError $ "unable to translate atom " <> show t
         backTranslate (List xs)
@@ -549,8 +552,10 @@ backTranslateWith
 
         isVarName :: Text -> Bool
         isVarName t =
-            Text.head t == '<'
-                && Text.last t == '>'
+            Text.head t
+                == '<'
+                && Text.last t
+                == '>'
                 && Text.all isDigit (Text.init $ Text.tail t)
 
         -- Reverse map of symbol metadata (collisions forbidden).

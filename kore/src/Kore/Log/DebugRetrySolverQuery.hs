@@ -32,16 +32,16 @@ newtype DebugRetrySolverQuery = DebugRetrySolverQuery
 
 instance Pretty DebugRetrySolverQuery where
     pretty DebugRetrySolverQuery{predicates} =
-        Pretty.vsep $
-            [ "The SMT solver initially failed to solve the following query:"
-            , Pretty.indent 2 "Decide predicate:"
-            , Pretty.indent 4 (pretty predicate)
-            , Pretty.indent 2 "with side conditions:"
-            ]
-                <> fmap (Pretty.indent 4 . pretty) sideConditions
-                <> [ "The SMT solver was reset and the query\
-                     \ was tried one more time."
-                   ]
+        Pretty.vsep
+            $ [ "The SMT solver initially failed to solve the following query:"
+              , Pretty.indent 2 "Decide predicate:"
+              , Pretty.indent 4 (pretty predicate)
+              , Pretty.indent 2 "with side conditions:"
+              ]
+            <> fmap (Pretty.indent 4 . pretty) sideConditions
+            <> [ "The SMT solver was reset and the query\
+                 \ was tried one more time."
+               ]
       where
         predicate :| sideConditions = predicates
 

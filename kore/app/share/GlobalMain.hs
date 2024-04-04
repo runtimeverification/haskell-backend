@@ -563,8 +563,8 @@ execute ::
     SMT r ->
     Main r
 execute options metadataTools lemmas worker =
-    clockSomethingIO "Executing" $
-        case solver of
+    clockSomethingIO "Executing"
+        $ case solver of
             Z3 -> withZ3
             None -> withoutSMT
   where
@@ -639,8 +639,8 @@ makeSerializedDefinition solverOptions definitionFileName mainModuleName = do
     let metadataTools = MetadataTools.build mainModule
     let lemmas = getSMTLemmas mainModule
     serializedModule <-
-        execute solverOptions metadataTools lemmas $
-            makeSerializedModule mainModule
+        execute solverOptions metadataTools lemmas
+            $ makeSerializedModule mainModule
     let locations = kFileLocations definition
     internedTextCache <- lift $ readIORef globalInternedTextCache
     let serializedDefinition =
@@ -674,8 +674,8 @@ loadDefinitions filePaths =
         let sources' = filter notDefault (nub sources)
         (indexedModules, definedNames) <-
             Monad.foldM verifyDefinitionWithBase mempty parsedDefinitions
-        return $
-            LoadedDefinition
+        return
+            $ LoadedDefinition
                 indexedModules
                 definedNames
                 (KFileLocations sources')
@@ -738,4 +738,4 @@ addExtraAxioms ::
 addExtraAxioms definitionModule moduleWithExtraAxioms =
     definitionModule
         & field @"indexedModuleAxioms"
-            <>~ indexedModuleAxioms moduleWithExtraAxioms
+        <>~ indexedModuleAxioms moduleWithExtraAxioms

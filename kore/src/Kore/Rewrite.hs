@@ -276,8 +276,8 @@ deriveResults Result.Results{results, remainders} =
             (_, simplifyRules :: Seq SimplifierTrace) <- lift get
             lift $ modify $ \(cache, _rules) -> (cache, mempty)
             addRule (RewriteRule $ extract appliedRule, simplifyRules)
-            pure $
-                Rewritten
+            pure
+                $ Rewritten
                     (RuleInfo (predicate appliedRule) (substitution appliedRule) $ from $ extract appliedRule)
                     result
     addRemainders remainders' =

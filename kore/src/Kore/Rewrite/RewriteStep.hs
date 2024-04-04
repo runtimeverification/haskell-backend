@@ -370,9 +370,9 @@ finalizeSequence
                     & Monad.Trans.lift
             let unification = Conditional.withoutTerm unifiedRule
                 remainder' =
-                    Condition.fromPredicate $
-                        Remainder.remainder' $
-                            MultiOr.singleton unification
+                    Condition.fromPredicate
+                        $ Remainder.remainder'
+                        $ MultiOr.singleton unification
             State.put (remainder `Conditional.andCondition` remainder')
             return results
 

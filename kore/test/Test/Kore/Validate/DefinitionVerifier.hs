@@ -707,8 +707,8 @@ simpleExistsEqualsParsedPattern ::
     ResultSort ->
     ParsedPattern
 simpleExistsEqualsParsedPattern name operandSort resultSort =
-    externalize $
-        simpleExistsEqualsTermLike name operandSort resultSort
+    externalize
+        $ simpleExistsEqualsTermLike name operandSort resultSort
 
 simpleExistsEqualsTermLike ::
     Text ->
@@ -719,8 +719,8 @@ simpleExistsEqualsTermLike
     name
     (OperandSort operandSort)
     (ResultSort resultSort) =
-        Internal.mkExists var $
-            Internal.mkEquals resultSort variablePattern' variablePattern'
+        Internal.mkExists var
+            $ Internal.mkEquals resultSort variablePattern' variablePattern'
       where
         variablePattern' = Internal.mkElemVar var
         var = mkElementVariable (testId name) operandSort
@@ -746,8 +746,8 @@ applicationParsedPatternWithParams ::
     [Sort] ->
     ParsedPattern
 applicationParsedPatternWithParams resultSort name params =
-    externalize $
-        applicationUnifiedPatternWithParams resultSort name params
+    externalize
+        $ applicationUnifiedPatternWithParams resultSort name params
 
 applicationUnifiedPatternWithParams ::
     Sort ->

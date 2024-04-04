@@ -255,18 +255,18 @@ runSimplifyRule ::
     rule ->
     IO [rule]
 runSimplifyRule rule =
-    fmap toList $
-        testRunSimplifier Mock.env $
-            simplifyRuleLhs rule
+    fmap toList
+        $ testRunSimplifier Mock.env
+        $ simplifyRuleLhs rule
 
 runSimplifyRuleSMT ::
     SimplifyRuleLHS rule =>
     rule ->
     IO [rule]
 runSimplifyRuleSMT rule =
-    fmap toList $
-        runSimplifierSMT Mock.env $
-            simplifyRuleLhs rule
+    fmap toList
+        $ runSimplifierSMT Mock.env
+        $ simplifyRuleLhs rule
 
 test_simplifyClaimRule :: [TestTree]
 test_simplifyClaimRule =
@@ -391,8 +391,8 @@ testSimplifyTerm testEnv sideCondition termLike = do
         TermLike variable ->
         TermLike variable
     applyReplacements replacements zero =
-        foldl' applyReplacement zero $
-            fmap liftReplacement replacements
+        foldl' applyReplacement zero
+            $ fmap liftReplacement replacements
 
     applyReplacement orig (ini, fin)
         | orig == ini = fin

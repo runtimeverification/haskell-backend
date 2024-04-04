@@ -74,7 +74,8 @@ simplifyTopConfigurationDefined configuration =
   where
     worker patt condition =
         makeEvaluate condition patt
-            >>= return . removeTopExists
+            >>= return
+            . removeTopExists
 
     term = Conditional.term configuration
     sideCondition = SideCondition.assumeDefined term

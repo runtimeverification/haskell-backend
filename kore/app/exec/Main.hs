@@ -399,14 +399,14 @@ parseKoreExecOptions startTime =
             "all" -> return All
             "any" -> return Any
             _ ->
-                readerError $
-                    show $
-                        OptPretty.hsep
-                            [ "Unknown option"
-                            , OptPretty.squotes (pretty val)
-                                <> OptPretty.dot
-                            , "Known options are 'all' and 'any'."
-                            ]
+                readerError
+                    $ show
+                    $ OptPretty.hsep
+                        [ "Unknown option"
+                        , OptPretty.squotes (pretty val)
+                            <> OptPretty.dot
+                        , "Known options are 'all' and 'any'."
+                        ]
 
 -- | modifiers for the Command line parser description
 parserInfoModifiers :: InfoMod options
@@ -482,12 +482,12 @@ koreExecSh
                             maxCounterexamples
                             _
                         ) =
-        unlines $
-            [ "#!/bin/sh"
-            , "exec kore-exec \\"
-            ]
-                <> fmap (\line -> "    " <> line <> " \\") options
-                <> ["    \"$@\""]
+        unlines
+            $ [ "#!/bin/sh"
+              , "exec kore-exec \\"
+              ]
+            <> fmap (\line -> "    " <> line <> " \\") options
+            <> ["    \"$@\""]
       where
         options =
             concat
@@ -561,8 +561,8 @@ writeOptionsAndKoreFiles
             copyFile
                 definitionKore
                 (reportDirectory </> defaultDefinitionFilePath opts)
-            for_ patternFileName $
-                flip copyFile (reportDirectory </> "pgm.kore")
+            for_ patternFileName
+                $ flip copyFile (reportDirectory </> "pgm.kore")
             writeKoreSolverFiles koreSolverOptions reportDirectory
             for_
                 koreSearchOptions
@@ -640,8 +640,8 @@ mainWithOptions LocalOptions{execOptions} = do
     handleWithConfiguration
         (Claim.WithConfiguration lastConfiguration someException) =
             do
-                liftIO $
-                    renderResult
+                liftIO
+                    $ renderResult
                         execOptions
                         ("// Last configuration:\n" <> unparse lastConfiguration)
                 throwM someException
@@ -693,9 +693,10 @@ koreSearch execOptions = do
             , rewrites
             } = serializedModule
         undefinedLabels = runValidate $ validateDebugOptions equations (rewriteRules rewrites) koreLogOptions
-    when (isLeft undefinedLabels) $
-        throwM . DebugOptionsValidationError $
-            fromLeft mempty undefinedLabels
+    when (isLeft undefinedLabels)
+        $ throwM
+        . DebugOptionsValidationError
+        $ fromLeft mempty undefinedLabels
     lift $ writeIORef globalInternedTextCache internedTextCache
     let KoreSearchOptions
             { searchFileName
@@ -706,8 +707,8 @@ koreSearch execOptions = do
     initial <- loadPattern metadataTools verifiedModule patternFileName
     let config = Search.Config{bound, searchType}
     final <-
-        execute koreSolverOptions metadataTools lemmas $
-            search
+        execute koreSolverOptions metadataTools lemmas
+            $ search
                 depthLimit
                 breadthLimit
                 serializedModule
@@ -742,14 +743,15 @@ koreRun execOptions = do
             , rewrites
             } = serializedModule
         undefinedLabels = runValidate $ validateDebugOptions equations (rewriteRules rewrites) koreLogOptions
-    when (isLeft undefinedLabels) $
-        throwM . DebugOptionsValidationError $
-            fromLeft mempty undefinedLabels
+    when (isLeft undefinedLabels)
+        $ throwM
+        . DebugOptionsValidationError
+        $ fromLeft mempty undefinedLabels
     lift $ writeIORef globalInternedTextCache internedTextCache
     initial <- loadPattern metadataTools verifiedModule patternFileName
     (exitCode, final) <-
-        execute koreSolverOptions metadataTools lemmas $
-            exec
+        execute koreSolverOptions metadataTools lemmas
+            $ exec
                 Nothing
                 DisableMovingAverage
                 depthLimit
@@ -853,8 +855,8 @@ koreProve execOptions = do
 
     lift $ for_ saveProofs $ saveProven specModule provenClaims
     lift $ renderResult execOptions (unparse final)
-    when (unexplored /= 0) $
-        warnUnexploredBranches unexplored
+    when (unexplored /= 0)
+        $ warnUnexploredBranches unexplored
     return (kFileLocations definition, exitCode)
   where
     failure pat = (ExitFailure 1, pat)

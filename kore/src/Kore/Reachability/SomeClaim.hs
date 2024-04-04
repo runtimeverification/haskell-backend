@@ -139,8 +139,8 @@ instance From SomeClaim (AxiomPattern VariableName) where
 
 instance From SomeClaim Verified.Sentence where
     from claim =
-        Syntax.SentenceClaimSentence $
-            Syntax.SentenceClaim
+        Syntax.SentenceClaimSentence
+            $ Syntax.SentenceClaim
                 Syntax.SentenceAxiom
                     { sentenceAxiomParameters = []
                     , sentenceAxiomPattern

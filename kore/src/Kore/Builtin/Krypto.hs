@@ -250,25 +250,25 @@ evalECDSAPubKey =
     evalWorker :: Builtin.Function
     evalWorker _ resultSort [input] = do
         sec_key <- InternalBytes.expectBuiltinBytes input
-        return $
-            String.asPattern resultSort $
-                if ByteString.length sec_key /= 32
-                    then ""
-                    else unsafePerformIO $ Secp256k1.unsafeUseByteString sec_key $ \(sec_key_ptr, _) -> allocaBytes 64 $ \pub_key_ptr -> do
-                        createdKeySuccessfully <-
-                            Secp256k1.isSuccess <$> Secp256k1.ecPubKeyCreate secp256k1Ctx pub_key_ptr sec_key_ptr
-                        if not createdKeySuccessfully
-                            then pure ""
-                            else alloca $ \len_ptr -> allocaBytes 65 $ \out_ptr -> do
-                                poke len_ptr 65
-                                serializedKeySuccessfully <-
-                                    Secp256k1.isSuccess
-                                        <$> Secp256k1.ecPubKeySerialize secp256k1Ctx out_ptr len_ptr pub_key_ptr Secp256k1.uncompressed
-                                if not serializedKeySuccessfully
-                                    then pure ""
-                                    else do
-                                        final_len <- peek len_ptr
-                                        toBase16 . ByteString.tail <$> Secp256k1.packByteString (out_ptr, final_len)
+        return
+            $ String.asPattern resultSort
+            $ if ByteString.length sec_key /= 32
+                then ""
+                else unsafePerformIO $ Secp256k1.unsafeUseByteString sec_key $ \(sec_key_ptr, _) -> allocaBytes 64 $ \pub_key_ptr -> do
+                    createdKeySuccessfully <-
+                        Secp256k1.isSuccess <$> Secp256k1.ecPubKeyCreate secp256k1Ctx pub_key_ptr sec_key_ptr
+                    if not createdKeySuccessfully
+                        then pure ""
+                        else alloca $ \len_ptr -> allocaBytes 65 $ \out_ptr -> do
+                            poke len_ptr 65
+                            serializedKeySuccessfully <-
+                                Secp256k1.isSuccess
+                                    <$> Secp256k1.ecPubKeySerialize secp256k1Ctx out_ptr len_ptr pub_key_ptr Secp256k1.uncompressed
+                            if not serializedKeySuccessfully
+                                then pure ""
+                                else do
+                                    final_len <- peek len_ptr
+                                    toBase16 . ByteString.tail <$> Secp256k1.packByteString (out_ptr, final_len)
     evalWorker _ _ _ = Builtin.wrongArity ecdsaPubKey
 
 evalECDSARecover :: BuiltinAndAxiomSimplifier
@@ -302,10 +302,10 @@ signatureToKey ::
     Integer ->
     ByteString
 signatureToKey messageHash r s v =
-    assert (27 <= v && v <= 34) $
-        ByteString.drop 1 $
-            encodePoint compressed $
-                recoverPublicKey recId (r, s) messageHash
+    assert (27 <= v && v <= 34)
+        $ ByteString.drop 1
+        $ encodePoint compressed
+        $ recoverPublicKey recId (r, s) messageHash
   where
     recId = v - 27
     compressed = v >= 31
@@ -316,17 +316,17 @@ recoverPublicKey ::
     Integer ->
     Point
 recoverPublicKey recId (r, s) e =
-    assert (recId >= 0) $
-        assert (r >= 0) $
-            assert (s >= 0) $
-                assert (pt_x <= p) $
-                    assert (pointMul p256k1 n pt == PointO) $
-                        pointAddTwoMuls
-                            p256k1
-                            (mulMod n (invMod n r) s)
-                            pt
-                            (mulMod n (invMod n r) (n - e `mod` n))
-                            (ecc_g curveParams)
+    assert (recId >= 0)
+        $ assert (r >= 0)
+        $ assert (s >= 0)
+        $ assert (pt_x <= p)
+        $ assert (pointMul p256k1 n pt == PointO)
+        $ pointAddTwoMuls
+            p256k1
+            (mulMod n (invMod n r) s)
+            pt
+            (mulMod n (invMod n r) (n - e `mod` n))
+            (ecc_g curveParams)
   where
     p256k1 = getCurveByName SEC_p256k1
     CurvePrime p curveParams =

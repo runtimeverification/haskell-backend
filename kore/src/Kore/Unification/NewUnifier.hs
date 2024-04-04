@@ -622,9 +622,9 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                             , List.isSymbolConcat symbol2 ->
                                 let (l1', var1', l2', var2') = if length l1 <= length l2 then (l1, var1, l2, var2) else (l2, var2, l1, var1)
                                     (start, left) = Seq.splitAt (length l1') l2'
-                                 in decomposeList $
-                                        (var1', mkApplySymbol symbol1 [List.asInternal tools sort left, var2'])
-                                            : zip (toList l1') (toList start)
+                                 in decomposeList
+                                        $ (var1', mkApplySymbol symbol1 [List.asInternal tools sort left, var2'])
+                                        : zip (toList l1') (toList start)
                     ( App_ symbol1 [var1@(ElemVar_ _), InternalList_ InternalList{internalListChild = l1}]
                         , App_ symbol2 [var2@(ElemVar_ _), InternalList_ InternalList{internalListChild = l2}]
                         )
@@ -632,9 +632,9 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                             , List.isSymbolConcat symbol2 ->
                                 let (l1', var1', l2', var2') = if length l1 <= length l2 then (l1, var1, l2, var2) else (l2, var2, l1, var1)
                                     (left, end) = Seq.splitAt (length l2' - length l1') l2'
-                                 in decomposeList $
-                                        (var1', mkApplySymbol symbol1 [var2', List.asInternal tools sort left])
-                                            : zip (toList l1') (toList end)
+                                 in decomposeList
+                                        $ (var1', mkApplySymbol symbol1 [var2', List.asInternal tools sort left])
+                                        : zip (toList l1') (toList end)
                     ( InternalList_ InternalList{internalListChild = l1}
                         , InternalList_ InternalList{internalListChild = l2}
                         ) ->
@@ -862,11 +862,11 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
     unifyIfThenElse condition branch1 branch2 other = do
         (bool, branch) <- Logic.scatter [(True, branch1), (False, branch2)]
         let newConstraints =
-                Condition.andCondition constraints $
-                    Condition.fromPredicate $
-                        makeCeilPredicate $
-                            mkAnd condition $
-                                Bool.asInternal (termLikeSort condition) bool
+                Condition.andCondition constraints
+                    $ Condition.fromPredicate
+                    $ makeCeilPredicate
+                    $ mkAnd condition
+                    $ Bool.asInternal (termLikeSort condition) bool
         unifyTerms'
             rootSort
             sideCondition
@@ -940,9 +940,10 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                   where
                     (fns, vrs) = partitionEithers (map elemVar opaque)
                 elements =
-                    Set.fromList $
-                        map (reconstructMapElement element) $
-                            normalElementsWithVariables ++ normalConcreteElements
+                    Set.fromList
+                        $ map (reconstructMapElement element)
+                        $ normalElementsWithVariables
+                        ++ normalConcreteElements
              in AcCollection{elements, variables, functions}
 
     reconstructMapElement element (key, val) = mkApplySymbol element [key, val]
@@ -965,9 +966,10 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
                   where
                     (fns, vrs) = partitionEithers (map elemVar opaque)
                 elements =
-                    Set.fromList $
-                        map (reconstructSetElement element) $
-                            normalElementsWithVariables ++ normalConcreteElements
+                    Set.fromList
+                        $ map (reconstructSetElement element)
+                        $ normalElementsWithVariables
+                        ++ normalConcreteElements
              in AcCollection{elements, variables, functions}
 
     reconstructSetElement element key = mkApplySymbol element [key]
@@ -1054,16 +1056,16 @@ unifyTerms' rootSort sideCondition origVars vars ((first, second) : rest) bindin
     acRecurse acSort bindings' vars' freeEqs =
         let newBindings = union bindings $ Map.fromList $ lefts bindings'
             newAcEquations = rights bindings'
-         in unifyTerms' rootSort sideCondition origVars vars' (freeEqs ++ rest) newBindings constraints $
-                Map.insert acSort (newAcEquations ++ Map.findWithDefault [] acSort acEquations) acEquations
+         in unifyTerms' rootSort sideCondition origVars vars' (freeEqs ++ rest) newBindings constraints
+                $ Map.insert acSort (newAcEquations ++ Map.findWithDefault [] acSort acEquations) acEquations
 
     acDecompose ::
         AcTerm ->
         AcTerm ->
         NewUnifier (Condition RewritingVariableName)
     acDecompose term1 term2 =
-        unifyTerms' rootSort sideCondition origVars vars rest bindings constraints $
-            Map.insert
+        unifyTerms' rootSort sideCondition origVars vars rest bindings constraints
+            $ Map.insert
                 (acSort term1)
                 (AcEquation term1 term2 : Map.findWithDefault [] (acSort term1) acEquations)
                 acEquations
@@ -1092,8 +1094,8 @@ solveAcEquations tools bindings vars sort acEquations =
         n = Set.size u
         constrainedVars = foldl' unionConstrainedVars Set.empty acEquations
         constrainedIndices =
-            IntSet.fromList $
-                map (flip Set.findIndex $ Set.mapMonotonic variableName u) (Set.toAscList constrainedVars)
+            IntSet.fromList
+                $ map (flip Set.findIndex $ Set.mapMonotonic variableName u) (Set.toAscList constrainedVars)
         system = Matrix.matrix p n (defect' newAcEquations u_vec)
         solved = solveDiophantineEquations system
         (newVars, vars') = mkVars sort (length solved) [] vars
@@ -1297,10 +1299,10 @@ mkVars ::
 mkVars _ 0 accum vars = (accum, vars)
 mkVars sort n accum vars =
     let varName =
-            ElementVariableName $
-                mkConfigVariable $
-                    mkVariableName $
-                        generatedId (Text.concat ["VarAC", Text.pack $ show n, "'Unds'"])
+            ElementVariableName
+                $ mkConfigVariable
+                $ mkVariableName
+                $ generatedId (Text.concat ["VarAC", Text.pack $ show n, "'Unds'"])
         newVar = Variable{variableName = varName, variableSort = sort}
         renamedVar = refreshVariable vars (inject newVar)
         finalVar = maybe newVar (fromJust . retract) renamedVar

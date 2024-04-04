@@ -151,8 +151,8 @@ lookupAlias symbolOrAlias = do
     let resolveAlias' = resolveAlias indexedModule aliasConstructor
     (_, decl) <- resolveAlias' `catchError` const empty
     aliasSorts <-
-        Trans.lift $
-            applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
+        Trans.lift
+            $ applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
     let aliasLeft = leftDefinition decl
         aliasRight = sentenceAliasRightPattern decl
     return
@@ -177,8 +177,8 @@ lookupSymbol symbolOrAlias = do
     let resolveSymbol' = resolveSymbol indexedModule symbolConstructor
     (symbolAttributes, decl) <- resolveSymbol' `catchError` const empty
     symbolSorts <-
-        Trans.lift $
-            applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
+        Trans.lift
+            $ applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
     let symbol =
             Internal.Symbol
                 { symbolConstructor
@@ -200,20 +200,21 @@ lookupDeclaredVariable varId = do
   where
     errorUnquantified :: PatternVerifier (SomeVariable VariableName)
     errorUnquantified =
-        koreFailWithLocations [varId] $
-            Pretty.renderText . Pretty.layoutOneLine $
-                Pretty.hsep
-                    [ "Unquantified variable:"
-                    , unparse varId
-                    ]
+        koreFailWithLocations [varId]
+            $ Pretty.renderText
+            . Pretty.layoutOneLine
+            $ Pretty.hsep
+                [ "Unquantified variable:"
+                , unparse varId
+                ]
 
 addDeclaredVariable ::
     SomeVariable VariableName ->
     DeclaredVariables ->
     DeclaredVariables
 addDeclaredVariable variable (getDeclaredVariables -> variables) =
-    DeclaredVariables $
-        Map.insert
+    DeclaredVariables
+        $ Map.insert
             (variableName variable)
             variable
             variables
@@ -236,13 +237,14 @@ newDeclaredVariable declared variable = do
     alreadyDeclared ::
         SomeVariable VariableName -> PatternVerifier DeclaredVariables
     alreadyDeclared variable' =
-        koreFailWithLocations [variable', variable] $
-            Pretty.renderText . Pretty.layoutOneLine $
-                Pretty.hsep
-                    [ "Variable"
-                    , unparse name
-                    , "was already declared."
-                    ]
+        koreFailWithLocations [variable', variable]
+            $ Pretty.renderText
+            . Pretty.layoutOneLine
+            $ Pretty.hsep
+                [ "Variable"
+                , unparse name
+                , "was already declared."
+                ]
 
 {- | Collect 'DeclaredVariables'.
 
@@ -287,12 +289,13 @@ assertSameSort expectedSort actualSort =
     koreFailWithLocationsWhen
         (expectedSort /= actualSort)
         [expectedSort, actualSort]
-        $ Pretty.renderText . Pretty.layoutCompact
+        $ Pretty.renderText
+        . Pretty.layoutCompact
         $ "Expecting sort"
-            <+> unparse expectedSort
-            <+> "but got"
-            <+> unparse actualSort
-                <> Pretty.dot
+        <+> unparse expectedSort
+        <+> "but got"
+        <+> unparse actualSort
+        <> Pretty.dot
 
 assertExpectedSort ::
     Maybe Sort ->

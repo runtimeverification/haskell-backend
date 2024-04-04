@@ -461,9 +461,9 @@ mapKeysAndValues ::
     HashMap a a ->
     HashMap b b
 mapKeysAndValues f hashMap =
-    HashMap.fromList $
-        Bifunctor.bimap f f
-            <$> HashMap.toList hashMap
+    HashMap.fromList
+        $ Bifunctor.bimap f f
+        <$> HashMap.toList hashMap
 
 fromDefinedTerms ::
     InternalVariable variable =>
@@ -546,13 +546,13 @@ simplifyConjunctionByAssumption ::
         , Assumptions variable
         )
 simplifyConjunctionByAssumption (toList -> andPredicates) =
-    (fmap . Bifunctor.first) MultiAnd.make $
-        flip runStateT (Assumptions HashMap.empty HashMap.empty) $
-            for (sortBySize andPredicates) $
-                \original -> do
-                    result <- applyAssumptions original
-                    assume result
-                    return result
+    (fmap . Bifunctor.first) MultiAnd.make
+        $ flip runStateT (Assumptions HashMap.empty HashMap.empty)
+        $ for (sortBySize andPredicates)
+        $ \original -> do
+            result <- applyAssumptions original
+            assume result
+            return result
   where
     -- Sorting by size ensures that every clause is considered before any clause
     -- which could contain it, because the containing clause is necessarily
@@ -584,19 +584,19 @@ simplifyConjunctionByAssumption (toList -> andPredicates) =
             case predicate of
                 PredicateNot notChild ->
                     -- Infer that the predicate is \bottom.
-                    Lens.over (field @"predicateMap") $
-                        HashMap.insert notChild makeFalsePredicate
+                    Lens.over (field @"predicateMap")
+                        $ HashMap.insert notChild makeFalsePredicate
                 _ ->
                     -- Infer that the predicate is \top.
-                    Lens.over (field @"predicateMap") $
-                        HashMap.insert predicate makeTruePredicate
+                    Lens.over (field @"predicateMap")
+                        $ HashMap.insert predicate makeTruePredicate
         assumeEqualTerms =
             case predicate of
                 PredicateEquals t1 t2 ->
                     case retractLocalFunction (Predicate.makeEqualsPredicate t1 t2) of
                         Just (Pair t1' t2') ->
-                            Lens.over (field @"termLikeMap") $
-                                HashMap.insert t1' t2'
+                            Lens.over (field @"termLikeMap")
+                                $ HashMap.insert t1' t2'
                         _ -> id
                 _ -> id
 
@@ -803,10 +803,10 @@ assumeDefined =
                     <> getConcreteValuesOfAc normalizedAc
                     & foldMap toList
             opaqueElems = opaque (unwrapAc normalizedAc)
-         in HashSet.fromList $
-                symbolicKeys
-                    <> opaqueElems
-                    <> values
+         in HashSet.fromList
+                $ symbolicKeys
+                <> opaqueElems
+                <> values
 
 {- | Checks if a 'TermLike' is defined. It may always be defined,
 or be defined in the context of the `SideCondition`.
@@ -831,14 +831,14 @@ isDefined sideCondition@SideCondition{definedTerms} term =
                             & HashSet.map TermLike.mkInternalMap
                  in isSymbolicSingleton internalMap
                         || subMaps
-                            `isNonEmptySubset` definedTerms
+                        `isNonEmptySubset` definedTerms
             TermLike.InternalSet_ internalSet ->
                 let subSets =
                         generateNormalizedAcs internalSet
                             & HashSet.map TermLike.mkInternalSet
                  in isSymbolicSingleton internalSet
                         || subSets
-                            `isNonEmptySubset` definedTerms
+                        `isNonEmptySubset` definedTerms
             _ -> False
 
     isNonEmptySubset subset set

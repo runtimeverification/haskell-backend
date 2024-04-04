@@ -227,8 +227,8 @@ debugRewriteTrace ::
     Results rule ->
     log ()
 debugRewriteTrace initial Result.Results{results = (toList -> results), remainders} =
-    unless (null results) $
-        logEntry
+    unless (null results)
+        $ logEntry
             DebugRewriteTrace
                 { initialPattern = getRewritingPattern initial
                 , rewriteResults = getResult <$> results

@@ -72,22 +72,22 @@ test_unparse =
                                             , sortActualSorts = []
                                             }
                                 , inContainedChild =
-                                    embedParsedPattern $
-                                        VariableF $
-                                            Const $
-                                                inject $
-                                                    mkElementVariable
-                                                        (testId "T")
-                                                        ( SortVariableSort
-                                                            SortVariable
-                                                                { getSortVariable = testId "C"
-                                                                }
-                                                        )
+                                    embedParsedPattern
+                                        $ VariableF
+                                        $ Const
+                                        $ inject
+                                        $ mkElementVariable
+                                            (testId "T")
+                                            ( SortVariableSort
+                                                SortVariable
+                                                    { getSortVariable = testId "C"
+                                                    }
+                                            )
                                 , inContainingChild =
-                                    embedParsedPattern $
-                                        StringLiteralF $
-                                            Const
-                                                StringLiteral{getStringLiteral = ""}
+                                    embedParsedPattern
+                                        $ StringLiteralF
+                                        $ Const
+                                            StringLiteral{getStringLiteral = ""}
                                 }
                         )
                     ]
@@ -182,33 +182,33 @@ test_parse =
     testGroup
         "Parse"
         [ testProperty "Generic testId" $ roundtrip idGen parseId
-        , testProperty "StringLiteral" $
-            roundtrip stringLiteralGen parseStringLiteral
+        , testProperty "StringLiteral"
+            $ roundtrip stringLiteralGen parseStringLiteral
         , testProperty "ElementVariable" $ do
             let gen = standaloneGen (elementVariableGen =<< sortGen)
             roundtrip gen parseElementVariable
         , testProperty "SetVariable" $ do
             let gen = standaloneGen (setVariableGen =<< sortGen)
             roundtrip gen parseSetVariable
-        , testProperty "Symbol" $
-            roundtrip symbolGen parseSymbolHead
-        , testProperty "Alias" $
-            roundtrip aliasGen parseAliasHead
-        , testProperty "SortVariable" $
-            roundtrip sortVariableGen parseSortVariable
-        , testProperty "Sort" $
-            roundtrip (standaloneGen sortGen) parseSort
+        , testProperty "Symbol"
+            $ roundtrip symbolGen parseSymbolHead
+        , testProperty "Alias"
+            $ roundtrip aliasGen parseAliasHead
+        , testProperty "SortVariable"
+            $ roundtrip sortVariableGen parseSortVariable
+        , testProperty "Sort"
+            $ roundtrip (standaloneGen sortGen) parseSort
         , testProperty "ParsedPattern" $ roundtrip korePatternGen parsePattern
-        , testProperty "Attributes" $
-            roundtrip (standaloneGen attributesGen) parseAttributes
-        , testProperty "Sentence" $
-            roundtrip (standaloneGen koreSentenceGen) parseSentence
-        , testProperty "Module" $
-            roundtrip
+        , testProperty "Attributes"
+            $ roundtrip (standaloneGen attributesGen) parseAttributes
+        , testProperty "Sentence"
+            $ roundtrip (standaloneGen koreSentenceGen) parseSentence
+        , testProperty "Module"
+            $ roundtrip
                 (standaloneGen $ moduleGen koreSentenceGen)
                 parseModule
-        , testProperty "Definition" $
-            roundtrip
+        , testProperty "Definition"
+            $ roundtrip
                 (standaloneGen $ definitionGen koreSentenceGen)
                 parseDefinition
         ]

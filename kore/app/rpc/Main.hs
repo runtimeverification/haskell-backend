@@ -176,18 +176,19 @@ koreRpcServerRun GlobalMain.LocalOptions{execOptions} = do
 
     loadedDefinition <- GlobalMain.loadDefinitions [definitionFileName]
     serverState <-
-        lift $
-            MVar.newMVar
+        lift
+            $ MVar.newMVar
                 ServerState
                     { serializedModules = Map.singleton mainModuleName sd
                     , loadedDefinition
                     , receivedModules = mempty
                     }
-    GlobalMain.clockSomethingIO "Executing" $
+    GlobalMain.clockSomethingIO "Executing"
+        $
         -- wrap the call to runServer in the logger monad
-        Log.LoggerT $
-            ReaderT $
-                \loggerEnv -> runServer port serverState mainModuleName (runSMT loggerEnv) loggerEnv
+        Log.LoggerT
+        $ ReaderT
+        $ \loggerEnv -> runServer port serverState mainModuleName (runSMT loggerEnv) loggerEnv
 
     pure ExitSuccess
   where
@@ -210,8 +211,9 @@ koreRpcServerRun GlobalMain.LocalOptions{execOptions} = do
         SMT.SMT a ->
         IO a
     runSMT Log.LoggerEnv{logAction} metadataTools lemmas m =
-        flip Log.runLoggerT logAction $
-            bracket (SMT.newSolver smtConfig) SMT.stopSolver $ \refSolverHandle -> do
+        flip Log.runLoggerT logAction
+            $ bracket (SMT.newSolver smtConfig) SMT.stopSolver
+            $ \refSolverHandle -> do
                 let userInit = SMT.runWithSolver $ declareSMTLemmas metadataTools lemmas
                     solverSetup =
                         SMT.SolverSetup

@@ -235,8 +235,8 @@ test_SubstitutionSimplifier =
                     let SubstitutionSimplifier{simplifySubstitution} =
                             Simplification.substitutionSimplifier
                     actual <-
-                        testRunSimplifier Mock.env $
-                            simplifySubstitution SideCondition.top input
+                        testRunSimplifier Mock.env
+                            $ simplifySubstitution SideCondition.top input
                     let expect = Condition.fromNormalizationSimplified <$> results
                         actualConditions = OrCondition.toConditions actual
                         actualSubstitutions =
@@ -252,8 +252,9 @@ test_SubstitutionSimplifier =
                     let SubstitutionSimplifier{simplifySubstitution} =
                             Unification.substitutionSimplifier
                     actual <-
-                        testRunSimplifier Mock.env . runUnifierT $
-                            simplifySubstitution SideCondition.top input
+                        testRunSimplifier Mock.env
+                            . runUnifierT
+                            $ simplifySubstitution SideCondition.top input
                     let expect = Condition.fromNormalizationSimplified <$> results
                         actualConditions = OrCondition.toConditions <$> actual
                         actualSubstitutions =

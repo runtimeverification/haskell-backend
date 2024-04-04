@@ -173,24 +173,30 @@ showAxiom :: Parser ReplCommand
 showAxiom =
     ShowAxiom
         <$$> literal "axiom"
-        *> ( Left <$> parseAxiomDecimal
-                <|> Right <$> ruleNameParser
+        *> ( Left
+                <$> parseAxiomDecimal
+                <|> Right
+                <$> ruleNameParser
            )
 
 showKAxiom :: Parser ReplCommand
 showKAxiom =
     ShowKAxiom
         <$$> literal "kaxiom"
-        *> ( Left <$> parseAxiomDecimal
-                <|> Right <$> ruleNameParser
+        *> ( Left
+                <$> parseAxiomDecimal
+                <|> Right
+                <$> ruleNameParser
            )
 
 prove :: Parser ReplCommand
 prove =
     Prove
         <$$> literal "prove"
-        *> ( Left <$> parseClaimDecimal
-                <|> Right <$> ruleNameParser
+        *> ( Left
+                <$> parseClaimDecimal
+                <|> Right
+                <$> ruleNameParser
            )
 
 showGraph :: Parser ReplCommand
@@ -290,7 +296,8 @@ tryAxiomClaim =
     Try
         <$$> literal "try"
         *> ( try (ByIndex <$> ruleIndexParser)
-                <|> ByName <$> ruleNameParser
+                <|> ByName
+                <$> ruleNameParser
            )
 
 tryKAxiomClaim :: Parser ReplCommand
@@ -298,7 +305,8 @@ tryKAxiomClaim =
     KTry
         <$$> literal "ktry"
         *> ( try (ByIndex <$> ruleIndexParser)
-                <|> ByName <$> ruleNameParser
+                <|> ByName
+                <$> ruleNameParser
            )
 
 tryForceAxiomClaim :: Parser ReplCommand
@@ -306,7 +314,8 @@ tryForceAxiomClaim =
     TryF
         <$$> literal "tryf"
         *> ( try (ByIndex <$> ruleIndexParser)
-                <|> ByName <$> ruleNameParser
+                <|> ByName
+                <$> ruleNameParser
            )
 
 tryForceKAxiomClaim :: Parser ReplCommand
@@ -314,7 +323,8 @@ tryForceKAxiomClaim =
     KTryF
         <$$> literal "ktryf"
         *> ( try (ByIndex <$> ruleIndexParser)
-                <|> ByName <$> ruleNameParser
+                <|> ByName
+                <$> ruleNameParser
            )
 
 ruleIndexParser :: Parser (Either AxiomIndex ClaimIndex)
@@ -376,8 +386,8 @@ log = do
     logType <- parseLogType
     timestampsSwitch <- parseTimestampSwitchWithDefault
     -- TODO (thomas.tuegel): Allow the user to specify --sqlog.
-    pure $
-        Log
+    pure
+        $ Log
             GeneralLogOptions
                 { logType
                 , logFormat
@@ -509,8 +519,8 @@ alias = do
     literal "alias"
     name <- word
     arguments <- many $ wordWithout "="
-    when (nub arguments /= arguments) $
-        customFailure "Error when parsing alias: duplicate argument name."
+    when (nub arguments /= arguments)
+        $ customFailure "Error when parsing alias: duplicate argument name."
     literal "="
     command <- some (noneOf ['\n'])
     return . Alias $ AliasDefinition{name, arguments, command}

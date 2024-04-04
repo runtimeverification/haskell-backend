@@ -235,8 +235,8 @@ toTermLike sort equation
                         argumentTerm
                     )
                 )
-                ( TermLike.mkEquals sort left $
-                    TermLike.mkAnd right ensures'
+                ( TermLike.mkEquals sort left
+                    $ TermLike.mkAnd right ensures'
                 )
     -- function rule without priority
     | Just argument' <- argument =
@@ -246,8 +246,8 @@ toTermLike sort equation
                     requires'
                     (TermLike.mkAnd argumentTerm $ TermLike.mkTop sort)
                 )
-                ( TermLike.mkEquals sort left $
-                    TermLike.mkAnd right ensures'
+                ( TermLike.mkEquals sort left
+                    $ TermLike.mkAnd right ensures'
                 )
     -- unconditional equation
     | isTop requires
@@ -257,8 +257,8 @@ toTermLike sort equation
     | otherwise =
         TermLike.mkImplies
             requires'
-            ( TermLike.mkEquals sort left $
-                TermLike.mkAnd right ensures'
+            ( TermLike.mkEquals sort left
+                $ TermLike.mkAnd right ensures'
             )
   where
     requires' = fromPredicate sort requires
@@ -345,11 +345,13 @@ refreshVariables
             adj =
                 AdjSomeVariableName
                     { adjSomeVariableNameElement =
-                        ElementVariableName . Lens.over _Wrapped $
-                            lookupSomeVariableName @(ElementVariableName _)
+                        ElementVariableName
+                            . Lens.over _Wrapped
+                            $ lookupSomeVariableName @(ElementVariableName _)
                     , adjSomeVariableNameSet =
-                        SetVariableName . Lens.over _Wrapped $
-                            lookupSomeVariableName @(SetVariableName _)
+                        SetVariableName
+                            . Lens.over _Wrapped
+                            $ lookupSomeVariableName @(SetVariableName _)
                     }
             subst :: Map (SomeVariableName variable) (TermLike variable)
             subst =

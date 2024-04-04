@@ -93,9 +93,9 @@ simplifyEvaluated sort sideCondition first second
     | OrPattern.isFalse second =
         Not.simplify sideCondition Not{notSort = sort, notChild = first}
     | otherwise =
-        OrPattern.observeAllT $
-            Logic.scatter second
-                >>= simplifyEvaluateHalfImplies sort sideCondition first
+        OrPattern.observeAllT
+            $ Logic.scatter second
+            >>= simplifyEvaluateHalfImplies sort sideCondition first
 
 simplifyEvaluateHalfImplies ::
     Sort ->
@@ -170,8 +170,8 @@ makeEvaluateImpliesNonBool
                 [ Conditional
                     { term = firstTerm
                     , predicate =
-                        Predicate.markSimplified $
-                            Predicate.makeImpliesPredicate
+                        Predicate.markSimplified
+                            $ Predicate.makeImpliesPredicate
                                 ( Predicate.makeAndPredicate
                                     firstPredicate
                                     (Substitution.toPredicate firstSubstitution)
@@ -188,8 +188,8 @@ makeEvaluateImpliesNonBool
             OrPattern.fromPatterns
                 [ Conditional
                     { term =
-                        TermLike.markSimplified $
-                            mkImplies
+                        TermLike.markSimplified
+                            $ mkImplies
                                 (Pattern.toTermLike pattern1)
                                 (Pattern.toTermLike pattern2)
                     , predicate = Predicate.makeTruePredicate

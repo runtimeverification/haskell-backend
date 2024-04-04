@@ -108,9 +108,9 @@ evaluateApplication
                     & lift
             for_ canMemoize (recordOrPattern results)
             let unexpectedBottomResult = Symbol.isTotal symbol && isBottom results
-            when unexpectedBottomResult $
-                lift $
-                    errorBottomTotalFunction termLike
+            when unexpectedBottomResult
+                $ lift
+                $ errorBottomTotalFunction termLike
             return results
       where
         finishT :: ExceptT r Simplifier r -> Simplifier r
@@ -125,11 +125,11 @@ evaluateApplication
             Maybe SideCondition.Representation ->
             m (OrPattern RewritingVariableName)
         unevaluated maybeSideCondition =
-            return $
-                OrPattern.fromPattern $
-                    Pattern.withCondition
-                        (markSimplifiedIfChildren maybeSideCondition termLike)
-                        childrenCondition
+            return
+                $ OrPattern.fromPattern
+                $ Pattern.withCondition
+                    (markSimplifiedIfChildren maybeSideCondition termLike)
+                    childrenCondition
 
         markSimplifiedIfChildren ::
             Maybe SideCondition.Representation ->
@@ -225,8 +225,8 @@ evaluatePattern
                                             }
                                     )
                         _ -> return result
-                    liftSimplifier $
-                        mergeWithConditionAndSubstitution
+                    liftSimplifier
+                        $ mergeWithConditionAndSubstitution
                             sideCondition
                             childrenCondition
                             flattened
@@ -465,8 +465,8 @@ mergeWithConditionAndSubstitution
             evaluatedRemainders <- OrPattern.observeAllT $ do
                 remainder <- Logic.scatter remainders
                 simplifyCondition sideCondition (Pattern.andCondition remainder toMerge)
-            return $
-                AttemptedAxiom.Applied
+            return
+                $ AttemptedAxiom.Applied
                     AttemptedAxiomResults
                         { results = evaluatedResults
                         , remainders = evaluatedRemainders

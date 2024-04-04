@@ -563,8 +563,8 @@ isAttributeSimplified ::
     TermAttributes variable ->
     Bool
 isAttributeSimplified sideCondition patt@TermAttributes{termSimplified} =
-    assertSimplifiedConsistency patt $
-        Attribute.isSimplified sideCondition termSimplified
+    assertSimplifiedConsistency patt
+        $ Attribute.isSimplified sideCondition termSimplified
 
 {- Checks whether the pattern is simplified relative to some side condition.
 -}
@@ -573,8 +573,8 @@ isAttributeSimplifiedSomeCondition ::
     TermAttributes variable ->
     Bool
 isAttributeSimplifiedSomeCondition patt@TermAttributes{termSimplified} =
-    assertSimplifiedConsistency patt $
-        Attribute.isSimplifiedSomeCondition termSimplified
+    assertSimplifiedConsistency patt
+        $ Attribute.isSimplifiedSomeCondition termSimplified
 
 {- Checks whether the pattern is simplified relative to any side condition.
 -}
@@ -583,8 +583,8 @@ isAttributeSimplifiedAnyCondition ::
     TermAttributes variable ->
     Bool
 isAttributeSimplifiedAnyCondition patt@TermAttributes{termSimplified} =
-    assertSimplifiedConsistency patt $
-        Attribute.isSimplifiedAnyCondition termSimplified
+    assertSimplifiedConsistency patt
+        $ Attribute.isSimplifiedAnyCondition termSimplified
 
 assertSimplifiedConsistency :: HasCallStack => TermAttributes variable -> a -> a
 assertSimplifiedConsistency
@@ -726,11 +726,11 @@ instance (Unparse variable, Ord variable) => Unparse (TermLike variable) where
                             " */"
                   where
                     representation =
-                        addTotalRepresentation $
-                            addFunctionRepresentation $
-                                addDefinedRepresentation $
-                                    addSimplifiedRepresentation $
-                                        addConstructorLikeRepresentation []
+                        addTotalRepresentation
+                            $ addFunctionRepresentation
+                            $ addDefinedRepresentation
+                            $ addSimplifiedRepresentation
+                            $ addConstructorLikeRepresentation []
                 addTotalRepresentation
                     | Attribute.isTotal $ termTotal attrs = ("T" :)
                     | otherwise = id
@@ -891,7 +891,9 @@ instance InternalVariable variable => Substitute (TermLike variable) where
             TermLike variable ->
             TermLike variable
         substituteWorker subst termLike =
-            substituteNone <|> substituteBinder <|> substituteVariable
+            substituteNone
+                <|> substituteBinder
+                <|> substituteVariable
                 & fromMaybe substituteDefault
           where
             substituteNone :: Maybe (TermLike variable)
@@ -1303,13 +1305,13 @@ uninternalize = Pattern.Pattern . Recursive.cata go
     go (attr :< trmLikePat) = case trmLikePat of
         AndF BinaryAnd{andSort, andFirst, andSecond} -> wrap $ PatternF.AndF And{andSort, andChildren = [andFirst, andSecond]}
         ApplySymbolF application ->
-            wrap $
-                PatternF.ApplicationF $
-                    first Symbol.toSymbolOrAlias application
+            wrap
+                $ PatternF.ApplicationF
+                $ first Symbol.toSymbolOrAlias application
         ApplyAliasF application ->
-            wrap $
-                PatternF.ApplicationF $
-                    first Alias.toSymbolOrAlias application
+            wrap
+                $ PatternF.ApplicationF
+                $ first Alias.toSymbolOrAlias application
         BottomF bottom -> wrap $ PatternF.BottomF bottom
         CeilF ceil -> wrap $ PatternF.CeilF ceil
         DomainValueF domainValue -> wrap $ PatternF.DomainValueF domainValue
@@ -1330,16 +1332,16 @@ uninternalize = Pattern.Pattern . Recursive.cata go
         InhabitantF inhabitant -> wrap $ PatternF.InhabitantF inhabitant
         StringLiteralF stringLiteral -> wrap $ PatternF.StringLiteralF stringLiteral
         InternalBoolF (Const (InternalBool boolSort boolValue)) ->
-            uninternalizeInternalValue boolSort $
-                if boolValue then "true" else "false"
+            uninternalizeInternalValue boolSort
+                $ if boolValue then "true" else "false"
         InternalBytesF (Const (InternalBytes bytesSort bytesValue)) ->
-            uninternalizeInternalValue bytesSort $
-                Encoding.decode8Bit $
-                    ByteString.fromShort bytesValue
+            uninternalizeInternalValue bytesSort
+                $ Encoding.decode8Bit
+                $ ByteString.fromShort bytesValue
         InternalIntF (Const (InternalInt intSort intValue)) ->
-            uninternalizeInternalValue intSort $
-                Text.pack $
-                    show intValue
+            uninternalizeInternalValue intSort
+                $ Text.pack
+                $ show intValue
         InternalStringF (Const (InternalString stringSort stringValue)) ->
             uninternalizeInternalValue stringSort stringValue
         InternalListF internalList -> uninternalizeInternalList internalList
@@ -1347,30 +1349,30 @@ uninternalize = Pattern.Pattern . Recursive.cata go
         InternalSetF internalSet -> uninternalizeInternalAc internalSet
         VariableF variable -> wrap $ PatternF.VariableF variable
         EndiannessF (Const endianness) ->
-            wrap $
-                PatternF.ApplicationF $
-                    first Symbol.toSymbolOrAlias $
-                        Endianness.toApplication endianness
+            wrap
+                $ PatternF.ApplicationF
+                $ first Symbol.toSymbolOrAlias
+                $ Endianness.toApplication endianness
         SignednessF (Const signedness) ->
-            wrap $
-                PatternF.ApplicationF $
-                    first Symbol.toSymbolOrAlias $
-                        Signedness.toApplication signedness
+            wrap
+                $ PatternF.ApplicationF
+                $ first Symbol.toSymbolOrAlias
+                $ Signedness.toApplication signedness
         InjF inj ->
-            wrap $
-                PatternF.ApplicationF $
-                    first Symbol.toSymbolOrAlias $
-                        Inj.toApplication inj
+            wrap
+                $ PatternF.ApplicationF
+                $ first Symbol.toSymbolOrAlias
+                $ Inj.toApplication inj
       where
         wrap x = CofreeT $ Identity $ attr :< x
         uninternalizeInternalValue sort strVal =
-            wrap $
-                PatternF.DomainValueF $
-                    DomainValue sort $
-                        wrap $
-                            PatternF.StringLiteralF $
-                                Const $
-                                    StringLiteral strVal
+            wrap
+                $ PatternF.DomainValueF
+                $ DomainValue sort
+                $ wrap
+                $ PatternF.StringLiteralF
+                $ Const
+                $ StringLiteral strVal
 
         -- The uninternalized lists and ac types are all of the following form:
         -- If the structure has no elements, we simply get the application of the unit symbol with no arguments
@@ -1388,22 +1390,22 @@ uninternalize = Pattern.Pattern . Recursive.cata go
           where
             foldAux = \case
                 [] ->
-                    wrap $
-                        PatternF.ApplicationF $
-                            Application (Symbol.toSymbolOrAlias unitSymbol) []
+                    wrap
+                        $ PatternF.ApplicationF
+                        $ Application (Symbol.toSymbolOrAlias unitSymbol) []
                 [x] -> x
                 (x : xs) ->
-                    wrap $
-                        PatternF.ApplicationF $
-                            Application (Symbol.toSymbolOrAlias concatSymbol) [x, foldAux xs]
+                    wrap
+                        $ PatternF.ApplicationF
+                        $ Application (Symbol.toSymbolOrAlias concatSymbol) [x, foldAux xs]
 
         uninternalizeInternalList InternalList{internalListUnit, internalListConcat, internalListElement, internalListChild} =
             foldApplication internalListUnit internalListConcat children
           where
             uniternalizeListElement e =
-                wrap $
-                    PatternF.ApplicationF $
-                        Application (Symbol.toSymbolOrAlias internalListElement) [e]
+                wrap
+                    $ PatternF.ApplicationF
+                    $ Application (Symbol.toSymbolOrAlias internalListElement) [e]
             children = map uniternalizeListElement $ toList internalListChild
 
         uninternalizeInternalAc ::
@@ -1431,8 +1433,9 @@ uninternalize = Pattern.Pattern . Recursive.cata go
             uninternalizedConcreteElements =
                 map
                     ( \(k, v) ->
-                        uninternalizeAcElement $
-                            uninternalizeKey k : concreteElementToApplicationArgs v
+                        uninternalizeAcElement
+                            $ uninternalizeKey k
+                            : concreteElementToApplicationArgs v
                     )
                     $ HashMap.toList concreteElements
 

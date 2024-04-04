@@ -64,11 +64,12 @@ substituteInAlias ::
     [TermLike variable] ->
     TermLike variable
 substituteInAlias Alias{aliasLeft, aliasRight} children =
-    assert (length aliasLeft == length children) $
-        substitute substitutionMap $
-            mapVariables (pure fromVariableName) aliasRight
+    assert (length aliasLeft == length children)
+        $ substitute substitutionMap
+        $ mapVariables (pure fromVariableName) aliasRight
   where
     aliasLeft' =
-        mapSomeVariableName (pure fromVariableName) . variableName
+        mapSomeVariableName (pure fromVariableName)
+            . variableName
             <$> aliasLeft
     substitutionMap = Map.fromList $ zip aliasLeft' children

@@ -107,8 +107,8 @@ test_simplify =
         [Pattern RewritingVariableName] ->
         TestTree
     becomes name origin expect =
-        testCase name $
-            assertEqual
+        testCase name
+            $ assertEqual
                 ""
                 (OrPattern.fromPatterns expect)
                 (evaluate origin)

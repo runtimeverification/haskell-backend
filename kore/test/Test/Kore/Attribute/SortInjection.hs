@@ -18,42 +18,42 @@ parseSortInjection = parseAttributes
 
 test_sortInjection :: TestTree
 test_sortInjection =
-    testCase "[sortInjection{}()] :: SortInjection" $
-        expectSuccess SortInjection{isSortInjection = True} $
-            parseSortInjection $
-                Attributes [sortInjectionAttribute]
+    testCase "[sortInjection{}()] :: SortInjection"
+        $ expectSuccess SortInjection{isSortInjection = True}
+        $ parseSortInjection
+        $ Attributes [sortInjectionAttribute]
 
 test_Attributes :: TestTree
 test_Attributes =
-    testCase "[sortInjection{}()] :: Attributes" $
-        expectSuccess attrs $
-            parseAttributes attrs
+    testCase "[sortInjection{}()] :: Attributes"
+        $ expectSuccess attrs
+        $ parseAttributes attrs
   where
     attrs = Attributes [sortInjectionAttribute]
 
 test_duplicate :: TestTree
 test_duplicate =
-    testCase "[sortInjection{}(), sortInjection{}()]" $
-        expectFailure $
-            parseSortInjection $
-                Attributes [sortInjectionAttribute, sortInjectionAttribute]
+    testCase "[sortInjection{}(), sortInjection{}()]"
+        $ expectFailure
+        $ parseSortInjection
+        $ Attributes [sortInjectionAttribute, sortInjectionAttribute]
 
 test_arguments :: TestTree
 test_arguments =
-    testCase "[sortInjection{}(\"illegal\")]" $
-        expectFailure $
-            parseSortInjection $
-                Attributes [illegalAttribute]
+    testCase "[sortInjection{}(\"illegal\")]"
+        $ expectFailure
+        $ parseSortInjection
+        $ Attributes [illegalAttribute]
   where
     illegalAttribute =
         attributePattern sortInjectionSymbol [attributeString "illegal"]
 
 test_parameters :: TestTree
 test_parameters =
-    testCase "[sortInjection{illegal}()]" $
-        expectFailure $
-            parseSortInjection $
-                Attributes [illegalAttribute]
+    testCase "[sortInjection{illegal}()]"
+        $ expectFailure
+        $ parseSortInjection
+        $ Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)

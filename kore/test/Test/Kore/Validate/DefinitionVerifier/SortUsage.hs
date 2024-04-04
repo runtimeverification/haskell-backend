@@ -104,8 +104,8 @@ test_sortUsage =
                 (SortName "mySort")
                 []
                 [Attribute.HasDomainValues.hasDomainValuesAttribute]
-            , SentenceSymbolSentence $
-                sentenceSymbolWithAttributes
+            , SentenceSymbolSentence
+                $ sentenceSymbolWithAttributes
                     (SymbolName "a")
                     []
                     (simpleSort (SortName "mySort"))
@@ -117,8 +117,8 @@ test_sortUsage =
         ( simpleDefinitionFromSentences
             (ModuleName "MODULE")
             [ simpleSortSentence (SortName "mySort")
-            , SentenceSymbolSentence $
-                sentenceSymbolWithAttributes
+            , SentenceSymbolSentence
+                $ sentenceSymbolWithAttributes
                     (SymbolName "a")
                     []
                     (simpleSort (SortName "mySort"))

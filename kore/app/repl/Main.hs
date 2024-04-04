@@ -233,8 +233,9 @@ mainWithOptions LocalOptions{execOptions} = do
             withLogger tempDirectory koreLogOptions $ \actualLogAction -> do
                 mvarLogAction <- newMVar actualLogAction
                 let swapLogAction = swappableLogger mvarLogAction
-                flip runLoggerT swapLogAction $
-                    runExceptionHandlers $ do
+                flip runLoggerT swapLogAction
+                    $ runExceptionHandlers
+                    $ do
                         definition <-
                             loadDefinitions [definitionFileName, specFile]
                         indexedModule <- loadModule mainModuleName definition
@@ -251,7 +252,8 @@ mainWithOptions LocalOptions{execOptions} = do
                                     }
 
                         when
-                            ( replMode == RunScript
+                            ( replMode
+                                == RunScript
                                 && isNothing (unReplScript replScript)
                             )
                             $ lift
@@ -263,8 +265,10 @@ mainWithOptions LocalOptions{execOptions} = do
                                 exitFailure
 
                         when
-                            ( replMode == Interactive
-                                && scriptModeOutput == EnableOutput
+                            ( replMode
+                                == Interactive
+                                && scriptModeOutput
+                                == EnableOutput
                             )
                             $ lift
                             $ do
@@ -332,8 +336,8 @@ mainWithOptions LocalOptions{execOptions} = do
     withConfigurationHandler
         (Claim.WithConfiguration lastConfiguration someException) =
             do
-                liftIO $
-                    hPutStrLn
+                liftIO
+                    $ hPutStrLn
                         stderr
                         ("// Last configuration:\n" <> unparseToString lastConfiguration)
                 throwM someException

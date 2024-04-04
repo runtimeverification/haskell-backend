@@ -140,8 +140,8 @@ mkSimplifierEnv tracingEnabled verifiedModule sortGraph overloadGraph metadataTo
     initialize :: Simplifier Env
     initialize = do
         axiomEquations <-
-            Equation.simplifyExtractedEquations $
-                (Map.map . fmap . Equation.mapVariables $ pure mkEquationVariable)
+            Equation.simplifyExtractedEquations
+                $ (Map.map . fmap . Equation.mapVariables $ pure mkEquationVariable)
                     rawEquations
         memo <- Memo.new
         return

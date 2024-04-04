@@ -443,16 +443,16 @@ evaluate ::
     TermLike RewritingVariableName ->
     IO (OrPattern RewritingVariableName)
 evaluate axiomEquations termLike =
-    testRunSimplifier testEnv{axiomEquations} $
-        TermLike.simplify SideCondition.top termLike
+    testRunSimplifier testEnv{axiomEquations}
+        $ TermLike.simplify SideCondition.top termLike
 
 evaluateWith ::
     BuiltinAndAxiomSimplifier ->
     TermLike RewritingVariableName ->
     IO CommonAttemptedAxiom
 evaluateWith simplifier patt =
-    runSimplifierSMT testEnv $
-        runBuiltinAndAxiomSimplifier simplifier patt SideCondition.top
+    runSimplifierSMT testEnv
+        $ runBuiltinAndAxiomSimplifier simplifier patt SideCondition.top
 
 -- Applied tests: check that one or more rules applies or not
 withApplied ::
@@ -487,8 +487,9 @@ applies =
             . Lens.view (field @"remainders")
 notApplies =
     withApplied $ \r ->
-        assertBool "Expected NotApplicable" $
-            isNotApplicable r || isNotApplicableUntilConditionChanges r
+        assertBool "Expected NotApplicable"
+            $ isNotApplicable r
+            || isNotApplicableUntilConditionChanges r
 
 natSort :: Sort
 natSort =
@@ -702,8 +703,8 @@ mkMap ::
     [TermLike RewritingVariableName] ->
     TermLike RewritingVariableName
 mkMap elements opaques =
-    Ac.asInternal Builtin.testMetadataTools Builtin.mapSort $
-        Map.normalizedMap elements opaques
+    Ac.asInternal Builtin.testMetadataTools Builtin.mapSort
+        $ Map.normalizedMap elements opaques
 
 removeMap ::
     TermLike RewritingVariableName ->
@@ -1133,7 +1134,8 @@ testModule =
 testDefinition :: ParsedDefinition
 testDefinition =
     Builtin.testDefinition
-        & field @"definitionModules" Lens.<>~ [natModule, testModule]
+        & field @"definitionModules"
+        Lens.<>~ [natModule, testModule]
 
 verify ::
     ParsedDefinition ->

@@ -127,8 +127,9 @@ instance SimplifyRuleLHS SomeClaim where
 simplifyClaimRule ::
     ClaimPattern ->
     Simplifier (MultiAnd ClaimPattern)
-simplifyClaimRule claimPattern = fmap MultiAnd.make $
-    Logic.observeAllT $ do
+simplifyClaimRule claimPattern = fmap MultiAnd.make
+    $ Logic.observeAllT
+    $ do
         let lhs = Pattern.requireDefined $ ClaimPattern.left claimPattern
         simplified <-
             liftSimplifier (Pattern.simplifyTopConfiguration lhs)
@@ -145,8 +146,8 @@ simplifyClaimRule claimPattern = fmap MultiAnd.make $
         LogicT Simplifier (Pattern RewritingVariableName)
     filterWithSolver conditional = do
         l <-
-            lift $
-                SMT.Evaluator.evalConditional (ErrorDecidePredicateUnknown $srcLoc Nothing) conditional Nothing
+            lift
+                $ SMT.Evaluator.evalConditional (ErrorDecidePredicateUnknown $srcLoc Nothing) conditional Nothing
         case l of
             Just False -> empty
             _ -> return conditional
@@ -188,7 +189,7 @@ simplifyPattern' ::
     TermLike RewritingVariableName ->
     Simplifier (OrPattern.OrPattern RewritingVariableName)
 simplifyPattern' termLike =
-    Simplifier.localAxiomEquations (const mempty) $
-        Simplifier.simplifyPattern
+    Simplifier.localAxiomEquations (const mempty)
+        $ Simplifier.simplifyPattern
             SideCondition.top
             (Pattern.fromTermLike termLike)
