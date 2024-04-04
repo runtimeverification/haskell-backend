@@ -68,8 +68,8 @@ test_simplifyCondition =
             assertNormalized existsSubst
     , testCase "¬∃ y z. x = σ(y, z)" $ do
         let expect =
-                Condition.fromPredicate
-                    $ Predicate.makeNotPredicate existsPredicate
+                Condition.fromPredicate $
+                    Predicate.makeNotPredicate existsPredicate
         assertNormalized expect
     , testCase "x = f(x)" $ do
         let x = inject Mock.xConfig
@@ -97,23 +97,24 @@ test_simplifyCondition =
     ]
   where
     existsSubst =
-        Condition.fromSubstitution
-            $ Substitution.unsafeWrap
+        Condition.fromSubstitution $
+            Substitution.unsafeWrap
                 [(inject Mock.xConfig, (Mock.sigma (mkElemVar Mock.yConfig) (mkElemVar Mock.zConfig)))]
     existsPredicate =
-        Predicate.makeMultipleExists [Mock.yConfig, Mock.zConfig]
-            $ Predicate.makeEqualsPredicate
+        Predicate.makeMultipleExists [Mock.yConfig, Mock.zConfig] $
+            Predicate.makeEqualsPredicate
                 (mkElemVar Mock.xConfig)
                 (Mock.sigma (mkElemVar Mock.yConfig) (mkElemVar Mock.zConfig))
 
 test_mergeAndNormalizeSubstitutions :: [TestTree]
 test_mergeAndNormalizeSubstitutions =
     [ testCase "Constructor normalization"
-        -- [x=constructor(a)] + [x=constructor(a)]  === [x=constructor(a)]
-        $ do
+      -- [x=constructor(a)] + [x=constructor(a)]  === [x=constructor(a)]
+      $
+        do
             let expect =
-                    [ Condition.fromSubstitution
-                        $ Substitution.unsafeWrap
+                    [ Condition.fromSubstitution $
+                        Substitution.unsafeWrap
                             [(inject Mock.xConfig, Mock.constr10 Mock.a)]
                     ]
             actual <-
@@ -131,11 +132,12 @@ test_mergeAndNormalizeSubstitutions =
             assertEqual "" expect actual
             assertNormalizedPredicatesMulti actual
     , testCase "Constructor normalization with variables"
-        -- [x=constructor(y)] + [x=constructor(y)]  === [x=constructor(y)]
-        $ do
+      -- [x=constructor(y)] + [x=constructor(y)]  === [x=constructor(y)]
+      $
+        do
             let expect =
-                    [ Condition.fromSubstitution
-                        $ Substitution.unsafeWrap
+                    [ Condition.fromSubstitution $
+                        Substitution.unsafeWrap
                             [
                                 ( inject Mock.xConfig
                                 , Mock.constr10 (mkElemVar Mock.yConfig)
@@ -157,8 +159,9 @@ test_mergeAndNormalizeSubstitutions =
             assertEqual "" expect actual
             assertNormalizedPredicatesMulti actual
     , testCase "Double constructor is bottom"
-        -- [x=constructor(a)] + [x=constructor(constructor(a))]  === bottom?
-        $ do
+      -- [x=constructor(a)] + [x=constructor(constructor(a))]  === bottom?
+      $
+        do
             let expect = []
             actual <-
                 merge
@@ -175,8 +178,9 @@ test_mergeAndNormalizeSubstitutions =
             assertEqual "" expect actual
             assertNormalizedPredicatesMulti actual
     , testCase "Double constructor is bottom with variables"
-        -- [x=constructor(y)] + [x=constructor(constructor(y))]  === bottom?
-        $ do
+      -- [x=constructor(y)] + [x=constructor(constructor(y))]  === bottom?
+      $
+        do
             let expect =
                     [ Substitution.assign
                         (inject Mock.xConfig)
@@ -204,8 +208,9 @@ test_mergeAndNormalizeSubstitutions =
             assertEqual "" [expect] actual
             assertNormalizedPredicatesMulti actual
     , testCase "Constructor and constructor of function"
-        -- [x=constructor(a)] + [x=constructor(f(a))]
-        $ do
+      -- [x=constructor(a)] + [x=constructor(f(a))]
+      $
+        do
             let expect =
                     [ Conditional
                         { term = ()
@@ -247,8 +252,7 @@ test_mergeAndNormalizeSubstitutions =
                 Substitution.assign (inject Mock.xConfig) (ctor (f y))
                     & Condition.fromSingleSubstitution
         let expect =
-                denormCondition
-                    <> substCondition
+                denormCondition <> substCondition
                     & pure
         actual <-
             merge
@@ -257,8 +261,9 @@ test_mergeAndNormalizeSubstitutions =
         assertEqual "" expect actual
         assertNormalizedPredicatesMulti actual
     , testCase "Constructor circular dependency?"
-        -- [x=y] + [y=constructor(x)]  === error
-        $ do
+      -- [x=y] + [y=constructor(x)]  === error
+      $
+        do
             let expect =
                     [ Predicate.makeEqualsPredicate
                         (mkElemVar Mock.xConfig)
@@ -292,8 +297,7 @@ test_mergeAndNormalizeSubstitutions =
                 Substitution.assign (inject Mock.xConfig) (mkElemVar Mock.yConfig)
                     & Condition.fromSingleSubstitution
         let expect =
-                denormCondition
-                    <> substCondition
+                denormCondition <> substCondition
                     & pure
         actual <-
             merge
@@ -309,30 +313,30 @@ test_mergeAndNormalizeSubstitutions =
                 ]
         assertEqual "" expect actual
         assertNormalizedPredicatesMulti actual
-    , testCase "Normalizes substitution"
-        $ do
+    , testCase "Normalizes substitution" $
+        do
             let expect =
-                    [ Condition.fromSubstitution
-                        $ Substitution.unsafeWrap
+                    [ Condition.fromSubstitution $
+                        Substitution.unsafeWrap
                             [ (inject Mock.xConfig, Mock.constr10 Mock.a)
                             , (inject Mock.yConfig, Mock.a)
                             ]
                     ]
             actual <-
-                normalize
-                    $ Condition.fromSubstitution
-                    $ Substitution.wrap
-                    $ Substitution.mkUnwrappedSubstitution
-                        [ (inject Mock.xConfig, Mock.constr10 Mock.a)
-                        ,
-                            ( inject Mock.xConfig
-                            , Mock.constr10 (mkElemVar Mock.yConfig)
-                            )
-                        ]
+                normalize $
+                    Condition.fromSubstitution $
+                        Substitution.wrap $
+                            Substitution.mkUnwrappedSubstitution
+                                [ (inject Mock.xConfig, Mock.constr10 Mock.a)
+                                ,
+                                    ( inject Mock.xConfig
+                                    , Mock.constr10 (mkElemVar Mock.yConfig)
+                                    )
+                                ]
             assertEqual "" expect actual
             assertNormalizedPredicatesMulti actual
-    , testCase "Predicate from normalizing substitution"
-        $ do
+    , testCase "Predicate from normalizing substitution" $
+        do
             let expect =
                     [ Conditional
                         { term = ()
@@ -349,22 +353,22 @@ test_mergeAndNormalizeSubstitutions =
                         { term = ()
                         , predicate = Predicate.makeTruePredicate
                         , substitution =
-                            Substitution.wrap
-                                $ Substitution.mkUnwrappedSubstitution
+                            Substitution.wrap $
+                                Substitution.mkUnwrappedSubstitution
                                     [ (inject Mock.xConfig, Mock.constr10 Mock.cf)
                                     , (inject Mock.xConfig, Mock.constr10 Mock.cg)
                                     ]
                         }
             assertEqual "" expect actual
             assertNormalizedPredicatesMulti actual
-    , testCase "Normalizes substitution and substitutes in predicate"
-        $ do
+    , testCase "Normalizes substitution and substitutes in predicate" $
+        do
             let expect =
                     [ Conditional
                         { term = ()
                         , predicate =
-                            Predicate.makeCeilPredicate
-                                $ Mock.f Mock.a
+                            Predicate.makeCeilPredicate $
+                                Mock.f Mock.a
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (inject Mock.xConfig, Mock.constr10 Mock.a)
@@ -377,11 +381,11 @@ test_mergeAndNormalizeSubstitutions =
                     Conditional
                         { term = ()
                         , predicate =
-                            Predicate.makeCeilPredicate
-                                $ Mock.f (mkElemVar Mock.yConfig)
+                            Predicate.makeCeilPredicate $
+                                Mock.f (mkElemVar Mock.yConfig)
                         , substitution =
-                            Substitution.wrap
-                                $ Substitution.mkUnwrappedSubstitution
+                            Substitution.wrap $
+                                Substitution.mkUnwrappedSubstitution
                                     [ (inject Mock.xConfig, Mock.constr10 Mock.a)
                                     ,
                                         ( inject Mock.xConfig
@@ -400,12 +404,12 @@ merge ::
 merge
     (Substitution.mkUnwrappedSubstitution -> s1)
     (Substitution.mkUnwrappedSubstitution -> s2) =
-        Test.testRunSimplifier mockEnv
-            $ Monad.Unify.runUnifierT
-            $ mergeSubstitutionsExcept
-            $ Substitution.wrap
-            . fmap simplifiedAssignment
-            <$> [s1, s2]
+        Test.testRunSimplifier mockEnv $
+            Monad.Unify.runUnifierT $
+                mergeSubstitutionsExcept $
+                    Substitution.wrap
+                        . fmap simplifiedAssignment
+                        <$> [s1, s2]
       where
         simplifiedAssignment ::
             Assignment RewritingVariableName ->
@@ -433,11 +437,11 @@ normalizeExcept ::
     Conditional RewritingVariableName () ->
     IO (MultiOr (Conditional RewritingVariableName ()))
 normalizeExcept predicated =
-    fmap MultiOr.make
-        $ Test.testRunSimplifier mockEnv
-        $ Monad.Unify.runUnifierT
-        $ Logic.lowerLogicT
-        $ Simplifier.simplifyCondition SideCondition.top predicated
+    fmap MultiOr.make $
+        Test.testRunSimplifier mockEnv $
+            Monad.Unify.runUnifierT $
+                Logic.lowerLogicT $
+                    Simplifier.simplifyCondition SideCondition.top predicated
   where
     mockEnv = Mock.env{axiomEquations}
     axiomEquations =

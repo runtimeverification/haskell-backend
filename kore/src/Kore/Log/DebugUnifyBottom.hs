@@ -81,8 +81,8 @@ debugUnifyBottom ::
     TermLike variable ->
     log ()
 debugUnifyBottom info first second =
-    logEntry
-        $ DebugUnifyBottom
+    logEntry $
+        DebugUnifyBottom
             info
             (TermLike.mapVariables (pure $ from @_ @VariableName) first)
             (TermLike.mapVariables (pure $ from @_ @VariableName) second)

@@ -365,9 +365,9 @@ replInterpreter0 printAux printKore replCmd = do
         st <- get
         config <- Reader.ask
         (ext, st', w) <-
-            Monad.Trans.lift
-                $ Monad.Trans.lift
-                $ runRWST c config st
+            Monad.Trans.lift $
+                Monad.Trans.lift $
+                    runRWST c config st
         put st'
         pure (w, ext)
 
@@ -485,10 +485,10 @@ prove indexOrName = do
     startProving :: SomeClaim -> m ()
     startProving claim
         | isTrusted claim =
-            putStrLn'
-                $ "Cannot switch to proving claim "
-                <> showIndexOrName indexOrName
-                <> ". Claim is trusted."
+            putStrLn' $
+                "Cannot switch to proving claim "
+                    <> showIndexOrName indexOrName
+                    <> ". Claim is trusted."
         | otherwise = do
             claimIndex <-
                 either
@@ -496,9 +496,9 @@ prove indexOrName = do
                     (getClaimIndexByName . unRuleName)
                     indexOrName
             switchToProof claim $ fromJust claimIndex
-            putStrLn'
-                $ "Switched to proving claim "
-                <> showIndexOrName indexOrName
+            putStrLn' $
+                "Switched to proving claim "
+                    <> showIndexOrName indexOrName
 
 showClaimSwitch :: Either ClaimIndex RuleName -> String
 showClaimSwitch indexOrName =
@@ -531,8 +531,8 @@ showGraph view mfile out = do
     installed <- liftIO Graph.isGraphvizInstalled
     if installed
         then
-            liftIO
-                $ maybe
+            liftIO $
+                maybe
                     (showDotGraphCatchException processedGraph)
                     (saveDotGraph processedGraph format)
                     mfile
@@ -580,10 +580,10 @@ withTime act =
         DisableStepTime -> act
         EnableStepTime -> do
             (time, result) <- timeAction act
-            putStrLn'
-                $ "Step(s) took "
-                <> show (time `div` 1000)
-                <> " milliseconds"
+            putStrLn' $
+                "Step(s) took "
+                    <> show (time `div` 1000)
+                    <> " milliseconds"
             pure result
 
 -- | Loads a script from a file.
@@ -772,8 +772,8 @@ allProofs = do
     graphs <- Lens.use (field @"graphs")
     claims <- Lens.use (field @"claims")
     let cindexes = ClaimIndex <$> [0 .. length claims - 1]
-    return
-        $ Map.union
+    return $
+        Map.union
             (fmap inProgressProofs graphs)
             (notStartedProofs graphs (Map.fromList $ zip cindexes claims))
   where
@@ -832,8 +832,7 @@ showRules (ReplNode node1, ReplNode node2) = do
         [] -> putStrLn' noPath
         [singleNode] ->
             getRuleFor (singleNode & fst & ReplNode & Just)
-                >>= putStrLn'
-                . maybe "Invalid node!" showRuleIdentifier
+                >>= putStrLn' . maybe "Invalid node!" showRuleIdentifier
         (_ : labeledNodes) -> do
             let mapPath = Map.fromList labeledNodes
             putStrLn' $ Map.foldrWithKey acc "Rules applied:" mapPath
@@ -983,10 +982,10 @@ runInterpreterWithOutput ::
 runInterpreterWithOutput printAux printKore cmd config =
     get
         >>= ( \st ->
-                lift
-                    $ execStateReader config st
-                    $ runInputT defaultSettings
-                    $ replInterpreter0 printAux printKore cmd
+                lift $
+                    execStateReader config st $
+                        runInputT defaultSettings $
+                            replInterpreter0 printAux printKore cmd
             )
         >>= put
 
@@ -1115,8 +1114,7 @@ tryAxiomClaimWorker mode ref = do
         ReplM ()
     runUnifier' sideCondition first second =
         runUnifier sideCondition first' second
-            >>= tell
-            . formatUnificationMessage
+            >>= tell . formatUnificationMessage
       where
         first' = TermLike.refreshVariables (freeVariables second) first
 
@@ -1223,8 +1221,7 @@ savePartialProof maybeNatural file = do
                     createNewDefinition
                         mainModuleName
                         (makeModuleName file)
-                        $ currentGoal
-                        : newTrustedClaims
+                        $ currentGoal : newTrustedClaims
             saveUnparsedDefinitionToFile (unparse newDefinition)
             putStrLn' "Done."
   where
@@ -1232,8 +1229,8 @@ savePartialProof maybeNatural file = do
         Pretty.Doc ann ->
         ReplM ()
     saveUnparsedDefinitionToFile definition =
-        liftIO
-            $ withFile
+        liftIO $
+            withFile
                 (file <.> "kore")
                 WriteMode
                 (`Pretty.hPutDoc` definition)
@@ -1287,8 +1284,8 @@ pipe cmd file args = do
             tell pipeOut
   where
     createProcess' exec =
-        liftIO
-            $ createProcess
+        liftIO $
+            createProcess
                 (proc exec args)
                     { std_in = CreatePipe
                     , std_out = CreatePipe
@@ -1364,11 +1361,11 @@ tryAlias replAlias@ReplAlias{name} printAux printKore = do
         ReplState ->
         ReplM (ReplStatus, ReplState)
     runInterpreter cmd config st =
-        lift
-            $ (`runStateT` st)
-            $ flip runReaderT config
-            $ runInputT defaultSettings
-            $ replInterpreter0 printAux printKore cmd
+        lift $
+            (`runStateT` st) $
+                flip runReaderT config $
+                    runInputT defaultSettings $
+                        replInterpreter0 printAux printKore cmd
 
 {- | Performs n proof steps, picking the next node unless branching occurs.
  Returns 'Left' while it has to continue looping, and 'Right' when done
@@ -1506,8 +1503,8 @@ showDotGraphCatchException gr =
     catch (showDotGraph gr) $ \(e :: GraphvizException) ->
         case e of
             GVProgramExc _ ->
-                hPrint stderr
-                    $ Pretty.vsep
+                hPrint stderr $
+                    Pretty.vsep
                         [ "Encountered the following exception:\n"
                         , Pretty.indent 4 $ fromString $ displayException e
                         , "Please note that the 'graph' command is not\
@@ -1529,8 +1526,8 @@ saveDotGraph gr format file =
   where
     saveGraphImg :: FilePath -> IO ()
     saveGraphImg path =
-        void
-            $ Graph.addExtension
+        void $
+            Graph.addExtension
                 ( Graph.runGraphviz
                     (Graph.graphToDot (graphParams gr) gr)
                 )
@@ -1554,8 +1551,8 @@ graphParams gr =
             , Graph.Attr.Style [dottedOrSolidEdge l]
             ]
         , Graph.fmtNode = \(_, ps) ->
-            [ Graph.Attr.Color
-                $ case ps of
+            [ Graph.Attr.Color $
+                case ps of
                     Proven -> toColorList green
                     Stuck _ -> toColorList red
                     _ -> []
@@ -1640,12 +1637,10 @@ parseEvalScript file scriptModeOutput = do
         else lift . liftIO . hPutStrLn stderr $ "Cannot find " <> file
   where
     parseFailed err =
-        lift
-            . liftIO
-            . hPutStrLn stderr
-            $ "\nCouldn't parse repl script file."
-            <> "\nParser error at: "
-            <> (err & toReplScriptParseErrors & errorBundlePretty)
+        lift . liftIO . hPutStrLn stderr $
+            "\nCouldn't parse repl script file."
+                <> "\nParser error at: "
+                <> (err & toReplScriptParseErrors & errorBundlePretty)
 
     toReplScriptParseErrors errorBundle =
         errorBundle
@@ -1662,19 +1657,19 @@ parseEvalScript file scriptModeOutput = do
         get >>= executeCommands config >>= put
       where
         executeCommands config st =
-            lift
-                $ execStateReader config st
-                $ for_ cmds
-                $ if scriptModeOutput == EnableOutput
-                    then executeCommandWithOutput
-                    else executeCommand
+            lift $
+                execStateReader config st $
+                    for_ cmds $
+                        if scriptModeOutput == EnableOutput
+                            then executeCommandWithOutput
+                            else executeCommand
 
         executeCommand ::
             ReplCommand ->
             ReaderT Config (StateT ReplState Simplifier) ReplStatus
         executeCommand command =
-            runInputT defaultSettings
-                $ replInterpreter0
+            runInputT defaultSettings $
+                replInterpreter0
                     (PrintAuxOutput $ \_ -> return ())
                     (PrintKoreOutput $ \_ -> return ())
                     command
@@ -1686,8 +1681,8 @@ parseEvalScript file scriptModeOutput = do
             node <- Lens.use (field @"node")
             liftIO $ putStr $ "Kore (" <> show (unReplNode node) <> ")> "
             liftIO $ print command
-            runInputT defaultSettings
-                $ replInterpreter0
+            runInputT defaultSettings $
+                replInterpreter0
                     (PrintAuxOutput printIfNotEmpty)
                     (PrintKoreOutput printIfNotEmpty)
                     command
@@ -1707,8 +1702,7 @@ formatUnificationMessage docOrCondition =
     unparseUnifier c =
         unparse
             . Pattern.toTermLike
-            $ TermLike.mkTop (TermLike.mkSortVariable "UNKNOWN")
-            <$ c
+            $ TermLike.mkTop (TermLike.mkSortVariable "UNKNOWN") <$ c
 
 showProofStatus :: Map.Map ClaimIndex GraphProofStatus -> String
 showProofStatus m =
@@ -1743,6 +1737,5 @@ withExistingDirectory path action =
     ifM
         (doesParentDirectoryExist path)
         (action path)
-        $ liftIO
-        . hPutStrLn stderr
+        $ liftIO . hPutStrLn stderr
         $ "Directory does not exist."

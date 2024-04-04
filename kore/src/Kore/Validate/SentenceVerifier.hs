@@ -331,8 +331,8 @@ verifyAliasSentence sentence = do
         (declaredVariables, verifiedLeftPattern) <-
             verifyAliasLeftPattern alias sentenceAliasSorts leftPattern
         verifiedRightPattern <-
-            withDeclaredVariables declaredVariables
-                $ verifyPattern (Just expectedSort) rightPattern
+            withDeclaredVariables declaredVariables $
+                verifyPattern (Just expectedSort) rightPattern
         return
             sentence
                 { sentenceAliasLeftPattern = verifiedLeftPattern
@@ -398,8 +398,8 @@ verifyClaimSentence sentence =
                 verifiedModule'
                 (freeVariables sentence)
                 (sentenceClaimAttributes sentence)
-        when (rejectClaim attrs verified)
-            $ koreFail
+        when (rejectClaim attrs verified) $
+            koreFail
                 "Found claim with universally-quantified variables\
                 \ appearing only on the right-hand side"
         State.modify' $ addClaim (SentenceClaim verified) attrs
@@ -456,9 +456,9 @@ verifyNonHooks sentences =
 
 verifyNonHookSentence :: ParsedSentence -> SentenceVerifier ()
 verifyNonHookSentence sentence =
-    withSentenceContext sentence
-        $ verifyNoHookAttribute
-        $ sentenceAttributes sentence
+    withSentenceContext sentence $
+        verifyNoHookAttribute $
+            sentenceAttributes sentence
 
 buildDeclaredSortVariables ::
     MonadError (Error e) error =>

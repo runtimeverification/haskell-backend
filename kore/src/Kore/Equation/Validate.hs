@@ -68,9 +68,8 @@ validateAxiom ::
 validateAxiom attrs verified =
     case fromSentenceAxiom (attrs, verified) of
         Right eq@Equation{left, argument} ->
-            when (needsVerification eq)
-                $ checkLHS eq left
-                >> checkArg eq argument
+            when (needsVerification eq) $
+                checkLHS eq left >> checkArg eq argument
         Left err@(RequiresError _) -> failWithBadEquation err
         Left err@(ArgumentError _) -> failWithBadEquation err
         Left err@(AntiLeftError _) -> failWithBadEquation err
@@ -120,13 +119,13 @@ validateAxiom attrs verified =
                 Symbol.isFunction sym && not (Symbol.isConstructorLike sym)
 
         throwIllegalFunctionSymbol sym =
-            koreFailWithLocations [eq]
-                $ pack
-                $ show
-                $ Pretty.vsep
-                    [ "Expected function symbol, but found constructor symbol:"
-                    , unparse sym
-                    ]
+            koreFailWithLocations [eq] $
+                pack $
+                    show $
+                        Pretty.vsep
+                            [ "Expected function symbol, but found constructor symbol:"
+                            , unparse sym
+                            ]
 
         checkVarFunctionArguments =
             failOnJust
@@ -206,12 +205,12 @@ validateAxiom attrs verified =
     failOnJust eq errorMessage (Just (term, location)) =
         koreFailWithLocations
             [location]
-            ( pack
-                $ show
-                $ Pretty.vsep
-                    [ errorMessage
-                    , Pretty.indent 4 term
-                    , "The equation that the above occurs in is:"
-                    , Pretty.indent 4 $ Pretty.pretty eq
-                    ]
+            ( pack $
+                show $
+                    Pretty.vsep
+                        [ errorMessage
+                        , Pretty.indent 4 term
+                        , "The equation that the above occurs in is:"
+                        , Pretty.indent 4 $ Pretty.pretty eq
+                        ]
             )

@@ -68,22 +68,22 @@ test_sortParsing =
         (constructorsAre [])
     , testForModule
         "Definition with simple sorts"
-        ( indexModule
-            $ emptyModule "m"
-            `with` sortDeclaration "S"
-            `with` sortDeclaration "T"
+        ( indexModule $
+            emptyModule "m"
+                `with` sortDeclaration "S"
+                `with` sortDeclaration "T"
         )
         (constructorsAre [])
     , testForModule
         "Definition with constructor-based sorts"
-        ( indexModule
-            $ emptyModule "m"
-            `with` sortDeclaration "S"
-            `with` sortDeclaration "T"
-            `with` ( symbolDeclaration "C" "S" []
-                        `with` [Attribute.functional, Attribute.constructor]
-                   )
-            `with` constructorAxiom "S" [("C", [])]
+        ( indexModule $
+            emptyModule "m"
+                `with` sortDeclaration "S"
+                `with` sortDeclaration "T"
+                `with` ( symbolDeclaration "C" "S" []
+                            `with` [Attribute.functional, Attribute.constructor]
+                       )
+                `with` constructorAxiom "S" [("C", [])]
         )
         ( constructorsAre
             [ ("S", noConstructor `with` constructor "C")
@@ -91,16 +91,16 @@ test_sortParsing =
         )
     , testForModule
         "Definition with complex constructor-based sorts"
-        ( indexModule
-            $ emptyModule "m"
-            `with` sortDeclaration "S"
-            `with` ( symbolDeclaration "C" "S" []
-                        `with` [Attribute.functional, Attribute.constructor]
-                   )
-            `with` ( symbolDeclaration "D" "S" ["S"]
-                        `with` [Attribute.functional, Attribute.constructor]
-                   )
-            `with` constructorAxiom "S" [("C", []), ("D", ["S"])]
+        ( indexModule $
+            emptyModule "m"
+                `with` sortDeclaration "S"
+                `with` ( symbolDeclaration "C" "S" []
+                            `with` [Attribute.functional, Attribute.constructor]
+                       )
+                `with` ( symbolDeclaration "D" "S" ["S"]
+                            `with` [Attribute.functional, Attribute.constructor]
+                       )
+                `with` constructorAxiom "S" [("C", []), ("D", ["S"])]
         )
         ( constructorsAre
             [
@@ -113,11 +113,11 @@ test_sortParsing =
         )
     , testForModule
         "Definition with builtin sorts"
-        ( indexModule
-            $ emptyModule "m"
-            `with` ( hookedSortDeclaration "Integer"
-                        `with` Attribute.hook Int.sort
-                   )
+        ( indexModule $
+            emptyModule "m"
+                `with` ( hookedSortDeclaration "Integer"
+                            `with` Attribute.hook Int.sort
+                       )
         )
         (constructorsAre [])
     ]

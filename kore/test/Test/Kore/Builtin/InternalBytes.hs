@@ -77,8 +77,8 @@ test_update =
             bytes = BS.pack [val]
             expect = asOrPattern bytes
         actual <-
-            evaluateTermT
-                $ mkApplySymbol
+            evaluateTermT $
+                mkApplySymbol
                     updateBytesSymbol
                     [ asInternal bytes
                     , Test.Int.asInternal 0
@@ -93,8 +93,8 @@ test_update =
             val' = toInteger $ ord val
             expect = OrPattern.bottom
         actual <-
-            evaluateTermT
-                $ mkApplySymbol
+            evaluateTermT $
+                mkApplySymbol
                     updateBytesSymbol
                     [ asInternal bytes
                     , Test.Int.asInternal (toInteger idx)
@@ -108,8 +108,8 @@ test_update =
             val' = toInteger $ ord val
             expect = OrPattern.bottom
         actual <-
-            evaluateTermT
-                $ mkApplySymbol
+            evaluateTermT $
+                mkApplySymbol
                     updateBytesSymbol
                     [ asInternal bytes
                     , Test.Int.asInternal (toInteger $ BS.length bytes)
@@ -142,8 +142,8 @@ test_get =
         let bytes = E.encode8Bit str
             expect = OrPattern.bottom
         actual <-
-            evaluateTermT
-                $ mkApplySymbol
+            evaluateTermT $
+                mkApplySymbol
                     getBytesSymbol
                     [ asInternal bytes
                     , Test.Int.asInternal (toInteger idx)
@@ -154,8 +154,8 @@ test_get =
         let bytes = E.encode8Bit str
             expect = OrPattern.bottom
         actual <-
-            evaluateTermT
-                $ mkApplySymbol
+            evaluateTermT $
+                mkApplySymbol
                     getBytesSymbol
                     [ asInternal bytes
                     , Test.Int.asInternal (toInteger $ BS.length bytes)
@@ -165,8 +165,8 @@ test_get =
         idx <- forAll $ Gen.int (Range.linear 0 256)
         let expect = OrPattern.bottom
         actual <-
-            evaluateTermT
-                $ mkApplySymbol
+            evaluateTermT $
+                mkApplySymbol
                     getBytesSymbol
                     [ asInternal ""
                     , Test.Int.asInternal (toInteger idx)
@@ -197,8 +197,8 @@ test_substr =
         let bytes = E.encode8Bit str
             expect = OrPattern.bottom
         actual <-
-            evaluateTermT
-                $ mkApplySymbol
+            evaluateTermT $
+                mkApplySymbol
                     substrBytesSymbol
                     [ asInternal bytes
                     , Test.Int.asInternal (toInteger $ end + delta)
@@ -211,8 +211,8 @@ test_substr =
         let bytes = E.encode8Bit str
             expect = OrPattern.bottom
         actual <-
-            evaluateTermT
-                $ mkApplySymbol
+            evaluateTermT $
+                mkApplySymbol
                     substrBytesSymbol
                     [ asInternal bytes
                     , Test.Int.asInternal 0
@@ -226,8 +226,8 @@ test_substr =
         let bytes = E.encode8Bit str
             expect = OrPattern.bottom
         actual <-
-            evaluateTermT
-                $ mkApplySymbol
+            evaluateTermT $
+                mkApplySymbol
                     substrBytesSymbol
                     [ asInternal bytes
                     , Test.Int.asInternal (toInteger begin)
@@ -282,8 +282,8 @@ test_replaceAt =
         let bytes = E.encode8Bit str
             expect = asOrPattern bytes
         actual <-
-            evaluateTermT
-                $ mkApplySymbol
+            evaluateTermT $
+                mkApplySymbol
                     replaceAtBytesSymbol
                     [ asInternal bytes
                     , Test.Int.asInternal (toInteger idx)
@@ -295,8 +295,8 @@ test_replaceAt =
         idx <- forAll $ Gen.int (Range.linear 0 256)
         let expect = OrPattern.bottom
         actual <-
-            evaluateTermT
-                $ mkApplySymbol
+            evaluateTermT $
+                mkApplySymbol
                     replaceAtBytesSymbol
                     [ asInternal ""
                     , Test.Int.asInternal (toInteger idx)
@@ -313,8 +313,8 @@ test_replaceAt =
                 bytes' = E.encode8Bit new
                 expect = OrPattern.bottom
             actual <-
-                evaluateTermT
-                    $ mkApplySymbol
+                evaluateTermT $
+                    mkApplySymbol
                         replaceAtBytesSymbol
                         [ asInternal bytes
                         , Test.Int.asInternal (toInteger idx)
@@ -355,8 +355,8 @@ test_padRight =
         let bytes = E.encode8Bit str
             expect = asOrPattern bytes
         actual <-
-            evaluateTermT
-                $ mkApplySymbol
+            evaluateTermT $
+                mkApplySymbol
                     padRightBytesSymbol
                     [ asInternal bytes
                     , Test.Int.asInternal (toInteger $ BS.length bytes)
@@ -381,8 +381,8 @@ test_padLeft =
         let bytes = E.encode8Bit str
             expect = asOrPattern bytes
         actual <-
-            evaluateTermT
-                $ mkApplySymbol
+            evaluateTermT $
+                mkApplySymbol
                     padLeftBytesSymbol
                     [ asInternal bytes
                     , Test.Int.asInternal (toInteger $ BS.length bytes)
@@ -406,8 +406,8 @@ test_reverse =
         let bytes = E.encode8Bit str
             expect = asOrPattern bytes
         actual <-
-            evaluateTermT
-                $ mkApplySymbol
+            evaluateTermT $
+                mkApplySymbol
                     reverseBytesSymbol
                     [ mkApplySymbol
                         reverseBytesSymbol
@@ -446,8 +446,8 @@ test_concat =
         let bytes = E.encode8Bit str
             expect = asOrPattern bytes
         actual <-
-            evaluateTermT
-                $ mkApplySymbol
+            evaluateTermT $
+                mkApplySymbol
                     concatBytesSymbol
                     [ asInternal bytes
                     , asInternal ""
@@ -458,8 +458,8 @@ test_concat =
         let bytes = E.encode8Bit str
             expect = asOrPattern bytes
         actual <-
-            evaluateTermT
-                $ mkApplySymbol
+            evaluateTermT $
+                mkApplySymbol
                     concatBytesSymbol
                     [ asInternal ""
                     , asInternal bytes
@@ -481,8 +481,8 @@ test_reverse_length =
         let bytes = E.encode8Bit str
             expect = Test.Int.asOrPattern $ toInteger $ BS.length bytes
         actual <-
-            evaluateTermT
-                $ mkApplySymbol
+            evaluateTermT $
+                mkApplySymbol
                     lengthBytesSymbol
                     [ mkApplySymbol
                         reverseBytesSymbol
@@ -499,8 +499,8 @@ test_update_get =
         let bytes = E.encode8Bit str
             expect = asOrPattern bytes
         actual <-
-            evaluateTermT
-                $ mkApplySymbol
+            evaluateTermT $
+                mkApplySymbol
                     updateBytesSymbol
                     [ asInternal bytes
                     , Test.Int.asInternal $ toInteger idx
@@ -518,8 +518,8 @@ test_bytes2string_string2bytes =
         str <- forAll genString
         let expect = Test.String.asOrPattern str
         actual <-
-            evaluateTermT
-                $ mkApplySymbol
+            evaluateTermT $
+                mkApplySymbol
                     bytes2stringBytesSymbol
                     [ mkApplySymbol
                         string2bytesBytesSymbol
@@ -536,8 +536,8 @@ test_decodeBytes_encodeBytes = map testProp encodings
             str <- forAll genString
             let expect = Test.String.asOrPattern str
             actual <-
-                evaluateTermT
-                    $ mkApplySymbol
+                evaluateTermT $
+                    mkApplySymbol
                         decodeBytesBytesSymbol
                         [ Test.String.asInternal encoding
                         , mkApplySymbol
@@ -584,15 +584,15 @@ testBadEvaluation testName hook term =
     testCase testName $ do
         try (runNoSMT $ evaluateTerm term) >>= \case
             Right patt ->
-                assertFailure
-                    $ unlines
+                assertFailure $
+                    unlines
                         [ "Expected evaluation to fail, but it succeeded:"
                         , show patt
                         ]
             Left (ErrorCall errMsg) -> do
                 let expectedErrMsg =
-                        show
-                            $ Pretty.vsep
+                        show $
+                            Pretty.vsep
                                 [ "Expecting hook " <> Pretty.squotes hook <> " to reduce concrete pattern:"
                                 , Pretty.indent 4 (unparse term)
                                 ]
@@ -691,17 +691,17 @@ test_InternalBytes :: [TestTree]
 test_InternalBytes =
     [ testCase "\\dv{Bytes{}}(\"00\")" $ do
         let unverified =
-                mkDomainValue
-                    $ DomainValue bytesSort
-                    $ mkStringLiteral "00"
+                mkDomainValue $
+                    DomainValue bytesSort $
+                        mkStringLiteral "00"
             expect = Right $ asInternal "00"
             actual = verifyPattern (Just bytesSort) unverified
         assertEqual "" expect actual
     , testCase "\\dv{Bytes{}}(\"\\x00\")" $ do
         let unverified =
-                mkDomainValue
-                    $ DomainValue bytesSort
-                    $ mkStringLiteral "\x00"
+                mkDomainValue $
+                    DomainValue bytesSort $
+                        mkStringLiteral "\x00"
             expect = Right $ asInternal "\x00"
             actual = verifyPattern (Just bytesSort) unverified
         assertEqual "" expect actual

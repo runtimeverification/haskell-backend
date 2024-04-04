@@ -212,4 +212,4 @@ test_sortModuleClaims =
     ixSetLocation index sourceLocation verifiedModule =
         verifiedModule
             & field @"indexedModuleClaims"
-            %~ (ix index . Lens._1 . field @"sourceLocation" .~ sourceLocation)
+                %~ (ix index . Lens._1 . field @"sourceLocation" .~ sourceLocation)

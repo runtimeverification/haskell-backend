@@ -358,10 +358,8 @@ smoothOutGraph graph = do
   where
     inOutDegreeOne :: Graph.Node -> Bool
     inOutDegreeOne node =
-        Graph.outdeg graph node
-            == 1
-            && Graph.indeg graph node
-            == 1
+        Graph.outdeg graph node == 1
+            && Graph.indeg graph node == 1
             && not (all isBranchingNode $ Graph.pre graph node)
     componentToEdge ::
         Gr node edgeLabel ->
@@ -527,17 +525,16 @@ liftSimplifierWithLogger mLogger simplifier = do
             } = koreLogOptions
     (textLogger, maybeHandle) <- logTypeToLogger logType
     let logger =
-            Log.koreLogFilters koreLogOptions
-                $ Log.makeKoreLogger
+            Log.koreLogFilters koreLogOptions $
+                Log.makeKoreLogger
                     exeName
                     startTime
                     timestampsSwitch
                     logFormat
                     textLogger
     _ <-
-        Monad.Trans.lift
-            . liftIO
-            $ swapMVar mLogger logger
+        Monad.Trans.lift . liftIO $
+            swapMVar mLogger logger
     result <- Monad.Trans.lift simplifier
     maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
     pure result
@@ -653,9 +650,8 @@ runUnifier sideCondition first second = do
     let unifyBottomEntry = someTypeRep (Proxy @DebugUnifyBottom)
         newState =
             initialState
-                & field @"koreLogOptions"
-                . field @"logEntries"
-                Lens.%~ Set.insert unifyBottomEntry
+                & field @"koreLogOptions" . field @"logEntries"
+                    Lens.%~ Set.insert unifyBottomEntry
     put newState
     result <-
         liftSimplifierWithLogger mvar

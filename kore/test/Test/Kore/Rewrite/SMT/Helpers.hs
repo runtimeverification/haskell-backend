@@ -151,8 +151,8 @@ isError ::
     SmtPrelude ->
     TestTree
 isError actions _ prelude =
-    testCase "isError"
-        $ catch (catch runSolver ignoreIOError) ignoreErrorCall
+    testCase "isError" $
+        catch (catch runSolver ignoreIOError) ignoreErrorCall
   where
     runSolver = do
         _ <- getSmtResult actions prelude
@@ -226,8 +226,8 @@ constructorAxiom sortName constructors =
         SentenceAxiom
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
-                externalize
-                    $ foldr mkOr (mkBottom sort) constructorAssertions
+                externalize $
+                    foldr mkOr (mkBottom sort) constructorAssertions
             , sentenceAxiomAttributes = Attributes []
             }
         `with` noJunk

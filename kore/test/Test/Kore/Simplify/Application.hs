@@ -148,8 +148,8 @@ test_applicationSimplification =
                                 { term = Mock.a
                                 , predicate = makeEqualsPredicate fOfA fOfB
                                 , substitution =
-                                    Substitution.wrap
-                                        $ Substitution.mkUnwrappedSubstitution
+                                    Substitution.wrap $
+                                        Substitution.mkUnwrappedSubstitution
                                             [(inject Mock.xConfig, fOfA)]
                                 }
                             ]
@@ -158,8 +158,8 @@ test_applicationSimplification =
                                 { term = Mock.b
                                 , predicate = makeEqualsPredicate gOfA gOfB
                                 , substitution =
-                                    Substitution.wrap
-                                        $ Substitution.mkUnwrappedSubstitution
+                                    Substitution.wrap $
+                                        Substitution.mkUnwrappedSubstitution
                                             [(inject Mock.yConfig, gOfA)]
                                 }
                             ]

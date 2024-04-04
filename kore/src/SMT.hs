@@ -288,9 +288,9 @@ withSolverHandleWithRestart solverSetup action = do
     restartSolverAndRetry = do
         logAction <- Log.askLogAction
         newSolverHandle <-
-            Trans.liftIO
-                $ Exception.handle handleIOException
-                $ SimpleSMT.newSolver exe args logAction
+            Trans.liftIO $
+                Exception.handle handleIOException $
+                    SimpleSMT.newSolver exe args logAction
         _ <- Trans.liftIO $ putMVar mvar newSolverHandle
         initSolver solverSetup
         action newSolverHandle
@@ -567,8 +567,8 @@ instance MonadSMT SMT where
                     action (Just solverSetup) `Exception.finally` do
                         withSolverWithRestart solverSetup pop
                         needReset <-
-                            modifySolverHandle solverSetup
-                                $ incrementQueryCounter (resetInterval (config solverSetup))
+                            modifySolverHandle solverSetup $
+                                incrementQueryCounter (resetInterval (config solverSetup))
                         when needReset (reinitSMT' solverSetup)
     liftSMT = id
 
@@ -598,11 +598,9 @@ mkComment origName name =
         <$> if Text.null origName
             then Nothing
             else
-                Just
-                    $ (Text.init . Text.unlines . map (Text.append "; ") . Text.lines)
-                    $ origName
-                    <> " -> "
-                    <> name
+                Just $
+                    (Text.init . Text.unlines . map (Text.append "; ") . Text.lines) $
+                        origName <> " -> " <> name
 
 declareSortSMT :: SortDeclaration SExpr -> SMT SExpr
 declareSortSMT declaration@SortDeclaration{name} =
@@ -633,9 +631,8 @@ assertSMT fact =
     SMT $ \case
         Nothing -> return ()
         Just solverSetup ->
-            traceProf ":solver:assert"
-                $ withSolver' solverSetup
-                $ \solver ->
+            traceProf ":solver:assert" $
+                withSolver' solverSetup $ \solver ->
                     SimpleSMT.assert solver fact
 
 checkSMT :: SMT (Maybe Result)
@@ -644,8 +641,8 @@ checkSMT =
         Nothing -> return Nothing
         Just solverSetup -> do
             result <-
-                traceProf ":solver:check"
-                    $ withSolver' solverSetup (\solver -> SimpleSMT.checkUsing solver (tactic . config $ solverSetup))
+                traceProf ":solver:check" $
+                    withSolver' solverSetup (\solver -> SimpleSMT.checkUsing solver (tactic . config $ solverSetup))
             return (Just result)
 
 checkSMTUsing :: SExpr -> SMT (Maybe Result)
@@ -654,8 +651,8 @@ checkSMTUsing tactic =
         Nothing -> return Nothing
         Just solverSetup -> do
             result <-
-                traceProf ":solver:check"
-                    $ withSolver' solverSetup (\solver -> SimpleSMT.checkUsing solver (Just tactic))
+                traceProf ":solver:check" $
+                    withSolver' solverSetup (\solver -> SimpleSMT.checkUsing solver (Just tactic))
             return (Just result)
 
 getValueSMT :: [SExpr] -> SMT (Either Text [(SExpr, SExpr)])
@@ -663,10 +660,10 @@ getValueSMT targets =
     SMT $ \case
         Nothing -> return $ Left "no-solver"
         Just solverSetup ->
-            traceProf ":solver:get-value"
-                $ onErrorLeft
-                $ fmap (map (second SimpleSMT.value))
-                $ withSolver' solverSetup (flip SimpleSMT.getExprs targets)
+            traceProf ":solver:get-value" $
+                onErrorLeft $
+                    fmap (map (second SimpleSMT.value)) $
+                        withSolver' solverSetup (flip SimpleSMT.getExprs targets)
   where
     onErrorLeft :: (MonadIO m, MonadCatch m) => m a -> m (Either Text a)
     onErrorLeft action =
@@ -704,18 +701,16 @@ localTimeOut adjust isolated = do
     isolated <* setTimeOut originalTimeOut
   where
     extractTimeOut =
-        SMT
-            $ pure
-            . \case
+        SMT $
+            pure . \case
                 Nothing -> TimeOut Unlimited
                 Just setup -> timeOut $ config setup
 
 -- | Get the retry limit for SMT queries.
 askRetryLimitSMT :: SMT RetryLimit
 askRetryLimitSMT =
-    SMT
-        $ pure
-        . \case
+    SMT $
+        pure . \case
             Nothing -> RetryLimit (Limit 0)
             Just setup -> retryLimit $ config setup
 

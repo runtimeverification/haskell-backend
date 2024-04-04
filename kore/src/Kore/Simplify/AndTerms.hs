@@ -165,8 +165,8 @@ maybeTermEquals childTransformers first second = do
         | Just unifyData <- matchBytes first second =
             lift $ unifyBytes unifyData
         | Just unifyData <- matchBottomTermEquals first second =
-            lift
-                $ bottomTermEquals
+            lift $
+                bottomTermEquals
                     (sameSort (termLikeSort first) (termLikeSort second))
                     SideCondition.topTODO
                     unifyData
@@ -201,16 +201,16 @@ maybeTermEquals childTransformers first second = do
         | Just unifyData <- Builtin.Map.matchUnifyEquals tools first second =
             lift $ Builtin.Map.unifyEquals childTransformers tools unifyData
         | Just unifyData <- Builtin.Map.matchUnifyNotInKeys first second =
-            lift
-                $ Builtin.Map.unifyNotInKeys
+            lift $
+                Builtin.Map.unifyNotInKeys
                     (sameSort (termLikeSort first) (termLikeSort second))
                     childTransformers
                     unifyData
         | Just unifyData <- Builtin.Set.matchUnifyEquals tools first second =
             lift $ Builtin.Set.unifyEquals childTransformers tools unifyData
         | Just unifyData <- Builtin.List.matchUnifyEqualsList tools first second =
-            lift
-                $ Builtin.List.unifyEquals
+            lift $
+                Builtin.List.unifyEquals
                     childTransformers
                     tools
                     unifyData
@@ -293,8 +293,8 @@ maybeTermAnd childTransformers first second = do
         | Just unifyData <- Builtin.Set.matchUnifyEquals tools first second =
             lift $ Builtin.Set.unifyEquals childTransformers tools unifyData
         | Just unifyData <- Builtin.List.matchUnifyEqualsList tools first second =
-            lift
-                $ Builtin.List.unifyEquals
+            lift $
+                Builtin.List.unifyEquals
                     childTransformers
                     tools
                     unifyData
@@ -463,9 +463,9 @@ bottomTermEquals
                         Conditional
                             { term = mkTop resultSort
                             , predicate =
-                                makeNotPredicate
-                                    $ OrCondition.toPredicate
-                                    $ OrPattern.map Condition.toPredicate secondCeil
+                                makeNotPredicate $
+                                    OrCondition.toPredicate $
+                                        OrPattern.map Condition.toPredicate secondCeil
                             , substitution = mempty
                             }
       where
@@ -743,10 +743,9 @@ overloadedConstructorSortInjectionAndEquals termMerger unifyData =
                 ) -> do
                 boundPattern <- do
                     merged <- termMerger firstTerm' secondTerm'
-                    liftSimplifier
-                        $ Exists.makeEvaluate SideCondition.topTODO narrowingVars
-                        $ merged
-                        `Pattern.andCondition` narrowingSubst
+                    liftSimplifier $
+                        Exists.makeEvaluate SideCondition.topTODO narrowingVars $
+                            merged `Pattern.andCondition` narrowingSubst
                 case OrPattern.toPatterns boundPattern of
                     [result] -> return result
                     [] ->
@@ -812,8 +811,8 @@ domainValueAndConstructorErrors ::
     DVConstrError ->
     unifier a
 domainValueAndConstructorErrors unifyData =
-    error
-        $ show
+    error $
+        show
             ( Pretty.vsep
                 [ cannotHandle
                 , fromString $ unparseToString term1

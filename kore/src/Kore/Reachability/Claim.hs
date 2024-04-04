@@ -290,19 +290,19 @@ deriveSeqClaim ::
     claim ->
     Strategy.TransitionT (AppliedRule claim) Simplifier (ApplyResult claim)
 deriveSeqClaim lensClaimPattern mkClaim claims claim =
-    getCompose
-        $ Lens.forOf lensClaimPattern claim
-        $ \claimPattern ->
-            fmap (snd . Step.refreshRule mempty)
-                $ Lens.forOf (field @"left") claimPattern
-                $ \config -> Compose $ do
-                    results <-
-                        Step.applyClaimsSequence
-                            mkClaim
-                            config
-                            (Lens.view lensClaimPattern <$> claims)
-                            & lift
-                    deriveResults fromAppliedRule results
+    getCompose $
+        Lens.forOf lensClaimPattern claim $
+            \claimPattern ->
+                fmap (snd . Step.refreshRule mempty) $
+                    Lens.forOf (field @"left") claimPattern $
+                        \config -> Compose $ do
+                            results <-
+                                Step.applyClaimsSequence
+                                    mkClaim
+                                    config
+                                    (Lens.view lensClaimPattern <$> claims)
+                                    & lift
+                            deriveResults fromAppliedRule results
   where
     fromAppliedRule =
         AppliedClaim
@@ -340,8 +340,8 @@ transitionRule stuckCheck allowVacuous claims axiomGroups = transitionRuleWorker
     transitionRuleWorker Begin claimState = pure claimState
     transitionRuleWorker Simplify claimState
         | Just claim <- retractSimplifiable claimState =
-            Transition.ifte (simplify claim) (pure . ($>) claimState)
-                $ case allowVacuous of
+            Transition.ifte (simplify claim) (pure . ($>) claimState) $
+                case allowVacuous of
                     AllowedVacuous -> pure Proven
                     DisallowedVacuous -> pure $ Stuck claim
         | otherwise =
@@ -514,14 +514,12 @@ assertFunctionLikeConfiguration ::
     m ()
 assertFunctionLikeConfiguration claimPattern
     | (not . isFunctionPattern) leftTerm =
-        error
-            . show
-            . Pretty.vsep
-            $ [ "The check implication step expects\
-                \ the configuration term to be function-like."
-              , Pretty.indent 2 "Configuration term:"
-              , Pretty.indent 4 (unparse leftTerm)
-              ]
+        error . show . Pretty.vsep $
+            [ "The check implication step expects\
+              \ the configuration term to be function-like."
+            , Pretty.indent 2 "Configuration term:"
+            , Pretty.indent 4 (unparse leftTerm)
+            ]
     | otherwise = pure ()
   where
     ClaimPattern{left} = claimPattern
@@ -592,9 +590,9 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
     elseImplied $ do
         (anyUnified, removal) <- getNegativeConjuncts
         let definedConfig =
-                Pattern.andCondition left
-                    $ from
-                    $ makeCeilPredicate leftTerm
+                Pattern.andCondition left $
+                    from $
+                        makeCeilPredicate leftTerm
         let configs' = MultiOr.map (definedConfig <*) removal
         stuck <- simplifyRemainder configs'
         result <- examine anyUnified stuck
@@ -613,10 +611,8 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
 
     simplifyRemainder remainder =
         Logic.scatter remainder
-            >>= liftSimplifier
-            . Pattern.simplify
-            >>= liftSimplifier
-            . SMT.Evaluator.filterMultiOr $srcLoc
+            >>= liftSimplifier . Pattern.simplify
+            >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
             >>= Logic.scatter
 
     -- TODO (#1278): Do not combine the predicate and the substitution.
@@ -641,14 +637,12 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
             unified <-
                 makeInPredicate leftTerm rightTerm
                     & Pattern.fromPredicateSorted sort
-                    & liftSimplifier
-                    . Pattern.simplify
+                    & liftSimplifier . Pattern.simplify
                     & (>>= Logic.scatter)
             didUnify
             removed <-
                 Pattern.andCondition unified rightCondition
-                    & liftSimplifier
-                    . Pattern.simplify
+                    & liftSimplifier . Pattern.simplify
                     & (>>= Logic.scatter)
             liftSimplifier (Exists.makeEvaluate sideCondition existentials removed)
                 >>= Logic.scatter
@@ -679,8 +673,8 @@ checkImplicationWorker (ClaimPattern.refreshExistentials -> claimPattern) =
         , not (isBottom right) =
             pure $ NotImplied claimPattern
         | otherwise = do
-            when (isBottom right)
-                $ warnClaimRHSIsBottom claimPattern
+            when (isBottom right) $
+                warnClaimRHSIsBottom claimPattern
             Lens.set (field @"left") stuck claimPattern
                 & NotImpliedStuck
                 & pure
@@ -767,19 +761,17 @@ checkSimpleImplication inLeft inRight existentials =
                     (mkExistsN existentials (Pattern.toTermLike right))
 
         let definedConfig =
-                Pattern.andCondition left
-                    $ from
-                    $ makeCeilPredicate leftTerm
+                Pattern.andCondition left $
+                    from $
+                        makeCeilPredicate leftTerm
         trivial <-
-            fmap isBottom
-                . liftSimplifier
-                $ SMT.Evaluator.filterMultiOr $srcLoc
-                =<< Pattern.simplify definedConfig
+            fmap isBottom . liftSimplifier $
+                SMT.Evaluator.filterMultiOr $srcLoc
+                    =<< Pattern.simplify definedConfig
         rhsBottom <-
-            fmap isBottom
-                . liftSimplifier
-                $ SMT.Evaluator.filterMultiOr $srcLoc
-                =<< Pattern.simplify right
+            fmap isBottom . liftSimplifier $
+                SMT.Evaluator.filterMultiOr $srcLoc
+                    =<< Pattern.simplify right
 
         case (trivial, rhsBottom) of
             (True, _) -> pure (claimToCheck, Implied Nothing)
@@ -787,9 +779,9 @@ checkSimpleImplication inLeft inRight existentials =
             _ -> do
                 -- attempt term unification (to remember the substitution
                 unified <-
-                    lift
-                        $ runUnifier
-                        $ unificationProcedure SideCondition.top leftTerm rightTerm
+                    lift $
+                        runUnifier $
+                            unificationProcedure SideCondition.top leftTerm rightTerm
 
                 -- for each unification result, attempt to refute the formula
                 remainders ::
@@ -819,13 +811,13 @@ checkSimpleImplication inLeft inRight existentials =
     simplifyToSingle ctx pat = do
         let patSort = termLikeSort (Pattern.term pat)
         simplified <- toList <$> lift (Pattern.simplify pat)
-        withContext (ctx <> showPretty pat)
-            $ koreFailWhen
+        withContext (ctx <> showPretty pat) $
+            koreFailWhen
                 (length simplified > 1)
                 "Term does not simplify to a singleton pattern"
-        pure
-            $ fromMaybe (Pattern.bottomOf patSort)
-            $ headMay simplified
+        pure $
+            fromMaybe (Pattern.bottomOf patSort) $
+                headMay simplified
 
     showPretty :: Pretty a => a -> String
     showPretty = Pretty.renderString . Pretty.layoutOneLine . Pretty.pretty
@@ -833,8 +825,8 @@ checkSimpleImplication inLeft inRight existentials =
     checkAssumptions left right = do
         let leftTerm = Pattern.term left
         -- must be function-like
-        withContext (showPretty leftTerm)
-            $ koreFailWhen
+        withContext (showPretty leftTerm) $
+            koreFailWhen
                 (not $ isFunctionPattern leftTerm)
                 "The check implication step expects the antecedent term to be function-like."
         -- RHS existentials must not capture free variables of LHS
@@ -883,9 +875,8 @@ checkSimpleImplication inLeft inRight existentials =
         leftCondition
         rightCondition
         unified =
-            fmap ((,unified) . MultiOr.mergeAll)
-                $ Logic.observeAllT
-                $ do
+            fmap ((,unified) . MultiOr.mergeAll) $
+                Logic.observeAllT $ do
                     let existsChild =
                             Pattern.andCondition
                                 (Pattern.fromCondition sort unified)
@@ -912,8 +903,8 @@ checkSimpleImplication inLeft inRight existentials =
                     toRefute <-
                         liftSimplifier
                             $ Pattern.simplify
-                            . OrPattern.toPattern sort
-                            . MultiOr.map combineWithAntecedent
+                                . OrPattern.toPattern sort
+                                . MultiOr.map combineWithAntecedent
                             $ notRhs
 
                     liftSimplifier $ SMT.Evaluator.filterMultiOr $srcLoc toRefute
@@ -960,14 +951,11 @@ simplifyRightHandSide ::
     Simplifier claim
 simplifyRightHandSide lensClaimPattern sideCondition =
     Lens.traverseOf (lensClaimPattern . field @"right") $ \dest ->
-        OrPattern.observeAllT
-            $ Logic.scatter dest
-            >>= liftSimplifier
-            . Pattern.makeEvaluate sideCondition
-            . Pattern.requireDefined
-            >>= liftSimplifier
-            . SMT.Evaluator.filterMultiOr $srcLoc
-            >>= Logic.scatter
+        OrPattern.observeAllT $
+            Logic.scatter dest
+                >>= liftSimplifier . Pattern.makeEvaluate sideCondition . Pattern.requireDefined
+                >>= liftSimplifier . SMT.Evaluator.filterMultiOr $srcLoc
+                >>= Logic.scatter
 
 isTrusted :: From claim Attribute.Axiom.Trusted => claim -> Bool
 isTrusted = Attribute.Trusted.isTrusted . from @_ @Attribute.Axiom.Trusted
@@ -1009,14 +997,14 @@ deriveWith ::
     claim ->
     Strategy.TransitionT (AppliedRule claim) m (ApplyResult claim)
 deriveWith lensClaimPattern mkRule takeStep rewrites claim =
-    getCompose
-        $ Lens.forOf lensClaimPattern claim
-        $ \claimPattern ->
-            fmap (snd . Step.refreshRule mempty)
-                $ Lens.forOf (field @"left") claimPattern
-                $ \config -> Compose $ do
-                    results <- takeStep rewrites config & lift
-                    deriveResults fromAppliedRule results
+    getCompose $
+        Lens.forOf lensClaimPattern claim $
+            \claimPattern ->
+                fmap (snd . Step.refreshRule mempty) $
+                    Lens.forOf (field @"left") claimPattern $
+                        \config -> Compose $ do
+                            results <- takeStep rewrites config & lift
+                            deriveResults fromAppliedRule results
   where
     fromAppliedRule =
         AppliedAxiom

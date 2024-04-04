@@ -340,10 +340,9 @@ buildConstructorArgument
         Just
             SMT.ConstructorArgument
                 { name =
-                    AST.Encodable
-                        $ SMT.Atom
-                        $ constructorName
-                        <> (Text.pack . show) index
+                    AST.Encodable $
+                        SMT.Atom $
+                            constructorName <> (Text.pack . show) index
                 , argType = AST.SortReference sort
                 }
 buildConstructorArgument _ _ _ = Nothing

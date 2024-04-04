@@ -686,9 +686,8 @@ test_unifyConcrete =
                     (,) <$> genIntVariable <*> genIntVariable
                   where
                     genIntVariable =
-                        standaloneGen
-                            $ mkElemVar
-                            <$> configElementVariableGen intSort
+                        standaloneGen $
+                            mkElemVar <$> configElementVariableGen intSort
             map12 <- forAll (genConcreteMap genVariablePair)
             let map1 = fst <$> map12
                 map2 = snd <$> map12
@@ -1005,9 +1004,9 @@ test_unifySelectTwoFromTwoElementMap =
             unless (distinctVariables variables) discard
 
             let selectPat =
-                    addSelectElement keyVar1 valueVar1
-                        $ addSelectElement keyVar2 valueVar2
-                        $ mkElemVar mapVar
+                    addSelectElement keyVar1 valueVar1 $
+                        addSelectElement keyVar2 valueVar2 $
+                            mkElemVar mapVar
                 mapDV = asInternal [(key1, value1), (key2, value2)]
                 expect1 =
                     Conditional
@@ -1057,8 +1056,8 @@ test_unifySameSymbolicKey =
             unless (distinctVariables variables) discard
 
             let selectPat =
-                    addSelectElement keyVar1 valueVar1
-                        $ mkElemVar mapVar
+                    addSelectElement keyVar1 valueVar1 $
+                        mkElemVar mapVar
                 mapValue =
                     asVariableInternal
                         (HashMap.singleton (mkElemVar keyVar1) value1)
@@ -1105,12 +1104,12 @@ test_unifySameSymbolicKeySymbolicOpaque =
                         then (mapVar1, mapVar2)
                         else (mapVar2, mapVar1)
                 selectPat =
-                    addLookupElement (from key1) valueVar1
-                        $ addSelectElement keyVar2 valueVar2
-                        $ mkElemVar mapVar2
+                    addLookupElement (from key1) valueVar1 $
+                        addSelectElement keyVar2 valueVar2 $
+                            mkElemVar mapVar2
                 mapValueFromVar mapVar =
-                    Ac.asInternal testMetadataTools mapSort
-                        $ wrapAc
+                    Ac.asInternal testMetadataTools mapSort $
+                        wrapAc
                             NormalizedAc
                                 { elementsWithVariables =
                                     [MapElement (mkElemVar keyVar2, value2)]
@@ -1490,8 +1489,8 @@ asPattern ::
     HashMap Key (TermLike RewritingVariableName) ->
     Pattern RewritingVariableName
 asPattern concreteMap =
-    Ac.asPattern testMetadataTools mapSort
-        $ wrapAc
+    Ac.asPattern testMetadataTools mapSort $
+        wrapAc
             NormalizedAc
                 { elementsWithVariables = []
                 , concreteElements = MapValue <$> concreteMap
@@ -1502,8 +1501,8 @@ asVariablePattern ::
     HashMap (TermLike RewritingVariableName) (TermLike RewritingVariableName) ->
     Pattern RewritingVariableName
 asVariablePattern variableMap =
-    Ac.asPattern testMetadataTools mapSort
-        $ wrapAc
+    Ac.asPattern testMetadataTools mapSort $
+        wrapAc
             NormalizedAc
                 { elementsWithVariables = MapElement <$> HashMap.toList variableMap
                 , concreteElements = HashMap.empty
@@ -1514,8 +1513,8 @@ asVariableInternal ::
     HashMap (TermLike RewritingVariableName) (TermLike RewritingVariableName) ->
     TermLike RewritingVariableName
 asVariableInternal variableMap =
-    Ac.asInternal testMetadataTools mapSort
-        $ wrapAc
+    Ac.asInternal testMetadataTools mapSort $
+        wrapAc
             NormalizedAc
                 { elementsWithVariables = MapElement <$> HashMap.toList variableMap
                 , concreteElements = HashMap.empty
@@ -1528,8 +1527,8 @@ asInternal ::
     [(TermLike variable, TermLike variable)] ->
     TermLike variable
 asInternal elements =
-    Ac.asInternal testMetadataTools mapSort
-        $ wrapAc
+    Ac.asInternal testMetadataTools mapSort $
+        wrapAc
             NormalizedAc
                 { elementsWithVariables = wrapElement <$> abstractElements
                 , concreteElements
@@ -1537,14 +1536,10 @@ asInternal elements =
                 }
   where
     asConcrete element@(key, value) =
-        (,)
-            <$> retractKey key
-            <*> pure value
+        (,) <$> retractKey key <*> pure value
             & maybe (Left element) Right
     (abstractElements, HashMap.fromList -> concreteElements) =
-        asConcrete
-            . Bifunctor.second MapValue
-            <$> elements
+        asConcrete . Bifunctor.second MapValue <$> elements
             & partitionEithers
 
 {- | Construct a 'NormalizedMap' from a list of elements and opaque terms.
@@ -1558,10 +1553,8 @@ normalizedMap ::
     [TermLike RewritingVariableName] ->
     NormalizedMap Key (TermLike RewritingVariableName)
 normalizedMap elements opaque =
-    Maybe.fromJust
-        . Ac.renormalize
-        . wrapAc
-        $ NormalizedAc
+    Maybe.fromJust . Ac.renormalize . wrapAc $
+        NormalizedAc
             { elementsWithVariables = MapElement <$> elements
             , concreteElements = HashMap.empty
             , opaque

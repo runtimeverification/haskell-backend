@@ -135,9 +135,9 @@ mkOverloadSimplifier overloadGraph InjSimplifier{isOrderedInj, injectTermTo} =
         [TermLike RewritingVariableName] ->
         TermLike RewritingVariableName
     resolveOverloading injProto overloadedHead overloadingChildren =
-        mkApplySymbol overloadedHead
-            $ assert (length overloadedChildrenSorts == length overloadingChildren)
-            $ zipWith mkInj overloadingChildren overloadedChildrenSorts
+        mkApplySymbol overloadedHead $
+            assert (length overloadedChildrenSorts == length overloadingChildren) $
+                zipWith mkInj overloadingChildren overloadedChildrenSorts
       where
         mkInj = injectTermTo injProto
         overloadedChildrenSorts =
@@ -149,8 +149,8 @@ mkOverloadSimplifier overloadGraph InjSimplifier{isOrderedInj, injectTermTo} =
         headMay withinBound
       where
         withinBound =
-            filterOverloads injProto topSort
-                $ OverloadGraph.commonOverloads overloadGraph s1 s2
+            filterOverloads injProto topSort $
+                OverloadGraph.commonOverloads overloadGraph s1 s2
 
     unifyOverloadWithSortWithinBound ::
         Symbol -> Inj () -> Either String (Maybe InjectedOverloadPair)
@@ -177,9 +177,8 @@ mkOverloadSimplifier overloadGraph InjSimplifier{isOrderedInj, injectTermTo} =
                 )
                 overloadings
         overloadings =
-            filterOverloads injProto injTo
-                . Set.toList
-                $ OverloadGraph.getOverloading overloadGraph sym
+            filterOverloads injProto injTo . Set.toList $
+                OverloadGraph.getOverloading overloadGraph sym
 
     getOverloadedWithinSort ::
         Inj () ->
@@ -194,9 +193,8 @@ mkOverloadSimplifier overloadGraph InjSimplifier{isOrderedInj, injectTermTo} =
         | otherwise = errorAmbiguousOverloads (map overload overloads)
       where
         overloads =
-            filterOverloads injProto topSort
-                . Set.toList
-                $ OverloadGraph.getOverloaded overloadGraph sym
+            filterOverloads injProto topSort . Set.toList $
+                OverloadGraph.getOverloaded overloadGraph sym
 
     updateMaxOverload :: (a -> Symbol) -> a -> Maybe a -> Maybe a
     updateMaxOverload _ x Nothing = Just x

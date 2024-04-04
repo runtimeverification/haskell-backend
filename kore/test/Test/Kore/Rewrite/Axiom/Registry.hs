@@ -171,15 +171,15 @@ testDef =
                 { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    externalize
-                        $ mkImplies
+                    externalize $
+                        mkImplies
                             ( mkAnd
                                 (mkTop sortVarS)
                                 ( mkAnd
                                     ( mkIn
                                         sortVarS
-                                        ( mkElemVar
-                                            $ mkElementVariable (testId "tVar") sortS
+                                        ( mkElemVar $
+                                            mkElementVariable (testId "tVar") sortS
                                         )
                                         (mkApplySymbol tHead [])
                                     )
@@ -190,8 +190,8 @@ testDef =
                                 sortVarS
                                 ( mkApplySymbol
                                     (injHead sortS sortS)
-                                    [ mkElemVar
-                                        $ mkElementVariable (testId "tVar") sortS
+                                    [ mkElemVar $
+                                        mkElementVariable (testId "tVar") sortS
                                     ]
                                 )
                                 ( mkAnd
@@ -205,8 +205,8 @@ testDef =
                 { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    externalize
-                        $ mkImplies
+                    externalize $
+                        mkImplies
                             (mkTop sortVarS)
                             ( mkEquals
                                 sortVarS
@@ -222,8 +222,8 @@ testDef =
                 { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    externalize
-                        $ mkImplies
+                    externalize $
+                        mkImplies
                             (mkTop sortVarS)
                             ( mkEquals
                                 sortVarS
@@ -240,8 +240,8 @@ testDef =
                 , sentenceAxiomAttributes =
                     Attributes [Attribute.priorityAttribute 2]
                 , sentenceAxiomPattern =
-                    externalize
-                        $ mkImplies
+                    externalize $
+                        mkImplies
                             (mkTop sortVarS)
                             ( mkEquals
                                 sortVarS
@@ -258,8 +258,8 @@ testDef =
                 , sentenceAxiomAttributes =
                     Attributes [Attribute.priorityAttribute 3]
                 , sentenceAxiomPattern =
-                    externalize
-                        $ mkImplies
+                    externalize $
+                        mkImplies
                             (mkTop sortVarS)
                             ( mkEquals
                                 sortVarS
@@ -276,8 +276,8 @@ testDef =
                 , sentenceAxiomAttributes =
                     Attributes [Attribute.owiseAttribute]
                 , sentenceAxiomPattern =
-                    externalize
-                        $ mkImplies
+                    externalize $
+                        mkImplies
                             (mkTop sortVarS)
                             ( mkEquals
                                 sortVarS
@@ -294,8 +294,8 @@ testDef =
                 , sentenceAxiomAttributes =
                     Attributes [Attribute.priorityAttribute 1]
                 , sentenceAxiomPattern =
-                    externalize
-                        $ mkImplies
+                    externalize $
+                        mkImplies
                             (mkTop sortVarS)
                             ( mkEquals
                                 sortVarS
@@ -311,8 +311,8 @@ testDef =
                 { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    externalize
-                        $ mkImplies
+                    externalize $
+                        mkImplies
                             (mkTop sortVarS)
                             ( mkEquals
                                 sortVarS
@@ -328,8 +328,8 @@ testDef =
                 { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes [simplificationAttribute Nothing]
                 , sentenceAxiomPattern =
-                    externalize
-                        $ mkImplies
+                    externalize $
+                        mkImplies
                             (mkTop sortVarS)
                             ( mkEquals
                                 sortVarS
@@ -348,8 +348,8 @@ testDef =
                         [ simplificationAttribute (Just 3)
                         ]
                 , sentenceAxiomPattern =
-                    externalize
-                        $ mkImplies
+                    externalize $
+                        mkImplies
                             (mkTop sortVarS)
                             ( mkEquals
                                 sortVarS
@@ -368,8 +368,8 @@ testDef =
                         [ simplificationAttribute (Just 1)
                         ]
                 , sentenceAxiomPattern =
-                    externalize
-                        $ mkImplies
+                    externalize $
+                        mkImplies
                             (mkTop sortVarS)
                             ( mkEquals
                                 sortVarS
@@ -388,8 +388,8 @@ testDef =
                         [ simplificationAttribute (Just 2)
                         ]
                 , sentenceAxiomPattern =
-                    externalize
-                        $ mkImplies
+                    externalize $
+                        mkImplies
                             (mkTop sortVarS)
                             ( mkEquals
                                 sortVarS
@@ -405,8 +405,8 @@ testDef =
                 { sentenceAxiomParameters = [sortVar]
                 , sentenceAxiomAttributes = Attributes []
                 , sentenceAxiomPattern =
-                    externalize
-                        $ mkRewrites
+                    externalize $
+                        mkRewrites
                             (mkAnd (mkTop sortS) (mkApplySymbol fHead []))
                             (mkAnd (mkTop sortS) (mkApplySymbol tHead []))
                 }
@@ -415,8 +415,8 @@ testDef =
                 { sentenceAxiomParameters = [sortVar, sortVar1]
                 , sentenceAxiomAttributes = Attributes [simplificationAttribute Nothing]
                 , sentenceAxiomPattern =
-                    externalize
-                        $ mkImplies
+                    externalize $
+                        mkImplies
                             (mkTop sortVarS)
                             ( mkEquals
                                 sortVarS
@@ -441,8 +441,8 @@ testIndexedModule =
 
 testEquations :: Map.Map AxiomIdentifier.AxiomIdentifier [Equation.Equation RewritingVariableName]
 testEquations =
-    Map.map (fmap . Equation.mapVariables $ pure mkConfigVariable)
-        $ extractEquations testIndexedModule
+    Map.map (fmap . Equation.mapVariables $ pure mkConfigVariable) $
+        extractEquations testIndexedModule
 
 testProcessedAxiomPatterns :: PartitionedEquationsMap
 testProcessedAxiomPatterns =
@@ -505,19 +505,19 @@ test_functionRegistry =
     , testCase "Checking that evaluator simplifies correctly" $ do
         let expect = [mkApplySymbol sHead []]
         simplified <-
-            testRunSimplifier testEnv
-                $ Pattern.simplify
-                $ makePattern
-                $ mkApplySymbol gHead []
+            testRunSimplifier testEnv $
+                Pattern.simplify $
+                    makePattern $
+                        mkApplySymbol gHead []
         let actual = Pattern.term <$> toList simplified
         assertEqual "" expect actual
     , testCase "Checking that evaluator simplifies correctly" $ do
         let expect = [mkApplySymbol tHead []]
         simplified <-
-            testRunSimplifier testEnv
-                $ Pattern.simplify
-                $ makePattern
-                $ mkApplySymbol pHead []
+            testRunSimplifier testEnv $
+                Pattern.simplify $
+                    makePattern $
+                        mkApplySymbol pHead []
         let actual = Pattern.term <$> toList simplified
         assertEqual "" expect actual
     , testCase

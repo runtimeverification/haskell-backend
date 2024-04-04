@@ -149,10 +149,10 @@ makeEvaluatePredicate
         Conditional
             { term = ()
             , predicate =
-                Predicate.markSimplified
-                    $ makeNotPredicate
-                    $ makeAndPredicate predicate
-                    $ Substitution.toPredicate substitution
+                Predicate.markSimplified $
+                    makeNotPredicate $
+                        makeAndPredicate predicate $
+                            Substitution.toPredicate substitution
             , substitution = mempty
             }
 

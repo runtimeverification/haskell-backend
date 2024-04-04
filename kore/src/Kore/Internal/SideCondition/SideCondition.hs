@@ -58,10 +58,8 @@ instance Ord Representation where
 
 instance Show Representation where
     showsPrec prec (Representation typeRep1 _) =
-        showParen (prec >= 10)
-            $ showString "Representation "
-            . shows typeRep1
-            . showString " _"
+        showParen (prec >= 10) $
+            showString "Representation " . shows typeRep1 . showString " _"
     {-# INLINE showsPrec #-}
 
 instance Hashable Representation where

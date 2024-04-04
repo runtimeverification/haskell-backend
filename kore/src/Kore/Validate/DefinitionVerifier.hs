@@ -149,4 +149,4 @@ sortModuleClaims ::
 sortModuleClaims verifiedModule =
     verifiedModule
         & field @"indexedModuleClaims"
-        %~ sortOn (Attribute.sourceLocation . fst)
+            %~ sortOn (Attribute.sourceLocation . fst)

@@ -81,5 +81,4 @@ main = do
 readKoreOrDie :: FilePath -> IO ParsedDefinition
 readKoreOrDie fileName =
     Text.readFile fileName
-        >>= either error return
-        . parseKoreDefinition fileName
+        >>= either error return . parseKoreDefinition fileName

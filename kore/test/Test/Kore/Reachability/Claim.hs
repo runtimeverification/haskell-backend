@@ -249,8 +249,8 @@ test_checkSimpleImplication =
             implication =
                 mkImplication (mkElemVar Mock.x) (mkElemVar Mock.y) existentials
             expected =
-                Condition.mapVariables (pure mkConfigVariable)
-                    $ Condition.assign (inject Mock.x) (mkElemVar Mock.y)
+                Condition.mapVariables (pure mkConfigVariable) $
+                    Condition.assign (inject Mock.x) (mkElemVar Mock.y)
         actual <-
             checkSimple config dest existentials
         assertEqual "" (implication, Implied $ Just expected) actual
@@ -300,16 +300,16 @@ test_checkSimpleImplication =
             dest = Mock.f (mkElemVar Mock.y) & Pattern.fromTermLike
             existentials = [Mock.y]
             unifier =
-                Condition.mapVariables (pure mkConfigVariable)
-                    $ Condition.fromPredicate
-                    $ makeAndPredicate
-                        ( makeCeilPredicate
-                            (Mock.f (mkElemVar Mock.x))
-                        )
-                        ( makeEqualsPredicate
-                            (Mock.f (mkElemVar Mock.x))
-                            (Mock.f (mkElemVar Mock.y))
-                        )
+                Condition.mapVariables (pure mkConfigVariable) $
+                    Condition.fromPredicate $
+                        makeAndPredicate
+                            ( makeCeilPredicate
+                                (Mock.f (mkElemVar Mock.x))
+                            )
+                            ( makeEqualsPredicate
+                                (Mock.f (mkElemVar Mock.x))
+                                (Mock.f (mkElemVar Mock.y))
+                            )
             implication =
                 mkImplication
                     (Mock.f $ mkElemVar Mock.x)
@@ -409,8 +409,8 @@ mkImplication ::
     [ElementVariable VariableName] ->
     TermLike.TermLike RewritingVariableName
 mkImplication antecedent consequent existentials =
-    mkRewritingTerm
-        $ TermLike.mkImplies antecedent (TermLike.mkExistsN existentials consequent)
+    mkRewritingTerm $
+        TermLike.mkImplies antecedent (TermLike.mkExistsN existentials consequent)
 
 aToB :: ClaimPattern
 aToB =

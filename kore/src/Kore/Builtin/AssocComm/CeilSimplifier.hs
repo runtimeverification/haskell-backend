@@ -146,8 +146,7 @@ generalizeMapElement freeVariables' element =
     (key, MapValue value) = unwrapElement element
     element' = wrapElement (key, MapValue $ TermLike.mkElemVar variable)
     avoiding =
-        TermLike.freeVariables key
-            <> freeVariables'
+        TermLike.freeVariables key <> freeVariables'
             & FreeVariables.toNames
     x =
         TermLike.mkElementVariable (generatedId "x") (termLikeSort value)
@@ -210,8 +209,7 @@ definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
     definedKeyPairs <-
         traverse
             distinctKey
-            ( symbolicKeyPairs
-                <> symbolicConcreteKeyPairs
+            ( symbolicKeyPairs <> symbolicConcreteKeyPairs
                 & HashSet.toList
             )
             & fmap MultiAnd.make
@@ -221,12 +219,11 @@ definePairWiseElements mkBuiltin mkNotMember internalAc pairWiseElements = do
                 (symbolicOpaquePairs <> concreteOpaquePairs')
         definedOpaquePairs =
             foldMap defineOpaquePair opaquePairs
-    return
-        . fold
-        $ [ definedKeyPairs
-          , definedElementOpaquePairs
-          , definedOpaquePairs
-          ]
+    return . fold $
+        [ definedKeyPairs
+        , definedElementOpaquePairs
+        , definedOpaquePairs
+        ]
   where
     PairWiseElements
         { symbolicPairs

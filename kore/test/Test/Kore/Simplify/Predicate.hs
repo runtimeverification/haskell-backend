@@ -245,15 +245,14 @@ test_simplify =
                 [[fromCeil_ (Mock.f (mkElemVar y))]]
             ]
         , (test "nested quantifiers")
-            ( (fromExists x)
-                . (fromExists y)
-                $ ( fromAnd
-                        (fromEquals_ (Mock.f Mock.a) (Mock.g (mkElemVar x)))
-                        ( fromAnd
-                            (fromEquals_ (mkElemVar t) (mkElemVar x))
-                            (fromEquals_ (mkElemVar u) (mkElemVar y))
-                        )
-                  )
+            ( (fromExists x) . (fromExists y) $
+                ( fromAnd
+                    (fromEquals_ (Mock.f Mock.a) (Mock.g (mkElemVar x)))
+                    ( fromAnd
+                        (fromEquals_ (mkElemVar t) (mkElemVar x))
+                        (fromEquals_ (mkElemVar u) (mkElemVar y))
+                    )
+                )
             )
             [[fromEquals_ (Mock.f Mock.a) (Mock.g (mkElemVar t))]]
         , (test "invalid assignment")

@@ -18,41 +18,41 @@ parseComm = parseAttributes
 
 test_comm :: TestTree
 test_comm =
-    testCase "[comm{}()] :: Comm"
-        $ expectSuccess Comm{isComm = True}
-        $ parseComm
-        $ Attributes [commAttribute]
+    testCase "[comm{}()] :: Comm" $
+        expectSuccess Comm{isComm = True} $
+            parseComm $
+                Attributes [commAttribute]
 
 test_Attributes :: TestTree
 test_Attributes =
-    testCase "[comm{}()] :: Attributes"
-        $ expectSuccess attrs
-        $ parseAttributes attrs
+    testCase "[comm{}()] :: Attributes" $
+        expectSuccess attrs $
+            parseAttributes attrs
   where
     attrs = Attributes [commAttribute]
 
 test_duplicate :: TestTree
 test_duplicate =
-    testCase "[comm{}(), comm{}()]"
-        $ expectFailure
-        $ parseComm
-        $ Attributes [commAttribute, commAttribute]
+    testCase "[comm{}(), comm{}()]" $
+        expectFailure $
+            parseComm $
+                Attributes [commAttribute, commAttribute]
 
 test_arguments :: TestTree
 test_arguments =
-    testCase "[comm{}(\"illegal\")]"
-        $ expectFailure
-        $ parseComm
-        $ Attributes [illegalAttribute]
+    testCase "[comm{}(\"illegal\")]" $
+        expectFailure $
+            parseComm $
+                Attributes [illegalAttribute]
   where
     illegalAttribute = attributePattern commSymbol [attributeString "illegal"]
 
 test_parameters :: TestTree
 test_parameters =
-    testCase "[comm{illegal}()]"
-        $ expectFailure
-        $ parseComm
-        $ Attributes [illegalAttribute]
+    testCase "[comm{illegal}()]" $
+        expectFailure $
+            parseComm $
+                Attributes [illegalAttribute]
   where
     illegalAttribute =
         (asAttributePattern . ApplicationF)

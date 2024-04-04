@@ -232,8 +232,8 @@ test_simplificationIntegration =
             actual
     , testCase "map function, non-matching" $ do
         let initial =
-                Pattern.fromTermLike
-                    $ Mock.function20MapTest (Mock.builtinMap []) Mock.a
+                Pattern.fromTermLike $
+                    Mock.function20MapTest (Mock.builtinMap []) Mock.a
             expect = OrPattern.fromPattern initial
         actual <-
             evaluateWithAxioms
@@ -268,9 +268,9 @@ test_simplificationIntegration =
                     (Mock.f (mkElemVar var))
                     (Mock.g Mock.b)
             expect =
-                OrPattern.fromTermLike
-                    $ Mock.functionalConstr11
-                    $ Mock.g Mock.a
+                OrPattern.fromTermLike $
+                    Mock.functionalConstr11 $
+                        Mock.g Mock.a
         actual <-
             evaluateConditionalWithAxioms
                 ( Map.fromList
@@ -289,10 +289,10 @@ test_simplificationIntegration =
                     . from @(Predicate _)
                     $ requirement Mock.xConfig
                 )
-                ( Pattern.fromTermLike
-                    $ mkExists Mock.zConfig
-                    $ Mock.functionalConstr11
-                    $ Mock.functionalConstr10 (mkElemVar Mock.xConfig)
+                ( Pattern.fromTermLike $
+                    mkExists Mock.zConfig $
+                        Mock.functionalConstr11 $
+                            Mock.functionalConstr10 (mkElemVar Mock.xConfig)
                 )
         assertEqual "" expect actual
     , testCase "no function branching" $ do
@@ -364,20 +364,20 @@ test_simplificationIntegration =
         assertEqual "" expect actual
     , testCase "exists variable equality" $ do
         actual <-
-            evaluate
-                $ Pattern.fromTermLike
-                $ mkExists Mock.xConfig
-                $ (mkEquals Mock.testSort) (mkElemVar Mock.xConfig) (mkElemVar Mock.yConfig)
+            evaluate $
+                Pattern.fromTermLike $
+                    mkExists Mock.xConfig $
+                        (mkEquals Mock.testSort) (mkElemVar Mock.xConfig) (mkElemVar Mock.yConfig)
         assertEqual "" (OrPattern.topOf Mock.testSort) actual
     , testCase "exists variable equality reverse" $ do
         actual <-
-            evaluate
-                $ Pattern.fromTermLike
-                $ mkExists Mock.xConfig
-                $ (mkEquals Mock.testSort) (mkElemVar Mock.yConfig) (mkElemVar Mock.xConfig)
+            evaluate $
+                Pattern.fromTermLike $
+                    mkExists Mock.xConfig $
+                        (mkEquals Mock.testSort) (mkElemVar Mock.yConfig) (mkElemVar Mock.xConfig)
         assertEqual "" (OrPattern.topOf Mock.testSort) actual
-    , testCase "simplification with top predicate (exists variable capture)"
-        $ do
+    , testCase "simplification with top predicate (exists variable capture)" $
+        do
             let requirement = \var ->
                     makeEqualsPredicate
                         (Mock.f (mkElemVar var))
@@ -413,8 +413,8 @@ test_simplificationIntegration =
                         , substitution = mempty
                         }
             assertEqual "" expect actual
-    , testCase "simplification with top predicate (forall variable capture)"
-        $ do
+    , testCase "simplification with top predicate (forall variable capture)" $
+        do
             let requirement = \var ->
                     makeEqualsPredicate
                         (Mock.f (mkElemVar var))
@@ -754,8 +754,8 @@ test_simplificationIntegrationUnification :: [TestTree]
 test_simplificationIntegrationUnification =
     [ testCase "map function, non-matching" $ do
         let initial =
-                Pattern.fromTermLike
-                    $ Mock.function20MapTest (Mock.builtinMap []) Mock.a
+                Pattern.fromTermLike $
+                    Mock.function20MapTest (Mock.builtinMap []) Mock.a
             expect = OrPattern.fromPattern initial
         actual <-
             evaluateWithAxioms
@@ -787,9 +787,9 @@ test_simplificationIntegrationUnification =
                     (Mock.f (mkElemVar var))
                     (Mock.g Mock.b)
             expect =
-                OrPattern.fromTermLike
-                    $ Mock.functionalConstr11
-                    $ Mock.g Mock.a
+                OrPattern.fromTermLike $
+                    Mock.functionalConstr11 $
+                        Mock.g Mock.a
         actual <-
             evaluateConditionalWithAxioms
                 ( Map.fromList
@@ -809,10 +809,10 @@ test_simplificationIntegrationUnification =
                     . from @(Predicate _)
                     $ requirement Mock.xConfig
                 )
-                ( Pattern.fromTermLike
-                    $ mkExists Mock.zConfig
-                    $ Mock.functionalConstr11
-                    $ Mock.functionalConstr10 (mkElemVar Mock.xConfig)
+                ( Pattern.fromTermLike $
+                    mkExists Mock.zConfig $
+                        Mock.functionalConstr11 $
+                            Mock.functionalConstr10 (mkElemVar Mock.xConfig)
                 )
         assertEqual "" expect actual
     , testCase "no function branching" $ do
@@ -852,8 +852,8 @@ test_simplificationIntegrationUnification =
                     , substitution = mempty
                     }
         assertEqual "" expect actual
-    , testCase "simplification with top predicate (exists variable capture)"
-        $ do
+    , testCase "simplification with top predicate (exists variable capture)" $
+        do
             let requirement = \var ->
                     makeEqualsPredicate
                         (Mock.f (mkElemVar var))
@@ -890,8 +890,8 @@ test_simplificationIntegrationUnification =
                         , substitution = mempty
                         }
             assertEqual "" expect actual
-    , testCase "simplification with top predicate (forall variable capture)"
-        $ do
+    , testCase "simplification with top predicate (forall variable capture)" $
+        do
             let requirement = \var ->
                     makeEqualsPredicate
                         (Mock.f (mkElemVar var))
@@ -1081,11 +1081,11 @@ test_substituteMap :: [TestTree]
 test_substituteMap =
     [ testCase "Substitution applied to Map elements" $ do
         let testMapX =
-                Mock.sortInjection Mock.testSort
-                    $ mkDomainBuiltinMap [(Mock.a, mkElemVar Mock.xConfig)]
+                Mock.sortInjection Mock.testSort $
+                    mkDomainBuiltinMap [(Mock.a, mkElemVar Mock.xConfig)]
             testMapA =
-                Mock.sortInjection Mock.testSort
-                    $ mkDomainBuiltinMap [(Mock.a, Mock.a)]
+                Mock.sortInjection Mock.testSort $
+                    mkDomainBuiltinMap [(Mock.a, Mock.a)]
             expect =
                 OrPattern.fromPatterns
                     [ Pattern.Conditional
@@ -1116,11 +1116,11 @@ test_substituteList :: [TestTree]
 test_substituteList =
     [ testCase "Substitution applied to List elements" $ do
         let testListX =
-                Mock.sortInjection Mock.testSort
-                    $ mkDomainBuiltinList [Mock.a, mkElemVar Mock.xConfig]
+                Mock.sortInjection Mock.testSort $
+                    mkDomainBuiltinList [Mock.a, mkElemVar Mock.xConfig]
             testListA =
-                Mock.sortInjection Mock.testSort
-                    $ mkDomainBuiltinList [Mock.a, Mock.a]
+                Mock.sortInjection Mock.testSort $
+                    mkDomainBuiltinList [Mock.a, Mock.a]
             expect =
                 OrPattern.fromPatterns
                     [ Pattern.Conditional

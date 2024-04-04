@@ -238,9 +238,8 @@ removeSymbolicKeyOfAc
     normalized@NormalizedAc{elementsWithVariables} =
         normalized
             { elementsWithVariables =
-                fmap wrapElement
-                    . HashMap.toList
-                    $ HashMap.delete child unwrappedMap
+                fmap wrapElement . HashMap.toList $
+                    HashMap.delete child unwrappedMap
             }
       where
         unwrappedMap =
@@ -447,8 +446,8 @@ unparseInternalAc ::
     InternalAc key normalized child ->
     Pretty.Doc ann
 unparseInternalAc keyUnparser childUnparser builtinAc =
-    unparseConcat' (unparse builtinAcUnit) (unparse builtinAcConcat)
-        $ unparsedChildren builtinAcElement keyUnparser childUnparser builtinAcChild
+    unparseConcat' (unparse builtinAcUnit) (unparse builtinAcConcat) $
+        unparsedChildren builtinAcElement keyUnparser childUnparser builtinAcChild
   where
     InternalAc{builtinAcChild} = builtinAc
     InternalAc{builtinAcUnit} = builtinAc
@@ -614,7 +613,5 @@ generatePairWiseElements (unwrapAc -> normalized) =
         [AcPair_ x y | x : ys <- List.tails elems, y <- dropWhile (== x) ys]
             & HashSet.fromList
     pairWiseElemsOfDifferentTypes elems1 elems2 =
-        (,)
-            <$> elems1
-            <*> elems2
+        (,) <$> elems1 <*> elems2
             & HashSet.fromList

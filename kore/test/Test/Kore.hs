@@ -503,34 +503,27 @@ korePatternChildGen patternSort' =
 
     korePatternGenStringLiteral :: Gen ParsedPattern
     korePatternGenStringLiteral =
-        embedParsedPattern
-            . Syntax.StringLiteralF
-            . Const
+        embedParsedPattern . Syntax.StringLiteralF . Const
             <$> stringLiteralGen
 
     korePatternGenDomainValue :: Gen ParsedPattern
     korePatternGenDomainValue =
-        embedParsedPattern
-            . Syntax.DomainValueF
+        embedParsedPattern . Syntax.DomainValueF
             <$> genDomainValue korePatternChildGen patternSort'
 
     korePatternGenNext :: Gen ParsedPattern
     korePatternGenNext =
-        embedParsedPattern
-            . Syntax.NextF
+        embedParsedPattern . Syntax.NextF
             <$> nextGen korePatternChildGen patternSort'
 
     korePatternGenRewrites :: Gen ParsedPattern
     korePatternGenRewrites =
-        embedParsedPattern
-            . Syntax.RewritesF
+        embedParsedPattern . Syntax.RewritesF
             <$> rewritesGen korePatternChildGen patternSort'
 
     korePatternGenVariable :: Gen ParsedPattern
     korePatternGenVariable =
-        embedParsedPattern
-            . Syntax.VariableF
-            . Const
+        embedParsedPattern . Syntax.VariableF . Const
             <$> unifiedVariableGen patternSort'
 
 korePatternUnifiedGen :: Gen ParsedPattern
@@ -713,8 +706,7 @@ koreSentenceGen =
         , SentenceImportSentence
             <$> sentenceImportGen
         , SentenceAxiomSentence <$> sentenceAxiomGen korePatternUnifiedGen
-        , SentenceClaimSentence
-            . SentenceClaim
+        , SentenceClaimSentence . SentenceClaim
             <$> sentenceAxiomGen korePatternUnifiedGen
         , SentenceSortSentence <$> sentenceSortGen
         , SentenceHookSentence . SentenceHookedSort <$> sentenceSortGen

@@ -252,10 +252,8 @@ test_orientSubstitution =
 
     toLeft :: SomeVariableName VariableName -> Bool
     toLeft someVariableName =
-        someVariableName
-            == inject (variableName Mock.x)
-            || someVariableName
-            == inject (variableName Mock.y)
+        someVariableName == inject (variableName Mock.x)
+            || someVariableName == inject (variableName Mock.y)
 
 test_substitute :: [TestTree]
 test_substitute =
@@ -303,52 +301,62 @@ test_substitute =
             "Expected original non-target variable"
             (mkElemVar Mock.y)
             (substitute subst (mkElemVar Mock.y))
-    , testGroup "Ignores patterns without children"
-        $ let ignoring mkPredicate =
+    , testGroup "Ignores patterns without children" $
+        let ignoring mkPredicate =
                 assertEqual
                     "Expected no substitution"
-                    (mkPredicate Mock.testSort) -- expect
-                    ( substitute
+                    expect
+                    actual
+              where
+                expect = mkPredicate Mock.testSort
+                actual =
+                    substitute
                         (mkSubst Mock.x Mock.z)
-                        (mkPredicate Mock.testSort) -- actual
-                    )
-           in [ testCase "Bottom" (ignoring mkBottom)
-              , testCase "Top" (ignoring mkTop)
-              ]
-    , testGroup "Ignores shadowed variables"
-        $ let ignoring mkQuantifier =
+                        (mkPredicate Mock.testSort)
+         in [ testCase "Bottom" (ignoring mkBottom)
+            , testCase "Top" (ignoring mkTop)
+            ]
+    , testGroup "Ignores shadowed variables" $
+        let ignoring mkQuantifier =
                 assertEqual
                     "Expected shadowed variable to be ignored"
-                    (mkQuantifier Mock.x (mkElemVar Mock.x)) -- expect
-                    ( substitute
+                    expect
+                    actual
+              where
+                expect = mkQuantifier Mock.x (mkElemVar Mock.x)
+                actual =
+                    substitute
                         (mkSubst Mock.x Mock.z)
-                        (mkQuantifier Mock.x (mkElemVar Mock.x)) -- actual
-                    )
-           in [ testCase "Exists" (ignoring mkExists)
-              , testCase "Forall" (ignoring mkForall)
-              ]
-    , testGroup "Renames quantified variables to avoid capture"
-        $ let Just z' =
-                refreshElementVariable
-                    (Set.singleton (inject $ variableName Mock.z))
-                    Mock.z
-              renaming mkQuantifier =
+                        (mkQuantifier Mock.x (mkElemVar Mock.x))
+         in [ testCase "Exists" (ignoring mkExists)
+            , testCase "Forall" (ignoring mkForall)
+            ]
+    , testGroup "Renames quantified variables to avoid capture" $
+        let renaming mkQuantifier =
                 assertEqual
                     "Expected quantified variable to be renamed"
-                    ( mkQuantifier z'
-                        $ mkAnd (mkElemVar z') (mkElemVar Mock.z) -- expect
-                    )
-                    ( substitute (mkSubst Mock.x Mock.z)
-                        $ mkQuantifier Mock.z
-                        $ mkAnd (mkElemVar Mock.z) (mkElemVar Mock.x)
-                    ) -- actual
-           in [ testCase "Exists" (renaming mkExists)
-              , testCase "Forall" (renaming mkForall)
-              ]
+                    expect
+                    actual
+              where
+                expect =
+                    mkQuantifier z' $
+                        mkAnd (mkElemVar z') (mkElemVar Mock.z)
+                  where
+                    Just z' =
+                        refreshElementVariable
+                            (Set.singleton (inject $ variableName Mock.z))
+                            Mock.z
+                actual =
+                    substitute (mkSubst Mock.x Mock.z) $
+                        mkQuantifier Mock.z $
+                            mkAnd (mkElemVar Mock.z) (mkElemVar Mock.x)
+         in [ testCase "Exists" (renaming mkExists)
+            , testCase "Forall" (renaming mkForall)
+            ]
     , testCase "Preserves the identity of free variables" $ do
         let actual =
-                substitute (mkSubst Mock.x Mock.y)
-                    $ mkAnd (mkElemVar Mock.x) (mkElemVar Mock.y)
+                substitute (mkSubst Mock.x Mock.y) $
+                    mkAnd (mkElemVar Mock.x) (mkElemVar Mock.y)
         let expect = mkAnd (mkElemVar Mock.y) (mkElemVar Mock.y)
         assertEqual
             "Expected y to remain as it is"
@@ -358,21 +366,16 @@ test_substitute =
 
 test_refreshVariables :: [TestTree]
 test_refreshVariables =
-    [ (Mock.a, [Mock.x])
-        `becomes` Mock.a
-        $ "Does not rename symbols"
-    , (xTerm, [])
-        `becomes` xTerm
-        $ "No used variable"
-    , (xTerm, [Mock.y])
-        `becomes` xTerm
-        $ "No renaming if variable not used"
-    , (xTerm, [Mock.x])
-        `becomes` mkElemVar x_0
-        $ "Renames used variable"
-    , (Mock.f xTerm, [Mock.x])
-        `becomes` Mock.f (mkElemVar x_0)
-        $ "Renames under symbol"
+    [ (Mock.a, [Mock.x]) `becomes` Mock.a $
+        "Does not rename symbols"
+    , (xTerm, []) `becomes` xTerm $
+        "No used variable"
+    , (xTerm, [Mock.y]) `becomes` xTerm $
+        "No renaming if variable not used"
+    , (xTerm, [Mock.x]) `becomes` mkElemVar x_0 $
+        "Renames used variable"
+    , (Mock.f xTerm, [Mock.x]) `becomes` Mock.f (mkElemVar x_0) $
+        "Renames under symbol"
     ]
   where
     xTerm = mkElemVar Mock.x
@@ -595,16 +598,16 @@ test_uninternalize =
                 $ PatternF.ApplicationF
                 $ Application
                     (Symbol.toSymbolOrAlias Mock.concatListSymbol)
-                    [ asPattern
-                        $ PatternF.ApplicationF
-                        $ Application
-                            (Symbol.toSymbolOrAlias Mock.elementListSymbol)
-                            [toPattern $ mkElemVar Mock.x]
-                    , asPattern
-                        $ PatternF.ApplicationF
-                        $ Application
-                            (Symbol.toSymbolOrAlias Mock.elementListSymbol)
-                            [toPattern $ mkElemVar Mock.y]
+                    [ asPattern $
+                        PatternF.ApplicationF $
+                            Application
+                                (Symbol.toSymbolOrAlias Mock.elementListSymbol)
+                                [toPattern $ mkElemVar Mock.x]
+                    , asPattern $
+                        PatternF.ApplicationF $
+                            Application
+                                (Symbol.toSymbolOrAlias Mock.elementListSymbol)
+                                [toPattern $ mkElemVar Mock.y]
                     ]
         )
     , testCase
@@ -633,16 +636,16 @@ test_uninternalize =
                 $ PatternF.ApplicationF
                 $ Application
                     (Symbol.toSymbolOrAlias Mock.concatSetSymbol)
-                    [ asPattern
-                        $ PatternF.ApplicationF
-                        $ Application
-                            (Symbol.toSymbolOrAlias Mock.elementSetSymbol)
-                            [toPattern $ mkElemVar Mock.x]
-                    , asPattern
-                        $ PatternF.ApplicationF
-                        $ Application
-                            (Symbol.toSymbolOrAlias Mock.elementSetSymbol)
-                            [toPattern $ mkElemVar Mock.y]
+                    [ asPattern $
+                        PatternF.ApplicationF $
+                            Application
+                                (Symbol.toSymbolOrAlias Mock.elementSetSymbol)
+                                [toPattern $ mkElemVar Mock.x]
+                    , asPattern $
+                        PatternF.ApplicationF $
+                            Application
+                                (Symbol.toSymbolOrAlias Mock.elementSetSymbol)
+                                [toPattern $ mkElemVar Mock.y]
                     ]
         )
     , testCase
@@ -664,8 +667,8 @@ test_uninternalize =
 
             assertEqual
                 "two element map"
-                ( toPattern
-                    $ Mock.builtinMap
+                ( toPattern $
+                    Mock.builtinMap
                         [(mkElemVar Mock.x, mkElemVar Mock.x), (mkElemVar Mock.y, mkElemVar Mock.y)]
                 )
                 $ asPattern
@@ -681,8 +684,8 @@ test_uninternalize =
                     ]
             assertEqual
                 "three element map"
-                ( toPattern
-                    $ Mock.builtinMap
+                ( toPattern $
+                    Mock.builtinMap
                         [ (mkElemVar Mock.x, mkElemVar Mock.x)
                         , (mkElemVar Mock.y, mkElemVar Mock.y)
                         , (mkElemVar Mock.z, mkElemVar Mock.z)
@@ -695,17 +698,17 @@ test_uninternalize =
                     [ asPatternMapElement
                         (toPattern $ mkElemVar Mock.x)
                         (toPattern $ mkElemVar Mock.x)
-                    , asPattern
-                        $ PatternF.ApplicationF
-                        $ Application
-                            (Symbol.toSymbolOrAlias Mock.concatMapSymbol)
-                            [ asPatternMapElement
-                                (toPattern $ mkElemVar Mock.y)
-                                (toPattern $ mkElemVar Mock.y)
-                            , asPatternMapElement
-                                (toPattern $ mkElemVar Mock.z)
-                                (toPattern $ mkElemVar Mock.z)
-                            ]
+                    , asPattern $
+                        PatternF.ApplicationF $
+                            Application
+                                (Symbol.toSymbolOrAlias Mock.concatMapSymbol)
+                                [ asPatternMapElement
+                                    (toPattern $ mkElemVar Mock.y)
+                                    (toPattern $ mkElemVar Mock.y)
+                                , asPatternMapElement
+                                    (toPattern $ mkElemVar Mock.z)
+                                    (toPattern $ mkElemVar Mock.z)
+                                ]
                     ]
         )
     ]
@@ -719,11 +722,11 @@ test_uninternalize =
     asPattern pattF = Pattern.asPattern $ Attribute.Null :< pattF
 
     asPatternMapElement k v =
-        Pattern.asPattern
-            $ Attribute.Null
-            :< PatternF.ApplicationF
-                ( Application (Symbol.toSymbolOrAlias Mock.elementMapSymbol) [k, v]
-                )
+        Pattern.asPattern $
+            Attribute.Null
+                :< PatternF.ApplicationF
+                    ( Application (Symbol.toSymbolOrAlias Mock.elementMapSymbol) [k, v]
+                    )
 
 test_toSyntaxPattern :: TestTree
 test_toSyntaxPattern = Hedgehog.testProperty "convert a valid pattern to a Syntax.Pattern and back" . Hedgehog.property $ do
@@ -734,13 +737,13 @@ test_toSyntaxPattern = Hedgehog.testProperty "convert a valid pattern to a Synta
                 (const Attribute.Null)
                 (from trmLike :: Pattern.Pattern VariableName (TermAttributes VariableName))
 
-    case PatternVerifier.runPatternVerifier Mock.verifiedModuleContext
-        $ PatternVerifier.verifyStandalonePattern Nothing patt of
+    case PatternVerifier.runPatternVerifier Mock.verifiedModuleContext $
+        PatternVerifier.verifyStandalonePattern Nothing patt of
         Left Kore.Error.Error{errorError} ->
-            fail
-                $ unparseToString patt
-                <> "\n\n"
-                <> show errorError
+            fail $
+                unparseToString patt
+                    <> "\n\n"
+                    <> show errorError
         Right trmLike2 ->
             patt
                 === fmap

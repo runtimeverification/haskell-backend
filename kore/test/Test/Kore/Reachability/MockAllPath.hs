@@ -131,9 +131,8 @@ test_transitionRule_CheckImplication =
   where
     run _rs = runTransitionRule [] [] Prim.CheckImplication
     initial `becomes` final =
-        testCase "becomes"
-            $ run [] initial
-            >>= assertEqual "" [final]
+        testCase "becomes" $
+            run [] initial >>= assertEqual "" [final]
 
 test_transitionRule_ApplyClaims :: [TestTree]
 test_transitionRule_ApplyClaims =
@@ -185,9 +184,8 @@ unmodifiedAB ::
     a ->
     TestTree
 unmodifiedAB run state =
-    testCase "unmodified"
-        $ run [Rule (A, B)] state
-        >>= assertEqual "" [(state, mempty)]
+    testCase "unmodified" $
+        run [Rule (A, B)] state >>= assertEqual "" [(state, mempty)]
 
 derivesFrom ::
     HasCallStack =>
@@ -200,9 +198,8 @@ derivesFrom ::
     [(MockClaimState, Seq MockAppliedRule)] ->
     TestTree
 derivesFrom run state rules result =
-    testCase "derives"
-        $ run rules state
-        >>= assertEqual "" result
+    testCase "derives" $
+        run rules state >>= assertEqual "" result
 
 test_runStrategy :: [TestTree]
 test_runStrategy =
@@ -228,8 +225,8 @@ test_runStrategy =
         MockRule ->
         IO (Strategy.ExecutionGraph MockClaimState MockAppliedRule)
     run axioms goal =
-        testRunSimplifier Mock.env
-            $ Strategy.runStrategy
+        testRunSimplifier Mock.env $
+            Strategy.runStrategy
                 Unlimited
                 ( Claim.transitionRule Claim.EnabledStuckCheck Claim.AllowedVacuous [MockClaim (unRule goal)] [axioms]
                 )
@@ -245,10 +242,8 @@ test_runStrategy =
         [MockClaim] ->
         TestTree
     disproves axioms (MockClaim goal) unproven =
-        testCase (show axioms ++ " disproves " ++ show goal)
-            $ run axioms (Rule goal)
-            >>= assertEqual "" unproven
-            . unprovenNodes
+        testCase (show axioms ++ " disproves " ++ show goal) $
+            run axioms (Rule goal) >>= assertEqual "" unproven . unprovenNodes
 
     proves ::
         HasCallStack =>
@@ -258,10 +253,8 @@ test_runStrategy =
         MockClaim ->
         TestTree
     proves axioms (MockClaim goal) =
-        testCase (show axioms ++ " proves " ++ show goal)
-            $ run axioms (Rule goal)
-            >>= assertBool ""
-            . proven
+        testCase (show axioms ++ " proves " ++ show goal) $
+            run axioms (Rule goal) >>= assertBool "" . proven
 
 -- * Definitions
 
@@ -413,10 +406,9 @@ unprovenNodes ::
     Strategy.ExecutionGraph (ClaimState.ClaimState a) (AppliedRule MockClaim) ->
     [a]
 unprovenNodes executionGraph =
-    toList
-        . MultiOr.make
-        $ mapMaybe ClaimState.extractUnproven
-        $ Strategy.pickFinal executionGraph
+    toList . MultiOr.make $
+        mapMaybe ClaimState.extractUnproven $
+            Strategy.pickFinal executionGraph
 
 -- | Does the 'Strategy.ExecutionGraph' indicate a successful proof?
 proven ::

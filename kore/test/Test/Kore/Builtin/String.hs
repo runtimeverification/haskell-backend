@@ -361,15 +361,15 @@ testBadEvaluation testName hook term =
     testCase testName $ do
         try (runNoSMT $ evaluateTerm term) >>= \case
             Right patt ->
-                assertFailure
-                    $ unlines
+                assertFailure $
+                    unlines
                         [ "Expected evaluation to fail, but it succeeded:"
                         , show patt
                         ]
             Left (ErrorCall errMsg) -> do
                 let expectedErrMsg =
-                        show
-                            $ Pretty.vsep
+                        show $
+                            Pretty.vsep
                                 [ "Expecting hook " <> Pretty.squotes hook <> " to reduce concrete pattern:"
                                 , Pretty.indent 4 (unparse term)
                                 ]
@@ -438,8 +438,8 @@ test_string2Token =
         "STRING.string2token('test') is \\dv{userTokenSortId{}}('test')"
         string2TokenStringSymbol
         [asInternal "test"]
-        ( MultiOr.singleton
-            $ Builtin.makeDomainValuePattern userTokenSort "test"
+        ( MultiOr.singleton $
+            Builtin.makeDomainValuePattern userTokenSort "test"
         )
     ]
 

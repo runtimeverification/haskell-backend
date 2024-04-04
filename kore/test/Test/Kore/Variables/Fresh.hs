@@ -84,19 +84,19 @@ test_refreshVariable =
             "Expected fresh variable"
             (Just x1')
             (refreshVariable avoiding x1)
-    , testCase "refreshVariable - avoid empty set"
-        $ assertEqual
+    , testCase "refreshVariable - avoid empty set" $
+        assertEqual
             "Expected no new variable"
             Nothing
             (refreshVariable Set.empty original)
-    , testCase "refreshVariable - avoid original"
-        $ assertBool "Expected fresh variable" (original < fresh0 original)
-    , testCase "refreshVariable - avoid fresh"
-        $ assertBool
+    , testCase "refreshVariable - avoid original" $
+        assertBool "Expected fresh variable" (original < fresh0 original)
+    , testCase "refreshVariable - avoid fresh" $
+        assertBool
             "Expected another fresh variable"
             (fresh0 original < fresh1 original)
-    , testCase "refreshVariable - expecting the same sort"
-        $ assertBool
+    , testCase "refreshVariable - expecting the same sort" $
+        assertBool
             "Expected fresh variable has same sort as original"
             (variableSort original == variableSort fresh2)
     , testCase "refreshVariable - sort order does not matter" $ do
@@ -136,9 +136,8 @@ testFreshPartialOrd ::
     Gen (Pair variable) ->
     [TestTree]
 testFreshPartialOrd gen =
-    [ testProperty "exclusive bounds"
-        $ property
-        $ do
+    [ testProperty "exclusive bounds" $
+        property $ do
             xy <- forAll gen
             let Pair infX infY = minBoundName <$> xy
                 Pair supX supY = maxBoundName <$> xy
@@ -149,9 +148,8 @@ testFreshPartialOrd gen =
             (infX == infY) === (supX == supY)
             infX /== supY
             infY /== supX
-    , testProperty "lower and upper bound"
-        $ property
-        $ do
+    , testProperty "lower and upper bound" $
+        property $ do
             Pair x _ <- forAll gen
             let inf = minBoundName x
                 sup = maxBoundName x
@@ -160,9 +158,8 @@ testFreshPartialOrd gen =
             Hedgehog.assert (inf <= x)
             Hedgehog.assert (x <= sup)
             Hedgehog.assert (inf < sup)
-    , testProperty "idempotence"
-        $ property
-        $ do
+    , testProperty "idempotence" $
+        property $ do
             Pair x _ <- forAll gen
             let inf1 = minBoundName x
                 inf2 = minBoundName inf1
@@ -170,9 +167,8 @@ testFreshPartialOrd gen =
                 sup2 = maxBoundName sup1
             inf1 === inf2
             sup1 === sup2
-    , testProperty "nextName"
-        $ property
-        $ do
+    , testProperty "nextName" $
+        property $ do
             Pair x _ <- forAll gen
             let inf = minBoundName x
                 sup = maxBoundName x
@@ -196,8 +192,8 @@ counterGen =
 
 test_FreshPartialOrd_VariableName :: TestTree
 test_FreshPartialOrd_VariableName =
-    testGroup "instance FreshPartialOrd VariableName"
-        $ testFreshPartialOrd relatedVariableNameGen
+    testGroup "instance FreshPartialOrd VariableName" $
+        testFreshPartialOrd relatedVariableNameGen
 
 relatedVariableNameGen :: Gen (Pair VariableName)
 relatedVariableNameGen = do
@@ -217,21 +213,21 @@ relatedVariableNameGen = do
 
 test_FreshPartialOrd_ElementVariableName :: TestTree
 test_FreshPartialOrd_ElementVariableName =
-    testGroup "instance FreshPartialOrd (ElementVariableName VariableName)"
-        $ testFreshPartialOrd
-        $ (fmap . fmap) ElementVariableName relatedVariableNameGen
+    testGroup "instance FreshPartialOrd (ElementVariableName VariableName)" $
+        testFreshPartialOrd $
+            (fmap . fmap) ElementVariableName relatedVariableNameGen
 
 test_FreshPartialOrd_SetVariableName :: TestTree
 test_FreshPartialOrd_SetVariableName =
-    testGroup "instance FreshPartialOrd (SetVariableName VariableName)"
-        $ testFreshPartialOrd
-        $ (fmap . fmap) SetVariableName relatedVariableNameGen
+    testGroup "instance FreshPartialOrd (SetVariableName VariableName)" $
+        testFreshPartialOrd $
+            (fmap . fmap) SetVariableName relatedVariableNameGen
 
 test_FreshPartialOrd_SomeVariableName :: TestTree
 test_FreshPartialOrd_SomeVariableName =
-    testGroup "instance FreshPartialOrd (SomeVariableName VariableName)"
-        $ testFreshPartialOrd
-        $ someVariableNameGen relatedVariableNameGen
+    testGroup "instance FreshPartialOrd (SomeVariableName VariableName)" $
+        testFreshPartialOrd $
+            someVariableNameGen relatedVariableNameGen
 
 someVariableNameGen ::
     Gen (Pair variable) ->

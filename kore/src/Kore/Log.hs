@@ -115,8 +115,7 @@ withMainLogger reportDirectory koreLogOptions = runContT $ do
     let KoreLogOptions{timestampsSwitch} = koreLogOptions
         KoreLogOptions{logFormat} = koreLogOptions
         logAction =
-            userLogAction
-                <> bugReportLogAction
+            userLogAction <> bugReportLogAction
                 & makeKoreLogger exeName startTime timestampsSwitch logFormat
                 & koreLogFilters koreLogOptions
                 & koreLogTransformer koreLogOptions
@@ -133,24 +132,24 @@ checkLogFilePath exeName prefix logFile = do
     let defaultLogFile = "." </> (getExeName exeName <> "-" <> prefix <> "-" <> show currentTime) <.> "log"
     if not pathExists
         then do
-            hPutStrLn stderr
-                $ getExeName exeName
-                <> ": Warning: the path '"
-                <> takeDirectory logFile
-                <> "' does not exist. Logging to '"
-                <> defaultLogFile
-                <> "' instead."
+            hPutStrLn stderr $
+                getExeName exeName
+                    <> ": Warning: the path '"
+                    <> takeDirectory logFile
+                    <> "' does not exist. Logging to '"
+                    <> defaultLogFile
+                    <> "' instead."
             pure defaultLogFile
         else
             if fileExists
                 then do
-                    hPutStrLn stderr
-                        $ getExeName exeName
-                        <> ": Warning: the file '"
-                        <> logFile
-                        <> "' already exists. Logging to '"
-                        <> defaultLogFile
-                        <> "' instead."
+                    hPutStrLn stderr $
+                        getExeName exeName
+                            <> ": Warning: the file '"
+                            <> logFile
+                            <> "' already exists. Logging to '"
+                            <> defaultLogFile
+                            <> "' instead."
                     pure defaultLogFile
                 else pure logFile
 
@@ -276,10 +275,8 @@ makeKoreLogger exeName startTime timestampSwitch koreLogFormat logActionText =
             case timestampSwitch of
                 TimestampsDisable -> Nothing
                 TimestampsEnable ->
-                    Just
-                        . Pretty.brackets
-                        . Pretty.pretty
-                        $ toMicroSecs (diffTimeSpec startTime entryTime)
+                    Just . Pretty.brackets . Pretty.pretty $
+                        toMicroSecs (diffTimeSpec startTime entryTime)
         toMicroSecs = (`div` 1000) . toNanoSecs
     exeName' = Pretty.pretty exeName <> Pretty.colon
     prettyActualEntry timestamp entry@(SomeEntry entryContext actualEntry)
@@ -302,9 +299,9 @@ makeKoreLogger exeName startTime timestampSwitch koreLogFormat logActionText =
                 <> Pretty.colon
         severity' = prettySeverity (entrySeverity actualEntry)
         type' e =
-            Pretty.pretty
-                $ lookupTextFromTypeWithError
-                $ typeOfSomeEntry e
+            Pretty.pretty $
+                lookupTextFromTypeWithError $
+                    typeOfSomeEntry e
         context' =
             (entry : entryContext)
                 & reverse

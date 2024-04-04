@@ -257,9 +257,8 @@ evalElement :: Builtin.Function
 evalElement _ resultSort [_elem] =
     case retractKey _elem of
         Just concrete ->
-            lift
-                . TermLike.assertConstructorLikeKeys [_elem]
-                $ returnConcreteSet
+            lift . TermLike.assertConstructorLikeKeys [_elem] $
+                returnConcreteSet
                     resultSort
                     (HashMap.singleton concrete SetValue)
         Nothing ->
@@ -438,8 +437,7 @@ matchUnifyEquals tools first second
     worker a b isFirstMatched
         | InternalSet_ normalized1 <- a
         , InternalSet_ normalized2 <- b =
-            NormAc
-                . NormAcData normalized1 normalized2 term1 term2
+            NormAc . NormAcData normalized1 normalized2 term1 term2
                 <$> Ac.matchUnifyEqualsNormalizedAc
                     tools
                     normalized1

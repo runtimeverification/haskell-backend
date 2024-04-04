@@ -202,8 +202,8 @@ verifyPattern ::
     TermLike VariableName ->
     Either (Error VerifyError) (TermLike VariableName)
 verifyPattern expectedSort termLike =
-    runPatternVerifier context
-        $ verifyStandalonePattern expectedSort parsedPattern
+    runPatternVerifier context $
+        verifyStandalonePattern expectedSort parsedPattern
   where
     context =
         PatternVerifier.verifiedModuleContext (indexedModuleSyntax verifiedModule)
@@ -260,15 +260,15 @@ evaluateTerm ::
     TermLike RewritingVariableName ->
     SMT (OrPattern RewritingVariableName)
 evaluateTerm termLike =
-    runSimplifier testEnv
-        $ Pattern.simplify (Pattern.fromTermLike termLike)
+    runSimplifier testEnv $
+        Pattern.simplify (Pattern.fromTermLike termLike)
 
 evaluatePredicate ::
     Predicate RewritingVariableName ->
     SMT (OrPattern RewritingVariableName)
 evaluatePredicate predicate =
-    runSimplifier testEnv
-        $ Pattern.simplify
+    runSimplifier testEnv $
+        Pattern.simplify
             ( Pattern.fromCondition kSort
                 . Condition.fromPredicate
                 $ predicate

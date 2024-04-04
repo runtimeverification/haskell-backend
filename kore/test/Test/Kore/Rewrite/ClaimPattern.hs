@@ -54,8 +54,8 @@ test_refreshRule =
     , testCase "no stale variables" $ do
         let (renaming, _) = refreshRule mempty testRulePattern
         assertBool "expected not to rename variables" (null renaming)
-    , testGroup "stale existentials"
-        $ let assertions (renaming, claim@ClaimPattern{existentials}) = do
+    , testGroup "stale existentials" $
+        let assertions (renaming, claim@ClaimPattern{existentials}) = do
                 assertBool
                     "expected to refresh existentials"
                     (notElem y existentials)
@@ -65,21 +65,21 @@ test_refreshRule =
                 assertBool
                     "expected not to rename free variables"
                     (null renaming)
-           in [ testCase "from outside" $ do
-                    let stale = freeVariable (inject y)
-                    assertions $ refreshRule stale testRulePattern
-              , testCase "from left-hand side" $ do
-                    let input =
-                            testRulePattern
-                                { left =
-                                    Pattern.fromTermAndPredicate
-                                        (mkElemVar y)
-                                        ( Predicate.makeCeilPredicate
-                                            (mkElemVar z)
-                                        )
-                                }
-                    assertions $ refreshRule mempty input
-              ]
+         in [ testCase "from outside" $ do
+                let stale = freeVariable (inject y)
+                assertions $ refreshRule stale testRulePattern
+            , testCase "from left-hand side" $ do
+                let input =
+                        testRulePattern
+                            { left =
+                                Pattern.fromTermAndPredicate
+                                    (mkElemVar y)
+                                    ( Predicate.makeCeilPredicate
+                                        (mkElemVar z)
+                                    )
+                            }
+                assertions $ refreshRule mempty input
+            ]
     ]
 
 testRulePattern :: ClaimPattern

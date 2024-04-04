@@ -354,15 +354,11 @@ parseReadS aReadS (Text.unpack -> syntax) =
   where
     noParse = Kore.Error.koreFail ("failed to parse \"" ++ syntax ++ "\"")
     ambiguousParse =
-        Kore.Error.koreFail
-            $ "parsing \""
-            ++ syntax
-            ++ "\" was ambiguous"
+        Kore.Error.koreFail $
+            "parsing \"" ++ syntax ++ "\" was ambiguous"
     incompleteParse unparsed =
-        Kore.Error.koreFail
-            $ "incomplete parse: failed to parse \""
-            ++ unparsed
-            ++ "\""
+        Kore.Error.koreFail $
+            "incomplete parse: failed to parse \"" ++ unparsed ++ "\""
 
 -- | Parse an 'Integer' from a 'StringLiteral'.
 parseInteger :: StringLiteral -> Parser Integer

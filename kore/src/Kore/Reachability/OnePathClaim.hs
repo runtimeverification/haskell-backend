@@ -200,19 +200,19 @@ instance ClaimExtractor OnePathClaim where
                                     attributes
                             (right', existentials') =
                                 ClaimPattern.termToExistentials rhs'
-                        pure
-                            $ OnePathClaim
-                            $ ClaimPattern.refreshExistentials
-                                ClaimPattern
-                                    { ClaimPattern.left =
-                                        Pattern.fromTermAndPredicate
-                                            lhs
-                                            (Predicate.wrapPredicate requires)
-                                            & Pattern.mapVariables (pure mkRuleVariable)
-                                    , ClaimPattern.right = parseRightHandSide right'
-                                    , ClaimPattern.existentials = existentials'
-                                    , ClaimPattern.attributes = attributes'
-                                    }
+                        pure $
+                            OnePathClaim $
+                                ClaimPattern.refreshExistentials
+                                    ClaimPattern
+                                        { ClaimPattern.left =
+                                            Pattern.fromTermAndPredicate
+                                                lhs
+                                                (Predicate.wrapPredicate requires)
+                                                & Pattern.mapVariables (pure mkRuleVariable)
+                                        , ClaimPattern.right = parseRightHandSide right'
+                                        , ClaimPattern.existentials = existentials'
+                                        , ClaimPattern.attributes = attributes'
+                                        }
                   where
                     aliasId = (getId . aliasConstructor) alias
             _ -> Nothing

@@ -31,26 +31,26 @@ test_instance_Synthetic =
     [ testGroup "AndF" $ map (isn't . AndF) (BinaryAnd sort <$> range <*> range)
     , testGroup "BottomF" [isn't $ BottomF (Bottom sort)]
     , testGroup "CeilF" $ map (isn't . CeilF) (Ceil sort sort <$> range)
-    , testGroup "EqualsF"
-        $ map (isn't . EqualsF) (Equals sort sort <$> range <*> range)
+    , testGroup "EqualsF" $
+        map (isn't . EqualsF) (Equals sort sort <$> range <*> range)
     , testGroup "FloorF" $ map (isn't . FloorF) (Floor sort sort <$> range)
     , testGroup "IffF" $ map (isn't . IffF) (Iff sort <$> range <*> range)
-    , testGroup "ImpliesF"
-        $ map (isn't . ImpliesF) (Implies sort <$> range <*> range)
+    , testGroup "ImpliesF" $
+        map (isn't . ImpliesF) (Implies sort <$> range <*> range)
     , testGroup "InF" $ map (isn't . InF) (In sort sort <$> range <*> range)
     , testGroup "NotF" $ map (isn't . NotF) (Not sort <$> range)
-    , testGroup "RewritesF"
-        $ map (isn't . RewritesF) (Rewrites sort <$> range <*> range)
+    , testGroup "RewritesF" $
+        map (isn't . RewritesF) (Rewrites sort <$> range <*> range)
     , testGroup "TopF" [is $ TopF (Top sort)]
     , testGroup "ExistsF" $ map (isn't . ExistsF) (Exists sort Mock.x <$> range)
     , testGroup "ForallF" $ map (isn't . ForallF) (Forall sort Mock.x <$> range)
     , testGroup
         "VariableF"
         [is $ VariableF $ Const (mkSomeVariable @VariableName Mock.x)]
-    , testGroup "MuF"
-        $ map (isn't . MuF) (Mu (SetVariableName <$> Mock.x) <$> range)
-    , testGroup "NuF"
-        $ map (isn't . NuF) (Nu (SetVariableName <$> Mock.x) <$> range)
+    , testGroup "MuF" $
+        map (isn't . MuF) (Mu (SetVariableName <$> Mock.x) <$> range)
+    , testGroup "NuF" $
+        map (isn't . NuF) (Nu (SetVariableName <$> Mock.x) <$> range)
     , testGroup
         "SetVariableF"
         [isn't $ VariableF $ Const (mkSomeVariable @VariableName Mock.setX)]
@@ -77,47 +77,33 @@ test_instance_Synthetic =
         [expect (Defined $ isDefined x || isDefined y) $ OrF $ BinaryOr sort x y]
     , testGroup
         "BuiltinSet"
-        [ is
-            . asSetBuiltin
-            $ emptyNormalizedSet
-        , is
-            . asSetBuiltin
-            $ with emptyNormalizedSet
-            $ map (retractKey >>> fromJust) [Mock.a @Concrete, Mock.b]
-        , is
-            . asSetBuiltin
-            $ emptyNormalizedSet
-            `with` VariableElement defined
-        , isn't
-            . asSetBuiltin
-            $ emptyNormalizedSet
-            `with` VariableElement nonDefined
-        , isn't
-            . asSetBuiltin
-            $ emptyNormalizedSet
-            `with` [VariableElement defined, VariableElement defined]
-        , isn't
-            . asSetBuiltin
-            $ emptyNormalizedSet
-            `with` [(retractKey >>> fromJust) (Mock.a @Concrete)]
-            `with` VariableElement defined
-        , is
-            . asSetBuiltin
-            $ emptyNormalizedSet
-            `with` OpaqueSet defined
-        , isn't
-            . asSetBuiltin
-            $ emptyNormalizedSet
-            `with` OpaqueSet nonDefined
-        , isn't
-            . asSetBuiltin
-            $ emptyNormalizedSet
-            `with` [OpaqueSet defined, OpaqueSet defined]
-        , isn't
-            . asSetBuiltin
-            $ emptyNormalizedSet
-            `with` [(retractKey >>> fromJust) (Mock.a @Concrete)]
-            `with` OpaqueSet defined
+        [ is . asSetBuiltin $
+            emptyNormalizedSet
+        , is . asSetBuiltin $
+            with emptyNormalizedSet $
+                map (retractKey >>> fromJust) [Mock.a @Concrete, Mock.b]
+        , is . asSetBuiltin $
+            emptyNormalizedSet `with` VariableElement defined
+        , isn't . asSetBuiltin $
+            emptyNormalizedSet `with` VariableElement nonDefined
+        , isn't . asSetBuiltin $
+            emptyNormalizedSet
+                `with` [VariableElement defined, VariableElement defined]
+        , isn't . asSetBuiltin $
+            emptyNormalizedSet
+                `with` [(retractKey >>> fromJust) (Mock.a @Concrete)]
+                `with` VariableElement defined
+        , is . asSetBuiltin $
+            emptyNormalizedSet `with` OpaqueSet defined
+        , isn't . asSetBuiltin $
+            emptyNormalizedSet `with` OpaqueSet nonDefined
+        , isn't . asSetBuiltin $
+            emptyNormalizedSet
+                `with` [OpaqueSet defined, OpaqueSet defined]
+        , isn't . asSetBuiltin $
+            emptyNormalizedSet
+                `with` [(retractKey >>> fromJust) (Mock.a @Concrete)]
+                `with` OpaqueSet defined
         ]
     ]
   where

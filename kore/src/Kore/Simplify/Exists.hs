@@ -292,11 +292,11 @@ makeEvaluateBoundLeft sideCondition variable boundTerm normalized =
             substituted =
                 normalized
                     { Conditional.term =
-                        substitute boundSubstitution
-                            $ Conditional.term normalized
+                        substitute boundSubstitution $
+                            Conditional.term normalized
                     , Conditional.predicate =
-                        substitute boundSubstitution
-                            $ Conditional.predicate normalized
+                        substitute boundSubstitution $
+                            Conditional.predicate normalized
                     }
         orPattern <- liftSimplifier $ simplifyPattern sideCondition substituted
         Logic.scatter (toList orPattern)
@@ -323,8 +323,8 @@ makeEvaluateBoundRight ::
     LogicT Simplifier (Pattern RewritingVariableName)
 makeEvaluateBoundRight sideCondition variable freeSubstitution normalized = do
     orCondition <-
-        lift
-            $ And.simplifyEvaluatedMultiPredicate
+        lift $
+            And.simplifyEvaluatedMultiPredicate
                 sideCondition
                 ( MultiAnd.make
                     [ OrCondition.fromCondition quantifyCondition
@@ -372,12 +372,11 @@ splitSubstitution variable substitution =
     (dependent, independent) =
         Substitution.partition hasVariable orderRenamedSubstitution
     hasVariable variable' term =
-        someVariable
-            == variable'
+        someVariable == variable'
             || TermLike.hasFreeVariable someVariableName term
     bound =
-        maybe (Right dependent) Left
-            $ Map.lookup someVariableName (Substitution.toMap dependent)
+        maybe (Right dependent) Left $
+            Map.lookup someVariableName (Substitution.toMap dependent)
     someVariable = inject variable
     someVariableName = variableName someVariable
 
@@ -402,18 +401,18 @@ quantifyPattern variable original@Conditional{term, predicate, substitution}
             ]
     | quantifyTerm = TermLike.markSimplified . mkExists variable <$> original
     | quantifyPredicate =
-        Conditional.withCondition term
-            $ Condition.fromPredicate
-            . Predicate.markSimplified
+        Conditional.withCondition term $
+            Condition.fromPredicate . Predicate.markSimplified
             -- TODO (thomas.tuegel): This may not be fully simplified: we have not used
             -- the And simplifier on the predicate.
-            $ Predicate.makeExistsPredicate variable predicate'
+            $
+                Predicate.makeExistsPredicate variable predicate'
     | otherwise = original
   where
     someVariableName = inject (variableName variable)
     quantifyTerm = TermLike.hasFreeVariable someVariableName term
     predicate' =
-        Predicate.makeAndPredicate predicate
-            $ Substitution.toPredicate substitution
+        Predicate.makeAndPredicate predicate $
+            Substitution.toPredicate substitution
     quantifyPredicate =
         Predicate.hasFreeVariable someVariableName predicate'

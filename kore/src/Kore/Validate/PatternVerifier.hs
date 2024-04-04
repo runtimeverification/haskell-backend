@@ -417,8 +417,8 @@ verifyApplySymbol getChildSort application =
     lookupSymbol symbolOrAlias >>= \symbol -> Trans.lift $ do
         let Attribute.Symbol{macro, aliasKywd} = Internal.symbolAttributes symbol
         isRpcRequest' <- Reader.asks isRpcRequest
-        when (isRpcRequest' && (isMacro macro || isAliasKywd aliasKywd))
-            $ koreFail "A symbol cannot be an alias or a macro"
+        when (isRpcRequest' && (isMacro macro || isAliasKywd aliasKywd)) $
+            koreFail "A symbol cannot be an alias or a macro"
         let verified = application{applicationSymbolOrAlias = symbol}
             sorts = Internal.symbolSorts symbol
         verifyApplicationChildren getChildSort verified sorts
@@ -586,18 +586,18 @@ checkVariable ::
     Map.Map (SomeVariableName VariableName) (SomeVariable VariableName) ->
     PatternVerifier VerifySuccess
 checkVariable var vars =
-    maybe verifySuccess inconsistent
-        $ Map.lookup (variableName var) vars
+    maybe verifySuccess inconsistent $
+        Map.lookup (variableName var) vars
   where
     inconsistent v =
-        koreFailWithLocations [v, var]
-            $ Pretty.renderText
-            $ Pretty.layoutCompact
-            $ "Inconsistent free variable usage:"
-            <+> unparse v
-            <+> "and"
-            <+> unparse var
-            <> Pretty.dot
+        koreFailWithLocations [v, var] $
+            Pretty.renderText $
+                Pretty.layoutCompact $
+                    "Inconsistent free variable usage:"
+                        <+> unparse v
+                        <+> "and"
+                        <+> unparse var
+                            <> Pretty.dot
 
 patternNameForContext :: PatternF VariableName p -> Text
 patternNameForContext (AndF _) = "\\and"

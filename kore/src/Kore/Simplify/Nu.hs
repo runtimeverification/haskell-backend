@@ -50,7 +50,7 @@ makeEvaluate ::
     Pattern RewritingVariableName ->
     Pattern RewritingVariableName
 makeEvaluate variable patt =
-    Pattern.fromTermLike
-        $ TermLike.setSimplified (Pattern.simplifiedAttribute patt)
-        $ mkNu variable
-        $ Pattern.toTermLike patt
+    Pattern.fromTermLike $
+        TermLike.setSimplified (Pattern.simplifiedAttribute patt) $
+            mkNu variable $
+                Pattern.toTermLike patt

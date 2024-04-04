@@ -113,8 +113,8 @@ test_commonOverloads =
 
 test_fromIndexedModule :: TestTree
 test_fromIndexedModule =
-    testCase "fromIndexedModule = fromSubsorts"
-        $ assertEqual
+    testCase "fromIndexedModule = fromSubsorts" $
+        assertEqual
             ""
             overloadGraph
             (fromIndexedModule verifiedModule)

@@ -41,8 +41,8 @@ test_predicate =
         "Wrapping and predicates without full simplification"
         ( assertEqual
             ""
-            ( wrapPredicate
-                $ mkAnd pa1 pa2
+            ( wrapPredicate $
+                mkAnd pa1 pa2
             )
             (makeAndPredicate pr1 pr2)
         )
@@ -50,8 +50,8 @@ test_predicate =
         "Wrapping or predicates without full simplification"
         ( assertEqual
             ""
-            ( wrapPredicate
-                $ mkOr pa1 pa2
+            ( wrapPredicate $
+                mkOr pa1 pa2
             )
             (makeOrPredicate pr1 pr2)
         )
@@ -59,8 +59,8 @@ test_predicate =
         "Wrapping implies predicates without full simplification"
         ( assertEqual
             ""
-            ( wrapPredicate
-                $ mkImplies pa1 pa2
+            ( wrapPredicate $
+                mkImplies pa1 pa2
             )
             (makeImpliesPredicate pr1 pr2)
         )
@@ -68,8 +68,8 @@ test_predicate =
         "Wrapping iff predicates without full simplification"
         ( assertEqual
             ""
-            ( wrapPredicate
-                $ mkIff pa1 pa2
+            ( wrapPredicate $
+                mkIff pa1 pa2
             )
             (makeIffPredicate pr1 pr2)
         )
@@ -77,8 +77,8 @@ test_predicate =
         "Wrapping not predicates without full simplification"
         ( assertEqual
             ""
-            ( wrapPredicate
-                $ mkNot pa1
+            ( wrapPredicate $
+                mkNot pa1
             )
             (makeNotPredicate pr1)
         )
@@ -138,9 +138,9 @@ test_predicate =
     , testCase
         "freeVariables"
         ( do
-            assertBool "top has no free variables"
-                $ FreeVariables.nullFreeVariables @VariableName
-                $ freeVariables (makeTruePredicate :: Predicate VariableName)
+            assertBool "top has no free variables" $
+                FreeVariables.nullFreeVariables @VariableName $
+                    freeVariables (makeTruePredicate :: Predicate VariableName)
             assertEqual
                 "equals predicate has two variables"
                 ( Set.fromList
@@ -182,35 +182,35 @@ test_predicate =
             )
         , testGroup
             "keeps simplified bit"
-            [ testCase "unsimplified stays unsimplified"
-                $ (mkEquals Mock.topSort Mock.cf Mock.cg, NotSimplified)
-                `makesPredicate` (makeEqualsPredicate Mock.cf Mock.cg, NotSimplified)
-            , testCase "simplified stays simplified"
-                $ ( simplifiedTerm $ mkEquals Mock.topSort Mock.cf Mock.cg
-                  , IsSimplified
-                  )
-                `makesPredicate` (makeEqualsPredicate Mock.cf Mock.cg, IsSimplified)
-            , testCase "Partial predicate stays simplified"
-                $ ( simplifiedTerm
-                        $ mkAnd (mkTop Mock.topSort) (mkEquals Mock.topSort Mock.cf Mock.cg)
-                  , IsSimplified
-                  )
-                `makesPredicate` (makeEqualsPredicate Mock.cf Mock.cg, IsSimplified)
-            , testCase "changed simplified becomes unsimplified"
-                $ ( simplifiedTerm
-                        $ mkAnd
-                            ( mkAnd
-                                (mkTop Mock.topSort)
-                                (mkEquals Mock.topSort Mock.cf Mock.cg)
-                            )
-                            (mkEquals Mock.topSort Mock.cg Mock.ch)
-                  , IsSimplified
-                  )
-                `makesPredicate` ( makeAndPredicate
-                                    (makeEqualsPredicate Mock.cf Mock.cg)
-                                    (makeEqualsPredicate Mock.cg Mock.ch)
-                                 , NotSimplified
-                                 )
+            [ testCase "unsimplified stays unsimplified" $
+                (mkEquals Mock.topSort Mock.cf Mock.cg, NotSimplified)
+                    `makesPredicate` (makeEqualsPredicate Mock.cf Mock.cg, NotSimplified)
+            , testCase "simplified stays simplified" $
+                ( simplifiedTerm $ mkEquals Mock.topSort Mock.cf Mock.cg
+                , IsSimplified
+                )
+                    `makesPredicate` (makeEqualsPredicate Mock.cf Mock.cg, IsSimplified)
+            , testCase "Partial predicate stays simplified" $
+                ( simplifiedTerm $
+                    mkAnd (mkTop Mock.topSort) (mkEquals Mock.topSort Mock.cf Mock.cg)
+                , IsSimplified
+                )
+                    `makesPredicate` (makeEqualsPredicate Mock.cf Mock.cg, IsSimplified)
+            , testCase "changed simplified becomes unsimplified" $
+                ( simplifiedTerm $
+                    mkAnd
+                        ( mkAnd
+                            (mkTop Mock.topSort)
+                            (mkEquals Mock.topSort Mock.cf Mock.cg)
+                        )
+                        (mkEquals Mock.topSort Mock.cg Mock.ch)
+                , IsSimplified
+                )
+                    `makesPredicate` ( makeAndPredicate
+                                        (makeEqualsPredicate Mock.cf Mock.cg)
+                                        (makeEqualsPredicate Mock.cg Mock.ch)
+                                     , NotSimplified
+                                     )
             ]
         ]
     ]

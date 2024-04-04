@@ -166,25 +166,25 @@ runRepl
         do
             startTime <- liftIO $ getTime Monotonic
             (newState, _) <-
-                (\rwst -> execRWST rwst config (state startTime))
-                    $ evaluateScript replScript scriptModeOutput
+                (\rwst -> execRWST rwst config (state startTime)) $
+                    evaluateScript replScript scriptModeOutput
             case replMode of
                 Interactive -> do
                     replGreeting
-                    flip evalStateT newState
-                        $ flip runReaderT config
-                        $ runInputT defaultSettings{historyFile = Just "./.kore-repl-history"}
-                        $ forever repl0
+                    flip evalStateT newState $
+                        flip runReaderT config $
+                            runInputT defaultSettings{historyFile = Just "./.kore-repl-history"} $
+                                forever repl0
                 RunScript ->
                     runReplCommand Exit newState
       where
         runReplCommand :: ReplCommand -> ReplState -> Simplifier ()
         runReplCommand cmd st =
-            void
-                $ flip evalStateT st
-                $ flip runReaderT config
-                $ runInputT defaultSettings
-                $ replInterpreter printIfNotEmpty cmd
+            void $
+                flip evalStateT st $
+                    flip runReaderT config $
+                        runInputT defaultSettings $
+                            replInterpreter printIfNotEmpty cmd
 
         evaluateScript ::
             ReplScript ->
@@ -312,8 +312,8 @@ runRepl
             _
             (Claim.WithConfiguration lastConfiguration someException) =
                 do
-                    liftIO
-                        $ hPutStrLn
+                    liftIO $
+                        hPutStrLn
                             stderr
                             ("// Last configuration:\n" <> unparseToString lastConfiguration)
                     Exception.throwM someException
@@ -329,8 +329,8 @@ runRepl
 
         replGreeting :: Simplifier ()
         replGreeting =
-            liftIO
-                $ putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
+            liftIO $
+                putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
         prompt :: MonadIO n => MonadMask n => MonadState ReplState n => InputT n String
         prompt = do

@@ -85,15 +85,15 @@ externalize = Recursive.futu externalize1
             VariableF variableF -> mkPurePattern Syntax.VariableF variableF
             InhabitantF inhabitantF -> mkPurePattern Syntax.InhabitantF inhabitantF
             EndiannessF endiannessF ->
-                mkApp
-                    $ mapHead Symbol.toSymbolOrAlias
-                    $ Endianness.toApplication
-                    $ getConst endiannessF
+                mkApp $
+                    mapHead Symbol.toSymbolOrAlias $
+                        Endianness.toApplication $
+                            getConst endiannessF
             SignednessF signednessF ->
-                mkApp
-                    $ mapHead Symbol.toSymbolOrAlias
-                    $ Signedness.toApplication
-                    $ getConst signednessF
+                mkApp $
+                    mapHead Symbol.toSymbolOrAlias $
+                        Signedness.toApplication $
+                            getConst signednessF
             -- Internals
             InternalBoolF (Const internalBool) -> externalizeBool internalBool
             InternalIntF (Const internalInt) -> externalizeInt internalInt
@@ -101,11 +101,11 @@ externalize = Recursive.futu externalize1
             InternalStringF (Const internalString) -> externalizeString internalString
             InternalListF internalList -> externalizeList internalList
             InternalSetF internalSet ->
-                either externalize1 id
-                    $ externalizeSet internalSet
+                either externalize1 id $
+                    externalizeSet internalSet
             InternalMapF internalMap ->
-                either externalize1 id
-                    $ externalizeMap internalMap
+                either externalize1 id $
+                    externalizeMap internalMap
             -- Inj
             InjF inj -> mkApp $ mapHead Symbol.toSymbolOrAlias (Inj.toApplication inj)
       where
@@ -130,9 +130,8 @@ externalizeAc
         worker [] [] [] = Right unit
           where
             unit =
-                (Attribute.Null :<)
-                    . Syntax.ApplicationF
-                    $ Application (Symbol.toSymbolOrAlias unitSymbol) []
+                (Attribute.Null :<) . Syntax.ApplicationF $
+                    Application (Symbol.toSymbolOrAlias unitSymbol) []
         worker concreteElements symbolicElements opaqueTerms =
             case foldr1 concat' operands of
                 Free patternF -> Right patternF
@@ -143,12 +142,12 @@ externalizeAc
                     <> map Pure opaqueTerms
                     <> map Free concreteElements
             concat' operand pat =
-                Free
-                    $ (Attribute.Null :<)
-                    $ Syntax.ApplicationF
-                    $ Application
-                        (Symbol.toSymbolOrAlias concatSymbol)
-                        [operand, pat]
+                Free $
+                    (Attribute.Null :<) $
+                        Syntax.ApplicationF $
+                            Application
+                                (Symbol.toSymbolOrAlias concatSymbol)
+                                [operand, pat]
 
 -- | Externalizes a 'Domain.InternalMap'
 externalizeMap ::
@@ -256,9 +255,9 @@ externalizeList builtin
             . mapHead toSymbolOrAlias
             $ symbolApplication elementSymbol [elem']
     concat' list1 list2 =
-        (Attribute.Null :<)
-            $ Syntax.ApplicationF
-            $ Application (toSymbolOrAlias concatSymbol) [Free list1, Free list2]
+        (Attribute.Null :<) $
+            Syntax.ApplicationF $
+                Application (toSymbolOrAlias concatSymbol) [Free list1, Free list2]
 
 {- | Render a 'Bool' as a domain value pattern of the given sort.
 
@@ -284,11 +283,8 @@ externalizeBool builtin =
         | bool = "true"
         | otherwise = "false"
     domainValueChild =
-        Free
-            . (:<) Attribute.Null
-            . Syntax.StringLiteralF
-            . Const
-            $ StringLiteral literal
+        Free . (:<) Attribute.Null . Syntax.StringLiteralF . Const $
+            StringLiteral literal
 
 {- | Render an 'String' as a domain value pattern of the given sort.
 
@@ -311,11 +307,8 @@ externalizeString builtin =
     InternalString{internalStringSort} = builtin
     InternalString{internalStringValue} = builtin
     domainValueChild =
-        Free
-            . (:<) Attribute.Null
-            . Syntax.StringLiteralF
-            . Const
-            $ StringLiteral internalStringValue
+        Free . (:<) Attribute.Null . Syntax.StringLiteralF . Const $
+            StringLiteral internalStringValue
 
 {- | Render a 'Bytes' as a domain value pattern of the given sort.
 
@@ -338,11 +331,8 @@ externalizeBytes builtin =
     InternalBytes{internalBytesSort} = builtin
     InternalBytes{internalBytesValue} = builtin
     domainValueChild =
-        Free
-            . (:<) Attribute.Null
-            . Syntax.StringLiteralF
-            . Const
-            $ StringLiteral (Encoding.decode8Bit $ ByteString.fromShort internalBytesValue)
+        Free . (:<) Attribute.Null . Syntax.StringLiteralF . Const $
+            StringLiteral (Encoding.decode8Bit $ ByteString.fromShort internalBytesValue)
 
 {- | Render an 'Integer' as a domain value pattern of the given sort.
 
@@ -365,8 +355,5 @@ externalizeInt builtin =
     InternalInt{internalIntSort} = builtin
     InternalInt{internalIntValue} = builtin
     domainValueChild =
-        Free
-            . (:<) Attribute.Null
-            . Syntax.StringLiteralF
-            . Const
-            $ StringLiteral (Text.pack $ show internalIntValue)
+        Free . (:<) Attribute.Null . Syntax.StringLiteralF . Const $
+            StringLiteral (Text.pack $ show internalIntValue)
