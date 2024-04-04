@@ -29,7 +29,7 @@ export LOG_DIR=${LOG_DIR:-"$BUG_REPORT_DIR-logs"}
 mkdir -p $LOG_DIR
 
 K_VERSION=$(cat $SCRIPT_DIR/../deps/k_release)
-export PATH="$(nix build github:runtimeverification/k/v$K_VERSION#k.openssl.procps --no-link  --print-build-logs --json | jq -r '.[].outputs | to_entries[].value')/bin:$PATH"
+export PATH="$(nix build github:runtimeverification/k/v$K_VERSION#k.openssl.procps.secp256k1 --no-link  --print-build-logs --json | jq -r '.[].outputs | to_entries[].value')/bin:$PATH"
 PLUGIN_VERSION=$(cat $SCRIPT_DIR/../deps/blockchain-k-plugin_release)
 export PLUGIN_DIR=$(nix build github:runtimeverification/blockchain-k-plugin/$PLUGIN_VERSION --no-link --json | jq -r '.[].outputs | to_entries[].value')
 
