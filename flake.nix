@@ -238,8 +238,9 @@
           mkShell {
             nativeBuildInputs = [
               (haskell.lib.justStaticExecutables
-                (ghcVersion pkgs).fourmolu
-                )
+               (ghcVersion pkgs).fourmolu)
+              (haskell.lib.justStaticExecutables
+               (ghcVersion pkgs).hlint)
             ];
           };
         cabal = let pkgs = nixpkgsFor system;
