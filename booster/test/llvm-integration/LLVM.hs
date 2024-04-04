@@ -10,13 +10,13 @@ module Main (
     displayTestDef,
 ) where
 
-import Control.Monad (unless, when)
+import Control.Monad (forM_, unless, when)
 import Control.Monad.Trans.Except (runExcept)
 import Data.ByteString.Char8 (ByteString)
 import Data.ByteString.Char8 qualified as BS
 import Data.Char (toLower)
 import Data.Int (Int64)
-import Data.List (isInfixOf)
+import Data.List (foldl1', isInfixOf, nub)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
@@ -89,6 +89,10 @@ llvmSpec =
                 it "should leave literal byte arrays as they are" $
                     hedgehog . propertyTest . byteArrayProp
 
+            describe "LLVM INT simplification" $ do
+                it "should leave naked domain values as they are" $
+                    hedgehog . propertyTest . intProp
+
             describe "LLVM String handling" $
                 it "should work with latin-1strings" $
                     hedgehog . propertyTest . latin1Prop
@@ -96,6 +100,10 @@ llvmSpec =
             describe "special map tests" $
                 it "should correct sort injections in non KItem maps" $
                     hedgehog . propertyTest . mapKItemInjProp
+
+            describe "internalised set tests" $
+                it "should leave concrete sets unchanged" $
+                    hedgehog . propertyTest . setProp
 
 --------------------------------------------------
 -- individual hedgehog property tests and helpers
@@ -131,6 +139,12 @@ byteArrayProp api = property $ do
     ba' <- forAll $ Gen.bytes $ Range.linear 0 1024
     res' <- LLVM.simplifyTerm api testDef (bytesTerm ba') bytesSort
     res' === Right (bytesTerm ba')
+
+intProp :: LLVM.API -> Property
+intProp api = property $ do
+    i <- forAll $ Gen.int (Range.linear 0 1024)
+    res <- LLVM.simplifyTerm api testDef (intTerm i) intSort
+    res === Right (intTerm i)
 
 -- Round-trip test passing syntactic strings through the simplifier
 -- and back. latin-1 characters should be left as they are (treated as
@@ -195,6 +209,48 @@ mapKItemInjProp api = property $ do
                 [intTerm i]
             ]
 
+setProp :: LLVM.API -> Property
+setProp api = property $ do
+    forM_ [1 .. 10] $ \n -> do
+        xs <-
+            forAll $
+                Gen.filter (\xs -> xs == nub xs) $
+                    Gen.list (Range.singleton n) $
+                        Gen.int (Range.linear 0 1024)
+        let setTerm = makeKSetNoRest xs
+        res <- LLVM.simplifyTerm api testDef setTerm (SortApp "SortSet" [])
+        res === Right (setAsConcat . map wrapIntTerm $ xs)
+  where
+    makeKSetNoRest :: [Int] -> Term
+    makeKSetNoRest xs =
+        KSet
+            sortSetKSet
+            (map wrapIntTerm xs)
+            Nothing
+
+    singletonSet v =
+        SymbolApplication
+            (defSymbols Map.! sortSetKSet.symbolNames.elementSymbolName)
+            []
+            [v]
+
+    setAsConcat =
+        foldl1'
+            ( \x y ->
+                SymbolApplication
+                    (defSymbols Map.! sortSetKSet.symbolNames.concatSymbolName)
+                    []
+                    [x, y]
+            )
+            . map singletonSet
+
+    wrapIntTerm :: Int -> Term
+    wrapIntTerm i =
+        SymbolApplication
+            (defSymbols Map.! "inj")
+            [intSort, kItemSort]
+            [intTerm i]
+
 ------------------------------------------------------------
 
 runKompile :: IO ()
@@ -217,11 +273,12 @@ loadAPI = Internal.withDLib dlPath Internal.mkAPI
 ------------------------------------------------------------
 -- term construction
 
-boolSort, intSort, bytesSort, stringSort :: Sort
+boolSort, intSort, bytesSort, stringSort, kItemSort :: Sort
 boolSort = SortApp "SortBool" []
 intSort = SortApp "SortInt" []
 bytesSort = SortApp "SortBytes" []
 stringSort = SortApp "SortString" []
+kItemSort = SortApp "SortKItem" []
 
 boolTerm :: Bool -> Term
 boolTerm = DomainValue boolSort . BS.pack . map toLower . show
@@ -313,6 +370,19 @@ sortMapKmap =
         , keySortName = "SortKItem"
         , elementSortName = "SortKItem"
         , mapSortName = "SortMap"
+        }
+
+sortSetKSet :: KSetDefinition
+sortSetKSet =
+    KListDefinition
+        { symbolNames =
+            KCollectionSymbolNames
+                { unitSymbolName = "Lbl'Stop'Set"
+                , elementSymbolName = "LblSetItem"
+                , concatSymbolName = "Lbl'Unds'Set'Unds'"
+                }
+        , elementSortName = "SortKItem"
+        , listSortName = "SortSet"
         }
 
 sortListKList :: KListDefinition
@@ -428,6 +498,13 @@ defSorts =
             ,
                 ( SortAttributes{collectionAttributes = Just (sortListKList.symbolNames, KListTag), argCount = 0}
                 , Set.fromList ["SortList"]
+                )
+            )
+        ,
+            ( "SortSet"
+            ,
+                ( SortAttributes{collectionAttributes = Just (sortSetKSet.symbolNames, KSetTag), argCount = 0}
+                , Set.fromList ["SortSet"]
                 )
             )
         ,
@@ -635,7 +712,7 @@ defSymbols =
                 , resultSort = SortApp "SortSet" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
+                        { collectionMetadata = Just $ KSetMeta sortSetKSet
                         , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
@@ -755,7 +832,7 @@ defSymbols =
                 , resultSort = SortApp "SortSet" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
+                        { collectionMetadata = Just $ KSetMeta sortSetKSet
                         , symbolType = PartialFunction
                         , isIdem = IsIdem
                         , isAssoc = IsAssoc
@@ -1938,7 +2015,7 @@ defSymbols =
                 , resultSort = SortApp "SortSet" []
                 , attributes =
                     SymbolAttributes
-                        { collectionMetadata = Nothing
+                        { collectionMetadata = Just $ KSetMeta sortSetKSet
                         , symbolType = TotalFunction
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
