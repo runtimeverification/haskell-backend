@@ -22,6 +22,8 @@ client=${CLIENT:-$booster/.build/booster/bin/kore-rpc-client}
 log_dir=${LOG_DIR:-.}
 
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+# needed for the MX backend otherwise llvm-backend-matching crashes
+export K_OPTS="$K_OPTS -Xmx16384m"
 
 nix_shell() {
   GC_DONT_GC=1 nix develop $SCRIPT_DIR/..#cabal --extra-experimental-features 'nix-command flakes' --command bash -c "$1"
@@ -72,7 +74,7 @@ if [ -z "${LLVM_LIB}" ]; then
     #generate matching data
     (cd $TEMPD && mkdir -p dt && llvm-kompile-matching llvm-definition.kore qbaL ./dt 1/2)
     # find library dependencies and source files
-    for lib in libff libcryptopp libsecp256k1; do
+    for lib in libff libcryptopp blake2; do
         LIBFILE=$(find ${PLUGIN_DIR} -name "${lib}.a" | head -1)
         [ -z "$LIBFILE" ] && (echo "[Error] Unable to locate ${lib}.a"; exit 1)
         PLUGIN_LIBS+="$LIBFILE "
