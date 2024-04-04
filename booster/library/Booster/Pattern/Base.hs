@@ -37,7 +37,7 @@ import Data.Data (Data)
 import Data.Functor.Foldable
 import Data.Hashable (Hashable)
 import Data.Hashable qualified as Hashable
-import Data.List as List (foldl1', sort)
+import Data.List as List (foldl', foldl1', sort)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
@@ -165,6 +165,10 @@ type instance Base Term = TermF
 
 instance Recursive Term where
     project (Term _ t) = t
+
+-- | Sort and de duplicate a list
+sortAndDeduplicate :: Ord a => [a] -> [a]
+sortAndDeduplicate = Set.toAscList . Set.fromList
 
 getAttributes :: Term -> TermAttributes
 getAttributes (Term a _) = a
@@ -584,29 +588,24 @@ pattern KMap def keyVals rest <- Term _ (KMapF def keyVals rest)
                         ([], Nothing) -> mempty
                         ([], Just s) -> getAttributes s
                         (_ : _, Nothing) -> foldl1' (<>) $ concatMap (\(k, v) -> [getAttributes k, getAttributes v]) keyVals
-                        (_ : _, Just r) -> foldr (<>) (getAttributes r) $ concatMap (\(k, v) -> [getAttributes k, getAttributes v]) keyVals
+                        (_ : _, Just r) ->
+                            foldl' (<>) (getAttributes r) $ concatMap (\(k, v) -> [getAttributes k, getAttributes v]) keyVals
                 (keyVals', rest') = case rest of
                     Just (KMap def' kvs r) | def' == def -> (kvs, r)
                     r -> ([], r)
+                newKeyVals = sortAndDeduplicate $ keyVals ++ keyVals'
+                newRest = rest'
              in Term
                     argAttributes
-                        { isEvaluated =
-                            -- Constructors and injections are evaluated if their arguments are.
-                            -- Function calls are not evaluated.
-                            argAttributes.isEvaluated
-                        , hash =
+                        { hash =
                             Hashable.hash
                                 ( "KMap" :: ByteString
                                 , def
-                                , map (\(k, v) -> (hash $ getAttributes k, hash $ getAttributes v)) keyVals
-                                , hash . getAttributes <$> rest
+                                , map (\(k, v) -> (hash $ getAttributes k, hash $ getAttributes v)) newKeyVals
+                                , hash . getAttributes <$> newRest
                                 )
-                        , isConstructorLike =
-                            argAttributes.isConstructorLike
-                        , canBeEvaluated =
-                            argAttributes.canBeEvaluated
                         }
-                    $ KMapF def (Set.toList $ Set.fromList $ keyVals ++ keyVals') rest'
+                    $ KMapF def newKeyVals newRest
 
 pattern KList :: KListDefinition -> [Term] -> Maybe (Term, [Term]) -> Term
 pattern KList def heads rest <- Term _ (KListF def heads rest)
@@ -619,7 +618,7 @@ pattern KList def heads rest <- Term _ (KListF def heads rest)
                         (nonEmpty, Nothing) ->
                             foldl1' (<>) $ map getAttributes nonEmpty
                         (_, Just (m, tails)) ->
-                            foldr ((<>) . getAttributes) (getAttributes m) $ heads <> tails
+                            foldl' (<>) (getAttributes m) . map getAttributes $ heads <> tails
                 (newHeads, newRest) = case rest of
                     Just (KList def' heads' rest', tails)
                         | def' /= def ->
@@ -636,9 +635,9 @@ pattern KList def heads rest <- Term _ (KListF def heads rest)
                             Hashable.hash
                                 ( "KList" :: ByteString
                                 , def
-                                , map (hash . getAttributes) heads
-                                , fmap (hash . getAttributes . fst) rest
-                                , fmap (map (hash . getAttributes) . snd) rest
+                                , map (hash . getAttributes) newHeads
+                                , fmap (hash . getAttributes . fst) newRest
+                                , fmap (map (hash . getAttributes) . snd) newRest
                                 )
                         }
                     $ KListF def newHeads newRest
@@ -654,22 +653,22 @@ pattern KSet def elements rest <- Term _ (KSetF def elements rest)
                     | Nothing <- rest =
                         foldl1' (<>) $ map getAttributes elements
                     | Just r <- rest =
-                        foldr ((<>) . getAttributes) (getAttributes r) elements
-                (newElements, newRest) = case rest of
-                    Just (KSet def' elements' rest')
-                        | def /= def' ->
-                            error $ "Inconsistent set definition " <> show (def, def')
-                        | otherwise ->
-                            (Set.toList . Set.fromList $ elements <> elements', rest')
-                    other -> (elements, other)
+                        foldl' (<>) (getAttributes r) . map getAttributes $ elements
+                (elements', rest') = case rest of
+                    Just (KSet def' es r)
+                        | def /= def' -> error $ "Inconsistent set definition " <> show (def, def')
+                        | otherwise -> (es, r)
+                    other -> ([], other)
+                newElements = sortAndDeduplicate $ elements <> elements'
+                newRest = rest'
              in Term
                     argAttributes
                         { hash =
                             Hashable.hash
                                 ( "KSet" :: ByteString
                                 , def
-                                , map (hash . getAttributes) elements
-                                , fmap (hash . getAttributes) rest
+                                , map (hash . getAttributes) newElements
+                                , fmap (hash . getAttributes) newRest
                                 )
                         }
                     $ KSetF def newElements newRest

@@ -26,10 +26,21 @@ test_collections :: TestTree
 test_collections =
     testGroup
         "Internal collection representation"
-        [ listRoundTrips
-        , listInternalisation
-        , setRoundTrips
-        , setInternalisation
+        [ testGroup
+            "Internalised List"
+            [ listRoundTrips
+            , listInternalisation
+            ]
+        , testGroup
+            "Internalised Set"
+            [ setRoundTrips
+            , setInternalisation
+            , setSmartConstructors
+            ]
+        , testGroup
+            "Internalised Map"
+            [ mapSmartConstructors
+            ]
         ]
 
 ------------------------------------------------------------
@@ -172,6 +183,45 @@ setInternalisation =
     internalise = internaliseKSet Fixture.testKSetDef
     unit = SymbolApplication Fixture.setUnitSym [] []
 
+setSmartConstructors :: TestTree
+setSmartConstructors =
+    testGroup
+        "pattern KSet"
+        [ testCase "Concrete KSet with nested concrete KSet" $
+            let input = makeKSetWithRest [1, 2, 3] (makeKSetNoRest [4, 5, 6])
+                expected = makeKSetNoRest [1, 2, 3, 4, 5, 6]
+             in expected @=? input
+        , testCase "Concrete KSet with nested concrete KSet (results needs sorting and de-duping)" $
+            let input = makeKSetWithRest [1, 2, 3] (makeKSetNoRest [1, 2, 4])
+                expected = makeKSetNoRest [1, 2, 3, 4]
+             in expected @=? input
+        , testCase "KSet with a nested KSet with a symbolic rest" $
+            let input = makeKSetWithRest [1, 2, 3] (makeKSetWithRest [4, 5, 6] [trm| REST:SortTestSet{}|])
+                expected = makeKSetWithRest [1, 2, 3, 4, 5, 6] [trm| REST:SortTestSet{}|]
+             in expected @=? input
+        , testCase "KSet with a nested KSet with a symbolic rest (results needs sorting and de-duping)" $
+            let input = makeKSetWithRest [1, 2, 3] (makeKSetWithRest [1, 2, 4] [trm| REST:SortTestSet{}|])
+                expected = makeKSetWithRest [1, 2, 3, 4] [trm| REST:SortTestSet{}|]
+             in expected @=? input
+        ]
+  where
+    makeKSetNoRest :: [Int] -> Term
+    makeKSetNoRest xs =
+        KSet
+            Fixture.testKSetDef
+            (makeDVs xs)
+            Nothing
+
+    makeKSetWithRest :: [Int] -> Term -> Term
+    makeKSetWithRest xs rest =
+        KSet
+            Fixture.testKSetDef
+            (makeDVs xs)
+            (Just rest)
+
+    makeDVs :: [Int] -> [Term]
+    makeDVs = map (Fixture.dv Fixture.someSort . BS.pack . show @Int)
+
 -- internalised data structures representing sets
 emptySet, concreteSet, setWithElement :: Term
 emptySet =
@@ -197,3 +247,46 @@ setConcat l1 l2 = Term mempty $ SymbolApplicationF Fixture.setConcatSym [] [l1, 
 
 inSet :: Term -> Term
 inSet x = SymbolApplication Fixture.setElemSym [] [x]
+
+------------------------------------------------------------
+
+mapSmartConstructors :: TestTree
+mapSmartConstructors =
+    testGroup
+        "pattern KMap"
+        [ testCase "Concrete KMap with nested concrete KMap" $
+            let input = makeKMapWithRest [1, 2, 3] (makeKMapNoRest [4, 5, 6])
+                expected = makeKMapNoRest [1, 2, 3, 4, 5, 6]
+             in input @=? expected
+        , testCase "Concrete KMap with nested concrete KMap (results needs sorting and de-duping)" $
+            let input = makeKMapWithRest [1, 2, 3] (makeKMapNoRest [1, 2, 4])
+                expected = makeKMapNoRest [1, 2, 3, 4]
+             in input @=? expected
+        , testCase "KMap with a nested KMap with a symbolic rest" $
+            let input = makeKMapWithRest [1, 2, 3] (makeKMapWithRest [4, 5, 6] [trm| REST:SortTestMap{}|])
+                expected = makeKMapWithRest [1, 2, 3, 4, 5, 6] [trm| REST:SortTestMap{}|]
+             in input @=? expected
+        , testCase "KMap with a nested KMap with a symbolic rest (results needs sorting and de-duping)" $
+            let input = makeKMapWithRest [1, 2, 3] (makeKMapWithRest [1, 2, 4] [trm| REST:SortTestMap{}|])
+                expected = makeKMapWithRest [1, 2, 3, 4] [trm| REST:SortTestMap{}|]
+             in input @=? expected
+        ]
+  where
+    -- produced a map of identities for all input ints: x1 |-> x1, x2 |-> x2 ...
+    makeKMapNoRest :: [Int] -> Term
+    makeKMapNoRest xs =
+        KMap
+            Fixture.testKMapDefinition
+            (zip (makeDVs xs) (makeDVs xs))
+            Nothing
+
+    -- produced a map of identities for all input ints and an opaque rest: x1 |-> x1, x2 |-> x2 ..., REST
+    makeKMapWithRest :: [Int] -> Term -> Term
+    makeKMapWithRest xs rest =
+        KMap
+            Fixture.testKMapDefinition
+            (zip (makeDVs xs) (makeDVs xs))
+            (Just rest)
+
+    makeDVs :: [Int] -> [Term]
+    makeDVs = map (Fixture.dv Fixture.someSort . BS.pack . show @Int)
