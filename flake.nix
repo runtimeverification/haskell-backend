@@ -45,10 +45,25 @@
             };
           additionalHaskellPkgSetOverrides = hfinal: hprev:
             with final.haskell.lib; {
+              crypton-x509 = dontCheck hprev.crypton-x509;
               decision-diagrams = dontCheck hprev.decision-diagrams;
               fgl = dontCheck hprev.fgl;
               fgl-arbitrary = dontCheck hprev.fgl-arbitrary;
+              graphviz = dontCheck hprev.graphviz;
               json-rpc = dontCheck hprev.json-rpc;
+              lifted-base = dontCheck hprev.lifted-base;
+              prettyprinter = dontCheck hprev.prettyprinter;
+              smtlib-backends-process = dontCheck hprev.smtlib-backends-process;
+              tar = dontCheck hprev.tar;
+              hs-backend-booster = overrideCabal hprev.hs-backend-booster
+                (drv: {
+                  doCheck = false;
+                  postPatch = ''
+                    ${drv.postPatch or ""}
+                    substituteInPlace library/Booster/VersionInfo.hs \
+                      --replace '$(GitRev.gitHash)' '"${self.rev or "dirty"}"'
+                  '';
+                });
               kore = (overrideCabal hprev.kore (drv: {
                 doCheck = false;
                 postPatch = ''
@@ -66,9 +81,6 @@
                 # and depending on another copy of ghc-compact breaks HLS in the dev shell.
                 ghc-compact = null;
               };
-              lifted-base = dontCheck hprev.lifted-base;
-              prettyprinter = dontCheck hprev.prettyprinter;
-              tar = dontCheck hprev.tar;
 
               # everything belwo should be removed once HLS in nixpkgs catches up to ghc 9.6
               doctest-discover = dontCheck hprev.doctest-discover;
@@ -200,6 +212,7 @@
           additionalDevShellNativeBuildInputs = stacklockHaskellPkgSet:
             with ghcVersion final; [
               cabal-install
+              hpack
               fourmolu
               hlint
               stacklockHaskellPkgSet.haskell-language-server
@@ -222,31 +235,45 @@
           pkgs = nixpkgsFor system;
           kore = with pkgs;
             haskell.lib.justStaticExecutables haskell-backend.pkgSet.kore;
+          hs-backend-booster = with pkgs;
+            haskell.lib.justStaticExecutables haskell-backend.pkgSet.hs-backend-booster;
         in {
           kore-exec = withZ3 pkgs kore "kore-exec";
           kore-match-disjunction = withZ3 pkgs kore "kore-match-disjunction";
           kore-parser = withZ3 pkgs kore "kore-parser";
           kore-repl = withZ3 pkgs kore "kore-repl";
           kore-rpc = withZ3 pkgs kore "kore-rpc";
+          kore-rpc-booster = withZ3 pkgs hs-backend-booster "kore-rpc-booster";
+          kore-rpc-client = withZ3 pkgs hs-backend-booster "kore-rpc-client";
           inherit (pkgs.haskell-backend.pkgSet) haskell-language-server;
         });
 
       devShells = perSystem (system: {
         # Separate fourmolu and cabal shells just for CI
-        fourmolu = with nixpkgsCleanFor system;
+        style = with nixpkgsCleanFor system;
           mkShell {
             nativeBuildInputs = [
               (haskell.lib.justStaticExecutables
                (ghcVersion pkgs).fourmolu)
               (haskell.lib.justStaticExecutables
                (ghcVersion pkgs).hlint)
+              pkgs.hpack
             ];
+            shellHook = ''
+              hpack booster && hpack dev-tools
+            '';
           };
         cabal = let pkgs = nixpkgsFor system;
         in pkgs.haskell-backend.pkgSet.shellFor {
           packages = pkgs.haskell-backend.localPkgsSelector;
-          nativeBuildInputs =
-            [ (ghcVersion pkgs).cabal-install pkgs.z3 ];
+          nativeBuildInputs = [
+              (ghcVersion pkgs).cabal-install
+              pkgs.hpack
+              pkgs.jq
+              pkgs.nix
+              pkgs.z3
+              pkgs.lsof
+          ];
         };
       });
 
