@@ -1,0 +1,67 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-ATTRIBUTE-2",
+      "sorts": [
+        {
+          "name": "Nat",
+          "attributes": [
+            [
+              "hook",
+              [
+                "NAT.Nat"
+              ]
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [],
+      "imports": [],
+      "symbols": [
+        {
+          "name": "plus",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Nat",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Nat",
+              "args": []
+            },
+            {
+              "tag": "SortApp",
+              "name": "Nat",
+              "args": []
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              [
+                "NAT.plus"
+              ]
+            ],
+            [
+              "associative",
+              []
+            ],
+            [
+              "commutative",
+              []
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,121 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "K",
+      "sorts": [
+        {
+          "name": "K",
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [],
+      "imports": [],
+      "symbols": []
+    },
+    {
+      "name": "BOOL",
+      "sorts": [
+        {
+          "name": "Bool",
+          "attributes": [
+            [
+              "hook",
+              [
+                "BOOL.Bool"
+              ]
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [],
+      "imports": [],
+      "symbols": []
+    },
+    {
+      "name": "INT",
+      "sorts": [
+        {
+          "name": "Int",
+          "attributes": [
+            [
+              "hook",
+              [
+                "INT.Int"
+              ]
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": [
+            "s"
+          ]
+        }
+      ],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [],
+      "imports": [
+        [
+          "K",
+          []
+        ],
+        [
+          "BOOL",
+          []
+        ]
+      ],
+      "symbols": [
+        {
+          "name": "geInt",
+          "sort": {
+            "tag": "SortApp",
+            "name": "Bool",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": [
+                {
+                  "tag": "SortVar",
+                  "name": "s"
+                }
+              ]
+            },
+            {
+              "tag": "SortApp",
+              "name": "Int",
+              "args": [
+                {
+                  "tag": "SortVar",
+                  "name": "s"
+                }
+              ]
+            }
+          ],
+          "attributes": [
+            [
+              "hook",
+              [
+                "INT.ge"
+              ]
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": [
+            "s"
+          ]
+        }
+      ]
+    }
+  ]
+}

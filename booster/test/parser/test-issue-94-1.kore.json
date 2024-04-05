@@ -1,0 +1,70 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "INJ",
+      "sorts": [
+        {
+          "name": "KInt",
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [
+        {
+          "attributes": [],
+          "axiom": {
+            "tag": "App",
+            "name": "input",
+            "sorts": [],
+            "args": [
+              {
+                "tag": "DV",
+                "sort": {
+                  "tag": "SortApp",
+                  "name": "KInt",
+                  "args": []
+                },
+                "value": "1"
+              },
+              {
+                "tag": "DV",
+                "sort": {
+                  "tag": "SortApp",
+                  "name": "KInt",
+                  "args": []
+                },
+                "value": "1"
+              }
+            ]
+          },
+          "sortVars": []
+        }
+      ],
+      "imports": [],
+      "symbols": [
+        {
+          "name": "input",
+          "sort": {
+            "tag": "SortApp",
+            "name": "KInt",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "KInt",
+              "args": []
+            }
+          ],
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ]
+    }
+  ]
+}

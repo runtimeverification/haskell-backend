@@ -1,0 +1,3 @@
+Json data in files is of different type
+  * File test/jsonrpc-examples/params.random.json: unknown object
+  * File test/jsonrpc-examples/foundry-proof2.simplify.request: SimplifyM request

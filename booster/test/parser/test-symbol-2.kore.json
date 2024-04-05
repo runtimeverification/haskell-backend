@@ -1,0 +1,40 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-SYMBOL-2",
+      "sorts": [
+        {
+          "name": "S",
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [],
+      "imports": [],
+      "symbols": [
+        {
+          "name": "f",
+          "sort": {
+            "tag": "SortApp",
+            "name": "S",
+            "args": []
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "S",
+              "args": []
+            }
+          ],
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ]
+    }
+  ]
+}

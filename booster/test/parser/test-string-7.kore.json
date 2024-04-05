@@ -1,0 +1,21 @@
+{
+  "attributes": [
+    [
+      "key",
+      [
+        "𒃿"
+      ]
+    ]
+  ],
+  "modules": [
+    {
+      "name": "TEST-STRING-6",
+      "sorts": [],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [],
+      "imports": [],
+      "symbols": []
+    }
+  ]
+}

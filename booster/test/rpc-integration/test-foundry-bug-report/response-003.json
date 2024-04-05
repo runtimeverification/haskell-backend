@@ -1,0 +1,1802 @@
+{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "result": {
+        "state": {
+            "format": "KORE",
+            "version": 1,
+            "term": {
+                "tag": "And",
+                "sort": {
+                    "tag": "SortApp",
+                    "name": "SortGeneratedTopCell",
+                    "args": []
+                },
+                "patterns": [
+                    {
+                        "tag": "App",
+                        "name": "Lbl'-LT-'generatedTop'-GT-'",
+                        "sorts": [],
+                        "args": [
+                            {
+                                "tag": "App",
+                                "name": "Lbl'-LT-'foundry'-GT-'",
+                                "sorts": [],
+                                "args": [
+                                    {
+                                        "tag": "App",
+                                        "name": "Lbl'-LT-'kevm'-GT-'",
+                                        "sorts": [],
+                                        "args": [
+                                            {
+                                                "tag": "App",
+                                                "name": "Lbl'-LT-'k'-GT-'",
+                                                "sorts": [],
+                                                "args": [
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "kseq",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "App",
+                                                                "name": "Lbl'Hash'halt'Unds'EVM'Unds'KItem",
+                                                                "sorts": [],
+                                                                "args": []
+                                                            },
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarCONTINUATION",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortK",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "tag": "App",
+                                                "name": "Lbl'-LT-'exit-code'-GT-'",
+                                                "sorts": [],
+                                                "args": [
+                                                    {
+                                                        "tag": "EVar",
+                                                        "name": "VarEXIT'Unds'CODE'Unds'CELL'Unds'5d410f2a",
+                                                        "sort": {
+                                                            "tag": "SortApp",
+                                                            "name": "SortInt",
+                                                            "args": []
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "tag": "App",
+                                                "name": "Lbl'-LT-'mode'-GT-'",
+                                                "sorts": [],
+                                                "args": [
+                                                    {
+                                                        "tag": "EVar",
+                                                        "name": "VarMODE'Unds'CELL'Unds'5d410f2a",
+                                                        "sort": {
+                                                            "tag": "SortApp",
+                                                            "name": "SortMode",
+                                                            "args": []
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "tag": "App",
+                                                "name": "Lbl'-LT-'schedule'-GT-'",
+                                                "sorts": [],
+                                                "args": [
+                                                    {
+                                                        "tag": "EVar",
+                                                        "name": "VarSCHEDULE'Unds'CELL'Unds'5d410f2a",
+                                                        "sort": {
+                                                            "tag": "SortApp",
+                                                            "name": "SortSchedule",
+                                                            "args": []
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "tag": "App",
+                                                "name": "Lbl'-LT-'ethereum'-GT-'",
+                                                "sorts": [],
+                                                "args": [
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'evm'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "App",
+                                                                "name": "Lbl'-LT-'output'-GT-'",
+                                                                "sorts": [],
+                                                                "args": [
+                                                                    {
+                                                                        "tag": "EVar",
+                                                                        "name": "VarOUTPUT'Unds'CELL'Unds'5d410f2a",
+                                                                        "sort": {
+                                                                            "tag": "SortApp",
+                                                                            "name": "SortBytes",
+                                                                            "args": []
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            },
+                                                            {
+                                                                "tag": "App",
+                                                                "name": "Lbl'-LT-'statusCode'-GT-'",
+                                                                "sorts": [],
+                                                                "args": [
+                                                                    {
+                                                                        "tag": "EVar",
+                                                                        "name": "VarSTATUSCODE'Unds'FINAL",
+                                                                        "sort": {
+                                                                            "tag": "SortApp",
+                                                                            "name": "SortStatusCode",
+                                                                            "args": []
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            },
+                                                            {
+                                                                "tag": "App",
+                                                                "name": "Lbl'-LT-'callStack'-GT-'",
+                                                                "sorts": [],
+                                                                "args": [
+                                                                    {
+                                                                        "tag": "EVar",
+                                                                        "name": "VarCALLSTACK'Unds'CELL'Unds'5d410f2a",
+                                                                        "sort": {
+                                                                            "tag": "SortApp",
+                                                                            "name": "SortList",
+                                                                            "args": []
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            },
+                                                            {
+                                                                "tag": "App",
+                                                                "name": "Lbl'-LT-'interimStates'-GT-'",
+                                                                "sorts": [],
+                                                                "args": [
+                                                                    {
+                                                                        "tag": "EVar",
+                                                                        "name": "VarINTERIMSTATES'Unds'CELL'Unds'5d410f2a",
+                                                                        "sort": {
+                                                                            "tag": "SortApp",
+                                                                            "name": "SortList",
+                                                                            "args": []
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            },
+                                                            {
+                                                                "tag": "App",
+                                                                "name": "Lbl'-LT-'touchedAccounts'-GT-'",
+                                                                "sorts": [],
+                                                                "args": [
+                                                                    {
+                                                                        "tag": "EVar",
+                                                                        "name": "VarTOUCHEDACCOUNTS'Unds'CELL'Unds'5d410f2a",
+                                                                        "sort": {
+                                                                            "tag": "SortApp",
+                                                                            "name": "SortSet",
+                                                                            "args": []
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            },
+                                                            {
+                                                                "tag": "App",
+                                                                "name": "Lbl'-LT-'callState'-GT-'",
+                                                                "sorts": [],
+                                                                "args": [
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'program'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarPROGRAM'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortBytes",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'jumpDests'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarJUMPDESTS'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortSet",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'id'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "App",
+                                                                                "name": "inj",
+                                                                                "sorts": [
+                                                                                    {
+                                                                                        "tag": "SortApp",
+                                                                                        "name": "SortInt",
+                                                                                        "args": []
+                                                                                    },
+                                                                                    {
+                                                                                        "tag": "SortApp",
+                                                                                        "name": "SortAccount",
+                                                                                        "args": []
+                                                                                    }
+                                                                                ],
+                                                                                "args": [
+                                                                                    {
+                                                                                        "tag": "DV",
+                                                                                        "sort": {
+                                                                                            "tag": "SortApp",
+                                                                                            "name": "SortInt",
+                                                                                            "args": []
+                                                                                        },
+                                                                                        "value": "728815563385977040452943777879061427756277306518"
+                                                                                    }
+                                                                                ]
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'caller'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarCALLER'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortAccount",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'callData'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarCALLDATA'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortBytes",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'callValue'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarCALLVALUE'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortInt",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'wordStack'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarWORDSTACK'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortWordStack",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'localMem'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarLOCALMEM'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortBytes",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'pc'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarPC'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortInt",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'gas'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarGAS'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortGas",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'memoryUsed'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarMEMORYUSED'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortInt",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'callGas'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarCALLGAS'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortGas",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'static'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarSTATIC'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortBool",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'callDepth'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarCALLDEPTH'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortInt",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            },
+                                                            {
+                                                                "tag": "App",
+                                                                "name": "Lbl'-LT-'substate'-GT-'",
+                                                                "sorts": [],
+                                                                "args": [
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'selfDestruct'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarSELFDESTRUCT'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortSet",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'log'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarLOG'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortList",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'refund'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarREFUND'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortInt",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'accessedAccounts'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarACCESSEDACCOUNTS'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortSet",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'accessedStorage'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarACCESSEDSTORAGE'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortMap",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            },
+                                                            {
+                                                                "tag": "App",
+                                                                "name": "Lbl'-LT-'gasPrice'-GT-'",
+                                                                "sorts": [],
+                                                                "args": [
+                                                                    {
+                                                                        "tag": "EVar",
+                                                                        "name": "VarGASPRICE'Unds'CELL'Unds'5d410f2a",
+                                                                        "sort": {
+                                                                            "tag": "SortApp",
+                                                                            "name": "SortInt",
+                                                                            "args": []
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            },
+                                                            {
+                                                                "tag": "App",
+                                                                "name": "Lbl'-LT-'origin'-GT-'",
+                                                                "sorts": [],
+                                                                "args": [
+                                                                    {
+                                                                        "tag": "EVar",
+                                                                        "name": "VarORIGIN'Unds'CELL'Unds'5d410f2a",
+                                                                        "sort": {
+                                                                            "tag": "SortApp",
+                                                                            "name": "SortAccount",
+                                                                            "args": []
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            },
+                                                            {
+                                                                "tag": "App",
+                                                                "name": "Lbl'-LT-'blockhashes'-GT-'",
+                                                                "sorts": [],
+                                                                "args": [
+                                                                    {
+                                                                        "tag": "EVar",
+                                                                        "name": "VarBLOCKHASHES'Unds'CELL'Unds'5d410f2a",
+                                                                        "sort": {
+                                                                            "tag": "SortApp",
+                                                                            "name": "SortList",
+                                                                            "args": []
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            },
+                                                            {
+                                                                "tag": "App",
+                                                                "name": "Lbl'-LT-'block'-GT-'",
+                                                                "sorts": [],
+                                                                "args": [
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'previousHash'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarPREVIOUSHASH'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortInt",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'ommersHash'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarOMMERSHASH'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortInt",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'coinbase'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarCOINBASE'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortInt",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'stateRoot'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarSTATEROOT'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortInt",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'transactionsRoot'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarTRANSACTIONSROOT'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortInt",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'receiptsRoot'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarRECEIPTSROOT'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortInt",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'logsBloom'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarLOGSBLOOM'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortBytes",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'difficulty'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarDIFFICULTY'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortInt",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'number'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarNUMBER'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortInt",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'gasLimit'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarGASLIMIT'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortInt",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'gasUsed'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarGASUSED'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortGas",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'timestamp'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarTIMESTAMP'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortInt",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'extraData'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarEXTRADATA'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortBytes",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'mixHash'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarMIXHASH'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortInt",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'blockNonce'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarBLOCKNONCE'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortInt",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'baseFee'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarBASEFEE'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortInt",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'-LT-'ommerBlockHeaders'-GT-'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "EVar",
+                                                                                "name": "VarOMMERBLOCKHEADERS'Unds'CELL'Unds'5d410f2a",
+                                                                                "sort": {
+                                                                                    "tag": "SortApp",
+                                                                                    "name": "SortJSON",
+                                                                                    "args": []
+                                                                                }
+                                                                            }
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'network'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "App",
+                                                                "name": "Lbl'-LT-'chainID'-GT-'",
+                                                                "sorts": [],
+                                                                "args": [
+                                                                    {
+                                                                        "tag": "EVar",
+                                                                        "name": "VarCHAINID'Unds'CELL'Unds'5d410f2a",
+                                                                        "sort": {
+                                                                            "tag": "SortApp",
+                                                                            "name": "SortInt",
+                                                                            "args": []
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            },
+                                                            {
+                                                                "tag": "App",
+                                                                "name": "Lbl'-LT-'accounts'-GT-'",
+                                                                "sorts": [],
+                                                                "args": [
+                                                                    {
+                                                                        "tag": "App",
+                                                                        "name": "Lbl'Unds'AccountCellMap'Unds'",
+                                                                        "sorts": [],
+                                                                        "args": [
+                                                                            {
+                                                                                "tag": "App",
+                                                                                "name": "LblAccountCellMapItem",
+                                                                                "sorts": [],
+                                                                                "args": [
+                                                                                    {
+                                                                                        "tag": "App",
+                                                                                        "name": "Lbl'-LT-'acctID'-GT-'",
+                                                                                        "sorts": [],
+                                                                                        "args": [
+                                                                                            {
+                                                                                                "tag": "DV",
+                                                                                                "sort": {
+                                                                                                    "tag": "SortApp",
+                                                                                                    "name": "SortInt",
+                                                                                                    "args": []
+                                                                                                },
+                                                                                                "value": "728815563385977040452943777879061427756277306518"
+                                                                                            }
+                                                                                        ]
+                                                                                    },
+                                                                                    {
+                                                                                        "tag": "App",
+                                                                                        "name": "Lbl'-LT-'account'-GT-'",
+                                                                                        "sorts": [],
+                                                                                        "args": [
+                                                                                            {
+                                                                                                "tag": "App",
+                                                                                                "name": "Lbl'-LT-'acctID'-GT-'",
+                                                                                                "sorts": [],
+                                                                                                "args": [
+                                                                                                    {
+                                                                                                        "tag": "DV",
+                                                                                                        "sort": {
+                                                                                                            "tag": "SortApp",
+                                                                                                            "name": "SortInt",
+                                                                                                            "args": []
+                                                                                                        },
+                                                                                                        "value": "728815563385977040452943777879061427756277306518"
+                                                                                                    }
+                                                                                                ]
+                                                                                            },
+                                                                                            {
+                                                                                                "tag": "App",
+                                                                                                "name": "Lbl'-LT-'balance'-GT-'",
+                                                                                                "sorts": [],
+                                                                                                "args": [
+                                                                                                    {
+                                                                                                        "tag": "EVar",
+                                                                                                        "name": "VarACCT'Unds'BALANCE'Unds'FINAL",
+                                                                                                        "sort": {
+                                                                                                            "tag": "SortApp",
+                                                                                                            "name": "SortInt",
+                                                                                                            "args": []
+                                                                                                        }
+                                                                                                    }
+                                                                                                ]
+                                                                                            },
+                                                                                            {
+                                                                                                "tag": "App",
+                                                                                                "name": "Lbl'-LT-'code'-GT-'",
+                                                                                                "sorts": [],
+                                                                                                "args": [
+                                                                                                    {
+                                                                                                        "tag": "App",
+                                                                                                        "name": "inj",
+                                                                                                        "sorts": [
+                                                                                                            {
+                                                                                                                "tag": "SortApp",
+                                                                                                                "name": "SortBytes",
+                                                                                                                "args": []
+                                                                                                            },
+                                                                                                            {
+                                                                                                                "tag": "SortApp",
+                                                                                                                "name": "SortAccountCode",
+                                                                                                                "args": []
+                                                                                                            }
+                                                                                                        ],
+                                                                                                        "args": [
+                                                                                                            {
+                                                                                                                "tag": "DV",
+                                                                                                                "sort": {
+                                                                                                                    "tag": "SortApp",
+                                                                                                                    "name": "SortBytes",
+                                                                                                                    "args": []
+                                                                                                                },
+                                                                                                                "value": "``@R4\u0015a\u0000\u0010W`\u0000ý[P`\u00046\u0010a\u0001\u0000W`\u00005`à\u001cc\u0013´`\u0011a\u0000Wcêï=\u0014\u0011a\u0000fWcêï=\u0014\u0014a\u0001ÂWcìm¦\u0014a\u0001ÕWcøÌ¿G\u0014a\u0001ÝWcúv&Ô\u0014a\u0001ðW`\u0000ý[c\u0013´`\u0014a\u0001Wc±ìy\u0014a\u0001WcºAO¦\u0014a\u0001¢WcÓP o\u0014a\u0001ºW`\u0000ý[cN\u0018ý\u000b\u0011a\u0000ÓWcN\u0018ý\u000b\u0014a\u0001QWc_Ev\u001c\u0014a\u0001dWc}»\u000f¿\u0014a\u0001lWc¯­c\u0014a\u0001W`\u0000ý[c\u001fÂ\u0014a\u0001\u0005Wc0!|\u0014a\u0001\u000fWc:vc\u0014a\u0001\u0017Wc?¦øP\u0014a\u0001IW[`\u0000ý[a\u0001\ra\u0001ýV[\u0000[a\u0001\ra\u0002V[a\u0001,`\u0000Q` a\u001409QRV[`@Q`\u0001`\u0001` \u001b\u0003\u0016R` \u0001[`@Q\u0003ó[a\u0001\ra\u0003JV[a\u0001\ra\u0001_6`\u0004a\u0010èV[a\u0003ÕV[a\u0001\ra\u0005»V[a\u0001\ra\u0001z6`\u0004a\u0011\u000cV[a\u0006¯V[a\u0001\ra\u0007}V[a\u0001\ra\u00016`\u0004a\u0011~V[a\u0008\u0006V[a\u0001\ra\u0008V[a\u0001ªa\t\u001eV[`@Q\u0015\u0015R` \u0001a\u0001@V[a\u0001\ra\n=V[a\u0001\ra\u0001Ð6`\u0004a\u0011V[a\nrV[a\u0001\ra\u000c×V[`\u0000Ta\u0001ªb\u0001\u0000\u0000\u0004`ÿ\u0016V[`\u0000Ta\u0001ª`ÿ\u0016V[`@QcÈ^m`à\u001bRa\u0001ù`\u0004\u0001Ra\u0001\u0000`$\u0001R`\u0000Q` a\u001409QRcÈ^m`D\u0001`\u0000`@Q\u0003`\u0000;\u0015\u0015a\u0002MW`\u0000ý[PZñ\u0015\u0015a\u0002aW=`\u0000>=`\u0000ý[PPPPa\u0002}a\u0001ù`\u0001`\u0001` \u001b\u0003\u00161a\u0001\u0000a\reV[V[`@Q\u0001R`\u001bRthis should be EVM bytecode\u0000\u0000\u0000\u0000\u0000` \u0001RQcZkcÁ`á\u001bR`\u0000Q` a\u001409QRc´ÖÇa\u0002å`|`\u0004\u0001a\u0012\u001cV[`\u0000`@Q\u0003`\u0000;\u0015\u0015a\u0002ÿW`\u0000ý[PZñ\u0015\u0015a\u0003\u0013W=`\u0000>=`\u0000ý[PPPPa\u0003G`|`\u0001`\u0001` \u001b\u0003\u0016;` \u0001`@Q\u0001`@RR`\u0000` \u0001<a\u000eTV[PV[`@Qc-\u00035«`à\u001bR`\u0000`\u0004\u0001R`\u0000Q` a\u001409QRc-\u00035«`$\u0001[` `@Q\u0003`\u0000Zñ\u0015\u0015a\u0003W=`\u0000>=`\u0000ý[PPPP`@Q=`\u001f\u0019`\u001f\u0001\u0016\u0001`@RP\u0001a\u0003¾a\u0012HV[Pa\u0003Ggÿÿÿÿÿÿÿÿ\u0016`\na\reV[`@Qc-\u00035«`à\u001bR0`\u0004\u0001R`\u0000`\u0000Q` a\u001409QRc-\u00035«`$\u0001` `@Q\u0003`\u0000Zñ\u0015\u0015a\u0004#W=`\u0000>=`\u0000ý[PPPP`@Q=`\u001f\u0019`\u001f\u0001\u0016\u0001`@RP\u0001a\u0004Ga\u0012HV[`@Qc&1ò±`á\u001bRgÿÿÿÿÿÿÿÿ\u0016\u0016\u0011`\u0004\u0001RP`\u0000Q` a\u001409QRcLcåb`$\u0001`\u0000`@Q\u0003`\u0000;\u0015\u0015a\u0004W`\u0000ý[PZñ\u0015\u0015a\u0004³W=`\u0000>=`\u0000ý[PP`@QcøáW`à\u001bR0`\u0004\u0001Rgÿÿÿÿÿÿÿÿ\u0016`$\u0001R`\u0000Q` a\u001409QRPcøáWP`D\u0001`\u0000`@Q\u0003`\u0000;\u0015\u0015a\u0005\rW`\u0000ý[PZñ\u0015\u0015a\u0005!W=`\u0000>=`\u0000ý[PP`@Qc-\u00035«`à\u001bR0`\u0004\u0001Rgÿÿÿÿÿÿÿÿ\u0016P`\u0000Q` a\u001409QRPc-\u00035«`$\u0001` `@Q\u0003`\u0000Zñ\u0015\u0015a\u0005|W=`\u0000>=`\u0000ý[PPPP`@Q=`\u001f\u0019`\u001f\u0001\u0016\u0001`@RP\u0001a\u0005 a\u0012HV[gÿÿÿÿÿÿÿÿ\u0016\u0014a\u0005·Wa\u0005·a\u0012eV[PPV[`@QcøáW`à\u001bR0`\u0004\u0001R`d`$\u0001R`\u0000Q` a\u001409QRcøáW`D\u0001`\u0000`@Q\u0003`\u0000;\u0015\u0015a\u0006\u0008W`\u0000ý[PZñ\u0015\u0015a\u0006\u001cW=`\u0000>=`\u0000ý[PP`@Qc-\u00035«`à\u001bR0`\u0004\u0001R`\u0000P`\u0000Q` a\u001409QRPc-\u00035«`$\u0001[` `@Q\u0003`\u0000Zñ\u0015\u0015a\u0006oW=`\u0000>=`\u0000ý[PPPP`@Q=`\u001f\u0019`\u001f\u0001\u0016\u0001`@RP\u0001a\u0006a\u0012HV[Pgÿÿÿÿÿÿÿÿ\u0016`d\u0014a\u0003GWa\u0003Ga\u0012eV[`@QcZkcÁ`á\u001bR`\u0000Q` a\u001409QRc´ÖÇa\u0006å`|`\u0004\u0001a\u0012{V[`\u0000`@Q\u0003`\u0000;\u0015\u0015a\u0006ÿW`\u0000ý[PZñ\u0015\u0015a\u0007\u0013W=`\u0000>=`\u0000ý[PPPPa\u0005·`|`\u0001`\u0001` \u001b\u0003\u0016;` \u0001`@Q\u0001`@RR`\u0000` \u0001<`\u001f\u0001` \u0004\u0002` \u0001`@Q\u0001`@RR` \u00017`\u0000\u0001RPa\u000eTPPPV[`@Qc-\u00035«`à\u001bR0`\u0004\u0001R`\u0000`\u0000Q` a\u001409QRc-\u00035«`$\u0001` `@Q\u0003`\u0000Zñ\u0015\u0015a\u0007ËW=`\u0000>=`\u0000ý[PPPP`@Q=`\u001f\u0019`\u001f\u0001\u0016\u0001`@RP\u0001a\u0007ïa\u0012HV[Pa\u0003Ggÿÿÿÿÿÿÿÿ\u0016`\u0001a\reV[`@QcÈ^m`à\u001bRa\u0001H`\u0004\u0001R`$\u0001R`\u0000Q` a\u001409QRcÈ^m`D\u0001`\u0000`@Q\u0003`\u0000;\u0015\u0015a\u0008UW`\u0000ý[PZñ\u0015\u0015a\u0008iW=`\u0000>=`\u0000ý[PPPPa\u0003Ga\u0001H`\u0001`\u0001` \u001b\u0003\u00161a\reV[`@QcøáW`à\u001bR`d`\u0004\u0001R`$\u0001R`\u0000Q` a\u001409QRcøáW`D\u0001`\u0000`@Q\u0003`\u0000;\u0015\u0015a\u0008ÑW`\u0000ý[PZñ\u0015\u0015a\u0008åW=`\u0000>=`\u0000ý[PP`@Qc-\u00035«`à\u001bR`d`\u0004\u0001R`\u0000P`\u0000Q` a\u001409QRPc-\u00035«`$\u0001a\u0006PV[`\u0000Ta\u0001\u0000\u0004`ÿ\u0016\u0015a\t>WP`\u0000Ta\u0001\u0000\u0004`ÿ\u0016V[`\u0000`\u0000Q` a\u001409QR;\u0015a\n8W`@Q`\u0000Q` a\u001409QR` \u0001Re\u0019Z[\u0019Y`Ò\u001b\u0001RQ\u0003\u0001R``\u0001R`\u0000a\tÀfpÊA\u001dpêÕ\r\\\"\u0007\r¯Ãj×_=Ï^r7²*ÞìÄ`\u0001a\u0012»V[`@Q`\u001f\u0019\u0003\u0001RRa\tÚa\u0012ìV[`\u0000`@Q\u0003`\u0000ZñPP=`\u0000\u0014a\n\u0017W`@QP`\u001f\u0019`?=\u0001\u0016\u0001`@R=R=`\u0000` \u0001>a\n\u001cV[``P[PPP` \u0001Q\u0001a\n4a\u0013\u0008V[PP[PV[`@Qc-\u00035«`à\u001bR`d`\u0004\u0001R`\u0000`\u0000Q` a\u001409QRc-\u00035«`$\u0001a\u0003{V[`@Qc&1ò±`á\u001bR`\u0000Q` a\u001409QR`\u0001`\u0001` \u001b\u0003\u0016\u0014\u0015`\u0004\u0001RcLcåb`$\u0001`\u0000`@Q\u0003`\u0000;\u0015\u0015a\nÄW`\u0000ý[PZñ\u0015\u0015a\nØW=`\u0000>=`\u0000ý[PP`@Qc&1ò±`á\u001bR0`\u0001`\u0001` \u001b\u0003\u0016\u0014\u0015`\u0004\u0001R`\u0000Q` a\u001409QRPcLcåbP`$\u0001`\u0000`@Q\u0003`\u0000;\u0015\u0015a\u000b.W`\u0000ý[PZñ\u0015\u0015a\u000bBW=`\u0000>=`\u0000ý[PP`@Qc&1ò±`á\u001bRs?«\u0018F\"Ü\u0019¶\u0010I¹H\u0011I;ò¤Sb`\u0001`\u0001` \u001b\u0003\u0016\u0014\u0015`\u0004\u0001R`\u0000Q` a\u001409QRPcLcåbP`$\u0001`\u0000`@Q\u0003`\u0000;\u0015\u0015a\u000b¬W`\u0000ý[PZñ\u0015\u0015a\u000bÀW=`\u0000>=`\u0000ý[PP`@Qc&1ò±`á\u001bRsNY´HG³yW\u000c§¿&À´l`\u0001`\u0001` \u001b\u0003\u0016\u0014\u0015`\u0004\u0001R`\u0000Q` a\u001409QRPcLcåbP`$\u0001`\u0000`@Q\u0003`\u0000;\u0015\u0015a\u000c*W`\u0000ý[PZñ\u0015\u0015a\u000c>W=`\u0000>=`\u0000ý[PP`@Qc-\u00035«`à\u001bR`\u0001`\u0001` \u001b\u0003\u0016`\u0004\u0001R`\u0000P`\u0000Q` a\u001409QRPc-\u00035«`$\u0001` `@Q\u0003`\u0000Zñ\u0015\u0015a\u000cW=`\u0000>=`\u0000ý[PPPP`@Q=`\u001f\u0019`\u001f\u0001\u0016\u0001`@RP\u0001a\u000c½a\u0012HV[Pgÿÿÿÿÿÿÿÿ\u0016\u0015a\u0005·Wa\u0005·a\u0012eV[`@Qc-\u00035«`à\u001bR0`\u0004\u0001R`\u0000`\u0000Q` a\u001409QRc-\u00035«`$\u0001` `@Q\u0003`\u0000Zñ\u0015\u0015a\r%W=`\u0000>=`\u0000ý[PPPP`@Q=`\u001f\u0019`\u001f\u0001\u0016\u0001`@RP\u0001a\rIa\u0012HV[Pgÿÿÿÿÿÿÿÿ\u0016`\u0001\u0014a\u0003GWa\u0003Ga\u0012eV[\u0014a\u0005·WA0O¬Ù2=u±\u001bÍÖ\tË8ïÿý°W\u0010÷Êðé±lmpP`@Qa\rÖ` R`\"\u0001RError: a == b not satisfied [uin`@\u0001Rat]`ð\u001b``\u0001R`\u0001V[`@Q\u0003¡²Þ/¾\u001a\röÀËÝýD£Ä\u001dH @Ê5Ålï\u000fÊç!¨`@Qa\u000e\ra\u0013*V[`@Q\u0003¡²Þ/¾\u001a\röÀËÝýD£Ä\u001dH @Ê5Ålï\u000fÊç!¨`@Qa\u000eDa\u0013bV[`@Q\u0003¡a\u0005·a\u000e^V[a\u0005·a\u000f^V[`\u0000Q` a\u001409QR;\u0015a\u000fMW`@Q`\u0000Q` a\u001409QR` \u0001Re\u0019Z[\u0019Y`Ò\u001b\u0001R`\u0001``\u0001R`\u0000pÊ\u0010»ÐÛý ©ô±4\u0002Ál± p^\r\u001c\nê±\u000f£S®XoÄ`\u0001`@Q`\u001f\u0019\u0003\u0001RRa\u000eì` \u0001a\u0012»V[`@Q`\u001f\u0019\u0003\u0001RRa\u000f\u0006a\u0012ìV[`\u0000`@Q\u0003`\u0000ZñPP=`\u0000\u0014a\u000fCW`@QP`\u001f\u0019`?=\u0001\u0016\u0001`@R=R=`\u0000` \u0001>a\u000fHV[``P[PPPP[`\u0000Taÿ\u0000\u0019\u0016a\u0001\u0000\u0017UV[a\u000fha\u0010EV[a\u0005·WA0O¬Ù2=u±\u001bÍÖ\tË8ïÿý°W\u0010÷Êðé±lmpP`@Qa\u000f×` R`#\u0001RError: a == b not satisfied [byt`@\u0001Rbes]`è\u001b``\u0001R`\u0001V[`@Q\u0003¡Òn\u0016ÊÔT\u0005äÉâÙOîÂ\u0008^ä%YOÕc_¢LÏ\u0018`@Qa\u0010\u000ea\u0013V[`@Q\u0003¡Òn\u0016ÊÔT\u0005äÉâÙOîÂ\u0008^ä%YOÕc_¢LÏ\u0018`@Qa\u000eDa\u0013ÈV[QQ`\u0001\u0003a\u0010ÈW`\u0000[Q\u0010\u0015a\u0010ÂWQ\u0010a\u0010pWa\u0010pa\u0013òV[` \u0001\u0001Q`ø\u001c`ø\u001b`\u0001`\u0001`ø\u001b\u0003\u0019\u0016Q\u0010a\u0010Wa\u0010a\u0013òV[\u0001` \u0001Q`\u0001`\u0001`ø\u001b\u0003\u0019\u0016\u0014a\u0010°W`\u0000P[a\u0010ºa\u0014\u0008V[PPa\u0010UV[Pa\u0010ÌV[P`\u0000[PPV[gÿÿÿÿÿÿÿÿ\u0016\u0014a\u0003GW`\u0000ý[`\u0000` \u0003\u0012\u0015a\u0010úW`\u0000ý[5a\u0011\u0005a\u0010ÒV[PPPV[`\u0000` \u0003\u0012\u0015a\u0011\u001fW`\u0000ý[5gÿÿÿÿÿÿÿÿ\u0011\u0015a\u00117W`\u0000ý[\u0001P`\u001f\u0001\u0012a\u0011KW`\u0000ý[5\u0011\u0015a\u0011ZW`\u0000ý[` \u0001\u0001\u0011\u0015a\u0011lW`\u0000ý[` \u0001PPPPPV[`\u0000` \u0003\u0012\u0015a\u0011W`\u0000ý[P5PV[`\u0000` \u0003\u0012\u0015a\u0011©W`\u0000ý[5`\u0001`\u0001` \u001b\u0003\u0016\u0014a\u0011\u0005W`\u0000ý[`\u0000[\u0010\u0015a\u0011ÛW\u0001Q\u0001R` \u0001a\u0011ÃV[\u0011\u0015a\u0011êW`\u0000\u0001R[PPPPV[`\u0000QRa\u0012\u0008` \u0001` \u0001a\u0011ÀV[`\u001f\u0001`\u001f\u0019\u0016\u0001` \u0001PPV[`\u0001`\u0001` \u001b\u0003\u0016R`@` \u0001R`\u0000a\u0012@\u0001a\u0011ðV[PPPPV[`\u0000` \u0003\u0012\u0015a\u0012ZW`\u0000ý[Qa\u0011\u0005a\u0010ÒV[cNH{q`à\u001b`\u0000R`\u0001`\u0004R`$`\u0000ý[`\u0001`\u0001` \u001b\u0003\u0016R`@` \u0001R\u0001R``\u00017`\u0000\u0001``\u0001R`\u001f\u0001`\u001f\u0019\u0016\u0001\u0001PPV[`\u0001`\u0001`à\u001b\u0003\u0019\u0016RQ`\u0000a\u0012Þ`\u0004\u0001` \u0001a\u0011ÀV[\u0001`\u0004\u0001PPPV[`\u0000Qa\u0012þ` \u0001a\u0011ÀV[\u0001PPV[`\u0000` \u0003\u0012\u0015a\u0013\u001aW`\u0000ý[Q\u0015\u0015\u0014a\u0011\u0005W`\u0000ý[`@R`\u0000a\u0013T`@\u0001`\nRi\u0008\u0008\u0011^\u001c\u0019XÝ\u0019Y`²\u001b` \u0001R`@\u0001V[P` \u0001RPPV[`@R`\u0000a\u0013T`@\u0001`\nRi\u0008\u0008\u0008\u0008\u0010XÝ\u001dX[`²\u001b` \u0001R`@\u0001V[`@R`\u0000a\u0013¶`@\u0001`\nRi\u0008\u0008\u0011^\u001c\u0019XÝ\u0019Y`²\u001b` \u0001R`@\u0001V[\u0003` \u0001Ra\u0012@a\u0011ðV[`@R`\u0000a\u0013¶`@\u0001`\nRi\u0008\u0008\u0008\u0008\u0010XÝ\u001dX[`²\u001b` \u0001R`@\u0001V[cNH{q`à\u001b`\u0000R`2`\u0004R`$`\u0000ý[`\u0000`\u0001\u0001a\u0014(WcNH{q`à\u001b`\u0000R`\u0011`\u0004R`$`\u0000ý[P`\u0001\u0001Vþ\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000q\tpÏ©\u001aboóhö[\u001dÑ-¢dipfsX\"\u0012 âÅêb¸jß©©.\u000cnã(F£²K¹\u0014\u0001=-Äo!ÉüdsolcC\u0000\u0008\r\u00003"
+                                                                                                            }
+                                                                                                        ]
+                                                                                                    }
+                                                                                                ]
+                                                                                            },
+                                                                                            {
+                                                                                                "tag": "App",
+                                                                                                "name": "Lbl'-LT-'storage'-GT-'",
+                                                                                                "sorts": [],
+                                                                                                "args": [
+                                                                                                    {
+                                                                                                        "tag": "EVar",
+                                                                                                        "name": "VarACCT'Unds'STORAGE'Unds'FINAL",
+                                                                                                        "sort": {
+                                                                                                            "tag": "SortApp",
+                                                                                                            "name": "SortMap",
+                                                                                                            "args": []
+                                                                                                        }
+                                                                                                    }
+                                                                                                ]
+                                                                                            },
+                                                                                            {
+                                                                                                "tag": "App",
+                                                                                                "name": "Lbl'-LT-'origStorage'-GT-'",
+                                                                                                "sorts": [],
+                                                                                                "args": [
+                                                                                                    {
+                                                                                                        "tag": "EVar",
+                                                                                                        "name": "VarACCT'Unds'ORIGSTORAGE'Unds'FINAL",
+                                                                                                        "sort": {
+                                                                                                            "tag": "SortApp",
+                                                                                                            "name": "SortMap",
+                                                                                                            "args": []
+                                                                                                        }
+                                                                                                    }
+                                                                                                ]
+                                                                                            },
+                                                                                            {
+                                                                                                "tag": "App",
+                                                                                                "name": "Lbl'-LT-'nonce'-GT-'",
+                                                                                                "sorts": [],
+                                                                                                "args": [
+                                                                                                    {
+                                                                                                        "tag": "EVar",
+                                                                                                        "name": "VarACCT'Unds'NONCE'Unds'FINAL",
+                                                                                                        "sort": {
+                                                                                                            "tag": "SortApp",
+                                                                                                            "name": "SortInt",
+                                                                                                            "args": []
+                                                                                                        }
+                                                                                                    }
+                                                                                                ]
+                                                                                            }
+                                                                                        ]
+                                                                                    }
+                                                                                ]
+                                                                            },
+                                                                            {
+                                                                                "tag": "App",
+                                                                                "name": "Lbl'Unds'AccountCellMap'Unds'",
+                                                                                "sorts": [],
+                                                                                "args": [
+                                                                                    {
+                                                                                        "tag": "App",
+                                                                                        "name": "LblAccountCellMapItem",
+                                                                                        "sorts": [],
+                                                                                        "args": [
+                                                                                            {
+                                                                                                "tag": "App",
+                                                                                                "name": "Lbl'-LT-'acctID'-GT-'",
+                                                                                                "sorts": [],
+                                                                                                "args": [
+                                                                                                    {
+                                                                                                        "tag": "DV",
+                                                                                                        "sort": {
+                                                                                                            "tag": "SortApp",
+                                                                                                            "name": "SortInt",
+                                                                                                            "args": []
+                                                                                                        },
+                                                                                                        "value": "645326474426547203313410069153905908525362434349"
+                                                                                                    }
+                                                                                                ]
+                                                                                            },
+                                                                                            {
+                                                                                                "tag": "App",
+                                                                                                "name": "Lbl'-LT-'account'-GT-'",
+                                                                                                "sorts": [],
+                                                                                                "args": [
+                                                                                                    {
+                                                                                                        "tag": "App",
+                                                                                                        "name": "Lbl'-LT-'acctID'-GT-'",
+                                                                                                        "sorts": [],
+                                                                                                        "args": [
+                                                                                                            {
+                                                                                                                "tag": "DV",
+                                                                                                                "sort": {
+                                                                                                                    "tag": "SortApp",
+                                                                                                                    "name": "SortInt",
+                                                                                                                    "args": []
+                                                                                                                },
+                                                                                                                "value": "645326474426547203313410069153905908525362434349"
+                                                                                                            }
+                                                                                                        ]
+                                                                                                    },
+                                                                                                    {
+                                                                                                        "tag": "App",
+                                                                                                        "name": "Lbl'-LT-'balance'-GT-'",
+                                                                                                        "sorts": [],
+                                                                                                        "args": [
+                                                                                                            {
+                                                                                                                "tag": "DV",
+                                                                                                                "sort": {
+                                                                                                                    "tag": "SortApp",
+                                                                                                                    "name": "SortInt",
+                                                                                                                    "args": []
+                                                                                                                },
+                                                                                                                "value": "0"
+                                                                                                            }
+                                                                                                        ]
+                                                                                                    },
+                                                                                                    {
+                                                                                                        "tag": "App",
+                                                                                                        "name": "Lbl'-LT-'code'-GT-'",
+                                                                                                        "sorts": [],
+                                                                                                        "args": [
+                                                                                                            {
+                                                                                                                "tag": "App",
+                                                                                                                "name": "inj",
+                                                                                                                "sorts": [
+                                                                                                                    {
+                                                                                                                        "tag": "SortApp",
+                                                                                                                        "name": "SortBytes",
+                                                                                                                        "args": []
+                                                                                                                    },
+                                                                                                                    {
+                                                                                                                        "tag": "SortApp",
+                                                                                                                        "name": "SortAccountCode",
+                                                                                                                        "args": []
+                                                                                                                    }
+                                                                                                                ],
+                                                                                                                "args": [
+                                                                                                                    {
+                                                                                                                        "tag": "DV",
+                                                                                                                        "sort": {
+                                                                                                                            "tag": "SortApp",
+                                                                                                                            "name": "SortBytes",
+                                                                                                                            "args": []
+                                                                                                                        },
+                                                                                                                        "value": "\u0000"
+                                                                                                                    }
+                                                                                                                ]
+                                                                                                            }
+                                                                                                        ]
+                                                                                                    },
+                                                                                                    {
+                                                                                                        "tag": "App",
+                                                                                                        "name": "Lbl'-LT-'storage'-GT-'",
+                                                                                                        "sorts": [],
+                                                                                                        "args": [
+                                                                                                            {
+                                                                                                                "tag": "EVar",
+                                                                                                                "name": "VarCHEATCODE'Unds'STORAGE'Unds'FINAL",
+                                                                                                                "sort": {
+                                                                                                                    "tag": "SortApp",
+                                                                                                                    "name": "SortMap",
+                                                                                                                    "args": []
+                                                                                                                }
+                                                                                                            }
+                                                                                                        ]
+                                                                                                    },
+                                                                                                    {
+                                                                                                        "tag": "App",
+                                                                                                        "name": "Lbl'-LT-'origStorage'-GT-'",
+                                                                                                        "sorts": [],
+                                                                                                        "args": [
+                                                                                                            {
+                                                                                                                "tag": "App",
+                                                                                                                "name": "Lbl'Stop'Map",
+                                                                                                                "sorts": [],
+                                                                                                                "args": []
+                                                                                                            }
+                                                                                                        ]
+                                                                                                    },
+                                                                                                    {
+                                                                                                        "tag": "App",
+                                                                                                        "name": "Lbl'-LT-'nonce'-GT-'",
+                                                                                                        "sorts": [],
+                                                                                                        "args": [
+                                                                                                            {
+                                                                                                                "tag": "DV",
+                                                                                                                "sort": {
+                                                                                                                    "tag": "SortApp",
+                                                                                                                    "name": "SortInt",
+                                                                                                                    "args": []
+                                                                                                                },
+                                                                                                                "value": "0"
+                                                                                                            }
+                                                                                                        ]
+                                                                                                    }
+                                                                                                ]
+                                                                                            }
+                                                                                        ]
+                                                                                    },
+                                                                                    {
+                                                                                        "tag": "EVar",
+                                                                                        "name": "VarACCOUNTS'Unds'FINAL",
+                                                                                        "sort": {
+                                                                                            "tag": "SortApp",
+                                                                                            "name": "SortAccountCellMap",
+                                                                                            "args": []
+                                                                                        }
+                                                                                    }
+                                                                                ]
+                                                                            }
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            },
+                                                            {
+                                                                "tag": "App",
+                                                                "name": "Lbl'-LT-'txOrder'-GT-'",
+                                                                "sorts": [],
+                                                                "args": [
+                                                                    {
+                                                                        "tag": "EVar",
+                                                                        "name": "VarTXORDER'Unds'CELL'Unds'5d410f2a",
+                                                                        "sort": {
+                                                                            "tag": "SortApp",
+                                                                            "name": "SortList",
+                                                                            "args": []
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            },
+                                                            {
+                                                                "tag": "App",
+                                                                "name": "Lbl'-LT-'txPending'-GT-'",
+                                                                "sorts": [],
+                                                                "args": [
+                                                                    {
+                                                                        "tag": "EVar",
+                                                                        "name": "VarTXPENDING'Unds'CELL'Unds'5d410f2a",
+                                                                        "sort": {
+                                                                            "tag": "SortApp",
+                                                                            "name": "SortList",
+                                                                            "args": []
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            },
+                                                            {
+                                                                "tag": "App",
+                                                                "name": "Lbl'-LT-'messages'-GT-'",
+                                                                "sorts": [],
+                                                                "args": [
+                                                                    {
+                                                                        "tag": "EVar",
+                                                                        "name": "VarMESSAGES'Unds'CELL'Unds'5d410f2a",
+                                                                        "sort": {
+                                                                            "tag": "SortApp",
+                                                                            "name": "SortMessageCellMap",
+                                                                            "args": []
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "tag": "App",
+                                        "name": "Lbl'-LT-'cheatcodes'-GT-'",
+                                        "sorts": [],
+                                        "args": [
+                                            {
+                                                "tag": "App",
+                                                "name": "Lbl'-LT-'prank'-GT-'",
+                                                "sorts": [],
+                                                "args": [
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'prevCaller'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarPREVCALLER'Unds'CELL'Unds'5d410f2a",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortAccount",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'prevOrigin'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarPREVORIGIN'Unds'CELL'Unds'5d410f2a",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortAccount",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'newCaller'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarNEWCALLER'Unds'CELL'Unds'5d410f2a",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortAccount",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'newOrigin'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarNEWORIGIN'Unds'CELL'Unds'5d410f2a",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortAccount",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'active'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarACTIVE'Unds'CELL'Unds'5d410f2a",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortBool",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'depth'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarDEPTH'Unds'CELL'Unds'5d410f2a",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortInt",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'singleCall'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarSINGLECALL'Unds'CELL'Unds'5d410f2a",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortBool",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "tag": "App",
+                                                "name": "Lbl'-LT-'expectedRevert'-GT-'",
+                                                "sorts": [],
+                                                "args": [
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'isRevertExpected'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarISREVERTEXPECTED'Unds'FINAL",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortBool",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'expectedReason'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarEXPECTEDREASON'Unds'CELL'Unds'5d410f2a",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortBytes",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'expectedDepth'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarEXPECTEDDEPTH'Unds'CELL'Unds'5d410f2a",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortInt",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "tag": "App",
+                                                "name": "Lbl'-LT-'expectedOpcode'-GT-'",
+                                                "sorts": [],
+                                                "args": [
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'isOpcodeExpected'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarISOPCODEEXPECTED'Unds'FINAL",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortBool",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'expectedAddress'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarEXPECTEDADDRESS'Unds'CELL'Unds'5d410f2a",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortAccount",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'expectedValue'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarEXPECTEDVALUE'Unds'CELL'Unds'5d410f2a",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortInt",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'expectedData'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarEXPECTEDDATA'Unds'CELL'Unds'5d410f2a",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortBytes",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'opcodeType'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarOPCODETYPE'Unds'CELL'Unds'5d410f2a",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortOpcodeType",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "tag": "App",
+                                                "name": "Lbl'-LT-'expectEmit'-GT-'",
+                                                "sorts": [],
+                                                "args": [
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'recordEvent'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarRECORDEVENT'Unds'FINAL",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortBool",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'isEventExpected'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarISEVENTEXPECTED'Unds'FINAL",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortBool",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'checkedTopics'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarCHECKEDTOPICS'Unds'CELL'Unds'5d410f2a",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortList",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'checkedData'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarCHECKEDDATA'Unds'CELL'Unds'5d410f2a",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortBool",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'expectedEventAddress'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarEXPECTEDEVENTADDRESS'Unds'CELL'Unds'5d410f2a",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortAccount",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "tag": "App",
+                                                "name": "Lbl'-LT-'whitelist'-GT-'",
+                                                "sorts": [],
+                                                "args": [
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'isCallWhitelistActive'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarISCALLWHITELISTACTIVE'Unds'FINAL",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortBool",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'isStorageWhitelistActive'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarISSTORAGEWHITELISTACTIVE'Unds'FINAL",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortBool",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'addressSet'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarADDRESSSET'Unds'FINAL",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortSet",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "Lbl'-LT-'storageSlotSet'-GT-'",
+                                                        "sorts": [],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarSTORAGESLOTSET'Unds'FINAL",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortSet",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "tag": "App",
+                                "name": "Lbl'-LT-'generatedCounter'-GT-'",
+                                "sorts": [],
+                                "args": [
+                                    {
+                                        "tag": "EVar",
+                                        "name": "VarGENERATEDCOUNTER'Unds'CELL'Unds'5d410f2a",
+                                        "sort": {
+                                            "tag": "SortApp",
+                                            "name": "SortInt",
+                                            "args": []
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "tag": "Equals",
+                        "argSort": {
+                            "tag": "SortApp",
+                            "name": "SortBool",
+                            "args": []
+                        },
+                        "sort": {
+                            "tag": "SortApp",
+                            "name": "SortGeneratedTopCell",
+                            "args": []
+                        },
+                        "first": {
+                            "tag": "DV",
+                            "sort": {
+                                "tag": "SortApp",
+                                "name": "SortBool",
+                                "args": []
+                            },
+                            "value": "true"
+                        },
+                        "second": {
+                            "tag": "App",
+                            "name": "Lblfoundry'Unds'success",
+                            "sorts": [],
+                            "args": [
+                                {
+                                    "tag": "EVar",
+                                    "name": "VarSTATUSCODE'Unds'FINAL",
+                                    "sort": {
+                                        "tag": "SortApp",
+                                        "name": "SortStatusCode",
+                                        "args": []
+                                    }
+                                },
+                                {
+                                    "tag": "App",
+                                    "name": "Lbl'Hash'lookup'LParUndsCommUndsRParUnds'EVM-TYPES'Unds'Int'Unds'Map'Unds'Int",
+                                    "sorts": [],
+                                    "args": [
+                                        {
+                                            "tag": "EVar",
+                                            "name": "VarCHEATCODE'Unds'STORAGE'Unds'FINAL",
+                                            "sort": {
+                                                "tag": "SortApp",
+                                                "name": "SortMap",
+                                                "args": []
+                                            }
+                                        },
+                                        {
+                                            "tag": "DV",
+                                            "sort": {
+                                                "tag": "SortApp",
+                                                "name": "SortInt",
+                                                "args": []
+                                            },
+                                            "value": "46308022326495007027972728677917914892729792999299745830475596687180801507328"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "tag": "EVar",
+                                    "name": "VarISREVERTEXPECTED'Unds'FINAL",
+                                    "sort": {
+                                        "tag": "SortApp",
+                                        "name": "SortBool",
+                                        "args": []
+                                    }
+                                },
+                                {
+                                    "tag": "EVar",
+                                    "name": "VarISOPCODEEXPECTED'Unds'FINAL",
+                                    "sort": {
+                                        "tag": "SortApp",
+                                        "name": "SortBool",
+                                        "args": []
+                                    }
+                                },
+                                {
+                                    "tag": "EVar",
+                                    "name": "VarRECORDEVENT'Unds'FINAL",
+                                    "sort": {
+                                        "tag": "SortApp",
+                                        "name": "SortBool",
+                                        "args": []
+                                    }
+                                },
+                                {
+                                    "tag": "EVar",
+                                    "name": "VarISEVENTEXPECTED'Unds'FINAL",
+                                    "sort": {
+                                        "tag": "SortApp",
+                                        "name": "SortBool",
+                                        "args": []
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

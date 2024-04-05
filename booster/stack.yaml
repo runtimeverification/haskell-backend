@@ -1,0 +1,34 @@
+resolver: lts-22.10
+
+packages:
+- .
+- dev-tools
+
+# Dependency packages to be pulled from upstream that are not in the resolver.
+extra-deps:
+  - decision-diagrams-0.2.0.0
+  - hashable-1.4.2.0
+  - smtlib-backends-0.3
+  - smtlib-backends-process-0.3
+  - monad-validate-1.3.0.0
+  - git: https://github.com/runtimeverification/haskell-backend.git
+    commit: 531f7c1db1a9fad6d18cbcedb3cfd3e35d6b82a5
+    subdirs:
+      - kore
+      - kore-rpc-types
+  - github: goodlyrottenapple/tasty-test-reporter
+    commit: b704130545aa3925a8487bd3e92f1dd5ce0512e2
+
+# Control whether we use the GHC we find on the path
+# system-ghc: true
+
+# Extra directories used by stack for building
+# extra-include-dirs: [/path/to/dir]
+# extra-lib-dirs: [/path/to/dir]
+
+# Allow a newer minor version of GHC than the snapshot specifies
+# compiler-check: newer-minor
+
+local-bin-path: ./.build/booster/bin
+
+allow-newer: false
