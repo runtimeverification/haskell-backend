@@ -69,7 +69,6 @@ executables:
     - kore-rpc-types
     ghc-options:
     - -rtsopts
-    - -eventlog
     - -threaded
     - -with-rtsopts=-N
   parsetest:

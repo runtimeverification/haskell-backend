@@ -12,7 +12,6 @@ extra-source-files:
 - LICENSE
 - package.yaml
 - README.md
-- stack.yaml
 - test/parser/*
 - cbits/*
 
