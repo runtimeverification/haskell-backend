@@ -1,0 +1,41 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-HOOKSYMBOL-1",
+      "sorts": [
+        {
+          "name": "S",
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [],
+      "imports": [],
+      "symbols": [
+        {
+          "name": "f",
+          "sort": {
+            "tag": "SortApp",
+            "name": "S",
+            "args": []
+          },
+          "argSorts": [],
+          "attributes": [
+            [
+              "hook",
+              [
+                "S.f"
+              ]
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-COMMENT-6",
+      "sorts": [
+        {
+          "name": "Nat",
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [],
+      "imports": [],
+      "symbols": []
+    }
+  ]
+}

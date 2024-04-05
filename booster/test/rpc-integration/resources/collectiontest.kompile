@@ -1,0 +1,5 @@
+kompile --llvm-kompile-type c collectiontest.k --syntax-module COLLECTIONTEST
+cp collectiontest-kompiled/interpreter.* ./collectiontest.dylib
+kompile --backend haskell collectiontest.k --syntax-module COLLECTIONTEST
+cp collectiontest-kompiled/definition.kore ./collectiontest.kore
+rm -r collectiontest-kompiled

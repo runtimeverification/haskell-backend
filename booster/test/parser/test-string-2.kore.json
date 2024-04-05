@@ -1,0 +1,21 @@
+{
+  "attributes": [
+    [
+      "key",
+      [
+        "\u0007"
+      ]
+    ]
+  ],
+  "modules": [
+    {
+      "name": "TEST-STRING-2",
+      "sorts": [],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [],
+      "imports": [],
+      "symbols": []
+    }
+  ]
+}

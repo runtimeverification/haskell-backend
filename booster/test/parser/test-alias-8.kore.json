@@ -1,0 +1,89 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-ALIAS-8",
+      "sorts": [
+        {
+          "name": "Nat",
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ],
+      "aliases": [
+        {
+          "name": "f",
+          "sort": {
+            "tag": "SortVar",
+            "name": "S"
+          },
+          "args": [
+            "N",
+            "X"
+          ],
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Nat",
+              "args": []
+            },
+            {
+              "tag": "SortVar",
+              "name": "S"
+            }
+          ],
+          "attributes": [],
+          "rhs": {
+            "tag": "App",
+            "name": "g",
+            "sorts": [
+              {
+                "tag": "SortVar",
+                "name": "S"
+              }
+            ],
+            "args": [
+              {
+                "tag": "EVar",
+                "name": "N",
+                "sort": {
+                  "tag": "SortApp",
+                  "name": "Nat",
+                  "args": []
+                }
+              }
+            ]
+          },
+          "sortVars": [
+            "S"
+          ]
+        }
+      ],
+      "attributes": [],
+      "axioms": [],
+      "imports": [],
+      "symbols": [
+        {
+          "name": "g",
+          "sort": {
+            "tag": "SortVar",
+            "name": "S"
+          },
+          "argSorts": [
+            {
+              "tag": "SortApp",
+              "name": "Nat",
+              "args": []
+            }
+          ],
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": [
+            "S"
+          ]
+        }
+      ]
+    }
+  ]
+}

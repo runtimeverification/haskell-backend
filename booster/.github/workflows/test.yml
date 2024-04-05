@@ -1,0 +1,181 @@
+name: 'Build + Test'
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: ['main']
+
+concurrency:
+  # head_ref is defined for PRs only, so we use run_id (unique) for
+  # the main branch to ensure all commits are built
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  ghc_version: '9.6.4'
+  hpack_version: '0.34.2'
+
+jobs:
+
+  stack:
+    name: 'Stack / Unit Tests'
+    runs-on: [self-hosted, linux, normal]
+    steps:
+
+      - name: 'Checkout Code'
+        uses: actions/checkout@v4
+        with:
+          # Check out pull request HEAD instead of merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: 'Cache Stack root'
+        uses: actions/cache@v4
+        with:
+          path: stack-cache
+          key: stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
+          restore-keys: |
+            stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('package.yaml') }}
+            stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}
+            stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}
+
+      - name: 'Set up Docker'
+        uses: ./.github/actions/with-docker
+        with:
+          tag: hs-booster-ci-stack-unit-buster-${{ github.run_id }}
+          os: ubuntu
+          distro: jammy
+          hpack: ${{ env.hpack_version }}
+          ghc: ${{ env.ghc_version }}
+
+      - name: 'Run unit tests'
+        run: docker exec -t hs-booster-ci-stack-unit-buster-${{ github.run_id }} /bin/bash -c 'stack --system-ghc --stack-root $(pwd)/stack-cache test :unit-tests --pedantic'
+
+      - name: 'Tear down Docker'
+        if: always()
+        run: |
+          docker stop --time=0 hs-booster-ci-stack-unit-buster-${{ github.run_id }}
+
+  style:
+    name: 'Formatting and Style'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: 'Check out code'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          submodules: recursive
+          token: ${{ secrets.JENKINS_GITHUB_PAT }}
+
+      - name: 'Install Nix'
+        uses: cachix/install-nix-action@v25
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.13.3/install
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+            substituters = http://cache.nixos.org https://cache.iog.io
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+
+      - name: 'Install Cachix'
+        uses: cachix/cachix-action@v14
+        with:
+          name: k-framework
+          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
+
+      - name: 'Check formatting'
+        run: |
+          nix develop .#style --command bash -c "./scripts/fourmolu.sh"
+
+      - name: Update branch
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if git status -s -b | grep -q '^##.*(no branch)$'; then
+            echo 2>&1 "Error: Git is in detached HEAD state"
+            exit 1
+          fi
+
+          if [ -n "$(git status --porcelain '*.hs')" ]; then
+            git config --global user.name github-actions
+            git config --global user.email github-actions@github.com
+            git add '*.hs'
+            git commit -m "Format with fourmolu"
+            git show --stat
+            git push
+            echo "Reformatted code pushed, aborting this workflow" | tee -a $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+      - name: 'Run hlint'
+        run: nix develop .#style --command bash -c './scripts/hlint.sh'
+
+  nix-build:
+    name: 'Nix / All Tests'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: [self-hosted, linux, normal]
+            os: Ubuntu-22.04
+            nix: x86_64-linux
+          - runner: MacM1
+            os: self-macos-12
+            nix: aarch64-darwin
+          - runner: macos-12
+            os: macos-12
+            nix: x86_64-darwin
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: 'Check out code'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: 'Install Nix'
+        if: ${{ matrix.os == 'macos-12' }}
+        uses: cachix/install-nix-action@v22
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.13.3/install
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+            substituters = http://cache.nixos.org https://cache.iog.io
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+
+      - name: 'Install Cachix'
+        if: ${{ matrix.os == 'macos-12' }}
+        uses: cachix/cachix-action@v14
+        with:
+          name: k-framework
+          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
+          skipPush: true
+
+      - name: Build executables
+        env:
+          CACHIX_AUTH_TOKEN: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
+          NIX_PATH: 'nixpkgs=http://nixos.org/channels/nixos-22.05/nixexprs.tar.xz'
+          GC_DONT_GC: '1'
+        run: |
+          nix --version
+          export JQ=$(nix-build '<nixpkgs>' -A jq --no-link)/bin/jq
+          nix build .#kore-rpc-booster --extra-experimental-features 'nix-command flakes' --print-build-logs
+          booster=$(nix build .#kore-rpc-booster --extra-experimental-features 'nix-command flakes' --json | $JQ -r '.[].outputs | to_entries[].value')
+          drv=$(nix-store --query --deriver ${booster})
+          nix-store --query --requisites --include-outputs ${drv} | cachix push k-framework
+
+      - name: 'Cache Cabal package database and store'
+        uses: actions/cache@v4
+        with:
+          path: |
+            cabal-cache/packages
+            cabal-cache/store
+          key: cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('dev-tools/package.yaml') }}-${{ hashFiles('cabal.project.freeze') }}
+          restore-keys: |
+            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('package.yaml') }}-${{ hashFiles('dev-tools/package.yaml') }}-
+            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('package.yaml') }}-
+            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-
+
+      - name: Unit Tests
+        run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "hpack . && hpack dev-tools && cabal --store-dir ./cabal-cache/store update && cabal --store-dir ./cabal-cache/store test unit-tests --enable-tests --test-show-details=direct"
+
+      - name: Integration Tests
+        if: ${{ matrix.os != 'macos-12' }}  ## takes long on public runner, already tested in MacM1
+        run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "scripts/integration-tests.sh"

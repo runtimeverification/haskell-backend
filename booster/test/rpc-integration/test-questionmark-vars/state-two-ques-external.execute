@@ -1,0 +1,82 @@
+{
+  "format": "KORE",
+  "version": 1,
+  "term": {
+    "tag": "App",
+    "name": "Lbl'-LT-'generatedTop'-GT-'",
+    "sorts": [],
+    "args": [
+      {
+        "args": [
+          {
+            "args": [
+              {
+                "args": [],
+                "name": "Lbl'Hash'setBStateSymbolic'Unds'QUESTIONMARK-VARS'Unds'KItem",
+                "sorts": [],
+                "tag": "App"
+              },
+              {
+                "args": [],
+                "name": "dotk",
+                "sorts": [],
+                "tag": "App"
+              }
+            ],
+            "name": "kseq",
+            "sorts": [],
+            "tag": "App"
+          }
+        ],
+        "name": "Lbl'-LT-'k'-GT-'",
+        "sorts": [],
+        "tag": "App"
+      },
+      {
+        "tag": "App",
+        "name": "Lbl'-LT-'a-state'-GT-'",
+        "sorts": [],
+        "args": [
+          {
+            "tag": "EVar",
+            "name": "Var'Ques'X",
+            "sort": {
+              "tag": "SortApp",
+              "name": "SortState",
+              "args": []
+            }
+          }
+        ]
+      },
+      {
+        "tag": "App",
+        "name": "Lbl'-LT-'b-state'-GT-'",
+        "sorts": [],
+        "args": [
+          {
+            "args": [],
+            "name": "Lbl'Stop'State'Unds'QUESTIONMARK-VARS'Unds'State",
+            "sorts": [],
+            "tag": "App"
+          }
+        ]
+      },
+      {
+        "tag": "App",
+        "name": "Lbl'-LT-'generatedCounter'-GT-'",
+        "sorts": [],
+        "args": [
+          {
+            "tag": "DV",
+            "sort": {
+              "tag": "SortApp",
+              "name": "SortInt",
+              "args": []
+            },
+            "value": "0"
+          }
+        ]
+      }
+    ]
+  }
+}

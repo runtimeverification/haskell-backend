@@ -1,0 +1,37 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-SYMBOL-6",
+      "sorts": [],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [],
+      "imports": [],
+      "symbols": [
+        {
+          "name": "f",
+          "sort": {
+            "tag": "SortVar",
+            "name": "S"
+          },
+          "argSorts": [
+            {
+              "tag": "SortVar",
+              "name": "S"
+            },
+            {
+              "tag": "SortVar",
+              "name": "S"
+            }
+          ],
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": [
+            "S"
+          ]
+        }
+      ]
+    }
+  ]
+}

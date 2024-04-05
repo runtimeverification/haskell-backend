@@ -1,0 +1,233 @@
+name: hs-backend-booster
+version: '0.0.0'
+github: "runtimeverification/hs-backend-booster"
+license: BSD3
+author: "Runtime Verification Inc"
+maintainer: "jost.berthold@runtimeverification.com"
+synopsis: A simple rewrite engine to accelerate K Framework's Haskell backend
+description: See [README](README.md)
+category: Language
+
+extra-source-files:
+- LICENSE
+- package.yaml
+- README.md
+- test/parser/*
+- cbits/*
+
+default-extensions:
+  BangPatterns
+  DataKinds
+  DefaultSignatures
+  DeriveAnyClass
+  DeriveGeneric
+  DerivingStrategies
+  DerivingVia
+  DuplicateRecordFields
+  EmptyCase
+  FlexibleInstances
+  FunctionalDependencies
+  GADTs
+  GeneralizedNewtypeDeriving
+  ImportQualifiedPost
+  KindSignatures
+  LambdaCase
+  MultiParamTypeClasses
+  NamedFieldPuns
+  OverloadedRecordDot
+  OverloadedStrings
+  PolyKinds
+  ScopedTypeVariables
+  StandaloneDeriving
+  TupleSections
+  TypeApplications
+  TypeFamilies
+  ViewPatterns
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+- -j6
+library:
+  dependencies:
+  - aeson
+  - aeson-pretty
+  - array
+  - attoparsec
+  - base
+  - binary
+  - bytestring
+  - casing
+  - clock
+  - conduit
+  - containers
+  - cryptonite
+  - deepseq
+  - deriving-aeson
+  - directory
+  - exceptions
+  - extra
+  - filepath
+  - ghc-trace-events
+  - gitrev
+  - hashable
+  - hpp
+  - json-rpc
+  - kore-rpc-types
+  - language-c
+  - monad-logger
+  - optparse-applicative
+  - prettyprinter
+  - process
+  - recursion-schemes >= 5.2.2.3
+  - regex-base
+  - regex-pcre-builtin
+  - smtlib-backends
+  - smtlib-backends-process
+  - stm
+  - stm-conduit
+  - syb
+  - template-haskell
+  - text
+  - transformers
+  - unix
+  - unliftio
+  - unordered-containers
+  source-dirs: library
+  build-tools:
+    - happy
+    - alex
+
+executables:
+  kore-rpc-client:
+    source-dirs: tools/rpc-client
+    main: RpcClient
+    dependencies:
+      - aeson
+      - aeson-pretty
+      - base
+      - bytestring
+      - bz2
+      - clock
+      - directory
+      - extra
+      - filepath
+      - hs-backend-booster
+      - monad-logger
+      - network
+      - network-run
+      - optparse-applicative
+      - tar
+      - text
+      - vector
+      - zlib
+    ghc-options:
+      - -rtsopts
+  kore-rpc-booster:
+    source-dirs: tools/booster
+    main: Server.hs
+    dependencies:
+      - aeson
+      - aeson-pretty
+      - base
+      - bytestring
+      - casing
+      - clock
+      - conduit-extra
+      - containers
+      - deepseq
+      - exceptions
+      - extra
+      - hs-backend-booster
+      - json-rpc
+      - kore
+      - kore-rpc-types
+      - monad-logger
+      - optparse-applicative
+      - prettyprinter
+      - recursion-schemes
+      - stm
+      - text
+      - transformers
+    ghc-options:
+    - -rtsopts
+    - -threaded
+
+tests:
+  unit-tests:
+    source-dirs: unit-tests
+    main: Driver.hs
+    build-tools:
+      - tasty-discover:tasty-discover
+    dependencies:
+    - base
+    - binary
+    - bytestring
+    - containers
+    - directory
+    - filepath
+    - hedgehog
+    - hs-backend-booster
+    - kore-rpc-types
+    - monad-logger
+    - process
+    - tasty
+    - tasty-golden
+    - tasty-hedgehog
+    - tasty-hunit
+    - tasty-test-reporter
+    - text
+    - transformers
+    ghc-options:
+    - -rtsopts
+    - -threaded
+    - -with-rtsopts=-N
+
+  llvm-integration:
+    source-dirs: test/llvm-integration
+    main: LLVM.hs
+    dependencies:
+      - base
+      - bytestring
+      - containers
+      - filepath
+      - hedgehog
+      - hspec
+      - hspec-hedgehog
+      - hs-backend-booster
+      - kore-rpc-types
+      - process
+      - tasty
+      - tasty-hspec
+      - text
+      - transformers
+    ghc-options:
+    - -rtsopts
+    - -threaded
+    - -with-rtsopts=-N
+
+  predicates-integration:
+    source-dirs: test/predicates-integration
+    main: Main.hs
+    dependencies:
+      - base
+      - bytestring
+      - containers
+      - filepath
+      - tasty
+      - tasty-golden
+      - tasty-hunit
+      - tasty-test-reporter
+      - hspec-hedgehog
+      - hs-backend-booster
+      - kore-rpc-types
+      - process
+      - text
+      - transformers

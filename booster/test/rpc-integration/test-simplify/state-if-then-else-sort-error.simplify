@@ -1,0 +1,62 @@
+{
+    "format": "KORE",
+    "version": 1,
+    "term": {
+        "tag": "App",
+        "name": "inj",
+        "sorts": [
+            {
+                "tag": "SortApp",
+                "name": "SortInt",
+                "args": []
+            },
+            {
+                "tag": "SortApp",
+                "name": "SortKItem",
+                "args": []
+            }
+        ],
+        "args": [
+            {
+                "tag": "App",
+                "name": "Lblite",
+                "sorts": [
+                    {
+                        "tag": "SortApp",
+                        "name": "SortInt",
+                        "args": []
+                    }
+                ],
+                "args": [
+                    {
+                        "tag": "DV",
+                        "sort": {
+                            "tag": "SortApp",
+                            "name": "SortInt",
+                            "args": []
+                        },
+                        "value": "42"
+                    },
+                    {
+                        "tag": "DV",
+                        "sort": {
+                            "tag": "SortApp",
+                            "name": "SortInt",
+                            "args": []
+                        },
+                        "value": "1"
+                    },
+                    {
+                        "tag": "DV",
+                        "sort": {
+                            "tag": "SortApp",
+                            "name": "SortInt",
+                            "args": []
+                        },
+                        "value": "0"
+                    }
+                ]
+            }
+        ]
+    }
+}

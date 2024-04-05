@@ -1,0 +1,23 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-1",
+      "sorts": [],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [],
+      "imports": [],
+      "symbols": []
+    },
+    {
+      "name": "TEST-2",
+      "sorts": [],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [],
+      "imports": [],
+      "symbols": []
+    }
+  ]
+}

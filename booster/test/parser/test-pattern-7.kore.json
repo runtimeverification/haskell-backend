@@ -1,0 +1,44 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-PATTERN-7",
+      "sorts": [],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [
+        {
+          "attributes": [],
+          "axiom": {
+            "tag": "Iff",
+            "sort": {
+              "tag": "SortVar",
+              "name": "S"
+            },
+            "first": {
+              "tag": "EVar",
+              "name": "X",
+              "sort": {
+                "tag": "SortVar",
+                "name": "S"
+              }
+            },
+            "second": {
+              "tag": "EVar",
+              "name": "X",
+              "sort": {
+                "tag": "SortVar",
+                "name": "S"
+              }
+            }
+          },
+          "sortVars": [
+            "S"
+          ]
+        }
+      ],
+      "imports": [],
+      "symbols": []
+    }
+  ]
+}

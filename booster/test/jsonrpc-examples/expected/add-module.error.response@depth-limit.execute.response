@@ -1,0 +1,3 @@
+Json data in files is of different type
+  * File test/jsonrpc-examples/add-module.error.response: error response
+  * File test/jsonrpc-examples/depth-limit.execute.response: ExecuteM response
