@@ -1,0 +1,3 @@
+Json data in files is of different type
+  * File test/jsonrpc-examples/depth-limit.execute.response: ExecuteM response
+  * File test/jsonrpc-examples/params.random.json: unknown object

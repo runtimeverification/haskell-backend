@@ -1,0 +1,24 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST4",
+      "sorts": [
+        {
+          "name": "Map",
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": [
+            "S",
+            "T"
+          ]
+        }
+      ],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [],
+      "imports": [],
+      "symbols": []
+    }
+  ]
+}

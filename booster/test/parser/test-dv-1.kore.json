@@ -1,0 +1,40 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "DV-1",
+      "sorts": [
+        {
+          "name": "Nat",
+          "attributes": [
+            [
+              "hasDomainValues",
+              []
+            ]
+          ],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [
+        {
+          "attributes": [],
+          "axiom": {
+            "tag": "DV",
+            "sort": {
+              "tag": "SortApp",
+              "name": "Nat",
+              "args": []
+            },
+            "value": "0"
+          },
+          "sortVars": []
+        }
+      ],
+      "imports": [],
+      "symbols": []
+    }
+  ]
+}

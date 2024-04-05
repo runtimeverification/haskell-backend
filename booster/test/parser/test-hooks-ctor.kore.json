@@ -1,0 +1,50 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-HOOKS-CTOR",
+      "sorts": [
+        {
+          "name": "S",
+          "attributes": [
+            [
+              "hook",
+              [
+                "S.S"
+              ]
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [],
+      "imports": [],
+      "symbols": [
+        {
+          "name": "sym",
+          "sort": {
+            "tag": "SortApp",
+            "name": "S",
+            "args": []
+          },
+          "argSorts": [],
+          "attributes": [
+            [
+              "functional",
+              []
+            ],
+            [
+              "constructor",
+              []
+            ]
+          ],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ]
+    }
+  ]
+}

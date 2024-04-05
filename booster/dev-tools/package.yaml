@@ -1,0 +1,192 @@
+name: hs-backend-booster-dev-tools
+version: '0.0.0'
+github: "runtimeverification/hs-backend-booster"
+license: BSD3
+author: "Runtime Verification Inc"
+maintainer: "jost.berthold@runtimeverification.com"
+synopsis: Dev-tools for hs-backend-booster
+category: Language
+
+extra-source-files:
+- LICENSE
+- package.yaml
+
+default-extensions:
+  BangPatterns
+  DataKinds
+  DefaultSignatures
+  DeriveAnyClass
+  DeriveGeneric
+  DerivingStrategies
+  DerivingVia
+  DuplicateRecordFields
+  EmptyCase
+  FlexibleInstances
+  FunctionalDependencies
+  GADTs
+  GeneralizedNewtypeDeriving
+  ImportQualifiedPost
+  KindSignatures
+  LambdaCase
+  MultiParamTypeClasses
+  NamedFieldPuns
+  OverloadedRecordDot
+  OverloadedStrings
+  PolyKinds
+  ScopedTypeVariables
+  StandaloneDeriving
+  TupleSections
+  TypeApplications
+  TypeFamilies
+  ViewPatterns
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+- -j6
+
+executables:
+  booster-dev:
+    source-dirs: booster-dev
+    main: Server.hs
+    dependencies:
+    - base
+    - containers
+    - conduit-extra
+    - deepseq
+    - hs-backend-booster
+    - optparse-applicative
+    - text
+    - directory
+    - monad-logger
+    - kore-rpc-types
+    ghc-options:
+    - -rtsopts
+    - -eventlog
+    - -threaded
+    - -with-rtsopts=-N
+  parsetest:
+    source-dirs: parsetest
+    main: Parsetest.hs
+    dependencies:
+      - base
+      - containers
+      - deepseq
+      - directory
+      - filepath
+      - hs-backend-booster
+      - monad-logger
+      - prettyprinter
+      - text
+      - transformers
+    ghc-options:
+    - -rtsopts
+  parsetest-binary:
+    source-dirs: parsetest-binary
+    main: ParsetestBinary.hs
+    dependencies:
+      - base
+      - binary
+      - bytestring
+      - containers
+      - hs-backend-booster
+      - text
+    ghc-options:
+    - -rtsopts
+  pretty:
+    source-dirs: pretty
+    main: Pretty.hs
+    dependencies:
+      - base
+      - aeson
+      - bytestring
+      - hs-backend-booster
+      - prettyprinter
+      - text
+      - transformers
+    ghc-options:
+    - -rtsopts
+  eventlog-parser:
+    source-dirs: eventlog-parser
+    main: EventlogParser.hs
+    dependencies:
+      - aeson
+      - base
+      - binary
+      - bytestring
+      - containers
+      - directory
+      - filepath
+      - ghc-events
+      - hashable
+      - hs-backend-booster
+      - optparse-applicative
+      - text
+      - transformers
+      - unix
+      - unordered-containers
+    ghc-options:
+    - -rtsopts
+  kore-json-differ:
+    source-dirs: kore-json-differ
+    main: Main.hs
+    dependencies:
+      - base
+      - bytestring
+      - containers
+      - hs-backend-booster
+  tarball-compare:
+    source-dirs: tarball-compare
+    main: Main
+    dependencies:
+      - aeson
+      - aeson-pretty
+      - base
+      - bytestring
+      - bz2
+      - clock
+      - containers
+      - directory
+      - extra
+      - filepath
+      - hs-backend-booster
+      - kore-rpc-types
+      - monad-logger
+      - optparse-applicative
+      - prettyprinter
+      - recursion-schemes
+      - tar
+      - text
+      - transformers
+      - vector
+      - zlib
+    ghc-options:
+      - -rtsopts
+  kore-rpc-dev:
+    source-dirs: kore-rpc-dev
+    main: Server.hs
+    dependencies:
+      - aeson
+      - base
+      - clock
+      - conduit-extra
+      - containers
+      - exceptions
+      - hs-backend-booster
+      - json-rpc
+      - kore
+      - kore-rpc-types
+      - monad-logger
+      - optparse-applicative
+      - text
+    ghc-options:
+    - -rtsopts
+    - -threaded
+    - -with-rtsopts=-N

@@ -1,0 +1,14 @@
+indentation: 4
+comma-style: leading # for lists, tuples etc. - can also be 'trailing'
+record-brace-space: false # rec {x = 1} vs. rec{x = 1}
+indent-wheres: false # 'false' means save space by only half-indenting the 'where' keyword
+diff-friendly-import-export: true # 'false' uses Ormolu-style lists
+respectful: true # don't be too opinionated about newlines etc.
+haddock-style: multi-line # '--' vs. '{-'
+newlines-between-decls: 1 # number of newlines between top-level declarations
+
+# reformat lines which are longer than this
+column-limit: 100
+
+# whether to put parentheses around single constraints (`auto` would keep existing ones)
+single-constraint-parens: never

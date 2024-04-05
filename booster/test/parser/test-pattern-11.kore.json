@@ -1,0 +1,48 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-PATTERN-11",
+      "sorts": [],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [
+        {
+          "attributes": [],
+          "axiom": {
+            "tag": "In",
+            "argSort": {
+              "tag": "SortVar",
+              "name": "S"
+            },
+            "sort": {
+              "tag": "SortVar",
+              "name": "S"
+            },
+            "first": {
+              "tag": "EVar",
+              "name": "X",
+              "sort": {
+                "tag": "SortVar",
+                "name": "S"
+              }
+            },
+            "second": {
+              "tag": "EVar",
+              "name": "X",
+              "sort": {
+                "tag": "SortVar",
+                "name": "S"
+              }
+            }
+          },
+          "sortVars": [
+            "S"
+          ]
+        }
+      ],
+      "imports": [],
+      "symbols": []
+    }
+  ]
+}
