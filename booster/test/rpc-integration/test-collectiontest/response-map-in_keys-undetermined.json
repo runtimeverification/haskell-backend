@@ -1,0 +1,53 @@
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+        "state": {
+            "format": "KORE",
+            "version": 1,
+            "term": {
+                "tag": "App",
+                "name": "Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map",
+                "sorts": [],
+                "args": [
+                    {
+                        "tag": "App",
+                        "name": "inj",
+                        "sorts": [
+                            {
+                                "tag": "SortApp",
+                                "name": "SortInt",
+                                "args": []
+                            },
+                            {
+                                "tag": "SortApp",
+                                "name": "SortKItem",
+                                "args": []
+                            }
+                        ],
+                        "args": [
+                            {
+                                "tag": "DV",
+                                "sort": {
+                                    "tag": "SortApp",
+                                    "name": "SortInt",
+                                    "args": []
+                                },
+                                "value": "0"
+                            }
+                        ]
+                    },
+                    {
+                        "tag": "EVar",
+                        "name": "AMAP",
+                        "sort": {
+                            "tag": "SortApp",
+                            "name": "SortMap",
+                            "args": []
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

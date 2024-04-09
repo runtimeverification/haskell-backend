@@ -1,0 +1,21 @@
+{
+  "attributes": [
+    [
+      "key",
+      [
+        "w77"
+      ]
+    ]
+  ],
+  "modules": [
+    {
+      "name": "TEST-STRING-5",
+      "sorts": [],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [],
+      "imports": [],
+      "symbols": []
+    }
+  ]
+}
