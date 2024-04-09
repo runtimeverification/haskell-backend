@@ -1,0 +1,36 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-PATTERN-14",
+      "sorts": [],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [
+        {
+          "attributes": [],
+          "axiom": {
+            "tag": "Next",
+            "sort": {
+              "tag": "SortVar",
+              "name": "S"
+            },
+            "dest": {
+              "tag": "EVar",
+              "name": "X",
+              "sort": {
+                "tag": "SortVar",
+                "name": "S"
+              }
+            }
+          },
+          "sortVars": [
+            "S"
+          ]
+        }
+      ],
+      "imports": [],
+      "symbols": []
+    }
+  ]
+}

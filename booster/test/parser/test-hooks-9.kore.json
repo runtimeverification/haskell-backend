@@ -1,0 +1,48 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-HOOKS-9",
+      "sorts": [
+        {
+          "name": "S",
+          "attributes": [
+            [
+              "hook",
+              [
+                "S.S"
+              ]
+            ]
+          ],
+          "isHooked": true,
+          "sortVars": []
+        }
+      ],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [],
+      "imports": [],
+      "symbols": [
+        {
+          "name": "f",
+          "sort": {
+            "tag": "SortApp",
+            "name": "S",
+            "args": []
+          },
+          "argSorts": [],
+          "attributes": [
+            [
+              "hook",
+              [
+                "S.f"
+              ]
+            ]
+          ],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ]
+    }
+  ]
+}

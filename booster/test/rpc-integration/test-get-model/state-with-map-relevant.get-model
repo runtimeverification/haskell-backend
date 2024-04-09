@@ -1,0 +1,171 @@
+{
+  "format": "KORE",
+  "version": 1,
+  "term": {
+    "tag": "And",
+    "sort": {
+      "tag": "SortApp",
+      "name": "SortGeneratedTopCell",
+      "args": []
+    },
+    "patterns": [
+      {
+        "tag": "Equals",
+        "argSort": {
+          "tag": "SortApp",
+          "name": "SortBool",
+          "args": []
+        },
+        "sort": {
+          "tag": "SortApp",
+          "name": "SortGeneratedTopCell",
+          "args": []
+        },
+        "first": {
+          "tag": "DV",
+          "sort": {
+            "tag": "SortApp",
+            "name": "SortBool",
+            "args": []
+          },
+          "value": "true"
+        },
+        "second": {
+          "tag": "App",
+          "name": "Lbl'Unds-LT-'Int'Unds'",
+          "sorts": [],
+          "args": [
+            {
+              "tag": "EVar",
+              "name": "AMOUNT",
+              "sort": {
+                "tag": "SortApp",
+                "name": "SortInt",
+                "args": []
+              }
+            },
+            {
+              "tag": "App",
+              "name": "Lbl'Hash'lookup",
+              "sorts": [],
+              "args": [
+                {
+                  "tag": "EVar",
+                  "name": "Var'Ques'STORAGE",
+                  "sort": {
+                    "tag": "SortApp",
+                    "name": "SortMap",
+                    "args": []
+                  }
+                },
+                {
+                  "tag": "EVar",
+                  "name": "KEY",
+                  "sort": {
+                    "tag": "SortApp",
+                    "name": "SortInt",
+                    "args": []
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "tag": "Equals",
+        "argSort": {
+          "tag": "SortApp",
+          "name": "SortBool",
+          "args": []
+        },
+        "sort": {
+          "tag": "SortApp",
+          "name": "SortGeneratedTopCell",
+          "args": []
+        },
+        "first": {
+          "tag": "DV",
+          "sort": {
+            "tag": "SortApp",
+            "name": "SortBool",
+            "args": []
+          },
+          "value": "true"
+        },
+        "second": {
+          "tag": "App",
+          "name": "Lbl'Unds-LT-Eqls'Int'Unds'",
+          "sorts": [],
+          "args": [
+            {
+              "tag": "EVar",
+              "name": "KEY",
+              "sort": {
+                "tag": "SortApp",
+                "name": "SortInt",
+                "args": []
+              }
+            },
+            {
+              "tag": "DV",
+              "sort": {
+                "tag": "SortApp",
+                "name": "SortInt",
+                "args": []
+              },
+              "value": "42"
+            }
+          ]
+        }
+      },
+      {
+        "tag": "Equals",
+        "argSort": {
+          "tag": "SortApp",
+          "name": "SortBool",
+          "args": []
+        },
+        "sort": {
+          "tag": "SortApp",
+          "name": "SortGeneratedTopCell",
+          "args": []
+        },
+        "first": {
+          "tag": "DV",
+          "sort": {
+            "tag": "SortApp",
+            "name": "SortBool",
+            "args": []
+          },
+          "value": "true"
+        },
+        "second": {
+          "tag": "App",
+          "name": "Lbl'Unds-LT-Eqls'Int'Unds'",
+          "sorts": [],
+          "args": [
+            {
+              "tag": "DV",
+              "sort": {
+                "tag": "SortApp",
+                "name": "SortInt",
+                "args": []
+              },
+              "value": "0"
+            },
+            {
+              "tag": "EVar",
+              "name": "AMOUNT",
+              "sort": {
+                "tag": "SortApp",
+                "name": "SortInt",
+                "args": []
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

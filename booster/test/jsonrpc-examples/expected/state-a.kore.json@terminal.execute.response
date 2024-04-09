@@ -1,0 +1,3 @@
+Json data in files is of different type
+  * File test/jsonrpc-examples/state-a.kore.json: Kore term
+  * File test/jsonrpc-examples/terminal.execute.response: ExecuteM response
