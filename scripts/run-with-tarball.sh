@@ -17,8 +17,8 @@ shift
 tarname=$(basename $tarball)
 
 booster=${BOOSTER:-$(realpath $(dirname $0)/..)}
-server=${SERVER:-$booster/.build/booster/bin/kore-rpc-booster}
-client=${CLIENT:-$booster/.build/booster/bin/kore-rpc-client}
+server=${SERVER:-$booster/.build/kore/bin/kore-rpc-booster}
+client=${CLIENT:-$booster/.build/kore/bin/kore-rpc-client}
 log_dir=${LOG_DIR:-.}
 
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
