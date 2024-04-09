@@ -1,0 +1,28 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-PATTERN-1",
+      "sorts": [],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [
+        {
+          "attributes": [],
+          "axiom": {
+            "tag": "Top",
+            "sort": {
+              "tag": "SortVar",
+              "name": "S"
+            }
+          },
+          "sortVars": [
+            "S"
+          ]
+        }
+      ],
+      "imports": [],
+      "symbols": []
+    }
+  ]
+}

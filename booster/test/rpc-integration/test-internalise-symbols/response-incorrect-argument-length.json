@@ -1,0 +1,94 @@
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "error": {
+        "code": 2,
+        "data": [
+            {
+                "term": {
+                    "format": "KORE",
+                    "version": 1,
+                    "term": {
+                        "tag": "App",
+                        "name": "Lbl'-LT-'generatedTop'-GT-'",
+                        "sorts": [],
+                        "args": [
+                            {
+                                "tag": "App",
+                                "name": "Lbl'-LT-'k'-GT-'",
+                                "sorts": [],
+                                "args": [
+                                    {
+                                        "tag": "App",
+                                        "name": "kseq",
+                                        "sorts": [],
+                                        "args": [
+                                            {
+                                                "tag": "App",
+                                                "name": "LblisInt",
+                                                "sorts": [],
+                                                "args": [
+                                                    {
+                                                        "tag": "App",
+                                                        "name": "inj",
+                                                        "sorts": [
+                                                            {
+                                                                "tag": "SortApp",
+                                                                "name": "SortKItem",
+                                                                "args": []
+                                                            },
+                                                            {
+                                                                "tag": "SortApp",
+                                                                "name": "SortK",
+                                                                "args": []
+                                                            }
+                                                        ],
+                                                        "args": [
+                                                            {
+                                                                "tag": "EVar",
+                                                                "name": "VarX",
+                                                                "sort": {
+                                                                    "tag": "SortApp",
+                                                                    "name": "SortKItem",
+                                                                    "args": []
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "tag": "App",
+                                                "name": "dotk",
+                                                "sorts": [],
+                                                "args": []
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "tag": "App",
+                                "name": "Lbl'-LT-'generatedCounter'-GT-'",
+                                "sorts": [],
+                                "args": [
+                                    {
+                                        "tag": "EVar",
+                                        "name": "VarGENERATEDCOUNTER'Unds'CELL'Unds'c84b0b5f",
+                                        "sort": {
+                                            "tag": "SortApp",
+                                            "name": "SortInt",
+                                            "args": []
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "error": "Inconsistent pattern. Symbol 'Lbl'-LT-'generatedTop'-GT-'' expected 3 arguments but got 2"
+            }
+        ],
+        "message": "Could not verify pattern"
+    }
+}

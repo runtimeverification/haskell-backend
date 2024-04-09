@@ -1,0 +1,680 @@
+[]
+
+// Produced by compiling `module X imports BOOL endmodule` and then manually deleting all item that refer to sorts other than SortBool
+
+module BOOL
+
+// sorts
+  hooked-sort SortBool{} [hook{}("BOOL.Bool"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(878,3,878,32)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), hasDomainValues{}()]
+
+// symbols
+  hooked-symbol Lbl'UndsEqlsSlshEqls'Bool'Unds'{}(SortBool{}, SortBool{}) : SortBool{} [functional{}(), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), total{}(), symbol'Kywd'{}(), priorities{}(), smt-hook{}("distinct"), right{}(), terminals{}("010"), klabel{}("_=/=Bool_"), hook{}("BOOL.ne"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(919,19,919,128)"), left{}(Lbl'UndsEqlsEqls'Bool'Unds'{}(),Lbl'UndsEqlsSlshEqls'Bool'Unds'{}()), format{}("%1 %c=/=Bool%r %2"), function{}()]
+  hooked-symbol Lbl'UndsEqlsEqls'Bool'Unds'{}(SortBool{}, SortBool{}) : SortBool{} [functional{}(), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), total{}(), symbol'Kywd'{}(), priorities{}(), smt-hook{}("="), right{}(), terminals{}("010"), klabel{}("_==Bool_"), hook{}("BOOL.eq"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(918,19,918,120)"), left{}(Lbl'UndsEqlsSlshEqls'Bool'Unds'{}(),Lbl'UndsEqlsEqls'Bool'Unds'{}()), format{}("%1 %c==Bool%r %2"), function{}()]
+  hooked-symbol Lbl'Unds'andBool'Unds'{}(SortBool{}, SortBool{}) : SortBool{} [latex{}("{#1}\\wedge_{\\scriptstyle\\it Bool}{#2}"), functional{}(), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), total{}(), symbol'Kywd'{}(), priorities{}(Lbl'UndsEqlsSlshEqls'Bool'Unds'{}(),Lbl'UndsEqlsEqls'Bool'Unds'{}()), smt-hook{}("and"), boolOperation{}(), right{}(), terminals{}("010"), klabel{}("_andBool_"), hook{}("BOOL.and"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(911,19,911,185)"), left{}(Lbl'Unds'andBool'Unds'{}()), format{}("%1 %candBool%r %2"), function{}()]
+  hooked-symbol Lbl'Unds'andThenBool'Unds'{}(SortBool{}, SortBool{}) : SortBool{} [functional{}(), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), total{}(), symbol'Kywd'{}(), priorities{}(Lbl'UndsEqlsSlshEqls'Bool'Unds'{}(),Lbl'UndsEqlsEqls'Bool'Unds'{}()), smt-hook{}("and"), boolOperation{}(), right{}(), terminals{}("010"), klabel{}("_andThenBool_"), hook{}("BOOL.andThen"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(912,19,912,147)"), left{}(Lbl'Unds'andThenBool'Unds'{}()), format{}("%1 %candThenBool%r %2"), function{}()]
+  hooked-symbol Lbl'Unds'impliesBool'Unds'{}(SortBool{}, SortBool{}) : SortBool{} [functional{}(), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), total{}(), symbol'Kywd'{}(), priorities{}(Lbl'UndsEqlsSlshEqls'Bool'Unds'{}(),Lbl'UndsEqlsEqls'Bool'Unds'{}()), smt-hook{}("=>"), boolOperation{}(), right{}(), terminals{}("010"), klabel{}("_impliesBool_"), hook{}("BOOL.implies"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(916,19,916,146)"), left{}(Lbl'Unds'impliesBool'Unds'{}()), format{}("%1 %cimpliesBool%r %2"), function{}()]
+  hooked-symbol Lbl'Unds'orBool'Unds'{}(SortBool{}, SortBool{}) : SortBool{} [latex{}("{#1}\\vee_{\\scriptstyle\\it Bool}{#2}"), functional{}(), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), total{}(), symbol'Kywd'{}(), priorities{}(Lbl'UndsEqlsSlshEqls'Bool'Unds'{}(),Lbl'UndsEqlsEqls'Bool'Unds'{}()), smt-hook{}("or"), boolOperation{}(), right{}(), terminals{}("010"), klabel{}("_orBool_"), hook{}("BOOL.or"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(914,19,914,180)"), left{}(Lbl'Unds'orBool'Unds'{}()), format{}("%1 %corBool%r %2"), function{}()]
+  hooked-symbol Lbl'Unds'orElseBool'Unds'{}(SortBool{}, SortBool{}) : SortBool{} [functional{}(), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), total{}(), symbol'Kywd'{}(), priorities{}(Lbl'UndsEqlsSlshEqls'Bool'Unds'{}(),Lbl'UndsEqlsEqls'Bool'Unds'{}()), smt-hook{}("or"), boolOperation{}(), right{}(), terminals{}("010"), klabel{}("_orElseBool_"), hook{}("BOOL.orElse"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(915,19,915,144)"), left{}(Lbl'Unds'orElseBool'Unds'{}()), format{}("%1 %corElseBool%r %2"), function{}()]
+  hooked-symbol Lbl'Unds'xorBool'Unds'{}(SortBool{}, SortBool{}) : SortBool{} [functional{}(), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), total{}(), symbol'Kywd'{}(), priorities{}(Lbl'UndsEqlsSlshEqls'Bool'Unds'{}(),Lbl'UndsEqlsEqls'Bool'Unds'{}()), smt-hook{}("xor"), boolOperation{}(), right{}(), terminals{}("010"), klabel{}("_xorBool_"), hook{}("BOOL.xor"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(913,19,913,139)"), left{}(Lbl'Unds'xorBool'Unds'{}()), format{}("%1 %cxorBool%r %2"), function{}()]
+  hooked-symbol LblnotBool'Unds'{}(SortBool{}) : SortBool{} [latex{}("\\neg_{\\scriptstyle\\it Bool}{#1}"), functional{}(), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), total{}(), symbol'Kywd'{}(), priorities{}(Lbl'Unds'orElseBool'Unds'{}(),Lbl'Unds'orBool'Unds'{}(),Lbl'UndsEqlsSlshEqls'Bool'Unds'{}(),Lbl'Unds'andThenBool'Unds'{}(),Lbl'Unds'impliesBool'Unds'{}(),Lbl'UndsEqlsEqls'Bool'Unds'{}(),Lbl'Unds'andBool'Unds'{}(),Lbl'Unds'xorBool'Unds'{}()), smt-hook{}("not"), boolOperation{}(), right{}(), terminals{}("10"), klabel{}("notBool_"), hook{}("BOOL.not"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(910,19,910,172)"), left{}(), format{}("%cnotBool%r %1"), function{}()]
+
+// generated axioms
+  axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, Lbl'UndsEqlsSlshEqls'Bool'Unds'{}(K0:SortBool{}, K1:SortBool{}))) [functional{}()] // functional
+  axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, Lbl'UndsEqlsEqls'Bool'Unds'{}(K0:SortBool{}, K1:SortBool{}))) [functional{}()] // functional
+  axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, Lbl'Unds'andBool'Unds'{}(K0:SortBool{}, K1:SortBool{}))) [functional{}()] // functional
+  axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, Lbl'Unds'andThenBool'Unds'{}(K0:SortBool{}, K1:SortBool{}))) [functional{}()] // functional
+  axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, Lbl'Unds'impliesBool'Unds'{}(K0:SortBool{}, K1:SortBool{}))) [functional{}()] // functional
+  axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, Lbl'Unds'orBool'Unds'{}(K0:SortBool{}, K1:SortBool{}))) [functional{}()] // functional
+  axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, Lbl'Unds'orElseBool'Unds'{}(K0:SortBool{}, K1:SortBool{}))) [functional{}()] // functional
+  axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, Lbl'Unds'xorBool'Unds'{}(K0:SortBool{}, K1:SortBool{}))) [functional{}()] // functional
+  axiom{R} \exists{R} (Val:SortBool{}, \equals{SortBool{}, R} (Val:SortBool{}, LblnotBool'Unds'{}(K0:SortBool{}))) [functional{}()] // functional
+  axiom{} \or{SortBool{}} (\top{SortBool{}}(), \bottom{SortBool{}}()) [constructor{}()] // no junk (TODO: fix bug with \dv)
+
+// rules
+// rule #Equals{Bool,#SortParam}(`_andBool_`(@B1,@B2),#token("true","Bool"))=>#And{#SortParam}(#Equals{Bool,#SortParam}(@B1,#token("true","Bool")),#Equals{Bool,#SortParam}(@B2,#token("true","Bool"))) requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(07baa96fd82cc826cf1685cb8119bf1c214ed8b884464ffe20e53b993c12e918), org.kframework.attributes.Location(Location(972,8,972,84)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]), simplification, sortParams({Q0})]
+  axiom{R,Q0} \implies{R} (
+    \top{R}(),
+    \equals{Q0,R} (
+      \equals{SortBool{}, Q0}(Lbl'Unds'andBool'Unds'{}(@VarB1:SortBool{},@VarB2:SortBool{}),\dv{SortBool{}}("true")),
+     \and{Q0} (
+       \and{Q0}(\equals{SortBool{}, Q0}(@VarB1:SortBool{},\dv{SortBool{}}("true")),\equals{SortBool{}, Q0}(@VarB2:SortBool{},\dv{SortBool{}}("true"))),
+        \top{Q0}())))
+  [sortParams{}("{Q0}"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(972,8,972,84)"), simplification{}(), UNIQUE'Unds'ID{}("07baa96fd82cc826cf1685cb8119bf1c214ed8b884464ffe20e53b993c12e918")]
+
+// rule #Equals{Bool,#SortParam}(`_orBool_`(@B1,@B2),#token("false","Bool"))=>#And{#SortParam}(#Equals{Bool,#SortParam}(@B1,#token("false","Bool")),#Equals{Bool,#SortParam}(@B2,#token("false","Bool"))) requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(2b11ac075f3dd3ffe0ddbec1741072a8869b134229fe049807754e8ad343744e), org.kframework.attributes.Location(Location(974,8,974,86)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]), simplification, sortParams({Q0})]
+  axiom{R,Q0} \implies{R} (
+    \top{R}(),
+    \equals{Q0,R} (
+      \equals{SortBool{}, Q0}(Lbl'Unds'orBool'Unds'{}(@VarB1:SortBool{},@VarB2:SortBool{}),\dv{SortBool{}}("false")),
+     \and{Q0} (
+       \and{Q0}(\equals{SortBool{}, Q0}(@VarB1:SortBool{},\dv{SortBool{}}("false")),\equals{SortBool{}, Q0}(@VarB2:SortBool{},\dv{SortBool{}}("false"))),
+        \top{Q0}())))
+  [sortParams{}("{Q0}"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(974,8,974,86)"), simplification{}(), UNIQUE'Unds'ID{}("2b11ac075f3dd3ffe0ddbec1741072a8869b134229fe049807754e8ad343744e")]
+
+// rule #Equals{Bool,#SortParam}(`notBool_`(@B),#token("false","Bool"))=>#Equals{Bool,#SortParam}(@B,#token("true","Bool")) requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(34328f07490eae9a3c60959e6bc930879eadfd5c2141758b8ee518c2fb0204ad), org.kframework.attributes.Location(Location(969,8,969,55)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]), simplification, sortParams({Q0})]
+  axiom{R,Q0} \implies{R} (
+    \top{R}(),
+    \equals{Q0,R} (
+      \equals{SortBool{}, Q0}(LblnotBool'Unds'{}(@VarB:SortBool{}),\dv{SortBool{}}("false")),
+     \and{Q0} (
+       \equals{SortBool{}, Q0}(@VarB:SortBool{},\dv{SortBool{}}("true")),
+        \top{Q0}())))
+  [sortParams{}("{Q0}"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(969,8,969,55)"), simplification{}(), UNIQUE'Unds'ID{}("34328f07490eae9a3c60959e6bc930879eadfd5c2141758b8ee518c2fb0204ad")]
+
+// rule #Equals{Bool,#SortParam}(`notBool_`(@B),#token("true","Bool"))=>#Equals{Bool,#SortParam}(@B,#token("false","Bool")) requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(ff38a911e0bfd4c9765658dd908e0ef2ceee912f22703ddb571af28ef362bc9e), org.kframework.attributes.Location(Location(967,8,967,55)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]), simplification, sortParams({Q0})]
+  axiom{R,Q0} \implies{R} (
+    \top{R}(),
+    \equals{Q0,R} (
+      \equals{SortBool{}, Q0}(LblnotBool'Unds'{}(@VarB:SortBool{}),\dv{SortBool{}}("true")),
+     \and{Q0} (
+       \equals{SortBool{}, Q0}(@VarB:SortBool{},\dv{SortBool{}}("false")),
+        \top{Q0}())))
+  [sortParams{}("{Q0}"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(967,8,967,55)"), simplification{}(), UNIQUE'Unds'ID{}("ff38a911e0bfd4c9765658dd908e0ef2ceee912f22703ddb571af28ef362bc9e")]
+
+// rule #Equals{Bool,#SortParam}(#token("false","Bool"),`_orBool_`(@B1,@B2))=>#And{#SortParam}(#Equals{Bool,#SortParam}(#token("false","Bool"),@B1),#Equals{Bool,#SortParam}(#token("false","Bool"),@B2)) requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(d58ed383e30c685252b6208bcbaa2c5a6d2bb2c61866156cd5f5496203452471), org.kframework.attributes.Location(Location(973,8,973,86)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]), simplification, sortParams({Q0})]
+  axiom{R,Q0} \implies{R} (
+    \top{R}(),
+    \equals{Q0,R} (
+      \equals{SortBool{}, Q0}(\dv{SortBool{}}("false"),Lbl'Unds'orBool'Unds'{}(@VarB1:SortBool{},@VarB2:SortBool{})),
+     \and{Q0} (
+       \and{Q0}(\equals{SortBool{}, Q0}(\dv{SortBool{}}("false"),@VarB1:SortBool{}),\equals{SortBool{}, Q0}(\dv{SortBool{}}("false"),@VarB2:SortBool{})),
+        \top{Q0}())))
+  [sortParams{}("{Q0}"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(973,8,973,86)"), simplification{}(), UNIQUE'Unds'ID{}("d58ed383e30c685252b6208bcbaa2c5a6d2bb2c61866156cd5f5496203452471")]
+
+// rule #Equals{Bool,#SortParam}(#token("false","Bool"),`notBool_`(@B))=>#Equals{Bool,#SortParam}(#token("true","Bool"),@B) requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(41cf8859c3dd6d6cb8f0d5950f13eda843cb8f3a234f96f288ac0443685d67e6), org.kframework.attributes.Location(Location(968,8,968,55)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]), simplification, sortParams({Q0})]
+  axiom{R,Q0} \implies{R} (
+    \top{R}(),
+    \equals{Q0,R} (
+      \equals{SortBool{}, Q0}(\dv{SortBool{}}("false"),LblnotBool'Unds'{}(@VarB:SortBool{})),
+     \and{Q0} (
+       \equals{SortBool{}, Q0}(\dv{SortBool{}}("true"),@VarB:SortBool{}),
+        \top{Q0}())))
+  [sortParams{}("{Q0}"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(968,8,968,55)"), simplification{}(), UNIQUE'Unds'ID{}("41cf8859c3dd6d6cb8f0d5950f13eda843cb8f3a234f96f288ac0443685d67e6")]
+
+// rule #Equals{Bool,#SortParam}(#token("true","Bool"),`_andBool_`(@B1,@B2))=>#And{#SortParam}(#Equals{Bool,#SortParam}(#token("true","Bool"),@B1),#Equals{Bool,#SortParam}(#token("true","Bool"),@B2)) requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(b87686476d42cb8b71543b0942857bf74e4e1f49c62efe4f060a06e0cc2d53fb), org.kframework.attributes.Location(Location(971,8,971,84)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]), simplification, sortParams({Q0})]
+  axiom{R,Q0} \implies{R} (
+    \top{R}(),
+    \equals{Q0,R} (
+      \equals{SortBool{}, Q0}(\dv{SortBool{}}("true"),Lbl'Unds'andBool'Unds'{}(@VarB1:SortBool{},@VarB2:SortBool{})),
+     \and{Q0} (
+       \and{Q0}(\equals{SortBool{}, Q0}(\dv{SortBool{}}("true"),@VarB1:SortBool{}),\equals{SortBool{}, Q0}(\dv{SortBool{}}("true"),@VarB2:SortBool{})),
+        \top{Q0}())))
+  [sortParams{}("{Q0}"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(971,8,971,84)"), simplification{}(), UNIQUE'Unds'ID{}("b87686476d42cb8b71543b0942857bf74e4e1f49c62efe4f060a06e0cc2d53fb")]
+
+// rule #Equals{Bool,#SortParam}(#token("true","Bool"),`notBool_`(@B))=>#Equals{Bool,#SortParam}(#token("false","Bool"),@B) requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(2c40c69936606d292ca999440716bfe9b6421a9e4a182731b8881126a2dc8e2f), org.kframework.attributes.Location(Location(966,8,966,55)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]), simplification, sortParams({Q0})]
+  axiom{R,Q0} \implies{R} (
+    \top{R}(),
+    \equals{Q0,R} (
+      \equals{SortBool{}, Q0}(\dv{SortBool{}}("true"),LblnotBool'Unds'{}(@VarB:SortBool{})),
+     \and{Q0} (
+       \equals{SortBool{}, Q0}(\dv{SortBool{}}("false"),@VarB:SortBool{}),
+        \top{Q0}())))
+  [sortParams{}("{Q0}"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(966,8,966,55)"), simplification{}(), UNIQUE'Unds'ID{}("2c40c69936606d292ca999440716bfe9b6421a9e4a182731b8881126a2dc8e2f")]
+
+// rule `_=/=Bool_`(B1,B2)=>`notBool_`(`_==Bool_`(B1,B2)) requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(31fe72efcfddcd8588a11d9d10c1b1a9f96ae3da46b647d4cb9d1e8b1bd1654f), org.kframework.attributes.Location(Location(960,8,960,57)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            VarB1:SortBool{}
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            VarB2:SortBool{}
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'UndsEqlsSlshEqls'Bool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       LblnotBool'Unds'{}(Lbl'UndsEqlsEqls'Bool'Unds'{}(VarB1:SortBool{},VarB2:SortBool{})),
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(960,8,960,57)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("31fe72efcfddcd8588a11d9d10c1b1a9f96ae3da46b647d4cb9d1e8b1bd1654f")]
+
+// rule `_andBool_`(#token("false","Bool") #as _Gen1,_Gen0)=>_Gen1 requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(61fbef33b3611f1cc2aaf3b5e8ddec4a0f434c557278c38461c65c8722743497), org.kframework.attributes.Location(Location(933,8,933,37)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            \and{SortBool{}}(\dv{SortBool{}}("false"),Var'Unds'Gen1:SortBool{})
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            Var'Unds'Gen0:SortBool{}
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'andBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       Var'Unds'Gen1:SortBool{},
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(933,8,933,37)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("61fbef33b3611f1cc2aaf3b5e8ddec4a0f434c557278c38461c65c8722743497")]
+
+// rule `_andBool_`(B,#token("true","Bool"))=>B requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(e8d4ca75a690151f99f8904b068db555782f5599b11230a9d0b97a71afb6fc98), org.kframework.attributes.Location(Location(932,8,932,37)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            VarB:SortBool{}
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            \dv{SortBool{}}("true")
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'andBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       VarB:SortBool{},
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(932,8,932,37)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("e8d4ca75a690151f99f8904b068db555782f5599b11230a9d0b97a71afb6fc98")]
+
+// rule `_andBool_`(_Gen0,#token("false","Bool") #as _Gen1)=>_Gen1 requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(9c183fae7de06f560180386d14d29c609cadf0c98266ce2adbecb50100a1daca), org.kframework.attributes.Location(Location(934,8,934,37)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            Var'Unds'Gen0:SortBool{}
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            \and{SortBool{}}(\dv{SortBool{}}("false"),Var'Unds'Gen1:SortBool{})
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'andBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       Var'Unds'Gen1:SortBool{},
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(934,8,934,37)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("9c183fae7de06f560180386d14d29c609cadf0c98266ce2adbecb50100a1daca")]
+
+// rule `_andBool_`(#token("true","Bool"),B)=>B requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(5b9db8dba12010819161cc42dadccd0adf0100a47c21f884ae66c0a3d5483a1f), org.kframework.attributes.Location(Location(931,8,931,37)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            \dv{SortBool{}}("true")
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            VarB:SortBool{}
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'andBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       VarB:SortBool{},
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(931,8,931,37)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("5b9db8dba12010819161cc42dadccd0adf0100a47c21f884ae66c0a3d5483a1f")]
+
+// rule `_andThenBool_`(#token("false","Bool") #as _Gen1,_Gen0)=>_Gen1 requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(5b729746be7bf2183d9eff138d97078a7c9489def6d8b2e1495c41ce3954997d), org.kframework.attributes.Location(Location(938,8,938,36)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            \and{SortBool{}}(\dv{SortBool{}}("false"),Var'Unds'Gen1:SortBool{})
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            Var'Unds'Gen0:SortBool{}
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'andThenBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       Var'Unds'Gen1:SortBool{},
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(938,8,938,36)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("5b729746be7bf2183d9eff138d97078a7c9489def6d8b2e1495c41ce3954997d")]
+
+// rule `_andThenBool_`(K,#token("true","Bool"))=>K requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(82ac30b094be9b12206773d87b60274e929a41ca595f4674be1d37eeff873d7c), org.kframework.attributes.Location(Location(937,8,937,37)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            VarK:SortBool{}
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            \dv{SortBool{}}("true")
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'andThenBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       VarK:SortBool{},
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(937,8,937,37)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("82ac30b094be9b12206773d87b60274e929a41ca595f4674be1d37eeff873d7c")]
+
+// rule `_andThenBool_`(_Gen0,#token("false","Bool") #as _Gen1)=>_Gen1 requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(0508592878b546cbc6eeda6ec7b322584eea5c6d6eea3f72be8418fe4f7149b2), org.kframework.attributes.Location(Location(939,8,939,36)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            Var'Unds'Gen0:SortBool{}
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            \and{SortBool{}}(\dv{SortBool{}}("false"),Var'Unds'Gen1:SortBool{})
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'andThenBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       Var'Unds'Gen1:SortBool{},
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(939,8,939,36)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("0508592878b546cbc6eeda6ec7b322584eea5c6d6eea3f72be8418fe4f7149b2")]
+
+// rule `_andThenBool_`(#token("true","Bool"),K)=>K requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(78a3191cbbdec57b0f411f41291076c8124bb0d9b6b57905674b2c6858d78689), org.kframework.attributes.Location(Location(936,8,936,37)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            \dv{SortBool{}}("true")
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            VarK:SortBool{}
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'andThenBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       VarK:SortBool{},
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(936,8,936,37)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("78a3191cbbdec57b0f411f41291076c8124bb0d9b6b57905674b2c6858d78689")]
+
+// rule `_impliesBool_`(B,#token("false","Bool"))=>`notBool_`(B) requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(022c562a21d72cedfb795607d2249b8ad14b66399b720b3b2f4a05a1da08df96), org.kframework.attributes.Location(Location(958,8,958,45)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            VarB:SortBool{}
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            \dv{SortBool{}}("false")
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'impliesBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       LblnotBool'Unds'{}(VarB:SortBool{}),
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(958,8,958,45)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("022c562a21d72cedfb795607d2249b8ad14b66399b720b3b2f4a05a1da08df96")]
+
+// rule `_impliesBool_`(_Gen0,#token("true","Bool"))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(99ba64afc26a739953df142ccd4b486bba68107fce8c9aa356d40afa7a988712), org.kframework.attributes.Location(Location(957,8,957,39)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            Var'Unds'Gen0:SortBool{}
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            \dv{SortBool{}}("true")
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'impliesBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       \dv{SortBool{}}("true"),
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(957,8,957,39)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("99ba64afc26a739953df142ccd4b486bba68107fce8c9aa356d40afa7a988712")]
+
+// rule `_impliesBool_`(#token("false","Bool"),_Gen0)=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(55bb5c83c9563c712537b95401c0a5c88255fd7cdbd18b2d4358c54aee80660e), org.kframework.attributes.Location(Location(956,8,956,40)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            \dv{SortBool{}}("false")
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            Var'Unds'Gen0:SortBool{}
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'impliesBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       \dv{SortBool{}}("true"),
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(956,8,956,40)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("55bb5c83c9563c712537b95401c0a5c88255fd7cdbd18b2d4358c54aee80660e")]
+
+// rule `_impliesBool_`(#token("true","Bool"),B)=>B requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(da818c43c21c5fb2cced7e02a74b6b4191d323de2967a671b961ad28550f3c7d), org.kframework.attributes.Location(Location(955,8,955,36)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            \dv{SortBool{}}("true")
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            VarB:SortBool{}
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'impliesBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       VarB:SortBool{},
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(955,8,955,36)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("da818c43c21c5fb2cced7e02a74b6b4191d323de2967a671b961ad28550f3c7d")]
+
+// rule `_orBool_`(B,#token("false","Bool"))=>B requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(d7245713da157cf997438091f92bb78eb51a6cefa568bb0d30560ce08d647f26), org.kframework.attributes.Location(Location(948,8,948,32)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            VarB:SortBool{}
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            \dv{SortBool{}}("false")
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'orBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       VarB:SortBool{},
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(948,8,948,32)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("d7245713da157cf997438091f92bb78eb51a6cefa568bb0d30560ce08d647f26")]
+
+// rule `_orBool_`(_Gen0,#token("true","Bool"))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(47860d52c18a441b229449cd89d5464256137dc32deb5551effbac0482c883f3), org.kframework.attributes.Location(Location(946,8,946,34)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            Var'Unds'Gen0:SortBool{}
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            \dv{SortBool{}}("true")
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'orBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       \dv{SortBool{}}("true"),
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(946,8,946,34)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("47860d52c18a441b229449cd89d5464256137dc32deb5551effbac0482c883f3")]
+
+// rule `_orBool_`(#token("false","Bool"),B)=>B requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(991a3290bc7b6dca75d676a72a848ec6b2bd2827fb0e9626252aa1507394ca1b), org.kframework.attributes.Location(Location(947,8,947,32)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            \dv{SortBool{}}("false")
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            VarB:SortBool{}
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'orBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       VarB:SortBool{},
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(947,8,947,32)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("991a3290bc7b6dca75d676a72a848ec6b2bd2827fb0e9626252aa1507394ca1b")]
+
+// rule `_orBool_`(#token("true","Bool"),_Gen0)=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(71744528cdad83bc729990d3af3b544d27b09630b2615ca707dd2fc6ec93e7c2), org.kframework.attributes.Location(Location(945,8,945,34)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            \dv{SortBool{}}("true")
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            Var'Unds'Gen0:SortBool{}
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'orBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       \dv{SortBool{}}("true"),
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(945,8,945,34)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("71744528cdad83bc729990d3af3b544d27b09630b2615ca707dd2fc6ec93e7c2")]
+
+// rule `_orElseBool_`(K,#token("false","Bool"))=>K requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(684b0444a1f711d49ff1502423a3346fb26958697423db488b05d25081fc0480), org.kframework.attributes.Location(Location(953,8,953,37)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            VarK:SortBool{}
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            \dv{SortBool{}}("false")
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'orElseBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       VarK:SortBool{},
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(953,8,953,37)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("684b0444a1f711d49ff1502423a3346fb26958697423db488b05d25081fc0480")]
+
+// rule `_orElseBool_`(_Gen0,#token("true","Bool"))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(c9eccff94ecf6e810c600d4536bf1701485c13c3456c6b98c0cdab0fe7c5af14), org.kframework.attributes.Location(Location(951,8,951,33)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            Var'Unds'Gen0:SortBool{}
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            \dv{SortBool{}}("true")
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'orElseBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       \dv{SortBool{}}("true"),
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(951,8,951,33)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("c9eccff94ecf6e810c600d4536bf1701485c13c3456c6b98c0cdab0fe7c5af14")]
+
+// rule `_orElseBool_`(#token("false","Bool"),K)=>K requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(eb8c85dac19a5951f694b65269c2b17c80d6d126d6a367958e4a5d736a880ecf), org.kframework.attributes.Location(Location(952,8,952,37)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            \dv{SortBool{}}("false")
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            VarK:SortBool{}
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'orElseBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       VarK:SortBool{},
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(952,8,952,37)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("eb8c85dac19a5951f694b65269c2b17c80d6d126d6a367958e4a5d736a880ecf")]
+
+// rule `_orElseBool_`(#token("true","Bool"),_Gen0)=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(354bd0860c7f38b59e285c935fd2ea553ebddbabb4973342ad25f0dac6ea7bf6), org.kframework.attributes.Location(Location(950,8,950,33)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            \dv{SortBool{}}("true")
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            Var'Unds'Gen0:SortBool{}
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'orElseBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       \dv{SortBool{}}("true"),
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(950,8,950,33)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("354bd0860c7f38b59e285c935fd2ea553ebddbabb4973342ad25f0dac6ea7bf6")]
+
+// rule `_xorBool_`(B,B)=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(9a6d91cd75cd777b0d4db536b3e4b20578e74fe650e644b55294da95fd2dba7f), org.kframework.attributes.Location(Location(943,8,943,38)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            VarB:SortBool{}
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            VarB:SortBool{}
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'xorBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       \dv{SortBool{}}("false"),
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(943,8,943,38)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("9a6d91cd75cd777b0d4db536b3e4b20578e74fe650e644b55294da95fd2dba7f")]
+
+// rule `_xorBool_`(B,#token("false","Bool"))=>B requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(7a2851f9d4ea4bd3f35070ee029fc3bdca36e361f7ee54addeff9d10ddeb7c75), org.kframework.attributes.Location(Location(942,8,942,38)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            VarB:SortBool{}
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            \dv{SortBool{}}("false")
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'xorBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       VarB:SortBool{},
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(942,8,942,38)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("7a2851f9d4ea4bd3f35070ee029fc3bdca36e361f7ee54addeff9d10ddeb7c75")]
+
+// rule `_xorBool_`(#token("false","Bool"),B)=>B requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(73513655c09a595907ab9d26d67e27f01d14a3435743b77000c02d10f35c05bf), org.kframework.attributes.Location(Location(941,8,941,38)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            \dv{SortBool{}}("false")
+          ),\and{R} (
+          \in{SortBool{}, R} (
+            X1:SortBool{},
+            VarB:SortBool{}
+          ),
+          \top{R} ()
+        ))),
+    \equals{SortBool{},R} (
+      Lbl'Unds'xorBool'Unds'{}(X0:SortBool{},X1:SortBool{}),
+     \and{SortBool{}} (
+       VarB:SortBool{},
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(941,8,941,38)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("73513655c09a595907ab9d26d67e27f01d14a3435743b77000c02d10f35c05bf")]
+
+
+// rule `notBool_`(#token("false","Bool"))=>#token("true","Bool") requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(17ebc68421572b8ebe609c068fb49cbb6cbbe3246e2142257ad8befdda38f415), org.kframework.attributes.Location(Location(929,8,929,29)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            \dv{SortBool{}}("false")
+          ),
+          \top{R} ()
+        )),
+    \equals{SortBool{},R} (
+      LblnotBool'Unds'{}(X0:SortBool{}),
+     \and{SortBool{}} (
+       \dv{SortBool{}}("true"),
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(929,8,929,29)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("17ebc68421572b8ebe609c068fb49cbb6cbbe3246e2142257ad8befdda38f415")]
+
+// rule `notBool_`(#token("true","Bool"))=>#token("false","Bool") requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(53fc758ece1ff16581673016dfacc556cc30fcf6b3c35b586f001d76a1f9336c), org.kframework.attributes.Location(Location(928,8,928,29)), org.kframework.attributes.Source(Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \and{R}(
+      \top{R}(),
+      \and{R} (
+          \in{SortBool{}, R} (
+            X0:SortBool{},
+            \dv{SortBool{}}("true")
+          ),
+          \top{R} ()
+        )),
+    \equals{SortBool{},R} (
+      LblnotBool'Unds'{}(X0:SortBool{}),
+     \and{SortBool{}} (
+       \dv{SortBool{}}("false"),
+        \top{SortBool{}}())))
+  [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(928,8,928,29)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), UNIQUE'Unds'ID{}("53fc758ece1ff16581673016dfacc556cc30fcf6b3c35b586f001d76a1f9336c")]
+
+// priority groups
+endmodule [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(977,1,980,10)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/nix/store/08jyy9cx4xp32ca29lfsa1k4mbvw6kwv-k-5.5.140-dirty-maven/include/kframework/builtin/domains.md)")]

@@ -1,0 +1,21 @@
+{
+  "attributes": [],
+  "modules": [
+    {
+      "name": "TEST-SORT-6",
+      "sorts": [
+        {
+          "name": "C",
+          "attributes": [],
+          "isHooked": false,
+          "sortVars": []
+        }
+      ],
+      "aliases": [],
+      "attributes": [],
+      "axioms": [],
+      "imports": [],
+      "symbols": []
+    }
+  ]
+}
