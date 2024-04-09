@@ -35,11 +35,11 @@ trap "exit 1"           HUP INT PIPE QUIT TERM
 trap 'rm -rf "$TEMPD" && killall kore-rpc-booster || echo "No zombie processes found"'  EXIT
 
 feature_shell() {
-  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/booster-backend $SCRIPT_DIR/../ --command bash -c "$1"
+  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/haskell-backend $SCRIPT_DIR/../ --command bash -c "$1"
 }
 
 master_shell() {
-  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/booster-backend github:runtimeverification/hs-backend-booster/$MASTER_COMMIT --command bash -c "$1"
+  GC_DONT_GC=1 nix develop . --extra-experimental-features 'nix-command flakes' --override-input k-framework/haskell-backend github:runtimeverification/haskell-backend/$MASTER_COMMIT --command bash -c "$1"
 }
 
 cd $TEMPD
