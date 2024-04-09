@@ -37,7 +37,7 @@ shift
 # mangle kore client arguments
 
 dir=$(basename $directory)
-bindir=../../.build/booster/bin
+bindir=../../../.build/kore/bin
 
 server=${SERVER:-$bindir/kore-rpc-booster}
 client=${CLIENT:-$bindir/kore-rpc-client}
