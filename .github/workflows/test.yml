@@ -1,22 +1,17 @@
 name: "Test"
 on:
-  workflow_dispatch:
   pull_request:
-
 concurrency:
-  # head_ref is defined for PRs only, so we use run_id (unique) in case
-  # we want to run on the main branch, to ensure all commits are built
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
   ghc_version: "9.6.4"
   stack_version: "2.15.1"
-  hpack_version: '0.34.2'
 
 jobs:
   formatting:
-    name: 'Formatting and Style'
+    name: 'Auto-formatting'
     runs-on: ubuntu-22.04
     steps:
       - name: 'Check out code'
@@ -25,6 +20,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
           submodules: recursive
+          token: ${{ secrets.JENKINS_GITHUB_PAT }}
 
       - name: 'Install Nix'
         uses: cachix/install-nix-action@v25
@@ -42,7 +38,8 @@ jobs:
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
 
       - name: Format
-        run: nix develop .#style --command bash -c './scripts/fourmolu.sh'
+        run: |
+          nix develop .#fourmolu --command bash -c "./scripts/fourmolu.sh"
 
       - name: Update branch
         env:
@@ -63,9 +60,6 @@ jobs:
             echo "Reformatted code pushed, aborting this workflow" | tee -a $GITHUB_STEP_SUMMARY
             exit 1
           fi
-      # could run hlint here, but then no more jobs would run if the code is not accepted
-      # - name: 'Check style with hlint'
-      #   run: nix develop .#style --command bash -c './scripts/hlint.sh'
 
   nix-build:
     name: 'Nix / Unit Tests'
@@ -115,7 +109,7 @@ jobs:
           authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
 
       - name: Build
-        run: GC_DONT_GC=1 nix build .#kore-exec .#kore-rpc-booster
+        run: GC_DONT_GC=1 nix build .#kore-exec
 
       - name: Cache Cabal package database and store
         uses: actions/cache@v4
@@ -123,16 +117,15 @@ jobs:
           path: |
             ~/.cabal/packages
             ~/.cabal/store
-          key: cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}-${{ hashFiles('kore-rpc-types/kore-rpc-types.cabal') }}-${{ hashFiles('booster/hs-backend-booster.cabal') }}
+          key: cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}-${{ hashFiles('kore-rpc-types/kore-rpc-types.cabal') }}
           restore-keys: |
-            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}-${{ hashFiles('kore-rpc-types/kore-rpc-types.cabal') }}
             cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}
             cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}
             cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}
             cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}
 
       - name: Test
-        run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "hpack ./booster && hpack dev-tools && cabal update && cabal build all && cabal test --enable-tests --test-show-details=direct kore-test unit-tests"
+        run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "cabal update && cabal build all && cabal test --enable-tests --test-show-details=direct all"
 
   nix-integration:
     name: 'Nix / Integration'
@@ -160,13 +153,7 @@ jobs:
           name: k-framework
           skipPush: true
 
-      - name: Run booster integration Tests
-        run: |
-          GC_DONT_GC=1 nix develop .#cabal --command bash -c "scripts/booster-integration-tests.sh"
-
-      - name: Run kore integration tests
-        # FIXME do not run this unless anything has changed in a relevant directory
-        # see https://github.com/dorny/paths-filter
+      - name: Run integration tests
         run: |
           nix develop github:runtimeverification/k/v$(cat deps/k_release)#kore-integration-tests \
                 --override-input haskell-backend . --update-input haskell-backend \
@@ -191,10 +178,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.stack
-          key: stack-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
+          key: stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('stack.yaml.lock') }}
           restore-keys: |
-            stack-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}
-            stack-${{ runner.os }}-ghc-${{ env.ghc_version }}
+            stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('stack.yaml') }}
+            stack-2-${{ runner.os }}-ghc-${{ env.ghc_version }}
 
       - uses: haskell-actions/setup@v2.7
         id: setup-haskell-stack
@@ -212,38 +199,24 @@ jobs:
             exit 1
           fi
 
-      - name: Build all packages (preparing for test)
-        run: stack build --test --no-run-tests --pedantic
-
       - name: Run unit tests
-        run: stack test kore:kore-test hs-backend-booster:unit-tests
+        run: stack test --pedantic
 
   hlint:
     name: 'HLint'
     needs: formatting
     runs-on: ubuntu-22.04
+    env:
+      hlint_version: "3.6.1"
     steps:
-      - name: 'Check out code'
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0
+          # Check out pull request HEAD instead of merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
           submodules: recursive
 
-      - name: 'Install Nix'
-        uses: cachix/install-nix-action@v25
-        with:
-          install_url: https://releases.nixos.org/nix/nix-2.13.3/install
-          extra_nix_config: |
-            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-            substituters = http://cache.nixos.org https://cache.iog.io
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+      - name: Download hlint
+        run: curl -sSL https://github.com/ndmitchell/hlint/releases/download/v${{ env.hlint_version }}/hlint-${{ env.hlint_version }}-x86_64-linux.tar.gz | tar xvz
 
-      - name: 'Install Cachix'
-        uses: cachix/cachix-action@v14
-        with:
-          name: k-framework
-          authToken: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
-
-      - name: Format
-        run: nix develop .#style --command bash -c './scripts/hlint.sh'
+      - name: Run hlint
+        run: hlint-${{ env.hlint_version }}/hlint kore kore-rpc-types -j

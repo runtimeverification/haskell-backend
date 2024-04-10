@@ -1,4 +1,0 @@
-echo "kompiling questionmark-vars.k"
-kompile --backend haskell questionmark-vars.k
-cp questionmark-vars-kompiled/definition.kore questionmark-vars.kore
-rm -r questionmark-vars-kompiled

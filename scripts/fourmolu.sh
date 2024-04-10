@@ -1,9 +1,11 @@
-#!/usr/bin/env bash
-set -euxo pipefail
-expected_fourmolu_version="0.14.0.0"
-fourmolu=${FOURMOLU:-$(which fourmolu)} || { echo 'No fourmolu!' ; exit 1 ; }
-fourmolu_version=$(${fourmolu} --version | head -n1)
-# drop the prefix 'fourmolu ' which is 9 letters long
-fourmolu_version=${fourmolu_version:9}
-[[ ${fourmolu_version} == ${expected_fourmolu_version} ]] || { echo "Unexpected fourmolu version, got ${fourmolu_version}, expected ${expected_fourmolu_version}" ; exit 1 ; }
-git ls-files | grep '.*\.hs$' | xargs ${fourmolu} -o -XImportQualifiedPost -o -XTypeApplications -o -XPatternSynonyms -o -XBangPatterns -o -XOverloadedRecordDot -i
+#!/bin/sh
+
+# https://github.com/tweag/ormolu/issues/38
+# https://gitlab.haskell.org/ghc/ghc/-/issues/17755
+export LOCALE_ARCHIVE=
+export LC_ALL=
+
+fourmolu --version
+all_hs_files=$(git ls-files | grep '.*\.hs$')
+hs_files=${1:-$all_hs_files}
+echo $hs_files | xargs fourmolu -o -XImportQualifiedPost -o -XTypeApplications -o -XPatternSynonyms -o -XBangPatterns -o -XCPP -i

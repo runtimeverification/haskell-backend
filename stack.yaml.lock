@@ -19,20 +19,6 @@ packages:
   original:
     hackage: decision-diagrams-0.2.0.0
 - completed:
-    hackage: smtlib-backends-0.3@sha256:a947aead99f6a314833bddca9b502d5faea8d3bd2fc76ffb53c34d5c5b7557bc,1211
-    pantry-tree:
-      sha256: 97b88a647ac996808a93b2eab62e9e8574d9b9a451ee37a9103e209b63be012d
-      size: 275
-  original:
-    hackage: smtlib-backends-0.3
-- completed:
-    hackage: smtlib-backends-process-0.3@sha256:caf131d3d6f6825e3a3182713130a8e14d0bd6530eeda643e8a511b546ff1a26,1676
-    pantry-tree:
-      sha256: 7147fef29b4270275168a285fc0c68784329d1276ab9e44e9a45f8d79b526220
-      size: 461
-  original:
-    hackage: smtlib-backends-process-0.3
-- completed:
     hackage: typerep-map-0.6.0.0@sha256:e54a4e99614ad890a10200da687efa189860c13207a97063db1b6881032ebecc,4890
     pantry-tree:
       sha256: f970c9dc26194bf708a5c18cf4daac5a1518afa1d8b92e8f1c170959587ee7a6
