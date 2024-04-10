@@ -1,8 +1,0 @@
-{
-    "log-successful-rewrites": true,
-    "terminal-rules": [
-        "TEST.DE",
-        "TEST.AB"
-    ],
-    "max-depth": 3
-}

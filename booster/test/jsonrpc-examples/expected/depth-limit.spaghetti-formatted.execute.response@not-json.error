@@ -1,3 +1,0 @@
-Json data in files is of different type
-  * File test/jsonrpc-examples/depth-limit.spaghetti-formatted.execute.response: ExecuteM response
-  * File test/jsonrpc-examples/not-json.error: non-JSON file

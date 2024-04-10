@@ -1,0 +1,77 @@
+on:
+  # schedule:
+  #  # Run every Sunday at 10pm UTC
+  #  - cron: '0 22 * * 0'
+  workflow_dispatch:
+    # allow manual runs using custom versions
+    inputs:
+      evm-version:
+        description: 'EVM version to use'
+        required: false
+        type: string
+      k-version:
+        description: 'K version to use'
+        required: false
+        type: string
+      reviewer:
+        description: 'Reviewer for the created PR'
+        required: true
+        type: string
+
+# don't allow several instances to run at the same time
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  generate-regression-evm:
+    runs-on: [Linux, performance]
+    env:
+      K_VERSION: ${{ inputs.k-version }}
+      EVM_VERSION: ${{ inputs.evm-version }}
+      REVIEWER:  ${{ inputs.reviewer }}
+      EVM_SEMANTICS: ./evm-semantics
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Switch to update branch (or create it off master)
+        run: |
+          git checkout -B _update origin/_update || git checkout -B _update
+      - name: Check out evm-semantics
+        uses: actions/checkout@v4
+        with:
+          repository: runtimeverification/evm-semantics
+          submodules: recursive
+          path: ${{ env.EVM_SEMANTICS }}
+      - run: |
+          echo "EVM_SEMANTICS: ${EVM_SEMANTICS} (preset by workflow)"
+          echo "EVM_VERSION: ${EVM_VERSION-none given}"
+          echo "K_VERSION: ${K_VERSION-none given}"
+          echo "Run by Haskell backend version: $(git show --oneline -s)"
+      - name: Run test update script
+        run: |
+          USE_K_VERSION="${K_VERSION:-v$(cat deps/k_release)}"
+          echo "Using K version ${USE_K_VERSION}"
+          nix develop \
+              github:runtimeverification/k/${USE_K_VERSION}#kore-integration-tests \
+              --command bash scripts/generate-regression-tests.sh
+      - name: Capture result (commit and push diff if exists)
+        run: |
+          if ! git diff --exit-code; then
+            git config --global user.name github-actions
+            git config --global user.email github-actions@github.com
+            git add test/
+            git commit -m "Update regression tests"
+
+            git push --set-upstream origin _update
+            # open a PR if there isn't already one (use hub)
+            if ! hub pr list --format '%H%n' | grep -q '^_update$'; then
+                hub pull-request \
+                    --head _update --base master \
+                    --reviewer $REVIEWER --assign $REVIEWER \
+                    --labels automerge                  \
+                    --message 'Update regression tests'
+            fi
+          fi

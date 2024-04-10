@@ -1,8 +1,0 @@
-Files test/jsonrpc-examples/terminal.execute.response and test/jsonrpc-examples/depth-limit.spaghetti-formatted.execute.response are different ExecuteM responses
-2c2
-<     "reason": "terminal-rule",
----
->     "reason": "depth-bound",
-4d3
-<     "rule": "TEST.DE",
-

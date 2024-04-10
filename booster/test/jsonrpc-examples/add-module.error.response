@@ -1,1 +1,0 @@
-{"jsonrpc":"2.0","id":4,"error":{"code":2,"data":{"context":null,"error":"FOUNDRY-MAIN-DEPENDS-MODULE: Duplicate module"},"message":"Could not verify pattern"}}

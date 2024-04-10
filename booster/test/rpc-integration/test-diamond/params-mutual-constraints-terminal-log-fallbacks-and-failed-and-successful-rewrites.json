@@ -1,9 +1,0 @@
-{
-    "log-fallbacks": true,
-    "log-failed-rewrites": true,
-    "log-successful-rewrites": true,
-    "terminal-rules": [
-        "TEST.EG",
-        "TEST.FG"
-    ]
-}
