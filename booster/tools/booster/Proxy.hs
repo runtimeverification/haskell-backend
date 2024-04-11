@@ -105,8 +105,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                         def =
                             fromMaybe (error $ "Module " <> show m <> " not found") $
                                 Map.lookup m bState.definitions
-                    handleExecute logSettings def execReq
-                        >>= traverse (postExecSimplify logSettings start execReq._module def)
+                    handleExecute logSettings def start execReq
     Implies impliesReq -> do
         koreResult <-
             loggedKore
@@ -261,9 +260,34 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
         | otherwise =
             pure ()
 
-    handleExecute :: LogSettings -> KoreDefinition -> ExecuteRequest -> m (Either ErrorObj (API 'Res))
-    handleExecute logSettings def =
-        executionLoop logSettings def (0, 0.0, 0.0, Nothing)
+    handleExecute ::
+        LogSettings ->
+        KoreDefinition ->
+        TimeSpec ->
+        ExecuteRequest ->
+        m (Either ErrorObj (API 'Res))
+    handleExecute logSettings def start execReq = do
+        execRes <-
+            executionLoop logSettings def (0, 0.0, 0.0, Nothing) execReq
+                >>= traverse (postExecSimplify logSettings execReq._module def)
+        if (fromMaybe False logSettings.logTiming)
+            then traverse (addTimeLog start) execRes
+            else pure execRes
+
+    addTimeLog :: TimeSpec -> API 'Res -> m (API 'Res)
+    addTimeLog start res = do
+        stop <- liftIO (getTime Monotonic)
+        let duration = fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
+        pure $ case res of
+            Execute result ->
+                let result' :: ExecuteResult
+                    result' =
+                        result
+                            { reason = result.reason
+                            , logs = combineLogs [Just [RPCLog.ProcessingTime Nothing duration], result.logs]
+                            }
+                 in Execute result'
+            other -> other
 
     executionLoop ::
         LogSettings ->
@@ -508,8 +532,8 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                     }
 
     postExecSimplify ::
-        LogSettings -> TimeSpec -> Maybe Text -> KoreDefinition -> API 'Res -> m (API 'Res)
-    postExecSimplify logSettings start mbModule def
+        LogSettings -> Maybe Text -> KoreDefinition -> API 'Res -> m (API 'Res)
+    postExecSimplify logSettings mbModule def
         | not cfg.simplifyAtEnd = pure
         | otherwise = \case
             Execute res ->
@@ -521,15 +545,6 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                         )
             other -> pure other
       where
-        -- timeLog :: TimeDiff -> Maybe [LogEntry]
-        timeLog stop
-            | fromMaybe False logSettings.logTiming =
-                let duration =
-                        fromIntegral (toNanoSecs (diffTimeSpec stop start)) / 1e9
-                 in Just [RPCLog.ProcessingTime Nothing duration]
-            | otherwise =
-                Nothing
-
         simplifyResult :: ExecuteResult -> m ExecuteResult
         simplifyResult res@ExecuteResult{reason, state, nextStates} = do
             Log.logInfoNS "proxy" . Text.pack $ "Simplifying state in " <> show reason <> " result"
@@ -538,15 +553,13 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                 Left logsOnly -> do
                     -- state simplified to \bottom, return vacuous
                     Log.logInfoNS "proxy" "Vacuous after simplifying result state"
-                    stop <- liftIO $ getTime Monotonic
-                    pure $ makeVacuous (combineLogs [timeLog stop, logsOnly]) res
+                    pure $ makeVacuous logsOnly res
                 Right (simplifiedState, simplifiedStateLogs) -> do
                     simplifiedNexts <-
                         maybe
                             (pure [])
                             (mapM $ simplifyExecuteState logSettings mbModule def)
                             nextStates
-                    stop <- liftIO $ getTime Monotonic
                     let (logsOnly, (filteredNexts, filteredNextLogs)) =
                             second unzip $ partitionEithers simplifiedNexts
                         newLogs = simplifiedStateLogs : logsOnly <> filteredNextLogs
@@ -557,14 +570,14 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                 res
                                     { reason = Stuck
                                     , nextStates = Nothing
-                                    , logs = combineLogs $ timeLog stop : res.logs : simplifiedStateLogs : logsOnly
+                                    , logs = combineLogs $ res.logs : simplifiedStateLogs : logsOnly
                                     }
                             | length filteredNexts == 1 ->
                                 res -- What now? would have to re-loop. Return as-is.
                                 -- otherwise falling through to _otherReason
                         CutPointRule
                             | null filteredNexts ->
-                                makeVacuous (combineLogs $ timeLog stop : newLogs) res
+                                makeVacuous (combineLogs $ res.logs : newLogs) res
                         _otherReason ->
                             res
                                 { state = simplifiedState
@@ -572,7 +585,7 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                     if null filteredNexts
                                         then Nothing
                                         else Just filteredNexts
-                                , logs = combineLogs $ timeLog stop : res.logs : newLogs
+                                , logs = combineLogs $ res.logs : newLogs
                                 }
 
 data LogSettings = LogSettings
