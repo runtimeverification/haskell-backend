@@ -14,6 +14,7 @@ module Proxy (
 
 import Control.Concurrent.MVar qualified as MVar
 import Control.Monad (when)
+import Control.Monad.Extra (whenJust)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Logger qualified as Log
 import Control.Monad.Trans.Except (runExcept)
@@ -574,6 +575,10 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                 Left logsOnly -> do
                     -- state simplified to \bottom, return vacuous
                     Log.logInfoNS "proxy" "Vacuous after simplifying result state"
+                    whenJust logsOnly $
+                        outputLogsAtLevel (Log.LevelOther "SimplifyJson")
+                            . map RPCLog.logEntryEraseTerms
+                            . filter isSimplificationLogEntry
                     pure . Right $ makeVacuous logsOnly res
                 Right (simplifiedState, simplifiedStateLogs) -> do
                     simplifiedNexts <-
@@ -584,6 +589,11 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                     let (logsOnly, (filteredNexts, filteredNextLogs)) =
                             second unzip $ partitionEithers simplifiedNexts
                         newLogs = simplifiedStateLogs : logsOnly <> filteredNextLogs
+
+                    whenJust (combineLogs newLogs) $
+                        outputLogsAtLevel (Log.LevelOther "SimplifyJson")
+                            . map RPCLog.logEntryEraseTerms
+                            . filter isSimplificationLogEntry
 
                     pure $ case reason of
                         Branching
