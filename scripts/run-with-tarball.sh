@@ -17,8 +17,8 @@ shift
 tarname=$(basename $tarball)
 
 booster=${BOOSTER:-$(realpath $(dirname $0)/..)}
-server=${SERVER:-$booster/.build/kore/bin/kore-rpc-booster}
-client=${CLIENT:-$booster/.build/kore/bin/kore-rpc-client}
+server=${SERVER:-$booster/.build/booster/bin/kore-rpc-booster}
+client=${CLIENT:-$booster/.build/booster/bin/kore-rpc-client}
 log_dir=${LOG_DIR:-.}
 
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
@@ -67,22 +67,9 @@ MODULE=$(grep -o -e "^module [A-Z0-9-]*" $kore | tail -1 | sed -e "s/module //")
 # build llvm backend unless provided
 if [ -z "${LLVM_LIB}" ]; then
     tar xf $tarball -O llvm_definition/definition.kore > $TEMPD/llvm-definition.kore
-    if [ ! -d "${PLUGIN_DIR}" ]; then
-        echo "Either LLVM_LIB or PLUGIN_DIR must be provided"
-        exit 2
-    fi
-    #generate matching data
-    (cd $TEMPD && mkdir -p dt && llvm-kompile-matching llvm-definition.kore qbaL ./dt 1/2)
-    # find library dependencies and source files
-    for lib in libff libcryptopp blake2; do
-        LIBFILE=$(find ${PLUGIN_DIR} -name "${lib}.a" | head -1)
-        [ -z "$LIBFILE" ] && (echo "[Error] Unable to locate ${lib}.a"; exit 1)
-        PLUGIN_LIBS+="$LIBFILE "
-        PLUGIN_INCLUDE+="-I$(dirname $LIBFILE)/../include "
-    done
-    PLUGIN_CPP="${PLUGIN_DIR}/include/plugin-c/blake2.cpp ${PLUGIN_DIR}/include/plugin-c/crypto.cpp ${PLUGIN_DIR}/include/plugin-c/plugin_util.cpp"
 
-    # kompile llvm-definition to interpreter
+    LLVM_DEFINITION_SHA=$(sha1sum $TEMPD/llvm-definition.kore | awk '{ print $1 }')
+
     case "$OSTYPE" in
         linux*)
             LPROCPS="-lprocps"
@@ -93,11 +80,33 @@ if [ -z "${LLVM_LIB}" ]; then
             LIBSUFFIX="dylib"
             ;;
     esac
-    llvm-kompile $TEMPD/llvm-definition.kore $TEMPD/dt c -- \
-             -fPIC -std=c++17 -o $TEMPD/interpreter \
-             $PLUGIN_LIBS $PLUGIN_INCLUDE $PLUGIN_CPP \
-             -lcrypto -lssl $LPROCPS
-    lib=$TEMPD/interpreter.$LIBSUFFIX
+
+    if [ ! -f "$log_dir/$LLVM_DEFINITION_SHA.$LIBSUFFIX" ]; then
+        if [ ! -d "${PLUGIN_DIR}" ]; then
+            echo "Either LLVM_LIB or PLUGIN_DIR must be provided"
+            exit 2
+        fi
+        #generate matching data
+        (cd $TEMPD && mkdir -p dt && llvm-kompile-matching llvm-definition.kore qbaL ./dt 1/2)
+        # find library dependencies and source files
+        for lib in libff libcryptopp blake2; do
+            LIBFILE=$(find ${PLUGIN_DIR} -name "${lib}.a" | head -1)
+            [ -z "$LIBFILE" ] && (echo "[Error] Unable to locate ${lib}.a"; exit 1)
+            PLUGIN_LIBS+="$LIBFILE "
+            PLUGIN_INCLUDE+="-I$(dirname $LIBFILE)/../include "
+        done
+        PLUGIN_CPP="${PLUGIN_DIR}/include/plugin-c/blake2.cpp ${PLUGIN_DIR}/include/plugin-c/crypto.cpp ${PLUGIN_DIR}/include/plugin-c/plugin_util.cpp"
+
+        # kompile llvm-definition to interpreter
+        llvm-kompile $TEMPD/llvm-definition.kore $TEMPD/dt c -- \
+                -fPIC -std=c++17 -o $TEMPD/interpreter \
+                $PLUGIN_LIBS $PLUGIN_INCLUDE $PLUGIN_CPP \
+                -lcrypto -lssl $LPROCPS
+        lib=$TEMPD/interpreter.$LIBSUFFIX
+        cp $TEMPD/interpreter.$LIBSUFFIX $log_dir/$LLVM_DEFINITION_SHA.$LIBSUFFIX
+    else
+        lib=$log_dir/$LLVM_DEFINITION_SHA.$LIBSUFFIX
+    fi
 else
     lib=$(realpath ${LLVM_LIB})
 fi
