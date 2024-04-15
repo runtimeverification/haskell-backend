@@ -9,7 +9,6 @@ module Test.Booster.Pattern.Rewrite (
     test_performRewrite,
 ) where
 
-import Control.Exception (ErrorCall, catch)
 import Control.Monad.Logger.CallStack
 import Data.Bifunctor (second)
 import Data.List.NonEmpty qualified as NE
@@ -347,12 +346,12 @@ callsError :: TestTree
 callsError =
     testGroup
         "Calls error when there are unexpected situations"
-        [ testCase "on wrong argument count in a symbol application" $ do
-            ( runRewrite
-                    [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing"), \dv{SomeSort{}}("thing"), \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
-                    >> assertFailure "success"
-                )
-                `catch` (\(_ :: ErrorCall) -> pure ())
+        [ testCase "on wrong argument count in a symbol application" $
+            runRewrite
+                [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con1{}( \dv{SomeSort{}}("thing"), \dv{SomeSort{}}("thing"), \dv{SomeSort{}}("thing") ) ), C:SortK{}) ) |]
+                >>= \case
+                    (_, RewriteAborted InternalMatchError{} _) -> pure ()
+                    _ -> assertFailure "success"
         ]
 
 getsStuckOnFailures :: TestTree
