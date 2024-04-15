@@ -2,17 +2,15 @@ include include.mk
 
 .PHONY: all kore clean clean-execution docs haddock \
 		test test-kore test-k test-k-simplifierx test-simplifierx \
-		kore-exec kore-repl kore-parser
+		kore-exec kore-repl
 
-all: kore-exec kore-repl kore-parser
+all: kore-exec kore-repl
 
 kore: all
 
 kore-exec: $(KORE_EXEC)
 
 kore-repl: $(KORE_REPL)
-
-kore-parser: $(KORE_PARSER)
 
 docs: haddock
 

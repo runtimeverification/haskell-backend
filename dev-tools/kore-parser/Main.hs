@@ -1,3 +1,5 @@
+{-# Language NoImplicitPrelude #-}
+
 module Main (main) where
 
 import Control.Monad.Catch (

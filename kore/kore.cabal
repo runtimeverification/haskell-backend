@@ -617,16 +617,6 @@ executable kore-rpc
   build-depends: optparse-applicative >=0.14
   build-depends: time >=1.9.3
 
-executable kore-parser
-  import: haskell
-  import: exe
-  main-is: Main.hs
-  hs-source-dirs: app/parser
-  build-depends: kore
-  build-depends: bytestring >=0.10
-  build-depends: containers >=0.5
-  build-depends: exceptions >=0.10
-
 executable kore-repl
   import: haskell
   import: exe

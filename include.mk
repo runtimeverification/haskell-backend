@@ -33,15 +33,6 @@ STACK_HADDOCK = $(STACK) --work-dir=.stack-work-haddock
 STACK_TEST = $(STACK) --work-dir=.stack-work-test
 
 ifeq ($(strip $(NIX)),)
-KORE_PARSER = $(BUILD_DIR)/kore/bin/kore-parser
-else
-KORE_PARSER = kore-parser
-endif
-KORE_PARSER_OPTS =
-export KORE_PARSER
-export KORE_PARSER_OPTS
-
-ifeq ($(strip $(NIX)),)
 KORE_EXEC = $(BUILD_DIR)/kore/bin/kore-exec
 else
 KORE_EXEC = kore-exec
@@ -65,6 +56,4 @@ $(BUILD_DIR)/kore/bin/kore-exec:
 $(BUILD_DIR)/kore/bin/kore-repl:
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-repl
 
-$(BUILD_DIR)/kore/bin/kore-parser:
-	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-parser
 

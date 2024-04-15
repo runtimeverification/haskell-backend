@@ -240,7 +240,7 @@
         in {
           kore-exec = withZ3 pkgs kore "kore-exec";
           kore-match-disjunction = withZ3 pkgs hs-backend-booster-dev-tools "kore-match-disjunction";
-          kore-parser = withZ3 pkgs kore "kore-parser";
+          kore-parser = withZ3 pkgs hs-backend-booster-dev-tools "kore-parser";
           kore-repl = withZ3 pkgs kore "kore-repl";
           kore-rpc = withZ3 pkgs kore "kore-rpc";
           kore-rpc-booster = withZ3 pkgs hs-backend-booster "kore-rpc-booster";

@@ -202,3 +202,16 @@ executables:
     - -rtsopts
     - -threaded
     - -with-rtsopts=-N
+  kore-parser:
+    source-dirs: kore-parser
+    main: Main.hs
+    dependencies:
+      - base
+      - bytestring
+      - containers
+      - exceptions
+      - kore
+    ghc-options:
+    - -rtsopts
+    - -threaded
+    - -with-rtsopts=-N
