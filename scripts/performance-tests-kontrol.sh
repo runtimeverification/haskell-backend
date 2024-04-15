@@ -9,8 +9,8 @@ KONTROL_VERSION=${KONTROL_VERSION:-'master'}
 
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 
-MASTER_COMMIT="$(git rev-parse origin/main)"
-MASTER_COMMIT_SHORT="$(git rev-parse --short origin/main)"
+MASTER_COMMIT="$(git rev-parse origin/master)"
+MASTER_COMMIT_SHORT="$(git rev-parse --short origin/master)"
 
 FEATURE_BRANCH_NAME=${FEATURE_BRANCH_NAME:-"$(git rev-parse --abbrev-ref HEAD)"}
 FEATURE_BRANCH_NAME="${FEATURE_BRANCH_NAME//\//-}"
