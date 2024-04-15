@@ -160,13 +160,36 @@ jobs:
           name: k-framework
           skipPush: true
 
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            kore:
+              - 'kore/**'
+            kore_rpc_types:
+              - 'kore-rpc-types/**'
+            booster:
+              - 'booster/**'
+            dev_tools:
+              - 'dev-tools/**'
+            project:
+              - 'stack.yaml*'
+              - 'cabal.project*'
+              - 'Makefile'
+              - '*.mk'
+              - 'flake.nix'
+              - 'deps/*'
+            kore_tests:
+              - 'test/**'
+
       - name: Run booster integration Tests
+        if: ${{ steps.changes.outputs.booster == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.project == 'true' }}
         run: |
           GC_DONT_GC=1 nix develop .#cabal --command bash -c "scripts/booster-integration-tests.sh"
 
       - name: Run kore integration tests
-        # FIXME do not run this unless anything has changed in a relevant directory
-        # see https://github.com/dorny/paths-filter
+        # do not run this unless anything has changed in a relevant directory
+        if: ${{ steps.changes.outputs.kore == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.kore_tests == 'true' || steps.changes.outputs.project == 'true' }}
         run: |
           nix develop github:runtimeverification/k/v$(cat deps/k_release)#kore-integration-tests \
                 --override-input haskell-backend . --update-input haskell-backend \
