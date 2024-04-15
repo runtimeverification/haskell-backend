@@ -152,9 +152,9 @@ instance HasAttributes ParsedSymbol where
                 isTotal <- attributes .! "total" <||> attributes .! "functional"
                 case (isConstr, isInjctn, isFunctn, isTotal) of
                     (True, _, _, _) -> pure Constructor
-                    (_, True, _, _) -> pure SortInjection
-                    (_, _, _, True) -> pure TotalFunction
-                    (_, _, True, _) -> pure PartialFunction
+                    (_, True, _, _) -> pure Constructor
+                    (_, _, _, True) -> pure $ Function Total
+                    (_, _, True, _) -> pure $ Function Partial
                     _other ->
                         throwE $ "Invalid symbol type '" <> name.getId <> "', attributes: " <> Text.pack (show attributes)
             isIdem = do

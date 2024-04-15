@@ -806,15 +806,20 @@ mkLogRewriteTrace
                                             { reason = "Uncertain about definedness of rule because of: " <> pack (show undefReasons)
                                             , _ruleId = fmap getUniqueId (uniqueId $ Definition.attributes r)
                                             }
-                                    UnificationIsNotMatch r _ _ ->
+                                    IsNotMatch r _ _ ->
                                         Failure
-                                            { reason = "Unification produced a non-match"
+                                            { reason = "Produced a non-match"
                                             , _ruleId = fmap getUniqueId (uniqueId $ Definition.attributes r)
                                             }
                                     RewriteSortError r _ _ ->
                                         Failure
                                             { reason = "Sort error while unifying"
                                             , _ruleId = fmap getUniqueId (uniqueId $ Definition.attributes r)
+                                            }
+                                    InternalMatchError{} ->
+                                        Failure
+                                            { reason = "Internal match error"
+                                            , _ruleId = Nothing
                                             }
                                 , origin = Booster
                                 }
