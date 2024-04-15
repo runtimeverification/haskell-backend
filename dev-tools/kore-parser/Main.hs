@@ -1,4 +1,4 @@
-{-# Language NoImplicitPrelude #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Main (main) where
 
