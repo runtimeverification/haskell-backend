@@ -59,11 +59,6 @@ KORE_REPL_OPTS = --no-bug-report
 export KORE_REPL
 export KORE_REPL_OPTS
 
-KORE_FORMAT = $(BUILD_DIR)/kore/bin/kore-format
-KORE_FORMAT_OPTS = --no-bug-report
-export KORE_FORMAT
-export KORE_FORMAT_OPTS
-
 $(BUILD_DIR)/kore/bin/kore-exec:
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-exec
 
@@ -72,7 +67,4 @@ $(BUILD_DIR)/kore/bin/kore-repl:
 
 $(BUILD_DIR)/kore/bin/kore-parser:
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-parser
-
-$(BUILD_DIR)/kore/bin/kore-format:
-	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-format
 

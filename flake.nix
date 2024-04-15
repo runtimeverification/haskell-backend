@@ -73,7 +73,6 @@
                 '';
                 postInstall = ''
                   ${drv.postInstall or ""}
-                  rm $out/bin/kore-format
                 '';
               })).override {
                 # bit pathological, but ghc-compact is already included with the ghc compiler
