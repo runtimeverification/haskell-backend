@@ -1,5 +1,5 @@
-{-# Language PatternSynonyms #-}
-{-# Language NoImplicitPrelude #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Main (main) where
 
