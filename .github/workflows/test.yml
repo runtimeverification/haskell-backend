@@ -135,7 +135,7 @@ jobs:
         run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "hpack ./booster && hpack dev-tools && cabal update && cabal build all && cabal test --enable-tests --test-show-details=direct kore-test unit-tests"
 
   nix-integration:
-    name: 'Nix / Integration Tests'
+    name: 'Nix / Integration'
     needs: formatting
     runs-on: [self-hosted, linux, normal]
     steps:
