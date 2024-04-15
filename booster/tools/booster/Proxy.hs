@@ -372,7 +372,6 @@ respondEither cfg@ProxyConfig{statsVar, boosterState} booster kore req = case re
                                             combineLogs
                                                 [ rpcLogs
                                                 , boosterResult.logs
-                                                , boosterStateSimplificationLogs
                                                 , map RPCLog.logEntryEraseTerms . filter (not . isSimplificationLogEntry) <$> koreResult.logs
                                                 , fallbackLog
                                                 ]
