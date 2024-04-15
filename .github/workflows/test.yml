@@ -135,22 +135,9 @@ jobs:
         run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "hpack ./booster && hpack dev-tools && cabal update && cabal build all && cabal test --enable-tests --test-show-details=direct kore-test unit-tests"
 
   nix-integration:
-    name: 'Nix / All Tests'
+    name: 'Nix / Integration Tests'
     needs: formatting
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: [self-hosted, linux, normal]
-            os: Ubuntu-22.04
-            nix: x86_64-linux
-          - runner: MacM1
-            os: self-macos-12
-            nix: aarch64-darwin
-          - runner: macos-12
-            os: macos-12
-            nix: x86_64-darwin
-    runs-on: ${{ matrix.runner }}
+    runs-on: [self-hosted, linux, normal]
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -160,7 +147,6 @@ jobs:
           submodules: recursive
 
       - name: Install Nix
-        if: ${{ !startsWith(matrix.os, 'self') }}
         uses: cachix/install-nix-action@v26
         with:
           install_url: https://releases.nixos.org/nix/nix-2.13.3/install
@@ -170,7 +156,6 @@ jobs:
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
 
       - name: Install Cachix
-        if: ${{ !startsWith(matrix.os, 'self') }}
         uses: cachix/cachix-action@v14
         with:
           name: k-framework
@@ -221,13 +206,13 @@ jobs:
         run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "cabal update && cabal build all && cabal test --enable-tests --test-show-details=direct kore-test unit-tests"
 
       - name: Run booster integration tests
-        if: ${{ matrix.os != 'macos-12' && (steps.changes.outputs.booster == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.project == 'true') }}
+        if: ${{ (steps.changes.outputs.booster == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.project == 'true') }}
         run: |
           GC_DONT_GC=1 nix develop .#cabal --command bash -c "scripts/booster-integration-tests.sh"
 
       - name: Run kore integration tests
         # do not run this unless anything has changed in a relevant directory
-        if: ${{ matrix.os != 'macos-12' && (steps.changes.outputs.kore == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.kore_tests == 'true' || steps.changes.outputs.project == 'true') }}
+        if: ${{ (steps.changes.outputs.kore == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.kore_tests == 'true' || steps.changes.outputs.project == 'true') }}
         run: |
           GC_DONT_GC=1 nix develop github:runtimeverification/k/v$(cat deps/k_release)#kore-integration-tests \
                 --override-input haskell-backend . --update-input haskell-backend \
