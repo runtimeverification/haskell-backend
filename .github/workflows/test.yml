@@ -135,7 +135,7 @@ jobs:
         run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "hpack ./booster && hpack dev-tools && cabal update && cabal build all && cabal test --enable-tests --test-show-details=direct kore-test unit-tests"
 
   nix-integration:
-    name: 'Nix / Integration'
+    name: 'Nix / All Tests'
     needs: formatting
     strategy:
       fail-fast: false
@@ -147,9 +147,9 @@ jobs:
           - runner: MacM1
             os: self-macos-12
             nix: aarch64-darwin
-          # - runner: macos-12
-          #   os: macos-12
-          #   nix: x86_64-darwin
+          - runner: macos-12
+            os: macos-12
+            nix: x86_64-darwin
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Check out code
@@ -195,17 +195,39 @@ jobs:
               - '*.mk'
               - 'flake.nix'
               - 'deps/*'
+              - scripts/booster-integration-tests.sh
             kore_tests:
               - 'test/**'
 
-      - name: Run booster integration Tests
-        if: ${{ steps.changes.outputs.booster == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.project == 'true' }}
+      - name: Build
+        run: GC_DONT_GC=1 nix build .#kore-exec .#kore-rpc-booster
+
+      - name: Cache Cabal package database and store
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cabal/packages
+            ~/.cabal/store
+          key: cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}-${{ hashFiles('kore-rpc-types/kore-rpc-types.cabal') }}-${{ hashFiles('booster/hs-backend-booster.cabal') }}
+          restore-keys: |
+            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}-${{ hashFiles('kore-rpc-types/kore-rpc-types.cabal') }}
+            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}-${{ hashFiles('kore/kore.cabal') }}
+            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}-${{ hashFiles('cabal.project.freeze') }}
+            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}-${{ hashFiles('cabal.project') }}
+            cabal-nix-${{ runner.os }}-ghc-${{ env.ghc_version }}
+
+      - name: Run unit tests
+        if: ${{ steps.changes.outputs.booster == 'true' || steps.changes.outputs.kore == 'true' || steps.changes.outputs.project == 'true' }}
+        run: GC_DONT_GC=1 nix develop .#cabal --command bash -c "cabal update && cabal build all && cabal test --enable-tests --test-show-details=direct kore-test unit-tests"
+
+      - name: Run booster integration tests
+        if: ${{ matrix.os != 'macos-12' && (steps.changes.outputs.booster == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.project == 'true') }}
         run: |
           GC_DONT_GC=1 nix develop .#cabal --command bash -c "scripts/booster-integration-tests.sh"
 
       - name: Run kore integration tests
         # do not run this unless anything has changed in a relevant directory
-        if: ${{ steps.changes.outputs.kore == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.kore_tests == 'true' || steps.changes.outputs.project == 'true' }}
+        if: ${{ matrix.os != 'macos-12' && (steps.changes.outputs.kore == 'true' || steps.changes.outputs.kore_rpc_types == 'true' || steps.changes.outputs.kore_tests == 'true' || steps.changes.outputs.project == 'true') }}
         run: |
           nix develop github:runtimeverification/k/v$(cat deps/k_release)#kore-integration-tests \
                 --override-input haskell-backend . --update-input haskell-backend \
