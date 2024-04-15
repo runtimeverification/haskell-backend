@@ -95,7 +95,7 @@ if [ -z "${LLVM_LIB}" ]; then
             PLUGIN_LIBS+="$LIBFILE "
             PLUGIN_INCLUDE+="-I$(dirname $LIBFILE)/../include "
         done
-        PLUGIN_CPP="${PLUGIN_DIR}/include/plugin-c/blake2.cpp ${PLUGIN_DIR}/include/plugin-c/crypto.cpp ${PLUGIN_DIR}/include/plugin-c/plugin_util.cpp"
+        PLUGIN_CPP="${PLUGIN_DIR}/include/plugin-c/crypto.cpp ${PLUGIN_DIR}/include/plugin-c/plugin_util.cpp"
 
         # kompile llvm-definition to interpreter
         llvm-kompile $TEMPD/llvm-definition.kore $TEMPD/dt c -- \
