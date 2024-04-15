@@ -41,7 +41,7 @@ bindir=../../../.build/kore/bin
 
 server=${SERVER:-$bindir/kore-rpc-booster}
 client=${CLIENT:-$bindir/kore-rpc-client}
-connection_attempts=${CONNECTION_ATTEMPTS:-15}
+connection_attempts=${CONNECTION_ATTEMPTS:-20}
 
 kore=resources/${dir#test-}.kore
 kompile=resources/${dir#test-}.kompile
