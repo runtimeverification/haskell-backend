@@ -136,7 +136,21 @@ jobs:
 
   nix-integration:
     name: 'Nix / Integration'
-    runs-on: [self-hosted, linux, normal]
+    needs: formatting
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: [self-hosted, linux, normal]
+            os: Ubuntu-22.04
+            nix: x86_64-linux
+          - runner: MacM1
+            os: self-macos-12
+            nix: aarch64-darwin
+          # - runner: macos-12
+          #   os: macos-12
+          #   nix: x86_64-darwin
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -146,6 +160,7 @@ jobs:
           submodules: recursive
 
       - name: Install Nix
+        if: ${{ !startsWith(matrix.os, 'self') }}
         uses: cachix/install-nix-action@v26
         with:
           install_url: https://releases.nixos.org/nix/nix-2.13.3/install
@@ -155,6 +170,7 @@ jobs:
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
 
       - name: Install Cachix
+        if: ${{ !startsWith(matrix.os, 'self') }}
         uses: cachix/cachix-action@v14
         with:
           name: k-framework
