@@ -24,7 +24,7 @@
 #   SERVER_OPTS: additional options to pass to the SERVER
 #                  (default: none)
 #   CONNECTION_ATTEMPTS: attempts to establish a connection with the server
-#                        after sleepeng for 2 seconds
+#                        after sleeping for 2 seconds
 #                          (default: 20)
 
 directory=${1?"Please provide a test directory in a single argument"}
