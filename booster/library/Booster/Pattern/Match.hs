@@ -351,8 +351,6 @@ matchInj
             failWith (DifferentSorts (Injection source1 target1 trm1) (Injection source2 target2 trm2))
 {-# INLINE matchInj #-}
 
------ Symbol Applications
--- two constructors: fail if names differ, recurse
 
 ----- Symbol Applications
 matchSymbolAplications ::
