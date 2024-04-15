@@ -639,15 +639,6 @@ executable kore-repl
   build-depends: filepath >=1.4
   build-depends: optparse-applicative >=0.14
 
-executable kore-simplify
-  import: haskell
-  import: exe
-  main-is: Main.hs
-  hs-source-dirs: app/simplify
-  build-depends: kore
-  build-depends: clock >=0.8
-  build-depends: optparse-applicative >=0.14
-
 test-suite kore-test
   import: haskell
   import: library

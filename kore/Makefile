@@ -49,9 +49,6 @@ ghcid-repl:
 ghcid-parser:
 	$(stack) exec -- ghcid -c "stack ghci $(package) --test --ghci-options='-fobject-code -fno-warn-unused-do-bind' --main-is $(package):kore-parser --work-dir .stack-work-ghci"
 
-ghcid-simplify:
-	$(stack) exec -- ghcid -c "stack ghci $(package) --test --ghci-options='-fobject-code -fno-warn-unused-do-bind' --main-is $(package):kore-simplify --work-dir .stack-work-ghci"
-
 dev-deps:
 	stack install ghcid
 
