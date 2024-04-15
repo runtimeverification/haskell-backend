@@ -26,9 +26,10 @@ module Booster.Pattern.Bool (
 import Data.ByteString.Char8 (ByteString)
 
 import Booster.Definition.Attributes.Base (
+    FunctionType (..),
     SMTType (SMTHook),
     SymbolAttributes (SymbolAttributes),
-    SymbolType (TotalFunction),
+    SymbolType (Function),
     pattern CanBeEvaluated,
     pattern IsNotAssoc,
     pattern IsNotIdem,
@@ -54,7 +55,7 @@ import Booster.SMT.Base (SExpr (Atom), SMTId (..))
 pattern HookedTotalFunction :: ByteString -> SymbolAttributes
 pattern HookedTotalFunction hook =
     SymbolAttributes
-        TotalFunction
+        (Function Total)
         IsNotIdem
         IsNotAssoc
         IsNotMacroOrAlias
@@ -66,7 +67,7 @@ pattern HookedTotalFunction hook =
 pattern HookedTotalFunctionWithSMT :: ByteString -> ByteString -> SymbolAttributes
 pattern HookedTotalFunctionWithSMT hook smt =
     SymbolAttributes
-        TotalFunction
+        (Function Total)
         IsNotIdem
         IsNotAssoc
         IsNotMacroOrAlias

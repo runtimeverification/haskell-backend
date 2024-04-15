@@ -685,7 +685,7 @@ data ApplyEquationResult
     deriving stock (Eq, Show)
 
 data ApplyEquationFailure
-    = FailedMatch MatchFailReason
+    = FailedMatch FailReason
     | IndeterminateMatch
     | IndeterminateCondition [Predicate]
     | ConditionFalse Predicate
@@ -813,9 +813,9 @@ applyEquation term rule = fmap (either Failure Success) $ runExceptT $ do
         throwE (MatchConstraintViolated Concrete "* (term has variables)")
     -- match lhs
     koreDef <- (.definition) <$> lift getConfig
-    case matchTerm koreDef rule.lhs term of
+    case matchTerms Eval koreDef rule.lhs term of
         MatchFailed failReason -> throwE $ FailedMatch failReason
-        MatchIndeterminate _pat _subj -> throwE IndeterminateMatch
+        MatchIndeterminate{} -> throwE IndeterminateMatch
         MatchSuccess subst -> do
             -- cancel if condition
             -- forall (v, t) : subst. concrete(v) -> isConstructorLike(t) /\

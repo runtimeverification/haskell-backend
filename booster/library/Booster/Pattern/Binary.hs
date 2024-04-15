@@ -214,7 +214,7 @@ lookupKoreDefinitionSymbol name = DecodeM $ do
                     []
                     (SortApp "UNKNOWN" [])
                     ( SymbolAttributes
-                        PartialFunction
+                        (Function Booster.Definition.Attributes.Base.Partial)
                         IsNotIdem
                         IsNotAssoc
                         IsNotMacroOrAlias

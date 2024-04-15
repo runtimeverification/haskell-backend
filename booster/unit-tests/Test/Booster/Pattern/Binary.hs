@@ -39,7 +39,7 @@ genSymbolUnknownSort =
     ( \name ->
         Symbol name [] [] (SortApp "UNKNOWN" []) $
             SymbolAttributes
-                PartialFunction
+                (Function Partial)
                 IsNotIdem
                 IsNotAssoc
                 IsNotMacroOrAlias

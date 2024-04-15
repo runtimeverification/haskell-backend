@@ -633,7 +633,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -653,7 +653,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -673,7 +673,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Just $ KListMeta sortListKList
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -693,7 +693,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Just $ KMapMeta sortMapKmap
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -713,7 +713,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Just $ KSetMeta sortSetKSet
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -733,7 +733,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -753,7 +753,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -773,7 +773,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -793,7 +793,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Just $ KListMeta sortListKList
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -813,7 +813,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Just $ KMapMeta sortMapKmap
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -833,7 +833,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Just $ KSetMeta sortSetKSet
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsIdem
                         , isAssoc = IsAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -853,7 +853,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -873,7 +873,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -893,7 +893,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -913,7 +913,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -933,7 +933,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -953,7 +953,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -973,7 +973,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -993,7 +993,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1013,7 +1013,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1033,7 +1033,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1053,7 +1053,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1073,7 +1073,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1093,7 +1093,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1113,7 +1113,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1133,7 +1133,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1153,7 +1153,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1173,7 +1173,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1193,7 +1193,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1213,7 +1213,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1233,7 +1233,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1253,7 +1253,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1273,7 +1273,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1293,7 +1293,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1313,7 +1313,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1333,7 +1333,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1353,7 +1353,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1373,7 +1373,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1393,7 +1393,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1413,7 +1413,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1433,7 +1433,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1453,7 +1453,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1473,7 +1473,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1493,7 +1493,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1513,7 +1513,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Just $ KMapMeta sortMapKmap
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1533,7 +1533,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1553,7 +1553,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1573,7 +1573,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1593,7 +1593,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1613,7 +1613,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1633,7 +1633,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1653,7 +1653,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1673,7 +1673,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1694,7 +1694,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1714,7 +1714,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1795,7 +1795,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1816,7 +1816,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1836,7 +1836,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1856,7 +1856,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1876,7 +1876,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Just $ KListMeta sortListKList
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1896,7 +1896,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1916,7 +1916,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1976,7 +1976,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -1996,7 +1996,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2016,7 +2016,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Just $ KSetMeta sortSetKSet
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2076,7 +2076,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2176,7 +2176,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2217,7 +2217,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2237,7 +2237,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2257,7 +2257,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2277,7 +2277,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2297,7 +2297,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2319,7 +2319,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2339,7 +2339,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2359,7 +2359,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2379,7 +2379,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2399,7 +2399,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2419,7 +2419,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2439,7 +2439,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2459,7 +2459,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2479,7 +2479,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2499,7 +2499,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2519,7 +2519,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2539,7 +2539,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2559,7 +2559,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2579,7 +2579,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2599,7 +2599,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2619,7 +2619,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2639,7 +2639,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2659,7 +2659,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2679,7 +2679,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2699,7 +2699,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2719,7 +2719,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2739,7 +2739,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2759,7 +2759,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2779,7 +2779,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2799,7 +2799,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2819,7 +2819,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2839,7 +2839,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2859,7 +2859,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2879,7 +2879,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2899,7 +2899,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2919,7 +2919,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2959,7 +2959,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2979,7 +2979,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -2999,7 +2999,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3019,7 +3019,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3079,7 +3079,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3100,7 +3100,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3121,7 +3121,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3141,7 +3141,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3161,7 +3161,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3181,7 +3181,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3201,7 +3201,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3221,7 +3221,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3241,7 +3241,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3261,7 +3261,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3281,7 +3281,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3301,7 +3301,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3321,7 +3321,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3341,7 +3341,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3361,7 +3361,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3381,7 +3381,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3401,7 +3401,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3421,7 +3421,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3441,7 +3441,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3461,7 +3461,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3481,7 +3481,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3501,7 +3501,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3521,7 +3521,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3541,7 +3541,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3561,7 +3561,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3581,7 +3581,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3602,7 +3602,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3622,7 +3622,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3643,7 +3643,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3683,7 +3683,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3703,7 +3703,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3723,7 +3723,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3743,7 +3743,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3764,7 +3764,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3804,7 +3804,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3824,7 +3824,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3844,7 +3844,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = PartialFunction
+                        , symbolType = Function Partial
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3864,7 +3864,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = TotalFunction
+                        , symbolType = Function Total
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias
@@ -3904,7 +3904,7 @@ defSymbols =
                 , attributes =
                     SymbolAttributes
                         { collectionMetadata = Nothing
-                        , symbolType = SortInjection
+                        , symbolType = Constructor
                         , isIdem = IsNotIdem
                         , isAssoc = IsNotAssoc
                         , isMacroOrAlias = IsNotMacroOrAlias

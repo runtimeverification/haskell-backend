@@ -42,7 +42,7 @@ import GHC.Records (HasField (..))
 import Language.Haskell.TH.Quote (QuasiQuoter (..), dataToExpQ)
 import Prettyprinter as Pretty
 
-import Booster.Definition.Attributes.Base
+import Booster.Definition.Attributes.Base hiding (Partial)
 import Booster.Definition.Attributes.Reader as Attributes (
     HasAttributes (mkAttributes),
     readLocation,
@@ -1154,7 +1154,7 @@ internaliseFunctionEquation partialDef requires args leftTerm right sortVars att
                 }
   where
     functionSymbolIsTotal = \case
-        Def.SymbolApplication symbol _ _ -> symbol.attributes.symbolType == TotalFunction
+        Def.SymbolApplication symbol _ _ -> symbol.attributes.symbolType == Function Total
         _ -> False
 
     internalisePattern' t = do

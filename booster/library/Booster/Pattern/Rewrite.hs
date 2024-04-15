@@ -52,7 +52,7 @@ import Booster.Pattern.ApplyEquations qualified as ApplyEquations
 import Booster.Pattern.Base
 import Booster.Pattern.Bool
 import Booster.Pattern.Index (TermIndex (..), kCellTermIndex)
-import Booster.Pattern.Unify
+import Booster.Pattern.Match
 import Booster.Pattern.Util
 import Booster.Prettyprinter
 import Booster.SMT.Interface qualified as SMT
@@ -257,15 +257,16 @@ applyRule ::
 applyRule pat@Pattern{ceilConditions} rule = runRewriteRuleAppT $ do
     def <- lift getDefinition
     -- unify terms
-    let unified = unifyTerms def rule.lhs pat.term
-    subst <- case unified of
-        UnificationFailed _reason ->
-            fail "Unification failed"
-        UnificationSortError sortError ->
+    subst <- case matchTerms Rewrite def rule.lhs pat.term of
+        MatchFailed (SubsortingError sortError) ->
             failRewrite $ RewriteSortError rule pat.term sortError
-        UnificationRemainder remainder ->
+        MatchFailed err@ArgLengthsDiffer{} ->
+            failRewrite $ InternalMatchError $ renderText $ pretty err
+        MatchFailed _reason ->
+            fail "Rule matching failed"
+        MatchIndeterminate remainder ->
             failRewrite $ RuleApplicationUnclear rule pat.term remainder
-        UnificationSuccess substitution ->
+        MatchSuccess substitution ->
             pure substitution
 
     -- check it is a "matching" substitution (substitutes variables
@@ -273,7 +274,7 @@ applyRule pat@Pattern{ceilConditions} rule = runRewriteRuleAppT $ do
     unless (Map.keysSet subst == freeVariables rule.lhs) $ do
         let violatingItems = Map.restrictKeys subst (Map.keysSet subst `Set.difference` freeVariables rule.lhs)
         failRewrite $
-            UnificationIsNotMatch rule pat.term violatingItems
+            IsNotMatch rule pat.term violatingItems
 
     -- Also fail the whole rewrite if a rule applies but may introduce
     -- an undefined term.
@@ -397,10 +398,12 @@ data RewriteFailed k
       RuleConditionUnclear (RewriteRule k) Predicate
     | -- | A rewrite rule does not preserve definedness
       DefinednessUnclear (RewriteRule k) Pattern [NotPreservesDefinednessReason]
-    | -- | A unification produced a non-match substitution
-      UnificationIsNotMatch (RewriteRule k) Term Substitution
-    | -- | A sort error was detected during unification
+    | -- | A matching produced a non-match substitution
+      IsNotMatch (RewriteRule k) Term Substitution
+    | -- | A sort error was detected during m,atching
       RewriteSortError (RewriteRule k) Term SortError
+    | -- | An error was detected during matching
+      InternalMatchError Text
     | -- | Term has index 'None', no rule should apply
       TermIndexIsNone Term
     deriving stock (Eq, Show)
@@ -431,9 +434,9 @@ instance Pretty (RewriteFailed k) where
             , "because of:"
             ]
                 ++ map pretty reasons
-    pretty (UnificationIsNotMatch rule term subst) =
+    pretty (IsNotMatch rule term subst) =
         hsep
-            [ "Unification produced a non-match:"
+            [ "Produced a non-match:"
             , pretty $ Map.toList subst
             , "when matching rule"
             , ruleLabelOrLoc rule
@@ -451,6 +454,7 @@ instance Pretty (RewriteFailed k) where
             ]
     pretty (TermIndexIsNone term) =
         "Term index is None for term " <> pretty term
+    pretty (InternalMatchError err) = "An internal error occured" <> pretty err
 
 ruleLabelOrLoc :: RewriteRule k -> Doc a
 ruleLabelOrLoc rule =

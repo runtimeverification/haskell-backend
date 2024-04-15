@@ -143,7 +143,8 @@ computeCeilRule mllvm def r@RewriteRule.RewriteRule{lhs, requires, rhs, attribut
 
 computeCeil :: MonadLoggerIO io => Term -> EquationT io [Either Predicate Term]
 computeCeil term@(SymbolApplication symbol _ args)
-    | symbol.attributes.symbolType /= Booster.Definition.Attributes.Base.PartialFunction =
+    | symbol.attributes.symbolType
+        /= Booster.Definition.Attributes.Base.Function Booster.Definition.Attributes.Base.Partial =
         concatMapM computeCeil args
     | otherwise = do
         ceils <- (.definition.ceils) <$> getConfig
