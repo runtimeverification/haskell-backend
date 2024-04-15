@@ -49,9 +49,6 @@ ghcid-repl:
 ghcid-match:
 	$(stack) exec -- ghcid -c "stack ghci $(package) --test --ghci-options='-fobject-code -fno-warn-unused-do-bind' --main-is $(package):kore-match-disjunction --work-dir .stack-work-ghci"
 
-ghcid-check-func:
-	$(stack) exec -- ghcid -c "stack ghci $(package) --test --ghci-options='-fobject-code -fno-warn-unused-do-bind' --main-is $(package):kore-check-functions --work-dir .stack-work-ghci"
-
 ghcid-parser:
 	$(stack) exec -- ghcid -c "stack ghci $(package) --test --ghci-options='-fobject-code -fno-warn-unused-do-bind' --main-is $(package):kore-parser --work-dir .stack-work-ghci"
 

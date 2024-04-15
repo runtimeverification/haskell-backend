@@ -658,15 +658,6 @@ executable kore-match-disjunction
   build-depends: optparse-applicative >=0.14
   build-depends: transformers >= 0.5
 
-executable kore-check-functions
-  import: haskell
-  import: exe
-  main-is: Main.hs
-  hs-source-dirs: app/check-functions
-  build-depends: kore
-  build-depends: clock >=0.8
-  build-depends: exceptions >=0.10
-
 executable kore-simplify
   import: haskell
   import: exe

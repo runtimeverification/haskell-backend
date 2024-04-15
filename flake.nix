@@ -73,7 +73,6 @@
                 '';
                 postInstall = ''
                   ${drv.postInstall or ""}
-                  rm $out/bin/kore-check-functions
                   rm $out/bin/kore-format
                 '';
               })).override {
