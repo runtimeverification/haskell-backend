@@ -189,3 +189,15 @@ executables:
     - -rtsopts
     - -threaded
     - -with-rtsopts=-N
+  kore-match-disjunction:
+    source-dirs: kore-rpc-disjunction
+    main: Main.hs
+    dependencies:
+      - kore
+      - clock
+      - optparse-applicative
+      - transformers
+    ghc-options:
+    - -rtsopts
+    - -threaded
+    - -with-rtsopts=-N

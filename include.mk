@@ -64,11 +64,6 @@ KORE_FORMAT_OPTS = --no-bug-report
 export KORE_FORMAT
 export KORE_FORMAT_OPTS
 
-KORE_MATCH_DISJUNCTION = $(BUILD_DIR)/kore/bin/kore-match-disjunction
-KORE_MATCH_DISJUNCTION_OPTS = --no-bug-report
-export KORE_MATCH_DISJUNCTION
-export KORE_MATCH_DISJUNCTION_OPTS
-
 $(BUILD_DIR)/kore/bin/kore-exec:
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-exec
 
@@ -81,5 +76,3 @@ $(BUILD_DIR)/kore/bin/kore-parser:
 $(BUILD_DIR)/kore/bin/kore-format:
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-format
 
-$(BUILD_DIR)/kore/bin/kore-match-disjunction:
-	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-match-disjunction
