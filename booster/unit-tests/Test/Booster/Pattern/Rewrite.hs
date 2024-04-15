@@ -211,7 +211,7 @@ unifyNotMatch =
                     [ (Variable someSort "X", dv someSort "otherThing")
                     ]
         [trm| kCell{}( kseq{}( inj{SomeSort{}, SortKItem{}}( con3{}( X:SomeSort{}, \dv{SomeSort{}}("thing") ) ), ConfigVar:SortK{}) ) |]
-            `failsWith` UnificationIsNotMatch rule3 t subst
+            `failsWith` IsNotMatch rule3 t subst
 definednessUnclear =
     testCase "con4 rewrite to f2 might become undefined" $ do
         let pcon4 =
