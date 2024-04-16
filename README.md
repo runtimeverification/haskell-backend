@@ -54,7 +54,6 @@ You can install/have access to K by either:
   * using [kup]
   * using a pre-built binary (see the releases page in the K repository)
   * if you use Nix, see the section below
-  * using the `Dockerfile` to run the integration tests inside a container
   * or by just building K from source
 
 ### Recommended dependencies
@@ -217,19 +216,6 @@ Call these scripts from the root of the repo to obtain performance numbers for t
 #### scripts/booster-analysis.sh
 
 This scipt can be used with any folder containing bug reports to build an anlysis of fallback/abort reasons in the booster. To obtain bug reports, first run `PYTEST_PARALLEL=8 scripts/performance-tests-kevm.sh --bug-report`, which will generate tarballs for all the tests and drop them into `scripts/bug-reports/`. Then call `scripts/booster-analysis.sh scripts/booster-analysis.sh scripts/bug-reports/kevm-v1.0.417-main`
-
-
-### Running integration tests with Docker
-
-Use `docker.sh` to run commands inside the container:
-
-``` sh
-./docker/build.sh  # run once when dependencies change
-./docker/run.sh make all  # build the backend
-./docker/run.sh make test  # run all tests
-./docker/run.sh make -C test/imp test  # run all tests in test/imp
-```
-
 
             
 
