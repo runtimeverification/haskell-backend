@@ -208,7 +208,7 @@ me@somewhere:haskell-backend$
 
 ### Integration/Performance tests of downstream projects
 
-#### scripts/performance-tests-{kevm, kontrol}.sh
+#### scripts/performance-tests-{kevm, kontrol, mx}.sh
 
 Call these scripts from the root of the repo to obtain performance numbers for the KEVM and Kontrol test suites. These are necessary for any new feature which is expected to modify the perfromance of the booster and the timings should be includedf in the PR.
 
@@ -216,6 +216,23 @@ Call these scripts from the root of the repo to obtain performance numbers for t
 #### scripts/booster-analysis.sh
 
 This scipt can be used with any folder containing bug reports to build an anlysis of fallback/abort reasons in the booster. To obtain bug reports, first run `PYTEST_PARALLEL=8 scripts/performance-tests-kevm.sh --bug-report`, which will generate tarballs for all the tests and drop them into `scripts/bug-reports/`. Then call `scripts/booster-analysis.sh scripts/booster-analysis.sh scripts/bug-reports/kevm-v1.0.417-main`
+
+
+### Generating an integration test from a bug-report.tar.gz
+
+1) Rename `bug-report.tar.gz` to something more descriptive like `issue-123.tar.gz`
+2) Copy the tar file into `test/rpc-integration/`
+3) Run `./generateDirectoryTest.sh issue-123.tar.gz`. This will copy the definition files into `resources/` and rpc commands into `test-issue-123/`
+4) Run the test via `./runDirectoryTest test-issue-123`
+
+### Pretty printing KORE JSON
+
+There is a simple utility called pretty which can be used to pretty print a KORE JSON term from a bug report, which does not contain the original K definition:
+
+```
+cabal run pretty -- ../definition.kore <(jq '.result.state' XXX_response.json)
+```
+
 
             
 
@@ -240,19 +257,3 @@ This scipt can be used with any folder containing bug reports to build an anlysi
 [Haskell extension]: https://marketplace.visualstudio.com/items?itemName=haskell.haskell
 [KORE RPC protocol]: ./docs/2022-07-18-JSON-RPC-Server-API.md
 [pyk]: https://github.com/runtimeverification/k/tree/master/pyk
-
-
-### Generating an integration test from a bug-report.tar.gz
-
-1) Rename `bug-report.tar.gz` to something more descriptive like `issue-123.tar.gz`
-2) Copy the tar file into `test/rpc-integration/`
-3) Run `./generateDirectoryTest.sh issue-123.tar.gz`. This will copy the definition files into `resources/` and rpc commands into `test-issue-123/`
-4) Run the test via `./runDirectoryTest test-issue-123`
-
-### Pretty printing KORE JSON
-
-There is a simple utility called pretty which can be used to pretty print a KORE JSON term from a bug report, which does not contain the original K definition:
-
-```
-cabal run pretty -- ../definition.kore <(jq '.result.state' XXX_response.json)
-```
