@@ -18,11 +18,11 @@ nix_shell() {
 
 nix_shell "cabal build kore-rpc-booster"
 
-export SERVER=$(nix_shell "cabal exec which kore-rpc-booster")
+export SERVER=$(nix_shell "cabal exec which kore-rpc-booster" | tail -1)
 
 nix_shell "cabal build kore-rpc-client"
 
-export CLIENT=$(nix_shell "cabal exec which kore-rpc-client")
+export CLIENT=$(nix_shell "cabal exec which kore-rpc-client" | tail -1)
 
 export LOG_DIR=${LOG_DIR:-"$BUG_REPORT_DIR-logs"}
 
