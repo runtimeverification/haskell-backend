@@ -86,7 +86,7 @@ executables:
       - text
       - transformers
     ghc-options:
-    - -rtsopts
+      - -rtsopts
   parsetest-binary:
     source-dirs: parsetest-binary
     main: ParsetestBinary.hs
@@ -98,7 +98,7 @@ executables:
       - hs-backend-booster
       - text
     ghc-options:
-    - -rtsopts
+      - -rtsopts
   pretty:
     source-dirs: pretty
     main: Pretty.hs
@@ -111,7 +111,7 @@ executables:
       - text
       - transformers
     ghc-options:
-    - -rtsopts
+      - -rtsopts
   eventlog-parser:
     source-dirs: eventlog-parser
     main: EventlogParser.hs
@@ -132,7 +132,7 @@ executables:
       - unix
       - unordered-containers
     ghc-options:
-    - -rtsopts
+      - -rtsopts
   kore-json-differ:
     source-dirs: kore-json-differ
     main: Main.hs
@@ -141,6 +141,8 @@ executables:
       - bytestring
       - containers
       - hs-backend-booster
+    ghc-options:
+      - -rtsopts
   tarball-compare:
     source-dirs: tarball-compare
     main: Main
@@ -198,6 +200,8 @@ executables:
       - kore
       - optparse-applicative
       - transformers
+    ghc-options:
+      - -rtsopts
   kore-parser:
     source-dirs: kore-parser
     main: Main.hs
@@ -207,3 +211,5 @@ executables:
       - containers
       - exceptions
       - kore
+    ghc-options:
+      - -rtsopts
