@@ -198,10 +198,6 @@ executables:
       - kore
       - optparse-applicative
       - transformers
-    ghc-options:
-    - -rtsopts
-    - -threaded
-    - -with-rtsopts=-N
   kore-parser:
     source-dirs: kore-parser
     main: Main.hs
@@ -211,7 +207,3 @@ executables:
       - containers
       - exceptions
       - kore
-    ghc-options:
-    - -rtsopts
-    - -threaded
-    - -with-rtsopts=-N
