@@ -209,12 +209,12 @@ kmapTerms =
             "Non-empty concrete KMap ~= empty KMap: fails"
             concreteKMapWithOneItem
             emptyKMap
-            (failed $ DifferentValues concreteKMapWithOneItem emptyKMap)
+            (failed $ KeyNotFound [trm| \dv{SortTestKMapKey{}}("key")|] emptyKMap)
         , test
             "Non-empty symbolic KMap ~= empty KMap: fails"
             symbolicKMapWithOneItem
             emptyKMap
-            (failed $ DifferentValues symbolicKMapWithOneItem emptyKMap)
+            (failed $ KeyNotFound [trm| \dv{SortTestKMapKey{}}("key")|] emptyKMap)
         , test
             "Non-empty symbolic KMap ~= non-empty concrete KMap, same key: matches contained value"
             symbolicKMapWithOneItem -- "key" -> A
@@ -233,12 +233,11 @@ kmapTerms =
                in success [("REST", kmapSort, restMap)]
             )
         , -- pattern has more assocs than subject
-          let patRest = kmap [(dv kmapKeySort "key2", dv kmapElementSort "value2")] Nothing
-           in test
+          test
                 "Extra concrete key in pattern, no rest in subject: fail on rest"
                 concreteKMapWithTwoItems
                 concreteKMapWithOneItem
-                (failed $ DifferentValues patRest emptyKMap)
+                (failed $ KeyNotFound [trm| \dv{SortTestKMapKey{}}("key2")|] emptyKMap)
         , -- cases with disjoint keys
           test
             "Variable key ~= concrete key (and common element) without rest: match key"
@@ -264,7 +263,7 @@ kmapTerms =
             "Keys disjoint and pattern keys are fully-concrete: fail"
             concreteKMapWithOneItemAndRest
             functionKMapWithOneItem
-            (failed $ DifferentValues concreteKMapWithOneItemAndRest functionKMapWithOneItem)
+            (failed $ KeyNotFound [trm| \dv{SortTestKMapKey{}}("key")|] functionKMapWithOneItem)
         , let patMap =
                 kmap
                     [ (var "A" kmapKeySort, dv kmapElementSort "a")

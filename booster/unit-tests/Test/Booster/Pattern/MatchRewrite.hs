@@ -428,27 +428,27 @@ internalMaps =
                     )
                 ]
             )
-        , -- TODO: re-enable once we re-factor the map matching
-          -- this would not produce a matchign substitution and should therefore fail
+        , 
+          -- this would not produce a matching substitution and should therefore fail
           -- at match time
-          -- , test
-          --     "Fails to match {\"key\" |-> \"value\", A |-> \"value2\"} with {\"key\" |-> \"value\", ...REST}"
-          --     concreteAndSymbolicKMapWithTwoItems
-          --     concreteKMapWithOneItemAndRest
-          --     ( failed $
-          --         DifferentSymbols
-          --             ( KMap
-          --                 testKMapDefinition
-          --                 [
-          --                     ( [trm| A:SortTestKMapKey{}|]
-          --                     , [trm| \dv{SortTestKMapItem{}}("value2") |]
-          --                     )
-          --                 ]
-          --                 Nothing
-          --             )
-          --             (KMap testKMapDefinition [] (Just [trm| REST:SortTestKMap{}|]))
-          --     )
-          test
+           test
+              "Fails to match {\"key\" |-> \"value\", A |-> \"value2\"} with {\"key\" |-> \"value\", ...REST}"
+              concreteAndSymbolicKMapWithTwoItems
+              concreteKMapWithOneItemAndRest
+              ( failed $
+                  DifferentSymbols
+                      ( KMap
+                          testKMapDefinition
+                          [
+                              ( [trm| A:SortTestKMapKey{}|]
+                              , [trm| \dv{SortTestKMapItem{}}("value2") |]
+                              )
+                          ]
+                          Nothing
+                      )
+                      (KMap testKMapDefinition [] (Just [trm| REST:SortTestKMap{}|]))
+              )
+        , test
             "Can match {\"f()\" |-> \"value\", ...REST} with {\"f()\" |-> B}"
             functionKMapWithOneItemAndRest
             functionKMapWithOneItem
@@ -472,12 +472,12 @@ internalMaps =
             "Empty and non-empty concrete map fail to match"
             emptyKMap
             concreteKMapWithOneItem
-            (failed $ KeyNotFound [trm| \dv{SortTestKMapKey{}}("key")|] emptyKMap)
+            (failed $ DifferentSymbols emptyKMap concreteKMapWithOneItem)
         , test
             "Concrete maps of different length fail to match"
             concreteKMapWithTwoItems
             concreteKMapWithOneItem
-            (failed $ KeyNotFound [trm| \dv{SortTestKMapKey{}}("key2")|] concreteKMapWithOneItem)
+            (failed $ KeyNotFound [trm| \dv{SortTestKMapKey{}}("key2")|] emptyKMap)
         , test
             "Symbolic non-empty map and empty map fail to match"
             symbolicKMapWithOneItem
