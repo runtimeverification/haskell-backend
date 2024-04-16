@@ -225,6 +225,8 @@ This scipt can be used with any folder containing bug reports to build an anlysi
 3) Run `./generateDirectoryTest.sh issue-123.tar.gz`. This will copy the definition files into `resources/` and rpc commands into `test-issue-123/`
 4) Run the test via `./runDirectoryTest test-issue-123`
 
+Note that it is also possible to run a test directly from a tarball with `runDirectoryTest.sh`, skipping the unpacking step. This is useful in automated workflows that involve running several tarballs.
+
 ### Pretty printing KORE JSON
 
 There is a simple utility called pretty which can be used to pretty print a KORE JSON term from a bug report, which does not contain the original K definition:
