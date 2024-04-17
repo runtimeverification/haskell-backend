@@ -116,6 +116,7 @@ import Log qualified
 import Prelude.Kore
 import SMT qualified
 import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
+import System.IO qualified as IO
 
 respond ::
     forall m.
@@ -591,6 +592,7 @@ respond serverState moduleName runSMT =
                                                     , definedNames
                                                     , kFileLocations
                                                     }
+                                            , simplificationLogHandle = simplificationLogHandle st
                                             }
                                     else -- the module already exists so we don't need to add it again
                                         st
@@ -646,6 +648,7 @@ respond serverState moduleName runSMT =
                                 , receivedModules =
                                     (if nameAsId then Map.insert (coerce name) _module else id) $
                                         Map.insert (coerce moduleHash) _module receivedModules
+                                , simplificationLogHandle = simplificationLogHandle st
                                 }
 
                         pure . AddModule $ AddModuleResult (getModuleName moduleHash)
@@ -774,6 +777,7 @@ data ServerState = ServerState
     { serializedModules :: Map.Map ModuleName SerializedDefinition
     , receivedModules :: Map.Map ModuleName Text
     , loadedDefinition :: LoadedDefinition
+    , simplificationLogHandle :: Maybe IO.Handle
     }
 
 runServer ::

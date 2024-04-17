@@ -271,6 +271,7 @@ mkKoreServer loggerEnv@Log.LoggerEnv{logAction} CLOptions{definitionFile, mainMo
                         { serializedModules = Map.singleton (ModuleName mainModuleName) sd
                         , receivedModules = mempty
                         , loadedDefinition
+                        , simplificationLogHandle = Nothing -- FIXME pass handle when -l SimplifyJson is set
                         }
 
         pure $
