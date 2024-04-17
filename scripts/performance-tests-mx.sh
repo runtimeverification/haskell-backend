@@ -47,7 +47,7 @@ git clone --depth 1 --branch $MX_VERSION https://github.com/runtimeverification/
 cd mx-backend
 
 if [[ $MX_VERSION == "master" ]]; then
-  MX_VERSION=$(git name-rev --tags --name-only $(git rev-parse HEAD))
+  MX_VERSION=$(git rev-parse --short HEAD)
 else
   MX_VERSION="${MX_VERSION//\//-}"
 fi
