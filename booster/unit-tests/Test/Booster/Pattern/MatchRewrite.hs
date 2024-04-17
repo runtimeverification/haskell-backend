@@ -85,7 +85,7 @@ sorts =
 constructors :: TestTree
 constructors =
     testGroup
-        "Unifying constructors"
+        "Matching constructors"
         [ test
             "same constructors, one variable argument"
             (app con1 [var "X" someSort])
@@ -176,7 +176,7 @@ varsAndValues =
         , let v1 = var "X" someSort
               v2 = var "Y" aSubsort
            in test "two variables (v2 subsort v1)" v1 v2 $
-                success [("X", someSort, v2)]
+                success [("X", someSort, inj aSubsort someSort v2)]
         , let v1 = var "X" aSubsort
               v2 = var "Y" someSort
            in test "two variables (v1 subsort v2)" v1 v2 $
@@ -276,22 +276,22 @@ internalLists =
                 "Concrete lists of different length fail to match"
                 two
                 three
-                (failed $ DifferentValues two three)
+                (failed $ DifferentValues emptyList $ klist [headElem] Nothing)
         , test
             "Empty and non-empty list fail to match (symbolic tail)"
             headList
             emptyList
             (failed $ DifferentValues headList emptyList)
         , test
-            "Empty and non-empty list fail to match (symbolic init)"
+            "Non-empty and empty list fail to match (symbolic init)"
             tailList
             emptyList
             (failed $ DifferentValues tailList emptyList)
         , test
-            "Unification failures may swap the argument lists"
+            "Empty and non-empty list fail to match (symbolic init)"
             emptyList
             tailList
-            (failed $ DifferentValues tailList emptyList)
+            (failed $ DifferentValues emptyList tailList)
         , test
             "Head list and tail list produce indeterminate unification"
             headList
@@ -350,7 +350,7 @@ internalLists =
                     (replicate 3 headElem)
                     (Just (var "LIST2" listSort, replicate 3 lastElem))
            in test
-                "Unifies two lists with symbolic middle (binding LIST1)"
+                "Match two lists with symbolic middle (binding LIST1)"
                 list1
                 list2
                 (success [("LIST1", listSort, klist [] (Just (var "LIST2" listSort, [lastElem])))])
@@ -363,10 +363,10 @@ internalLists =
                     (replicate 3 headElem)
                     (Just (var "LIST2" listSort, replicate 3 lastElem))
            in test
-                "Unifies two lists with symbolic middle (binding LIST1), reverse direction"
+                "Match two lists with symbolic middle, reverse direction indeterminate"
                 list2
                 list1
-                (success [("LIST1", listSort, klist [] (Just (var "LIST2" listSort, [lastElem])))])
+                (remainder [(klist [] (Just (var "LIST2" listSort, [lastElem])), klist [] (Just (var "LIST1" listSort, [])))])
         ]
   where
     headElem = [trm| \dv{SomeSort{}}("head") |]

@@ -431,6 +431,11 @@ matchVar
                 else failWith $ DifferentSorts (Var var) term2
 
 -- matching for lists. Only solves simple cases, returns indeterminate otherwise
+
+{- | pair up the argument lists and return the pairs in the first argument. If the lists
+are of equal length, return Nothing in second, else return the remaining
+terms in the longer list, tagged with their origin).
+-}
 mkPairs :: [a] -> [a] -> ([(a, a)], Maybe (Either [a] [a]))
 mkPairs ts1 ts2
     | l1 == l2 =
@@ -518,28 +523,43 @@ matchLists
                 case remainderBack of
                     -- match [...REST, X1, ..., Xn] with [...REST', X'1, ..., X'n]
                     -- succeed matching [...REST] with [...REST'] and [X1, ..., Xn] with [X'1, ..., X'n]
-                    Nothing -> pure $ Seq.fromList $ (mid1, mid2) : zippedBack
+                    Nothing -> 
+                        pure $ Seq.fromList $ (mid1, mid2) : zippedBack
                     -- match [...REST, X'1, ..., X'm, X1, ..., Xn] with [...REST', X'1, ..., X'n]
                     -- indeterminate matching [...REST, X'1, ..., X'm] with [...REST']
                     Just (Left ts1') -> do
                         lift $ addIndeterminate (KList def [] (Just (mid1, ts1'))) (KList def [] (Just (mid2, [])))
                         fail "indeterminate list match"
                     -- match [...REST, X1, ..., Xn] with [...REST', X'1, ..., X'm, X'1, ..., X'n]
-                    -- indeterminate matching [...REST] with [...REST', X'1, ..., X'm]
-                    Just (Right ts2') -> do
-                        lift $ addIndeterminate (KList def [] (Just (mid1, []))) (KList def [] (Just (mid2, ts2')))
-                        fail "indeterminate list match"
+                    -- succeed matching [...REST] with [...REST', X'1, ..., X'm] and [X1, ..., Xn] with [X'1, ..., X'n]
+                    Just (Right ts2') -> 
+                        pure $ Seq.fromList $ (mid1, KList def [] (Just (mid2, ts2'))) : zippedBack
             Just (Left hs1) -> do
                 -- match [X1,...,Xk,...REST, ...] with [...REST', ...]
                 -- indeterminate
                 lift $ addIndeterminate (KList def hs1 t1) (KList def [] t2)
                 fail "indeterminate list match"
-            Just (Right hs2) -> do
+            Just (Right hs2) ->
                 -- match [...REST, ...] with [X'1,...,X'k,...REST', ...]
-                -- indeterminate
-                lift $ addIndeterminate (KList def [] t1) (KList def hs2 t2)
-                fail "indeterminate list match"
 
+                -- do lift $ addIndeterminate (KList def [] t1) (KList def hs2 t2)
+                --    fail "indeterminate list match"
+                
+                let (zippedBack, remainderBack) = bimap reverse (fmap (bimap reverse reverse)) $ mkPairs (reverse ts1) (reverse ts2) in
+                case remainderBack of
+                    -- match [...REST, X1, ..., Xn] with [X'1,...,X'k,...REST', X'1, ..., X'n]
+                    -- succeed matching [...REST] with [X'1,...,X'k,...REST'] and [X1, ..., Xn] with [X'1, ..., X'n]
+                    Nothing -> 
+                        pure $ Seq.fromList $ (mid1, KList def hs2 (Just (mid2, []))) : zippedBack
+                    -- match [...REST, X'1, ..., X'm, X1, ..., Xn] with [X'1,...,X'k,...REST', X'1, ..., X'n]
+                    -- indeterminate matching [...REST, X'1, ..., X'm] with [X'1,...,X'k,...REST']
+                    Just (Left ts1') -> do
+                        lift $ addIndeterminate (KList def [] (Just (mid1, ts1'))) (KList def hs2 (Just (mid2, [])))
+                        fail "indeterminate list match"
+                    -- match [...REST, X1, ..., Xn] with [X'1,...,X'k,...REST', X'1, ..., X'm, X'1, ..., X'n]
+                    -- succeed matching [...REST] with [X'1,...,X'k,...REST', X'1, ..., X'm] and [X1, ..., Xn] with [X'1, ..., X'n]
+                    Just (Right ts2') -> 
+                        pure $ Seq.fromList $ (mid1, KList def hs2 (Just (mid2, ts2'))) : zippedBack
 
 
         -- | -- two fully-concrete lists of the same length
@@ -789,26 +809,6 @@ enqueueRegularProblems :: Monad m => Seq (Term, Term) -> StateT MatchState m ()
 enqueueRegularProblems ts =
     modify $ \s@State{mQueue} -> s{mQueue = mQueue >< ts}
 
-{- | pair up the argument lists and enqueue the pairs. If the lists
-are of equal length, return Nothing, else return the remaining
-terms in the longer list, tagged with their origin).
--}
-enqueuePairs ::
-    Monad m => [Term] -> [Term] -> StateT MatchState m (Maybe (Either [Term] [Term]))
-enqueuePairs ts1 ts2
-    | l1 == l2 =
-        enqueue ts1 ts2 >> pure Nothing
-    | l1 > l2 =
-        let (ts1', rest1) = splitAt l2 ts1
-         in enqueue ts1' ts2 >> pure (Just $ Left rest1)
-    | otherwise -- l1 < l2
-        =
-        let (ts2', rest2) = splitAt l1 ts2
-         in enqueue ts1 ts2' >> pure (Just $ Right rest2)
-  where
-    l1 = length ts1
-    l2 = length ts2
-    enqueue xs ys = enqueueRegularProblems $ Seq.fromList $ zip xs ys
 
 {- | Binds a variable to a term to add to the resulting unifier.
 

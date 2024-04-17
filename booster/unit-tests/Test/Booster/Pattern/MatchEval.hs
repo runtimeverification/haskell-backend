@@ -118,7 +118,7 @@ varsAndValues =
         , let v1 = var "X" someSort
               v2 = var "X" differentSort
            in test "same variable name, different sort" v1 v2 $
-                failed (DifferentSorts v1 v2)
+                failed (VariableConflict (Variable someSort "X") v1 v2)
         , let d1 = dv someSort "1"
               d2 = dv someSort "1"
            in test "same domain values (same sort)" d1 d2 $
@@ -177,7 +177,7 @@ andTerms =
               ca = app con1 [da]
               cb = app con1 [db]
            in test
-                "And-term on the left, one unifies one fails"
+                "And-term on the left, one matches one fails"
                 (AndTerm ca cb)
                 ca
                 (failed $ DifferentValues db da)
